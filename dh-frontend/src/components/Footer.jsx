@@ -9,8 +9,7 @@ const Footer = () => {
           {/* Brand Col */}
           <div className="col-span-1">
              <div className="flex flex-col items-start leading-none mb-6">
-              <span className="text-2xl font-black text-emerald-700 tracking-tighter">DH</span>
-              <span className="text-[9px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded-sm mt-1 tracking-widest shadow-sm">NOTEBOOK</span>
+               <img src="/logo.png" alt="DH Notebook Logo" className="h-8 md:h-10 object-contain" />
             </div>
             <p className="text-sm text-slate-500 mb-6 pr-4 leading-relaxed font-medium">
               ผู้นำเข้าและจัดจำหน่ายอะไหล่โน๊ตบุ๊คครบวงจร พร้อมเครือข่ายช่างพันธมิตรทั่วประเทศ ที่พร้อมให้บริการคุณ

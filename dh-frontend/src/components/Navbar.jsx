@@ -33,11 +33,9 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 py-2 md:py-3 flex items-center justify-between">
         
-        {/* 1. Logo (ขนาดเล็กตาม Request) */}
+        {/* 1. Logo (ขนาดเล็กตาม Request) ใช้รูปจริง */}
         <Link to="/" className="flex items-center group cursor-pointer transition-transform hover:scale-105">
-          <div className="text-lg md:text-xl font-black text-emerald-700 tracking-tighter leading-none flex flex-col items-start">
-            DH<span className="text-red-600 text-[8px] md:text-[9px] block tracking-widest font-bold mt-0.5">NOTEBOOK</span>
-          </div>
+          <img src="/logo.png" alt="DH Notebook Logo" className="h-6 sm:h-8 object-contain" />
         </Link>
 
         {/* 2. Search Bar (โค้งมน ดูสะอาดตา) */}
