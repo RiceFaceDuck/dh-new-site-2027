@@ -1,9 +1,39 @@
-import React from 'react';
-import { ChevronRight, ShoppingCart } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronRight, ShoppingCart, CheckCircle2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getAuth } from 'firebase/auth';
+import { cartService } from '../firebase/cartService';
 
 const ProductList = ({ products, loading }) => {
   const navigate = useNavigate();
+  const [addingState, setAddingState] = useState({}); // Track adding state per product ID
+
+  const handleAddToCart = async (e, product) => {
+    e.stopPropagation(); // ป้องกันการ trigger onClick ของ div หลักที่พาไปหน้า Detail
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("กรุณาเข้าสู่ระบบก่อนหยิบสินค้าใส่ตะกร้า");
+      return;
+    }
+
+    setAddingState(prev => ({ ...prev, [product.id]: 'loading' }));
+
+    try {
+      await cartService.addToCart(user.uid, product, 1);
+
+      setAddingState(prev => ({ ...prev, [product.id]: 'success' }));
+      setTimeout(() => {
+        setAddingState(prev => ({ ...prev, [product.id]: null }));
+      }, 2000);
+    } catch (error) {
+      console.error("🔥 Error add to cart:", error);
+      alert("เกิดข้อผิดพลาด: " + error.message);
+      setAddingState(prev => ({ ...prev, [product.id]: null }));
+    }
+  };
 
   return (
     <div className="mb-10 md:mb-16">
@@ -100,14 +130,22 @@ const ProductList = ({ products, loading }) => {
 
                     {/* ปุ่ม Add to cart */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert('เพิ่มลงตะกร้าแล้ว');
-                      }}
-                      className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md"
+                      onClick={(e) => handleAddToCart(e, product)}
+                      disabled={addingState[product.id] === 'loading' || addingState[product.id] === 'success'}
+                      className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${
+                        addingState[product.id] === 'success'
+                          ? 'bg-emerald-100 text-emerald-600 border border-emerald-200'
+                          : 'bg-slate-50 text-slate-400 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-md'
+                      }`}
                       aria-label="Add to cart"
                     >
-                      <ShoppingCart size={18} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
+                      {addingState[product.id] === 'loading' ? (
+                         <Loader2 size={18} className="animate-spin text-emerald-600" />
+                      ) : addingState[product.id] === 'success' ? (
+                         <CheckCircle2 size={18} strokeWidth={2.5} />
+                      ) : (
+                         <ShoppingCart size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+                      )}
                     </button>
                   </div>
                 </div>
