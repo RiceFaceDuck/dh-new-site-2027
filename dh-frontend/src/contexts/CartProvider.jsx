@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { CartContext } from './CartContext';
+import { CartContext } from './CartContext.jsx';
 
 export const CartProvider = ({ children }) => {
   const [cartTotalQty, setCartTotalQty] = useState(0);

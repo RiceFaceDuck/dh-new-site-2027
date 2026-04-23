@@ -8,7 +8,7 @@ import Profile from './pages/Profile';
 // 🚀 เพิ่มหน้าตะกร้าสินค้า และหน้าสั่งซื้อ (Checkout)
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
-import { CartProvider } from './contexts/CartProvider';
+import { CartProvider } from './contexts/CartProvider.jsx';
 
 function App() {
   return (
