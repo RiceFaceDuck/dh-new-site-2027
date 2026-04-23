@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCart } from '../hooks/useCart';
 
 const Navbar = () => {
   // State สำหรับจัดการการซ่อน/แสดง Navbar อัตโนมัติ
   const [isVisible, setIsVisible] = useState(true);
+  const { cartTotalQty } = useCart();
+  const navigate = useNavigate();
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
@@ -52,11 +55,16 @@ const Navbar = () => {
 
         {/* 3. Action Icons */}
         <div className="flex items-center space-x-4 md:space-x-6">
-          <div className="relative cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors p-2 hover:bg-slate-50 rounded-full">
+          <div
+            className="relative cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors p-2 hover:bg-slate-50 rounded-full"
+            onClick={() => navigate('/cart')}
+          >
             <ShoppingCart size={22} strokeWidth={1.5} />
-            <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white shadow-sm">
-              0
-            </span>
+            {cartTotalQty > 0 && (
+              <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white shadow-sm">
+                {cartTotalQty > 99 ? '99+' : cartTotalQty}
+              </span>
+            )}
           </div>
 
           <Link to="/profile" className="flex items-center space-x-2 cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors group">
