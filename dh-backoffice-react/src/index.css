@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ☀️ Day Theme - อิงจากภาพ image_80f6a5.png */
+    --dh-bg-base: #EAEFEF; /* สีพื้นหลังหลัก สว่างสบายตา */
+    --dh-bg-surface: #FFFFFF; /* สีพื้นผิวการ์ด ให้ตัดกับพื้นหลังเพิ่มมิติ */
+    --dh-border: #BFC9D1; /* สีเส้นขอบ โทนเทาอมฟ้า */
+    --dh-text-main: #25343F; /* สีข้อความหลัก เข้มแต่นุ่มนวลกว่าสีดำ */
+    --dh-text-muted: #7A8B99; /* สีข้อความรอง ซอฟต์ลงมาจาก Text Main */
+    --dh-accent: #FF9B51; /* สีส้มเอกลักษณ์ DH */
+    --dh-accent-hover: #E88942; /* สีส้มเข้มขึ้นเล็กน้อยเมื่อ Hover */
+    --dh-accent-light: rgba(255, 155, 81, 0.15); /* สีพื้นหลังรองของ Accent */
+
+    /* เงาสำหรับโหมดกลางวัน (นุ่มนวล หรูหรา) */
+    --dh-shadow-color: rgba(37, 52, 63, 0.08);
+
+    /* ✨ [UPGRADE 2026] ตัวแปรสำหรับลูกเล่น (Glass, Glow, Motion) */
+    --dh-glass-bg: rgba(255, 255, 255, 0.7);
+    --dh-glass-border: rgba(255, 255, 255, 0.5);
+    --dh-glow-color: rgba(255, 155, 81, 0.25); /* สีส้มฟุ้งๆ */
+    --dh-spring-easing: cubic-bezier(0.34, 1.56, 0.64, 1); /* ความเด้งแบบสปริง */
+    --dh-smooth-easing: cubic-bezier(0.4, 0, 0.2, 1); /* ความนุ่มนวลปกติ */
+  }
+
+  .dark {
+    /* 🌙 Night Theme - อิงจากภาพ image_8101cd.png */
+    --dh-bg-base: #363636; /* ปรับให้พื้นหลังลึกกว่าสี Surface เล็กน้อย */
+    --dh-bg-surface: #454545; /* ใช้สีเทาเข้มจากภาพเป็นพื้นผิวการ์ด */
+    --dh-border: #5A5A5A; /* สีเส้นขอบที่กลืนไปกับโหมดมืด */
+    --dh-text-main: #FFE6C7; /* สีข้อความหลัก ครีมอ่อน สบายตาในที่มืด */
+    --dh-text-muted: #B3A18C; /* สีข้อความรอง */
+    --dh-accent: #FF6000; /* สีส้มสด เด่นชัดในที่มืด */
+    --dh-accent-hover: #FFA559; /* สีส้มอ่อนจากภาพ นำมาใช้ตอน Hover */
+    --dh-accent-light: rgba(255, 96, 0, 0.15); /* สีพื้นหลังรองของ Accent */
+
+    /* เงาสำหรับโหมดกลางคืน (เข้มและลึกขึ้น เพื่อแยกชั้นเลเยอร์) */
+    --dh-shadow-color: rgba(0, 0, 0, 0.4);
+
+    /* ✨ [UPGRADE 2026] ตัวแปรสำหรับลูกเล่น (Glass, Glow, Motion) โหมดมืด */
+    --dh-glass-bg: rgba(69, 69, 69, 0.6);
+    --dh-glass-border: rgba(255, 255, 255, 0.05);
+    --dh-glow-color: rgba(255, 96, 0, 0.3); /* สีส้มสว่างฟุ้งๆ */
+  }
+
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: var(--dh-bg-base);
+    color: var(--dh-text-main);
+    /* เปลี่ยนหน้าจอหรือสลับโหมดให้ละมุนขึ้น ไม่แข็งกระด้าง */
+    transition: background-color 0.4s var(--dh-smooth-easing), color 0.4s var(--dh-smooth-easing);
+  }
+
+  /* Custom Scrollbar - เรียบหรู ไม่เกะกะสายตา */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--dh-border);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--dh-text-muted);
+  }
+}
+
+/* ✨ [UPGRADE 2026] Utilities ใหม่ เลือกหยิบไปใช้ร่วมกับ Tailwind ได้เลย (Optional) */
+@layer utilities {
+  
+  /* 1. Glassmorphism - สำหรับ Navbar, Sidebar หรือ Modal ให้ดูลอยและหรูหรา */
+  .dh-glass {
+    background-color: var(--dh-glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--dh-glass-border);
+  }
+
+  /* 2. Micro-Interactions - การยกตัวของการ์ดแบบมีสปริง (Bento Grid Style) */
+  .dh-hover-lift {
+    transition: transform 0.4s var(--dh-spring-easing), box-shadow 0.4s var(--dh-smooth-easing);
+  }
+  .dh-hover-lift:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 24px -8px var(--dh-shadow-color), 0 0 15px var(--dh-glow-color);
+  }
+
+  /* 3. Tactile Button - ปุ่มกดแล้วยุบตัว (จำลองการกดสวิตช์จริง) */
+  .dh-active-press {
+    transition: transform 0.15s ease;
+  }
+  .dh-active-press:active {
+    transform: scale(0.96);
+  }
+
+  /* 4. Soft Neumorphism - เงาหลุมด้านใน สำหรับช่อง Input/Search ให้อารมณ์เหมือนช่องถูกเจาะลงไป */
+  .dh-inner-shadow {
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  }
+  .dark .dh-inner-shadow {
+    box-shadow: inset 0 2px 5px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  /* 5. Status Glow - เรืองแสงรอบนอก (เช่น สินค้าหมด หรือแจ้งเตือนสำคัญ) */
+  .dh-glow {
+    box-shadow: 0 0 15px var(--dh-glow-color);
+  }
+
+  /* 6. Night Mode Text Clarity - เพิ่มความคมชัดอ่านง่ายให้ข้อความสำคัญในโหมดมืด */
+  .dark .dh-text-glow {
+    text-shadow: 0 0 8px rgba(255, 230, 199, 0.3); /* อิงจากสี text-main โหมดมืด */
+  }
+
+}

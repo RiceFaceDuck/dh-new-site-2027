@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "dh-notebook-69f3b"
+  },
+  "targets": {
+    "dh-notebook-69f3b": {
+      "hosting": {
+        "dh-staff": [
+          "dh-notebook-69f3b"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
