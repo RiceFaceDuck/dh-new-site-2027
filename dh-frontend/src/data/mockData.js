@@ -1,17 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, ShoppingCart, User, Menu, MapPin, 
-  MessageCircle, ChevronRight, Star, ShieldCheck, 
-  X, Monitor, Keyboard, Battery, Wrench, CheckCircle2, Truck, Trash2, ShoppingBag
-} from 'lucide-react';
+// ข้อมูลสินค้าจำลอง (Mock Data) สำหรับทดสอบ UI ก่อนต่อ Firebase จริง
+// ต้องใช้คำสั่ง export const products เพื่อให้ไฟล์อื่นสามารถ import { products } ไปใช้ได้
 
-// ============================================================================
-// 📁 MOCK DATA (จำลองฐานข้อมูล)
-// ============================================================================
-const PRODUCTS_DATA = [
-  { id: 'p1', title: "หน้าจอ IPS 15.6 144Hz 40Pin (ไม่มีหู) ขอบบาง", sku: "SC-156-144", price: 1850, category: "หน้าจอ", rating: 5.0, sold: 1240, imageUrl: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=400&q=80" },
-  { id: 'p2', title: "คีย์บอร์ด Acer Nitro 5 AN515-51 มีไฟ Backlight", sku: "KB-AC-001", price: 590, category: "คีย์บอร์ด", rating: 4.8, sold: 856, imageUrl: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=400&q=80" },
-  { id: 'p3', title: "แบตเตอรี่แท้ Asus TUF Gaming FX505 FX505DT", sku: "BT-AS-092", price: 1200, category: "แบตเตอรี่", rating: 4.9, sold: 430, imageUrl: "https://images.unsplash.com/photo-1601524909162-ae8725290836?auto=format&fit=crop&w=400&q=80" },
-  { id: 'p4', title: "บานพับ L/R Lenovo IdeaPad 3 15ADA05 แท้", sku: "HG-LN-033", price: 450, category: "สายแพร/บานพับ", rating: 4.7, sold: 215, imageUrl: "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=400&q=80" },
-  { id: 'p5', title: "พัดลมระบายความร้อน HP Pavilion 15-EG CPU Fan", sku: "FN-HP-012", price: 390, category: "พัดลม", rating: 4.6, sold: 342, imageUrl: "https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=400&q=80" }
+export const products = [
+  {
+    id: "PROD-001",
+    name: "สมุดโน้ต DH Notebook ขนาด A5 ลายคลาสสิก",
+    price: 120,
+    stock: 50, // สถานะ: มีสินค้า
+    imageUrl: "", // ปล่อยว่างเพื่อดู Fallback ไอคอนกระเป๋า
+  },
+  {
+    id: "PROD-002",
+    name: "ปากกาเจล DH รุ่น Premium (หมึกสีน้ำเงิน)",
+    price: 45,
+    stock: 4, // สถานะ: เหลือน้อย (<= 5)
+    imageUrl: "",
+  },
+  {
+    id: "PROD-003",
+    name: "แฟ้มใส่เอกสาร DH Folder F4 สีเขียว",
+    price: 85,
+    stock: 0, // สถานะ: หมด
+    imageUrl: "",
+  },
+  {
+    id: "PROD-004",
+    name: "กระดาษถ่ายเอกสาร DH A4 80 แกรม (500 แผ่น)",
+    price: 155,
+    stock: 200, // สถานะ: มีสินค้า
+    imageUrl: "",
+  },
+  {
+    id: "PROD-005",
+    name: "เทปลบคำผิด DH Correction Tape ยาว 8 เมตร",
+    price: 35,
+    stock: 2, // สถานะ: เหลือน้อย
+    imageUrl: "",
+  }
+];
+
+// ข้อมูลจำลองอื่นๆ สำหรับใช้งานในอนาคต
+export const categories = [
+  { id: "CAT-01", name: "สมุดและกระดาษ" },
+  { id: "CAT-02", name: "อุปกรณ์การเขียน" },
+  { id: "CAT-03", name: "แฟ้มและอุปกรณ์จัดเก็บ" }
 ];

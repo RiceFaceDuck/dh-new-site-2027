@@ -1,7 +1,12 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider } from "firebase/auth"; 
+// นำเข้า functions ที่จำเป็นจาก Firebase SDK
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+import { getAnalytics } from "firebase/analytics";
 
+// ข้อมูล Config จาก Firestore Project settings (DH New Site)
+// Hardcode ค่าลงไปเพื่อป้องกันปัญหาตัวแปร .env หายตอน Deploy ขึ้น Production ของ Backoffice
 const firebaseConfig = {
   apiKey: "AIzaSyBSl7KV5HheJ4MSKR7udZkrMKQdSUBLJng",
   authDomain: "dh-notebook-69f3b.firebaseapp.com",
@@ -12,13 +17,19 @@ const firebaseConfig = {
   measurementId: "G-WN1STHEG7N"
 };
 
-// ✨ เช็คก่อนว่าเคย Initialize Firebase ไปหรือยัง ป้องกัน Error เวลาระบบ Hot Reload
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-// ✨ เปิดใช้งาน Offline Persistence (Caching) ช่วยลดค่า Reads และจำข้อมูลลงเครื่องพนักงาน
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
-});
-
+// Initialize Services (Export ไปใช้งานใน Service อื่นๆ ของ Backoffice)
 export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
+// Analytics
+let analytics;
+if (typeof window !== "undefined") {
+  analytics = getAnalytics(app);
+}
+export { analytics };
+
+export default app;

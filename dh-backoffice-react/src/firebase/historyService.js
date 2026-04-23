@@ -1,5 +1,5 @@
 import { collection, addDoc, getDocs, query, orderBy, limit, startAfter, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from './config';
+import { db, auth } from './config.js';
 
 const COLLECTION_NAME = 'history_logs';
 

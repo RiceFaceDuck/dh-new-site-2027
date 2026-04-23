@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './config';
-import { historyService } from './historyService';
+import { db } from './config.js';
+import { historyService } from './historyService.js';
 
 const SETTINGS_DOC = 'warranty';
 

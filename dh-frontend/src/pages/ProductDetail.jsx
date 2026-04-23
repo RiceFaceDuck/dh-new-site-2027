@@ -85,6 +85,23 @@ const ProductDetail = () => {
   }
 
   const imageUrl = product.images?.[0] || product.image || 'https://via.placeholder.com/600x600?text=DH+Notebook';
+  
+  // 🧠 Stock Status Logic
+  const stock = product.stockQuantity || 0;
+  const buffer = product.bufferStock || 0;
+  let stockStatus = 'หมด';
+  let stockColor = 'text-red-600 bg-red-50 border border-red-100';
+  let isOutOfStock = true;
+  
+  if (stock > buffer) {
+    stockStatus = 'มีสินค้า';
+    stockColor = 'text-emerald-600 bg-emerald-50 border border-emerald-100';
+    isOutOfStock = false;
+  } else if (stock > 0 && stock <= buffer) {
+    stockStatus = 'เหลือน้อย';
+    stockColor = 'text-amber-600 bg-amber-50 border border-amber-100';
+    isOutOfStock = false;
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto bg-white md:bg-transparent min-h-[70vh]">
@@ -129,7 +146,9 @@ const ProductDetail = () => {
           {/* ส่วนข้อมูล */}
           <div className="flex flex-col pt-4 md:pt-0">
             <div className="mb-2">
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded tracking-wide">มีสินค้าพร้อมส่ง</span>
+              <span className={`text-[10px] font-bold px-2 py-1 rounded tracking-wide shadow-sm ${stockColor}`}>
+                {stockStatus}
+              </span>
               <span className="text-[10px] text-gray-400 ml-3 font-medium">SKU: {product.sku || 'N/A'}</span>
             </div>
             
@@ -167,17 +186,21 @@ const ProductDetail = () => {
             <div className="flex gap-3 mt-auto">
               <button 
                 onClick={handleAddToCart}
-                disabled={isAdding || addSuccess}
-                className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-sm text-sm flex items-center justify-center gap-2 ${
-                  addSuccess 
-                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                disabled={isAdding || addSuccess || isOutOfStock}
+                className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-sm text-sm flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+                  isOutOfStock
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200'
+                    : addSuccess 
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 }`}
               >
                 {isAdding ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
                 ) : addSuccess ? (
                   <><CheckCircle2 size={16} strokeWidth={2.5} /> ใส่ตะกร้าแล้ว</>
+                ) : isOutOfStock ? (
+                  <>สินค้าหมด</>
                 ) : (
                   <><ShoppingCart size={16} strokeWidth={2.5} /> หยิบใส่ตะกร้า</>
                 )}

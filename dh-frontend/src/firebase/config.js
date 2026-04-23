@@ -1,8 +1,12 @@
+// นำเข้า functions ที่จำเป็นจาก Firebase SDK
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// import { getAnalytics } from "firebase/analytics";
+import { getStorage } from "firebase/storage";
+import { getAnalytics } from "firebase/analytics";
 
-// Config จากเอกสาร Firestore Project settings
+// ข้อมูล Config จาก Firestore Project settings (DH New Site)
+// Hardcode ค่าลงไปเพื่อป้องกันปัญหาตัวแปร .env หายตอน Deploy ขึ้น Production
 const firebaseConfig = {
   apiKey: "AIzaSyBSl7KV5HheJ4MSKR7udZkrMKQdSUBLJng",
   authDomain: "dh-notebook-69f3b.firebaseapp.com",
@@ -15,7 +19,17 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-// const analytics = getAnalytics(app); // ปิดไว้ก่อนหากยังไม่ได้ใช้งาน Analytics
 
-export { db };
+// Initialize Services (Export ไปใช้งานใน Service อื่นๆ)
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
+// Analytics (จะทำงานได้ดีเมื่ออยู่บน Production)
+let analytics;
+if (typeof window !== "undefined") {
+  analytics = getAnalytics(app);
+}
+export { analytics };
+
+export default app;

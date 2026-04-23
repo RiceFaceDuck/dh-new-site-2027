@@ -83,8 +83,9 @@ export default function GlobalSettingsPanel() {
             }
             else if (activeTab === 'regex') {
                 // Test Regex syntax before saving
-                for (const pattern of Object.values(regexConfig)) {
-                    if (pattern) new RegExp(pattern); 
+                for (const key in regexConfig) {
+                    const pattern = regexConfig[key];
+                    if (pattern) new RegExp(pattern);
                 }
                 await settingsService.updatePlatformRegex(regexConfig);
                 alert("✅ บันทึกกฎตรวจสอบลิงก์สำเร็จ");
