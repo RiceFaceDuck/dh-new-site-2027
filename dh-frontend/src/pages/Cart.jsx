@@ -6,6 +6,25 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config'; 
 import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, ArrowRight, ShieldCheck, Loader2, Gift, Terminal } from 'lucide-react'; 
 
+// 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล (กันกระสุน)
+const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
+
+const getVal = (obj, possibleKeys) => {
+  if (!obj || typeof obj !== 'object') return null;
+  const normalizedObj = Object.keys(obj).reduce((acc, key) => {
+    acc[normalizeKey(key)] = obj[key];
+    return acc;
+  }, {});
+  
+  for (let key of possibleKeys) {
+    const val = normalizedObj[normalizeKey(key)];
+    if (val !== undefined && val !== null && val !== '') {
+      return val;
+    }
+  }
+  return null;
+};
+
 const Cart = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -22,7 +41,6 @@ const Cart = () => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        // ดึงข้อมูลตะกร้าและโปรโมชันของแถมพร้อมกัน
         await Promise.all([
           fetchCart(currentUser.uid),
           fetchFreebies()
@@ -35,11 +53,10 @@ const Cart = () => {
     return () => unsubscribe();
   }, []);
 
-  // 2. ฟังก์ชันดึงข้อมูลตะกร้า
   const fetchCart = async (uid) => {
     try {
       const data = await cartService.getCart(uid);
-      setCartData(data);
+      setCartData(data || { items: [], total: 0, totalQty: 0 });
     } catch (error) {
       console.error("Error fetching cart:", error);
     } finally {
@@ -47,7 +64,6 @@ const Cart = () => {
     }
   };
 
-  // 3. ฟังก์ชันดึงข้อมูลของแถมจาก Firestore
   const fetchFreebies = async () => {
     try {
       const q = query(collection(db, "freebies"), where("isActive", "==", true));
@@ -56,7 +72,6 @@ const Cart = () => {
       querySnapshot.forEach((doc) => {
         freebiesData.push({ id: doc.id, ...doc.data() });
       });
-      // เรียงลำดับจากยอดใช้น้อย ไปมาก
       freebiesData.sort((a, b) => a.conditionTotal - b.conditionTotal);
       setFreebies(freebiesData);
     } catch (error) {
@@ -64,7 +79,6 @@ const Cart = () => {
     }
   };
 
-  // 4. ฟังก์ชันอัปเดตจำนวนสินค้า
   const handleUpdateQty = async (productId, currentQty, change) => {
     if (!user) return;
     const newQty = currentQty + change;
@@ -77,7 +91,7 @@ const Cart = () => {
     setUpdatingId(productId);
     try {
       await cartService.updateQuantity(user.uid, productId, newQty);
-      await fetchCart(user.uid); // ดึงข้อมูลใหม่เพื่ออัปเดต UI และยอดรวม
+      await fetchCart(user.uid); 
     } catch (error) {
       console.error("Error updating qty:", error);
       alert("เกิดข้อผิดพลาดในการอัปเดตจำนวน");
@@ -86,11 +100,9 @@ const Cart = () => {
     }
   };
 
-  // 5. ฟังก์ชันลบสินค้า
   const handleRemoveItem = async (productId) => {
     if (!user) return;
     
-    // Custom UI Alert - แนะนำให้ใช้ Modal ในอนาคต แต่ตอนนี้รักษา Logic เก่าไว้
     if (!window.confirm('คุณต้องการลบสินค้านี้ออกจากรายการสั่งซื้อใช่หรือไม่?')) return;
 
     setUpdatingId(productId);
@@ -116,7 +128,6 @@ const Cart = () => {
     );
   }
 
-  // กรณีไม่ได้ล็อคอิน
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] px-4 animate-fade-in-up">
@@ -137,8 +148,8 @@ const Cart = () => {
     );
   }
 
-  // กรณีตะกร้าว่าง
-  if (cartData.items.length === 0) {
+  // 🚀 ดักจับความปลอดภัยกัน Render พังเมื่อไม่มี items
+  if (!cartData || !cartData.items || cartData.items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] px-4 animate-fade-in-up">
         <div className="w-24 h-24 bg-slate-50 rounded-sm flex items-center justify-center mb-6 border border-slate-200 border-dashed shadow-sm">
@@ -172,7 +183,7 @@ const Cart = () => {
             Purchase Order <span className="font-tech font-light text-slate-400 ml-2 text-lg">/ Draft</span>
           </h1>
           <p className="text-[10px] text-slate-400 mt-1 uppercase font-tech tracking-widest">
-            {cartData.totalQty} Units In Preparation
+            {cartData.totalQty || 0} Units In Preparation
           </p>
         </div>
       </div>
@@ -181,71 +192,87 @@ const Cart = () => {
         
         {/* 📋 รายการสินค้า (Left Col) */}
         <div className="w-full lg:w-[65%] space-y-3 md:space-y-4 px-2 md:px-0">
-          {cartData.items.map((item) => (
-            <div 
-              key={item.id} 
-              className="bg-white rounded-sm border border-slate-200 p-3 md:p-4 flex gap-4 shadow-tech-card hover:border-slate-300 transition-colors group relative"
-            >
-              {/* Product Image */}
-              <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-50 rounded-sm border border-slate-100 flex items-center justify-center shrink-0 p-2 relative overflow-hidden">
-                <div className="absolute inset-0 bg-tech-grid opacity-30"></div>
-                <img 
-                  src={item.imageUrl || '/logo.png'} 
-                  alt={item.name} 
-                  className="w-full h-full object-contain relative z-10 mix-blend-multiply"
-                  onError={(e) => { e.target.src = '/logo.png' }}
-                />
-              </div>
+          {cartData.items.map((item, index) => {
+            if (!item) return null; // Safe guard
+            
+            // 🚀 SMART EXTRACTION: แกะข้อมูลจากข้อมูลดิบใน Cart ให้ถูกต้องเสมอ
+            const rawImage = getVal(item, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
+            const imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
+            
+            const rawPrice = getVal(item, ['retailprice', 'regularprice', 'ราคาปลีก', 'price', 'saleprice', 'ราคา', 'sellprice']);
+            const price = (rawPrice !== null && rawPrice !== undefined) ? Number(String(rawPrice).replace(/[^0-9.-]+/g,"")) : (item.price || 0);
 
-              {/* Product Details & Controls */}
-              <div className="flex flex-col flex-grow justify-between py-1">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="text-[9px] md:text-[10px] text-slate-400 font-tech mb-1 uppercase tracking-wider">
-                      SKU: {item.sku || item.id.substring(0, 8)}
-                    </div>
-                    <Link to={`/product/${item.id}`} className="text-xs md:text-sm font-semibold text-slate-800 line-clamp-2 hover:text-cyber-blue transition-colors leading-relaxed">
-                      {item.name}
-                    </Link>
-                  </div>
-                  <button 
-                    onClick={() => handleRemoveItem(item.id)}
-                    disabled={updatingId === item.id}
-                    className="text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-sm transition-all ml-2"
-                  >
-                    {updatingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                  </button>
+            const name = getVal(item, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
+            const sku = getVal(item, ['sku', 'code', 'productcode', 'รหัสสินค้า', 'barcode']) || item.id?.substring(0, 8) || `ITM-${index}`;
+            const itemId = item.id || index;
+
+            return (
+              <div 
+                key={itemId} 
+                className="bg-white rounded-sm border border-slate-200 p-3 md:p-4 flex gap-4 shadow-tech-card hover:border-slate-300 transition-colors group relative"
+              >
+                {/* Product Image */}
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-50 rounded-sm border border-slate-100 flex items-center justify-center shrink-0 p-2 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-tech-grid opacity-30"></div>
+                  {/* 🚀 แก้บัคภาพหายบนมือถือโดยการเอา mix-blend-multiply ออก */}
+                  <img 
+                    src={imageUrl} 
+                    alt={name} 
+                    className="w-full h-full object-contain relative z-10"
+                    onError={(e) => { e.target.src = '/logo.png' }}
+                  />
                 </div>
 
-                <div className="flex justify-between items-end mt-3">
-                  <span className="text-sm md:text-base font-bold text-cyber-blue font-tech tracking-tight">
-                    ฿{item.price ? item.price.toLocaleString() : 'N/A'}
-                  </span>
-
-                  {/* Tech Qty Controls */}
-                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-sm h-8 md:h-9">
-                    <button 
-                      onClick={() => handleUpdateQty(item.id, item.qty, -1)}
-                      disabled={updatingId === item.id}
-                      className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors disabled:opacity-50"
-                    >
-                      <Minus size={14} strokeWidth={3} />
-                    </button>
-                    <div className="w-10 h-full flex items-center justify-center bg-white border-x border-slate-200 text-xs font-bold font-tech text-slate-800">
-                      {updatingId === item.id ? <Loader2 size={12} className="animate-spin" /> : item.qty}
+                {/* Product Details & Controls */}
+                <div className="flex flex-col flex-grow justify-between py-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-[9px] md:text-[10px] text-slate-400 font-tech mb-1 uppercase tracking-wider">
+                        SKU: {sku}
+                      </div>
+                      <Link to={`/product/${itemId}`} className="text-xs md:text-sm font-semibold text-slate-800 line-clamp-2 hover:text-cyber-blue transition-colors leading-relaxed">
+                        {name}
+                      </Link>
                     </div>
                     <button 
-                      onClick={() => handleUpdateQty(item.id, item.qty, 1)}
-                      disabled={updatingId === item.id}
-                      className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors disabled:opacity-50"
+                      onClick={() => handleRemoveItem(itemId)}
+                      disabled={updatingId === itemId}
+                      className="text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-sm transition-all ml-2"
                     >
-                      <Plus size={14} strokeWidth={3} />
+                      {updatingId === itemId ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                     </button>
+                  </div>
+
+                  <div className="flex justify-between items-end mt-3">
+                    <span className="text-sm md:text-base font-bold text-cyber-blue font-tech tracking-tight">
+                      ฿{price ? price.toLocaleString() : '0'}
+                    </span>
+
+                    {/* Tech Qty Controls */}
+                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-sm h-8 md:h-9">
+                      <button 
+                        onClick={() => handleUpdateQty(itemId, item.qty, -1)}
+                        disabled={updatingId === itemId}
+                        className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors disabled:opacity-50"
+                      >
+                        <Minus size={14} strokeWidth={3} />
+                      </button>
+                      <div className="w-10 h-full flex items-center justify-center bg-white border-x border-slate-200 text-xs font-bold font-tech text-slate-800">
+                        {updatingId === itemId ? <Loader2 size={12} className="animate-spin" /> : (item.qty || 1)}
+                      </div>
+                      <button 
+                        onClick={() => handleUpdateQty(itemId, item.qty, 1)}
+                        disabled={updatingId === itemId}
+                        className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors disabled:opacity-50"
+                      >
+                        <Plus size={14} strokeWidth={3} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* 📊 สรุปยอดและโปรโมชั่น (Right Col) */}
@@ -264,7 +291,7 @@ const Cart = () => {
 
             <div className="p-5 md:p-6 space-y-4">
               <div className="flex justify-between text-sm text-slate-500 font-medium border-b border-slate-100 pb-4">
-                <span>Subtotal ({cartData.totalQty} Units)</span>
+                <span>Subtotal ({cartData.totalQty || 0} Units)</span>
                 <span className="font-tech font-bold text-slate-700">฿{(cartData.total || 0).toLocaleString()}</span>
               </div>
               

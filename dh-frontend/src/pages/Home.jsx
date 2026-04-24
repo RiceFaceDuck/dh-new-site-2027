@@ -8,12 +8,14 @@ import ProductList from '../components/ProductList';
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // 🚀 เพิ่ม State จับ Error การเชื่อมต่อ
 
-  // --- LOGIC: คงเดิม 100% ห้ามแก้ไขส่วนนี้เด็ดขาด ---
+  // --- LOGIC: โครงสร้างหลักดึงข้อมูล 100% คงเดิม เพิ่มการเซ็ต Error ---
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        setError(null);
         const q = query(collection(db, "products"), limit(8));
         const querySnapshot = await getDocs(q);
         const productsData = [];
@@ -21,8 +23,9 @@ const Home = () => {
           productsData.push({ id: doc.id, ...doc.data() });
         });
         setProducts(productsData);
-      } catch (error) {
-        console.error("Error fetching products:", error);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError(err.message); // 🚀 เก็บข้อความ Error ไว้ส่งไปหน้า UI
       } finally {
         setLoading(false);
       }
@@ -35,7 +38,8 @@ const Home = () => {
     <div className="w-full animate-in fade-in duration-500">
       <HeroBanner />
       <CategoryList />
-      <ProductList products={products} loading={loading} />
+      {/* 🚀 ส่ง error เป็น props เพื่อให้หน้า ProductList จัดการแสดงผลอย่างชาญฉลาด */}
+      <ProductList products={products} loading={loading} error={error} />
     </div>
   );
 };

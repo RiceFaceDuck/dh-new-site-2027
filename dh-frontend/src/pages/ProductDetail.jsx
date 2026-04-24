@@ -4,38 +4,37 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { getAuth } from 'firebase/auth'; 
 import { cartService } from '../firebase/cartService'; 
-import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, Package, Heart, CheckCircle2, Cpu, FileText } from 'lucide-react';
+import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, Package, Heart, CheckCircle2, Cpu, FileText, ShieldAlert } from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   
-  // 🧠 SMART FETCH: 
-  // ถ้ารับข้อมูลมาจากหน้า Home (location.state) จะใช้ข้อมูลนั้นทันที = ประหยัด Read 100%
-  // แต่ถ้ากด Refresh หรือเข้าลิงก์ตรงๆ ถึงจะวิ่งไปดึง Database ใหม่
+  // 🧠 SMART FETCH
   const [product, setProduct] = useState(location.state?.product || null);
   const [loading, setLoading] = useState(!product); 
+  const [error, setError] = useState(null);
 
-  // ✨ State สำหรับการทำงานของปุ่มตะกร้า & การแจ้งเตือน
   const [isAdding, setIsAdding] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
-  const [alertMessage, setAlertMessage] = useState(null); // ใช้แทน window.alert()
+  const [alertMessage, setAlertMessage] = useState(null); 
 
   useEffect(() => {
-    // ถ้าไม่มีข้อมูลถูกส่งมาจากหน้าก่อนหน้า ให้ดึงใหม่จาก Firebase
     if (!product) {
       const fetchProduct = async () => {
         try {
+          setError(null);
           const docRef = doc(db, "products", id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             setProduct({ id: docSnap.id, ...docSnap.data() });
           } else {
-            console.log("No such document!");
+            setError("404_NOT_FOUND");
           }
-        } catch (error) {
-          console.error("Error fetching document:", error);
+        } catch (err) {
+          console.error("Error fetching document:", err);
+          setError(err.message); 
         } finally {
           setLoading(false);
         }
@@ -82,7 +81,31 @@ const ProductDetail = () => {
     );
   }
 
-  if (!product) {
+  if (error && error !== "404_NOT_FOUND") {
+    return (
+      <div className="max-w-4xl mx-auto py-10 px-4 animate-fade-in-up">
+        <button onClick={() => navigate(-1)} className="flex items-center text-slate-400 hover:text-cyber-emerald mb-6 transition-colors group">
+          <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          <span className="text-xs font-bold font-tech uppercase tracking-widest ml-1">Back</span>
+        </button>
+        <div className="w-full bg-slate-900 border border-red-500/50 rounded-sm p-6 md:p-10 flex flex-col items-center justify-center shadow-tech-card relative overflow-hidden">
+           <div className="absolute inset-0 bg-tech-grid-dark opacity-30 pointer-events-none"></div>
+           <div className="relative z-10 flex flex-col items-center text-center w-full">
+              <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-sm flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                 <ShieldAlert size={32} className="text-red-500" />
+              </div>
+              <h3 className="text-white font-bold text-lg md:text-xl mb-2 font-tech uppercase tracking-wider">Data Retrieval Failed</h3>
+              <p className="text-slate-400 text-xs md:text-sm font-medium max-w-lg leading-relaxed mb-6">
+                 ระบบไม่สามารถเชื่อมต่อและดึงข้อมูลรายละเอียดสินค้าได้: <br/>
+                 <span className="text-red-400 font-tech break-all">{error}</span>
+              </p>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product || error === "404_NOT_FOUND") {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="text-red-500 mb-4 border border-red-500/20 bg-red-500/10 p-4 rounded-sm">
@@ -95,12 +118,18 @@ const ProductDetail = () => {
     );
   }
 
-  const isOutOfStock = product.stock <= 0;
+  // 🚀 SMART FIELD MAPPER: ดักจับความหลากหลายของชื่อตัวแปรที่มาจาก Firebase
+  const stock = product.stock || product.Stock || product.quantity || product.qty || 0;
+  const isOutOfStock = stock <= 0;
+  const price = product.price || product.Price || product.salePrice || product.regularPrice || 0;
+  const name = product.name || product.Name || product.title || 'Unknown Product';
+  const brand = product.brand || product.Brand || 'GENERIC BRAND';
+  const imageUrl = product.imageUrl || product.image || product.image_url || product.img || product.picture || '/logo.png';
+  const sku = product.sku || product.SKU || product.id.substring(0, 8);
 
   return (
     <div className="max-w-6xl mx-auto py-2 md:py-6 animate-fade-in-up">
       
-      {/* Alert Notification UI (Custom) */}
       {alertMessage && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 border border-red-500 text-red-400 px-6 py-3 rounded-sm shadow-glow-blue flex items-center space-x-3 w-[90%] md:w-auto">
           <ShieldCheck size={18} className="text-red-500" />
@@ -108,7 +137,6 @@ const ProductDetail = () => {
         </div>
       )}
 
-      {/* Tech Breadcrumb / Header */}
       <button 
         onClick={() => navigate(-1)} 
         className="flex items-center text-slate-400 hover:text-cyber-emerald mb-6 transition-colors group px-2"
@@ -117,26 +145,20 @@ const ProductDetail = () => {
         <span className="text-xs font-bold font-tech uppercase tracking-widest ml-1">Back</span>
       </button>
 
-      {/* Main Tech Sheet Card */}
       <div className="bg-white rounded-sm border border-slate-200 shadow-tech-card overflow-hidden relative">
-        {/* Subtle top border glow */}
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-cyber-emerald via-cyber-blue to-transparent"></div>
 
         <div className="flex flex-col md:flex-row">
-          
-          {/* ส่วนรูปภาพ (Left Panel) */}
           <div className="w-full md:w-2/5 lg:w-1/2 p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50 flex items-center justify-center relative min-h-[300px]">
-             {/* Tech grid background for image area */}
              <div className="absolute inset-0 bg-tech-grid opacity-50 pointer-events-none"></div>
             
              <img 
-              src={product.imageUrl || '/logo.png'} 
-              alt={product.name} 
+              src={imageUrl} 
+              alt={name} 
               className="max-w-full max-h-80 object-contain relative z-10 filter drop-shadow-md hover:scale-105 transition-transform duration-500"
               onError={(e) => { e.target.src = '/logo.png' }}
             />
             
-            {/* Status indicator on Image */}
             <div className="absolute top-4 left-4 flex items-center space-x-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-sm border border-slate-200 shadow-sm z-20">
                <span className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-cyber-emerald animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]'}`}></span>
                <span className="text-[10px] font-bold text-slate-700 font-tech uppercase tracking-wider">
@@ -145,35 +167,32 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* ส่วนข้อมูล (Right Panel - Tech Data) */}
           <div className="w-full md:w-3/5 lg:w-1/2 flex flex-col p-6 md:p-10 relative">
-            
             <div className="mb-6 pb-6 border-b border-slate-100">
               <div className="flex flex-wrap items-center gap-3 mb-3">
                  <span className="bg-slate-100 text-slate-500 text-[10px] px-2.5 py-1 rounded-sm font-tech font-bold tracking-widest border border-slate-200 uppercase">
                     ID: {product.id}
                  </span>
                  <span className="text-cyber-blue text-xs font-bold uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded-sm border border-sky-100">
-                    {product.brand || 'GENERIC BRAND'}
+                    {brand}
                  </span>
               </div>
               
               <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 leading-tight mb-4">
-                {product.name}
+                {name}
               </h1>
 
               <div className="flex flex-col mb-2">
                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-tech mb-1">PARTNER PRICE</span>
                  <div className="flex items-end">
                     <span className="text-4xl font-bold text-cyber-emerald font-tech tracking-tight mr-2 leading-none">
-                      ฿{product.price ? product.price.toLocaleString() : 'N/A'}
+                      ฿{price ? price.toLocaleString() : '0'}
                     </span>
                     <span className="text-xs text-slate-400 font-medium mb-1">/ {product.unit || 'ชิ้น'}</span>
                  </div>
               </div>
             </div>
 
-            {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-slate-50 border border-slate-100 p-3 rounded-sm flex items-start space-x-3">
                 <div className="p-1.5 bg-white shadow-sm rounded-sm border border-slate-200">
@@ -182,7 +201,7 @@ const ProductDetail = () => {
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Stock Available</p>
                   <p className={`text-sm font-tech font-bold ${isOutOfStock ? 'text-red-500' : 'text-slate-700'}`}>
-                    {product.stock || 0} Units
+                    {stock} Units
                   </p>
                 </div>
               </div>
@@ -206,7 +225,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Action Buttons (Tech Style) */}
             <div className="mt-auto flex items-center gap-3">
               <button 
                 onClick={handleAddToCart}
@@ -236,7 +254,6 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* รายละเอียดสินค้าเต็มรูปแบบ (Full Tech Specs) */}
         <div className="border-t border-slate-200 bg-slate-50 p-6 md:p-10">
           <h3 className="text-xs font-tech font-bold text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-widest border-b border-slate-200 pb-3">
             <FileText size={16} className="text-cyber-blue" />
