@@ -1,3 +1,62 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* ปิดไฮไลต์สีเทาเวลากดบนมือถือ เพื่อให้รู้สึกเหมือน Native App */
+    -webkit-tap-highlight-color: transparent; 
+  }
+  
+  body {
+    /* FIX: ใช้สี bg-slate-50 แทน bg-dh-gray เพื่อป้องกัน Error 
+      หาก Tailwind config ยัง compile ไม่เสร็จ
+    */
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+  
+  /* ปรับแต่ง Scrollbar สไตล์ Tech/Dashboard ให้เรียบและเล็ก */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-sm hover:bg-emerald-500 transition-colors;
+  }
+}
+
+@layer components {
+  /* คลาสสำหรับพื้นหลังลายตาราง (Tech Grid) */
+  .bg-tech-grid {
+    background-size: 30px 30px;
+    background-image: 
+      linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  }
+
+  /* คลาสสำหรับพื้นหลังลายตารางแบบมืด (Dark Tech Grid) ไว้ใช้ในโซน Hero/Footer */
+  .bg-tech-grid-dark {
+    background-size: 30px 30px;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  }
+
+  /* คลาสสำหรับเอฟเฟกต์กระจกฝ้า (Glassmorphism) */
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-md border border-white/40 shadow-sm;
+  }
+  
+  /* คลาสซ่อน Scrollbar สำหรับ Mobile Swipe (Bottom Nav, Category List) */
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}

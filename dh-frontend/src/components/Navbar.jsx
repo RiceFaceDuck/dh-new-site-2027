@@ -30,51 +30,59 @@ const Navbar = () => {
 
   return (
     <header 
-      className={`bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-transform duration-300 ease-in-out ${
+      // อัปเกรด Glassmorphism และเส้นขอบให้ดูคมขึ้น (Tech Dashboard Style)
+      className={`bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm sticky top-0 z-50 transition-transform duration-300 ease-in-out ${
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-      <div className="container mx-auto px-4 py-2 md:py-3 flex items-center justify-between">
-        
-        {/* 1. Logo (ขนาดเล็กตาม Request) ใช้รูปจริง */}
-        <Link to="/" className="flex items-center group cursor-pointer transition-transform hover:scale-105">
-          <img src="/logo.png" alt="DH Notebook Logo" className="h-6 sm:h-8 object-contain" />
-        </Link>
-
-        {/* 2. Search Bar (โค้งมน ดูสะอาดตา) */}
-        <div className="hidden md:flex flex-1 max-w-xl mx-8 relative group">
-          <input
-            type="text"
-            placeholder="ค้นหาอะไหล่, รุ่น, หรือ SKU..."
-            className="w-full py-2.5 pl-5 pr-12 rounded-full border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-slate-50 hover:bg-white text-sm transition-all shadow-sm"
-          />
-          <button className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full transition-colors">
-            <Search size={18} strokeWidth={2} />
-          </button>
-        </div>
-
-        {/* 3. Action Icons */}
-        <div className="flex items-center space-x-4 md:space-x-6">
-          <div 
-            className="relative cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors p-2 hover:bg-slate-50 rounded-full"
-            onClick={() => navigate('/cart')}
-          >
-            <ShoppingCart size={22} strokeWidth={1.5} />
-            {cartTotalQty > 0 && (
-              <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white shadow-sm">
-                {cartTotalQty > 99 ? '99+' : cartTotalQty}
-              </span>
-            )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          
+          {/* 1. Logo */}
+          <div className="flex-shrink-0 flex items-center">
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo.png" alt="DH Notebook Logo" className="h-8 w-auto object-contain" />
+            </Link>
           </div>
 
-          <Link to="/profile" className="flex items-center space-x-2 cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors group">
-            <div className="bg-slate-50 border border-slate-200 p-2 rounded-full group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-colors shadow-sm">
-              <User size={18} strokeWidth={1.5} />
-            </div>
-            <span className="hidden md:block text-xs font-bold tracking-wide">บัญชีของฉัน</span>
-          </Link>
-        </div>
+          {/* 2. Search Bar (Desktop) - อัปเกรดทรงเหลี่ยมมน (rounded-md) ให้อารมณ์หน้าต่าง Command */}
+          <div className="hidden md:flex items-center relative w-full max-w-md mx-8 group">
+            <input 
+              type="text" 
+              placeholder="ค้นหาสินค้า (SKU, ชื่อ)..." 
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-4 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder:text-slate-400 font-medium"
+            />
+            <button className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50/80 p-1.5 rounded-sm transition-colors">
+              <Search size={18} strokeWidth={2} />
+            </button>
+          </div>
 
+          {/* 3. Action Icons */}
+          <div className="flex items-center space-x-4 md:space-x-6">
+            
+            {/* ปุ่มตะกร้า - เปลี่ยนปุ่มและ Badge เป็น rounded-md / rounded-sm */}
+            <div 
+              className="relative cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors p-2 hover:bg-slate-100 rounded-md"
+              onClick={() => navigate('/cart')}
+            >
+              <ShoppingCart size={22} strokeWidth={1.5} />
+              {cartTotalQty > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] font-bold rounded-sm w-4 h-4 flex items-center justify-center border border-white shadow-sm">
+                  {cartTotalQty > 99 ? '99+' : cartTotalQty}
+                </span>
+              )}
+            </div>
+
+            {/* ปุ่มโปรไฟล์ - เปลี่ยนเป็นทรงเหลี่ยมมน */}
+            <Link to="/profile" className="flex items-center space-x-2 cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors group">
+              <div className="bg-slate-50 border border-slate-200 p-2 rounded-md group-hover:bg-emerald-50/50 group-hover:border-emerald-300 transition-all shadow-sm">
+                <User size={20} strokeWidth={1.5} className="text-slate-500 group-hover:text-emerald-600" />
+              </div>
+              <span className="hidden md:block font-semibold text-sm">เข้าสู่ระบบ</span>
+            </Link>
+
+          </div>
+        </div>
       </div>
     </header>
   );

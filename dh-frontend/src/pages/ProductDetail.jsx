@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { getAuth } from 'firebase/auth'; // 🚀 นำเข้า Auth เพื่อดึง UID ลูกค้า
-import { cartService } from '../firebase/cartService'; // 🚀 นำเข้า cartService
-import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, Package, Heart, CheckCircle2 } from 'lucide-react';
+import { getAuth } from 'firebase/auth'; 
+import { cartService } from '../firebase/cartService'; 
+import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, Package, Heart, CheckCircle2, Cpu, FileText } from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -15,11 +15,12 @@ const ProductDetail = () => {
   // ถ้ารับข้อมูลมาจากหน้า Home (location.state) จะใช้ข้อมูลนั้นทันที = ประหยัด Read 100%
   // แต่ถ้ากด Refresh หรือเข้าลิงก์ตรงๆ ถึงจะวิ่งไปดึง Database ใหม่
   const [product, setProduct] = useState(location.state?.product || null);
-  const [loading, setLoading] = useState(!product); // โหลดเฉพาะตอนไม่มีข้อมูล
+  const [loading, setLoading] = useState(!product); 
 
-  // ✨ State สำหรับการทำงานของปุ่มตะกร้า
+  // ✨ State สำหรับการทำงานของปุ่มตะกร้า & การแจ้งเตือน
   const [isAdding, setIsAdding] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null); // ใช้แทน window.alert()
 
   useEffect(() => {
     // ถ้าไม่มีข้อมูลถูกส่งมาจากหน้าก่อนหน้า ให้ดึงใหม่จาก Firebase
@@ -28,14 +29,13 @@ const ProductDetail = () => {
         try {
           const docRef = doc(db, "products", id);
           const docSnap = await getDoc(docRef);
-          
           if (docSnap.exists()) {
             setProduct({ id: docSnap.id, ...docSnap.data() });
           } else {
-            console.log("No such product!");
+            console.log("No such document!");
           }
         } catch (error) {
-          console.error("Error fetching product:", error);
+          console.error("Error fetching document:", error);
         } finally {
           setLoading(false);
         }
@@ -44,183 +44,209 @@ const ProductDetail = () => {
     }
   }, [id, product]);
 
-  // 🚀 ฟังก์ชันหยิบสินค้าใส่ตะกร้า
   const handleAddToCart = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
 
-    // เช็ค Login ก่อนทำรายการ
     if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนหยิบสินค้าใส่ตะกร้า");
+      setAlertMessage("ACCESS DENIED: กรุณาเข้าสู่ระบบพันธมิตรก่อนทำรายการ");
+      setTimeout(() => setAlertMessage(null), 3000);
       return;
     }
 
     setIsAdding(true);
+    
     try {
-      // เรียกใช้ Service ส่งข้อมูลเข้า Collection: carts
       await cartService.addToCart(user.uid, product, 1);
       
-      // แสดงสถานะสำเร็จให้ผู้ใช้ทราบ
+      setIsAdding(false);
       setAddSuccess(true);
-      setTimeout(() => setAddSuccess(false), 2500); // กลับเป็นปุ่มปกติหลัง 2.5 วิ
-
+      setTimeout(() => setAddSuccess(false), 2000);
     } catch (error) {
       console.error("🔥 Error add to cart:", error);
-      alert("เกิดข้อผิดพลาด: " + error.message);
-    } finally {
+      setAlertMessage("ERROR: " + error.message);
       setIsAdding(false);
+      setTimeout(() => setAlertMessage(null), 3000);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+      <div className="flex flex-col justify-center items-center h-64 w-full">
+        <div className="relative w-16 h-16 flex items-center justify-center">
+            <div className="absolute inset-0 border-t-2 border-cyber-emerald rounded-full animate-spin"></div>
+            <Cpu className="text-slate-400" size={24} />
+        </div>
+        <p className="mt-4 text-xs font-tech tracking-widest text-slate-500 uppercase animate-pulse">Loading Tech Data...</p>
       </div>
     );
   }
 
   if (!product) {
-    return <div className="text-center py-20 text-gray-500 font-medium">ไม่พบสินค้านี้ในระบบ</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="text-red-500 mb-4 border border-red-500/20 bg-red-500/10 p-4 rounded-sm">
+           <span className="font-tech text-xl font-bold tracking-widest">404 - DATA NOT FOUND</span>
+        </div>
+        <button onClick={() => navigate('/')} className="text-cyber-emerald hover:text-emerald-400 font-bold underline font-tech tracking-wider text-sm">
+          RETURN TO HOME
+        </button>
+      </div>
+    );
   }
 
-  const imageUrl = product.images?.[0] || product.image || 'https://via.placeholder.com/600x600?text=DH+Notebook';
-  
-  // 🧠 Stock Status Logic
-  const stock = product.stockQuantity || 0;
-  const buffer = product.bufferStock || 0;
-  let stockStatus = 'หมด';
-  let stockColor = 'text-red-600 bg-red-50 border border-red-100';
-  let isOutOfStock = true;
-  
-  if (stock > buffer) {
-    stockStatus = 'มีสินค้า';
-    stockColor = 'text-emerald-600 bg-emerald-50 border border-emerald-100';
-    isOutOfStock = false;
-  } else if (stock > 0 && stock <= buffer) {
-    stockStatus = 'เหลือน้อย';
-    stockColor = 'text-amber-600 bg-amber-50 border border-amber-100';
-    isOutOfStock = false;
-  }
+  const isOutOfStock = product.stock <= 0;
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white md:bg-transparent min-h-[70vh]">
+    <div className="max-w-6xl mx-auto py-2 md:py-6 animate-fade-in-up">
       
-      {/* Breadcrumb & Back Button */}
-      <div className="flex items-center mb-4 md:mb-6 text-[10px] md:text-xs font-medium text-gray-500 px-4 md:px-0">
-        <button onClick={() => navigate(-1)} className="flex items-center hover:text-emerald-600 mr-4 text-gray-700">
-          <ChevronLeft size={16} className="mr-1" /> ย้อนกลับ
-        </button>
-        <span className="hidden md:inline cursor-pointer hover:text-emerald-600">หน้าแรก</span>
-        <span className="hidden md:inline mx-2">/</span>
-        <span className="hidden md:inline cursor-pointer hover:text-emerald-600">หมวดหมู่</span>
-        <span className="hidden md:inline mx-2">/</span>
-        <span className="text-emerald-600 truncate max-w-[200px]">{product.name}</span>
-      </div>
+      {/* Alert Notification UI (Custom) */}
+      {alertMessage && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 border border-red-500 text-red-400 px-6 py-3 rounded-sm shadow-glow-blue flex items-center space-x-3 w-[90%] md:w-auto">
+          <ShieldCheck size={18} className="text-red-500" />
+          <span className="font-tech text-xs tracking-wider font-bold">{alertMessage}</span>
+        </div>
+      )}
 
-      <div className="bg-white md:rounded-2xl md:shadow-[0_2px_15px_rgba(0,0,0,0.03)] border-gray-100 md:border overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8 lg:gap-12 p-4 md:p-8">
+      {/* Tech Breadcrumb / Header */}
+      <button 
+        onClick={() => navigate(-1)} 
+        className="flex items-center text-slate-400 hover:text-cyber-emerald mb-6 transition-colors group px-2"
+      >
+        <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+        <span className="text-xs font-bold font-tech uppercase tracking-widest ml-1">Back</span>
+      </button>
+
+      {/* Main Tech Sheet Card */}
+      <div className="bg-white rounded-sm border border-slate-200 shadow-tech-card overflow-hidden relative">
+        {/* Subtle top border glow */}
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-cyber-emerald via-cyber-blue to-transparent"></div>
+
+        <div className="flex flex-col md:flex-row">
           
-          {/* ส่วนรูปภาพ */}
-          <div className="flex flex-col gap-3">
-            <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden border border-gray-100 flex items-center justify-center p-4 relative">
-              {product.isPartnerOnly && (
-                <span className="absolute top-4 left-4 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm">
-                  เฉพาะ Partner
-                </span>
-              )}
-              <img src={imageUrl} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
+          {/* ส่วนรูปภาพ (Left Panel) */}
+          <div className="w-full md:w-2/5 lg:w-1/2 p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50 flex items-center justify-center relative min-h-[300px]">
+             {/* Tech grid background for image area */}
+             <div className="absolute inset-0 bg-tech-grid opacity-50 pointer-events-none"></div>
+            
+             <img 
+              src={product.imageUrl || '/logo.png'} 
+              alt={product.name} 
+              className="max-w-full max-h-80 object-contain relative z-10 filter drop-shadow-md hover:scale-105 transition-transform duration-500"
+              onError={(e) => { e.target.src = '/logo.png' }}
+            />
+            
+            {/* Status indicator on Image */}
+            <div className="absolute top-4 left-4 flex items-center space-x-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-sm border border-slate-200 shadow-sm z-20">
+               <span className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-cyber-emerald animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]'}`}></span>
+               <span className="text-[10px] font-bold text-slate-700 font-tech uppercase tracking-wider">
+                 {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+               </span>
             </div>
-            {/* Gallery Thumbnail (ถ้ามีภาพมากกว่า 1) */}
-            {product.images && product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-                {product.images.map((img, idx) => (
-                  <div key={idx} className="w-16 h-16 rounded-md border border-gray-200 cursor-pointer hover:border-emerald-500 flex-shrink-0 p-1 bg-white">
-                    <img src={img} alt="" className="w-full h-full object-contain" />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* ส่วนข้อมูล */}
-          <div className="flex flex-col pt-4 md:pt-0">
-            <div className="mb-2">
-              <span className={`text-[10px] font-bold px-2 py-1 rounded tracking-wide shadow-sm ${stockColor}`}>
-                {stockStatus}
-              </span>
-              <span className="text-[10px] text-gray-400 ml-3 font-medium">SKU: {product.sku || 'N/A'}</span>
-            </div>
+          {/* ส่วนข้อมูล (Right Panel - Tech Data) */}
+          <div className="w-full md:w-3/5 lg:w-1/2 flex flex-col p-6 md:p-10 relative">
             
-            <h1 className="text-lg md:text-xl font-bold text-gray-800 leading-snug mb-4">
-              {product.name}
-            </h1>
+            <div className="mb-6 pb-6 border-b border-slate-100">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                 <span className="bg-slate-100 text-slate-500 text-[10px] px-2.5 py-1 rounded-sm font-tech font-bold tracking-widest border border-slate-200 uppercase">
+                    ID: {product.id}
+                 </span>
+                 <span className="text-cyber-blue text-xs font-bold uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded-sm border border-sky-100">
+                    {product.brand || 'GENERIC BRAND'}
+                 </span>
+              </div>
+              
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 leading-tight mb-4">
+                {product.name}
+              </h1>
 
-            <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100">
-              {product.regularPrice && (
-                <p className="text-xs text-gray-500 line-through mb-1">
-                  ราคาปกติ ฿{product.regularPrice.toLocaleString()}
-                </p>
-              )}
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl md:text-3xl font-extrabold text-red-600">
-                  ฿{product.retailPrice?.toLocaleString() || '0'}
-                </span>
-                <span className="text-xs text-gray-500 font-medium">/ ชิ้น</span>
+              <div className="flex flex-col mb-2">
+                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-tech mb-1">PARTNER PRICE</span>
+                 <div className="flex items-end">
+                    <span className="text-4xl font-bold text-cyber-emerald font-tech tracking-tight mr-2 leading-none">
+                      ฿{product.price ? product.price.toLocaleString() : 'N/A'}
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium mb-1">/ {product.unit || 'ชิ้น'}</span>
+                 </div>
               </div>
             </div>
 
-            {/* ความน่าเชื่อถือของร้านค้า */}
-            <div className="grid grid-cols-2 gap-3 mb-8 text-[11px] font-medium text-gray-600">
-              <div className="flex items-center gap-2 bg-white border border-gray-100 p-2 rounded-lg">
-                <ShieldCheck size={16} className="text-emerald-500" />
-                รับประกันศูนย์ DH {product.warranty || '6 เดือน'}
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="bg-slate-50 border border-slate-100 p-3 rounded-sm flex items-start space-x-3">
+                <div className="p-1.5 bg-white shadow-sm rounded-sm border border-slate-200">
+                  <Package size={16} className="text-cyber-emerald" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Stock Available</p>
+                  <p className={`text-sm font-tech font-bold ${isOutOfStock ? 'text-red-500' : 'text-slate-700'}`}>
+                    {product.stock || 0} Units
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-white border border-gray-100 p-2 rounded-lg">
-                <Truck size={16} className="text-emerald-500" />
-                จัดส่งด่วนทั่วประเทศ
+              <div className="bg-slate-50 border border-slate-100 p-3 rounded-sm flex items-start space-x-3">
+                <div className="p-1.5 bg-white shadow-sm rounded-sm border border-slate-200">
+                  <Truck size={16} className="text-cyber-blue" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Shipping</p>
+                  <p className="text-sm font-medium text-slate-700">จัดส่งฟรี (VIP)</p>
+                </div>
+              </div>
+              <div className="col-span-2 bg-slate-50 border border-slate-100 p-3 rounded-sm flex items-start space-x-3">
+                <div className="p-1.5 bg-white shadow-sm rounded-sm border border-slate-200">
+                  <ShieldCheck size={16} className="text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Warranty</p>
+                  <p className="text-sm font-medium text-slate-700">{product.warranty || 'รับประกันตามเงื่อนไขบริษัท'}</p>
+                </div>
               </div>
             </div>
 
-            {/* ปุ่ม Actions */}
-            <div className="flex gap-3 mt-auto">
+            {/* Action Buttons (Tech Style) */}
+            <div className="mt-auto flex items-center gap-3">
               <button 
                 onClick={handleAddToCart}
-                disabled={isAdding || addSuccess || isOutOfStock}
-                className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-sm text-sm flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
-                  isOutOfStock
-                    ? 'bg-slate-100 text-slate-400 border border-slate-200'
-                    : addSuccess 
-                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                disabled={isOutOfStock || isAdding || addSuccess}
+                className={`flex-1 h-12 md:h-14 rounded-sm flex items-center justify-center gap-2 text-sm font-bold tracking-wider uppercase transition-all duration-300 shadow-sm border ${
+                  isAdding || addSuccess 
+                    ? 'bg-emerald-50 text-cyber-emerald border-emerald-200' 
+                    : isOutOfStock 
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                      : 'bg-slate-800 hover:bg-slate-900 text-white border-slate-900 hover:shadow-glow-emerald'
                 }`}
               >
                 {isAdding ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
+                  <><div className="w-4 h-4 border-2 border-cyber-emerald border-t-transparent rounded-full animate-spin"></div> PROCESSING</>
                 ) : addSuccess ? (
-                  <><CheckCircle2 size={16} strokeWidth={2.5} /> ใส่ตะกร้าแล้ว</>
+                  <><CheckCircle2 size={18} strokeWidth={2.5} /> ADDED TO CART</>
                 ) : isOutOfStock ? (
-                  <>สินค้าหมด</>
+                  <>OUT OF STOCK</>
                 ) : (
-                  <><ShoppingCart size={16} strokeWidth={2.5} /> หยิบใส่ตะกร้า</>
+                  <><ShoppingCart size={18} /> ADD TO CART</>
                 )}
               </button>
-              <button className="w-12 h-12 bg-white border border-gray-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50 text-gray-400 rounded-xl flex items-center justify-center transition-colors">
+              <button className="w-12 h-12 md:w-14 md:h-14 bg-white border border-slate-200 hover:border-red-300 hover:text-red-500 hover:bg-red-50 text-slate-400 rounded-sm flex items-center justify-center transition-colors shadow-sm">
                 <Heart size={20} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* รายละเอียดเพิ่มเติม */}
-        <div className="border-t border-gray-100 p-4 md:p-8">
-          <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Package size={16} className="text-emerald-600" /> รายละเอียดสินค้า
+        {/* รายละเอียดสินค้าเต็มรูปแบบ (Full Tech Specs) */}
+        <div className="border-t border-slate-200 bg-slate-50 p-6 md:p-10">
+          <h3 className="text-xs font-tech font-bold text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-widest border-b border-slate-200 pb-3">
+            <FileText size={16} className="text-cyber-blue" />
+            Technical Specifications
           </h3>
-          <div className="text-xs md:text-sm text-gray-600 leading-relaxed space-y-3 whitespace-pre-wrap">
-            {product.description || "ไม่ระบุรายละเอียดสินค้าเพิ่มเติม โปรดตรวจสอบรูปภาพหรือติดต่อแอดมิน"}
+          <div className="text-sm text-slate-600 leading-relaxed font-medium bg-white p-6 rounded-sm border border-slate-200 shadow-sm">
+             {product.description || "ไม่มีข้อมูลรายละเอียดสินค้าระบุไว้ในระบบ"}
           </div>
         </div>
+
       </div>
     </div>
   );

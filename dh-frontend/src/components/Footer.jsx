@@ -1,77 +1,109 @@
 import React from 'react';
-import { MapPin, MessageCircle, User } from 'lucide-react';
+import { MapPin, MessageCircle, Phone, ChevronRight, ShieldCheck } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-slate-50 border-t border-slate-200 pt-16 pb-24 md:pb-12 mt-12 md:mt-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          {/* Brand Col */}
+    <footer className="relative bg-slate-900 border-t border-slate-800 pt-16 pb-24 md:pb-12 mt-12 md:mt-24 overflow-hidden text-slate-300">
+      
+      {/* Tech Background Layer */}
+      <div className="absolute inset-0 bg-tech-grid-dark opacity-20 pointer-events-none z-0"></div>
+      
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 mb-12">
+          
+          {/* 1. Brand & Corporate Col */}
           <div className="col-span-1">
              <div className="flex flex-col items-start leading-none mb-6">
-               <img src="/logo.png" alt="DH Notebook Logo" className="h-8 md:h-10 object-contain" />
+               {/* Logo in Corporate Badge Style */}
+               <div className="bg-white p-2.5 rounded-sm shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 inline-block">
+                 <img src="/logo.png" alt="DH Notebook Logo" className="h-7 md:h-9 object-contain" />
+               </div>
             </div>
-            <p className="text-sm text-slate-500 mb-6 pr-4 leading-relaxed font-medium">
-              ผู้นำเข้าและจัดจำหน่ายอะไหล่โน๊ตบุ๊คครบวงจร พร้อมเครือข่ายช่างพันธมิตรทั่วประเทศ ที่พร้อมให้บริการคุณ
+            <p className="text-sm text-slate-400 mb-6 pr-4 leading-relaxed font-medium">
+              ผู้นำเข้าและจัดจำหน่ายอะไหล่โน๊ตบุ๊คครบวงจร พร้อมเครือข่ายช่างพันธมิตรทั่วประเทศ ที่พร้อมให้บริการคุณด้วยระบบปฏิบัติการอัจฉริยะ
             </p>
-            <div className="flex space-x-3">
-               <div className="w-9 h-9 rounded-full bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 flex items-center justify-center text-slate-600 hover:text-emerald-600 cursor-pointer transition-all shadow-sm">FB</div>
-               <div className="w-9 h-9 rounded-full bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 flex items-center justify-center text-slate-600 hover:text-emerald-600 cursor-pointer transition-all shadow-sm">LN</div>
-               <div className="w-9 h-9 rounded-full bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 flex items-center justify-center text-slate-600 hover:text-emerald-600 cursor-pointer transition-all shadow-sm">TT</div>
+            <div className="flex items-center space-x-2 text-cyber-emerald text-xs font-tech font-bold tracking-widest uppercase bg-emerald-900/20 px-3 py-2 rounded-sm border border-emerald-500/20 inline-flex">
+               <ShieldCheck size={16} />
+               <span>Verified B2B Partner</span>
             </div>
           </div>
-          
-          {/* Links Col 1 */}
+
+          {/* 2. Quick Links */}
           <div>
-            <h4 className="font-bold text-slate-800 mb-6 text-lg tracking-tight">หมวดหมู่สินค้ายอดฮิต</h4>
-            <ul className="space-y-4 text-sm text-slate-600 font-medium">
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>หน้าจอโน๊ตบุ๊ค (Screen)</li>
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>คีย์บอร์ด (Keyboard)</li>
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>แบตเตอรี่ (Battery)</li>
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>สายแพร & บานพับ</li>
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>อะแดปเตอร์ (Adapter)</li>
+            <h3 className="text-white font-bold mb-5 md:mb-6 flex items-center text-sm md:text-base tracking-wide">
+              <span className="w-1.5 h-4 bg-cyber-blue rounded-sm mr-2.5 shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
+              หมวดหมู่สินค้า
+            </h3>
+            <ul className="space-y-3.5 text-sm">
+              {['อะไหล่ภายใน', 'อุปกรณ์ภายนอก', 'เครื่องมือช่าง', 'โปรโมชั่นพาร์ทเนอร์'].map(item => (
+                <li key={item}>
+                  <button className="flex items-center text-slate-400 hover:text-cyber-blue hover:translate-x-1.5 transition-all group">
+                    <ChevronRight size={14} className="mr-1.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+                    {item}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
-          
-          {/* Links Col 2 */}
+
+          {/* 3. Support Links */}
           <div>
-            <h4 className="font-bold text-slate-800 mb-6 text-lg tracking-tight">Partner Program</h4>
-            <ul className="space-y-4 text-sm text-slate-600 font-medium">
-              <li className="hover:text-emerald-700 hover:translate-x-1 transition-all cursor-pointer font-bold text-emerald-600 flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>สมัครเป็นพาร์ทเนอร์ 🚀</li>
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>เข้าสู่ระบบหลังบ้าน (Admin)</li>
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>ลงโฆษณากับเรา</li>
-              <li className="hover:text-emerald-600 hover:translate-x-1 transition-all cursor-pointer flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>ตรวจสอบสถานะการเคลม</li>
+            <h3 className="text-white font-bold mb-5 md:mb-6 flex items-center text-sm md:text-base tracking-wide">
+              <span className="w-1.5 h-4 bg-amber-500 rounded-sm mr-2.5 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+              ศูนย์ช่วยเหลือ
+            </h3>
+            <ul className="space-y-3.5 text-sm">
+              {['คู่มือการใช้งานระบบ', 'เงื่อนไขการรับประกัน (Claim)', 'สมัครตัวแทนจำหน่าย', 'ติดตามสถานะคำสั่งซื้อ'].map(item => (
+                <li key={item}>
+                  <button className="flex items-center text-slate-400 hover:text-amber-400 hover:translate-x-1.5 transition-all group">
+                    <ChevronRight size={14} className="mr-1.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+                    {item}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
-          
-          {/* Contact Col */}
+
+          {/* 4. Contact HQ */}
           <div>
-            <h4 className="font-bold text-slate-800 mb-6 text-lg tracking-tight">ติดต่อเรา</h4>
-            <ul className="space-y-4 text-sm text-slate-600 font-medium">
-              <li className="flex items-start bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                <MapPin size={18} className="mr-3 mt-0.5 text-emerald-600 flex-shrink-0"/> 
-                <span className="leading-relaxed">ศูนย์การค้าเซียร์รังสิต ชั้น 3 ห้อง xxx ถ.พหลโยธิน จ.ปทุมธานี 12130</span>
+            <h3 className="text-white font-bold mb-5 md:mb-6 flex items-center text-sm md:text-base tracking-wide">
+              <span className="w-1.5 h-4 bg-cyber-emerald rounded-sm mr-2.5 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              สำนักงานใหญ่ (HQ)
+            </h3>
+            <ul className="space-y-3 text-xs md:text-sm">
+              <li className="flex items-start bg-slate-800/60 p-3 rounded-sm border border-slate-700/50 hover:border-slate-500 transition-colors group">
+                <MapPin size={18} className="mr-3 text-slate-400 group-hover:text-cyber-blue flex-shrink-0 mt-0.5 transition-colors"/>
+                <span className="leading-relaxed text-slate-400 group-hover:text-slate-200 transition-colors">
+                  ศูนย์การค้าเซียร์รังสิต ชั้น 3 ห้อง xxx ถ.พหลโยธิน จ.ปทุมธานี 12130
+                </span>
               </li>
-              <li className="flex items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                 <MessageCircle size={18} className="mr-3 text-emerald-600 flex-shrink-0"/>
-                 <span>Line Official: <strong className="text-slate-800">@dhnotebook</strong></span>
+              <li className="flex items-center bg-slate-800/60 p-3 rounded-sm border border-slate-700/50 hover:border-cyber-emerald hover:shadow-[0_0_10px_rgba(16,185,129,0.1)] transition-all group">
+                 <MessageCircle size={18} className="mr-3 text-slate-400 group-hover:text-cyber-emerald flex-shrink-0 transition-colors"/>
+                 <span className="text-slate-400 group-hover:text-slate-200 transition-colors">
+                   Line ID: <strong className="text-white font-tech tracking-wider">@dhnotebook</strong>
+                 </span>
               </li>
-              <li className="flex items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                 <User size={18} className="mr-3 text-emerald-600 flex-shrink-0"/>
-                 <span>Tel: <strong className="text-slate-800">02-xxx-xxxx</strong></span>
+              <li className="flex items-center bg-slate-800/60 p-3 rounded-sm border border-slate-700/50 hover:border-cyber-blue hover:shadow-[0_0_10px_rgba(14,165,233,0.1)] transition-all group">
+                 <Phone size={18} className="mr-3 text-slate-400 group-hover:text-cyber-blue flex-shrink-0 transition-colors"/>
+                 <span className="text-slate-400 group-hover:text-slate-200 transition-colors">
+                   Tel: <strong className="text-white font-tech tracking-wider">02-xxx-xxxx</strong>
+                 </span>
               </li>
             </ul>
           </div>
         </div>
         
         {/* Bottom Bar */}
-        <div className="border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-500 space-y-4 md:space-y-0">
-          <p className="font-semibold text-slate-600">© 2026 DH Notebook. All rights reserved.</p>
+        <div className="border-t border-slate-800 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs text-slate-500 space-y-4 md:space-y-0">
+          <p className="font-tech tracking-widest uppercase">
+            © 2027 DH NOTEBOOK SYSTEM. ALL RIGHTS RESERVED.
+          </p>
           <div className="flex space-x-6 font-medium">
-            <span className="hover:text-emerald-600 cursor-pointer transition-colors">นโยบายความเป็นส่วนตัว (PDPA)</span>
-            <span className="hover:text-emerald-600 cursor-pointer transition-colors">เงื่อนไขการให้บริการ</span>
+            <span className="hover:text-cyber-emerald cursor-pointer transition-colors">Privacy Policy</span>
+            <span className="hover:text-cyber-emerald cursor-pointer transition-colors">Terms of Service</span>
           </div>
         </div>
+
       </div>
     </footer>
   );

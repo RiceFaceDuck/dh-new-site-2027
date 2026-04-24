@@ -8,10 +8,17 @@ import { useNavigate } from 'react-router-dom';
 const MenuButton = ({ icon, label, active, onClick }) => (
   <button 
     onClick={onClick}
-    className={`w-full flex items-center justify-between p-3.5 md:p-4 text-sm font-bold transition-all border-l-4 ${active ? 'bg-emerald-50/40 text-emerald-700 border-emerald-500' : 'bg-transparent text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'}`}
+    className={`w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all border-l-2 ${
+      active 
+        ? 'bg-emerald-500/10 text-cyber-emerald border-cyber-emerald shadow-[inset_4px_0_0_rgba(16,185,129,0.2)]' 
+        : 'bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-transparent hover:border-slate-300'
+    }`}
   >
-    <div className="flex items-center gap-3">{icon} {label}</div>
-    {active && <ChevronRight size={16} className="text-emerald-500" />}
+    <div className={`flex items-center gap-3 ${active ? 'text-cyber-emerald' : 'text-slate-400'}`}>
+      {icon} 
+      <span className="font-tech mt-0.5">{label}</span>
+    </div>
+    {active && <ChevronRight size={16} className="text-cyber-emerald" />}
   </button>
 );
 
@@ -20,95 +27,125 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Profile Card Summary */}
-      <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 p-5 text-center relative overflow-hidden group">
-        <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 opacity-90 transition-transform duration-500 group-hover:scale-105"></div>
+      
+      {/* 1. Partner ID Badge (Profile Card Summary) */}
+      <div className="bg-slate-900 rounded-sm shadow-tech-card border border-slate-800 p-5 text-center relative overflow-hidden group">
         
-        <div className="relative z-10 flex flex-col items-center mt-6">
-          <div className="relative">
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover mb-3" />
-            ) : (
-              <div className="w-24 h-24 bg-white border-4 border-gray-50 text-emerald-600 rounded-full flex items-center justify-center font-black text-4xl shadow-md mb-3">
-                {user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'DH'}
-              </div>
-            )}
-            <button className="absolute bottom-3 right-0 bg-gray-800 text-white p-1.5 rounded-full border-2 border-white hover:bg-emerald-600 transition-colors shadow-sm">
-              <Settings size={14} />
-            </button>
-          </div>
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-tech-grid-dark opacity-20 pointer-events-none"></div>
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-cyber-emerald via-cyber-blue to-transparent"></div>
+        <div className="absolute -left-10 -top-10 w-32 h-32 bg-cyber-emerald/10 blur-[40px] rounded-full"></div>
 
-          <h3 className="text-base font-bold text-gray-800 mb-1">{user?.displayName || 'ผู้ใช้งานทั่วไป'}</h3>
-          <p className="text-[11px] font-medium text-gray-500 mb-4 bg-gray-50 px-2 py-0.5 rounded-full">{user?.email}</p>
+        <div className="relative z-10 flex flex-col items-center">
+          {/* Avatar Icon */}
+          <div className="w-16 h-16 rounded-sm bg-slate-800 border border-slate-700 p-1 mb-3 flex items-center justify-center relative shadow-glow-emerald">
+             <Store size={32} className="text-cyber-emerald" />
+          </div>
           
-          <div className="w-full text-left bg-gray-50 p-3 rounded-xl border border-gray-100 mb-2">
-            <div className="flex justify-between text-[10px] font-bold text-gray-600 mb-1.5">
-              <span>ยอดสะสมเดือนนี้</span>
-              <span className="text-emerald-600">฿12,500 / ฿50K</span>
+          <h2 className="text-base md:text-lg font-bold text-white tracking-wide">
+            {user?.storeName || 'DH Partner'}
+          </h2>
+          <p className="text-[10px] text-slate-400 font-tech mt-1 mb-5 uppercase tracking-widest bg-slate-800 px-2 py-0.5 rounded-sm border border-slate-700">
+            ID: {user?.uid?.substring(0,8) || 'SYS-ADMIN'}
+          </p>
+
+          {/* Partner Stats Grid */}
+          <div className="grid grid-cols-3 gap-2 w-full border-t border-slate-800 pt-4">
+            <div>
+              <p className="text-[9px] text-slate-500 font-tech uppercase tracking-widest mb-1">Tier</p>
+              <p className="text-[11px] font-bold text-cyber-blue font-tech uppercase">
+                {user?.stats?.level || 'STANDARD'}
+              </p>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-1.5">
-              <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '25%' }}></div>
+            <div className="border-x border-slate-800 px-1">
+              <p className="text-[9px] text-slate-500 font-tech uppercase tracking-widest mb-1">Points</p>
+              <p className="text-[11px] font-bold text-amber-500 font-tech">
+                {user?.stats?.points?.toLocaleString() || 0}
+              </p>
             </div>
-            <p className="text-[9px] text-gray-400 mt-1.5 text-center">อีก ฿37,500 เพื่อรับ Badges ถัดไป</p>
+            <div>
+              <p className="text-[9px] text-slate-500 font-tech uppercase tracking-widest mb-1">Orders</p>
+              <p className="text-[11px] font-bold text-white font-tech">
+                {user?.stats?.totalOrders?.toLocaleString() || 0}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Links */}
-      <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden sticky top-24">
+      {/* 2. Control Menu Navigation */}
+      <div className="bg-white rounded-sm shadow-tech-card border border-slate-200 overflow-hidden flex flex-col">
         <MenuButton 
-          icon={<Store size={18} strokeWidth={2.5} />} 
-          label="ข้อมูลร้านค้า" 
+          icon={<Store size={18} strokeWidth={2} />} 
+          label="Overview" 
           active={activeTab === 'overview'} 
           onClick={() => setActiveTab('overview')} 
         />
         <MenuButton 
-          icon={<CreditCard size={18} strokeWidth={2.5} />} 
-          label="การเงิน & เครดิต" 
+          icon={<CreditCard size={18} strokeWidth={2} />} 
+          label="Wallet & Credit" 
           active={activeTab === 'wallet'} 
           onClick={() => setActiveTab('wallet')} 
         />
         <MenuButton 
-          icon={<Package size={18} strokeWidth={2.5} />} 
-          label="สินค้าของฉัน (User SKU)" 
-          active={activeTab === 'sku'} 
-          onClick={() => setActiveTab('sku')} 
+          icon={<Package size={18} strokeWidth={2} />} 
+          label="My SKU" 
+          active={activeTab === 'usersku'} 
+          onClick={() => setActiveTab('usersku')} 
         />
-        {/* ✨ เมนูใหม่: จัดการโฆษณา & การสนับสนุน */}
         <MenuButton 
-          icon={<Megaphone size={18} strokeWidth={2.5} />} 
-          label="พื้นที่โฆษณา & สนับสนุน" 
+          icon={<Megaphone size={18} strokeWidth={2} />} 
+          label="Ad Manager" 
           active={activeTab === 'ads'} 
           onClick={() => setActiveTab('ads')} 
         />
         <MenuButton 
-          icon={<History size={18} strokeWidth={2.5} />} 
-          label="ประวัติออเดอร์" 
+          icon={<History size={18} strokeWidth={2} />} 
+          label="Order History" 
           active={activeTab === 'history'} 
           onClick={() => setActiveTab('history')} 
         />
         <MenuButton 
-          icon={<Heart size={18} strokeWidth={2.5} />} 
-          label="สินค้าที่ถูกใจ" 
+          icon={<Heart size={18} strokeWidth={2} />} 
+          label="Favorites" 
           active={activeTab === 'favorites'} 
           onClick={() => setActiveTab('favorites')} 
         />
-        {/* ✨ กู้คืน: ตะกร้าสินค้า (ลิงก์ไปยังหน้าตะกร้าโดยตรง) */}
+        
+        {/* ✨ ตะกร้าสินค้า (ลิงก์ไปยังหน้าตะกร้าโดยตรง) */}
         <button 
           onClick={() => navigate('/cart')}
-          className="w-full flex items-center justify-between p-3.5 md:p-4 text-sm font-bold transition-all border-l-4 bg-transparent text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300"
+          className="w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold font-tech uppercase tracking-widest transition-all border-l-2 bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-transparent hover:border-slate-300"
         >
-          <div className="flex items-center gap-3"><ShoppingCart size={18} strokeWidth={2.5} /> ตะกร้าสินค้า</div>
+          <div className="flex items-center gap-3 text-slate-400">
+            <ShoppingCart size={18} strokeWidth={2} /> 
+            <span className="text-slate-500 mt-0.5">Active Cart</span>
+          </div>
         </button>
 
-        <div className="border-t border-gray-100 my-1"></div>
+        {/* Divider & Action Buttons */}
+        <div className="border-t border-slate-100 my-1 mx-4"></div>
+        
+        <button 
+          className="w-full flex items-center p-3.5 md:p-4 text-xs font-bold font-tech uppercase tracking-widest transition-all bg-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+        >
+          <div className="flex items-center gap-3">
+            <Settings size={18} strokeWidth={2} /> 
+            <span className="mt-0.5">System Settings</span>
+          </div>
+        </button>
+
         <button 
           onClick={handleLogout} 
-          className="w-full flex items-center gap-3 p-4 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors text-left"
+          className="w-full flex items-center p-3.5 md:p-4 text-xs font-bold font-tech uppercase tracking-widest transition-all bg-transparent text-slate-400 hover:bg-red-50 hover:text-red-600 group border-t border-slate-100"
         >
-          <LogOut size={18} strokeWidth={2.5} /> ออกจากระบบ
+          <div className="flex items-center gap-3">
+            <LogOut size={18} strokeWidth={2} className="group-hover:-translate-x-1 transition-transform" /> 
+            <span className="mt-0.5">Terminate Session</span>
+          </div>
         </button>
       </div>
+
     </div>
   );
 };

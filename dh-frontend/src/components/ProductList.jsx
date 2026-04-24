@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ShoppingCart, CheckCircle2, Loader2 } from 'lucide-react';
+import { ChevronRight, ShoppingCart, CheckCircle2, Loader2, Cpu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
@@ -35,120 +35,127 @@ const ProductList = ({ products, loading }) => {
     }
   };
 
+  // คอมโพเนนต์จำลองโครงร่างระหว่างรอโหลดข้อมูล (Tech Skeleton)
+  const SkeletonCard = () => (
+    <div className="rounded-md border border-slate-200 bg-white p-3 flex flex-col h-[280px]">
+      <div className="w-full h-36 bg-slate-100 rounded-sm animate-pulse mb-3"></div>
+      <div className="w-1/3 h-3 bg-slate-100 rounded-sm animate-pulse mb-2"></div>
+      <div className="w-full h-4 bg-slate-100 rounded-sm animate-pulse mb-1"></div>
+      <div className="w-2/3 h-4 bg-slate-100 rounded-sm animate-pulse mb-auto"></div>
+      <div className="flex justify-between items-end mt-4">
+        <div className="w-1/2 h-6 bg-slate-100 rounded-sm animate-pulse"></div>
+        <div className="w-9 h-9 bg-slate-100 rounded-sm animate-pulse"></div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="mb-10 md:mb-16">
-      <div className="flex items-end justify-between mb-6 px-1">
-        <h2 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight drop-shadow-sm flex items-center">
-          <span className="w-1.5 h-6 bg-emerald-500 rounded-full mr-3 inline-block"></span>
-          สินค้าแนะนำ
+    <div className="mb-12 md:mb-20">
+      
+      {/* Tech Heading */}
+      <div className="flex justify-between items-end mb-4 px-1">
+        <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight flex items-center">
+          <span className="w-1.5 h-5 bg-cyber-blue rounded-sm mr-3 inline-block shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
+          สินค้าแนะนำ / มาใหม่
         </h2>
-        <button className="text-xs md:text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center transition-colors bg-emerald-50/80 hover:bg-emerald-100 px-3 py-1.5 rounded-lg">
-          ดูทั้งหมด <ChevronRight size={16} className="ml-0.5" />
+        <button className="text-sm font-semibold text-cyber-blue hover:text-sky-600 flex items-center group transition-colors">
+          ดูทั้งหมด 
+          <ChevronRight size={16} className="ml-0.5 group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
 
       {loading ? (
-        // Skeleton Loading
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-          {[...Array(5)].map((_, index) => (
-            <div key={index} className="bg-white p-4 rounded-[20px] border border-slate-100 shadow-sm animate-pulse">
-              <div className="w-full aspect-square bg-slate-50 rounded-[16px] mb-4"></div>
-              <div className="h-4 bg-slate-100 rounded w-full mb-3"></div>
-              <div className="h-4 bg-slate-100 rounded w-2/3 mb-5"></div>
-              <div className="h-5 bg-slate-100 rounded w-1/2 mt-auto"></div>
-            </div>
-          ))}
+        // Grid สำหรับหน้า Skeleton Loading
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 px-1">
+          {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : (
-        // Product Grid
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+        // Grid สำหรับแสดงสินค้าจริง
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 px-1">
           {products.map((product) => {
-            const imageUrl = product.images?.[0] || product.image || 'https://via.placeholder.com/400x400?text=DH';
-            
-            // Stock Status Logic (Using stockQuantity instead of stock)
-            const stock = product.stockQuantity || 0;
-            const buffer = product.bufferStock || 0;
-            
-            let stockStatus = 'หมด';
-            let stockColor = 'text-red-600 bg-red-50 border-red-100';
-            
-            if (stock > buffer) {
-              stockStatus = 'มีสินค้า';
-              stockColor = 'text-emerald-600 bg-emerald-50 border-emerald-100';
-            } else if (stock > 0 && stock <= buffer) {
-              stockStatus = 'เหลือน้อย';
-              stockColor = 'text-amber-600 bg-amber-50 border-amber-100';
-            }
+            const hasStock = product.stock > 0;
             
             return (
               <div 
                 key={product.id} 
-                onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
-                className="group bg-white rounded-[20px] p-4 md:p-5 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col relative h-full cursor-pointer overflow-hidden"
+                onClick={() => navigate(`/product/${product.id}`)}
+                className="group cursor-pointer bg-white rounded-md border border-slate-200 overflow-hidden flex flex-col hover:border-cyber-emerald hover:shadow-glow-emerald transition-all duration-300 relative"
               >
-                {/* Badge & Stock Status */}
-                <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start">
-                  {product.isPartnerOnly ? (
-                    <span className="bg-emerald-600 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded shadow-sm tracking-wider">
-                      PARTNER
-                    </span>
-                  ) : <span></span>}
-                  
-                  <span className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded border shadow-sm ${stockColor}`}>
-                    {stockStatus}
-                  </span>
-                </div>
-
-                {/* Product Image */}
-                <div className="aspect-square mb-4 bg-white flex items-center justify-center relative mix-blend-multiply pt-4">
+                {/* 1. Image & Tech Overlay Area */}
+                <div className="relative aspect-square w-full bg-slate-50 flex items-center justify-center p-4 overflow-hidden border-b border-slate-100">
                   <img 
-                    src={imageUrl} 
+                    src={product.imageUrl || '/logo.png'} 
                     alt={product.name} 
-                    className="w-full h-full object-contain group-hover:scale-110 transition duration-500 drop-shadow-sm"
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/400x400?text=Image+Error' }}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => { e.target.src = '/logo.png' }}
                   />
-                </div>
+                  
+                  {/* Status Indicator (จุดไฟสถานะ) */}
+                  <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-sm border border-slate-200/50 shadow-sm z-10">
+                    <span className={`w-1.5 h-1.5 rounded-full ${hasStock ? 'bg-cyber-emerald animate-pulse' : 'bg-red-500'}`}></span>
+                    <span className="text-[9px] md:text-[10px] font-bold text-slate-600 font-tech">
+                      {hasStock ? 'READY' : 'OUT OF STOCK'}
+                    </span>
+                  </div>
 
-                {/* Product Details */}
-                <div className="flex-1 flex flex-col">
-                  <p className="text-[10px] sm:text-[11px] text-slate-400 mb-1.5 font-medium tracking-wide uppercase">{product.sku || 'SKU: N/A'}</p>
-                  <h3 className="text-sm md:text-base font-semibold text-slate-700 line-clamp-2 leading-relaxed mb-4 flex-1 group-hover:text-emerald-600 transition-colors">
+                  {/* Quick Tech-Specs (แสดงข้อมูลเมื่อ Hover บน Desktop เท่านั้น ประหยัดการคลิกเข้าไปดู) */}
+                  <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex flex-col items-center justify-center p-4 text-center z-20">
+                    <Cpu size={24} className="text-cyber-blue mb-2" strokeWidth={1.5} />
+                    <span className="text-white text-[10px] font-tech mb-2 tracking-widest border-b border-slate-700 pb-1 w-full">QUICK SPECS</span>
+                    <span className="text-slate-300 text-xs font-medium mt-1">Brand: <span className="text-white">{product.brand || 'OEM'}</span></span>
+                    <span className="text-slate-300 text-xs font-medium">Stock: <span className={hasStock ? 'text-cyber-emerald' : 'text-red-400'}>{product.stock || 0} Units</span></span>
+                    
+                    <div className="mt-4 px-4 py-1.5 border border-cyber-emerald text-cyber-emerald text-[10px] rounded-sm font-bold uppercase tracking-wider bg-emerald-500/10">
+                      View Details
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 2. Data Info Area */}
+                <div className="p-3 md:p-4 flex flex-col flex-grow">
+                  {/* SKU / Code */}
+                  <div className="text-[10px] md:text-xs text-slate-400 font-tech mb-1 uppercase tracking-wider">
+                    SKU: {product.sku || product.id.substring(0, 8)}
+                  </div>
+                  
+                  {/* Product Name */}
+                  <h3 className="text-xs md:text-sm font-semibold text-slate-800 line-clamp-2 mb-2 group-hover:text-cyber-emerald transition-colors leading-relaxed">
                     {product.name}
                   </h3>
                   
-                  <div className="mt-auto flex items-end justify-between relative">
+                  <div className="mt-auto flex items-end justify-between pt-2">
+                    {/* Price */}
                     <div className="flex flex-col">
-                      {product.regularPrice && (
-                        <span className="text-[11px] sm:text-xs text-slate-400 line-through mb-0.5">
-                          ฿{product.regularPrice.toLocaleString()}
-                        </span>
-                      )}
-                      <span className="text-lg md:text-xl font-black text-slate-900 leading-none">
-                        ฿{product.retailPrice?.toLocaleString() || '0'}
+                      <span className="text-[9px] md:text-[10px] text-slate-400 font-medium leading-none mb-1">Partner Price</span>
+                      <span className="text-sm md:text-lg font-bold text-cyber-blue font-tech leading-none">
+                        ฿{product.price ? product.price.toLocaleString() : 'N/A'}
                       </span>
                     </div>
                     
-                    {/* ปุ่ม Add to cart */}
+                    {/* Add to cart Button (Tech Sharp Style) */}
                     <button 
                       onClick={(e) => handleAddToCart(e, product)}
-                      disabled={addingState[product.id] === 'loading' || addingState[product.id] === 'success'}
-                      className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${
+                      disabled={!hasStock || addingState[product.id] === 'loading' || addingState[product.id] === 'success'}
+                      className={`w-8 h-8 md:w-9 md:h-9 rounded-sm flex items-center justify-center transition-all duration-300 shadow-sm ${
                         addingState[product.id] === 'success'
-                          ? 'bg-emerald-100 text-emerald-600 border border-emerald-200'
-                          : 'bg-slate-50 text-slate-400 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-md'
+                          ? 'bg-emerald-100 text-cyber-emerald border border-emerald-200'
+                          : !hasStock 
+                            ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                            : 'bg-slate-50 text-slate-500 border border-slate-200 hover:bg-cyber-emerald hover:text-white hover:border-cyber-emerald'
                       }`}
                       aria-label="Add to cart"
                     >
                       {addingState[product.id] === 'loading' ? (
-                         <Loader2 size={18} className="animate-spin text-emerald-600" />
+                         <Loader2 size={16} className="animate-spin text-cyber-emerald" />
                       ) : addingState[product.id] === 'success' ? (
-                         <CheckCircle2 size={18} strokeWidth={2.5} />
+                         <CheckCircle2 size={16} strokeWidth={2.5} />
                       ) : (
-                         <ShoppingCart size={18} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+                         <ShoppingCart size={16} strokeWidth={2} className={`${hasStock ? 'group-hover:scale-110' : ''} transition-transform`} />
                       )}
                     </button>
                   </div>
                 </div>
+
               </div>
             );
           })}
