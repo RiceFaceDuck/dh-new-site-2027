@@ -1,294 +1,264 @@
 import React, { useState, useEffect } from 'react';
-import { Store, MapPin, Receipt, Link as LinkIcon, ShieldCheck, Wrench, Award, Upload, Save, Loader2, Cpu, FileText, CheckCircle2 } from 'lucide-react';
-import { doc, updateDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore';
+import { User, MapPin, Store, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+// 🛠️ แก้ไขบรรทัด Import Auth ให้เรียกตรงจาก firebase/auth แทน
+import { getAuth } from 'firebase/auth'; 
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
+import { updatePartnerProfile, extractCoordsFromUrl } from '../../../firebase/partnerService';
 
-const TabOverview = ({ userProfile }) => {
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState(null);
+// กำหนด App ID สำหรับดึงข้อมูล
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-  // 1. ผูก State กับข้อมูล userProfile ที่ส่งมาจากด้านนอก
-  const [formData, setFormData] = useState({
-    accountName: '',
-    contactName: '',
-    phone: '',
-    address: '',
-    shopInfo: {
-      shopName: '',
-      mapUrl: '',
-      services: {
-        screen_keyboard: false,
-        board_chip: false,
-        software_os: false,
-        server_network: false,
-        buy_secondhand: false,
-        onsite: false,
-        machine_robot: false,
-        ai_smarthome: false
-      },
-      social: { youtube: '', tiktok: '', facebook: '' },
-      tax: { name: '', taxId: '', address: '' }
-    },
-    settings: {
-      pushNotifications: true,
-      emailNotifications: true,
-      language: 'th'
-    }
+const TabOverview = () => {
+  // State สำหรับข้อมูลผู้ใช้ทั่วไป
+  const [userInfo, setUserInfo] = useState({
+    displayName: 'กำลังโหลด...',
+    email: 'กำลังโหลด...',
+    phoneNumber: 'ยังไม่ได้ระบุ'
   });
 
+  // State สำหรับระบบ Partner
+  const [isPartnerActive, setIsPartnerActive] = useState(false);
+  const [storeName, setStoreName] = useState('');
+  const [mapsUrl, setMapsUrl] = useState('');
+  const [services, setServices] = useState('');
+  
+  // State สำหรับ UI & UX
+  const [isValidMap, setIsValidMap] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+
+  // 1. ดึงข้อมูล Profile และ Partner ข้อมูลเริ่มต้น
   useEffect(() => {
-    if (userProfile) {
-      setFormData(prev => ({
-        ...prev,
-        ...userProfile,
-        shopInfo: { ...prev.shopInfo, ...(userProfile.shopInfo || {}) },
-        settings: { ...prev.settings, ...(userProfile.settings || {}) }
-      }));
-    }
-  }, [userProfile]);
+    const fetchUserData = async () => {
+      // 🛠️ ตรวจสอบ Auth แบบปลอดภัยขึ้น
+      const auth = getAuth();
+      const user = auth?.currentUser;
+      
+      if (user) {
+        setUserInfo({
+          displayName: user.displayName || 'ผู้ใช้งาน DH',
+          email: user.email || 'ไม่มีอีเมล',
+          phoneNumber: user.phoneNumber || 'ยังไม่ได้ระบุ'
+        });
 
-  // 2. ฟังก์ชันจัดการการพิมพ์ฟิลด์ต่างๆ (รวมถึง nested object)
-  const handleChange = (e, section = null, subSection = null) => {
-    const { name, value } = e.target;
-    
-    if (subSection && section) {
-      setFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [subSection]: {
-            ...prev[section][subSection],
-            [name]: value
+        // ดึงข้อมูล Partner เดิมที่เคยบันทึกไว้ (ถ้ามี)
+        try {
+          const partnerRef = doc(db, 'artifacts', appId, 'users', user.uid, 'partner_profile', 'data');
+          const snap = await getDoc(partnerRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            setIsPartnerActive(data.isActive || false);
+            setStoreName(data.storeName || '');
+            setMapsUrl(data.mapsUrl || '');
+            setServices(data.services || '');
           }
-        }
-      }));
-    } else if (section) {
-      setFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [name]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleServiceChange = (key) => {
-    setFormData(prev => ({
-      ...prev,
-      shopInfo: {
-        ...prev.shopInfo,
-        services: {
-          ...prev.shopInfo.services,
-          [key]: !prev.shopInfo.services[key]
+        } catch (error) {
+          console.error("Error fetching partner data:", error);
         }
       }
-    }));
-  };
+      setLoadingInitial(false);
+    };
 
-  // 3. ฟังก์ชันบันทึกข้อมูล (Tech Save Logic)
-  const handleSave = async () => {
-    if (!userProfile?.uid) return;
-    setIsSaving(true);
-    setSaveStatus(null);
+    fetchUserData();
+  }, []);
+
+  // 2. Live Validation: ตรวจสอบความถูกต้องของ Google Maps URL แบบ Real-time
+  useEffect(() => {
+    if (mapsUrl) {
+      const coords = extractCoordsFromUrl(mapsUrl);
+      setIsValidMap(!!coords); // เป็น true ถ้าสกัดพิกัดได้สำเร็จ
+    } else {
+      setIsValidMap(false);
+    }
+  }, [mapsUrl]);
+
+  // 3. ฟังก์ชันบันทึกข้อมูล Partner
+  const handleSavePartnerSettings = async () => {
+    const auth = getAuth();
+    const user = auth?.currentUser;
     
-    try {
-      const userRef = doc(db, "users", userProfile.uid);
-      await updateDoc(userRef, {
-        ...formData,
-        lastUpdated: serverTimestamp()
-      });
-      
-      // บันทึกลง System Log
-      await addDoc(collection(db, "users", userProfile.uid, "history"), {
-        action: "update_profile",
-        details: "พาร์ทเนอร์อัปเดตข้อมูลโปรไฟล์และหน้าร้าน",
-        timestamp: serverTimestamp()
-      });
+    // 🛠️ เปลี่ยน alert เป็น UI ที่พรีเมียมขึ้นถ้าไม่ได้ล็อกอิน
+    if (!user) {
+      console.error("Not authenticated");
+      return; 
+    }
 
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus(null), 3000);
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    try {
+      await updatePartnerProfile(user.uid, {
+        storeName,
+        mapsUrl,
+        services,
+        // ส่งข้อมูลเบสิกไปเผื่อดึงไปแสดงผลด้วย
+        contactName: userInfo.displayName,
+        contactEmail: userInfo.email
+      }, isPartnerActive);
+
+      setSaveSuccess(true);
+      // ซ่อนข้อความ Success หลังผ่านไป 3 วินาที
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      console.error("🔥 Error updating profile:", error);
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus(null), 4000);
+      console.error(error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const serviceLabels = {
-    screen_keyboard: 'เปลี่ยนจอ/คีย์บอร์ด/แบต',
-    board_chip: 'ซ่อมบอร์ด/ชิป/ระบบไฟ',
-    software_os: 'ลงโปรแกรม/OS/ล้างไวรัส',
-    server_network: 'ระบบ Network/Server',
-    buy_secondhand: 'รับซื้อ/เทิร์นเครื่องมือสอง',
-    onsite: 'บริการนอกสถานที่ (On-site)',
-    machine_robot: 'ซ่อมตู้ม้า/เครื่องจักร/หุ่นยนต์',
-    ai_smarthome: 'ระบบบ้านอัจฉริยะ/AI/กล้อง'
-  };
+  if (loadingInitial) {
+    return (
+      <div className="flex justify-center items-center h-48 text-gray-400">
+        <Loader2 className="animate-spin w-8 h-8 mr-2" /> กำลังโหลดข้อมูล...
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-10 animate-fade-in-up">
+    <div className="space-y-6 animate-fade-in">
       
-      {/* Header & Save Button Area */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-200 pb-4">
-         <div>
-           <h2 className="text-xl font-bold text-slate-800 flex items-center font-tech tracking-wider uppercase">
-             <span className="w-1.5 h-6 bg-cyber-blue rounded-sm mr-3 inline-block shadow-glow-blue"></span>
-             Terminal Data
-           </h2>
-           <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-tech">Manage your partner identity and configurations.</p>
-         </div>
-
-         {/* Smart Tech Save Button */}
-         <button 
-          onClick={handleSave} 
-          disabled={isSaving}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-sm font-tech font-bold uppercase tracking-widest text-xs transition-all duration-300 shadow-sm border ${
-            isSaving ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait' 
-            : saveStatus === 'success' ? 'bg-emerald-50 text-cyber-emerald border-emerald-200' 
-            : saveStatus === 'error' ? 'bg-red-50 text-red-500 border-red-200'
-            : 'bg-slate-800 text-white border-slate-900 hover:bg-slate-900 hover:shadow-glow-emerald'
-          }`}
-        >
-          {isSaving ? <Loader2 size={16} className="animate-spin" /> 
-           : saveStatus === 'success' ? <CheckCircle2 size={16} /> 
-           : saveStatus === 'error' ? <ShieldCheck size={16} /> 
-           : <Save size={16} />}
-          {isSaving ? 'Processing...' : saveStatus === 'success' ? 'Data Saved' : saveStatus === 'error' ? 'Failed' : 'Save Changes'}
-        </button>
+      {/* ==========================================
+          ส่วนที่ 1: ข้อมูลส่วนตัวพื้นฐาน (รักษาโครงสร้างเดิม)
+          ========================================== */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <User className="text-[#0870B8] w-5 h-5" /> ข้อมูลบัญชีผู้ใช้
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div className="text-xs text-gray-500 mb-1">ชื่อ-นามสกุล</div>
+            <div className="font-medium text-gray-800">{userInfo.displayName}</div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div className="text-xs text-gray-500 mb-1">อีเมล</div>
+            <div className="font-medium text-gray-800">{userInfo.email}</div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 md:col-span-2">
+            <div className="text-xs text-gray-500 mb-1">เบอร์โทรศัพท์</div>
+            <div className="font-medium text-gray-800">{userInfo.phoneNumber}</div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      {/* ==========================================
+          ส่วนที่ 2: ระบบ Partner (รับการสนับสนุน) - อัปเกรดใหม่!
+          ========================================== */}
+      <div className={`rounded-2xl border transition-all duration-500 shadow-sm overflow-hidden ${
+        isPartnerActive ? 'border-[#0870B8] bg-[#f8fbff]' : 'border-gray-200 bg-white'
+      }`}>
         
-        {/* 📋 Column 1: ข้อมูลผู้ใช้งาน และข้อมูลร้านค้า */}
-        <div className="space-y-6">
-          
-          <div className="bg-slate-50 border border-slate-200 rounded-sm p-5 shadow-tech-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-slate-300"></div>
-            <h3 className="text-xs font-tech font-bold tracking-widest uppercase text-slate-700 flex items-center gap-2 mb-4">
-              <FileText size={16} className="text-slate-400" /> Account Identity
-            </h3>
-            <div className="space-y-3">
-              <div>
-                 <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Username / Nickname</label>
-                 <input type="text" name="accountName" value={formData.accountName} onChange={handleChange} placeholder="นามแฝง (ที่ใช้ในระบบ)" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                 <div>
-                    <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Contact Name</label>
-                    <input type="text" name="contactName" value={formData.contactName} onChange={handleChange} placeholder="ชื่อผู้ติดต่อจริง" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all" />
-                 </div>
-                 <div>
-                    <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Phone Number</label>
-                    <input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="เบอร์โทรศัพท์" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-tech text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all" />
-                 </div>
-              </div>
-            </div>
+        {/* Header & Toggle Switch */}
+        <div className="p-6 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4 border-b border-gray-100/50">
+          <div>
+            <h2 className="text-lg font-bold flex items-center gap-2 text-gray-800">
+              <ShieldCheck className={isPartnerActive ? "text-[#0870B8]" : "text-gray-400"} />
+              ร่วมเป็น Partner รับการสนับสนุน
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              เปิดการรับการสนับสนุน เพื่อให้ร้านค้าของคุณแสดงบนเว็บ DH เมื่อมีลูกค้าอยู่ในบริเวณใกล้เคียง
+            </p>
           </div>
+          
+          {/* Animated Toggle Switch */}
+          <button 
+            type="button"
+            onClick={() => setIsPartnerActive(!isPartnerActive)}
+            className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${
+              isPartnerActive ? 'bg-[#0870B8]' : 'bg-gray-300'
+            }`}
+          >
+            <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${
+              isPartnerActive ? 'translate-x-7' : 'translate-x-0'
+            }`} />
+          </button>
+        </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-sm p-5 shadow-tech-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-cyber-blue"></div>
-            <h3 className="text-xs font-tech font-bold tracking-widest uppercase text-slate-700 flex items-center gap-2 mb-4">
-              <Store size={16} className="text-cyber-blue" /> Store Profile
-            </h3>
+        {/* Form Details (Expandable) */}
+        <div className={`transition-all duration-500 ease-in-out origin-top ${
+          isPartnerActive ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="p-6 space-y-5">
             
-            <div className="space-y-4">
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Store / Branch Name</label>
-                  <input type="text" name="shopName" value={formData.shopInfo.shopName} onChange={(e) => handleChange(e, 'shopInfo')} placeholder="ชื่อร้าน (ที่ใช้โปรโมทและแสดงในบิล)" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-bold text-slate-800 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all" />
-               </div>
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1 flex items-center gap-1"><MapPin size={12}/> Physical Address</label>
-                  <textarea rows="2" name="address" value={formData.address} onChange={handleChange} placeholder="ที่อยู่ในการจัดส่ง (พิมพ์แบบเต็ม)" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all"></textarea>
-               </div>
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Google Maps URL</label>
-                  <input type="url" name="mapUrl" value={formData.shopInfo.mapUrl} onChange={(e) => handleChange(e, 'shopInfo')} placeholder="ลิงก์หมุดร้านค้า (หากมี)" className="w-full px-3 py-2 border border-slate-200 rounded-sm text-xs text-slate-600 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all" />
-               </div>
+            {/* Store Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <Store className="w-4 h-4 text-gray-400" /> ชื่อร้านค้า / สถานประกอบการ
+              </label>
+              <input 
+                type="text" 
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder="เช่น DH Service สาขาเชียงใหม่..."
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#0870B8] focus:border-[#0870B8] outline-none transition-all"
+              />
             </div>
-            
-            {/* Tech Badges (Services Toggle) */}
-            <div className="mt-6 border-t border-slate-200 pt-4">
-              <p className="text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-3 ml-1 flex items-center gap-1"><Wrench size={12}/> Provided Services</p>
-              <div className="grid grid-cols-1 gap-2">
-                {Object.keys(serviceLabels).map((key) => {
-                  const isSelected = formData.shopInfo.services[key];
-                  return (
-                    <label key={key} className={`flex items-center gap-3 p-2.5 border rounded-sm cursor-pointer transition-all duration-200 select-none ${
-                      isSelected ? 'bg-emerald-50/50 border-cyber-emerald text-slate-800 shadow-[inset_2px_0_0_rgba(16,185,129,1)]' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300'
-                    }`}>
-                      <input 
-                        type="checkbox" 
-                        checked={isSelected}
-                        onChange={() => handleServiceChange(key)}
-                        className="w-4 h-4 rounded-sm border-slate-300 text-cyber-emerald focus:ring-cyber-emerald focus:ring-offset-0 bg-slate-100"
-                      />
-                      <span className="text-xs md:text-sm font-medium">{serviceLabels[key]}</span>
-                    </label>
-                  )
-                })}
+
+            {/* Google Maps URL with Live Validation */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-gray-400" /> ลิงก์ Google Maps (เพื่อหาพิกัด)
+              </label>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={mapsUrl}
+                  onChange={(e) => setMapsUrl(e.target.value)}
+                  placeholder="วางลิงก์ Google Maps ที่นี่..."
+                  className={`w-full px-4 py-2.5 pr-10 rounded-xl border outline-none transition-all ${
+                    mapsUrl ? (isValidMap ? 'border-emerald-500 focus:ring-emerald-200' : 'border-amber-500 focus:ring-amber-200') : 'border-gray-300 focus:ring-[#0870B8]'
+                  }`}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {mapsUrl && (
+                    isValidMap 
+                    ? <CheckCircle2 className="w-5 h-5 text-emerald-500 animate-in zoom-in" />
+                    : <AlertCircle className="w-5 h-5 text-amber-500 animate-pulse" title="ระบบยังตรวจไม่พบพิกัดในลิงก์นี้" />
+                  )}
+                </div>
               </div>
+              <p className="text-xs text-gray-500 mt-1.5">
+                {isValidMap ? <span className="text-emerald-600">✓ ตรวจพบพิกัดแผนที่สำเร็จ</span> : "คัดลอกลิงก์จากแอป Google Maps แล้วนำมาวางได้เลย"}
+              </p>
             </div>
+
+            {/* Services Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                รายละเอียดบริการเพิ่มเติม (ไม่บังคับ)
+              </label>
+              <textarea 
+                value={services}
+                onChange={(e) => setServices(e.target.value)}
+                placeholder="อธิบายบริการที่รับรอง หรือเวลาเปิด-ปิดทำการ..."
+                rows="3"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#0870B8] focus:border-[#0870B8] outline-none transition-all resize-none"
+              />
+            </div>
+
           </div>
         </div>
 
-        {/* 📋 Column 2: โซเชียลมีเดีย และ ข้อมูลภาษี */}
-        <div className="space-y-6">
-          
-          <div className="bg-slate-50 border border-slate-200 rounded-sm p-5 shadow-tech-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-purple-400"></div>
-            <h3 className="text-xs font-tech font-bold tracking-widest uppercase text-slate-700 flex items-center gap-2 mb-4">
-              <LinkIcon size={16} className="text-purple-400" /> Digital Footprint
-            </h3>
-            <div className="space-y-3">
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Facebook Page</label>
-                  <input type="url" name="facebook" value={formData.shopInfo.social.facebook} onChange={(e) => handleChange(e, 'shopInfo', 'social')} placeholder="URL..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm text-xs font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 transition-all" />
-               </div>
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">TikTok Channel</label>
-                  <input type="url" name="tiktok" value={formData.shopInfo.social.tiktok} onChange={(e) => handleChange(e, 'shopInfo', 'social')} placeholder="URL..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm text-xs font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 transition-all" />
-               </div>
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">YouTube Channel</label>
-                  <input type="url" name="youtube" value={formData.shopInfo.social.youtube} onChange={(e) => handleChange(e, 'shopInfo', 'social')} placeholder="URL..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-sm text-xs font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 transition-all" />
-               </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200 rounded-sm p-5 shadow-tech-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-            <h3 className="text-xs font-tech font-bold tracking-widest uppercase text-slate-700 flex items-center gap-2 mb-4">
-              <Receipt size={16} className="text-amber-500" /> Tax & Billing Configuration
-            </h3>
-            <div className="space-y-3">
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Entity Name</label>
-                  <input type="text" name="name" value={formData.shopInfo.tax.name} onChange={(e) => handleChange(e, 'shopInfo', 'tax')} placeholder="ชื่อบริษัท / นิติบุคคล / บุคคลธรรมดา" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all" />
-               </div>
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Tax ID</label>
-                  <input type="text" name="taxId" value={formData.shopInfo.tax.taxId} onChange={(e) => handleChange(e, 'shopInfo', 'tax')} placeholder="เลขประจำตัวผู้เสียภาษี (13 หลัก)" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-tech text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all" />
-               </div>
-               <div>
-                  <label className="block text-[10px] text-slate-500 font-tech uppercase tracking-widest mb-1 ml-1">Registered Address</label>
-                  <textarea rows="2" name="address" value={formData.shopInfo.tax.address} onChange={(e) => handleChange(e, 'shopInfo', 'tax')} placeholder="ที่อยู่สำหรับออกใบกำกับภาษีเต็มรูปแบบ" className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-sm text-xs md:text-sm font-medium text-slate-700 outline-none focus:border-cyber-emerald focus:ring-1 focus:ring-cyber-emerald transition-all"></textarea>
-               </div>
-            </div>
-            
-            <div className="mt-4 p-3 bg-amber-50/50 border border-amber-200 rounded-sm flex items-start gap-2">
-               <ShieldCheck size={16} className="text-amber-500 shrink-0 mt-0.5" />
-               <p className="text-[10px] md:text-xs text-amber-800 font-medium leading-relaxed">
-                 ข้อมูลในส่วนนี้จะถูกใช้เป็นค่าเริ่มต้นเมื่อท่านขอออกใบกำกับภาษี/ใบเสร็จรับเงินในขั้นตอนการ Check out ตรวจสอบให้ถูกต้องเพื่อป้องกันความล่าช้าในการจัดส่งเอกสาร
-               </p>
-            </div>
-          </div>
-          
+        {/* Action Footer (แสดงตลอดเพื่อใช้เซฟการปิดด้วย) */}
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+          {saveSuccess && (
+            <span className="text-sm font-medium text-emerald-600 flex items-center gap-1.5 animate-in slide-in-from-right-4">
+              <CheckCircle2 className="w-4 h-4" /> บันทึกสำเร็จ
+            </span>
+          )}
+          <button
+            onClick={handleSavePartnerSettings}
+            disabled={isSaving}
+            className={`px-6 py-2.5 rounded-xl font-medium text-white transition-all flex items-center gap-2 ${
+              isSaving ? 'bg-[#0870B8]/70 cursor-not-allowed' : 'bg-[#0870B8] hover:bg-[#054D80] hover:shadow-lg hover:-translate-y-0.5'
+            }`}
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {isSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่าพาร์ทเนอร์'}
+          </button>
         </div>
+
       </div>
     </div>
   );
