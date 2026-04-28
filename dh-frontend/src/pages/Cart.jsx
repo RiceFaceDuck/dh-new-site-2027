@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
-import { collection, query, where, getDocs } from 'firebase/firestore'; 
-import { db } from '../firebase/config'; 
-import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, ArrowRight, ShieldCheck, Loader2, Gift, Terminal } from 'lucide-react'; 
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, ArrowRight, ShieldCheck, Loader2, Gift } from 'lucide-react';
 
-// 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล (กันกระสุน)
+// 🚀 1. ฟังก์ชันตัวช่วย: ดึงค่า Key แบบไม่สนใจตัวพิมพ์เล็กใหญ่ หรืออักษรพิเศษ
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
 
 const getVal = (obj, possibleKeys) => {
@@ -15,14 +15,18 @@ const getVal = (obj, possibleKeys) => {
     acc[normalizeKey(key)] = obj[key];
     return acc;
   }, {});
-  
   for (let key of possibleKeys) {
     const val = normalizedObj[normalizeKey(key)];
-    if (val !== undefined && val !== null && val !== '') {
-      return val;
-    }
+    if (val !== undefined && val !== null && val !== '') return val;
   }
   return null;
+};
+
+// 🚀 2. ฟังก์ชันตัวช่วย: แปลงข้อมูลทุกรูปแบบให้เป็นตัวเลข ป้องกัน NaN ยอดพัง
+const parseSafeNumber = (val) => {
+  if (val === null || val === undefined) return 0;
+  const num = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : Number(val);
+  return isNaN(num) ? 0 : num;
 };
 
 const Cart = () => {
@@ -32,10 +36,8 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
 
-  // 🎁 State สำหรับระบบของแถม (Gamification)
   const [freebies, setFreebies] = useState([]);
 
-  // 1. ตรวจสอบ Auth และดึงข้อมูล
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -56,9 +58,13 @@ const Cart = () => {
   const fetchCart = async (uid) => {
     try {
       const data = await cartService.getCart(uid);
-      setCartData(data || { items: [], total: 0, totalQty: 0 });
+      if (data && Array.isArray(data.items)) {
+          setCartData(data);
+      } else {
+          setCartData({ items: [], total: 0, totalQty: 0 });
+      }
     } catch (error) {
-      console.error("Error fetching cart:", error);
+      console.error("🔥 Error fetching cart:", error);
     } finally {
       setLoading(false);
     }
@@ -66,35 +72,33 @@ const Cart = () => {
 
   const fetchFreebies = async () => {
     try {
-      const q = query(collection(db, "freebies"), where("isActive", "==", true));
-      const querySnapshot = await getDocs(q);
-      const freebiesData = [];
-      querySnapshot.forEach((doc) => {
-        freebiesData.push({ id: doc.id, ...doc.data() });
-      });
-      freebiesData.sort((a, b) => a.conditionTotal - b.conditionTotal);
-      setFreebies(freebiesData);
+      const q = query(collection(db, 'freebies'), where('isActive', '==', true));
+      const snapshot = await getDocs(q);
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      items.sort((a, b) => a.minSpend - b.minSpend);
+      setFreebies(items);
     } catch (error) {
-      console.error("Error fetching freebies:", error);
+      console.error("🔥 Error fetching freebies:", error);
     }
   };
 
   const handleUpdateQty = async (productId, currentQty, change) => {
     if (!user) return;
-    const newQty = currentQty + change;
     
-    if (newQty <= 0) {
-      handleRemoveItem(productId);
-      return;
+    const newQty = currentQty + change;
+    if (newQty < 0) return; 
+
+    if (newQty === 0) {
+      if (!window.confirm("ต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?")) return;
     }
 
     setUpdatingId(productId);
     try {
-      await cartService.updateQuantity(user.uid, productId, newQty);
+      await cartService.updateCartItemQty(user.uid, productId, newQty);
       await fetchCart(user.uid); 
     } catch (error) {
-      console.error("Error updating qty:", error);
-      alert("เกิดข้อผิดพลาดในการอัปเดตจำนวน");
+      console.error("🔥 Error updating quantity:", error);
+      alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setUpdatingId(null);
     }
@@ -103,169 +107,194 @@ const Cart = () => {
   const handleRemoveItem = async (productId) => {
     if (!user) return;
     
-    if (!window.confirm('คุณต้องการลบสินค้านี้ออกจากรายการสั่งซื้อใช่หรือไม่?')) return;
+    if (!productId) {
+      alert("ไม่พบรหัสอ้างอิงสินค้า (Data Error)");
+      return;
+    }
+
+    if (!window.confirm("ต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?")) return;
 
     setUpdatingId(productId);
     try {
-      await cartService.removeItem(user.uid, productId);
+      // 🚀 แก้ไข Bug ลบไม่ออก: ใช้ updateCartItemQty และส่งค่า Qty = 0 แทน เนื่องจากระบบของคุณไม่มีฟังก์ชัน removeItem
+      await cartService.updateCartItemQty(user.uid, productId, 0); 
+      
       await fetchCart(user.uid);
     } catch (error) {
-      console.error("Error removing item:", error);
-      alert("เกิดข้อผิดพลาดในการลบสินค้า");
+      console.error("🔥 Error removing item:", error);
+      alert("เกิดข้อผิดพลาดในการลบ: " + error.message);
     } finally {
       setUpdatingId(null);
     }
   };
 
-  // --- UI Renders ---
+  const subTotal = parseSafeNumber(cartData.total);
+  const nextFreebie = freebies.find(f => f.minSpend > subTotal); 
+  const currentFreebie = [...freebies].reverse().find(f => f.minSpend <= subTotal); 
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-[60vh] flex-col">
-         <Loader2 className="animate-spin text-cyber-emerald mb-4" size={32} />
-         <p className="text-xs font-tech tracking-widest text-slate-500 uppercase animate-pulse">Loading System Protocol...</p>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
+        <p className="text-sm text-gray-500 font-medium font-tech">Synchronizing Cart Protocol...</p>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] px-4 animate-fade-in-up">
-        <div className="w-20 h-20 bg-slate-100 rounded-sm flex items-center justify-center mb-6 shadow-sm border border-slate-200">
-          <Terminal size={32} className="text-slate-400" />
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+          <ShoppingBag size={40} className="text-gray-400" />
         </div>
-        <h2 className="text-xl font-bold text-slate-800 mb-2 font-tech uppercase tracking-wider">Authentication Required</h2>
-        <p className="text-slate-500 mb-8 text-center max-w-sm text-sm">
-          กรุณาเข้าสู่ระบบพาร์ทเนอร์ก่อนเข้าใช้งานระบบจัดเตรียมคำสั่งซื้อ (Purchase Order)
-        </p>
-        <button 
-          onClick={() => navigate('/profile')}
-          className="bg-cyber-emerald hover:bg-emerald-500 text-white font-bold py-3 px-10 rounded-sm transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] font-tech tracking-wider uppercase text-xs"
-        >
-          Login to System
-        </button>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">ตะกร้าสินค้าของคุณ</h2>
+        <p className="text-gray-500 mb-8 max-w-sm">กรุณาเข้าสู่ระบบเพื่อดูสินค้าในตะกร้า หรือดำเนินการสั่งซื้อต่อ</p>
+        <Link to="/profile" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm">
+          เข้าสู่ระบบ / สมัครสมาชิก
+        </Link>
       </div>
     );
   }
 
-  // 🚀 ดักจับความปลอดภัยกัน Render พังเมื่อไม่มี items
-  if (!cartData || !cartData.items || cartData.items.length === 0) {
+  const items = cartData?.items || [];
+
+  if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] px-4 animate-fade-in-up">
-        <div className="w-24 h-24 bg-slate-50 rounded-sm flex items-center justify-center mb-6 border border-slate-200 border-dashed shadow-sm">
-          <ShoppingBag size={40} className="text-slate-300" strokeWidth={1} />
+      <div className="max-w-4xl mx-auto px-4 py-12 md:py-20 text-center animate-in fade-in duration-500">
+        <div className="w-32 h-32 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <ShoppingBag size={48} className="text-emerald-500 opacity-80" />
         </div>
-        <h2 className="text-xl font-bold text-slate-800 mb-2 font-tech uppercase tracking-wider">Empty Protocol</h2>
-        <p className="text-slate-500 mb-8 text-center max-w-sm text-sm">
-          ยังไม่มีข้อมูลอะไหล่ในระบบจัดเตรียมคำสั่งซื้อของคุณ
-        </p>
-        <button 
-          onClick={() => navigate('/')}
-          className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-10 rounded-sm transition-all shadow-sm font-tech tracking-wider uppercase text-xs"
-        >
-          Browse Database
-        </button>
+        <h2 className="text-2xl font-black text-gray-800 mb-3">ตะกร้าสินค้าว่างเปล่า</h2>
+        <p className="text-sm text-gray-500 mb-8">คุณยังไม่มีสินค้าในตะกร้า ลองดูสินค้าที่น่าสนใจในร้านของเราสิ!</p>
+        <Link to="/" className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm">
+          <ChevronLeft size={18} /> เลือกซื้อสินค้าต่อ
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-2 md:py-8 animate-fade-in-up">
+    <div className="w-full max-w-6xl mx-auto px-4 py-6 md:py-8 min-h-[80vh] animate-in fade-in duration-500">
       
-      {/* Header */}
-      <div className="flex items-center mb-6 px-2 md:px-0">
-        <button onClick={() => navigate(-1)} className="mr-3 text-slate-400 hover:text-cyber-emerald transition-colors">
-          <ChevronLeft size={24} />
+      <div className="flex items-center justify-between mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-black text-gray-800 flex items-center gap-3 font-tech uppercase tracking-tight">
+          <ShoppingBag className="text-emerald-600" size={28} strokeWidth={2.5} /> 
+          Purchase Order <span className="text-lg text-gray-400 font-medium">({cartData.totalQty || 0} Units)</span>
+        </h1>
+        <button onClick={() => navigate(-1)} className="hidden md:flex items-center text-sm font-bold text-gray-500 hover:text-emerald-600 transition-colors">
+          <ChevronLeft size={16} className="mr-1" /> เลือกซื้อสินค้าต่อ
         </button>
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center tracking-tight">
-            <span className="w-1.5 h-6 bg-cyber-emerald rounded-sm mr-3 inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-            Purchase Order <span className="font-tech font-light text-slate-400 ml-2 text-lg">/ Draft</span>
-          </h1>
-          <p className="text-[10px] text-slate-400 mt-1 uppercase font-tech tracking-widest">
-            {cartData.totalQty || 0} Units In Preparation
-          </p>
-        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
-        
-        {/* 📋 รายการสินค้า (Left Col) */}
-        <div className="w-full lg:w-[65%] space-y-3 md:space-y-4 px-2 md:px-0">
-          {cartData.items.map((item, index) => {
-            if (!item) return null; // Safe guard
-            
-            // 🚀 SMART EXTRACTION: แกะข้อมูลจากข้อมูลดิบใน Cart ให้ถูกต้องเสมอ
-            const rawImage = getVal(item, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
-            const imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
-            
-            const rawPrice = getVal(item, ['retailprice', 'regularprice', 'ราคาปลีก', 'price', 'saleprice', 'ราคา', 'sellprice']);
-            const price = (rawPrice !== null && rawPrice !== undefined) ? Number(String(rawPrice).replace(/[^0-9.-]+/g,"")) : (item.price || 0);
+      {freebies.length > 0 && (
+        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 md:p-5 mb-8 shadow-sm relative overflow-hidden transition-all">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-200 opacity-20 rounded-full -translate-y-1/2 translate-x-1/4"></div>
+          
+          {nextFreebie ? (
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Gift className="text-emerald-500" size={20} />
+                  <span className="text-xs md:text-sm font-bold text-emerald-800">
+                    ซื้อเพิ่มอีก <span className="text-emerald-600">฿{(nextFreebie.minSpend - subTotal).toLocaleString()}</span>
+                  </span>
+                </div>
+                <span className="text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1.5 rounded-lg shadow-sm border border-emerald-200">
+                  รับฟรี: {nextFreebie.title}
+                </span>
+              </div>
+              <div className="w-full bg-emerald-200/60 rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className="bg-emerald-500 h-2.5 rounded-full transition-all duration-700 ease-out relative" 
+                  style={{ width: `${Math.min((subTotal / nextFreebie.minSpend) * 100, 100)}%` }}
+                >
+                   <div className="absolute inset-0 bg-white/20 animate-[pulse_2s_ease-in-out_infinite]"></div>
+                </div>
+              </div>
+            </div>
+          ) : currentFreebie ? (
+            <div className="relative z-10 flex items-center gap-3">
+               <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
+                 <Gift className="text-white animate-bounce" size={20} />
+               </div>
+               <div>
+                 <p className="text-sm font-bold text-emerald-800">ยินดีด้วย! ยอดสั่งซื้อถึงเกณฑ์รับของแถมแล้ว</p>
+                 <p className="text-xs text-emerald-600 font-medium mt-0.5">คุณได้รับ: {currentFreebie.title}</p>
+               </div>
+            </div>
+          ) : null}
+        </div>
+      )}
 
-            const name = getVal(item, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
-            const sku = getVal(item, ['sku', 'code', 'productcode', 'รหัสสินค้า', 'barcode']) || item.id?.substring(0, 8) || `ITM-${index}`;
-            const itemId = item.id || index;
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div className="lg:col-span-2 space-y-4">
+          {items.map((item, index) => {
+            const realId = item.id;
+            const name = getVal(item, ['name', 'title', 'productname', 'ชื่อสินค้า']) || "Unknown Product / Corrupt Data";
+            const price = parseSafeNumber(getVal(item, ['retailprice', 'regularprice', 'price', 'saleprice', 'ราคา']));
+            
+            const rawImg = getVal(item, ['imageurl', 'image', 'images', 'img', 'รูปภาพ']);
+            const imageUrl = Array.isArray(rawImg) ? rawImg[0] : (rawImg || '/logo.png');
+            
+            const sku = getVal(item, ['sku', 'code', 'รหัสสินค้า']) || `SKU-ERR-${index}`;
 
             return (
-              <div 
-                key={itemId} 
-                className="bg-white rounded-sm border border-slate-200 p-3 md:p-4 flex gap-4 shadow-tech-card hover:border-slate-300 transition-colors group relative"
-              >
-                {/* Product Image */}
-                <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-50 rounded-sm border border-slate-100 flex items-center justify-center shrink-0 p-2 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-tech-grid opacity-30"></div>
-                  {/* 🚀 แก้บัคภาพหายบนมือถือโดยการเอา mix-blend-multiply ออก */}
+              <div key={realId || index} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row gap-4 relative overflow-hidden transition-all hover:shadow-md">
+                
+                <div className="w-full sm:w-28 h-28 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center p-2 border border-gray-100">
                   <img 
                     src={imageUrl} 
                     alt={name} 
-                    className="w-full h-full object-contain relative z-10"
-                    onError={(e) => { e.target.src = '/logo.png' }}
+                    className="w-full h-full object-contain"
+                    onError={(e) => e.target.src='/logo.png'}
                   />
                 </div>
 
-                {/* Product Details & Controls */}
-                <div className="flex flex-col flex-grow justify-between py-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-[9px] md:text-[10px] text-slate-400 font-tech mb-1 uppercase tracking-wider">
-                        SKU: {sku}
-                      </div>
-                      <Link to={`/product/${itemId}`} className="text-xs md:text-sm font-semibold text-slate-800 line-clamp-2 hover:text-cyber-blue transition-colors leading-relaxed">
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start gap-4">
+                      <h3 className="text-sm md:text-base font-bold text-gray-800 line-clamp-2 leading-snug">
                         {name}
-                      </Link>
+                      </h3>
+                      <button 
+                        onClick={() => handleRemoveItem(realId)}
+                        disabled={updatingId === realId}
+                        className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors shrink-0 disabled:opacity-50"
+                        title="ลบสินค้า"
+                      >
+                        {updatingId === realId ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                      </button>
                     </div>
-                    <button 
-                      onClick={() => handleRemoveItem(itemId)}
-                      disabled={updatingId === itemId}
-                      className="text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-sm transition-all ml-2"
-                    >
-                      {updatingId === itemId ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                    </button>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-1 font-medium font-tech uppercase">SKU: {sku}</p>
                   </div>
 
-                  <div className="flex justify-between items-end mt-3">
-                    <span className="text-sm md:text-base font-bold text-cyber-blue font-tech tracking-tight">
-                      ฿{price ? price.toLocaleString() : '0'}
-                    </span>
+                  <div className="flex items-end justify-between mt-4">
+                    <div className="font-black text-lg text-emerald-600 font-tech">
+                      ฿{price.toLocaleString()}
+                    </div>
 
-                    {/* Tech Qty Controls */}
-                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-sm h-8 md:h-9">
+                    <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                       <button 
-                        onClick={() => handleUpdateQty(itemId, item.qty, -1)}
-                        disabled={updatingId === itemId}
-                        className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors disabled:opacity-50"
+                        onClick={() => handleUpdateQty(realId, item.qty, -1)}
+                        disabled={updatingId === realId}
+                        className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
                       >
-                        <Minus size={14} strokeWidth={3} />
+                        <Minus size={14} strokeWidth={2.5} />
                       </button>
-                      <div className="w-10 h-full flex items-center justify-center bg-white border-x border-slate-200 text-xs font-bold font-tech text-slate-800">
-                        {updatingId === itemId ? <Loader2 size={12} className="animate-spin" /> : (item.qty || 1)}
+                      <div className="w-10 text-center text-sm font-bold text-gray-800 relative font-tech">
+                        {updatingId === realId ? (
+                          <Loader2 size={14} className="animate-spin mx-auto text-emerald-600" />
+                        ) : (
+                          item.qty || 1
+                        )}
                       </div>
                       <button 
-                        onClick={() => handleUpdateQty(itemId, item.qty, 1)}
-                        disabled={updatingId === itemId}
-                        className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors disabled:opacity-50"
+                        onClick={() => handleUpdateQty(realId, item.qty, 1)}
+                        disabled={updatingId === realId}
+                        className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
                       >
-                        <Plus size={14} strokeWidth={3} />
+                        <Plus size={14} strokeWidth={2.5} />
                       </button>
                     </div>
                   </div>
@@ -275,105 +304,46 @@ const Cart = () => {
           })}
         </div>
 
-        {/* 📊 สรุปยอดและโปรโมชั่น (Right Col) */}
-        <div className="w-full lg:w-[35%] px-2 md:px-0 pb-10 md:pb-0">
-          <div className="bg-white rounded-sm border border-slate-200 shadow-tech-card sticky top-24 overflow-hidden">
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
+            <h2 className="text-lg font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100">สรุปคำสั่งซื้อ</h2>
             
-            {/* Top accent line */}
-            <div className="h-1 w-full bg-gradient-to-r from-cyber-blue to-cyber-emerald"></div>
-
-            <div className="p-5 md:p-6 border-b border-slate-100 bg-slate-50/50">
-              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-tech flex items-center gap-2">
-                <Terminal size={16} className="text-cyber-blue" />
-                Order Summary
-              </h2>
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>ยอดรวมสินค้า ({cartData.totalQty || 0} ชิ้น)</span>
+                <span className="font-bold text-gray-800 font-tech">฿{parseSafeNumber(cartData.total).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>ค่าจัดส่ง</span>
+                <span className="font-bold text-emerald-600">คำนวณในขั้นตอนถัดไป</span>
+              </div>
             </div>
 
-            <div className="p-5 md:p-6 space-y-4">
-              <div className="flex justify-between text-sm text-slate-500 font-medium border-b border-slate-100 pb-4">
-                <span>Subtotal ({cartData.totalQty || 0} Units)</span>
-                <span className="font-tech font-bold text-slate-700">฿{(cartData.total || 0).toLocaleString()}</span>
+            <div className="border-t border-dashed border-gray-200 pt-4 mb-6">
+              <div className="flex justify-between items-end">
+                <span className="text-sm font-bold text-gray-800">ยอดสุทธิ</span>
+                <span className="text-2xl font-black text-red-600 font-tech">฿{parseSafeNumber(cartData.total).toLocaleString()}</span>
               </div>
-              
-              <div className="flex justify-between items-end pt-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Grand Total</span>
-                <span className="text-2xl md:text-3xl font-black text-cyber-emerald font-tech leading-none">
-                  ฿{(cartData.total || 0).toLocaleString()}
-                </span>
-              </div>
-              <p className="text-[9px] text-slate-400 text-right mt-1 font-tech tracking-widest">
-                *EXCLUDES SHIPPING & TAX
+              <p className="text-[10px] text-gray-400 text-right mt-1">ราคานี้ยังไม่รวมค่าจัดส่งและส่วนลด (ถ้ามี)</p>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-6 flex items-start gap-2">
+              <ShieldCheck size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-emerald-800 leading-tight">
+                <strong>รับประกันความปลอดภัย</strong><br/>
+                คุณสามารถชำระเงิน ตัดยอด Wallet ขอราคาส่ง หรือขอใบกำกับภาษีได้ในขั้นตอนต่อไป
               </p>
             </div>
 
-            {/* 🎁 ระบบของแถม (Tech Gamification) */}
-            {freebies.length > 0 && (
-              <div className="mx-5 mb-6">
-                <div className="text-[10px] font-bold text-amber-500 flex items-center gap-1.5 mb-2 uppercase tracking-widest font-tech">
-                  <Gift size={14} className="animate-pulse" />
-                  Partner Rewards Status
-                </div>
-                <div className="space-y-3">
-                  {freebies.map((freebie, index) => {
-                    const currentTotal = cartData.total || 0;
-                    const targetTotal = freebie.conditionTotal;
-                    const isUnlocked = currentTotal >= targetTotal;
-                    const percent = isUnlocked ? 100 : Math.min(100, Math.round((currentTotal / targetTotal) * 100));
-                    const diff = targetTotal - currentTotal;
-
-                    return (
-                      <div key={index} className={`relative p-3 rounded-sm border ${isUnlocked ? 'bg-amber-50/80 border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.15)]' : 'bg-slate-50 border-slate-200'} transition-all`}>
-                         <div className="flex justify-between text-xs mb-1">
-                           <span className={`font-semibold ${isUnlocked ? 'text-amber-700' : 'text-slate-600'}`}>{freebie.name}</span>
-                           <span className="font-tech font-bold text-slate-400">{percent}%</span>
-                         </div>
-                         
-                         {/* Tech Progress Bar */}
-                         <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden mt-2 mb-1.5">
-                           <div 
-                             className={`h-full transition-all duration-1000 ease-out ${isUnlocked ? 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.8)]' : 'bg-slate-400'}`}
-                             style={{ width: `${percent}%` }}
-                           ></div>
-                         </div>
-                         
-                         {isUnlocked ? (
-                           <p className="text-[10px] text-amber-600 font-bold tracking-wide flex items-center gap-1">
-                              <CheckCircle2 size={12} /> REWARD UNLOCKED
-                           </p>
-                         ) : (
-                           <p className="text-[10px] text-slate-500 font-tech">
-                             ขาดอีก <strong className="text-cyber-blue">฿{diff.toLocaleString()}</strong>
-                           </p>
-                         )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Corporate Trust Badge */}
-            <div className="bg-slate-800 p-4 flex items-start gap-3 mt-2">
-              <ShieldCheck size={18} className="text-cyber-emerald shrink-0 mt-0.5" />
-              <p className="text-[10px] text-slate-300 leading-relaxed font-medium">
-                <strong className="text-white uppercase tracking-widest font-tech">Secure Protocol</strong><br/>
-                ดำเนินการสั่งซื้อ (Checkout) เพื่อกำหนดวิธีชำระเงิน, ใช้เครดิต หรือขอใบกำกับภาษีในขั้นตอนถัดไป
-              </p>
-            </div>
-
-            {/* Proceed to Checkout Button */}
-            <div className="p-4 bg-slate-900 border-t border-slate-800">
-              <button 
-                onClick={() => navigate('/checkout')}
-                className="w-full bg-cyber-emerald hover:bg-emerald-400 text-white font-bold py-3.5 rounded-sm text-sm transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)] active:scale-95 flex items-center justify-center gap-2 group uppercase tracking-widest font-tech"
-              >
-                Proceed Checkout
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-
+            <button 
+              onClick={() => navigate('/checkout')}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 group"
+            >
+              ดำเนินการสั่งซื้อ <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
         </div>
+
       </div>
     </div>
   );

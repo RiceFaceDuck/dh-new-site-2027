@@ -2,61 +2,114 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================
+   1. GLOBAL STYLES (Foundation)
+========================================= */
 @layer base {
   html {
     scroll-behavior: smooth;
-    /* ปิดไฮไลต์สีเทาเวลากดบนมือถือ เพื่อให้รู้สึกเหมือน Native App */
-    -webkit-tap-highlight-color: transparent; 
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   body {
-    /* FIX: ใช้สี bg-slate-50 แทน bg-dh-gray เพื่อป้องกัน Error 
-      หาก Tailwind config ยัง compile ไม่เสร็จ
-    */
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-gray-50 text-gray-800 font-sans;
   }
-  
-  /* ปรับแต่ง Scrollbar สไตล์ Tech/Dashboard ให้เรียบและเล็ก */
+
+  /* Custom Scrollbar - เรียบหรู ทันสมัย ประหยัดพื้นที่ */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-slate-100;
+    @apply bg-transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 rounded-sm hover:bg-emerald-500 transition-colors;
+    @apply bg-gray-300 rounded-full transition-colors duration-200;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #0870B8; /* Brand Color Fix */
+    @apply rounded-full;
   }
 }
 
+/* =========================================
+   2. COMPONENTS (Premium Structured Depth)
+========================================= */
 @layer components {
-  /* คลาสสำหรับพื้นหลังลายตาราง (Tech Grid) */
-  .bg-tech-grid {
-    background-size: 30px 30px;
-    background-image: 
-      linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-  }
-
-  /* คลาสสำหรับพื้นหลังลายตารางแบบมืด (Dark Tech Grid) ไว้ใช้ในโซน Hero/Footer */
-  .bg-tech-grid-dark {
-    background-size: 30px 30px;
-    background-image: 
-      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  }
-
-  /* คลาสสำหรับเอฟเฟกต์กระจกฝ้า (Glassmorphism) */
-  .glass-panel {
-    @apply bg-white/80 backdrop-blur-md border border-white/40 shadow-sm;
+  
+  /* Cards & Containers (ขอบมนนิดเดียว มิติลึก) */
+  .card-premium {
+    @apply bg-white rounded-md border border-gray-100 transition-all duration-300 ease-out;
+    box-shadow: 0 20px 50px rgba(8, 112, 184, 0.07);
   }
   
-  /* คลาสซ่อน Scrollbar สำหรับ Mobile Swipe (Bottom Nav, Category List) */
+  .card-premium:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 25px 60px rgba(8, 112, 184, 0.15);
+  }
+
+  /* สำหรับพื้นหลัง Wallet / History (หลุมลึก) */
+  .card-premium-inner {
+    @apply bg-gray-50 rounded-md border border-gray-200;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Glassmorphism Elements (กระจกโปร่งแสง) */
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-md border border-white/40 shadow-lg;
+  }
+
+  .glass-header {
+    @apply bg-white/90 backdrop-blur-lg border-b border-gray-100/50 shadow-sm transition-all duration-300;
+  }
+
+  .glass-bottom-nav {
+    @apply bg-white/90 backdrop-blur-md border-t border-gray-100/50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)];
+  }
+
+  /* Interactive Buttons & Badges (ป้ายเรืองแสง) */
+  .badge-premium {
+    @apply relative overflow-hidden font-semibold bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 shadow-lg px-3 py-1 rounded-md;
+    color: #D4AF37; /* Gold Color Fix */
+  }
+  
+  /* Floating Action Button (ปุ่มลอยมีแสงเรืองรอง) */
+  .fab-button {
+    @apply flex items-center justify-center text-white rounded-full transition-all duration-300 hover:scale-105 active:scale-95;
+    background-color: #0870B8; /* Fix */
+    box-shadow: 0 0 15px rgba(8, 112, 184, 0.4); /* Glow Brand Fix */
+  }
+}
+
+/* =========================================
+   3. UTILITIES (Helpers & Tactics)
+========================================= */
+@layer utilities {
+  
+  /* ซ่อน Scrollbar */
   .hide-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+  }
+
+  /* Text Glow */
+  .text-glow-brand {
+    text-shadow: 0 0 10px rgba(8, 112, 184, 0.5);
+  }
+  .text-glow-gold {
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  }
+
+  /* Skeleton Shimmer (แสงวิ่งผ่านระหว่างรอโหลดข้อมูล) */
+  .skeleton-shimmer {
+    @apply relative overflow-hidden bg-gray-200 rounded-md;
+  }
+  .skeleton-shimmer::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer;
   }
 }

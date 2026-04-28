@@ -7,37 +7,47 @@ export default {
   theme: {
     extend: {
       colors: {
-        // เพิ่มสี Tech Dashboard สำหรับองค์กร
-        'cyber-emerald': '#10B981', // สีหลักแสดงสถานะปกติ / In-stock
-        'cyber-blue': '#0EA5E9',    // สีรองสำหรับเน้นข้อมูล Tech
-        'dh-dark': '#0F172A',       // พื้นหลังโซนเข้ม
-        'dh-gray': '#F8FAFC',       // พื้นหลังโซนสว่าง (Clean UI)
-      },
-      fontFamily: {
-        // ฟอนต์พิเศษสำหรับข้อมูลเชิงเทคนิค เช่น รหัสสินค้า (SKU), ราคา
-        tech: ['"Space Grotesk"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        // ชุดสี Brand สำหรับความพรีเมียม
+        brand: {
+          DEFAULT: '#0870B8', // สีน้ำเงินหลักของ DH
+          dark: '#054D80',
+          light: '#E6F0F9',
+          gold: '#D4AF37',    // สีทองสำหรับ Badge/Premium
+          silver: '#E0E0E0',  // สีเงินสำหรับ Skeleton/Shimmer
+        }
       },
       boxShadow: {
-        // เพิ่มเงาสไตล์ Tech & Glassmorphism
-        'glow-emerald': '0 0 12px -2px rgba(16, 185, 129, 0.4)',
-        'glow-blue': '0 0 12px -2px rgba(14, 165, 233, 0.4)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-        'tech-card': '0 2px 10px -2px rgba(0, 0, 0, 0.05), 0 0 1px rgba(0,0,0,0.1)',
-      },
-      animation: {
-        // แอนิเมชันสำหรับโหลดดิ้งและ Micro-interactions
-        'shimmer': 'shimmer 2s infinite linear',
-        'fade-in-up': 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        // มิติ แสง และเงา (Depth & Lighting)
+        'premium': '0 20px 50px rgba(8, 112, 184, 0.07)',
+        'premium-hover': '0 25px 60px rgba(8, 112, 184, 0.15)',
+        'premium-inner': 'inset 0 2px 10px rgba(0, 0, 0, 0.05)',
+        'glow-brand': '0 0 15px rgba(8, 112, 184, 0.4)',
+        'glow-gold': '0 0 15px rgba(212, 175, 55, 0.4)',
       },
       keyframes: {
         shimmer: {
-          '0%': { backgroundPosition: '-1000px 0' },
-          '100%': { backgroundPosition: '1000px 0' },
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
-        fadeInUp: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+        shine: {
+          '0%': { backgroundPosition: '200% center' },
+          '100%': { backgroundPosition: '-200% center' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-5px)' },
+        },
+        pulseGlow: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.8', transform: 'scale(1.02)' },
         }
+      },
+      animation: {
+        // Tactic Animations สำหรับความน่าตื่นเต้นและลูกเล่น
+        'shimmer': 'shimmer 2s infinite linear',
+        'shine': 'shine 3s linear infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       }
     },
   },
