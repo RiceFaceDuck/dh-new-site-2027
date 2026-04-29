@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, ShoppingCart, CheckCircle2, Loader2, Cpu, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
+
+// 🚀 นำเข้าระบบโฆษณา (Ad Injection System)
+import { marketingService } from '../firebase/marketingService';
+import ProductAdCard from './ads/ProductAdCard';
 
 // 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล (กันกระสุน)
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
@@ -26,6 +30,33 @@ const getVal = (obj, possibleKeys) => {
 const ProductList = ({ products, loading, error }) => {
   const navigate = useNavigate();
   const [addingState, setAddingState] = useState({}); 
+
+  // 🎯 ดึงโฆษณาจาก Smart Cache 
+  const [ads, setAds] = useState([]);
+  useEffect(() => {
+    const fetchAdsForList = async () => {
+      try {
+        const activeAds = await marketingService.getActiveAds();
+        setAds(activeAds || []);
+      } catch (err) {
+        console.error("Failed to load ads for list:", err);
+      }
+    };
+    fetchAdsForList();
+  }, []);
+
+  // 🎯 ถักทอโฆษณา (1 Ad ทุกๆ 4 สินค้า)
+  const displayItems = [];
+  let adIndex = 0;
+  if (products && products.length > 0) {
+    products.forEach((product, index) => {
+      displayItems.push({ type: 'product', data: product });
+      if ((index + 1) % 4 === 0 && ads.length > 0) {
+        displayItems.push({ type: 'ad', data: ads[adIndex % ads.length] });
+        adIndex++;
+      }
+    });
+  }
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation(); 
@@ -111,14 +142,30 @@ const ProductList = ({ products, loading, error }) => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 px-1">
           {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : (!products || products.length === 0) ? ( 
+      ) : (!displayItems || displayItems.length === 0) ? ( 
         <div className="w-full bg-slate-50 border border-slate-200 rounded-sm p-10 flex flex-col items-center justify-center shadow-inner">
            <Cpu size={32} className="text-slate-300 mb-3" />
            <p className="text-slate-500 font-tech uppercase tracking-widest text-xs font-bold">No Products Found in Database</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 px-1">
-          {products.map((product) => {
+          {displayItems.map((item, index) => {
+            
+            // =====================================
+            // 🌟 กรณีป้ายโฆษณา
+            // =====================================
+            if (item.type === 'ad') {
+              return (
+                <div key={`ad-${item.data.id}-${index}`} className="col-span-1 h-full">
+                  <ProductAdCard ad={item.data} />
+                </div>
+              );
+            }
+
+            // =====================================
+            // 🌟 กรณีสินค้า (ใช้โค้ดดั้งเดิม 100%)
+            // =====================================
+            const product = item.data;
             
             // 🚀 ULTRA SMART FIELD MAPPER: กวาดหาข้อมูลที่ถูกต้องและแปลงเป็นตัวเลขให้ชัวร์
             const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);

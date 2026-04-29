@@ -5,6 +5,9 @@ import Footer from '../components/Footer';
 import BottomNav from '../components/navigation/BottomNav';
 import FloatingMessenger from '../components/chat/FloatingMessenger';
 
+// 🚀 นำเข้า Component ป้ายแบนเนอร์ผู้สนับสนุน
+import TopPartnerBanner from '../components/partner/TopPartnerBanner';
+
 /**
  * MainLayout - โครงสร้างหลักของหน้าเว็บหน้าบ้าน
  * ประกอบด้วย Navbar ด้านบน, พื้นที่เนื้อหาตรงกลาง, Footer และระบบแชทลอยตัว
@@ -13,6 +16,9 @@ const MainLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 relative selection:bg-[#E6F0F9] selection:text-[#054D80]">
       
+      {/* 🚀 0. Top Banner: พื้นที่โปรโมทพาร์ทเนอร์ด้านบนสุด (อยู่เหนือ Navbar) */}
+      <TopPartnerBanner />
+
       {/* 1. Header: ยึดติดด้านบน พร้อมเอฟเฟกต์กระจกพรีเมียม (glass-header) */}
       <header className="sticky top-0 z-50 w-full glass-header">
         <Navbar />

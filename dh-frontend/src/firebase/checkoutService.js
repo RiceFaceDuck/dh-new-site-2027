@@ -6,50 +6,47 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
 export const checkoutService = {
   /**
    * ประมวลผลคำสั่งซื้อด้วยระบบ Transaction (Atomic Operations)
    * รัดกุม ปลอดภัย และประหยัด Reads/Writes กับ Firebase
    * รับ Payload ตรงจาก Checkout.jsx
+   * @param {string} userId - ID ของลูกค้า
+   * @param {Object} orderData - ข้อมูลสรุปคำสั่งซื้อ
    */
-  async processCheckout(payload) {
-    const {
-      user,
-      cartData,
-      shippingInfo,
-      taxInfo,
-      b2bInfo,
-      walletUsed,
-      finalPayable,
-      slipUrl,
-      matchedFreebie,
-      promoDiscount,
-      shippingFee,
-      appliedPromos,
-      saveAddress
-    } = payload;
-
-    // 1. Safety Guard: ตรวจสอบความสมบูรณ์ของ User เพื่อป้องกัน Error: Cannot read properties of undefined
-    const userId = user?.uid;
+  async processCheckout(userId, orderData) {
     if (!userId) {
       throw new Error("ข้อมูลผู้ใช้ไม่สมบูรณ์ หรือเซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
     }
 
-    if (!cartData || !cartData.items || cartData.items.length === 0) {
+    if (!orderData || !orderData.items || orderData.items.length === 0) {
       throw new Error("ไม่มีสินค้าในตะกร้า ไม่สามารถทำรายการได้");
     }
 
+    const {
+      items,
+      shippingAddress,
+      contactPhone,
+      paymentMethod,
+      totalInfo
+    } = orderData;
+
+    const discountFromPoints = totalInfo.discountFromPoints || 0;
+
     try {
-      // 2. เริ่มต้น Transaction (หักสต๊อก, ลด Wallet, สร้างออเดอร์, ลบตะกร้า จะต้องสำเร็จพร้อมกันทั้งหมด)
+      // เริ่มต้น Transaction
       const orderId = await runTransaction(db, async (transaction) => {
         
-        // เตรียม References ที่ต้องใช้
-        const userRef = doc(db, 'users', userId);
-        const cartRef = doc(db, 'carts', userId);
-        const newOrderRef = doc(collection(db, 'orders'));
+        // 1. เตรียม References ที่ต้องใช้ตามโครงสร้างใหม่
+        const userWalletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
+        const cartRef = doc(db, 'artifacts', appId, 'users', userId, 'cart', 'data');
+        const newOrderRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'orders'));
 
-        const productRefs = cartData.items.map(item => ({
-          ref: doc(db, 'products', item.id || item.productId),
+        // เตรียม References สำหรับสินค้าในตะกร้าเพื่อตรวจและหักสต๊อก
+        const productRefs = items.map(item => ({
+          ref: doc(db, 'artifacts', appId, 'public', 'data', 'products', item.id || item.productId),
           item: item
         }));
 
@@ -57,27 +54,18 @@ export const checkoutService = {
         // [READ] อ่านข้อมูลทั้งหมดก่อน (กฎของ Firestore Transaction)
         // ==========================================
         
-        // อ่านข้อมูล User เพื่อตรวจสอบ Wallet / ยอดคงเหลือ
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists()) throw new Error("ไม่พบข้อมูลบัญชีผู้ใช้ในระบบ");
-        const userData = userDoc.data();
-
-        let targetWalletField = '';
         let currentBalance = 0;
 
-        // ตรวจสอบกระเป๋าเงิน (รองรับทั้งระบบเดิมและระบบใหม่ที่ใช้ stats.creditBalance หรือ partnerCredit)
-        if (walletUsed > 0) {
-          const creditBalance = userData.stats?.creditBalance || 0;
-          const partnerCredit = userData.partnerCredit || 0;
+        // อ่านข้อมูล Wallet เฉพาะเมื่อมีการใช้แต้มเป็นส่วนลด
+        if (discountFromPoints > 0) {
+          const walletDoc = await transaction.get(userWalletRef);
+          if (!walletDoc.exists()) {
+            throw new Error("ไม่พบข้อมูลกระเป๋าเงิน (Wallet) ของคุณ");
+          }
+          currentBalance = walletDoc.data().balance || 0;
 
-          if (creditBalance >= walletUsed) {
-            targetWalletField = 'stats.creditBalance';
-            currentBalance = creditBalance;
-          } else if (partnerCredit >= walletUsed) {
-            targetWalletField = 'partnerCredit';
-            currentBalance = partnerCredit;
-          } else {
-            throw new Error("ยอดเงินในระบบ (Wallet) ไม่เพียงพอสำหรับการทำรายการ");
+          if (currentBalance < discountFromPoints) {
+            throw new Error(`ยอดแต้มในระบบไม่เพียงพอ (คุณมี ${currentBalance} Pts แต่พยายามใช้ ${discountFromPoints} Pts)`);
           }
         }
 
@@ -88,11 +76,15 @@ export const checkoutService = {
           if (!pDoc.exists()) {
             throw new Error(`ไม่พบสินค้า (${p.item.name}) ในคลังสินค้า`);
           }
+          
           const pData = pDoc.data();
-          if ((pData.stock || 0) < p.item.qty) {
-            throw new Error(`สินค้า ${p.item.name} มีสต๊อกไม่เพียงพอ (คงเหลือ ${pData.stock || 0} ชิ้น)`);
+          // ดึงจำนวนสต๊อกจากรูปแบบข้อมูลที่อาจแตกต่างกัน
+          const stock = pData.stock?.quantity || pData.stock || pData.qty || 0;
+
+          if (stock < p.item.quantity) {
+            throw new Error(`สินค้า ${p.item.name} มีสต๊อกไม่เพียงพอ (คงเหลือ ${stock} ชิ้น)`);
           }
-          productDocs.push({ doc: pDoc, item: p.item });
+          productDocs.push({ doc: pDoc, item: p.item, currentStock: stock });
         }
 
         // ==========================================
@@ -101,67 +93,45 @@ export const checkoutService = {
 
         // 1. หักสต๊อกสินค้า
         for (const p of productDocs) {
-          const newStock = p.doc.data().stock - p.item.qty;
-          transaction.update(p.doc.ref, { stock: newStock });
+          const newStock = p.currentStock - p.item.quantity;
+          // อัปเดตสต๊อก ขึ้นอยู่กับโครงสร้างข้อมูลของสินค้า
+          if (typeof p.doc.data().stock === 'object') {
+             transaction.update(p.doc.ref, { 'stock.quantity': newStock });
+          } else {
+             transaction.update(p.doc.ref, { stock: newStock });
+          }
         }
 
-        // 2. อัปเดตข้อมูลผู้ใช้ (หัก Wallet และ/หรือ บันทึกที่อยู่ใหม่)
-        const userUpdates = {};
-        if (walletUsed > 0 && targetWalletField) {
-          userUpdates[targetWalletField] = currentBalance - walletUsed;
-        }
-        if (saveAddress) {
-          userUpdates.address = shippingInfo.address;
-          userUpdates.phone = shippingInfo.phone;
-          userUpdates.contactName = shippingInfo.fullName;
-          userUpdates.logisticProvider = shippingInfo.logisticProvider;
-        }
-        if (Object.keys(userUpdates).length > 0) {
-          transaction.update(userRef, userUpdates);
-        }
+        // 2. หัก Wallet และสร้าง History Log (ถ้ามีการใช้แต้ม)
+        if (discountFromPoints > 0) {
+          transaction.update(userWalletRef, { balance: currentBalance - discountFromPoints });
 
-        // 3. Double-entry Bookkeeping: สร้าง History Log บันทึกการหัก Wallet
-        if (walletUsed > 0) {
-          const walletLogRef = doc(collection(db, 'walletLogs'));
-          transaction.set(walletLogRef, {
-            userId,
-            type: 'deduct',
-            amount: walletUsed,
-            reason: `ชำระค่าสินค้า สำหรับคำสั่งซื้อ #${newOrderRef.id}`,
-            orderId: newOrderRef.id,
+          const historyLogRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'credit_history'));
+          transaction.set(historyLogRef, {
+            type: 'spend',
+            points: discountFromPoints,
+            note: `ใช้เป็นส่วนลดสำหรับคำสั่งซื้อ #${newOrderRef.id.substring(0,8)}`,
+            referenceId: newOrderRef.id,
+            timestamp: serverTimestamp(),
             createdAt: serverTimestamp()
           });
         }
 
-        // 4. สร้างเอกสารคำสั่งซื้อ (Order)
-        // จัดการสถานะอัตโนมัติ เพื่อเชื่อมโยงให้หลังบ้านทำงานต่อได้ทันที
-        let orderStatus = 'pending';
-        if (b2bInfo?.isRequesting) {
-          orderStatus = 'draft'; // บิล B2B รอพนักงานหลังบ้านตีราคา
-        } else if (finalPayable === 0) {
-          orderStatus = 'paid'; // ใช้ Wallet จ่ายเต็มจำนวน
-        } else if (slipUrl) {
-          orderStatus = 'verifying_slip'; // รอแอดมินตรวจสลิป
+        // 3. สร้างเอกสารคำสั่งซื้อ (Order) ใน Folder ของ User
+        let orderStatus = 'waiting_payment';
+        if (totalInfo.grandTotal === 0) {
+           orderStatus = 'paid'; // ถ้าใช้แต้มจ่ายเต็มจำนวน
         }
 
         const orderPayload = {
           orderId: newOrderRef.id,
           userId,
-          customerName: shippingInfo.fullName,
-          items: cartData.items,
-          shippingInfo,
-          taxInfo: taxInfo?.isRequesting ? taxInfo : null,
-          b2bInfo: b2bInfo?.isRequesting ? b2bInfo : null,
-          summary: {
-            subtotal: cartData.total || 0,
-            shippingFee,
-            promoDiscount,
-            walletUsed,
-            finalPayable
-          },
-          appliedPromos: appliedPromos || [],
-          matchedFreebie: matchedFreebie || null,
-          slipUrl: slipUrl || null,
+          items,
+          shippingAddress,
+          contactPhone,
+          paymentMethod,
+          totalInfo,
+          orderStatus: orderStatus,
           status: orderStatus,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -169,8 +139,20 @@ export const checkoutService = {
 
         transaction.set(newOrderRef, orderPayload);
 
-        // 5. เคลียร์ตะกร้าสินค้าของลูกค้า
-        transaction.delete(cartRef);
+        // 4. สร้าง Log ส่งให้แอดมินรับทราบ (History_logs ส่วนกลาง)
+        const adminLogRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'History_logs'));
+        transaction.set(adminLogRef, {
+          type: 'NEW_ORDER',
+          orderId: newOrderRef.id,
+          userId: userId,
+          amount: totalInfo.grandTotal || 0,
+          message: `มีคำสั่งซื้อใหม่ รอยืนยันการชำระเงิน`,
+          timestamp: serverTimestamp(),
+          status: 'unread'
+        });
+
+        // 5. ไม่จำเป็นต้องลบ Cart ในนี้ เพราะ Checkout.jsx จะเรียก cartService.clearCart() ให้แล้ว
+        // (แยกให้ชัดเจนตามสถาปัตยกรรมของคุณ)
 
         return newOrderRef.id;
       });
