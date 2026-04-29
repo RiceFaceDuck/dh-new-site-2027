@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
 
-// 🚀 นำเข้าระบบโฆษณา (Ad Injection System)
-import { marketingService } from '../firebase/marketingService';
+// 🚀 นำเข้า Component โฆษณา และ Service
 import ProductAdCard from './ads/ProductAdCard';
+import { marketingService } from '../firebase/marketingService';
 
 // 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล (กันกระสุน)
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
@@ -30,9 +30,9 @@ const getVal = (obj, possibleKeys) => {
 const ProductList = ({ products, loading, error }) => {
   const navigate = useNavigate();
   const [addingState, setAddingState] = useState({}); 
+  const [ads, setAds] = useState([]); // State สำหรับเก็บโฆษณาที่จะมาแทรก
 
-  // 🎯 ดึงโฆษณาจาก Smart Cache 
-  const [ads, setAds] = useState([]);
+  // 1. 📡 โหลดโฆษณาจาก Smart Cache เมื่อ Component ทำงาน
   useEffect(() => {
     const fetchAdsForList = async () => {
       try {
@@ -44,19 +44,6 @@ const ProductList = ({ products, loading, error }) => {
     };
     fetchAdsForList();
   }, []);
-
-  // 🎯 ถักทอโฆษณา (1 Ad ทุกๆ 4 สินค้า)
-  const displayItems = [];
-  let adIndex = 0;
-  if (products && products.length > 0) {
-    products.forEach((product, index) => {
-      displayItems.push({ type: 'product', data: product });
-      if ((index + 1) % 4 === 0 && ads.length > 0) {
-        displayItems.push({ type: 'ad', data: ads[adIndex % ads.length] });
-        adIndex++;
-      }
-    });
-  }
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation(); 
@@ -72,7 +59,6 @@ const ProductList = ({ products, loading, error }) => {
     setAddingState(prev => ({ ...prev, [product.id]: 'loading' }));
     
     try {
-      // 🚀 ตอนนี้ product ที่ถูกส่งเข้ามาคือ mappedProduct ที่สะอาดแล้ว!
       await cartService.addToCart(user.uid, product, 1);
       
       setAddingState(prev => ({ ...prev, [product.id]: 'success' }));
@@ -125,6 +111,28 @@ const ProductList = ({ products, loading, error }) => {
     );
   }
 
+  // 2. 🎯 อัลกอริทึมผสมข้อมูล (Mix Data): แทรกโฆษณาเข้าไประหว่างสินค้า
+  const mixProductsAndAds = () => {
+    if (!products || products.length === 0) return [];
+    
+    const displayItems = [];
+    let adIndex = 0;
+    
+    products.forEach((product, index) => {
+      displayItems.push({ type: 'product', data: product });
+      
+      // แทรกโฆษณาทุกๆ 4 ชิ้นสินค้า (ปรับตัวเลขได้ตามต้องการ)
+      if ((index + 1) % 4 === 0 && ads.length > 0) {
+        displayItems.push({ type: 'ad', data: ads[adIndex % ads.length] });
+        adIndex++;
+      }
+    });
+    
+    return displayItems;
+  };
+
+  const displayItems = mixProductsAndAds();
+
   return (
     <div className="mb-12 md:mb-20">
       <div className="flex justify-between items-end mb-4 px-1">
@@ -142,7 +150,7 @@ const ProductList = ({ products, loading, error }) => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 px-1">
           {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : (!displayItems || displayItems.length === 0) ? ( 
+      ) : displayItems.length === 0 ? ( 
         <div className="w-full bg-slate-50 border border-slate-200 rounded-sm p-10 flex flex-col items-center justify-center shadow-inner">
            <Cpu size={32} className="text-slate-300 mb-3" />
            <p className="text-slate-500 font-tech uppercase tracking-widest text-xs font-bold">No Products Found in Database</p>
@@ -152,22 +160,22 @@ const ProductList = ({ products, loading, error }) => {
           {displayItems.map((item, index) => {
             
             // =====================================
-            // 🌟 กรณีป้ายโฆษณา
+            // 🌟 กรณีเป็นป้ายโฆษณา (แทรกอัตโนมัติ)
             // =====================================
             if (item.type === 'ad') {
               return (
-                <div key={`ad-${item.data.id}-${index}`} className="col-span-1 h-full">
+                <div key={`ad-${item.data.id}-${index}`} className="col-span-1 h-full animate-in fade-in duration-500">
                   <ProductAdCard ad={item.data} />
                 </div>
               );
             }
 
             // =====================================
-            // 🌟 กรณีสินค้า (ใช้โค้ดดั้งเดิม 100%)
+            // 🌟 กรณีเป็นสินค้าปกติ
             // =====================================
             const product = item.data;
             
-            // 🚀 ULTRA SMART FIELD MAPPER: กวาดหาข้อมูลที่ถูกต้องและแปลงเป็นตัวเลขให้ชัวร์
+            // 🚀 ULTRA SMART FIELD MAPPER
             const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
             const imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
             
@@ -175,14 +183,18 @@ const ProductList = ({ products, loading, error }) => {
             const price = (rawPrice !== null && rawPrice !== undefined) ? Number(String(rawPrice).replace(/[^0-9.-]+/g,"")) : 0;
             
             const rawStock = getVal(product, ['stock', 'quantity', 'qty', 'amount', 'คงเหลือ', 'สต๊อก', 'inventory', 'instock', 'available', 'จำนวน', 'จำนวนสินค้า', 'stockquantity']);
-            const stock = (rawStock !== null && rawStock !== undefined) ? Number(String(rawStock).replace(/[^0-9.-]+/g,"")) : 0;
+            let stock = 0;
+            if (typeof rawStock === 'object' && rawStock !== null) {
+              stock = rawStock.quantity || 0; // รองรับกรณีเก็บ stock เป็น object
+            } else {
+              stock = (rawStock !== null && rawStock !== undefined) ? Number(String(rawStock).replace(/[^0-9.-]+/g,"")) : 0;
+            }
             const hasStock = stock > 0;
 
             const name = getVal(product, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
             const brand = getVal(product, ['brand', 'manufacturer', 'ยี่ห้อ', 'category']) || 'OEM';
             const sku = getVal(product, ['sku', 'code', 'productcode', 'รหัสสินค้า', 'barcode']) || product.id?.substring(0, 8);
             
-            // 🚀 MAPPED PRODUCT: แพ็กข้อมูลที่คลีนแล้ว เพื่อส่งไปตะกร้าและหน้า Detail ให้ไม่รวน!
             const mappedProduct = {
               ...product,
               id: product.id,
@@ -198,7 +210,7 @@ const ProductList = ({ products, loading, error }) => {
               <div 
                 key={product.id} 
                 onClick={() => navigate(`/product/${product.id}`, { state: { product: mappedProduct } })} 
-                className="group cursor-pointer bg-white rounded-md border border-slate-200 overflow-hidden flex flex-col hover:border-cyber-emerald hover:shadow-glow-emerald transition-all duration-300 relative"
+                className="group cursor-pointer bg-white rounded-md border border-slate-200 overflow-hidden flex flex-col hover:border-cyber-emerald hover:shadow-glow-emerald transition-all duration-300 relative animate-in fade-in"
               >
                 <div className="relative aspect-square w-full bg-slate-50 flex items-center justify-center p-4 overflow-hidden border-b border-slate-100">
                   <div className="absolute inset-0 bg-tech-grid opacity-20 pointer-events-none"></div>

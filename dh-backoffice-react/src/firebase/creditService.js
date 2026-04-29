@@ -4,7 +4,32 @@ import { historyService } from './historyService';
 
 const SETTINGS_DOC = 'credit_config';
 
+// ==========================================
+// 🎮 Gamification & Formatting (ลูกเล่นสร้างความตื่นเต้น)
+// ==========================================
+
+/**
+ * 🏆 คำนวณระดับ VIP ของลูกค้าจากยอด Credit สะสม
+ */
+export const getUserTier = (points = 0) => {
+  if (points >= 10000) return { name: 'Platinum', icon: '👑', color: 'text-purple-600', bg: 'bg-purple-100' };
+  if (points >= 5000) return { name: 'Gold', icon: '🥇', color: 'text-yellow-600', bg: 'bg-yellow-100' };
+  if (points >= 1000) return { name: 'Silver', icon: '🥈', color: 'text-gray-600', bg: 'bg-gray-100' };
+  return { name: 'Member', icon: '🌟', color: 'text-blue-600', bg: 'bg-blue-100' };
+};
+
+/**
+ * 💎 ฟอร์แมตตัวเลขให้ดูสวยงาม (เช่น 1,200)
+ */
+export const formatCredit = (points = 0) => {
+  return new Intl.NumberFormat('th-TH').format(points);
+};
+
 export const creditService = {
+  // เปิดให้เรียกใช้ฟังก์ชัน Helper จาก Service Object ได้ด้วย
+  formatCredit,
+  getUserTier,
+
   /**
    * 🌟 ดึงข้อมูลการตั้งค่าระบบ Credit และ Master Ledger
    * (ใช้วิธี Caching ของ Firestore เพื่อประหยัด Reads)

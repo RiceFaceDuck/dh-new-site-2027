@@ -6,6 +6,19 @@ import { todoService } from './todoService';
 const COLLECTION_NAME = 'users';
 
 export const userService = {
+  // ✨ ฟังก์ชันอัปเดตเวลาเข้าสู่ระบบล่าสุด (เพิ่มใหม่เพื่อแก้ Error)
+  updateUserLoginStatus: async (uid) => {
+    try {
+      const docRef = doc(db, COLLECTION_NAME, uid);
+      // ใช้ setDoc + merge: true เพื่ออัปเดตหรือสร้างใหม่ถ้ายังไม่มีเอกสาร
+      await setDoc(docRef, {
+        lastLoginAt: serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      console.error("🔥 Error updating login status:", error);
+    }
+  },
+
   getUserProfile: async (uid) => {
     const docRef = doc(db, COLLECTION_NAME, uid);
     const docSnap = await getDoc(docRef);
