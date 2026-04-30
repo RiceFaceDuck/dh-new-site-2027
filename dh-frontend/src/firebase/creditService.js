@@ -1,8 +1,8 @@
-import { collection, doc, getDoc, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { db } from './config';
 
 // กำหนด App ID
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
 // ==========================================
 // 🧠 Smart Cache System (สำหรับประวัติการใช้งาน)
@@ -112,16 +112,14 @@ export const getCreditHistory = async (userId, forceRefresh = false) => {
   try {
     const historyRef = collection(db, 'artifacts', appId, 'users', userId, 'credit_history');
     
-    // FETCH ทั้งหมดแบบปลอดภัย ไม่ใช้ Complex Query เพื่อป้องกัน Firestore Error
-    const snapshot = await getDocs(historyRef);
+    // FETCH ข้อมูลโดย Query ดึงล่าสุด 30 รายการ ช่วยลดปริมาณ Reads แทนการดึงทั้งหมด
+    const q = query(historyRef, orderBy('createdAt', 'desc'), limit(30));
+    const snapshot = await getDocs(q);
     
     let historyList = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
-
-    // Sort ด้วย JavaScript (ใหม่สุดอยู่บน)
-    historyList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
     // บันทึกลง Cache
     historyCache[userId] = {

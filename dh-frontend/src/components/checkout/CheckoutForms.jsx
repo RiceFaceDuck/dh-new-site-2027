@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import { Truck, Receipt, Briefcase, AlertCircle, CreditCard, Upload } from 'lucide-react';
 

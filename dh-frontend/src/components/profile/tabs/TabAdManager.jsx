@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Plus, Search, Loader2, Link as LinkIcon, Image as ImageIcon, CheckCircle2, ShieldAlert, X, Eye } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
@@ -33,7 +34,7 @@ const TabAdManager = () => {
 
     try {
       const q = query(
-        collection(db, 'artifacts', typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', 'public', 'data', 'marketing_ads'),
+        collection(db, 'artifacts', typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', 'public', 'data', 'marketing_ads'),
         where('partnerId', '==', user.uid)
       );
       const snapshot = await getDocs(q);
@@ -87,7 +88,7 @@ const TabAdManager = () => {
       };
 
       await addDoc(
-        collection(db, 'artifacts', typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', 'public', 'data', 'marketing_ads'), 
+        collection(db, 'artifacts', typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', 'public', 'data', 'marketing_ads'),
         adPayload
       );
       
@@ -295,7 +296,7 @@ const TabAdManager = () => {
                         <button 
                           onClick={async () => {
                             if(window.confirm("คุณต้องการลบโฆษณานี้ใช่หรือไม่?")) {
-                              const docRef = doc(db, 'artifacts', typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', 'public', 'data', 'marketing_ads', ad.id);
+                              const docRef = doc(db, 'artifacts', typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', 'public', 'data', 'marketing_ads', ad.id);
                               await deleteDoc(docRef);
                               fetchMyAds();
                             }

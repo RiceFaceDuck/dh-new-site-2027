@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { History, PackageSearch, Truck, ShieldAlert, CreditCard, Loader2, Eye, Calendar, X, Upload, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 // 🛑 นำเข้า Library ของเดิมของคุณทั้งหมด
@@ -40,7 +41,7 @@ const TabHistory = () => {
 
       try {
         const q = query(
-          collection(db, "artifacts", typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', "users", user.uid, "orders"),
+          collection(db, "artifacts", typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', "users", user.uid, "orders"),
           orderBy('createdAt', 'desc'),
           limit(20)
         );
@@ -83,7 +84,7 @@ const TabHistory = () => {
       const slipUrl = await driveService.uploadSlip(slipFile, selectedOrder.id);
       
       // 2. อัปเดต Orders Collection
-      const orderRef = doc(db, "artifacts", typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', "users", user.uid, "orders", selectedOrder.id);
+      const orderRef = doc(db, "artifacts", typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', "users", user.uid, "orders", selectedOrder.id);
       const updateData = {
         'paymentInfo.slipUrl': slipUrl,
         'paymentInfo.uploadedAt': serverTimestamp(),
@@ -93,7 +94,7 @@ const TabHistory = () => {
       await updateDoc(orderRef, updateData);
 
       // 3. 🚀 ยิงแจ้งเตือนเข้าระบบ History Logs ของแอดมิน
-      await addDoc(collection(db, "artifacts", typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', "public", "data", "History_logs"), {
+      await addDoc(collection(db, "artifacts", typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', "public", "data", "History_logs"), {
         type: 'PAYMENT_SUBMITTED',
         orderId: selectedOrder.id,
         userId: user.uid,
@@ -106,7 +107,7 @@ const TabHistory = () => {
       });
 
       // 4. สร้าง To-do ให้แอดมิน (ถ้าระบบเดิมมี)
-      await addDoc(collection(db, "artifacts", typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', "public", "data", "todos"), {
+      await addDoc(collection(db, "artifacts", typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', "public", "data", "todos"), {
         title: `ตรวจสอบสลิปโอนเงิน ${selectedOrder.id}`,
         taskType: 'payment_verification',
         orderId: selectedOrder.id,

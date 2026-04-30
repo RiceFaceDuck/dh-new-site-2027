@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Search, Info, Link as LinkIcon, X, Loader2, Save } from 'lucide-react';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';

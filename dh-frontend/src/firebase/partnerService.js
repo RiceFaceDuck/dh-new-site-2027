@@ -1,7 +1,7 @@
 import { collection, doc, getDocs, setDoc, query, where } from 'firebase/firestore';
 import { db } from './config';
 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
 // ==========================================
 // 🧠 Smart Cache System
@@ -76,21 +76,17 @@ export const findNearestPartner = async (userLat, userLng) => {
 
 export const updatePartnerProfile = async (userId, partnerData, isActive) => {
   if (!userId) throw new Error("User ID is required");
-  try {
-    const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', userId);
-    let coords = {};
-    if (partnerData?.mapsUrl) {
-      const extracted = extractCoordsFromUrl(partnerData.mapsUrl);
-      if (extracted) coords = extracted;
-    }
-    const payload = { ...partnerData, ...coords, isActive, updatedAt: new Date().toISOString() };
-    await setDoc(partnerRef, payload, { merge: true });
-    cachedPartners = null; 
-    lastFetchTime = 0;
-    return true;
-  } catch (error) {
-    throw error;
+  const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', userId);
+  let coords = {};
+  if (partnerData?.mapsUrl) {
+    const extracted = extractCoordsFromUrl(partnerData.mapsUrl);
+    if (extracted) coords = extracted;
   }
+  const payload = { ...partnerData, ...coords, isActive, updatedAt: new Date().toISOString() };
+  await setDoc(partnerRef, payload, { merge: true });
+  cachedPartners = null;
+  lastFetchTime = 0;
+  return true;
 };
 
 // 🚀 [FIX]: เพิ่ม Named Export เพื่อแก้ปัญหา Uncaught SyntaxError
