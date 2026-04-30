@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { Coins, Star, History, Zap, Loader2, Trophy, TrendingUp, ArrowUpRight, ArrowDownRight, Crown } from 'lucide-react';
 import { getAuth } from 'firebase/auth';

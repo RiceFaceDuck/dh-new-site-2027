@@ -7,7 +7,7 @@ import { db } from '../../../firebase/config';
 import { updatePartnerProfile, extractCoordsFromUrl } from '../../../firebase/partnerService';
 
 // กำหนด App ID สำหรับดึงข้อมูล
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof window !== "undefined" && typeof window.window.__app_id !== "undefined" ? window.window.__app_id : "default-app-id";
 
 const TabOverview = () => {
   // State สำหรับข้อมูลผู้ใช้ทั่วไป

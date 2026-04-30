@@ -2,7 +2,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './config';
 
 // กำหนด App ID ตามโครงสร้างของระบบ
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
 // ==========================================
 // In-memory Cache System (ประหยัด Reads)
