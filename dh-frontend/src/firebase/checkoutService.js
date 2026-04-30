@@ -6,7 +6,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
 export const checkoutService = {
   /**
@@ -27,9 +27,9 @@ export const checkoutService = {
 
     const {
       items,
-      shippingAddress,
-      contactPhone,
-      paymentMethod,
+      // shippingAddress,
+      // contactPhone,
+      // paymentMethod,
       totalInfo
     } = orderData;
 
@@ -41,7 +41,7 @@ export const checkoutService = {
         
         // 1. เตรียม References ที่ต้องใช้ตามโครงสร้างใหม่
         const userWalletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
-        const cartRef = doc(db, 'artifacts', appId, 'users', userId, 'cart', 'data');
+        // const cartRef = doc(db, 'artifacts', appId, 'users', userId, 'cart', 'data');
         const newOrderRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'orders'));
 
         // เตรียม References สำหรับสินค้าในตะกร้าเพื่อตรวจและหักสต๊อก
@@ -122,15 +122,15 @@ export const checkoutService = {
         if (totalInfo.grandTotal === 0) {
            orderStatus = 'paid'; // ถ้าใช้แต้มจ่ายเต็มจำนวน
         }
+        
+        if (orderData.b2bInfo?.isRequesting) {
+           orderStatus = 'b2b_request'; // ถ้าเป็นรายการขอราคาส่ง B2B
+        }
 
         const orderPayload = {
           orderId: newOrderRef.id,
           userId,
-          items,
-          shippingAddress,
-          contactPhone,
-          paymentMethod,
-          totalInfo,
+          ...orderData, // ดึงข้อมูล taxInfo, b2bInfo และอื่นๆ ที่ส่งมาจาก Checkout.jsx
           orderStatus: orderStatus,
           status: orderStatus,
           createdAt: serverTimestamp(),
@@ -140,13 +140,14 @@ export const checkoutService = {
         transaction.set(newOrderRef, orderPayload);
 
         // 4. สร้าง Log ส่งให้แอดมินรับทราบ (History_logs ส่วนกลาง)
+        const adminLogMessage = orderData.b2bInfo?.isRequesting ? 'มีคำขอราคาส่งใหม่ B2B' : 'มีคำสั่งซื้อใหม่ รอยืนยันการชำระเงิน';
         const adminLogRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'History_logs'));
         transaction.set(adminLogRef, {
-          type: 'NEW_ORDER',
+          type: orderData.b2bInfo?.isRequesting ? 'B2B_REQUEST' : 'NEW_ORDER',
           orderId: newOrderRef.id,
           userId: userId,
           amount: totalInfo.grandTotal || 0,
-          message: `มีคำสั่งซื้อใหม่ รอยืนยันการชำระเงิน`,
+          message: adminLogMessage,
           timestamp: serverTimestamp(),
           status: 'unread'
         });

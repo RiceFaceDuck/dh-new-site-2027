@@ -39,14 +39,14 @@ const Cart = () => {
   const [freebies, setFreebies] = useState([]);
 
   useEffect(() => {
+    // ดึงโปรโมชั่นเพียงครั้งเดียวต่อการเข้าหน้าตะกร้า (ช่วยลด Reads)
+    fetchFreebies();
+    
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        await Promise.all([
-          fetchCart(currentUser.uid),
-          fetchFreebies()
-        ]);
+        await fetchCart(currentUser.uid);
       } else {
         setUser(null);
         setLoading(false);

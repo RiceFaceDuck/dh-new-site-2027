@@ -8,6 +8,7 @@ import { checkoutService } from '../firebase/checkoutService';
 // 🚀 นำเข้า Component ลูกที่แยกไว้
 import PrivilegeSelector from '../components/checkout/PrivilegeSelector';
 import CheckoutSummary from '../components/checkout/CheckoutSummary';
+import { B2BTaxForm } from '../components/checkout/CheckoutForms';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -23,6 +24,10 @@ const Checkout = () => {
   const [shippingAddress, setShippingAddress] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [appliedPoints, setAppliedPoints] = useState(0); 
+
+  // ข้อมูล B2B และใบกำกับภาษี
+  const [b2b, setB2b] = useState({ isRequesting: false, companyName: '', taxId: '', documentUrl: '' });
+  const [tax, setTax] = useState({ isRequesting: false, name: '', taxId: '', address: '' });
 
   const showMessage = (type, text) => {
     setMessageBox({ type, text });
@@ -98,8 +103,8 @@ const Checkout = () => {
           fullName: contactName, 
           logisticProvider: 'DH Express' 
         },
-        taxInfo: null,
-        b2bInfo: null,
+        taxInfo: tax.isRequesting ? tax : null,
+        b2bInfo: b2b.isRequesting ? b2b : null,
         walletUsed: appliedPoints, // 🌟 ส่งแต้มเครดิตไปตัดยอดที่ Transaction หลังบ้าน
         finalPayable: grandTotal,
         slipUrl: null, // โอนเงินสด ยังไม่แนบสลิป
@@ -251,6 +256,11 @@ const Checkout = () => {
                 <p className="text-xs text-slate-500 mt-1">หลังจากยืนยันคำสั่งซื้อ กรุณาแนบสลิปการโอนเงินที่หน้าประวัติการสั่งซื้อ (Profile)</p>
               </div>
             </div>
+          </div>
+
+          {/* B2B / Wholesale & Tax Form */}
+          <div className="mt-6">
+            <B2BTaxForm b2b={b2b} setB2b={setB2b} tax={tax} setTax={setTax} />
           </div>
 
         </div>

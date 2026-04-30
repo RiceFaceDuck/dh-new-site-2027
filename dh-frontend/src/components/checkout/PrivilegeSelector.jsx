@@ -13,6 +13,7 @@ const PrivilegeSelector = ({ orderTotal = 0, onApplyPoints }) => {
   const [walletBalance, setWalletBalance] = useState(0);
   const [inputValue, setInputValue] = useState('');
   const [appliedPoints, setAppliedPoints] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [isLoading, setIsLoading] = useState(true);
   const [walletData, setWalletData] = useState({ tier: { name: 'Member', color: 'text-slate-500' }});
 
@@ -21,14 +22,13 @@ const PrivilegeSelector = ({ orderTotal = 0, onApplyPoints }) => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) {
-      setIsLoading(false);
       return;
     }
 
     const unsubscribe = subscribeToWallet(user.uid, (data) => {
       setWalletData(data);
       setWalletBalance(data.balance || 0);
-      setIsLoading(false);
+      // setIsLoading(false);
     });
 
     return () => unsubscribe();
