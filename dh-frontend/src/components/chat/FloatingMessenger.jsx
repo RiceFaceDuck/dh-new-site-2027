@@ -6,15 +6,16 @@ import { partnerService } from '../../firebase/partnerService';
 const FloatingMessenger = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState('menu'); // 'menu' | 'radar' | 'result'
-  // // eslint-disable-next-line no-unused-vars
-  const [isSearching, setIsSearching] = useState(false);
+  //
+  // eslint-disable-next-line no-unused-vars
+
   const [partnerResult, setPartnerResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   // 1. ฟังก์ชันสแกนหาพาร์ทเนอร์ (GPS)
   const handleFindPartner = () => {
     setMode('radar');
-    setIsSearching(true);
+
     setErrorMsg('');
 
     if ("geolocation" in navigator) {
@@ -33,26 +34,26 @@ const FloatingMessenger = () => {
                 setPartnerResult(null);
                 setErrorMsg('ขออภัย ไม่พบพาร์ทเนอร์ใกล้เคียงที่เปิดรับการสนับสนุนในขณะนี้');
               }
-              setIsSearching(false);
+
               setMode('result');
             }, 1500);
 
           } catch (error) {
             console.error(error);
             setErrorMsg('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
-            setIsSearching(false);
+
             setMode('result');
           }
         },
         (error) => {
-          setIsSearching(false);
+
           setMode('result');
           setErrorMsg('ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาเปิดการระบุตำแหน่ง (GPS) หรืออนุญาตในเบราว์เซอร์');
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
-      setIsSearching(false);
+
       setMode('result');
       setErrorMsg('อุปกรณ์ของคุณไม่รองรับการระบุตำแหน่ง');
     }

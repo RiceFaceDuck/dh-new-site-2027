@@ -139,20 +139,38 @@ export const checkoutService = {
 
         transaction.set(newOrderRef, orderPayload);
 
-        // 4. สร้าง Log ส่งให้แอดมินรับทราบ (History_logs ส่วนกลาง)
+        // 4. สร้าง Log ส่งให้แอดมินรับทราบ (ลง Root collection: history_logs ที่เดียวกับ Backoffice)
         const adminLogMessage = orderData.b2bInfo?.isRequesting ? 'มีคำขอราคาส่งใหม่ B2B' : 'มีคำสั่งซื้อใหม่ รอยืนยันการชำระเงิน';
-        const adminLogRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'History_logs'));
+        const adminLogRef = doc(collection(db, 'history_logs'));
         transaction.set(adminLogRef, {
-          type: orderData.b2bInfo?.isRequesting ? 'B2B_REQUEST' : 'NEW_ORDER',
-          orderId: newOrderRef.id,
-          userId: userId,
-          amount: totalInfo.grandTotal || 0,
-          message: adminLogMessage,
-          timestamp: serverTimestamp(),
-          status: 'unread'
+          module: 'Orders',
+          action: 'Create',
+          targetId: newOrderRef.id,
+          details: adminLogMessage,
+          actionBy: userId,
+          performedBy: userId,
+          actorName: orderData.shippingInfo?.fullName || 'Customer',
+          timestamp: serverTimestamp()
         });
 
-        // 5. ไม่จำเป็นต้องลบ Cart ในนี้ เพราะ Checkout.jsx จะเรียก cartService.clearCart() ให้แล้ว
+        // 5. สร้าง Todo ให้แอดมินจัดการ (รองรับ Wholesale B2B และ Payment)
+        const todoType = orderData.b2bInfo?.isRequesting ? 'WHOLESALE_APPROVAL' : 'PAYMENT_VERIFICATION';
+        const todoRef = doc(collection(db, 'todos'));
+        transaction.set(todoRef, {
+          type: todoType,
+          status: 'pending',
+          title: adminLogMessage,
+          payload: {
+            orderId: newOrderRef.id,
+            userId: userId,
+            customerName: orderData.shippingInfo?.fullName || 'Customer',
+            itemsSnapshot: items
+          },
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        // 6. ไม่จำเป็นต้องลบ Cart ในนี้ เพราะ Checkout.jsx จะเรียก cartService.clearCart() ให้แล้ว
         // (แยกให้ชัดเจนตามสถาปัตยกรรมของคุณ)
 
         return newOrderRef.id;

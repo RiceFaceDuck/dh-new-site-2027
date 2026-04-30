@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { History, PackageSearch, Truck, ShieldAlert, CreditCard, Loader2, Eye, Calendar, X, Upload, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 // 🛑 นำเข้า Library ของเดิมของคุณทั้งหมด
@@ -94,16 +93,30 @@ const TabHistory = () => {
       await updateDoc(orderRef, updateData);
 
       // 3. 🚀 ยิงแจ้งเตือนเข้าระบบ History Logs ของแอดมิน
-      await addDoc(collection(db, "artifacts", typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id', "public", "data", "History_logs"), {
-        type: 'PAYMENT_SUBMITTED',
-        orderId: selectedOrder.id,
-        userId: user.uid,
-        userName: user.displayName || 'ลูกค้าทั่วไป',
-        amount: selectedOrder.totalInfo?.grandTotal || 0,
-        slipUrl: slipUrl,
-        message: `ลูกค้าส่งหลักฐานการโอนเงิน ออเดอร์ ${selectedOrder.id}`,
-        timestamp: serverTimestamp(),
-        status: 'unread'
+      await addDoc(collection(db, "history_logs"), {
+        module: 'Orders',
+        action: 'Update',
+        targetId: selectedOrder.id,
+        details: `ลูกค้าส่งหลักฐานการโอนเงิน ออเดอร์ ${selectedOrder.id}`,
+        actionBy: user.uid,
+        performedBy: user.uid,
+        actorName: user.displayName || 'ลูกค้าทั่วไป',
+        timestamp: serverTimestamp()
+      });
+
+      // 🌟 สร้าง Todo ไปให้แอดมินตรวจ
+      await addDoc(collection(db, 'todos'), {
+        type: 'PAYMENT_VERIFICATION',
+        status: 'pending',
+        title: 'ตรวจสอบสลิปโอนเงิน',
+        payload: {
+          orderId: selectedOrder.id,
+          userId: user.uid,
+          customerName: user.displayName || 'ลูกค้าทั่วไป',
+          slipUrl: slipUrl
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
 
       // 4. สร้าง To-do ให้แอดมิน (ถ้าระบบเดิมมี)
