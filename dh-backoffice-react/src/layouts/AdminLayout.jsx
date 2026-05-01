@@ -17,7 +17,7 @@ export default function AdminLayout() {
   
   const [profile, setProfile] = useState(null);
   const [managerTodoCount, setManagerTodoCount] = useState(0); 
-  const [todoCount, setTodoCount] = useState(0); // ✨ เพิ่ม State สำหรับจำนวนงาน To-do ทั่วไป
+  const [todoCount, setTodoCount] = useState(0); 
   
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -40,7 +40,7 @@ export default function AdminLayout() {
       userService.getUserProfile(currentUser.uid).then(data => {
         if (data) {
           setProfile(data);
-          // ระบบแจ้งเตือนเฉพาะระดับ Manager/Owner (เดิม)
+          // ระบบแจ้งเตือนเฉพาะระดับ Manager/Owner 
           if (['Manager', 'Owner', 'ผู้จัดการ', 'เจ้าของ'].includes(data.role)) {
             unsubscribeTodo = todoService.subscribeManagerApprovals((todos) => {
               setManagerTodoCount(todos.length);
@@ -74,6 +74,7 @@ export default function AdminLayout() {
     }
   };
 
+  // 📝 โครงสร้างเมนูดั้งเดิม (ครบ 11 เมนู)
   const menuItems = [
     { path: '/', name: 'Overview', desc: 'หน้ากระดานสรุปภาพรวมและสถิติ', icon: <LayoutDashboard size={18} /> },
     { path: '/search', name: 'Product Search+', desc: 'ค้นหาสินค้าและเช็คสต็อกเร่งด่วน', icon: <Search size={18} /> },
@@ -91,11 +92,11 @@ export default function AdminLayout() {
   return (
     <div className="flex h-screen bg-dh-bg-base text-dh-main font-sans overflow-hidden selection:bg-dh-accent-light selection:text-dh-accent transition-colors duration-200">
       
-      {/* Sidebar Navigation - 🎨 ปรับพื้นหลังเป็นสีขาวขุ่น (Off-white) */}
-      <aside className="w-[260px] bg-[#F8FAFB] dark:bg-[#3d3d3d] border-r border-dh-border flex flex-col z-20 transition-colors duration-200 shadow-sm">
+      {/* Sidebar Navigation - 🎨 ปรับพื้นหลังให้ดูเรียบง่าย มืออาชีพ */}
+      <aside className="w-[260px] bg-[#F8FAFB] dark:bg-[#2D333B] border-r border-dh-border flex flex-col z-20 transition-colors duration-200 shadow-sm">
         
         {/* Logo Area */}
-        <div className="h-16 flex items-center px-6 border-b border-dh-border shrink-0 bg-white dark:bg-dh-bg-surface">
+        <div className="h-16 flex items-center px-6 border-b border-dh-border shrink-0 bg-white dark:bg-[#22272E]">
           <h1 className="text-xl font-black text-dh-main tracking-tight flex items-center gap-1">
             DH<span className="text-dh-accent">Notebook</span>
           </h1>
@@ -106,42 +107,49 @@ export default function AdminLayout() {
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
             
-            // ✨ กำหนดตัวเลข Badge ตามประเภทเมนู
+            // ✨ กำหนดตัวเลขและรูปแบบ Badge ตามประเภทเมนู
             let badgeCount = 0;
-            if (item.path === '/todo') badgeCount = todoCount;
-            if (item.path === '/managers') badgeCount = managerTodoCount;
+            let badgeStyle = "";
+
+            if (item.path === '/todo' && todoCount > 0) {
+              badgeCount = todoCount;
+              badgeStyle = isActive ? "bg-white text-dh-accent" : "bg-dh-accent text-white"; // งานปกติ: สีหลัก
+            }
+            if (item.path === '/managers' && managerTodoCount > 0) {
+              badgeCount = managerTodoCount;
+              badgeStyle = isActive ? "bg-white text-orange-600" : "bg-orange-500 text-white animate-pulse shadow-sm"; // งานราคาส่ง/ด่วน: สีส้มกะพริบ
+            }
 
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-200 outline-none ${
+                className={`relative group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-200 outline-none border border-transparent ${
                   isActive 
-                    ? 'bg-dh-accent text-white font-semibold shadow-md' 
-                    : 'text-dh-muted hover:bg-dh-accent/10 hover:text-dh-main font-medium'
+                    ? 'bg-dh-accent text-white font-semibold shadow-sm' 
+                    : 'text-dh-muted hover:bg-slate-200/50 dark:hover:bg-slate-700/50 hover:text-dh-main hover:border-slate-300/50 dark:hover:border-slate-600/50 font-medium'
                 }`}
               >
                 <div className="flex items-center gap-3 w-full">
-                  <span className={`${isActive ? 'text-white' : 'text-dh-muted group-hover:text-dh-accent'} transition-colors duration-200 flex-shrink-0 relative z-10`}>
+                  <span className={`${isActive ? 'text-white' : 'text-dh-muted group-hover:text-dh-main'} transition-colors duration-200 flex-shrink-0 relative z-10`}>
                     {React.cloneElement(item.icon, { strokeWidth: isActive ? 2.5 : 2 })}
                   </span>
                   <span className="tracking-wide relative z-10">{item.name}</span>
                 </div>
                 
-                {/* ✨ Badge แจ้งเตือนจำนวนงาน (รองรับทั้ง To-do และ Managers Office) */}
+                {/* ✨ Badge แจ้งเตือนจำนวนงาน */}
                 {badgeCount > 0 && (
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm flex-shrink-0 relative z-10 animate-in zoom-in duration-300 ${
-                    isActive ? 'bg-white text-dh-accent' : (item.path === '/todo' ? 'bg-dh-accent text-white' : 'bg-red-500 text-white')
-                  }`}>
-                    {badgeCount}
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 relative z-10 transition-all ${badgeStyle}`}>
+                    {badgeCount > 99 ? '99+' : badgeCount}
                   </span>
                 )}
 
-                <div className="absolute left-12 top-[90%] w-max max-w-[210px] bg-dh-main text-dh-base text-[11.5px] font-medium px-2.5 py-1.5 rounded-md shadow-dh-elevated 
+                {/* Tooltip อธิบายเมนู (แสดงตอน Hover) */}
+                <div className="absolute left-12 top-[90%] w-max max-w-[210px] bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-[11.5px] font-medium px-2.5 py-1.5 rounded-md shadow-lg 
                                 opacity-0 translate-y-2 invisible group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 
-                                transition-all duration-200 delay-100 z-50 pointer-events-none border border-dh-border/10">
+                                transition-all duration-200 delay-100 z-50 pointer-events-none">
                   {item.desc}
-                  <div className="absolute -top-1 left-3 w-2 h-2 bg-dh-main rotate-45 rounded-sm"></div>
+                  <div className="absolute -top-1 left-3 w-2 h-2 bg-slate-800 dark:bg-slate-100 rotate-45 rounded-sm"></div>
                 </div>
               </Link>
             );
@@ -149,13 +157,13 @@ export default function AdminLayout() {
         </nav>
 
         {/* User Profile & Footer Area */}
-        <div className="p-4 border-t border-dh-border bg-[#F8FAFB] dark:bg-[#3d3d3d] shrink-0">
+        <div className="p-4 border-t border-dh-border bg-[#F8FAFB] dark:bg-[#2D333B] shrink-0">
           
-          <div className="flex items-center gap-3 min-w-0 p-2 rounded-lg border border-transparent hover:border-dh-border hover:bg-white dark:hover:bg-dh-bg-surface transition-colors duration-200 mb-2">
+          <div className="flex items-center gap-3 min-w-0 p-2 rounded-lg border border-transparent hover:border-dh-border hover:bg-white dark:hover:bg-[#22272E] transition-colors duration-200 mb-2">
             {profile?.photoURL ? (
-              <img src={profile.photoURL} alt="Profile" className="w-9 h-9 rounded-full object-cover shadow-sm shrink-0" />
+              <img src={profile.photoURL} alt="Profile" className="w-9 h-9 rounded-full object-cover shadow-sm shrink-0 border border-slate-200 dark:border-slate-600" />
             ) : (
-              <div className="w-9 h-9 bg-dh-accent-light text-dh-accent rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="w-9 h-9 bg-dh-accent/10 text-dh-accent rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-dh-accent/20">
                 {profile?.nickname?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
@@ -171,7 +179,7 @@ export default function AdminLayout() {
 
             <button 
               onClick={toggleDarkMode}
-              className="p-1.5 rounded-md text-dh-muted hover:bg-dh-border hover:text-dh-main transition-colors shrink-0 outline-none"
+              className="p-1.5 rounded-md text-dh-muted hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-dh-main transition-colors shrink-0 outline-none"
               title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
             >
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -180,7 +188,7 @@ export default function AdminLayout() {
           
           <button 
             onClick={handleLogout}
-            className="group w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-dh-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors outline-none"
+            className="group w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-dh-muted hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-colors outline-none"
           >
             <LogOut size={16} className="transition-transform group-hover:-translate-x-0.5" />
             <span>เลิกงาน (ออกจากระบบ)</span>

@@ -1,263 +1,228 @@
-import { 
-  collection, 
-  doc, 
-  updateDoc, 
-  onSnapshot, 
-  serverTimestamp, 
-  addDoc, 
-  query, 
-  where, 
-  limit, 
-  runTransaction, 
-  getDocs, 
-  orderBy, 
-  arrayUnion
-} from 'firebase/firestore';
 import { db } from './config';
-import { historyService } from './historyService';
-import { billingService } from './billingService';
-
-const COLLECTION_NAME = 'todos';
+import { 
+  collection, query, where, orderBy, limit, getDocs, doc, updateDoc, 
+  addDoc, serverTimestamp, onSnapshot, runTransaction 
+} from 'firebase/firestore';
 
 export const todoService = {
-  subscribePendingTodos: (callback) => {
+  // 📥 1. ระบบ Subscribe งาน 
+  subscribePendingTodos: (callback, onError) => {
     const q = query(
-      collection(db, COLLECTION_NAME), 
-      where("status", "==", "pending"), 
-      limit(50)
+      collection(db, 'tasks'),
+      where('status', 'in', ['todo', 'in_progress', 'pending']),
+      orderBy('createdAt', 'desc'),
+      limit(100)
     );
-    
     return onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      data.sort((a, b) => {
-        const priorityOrder = { "Critical": 4, "High": 3, "Medium": 2, "Low": 1 };
-        const pA = priorityOrder[a.priority] || 0;
-        const pB = priorityOrder[b.priority] || 0;
-        if (pA !== pB) return pB - pA;
-        return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
-      });
-      callback(data);
+      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(todos);
     }, (error) => {
-      console.error("🔥 TodoService Error:", error);
-      callback([]);
+      console.error("Snapshot Error:", error);
+      if (onError) onError(error);
     });
   },
 
-  subscribeManagerApprovals: (callback) => {
-    return () => {}; 
+  // 📥 2. ระบบ Subscribe ของผู้จัดการ
+  subscribeManagerApprovals: (callback, onError) => {
+    const q = query(
+      collection(db, 'tasks'),
+      where('type', 'in', ['WHOLESALE_APPROVAL', 'wholesale_request']),
+      where('status', 'in', ['todo', 'in_progress', 'pending']),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
+    return onSnapshot(q, (snapshot) => {
+      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(todos);
+    }, (error) => {
+      console.error("Manager Snapshot Error:", error);
+      if (onError) onError(error);
+    });
   },
 
-  getCompletedTodos: async (maxLimit = 30) => {
+  // ✅ 3. อนุมัติงาน (General Resolve + Wholesale) 
+  // 🌟 [อัปเกรด: เพิ่มระบบบันทึก Audit Log ลงใน Transaction]
+  resolveTodo: async (todo, resolutionData, currentUser) => {
+    try {
+      const taskRef = doc(db, 'tasks', todo.id);
+      
+      if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
+        const orderId = todo.orderId || todo.payload?.orderId;
+        if (!orderId) throw new Error("ไม่พบ Order ID");
+
+        await runTransaction(db, async (transaction) => {
+          const orderRef = doc(db, 'orders', orderId);
+          const logRef = doc(collection(db, 'system_logs')); // 📝 เตรียมพื้นที่เขียน Log
+          
+          // 3.1 อัปเดต Order หน้าบ้าน
+          transaction.update(orderRef, {
+            finalTotalAmount: resolutionData.approvedPrice,
+            shippingFee: resolutionData.approvedShipping,
+            manualPromo: resolutionData.manualPromo || 0,
+            freebies: resolutionData.freebies || '',
+            status: 'awaiting_payment',
+            managerApprovedBy: currentUser?.displayName || 'Manager',
+            managerApprovedAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+
+          // 3.2 ปิดงานใน Todo
+          transaction.update(taskRef, {
+            status: 'completed',
+            completedAt: serverTimestamp(),
+            actionBy: currentUser?.displayName || 'Manager',
+            resolution: resolutionData
+          });
+
+          // 3.3 บันทึกประวัติ (Audit Trail)
+          transaction.set(logRef, {
+            actionType: 'WHOLESALE_APPROVED',
+            orderId: orderId,
+            taskId: todo.id,
+            details: `อนุมัติราคาส่งที่ ฿${resolutionData.approvedPrice.toLocaleString()}`,
+            actionByUid: currentUser?.uid || 'system',
+            actionByName: currentUser?.displayName || 'Manager',
+            timestamp: serverTimestamp()
+          });
+        });
+      } else {
+        // งาน Manual ทั่วไป ไม่ต้องบันทึก Log แยกลง system_logs ให้เปลือง Reads
+        await updateDoc(taskRef, {
+          status: 'completed',
+          completedAt: serverTimestamp(),
+          actionBy: currentUser?.displayName || 'Staff',
+          resolution: resolutionData
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error("Resolve Error:", error);
+      throw error;
+    }
+  },
+
+  // ❌ 4. ปฏิเสธงาน
+  rejectTodo: async (todoId, reason, currentUser) => {
+    try {
+      const taskRef = doc(db, 'tasks', todoId);
+      await updateDoc(taskRef, {
+        status: 'rejected',
+        rejectReason: reason,
+        completedAt: serverTimestamp(),
+        actionBy: currentUser?.displayName || 'Staff'
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 📝 5. สร้างงานใหม่
+  createManualTodo: async (taskData, currentUser) => {
+    try {
+      await addDoc(collection(db, 'tasks'), {
+        ...taskData,
+        type: 'MANUAL_TASK',
+        status: 'todo',
+        createdBy: currentUser?.uid,
+        creatorName: currentUser?.displayName,
+        createdAt: serverTimestamp()
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 📜 6. ประวัติการทำงานใน Todo
+  getCompletedTodos: async (limitCount = 30) => {
     try {
       const q = query(
-        collection(db, COLLECTION_NAME),
-        where("status", "in", ["completed", "rejected"]),
-        orderBy("updatedAt", "desc"),
-        limit(maxLimit)
+        collection(db, 'tasks'),
+        where('status', 'in', ['completed', 'rejected']),
+        orderBy('completedAt', 'desc'),
+        limit(limitCount)
       );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
-      console.error("🔥 Get Completed Todos Error:", error);
+      console.error("History Error:", error);
       return [];
     }
   },
 
-  createManualTodo: async (taskData, user) => {
+  // 🔄 7. ดึงงานกลับมา
+  recallTodo: async (todo, currentUser) => {
     try {
-      const userName = user.nickname || user.firstName || user.email || "System";
-      const newTodo = {
-        type: 'MANUAL_TASK',
-        title: taskData.title,
-        description: taskData.description,
-        priority: taskData.priority || 'Medium',
-        status: 'pending', 
-        payload: {
-          dueDate: taskData.dueDate || null,
-          syncGcal: taskData.syncGcal || false,
-          assignedTo: taskData.assignedTo || 'all'
-        },
-        createdByUid: user.uid,
-        createdByName: userName,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), newTodo);
-      await historyService.addLog('Todo', 'Create', docRef.id, `สร้างงานใหม่ [${taskData.title}]`, user.uid);
-      return docRef.id;
+      const taskRef = doc(db, 'tasks', todo.id);
+      await updateDoc(taskRef, {
+        status: 'todo',
+        recalledAt: serverTimestamp(),
+        recalledBy: currentUser?.displayName
+      });
     } catch (error) {
-      console.error("🔥 Create Manual Todo Error:", error);
       throw error;
     }
   },
 
-  resolveTodo: async (todo, resolutionData, adminUser) => {
-    const todoRef = doc(db, COLLECTION_NAME, todo.id);
-    const userId = adminUser.uid;
-    const userName = adminUser.nickname || adminUser.firstName || "Staff";
-    
+  // 📦 8. ดึงงานทั่วไป 
+  getActiveTasks: async (taskType = 'ALL') => {
     try {
-      let orderDocRef = null;
-      if ((todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'PAYMENT_VERIFICATION') && todo.payload?.orderId) {
-        const q = query(collection(db, 'orders'), where('orderId', '==', todo.payload.orderId), limit(1));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          orderDocRef = snap.docs[0].ref;
-        }
+      let q;
+      if (taskType === 'ALL') {
+        q = query(collection(db, 'tasks'), where('status', 'in', ['todo', 'in_progress']), orderBy('createdAt', 'asc'), limit(50));
+      } else {
+        q = query(collection(db, 'tasks'), where('type', '==', taskType), where('status', 'in', ['todo', 'in_progress']), orderBy('createdAt', 'asc'), limit(50));
       }
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) { throw error; }
+  },
 
+  // 🚀 9. ตรวจสลิปและส่งไปแผนกแพ็ค
+  // 🌟 [อัปเกรด: เพิ่มระบบบันทึก Audit Log ลงใน Transaction]
+  verifyPaymentAndSendToPack: async (taskId, orderId, currentUser) => {
+    try {
       await runTransaction(db, async (transaction) => {
-        const todoDoc = await transaction.get(todoRef);
-        if (!todoDoc.exists()) throw new Error("ไม่พบรายการงานนี้");
-        if (todoDoc.data().status === 'completed') throw new Error("งานนี้ถูกดำเนินการไปแล้ว");
+        const taskRef = doc(db, 'tasks', taskId);
+        const orderRef = doc(db, 'orders', orderId);
+        const logRef = doc(collection(db, 'system_logs')); // 📝 เตรียมพื้นที่เขียน Log
 
-        let orderData = null;
-        if (orderDocRef) {
-          const orderSnap = await transaction.get(orderDocRef);
-          if (orderSnap.exists()) orderData = orderSnap.data();
-        }
-
-        transaction.update(todoRef, {
-          status: 'completed',
-          resolution: resolutionData || {},
-          handledBy: userId,
-          handledByName: userName,
+        // 9.1 อัปเดต Order เป็นจ่ายแล้ว
+        transaction.update(orderRef, {
+          status: 'paid',
+          paidAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
 
-        switch (todo.type) {
-          case 'WHOLESALE_APPROVAL':
-            if (resolutionData.approvedPrice && orderDocRef && orderData) {
-              const approvedPrice = Number(resolutionData.approvedPrice);
-              const approvedShipping = Number(resolutionData.approvedShipping || 0);
-              
-              // ✨ เพิ่มการอ่านค่า Promo & Freebies จากพนักงานที่จัดการด้วยมือ (Fallback ไปที่ค่าเดิม)
-              const promoDiscount = resolutionData.manualPromo !== undefined 
-                                    ? Number(resolutionData.manualPromo) 
-                                    : Number(orderData.summary?.promoDiscount || orderData.promoDiscount || 0);
-              const updatedFreebies = resolutionData.freebies !== undefined 
-                                    ? resolutionData.freebies 
-                                    : (orderData.freebies || orderData.summary?.freebies || '');
-              
-              const newNetTotal = Math.max(0, approvedPrice - promoDiscount + approvedShipping);
-              const walletApplied = Number(orderData.walletApplied || orderData.summary?.walletUsed || 0);
-              const newFinalPayable = Math.max(0, newNetTotal - walletApplied);
+        // 9.2 ปิดงานตรวจสลิป
+        transaction.update(taskRef, {
+          status: 'completed',
+          completedAt: serverTimestamp(),
+          actionBy: currentUser?.displayName || 'Staff'
+        });
 
-              let updatedItems = orderData.items;
-              if (resolutionData.itemWholesalePrices) {
-                 updatedItems = orderData.items.map((item, idx) => {
-                     const wsPrice = resolutionData.itemWholesalePrices[idx];
-                     if (wsPrice !== undefined) {
-                         return { ...item, price: Number(wsPrice), discount: 0 }; 
-                     }
-                     return item;
-                 });
-              }
+        // 9.3 สร้างงานใหม่ให้ฝ่ายจัดแพ็ค
+        const packTaskRef = doc(collection(db, 'tasks'));
+        transaction.set(packTaskRef, {
+          orderId,
+          type: 'PACKING',
+          title: `จัดเตรียมสินค้าและแพ็ค (Order #${orderId.substring(0,8).toUpperCase()})`,
+          status: 'todo',
+          priority: 'Normal',
+          createdAt: serverTimestamp()
+        });
 
-              transaction.update(orderDocRef, {
-                items: updatedItems,               
-                status: 'waiting_payment',         
-                orderStatus: 'waiting_payment',    
-                shippingFee: approvedShipping,
-                promoDiscount: promoDiscount,
-                freebies: updatedFreebies, // 🎁 อัปเดตข้อมูลของแถมลงบิล
-                netTotal: newNetTotal,
-                finalTotal: newNetTotal,
-                finalPayable: newFinalPayable,
-                'summary.subTotal': approvedPrice,
-                'summary.promoDiscount': promoDiscount,
-                'summary.shippingFee': approvedShipping,
-                'summary.finalTotal': newNetTotal,
-                'summary.freebies': updatedFreebies,
-                'wholesaleRequest.approvedAt': serverTimestamp(),
-                'wholesaleRequest.approvedPrice': approvedPrice,
-                'wholesaleRequest.approvedShipping': approvedShipping,
-                updatedAt: serverTimestamp()
-              });
-            }
-            break;
-
-          case 'PAYMENT_VERIFICATION':
-            break;
-
-          case 'STAFF_APPROVAL':
-            const userRef = doc(db, 'users', todo.payload.uid);
-            transaction.update(userRef, {
-              isApproved: true,
-              role: todo.payload.role || 'พนักงานทั่วไป',
-              updatedAt: serverTimestamp()
-            });
-            break;
-            
-          case 'KNOWLEDGE_APPROVAL':
-            if (todo.payload && todo.payload.sku && todo.payload.proposedValue) {
-              const knowledgeProductRef = doc(db, 'products', todo.payload.sku);
-              const fieldToUpdate = todo.payload.knowledgeType === 'model' ? 'compatibleModels' : 'compatiblePartNumbers';
-              transaction.update(knowledgeProductRef, {
-                [fieldToUpdate]: arrayUnion(todo.payload.proposedValue),
-                updatedAt: serverTimestamp()
-              });
-            }
-            break;
-        }
+        // 9.4 บันทึกประวัติ (Audit Trail)
+        transaction.set(logRef, {
+          actionType: 'PAYMENT_VERIFIED',
+          orderId: orderId,
+          taskId: taskId,
+          details: `ยืนยันสลิปโอนเงินถูกต้อง และส่งต่อให้แผนกแพ็คสินค้า`,
+          actionByUid: currentUser?.uid || 'system',
+          actionByName: currentUser?.displayName || 'Staff',
+          timestamp: serverTimestamp()
+        });
       });
-
-      if (todo.type === 'PAYMENT_VERIFICATION' && orderDocRef) {
-          await billingService.updateOrderStatus(orderDocRef.id, 'paid', 'waiting_verification', adminUser.uid);
-      }
-
-      await historyService.addLog('Todo', 'Resolve', todo.id, `จัดการงาน [${todo.type}] สำเร็จโดย ${userName}`, userId);
-      return { success: true };
-      
     } catch (error) {
-      console.error("🔥 Resolve Todo Error:", error);
-      throw error;
-    }
-  },
-
-  rejectTodo: async (todoId, reason, adminUser) => {
-    try {
-      const todoRef = doc(db, COLLECTION_NAME, todoId);
-      const uid = typeof adminUser === 'string' ? adminUser : (adminUser?.uid || 'system');
-      const name = typeof adminUser === 'string' ? "Staff" : (adminUser?.nickname || adminUser?.firstName || 'System');
-      
-      await updateDoc(todoRef, {
-        status: 'rejected',
-        rejectionReason: reason,
-        handledBy: uid,
-        handledByName: name,
-        updatedAt: serverTimestamp()
-      });
-
-      await historyService.addLog('Todo', 'Reject', todoId, `ปฏิเสธงาน เหตุผล: ${reason}`, uid);
-      return { success: true };
-    } catch (error) {
-      console.error("🔥 Reject Todo Error:", error);
-      throw error;
-    }
-  },
-  
-  recallTodo: async (todo, adminUser) => {
-    try {
-      const todoId = typeof todo === 'string' ? todo : todo.id;
-      const todoTitle = typeof todo === 'string' ? 'งานเก่า' : todo.title;
-      const uid = typeof adminUser === 'string' ? adminUser : (adminUser?.uid || 'system');
-
-      const todoRef = doc(db, COLLECTION_NAME, todoId);
-      await updateDoc(todoRef, {
-        status: 'pending',
-        handledBy: null,
-        handledByName: null,
-        rejectionReason: null,
-        resolutionData: null,
-        updatedAt: serverTimestamp()
-      });
-
-      await historyService.addLog('Todo', 'Recall', todoId, `ดึงงาน ${todoTitle} กลับมาสถานะรอดำเนินการอีกครั้ง`, uid);
-      return { success: true };
-    } catch (error) {
-      console.error("🔥 Recall Todo Error:", error);
       throw error;
     }
   }
