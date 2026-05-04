@@ -3,26 +3,48 @@ import { Truck, Zap, Store, Info, CheckCircle2, PackageSearch } from 'lucide-rea
 import { useCart } from '../../hooks/useCart';
 
 // ข้อมูลจำลองสำหรับตัวเลือกการจัดส่ง (อนาคตสามารถดึงจาก Firebase ได้)
-const shippingOptions = [
-  { id: 'standard', name: 'จัดส่งพัสดุธรรมดา', cost: 50, est: '2-3 วันทำการ', icon: Truck, description: 'จัดส่งโดยบริษัทขนส่งเอกชนชั้นนำ' },
-  { id: 'express', name: 'จัดส่งด่วนพิเศษ', cost: 100, est: '1-2 วันทำการ', icon: Zap, description: 'แพ็คด่วน แซงคิว ส่งไวทันใจ' },
-  { id: 'pickup', name: 'รับสินค้าที่สาขา', cost: 0, est: 'พร้อมรับภายใน 2 ชม.', icon: Store, description: 'สาขาเซียร์รังสิต ชั้น 3' }
-];
 
-export default function ShippingMethod({ orderMode = 'retail' }) {
+
+export default function ShippingMethod({ orderMode = 'retail', availableRules = [] }) {
+  // Mapping ไอคอน
+  const getIcon = (type) => {
+    switch (type) {
+      case 'express': return Zap;
+      case 'pickup': return Store;
+      default: return Truck;
+    }
+  };
+
+  const defaultOptions = [
+    { id: 'standard', name: 'จัดส่งพัสดุธรรมดา', cost: 50, est: '2-3 วันทำการ', icon: Truck, description: 'จัดส่งโดยบริษัทขนส่งเอกชนชั้นนำ' },
+    { id: 'pickup', name: 'รับสินค้าที่สาขา', cost: 0, est: 'พร้อมรับภายใน 2 ชม.', icon: Store, description: 'สาขาเซียร์รังสิต ชั้น 3' }
+  ];
+
+  // ถ้ามีกฎจากหลังบ้านใช้หลังบ้าน ถ้าไม่มีใช้ค่าเริ่มต้น
+  const shippingOptions = availableRules.length > 0
+    ? availableRules.map(r => ({
+        id: r.id,
+        name: r.name || r.id,
+        cost: r.cost || 0,
+        est: r.estimatedTime || 'ระบุไม่ได้',
+        icon: getIcon(r.type),
+        description: r.description || ''
+      }))
+    : defaultOptions;
+
   const { checkoutState, updateCheckoutConfig } = useCart();
   
   const currentMethod = checkoutState?.shippingMethod;
 
-  // ⚡️ Smart Default: ถ้ายังไม่ได้เลือกวิธีจัดส่ง ให้ตั้งค่าเริ่มต้นเป็น 'standard' ทันที
+  // ⚡️ Smart Default: ถ้ายังไม่ได้เลือกวิธีจัดส่ง ให้ตั้งค่าเริ่มต้นเป็นตัวเลือกแรกที่มี
   useEffect(() => {
-    if (orderMode === 'retail' && !currentMethod) {
+    if (orderMode === 'retail' && !currentMethod && shippingOptions.length > 0) {
       updateCheckoutConfig({ 
-        shippingMethod: 'standard', 
-        shippingCost: 50 
+        shippingMethod: shippingOptions[0].id,
+        shippingCost: shippingOptions[0].cost
       });
     }
-  }, [orderMode, currentMethod, updateCheckoutConfig]);
+  }, [orderMode, currentMethod, updateCheckoutConfig, shippingOptions]);
 
   // เมื่อโหมดเปลี่ยนเป็น wholesale ให้บังคับค่าขนส่งเป็น 0 ในระบบ เพื่อรอแอดมินประเมิน
   useEffect(() => {

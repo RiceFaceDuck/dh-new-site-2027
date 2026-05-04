@@ -122,13 +122,13 @@ export default function Checkout() {
           
           {/* 🤏 ย่อขนาด Credit Point & Wallet ให้เล็กลง (ข้อมูลจริง) */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-full text-amber-700">
-              <Coins className="w-4 h-4" />
-              <span className="text-xs font-bold">{userData.creditPoints?.toLocaleString() || 0} P</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-amber-50 border border-amber-100 rounded-full text-amber-700 shadow-sm hover:shadow transition-shadow">
+              <Coins className="w-5 h-5" />
+              <span className="text-sm font-bold">{userData.creditPoints?.toLocaleString() || 0} P</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full text-blue-700">
-              <Wallet className="w-4 h-4" />
-              <span className="text-xs font-bold">฿{userData.walletBalance?.toLocaleString() || 0}</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-blue-50 border border-blue-100 rounded-full text-blue-700 shadow-sm hover:shadow transition-shadow">
+              <Wallet className="w-5 h-5" />
+              <span className="text-sm font-bold">฿{userData.walletBalance?.toLocaleString() || 0}</span>
             </div>
           </div>
         </div>

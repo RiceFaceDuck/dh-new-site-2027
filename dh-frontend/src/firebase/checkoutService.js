@@ -1,5 +1,5 @@
 import { db } from './config';
-import { doc, collection, runTransaction, serverTimestamp, addDoc } from 'firebase/firestore';
+import { doc, collection, runTransaction, writeBatch, serverTimestamp, addDoc } from 'firebase/firestore';
 
 /**
  * ⚡️ Smart Checkout Service
@@ -146,50 +146,51 @@ export const createWholesaleRequest = async (user, cartItems, customerData, tota
 
   const customerName = user.displayName || customerData?.name || 'Customer';
 
-  return await runTransaction(db, async (transaction) => {
-    const orderData = {
-      orderId: orderRef.id,
-      userId: user.uid,
-      customerName: customerName,
-      orderType: "wholesale",
-      status: "pending_wholesale", // เด้งไป To-do แอดมินทันที
-      items: cartItems.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price || 0,
-        quantity: item.quantity,
-        sku: item.sku || ''
-      })),
-      totals: totals || {
-        count: cartItems.reduce((acc, item) => acc + item.quantity, 0),
-        subtotal: cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0)
-      },
-      notes: {
-        general: customerData?.note || "",
-        wholesale: customerData?.wholesaleNote || ""
-      },
-      companyInfo: customerData?.company || "",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
+  const batch = writeBatch(db);
 
-    transaction.set(orderRef, orderData);
+  const orderData = {
+    orderId: orderRef.id,
+    userId: user.uid,
+    customerName: customerName,
+    orderType: "wholesale",
+    status: "pending_wholesale", // เด้งไป To-do แอดมินทันที
+    items: cartItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price || 0,
+      quantity: item.quantity,
+      sku: item.sku || ''
+    })),
+    totals: totals || {
+      count: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+      subtotal: cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0)
+    },
+    notes: {
+      general: customerData?.note || "",
+      wholesale: customerData?.wholesaleNote || ""
+    },
+    companyInfo: customerData?.company || "",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  };
 
-    const taskData = {
-      type: "wholesale_request",
-      status: "todo",
-      title: "ขอราคาส่ง (B2B) จากลูกค้าหน้าเว็บ",
-      orderId: orderRef.id,
-      customerName: customerName,
-      totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
-      createdAt: serverTimestamp(),
-      createdBy: user.uid
-    };
+  batch.set(orderRef, orderData);
 
-    transaction.set(taskRef, taskData);
+  const taskData = {
+    type: "wholesale_request",
+    status: "todo",
+    title: "ขอราคาส่ง (B2B) จากลูกค้าหน้าเว็บ",
+    orderId: orderRef.id,
+    customerName: customerName,
+    totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
+    createdAt: serverTimestamp(),
+    createdBy: user.uid
+  };
 
-    return orderRef.id;
-  });
+  batch.set(taskRef, taskData);
+
+  await batch.commit();
+  return orderRef.id;
 };
 
 // เผื่อไฟล์อื่นดึงรูปแบบ Object 

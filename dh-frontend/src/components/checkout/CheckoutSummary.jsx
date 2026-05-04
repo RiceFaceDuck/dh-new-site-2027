@@ -43,14 +43,23 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
       {/* รายการสินค้า */}
       <div className="space-y-4 mb-6 max-h-[25vh] overflow-y-auto pr-2 custom-scrollbar">
         {cartItems.length > 0 ? cartItems.map((item) => (
-          <div key={item.id} className="flex justify-between items-start gap-4">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.name}</p>
-              <p className="text-xs text-gray-500 mt-1">จำนวน: {item.quantity} ชิ้น</p>
+          <div key={item.id} className="flex justify-between items-start gap-3 border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+            <div className="w-14 h-14 flex-shrink-0 bg-gray-50 rounded-lg border border-gray-100 overflow-hidden flex items-center justify-center">
+              {item.image || item.images?.[0] ? (
+                <img src={item.image || item.images?.[0]} alt={item.name} className="w-full h-full object-cover mix-blend-multiply" />
+              ) : (
+                <ShoppingBag className="w-6 h-6 text-gray-300" />
+              )}
             </div>
-            <p className="text-sm font-bold text-gray-900 whitespace-nowrap">
-              ฿{((item.price || 0) * item.quantity).toLocaleString()}
-            </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug">{item.name}</p>
+              <p className="text-xs text-gray-500 mt-1">จำนวน: <span className="font-semibold text-gray-700">{item.quantity}</span> ชิ้น</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm font-bold text-gray-900">
+                ฿{((item.price || 0) * item.quantity).toLocaleString()}
+              </p>
+            </div>
           </div>
         )) : (
           <p className="text-center py-4 text-sm text-gray-400">กำลังดึงข้อมูลตะกร้า...</p>
