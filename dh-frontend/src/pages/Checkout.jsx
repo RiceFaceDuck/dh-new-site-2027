@@ -32,6 +32,9 @@ export default function Checkout() {
 
   // Real Firestore Data States
   const [userData, setUserData] = useState({ creditPoints: 0, walletBalance: 0 });
+  const isComplete = orderMode === 'retail'
+    ? checkoutState?.addressInfo?.fullName?.length > 2 && checkoutState?.addressInfo?.phone?.length >= 12 && checkoutState?.addressInfo?.address?.length > 10
+    : checkoutState?.addressInfo?.companyName?.length > 2 && checkoutState?.addressInfo?.fullName?.length > 2 && checkoutState?.addressInfo?.phone?.length >= 12 && checkoutState?.addressInfo?.address?.length > 10;
   const [shippingRules, setShippingRules] = useState([]);
   const [fetchingData, setFetchingData] = useState(true);
 
@@ -46,7 +49,7 @@ export default function Checkout() {
         }, (err) => console.error("User data fetch error", err));
 
         // ดึง Shipping Rules จริง
-        const shipRef = collection(db, 'artifacts', appId, 'public', 'data', 'shippingRules');
+        const shipRef = collection(db, 'shipping_rules');
         const unsubShip = onSnapshot(shipRef, (snap) => {
           setShippingRules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
           setFetchingData(false);
@@ -170,7 +173,7 @@ export default function Checkout() {
           </div>
 
           <div className="w-full lg:w-1/3">
-            <CheckoutSummary orderMode={orderMode} loading={loading} onCheckout={handleCheckout} />
+            <CheckoutSummary orderMode={orderMode} loading={loading} isComplete={isComplete} onCheckout={handleCheckout} />
           </div>
         </div>
       </div>

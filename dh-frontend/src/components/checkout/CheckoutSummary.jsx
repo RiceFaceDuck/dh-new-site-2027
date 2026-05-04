@@ -4,7 +4,7 @@ import { useCart } from '../../hooks/useCart';
 import { db } from '../../firebase/config';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
-export default function CheckoutSummary({ orderMode = 'retail', loading = false, onCheckout }) {
+export default function CheckoutSummary({ orderMode = 'retail', loading = false, isComplete = false, onCheckout }) {
   const { cartItems, totals, checkoutState, updateCheckoutConfig } = useCart();
   const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
 
@@ -15,13 +15,13 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
 
   useEffect(() => {
     // ดึงโปรโมชั่นที่ใช้งานอยู่
-    const promoRef = collection(db, 'artifacts', appId, 'public', 'data', 'promotions');
+    const promoRef = collection(db, 'promotions');
     const unsubPromo = onSnapshot(promoRef, (snap) => {
       setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
     // ดึงกฎของแถม
-    const freebieRef = collection(db, 'artifacts', appId, 'public', 'data', 'freebieSettings');
+    const freebieRef = collection(db, 'freebies');
     const unsubFreebie = onSnapshot(freebieRef, (snap) => {
       setFreebieRules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setIsDataLoaded(true);
@@ -142,7 +142,7 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
 
       <button
         onClick={onCheckout}
-        disabled={loading || cartItems.length === 0}
+        disabled={loading || cartItems.length === 0 || !isComplete}
         className={`w-full mt-6 py-4 px-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-md ${
           orderMode === 'wholesale' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
         } disabled:bg-gray-200 disabled:shadow-none`}

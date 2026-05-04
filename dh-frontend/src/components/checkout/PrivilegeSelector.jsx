@@ -27,7 +27,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
       });
 
       // ฟังข้อมูลโปรโมชั่นจากฐานข้อมูลกลาง
-      const promoRef = collection(db, 'artifacts', appId, 'public', 'data', 'promotions');
+      const promoRef = collection(db, 'promotions');
       const unsubPromo = onSnapshot(promoRef, (snap) => {
         setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       });
@@ -154,30 +154,23 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
         {/* Credit Points - ปรับ UI ให้มินิมอล เล็กกะทัดรัด */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-semibold text-gray-600 flex items-center gap-1.5">
-              <Coins className="w-3.5 h-3.5 text-amber-500" />
+            <label className="block text-xs font-semibold text-gray-400 flex items-center gap-1.5">
+              <Coins className="w-3.5 h-3.5 text-gray-400" />
               หัก Credit Point
             </label>
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
-              มี: {availablePoints.toLocaleString()} P
+            <span className="text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md">
+              ยังไม่รองรับการใช้งาน
             </span>
           </div>
           
           <div className="relative">
             <input 
               type="text" 
-              value={pointsInput}
-              onChange={handlePointsChange}
-              placeholder="ใส่จำนวน Point ที่ต้องการใช้" 
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-amber-500 transition-all font-medium pr-16 outline-none"
+              value=""
+              disabled
+              placeholder="ยังไม่รองรับการใช้งาน"
+              className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed outline-none"
             />
-            <button 
-              type="button"
-              onClick={handleUseMaxPoints}
-              className="absolute right-1.5 top-1.5 px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 text-[10px] font-bold rounded-lg transition-colors"
-            >
-              ใช้สูงสุด
-            </button>
           </div>
           <p className="text-[10px] text-gray-400 mt-1.5 ml-1">อัตราแลกเปลี่ยน 1 Point = 1 บาท</p>
         </div>

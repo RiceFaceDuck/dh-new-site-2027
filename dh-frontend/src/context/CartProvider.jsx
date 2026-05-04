@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { auth, db } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -141,7 +141,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateCheckoutConfig = (updates) => setCheckoutState(prev => ({ ...prev, ...updates }));
+  const updateCheckoutConfig = useCallback((updates) => setCheckoutState(prev => ({ ...prev, ...updates })), []);
   const clearCart = async () => {
     const user = auth.currentUser;
     if (user) {
