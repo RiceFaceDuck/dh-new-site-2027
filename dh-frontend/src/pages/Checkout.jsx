@@ -77,7 +77,7 @@ export default function Checkout() {
       } else {
         orderId = await createWholesaleRequest(user, cartItems, { 
           name: addr.fullName, company: addr.companyName, wholesaleNote: checkoutState?.wholesaleNote, note: addr.address 
-        });
+        }, totals);
       }
       clearCart();
       setSuccess(true);

@@ -137,35 +137,59 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
 // 2. ⚡️เพิ่มฟังก์ชันนี้กลับมา (Backward Compatibility) เพื่อไม่ให้หน้าเว็บเดิม Crash
 // ฟังก์ชันสำหรับขอราคาส่งแบบเดิม แปลงให้ใช้งานร่วมกับระบบใหม่ได้ทันที
-export const createWholesaleRequest = async (user, cartItems, customerData) => {
+export const createWholesaleRequest = async (user, cartItems, customerData, totals = null) => {
   if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
   if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า");
 
-  const orderRef = collection(db, "orders");
-  const orderData = {
-    userId: user.uid,
-    customerName: user.displayName || customerData?.name || 'Customer',
-    orderType: "wholesale",
-    status: "pending_wholesale", // เด้งไป To-do แอดมินทันที
-    items: cartItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: item.price || 0,
-      quantity: item.quantity,
-      sku: item.sku || ''
-    })),
-    notes: {
-      general: customerData?.note || "",
-      wholesale: customerData?.wholesaleNote || ""
-    },
-    companyInfo: customerData?.company || "",
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  };
+  const orderRef = doc(collection(db, "orders"));
+  const taskRef = doc(collection(db, "tasks"));
 
-  // ใช้ addDoc แบบเบาๆ ประหยัด Read/Write สำหรับฝั่งขายส่งที่ยังไม่มีการคิดเงินซับซ้อน
-  const docRef = await addDoc(orderRef, orderData);
-  return docRef.id;
+  const customerName = user.displayName || customerData?.name || 'Customer';
+
+  return await runTransaction(db, async (transaction) => {
+    const orderData = {
+      orderId: orderRef.id,
+      userId: user.uid,
+      customerName: customerName,
+      orderType: "wholesale",
+      status: "pending_wholesale", // เด้งไป To-do แอดมินทันที
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price || 0,
+        quantity: item.quantity,
+        sku: item.sku || ''
+      })),
+      totals: totals || {
+        count: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+        subtotal: cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0)
+      },
+      notes: {
+        general: customerData?.note || "",
+        wholesale: customerData?.wholesaleNote || ""
+      },
+      companyInfo: customerData?.company || "",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    transaction.set(orderRef, orderData);
+
+    const taskData = {
+      type: "wholesale_request",
+      status: "todo",
+      title: "ขอราคาส่ง (B2B) จากลูกค้าหน้าเว็บ",
+      orderId: orderRef.id,
+      customerName: customerName,
+      totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
+      createdAt: serverTimestamp(),
+      createdBy: user.uid
+    };
+
+    transaction.set(taskRef, taskData);
+
+    return orderRef.id;
+  });
 };
 
 // เผื่อไฟล์อื่นดึงรูปแบบ Object 
