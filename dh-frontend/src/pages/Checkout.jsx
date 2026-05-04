@@ -20,6 +20,11 @@ export default function Checkout() {
   const { cartItems, totals, checkoutState, clearCart, isInitialized } = useCart();
   
   const [orderMode, setOrderMode] = useState('retail');
+  const { updateCheckoutConfig: updateMode } = useCart();
+
+  useEffect(() => {
+    updateMode({ isWholesaleRequest: orderMode === 'wholesale' });
+  }, [orderMode, updateMode]);
   const [slipFile, setSlipFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,6 +32,9 @@ export default function Checkout() {
 
   // Real Firestore Data States
   const [userData, setUserData] = useState({ creditPoints: 0, walletBalance: 0 });
+  const isComplete = orderMode === 'retail' 
+    ? checkoutState?.addressInfo?.fullName?.length > 2 && checkoutState?.addressInfo?.phone?.length >= 12 && checkoutState?.addressInfo?.address?.length > 10
+    : checkoutState?.addressInfo?.companyName?.length > 2 && checkoutState?.addressInfo?.fullName?.length > 2 && checkoutState?.addressInfo?.phone?.length >= 12 && checkoutState?.addressInfo?.address?.length > 10;
   const [shippingRules, setShippingRules] = useState([]);
   const [fetchingData, setFetchingData] = useState(true);
 
@@ -41,7 +49,7 @@ export default function Checkout() {
         }, (err) => console.error("User data fetch error", err));
 
         // ดึง Shipping Rules จริง
-        const shipRef = collection(db, 'artifacts', appId, 'public', 'data', 'shippingRules');
+        const shipRef = collection(db, 'shipping_rules');
         const unsubShip = onSnapshot(shipRef, (snap) => {
           setShippingRules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
           setFetchingData(false);
@@ -77,7 +85,7 @@ export default function Checkout() {
       } else {
         orderId = await createWholesaleRequest(user, cartItems, { 
           name: addr.fullName, company: addr.companyName, wholesaleNote: checkoutState?.wholesaleNote, note: addr.address 
-        });
+        }, totals);
       }
       clearCart();
       setSuccess(true);
@@ -122,13 +130,13 @@ export default function Checkout() {
           
           {/* 🤏 ย่อขนาด Credit Point & Wallet ให้เล็กลง (ข้อมูลจริง) */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-full text-amber-700">
-              <Coins className="w-4 h-4" />
-              <span className="text-xs font-bold">{userData.creditPoints?.toLocaleString() || 0} P</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-amber-50 border border-amber-100 rounded-full text-amber-700 shadow-sm hover:shadow transition-shadow">
+              <Coins className="w-5 h-5" />
+              <span className="text-sm font-bold">{userData.creditPoints?.toLocaleString() || 0} P</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full text-blue-700">
-              <Wallet className="w-4 h-4" />
-              <span className="text-xs font-bold">฿{userData.walletBalance?.toLocaleString() || 0}</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-blue-50 border border-blue-100 rounded-full text-blue-700 shadow-sm hover:shadow transition-shadow">
+              <Wallet className="w-5 h-5" />
+              <span className="text-sm font-bold">฿{userData.walletBalance?.toLocaleString() || 0}</span>
             </div>
           </div>
         </div>
@@ -165,7 +173,7 @@ export default function Checkout() {
           </div>
 
           <div className="w-full lg:w-1/3">
-            <CheckoutSummary orderMode={orderMode} loading={loading} onCheckout={handleCheckout} />
+            <CheckoutSummary orderMode={orderMode} loading={loading} isComplete={isComplete} onCheckout={handleCheckout} />
           </div>
         </div>
       </div>

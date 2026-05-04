@@ -1,4 +1,8 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { auth, db } from '../firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { cartService } from '../firebase/cartService';
 
 export const CartContext = createContext();
 
@@ -51,6 +55,47 @@ export const CartProvider = ({ children }) => {
 
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  // Sync กับ Firebase
+  useEffect(() => {
+    let unsubscribeSnapshot = null;
+    
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // เมื่อ Login แล้วให้ดึงข้อมูลจาก Firebase เป็นหลัก
+        const cartRef = doc(db, 'carts', user.uid);
+        unsubscribeSnapshot = onSnapshot(cartRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            // แปลงโครงสร้างให้ตรงกับที่ UI ใช้
+            const mappedItems = (data.items || []).map(item => ({
+              ...item,
+              quantity: item.qty || 1
+            }));
+            setCartItems(mappedItems);
+          } else {
+            setCartItems([]);
+          }
+        });
+      } else {
+        // ถ้าไม่ได้ Login ใช้ LocalStorage
+        if (unsubscribeSnapshot) {
+          unsubscribeSnapshot();
+          unsubscribeSnapshot = null;
+        }
+        try {
+          const savedCart = localStorage.getItem('dh_cart');
+          setCartItems(savedCart ? JSON.parse(savedCart) : []);
+        } catch (e) { setCartItems([]); }
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
+  }, []);
+
+
   useEffect(() => {
     localStorage.setItem('dh_cart', JSON.stringify(cartItems));
   }, [cartItems]);
@@ -60,24 +105,48 @@ export const CartProvider = ({ children }) => {
     setIsInitialized(true); // ยืนยันว่าระบบพร้อมทำงาน
   }, [checkoutState]);
 
-  const addToCart = (product, quantity = 1) => {
-    setCartItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
-      }
-      return [...prev, { ...product, quantity }];
-    });
+  const addToCart = async (product, quantity = 1) => {
+    const user = auth.currentUser;
+    if (user) {
+      await cartService.addToCart(user.uid, product, quantity);
+    } else {
+      setCartItems(prev => {
+        const existing = prev.find(item => item.id === product.id);
+        if (existing) {
+          return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
+        }
+        return [...prev, { ...product, quantity }];
+      });
+    }
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId) => setCartItems(prev => prev.filter(item => item.id !== productId));
-  const updateQuantity = (productId, amount) => {
-    setCartItems(prev => prev.map(item => item.id === productId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item));
+  const removeFromCart = async (productId) => {
+    const user = auth.currentUser;
+    if (user) {
+      await cartService.updateCartItemQty(user.uid, productId, 0);
+    } else {
+      setCartItems(prev => prev.filter(item => item.id !== productId));
+    }
+  };
+  const updateQuantity = async (productId, amount) => {
+    const user = auth.currentUser;
+    if (user) {
+      const item = cartItems.find(i => i.id === productId);
+      if (item) {
+        await cartService.updateCartItemQty(user.uid, productId, Math.max(1, (item.qty || item.quantity || 1) + amount));
+      }
+    } else {
+      setCartItems(prev => prev.map(item => item.id === productId ? { ...item, quantity: Math.max(1, (item.qty || item.quantity || 1) + amount) } : item));
+    }
   };
 
-  const updateCheckoutConfig = (updates) => setCheckoutState(prev => ({ ...prev, ...updates }));
-  const clearCart = () => {
+  const updateCheckoutConfig = useCallback((updates) => setCheckoutState(prev => ({ ...prev, ...updates })), []);
+  const clearCart = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      await cartService.clearCart(user.uid);
+    }
     setCartItems([]);
     setCheckoutState(defaultCheckoutState);
     localStorage.removeItem('dh_cart');
@@ -85,8 +154,8 @@ export const CartProvider = ({ children }) => {
   };
 
   // Calculations
-  const cartTotalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-  const subtotal = cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0);
+  const cartTotalQty = cartItems.reduce((acc, item) => acc + (item.qty || item.quantity || 0), 0);
+  const subtotal = cartItems.reduce((acc, item) => acc + ((item.price || 0) * (item.qty || item.quantity || 0)), 0);
   const totalDiscount = (checkoutState.discountAmount || 0) + (checkoutState.usePoints || 0) + (checkoutState.useWallet || 0);
   const grandTotal = checkoutState.isWholesaleRequest ? 0 : Math.max(0, subtotal + (checkoutState.shippingCost || 0) - totalDiscount);
 

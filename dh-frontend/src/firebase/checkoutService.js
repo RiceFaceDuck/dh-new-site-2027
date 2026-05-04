@@ -1,5 +1,5 @@
 import { db } from './config';
-import { doc, collection, runTransaction, serverTimestamp, addDoc } from 'firebase/firestore';
+import { doc, collection, runTransaction, writeBatch, serverTimestamp, addDoc } from 'firebase/firestore';
 
 /**
  * ⚡️ Smart Checkout Service
@@ -70,6 +70,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       
       calculationLog: {
         promotions: checkoutState?.appliedPromotions || [],
+        freebies: checkoutState?.qualifiedFreebies || [],
         discountCode: checkoutState?.discountCode || null,
         discountAmount: checkoutState?.discountAmount || 0,
         usedPoints: usePoints,
@@ -137,14 +138,21 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
 // 2. ⚡️เพิ่มฟังก์ชันนี้กลับมา (Backward Compatibility) เพื่อไม่ให้หน้าเว็บเดิม Crash
 // ฟังก์ชันสำหรับขอราคาส่งแบบเดิม แปลงให้ใช้งานร่วมกับระบบใหม่ได้ทันที
-export const createWholesaleRequest = async (user, cartItems, customerData) => {
+export const createWholesaleRequest = async (user, cartItems, customerData, totals = null) => {
   if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
   if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า");
 
-  const orderRef = collection(db, "orders");
+  const orderRef = doc(collection(db, "orders"));
+  const taskRef = doc(collection(db, "tasks"));
+
+  const customerName = user.displayName || customerData?.name || 'Customer';
+
+  const batch = writeBatch(db);
+
   const orderData = {
+    orderId: orderRef.id,
     userId: user.uid,
-    customerName: user.displayName || customerData?.name || 'Customer',
+    customerName: customerName,
     orderType: "wholesale",
     status: "pending_wholesale", // เด้งไป To-do แอดมินทันที
     items: cartItems.map(item => ({
@@ -154,6 +162,10 @@ export const createWholesaleRequest = async (user, cartItems, customerData) => {
       quantity: item.quantity,
       sku: item.sku || ''
     })),
+    totals: totals || {
+      count: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+      subtotal: cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0)
+    },
     notes: {
       general: customerData?.note || "",
       wholesale: customerData?.wholesaleNote || ""
@@ -163,9 +175,23 @@ export const createWholesaleRequest = async (user, cartItems, customerData) => {
     updatedAt: serverTimestamp()
   };
 
-  // ใช้ addDoc แบบเบาๆ ประหยัด Read/Write สำหรับฝั่งขายส่งที่ยังไม่มีการคิดเงินซับซ้อน
-  const docRef = await addDoc(orderRef, orderData);
-  return docRef.id;
+  batch.set(orderRef, orderData);
+
+  const taskData = {
+    type: "wholesale_request",
+    status: "todo",
+    title: "ขอราคาส่ง (B2B) จากลูกค้าหน้าเว็บ",
+    orderId: orderRef.id,
+    customerName: customerName,
+    totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
+    createdAt: serverTimestamp(),
+    createdBy: user.uid
+  };
+
+  batch.set(taskRef, taskData);
+
+  await batch.commit();
+  return orderRef.id;
 };
 
 // เผื่อไฟล์อื่นดึงรูปแบบ Object 
