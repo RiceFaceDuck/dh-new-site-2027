@@ -4,8 +4,8 @@ import { useCart } from '../../hooks/useCart';
 import { db } from '../../firebase/config';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
-export default function CheckoutSummary({ orderMode = 'retail', loading = false, onCheckout }) {
-  const { cartItems, totals, checkoutState } = useCart();
+export default function CheckoutSummary({ orderMode = 'retail', loading = false, isComplete = false, onCheckout }) {
+  const { cartItems, totals, checkoutState, updateCheckoutConfig } = useCart();
   const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
 
   // 📡 Real-time Fetch: Promotions และ กฎของแถม
@@ -15,13 +15,13 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
 
   useEffect(() => {
     // ดึงโปรโมชั่นที่ใช้งานอยู่
-    const promoRef = collection(db, 'artifacts', appId, 'public', 'data', 'promotions');
+    const promoRef = collection(db, 'promotions');
     const unsubPromo = onSnapshot(promoRef, (snap) => {
       setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
     // ดึงกฎของแถม
-    const freebieRef = collection(db, 'artifacts', appId, 'public', 'data', 'freebieSettings');
+    const freebieRef = collection(db, 'freebies');
     const unsubFreebie = onSnapshot(freebieRef, (snap) => {
       setFreebieRules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setIsDataLoaded(true);
@@ -30,8 +30,20 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
     return () => { unsubPromo(); unsubFreebie(); };
   }, [appId]);
 
-  // 🎁 Logic ค้นหาของแถมที่ลูกค้าควรได้รับ (ตัวอย่าง: แถมตามยอดซื้อ)
+
+  // 🎁 Logic ค้นหาของแถมที่ลูกค้าควรได้รับ
   const qualifiedFreebies = freebieRules.filter(rule => totals.subtotal >= (rule.minAmount || 0));
+
+  // ส่งข้อมูลเข้า State เพื่อให้ submitOrder รับรู้
+  useEffect(() => {
+    if (isDataLoaded) {
+      updateCheckoutConfig({
+        appliedPromotions: promotions.filter(p => p.isActive),
+        qualifiedFreebies: qualifiedFreebies
+      });
+    }
+  }, [isDataLoaded, totals.subtotal, updateCheckoutConfig]);
+
 
   return (
     <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 sticky top-24 transition-all duration-300">
@@ -43,14 +55,23 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
       {/* รายการสินค้า */}
       <div className="space-y-4 mb-6 max-h-[25vh] overflow-y-auto pr-2 custom-scrollbar">
         {cartItems.length > 0 ? cartItems.map((item) => (
-          <div key={item.id} className="flex justify-between items-start gap-4">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.name}</p>
-              <p className="text-xs text-gray-500 mt-1">จำนวน: {item.quantity} ชิ้น</p>
+          <div key={item.id} className="flex justify-between items-start gap-3 border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+            <div className="w-14 h-14 flex-shrink-0 bg-gray-50 rounded-lg border border-gray-100 overflow-hidden flex items-center justify-center">
+              {item.image || item.images?.[0] ? (
+                <img src={item.image || item.images?.[0]} alt={item.name} className="w-full h-full object-cover mix-blend-multiply" />
+              ) : (
+                <ShoppingBag className="w-6 h-6 text-gray-300" />
+              )}
             </div>
-            <p className="text-sm font-bold text-gray-900 whitespace-nowrap">
-              ฿{((item.price || 0) * item.quantity).toLocaleString()}
-            </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug">{item.name}</p>
+              <p className="text-xs text-gray-500 mt-1">จำนวน: <span className="font-semibold text-gray-700">{item.quantity}</span> ชิ้น</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm font-bold text-gray-900">
+                ฿{((item.price || 0) * item.quantity).toLocaleString()}
+              </p>
+            </div>
           </div>
         )) : (
           <p className="text-center py-4 text-sm text-gray-400">กำลังดึงข้อมูลตะกร้า...</p>
@@ -121,7 +142,7 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
 
       <button
         onClick={onCheckout}
-        disabled={loading || cartItems.length === 0}
+        disabled={loading || cartItems.length === 0 || !isComplete}
         className={`w-full mt-6 py-4 px-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-md ${
           orderMode === 'wholesale' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
         } disabled:bg-gray-200 disabled:shadow-none`}
