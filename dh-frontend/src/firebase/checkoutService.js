@@ -70,6 +70,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       
       calculationLog: {
         promotions: checkoutState?.appliedPromotions || [],
+        freebies: checkoutState?.qualifiedFreebies || [],
         discountCode: checkoutState?.discountCode || null,
         discountAmount: checkoutState?.discountAmount || 0,
         usedPoints: usePoints,

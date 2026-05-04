@@ -20,6 +20,11 @@ export default function Checkout() {
   const { cartItems, totals, checkoutState, clearCart, isInitialized } = useCart();
   
   const [orderMode, setOrderMode] = useState('retail');
+  const { updateCheckoutConfig: updateMode } = useCart();
+
+  useEffect(() => {
+    updateMode({ isWholesaleRequest: orderMode === 'wholesale' });
+  }, [orderMode, updateMode]);
   const [slipFile, setSlipFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

@@ -5,7 +5,7 @@ import { db } from '../../firebase/config';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
 export default function CheckoutSummary({ orderMode = 'retail', loading = false, onCheckout }) {
-  const { cartItems, totals, checkoutState } = useCart();
+  const { cartItems, totals, checkoutState, updateCheckoutConfig } = useCart();
   const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
 
   // 📡 Real-time Fetch: Promotions และ กฎของแถม
@@ -30,8 +30,20 @@ export default function CheckoutSummary({ orderMode = 'retail', loading = false,
     return () => { unsubPromo(); unsubFreebie(); };
   }, [appId]);
 
-  // 🎁 Logic ค้นหาของแถมที่ลูกค้าควรได้รับ (ตัวอย่าง: แถมตามยอดซื้อ)
+
+  // 🎁 Logic ค้นหาของแถมที่ลูกค้าควรได้รับ
   const qualifiedFreebies = freebieRules.filter(rule => totals.subtotal >= (rule.minAmount || 0));
+
+  // ส่งข้อมูลเข้า State เพื่อให้ submitOrder รับรู้
+  useEffect(() => {
+    if (isDataLoaded) {
+      updateCheckoutConfig({
+        appliedPromotions: promotions.filter(p => p.isActive),
+        qualifiedFreebies: qualifiedFreebies
+      });
+    }
+  }, [isDataLoaded, totals.subtotal, updateCheckoutConfig]);
+
 
   return (
     <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 sticky top-24 transition-all duration-300">
