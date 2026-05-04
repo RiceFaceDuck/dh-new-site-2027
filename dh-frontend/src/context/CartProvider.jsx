@@ -1,48 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { CartContext } from './CartContext';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+
+export const CartContext = createContext();
+
+// Safe Custom Hook
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    return {
+      cartItems: [],
+      totals: { count: 0, subtotal: 0, shipping: 0, discount: 0, grandTotal: 0, displayTotal: 0 },
+      checkoutState: {},
+      isInitialized: false
+    };
+  }
+  return context;
+};
+
+const defaultCheckoutState = {
+  shippingMethod: null,
+  shippingCost: 0,
+  discountCode: null,
+  discountAmount: 0,
+  usePoints: 0,
+  useWallet: 0,
+  isWholesaleRequest: false,
+  requestTax: false,
+  taxInfo: null,
+  note: '',
+  wholesaleNote: '',
+  appliedPromotions: []
+};
 
 export const CartProvider = ({ children }) => {
-  const [cartTotalQty, setCartTotalQty] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // ⚡️ บังคับโหลดตะกร้าทันทีที่ Component Mount เพื่อป้องกันบั๊ก "หน้าว่าง"
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('dh_cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (e) { return []; }
+  });
+
+  const [checkoutState, setCheckoutState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dh_checkout_state');
+      return saved ? { ...defaultCheckoutState, ...JSON.parse(saved) } : defaultCheckoutState;
+    } catch (e) { return defaultCheckoutState; }
+  });
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
-    const auth = getAuth();
-    
-    // Listen for auth state changes
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, listen to their cart document
-        const cartRef = doc(db, 'carts', user.uid);
-        
-        // This onSnapshot uses 1 Read initially, then pushes updates locally without extra Read costs.
-        // It provides real-time updates across multiple tabs/components.
-        const unsubscribeCart = onSnapshot(cartRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setCartTotalQty(data.totalQty || 0);
-          } else {
-            setCartTotalQty(0);
-          }
-        }, (error) => {
-            console.error("Cart subscription error:", error);
-        });
+    localStorage.setItem('dh_cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
-        // Cleanup listener when user logs out or component unmounts
-        return () => unsubscribeCart();
-      } else {
-        // User is signed out
-        setCartTotalQty(0);
+  useEffect(() => {
+    localStorage.setItem('dh_checkout_state', JSON.stringify(checkoutState));
+    setIsInitialized(true); // ยืนยันว่าระบบพร้อมทำงาน
+  }, [checkoutState]);
+
+  const addToCart = (product, quantity = 1) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
       }
+      return [...prev, { ...product, quantity }];
     });
+    setIsCartOpen(true);
+  };
 
-    return () => unsubscribeAuth();
-  }, []);
+  const removeFromCart = (productId) => setCartItems(prev => prev.filter(item => item.id !== productId));
+  const updateQuantity = (productId, amount) => {
+    setCartItems(prev => prev.map(item => item.id === productId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item));
+  };
+
+  const updateCheckoutConfig = (updates) => setCheckoutState(prev => ({ ...prev, ...updates }));
+  const clearCart = () => {
+    setCartItems([]);
+    setCheckoutState(defaultCheckoutState);
+    localStorage.removeItem('dh_cart');
+    localStorage.removeItem('dh_checkout_state');
+  };
+
+  // Calculations
+  const cartTotalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const subtotal = cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0);
+  const totalDiscount = (checkoutState.discountAmount || 0) + (checkoutState.usePoints || 0) + (checkoutState.useWallet || 0);
+  const grandTotal = checkoutState.isWholesaleRequest ? 0 : Math.max(0, subtotal + (checkoutState.shippingCost || 0) - totalDiscount);
 
   return (
-    <CartContext.Provider value={{ cartTotalQty }}>
+    <CartContext.Provider value={{
+      cartItems, addToCart, removeFromCart, updateQuantity, clearCart, isCartOpen, setIsCartOpen,
+      cartTotalQty, cartTotalAmount: subtotal,
+      checkoutState, updateCheckoutConfig, isInitialized,
+      totals: { count: cartTotalQty, subtotal, shipping: checkoutState.shippingCost || 0, discount: totalDiscount, grandTotal, displayTotal: subtotal }
+    }}>
       {children}
     </CartContext.Provider>
   );
 };
+
+export default CartProvider;

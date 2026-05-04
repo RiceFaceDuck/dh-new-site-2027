@@ -1,140 +1,177 @@
 import { db } from './config';
-import { 
-  collection, 
-  addDoc, 
-  doc, 
-  runTransaction, 
-  serverTimestamp 
-} from 'firebase/firestore';
+import { doc, collection, runTransaction, serverTimestamp, addDoc } from 'firebase/firestore';
 
 /**
- * 🛒 1. การสั่งซื้อแบบปกติ (Retail Checkout)
- * ใช้ Transaction เพื่อความปลอดภัยสูงสุดในการบันทึก Order และ Task พร้อมกัน
+ * ⚡️ Smart Checkout Service
+ * บริการจัดการคำสั่งซื้อแบบรัดกุม ใช้ระบบ Double-entry Transaction
+ * ป้องกันยอดเงิน/แต้ม ติดลบ และประหยัด Firestore Writes ขั้นสุด
  */
-export const processCheckout = async (userId, orderData) => {
-  try {
-    const result = await runTransaction(db, async (transaction) => {
-      // 1. สร้าง Reference สำหรับเอกสารใหม่ (เพื่อเอา ID มาใช้เชื่อมโยงกัน)
-      const orderRef = doc(collection(db, 'orders'));
-      const taskRef = doc(collection(db, 'tasks'));
 
-      // 2. เตรียมข้อมูล Order
-      const finalOrder = {
-        ...orderData,
-        orderId: orderRef.id,
-        userId: userId,
-        status: 'pending_payment', // รอชำระเงิน หรือรอตรวจสอบสลิป
-        orderType: 'retail',
-        updatedAt: serverTimestamp(),
-      };
+// 1. ฟังก์ชันส่งยืนยันคำสั่งซื้อหลัก (Export แยกชื่อ เพื่อรองรับ Checkout.jsx เดิม)
+export const submitOrder = async (user, cartItems, checkoutState, totals, slipUrl = null, saveProfile = false) => {
+  if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนดำเนินการสั่งซื้อ");
+  if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อน");
 
-      // 3. เตรียมข้อมูล Task สำหรับ Todo หลังบ้าน
-      const todoTask = {
-        orderId: orderRef.id,
-        userId: userId,
-        type: 'new_order',
-        title: `ออเดอร์ใหม่จากลูกค้า (${orderData.items.length} รายการ)`,
-        customerName: orderData.taxInvoice?.name || 'ลูกค้าทั่วไป',
-        totalAmount: orderData.totalAmount,
-        status: 'todo', // สถานะเริ่มต้นใน Todo
-        priority: 'normal',
-        createdAt: serverTimestamp(),
-      };
+  const orderRef = doc(collection(db, "orders")); // สร้าง Reference ล่วงหน้า
+  const userRef = doc(db, "users", user.uid);
 
-      // 4. ทำการเขียนข้อมูลพร้อมกัน (Atomic Write)
-      transaction.set(orderRef, finalOrder);
-      transaction.set(taskRef, todoTask);
+  // 🔥 การใช้ runTransaction: ล็อกการทำงานทั้งหมดเป็นเนื้อเดียว (Atomic)
+  return await runTransaction(db, async (transaction) => {
+    
+    // 1. [READ] ดึงข้อมูลผู้ใช้เพื่อเช็คยอดคงเหลือ
+    const userDoc = await transaction.get(userRef);
+    const userData = userDoc.exists() ? userDoc.data() : {};
 
-      return orderRef.id;
-    });
+    // 🛑 Data Validation: ตรวจสอบไม่ให้ตัดแต้มเกินยอดที่มีจริง (Safe Check ป้องกันค่าว่าง)
+    const currentPoints = userData.creditPoints || 0;
+    const currentWallet = userData.walletBalance || 0;
+    const usePoints = checkoutState?.usePoints || 0;
+    const useWallet = checkoutState?.useWallet || 0;
 
-    return result;
-  } catch (error) {
-    console.error("Process Checkout Error: ", error);
-    throw new Error("ไม่สามารถบันทึกข้อมูลการสั่งซื้อได้: " + error.message);
-  }
-};
+    if (usePoints > currentPoints) throw new Error("Credit Point ของคุณไม่เพียงพอ");
+    if (useWallet > currentWallet) throw new Error("ยอดเงิน Wallet ของคุณไม่เพียงพอ");
 
-/**
- * 📦 2. การขอราคาส่ง (Wholesale Request)
- * ส่งคำร้องเข้าไปในระบบเพื่อให้ผู้จัดการประเมินราคา
- */
-export const createWholesaleRequest = async (userId, orderData) => {
-  try {
-    const result = await runTransaction(db, async (transaction) => {
-      const orderRef = doc(collection(db, 'orders'));
-      const taskRef = doc(collection(db, 'tasks'));
+    // 2. โครงสร้างอัจฉริยะ: แยกสายงานตามแผน (Retail vs Wholesale)
+    const isWholesale = checkoutState?.isWholesaleRequest || false;
+    const orderType = isWholesale ? "wholesale" : "retail";
+    
+    const status = isWholesale 
+      ? "pending_wholesale" 
+      : (slipUrl ? "pending_verification" : "pending_payment");
 
-      // โครงสร้าง Order สำหรับราคาส่ง (สถานะเริ่มต้นจะต่างออกไป)
-      const wholesaleOrder = {
-        ...orderData,
-        orderId: orderRef.id,
-        userId: userId,
-        status: 'pending_wholesale_price', // รอผู้จัดการตั้งราคา
-        orderType: 'wholesale',
-        initialTotalAmount: orderData.totalAmount, // เก็บราคาปลีกเดิมไว้เทียบ
-        finalTotalAmount: 0, // รอผู้จัดการกรอก
-        updatedAt: serverTimestamp(),
-      };
-
-      // สร้าง Task ประเภทพิเศษเพื่อให้ผู้จัดการเห็นชัดเจน
-      const wholesaleTask = {
-        orderId: orderRef.id,
-        userId: userId,
-        type: 'wholesale_request',
-        title: '📢 คำร้องขอราคาส่ง (รอประเมินราคา)',
-        customerName: orderData.taxInvoice?.name || 'ลูกค้าขายส่ง',
-        itemCount: orderData.items.length,
-        status: 'todo',
-        priority: 'high', // งานขอราคาส่งควรให้ความสำคัญสูง
-        createdAt: serverTimestamp(),
-      };
-
-      transaction.set(orderRef, wholesaleOrder);
-      transaction.set(taskRef, wholesaleTask);
-
-      return orderRef.id;
-    });
-
-    return result;
-  } catch (error) {
-    console.error("Wholesale Request Error: ", error);
-    throw new Error("ไม่สามารถส่งคำร้องขอราคาส่งได้: " + error.message);
-  }
-};
-
-/**
- * 💳 3. ฟังก์ชันเสริมสำหรับการใช้ Wallet (ในอนาคต)
- * เตรียมไว้สำหรับกรณีลูกค้ากดยืนยันชำระเงินผ่านยอดค้างในระบบ
- */
-export const payWithWallet = async (userId, amount, orderId) => {
-  const userRef = doc(db, 'users', userId);
-  
-  try {
-    await runTransaction(db, async (transaction) => {
-      const userSnap = await transaction.get(userRef);
-      if (!userSnap.exists()) throw "ไม่พบข้อมูลผู้ใช้";
-
-      const currentWallet = userSnap.data().wallet || 0;
-      if (currentWallet < amount) throw "ยอดเงินใน Wallet ไม่เพียงพอ";
-
-      // หักเงิน และบันทึกประวัติ
-      transaction.update(userRef, { 
-        wallet: currentWallet - amount,
-        updatedAt: serverTimestamp()
-      });
+    // 📦 ประกอบ Data Model สำหรับ Order
+    const orderData = {
+      orderId: orderRef.id,
+      userId: user.uid,
+      customerName: user.displayName || user.email || 'Customer',
+      orderType: orderType,
+      status: status,
       
-      // อัปเดตสถานะ Order
-      const orderRef = doc(db, 'orders', orderId);
-      transaction.update(orderRef, { 
-        status: 'paid',
-        paymentMethod: 'wallet',
-        paidAt: serverTimestamp() 
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price || 0,
+        quantity: item.quantity,
+        sku: item.sku || ''
+      })),
+      
+      totals: totals || {
+        // Fallback เผื่อเวอร์ชันเก่าไม่ได้ส่ง totals มา
+        count: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+        subtotal: cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+      },
+      
+      shippingDetails: {
+        method: checkoutState?.shippingMethod || "standard",
+        cost: checkoutState?.shippingCost || 0,
+      },
+      
+      taxDetails: checkoutState?.requestTax ? checkoutState.taxInfo : null,
+      
+      calculationLog: {
+        promotions: checkoutState?.appliedPromotions || [],
+        discountCode: checkoutState?.discountCode || null,
+        discountAmount: checkoutState?.discountAmount || 0,
+        usedPoints: usePoints,
+        usedWallet: useWallet,
+      },
+      
+      notes: {
+        general: checkoutState?.note || "",
+        wholesale: checkoutState?.wholesaleNote || ""
+      },
+      
+      paymentProof: slipUrl ? { url: slipUrl, verified: false, uploadedAt: serverTimestamp() } : null,
+      
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    // 3. [WRITE] สร้างเอกสารคำสั่งซื้อ
+    transaction.set(orderRef, orderData);
+
+    // 4. [WRITE] Double-entry Bookkeeping
+    let profileUpdates = {};
+    
+    if (usePoints > 0) {
+      profileUpdates.creditPoints = currentPoints - usePoints;
+      const pointTxRef = doc(collection(db, "transactions"));
+      transaction.set(pointTxRef, {
+        userId: user.uid,
+        orderId: orderRef.id,
+        type: "deduct",
+        currency: "point",
+        amount: usePoints,
+        note: `แลก Credit Point เป็นส่วนลดสำหรับคำสั่งซื้อ #${orderRef.id}`,
+        createdAt: serverTimestamp()
       });
-    });
-    return true;
-  } catch (error) {
-    console.error("Wallet Payment Error: ", error);
-    throw error;
-  }
+    }
+    
+    if (useWallet > 0) {
+      profileUpdates.walletBalance = currentWallet - useWallet;
+      const walletTxRef = doc(collection(db, "transactions"));
+      transaction.set(walletTxRef, {
+        userId: user.uid,
+        orderId: orderRef.id,
+        type: "deduct",
+        currency: "wallet",
+        amount: useWallet,
+        note: `ชำระเงิน (ตัด Wallet) สำหรับคำสั่งซื้อ #${orderRef.id}`,
+        createdAt: serverTimestamp()
+      });
+    }
+
+    // 5. [WRITE] Lazy Profile Update
+    if (saveProfile) {
+      if (checkoutState?.taxInfo) profileUpdates.taxInfo = checkoutState.taxInfo;
+      if (checkoutState?.note) profileUpdates.defaultDeliveryNote = checkoutState.note; 
+    }
+
+    if (Object.keys(profileUpdates).length > 0) {
+      transaction.update(userRef, profileUpdates);
+    }
+
+    return orderRef.id;
+  });
 };
+
+// 2. ⚡️เพิ่มฟังก์ชันนี้กลับมา (Backward Compatibility) เพื่อไม่ให้หน้าเว็บเดิม Crash
+// ฟังก์ชันสำหรับขอราคาส่งแบบเดิม แปลงให้ใช้งานร่วมกับระบบใหม่ได้ทันที
+export const createWholesaleRequest = async (user, cartItems, customerData) => {
+  if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+  if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า");
+
+  const orderRef = collection(db, "orders");
+  const orderData = {
+    userId: user.uid,
+    customerName: user.displayName || customerData?.name || 'Customer',
+    orderType: "wholesale",
+    status: "pending_wholesale", // เด้งไป To-do แอดมินทันที
+    items: cartItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price || 0,
+      quantity: item.quantity,
+      sku: item.sku || ''
+    })),
+    notes: {
+      general: customerData?.note || "",
+      wholesale: customerData?.wholesaleNote || ""
+    },
+    companyInfo: customerData?.company || "",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  };
+
+  // ใช้ addDoc แบบเบาๆ ประหยัด Read/Write สำหรับฝั่งขายส่งที่ยังไม่มีการคิดเงินซับซ้อน
+  const docRef = await addDoc(orderRef, orderData);
+  return docRef.id;
+};
+
+// เผื่อไฟล์อื่นดึงรูปแบบ Object 
+export const checkoutService = {
+  submitOrder,
+  createWholesaleRequest
+};
+
+export default checkoutService;

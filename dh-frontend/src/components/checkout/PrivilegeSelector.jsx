@@ -1,148 +1,210 @@
 import React, { useState, useEffect } from 'react';
-import { Coins, CheckCircle2, Sparkles, XCircle } from 'lucide-react';
-import { getAuth } from 'firebase/auth';
-import { subscribeToWallet, formatCredit } from '../../firebase/creditService';
+import { Ticket, Coins, Wallet, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { useCart } from '../../hooks/useCart';
+import { db, auth } from '../../firebase/config';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
 
-/**
- * PrivilegeSelector - กล่องเลือกใช้สิทธิพิเศษ (DH Credit Points)
- * @param {number} orderTotal - ยอดรวมสั่งซื้อ (ใช้เพื่อคำนวณไม่ให้ใช้แต้มเกินยอด)
- * @param {function} onApplyPoints - Callback ส่งค่าแต้มที่เลือกใช้กลับไปหน้าหลัก
- */
-const PrivilegeSelector = ({ orderTotal = 0, onApplyPoints }) => {
-  // 🚀 [แก้ไขบั๊ก]: ย้าย State ทั้งหมดมารวมไว้ด้านบนสุด ป้องกัน ReferenceError
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [inputValue, setInputValue] = useState('');
-  const [appliedPoints, setAppliedPoints] = useState(0);
-  // eslint-disable-next-line no-unused-vars
-  const [isLoading, setIsLoading] = useState(true);
-  const [walletData, setWalletData] = useState({ tier: { name: 'Member', color: 'text-slate-500' }});
+export default function PrivilegeSelector({ orderMode = 'retail' }) {
+  const { checkoutState, updateCheckoutConfig, totals } = useCart();
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
 
-  // 1. ดึงยอดแต้มคงเหลือแบบ Real-time
+  // 📡 1. ดึงข้อมูลจริงจาก Firebase (Points, Wallet, Promotions)
+  const [availablePoints, setAvailablePoints] = useState(0);
+  const [availableWallet, setAvailableWallet] = useState(0);
+  const [promotions, setPromotions] = useState([]);
+
   useEffect(() => {
-    const auth = getAuth();
     const user = auth.currentUser;
-    if (!user) {
+    if (user) {
+      // ฟังข้อมูล User Profile (Points & Wallet) แบบ Real-time
+      const userRef = doc(db, 'users', user.uid);
+      const unsubUser = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setAvailablePoints(data.creditPoints || 0);
+          setAvailableWallet(data.walletBalance || 0);
+        }
+      });
+
+      // ฟังข้อมูลโปรโมชั่นจากฐานข้อมูลกลาง
+      const promoRef = collection(db, 'artifacts', appId, 'public', 'data', 'promotions');
+      const unsubPromo = onSnapshot(promoRef, (snap) => {
+        setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+
+      return () => { unsubUser(); unsubPromo(); };
+    }
+  }, [appId]);
+
+  // Local States
+  const [promoCode, setPromoCode] = useState(checkoutState?.discountCode || '');
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState(!!checkoutState?.discountCode);
+  
+  const [pointsInput, setPointsInput] = useState(checkoutState?.usePoints || '');
+  const [useWallet, setUseWallet] = useState((checkoutState?.useWallet || 0) > 0);
+
+  // 🛡 2. แก้ไขบั๊ก Infinite Loop (Maximum update depth exceeded)
+  useEffect(() => {
+    if (useWallet) {
+      const remainingTotal = (totals?.subtotal || 0) + (checkoutState?.shippingCost || 0) - (checkoutState?.discountAmount || 0) - (checkoutState?.usePoints || 0);
+      const walletToDeduct = Math.min(availableWallet, Math.max(0, remainingTotal));
+      
+      // อัปเดตเฉพาะเมื่อค่าเปลี่ยนจริงๆ เพื่อป้องกัน Loop
+      if (checkoutState?.useWallet !== walletToDeduct) {
+        updateCheckoutConfig({ useWallet: walletToDeduct });
+      }
+    } else if (checkoutState?.useWallet !== 0) {
+       updateCheckoutConfig({ useWallet: 0 });
+    }
+  }, [totals?.subtotal, checkoutState?.shippingCost, checkoutState?.discountAmount, checkoutState?.usePoints, checkoutState?.useWallet, useWallet, availableWallet, updateCheckoutConfig]);
+
+  // 🎟 จัดการโค้ดส่วนลด (เทียบกับ Firebase จริง)
+  const handleApplyPromo = () => {
+    setPromoError('');
+    setPromoSuccess(false);
+
+    if (!promoCode.trim()) {
+      setPromoError('กรุณากรอกโค้ดส่วนลด');
       return;
     }
 
-    const unsubscribe = subscribeToWallet(user.uid, (data) => {
-      setWalletData(data);
-      setWalletBalance(data.balance || 0);
-      // setIsLoading(false);
-    });
+    // หาโปรที่รหัสตรงกัน และเปิดใช้งานอยู่
+    const validPromo = promotions.find(p => (p.code || '').toUpperCase() === promoCode.toUpperCase() && p.isActive !== false);
 
-    return () => unsubscribe();
-  }, []);
-
-  // 2. ฟังก์ชันตรวจสอบและจำกัดตัวเลข (Auto-Adjust)
-  const handleInputChange = (e) => {
-    // กรองให้เหลือแต่ตัวเลข
-    const val = e.target.value.replace(/[^0-9]/g, '');
-    let numVal = parseInt(val, 10);
-
-    if (isNaN(numVal)) {
-      setInputValue('');
-      return;
+    if (validPromo) {
+      if ((totals?.subtotal || 0) < (validPromo.minAmount || 0)) {
+        setPromoError(`ต้องมียอดสั่งซื้อขั้นต่ำ ฿${validPromo.minAmount}`);
+        return;
+      }
+      setPromoSuccess(true);
+      updateCheckoutConfig({ 
+        discountCode: promoCode.toUpperCase(),
+        discountAmount: validPromo.discountAmount || 0 
+      });
+    } else {
+      setPromoError('โค้ดส่วนลดไม่ถูกต้อง หรือหมดอายุแล้ว');
+      updateCheckoutConfig({ discountCode: null, discountAmount: 0 });
     }
-
-    // 🛑 ป้องกัน 1: ห้ามใช้เกินยอดคงเหลือที่มี
-    if (numVal > walletBalance) {
-      numVal = walletBalance;
-    }
-    // 🛑 ป้องกัน 2: ห้ามใช้เกินยอดสั่งซื้อสุทธิ (ไม่ให้ยอดติดลบ)
-    if (numVal > orderTotal) {
-      numVal = Math.floor(orderTotal);
-    }
-
-    setInputValue(numVal.toString());
   };
 
-  // 3. ฟังก์ชันกดยืนยันการใช้แต้ม
-  const handleApply = () => {
-    const points = parseInt(inputValue, 10) || 0;
-    setAppliedPoints(points);
-    if (onApplyPoints) onApplyPoints(points);
+  // 🌟 จัดการ Credit Points
+  const handlePointsChange = (e) => {
+    let val = parseInt(e.target.value.replace(/\D/g, ''), 10) || 0;
+    const maxUsable = Math.min(availablePoints, (totals?.subtotal || 0) + (checkoutState?.shippingCost || 0) - (checkoutState?.discountAmount || 0));
+    if (val > maxUsable) val = maxUsable;
+
+    setPointsInput(val || '');
+    updateCheckoutConfig({ usePoints: val });
   };
 
-  // 4. ฟังก์ชันกดยกเลิกการใช้แต้ม
-  const handleCancel = () => {
-    setInputValue('');
-    setAppliedPoints(0);
-    if (onApplyPoints) onApplyPoints(0);
+  const handleUseMaxPoints = () => {
+    const maxUsable = Math.min(availablePoints, (totals?.subtotal || 0) + (checkoutState?.shippingCost || 0) - (checkoutState?.discountAmount || 0));
+    setPointsInput(maxUsable);
+    updateCheckoutConfig({ usePoints: maxUsable });
   };
 
-  // 5. ปุ่มทางลัด "ใช้แต้มสูงสุด"
-  const handleUseMax = () => {
-    const maxUsable = Math.floor(Math.min(walletBalance, orderTotal));
-    setInputValue(maxUsable.toString());
-    setAppliedPoints(maxUsable);
-    if (onApplyPoints) onApplyPoints(maxUsable);
+  const handleWalletToggle = (e) => {
+    setUseWallet(e.target.checked);
   };
 
-  if (isLoading) return null;
+  // 🛡 3. แก้ไขบั๊ก Rendered fewer hooks (ต้องย้าย Early Return มาไว้ล่างสุดเสมอ)
+  if (orderMode === 'wholesale') {
+    return null;
+  }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6 animate-fade-in">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center">
-          <Coins size={18} />
-        </div>
+    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
+      <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+        <Ticket className="w-5 h-5 text-blue-600" />
+        สิทธิพิเศษและส่วนลด
+      </h2>
+
+      <div className="space-y-4">
+        {/* โค้ดส่วนลด */}
         <div>
-          <h3 className="font-bold text-slate-800 text-sm">ใช้ DH Credit เป็นส่วนลด</h3>
-          <p className="text-[10px] text-slate-500 font-medium">1 Pts = 1 บาท • ระดับ: <span className={walletData.tier.color}>{walletData.tier.name}</span></p>
-        </div>
-      </div>
-
-      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col gap-3">
-        <div className="flex justify-between items-end">
-          <span className="text-xs text-slate-500 font-medium">แต้มสะสมที่ใช้ได้</span>
-          <span className="text-base font-black text-[#0870B8] font-tech">{formatCredit(walletBalance)} Pts</span>
-        </div>
-
-        {appliedPoints > 0 ? (
-          <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 p-3 rounded-lg animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-2 text-emerald-700">
-              <CheckCircle2 size={16} />
-              <span className="text-sm font-bold">ใช้ส่วนลด {formatCredit(appliedPoints)} บาท</span>
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5">โค้ดส่วนลด</label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input 
+                type="text" 
+                value={promoCode}
+                onChange={(e) => { setPromoCode(e.target.value); setPromoSuccess(false); setPromoError(''); }}
+                placeholder="กรอกโค้ดส่วนลด" 
+                className={`w-full px-3 py-2.5 text-sm bg-gray-50 border ${promoError ? 'border-red-300' : promoSuccess ? 'border-emerald-300' : 'border-gray-200 focus:border-blue-500'} rounded-xl focus:bg-white transition-all uppercase outline-none`}
+              />
+              {promoSuccess && <CheckCircle2 className="absolute right-3 top-2.5 w-4 h-4 text-emerald-500" />}
+              {promoError && <XCircle className="absolute right-3 top-2.5 w-4 h-4 text-red-500" />}
             </div>
             <button 
-              onClick={handleCancel}
-              className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+              type="button"
+              onClick={handleApplyPromo}
+              disabled={!promoCode || promoSuccess}
+              className="px-4 py-2.5 text-sm bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl disabled:bg-gray-300 transition-colors"
             >
-              <XCircle size={14} /> ยกเลิก
+              ใช้โค้ด
             </button>
           </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                placeholder="ระบุจำนวนแต้ม"
-                disabled={walletBalance <= 0 || orderTotal <= 0}
-                className="w-full px-4 py-2.5 text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0870B8] focus:ring-2 focus:ring-[#0870B8]/20 disabled:bg-slate-100 disabled:cursor-not-allowed transition-all"
-              />
-              <button 
-                onClick={handleUseMax}
-                disabled={walletBalance <= 0 || orderTotal <= 0}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-[#E6F0F9] text-[#0870B8] px-2 py-1 rounded hover:bg-[#0870B8] hover:text-white transition-colors disabled:opacity-50"
-              >
-                ใช้สูงสุด
-              </button>
+          {promoError && <p className="text-[10px] text-red-500 mt-1.5 font-medium flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {promoError}</p>}
+          {promoSuccess && <p className="text-[10px] text-emerald-600 mt-1.5 font-bold flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> โค้ดถูกใช้งานแล้ว (ลด ฿{(checkoutState?.discountAmount || 0).toLocaleString()})</p>}
+        </div>
+
+        <hr className="border-gray-100" />
+
+        {/* Credit Points - ปรับ UI ให้มินิมอล เล็กกะทัดรัด */}
+        <div>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="block text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              หัก Credit Point
+            </label>
+            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
+              มี: {availablePoints.toLocaleString()} P
+            </span>
+          </div>
+          
+          <div className="relative">
+            <input 
+              type="text" 
+              value={pointsInput}
+              onChange={handlePointsChange}
+              placeholder="ใส่จำนวน Point ที่ต้องการใช้" 
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-amber-500 transition-all font-medium pr-16 outline-none"
+            />
+            <button 
+              type="button"
+              onClick={handleUseMaxPoints}
+              className="absolute right-1.5 top-1.5 px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 text-[10px] font-bold rounded-lg transition-colors"
+            >
+              ใช้สูงสุด
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1.5 ml-1">อัตราแลกเปลี่ยน 1 Point = 1 บาท</p>
+        </div>
+
+        {/* Wallet Balance - ปรับ UI เล็กลงและดูเนียนตา */}
+        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-white rounded-lg shadow-sm text-blue-600">
+              <Wallet className="w-4 h-4" />
             </div>
-            <button
-              onClick={handleApply}
-              disabled={!inputValue || parseInt(inputValue) <= 0}
-              className="px-5 py-2.5 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
-            >
-              <Sparkles size={14} /> ตกลง
-            </button>
+            <div>
+              <p className="text-xs font-bold text-gray-800">จ่ายด้วย Wallet</p>
+              <p className="text-[10px] font-medium text-blue-600 mt-0.5">ยอดคงเหลือ: ฿{availableWallet.toLocaleString()}</p>
+            </div>
           </div>
-        )}
+          
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              className="sr-only peer" 
+              checked={useWallet}
+              onChange={handleWalletToggle}
+            />
+            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 shadow-sm"></div>
+          </label>
+        </div>
       </div>
     </div>
   );
-};
-
-export default PrivilegeSelector;
+}

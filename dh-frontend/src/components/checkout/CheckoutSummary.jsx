@@ -1,79 +1,139 @@
-import React from 'react';
-import { ShoppingBag, Tag } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, ShieldCheck, CheckCircle2, Info, ShoppingBag, Sparkles, Gift, Loader2 } from 'lucide-react';
+import { useCart } from '../../hooks/useCart';
+import { db } from '../../firebase/config';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
-/**
- * CheckoutSummary - กล่องแสดงสรุปรายการสั่งซื้อฝั่งขวา
- */
-const CheckoutSummary = ({ cartItems = [], subTotal = 0, shippingFee = 0, discountFromPoints = 0 }) => {
-  
-  // คำนวณยอดสุทธิ (Grand Total)
-  const grandTotal = Math.max(0, subTotal + shippingFee - discountFromPoints);
+export default function CheckoutSummary({ orderMode = 'retail', loading = false, onCheckout }) {
+  const { cartItems, totals, checkoutState } = useCart();
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
+
+  // 📡 Real-time Fetch: Promotions และ กฎของแถม
+  const [promotions, setPromotions] = useState([]);
+  const [freebieRules, setFreebieRules] = useState([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  useEffect(() => {
+    // ดึงโปรโมชั่นที่ใช้งานอยู่
+    const promoRef = collection(db, 'artifacts', appId, 'public', 'data', 'promotions');
+    const unsubPromo = onSnapshot(promoRef, (snap) => {
+      setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // ดึงกฎของแถม
+    const freebieRef = collection(db, 'artifacts', appId, 'public', 'data', 'freebieSettings');
+    const unsubFreebie = onSnapshot(freebieRef, (snap) => {
+      setFreebieRules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setIsDataLoaded(true);
+    });
+
+    return () => { unsubPromo(); unsubFreebie(); };
+  }, [appId]);
+
+  // 🎁 Logic ค้นหาของแถมที่ลูกค้าควรได้รับ (ตัวอย่าง: แถมตามยอดซื้อ)
+  const qualifiedFreebies = freebieRules.filter(rule => totals.subtotal >= (rule.minAmount || 0));
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm sticky top-24 overflow-hidden">
+    <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 sticky top-24 transition-all duration-300">
+      <h2 className="text-xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-100 flex items-center gap-2">
+        <ShoppingBag className="w-5 h-5 text-blue-600" />
+        สรุปคำสั่งซื้อ
+      </h2>
       
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-        <ShoppingBag size={18} className="text-[#0870B8]" />
-        <h3 className="font-bold text-slate-800">สรุปคำสั่งซื้อ</h3>
-        <span className="ml-auto bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">
-          {cartItems.length} ชิ้น
-        </span>
-      </div>
-
-      {/* Item List (แสดงย่อๆ) */}
-      <div className="p-6 border-b border-slate-100 max-h-[300px] overflow-y-auto custom-scrollbar">
-        <div className="space-y-4">
-          {cartItems.map((item, index) => (
-            <div key={index} className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 p-1 flex-shrink-0">
-                <img src={item.imageUrl || '/logo.png'} alt={item.name} className="w-full h-full object-contain" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{item.name}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-slate-500">จำนวน: {item.quantity}</span>
-                  <span className="text-sm font-bold text-slate-700">฿{(item.price * item.quantity).toLocaleString()}</span>
-                </div>
-              </div>
+      {/* รายการสินค้า */}
+      <div className="space-y-4 mb-6 max-h-[25vh] overflow-y-auto pr-2 custom-scrollbar">
+        {cartItems.length > 0 ? cartItems.map((item) => (
+          <div key={item.id} className="flex justify-between items-start gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.name}</p>
+              <p className="text-xs text-gray-500 mt-1">จำนวน: {item.quantity} ชิ้น</p>
             </div>
-          ))}
-        </div>
+            <p className="text-sm font-bold text-gray-900 whitespace-nowrap">
+              ฿{((item.price || 0) * item.quantity).toLocaleString()}
+            </p>
+          </div>
+        )) : (
+          <p className="text-center py-4 text-sm text-gray-400">กำลังดึงข้อมูลตะกร้า...</p>
+        )}
       </div>
 
-      {/* Calculation */}
-      <div className="p-6 bg-slate-50 space-y-3">
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>ยอดรวมสินค้า (Subtotal)</span>
-          <span className="font-semibold">฿{subTotal.toLocaleString()}</span>
-        </div>
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>ค่าจัดส่ง (Shipping)</span>
-          <span className="font-semibold">{shippingFee > 0 ? `฿${shippingFee.toLocaleString()}` : 'ส่งฟรี'}</span>
-        </div>
-
-        {/* บรรทัดส่วนลดจากแต้ม (แสดงเมื่อมีการใช้แต้ม) */}
-        {discountFromPoints > 0 && (
-          <div className="flex items-center justify-between text-sm text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg border border-emerald-100 animate-in slide-in-from-right-4 duration-300">
-            <span className="flex items-center gap-1"><Tag size={14} /> ส่วนลด (DH Points)</span>
-            <span>- ฿{discountFromPoints.toLocaleString()}</span>
+      {/* 🚀 Real Promotions & Freebies (สีสันตื่นเต้น) */}
+      <div className="mb-6 space-y-3">
+        {(promotions.length > 0 || qualifiedFreebies.length > 0) ? (
+          <div className="rounded-2xl p-4 bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-lg relative overflow-hidden group">
+            <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-12"></div>
+            <div className="flex items-center gap-2 mb-2.5 relative z-10">
+              <Sparkles className="w-5 h-5 text-yellow-300 animate-bounce" />
+              <h3 className="font-bold text-sm text-white tracking-wide uppercase">สิทธิพิเศษที่คุณได้รับ!</h3>
+            </div>
+            <ul className="space-y-2 text-xs font-semibold relative z-10">
+              {promotions.filter(p => p.isActive).map(p => (
+                <li key={p.id} className="flex items-start gap-2 bg-white/20 p-1.5 rounded-lg border border-white/20">
+                  <CheckCircle2 className="w-4 h-4 text-green-300 flex-shrink-0" />
+                  <span>{p.title || p.description}</span>
+                </li>
+              ))}
+              {qualifiedFreebies.map(f => (
+                <li key={f.id} className="flex items-start gap-2 bg-yellow-400/20 p-1.5 rounded-lg border border-yellow-400/30">
+                  <Gift className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+                  <span>ฟรี! {f.itemName} (เมื่อซื้อครบ {f.minAmount}.-)</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="rounded-2xl p-4 bg-gray-50 border border-gray-100 text-center flex flex-col items-center justify-center opacity-60">
+            <Gift className="w-6 h-6 text-gray-300 mb-2" />
+            <p className="text-[10px] font-bold text-gray-400">ยังไม่มีโปรโมชั่นพิเศษในขณะนี้</p>
           </div>
         )}
       </div>
 
-      {/* Grand Total */}
-      <div className="p-6 bg-slate-900 text-white">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-300">ยอดชำระสุทธิ</span>
-          <span className="text-2xl font-black text-white font-tech tracking-wider">
-            ฿{grandTotal.toLocaleString()}
+      {/* รายละเอียดค่าใช้จ่าย */}
+      <div className="space-y-3 pt-4 border-t border-gray-100 text-sm">
+        <div className="flex justify-between text-gray-700">
+          <span>มูลค่าสินค้า ({totals.count} ชิ้น)</span>
+          <span className="font-medium">฿{totals.subtotal.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-gray-700">
+          <span>ค่าจัดส่ง</span>
+          <span className={orderMode === 'wholesale' ? 'text-gray-400' : (totals.shipping === 0 ? 'text-emerald-500 font-bold' : 'font-medium')}>
+            {orderMode === 'wholesale' ? 'รอประเมิน' : `฿${totals.shipping.toLocaleString()}`}
           </span>
         </div>
-        <p className="text-[10px] text-slate-400 mt-2 text-right">รวมภาษีมูลค่าเพิ่มแล้ว</p>
+        <div className="flex justify-between text-gray-700">
+          <span>ส่วนลดทั้งหมด</span>
+          <span className="text-emerald-500 font-medium">{totals.discount > 0 ? `- ฿${totals.discount.toLocaleString()}` : '฿0'}</span>
+        </div>
       </div>
 
+      {/* ยอดสุทธิ */}
+      <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="flex justify-between items-end">
+          <span className="text-base font-bold text-gray-900">{orderMode === 'wholesale' ? 'ยอดรอประเมิน' : 'ยอดชำระสุทธิ'}</span>
+          <div className="text-right">
+            <span className={`text-2xl tracking-tighter font-black ${orderMode === 'wholesale' ? 'text-gray-400' : 'text-blue-600'}`}>
+              {orderMode === 'wholesale' ? `฿${totals.subtotal.toLocaleString()}` : `฿${totals.grandTotal.toLocaleString()}`}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onCheckout}
+        disabled={loading || cartItems.length === 0}
+        className={`w-full mt-6 py-4 px-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-md ${
+          orderMode === 'wholesale' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+        } disabled:bg-gray-200 disabled:shadow-none`}
+      >
+        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (orderMode === 'wholesale' ? 'ส่งคำร้องขอราคาส่ง' : 'สั่งสินค้าทันที')}
+        <ArrowRight className="w-5 h-5" />
+      </button>
+
+      <div className="mt-6 flex justify-center gap-4 opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all">
+        <ShieldCheck className="w-5 h-5 text-emerald-600" />
+        <CheckCircle2 className="w-5 h-5 text-blue-600" />
+      </div>
     </div>
   );
-};
-
-export default CheckoutSummary;
+}
