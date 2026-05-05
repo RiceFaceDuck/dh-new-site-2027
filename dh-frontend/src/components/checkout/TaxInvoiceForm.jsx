@@ -23,13 +23,26 @@ export default function TaxInvoiceForm() {
     taxInfo.address.length > 10 &&
     (taxInfo.isHeadOffice || taxInfo.branchCode.length >= 4);
 
+  const [errors, setErrors] = useState({});
+  const validateTaxId = (taxId) => {
+    return /^\d{13}$/.test(taxId);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let newErrors = { ...errors };
 
     // 🪄 ลูกเล่น UX: บังคับกรอกเฉพาะตัวเลข 13 หลัก สำหรับเลขภาษี
     if (name === 'taxId') {
       const onlyNums = value.replace(/\D/g, '').slice(0, 13);
       setTaxInfo(prev => ({ ...prev, [name]: onlyNums }));
+      
+      if (onlyNums.length > 0 && !validateTaxId(onlyNums)) {
+        newErrors.taxId = 'เลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก';
+      } else {
+        delete newErrors.taxId;
+      }
+      setErrors(newErrors);
       return;
     }
 
@@ -135,10 +148,12 @@ export default function TaxInvoiceForm() {
                 onChange={handleChange}
                 placeholder="X-XXXX-XXXXX-XX-X"
                 maxLength="13"
-                className="w-full px-4 py-3 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium tracking-widest"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium tracking-widest ${errors.taxId ? 'border-red-300 bg-red-50' : 'border-transparent'}`}
               />
-              {taxInfo.taxId.length > 0 && taxInfo.taxId.length < 13 && (
-                <p className="text-xs text-red-500 mt-1.5 ml-1">กรุณากรอกให้ครบ 13 หลัก (ขาดอีก {13 - taxInfo.taxId.length} ตัว)</p>
+              {errors.taxId ? (
+                <p className="text-xs text-red-500 mt-1.5 ml-1">{errors.taxId}</p>
+              ) : taxInfo.taxId.length > 0 && taxInfo.taxId.length < 13 && (
+                <p className="text-xs text-amber-500 mt-1.5 ml-1">กรุณากรอกให้ครบ 13 หลัก (ขาดอีก {13 - taxInfo.taxId.length} ตัว)</p>
               )}
             </div>
 

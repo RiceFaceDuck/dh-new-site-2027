@@ -14,12 +14,14 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
   const orderRef = doc(collection(db, "orders")); // สร้าง Reference ล่วงหน้า
   const userRef = doc(db, "users", user.uid);
+  const counterRef = doc(db, "system_counters", "orders");
 
   // 🔥 การใช้ runTransaction: ล็อกการทำงานทั้งหมดเป็นเนื้อเดียว (Atomic)
   return await runTransaction(db, async (transaction) => {
     
-    // 1. [READ] ดึงข้อมูลผู้ใช้เพื่อเช็คยอดคงเหลือ
+    // 1. [READ] ดึงข้อมูลผู้ใช้เพื่อเช็คยอดคงเหลือ และดึงเลขรันบิลล่าสุด
     const userDoc = await transaction.get(userRef);
+    const counterDoc = await transaction.get(counterRef);
     const userData = userDoc.exists() ? userDoc.data() : {};
 
     // 🛑 Data Validation: ตรวจสอบไม่ให้ตัดแต้มเกินยอดที่มีจริง (Safe Check ป้องกันค่าว่าง)
@@ -31,7 +33,31 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     if (usePoints > currentPoints) throw new Error("Credit Point ของคุณไม่เพียงพอ");
     if (useWallet > currentWallet) throw new Error("ยอดเงิน Wallet ของคุณไม่เพียงพอ");
 
-    // 2. โครงสร้างอัจฉริยะ: แยกสายงานตามแผน (Retail vs Wholesale)
+    // 1.5 [READ] ดึงสต็อกสินค้าล่าสุด
+    const productDocs = [];
+    for (const item of cartItems) {
+      const productRef = doc(db, "products", item.id || item.sku);
+      const pDoc = await transaction.get(productRef);
+      if (!pDoc.exists()) throw new Error(`ไม่พบสินค้า ${item.name} ในระบบ`);
+      const stock = pDoc.data().stockQuantity || 0;
+      if (stock < item.quantity) throw new Error(`สินค้า ${item.name} มีสต็อกไม่เพียงพอ (เหลือ ${stock} ชิ้น)`);
+      productDocs.push({ ref: productRef, currentStock: stock, required: item.quantity });
+    }
+
+    // 2. โครงสร้างอัจฉริยะ: แยกสายงานตามแผน (Retail vs Wholesale) และสร้างเลขบิล
+    let newOrderId = orderRef.id; // Fallback
+    if (counterDoc.exists()) {
+      const currentCount = counterDoc.data().count || 0;
+      const nextCount = currentCount + 1;
+      const yearMonth = new Date().toISOString().slice(0, 7).replace('-', '');
+      newOrderId = `DH-${yearMonth}-${String(nextCount).padStart(3, '0')}`;
+      transaction.update(counterRef, { count: nextCount });
+    } else {
+      transaction.set(counterRef, { count: 1 });
+      const yearMonth = new Date().toISOString().slice(0, 7).replace('-', '');
+      newOrderId = `DH-${yearMonth}-001`;
+    }
+
     const isWholesale = checkoutState?.isWholesaleRequest || false;
     const orderType = isWholesale ? "wholesale" : "retail";
     
@@ -41,7 +67,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     // 📦 ประกอบ Data Model สำหรับ Order
     const orderData = {
-      orderId: orderRef.id,
+      orderId: newOrderId,
       userId: user.uid,
       customerName: user.displayName || user.email || 'Customer',
       orderType: orderType,
@@ -88,8 +114,12 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       updatedAt: serverTimestamp()
     };
 
-    // 3. [WRITE] สร้างเอกสารคำสั่งซื้อ
+    // 3. [WRITE] สร้างเอกสารคำสั่งซื้อ และ ตัดสต็อกแบบ Atomic
     transaction.set(orderRef, orderData);
+    
+    for (const p of productDocs) {
+      transaction.update(p.ref, { stockQuantity: p.currentStock - p.required });
+    }
 
     // 4. [WRITE] Double-entry Bookkeeping
     let profileUpdates = {};
@@ -103,7 +133,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         type: "deduct",
         currency: "point",
         amount: usePoints,
-        note: `แลก Credit Point เป็นส่วนลดสำหรับคำสั่งซื้อ #${orderRef.id}`,
+        note: `แลก Credit Point เป็นส่วนลดสำหรับคำสั่งซื้อ #${newOrderId}`,
         createdAt: serverTimestamp()
       });
     }
@@ -113,11 +143,11 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       const walletTxRef = doc(collection(db, "transactions"));
       transaction.set(walletTxRef, {
         userId: user.uid,
-        orderId: orderRef.id,
+        orderId: newOrderId,
         type: "deduct",
         currency: "wallet",
         amount: useWallet,
-        note: `ชำระเงิน (ตัด Wallet) สำหรับคำสั่งซื้อ #${orderRef.id}`,
+        note: `ชำระเงิน (ตัด Wallet) สำหรับคำสั่งซื้อ #${newOrderId}`,
         createdAt: serverTimestamp()
       });
     }
@@ -132,7 +162,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       transaction.update(userRef, profileUpdates);
     }
 
-    return orderRef.id;
+    return newOrderId;
   });
 };
 
@@ -194,9 +224,11 @@ export const createWholesaleRequest = async (user, cartItems, customerData, tota
     totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
     payload: {
       items: cartItems,
+      itemsSnapshot: cartItems, // Snapshot ป้องกันการเปลี่ยนแปลง
       shippingFee: checkoutState?.shippingCost || 0,
       promoDiscount: checkoutState?.discountAmount || 0,
-      freebies: checkoutState?.qualifiedFreebies?.map(f => f.itemName).join(', ') || ''
+      freebies: checkoutState?.qualifiedFreebies?.map(f => f.itemName).join(', ') || '',
+      checkoutSnapshot: checkoutState || {} // เก็บ state เต็มรูปแบบ
     },
     createdAt: serverTimestamp(),
     createdBy: user.uid

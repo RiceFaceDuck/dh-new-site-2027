@@ -94,7 +94,11 @@ const Cart = () => {
 
     setUpdatingId(productId);
     try {
-      await cartService.updateCartItemQty(user.uid, productId, newQty);
+      if (newQty === 0) {
+        await cartService.removeItem(user.uid, productId);
+      } else {
+        await cartService.updateCartItemQty(user.uid, productId, newQty);
+      }
       await fetchCart(user.uid); 
     } catch (error) {
       console.error("🔥 Error updating quantity:", error);
@@ -116,9 +120,7 @@ const Cart = () => {
 
     setUpdatingId(productId);
     try {
-      // 🚀 แก้ไข Bug ลบไม่ออก: ใช้ updateCartItemQty และส่งค่า Qty = 0 แทน เนื่องจากระบบของคุณไม่มีฟังก์ชัน removeItem
-      await cartService.updateCartItemQty(user.uid, productId, 0); 
-      
+      await cartService.removeItem(user.uid, productId);
       await fetchCart(user.uid);
     } catch (error) {
       console.error("🔥 Error removing item:", error);

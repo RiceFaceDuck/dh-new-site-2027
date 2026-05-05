@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Settings, User, Search as SearchIcon, X, Truck, Check, Calculator, Megaphone, Receipt, Package, FileText, Tag, Wallet, Database, MapPin, Phone, ShieldCheck, SlidersHorizontal, Printer, Volume2, Lock, Wand2, Sparkles, RefreshCw, UserPlus, AlertCircle, Save, Info, Loader2, ChevronRight } from 'lucide-react';
+import { Settings, User, Search as SearchIcon, X, Truck, Check, Calculator, Megaphone, Receipt, FileText, Tag, Wallet, Phone, ShieldCheck, SlidersHorizontal, Printer, Volume2, Wand2, Sparkles, RefreshCw, UserPlus, Save, Info, Loader2, ChevronRight } from 'lucide-react';
 import { userService } from '../../../firebase/userService';
 
 export default function SettingsPanel({

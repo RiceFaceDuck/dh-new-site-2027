@@ -85,10 +85,50 @@ export const cartService = {
   },
 
   /**
-   * ➖ ลบสินค้า หรือ อัปเดตจำนวนในหน้าตะกร้า
+   * 🗑️ ลบสินค้าออกจากตะกร้า
+   */
+  removeItem: async (uid, productId) => {
+    if (!uid) return;
+    try {
+      const cartRef = doc(db, COLLECTION_NAME, uid);
+      const snap = await getDoc(cartRef);
+      if (!snap.exists()) return;
+
+      let currentItems = snap.data().items || [];
+      currentItems = currentItems.filter(item => (item.id || item.sku) !== productId);
+
+      const totalSummary = currentItems.reduce(
+        (acc, item) => {
+          acc.total += item.price * item.qty;
+          acc.totalQty += item.qty;
+          return acc;
+        },
+        { total: 0, totalQty: 0 }
+      );
+
+      await setDoc(cartRef, {
+        items: currentItems,
+        total: totalSummary.total,
+        totalQty: totalSummary.totalQty,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      return true;
+    } catch (error) {
+      console.error("🔥 Error removing item from cart:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * ➖ อัปเดตจำนวนในหน้าตะกร้า
    */
   updateCartItemQty: async (uid, productId, newQty) => {
     if (!uid) return;
+
+    if (newQty <= 0) {
+      return cartService.removeItem(uid, productId);
+    }
     
     try {
       const cartRef = doc(db, COLLECTION_NAME, uid);
@@ -97,15 +137,10 @@ export const cartService = {
 
       let currentItems = snap.data().items || [];
       
-      if (newQty <= 0) {
-        // ลบออกจากตะกร้า
-        currentItems = currentItems.filter(item => (item.id || item.sku) !== productId);
-      } else {
-        // อัปเดตจำนวน
-        const existingItemIndex = currentItems.findIndex(item => (item.id || item.sku) === productId);
-        if (existingItemIndex > -1) {
-          currentItems[existingItemIndex].qty = newQty;
-        }
+      // อัปเดตจำนวน
+      const existingItemIndex = currentItems.findIndex(item => (item.id || item.sku) === productId);
+      if (existingItemIndex > -1) {
+        currentItems[existingItemIndex].qty = newQty;
       }
 
       const totalSummary = currentItems.reduce(

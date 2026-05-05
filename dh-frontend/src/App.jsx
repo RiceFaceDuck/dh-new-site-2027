@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import { CartProvider } from './context/CartProvider';
+import { OrderProvider } from './context/OrderContext';
 
 // 🎯 นำเข้าระบบการตลาด เพื่อใช้งาน Smart Cache ประหยัด Reads
 import { marketingService } from './firebase/marketingService';
@@ -57,6 +58,7 @@ function App() {
 
   return (
     <CartProvider>
+      <OrderProvider>
       <Router>
         {/* ฝังลูกเล่น ScrollToTop ทำงานเงียบๆ ทุกครั้งที่ Route เปลี่ยน */}
         <ScrollToTop />
@@ -73,6 +75,7 @@ function App() {
           </Routes>
         </MainLayout>
       </Router>
+      </OrderProvider>
     </CartProvider>
   );
 }

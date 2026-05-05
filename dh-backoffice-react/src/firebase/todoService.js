@@ -3,6 +3,7 @@ import {
   collection, query, where, orderBy, limit, getDocs, doc, updateDoc, 
   addDoc, serverTimestamp, onSnapshot, runTransaction 
 } from 'firebase/firestore';
+import { historyService } from './historyService';
 
 export const todoService = {
   // 📥 1. ระบบ Subscribe งาน 
@@ -52,7 +53,6 @@ export const todoService = {
 
         await runTransaction(db, async (transaction) => {
           const orderRef = doc(db, 'orders', orderId);
-          const logRef = doc(collection(db, 'system_logs')); // 📝 เตรียมพื้นที่เขียน Log
           
           // 3.1 อัปเดต Order หน้าบ้าน
           transaction.update(orderRef, {
@@ -74,17 +74,17 @@ export const todoService = {
             resolution: resolutionData
           });
 
-          // 3.3 บันทึกประวัติ (Audit Trail)
-          transaction.set(logRef, {
-            actionType: 'WHOLESALE_APPROVED',
-            orderId: orderId,
-            taskId: todo.id,
-            details: `อนุมัติราคาส่งที่ ฿${resolutionData.approvedPrice.toLocaleString()}`,
-            actionByUid: currentUser?.uid || 'system',
-            actionByName: currentUser?.displayName || 'Manager',
-            timestamp: serverTimestamp()
-          });
+          // 3.3 ไม่ต้องบันทึกลง system_logs เราจะไปใช้ HistoryService เป็นมาตรฐานเดียวกันหมด
         });
+        
+        // 🌟 บันทึก Audit Log จากบริการกลาง (HistoryService)
+        await historyService.addLog(
+          'Wholesale', 
+          'Approve', 
+          orderId, 
+          `อนุมัติราคาส่งที่ ฿${resolutionData.approvedPrice.toLocaleString()}`, 
+          currentUser?.uid || 'system'
+        );
       } else {
         // งาน Manual ทั่วไป ไม่ต้องบันทึก Log แยกลง system_logs ให้เปลือง Reads
         await updateDoc(taskRef, {

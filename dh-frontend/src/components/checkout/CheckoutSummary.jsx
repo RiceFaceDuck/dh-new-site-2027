@@ -6,7 +6,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 
 export default function CheckoutSummary({ orderMode = 'retail', loading = false, isComplete = false, onCheckout }) {
   const { cartItems, totals, checkoutState, updateCheckoutConfig } = useCart();
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
+  const appId = typeof import.meta.env.VITE_FIREBASE_APP_ID !== 'undefined' ? import.meta.env.VITE_FIREBASE_APP_ID : 'dh-notebook-69f3b';
 
   // 📡 Real-time Fetch: Promotions และ กฎของแถม
   const [promotions, setPromotions] = useState([]);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { todoService } from '../firebase/todoService';
 import { auth, db } from '../firebase/config';
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore'; 
+import { collection, doc, getDoc, getDocs, query, where, documentId } from 'firebase/firestore'; 
 import NonExistingProducts from './todo/NonExistingProducts';
 import { 
   Check, X, Clock, UserPlus, Tag, Info, AlertCircle, 
@@ -76,6 +76,39 @@ export default function Todo() {
         const rulesSnap = await getDocs(collection(db, 'shipping_rules'));
         shippingRules = rulesSnap.docs.map(d => d.data()).filter(r => r.isActive !== false);
       } catch (e) { console.warn("Failed to fetch shipping rules"); }
+
+      // 🚀 Batch Fetch Strategy: รวบรวม ID ที่ต้องดึงทั้งหมด
+      const orderIdsToFetch = new Set();
+      const productIdsToFetch = new Set();
+      const pendingTodos = b2bTodos.filter(t => !fetchedPrices[t.id]);
+
+      pendingTodos.forEach(todo => {
+        if (todo.payload?.orderId) orderIdsToFetch.add(todo.payload.orderId);
+        const items = todo.payload.itemsSnapshot || todo.payload.items || [];
+        items.forEach(item => {
+          const id = item.id || item.sku;
+          if (id) productIdsToFetch.add(id);
+        });
+      });
+
+      const ordersMap = {};
+      const productsMap = {};
+
+      // Helper for batching 'in' queries (max 30 ids per query)
+      const fetchInBatches = async (collectionName, ids, map) => {
+        const idList = Array.from(ids);
+        for (let i = 0; i < idList.length; i += 30) {
+          const batch = idList.slice(i, i + 30);
+          try {
+            const q = query(collection(db, collectionName), where(documentId(), 'in', batch));
+            const snap = await getDocs(q);
+            snap.forEach(d => { map[d.id] = d.data(); });
+          } catch (err) { console.warn(`Batch fetch error for ${collectionName}:`, err); }
+        }
+      };
+
+      if (orderIdsToFetch.size > 0) await fetchInBatches('orders', orderIdsToFetch, ordersMap);
+      if (productIdsToFetch.size > 0) await fetchInBatches('products', productIdsToFetch, productsMap);
       
       for (const todo of b2bTodos) {
         if (fetchedPrices[todo.id]) continue; 
@@ -87,41 +120,33 @@ export default function Todo() {
           let shippingFee = 0;
           let freebies = '';
           
-          if (todo.payload?.orderId) {
-            const orderSnap = await getDoc(doc(db, 'orders', todo.payload.orderId));
-            if (orderSnap.exists()) {
-              const orderData = orderSnap.data();
-              promoDiscount = Number(orderData.summary?.promoDiscount || orderData.promoDiscount) || 0;
-              shippingFee = Number(orderData.summary?.shippingFee || orderData.shippingFee) || 0;
-              freebies = orderData.freebies || orderData.summary?.freebies || '';
-            }
+          const orderData = todo.payload?.orderId ? ordersMap[todo.payload.orderId] : null;
+          if (orderData) {
+            promoDiscount = Number(orderData.summary?.promoDiscount || orderData.promoDiscount) || 0;
+            shippingFee = Number(orderData.summary?.shippingFee || orderData.shippingFee) || 0;
+            freebies = orderData.freebies || orderData.summary?.freebies || '';
           }
 
           const targetItems = todo.payload.itemsSnapshot || todo.payload.items || [];
           let totalQty = 0;
 
-          const itemsWithPricing = await Promise.all(targetItems.map(async (item) => {
+          const itemsWithPricing = targetItems.map((item) => {
             let dbCost = 0; 
             let dbRetail = Number(item.price) - Number(item.discount || 0) || 0; 
             let dbWholesalePrice = 0;
             totalQty += (Number(item.qty) || 1);
 
-            try {
-              const itemIdentifier = item.id || item.sku;
-              if (itemIdentifier) {
-                const pSnap = await getDoc(doc(db, 'products', itemIdentifier));
-                if (pSnap.exists()) {
-                  const data = pSnap.data();
-                  dbWholesalePrice = Number(data.Price) || Number(data.wholesalePrice) || 0; 
-                  dbCost = Number(data.cost) || 0; 
-                  dbRetail = Number(data.retailPrice) || dbRetail;
-                }
-              }
-            } catch(e) { console.warn("Fetch DB Error:", e); }
+            const itemIdentifier = item.id || item.sku;
+            const data = itemIdentifier ? productsMap[itemIdentifier] : null;
+            if (data) {
+              dbWholesalePrice = Number(data.Price) || Number(data.wholesalePrice) || 0; 
+              dbCost = Number(data.cost) || 0; 
+              dbRetail = Number(data.retailPrice) || dbRetail;
+            }
             
             const computedWsPrice = dbWholesalePrice > 0 ? dbWholesalePrice : dbRetail;
             return { ...item, retailPrice: dbRetail, computedWsPrice, dbCost };
-          }));
+          });
 
           let calculatedShipping = shippingFee;
           if (shippingRules.length > 0) {

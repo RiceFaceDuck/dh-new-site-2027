@@ -124,7 +124,7 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (productId) => {
     const user = auth.currentUser;
     if (user) {
-      await cartService.updateCartItemQty(user.uid, productId, 0);
+      await cartService.removeItem(user.uid, productId);
     } else {
       setCartItems(prev => prev.filter(item => item.id !== productId));
     }
