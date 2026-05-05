@@ -1,5 +1,5 @@
 import { db } from './config';
-import { doc, collection, runTransaction, writeBatch, serverTimestamp, addDoc } from 'firebase/firestore';
+import { doc, collection, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 /**
  * ⚡️ Smart Checkout Service
@@ -138,7 +138,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
 // 2. ⚡️เพิ่มฟังก์ชันนี้กลับมา (Backward Compatibility) เพื่อไม่ให้หน้าเว็บเดิม Crash
 // ฟังก์ชันสำหรับขอราคาส่งแบบเดิม แปลงให้ใช้งานร่วมกับระบบใหม่ได้ทันที
-export const createWholesaleRequest = async (user, cartItems, customerData, totals = null) => {
+export const createWholesaleRequest = async (user, cartItems, customerData, totals = null, checkoutState = null) => {
   if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนทำรายการ");
   if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า");
 
@@ -171,6 +171,14 @@ export const createWholesaleRequest = async (user, cartItems, customerData, tota
       wholesale: customerData?.wholesaleNote || ""
     },
     companyInfo: customerData?.company || "",
+    calculationLog: {
+      promotions: checkoutState?.appliedPromotions || [],
+      freebies: checkoutState?.qualifiedFreebies || [],
+      discountCode: checkoutState?.discountCode || null,
+      discountAmount: checkoutState?.discountAmount || 0,
+      usedPoints: checkoutState?.usePoints || 0,
+      usedWallet: checkoutState?.useWallet || 0,
+    },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   };
@@ -184,6 +192,12 @@ export const createWholesaleRequest = async (user, cartItems, customerData, tota
     orderId: orderRef.id,
     customerName: customerName,
     totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
+    payload: {
+      items: cartItems,
+      shippingFee: checkoutState?.shippingCost || 0,
+      promoDiscount: checkoutState?.discountAmount || 0,
+      freebies: checkoutState?.qualifiedFreebies?.map(f => f.itemName).join(', ') || ''
+    },
     createdAt: serverTimestamp(),
     createdBy: user.uid
   };
