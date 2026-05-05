@@ -11,9 +11,15 @@ export default function WholesaleCard({ task, onComplete }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // UX Gimmick: คำนวณส่วนลดแบบ Real-time ให้ผู้จัดการเห็นทันที
+  // UX Gimmick: คำนวณส่วนลดและกำไรแบบ Real-time ให้ผู้จัดการเห็นทันที
   const discount = initialPrice - Number(finalPrice);
   const discountPercent = initialPrice > 0 ? ((discount / initialPrice) * 100).toFixed(1) : 0;
+
+  // คำนวณต้นทุนรวมจากสินค้า
+  const totalCost = (task.payload?.itemsSnapshot || task.payload?.items || []).reduce((acc, item) => {
+    return acc + (Number(item.dbCost || 0) * Number(item.qty || item.quantity || 1));
+  }, 0);
+  const estimatedProfit = Number(finalPrice) - totalCost;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,17 +119,34 @@ export default function WholesaleCard({ task, onComplete }) {
              </div>
 
              {/* UI Gimmick: คำนวณความต่างราคาให้ Manager ตัดสินใจง่ายขึ้น */}
-             <div className="mt-3 flex flex-wrap gap-2">
-               {discount > 0 ? (
-                 <div className="flex items-center gap-1.5 text-[11px] bg-green-100 text-green-700 px-2 py-1 rounded-md font-bold border border-green-200">
-                    <Calculator className="w-3 h-3" /> ลดไป: ฿{discount.toLocaleString()} ({discountPercent}%)
+             <div className="mt-3 flex flex-col gap-2">
+               <div className="flex flex-wrap gap-2">
+                 {discount > 0 ? (
+                   <div className="flex items-center gap-1.5 text-[11px] bg-green-100 text-green-700 px-2 py-1 rounded-md font-bold border border-green-200">
+                      <Calculator className="w-3 h-3" /> ลดไป: ฿{discount.toLocaleString()} ({discountPercent}%)
+                   </div>
+                 ) : discount < 0 ? (
+                   <div className="flex items-center gap-1.5 text-[11px] bg-red-100 text-red-700 px-2 py-1 rounded-md font-bold border border-red-200">
+                      <AlertCircle className="w-3 h-3" /> ราคาสูงกว่าปกติ ฿{Math.abs(discount).toLocaleString()}
+                   </div>
+                 ) : (
+                   <div className="text-[11px] text-gray-400 font-bold px-2 py-1 uppercase tracking-tight">ไม่มีส่วนลดเพิ่มเติม</div>
+                 )}
+               </div>
+
+               {totalCost > 0 && (
+                 <div className="flex items-center justify-between text-xs p-2 bg-gray-100 rounded-lg border border-gray-200 mt-2">
+                   <div className="flex items-center gap-2">
+                     <span className="font-bold text-gray-600">ต้นทุนรวมประเมิน:</span>
+                     <span className="text-gray-500">฿{totalCost.toLocaleString()}</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <span className="font-bold text-gray-600">กำไรเบื้องต้น:</span>
+                     <span className={`font-black ${estimatedProfit > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                       ฿{estimatedProfit.toLocaleString()}
+                     </span>
+                   </div>
                  </div>
-               ) : discount < 0 ? (
-                 <div className="flex items-center gap-1.5 text-[11px] bg-red-100 text-red-700 px-2 py-1 rounded-md font-bold border border-red-200">
-                    <AlertCircle className="w-3 h-3" /> ราคาสูงกว่าปกติ ฿{Math.abs(discount).toLocaleString()}
-                 </div>
-               ) : (
-                 <div className="text-[11px] text-gray-400 font-bold px-2 py-1 uppercase tracking-tight">ไม่มีส่วนลดเพิ่มเติม</div>
                )}
              </div>
           </form>

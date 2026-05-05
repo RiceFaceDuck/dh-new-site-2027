@@ -6,7 +6,7 @@ import { collection, onSnapshot, doc } from 'firebase/firestore';
 
 export default function PrivilegeSelector({ orderMode = 'retail' }) {
   const { checkoutState, updateCheckoutConfig, totals } = useCart();
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
+  const appId = typeof import.meta.env.VITE_FIREBASE_APP_ID !== 'undefined' ? import.meta.env.VITE_FIREBASE_APP_ID : 'dh-notebook-69f3b';
 
   // 📡 1. ดึงข้อมูลจริงจาก Firebase (Points, Wallet, Promotions)
   const [availablePoints, setAvailablePoints] = useState(0);

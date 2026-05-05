@@ -12,6 +12,7 @@ import {
 import TodoItem from '../components/todo/TodoItem';
 import HistoryPanel from '../components/todo/HistoryPanel';
 import WholesaleCard from '../components/todo/WholesaleCard';
+import TaxInvoiceCard from '../components/todo/TaxInvoiceCard';
 
 export default function Todo() {
   const [todos, setTodos] = useState([]);
@@ -374,6 +375,15 @@ export default function Todo() {
                     </div>
                   );
                 }
+
+                if (todo.type === 'tax_invoice_request') {
+                  return (
+                    <div className="p-4" key={todo.id}>
+                      <TaxInvoiceCard task={todo} onComplete={() => {}} />
+                    </div>
+                  );
+                }
+
                 // ระบบเก่า
                 return (
                   <TodoItem 
