@@ -78,14 +78,14 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      let orderId;
+      
       if (orderMode === 'retail') {
         const mockSlipUrl = URL.createObjectURL(slipFile); 
-        orderId = await submitOrder(user, cartItems, checkoutState, totals, mockSlipUrl, true);
+        await submitOrder(user, cartItems, checkoutState, totals, mockSlipUrl, true);
       } else {
-        orderId = await createWholesaleRequest(user, cartItems, { 
+        await createWholesaleRequest(user, cartItems, { 
           name: addr.fullName, company: addr.companyName, wholesaleNote: checkoutState?.wholesaleNote, note: addr.address 
-        }, totals);
+        }, totals, checkoutState);
       }
       clearCart();
       setSuccess(true);

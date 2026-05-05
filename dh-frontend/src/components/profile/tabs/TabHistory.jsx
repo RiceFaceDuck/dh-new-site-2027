@@ -177,7 +177,7 @@ export default function TabHistory({ userId }) {
   // 🎨 จัดการแสดงผล Badge สถานะ
   const getStatusDisplay = (status) => {
     switch (status) {
-      case 'pending_wholesale_price':
+      case 'pending_wholesale':
         return { text: 'รอประเมินราคาส่ง', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: <Clock className="w-3 h-3" /> };
       case 'pending_payment':
       case 'awaiting_payment':
@@ -242,7 +242,7 @@ export default function TabHistory({ userId }) {
         <div className="space-y-4">
           {orders.map((order) => {
             const statusStyle = getStatusDisplay(order.status);
-            const isPendingWholesale = order.status === 'pending_wholesale_price';
+            const isPendingWholesale = order.status === 'pending_wholesale';
             const displayPrice = order.finalTotalAmount || order.totalAmount || order.initialTotalAmount || 0;
 
             return (
