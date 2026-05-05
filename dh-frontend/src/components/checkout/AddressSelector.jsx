@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, User, Phone, Building2, CheckCircle2, ShieldCheck, Navigation } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
+import { auth, db } from '../../firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function AddressSelector({ orderMode = 'retail' }) {
   const { checkoutState, updateCheckoutConfig } = useCart();
@@ -14,14 +16,47 @@ export default function AddressSelector({ orderMode = 'retail' }) {
     saveAsDefault: checkoutState?.addressInfo?.saveAsDefault ?? true
   });
 
+  // 🚀 Smart Profile Binding: ดึงข้อมูลที่อยู่จาก User Profile มาแสดงเป็นค่าเริ่มต้น
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (auth.currentUser && !checkoutState?.addressInfo?.fullName) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.taxInfo || data.defaultDeliveryNote || data.displayName) {
+               setFormData(prev => ({
+                 ...prev,
+                 fullName: data.taxInfo?.name || data.displayName || prev.fullName,
+                 address: data.taxInfo?.address || data.defaultDeliveryNote || prev.address,
+                 companyName: data.taxInfo?.name || prev.companyName,
+                 phone: data.phone || prev.phone
+               }));
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user profile for auto-fill", error);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, [checkoutState?.addressInfo?.fullName]);
+
   // 🛡 UX Validation: เช็คว่ากรอกข้อมูลสำคัญครบหรือยัง
   const isComplete = orderMode === 'retail' 
     ? formData.fullName.length > 2 && formData.phone.length >= 12 && formData.address.length > 10
     : formData.companyName.length > 2 && formData.fullName.length > 2 && formData.phone.length >= 12 && formData.address.length > 10;
 
+  const [errors, setErrors] = useState({});
+  const validatePhone = (phone) => {
+    const raw = phone.replace(/\D/g, '');
+    return /^0\d{9}$/.test(raw);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+    let newErrors = { ...errors };
+
     // 🪄 ลูกเล่น UX: จัดฟอร์แมตเบอร์โทรศัพท์อัตโนมัติ (08X-XXX-XXXX)
     if (name === 'phone') {
       let val = value.replace(/\D/g, ''); // ลบตัวอักษรที่ไม่ใช่ตัวเลขออก
@@ -35,6 +70,12 @@ export default function AddressSelector({ orderMode = 'retail' }) {
       }
       
       setFormData(prev => ({ ...prev, [name]: formatted }));
+      if (formatted.length > 0 && !validatePhone(formatted)) {
+        newErrors.phone = 'เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องขึ้นต้นด้วย 0 และมี 10 หลัก)';
+      } else {
+        delete newErrors.phone;
+      }
+      setErrors(newErrors);
       return;
     }
 
@@ -119,8 +160,9 @@ export default function AddressSelector({ orderMode = 'retail' }) {
               value={formData.phone}
               onChange={handleChange}
               placeholder="08X-XXX-XXXX" 
-              className="w-full px-4 py-3 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 font-medium tracking-wide"
+              className={`w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm outline-none ${errors.phone ? 'border-red-300 bg-red-50' : formData.phone.length > 0 && formData.phone.length < 12 ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'}`}
             />
+            {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
           </div>
         </div>
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
+import { useOrderConfig } from '../context/OrderContext';
 import { auth, db } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { submitOrder, createWholesaleRequest } from '../firebase/checkoutService';
+import { driveService } from '../firebase/driveService';
 import { Receipt, AlertCircle, Package, User, Store, CheckCircle2, Coins, Wallet, Loader2 } from 'lucide-react';
 
 import AddressSelector from '../components/checkout/AddressSelector';
@@ -13,11 +15,13 @@ import TaxInvoiceForm from '../components/checkout/TaxInvoiceForm';
 import PrivilegeSelector from '../components/checkout/PrivilegeSelector';
 import PaymentMethod from '../components/checkout/PaymentMethod';
 import CheckoutSummary from '../components/checkout/CheckoutSummary';
+import PaymentUploader from '../components/checkout/PaymentUploader';
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'dh-notebook-69f3b';
+  const appId = typeof import.meta.env.VITE_FIREBASE_APP_ID !== 'undefined' ? import.meta.env.VITE_FIREBASE_APP_ID : 'dh-notebook-69f3b';
   const { cartItems, totals, checkoutState, clearCart, isInitialized } = useCart();
+  const { shippingRules: configShippingRules, isConfigLoaded } = useOrderConfig();
   
   const [orderMode, setOrderMode] = useState('retail');
   const { updateCheckoutConfig: updateMode } = useCart();
@@ -48,20 +52,36 @@ export default function Checkout() {
           if (doc.exists()) setUserData(doc.data());
         }, (err) => console.error("User data fetch error", err));
 
-        // ดึง Shipping Rules จริง
-        const shipRef = collection(db, 'shipping_rules');
-        const unsubShip = onSnapshot(shipRef, (snap) => {
-          setShippingRules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-          setFetchingData(false);
-        }, (err) => console.error("Shipping fetch error", err));
-
-        return () => { unsubUser(); unsubShip(); };
+        setFetchingData(false);
+        return () => { unsubUser(); };
       } else {
         setFetchingData(false);
       }
     });
     return () => unsubscribeAuth();
   }, [appId]);
+
+  useEffect(() => {
+    if (isConfigLoaded) {
+      setShippingRules(configShippingRules);
+    }
+  }, [isConfigLoaded, configShippingRules]);
+
+  // 📝 Draft Order Persistence: สำรองข้อมูลชั่วคราว
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (auth.currentUser && cartItems.length > 0) {
+        const draftRef = doc(db, 'users', auth.currentUser.uid, 'drafts', 'current');
+        setDoc(draftRef, {
+          checkoutState,
+          totals,
+          lastUpdated: new Date()
+        }, { merge: true }).catch(err => console.error("Draft sync error", err));
+      }
+    }, 1500); // ดีเลย์ 1.5 วิ ป้องกันการยิงถี่เกินไป
+
+    return () => clearTimeout(timer);
+  }, [checkoutState, totals, cartItems.length]);
 
   const handleCheckout = async () => {
     setError('');
@@ -80,8 +100,8 @@ export default function Checkout() {
     try {
       
       if (orderMode === 'retail') {
-        const mockSlipUrl = URL.createObjectURL(slipFile); 
-        await submitOrder(user, cartItems, checkoutState, totals, mockSlipUrl, true);
+        const slipUrl = await driveService.uploadSlipImage(slipFile);
+        await submitOrder(user, cartItems, checkoutState, totals, slipUrl, true);
       } else {
         await createWholesaleRequest(user, cartItems, { 
           name: addr.fullName, company: addr.companyName, wholesaleNote: checkoutState?.wholesaleNote, note: addr.address 
@@ -170,6 +190,7 @@ export default function Checkout() {
             {orderMode === 'retail' && <TaxInvoiceForm />}
             <PrivilegeSelector orderMode={orderMode} userPoints={userData.creditPoints} />
             <PaymentMethod orderMode={orderMode} onSlipChange={setSlipFile} />
+            {orderMode === 'retail' && !slipFile && <PaymentUploader onUpload={setSlipFile} />}
           </div>
 
           <div className="w-full lg:w-1/3">
