@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, ShieldCheck, CheckCircle2, Info, ShoppingBag, Sparkles, Gift, Loader2 } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { db } from '../../firebase/config';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 export default function CheckoutSummary({ orderMode = 'retail', loading = false, isComplete = false, onCheckout }) {
   const { cartItems, totals, checkoutState, updateCheckoutConfig } = useCart();

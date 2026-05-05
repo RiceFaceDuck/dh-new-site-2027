@@ -1,5 +1,5 @@
 import { db } from './config';
-import { doc, collection, runTransaction, writeBatch, serverTimestamp, addDoc } from 'firebase/firestore';
+import { doc, collection, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 /**
  * ⚡️ Smart Checkout Service
