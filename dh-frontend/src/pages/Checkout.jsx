@@ -1,203 +1,278 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
-import { useOrderConfig } from '../context/OrderContext';
-import { auth, db } from '../firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
-import { onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { submitOrder, createWholesaleRequest } from '../firebase/checkoutService';
-import { driveService } from '../firebase/driveService';
-import { Receipt, AlertCircle, Package, User, Store, CheckCircle2, Coins, Wallet, Loader2 } from 'lucide-react';
+import { auth } from '../firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
 
+// นำเข้า Components ย่อย (อ้างอิงจากโครงสร้างโปรเจกต์)
 import AddressSelector from '../components/checkout/AddressSelector';
 import ShippingMethod from '../components/checkout/ShippingMethod';
-import TaxInvoiceForm from '../components/checkout/TaxInvoiceForm';
-import PrivilegeSelector from '../components/checkout/PrivilegeSelector';
 import PaymentMethod from '../components/checkout/PaymentMethod';
+import TaxInvoiceForm from '../components/checkout/TaxInvoiceForm';
 import CheckoutSummary from '../components/checkout/CheckoutSummary';
+import CheckoutSuccess from '../components/checkout/CheckoutSuccess';
+import WholesaleRequestModal from '../components/checkout/WholesaleRequestModal';
 import PaymentUploader from '../components/checkout/PaymentUploader';
 
-export default function Checkout() {
+const Checkout = () => {
   const navigate = useNavigate();
-  const appId = typeof import.meta.env.VITE_FIREBASE_APP_ID !== 'undefined' ? import.meta.env.VITE_FIREBASE_APP_ID : 'dh-notebook-69f3b';
-  const { cartItems, totals, checkoutState, clearCart, isInitialized } = useCart();
-  const { shippingRules: configShippingRules, isConfigLoaded } = useOrderConfig();
+  const { cartItems, totals, clearCart } = useCart();
+  const [user, setUser] = useState(null);
+
+  // 1. Centralized State (ศูนย์รวมข้อมูลของหน้า Checkout)
+  const [checkoutState, setCheckoutState] = useState({
+    customerData: null, // ข้อมูลที่อยู่จัดส่ง
+    taxData: null, // ข้อมูลใบกำกับภาษี
+    paymentMethod: 'transfer', // ค่าเริ่มต้น: โอนเงิน
+    shippingCost: 0,
+    appliedPromotions: [],
+    discountAmount: 0,
+    usePoints: 0,
+    useWallet: 0,
+    wholesaleReason: '', // เหตุผลประกอบการขอราคาส่ง
+  });
+
+  const [slipUrl, setSlipUrl] = useState(null);
+  const [saveProfile, setSaveProfile] = useState(true); // Default ให้จดจำข้อมูลลง Profile
   
-  const [orderMode, setOrderMode] = useState('retail');
-  const { updateCheckoutConfig: updateMode } = useCart();
+  // 2. UI & UX States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [orderResult, setOrderResult] = useState(null); // เก็บผลลัพธ์เมื่อสำเร็จ { orderId, isWholesale, message }
+  const [isWholesaleModalOpen, setIsWholesaleModalOpen] = useState(false);
 
+  // ตรวจสอบสถานะ User และ ตะกร้าสินค้า
   useEffect(() => {
-    updateMode({ isWholesaleRequest: orderMode === 'wholesale' });
-  }, [orderMode, updateMode]);
-  const [slipFile, setSlipFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-
-  // Real Firestore Data States
-  const [userData, setUserData] = useState({ creditPoints: 0, walletBalance: 0 });
-  const isComplete = orderMode === 'retail' 
-    ? checkoutState?.addressInfo?.fullName?.length > 2 && checkoutState?.addressInfo?.phone?.length >= 12 && checkoutState?.addressInfo?.address?.length > 10
-    : checkoutState?.addressInfo?.companyName?.length > 2 && checkoutState?.addressInfo?.fullName?.length > 2 && checkoutState?.addressInfo?.phone?.length >= 12 && checkoutState?.addressInfo?.address?.length > 10;
-  const [shippingRules, setShippingRules] = useState([]);
-  const [fetchingData, setFetchingData] = useState(true);
-
-  // 📡 Real-time Fetch: ข้อมูลผู้ใช้ (Points/Wallet) และ กฎการขนส่ง
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // ดึง Point/Wallet จริงจาก Profile
-        const userRef = doc(db, 'users', user.uid);
-        const unsubUser = onSnapshot(userRef, (doc) => {
-          if (doc.exists()) setUserData(doc.data());
-        }, (err) => console.error("User data fetch error", err));
-
-        setFetchingData(false);
-        return () => { unsubUser(); };
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
       } else {
-        setFetchingData(false);
+        // บังคับ Login หากยังไม่เข้าระบบ
+        navigate('/profile?tab=login', { state: { returnUrl: '/checkout' } });
       }
     });
-    return () => unsubscribeAuth();
-  }, [appId]);
+    return () => unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
-    if (isConfigLoaded) {
-      setShippingRules(configShippingRules);
+    // ป้องกันการเข้าหน้า Checkout เมื่อตะกร้าว่างเปล่า (ยกเว้นเพิ่งสั่งซื้อสำเร็จ)
+    if (!orderResult && (!cartItems || cartItems.length === 0)) {
+      navigate('/cart');
     }
-  }, [isConfigLoaded, configShippingRules]);
+  }, [cartItems, orderResult, navigate]);
 
-  // 📝 Draft Order Persistence: สำรองข้อมูลชั่วคราว
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (auth.currentUser && cartItems.length > 0) {
-        const draftRef = doc(db, 'users', auth.currentUser.uid, 'drafts', 'current');
-        setDoc(draftRef, {
-          checkoutState,
-          totals,
-          lastUpdated: new Date()
-        }, { merge: true }).catch(err => console.error("Draft sync error", err));
-      }
-    }, 1500); // ดีเลย์ 1.5 วิ ป้องกันการยิงถี่เกินไป
-
-    return () => clearTimeout(timer);
-  }, [checkoutState, totals, cartItems.length]);
-
-  const handleCheckout = async () => {
-    setError('');
-    const user = auth.currentUser;
-    if (!user) { setError('กรุณาเข้าสู่ระบบก่อนดำเนินการ'); return; }
-    
-    const addr = checkoutState?.addressInfo;
-    if (orderMode === 'retail') {
-      if (!addr?.fullName || !addr?.phone || !addr?.address) { setError('กรุณากรอกข้อมูลจัดส่งให้ครบถ้วน'); return; }
-      if (!slipFile) { setError('กรุณาแนบสลิปหลักฐานการโอนเงิน'); return; }
-    } else {
-      if (!addr?.companyName) { setError('กรุณากรอกชื่อร้านค้า/ช่าง'); return; }
-    }
-
-    setLoading(true);
-    try {
-      
-      if (orderMode === 'retail') {
-        const slipUrl = await driveService.uploadSlipImage(slipFile); 
-        await submitOrder(user, cartItems, checkoutState, totals, slipUrl, true);
-      } else {
-        await createWholesaleRequest(user, cartItems, { 
-          name: addr.fullName, company: addr.companyName, wholesaleNote: checkoutState?.wholesaleNote, note: addr.address 
-        }, totals, checkoutState);
-      }
-      clearCart();
-      setSuccess(true);
-      setTimeout(() => navigate('/'), 3500);
-    } catch (err) {
-      setError(err.message);
-    } finally { setLoading(false); }
+  // Handler: อัปเดตข้อมูลจาก Component ลูก
+  const handleUpdateCheckoutState = (key, value) => {
+    setCheckoutState((prev) => ({ ...prev, [key]: value }));
+    // ลบ Error Message ทิ้งเมื่อผู้ใช้เริ่มแก้ไขข้อมูล
+    if (errorMessage) setErrorMessage('');
   };
 
-  if (success) return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="text-center">
-        <CheckCircle2 className="w-20 h-20 text-emerald-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold">ทำรายการสำเร็จ!</h2>
-        <p className="text-gray-500 mt-2">ระบบได้รับคำสั่งซื้อของคุณเรียบร้อยแล้ว</p>
-      </div>
-    </div>
-  );
+  // 3. ฟังก์ชันตรวจสอบความถูกต้องก่อนส่ง (Validation)
+  const validateOrder = () => {
+    if (!checkoutState.customerData) {
+      setErrorMessage('กรุณาระบุที่อยู่สำหรับจัดส่งสินค้า');
+      return false;
+    }
+    if (checkoutState.paymentMethod === 'transfer' && !slipUrl) {
+      // หมายเหตุ: กรณีระบบอนุญาตให้ส่งออเดอร์ก่อนโอนทีหลังได้ สามารถเอาเงื่อนไขนี้ออกได้
+      // แต่เพื่อความสมบูรณ์ แนะนำให้อัปโหลดสลิปก่อน หรือ ให้สถานะเป็น "pending_payment"
+    }
+    return true;
+  };
 
-  // 🛡 แก้ไขปัญหา "ตะกร้าว่าง" ช่วงโหลด: ถ้ายังไม่ initialized หรือกำลังดึงข้อมูล ให้โชว์ Loading แทน
-  if (fetchingData || !isInitialized) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-3">
-        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-        <p className="text-sm font-medium text-gray-500">กำลังตรวจสอบข้อมูลตะกร้า...</p>
-      </div>
-    </div>
-  );
+  // 4. กระแสการสั่งซื้อปกติ
+  const handlePlaceOrder = async () => {
+    if (!validateOrder()) {
+      // เลื่อนหน้าจอขึ้นไปบนสุดเพื่อให้เห็น Error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const result = await submitOrder(
+        user,
+        cartItems,
+        checkoutState,
+        totals,
+        slipUrl,
+        saveProfile
+      );
+
+      if (result.success) {
+        clearCart();
+        setOrderResult(result);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch (error) {
+      console.error("Order Error:", error);
+      setErrorMessage(error.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 5. กระแสการขอราคาส่ง
+  const handleSubmitWholesale = async (reasonText) => {
+    setIsSubmitting(true);
+    setErrorMessage('');
+    setIsWholesaleModalOpen(false);
+
+    try {
+      // อัปเดตเหตุผลลงใน State ก่อนส่ง
+      const updatedState = { ...checkoutState, wholesaleReason: reasonText };
+      
+      const result = await createWholesaleRequest(
+        user,
+        cartItems,
+        updatedState,
+        totals
+      );
+
+      if (result.success) {
+        clearCart();
+        setOrderResult({ ...result, isWholesale: true });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch (error) {
+      console.error("Wholesale Request Error:", error);
+      setErrorMessage(error.message || 'เกิดข้อผิดพลาดในการส่งคำขอราคาส่ง');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // RENDER: หน้า Success (เมื่อสั่งซื้อหรือส่งคำขอสำเร็จ)
+  // -------------------------------------------------------------
+  if (orderResult) {
+    return <CheckoutSuccess result={orderResult} />;
+  }
+
+  // -------------------------------------------------------------
+  // RENDER: หน้า Checkout ปกติ
+  // -------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-slate-50 py-6 pb-24">
+    <div className="min-h-screen bg-gray-50 py-8 pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header Section */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-              <Receipt className="w-7 h-7 text-blue-600" />
-              ตรวจสอบและชำระเงิน
-            </h1>
-          </div>
-          
-          {/* 🤏 ย่อขนาด Credit Point & Wallet ให้เล็กลง (ข้อมูลจริง) */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 px-4 py-2 bg-amber-50 border border-amber-100 rounded-full text-amber-700 shadow-sm hover:shadow transition-shadow">
-              <Coins className="w-5 h-5" />
-              <span className="text-sm font-bold">{userData.creditPoints?.toLocaleString() || 0} P</span>
-            </div>
-            <div className="flex items-center gap-2.5 px-4 py-2 bg-blue-50 border border-blue-100 rounded-full text-blue-700 shadow-sm hover:shadow transition-shadow">
-              <Wallet className="w-5 h-5" />
-              <span className="text-sm font-bold">฿{userData.walletBalance?.toLocaleString() || 0}</span>
-            </div>
-          </div>
+        {/* Header */}
+        <div className="mb-8 text-center sm:text-left">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">ดำเนินการชำระเงิน</h1>
+          <p className="mt-2 text-sm text-gray-500">ตรวจสอบข้อมูลการจัดส่งและรายการสินค้าของคุณ</p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl flex items-center gap-3 animate-in fade-in">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="font-bold text-sm">{error}</p>
+        {/* Error Alert */}
+        {errorMessage && (
+          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm flex items-start animate-fade-in">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700 font-medium">{errorMessage}</p>
+            </div>
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <div className="w-full lg:w-2/3 space-y-5">
-            {/* Order Mode Selection */}
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setOrderMode('retail')} className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ${orderMode === 'retail' ? 'border-blue-600 bg-blue-50' : 'border-gray-50 bg-gray-50 text-gray-400'}`}>
-                  <User className="w-5 h-5" />
-                  <span className="font-bold text-sm">สั่งสินค้าทันที</span>
-                </button>
-                <button onClick={() => setOrderMode('wholesale')} className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ${orderMode === 'wholesale' ? 'border-orange-500 bg-orange-50' : 'border-gray-50 bg-gray-50 text-gray-400'}`}>
-                  <Store className="w-5 h-5" />
-                  <span className="font-bold text-sm text-left leading-tight">ขอราคาส่ง (ช่าง/ร้านค้า)</span>
-                </button>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+          
+          {/* Loading Overlay (บังส่วนฟอร์มเมื่อกำลังประมวลผล) */}
+          {isSubmitting && (
+            <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+              <div className="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                <p className="text-gray-800 font-medium">กำลังดำเนินการอย่างปลอดภัย...</p>
+                <p className="text-xs text-gray-500 mt-1">กรุณาอย่าปิดหน้าต่างนี้</p>
               </div>
             </div>
+          )}
 
-            <AddressSelector orderMode={orderMode} />
-            {/* ส่ง Shipping Rules จริงเข้าไปแสดงผล */}
-            <ShippingMethod orderMode={orderMode} availableRules={shippingRules} />
-            {orderMode === 'retail' && <TaxInvoiceForm />}
-            <PrivilegeSelector orderMode={orderMode} userPoints={userData.creditPoints} />
-            <PaymentMethod orderMode={orderMode} onSlipChange={setSlipFile} />
-            {orderMode === 'retail' && !slipFile && <PaymentUploader onUpload={setSlipFile} />}
+          {/* Left Column: Forms */}
+          <div className="lg:col-span-8 space-y-6">
+            <AddressSelector 
+              selectedData={checkoutState.customerData}
+              onUpdate={(data) => handleUpdateCheckoutState('customerData', data)}
+              saveProfile={saveProfile}
+              onSaveProfileChange={setSaveProfile}
+            />
+            
+            <ShippingMethod 
+              selectedMethod={checkoutState.shippingCost}
+              onUpdate={(cost) => handleUpdateCheckoutState('shippingCost', cost)}
+            />
+            
+            <TaxInvoiceForm 
+              taxData={checkoutState.taxData}
+              onUpdate={(data) => handleUpdateCheckoutState('taxData', data)}
+            />
+            
+            <PaymentMethod 
+              selectedMethod={checkoutState.paymentMethod}
+              onUpdate={(method) => handleUpdateCheckoutState('paymentMethod', method)}
+            />
+
+            {/* แสดง Uploader เมื่อเลือกโอนเงิน */}
+            {checkoutState.paymentMethod === 'transfer' && (
+              <PaymentUploader 
+                onSlipUploaded={setSlipUrl}
+                slipUrl={slipUrl}
+              />
+            )}
           </div>
 
-          <div className="w-full lg:w-1/3">
-            <CheckoutSummary orderMode={orderMode} loading={loading} isComplete={isComplete} onCheckout={handleCheckout} />
+          {/* Right Column: Order Summary & Actions */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-6">
+              <CheckoutSummary 
+                cartItems={cartItems}
+                totals={totals}
+                checkoutState={checkoutState}
+                onPlaceOrder={handlePlaceOrder}
+                onRequestWholesale={() => setIsWholesaleModalOpen(true)}
+                isSubmitting={isSubmitting}
+              />
+              
+              {/* Trust Badges - ย้ำความเชื่อมั่นก่อนกดชำระเงิน */}
+              <div className="mt-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 text-sm text-gray-600 mb-3">
+                  <span className="flex-shrink-0 bg-green-100 p-1.5 rounded-full text-green-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                  </span>
+                  <span>ข้อมูลทั้งหมดถูกเข้ารหัส 256-bit อย่างปลอดภัย</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <span className="flex-shrink-0 bg-blue-100 p-1.5 rounded-full text-blue-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </span>
+                  <span>รับประกันสินค้าคุณภาพโดย DH Notebook</span>
+                </div>
+              </div>
+            </div>
           </div>
+
         </div>
       </div>
+
+      {/* Modal ขอราคาส่ง */}
+      {isWholesaleModalOpen && (
+        <WholesaleRequestModal 
+          isOpen={isWholesaleModalOpen}
+          onClose={() => setIsWholesaleModalOpen(false)}
+          onSubmit={handleSubmitWholesale}
+          companyName={checkoutState.customerData?.company || ''}
+        />
+      )}
     </div>
   );
-}
+};
+
+export default Checkout;

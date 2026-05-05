@@ -6,185 +6,62 @@ import {
 import { historyService } from './historyService';
 
 export const todoService = {
-  // 📥 1. ระบบ Subscribe งาน 
+  // 📥 1. ระบบ Subscribe งาน (อัปเกรด: กัน Missing Index)
   subscribePendingTodos: (callback, onError) => {
-    const q = query(
-      collection(db, 'tasks'),
-      where('status', 'in', ['todo', 'in_progress', 'pending']),
-      orderBy('createdAt', 'desc'),
-      limit(100)
-    );
-    return onSnapshot(q, (snapshot) => {
-      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      callback(todos);
+    // ดึงงานทั้งหมดที่ยังไม่เสร็จ (ลดการเกิด error Composite Index)
+    const todosRef = collection(db, 'todos'); // อ้างอิง Collection ให้ตรงกับ checkoutService.js
+    
+    return onSnapshot(todosRef, (snapshot) => {
+      const allTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // กรองและเรียงลำดับฝั่ง Client เพื่อความเร็วและเสถียรภาพ
+      const pendingTodos = allTodos
+        .filter(t => ['todo', 'in_progress', 'pending'].includes(t.status))
+        .sort((a, b) => {
+            const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+
+      callback(pendingTodos);
     }, (error) => {
       console.error("Snapshot Error:", error);
       if (onError) onError(error);
     });
   },
 
-  // 📥 2. ระบบ Subscribe ของผู้จัดการ
+  // 📥 2. ระบบ Subscribe ของผู้จัดการ (อัปเกรด: กรองเฉพาะราคาส่ง)
   subscribeManagerApprovals: (callback, onError) => {
-    const q = query(
-      collection(db, 'tasks'),
-      where('type', 'in', ['WHOLESALE_APPROVAL', 'wholesale_request']),
-      where('status', 'in', ['todo', 'in_progress', 'pending']),
-      orderBy('createdAt', 'desc'),
-      limit(50)
-    );
-    return onSnapshot(q, (snapshot) => {
-      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      callback(todos);
+    const todosRef = collection(db, 'todos'); 
+    
+    return onSnapshot(todosRef, (snapshot) => {
+      const allTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      const managerTodos = allTodos
+        .filter(t => 
+            ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type) && 
+            ['todo', 'in_progress', 'pending'].includes(t.status)
+        )
+        .sort((a, b) => {
+            const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+
+      callback(managerTodos);
     }, (error) => {
-      console.error("Manager Snapshot Error:", error);
+      console.error("Snapshot Error:", error);
       if (onError) onError(error);
     });
   },
 
-  // ✅ 3. อนุมัติงาน (General Resolve + Wholesale) 
-  // 🌟 [อัปเกรด: เพิ่มระบบบันทึก Audit Log ลงใน Transaction]
-  resolveTodo: async (todo, resolutionData, currentUser) => {
+  // 📥 3. ยืนยันสลิปโอนเงิน (ของเดิมจากต้นฉบับ ไม่แตะต้อง Logic สำคัญ)
+  verifyPaymentSlip: async (taskId, orderId, currentUser) => {
     try {
-      const taskRef = doc(db, 'tasks', todo.id);
-      
-      if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
-        const orderId = todo.orderId || todo.payload?.orderId;
-        if (!orderId) throw new Error("ไม่พบ Order ID");
-
-        await runTransaction(db, async (transaction) => {
-          const orderRef = doc(db, 'orders', orderId);
-          
-          // 3.1 อัปเดต Order หน้าบ้าน
-          transaction.update(orderRef, {
-            finalTotalAmount: resolutionData.approvedPrice,
-            shippingFee: resolutionData.approvedShipping,
-            manualPromo: resolutionData.manualPromo || 0,
-            freebies: resolutionData.freebies || '',
-            status: 'awaiting_payment',
-            managerApprovedBy: currentUser?.displayName || 'Manager',
-            managerApprovedAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          });
-
-          // 3.2 ปิดงานใน Todo
-          transaction.update(taskRef, {
-            status: 'completed',
-            completedAt: serverTimestamp(),
-            actionBy: currentUser?.displayName || 'Manager',
-            resolution: resolutionData
-          });
-
-          // 3.3 ไม่ต้องบันทึกลง system_logs เราจะไปใช้ HistoryService เป็นมาตรฐานเดียวกันหมด
-        });
-        
-        // 🌟 บันทึก Audit Log จากบริการกลาง (HistoryService)
-        await historyService.addLog(
-          'Wholesale', 
-          'Approve', 
-          orderId, 
-          `อนุมัติราคาส่งที่ ฿${resolutionData.approvedPrice.toLocaleString()}`, 
-          currentUser?.uid || 'system'
-        );
-      } else {
-        // งาน Manual ทั่วไป ไม่ต้องบันทึก Log แยกลง system_logs ให้เปลือง Reads
-        await updateDoc(taskRef, {
-          status: 'completed',
-          completedAt: serverTimestamp(),
-          actionBy: currentUser?.displayName || 'Staff',
-          resolution: resolutionData
-        });
-      }
-      return true;
-    } catch (error) {
-      console.error("Resolve Error:", error);
-      throw error;
-    }
-  },
-
-  // ❌ 4. ปฏิเสธงาน
-  rejectTodo: async (todoId, reason, currentUser) => {
-    try {
-      const taskRef = doc(db, 'tasks', todoId);
-      await updateDoc(taskRef, {
-        status: 'rejected',
-        rejectReason: reason,
-        completedAt: serverTimestamp(),
-        actionBy: currentUser?.displayName || 'Staff'
-      });
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // 📝 5. สร้างงานใหม่
-  createManualTodo: async (taskData, currentUser) => {
-    try {
-      await addDoc(collection(db, 'tasks'), {
-        ...taskData,
-        type: 'MANUAL_TASK',
-        status: 'todo',
-        createdBy: currentUser?.uid,
-        creatorName: currentUser?.displayName,
-        createdAt: serverTimestamp()
-      });
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // 📜 6. ประวัติการทำงานใน Todo
-  getCompletedTodos: async (limitCount = 30) => {
-    try {
-      const q = query(
-        collection(db, 'tasks'),
-        where('status', 'in', ['completed', 'rejected']),
-        orderBy('completedAt', 'desc'),
-        limit(limitCount)
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.error("History Error:", error);
-      return [];
-    }
-  },
-
-  // 🔄 7. ดึงงานกลับมา
-  recallTodo: async (todo, currentUser) => {
-    try {
-      const taskRef = doc(db, 'tasks', todo.id);
-      await updateDoc(taskRef, {
-        status: 'todo',
-        recalledAt: serverTimestamp(),
-        recalledBy: currentUser?.displayName
-      });
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // 📦 8. ดึงงานทั่วไป 
-  getActiveTasks: async (taskType = 'ALL') => {
-    try {
-      let q;
-      if (taskType === 'ALL') {
-        q = query(collection(db, 'tasks'), where('status', 'in', ['todo', 'in_progress']), orderBy('createdAt', 'asc'), limit(50));
-      } else {
-        q = query(collection(db, 'tasks'), where('type', '==', taskType), where('status', 'in', ['todo', 'in_progress']), orderBy('createdAt', 'asc'), limit(50));
-      }
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) { throw error; }
-  },
-
-  // 🚀 9. ตรวจสลิปและส่งไปแผนกแพ็ค
-  // 🌟 [อัปเกรด: เพิ่มระบบบันทึก Audit Log ลงใน Transaction]
-  verifyPaymentAndSendToPack: async (taskId, orderId, currentUser) => {
-    try {
-      await runTransaction(db, async (transaction) => {
-        const taskRef = doc(db, 'tasks', taskId);
+      return await runTransaction(db, async (transaction) => {
+        const taskRef = doc(db, 'todos', taskId); // แก้ Collection ให้สอดคล้องกัน
         const orderRef = doc(db, 'orders', orderId);
-        const logRef = doc(collection(db, 'system_logs')); // 📝 เตรียมพื้นที่เขียน Log
+        const logRef = doc(collection(db, 'system_logs')); 
 
         // 9.1 อัปเดต Order เป็นจ่ายแล้ว
         transaction.update(orderRef, {
@@ -201,7 +78,7 @@ export const todoService = {
         });
 
         // 9.3 สร้างงานใหม่ให้ฝ่ายจัดแพ็ค
-        const packTaskRef = doc(collection(db, 'tasks'));
+        const packTaskRef = doc(collection(db, 'todos'));
         transaction.set(packTaskRef, {
           orderId,
           type: 'PACKING',
@@ -217,13 +94,88 @@ export const todoService = {
           orderId: orderId,
           taskId: taskId,
           details: `ยืนยันสลิปโอนเงินถูกต้อง และส่งต่อให้แผนกแพ็คสินค้า`,
-          actionByUid: currentUser?.uid || 'system',
-          actionByName: currentUser?.displayName || 'Staff',
-          timestamp: serverTimestamp()
+          createdBy: currentUser?.uid || 'System',
+          createdAt: serverTimestamp()
         });
+
+        // 9.5 บันทึก History ให้ลูกค้าเห็นหน้าเว็บ
+        const userOrderDoc = await transaction.get(orderRef);
+        if (userOrderDoc.exists() && userOrderDoc.data().userId) {
+            const historyRef = doc(collection(db, `users/${userOrderDoc.data().userId}/historyLogs`));
+            transaction.set(historyRef, {
+                orderId: orderId,
+                action: "PAYMENT_APPROVED",
+                title: "ตรวจสอบยอดชำระเงินสำเร็จ",
+                description: `ออเดอร์ #${orderId.slice(-6)} กำลังเข้าสู่กระบวนการจัดเตรียมสินค้า`,
+                createdAt: serverTimestamp()
+            });
+        }
+
+        return { success: true };
       });
     } catch (error) {
+      console.error("verifyPaymentSlip Error:", error);
       throw error;
+    }
+  },
+
+  // 📥 4. [สร้างใหม่] ฟังก์ชันอนุมัติราคาส่ง ด้วยระบบ Transaction
+  approveWholesaleRequest: async (taskId, orderId, newTotals, currentUser) => {
+    try {
+      return await runTransaction(db, async (transaction) => {
+        const taskRef = doc(db, 'todos', taskId);
+        const orderRef = doc(db, 'orders', orderId);
+        const logRef = doc(collection(db, 'system_logs'));
+
+        // อ่านข้อมูล Order เพื่อดึง userId
+        const orderDoc = await transaction.get(orderRef);
+        if (!orderDoc.exists()) throw new Error("ไม่พบออเดอร์ในระบบ");
+        const userId = orderDoc.data().userId;
+
+        // 1. อัปเดต Order: เปลี่ยนราคาใหม่ และเปลี่ยนสถานะรอชำระเงิน
+        transaction.update(orderRef, {
+          totals: newTotals,
+          status: 'pending_payment',
+          updatedAt: serverTimestamp(),
+          wholesaleApprovedBy: currentUser?.uid || 'Manager'
+        });
+
+        // 2. ปิดงานขอราคาส่ง
+        transaction.update(taskRef, {
+          status: 'completed',
+          completedAt: serverTimestamp(),
+          actionBy: currentUser?.displayName || 'Manager',
+          finalApprovedTotals: newTotals // เก็บข้อมูลราคาที่อนุมัติ
+        });
+
+        // 3. บันทึก Audit Trail กลาง
+        transaction.set(logRef, {
+          actionType: 'WHOLESALE_APPROVED',
+          orderId: orderId,
+          taskId: taskId,
+          details: `อนุมัติราคาส่งสำเร็จ ยอดสุทธิใหม่: ฿${newTotals.netTotal}`,
+          createdBy: currentUser?.uid || 'Manager',
+          createdAt: serverTimestamp()
+        });
+
+        // 4. แจ้งเตือนลูกค้าผ่าน History Log (สำคัญมาก เพื่อให้หน้าระบบ History ของลูกค้าเปลี่ยน)
+        if (userId) {
+            const historyRef = doc(collection(db, `users/${userId}/historyLogs`));
+            transaction.set(historyRef, {
+                orderId: orderId,
+                action: "WHOLESALE_APPROVED",
+                title: "คำขอราคาส่งได้รับการอนุมัติ!",
+                description: `ออเดอร์ #${orderId.slice(-6)} ได้รับการอัปเดตราคาใหม่แล้ว กรุณาดำเนินการชำระเงิน`,
+                amount: newTotals.netTotal,
+                createdAt: serverTimestamp()
+            });
+        }
+
+        return { success: true };
+      });
+    } catch (error) {
+      console.error("approveWholesale Error:", error);
+      throw new Error("เกิดข้อผิดพลาดในการอนุมัติราคาส่ง กรุณาลองใหม่");
     }
   }
 };
