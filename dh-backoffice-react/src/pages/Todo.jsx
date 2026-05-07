@@ -12,6 +12,7 @@ import {
 import TodoItem from '../components/todo/TodoItem';
 import HistoryPanel from '../components/todo/HistoryPanel';
 import WholesaleCard from '../components/todo/WholesaleCard';
+import PaymentCard from '../components/todo/PaymentCard'; // 🟡 อัปเดต: นำเข้า PaymentCard
 
 export default function Todo() {
   const [todos, setTodos] = useState([]);
@@ -25,457 +26,397 @@ export default function Todo() {
   const [fetchedPrices, setFetchedPrices] = useState({}); 
 
   const [showHelp, setShowHelp] = useState(false);
-  const [helpPage, setHelpPage] = useState(1); 
-  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [helpPage, setHelpPage] = useState(1);
+
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [taskForm, setTaskForm] = useState({
+    title: '', description: '', priority: 'Medium', type: 'GENERAL', dueDate: ''
+  });
+
   const [showCompletedPanel, setShowCompletedPanel] = useState(false);
   const [completedTodos, setCompletedTodos] = useState([]);
   const [loadingCompleted, setLoadingCompleted] = useState(false);
 
-  const [taskForm, setTaskForm] = useState({
-    title: '', description: '', priority: 'Medium', dueDate: '', syncGcal: false
-  });
-
   useEffect(() => {
+    let unsubscribeApprovals;
+    let unsubscribeTasks;
+  
     setLoading(true);
     setFetchError('');
-    
-    const unsubscribe = todoService.subscribePendingTodos(
-      (data) => {
-        const cleanData = data.map(item => ({
-          ...item,
-          title: item.title || 'คำร้องขอไม่มีชื่อ (System Data)',
-          description: item.description || 'ไม่มีรายละเอียดเพิ่มเติม'
-        }));
-        setTodos(cleanData);
-        setLoading(false);
-        setFetchError('');
-      },
-      (error) => {
-        setLoading(false);
-        // แสดงข้อความ Error ออกมาที่หน้าจอ จะได้ไม่ค้างสถานะ Loading
-        if (error.message.includes('index')) {
-          setFetchError('⚠️ ระบบต้องการสร้าง Index ใน Firebase กรุณากดลิงก์สีแดงใน Console (F12) เพื่อสร้าง');
-        } else {
-          setFetchError('⚠️ ไม่สามารถดึงข้อมูลได้: ' + error.message);
-        }
+  
+    try {
+      if (activeTab === 'approvals') {
+        unsubscribeApprovals = todoService.subscribeManagerApprovals(
+          (data) => {
+            setTodos(data);
+            setLoading(false);
+            setFetchError('');
+          },
+          (error) => {
+            console.error("Subscription Error (Approvals):", error);
+            setFetchError('ไม่สามารถดึงข้อมูลรายการอนุมัติได้ กรุณาตรวจสอบสิทธิ์การเข้าถึง หรือดัชนีฐานข้อมูล (Index)');
+            setLoading(false);
+          }
+        );
+      } else {
+        unsubscribeTasks = todoService.subscribePendingTodos(
+          (data) => {
+            // 🟡 อัปเดต: ให้แท็บ Tasks ดึงงาน verify_slip มาโชว์ด้วย
+            const tasks = data.filter(t => !['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type));
+            setTodos(tasks);
+            setLoading(false);
+            setFetchError('');
+          },
+          (error) => {
+            console.error("Subscription Error (Tasks):", error);
+            setFetchError('ไม่สามารถดึงข้อมูลรายการปฏิบัติงานได้ กรุณาตรวจสอบสิทธิ์การเข้าถึง');
+            setLoading(false);
+          }
+        );
       }
-    );
-    return () => unsubscribe();
-  }, []);
+    } catch (err) {
+      console.error("Try-Catch Error:", err);
+      setFetchError('เกิดข้อผิดพลาดร้ายแรงในการเชื่อมต่อฐานข้อมูล');
+      setLoading(false);
+    }
+  
+    return () => {
+      if (unsubscribeApprovals) unsubscribeApprovals();
+      if (unsubscribeTasks) unsubscribeTasks();
+    };
+  }, [activeTab]);
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchProductPrices = async () => {
-      const b2bTodos = todos.filter(t => t.type === 'WHOLESALE_APPROVAL' && (t.payload?.itemsSnapshot || t.payload?.items));
-      if(b2bTodos.length === 0) return;
-
-      // ✨ ดึงกฎเกณฑ์ค่าขนส่งอัตโนมัติ
-      let shippingRules = [];
-      try {
-        const rulesSnap = await getDocs(collection(db, 'shipping_rules'));
-        shippingRules = rulesSnap.docs.map(d => d.data()).filter(r => r.isActive !== false);
-      } catch (e) { console.warn("Failed to fetch shipping rules"); }
-
-      // 🚀 Batch Fetch Strategy: รวบรวม ID ที่ต้องดึงทั้งหมด
-      const orderIdsToFetch = new Set();
-      const productIdsToFetch = new Set();
-      const pendingTodos = b2bTodos.filter(t => !fetchedPrices[t.id]);
-
-      pendingTodos.forEach(todo => {
-        if (todo.payload?.orderId) orderIdsToFetch.add(todo.payload.orderId);
-        const items = todo.payload.itemsSnapshot || todo.payload.items || [];
-        items.forEach(item => {
-          const id = item.id || item.sku;
-          if (id) productIdsToFetch.add(id);
-        });
-      });
-
-      const ordersMap = {};
-      const productsMap = {};
-
-      // Helper for batching 'in' queries (max 30 ids per query)
-      const fetchInBatches = async (collectionName, ids, map) => {
-        const idList = Array.from(ids);
-        for (let i = 0; i < idList.length; i += 30) {
-          const batch = idList.slice(i, i + 30);
-          try {
-            const q = query(collection(db, collectionName), where(documentId(), 'in', batch));
-            const snap = await getDocs(q);
-            snap.forEach(d => { map[d.id] = d.data(); });
-          } catch (err) { console.warn(`Batch fetch error for ${collectionName}:`, err); }
-        }
-      };
-
-      if (orderIdsToFetch.size > 0) await fetchInBatches('orders', orderIdsToFetch, ordersMap);
-      if (productIdsToFetch.size > 0) await fetchInBatches('products', productIdsToFetch, productsMap);
+    const fetchPricesForWholesale = async () => {
+      const wholesaleTasks = todos.filter(t => t.type === 'WHOLESALE_APPROVAL' && t.items);
       
-      for (const todo of b2bTodos) {
-        if (fetchedPrices[todo.id]) continue; 
+      const newFetchedPrices = { ...fetchedPrices };
+      let hasChanges = false;
 
-        setFetchedPrices(prev => ({ ...prev, [todo.id]: 'loading' }));
-
-        try {
-          let promoDiscount = 0;
-          let shippingFee = 0;
-          let freebies = '';
-          
-          const orderData = todo.payload?.orderId ? ordersMap[todo.payload.orderId] : null;
-          if (orderData) {
-            promoDiscount = Number(orderData.summary?.promoDiscount || orderData.promoDiscount) || 0;
-            shippingFee = Number(orderData.summary?.shippingFee || orderData.shippingFee) || 0;
-            freebies = orderData.freebies || orderData.summary?.freebies || '';
-          }
-
-          const targetItems = todo.payload.itemsSnapshot || todo.payload.items || [];
-          let totalQty = 0;
-
-          const itemsWithPricing = targetItems.map((item) => {
-            let dbCost = 0; 
-            let dbRetail = Number(item.price) - Number(item.discount || 0) || 0; 
-            let dbWholesalePrice = 0;
-            totalQty += (Number(item.qty) || 1);
-
-            const itemIdentifier = item.id || item.sku;
-            const data = itemIdentifier ? productsMap[itemIdentifier] : null;
-            if (data) {
-              dbWholesalePrice = Number(data.Price) || Number(data.wholesalePrice) || 0; 
-              dbCost = Number(data.cost) || 0; 
-              dbRetail = Number(data.retailPrice) || dbRetail;
-            }
-            
-            const computedWsPrice = dbWholesalePrice > 0 ? dbWholesalePrice : dbRetail;
-            return { ...item, retailPrice: dbRetail, computedWsPrice, dbCost };
-          });
-
-          let calculatedShipping = shippingFee;
-          if (shippingRules.length > 0) {
-             const matchedRule = shippingRules.find(r => totalQty >= Number(r.minQty||0) && totalQty <= Number(r.maxQty||9999));
-             if (matchedRule) {
-               calculatedShipping = Number(matchedRule.shippingFee || 0);
-             }
-          }
-
-          if (isMounted) {
-            setFetchedPrices(prev => ({ 
-              ...prev, 
-              [todo.id]: { items: itemsWithPricing, promoDiscount, shippingFee: calculatedShipping, freebies } 
-            }));
-            
-            setWholesaleInputs(prev => {
-              if (prev[todo.id]) return prev;
-              const initialPrices = {};
-              itemsWithPricing.forEach((it, idx) => {
-                initialPrices[idx] = it.computedWsPrice || 0;
-              });
-              return { 
-                ...prev, 
-                [todo.id]: { 
-                  itemPrices: initialPrices,
-                  shipping: calculatedShipping,
-                  manualPromo: promoDiscount,
-                  freebies: freebies
-                } 
-              };
-            });
-          }
-        } catch (error) {
-          if (isMounted) setFetchedPrices(prev => ({ ...prev, [todo.id]: 'error' }));
+      for (const task of wholesaleTasks) {
+        if (!newFetchedPrices[task.id]) {
+          newFetchedPrices[task.id] = {};
         }
+
+        const productIds = task.items.map(item => item.productId).filter(Boolean);
+        
+        if (productIds.length > 0) {
+           // แบ่ง batch ละ 10 ป้องกัน Firestore in query limit
+           for(let i=0; i < productIds.length; i+=10) {
+              const batchIds = productIds.slice(i, i+10);
+              try {
+                const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));
+                const snapshot = await getDocs(q);
+                
+                snapshot.forEach(doc => {
+                  const data = doc.data();
+                  if (data.wholesalePrice) {
+                    newFetchedPrices[task.id][doc.id] = data.wholesalePrice;
+                    hasChanges = true;
+                  }
+                });
+              } catch (err) {
+                console.error("Error fetching wholesale prices for task", task.id, err);
+              }
+           }
+        }
+      }
+
+      if (hasChanges) {
+        setFetchedPrices(newFetchedPrices);
       }
     };
 
-    if (todos.length > 0) fetchProductPrices();
-    return () => { isMounted = false; };
-  }, [todos]); 
-
-  const handleApprove = async (todo) => {
-    if (processingId) return;
-    setProcessingId(todo.id);
-    try {
-      let resolutionData = {};
-      
-      if (todo.type === 'WHOLESALE_APPROVAL') {
-        const fetchedData = fetchedPrices[todo.id];
-        const rawItems = todo.payload.itemsSnapshot || todo.payload.items || [];
-        const itemsList = fetchedData?.items || rawItems;
-        const inputs = wholesaleInputs[todo.id] || {};
-        
-        let approvedPrice = 0;
-        let finalItemPrices = {};
-
-        if (itemsList.length > 0) {
-          itemsList.forEach((item, idx) => {
-            const wsPrice = inputs.itemPrices?.[idx] !== undefined && inputs.itemPrices[idx] !== ''
-                            ? Number(inputs.itemPrices[idx])
-                            : Number(item.computedWsPrice || 0);
-            
-            approvedPrice += wsPrice * Number(item.qty || 0);
-            finalItemPrices[idx] = wsPrice; 
-          });
-        } else {
-          approvedPrice = Number(inputs.price || 0);
-        }
-
-        const approvedShipping = inputs.shipping !== undefined && inputs.shipping !== '' 
-                                ? Number(inputs.shipping) 
-                                : Number(fetchedData?.shippingFee || 0);
-                                
-        const manualPromo = inputs.manualPromo !== undefined ? Number(inputs.manualPromo) : Number(fetchedData?.promoDiscount || 0);
-        const manualFreebies = inputs.freebies !== undefined ? inputs.freebies : (fetchedData?.freebies || '');
-        
-        if (approvedPrice <= 0 && itemsList.length > 0) {
-          alert('เกิดข้อผิดพลาด: ราคาสินค้ารวมเป็น 0');
-          setProcessingId(null);
-          return;
-        }
-
-        resolutionData = { 
-          approvedPrice: approvedPrice, 
-          approvedShipping: approvedShipping,
-          itemWholesalePrices: finalItemPrices,
-          manualPromo: manualPromo,
-          freebies: manualFreebies
-        };
-      }
-
-      await todoService.resolveTodo(todo, resolutionData, auth.currentUser);
-    } catch (error) {
-      alert("เกิดข้อผิดพลาด: " + error.message);
-    } finally {
-      setProcessingId(null);
+    if (todos.length > 0) {
+      fetchPricesForWholesale();
     }
+  }, [todos]);
+
+  const loadCompletedTodos = async () => {
+    setLoadingCompleted(true);
+    try {
+      const data = await todoService.getCompletedTodos(50);
+      setCompletedTodos(data);
+    } catch (error) {
+      console.error("Error loading history", error);
+    }
+    setLoadingCompleted(false);
   };
 
-  const handleReject = async (todoId) => {
-    if (processingId) return;
-    const reason = window.prompt('เหตุผลที่ไม่อนุมัติ (เว้นว่างได้):');
-    if (reason === null) return; 
-    setProcessingId(todoId);
-    try {
-      await todoService.rejectTodo(todoId, reason || 'ปฏิเสธโดยพนักงาน', auth.currentUser);
-    } catch (error) {
-      alert("เกิดข้อผิดพลาดในการปฏิเสธ");
-    } finally {
-      setProcessingId(null);
+  useEffect(() => {
+    if (showCompletedPanel) {
+      loadCompletedTodos();
     }
+  }, [showCompletedPanel]);
+
+  const handleAction = async (taskId, action, actionType, payload = {}) => {
+    setProcessingId(taskId);
+    try {
+      if (action === 'approve') {
+        if (actionType === 'VERIFY_DEALER') {
+          await todoService.approveDealer(taskId, payload.userId);
+        } else if (actionType === 'CREDIT_APPROVAL') {
+          await todoService.approveCredit(taskId, payload.userId, payload.amount, payload.points);
+        }
+      } else if (action === 'reject') {
+        if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {
+           await todoService.rejectWholesale(taskId, payload.orderId);
+        } else {
+           await todoService.rejectTask(taskId, payload.reason);
+        }
+      } else if (action === 'start') {
+        await todoService.startTask(taskId);
+      } else if (action === 'complete') {
+        await todoService.completeTask(taskId);
+      }
+    } catch (error) {
+      console.error(`Error performing ${action} on task ${taskId}:`, error);
+      alert(`ทำรายการไม่สำเร็จ: ${error.message}`);
+    }
+    setProcessingId(null);
   };
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
-    if (!taskForm.title.trim()) return alert('กรุณาระบุหัวข้องาน');
+    if(!taskForm.title) return alert('กรุณาระบุหัวข้องาน');
+    
     try {
-      await todoService.createManualTodo(taskForm, auth.currentUser);
-      setShowCreateTask(false);
-      setTaskForm({ title: '', description: '', priority: 'Medium', dueDate: '', syncGcal: false });
-    } catch (error) { alert("ไม่สามารถสร้างงานได้"); }
+      await todoService.createManualTask(taskForm, auth.currentUser);
+      setShowNewTaskModal(false);
+      setTaskForm({ title: '', description: '', priority: 'Medium', type: 'GENERAL', dueDate: '' });
+      alert('สร้างงานสำเร็จ');
+    } catch (err) {
+      console.error(err);
+      alert('สร้างงานไม่สำเร็จ');
+    }
   };
 
-  const loadCompletedTodos = async () => {
-    setShowCompletedPanel(true);
-    setLoadingCompleted(true);
-    const data = await todoService.getCompletedTodos(30);
-    setCompletedTodos(data);
-    setLoadingCompleted(false);
+  const filteredTodos = todos.filter(todo => {
+    if (filterType === 'ALL') return true;
+    if (filterType === 'RETAIL') return todo.customerType === 'retail';
+    if (filterType === 'DEALER') return todo.customerType === 'dealer';
+    return true;
+  });
+
+  const getUrgencyColor = (createdAt) => {
+    if (!createdAt) return 'bg-gray-100 text-gray-500';
+    const hours = (new Date() - createdAt.toDate()) / (1000 * 60 * 60);
+    if (hours > 24) return 'bg-red-100 text-red-700 border border-red-200';
+    if (hours > 12) return 'bg-orange-100 text-orange-700 border border-orange-200';
+    return 'bg-green-100 text-green-700 border border-green-200';
   };
 
-  const handleRecallTodo = async (todo) => {
-    if (!window.confirm(`ต้องการดึงงาน "${todo.title}" กลับมาแก้ไขหรือไม่?`)) return;
-    try {
-      await todoService.recallTodo(todo, auth.currentUser);
-      setCompletedTodos(prev => prev.filter(t => t.id !== todo.id));
-    } catch (error) { alert("ดึงงานกลับไม่สำเร็จ"); }
-  };
+  const calculateWholesaleTotal = (items, taskId) => {
+    if (!items) return 0;
+    return items.reduce((sum, item) => {
+      let price = item.price;
+      const inputPrice = wholesaleInputs[taskId]?.[item.productId];
+      const fetchedPrice = fetchedPrices[taskId]?.[item.productId];
 
-  const filteredTodos = todos.filter(todo => filterType === 'ALL' || todo.type === filterType);
-
-  // 🚀 UX Gimmick Component: Smart Filter Buttons
-  const FilterButton = ({ type, label, icon: Icon, colorClass }) => {
-    const isActive = filterType === type;
-    return (
-      <button
-        onClick={() => setFilterType(type)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap ${
-          isActive 
-            ? `${colorClass} shadow-md ring-2 ring-offset-1 ring-opacity-60` 
-            : 'bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-700'
-        }`}
-      >
-        {Icon && <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />}
-        {label}
-        {isActive && filteredTodos.length > 0 && (
-           <span className="ml-1 flex h-2 w-2 relative">
-             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-             <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-           </span>
-        )}
-      </button>
-    );
+      if (inputPrice !== undefined && inputPrice !== '') {
+        price = parseFloat(inputPrice);
+      } else if (fetchedPrice !== undefined) {
+        price = fetchedPrice;
+      }
+      return sum + (price * item.quantity);
+    }, 0);
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 max-w-7xl mx-auto relative p-4 md:p-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       
-      {/* 🚀 Header Section (Premium Update) */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-dh-border mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CheckCircle2 className="w-6 h-6 text-blue-600" />
-            </div>
-            <h2 className="text-2xl font-black text-dh-main tracking-tight">To-do ส่วนกลาง (Central Workflow)</h2>
-          </div>
-          <p className="text-sm text-dh-muted ml-11">พื้นที่ปฏิบัติงานของพนักงานทุกคน ประเมินราคาส่ง และ ยืนยันรับยอดโอน</p>
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-dh-border relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-dh-accent opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-bold text-dh-main flex items-center gap-3">
+            <Inbox className="w-8 h-8 text-dh-accent" />
+            ศูนย์ปฏิบัติการ (To-Do & Approvals)
+          </h1>
+          <p className="text-dh-muted mt-1 font-medium flex items-center gap-2">
+            จัดการคำขออนุมัติ, ตรวจสอบการชำระเงิน และงานอื่นๆ ของพนักงาน
+            <button onClick={() => setShowHelp(true)} className="text-dh-accent hover:bg-orange-50 p-1 rounded-full transition-colors" title="คู่มือการใช้งาน">
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </p>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-3 ml-11 md:ml-0">
-          <button onClick={() => setShowHelp(true)} className="text-slate-400 hover:text-dh-accent transition-colors p-2" title="คู่มือการใช้งาน">
-            <HelpCircle size={20} />
+        <div className="flex gap-2 relative z-10 w-full sm:w-auto">
+          <button 
+            onClick={() => setShowCompletedPanel(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-dh-border text-dh-main font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+          >
+            <History className="w-4 h-4 text-slate-500" />
+            ประวัติการทำงาน
           </button>
-          <button onClick={() => setShowCreateTask(true)} className="flex items-center gap-1.5 px-4 py-2.5 bg-dh-accent text-white text-sm font-bold rounded-xl hover:bg-orange-500 transition-colors shadow-sm">
-            <Plus size={16} /> สั่งงานใหม่
-          </button>
-          <button onClick={loadCompletedTodos} className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-dh-border text-dh-muted hover:text-dh-main text-sm font-bold rounded-xl transition-colors shadow-sm">
-            <History size={16} /> ประวัติงาน
+          <button 
+            onClick={() => setShowNewTaskModal(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-dh-main text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-md"
+          >
+            <Plus className="w-4 h-4" />
+            สร้างงาน
           </button>
         </div>
       </div>
 
-      {/* 🚨 แจ้งเตือน Error ขาด Index หรือดึงข้อมูลไม่ได้ */}
+      {/* 🚨 แสดง Error ถ้ามี */}
       {fetchError && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3 shadow-sm animate-pulse">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold">เชื่อมต่อฐานข้อมูลไม่สมบูรณ์</p>
-            <p className="text-sm mt-1">{fetchError}</p>
-          </div>
+          <p className="text-sm font-semibold">{fetchError}</p>
         </div>
       )}
 
-      <div className="flex gap-6 border-b border-dh-border px-2">
-        <button onClick={() => setActiveTab('approvals')} className={`relative pb-3 text-sm font-bold transition-colors ${activeTab === 'approvals' ? 'text-dh-accent border-b-2 border-dh-accent' : 'text-dh-muted hover:text-dh-main'}`}>
-          Inbox ของฉัน {todos.length > 0 && `(${todos.length})`}
-        </button>
-        <button onClick={() => setActiveTab('sourcing')} className={`relative pb-3 text-sm font-bold transition-colors ${activeTab === 'sourcing' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-dh-muted hover:text-dh-main'}`}>
-          สินค้ายังไม่มีจำหน่าย
-        </button>
+      {/* Tabs & Filters */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl w-full md:w-auto border border-dh-border">
+          <button 
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'approvals' ? 'bg-white text-dh-accent shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
+            onClick={() => setActiveTab('approvals')}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            รอการอนุมัติ 
+            {activeTab === 'approvals' && todos.length > 0 && <span className="bg-orange-100 text-dh-accent px-2 py-0.5 rounded-full text-xs ml-1">{todos.length}</span>}
+          </button>
+          <button 
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'tasks' ? 'bg-white text-dh-main shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
+            onClick={() => setActiveTab('tasks')}
+          >
+            <PackageSearch className="w-4 h-4" />
+            งานปฏิบัติการ
+            {activeTab === 'tasks' && todos.length > 0 && <span className="bg-slate-100 text-dh-main px-2 py-0.5 rounded-full text-xs ml-1">{todos.length}</span>}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+          <div className="flex items-center gap-2 text-sm font-medium text-dh-muted mr-2">
+            <Filter className="w-4 h-4" /> กรอง:
+          </div>
+          {['ALL', 'RETAIL', 'DEALER'].map(type => (
+            <button
+              key={type}
+              onClick={() => setFilterType(type)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+                filterType === type 
+                  ? 'bg-dh-main text-white border-dh-main' 
+                  : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50 hover:border-slate-300'
+              }`}
+            >
+              {type === 'ALL' ? 'ทั้งหมด' : type === 'RETAIL' ? 'ลูกค้าปลีก' : 'ลูกค้าส่ง (Dealer)'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {activeTab === 'approvals' && (
-        <div className="bg-dh-surface border border-dh-border rounded-xl shadow-sm overflow-hidden">
-          
-          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-b border-dh-border flex items-center gap-3 overflow-x-auto custom-scrollbar">
-            <ListFilter size={16} className="text-dh-muted ml-1" />
-            <span className="text-xs font-bold text-dh-muted uppercase mr-2">ตัวกรอง:</span>
-            
-            <FilterButton type="ALL" label="งานทั้งหมด" icon={Inbox} colorClass="bg-slate-800 text-white ring-slate-800" />
-            <FilterButton type="WHOLESALE_APPROVAL" label="ขอราคาส่ง (เก่า)" icon={Tag} colorClass="bg-orange-500 text-white ring-orange-500" />
-            <FilterButton type="wholesale_request" label="ขอราคาส่ง (ระบบใหม่)" icon={Calculator} colorClass="bg-amber-500 text-white ring-amber-500" />
-            <FilterButton type="PAYMENT_VERIFICATION" label="ตรวจสอบสลิปโอน" icon={Receipt} colorClass="bg-blue-600 text-white ring-blue-600" />
-            <FilterButton type="MANUAL_TASK" label="สั่งงาน Manual" icon={CheckCircle2} colorClass="bg-emerald-500 text-white ring-emerald-500" />
+      {/* Todo List Content */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-3xl border border-dh-border/50">
+          <Loader2 className="w-10 h-10 text-dh-accent animate-spin mb-4" />
+          <p className="text-dh-muted font-medium animate-pulse">กำลังโหลดรายการงาน...</p>
+        </div>
+      ) : filteredTodos.length === 0 ? (
+        <div className="text-center py-24 bg-white dark:bg-slate-800 rounded-3xl border border-dh-border shadow-sm flex flex-col items-center">
+          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 className="w-10 h-10 text-green-500" />
           </div>
+          <h3 className="text-xl font-bold text-dh-main mb-2">ยอดเยี่ยม! เคลียร์งานหมดแล้ว</h3>
+          <p className="text-dh-muted max-w-sm">
+            {activeTab === 'approvals' ? 'ไม่มีรายการรอพิจารณาอนุมัติในขณะนี้' : 'ไม่มีงานปฏิบัติการค้างในระบบ'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredTodos.map(todo => {
+            const isProcessing = processingId === todo.id;
+            const isManagerTab = activeTab === 'approvals';
+            const urgencyClass = getUrgencyColor(todo.createdAt || todo.requestedAt);
 
-          <div className="divide-y divide-dh-border">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-dh-muted">
-                <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
-                <p className="font-medium animate-pulse text-sm">กำลังซิงค์ข้อมูล...</p>
-              </div>
-            ) : filteredTodos.length === 0 && !fetchError ? (
-              <div className="flex flex-col items-center justify-center py-24 bg-white rounded-b-xl">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-700 mb-2">ไม่มีงานค้างในหมวดหมู่นี้</h3>
-                <p className="text-slate-500 text-sm">ยอดเยี่ยมมาก! คุณจัดการงานในระบบครบหมดแล้ว</p>
-              </div>
-            ) : (
-              filteredTodos.map((todo) => {
-                // แทรก UI ระบบใหม่ เข้าไปร่วมกับของเก่า
-                if (todo.type === 'wholesale_request') {
-                  return (
-                    <div className="p-4" key={todo.id}>
-                      <WholesaleCard task={todo} onComplete={() => {}} />
-                    </div>
-                  );
-                }
-                // ระบบเก่า
-                return (
-                  <TodoItem 
-                    key={todo.id}
-                    todo={todo}
-                    processingId={processingId}
-                    handleApprove={handleApprove}
-                    handleReject={handleReject}
-                    fetchedPrices={fetchedPrices}
-                    wholesaleInputs={wholesaleInputs}
-                    setWholesaleInputs={setWholesaleInputs}
+            // 🟡 อัปเดต 1: ใช้ WholesaleCard แบบแยก Component ถ้าง่วนเป็น WHOLESALE
+            if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
+              return (
+                <div key={todo.id} className="md:col-span-2 xl:col-span-3">
+                  <WholesaleCard 
+                    task={todo} 
+                    currentUser={auth.currentUser}
+                    onReject={() => handleAction(todo.id, 'reject', todo.type, { orderId: todo.orderId || todo.payload?.orderId })}
                   />
-                )
-              })
-            )}
-          </div>
+                </div>
+              );
+            }
+
+            // 🟡 อัปเดต 2: ใช้ PaymentCard แบบแยก Component ถ้าง่วนเป็น VERIFY_SLIP
+            if (todo.type === 'verify_slip') {
+              return (
+                <div key={todo.id} className="md:col-span-2 xl:col-span-3">
+                  <PaymentCard 
+                    task={todo} 
+                    currentUser={auth.currentUser} 
+                  />
+                </div>
+              );
+            }
+
+            // Fallback สำหรับงานประเภทอื่นๆ
+            return (
+              <TodoItem 
+                key={todo.id}
+                todo={todo}
+                isProcessing={isProcessing}
+                isManagerTab={isManagerTab}
+                urgencyClass={urgencyClass}
+                handleAction={handleAction}
+              />
+            );
+          })}
         </div>
       )}
 
-      {activeTab === 'sourcing' && <NonExistingProducts />}
-
-      {/* --- MODALS & PANELS --- */}
-      {showHelp && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-dh-surface w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-dh-border flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-              <h3 className="font-bold text-lg text-dh-main flex items-center gap-2">
-                <HelpCircle size={20} className="text-dh-accent"/> คู่มือการใช้งาน To-do
+      {/* New Task Modal */}
+      {showNewTaskModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 border-b border-dh-border bg-slate-50 dark:bg-slate-900/50">
+              <h3 className="font-bold text-dh-main flex items-center gap-2">
+                <Plus className="w-5 h-5 text-dh-accent" />
+                สร้างงานใหม่ (Manual Task)
               </h3>
-              <button onClick={() => { setShowHelp(false); setHelpPage(1); }} className="text-slate-400 hover:text-red-500">
-                <XCircle size={20}/>
+              <button onClick={() => setShowNewTaskModal(false)} className="text-dh-muted hover:text-dh-main transition-colors bg-white p-1 rounded-full shadow-sm border border-dh-border">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 text-sm text-dh-muted">
-               <p className="font-bold text-dh-main border-b border-dh-border pb-2">⚙️ ขีดจำกัด และ ความสามารถระบบ</p>
-               <ul className="space-y-3 mt-4">
-                 <li className="flex gap-2"><Check size={16} className="text-emerald-500 shrink-0 mt-0.5"/> <b>Real-time Auto Update:</b> เมื่อกด "อนุมัติ" ระบบจะวิ่งไปอัปเดตข้อมูลให้ทันที</li>
-                 <li className="flex gap-2"><History size={16} className="text-blue-500 shrink-0 mt-0.5"/> <b>ตัวดูงานที่เสร็จแล้ว:</b> กดปุ่มประวัติงาน แถบข้อมูลจะสไลด์ออกมาโดยไม่กวนหน้าจอหลัก</li>
-                 <li className="flex gap-2"><AlertCircle size={16} className="text-orange-500 shrink-0 mt-0.5"/> <b>ขีดจำกัดประหยัดทรัพยากร:</b> ดึงงานแสดงสูงสุด 100 รายการ เพื่อไม่ให้เปลืองโควต้าโหลดข้อมูล</li>
-               </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCreateTask && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-dh-surface w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-dh-border flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-              <h3 className="font-bold text-lg text-dh-main flex items-center gap-2"><Plus size={20} className="text-dh-accent"/> สั่งงานใหม่ (Manual Task)</h3>
-              <button onClick={() => setShowCreateTask(false)} className="text-slate-400 hover:text-red-500"><XCircle size={20}/></button>
-            </div>
-            <form onSubmit={handleCreateTask} className="p-6 space-y-4">
+            <form onSubmit={handleCreateTask} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-dh-muted mb-1">หัวข้องาน <span className="text-red-500">*</span></label>
-                <input required type="text" value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2 text-sm text-dh-main outline-none focus:border-dh-accent" placeholder="เช่น ตรวจเช็คสต็อกโซน A" />
+                <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">หัวข้องาน <span className="text-red-500">*</span></label>
+                <input required type="text" placeholder="เช่น ติดต่อลูกค้าคุณเอ, ตรวจสอบสต็อก" value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-4 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-1 focus:ring-dh-accent/30 transition-all font-medium" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-dh-muted mb-1">รายละเอียด</label>
-                <textarea rows="3" value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2 text-sm text-dh-main outline-none focus:border-dh-accent resize-none" placeholder="อธิบายเพิ่มเติม..."></textarea>
+                <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">รายละเอียดเพิ่มเติม</label>
+                <textarea rows="3" placeholder="ใส่ข้อมูลที่จำเป็นสำหรับการทำงานนี้..." value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-4 py-3 text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-1 focus:ring-dh-accent/30 transition-all resize-none"></textarea>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-dh-muted mb-1">ระดับความสำคัญ</label>
-                  <select value={taskForm.priority} onChange={e => setTaskForm({...taskForm, priority: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2 text-sm text-dh-main outline-none focus:border-dh-accent">
+                  <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">ความสำคัญ</label>
+                  <select value={taskForm.priority} onChange={e => setTaskForm({...taskForm, priority: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent font-medium">
                     <option value="Low">Low (ทั่วไป)</option>
                     <option value="Medium">Medium (ปานกลาง)</option>
-                    <option value="High">High (ด่วนมาก)</option>
+                    <option value="High" className="text-red-500 font-bold">High (ด่วนมาก)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-dh-muted mb-1">กำหนดส่ง (Due Date)</label>
-                  <input type="datetime-local" value={taskForm.dueDate} onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2 text-sm text-dh-main outline-none focus:border-dh-accent" />
+                  <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">ประเภทงาน</label>
+                  <select value={taskForm.type} onChange={e => setTaskForm({...taskForm, type: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent font-medium">
+                    <option value="GENERAL">งานทั่วไป</option>
+                    <option value="FOLLOW_UP">ติดตามลูกค้า</option>
+                    <option value="INVENTORY">ตรวจสอบสต็อก</option>
+                  </select>
                 </div>
               </div>
-              <div className="pt-4 flex gap-2">
-                <button type="submit" className="flex-1 bg-dh-accent hover:bg-orange-500 text-white font-bold py-2.5 rounded-lg transition-colors text-sm">บันทึกงาน</button>
+              <div>
+                <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">กำหนดส่ง (Due Date)</label>
+                <input type="datetime-local" value={taskForm.dueDate} onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-4 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-1 focus:ring-dh-accent/30 transition-all font-medium" />
+              </div>
+              <div className="pt-5 border-t border-dh-border flex gap-3">
+                <button type="button" onClick={() => setShowNewTaskModal(false)} className="px-5 py-2.5 text-sm font-bold text-dh-muted hover:text-dh-main bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">ยกเลิก</button>
+                <button type="submit" className="flex-1 bg-dh-main hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">บันทึกและสร้างงาน</button>
               </div>
             </form>
           </div>
@@ -487,7 +428,6 @@ export default function Todo() {
         setShowCompletedPanel={setShowCompletedPanel} 
         loadingCompleted={loadingCompleted} 
         completedTodos={completedTodos} 
-        handleRecallTodo={handleRecallTodo} 
       />
 
     </div>
