@@ -6,18 +6,19 @@ import NonExistingProducts from './todo/NonExistingProducts';
 import { 
   Check, X, Clock, UserPlus, Tag, Info, AlertCircle, 
   Inbox, ListFilter, HelpCircle, Plus, History, XCircle, 
-  RotateCcw, Calendar, Receipt, ChevronRight, Calculator, Loader2, PackageSearch, CheckCircle2, Filter
+  RotateCcw, Calendar, Receipt, ChevronRight, Calculator, Loader2, PackageSearch, CheckCircle2, Filter, FileText
 } from 'lucide-react';
 
 import TodoItem from '../components/todo/TodoItem';
 import HistoryPanel from '../components/todo/HistoryPanel';
 import WholesaleCard from '../components/todo/WholesaleCard';
-import PaymentCard from '../components/todo/PaymentCard'; // 🟡 อัปเดต: นำเข้า PaymentCard
+import PaymentCard from '../components/todo/PaymentCard'; 
+import TaxInvoiceCard from '../components/todo/TaxInvoiceCard'; // 🟡 เพิ่ม TaxInvoiceCard
 
 export default function Todo() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(''); // 🚨 ตัวแปรใหม่สำหรับเก็บ Error
+  const [fetchError, setFetchError] = useState(''); 
   const [activeTab, setActiveTab] = useState('approvals'); 
   const [filterType, setFilterType] = useState('ALL');
   
@@ -61,7 +62,7 @@ export default function Todo() {
       } else {
         unsubscribeTasks = todoService.subscribePendingTodos(
           (data) => {
-            // 🟡 อัปเดต: ให้แท็บ Tasks ดึงงาน verify_slip มาโชว์ด้วย
+            // กรองงาน WHOLESALE ออก ให้ไปอยู่แท็บ approvals ให้หมด
             const tasks = data.filter(t => !['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type));
             setTodos(tasks);
             setLoading(false);
@@ -101,7 +102,6 @@ export default function Todo() {
         const productIds = task.items.map(item => item.productId).filter(Boolean);
         
         if (productIds.length > 0) {
-           // แบ่ง batch ละ 10 ป้องกัน Firestore in query limit
            for(let i=0; i < productIds.length; i+=10) {
               const batchIds = productIds.slice(i, i+10);
               try {
@@ -195,6 +195,9 @@ export default function Todo() {
     if (filterType === 'ALL') return true;
     if (filterType === 'RETAIL') return todo.customerType === 'retail';
     if (filterType === 'DEALER') return todo.customerType === 'dealer';
+    // กรองประเภทงานใน Tab งานปฏิบัติการ
+    if (filterType === 'TAX_INVOICE' && activeTab === 'tasks') return todo.type === 'issue_tax_invoice';
+    if (filterType === 'PAYMENT' && activeTab === 'tasks') return todo.type === 'verify_slip';
     return true;
   });
 
@@ -204,22 +207,6 @@ export default function Todo() {
     if (hours > 24) return 'bg-red-100 text-red-700 border border-red-200';
     if (hours > 12) return 'bg-orange-100 text-orange-700 border border-orange-200';
     return 'bg-green-100 text-green-700 border border-green-200';
-  };
-
-  const calculateWholesaleTotal = (items, taskId) => {
-    if (!items) return 0;
-    return items.reduce((sum, item) => {
-      let price = item.price;
-      const inputPrice = wholesaleInputs[taskId]?.[item.productId];
-      const fetchedPrice = fetchedPrices[taskId]?.[item.productId];
-
-      if (inputPrice !== undefined && inputPrice !== '') {
-        price = parseFloat(inputPrice);
-      } else if (fetchedPrice !== undefined) {
-        price = fetchedPrice;
-      }
-      return sum + (price * item.quantity);
-    }, 0);
   };
 
   return (
@@ -234,7 +221,7 @@ export default function Todo() {
             ศูนย์ปฏิบัติการ (To-Do & Approvals)
           </h1>
           <p className="text-dh-muted mt-1 font-medium flex items-center gap-2">
-            จัดการคำขออนุมัติ, ตรวจสอบการชำระเงิน และงานอื่นๆ ของพนักงาน
+            จัดการคำขออนุมัติ, ตรวจสอบการชำระเงิน และเอกสารภาษี
             <button onClick={() => setShowHelp(true)} className="text-dh-accent hover:bg-orange-50 p-1 rounded-full transition-colors" title="คู่มือการใช้งาน">
               <HelpCircle className="w-4 h-4" />
             </button>
@@ -271,7 +258,7 @@ export default function Todo() {
         <div className="flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl w-full md:w-auto border border-dh-border">
           <button 
             className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'approvals' ? 'bg-white text-dh-accent shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
-            onClick={() => setActiveTab('approvals')}
+            onClick={() => { setActiveTab('approvals'); setFilterType('ALL'); }}
           >
             <CheckCircle2 className="w-4 h-4" />
             รอการอนุมัติ 
@@ -279,7 +266,7 @@ export default function Todo() {
           </button>
           <button 
             className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'tasks' ? 'bg-white text-dh-main shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
-            onClick={() => setActiveTab('tasks')}
+            onClick={() => { setActiveTab('tasks'); setFilterType('ALL'); }}
           >
             <PackageSearch className="w-4 h-4" />
             งานปฏิบัติการ
@@ -291,19 +278,58 @@ export default function Todo() {
           <div className="flex items-center gap-2 text-sm font-medium text-dh-muted mr-2">
             <Filter className="w-4 h-4" /> กรอง:
           </div>
-          {['ALL', 'RETAIL', 'DEALER'].map(type => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-                filterType === type 
-                  ? 'bg-dh-main text-white border-dh-main' 
-                  : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50 hover:border-slate-300'
-              }`}
-            >
-              {type === 'ALL' ? 'ทั้งหมด' : type === 'RETAIL' ? 'ลูกค้าปลีก' : 'ลูกค้าส่ง (Dealer)'}
-            </button>
-          ))}
+          
+          <button
+            onClick={() => setFilterType('ALL')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+              filterType === 'ALL' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
+            }`}
+          >
+            ทั้งหมด
+          </button>
+
+          {activeTab === 'tasks' ? (
+             // ตัวกรองเฉพาะของ "งานปฏิบัติการ"
+             <>
+               <button
+                  onClick={() => setFilterType('PAYMENT')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+                    filterType === 'PAYMENT' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                  }`}
+                >
+                  ตรวจสลิป
+                </button>
+                <button
+                  onClick={() => setFilterType('TAX_INVOICE')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+                    filterType === 'TAX_INVOICE' ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-teal-600 border-teal-200 hover:bg-teal-50'
+                  }`}
+                >
+                  ออกใบกำกับภาษี
+                </button>
+             </>
+          ) : (
+            // ตัวกรองเฉพาะของ "รอการอนุมัติ"
+            <>
+               <button
+                onClick={() => setFilterType('RETAIL')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+                  filterType === 'RETAIL' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
+                }`}
+              >
+                ลูกค้าปลีก
+              </button>
+              <button
+                onClick={() => setFilterType('DEALER')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+                  filterType === 'DEALER' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
+                }`}
+              >
+                ลูกค้าส่ง (Dealer)
+              </button>
+            </>
+          )}
+          
         </div>
       </div>
 
@@ -330,7 +356,7 @@ export default function Todo() {
             const isManagerTab = activeTab === 'approvals';
             const urgencyClass = getUrgencyColor(todo.createdAt || todo.requestedAt);
 
-            // 🟡 อัปเดต 1: ใช้ WholesaleCard แบบแยก Component ถ้าง่วนเป็น WHOLESALE
+            // 🟡 1. การอนุมัติราคาส่ง
             if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
               return (
                 <div key={todo.id} className="md:col-span-2 xl:col-span-3">
@@ -343,7 +369,7 @@ export default function Todo() {
               );
             }
 
-            // 🟡 อัปเดต 2: ใช้ PaymentCard แบบแยก Component ถ้าง่วนเป็น VERIFY_SLIP
+            // 🟡 2. การตรวจสลิปโอนเงิน
             if (todo.type === 'verify_slip') {
               return (
                 <div key={todo.id} className="md:col-span-2 xl:col-span-3">
@@ -355,7 +381,19 @@ export default function Todo() {
               );
             }
 
-            // Fallback สำหรับงานประเภทอื่นๆ
+            // 🟡 3. การออกใบกำกับภาษี (ใหม่)
+            if (todo.type === 'issue_tax_invoice') {
+               return (
+                  <div key={todo.id} className="md:col-span-2 xl:col-span-3">
+                     <TaxInvoiceCard
+                        task={todo}
+                        currentUser={auth.currentUser}
+                     />
+                  </div>
+               )
+            }
+
+            // 🟡 4. Fallback สำหรับงานประเภทอื่นๆ
             return (
               <TodoItem 
                 key={todo.id}

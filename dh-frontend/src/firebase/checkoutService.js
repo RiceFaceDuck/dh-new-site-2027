@@ -84,7 +84,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       transaction.set(todoRef, {
         type: "verify_slip",
         status: "pending",
-        title: `ตรวจสอบการชำระเงิน: ออเดอร์ #${orderRef.id.slice(-6)}`,
+        title: `ตรวจสอบการชำระเงิน: ออเดอร์ #${orderRef.id.slice(-6).toUpperCase()}`,
         orderId: orderRef.id,
         userId: user.uid,
         customerName: checkoutState?.customerData?.fullName || "ลูกค้าทั่วไป",
@@ -94,13 +94,32 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       });
     }
 
+    // 4.5 🌟 [WRITE] แจ้งเตือนไปหลังบ้าน (Todo) กรณีลูกค้าขอใบกำกับภาษี
+    if (checkoutState?.taxData) {
+      const taxTodoRef = doc(collection(db, "todos"));
+      transaction.set(taxTodoRef, {
+        type: "issue_tax_invoice",
+        status: "pending",
+        title: `ออกใบกำกับภาษี: ออเดอร์ #${orderRef.id.slice(-6).toUpperCase()}`,
+        orderId: orderRef.id,
+        userId: user.uid,
+        customerName: checkoutState.taxData.name || checkoutState?.customerData?.fullName || "ลูกค้าทั่วไป",
+        payload: {
+          taxInvoice: checkoutState.taxData,
+          orderId: orderRef.id
+        },
+        requestedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
+    }
+
     // 5. [WRITE] บันทึก History Log สำหรับลูกค้า
     const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`));
     transaction.set(historyRef, {
       orderId: orderRef.id,
       action: "PLACE_ORDER",
       title: "สั่งซื้อสินค้าสำเร็จ",
-      description: slipUrl ? `ออเดอร์ #${orderRef.id.slice(-6)} รอตรวจสอบการชำระเงิน` : `ออเดอร์ #${orderRef.id.slice(-6)} รอการชำระเงิน`,
+      description: slipUrl ? `ออเดอร์ #${orderRef.id.slice(-6).toUpperCase()} รอตรวจสอบการชำระเงิน` : `ออเดอร์ #${orderRef.id.slice(-6).toUpperCase()} รอการชำระเงิน`,
       amount: totals?.netTotal || 0,
       createdAt: serverTimestamp()
     });
@@ -112,7 +131,6 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
 /**
  * ฟังก์ชันสำหรับแยกกระแส ขอราคาส่งโดยเฉพาะ (ใช้ Batch Write เนื่องจากไม่มีการตัดแต้ม)
- * 🛠️ แก้ไข: อัปเดตชื่อฟังก์ชันให้ตรงกับ Checkout.jsx
  */
 export const createWholesaleRequest = async (user, cartItems, checkoutState, totals) => {
   if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนดำเนินการ");
@@ -121,14 +139,12 @@ export const createWholesaleRequest = async (user, cartItems, checkoutState, tot
   const batch = writeBatch(db);
   const orderRef = doc(collection(db, "orders"));
   const todoRef = doc(collection(db, "todos"));
-  const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`)); // สร้าง Reference สำหรับ History Log
+  const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`));
 
   const customerName = checkoutState?.customerData?.fullName || "ลูกค้าทั่วไป";
   
-  // ✅ อัปเดต: นำเหตุผลขอราคาส่งมารวมกับชื่อบริษัท/ร้าน
   const wholesaleNote = `บริษัท/ร้าน: ${checkoutState?.customerData?.company || 'ไม่ได้ระบุ'} | เหตุผล: ${checkoutState?.wholesaleReason || 'สั่งซื้อจำนวนมาก'}`;
   
-  // จัดการข้อมูลโปรโมชั่นที่ถูกใช้
   const appliedPromos = checkoutState?.appliedPromotions?.map(p => `✅ ${p.name || 'โปรโมชั่น'}`) || [];
 
   // 1. สร้าง Draft Order
@@ -138,11 +154,11 @@ export const createWholesaleRequest = async (user, cartItems, checkoutState, tot
     items: cartItems,
     status: "awaiting_wholesale_price", // สถานะรอราคาส่ง
     shippingAddress: checkoutState?.customerData || null,
-    taxInvoice: checkoutState?.taxData || null,
+    taxInvoice: checkoutState?.taxData || null, // 📝 บันทึกข้อมูลใบกำกับภาษีลง Order
     totals: totals, // ยอดคำนวณราคาปลีก (เพื่อเปรียบเทียบ)
-    wholesaleNote: wholesaleNote, // ✅ อัปเดต: บันทึกเหตุผลลงใน Order
+    wholesaleNote: wholesaleNote, 
     calculationLog: {
-      promotions: appliedPromos, // ✅ อัปเดต: เก็บรายการโปรโมชั่นที่ใช้งาน
+      promotions: appliedPromos, 
       freebies: checkoutState?.qualifiedFreebies || [],
       discountCode: checkoutState?.discountCode || null,
       discountAmount: checkoutState?.discountAmount || 0,
@@ -155,25 +171,25 @@ export const createWholesaleRequest = async (user, cartItems, checkoutState, tot
 
   batch.set(orderRef, orderData);
 
-  // 2. สร้าง To-do ให้ส่วนกลาง (หลังบ้าน)
+  // 2. สร้าง To-do ขอราคาส่ง ให้ผู้จัดการพิจารณา
   const taskData = {
     type: "wholesale_request",
-    status: "pending", // แก้จาก 'todo' เป็น 'pending' เพื่อให้สอดคล้องกับระบบ History
+    status: "pending", 
     title: "ขอราคาส่ง (B2B) จากลูกค้าหน้าเว็บ",
     orderId: orderRef.id,
-    userId: user.uid, // เพิ่ม userId เพื่อให้หลังบ้านดึงข้อมูลลูกค้าได้
+    userId: user.uid,
     customerName: customerName,
     totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
-    requestedAt: serverTimestamp(), // เพิ่ม requestedAt
+    requestedAt: serverTimestamp(),
     payload: {
       items: cartItems,
-      itemsSnapshot: cartItems, // Snapshot ป้องกันการเปลี่ยนแปลง
+      itemsSnapshot: cartItems,
       shippingFee: checkoutState?.shippingCost || 0,
       promoDiscount: checkoutState?.discountAmount || 0,
       freebies: checkoutState?.qualifiedFreebies?.map(f => f.itemName).join(', ') || '',
-      reason: checkoutState?.wholesaleReason || 'ไม่ได้ระบุเหตุผล', // ✅ อัปเดต: บันทึกเหตุผลส่งให้ผู้จัดการพิจารณา
-      checkoutSnapshot: checkoutState || {}, // เก็บ state เต็มรูปแบบ
-      originalTotals: totals // เพิ่ม originalTotals
+      reason: checkoutState?.wholesaleReason || 'ไม่ได้ระบุเหตุผล',
+      checkoutSnapshot: checkoutState || {}, 
+      originalTotals: totals 
     },
     createdAt: serverTimestamp(),
     createdBy: user.uid
@@ -181,18 +197,37 @@ export const createWholesaleRequest = async (user, cartItems, checkoutState, tot
 
   batch.set(todoRef, taskData);
 
+  // 2.5 🌟 สร้าง To-do ออกใบกำกับภาษี (ถ้ามีการขอไว้)
+  if (checkoutState?.taxData) {
+    const taxTodoRef = doc(collection(db, "todos"));
+    batch.set(taxTodoRef, {
+      type: "issue_tax_invoice",
+      status: "pending",
+      title: `ออกใบกำกับภาษี (ออเดอร์ราคาส่ง): #${orderRef.id.slice(-6).toUpperCase()}`,
+      orderId: orderRef.id,
+      userId: user.uid,
+      customerName: checkoutState.taxData.name || checkoutState?.customerData?.fullName || "ลูกค้าทั่วไป",
+      payload: {
+        taxInvoice: checkoutState.taxData,
+        orderId: orderRef.id
+      },
+      requestedAt: serverTimestamp(),
+      createdAt: serverTimestamp()
+    });
+  }
+
   // 3. บันทึก History Log ลง Sub-collection ของ User
   const historyData = {
     orderId: orderRef.id,
     action: 'REQUEST_WHOLESALE',
     title: 'ส่งคำขอพิจารณาราคาส่ง',
-    description: `ระบบกำลังส่งคำขอราคาส่งไปยังเจ้าหน้าที่ (ออเดอร์ #${orderRef.id.slice(-6)})`,
+    description: `ระบบกำลังส่งคำขอราคาส่งไปยังเจ้าหน้าที่ (ออเดอร์ #${orderRef.id.slice(-6).toUpperCase()})`,
     amount: totals?.netTotal || 0,
     createdAt: serverTimestamp(),
   };
   batch.set(historyRef, historyData);
 
-  // สั่งบันทึกรวดเดียว
+  // สั่งบันทึกรวดเดียว (Batch Commit)
   await batch.commit();
 
   return { 

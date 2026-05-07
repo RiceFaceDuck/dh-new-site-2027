@@ -17,15 +17,15 @@ const TabHistory = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // สถานะการคัดลอกข้อความ
+  const [copyStatus, setCopyStatus] = useState({});
 
-  // 1. 🛡️ อัปเกรด: ดึงข้อมูลประวัติออเดอร์แบบรัดกุม 100% (กันออเดอร์หาย)
   useEffect(() => {
     let unsubscribeSnapshot;
 
-    // ครอบด้วย onAuthStateChanged เพื่อกันปัญหาดึงข้อมูลตอน User ยังโหลดไม่เสร็จ
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // ถอด orderBy ออกจาก Query เพื่อป้องกันปัญหา Missing Index ทำออเดอร์หาย
         const q = query(
           collection(db, 'orders'),
           where('userId', '==', user.uid)
@@ -34,7 +34,6 @@ const TabHistory = () => {
         unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
           const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           
-          // ✨ Sort ด้วย JavaScript แทน เพื่อความชัวร์ว่าข้อมูลจะไม่เด้งหลุด
           ordersData.sort((a, b) => {
             const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
             const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
@@ -60,7 +59,6 @@ const TabHistory = () => {
     };
   }, []);
 
-  // ตัวช่วยแสดงสถานะ (Status Badges)
   const getStatusDisplay = (status) => {
     switch (status) {
       case 'awaiting_wholesale_price':
@@ -83,7 +81,6 @@ const TabHistory = () => {
     }
   };
 
-  // การจัดการไฟล์สลิป
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
@@ -97,7 +94,6 @@ const TabHistory = () => {
     }
   };
 
-  // ฟังก์ชันช่วยบีบอัดรูปภาพ
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -124,7 +120,6 @@ const TabHistory = () => {
     });
   };
 
-  // 2. ฟังก์ชันอัปโหลดและยืนยันสลิป
   const handleUploadSlip = async () => {
     if (!file) {
       setErrorMsg('กรุณาเลือกรูปภาพสลิปโอนเงิน');
@@ -153,7 +148,6 @@ const TabHistory = () => {
       const batch = writeBatch(db);
       const user = auth.currentUser;
 
-      // 3.1 เปลี่ยนสถานะ Order และแนบสลิป
       const orderRef = doc(db, 'orders', selectedOrder.id);
       batch.update(orderRef, {
         paymentSlipUrl: finalSlipUrl,
@@ -161,7 +155,6 @@ const TabHistory = () => {
         updatedAt: serverTimestamp()
       });
 
-      // 3.2 สร้างแจ้งเตือน To-do ไปให้แอดมินหลังบ้านตรวจสอบ
       const todoRef = doc(collection(db, 'todos'));
       batch.set(todoRef, {
         type: "verify_slip",
@@ -176,7 +169,6 @@ const TabHistory = () => {
         createdAt: serverTimestamp()
       });
 
-      // 3.3 บันทึกประวัติหน้าบ้าน
       const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`));
       batch.set(historyRef, {
         orderId: selectedOrder.id,
@@ -217,8 +209,21 @@ const TabHistory = () => {
       setExpandedOrderId(orderId);
     }
   };
+  
+  // 📋 ฟังก์ชันคัดลอกเลขพัสดุ (รองรับ iFrame)
+  const handleCopyTracking = (e, orderId, trackingNum) => {
+    e.stopPropagation();
+    const el = document.createElement('textarea');
+    el.value = trackingNum;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    
+    setCopyStatus({ [orderId]: true });
+    setTimeout(() => setCopyStatus({}), 2000);
+  };
 
-  // กรองรายการที่จะแสดง
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
     if (filter === 'pending') return ['pending_payment', 'awaiting_wholesale_price'].includes(order.status);
@@ -241,12 +246,12 @@ const TabHistory = () => {
         </div>
         
         {/* Filters */}
-        <div className="flex bg-gray-100 p-1 rounded-lg">
+        <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto overflow-x-auto hide-scrollbar">
           {['all', 'pending', 'processing', 'completed'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${filter === f ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${filter === f ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
             >
               {f === 'all' ? 'ทั้งหมด' : f === 'pending' ? 'รอชำระเงิน' : f === 'processing' ? 'กำลังดำเนินการ' : 'สำเร็จแล้ว'}
             </button>
@@ -281,9 +286,17 @@ const TabHistory = () => {
                     <h3 className="text-base font-bold text-gray-900">ออเดอร์ #{order.id?.slice(-8).toUpperCase()}</h3>
                     <p className="text-xs text-gray-500 mt-0.5">สั่งซื้อเมื่อ: {order.createdAt?.toDate().toLocaleString() || 'N/A'}</p>
                   </div>
-                  <span className={`px-3 py-1.5 text-xs font-bold rounded-full border ${statusObj.color}`}>
-                    {statusObj.text}
-                  </span>
+                  <div className="flex flex-col sm:items-end gap-1">
+                     <span className={`px-3 py-1.5 text-xs font-bold rounded-full border w-max ${statusObj.color}`}>
+                       {statusObj.text}
+                     </span>
+                     {/* แจ้งเตือนบิลในหน้าย่อ ถ้ามีใบกำกับภาษีออกแล้ว */}
+                     {order.taxInvoiceUrl && !isExpanded && (
+                       <span className="text-[10px] text-teal-600 font-bold bg-teal-50 px-2 py-0.5 rounded border border-teal-100 w-max">
+                         📄 มีใบกำกับภาษี
+                       </span>
+                     )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
@@ -322,6 +335,38 @@ const TabHistory = () => {
                 {/* 📋 รายละเอียดออเดอร์ (Expandable Details) */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
+                    
+                    {/* 🚚 ระบบแสดงเลขพัสดุ (อัปเดตใหม่) */}
+                    {order.trackingNumber && (
+                      <div className="mb-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-green-100 rounded-lg text-green-600 shadow-inner">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-green-700 uppercase tracking-wider mb-0.5">จัดส่งแล้ว! หมายเลขพัสดุของคุณ</p>
+                            <p className="text-xl font-black text-green-900 tracking-tight">{order.trackingNumber}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={(e) => handleCopyTracking(e, order.id, order.trackingNumber)}
+                          className={`w-full sm:w-auto px-4 py-2 border text-sm font-bold rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 ${copyStatus[order.id] ? 'bg-green-600 text-white border-green-600' : 'bg-white border-green-300 text-green-700 hover:bg-green-100'}`}
+                        >
+                          {copyStatus[order.id] ? (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                              คัดลอกสำเร็จ!
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                              คัดลอกเลขพัสดุ
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
                     <h4 className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> รายการสินค้าที่สั่งซื้อ
                     </h4>
@@ -329,7 +374,6 @@ const TabHistory = () => {
                     {/* List Items */}
                     <div className="space-y-3 mb-5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                       {order.items?.map((item, idx) => {
-                        // 🌟 ไฮไลท์: เช็คว่าได้ราคาส่งมาหรือเปล่า ถ้าได้ให้โชว์ราคาเทียบกันให้เห็นชัดๆ
                         const approvedPrice = order.totals?.wholesaleDetails?.approvedPrices?.[idx];
                         const isWholesaleApplied = approvedPrice !== undefined && approvedPrice < item.price;
                         const priceToShow = isWholesaleApplied ? approvedPrice : (item.price || 0);
@@ -366,7 +410,6 @@ const TabHistory = () => {
                          <span className="font-semibold text-gray-900">฿{order.totals?.subtotal?.toLocaleString() || 0}</span>
                        </div>
                        
-                       {/* โชว์ส่วนลดจากหน้าเว็บ */}
                        {order.totals?.discount > 0 && (
                          <div className="flex justify-between text-red-500">
                            <span>ส่วนลดโปรโมชั่น / คูปอง</span>
@@ -374,7 +417,6 @@ const TabHistory = () => {
                          </div>
                        )}
 
-                       {/* โชว์ส่วนลดราคาส่งที่ผู้จัดการอนุมัติ */}
                        {(order.totals?.wholesaleDetails?.itemLevelDiscount > 0 || order.totals?.wholesaleDetails?.manualExtraDiscount > 0) && (
                          <div className="flex justify-between text-indigo-700 bg-indigo-100/50 px-2.5 py-1.5 rounded-lg border border-indigo-100 mt-1">
                            <span className="font-bold flex items-center gap-1.5"><span className="text-lg leading-none">✨</span> ส่วนลดราคาส่ง (อนุมัติแล้ว)</span>
@@ -392,6 +434,21 @@ const TabHistory = () => {
                          <span className="text-2xl text-indigo-700">฿{order.totals?.netTotal?.toLocaleString() || 0}</span>
                        </div>
                     </div>
+
+                    {/* 📄 ระบบโหลดใบกำกับภาษี (อัปเดตใหม่) */}
+                    {order.taxInvoiceUrl && (
+                      <div className="mt-4 flex justify-end">
+                        <a 
+                          href={order.taxInvoiceUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-bold rounded-xl border border-teal-200 transition-colors shadow-sm active:scale-95"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                          ดาวน์โหลดใบกำกับภาษี (PDF)
+                        </a>
+                      </div>
+                    )}
 
                     {/* ที่อยู่จัดส่ง */}
                     {order.shippingAddress && (
@@ -416,7 +473,7 @@ const TabHistory = () => {
 
       {/* 🖼️ Modal: อัปโหลดสลิป */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={isUploading ? null : closeModal}></div>
           <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95">
             
