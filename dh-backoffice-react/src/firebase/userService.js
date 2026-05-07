@@ -1,196 +1,172 @@
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, serverTimestamp, addDoc, query, where } from 'firebase/firestore';
 import { db } from './config';
-import { historyService } from './historyService';
-import { todoService } from './todoService';
+import { 
+    collection, 
+    doc, 
+    getDocs, 
+    getDoc, 
+    updateDoc, 
+    serverTimestamp,
+    setDoc,
+    deleteDoc // นำเข้าฟังก์ชันลบถาวร
+} from 'firebase/firestore';
 
-const COLLECTION_NAME = 'users';
+const USERS_COL = 'users';
+const VALID_STAFF_ROLES = ['admin', 'manager', 'staff', 'packer', 'pending', 'pending-staff'];
+
+export const getAllStaff = async () => {
+    try {
+        const usersRef = collection(db, USERS_COL);
+        const snapshot = await getDocs(usersRef);
+        
+        return snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                let rawRole = data.role || data.userType || data.type || '';
+                let cleanRole = String(rawRole).toLowerCase().trim();
+
+                return { 
+                    id: doc.id, 
+                    isActive: data.isActive !== false,
+                    computedRole: cleanRole,
+                    ...data 
+                };
+            })
+            .filter(user => {
+                if (!user.computedRole) return false;
+                if (user.computedRole === 'customer' || user.computedRole === 'user') return false;
+                if (VALID_STAFF_ROLES.includes(user.computedRole)) return true;
+                return true;
+            });
+    } catch (error) {
+        console.error("Error fetching staff:", error);
+        throw error;
+    }
+};
+
+export const getAllCustomers = async () => {
+    try {
+        const usersRef = collection(db, USERS_COL);
+        const snapshot = await getDocs(usersRef);
+        
+        return snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                let cleanRole = String(data.role || data.userType || data.type || '').toLowerCase().trim();
+                return { id: doc.id, computedRole: cleanRole, ...data };
+            })
+            .filter(user => {
+                if (!user.computedRole || user.computedRole === 'customer' || user.computedRole === 'user') return true;
+                if (VALID_STAFF_ROLES.includes(user.computedRole)) return false;
+                return false; 
+            });
+    } catch (error) {
+        console.error("Error fetching customers:", error);
+        throw error;
+    }
+};
+
+export const getUserById = async (uid) => {
+    try {
+        const userRef = doc(db, USERS_COL, uid);
+        const snapshot = await getDoc(userRef);
+        if (snapshot.exists()) {
+            return { id: snapshot.id, ...snapshot.data() };
+        }
+        return null;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getUserProfile = async (uid) => { return await getUserById(uid); };
+
+export const updateUserProfile = async (uid, profileData) => {
+    try {
+        const userRef = doc(db, USERS_COL, uid);
+        await updateDoc(userRef, { ...profileData, updatedAt: serverTimestamp() });
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const updateUserRole = async (uid, newRole) => {
+    try {
+        const userRef = doc(db, USERS_COL, uid);
+        await updateDoc(userRef, {
+            role: newRole,
+            userType: newRole, // อัปเดตทั้งคู่เผื่อระบบเก่า
+            updatedAt: serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const suspendUser = async (uid) => {
+    try {
+        const userRef = doc(db, USERS_COL, uid);
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+        await updateDoc(userRef, {
+            isActive: false, 
+            suspendedAt: serverTimestamp(),
+            suspendedUntil: oneYearFromNow.toISOString(), // มีอายุ 1 ปี
+            updatedAt: serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const restoreUser = async (uid) => {
+    try {
+        const userRef = doc(db, USERS_COL, uid);
+        await updateDoc(userRef, {
+            isActive: true,
+            updatedAt: serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// ลบออกแบบถาวรจาก Firebase เลย
+export const deleteUser = async (uid) => {
+    try {
+        const userRef = doc(db, USERS_COL, uid);
+        await deleteDoc(userRef); // ลบทิ้งจาก DB ถาวร
+        return true;
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        throw error;
+    }
+};
+
+export const updateUserLoginStatus = async (uid, isOnline = true) => {
+    if(!uid) return;
+    try {
+        const userRef = doc(db, USERS_COL, uid);
+        await setDoc(userRef, { 
+            lastLogin: serverTimestamp(),
+            isOnline: isOnline
+        }, { merge: true });
+    } catch (error) {}
+};
 
 export const userService = {
-  // ✨ ฟังก์ชันอัปเดตเวลาเข้าสู่ระบบล่าสุด (เพิ่มใหม่เพื่อแก้ Error)
-  updateUserLoginStatus: async (uid) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, uid);
-      // ใช้ setDoc + merge: true เพื่ออัปเดตหรือสร้างใหม่ถ้ายังไม่มีเอกสาร
-      await setDoc(docRef, {
-        lastLoginAt: serverTimestamp()
-      }, { merge: true });
-    } catch (error) {
-      console.error("🔥 Error updating login status:", error);
-    }
-  },
-
-  getUserProfile: async (uid) => {
-    const docRef = doc(db, COLLECTION_NAME, uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return { uid, ...docSnap.data() };
-    }
-    return null; 
-  },
-
-  createUserProfile: async (uid, profileData) => {
-    const docRef = doc(db, COLLECTION_NAME, uid);
-    
-    const newProfile = {
-      ...profileData,
-      userType: 'staff', 
-      isApproved: false, 
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-
-    await setDoc(docRef, newProfile);
-    await historyService.addLog('Staff/Member', 'Create', uid, `พนักงานลงทะเบียนใหม่ (รออนุมัติ): ${profileData.email || uid}`);
-    await todoService.requestStaffApproval(profileData, uid);
-  },
-
-  createManualCustomer: async (customerData) => {
-    try {
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-        ...customerData,
-        userType: 'customer', 
-        isApproved: true, 
-        isManualAccount: true, 
-        // 🌟 Stats Snapshot Init
-        stats: {
-          totalSales: 0,
-          last30DaysSales: 0,
-          creditBalance: 0
-        },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      await historyService.addLog('Customer', 'Create', docRef.id, `สร้างบัญชีลูกค้า Manual: ${customerData.accountName || 'ไม่ระบุชื่อ'}`);
-      return docRef.id;
-    } catch (error) {
-      console.error("🔥 Error creating manual customer:", error);
-      throw error;
-    }
-  },
-
-  // ✨ อัปเดตข้อมูลลูกค้า (Dirty Check ควรทำที่ฝั่ง UI ก่อนส่งมาที่นี่เพื่อลด Write)
-  updateCustomerProfile: async (uid, updateData) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, uid);
-      await updateDoc(docRef, {
-        ...updateData,
-        updatedAt: serverTimestamp()
-      });
-      await historyService.addLog('Customer', 'Update', uid, `อัปเดตข้อมูลลูกค้า: ${updateData.accountName || uid}`);
-      return true;
-    } catch (error) {
-      console.error("🔥 Error updating customer:", error);
-      throw error;
-    }
-  },
-
-  // ✨ ลบข้อมูลลูกค้า
-  deleteCustomer: async (uid, customerName) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, uid);
-      await deleteDoc(docRef);
-      await historyService.addLog('Customer', 'Delete', uid, `ลบข้อมูลลูกค้า: ${customerName}`);
-      return true;
-    } catch (error) {
-      console.error("🔥 Error deleting customer:", error);
-      throw error;
-    }
-  },
-
-  // ✨ Smart Tiering: อัปเดต Rank อัตโนมัติ (สามารถเรียกใช้ตอนจบบิล)
-  updateCustomerStatsAndRank: async (uid, newSalesAmount) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, uid);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) return;
-
-      const currentData = docSnap.data();
-      const currentTotalSales = currentData.stats?.totalSales || 0;
-      const newTotalSales = currentTotalSales + newSalesAmount;
-
-      // Logic คำนวณ Rank
-      let newRank = currentData.rank || 'Customer';
-      if (newTotalSales >= 100000 && newRank !== 'VIP') newRank = 'Partner';
-
-      await updateDoc(docRef, {
-        'stats.totalSales': newTotalSales,
-        'stats.last30DaysSales': (currentData.stats?.last30DaysSales || 0) + newSalesAmount,
-        rank: newRank,
-        role: newRank, // Sync
-        updatedAt: serverTimestamp()
-      });
-    } catch (error) {
-      console.error("🔥 Error updating stats:", error);
-    }
-  },
-
-  approveStaff: async (uid, approverName) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, uid);
-      await updateDoc(docRef, { isApproved: true, updatedAt: serverTimestamp() });
-      await historyService.addLog('Staff/Member', 'Approve', uid, `อนุมัติพนักงานโดย: ${approverName}`);
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  getPendingStaff: async () => {
-    try {
-      const q = query(collection(db, COLLECTION_NAME), where("userType", "==", "staff"), where("isApproved", "==", false));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
-    } catch (error) {
-      return [];
-    }
-  },
-
-  getAllStaff: async () => {
-    try {
-      const staffRoles = ['พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ', 'Admin', 'Manager', 'Owner'];
-      const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-      return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })).filter(user => user.userType === 'staff' || (user.role && staffRoles.includes(user.role)));
-    } catch (error) {
-      return [];
-    }
-  },
-
-  getAllCustomers: async () => {
-    try {
-      const staffRoles = ['พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ', 'Admin', 'Manager', 'Owner'];
-      const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-      return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })).filter(user => user.userType === 'customer' || (!user.role || !staffRoles.includes(user.role)));
-    } catch (error) {
-      return [];
-    }
-  },
-
-  getAllUsers: async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-      return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
-    } catch (error) {
-      return [];
-    }
-  },
-
-  updateUserRole: async (uid, newRole) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, uid);
-      await updateDoc(docRef, { role: newRole, updatedAt: serverTimestamp() });
-      await historyService.addLog('Staff/Member', 'UpdateRole', uid, `เปลี่ยนตำแหน่งเป็น: ${newRole}`);
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  deleteUser: async (uid) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, uid);
-      await deleteDoc(docRef);
-      await historyService.addLog('Staff/Member', 'Delete', uid, `ลบผู้ใช้ออกจากระบบ`);
-    } catch (error) {
-      throw error;
-    }
-  }
+    getAllStaff,
+    getAllCustomers,
+    getUserById,
+    getUserProfile,
+    updateUserProfile,
+    updateUserRole,
+    suspendUser,
+    restoreUser,
+    updateUserLoginStatus,
+    deleteUser
 };
