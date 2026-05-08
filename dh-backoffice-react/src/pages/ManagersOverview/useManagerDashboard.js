@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
-import { userService } from '../../../firebase/userService';
+import { db } from '../../firebase/config';
+import { userService } from '../../firebase/userService';
 
 /**
  * 🧠 สมองกลคุม Data & Firebase สำหรับหน้า Managers Overview
@@ -124,7 +124,6 @@ export const useManagerDashboard = () => {
        return { success: false, error };
      }
   };
-
 
   return {
     stats,

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, X } from 'lucide-react';
-import { auth } from '../../../firebase/config';
-import { userService } from '../../../firebase/userService';
+import { auth } from '../../firebase/config';
+import { userService } from '../../firebase/userService';
 
 // นำเข้า Components ที่เราแยกชิ้นส่วนมา
 import { useManagerDashboard } from './useManagerDashboard';
@@ -10,7 +10,7 @@ import ExecutiveStats from './ExecutiveStats';
 import QuickAccessTools from './QuickAccessTools';
 import StaffApprovalModal from './StaffApprovalModal';
 import VipManagementModal from './VipManagementModal';
-import GlobalSettingsPanel from '../../../components/managers/GlobalSettingsPanel';
+import GlobalSettingsPanel from '../../components/managers/GlobalSettingsPanel';
 
 /**
  * 🏢 ศูนย์บัญชาการผู้จัดการ (Managers Overview)
