@@ -3,7 +3,8 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Search, Receipt, Undo2, 
   CheckSquare, History, Image as ImageIcon, 
-  Boxes, Users, Settings, LogOut, Sun, Moon 
+  Boxes, Users, Settings, LogOut, Sun, Moon,
+  UserCog // นำเข้าไอคอนสำหรับการตั้งค่าโปรไฟล์
 } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { signOut, onAuthStateChanged } from 'firebase/auth'; 
@@ -173,12 +174,12 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 transition-colors duration-200">
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-slate-200 dark:border-slate-700">
+        <div className="h-16 flex items-center justify-center border-b border-slate-200 dark:border-slate-700 shrink-0">
           <img src="/dh-logo.png" alt="DH Logo" className="h-8 object-contain" />
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
@@ -211,37 +212,67 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        {/* Profile & Settings Area */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
-              {profile?.firstName?.charAt(0) || 'U'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">
-                {profile ? `${profile.firstName} ${profile.nickname ? `(${profile.nickname})` : ''}` : 'กำลังโหลด...'}
+        {/* 🌟 Profile & Settings Area (อัปเกรด UI ใหม่ตามแผน) 🌟 */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-800">
+          
+          {/* User Info Block (มีลูกเล่น Hover) */}
+          <div className="relative group flex items-start gap-3 p-2.5 -mx-2 mb-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+            
+            {/* User Avatar / Photo */}
+            {currentUser?.photoURL ? (
+              <img 
+                src={currentUser.photoURL} 
+                alt="Profile" 
+                className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-600 shadow-sm"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-sm border border-blue-400 dark:border-blue-500">
+                {profile?.firstName?.charAt(0) || currentUser?.email?.charAt(0).toUpperCase() || 'U'}
+              </div>
+            )}
+            
+            {/* Details */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+              <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">
+                {profile ? `${profile.firstName} ${profile.nickname ? `(${profile.nickname})` : ''}` : (currentUser?.displayName || 'กำลังโหลด...')}
               </p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mt-0.5 truncate">
-                {profile?.role || 'Staff'}
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title={currentUser?.email}>
+                {currentUser?.email || 'ไม่มีอีเมล'}
               </p>
+              <div className="mt-1.5 flex items-center">
+                <span className="inline-flex items-center px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-[4px] text-[9px] font-black uppercase tracking-wider">
+                  {profile?.role || 'Staff'}
+                </span>
+              </div>
             </div>
 
+            {/* Quick Edit Icon (ซ่อนอยู่ จะแสดงตอน Hover) */}
+            <div 
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-600 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
+              title="ตั้งค่าข้อมูลบัญชี (Coming Soon)"
+              onClick={() => alert('ส่วนตั้งค่าบัญชีส่วนตัว จะเปิดใช้งานในระบบ KPI เร็วๆ นี้ครับ')}
+            >
+              <UserCog size={15} />
+            </div>
+          </div>
+          
+          {/* Action Buttons (จัดระเบียบใหม่) */}
+          <div className="flex gap-2">
+            <button 
+              onClick={handleLogout}
+              className="flex-1 group flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-colors outline-none border border-slate-200 dark:border-slate-700 shadow-sm"
+            >
+              <LogOut size={16} className="transition-transform group-hover:-translate-x-1" />
+              <span>เลิกงาน</span>
+            </button>
             <button 
               onClick={toggleDarkMode}
-              className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-white transition-colors shrink-0 outline-none"
+              className="p-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors outline-none border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm"
               title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
             >
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
           </div>
-          
-          <button 
-            onClick={handleLogout}
-            className="group w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-colors outline-none"
-          >
-            <LogOut size={16} className="transition-transform group-hover:-translate-x-0.5" />
-            <span>เลิกงาน (ออกจากระบบ)</span>
-          </button>
         </div>
       </aside>
 
