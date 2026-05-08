@@ -12,7 +12,8 @@ import Login from './pages/Login'
 import ProfileSetup from './pages/ProfileSetup'
 
 import Todo from './pages/Todo'
-import ManagersOverview from './pages/managers/ManagersOverview'
+// ✅ อัปเดต: นำเข้าจากโฟลเดอร์ ManagersOverview ที่เราเพิ่งแยกส่วนประกอบ
+import ManagersOverview from './pages/managers/ManagersOverview/index'
 import Customers from './pages/Customers' 
 import HistoryPage from './pages/History' 
 import BillingMain from './pages/billing/BillingMain'
@@ -31,177 +32,143 @@ import ShippingManagement from './pages/managers/ShippingManagement'
 import AdManagement from './pages/managers/AdManagement'
 import PartnerSettings from './pages/managers/PartnerSettings'
 
-// Component สำหรับหน้าชั่วคราว
+// Component จำลองสำหรับหน้าเว็บที่ยังไม่เสร็จ
 const Placeholder = ({ title }) => (
-  <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-slate-500">
-    <div className="text-4xl mb-4">🚧</div>
-    <h2 className="text-2xl font-bold mb-2">{title}</h2>
-    <p>หน้านี้กำลังอยู่ระหว่างการพัฒนา</p>
+  <div className="flex items-center justify-center h-full min-h-[60vh]">
+    <div className="text-center opacity-50">
+      <Clock size={48} className="mx-auto mb-4 text-[var(--dh-text-muted)]" />
+      <h2 className="text-2xl font-bold text-[var(--dh-text-main)]">{title}</h2>
+      <p className="text-[var(--dh-text-muted)]">กำลังอยู่ในระหว่างการพัฒนา</p>
+    </div>
   </div>
 )
 
-function App() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [isSessionExpired, setIsSessionExpired] = useState(false)
-  const [sessionTimeLeft, setSessionTimeLeft] = useState(0)
-  const SESSION_TIMEOUT = 30 * 60 // 30 นาที
+// Guard Layer 4: หน้าจอรอการอนุมัติ
+const PendingApprovalScreen = ({ onLogout }) => (
+  <div className="min-h-screen flex items-center justify-center bg-[var(--dh-bg-base)] p-4">
+    <div className="bg-[var(--dh-bg-surface)] p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-[var(--dh-border)]">
+      <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <Clock size={40} />
+      </div>
+      <h1 className="text-2xl font-black text-[var(--dh-text-main)] mb-2">รอการอนุมัติเข้าใช้งาน</h1>
+      <p className="text-[var(--dh-text-muted)] font-medium mb-8">
+        บัญชีของคุณกำลังรอการตรวจสอบจากผู้ดูแลระบบ กรุณาติดต่อผู้จัดการเพื่อขออนุมัติการเข้าถึง
+      </p>
+      <button
+        onClick={onLogout}
+        className="w-full bg-[var(--dh-bg-base)] hover:bg-[var(--dh-border)] text-[var(--dh-text-main)] font-bold py-3 px-4 rounded-xl transition-colors"
+      >
+        ออกจากระบบ
+      </button>
+    </div>
+  </div>
+)
 
-  // ==========================================
-  // 🛑 1. ระบบ Auth (แยกออกมาให้ทำงานแค่ครั้งเดียว ป้องกัน Infinite Loop)
-  // ==========================================
+const App = () => {
+  const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
+        setUser(currentUser)
         try {
-          // ยิงคำสั่ง Write แค่ "1 ครั้ง" ตอนที่เปิดเว็บเข้ามาใหม่เท่านั้น!
-          await userService.updateUserLoginStatus(currentUser.uid)
-        } catch (err) {
-          console.error("Auth status update failed (อาจจะติด Quota):", err)
+          // ตรวจสอบโปรไฟล์
+          const userProfile = await userService.getUserProfile(currentUser.uid)
+          setProfile(userProfile)
+        } catch (error) {
+          console.error("Error fetching profile:", error)
         }
-        
-        setUser({
-          uid: currentUser.uid,
-          email: currentUser.email,
-          displayName: currentUser.displayName,
-          photoURL: currentUser.photoURL
-        })
-        
-        setIsSessionExpired(false)
-        setSessionTimeLeft(SESSION_TIMEOUT)
       } else {
         setUser(null)
-        setSessionTimeLeft(0)
+        setProfile(null)
       }
       setLoading(false)
     })
 
     return () => unsubscribe()
-  }, []) // 👈 Empty Array: คือกุญแจสำคัญที่ทำให้ทำงานแค่รอบเดียวตอนรีเฟรชหน้า!
+  }, [])
 
-  // ==========================================
-  // ⏱️ 2. ระบบ Session Timeout (จัดการเวลาแยกต่างหาก)
-  // ==========================================
-  useEffect(() => {
-    if (!user || isSessionExpired) return;
-
-    let sessionTimer;
-    let countdownInterval;
-
-    const resetTimer = () => {
-      clearTimeout(sessionTimer)
-      clearInterval(countdownInterval)
-      
-      setSessionTimeLeft(SESSION_TIMEOUT)
-      
-      countdownInterval = setInterval(() => {
-        setSessionTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdownInterval)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-
-      sessionTimer = setTimeout(async () => {
-        await signOut(auth)
-        setIsSessionExpired(true)
-      }, SESSION_TIMEOUT * 1000)
-    }
-
-    // เริ่มจับเวลา
-    resetTimer()
-
-    window.addEventListener('mousemove', resetTimer)
-    window.addEventListener('keydown', resetTimer)
-
-    return () => {
-      clearTimeout(sessionTimer)
-      clearInterval(countdownInterval)
-      window.removeEventListener('mousemove', resetTimer)
-      window.removeEventListener('keydown', resetTimer)
-    }
-  }, [user, isSessionExpired]) // โยงแค่เฉพาะตอนที่ user เปลี่ยนแปลงจริง
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  const handleLogout = async () => {
+    await signOut(auth)
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="w-12 h-12 border-4 border-[#0870B8] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div className="text-slate-500 font-medium">กำลังโหลดระบบ...</div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--dh-bg-base)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--dh-accent)] border-t-transparent"></div>
       </div>
     )
   }
 
+  // Guard Layer 1: ยังไม่ได้ Login
+  if (!user) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    )
+  }
+
+  // Guard Layer 2: Login แล้ว แต่ไม่มี Profile ใน Firestore
+  if (!profile) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/setup-profile" element={<ProfileSetup onComplete={(p) => setProfile(p)} />} />
+          <Route path="*" element={<Navigate to="/setup-profile" replace />} />
+        </Routes>
+      </Router>
+    )
+  }
+
+  // Guard Layer 3: เป็น Customer (ไม่ใช่ Staff) ให้ดีดออก
+  if (profile.userType !== 'staff') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--dh-bg-base)] p-4">
+        <div className="bg-[var(--dh-bg-surface)] p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-red-200">
+          <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle size={40} />
+          </div>
+          <h1 className="text-2xl font-black text-[var(--dh-text-main)] mb-2">ไม่ได้รับอนุญาต</h1>
+          <p className="text-[var(--dh-text-muted)] font-medium mb-8">
+            คุณเข้าสู่ระบบด้วยบัญชีลูกค้า ระบบนี้สงวนไว้สำหรับพนักงานเท่านั้น
+          </p>
+          <button
+            onClick={handleLogout}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl transition-colors"
+          >
+            ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Guard Layer 4: เป็น Staff แต่ยังไม่ได้รับอนุมัติ (ยกเว้น Owner email)
+  const isOwnerEmail = user.email === 'dh1notebook@gmail.com'
+  if (!profile.isApproved && !isOwnerEmail) {
+    return <PendingApprovalScreen onLogout={handleLogout} />
+  }
+
   return (
     <Router>
-      {/* Session Alert */}
-      {isSessionExpired && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 text-center transform animate-in zoom-in duration-200">
-            <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-8 h-8 text-rose-600" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">เซสชันหมดอายุ</h3>
-            <p className="text-slate-600 mb-6 text-sm">
-              เพื่อความปลอดภัย ระบบได้ทำการล็อกเอาท์อัตโนมัติเนื่องจากไม่มีการใช้งานเกิน 30 นาที
-            </p>
-            <button
-              onClick={() => {
-                setIsSessionExpired(false)
-                window.location.href = '/login'
-              }}
-              className="w-full bg-[#0870B8] text-white rounded-lg py-2.5 font-medium hover:bg-[#065A96] transition-colors shadow-md"
-            >
-              เข้าสู่ระบบใหม่
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Session Timer */}
-      {user && !isSessionExpired && (
-        <div className="fixed bottom-4 right-4 z-40 bg-white/90 backdrop-blur shadow-lg rounded-full px-4 py-2 flex items-center gap-2 border border-slate-100 text-xs font-medium text-slate-600 transition-opacity hover:opacity-100 opacity-50">
-          <Clock className={`w-3 h-3 ${sessionTimeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-[#0870B8]'}`} />
-          <span className={sessionTimeLeft < 300 ? 'text-rose-600 font-bold' : ''}>
-            {formatTime(sessionTimeLeft)}
-          </span>
-        </div>
-      )}
-
       <Routes>
-        <Route 
-          path="/login" 
-          element={user ? <Navigate to="/" replace /> : <Login />} 
-        />
-        <Route 
-          path="/profile-setup" 
-          element={!user ? <Navigate to="/login" replace /> : <ProfileSetup />} 
-        />
-        <Route
-          path="/"
-          element={
-            user ? (
-              <AdminLayout user={user} onLogout={() => signOut(auth)}>
-                <Overview />
-              </AdminLayout>
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        >
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/setup-profile" element={<Navigate to="/" replace />} />
+
+        <Route path="/" element={<AdminLayout />}>
           <Route index element={<Overview />} />
           <Route path="search" element={<Search />} /> 
           <Route path="todo" element={<Todo />} />
           <Route path="claims" element={<ClaimMain />} />
           <Route path="billing" element={<BillingMain />} />
           
+          {/* อัปเดต Path การเรียกหน้า ManagersOverview */}
           <Route path="managers" element={<ManagersOverview />} />
           <Route path="managers/promotions" element={<PromotionManagement />} />
           <Route path="managers/pricing" element={<PricingSettings />} />
