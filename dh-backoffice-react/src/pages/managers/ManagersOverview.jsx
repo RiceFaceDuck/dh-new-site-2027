@@ -117,16 +117,44 @@ export default function ManagersOverview() {
     return <Moon size={16} className="text-indigo-400" />;
   };
 
+  // 🛠️ แก้ไขเฉพาะจุดนี้: อัปเกรดระบบตรวจสิทธิ์ให้รองรับ Owner และไม่ต้องสนตัวพิมพ์เล็กใหญ่
   const checkAccessAndLoadData = async () => {
     setLoading(true);
-    if (!auth.currentUser) { setIsAuthorized(false); setLoading(false); return; }
+    const user = auth.currentUser;
+    if (!user) { setIsAuthorized(false); setLoading(false); return; }
+    
     try {
-      const profile = await userService.getUserProfile(auth.currentUser.uid);
-      if (!profile || !['Manager', 'Owner', 'ผู้จัดการ', 'เจ้าของ'].includes(profile.role)) {
-        setIsAuthorized(false); setLoading(false); return;
+      const profile = await userService.getUserProfile(user.uid);
+      
+      // 🛡️ เช็คสิทธิ์เจ้าของร้านโดยตรง
+      const userEmail = (user.email || '').toLowerCase();
+      const isOwnerEmail = userEmail === 'dh1notebook@gmail.com' || userEmail === 'zhoulinjuan1@gmail.com';
+      
+      // แปลงข้อมูล role ให้เป็นตัวพิมพ์เล็กทั้งหมดเพื่อป้องกันบั๊ก
+      const role = String(profile?.role || '').toLowerCase();
+      const rolesArray = profile?.roles?.map(r => String(r).toLowerCase()) || [];
+      
+      // เช็คว่ามีสิทธิ์เพียงพอหรือไม่
+      const hasAccess = isOwnerEmail || 
+                        ['admin', 'manager', 'owner', 'ผู้จัดการ', 'เจ้าของ'].includes(role) ||
+                        rolesArray.includes('admin') || 
+                        rolesArray.includes('manager') || 
+                        rolesArray.includes('owner');
+
+      if (!hasAccess) {
+        setIsAuthorized(false); 
+        setLoading(false); 
+        return;
       }
+      
+      setIsAuthorized(true);
       await fetchPendingCount();
-    } catch (error) { console.error("Error loading manager data:", error); } finally { setLoading(false); }
+    } catch (error) { 
+      console.error("Error loading manager data:", error); 
+      setIsAuthorized(false);
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const fetchPendingCount = async () => {

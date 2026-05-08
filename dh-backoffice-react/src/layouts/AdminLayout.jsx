@@ -6,7 +6,7 @@ import {
   Boxes, Users, Settings, LogOut, Sun, Moon 
 } from 'lucide-react';
 import { auth } from '../firebase/config';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth'; 
 import { userService } from '../firebase/userService';
 import { todoService } from '../firebase/todoService';
 
@@ -16,8 +16,11 @@ export default function AdminLayout() {
   const currentUser = auth.currentUser;
   
   const [profile, setProfile] = useState(null);
-  const [managerTodoCount, setManagerTodoCount] = useState(0); 
   const [todoCount, setTodoCount] = useState(0); 
+
+  // --- States สำหรับระบบ Guard ---
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -27,159 +30,205 @@ export default function AdminLayout() {
     return false;
   });
 
+  // จัดการ Dark Mode 
   useEffect(() => {
-    let unsubscribeTodo = null;
-    let unsubscribeGeneralTodo = null;
-
-    // ✨ Subscribe จำนวนงานค้างทั้งหมดสำหรับแสดงที่เมนู To-do (Real-time)
-    unsubscribeGeneralTodo = todoService.subscribePendingTodos((todos) => {
-      setTodoCount(todos.length);
-    });
-
-    if (currentUser) {
-      userService.getUserProfile(currentUser.uid).then(data => {
-        if (data) {
-          setProfile(data);
-          // ระบบแจ้งเตือนเฉพาะระดับ Manager/Owner 
-          if (['Manager', 'Owner', 'ผู้จัดการ', 'เจ้าของ'].includes(data.role)) {
-            unsubscribeTodo = todoService.subscribeManagerApprovals((todos) => {
-              setManagerTodoCount(todos.length);
-            });
-          }
-        }
-      });
-    }
-
-    return () => {
-      if (unsubscribeTodo) unsubscribeTodo();
-      if (unsubscribeGeneralTodo) unsubscribeGeneralTodo();
-    };
-  }, [currentUser]);
-
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-    if (!isDark) {
+    if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  };
+  }, [isDark]);
+
+  const toggleDarkMode = () => setIsDark(!isDark);
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
       navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error logging out:', error);
     }
   };
 
-  // 📝 โครงสร้างเมนูดั้งเดิม (ครบ 11 เมนู)
-  const menuItems = [
-    { path: '/', name: 'Overview', desc: 'หน้ากระดานสรุปภาพรวมและสถิติ', icon: <LayoutDashboard size={18} /> },
-    { path: '/search', name: 'Product Search+', desc: 'ค้นหาสินค้าและเช็คสต็อกเร่งด่วน', icon: <Search size={18} /> },
-    { path: '/billing', name: 'Billing', desc: 'จัดการบิลรายการขายและใบเสร็จ', icon: <Receipt size={18} /> },
-    { path: '/claims', name: 'Claims', desc: 'ระบบจัดการงานเคลมและส่งซ่อม', icon: <Undo2 size={18} /> },
-    { path: '/todo', name: 'To-do', desc: 'กระดานรายการสิ่งที่ต้องดำเนินการ', icon: <CheckSquare size={18} /> },
-    { path: '/managers', name: 'Managers Office', desc: 'พื้นที่ตรวจสอบและอนุมัติ (สำหรับผู้จัดการ)', icon: <Users size={18} /> },
-    { path: '/history', name: 'History', desc: 'ประวัติการทำรายการย้อนหลังทั้งหมด', icon: <History size={18} /> },
-    { path: '/gallery', name: 'Gallery', desc: 'คลังรูปภาพสินค้าและสลิปการโอน', icon: <ImageIcon size={18} /> },
-    { path: '/inventory', name: 'Inventory', desc: 'ระบบจัดการคลังสินค้าและอะไหล่', icon: <Boxes size={18} /> },
-    { path: '/customers', name: 'Customers', desc: 'ฐานข้อมูลพาร์ทเนอร์และลูกค้า', icon: <Users size={18} /> },
-    { path: '/config', name: 'Config', desc: 'ตั้งค่าระบบและสิทธิ์การใช้งาน', icon: <Settings size={18} /> },
+  // --- 🛡️ useEffect 1: ระบบรักษาความปลอดภัย Gatekeeper ---
+  useEffect(() => {
+    let unsubscribeRole = () => {};
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        unsubscribeRole = userService.listenToUserRole(user, (roleData) => {
+          // เช็คสิทธิ์แบบครอบคลุมข้อมูลเก่าและใหม่
+          const roleStr = String(roleData?.role || roleData?.userType || '').toLowerCase();
+          const isStaffMember = roleData?.isStaff || 
+            ['admin', 'manager', 'staff', 'packer', 'developer', 'owner', 'ผู้จัดการ', 'เจ้าของ'].includes(roleStr) ||
+            (user.email === 'dh1notebook@gmail.com' || user.email === 'zhoulinjuan1@gmail.com');
+
+          if (isStaffMember && roleData?.isActive !== false) {
+            setIsCheckingAuth(false);
+            setAccessDenied(false);
+            setProfile(prev => prev || {
+              firstName: roleData.displayName || user.displayName || 'พนักงาน',
+              nickname: '',
+              role: roleData.roles ? roleData.roles[0] : (roleData.role || 'Staff')
+            });
+          } else {
+            // แจ้งเตือนรออนุมัติ สำหรับคนที่สมัครใหม่แต่ยังไม่มียศ
+            setIsCheckingAuth(false);
+            setAccessDenied(true);
+          }
+        });
+      } else {
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeRole();
+    };
+  }, [navigate]);
+
+  // --- 📝 useEffect 2: โหลดข้อมูลเดิมของระบบ ---
+  useEffect(() => {
+    let unsubscribeGeneralTodo = null;
+
+    // Subscribe จำนวนงานค้างทั้งหมดสำหรับแสดงที่เมนู To-do
+    if (typeof todoService.subscribePendingTodos === 'function') {
+      unsubscribeGeneralTodo = todoService.subscribePendingTodos((todos) => {
+        setTodoCount(todos.length);
+      });
+    }
+
+    if (currentUser) {
+      if (userService && typeof userService.getUserProfile === 'function') {
+        userService.getUserProfile(currentUser.uid)
+          .then(data => {
+            if(data) setProfile(data);
+          })
+          .catch(err => console.error(err));
+      }
+    }
+
+    return () => {
+      if (unsubscribeGeneralTodo) unsubscribeGeneralTodo();
+    };
+  }, [currentUser]);
+
+  // --- โครงสร้างเมนู ---
+  const navItems = [
+    { path: '/overview', label: 'ภาพรวม', icon: LayoutDashboard },
+    { path: '/search', label: 'ค้นหาสินค้า', icon: Search },
+    { path: '/billing', label: 'ระบบบิล', icon: Receipt },
+    { path: '/claims', label: 'รับเคลม/คืน', icon: Undo2 },
+    { path: '/todo', label: 'To-do', icon: CheckSquare, badge: todoCount },
+    { path: '/history', label: 'ประวัติ', icon: History },
+    { path: '/gallery', label: 'คลังภาพ', icon: ImageIcon },
+    { path: '/inventory', label: 'สต๊อกสินค้า', icon: Boxes },
+    { path: '/customers', label: 'ลูกค้า/ทีมงาน', icon: Users },
+    { path: '/managers', label: 'ตั้งค่า/จัดการ', icon: Settings }
   ];
 
+  // --- UI: หน้าจอตอนถูกปฏิเสธการเข้าถึง (รอการอนุมัติ) ---
+  if (accessDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors p-4">
+        <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl shadow-xl text-center max-w-md border-t-4 border-amber-500">
+          <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-6">
+            <Users className="h-10 w-10 text-amber-600 dark:text-amber-400" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">บัญชีรอการอนุมัติ</h2>
+          <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed font-medium">
+            คุณได้ลงทะเบียนเข้าสู่ระบบเรียบร้อยแล้ว แต่อยู่ในสถานะ <br/>
+            <span className="inline-block mt-2 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-md border border-amber-200 dark:border-amber-500/20">"รอการอนุมัติสิทธิ์ (Pending)"</span> <br/><br/>
+            กรุณาแจ้งผู้จัดการเพื่อกำหนดสิทธิ์การเข้าใช้งานระบบให้กับบัญชีของคุณ
+          </p>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => window.location.reload()} className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm active:scale-95">
+              ตรวจสอบสถานะอีกครั้ง
+            </button>
+            <button onClick={handleLogout} className="w-full px-4 py-3 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors active:scale-95">
+              ออกจากระบบ
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- UI: หน้าจอตอนกำลังโหลดเช็คข้อมูล (Checking Auth) ---
+  if (isCheckingAuth) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors">
+        <div className="p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg text-center">
+          <div className="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-blue-600 dark:border-blue-500 mx-auto mb-6"></div>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">กำลังตรวจสอบสิทธิ์...</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">DH System Security Gatekeeper</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-dh-bg-base text-dh-main font-sans overflow-hidden selection:bg-dh-accent-light selection:text-dh-accent transition-colors duration-200">
-      
-      {/* Sidebar Navigation - 🎨 ปรับพื้นหลังให้ดูเรียบง่าย มืออาชีพ */}
-      <aside className="w-[260px] bg-[#F8FAFB] dark:bg-[#2D333B] border-r border-dh-border flex flex-col z-20 transition-colors duration-200 shadow-sm">
-        
-        {/* Logo Area */}
-        <div className="h-16 flex items-center px-6 border-b border-dh-border shrink-0 bg-white dark:bg-[#22272E]">
-          <h1 className="text-xl font-black text-dh-main tracking-tight flex items-center gap-1">
-            DH<span className="text-dh-accent">Notebook</span>
-          </h1>
+    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-slate-900 transition-colors duration-200">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 transition-colors duration-200">
+        {/* Logo */}
+        <div className="h-16 flex items-center justify-center border-b border-slate-200 dark:border-slate-700">
+          <img src="/dh-logo.png" alt="DH Logo" className="h-8 object-contain" />
         </div>
 
-        {/* Navigation Menu Links */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar pb-10">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-            
-            // ✨ กำหนดตัวเลขและรูปแบบ Badge ตามประเภทเมนู
-            let badgeCount = 0;
-            let badgeStyle = "";
-
-            if (item.path === '/todo' && todoCount > 0) {
-              badgeCount = todoCount;
-              badgeStyle = isActive ? "bg-white text-dh-accent" : "bg-dh-accent text-white"; // งานปกติ: สีหลัก
-            }
-            if (item.path === '/managers' && managerTodoCount > 0) {
-              badgeCount = managerTodoCount;
-              badgeStyle = isActive ? "bg-white text-orange-600" : "bg-orange-500 text-white animate-pulse shadow-sm"; // งานราคาส่ง/ด่วน: สีส้มกะพริบ
-            }
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname.startsWith(item.path);
 
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all duration-200 outline-none border border-transparent ${
+                className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive 
-                    ? 'bg-dh-accent text-white font-semibold shadow-sm' 
-                    : 'text-dh-muted hover:bg-slate-200/50 dark:hover:bg-slate-700/50 hover:text-dh-main hover:border-slate-300/50 dark:hover:border-slate-600/50 font-medium'
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
               >
-                <div className="flex items-center gap-3 w-full">
-                  <span className={`${isActive ? 'text-white' : 'text-dh-muted group-hover:text-dh-main'} transition-colors duration-200 flex-shrink-0 relative z-10`}>
-                    {React.cloneElement(item.icon, { strokeWidth: isActive ? 2.5 : 2 })}
-                  </span>
-                  <span className="tracking-wide relative z-10">{item.name}</span>
+                <div className="flex items-center gap-3">
+                  <Icon size={18} />
+                  <span>{item.label}</span>
                 </div>
-                
-                {/* ✨ Badge แจ้งเตือนจำนวนงาน */}
-                {badgeCount > 0 && (
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 relative z-10 transition-all ${badgeStyle}`}>
-                    {badgeCount > 99 ? '99+' : badgeCount}
+                {item.badge > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    isActive 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'
+                  }`}>
+                    {item.badge}
                   </span>
                 )}
-
-                {/* Tooltip อธิบายเมนู (แสดงตอน Hover) */}
-                <div className="absolute left-12 top-[90%] w-max max-w-[210px] bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-[11.5px] font-medium px-2.5 py-1.5 rounded-md shadow-lg 
-                                opacity-0 translate-y-2 invisible group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 
-                                transition-all duration-200 delay-100 z-50 pointer-events-none">
-                  {item.desc}
-                  <div className="absolute -top-1 left-3 w-2 h-2 bg-slate-800 dark:bg-slate-100 rotate-45 rounded-sm"></div>
-                </div>
               </Link>
             );
           })}
         </nav>
 
-        {/* User Profile & Footer Area */}
-        <div className="p-4 border-t border-dh-border bg-[#F8FAFB] dark:bg-[#2D333B] shrink-0">
-          
-          <div className="flex items-center gap-3 min-w-0 p-2 rounded-lg border border-transparent hover:border-dh-border hover:bg-white dark:hover:bg-[#22272E] transition-colors duration-200 mb-2">
-            {profile?.photoURL ? (
-              <img src={profile.photoURL} alt="Profile" className="w-9 h-9 rounded-full object-cover shadow-sm shrink-0 border border-slate-200 dark:border-slate-600" />
-            ) : (
-              <div className="w-9 h-9 bg-dh-accent/10 text-dh-accent rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-dh-accent/20">
-                {profile?.nickname?.charAt(0).toUpperCase() || 'U'}
-              </div>
-            )}
-            
+        {/* Profile & Settings Area */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
+              {profile?.firstName?.charAt(0) || 'U'}
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-dh-main truncate leading-tight">
-                {profile ? `${profile.firstName} (${profile.nickname})` : 'กำลังโหลด...'}
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">
+                {profile ? `${profile.firstName} ${profile.nickname ? `(${profile.nickname})` : ''}` : 'กำลังโหลด...'}
               </p>
-              <p className="text-[10px] text-dh-muted font-medium uppercase tracking-wider mt-0.5 truncate">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mt-0.5 truncate">
                 {profile?.role || 'Staff'}
               </p>
             </div>
 
             <button 
               onClick={toggleDarkMode}
-              className="p-1.5 rounded-md text-dh-muted hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-dh-main transition-colors shrink-0 outline-none"
+              className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-white transition-colors shrink-0 outline-none"
               title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
             >
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -188,7 +237,7 @@ export default function AdminLayout() {
           
           <button 
             onClick={handleLogout}
-            className="group w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-dh-muted hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-colors outline-none"
+            className="group w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-colors outline-none"
           >
             <LogOut size={16} className="transition-transform group-hover:-translate-x-0.5" />
             <span>เลิกงาน (ออกจากระบบ)</span>
@@ -197,12 +246,9 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen relative bg-dh-bg-base">
-        <div className="flex-1 p-6 lg:p-8 overflow-y-auto custom-scrollbar">
-          <Outlet />
-        </div>
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+        <Outlet />
       </main>
-
     </div>
   );
 }
