@@ -40,6 +40,38 @@ export default function CreditDashboard() {
   const [adjustNote, setAdjustNote] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isAdjusting, setIsAdjusting] = useState(false);
+
+  // Global Credit Settings
+  const [earningRate, setEarningRate] = useState(100);
+  const [redemptionRate, setRedemptionRate] = useState(1);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const settings = await creditService.getCreditSettings();
+      if (settings) {
+        setEarningRate(settings.earningRate || 100);
+        setRedemptionRate(settings.redemptionRate || 1);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      await creditService.updateCreditSettings({
+        earningRate: Number(earningRate),
+        redemptionRate: Number(redemptionRate)
+      }, currentUser?.uid || 'System');
+      alert('บันทึกการตั้งค่าระบบเรียบร้อยแล้ว');
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
   const [messageBox, setMessageBox] = useState(null);
 
   // ฟังก์ชันแสดงแจ้งเตือน
@@ -519,6 +551,63 @@ export default function CreditDashboard() {
              )}
           </div>
 
+        </div>
+      )}
+
+      {/* ==========================================
+          🌟 แท็บที่ 3: ตั้งค่าระบบ (Global Credit Settings)
+          ========================================== */}
+      {activeTab === 'settings' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-fit">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Settings className="text-emerald-600 w-5 h-5" /> Global Credit Settings
+            </h2>
+            <form onSubmit={handleSaveSettings} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">อัตราการได้รับแต้ม (Earning Rate)</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-600">ซื้อทุก ๆ</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={earningRate}
+                    onChange={(e) => setEarningRate(e.target.value)}
+                    className="w-24 px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-tech text-center font-bold"
+                    required
+                  />
+                  <span className="text-sm font-bold text-slate-600">บาท = 1 แต้ม</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">อัตราการใช้แต้ม (Redemption Rate)</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-600">ใช้</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={redemptionRate}
+                    onChange={(e) => setRedemptionRate(e.target.value)}
+                    className="w-24 px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-tech text-center font-bold"
+                    required
+                  />
+                  <span className="text-sm font-bold text-slate-600">แต้ม = ส่วนลด 1 บาท</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingSettings}
+                className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-md flex items-center justify-center gap-2 ${
+                  isSavingSettings ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'
+                }`}
+              >
+                {isSavingSettings ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                บันทึกการตั้งค่า
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
