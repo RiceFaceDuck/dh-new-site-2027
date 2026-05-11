@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+
+import { calculateEarnedPoints, getCreditSettings, getWalletBalance } from '../firebase/creditService';
+
 import { useNavigate, Link } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, ArrowRight, ShieldCheck, Loader2, Gift } from 'lucide-react';
+// import removed to resolve lint issue as it's defined and imported
 
 // 🚀 1. ฟังก์ชันตัวช่วย: ดึงค่า Key แบบไม่สนใจตัวพิมพ์เล็กใหญ่ หรืออักษรพิเศษ
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
@@ -32,7 +36,20 @@ const parseSafeNumber = (val) => {
 const Cart = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+    });
+    return unsubscribe;
+  }, []);
   const [cartData, setCartData] = useState({ items: [], total: 0, totalQty: 0 });
+  
+  const [creditConfig, setCreditConfig] = useState(null);
+  const [userPoints, setUserPoints] = useState(0);
+  const [usePoints, setUsePoints] = useState(0);
+  const [inputPoints, setInputPoints] = useState('');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -131,6 +148,33 @@ const Cart = () => {
   };
 
   const subTotal = parseSafeNumber(cartData.total);
+  const discountFromPoints = (usePoints && creditConfig) ? Math.floor(usePoints / (creditConfig.redemptionRate || 1)) : 0;
+  const netTotal = Math.max(0, subTotal - discountFromPoints);
+  const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig) : 0;
+
+  const handleApplyPoints = () => {
+    const pointsToUse = Number(inputPoints);
+    if (isNaN(pointsToUse) || pointsToUse <= 0) {
+      alert('กรุณากรอกจำนวนแต้มที่ถูกต้อง');
+      return;
+    }
+    if (pointsToUse > userPoints) {
+      alert('แต้มสะสมของคุณไม่เพียงพอ');
+      return;
+    }
+    
+    // Safety Lock ป้องกันใช้แต้มเกินราคาสินค้า
+    const maxDiscount = subTotal;
+    const maxPointsToUse = maxDiscount * (creditConfig?.redemptionRate || 1);
+    
+    if (pointsToUse > maxPointsToUse) {
+       setUsePoints(maxPointsToUse);
+       setInputPoints(maxPointsToUse.toString());
+       alert(`สามารถใช้แต้มได้สูงสุด ${maxPointsToUse} แต้ม สำหรับคำสั่งซื้อนี้`);
+    } else {
+       setUsePoints(pointsToUse);
+    }
+  };
   const nextFreebie = freebies.find(f => f.minSpend > subTotal); 
   const currentFreebie = [...freebies].reverse().find(f => f.minSpend <= subTotal); 
 
@@ -310,11 +354,47 @@ const Cart = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
             <h2 className="text-lg font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100">สรุปคำสั่งซื้อ</h2>
             
+            {/* โซนการใช้แต้ม */}
+            {currentUser && creditConfig && userPoints > 0 && (
+              <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold text-blue-800 flex items-center gap-1">✨ ใช้แต้มเป็นส่วนลด</span>
+                  <span className="text-xs text-blue-600">คุณมี {userPoints.toLocaleString()} แต้ม</span>
+                </div>
+                <div className="flex gap-2">
+                  <input 
+                    type="number" 
+                    value={inputPoints}
+                    onChange={(e) => setInputPoints(e.target.value)}
+                    placeholder="ระบุจำนวนแต้ม"
+                    className="flex-1 px-3 py-2 text-sm border border-blue-200 rounded-lg focus:outline-none focus:border-blue-400"
+                  />
+                  <button 
+                    onClick={handleApplyPoints}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    ใช้แต้ม
+                  </button>
+                </div>
+                {usePoints > 0 && (
+                   <p className="text-xs text-emerald-600 font-medium mt-2">
+                     ประหยัดไป ฿{discountFromPoints.toLocaleString()}
+                   </p>
+                )}
+              </div>
+            )}
+
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>ยอดรวมสินค้า ({cartData.totalQty || 0} ชิ้น)</span>
-                <span className="font-bold text-gray-800 font-tech">฿{parseSafeNumber(cartData.total).toLocaleString()}</span>
+                <span className="font-bold text-gray-800 font-tech">฿{subTotal.toLocaleString()}</span>
               </div>
+              {usePoints > 0 && (
+                <div className="flex justify-between text-sm text-emerald-600">
+                  <span>ส่วนลดจากแต้ม ({usePoints.toLocaleString()} แต้ม)</span>
+                  <span className="font-bold font-tech">-฿{discountFromPoints.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm text-gray-600">
                 <span>ค่าจัดส่ง</span>
                 <span className="font-bold text-emerald-600">คำนวณในขั้นตอนถัดไป</span>
@@ -324,8 +404,13 @@ const Cart = () => {
             <div className="border-t border-dashed border-gray-200 pt-4 mb-6">
               <div className="flex justify-between items-end">
                 <span className="text-sm font-bold text-gray-800">ยอดสุทธิ</span>
-                <span className="text-2xl font-black text-red-600 font-tech">฿{parseSafeNumber(cartData.total).toLocaleString()}</span>
+                <span className="text-2xl font-black text-red-600 font-tech">฿{netTotal.toLocaleString()}</span>
               </div>
+              {earnedPoints > 0 && (
+                <p className="text-xs text-blue-600 text-right mt-1 font-medium">
+                  จะได้รับแต้มสะสม {earnedPoints.toLocaleString()} แต้ม จากคำสั่งซื้อนี้
+                </p>
+              )}
               <p className="text-[10px] text-gray-400 text-right mt-1">ราคานี้ยังไม่รวมค่าจัดส่งและส่วนลด (ถ้ามี)</p>
             </div>
 

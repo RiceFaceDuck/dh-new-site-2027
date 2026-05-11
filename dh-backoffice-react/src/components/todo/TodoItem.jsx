@@ -12,6 +12,7 @@ export default function TodoItem({ todo, processingId, handleApprove, handleReje
       case 'PAYMENT_VERIFICATION': return <Receipt size={18} className="text-emerald-500" />;
       case 'KNOWLEDGE_UPDATE_APPROVAL': return <Info size={18} className="text-purple-500" />;
       case 'MANUAL_TASK': return <Calendar size={18} className="text-dh-accent" />;
+      case 'PACKING_TASK': return <Calendar size={18} className="text-orange-500" />;
       default: return <AlertCircle size={18} className="text-slate-400" />;
     }
   };
@@ -36,9 +37,9 @@ export default function TodoItem({ todo, processingId, handleApprove, handleReje
             <div className="flex items-center gap-2 mb-0.5">
               <h4 className="font-bold text-sm text-dh-main truncate">{displayTitle}</h4>
               <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 ${
-                todo.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-slate-100 dark:bg-slate-800 text-dh-muted'
+                todo.priority === 'High' ? 'bg-red-100 text-red-700' : todo.type === 'PACKING_TASK' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 dark:bg-slate-800 text-dh-muted'
               }`}>
-                {todo.type === 'PAYMENT_VERIFICATION' ? 'ตรวจสอบยอดโอน' : todo.type.replace('_APPROVAL', '')}
+                {todo.type === 'PAYMENT_VERIFICATION' ? 'ตรวจสอบยอดโอน' : todo.type === 'PACKING_TASK' ? 'PACKING_TASK' : todo.type.replace('_APPROVAL', '')}
               </span>
             </div>
             <p className="text-xs text-dh-muted whitespace-pre-line line-clamp-2">{todo.description}</p>
