@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../../firebase/config';
 import { collection, query, where, onSnapshot, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import * as driveService from '../../../firebase/driveService';
+import { driveService } from '../../../firebase/driveService';
 
 const TabHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -133,7 +133,7 @@ const TabHistory = () => {
       let finalSlipUrl = '';
 
       try {
-        const uploadFn = driveService.uploadFile || driveService.uploadSlip || driveService.default;
+        const uploadFn = driveService.uploadImage || driveService.uploadSlip;
         if (typeof uploadFn === 'function') {
           finalSlipUrl = await uploadFn(file);
         }

@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, runTransaction, increment } from 'firebase/firestore';
 import { db } from './config';
 
 // กำหนด App ID
@@ -132,5 +132,98 @@ export const getCreditHistory = async (userId, forceRefresh = false) => {
   } catch (error) {
     console.error("❌ Error fetching credit history:", error);
     return userCache ? userCache.data : []; // หากเกิด Error ให้ดึง Cache เก่ามาใช้กันหน้าพัง
+  }
+};
+// ==========================================
+// 💡 Point Consumption Logic: หักแต้มสำหรับการโฆษณา
+// ==========================================
+export const consumeAdCredit = async (userId, amount, referenceId = null) => {
+  if (!userId || amount <= 0) return false;
+
+  const userRef = doc(db, 'users', userId);
+  const txRef = doc(collection(db, 'credit_transactions'));
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้");
+
+      const currentPoints = userDoc.data().points || 0;
+      if (currentPoints < amount) throw new Error("แต้มสะสมไม่เพียงพอสำหรับการโฆษณา");
+
+      const newBalance = currentPoints - amount;
+
+      // 1. หักแต้มผู้ใช้
+      transaction.update(userRef, {
+        points: newBalance,
+        updatedAt: new Date().toISOString()
+      });
+
+      // 2. บันทึกประวัติการหักแต้ม
+      transaction.set(txRef, {
+        transactionId: `TX-${Date.now()}`,
+        uid: userId,
+        type: 'spend',
+        amount: amount,
+        balanceAfter: newBalance,
+        referenceId: referenceId,
+        note: 'หักแต้มสำหรับค่าโฆษณา (Ad Impression/Click)',
+        recordedBy: userId,
+        timestamp: new Date().toISOString()
+      });
+
+      // 3. บันทึกสถิติลง sub-collection ของพาร์ทเนอร์ (Lead Generation Tracking)
+      const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', userId, 'stats', `${new Date().getFullYear()}-${new Date().getMonth()+1}`);
+      const partnerStatsDoc = await transaction.get(partnerStatsRef);
+      if (partnerStatsDoc.exists()) {
+        transaction.update(partnerStatsRef, {
+           impressions: increment(1),
+           spentCredits: increment(amount),
+           updatedAt: new Date().toISOString()
+        });
+      } else {
+        transaction.set(partnerStatsRef, {
+           impressions: 1,
+           clicks: 0,
+           spentCredits: amount,
+           updatedAt: new Date().toISOString()
+        });
+      }
+    });
+    return true;
+  } catch (error) {
+    console.error("🔥 Error consuming ad credit:", error);
+    throw error;
+  }
+};
+
+// ==========================================
+// 💡 Track Ad Click: บันทึกเมื่อมีการคลิกโฆษณาพาร์ทเนอร์
+// ==========================================
+export const trackAdClick = async (partnerId) => {
+  if (!partnerId) return;
+
+  try {
+    const statDocId = `${new Date().getFullYear()}-${new Date().getMonth()+1}`;
+    const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId, 'stats', statDocId);
+
+    await runTransaction(db, async (transaction) => {
+      const docSnap = await transaction.get(partnerStatsRef);
+      if (docSnap.exists()) {
+        transaction.update(partnerStatsRef, {
+          clicks: increment(1),
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        transaction.set(partnerStatsRef, {
+          impressions: 0,
+          clicks: 1,
+          spentCredits: 0,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error tracking ad click:", error);
   }
 };

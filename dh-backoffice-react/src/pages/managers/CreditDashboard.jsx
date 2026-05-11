@@ -5,7 +5,7 @@ import {
   ArrowRightLeft, Clock, Lock, Server, Fingerprint, Info, CheckCircle2, XCircle, Terminal, TrendingUp, TrendingDown,
   Coins, PlusCircle, MinusCircle, Loader2
 } from 'lucide-react';
-import { collection, query, where, getDocs, doc, getDoc, limit, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, limit, runTransaction, serverTimestamp, getAggregateFromServer, sum } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
 // 🚀 นำเข้า Component ลูก (ถ้ามี) หรือฟังก์ชันจาก Service 
@@ -23,6 +23,14 @@ export default function CreditDashboard() {
   const [healthLogs, setHealthLogs] = useState([
     { time: new Date().toLocaleTimeString(), msg: "ระบบ Credit System Initialized", type: "info" }
   ]);
+
+  // State สำหรับ Ledger / Balance Check
+  const [ledgerStats, setLedgerStats] = useState({
+    systemPoolMax: 0,
+    totalAllocated: 0,
+    totalUserBalance: 0,
+    totalPendingCredits: 0
+  });
 
   // State สำหรับ Manual Adjustment
   const [searchEmail, setSearchEmail] = useState('');
@@ -44,17 +52,60 @@ export default function CreditDashboard() {
     setHealthLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), msg, type }].slice(-15));
   };
 
-  const checkSystemHealth = () => {
+  const checkSystemHealth = async () => {
     setIsCheckingHealth(true);
     addLog("กำลังตรวจสอบการเชื่อมต่อ Firestore Transactions...", "info");
     
-    setTimeout(() => {
-      addLog("Firestore Read/Write Response Time: 45ms", "success");
-      addLog("ตรวจสอบ Index ของ Collection Users... ผ่าน", "success");
-      addLog("ตรวจสอบ Atomic Operations... ผ่าน", "success");
-      setHealthStatus('healthy');
+    try {
+      // ดึง Ledger Setting
+      const settingRef = doc(db, 'settings', 'credit_config');
+      const settingSnap = await getDoc(settingRef);
+      const ledger = settingSnap.exists() ? settingSnap.data()?.ledger || {} : {};
+
+      // ดึงข้อมูล User ทั้งหมดเพื่อหาผลรวมโดยใช้ getAggregateFromServer เพื่อประหยัด Reads
+      const usersRef = collection(db, 'users');
+      const usersSnapshot = await getAggregateFromServer(usersRef, {
+        totalCreditBalance: sum('stats.creditBalance'),
+        totalPartnerCredit: sum('partnerCredit'),
+        totalPoints: sum('points')
+      });
+      // เลือกใช้ฟิลด์ใดฟิลด์หนึ่งเป็นหลัก (หรือรวมกันถ้าเก็บแยก) ในที่นี้สมมติว่าดึงฟิลด์ที่มีค่ามากที่สุด
+      const sumBalance = Math.max(
+        usersSnapshot.data().totalCreditBalance || 0,
+        usersSnapshot.data().totalPartnerCredit || 0,
+        usersSnapshot.data().totalPoints || 0
+      );
+
+      // ดึงข้อมูล Pending Credits จาก Orders ที่ยังไม่ received
+      const ordersRef = collection(db, 'orders');
+      const qOrders = query(ordersRef, where('status', '!=', 'received'));
+      const ordersSnapshot = await getAggregateFromServer(qOrders, {
+        totalPending: sum('pendingCredits')
+      });
+      const sumPending = ordersSnapshot.data().totalPending || 0;
+
+      setLedgerStats({
+        systemPoolMax: ledger.systemPoolMax || 0,
+        totalAllocated: ledger.totalAllocated || 0,
+        totalUserBalance: sumBalance,
+        totalPendingCredits: sumPending
+      });
+
+      addLog(`ระบบปกติ. ทุนสำรอง: ${formatCredit(ledger.systemPoolMax || 0)}`, "success");
+
+      const difference = (ledger.totalAllocated || 0) - (sumBalance + sumPending);
+      if (Math.abs(difference) > 0 && ledger.totalAllocated > 0) {
+        addLog(`คำเตือน: ยอดรวมในระบบไม่ตรงกับที่จ่ายไป (ส่วนต่าง ${difference})`, "error");
+        setHealthStatus('warning');
+      } else {
+        addLog("Balance Check สมบูรณ์... ยอดเงินตรงกัน", "success");
+        setHealthStatus('healthy');
+      }
+    } catch (error) {
+      addLog("เกิดข้อผิดพลาดในการดึงข้อมูล", "error");
+    } finally {
       setIsCheckingHealth(false);
-    }, 1500);
+    }
   };
 
   useEffect(() => {
@@ -206,6 +257,32 @@ export default function CreditDashboard() {
             </span>
             System Online
           </div>
+        </div>
+      </div>
+
+      {/* 📊 ระบบตรวจสอบความสมดุล (Balance Check) */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+          <p className="text-xs font-bold text-slate-400 uppercase mb-1">System Pool Max</p>
+          <h3 className="text-2xl font-black text-slate-800">{formatCredit(ledgerStats.systemPoolMax)}</h3>
+          <p className="text-[10px] text-slate-500 mt-1">ทุนสำรองสูงสุด (เพดาน)</p>
+        </div>
+        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+          <p className="text-xs font-bold text-slate-400 uppercase mb-1">Total Users Balance</p>
+          <h3 className="text-2xl font-black text-blue-600">{formatCredit(ledgerStats.totalUserBalance)}</h3>
+          <p className="text-[10px] text-slate-500 mt-1">ยอดเครดิตที่ผู้ใช้ออนไลน์มีอยู่</p>
+        </div>
+        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+          <p className="text-xs font-bold text-slate-400 uppercase mb-1">Pending Credits (11-Days)</p>
+          <h3 className="text-2xl font-black text-amber-500">{formatCredit(ledgerStats.totalPendingCredits)}</h3>
+          <p className="text-[10px] text-slate-500 mt-1">แต้มรอรับหลังจากสั่งซื้อสินค้า</p>
+        </div>
+        <div className={`border p-5 rounded-2xl shadow-sm ${Math.abs((ledgerStats.totalAllocated) - (ledgerStats.totalUserBalance + ledgerStats.totalPendingCredits)) > 0 && ledgerStats.totalAllocated > 0 ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
+          <p className="text-xs font-bold uppercase mb-1 text-slate-700">Balance Integrity</p>
+          <h3 className={`text-2xl font-black ${Math.abs((ledgerStats.totalAllocated) - (ledgerStats.totalUserBalance + ledgerStats.totalPendingCredits)) > 0 && ledgerStats.totalAllocated > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+             {Math.abs((ledgerStats.totalAllocated) - (ledgerStats.totalUserBalance + ledgerStats.totalPendingCredits)) > 0 && ledgerStats.totalAllocated > 0 ? 'MISMATCH' : 'SECURE'}
+          </h3>
+          <p className="text-[10px] mt-1 text-slate-600">ตรวจสอบความตรงกันของยอด (Ledger VS Actual)</p>
         </div>
       </div>
 

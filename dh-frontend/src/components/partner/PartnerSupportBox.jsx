@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, ShieldCheck, Star, Loader2, Store } from 'lucide-react';
 import { partnerService } from '../../firebase/partnerService';
+import { trackAdClick } from '../../firebase/creditService';
 
 const PartnerSupportBox = () => {
   const [partner, setPartner] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const handleNavigateClick = () => {
+    if (partner?.userId) {
+      trackAdClick(partner.userId);
+    }
+    window.open(partner.googleMapsUrl || partner.mapsUrl, '_blank');
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -63,7 +71,7 @@ const PartnerSupportBox = () => {
         </div>
         {(partner.googleMapsUrl || partner.mapsUrl) && (
           <button 
-            onClick={() => window.open(partner.googleMapsUrl || partner.mapsUrl, '_blank')}
+            onClick={handleNavigateClick}
             className="w-full mt-4 py-2 bg-[#f8fbff] hover:bg-[#E6F0F9] border border-[#0870B8]/20 text-[#0870B8] text-[11px] font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <Navigation size={12} /> นำทางไปร้านค้า
