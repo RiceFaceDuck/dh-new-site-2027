@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { db } from '../../firebase/config';
 import { doc, updateDoc, collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import * as driveService from '../../firebase/driveService';
+import { driveService } from '../../firebase/driveService';
 
 const TaxInvoiceCard = ({ task, currentUser, onSuccess }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -41,7 +41,7 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess }) => {
       
       // อัปโหลดไฟล์ผ่าน driveService
       try {
-        const uploadFn = driveService.uploadFile || driveService.default;
+        const uploadFn = driveService.uploadSlip || driveService.uploadImage;
         if (typeof uploadFn === 'function') {
           fileUrl = await uploadFn(file);
         } else {

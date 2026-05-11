@@ -117,7 +117,7 @@ export const useManagerDashboard = () => {
   // ✅ อนุมัติพนักงาน (สมมติว่าต้องดึงมาจาก userService หรือ logic เดิม)
   const approveStaff = async (userId) => {
      try {
-       await userService.approveStaff(userId);
+       await userService.updateUserRole(userId, "staff");
        return { success: true };
      } catch (error) {
        console.error("Error approving staff:", error);
