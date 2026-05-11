@@ -461,9 +461,16 @@ export const billingService = {
                      refundAmount = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
                  }
                  
-                 const clawbackPoints = Number(orderData.earnedPoints || 0); 
+                 // 11-Day Delay Safety Net: ดึงแต้มคืน หากแต้มยัง Pending อยู่ให้เคลียร์
+                 let clawbackPoints = Number(orderData.earnedPoints || 0); 
+                 let cancelledPending = 0;
+                 if (orderData.pendingCredits && orderData.pendingCredits > 0 && orderData.status !== 'received') {
+                     cancelledPending = orderData.pendingCredits;
+                     clawbackPoints = 0; // ไม่หักแต้มในบัญชีเพราะยังไม่เข้า
+                     updates.pendingCredits = 0; // เคลียร์ใน Order
+                 }
 
-                 if (refundAmount > 0 || clawbackPoints > 0) {
+                 if (refundAmount > 0 || clawbackPoints > 0 || cancelledPending > 0) {
                      const currentWallet = userSnap.data().stats?.creditBalance || userSnap.data().partnerCredit || 0;
                      const currentPoints = userSnap.data().stats?.rewardPoints || 0;
                      

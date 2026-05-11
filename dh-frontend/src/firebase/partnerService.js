@@ -59,19 +59,29 @@ export const findNearestPartner = async (userLat, userLng) => {
   const partners = await getActivePartners();
   if (!partners || partners.length === 0) return null;
 
-  let nearestPartner = null;
-  let minDistance = Infinity;
+  let bestPartner = null;
+  let maxScore = -Infinity;
 
   partners.forEach(partner => {
     if (partner.lat && partner.lng) {
       const distance = calculateDistance(userLat, userLng, partner.lat, partner.lng);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestPartner = { ...partner, distanceKm: distance.toFixed(2) };
+      // ถ้าระยะทางน้อยมาก ป้องกันการหารด้วยศูนย์
+      const safeDistance = distance < 0.1 ? 0.1 : distance;
+      
+      // ดึงคะแนนเครดิต (ถ้าไม่มีก็ให้ default เป็น 1 เพื่อไม่ให้เสียเปรียบเกินไป)
+      const creditPoints = partner.points || 1; 
+
+      // 🌟 Weighted Search Algorithm: แต้มยิ่งเยอะ ยิ่งได้คะแนนดี / ระยะทางยิ่งไกล คะแนนยิ่งลด
+      const score = creditPoints / safeDistance;
+
+      if (score > maxScore) {
+        maxScore = score;
+        bestPartner = { ...partner, distanceKm: distance.toFixed(2), score: score.toFixed(2) };
       }
     }
   });
-  return nearestPartner;
+  
+  return bestPartner;
 };
 
 export const updatePartnerProfile = async (userId, partnerData, isActive) => {

@@ -76,6 +76,31 @@ export default function PartnerSettings() {
     }
   };
 
+  // 🛡️ อนุมัติ Verification Badge ให้ร้านค้า
+  const togglePartnerVerification = async (partnerId, currentStatus) => {
+    if (!window.confirm(`คุณต้องการ ${currentStatus ? 'ยกเลิก' : 'อนุมัติ'} การยืนยันตัวตน (Verification Badge) ของพาร์ทเนอร์รายนี้ใช่หรือไม่?`)) return;
+    
+    setActionLoading(`verify_${partnerId}`);
+    try {
+      const newStatus = !currentStatus;
+      const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId);
+      
+      await updateDoc(partnerRef, {
+        isVerified: newStatus,
+        updatedAt: new Date().toISOString()
+      });
+      
+      // อัปเดต UI ทันที
+      setPartners(prev => prev.map(p => p.id === partnerId ? { ...p, isVerified: newStatus } : p));
+      
+    } catch (error) {
+      console.error("Error updating verification status:", error);
+      alert("เกิดข้อผิดพลาดในการอัปเดต Verification Badge");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto animate-in fade-in duration-300">
       
@@ -229,6 +254,19 @@ export default function PartnerSettings() {
                 >
                   {actionLoading === partner.id ? <Loader2 size={14} className="animate-spin" /> : (partner.isActive ? <XCircle size={14} /> : <CheckCircle2 size={14} />)}
                   {partner.isActive ? 'ระงับพาร์ทเนอร์' : 'เปิดใช้งานอีกครั้ง'}
+                </button>
+                
+                <button 
+                  onClick={() => togglePartnerVerification(partner.id, partner.isVerified)}
+                  disabled={actionLoading === `verify_${partner.id}`}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+                    partner.isVerified 
+                    ? 'bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100' 
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
+                  }`}
+                >
+                  {actionLoading === `verify_${partner.id}` ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+                  {partner.isVerified ? 'ยกเลิก Verification Badge' : 'มอบ Verification Badge'}
                 </button>
               </div>
 
