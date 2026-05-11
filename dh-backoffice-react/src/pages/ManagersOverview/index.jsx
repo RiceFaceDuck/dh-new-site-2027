@@ -43,7 +43,7 @@ const ManagersOverview = () => {
       }
       try {
         const profile = await userService.getUserProfile(user.uid);
-        if (!profile || (profile.role !== 'Owner' && profile.role !== 'Manager' && profile.role !== 'เจ้าของ' && profile.role !== 'ผู้จัดการ')) {
+        if (!profile || (!['Owner', 'Manager', 'owner', 'manager', 'admin', 'Admin', 'เจ้าของ', 'ผู้จัดการ', 'แอดมิน'].includes(profile.role))) {
           navigate('/'); // ดีดกลับถ้าไม่ใช่ผู้บริหาร
         } else {
           setCurrentUserRole(profile.role);

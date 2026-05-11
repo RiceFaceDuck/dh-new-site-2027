@@ -12,7 +12,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   // 1. Roles & Permissions State
   // ==========================================
   const [currentUserRole, setCurrentUserRole] = useState('Staff');
-  const managerRoles = ['Admin', 'Manager', 'Owner', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'];
+  const managerRoles = ['Admin', 'Manager', 'Owner', 'manager', 'owner', 'admin', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'];
 
   useEffect(() => {
     // โหลด Role ของ User ที่กำลังใช้งานเพื่อใช้คุมสิทธิ์

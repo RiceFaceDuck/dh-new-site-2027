@@ -48,7 +48,7 @@ export default function WalletManagement() {
             if (!auth.currentUser) { navigate('/'); return; }
             try {
                 const profile = await userService.getUserProfile(auth.currentUser.uid);
-                if (!profile || !['Manager', 'Owner', 'ผู้จัดการ', 'เจ้าของ'].includes(profile.role)) {
+                if (!profile || !['Manager', 'Owner', 'manager', 'owner', 'admin', 'Admin', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน'].includes(profile.role)) {
                     navigate('/'); return;
                 }
 
