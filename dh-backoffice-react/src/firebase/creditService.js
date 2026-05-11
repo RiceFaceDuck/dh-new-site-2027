@@ -25,7 +25,109 @@ export const formatCredit = (points = 0) => {
   return new Intl.NumberFormat('th-TH').format(points);
 };
 
+import { query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+
 export const creditService = {
+
+  /**
+   * คำนวณแต้มสะสมจากยอดสั่งซื้อ
+   * @param {number} amount ยอดรวม (Subtotal หรือ NetTotal แล้วแต่กำหนด)
+   * @param {object} config ข้อมูลการตั้งค่าระบบ
+   */
+  calculateEarnedPoints: (amount, config) => {
+    if (!amount || amount <= 0 || !config) return 0;
+
+    // ตั้งค่า Default Earning Rate เช่น 100 บาท = 1 แต้ม
+    const earningRate = config.earningRate || 100;
+    let basePoints = Math.floor(amount / earningRate);
+
+    // ตั้งค่า Tier Multiplier (เช่น VIP ได้ x1.2)
+    // ตรงนี้อาจจะรับ Tier ปัจจุบันเข้ามาด้วย ถ้าต้องการ (สมมติว่าเป็น default 1 ไปก่อน)
+    let multiplier = config.tierMultiplier || 1;
+
+    return Math.floor(basePoints * multiplier);
+  },
+
+  /**
+   * ยืนยันการได้รับแต้มหลังจากชำระเงินสำเร็จ (ย้ายจาก Pending -> Balance)
+   */
+  handlePaymentCompletion: async (orderId, userId) => {
+    try {
+      await runTransaction(db, async (transaction) => {
+        const orderRef = doc(db, 'orders', orderId);
+        const userRef = doc(db, 'users', userId);
+
+        const [orderDoc, userDoc] = await Promise.all([
+          transaction.get(orderRef),
+          transaction.get(userRef)
+        ]);
+
+        if (!orderDoc.exists() || !userDoc.exists()) {
+          throw new Error("Order or User does not exist.");
+        }
+
+        const orderData = orderDoc.data();
+        const pendingPoints = orderData.pendingCredits || 0;
+
+        // ถ้าไม่มีแต้มที่ต้องเพิ่ม ให้ข้ามไป
+        if (pendingPoints <= 0) return;
+
+        // อัปเดตยอดแต้มที่ได้
+        const currentPoints = userDoc.data().stats?.creditBalance || userDoc.data().partnerCredit || 0;
+        const newBalance = currentPoints + pendingPoints;
+
+        // 1. ลบ pendingCredits และทำเครื่องหมายว่าให้แต้มแล้ว
+        transaction.update(orderRef, {
+          pendingCredits: 0,
+          pointsAwarded: true
+        });
+
+        // 2. เพิ่มแต้มเข้ากระเป๋า
+        transaction.update(userRef, {
+          'stats.creditBalance': newBalance,
+          'partnerCredit': newBalance
+        });
+
+        // 3. บันทึก History Log ของการได้แต้ม
+        const txRef = doc(collection(db, 'credit_transactions'));
+        transaction.set(txRef, {
+          transactionId: `EARN-${Date.now()}`,
+          uid: userId,
+          type: 'deposit',
+          amount: pendingPoints,
+          balanceAfter: newBalance,
+          referenceId: orderId,
+          note: 'ได้รับแต้มจากการสั่งซื้อ',
+          timestamp: serverTimestamp()
+        });
+      });
+      return true;
+    } catch (error) {
+      console.error("🔥 System Error [handlePaymentCompletion]:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * ดึงประวัติการใช้แต้ม (แบบจำกัด Reads)
+   */
+  getPointsHistory: async (userId, limitCount = 30) => {
+    if (!userId) return [];
+    try {
+      const q = query(
+        collection(db, 'credit_transactions'),
+        where('uid', '==', userId),
+        orderBy('timestamp', 'desc'),
+        limit(limitCount)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("🔥 System Error [getPointsHistory]:", error);
+      return [];
+    }
+  },
+
   // เปิดให้เรียกใช้ฟังก์ชัน Helper จาก Service Object ได้ด้วย
   formatCredit,
   getUserTier,

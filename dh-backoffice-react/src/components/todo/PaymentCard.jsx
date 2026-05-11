@@ -17,6 +17,15 @@ const PaymentCard = ({ task, currentUser, onSuccess }) => {
     try {
       // เรียกใช้ฟังก์ชัน Transaction ที่เราเขียนเตรียมไว้แล้วใน todoService
       await todoService.verifyPaymentSlip(task.id, task.orderId, currentUser);
+
+      // อัปเดตการได้แต้มสะสม
+      try {
+        await creditService.handlePaymentCompletion(task.orderId, task.userId);
+      } catch (creditError) {
+        console.error("Failed to update credit points:", creditError);
+        // ถึงแม้จะให้แต้มไม่สำเร็จ ก็ควรอนุมัติสลิปผ่านไปก่อน แล้วให้ระบบไปรันอัปเดตย้อนหลัง
+      }
+
       if (onSuccess) onSuccess(); // แจ้ง UI ภายนอกให้รีเฟรชหรือลบการ์ดทิ้ง
     } catch (error) {
       console.error("Approve Slip Error:", error);

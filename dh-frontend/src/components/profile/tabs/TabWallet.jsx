@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Coins, Star, History, Zap, Loader2, Trophy, TrendingUp, ArrowUpRight, ArrowDownRight, Crown } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 // 🚀 เรียกใช้ Credit Service ที่เราสร้างไว้
-import { subscribeToWallet, getCreditHistory, getUserTier, formatCredit } from '../../../firebase/creditService';
+import { subscribeToWallet, getPointsHistory, getUserTier, formatCredit } from '../../../firebase/creditService';
 
 const TabWallet = () => {
   const [activeTab, setActiveTab] = useState('history'); 
@@ -83,6 +83,13 @@ const TabWallet = () => {
               </h2>
               <span className="text-slate-400 font-bold uppercase tracking-widest">Points</span>
             </div>
+
+            {/* โชว์คะแนนรอดำเนินการ (Pending Points) ถ้ามี */}
+            {(walletData.pendingCredits || 0) > 0 && (
+              <div className="mt-2 text-sm font-medium text-amber-300">
+                รออนุมัติ: {formatCredit(walletData.pendingCredits)} Pts
+              </div>
+            )}
           </div>
 
           {/* ปุ่ม Action */}

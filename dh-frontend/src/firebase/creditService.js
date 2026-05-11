@@ -1,5 +1,7 @@
-import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, runTransaction, increment } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
+import { where } from 'firebase/firestore';
+
 
 // กำหนด App ID
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
@@ -66,20 +68,23 @@ export const getWalletBalance = async (userId) => {
 export const subscribeToWallet = (userId, callback) => {
   if (!userId) return () => {};
 
-  const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
+  const userRef = doc(db, 'users', userId);
   
   const unsubscribe = onSnapshot(
-    walletRef, 
+    userRef,
     (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
+        // รองรับทั้งแบบที่เก็บใน points โดยตรงและใน stats
+        const balance = data.points || data.stats?.creditBalance || data.partnerCredit || 0;
         callback({
-          balance: data.balance || 0,
+          balance: balance,
           totalAccumulated: data.totalAccumulated || 0,
-          tier: getUserTier(data.balance || 0) // คืนค่าระดับ VIP ไปพร้อมกันเลย
+          pendingCredits: data.pendingCredits || 0,
+          tier: getUserTier(balance)
         });
       } else {
-        callback({ balance: 0, totalAccumulated: 0, tier: getUserTier(0) });
+        callback({ balance: 0, totalAccumulated: 0, pendingCredits: 0, tier: getUserTier(0) });
       }
     },
     (error) => {
@@ -169,7 +174,7 @@ export const consumeAdCredit = async (userId, amount, referenceId = null) => {
         referenceId: referenceId,
         note: 'หักแต้มสำหรับค่าโฆษณา (Ad Impression/Click)',
         recordedBy: userId,
-        timestamp: new Date().toISOString()
+        timestamp: serverTimestamp()
       });
       
       // 3. บันทึกสถิติลง sub-collection ของพาร์ทเนอร์ (Lead Generation Tracking)
@@ -225,5 +230,110 @@ export const trackAdClick = async (partnerId) => {
     });
   } catch (error) {
     console.error("Error tracking ad click:", error);
+  }
+};
+
+
+/**
+ * 🌟 ดึงข้อมูลการตั้งค่าระบบ Credit และ Master Ledger
+ * (ใช้วิธี Caching ของ Firestore เพื่อประหยัด Reads)
+ */
+export const getCreditSettings = async () => {
+  try {
+    const docRef = doc(db, 'settings', 'credit_config');
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data();
+    }
+    return null;
+  } catch (error) {
+    console.error("🔥 System Error [getCreditSettings]:", error);
+    return null;
+  }
+};
+
+/**
+ * คำนวณแต้มสะสมจากยอดสั่งซื้อ
+ * @param {number} amount ยอดรวม
+ * @param {object} config ข้อมูลการตั้งค่าระบบ
+ */
+export const calculateEarnedPoints = (amount, config) => {
+  if (!amount || amount <= 0 || !config) return 0;
+  const earningRate = config.earningRate || 100;
+  let basePoints = Math.floor(amount / earningRate);
+  let multiplier = config.tierMultiplier || 1;
+  return Math.floor(basePoints * multiplier);
+};
+
+/**
+ * ดึงประวัติการใช้แต้ม
+ */
+export const getPointsHistory = async (userId, limitCount = 30) => {
+  if (!userId) return [];
+  try {
+    const q = query(
+      collection(db, 'credit_transactions'),
+      where('uid', '==', userId),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("🔥 System Error [getPointsHistory]:", error);
+    return [];
+  }
+};
+
+/**
+ * ยืนยันการได้รับแต้มหลังจากชำระเงินสำเร็จ (ย้ายจาก Pending -> Balance)
+ */
+export const handlePaymentCompletion = async (orderId, userId) => {
+  try {
+    await runTransaction(db, async (transaction) => {
+      const orderRef = doc(db, 'orders', orderId);
+      const userRef = doc(db, 'users', userId);
+
+      const [orderDoc, userDoc] = await Promise.all([
+        transaction.get(orderRef),
+        transaction.get(userRef)
+      ]);
+
+      if (!orderDoc.exists() || !userDoc.exists()) return;
+
+      const orderData = orderDoc.data();
+      const pendingPoints = orderData.pendingCredits || 0;
+
+      if (pendingPoints <= 0) return;
+
+      const currentPoints = userDoc.data().points || 0;
+      const newBalance = currentPoints + pendingPoints;
+
+      transaction.update(orderRef, {
+        pendingCredits: 0,
+        pointsAwarded: true
+      });
+
+      transaction.update(userRef, {
+        points: newBalance
+      });
+
+      const txRef = doc(collection(db, 'credit_transactions'));
+      transaction.set(txRef, {
+        transactionId: `EARN-${Date.now()}`,
+        uid: userId,
+        type: 'deposit',
+        amount: pendingPoints,
+        balanceAfter: newBalance,
+        referenceId: orderId,
+        note: 'ได้รับแต้มจากการสั่งซื้อ',
+        timestamp: serverTimestamp()
+      });
+    });
+    return true;
+  } catch (error) {
+    console.error("🔥 System Error [handlePaymentCompletion]:", error);
+    throw error;
   }
 };
