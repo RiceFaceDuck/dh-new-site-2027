@@ -87,7 +87,7 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
     setPlatformRegex(regexRules);
   };
 
-  const isManagerOrOwner = ['Manager', 'Owner', 'ผู้จัดการ', 'เจ้าของ'].includes(userRole);
+  const isManagerOrOwner = ['Manager', 'Owner', 'manager', 'owner', 'admin', 'Admin', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน'].includes(userRole);
 
   const handlePriceChange = (val, field) => {
     const numVal = Number(val);

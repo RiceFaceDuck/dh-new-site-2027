@@ -12,7 +12,7 @@ export const useCustomerData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const CACHE_KEY = 'dh_customers_data_cache';
-  const staffRoles = ['พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ', 'Admin', 'Manager', 'Owner'];
+  const staffRoles = ['พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ', 'Admin', 'Manager', 'Owner', 'manager', 'owner', 'admin', 'packer', 'staff'];
 
   // จัดระเบียบข้อมูลลูกค้า (กรอง Staff ออก และเรียงตามยอดขาย)
   const processCustomerData = (usersData) => {
