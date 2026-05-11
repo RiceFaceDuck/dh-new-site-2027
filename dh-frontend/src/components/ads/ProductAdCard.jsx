@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExternalLink, Store, Info } from 'lucide-react';
+import { trackAdClick } from '../../firebase/creditService';
 
 /**
  * ProductAdCard - คอมโพเนนต์สำหรับการ์ดโฆษณา (อัตราส่วน 1:1)
@@ -37,11 +38,18 @@ const ProductAdCard = ({ ad }) => {
 
   const pStyle = getPlatformStyle(platform);
 
+  const handleClick = (e) => {
+    if (ad?.partnerId) {
+      trackAdClick(ad.partnerId);
+    }
+  };
+
   return (
     <a
       href={link || '#'}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={handleClick}
       className="group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-amber-100 overflow-hidden relative cursor-pointer h-full"
       title={title}
     >
