@@ -5,10 +5,13 @@ import {
   ShieldAlert, Search, Clock, CheckCircle, XCircle, 
   Package, ArrowLeftRight, Wrench, FileText, Receipt, 
   Printer, Ban, Eye, AlertTriangle, User, X, Calendar, Image as ImageIcon, Copy, Check, RefreshCw,
-  Flame, Zap, Timer // ✨ นำเข้าไอคอนใหม่สำหรับระบบ SLA Gimmick
+  Flame, Zap, Timer, UploadCloud, Loader2
 } from 'lucide-react';
 import { claimService } from '../../firebase/claimService';
+import { billingService } from '../../firebase/billingService';
+import { driveService } from '../../firebase/driveService';
 import { userService } from '../../firebase/userService';
+import BillingDashboard from '../billing/BillingMain';
 
 // ==========================================
 // 🖨️ Component: Print Form (คงเดิม 100%)
@@ -348,6 +351,7 @@ export default function ClaimMain() {
       {/* --- Stats Cards (Minimal & Compact) --- */}
       <div className="flex flex-wrap gap-2 mb-4">
         {[
+          { id: 'create', label: 'สร้างรายการใหม่', count: '+', icon: Plus, color: 'text-dh-accent', bg: 'bg-dh-accent/10 border-dh-accent/20 hover:bg-dh-accent/20' },
           { id: 'all', label: 'ทั้งหมด', count: stats.total, color: 'text-dh-main', bg: 'bg-dh-surface hover:bg-dh-base' },
           { id: 'pending', label: 'รอตรวจ', count: stats.pending, icon: Clock, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50/50 hover:bg-amber-100/50 border-amber-200/50 dark:bg-amber-900/10 dark:border-amber-700/30' },
           { id: 'approved', label: 'อนุมัติแล้ว', count: stats.approved, icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50/50 hover:bg-emerald-100/50 border-emerald-200/50 dark:bg-emerald-900/10 dark:border-emerald-700/30' },
@@ -367,7 +371,12 @@ export default function ClaimMain() {
         ))}
       </div>
 
-      {/* --- Data Table --- */}
+      {/* --- Main Content Area --- */}
+      {activeTab === 'create' ? (
+          <div className="bg-dh-surface rounded-xl shadow-sm border border-dh-border overflow-hidden p-0 h-[80vh]">
+              <BillingDashboard />
+          </div>
+      ) : (
       <div className="bg-dh-surface rounded-xl shadow-sm border border-dh-border overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16"><RefreshCw className="w-6 h-6 animate-spin text-dh-accent"/></div>
@@ -519,6 +528,7 @@ export default function ClaimMain() {
           </div>
         )}
       </div>
+      )}
 
       {/* --- Detail Modal (Grid Card Design - สะอาด อ่านง่าย) --- */}
       {selectedRequest && (

@@ -4,7 +4,7 @@ import { claimService } from '../../firebase/claimService';
 import { driveService } from '../../firebase/driveService'; 
 import { auth } from '../../firebase/config'; 
 import { 
-    Search, Plus, Receipt, CheckCircle2, Clock, Eye, X, QrCode, 
+    Search, Plus, Receipt, CheckCircle2, Check, Clock, Eye, X, QrCode,
     Printer, Wrench, ArrowLeftRight, Loader2, Calendar, Truck, 
     Store, MapPin, Phone, FileEdit, UploadCloud, Ban 
 } from 'lucide-react'; 
