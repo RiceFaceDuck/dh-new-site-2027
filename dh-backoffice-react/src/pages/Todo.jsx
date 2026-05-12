@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { todoService } from '../firebase/todoService';
+import { claimService } from '../firebase/claimService';
 import { auth, db } from '../firebase/config';
 import { collection, doc, getDoc, getDocs, query, where, documentId } from 'firebase/firestore'; 
 import NonExistingProducts from './todo/NonExistingProducts';
@@ -157,10 +158,14 @@ export default function Todo() {
           await todoService.approveDealer(taskId, payload.userId);
         } else if (actionType === 'CREDIT_APPROVAL') {
           await todoService.approveCredit(taskId, payload.userId, payload.amount, payload.points);
+        } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
+          await claimService.approveRequest(payload, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
         }
       } else if (action === 'reject') {
         if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {
            await todoService.rejectWholesale(taskId, payload.orderId);
+        } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
+           await claimService.rejectRequest(payload, payload.reason || 'ปฏิเสธโดยผู้จัดการ', auth.currentUser.uid);
         } else {
            await todoService.rejectTask(taskId, payload.reason);
         }

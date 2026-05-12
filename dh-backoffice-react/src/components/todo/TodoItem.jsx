@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, X, Clock, UserPlus, Tag, Info, AlertCircle, Calendar, Receipt } from 'lucide-react';
 import WholesaleCard from './WholesaleCard';
 import PaymentCard from './PaymentCard';
+import ServiceTaskCard from './ServiceTaskCard';
 
 export default function TodoItem({ todo, processingId, handleApprove, handleReject, fetchedPrices, wholesaleInputs, setWholesaleInputs }) {
   
@@ -56,22 +57,24 @@ export default function TodoItem({ todo, processingId, handleApprove, handleReje
           <div className="flex items-center gap-1.5 text-[11px] text-dh-muted whitespace-nowrap">
             <Clock size={12} /> {formatDate(todo.createdAt)}
           </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => handleApprove(todo)}
-              title={todo.type === 'PAYMENT_VERIFICATION' ? 'ยืนยันรับยอดโอน' : 'ดำเนินการเสร็จสิ้น / อนุมัติ'}
-              className={`flex items-center gap-1.5 font-bold px-4 py-2.5 rounded-xl transition-all shadow-md text-sm text-white hover:-translate-y-0.5 active:translate-y-0 ${todo.type === 'PAYMENT_VERIFICATION' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20'}`}
-            >
-              <Check size={16} strokeWidth={3} /> {todo.type === 'PAYMENT_VERIFICATION' ? 'ยืนยันรับยอดโอน' : 'อนุมัติราคาส่ง'}
-            </button>
-            <button 
-              onClick={() => handleReject(todo.id)}
-              title="ปฏิเสธ / ยกเลิก"
-              className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 px-3 py-2.5 rounded-xl transition-all shadow-sm"
-            >
-              <X size={18} strokeWidth={2.5} />
-            </button>
-          </div>
+          {!(todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type.startsWith('CANCEL_')) && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleApprove(todo)}
+                title={todo.type === 'PAYMENT_VERIFICATION' ? 'ยืนยันรับยอดโอน' : 'ดำเนินการเสร็จสิ้น / อนุมัติ'}
+                className={`flex items-center gap-1.5 font-bold px-4 py-2.5 rounded-xl transition-all shadow-md text-sm text-white hover:-translate-y-0.5 active:translate-y-0 ${todo.type === 'PAYMENT_VERIFICATION' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20'}`}
+              >
+                <Check size={16} strokeWidth={3} /> {todo.type === 'PAYMENT_VERIFICATION' ? 'ยืนยันรับยอดโอน' : 'อนุมัติราคาส่ง'}
+              </button>
+              <button
+                onClick={() => handleReject(todo.id)}
+                title="ปฏิเสธ / ยกเลิก"
+                className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 px-3 py-2.5 rounded-xl transition-all shadow-sm"
+              >
+                <X size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -84,8 +87,17 @@ export default function TodoItem({ todo, processingId, handleApprove, handleReje
         />
       )}
 
+
       {todo.type === 'PAYMENT_VERIFICATION' && todo.payload && (
          <PaymentCard todo={todo} />
+      )}
+
+      {(todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type.startsWith('CANCEL_')) && todo.payload && (
+          <ServiceTaskCard
+              task={todo}
+              onApprove={handleApprove}
+              onReject={() => handleReject(todo.id)}
+          />
       )}
     </div>
   );

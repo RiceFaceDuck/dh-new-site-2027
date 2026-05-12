@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../../firebase/config';
-import { collection, query, where, onSnapshot, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { Loader2, Wrench, ArrowLeftRight, X, UploadCloud, Check } from 'lucide-react';
+import { collection, query, where, onSnapshot, doc, writeBatch, serverTimestamp, addDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { driveService } from '../../../firebase/driveService';
 
@@ -19,7 +20,18 @@ const TabHistory = () => {
   const [errorMsg, setErrorMsg] = useState('');
   
   // สถานะการคัดลอกข้อความ
+
   const [copyStatus, setCopyStatus] = useState({});
+
+  // 🛠️ Service States (Claim/Return)
+  const [serviceModal, setServiceModal] = useState(null);
+  const [serviceForm, setServiceForm] = useState({
+    transactionId: '', timestamp: '', customerInfo: '', productInfo: '',
+    actionType: '', warrantyDate: '', reasonCode: '', details: '',
+    inspectorName: '', currentStatus: 'รอรับสินค้าคืน / รอตรวจสอบ', tracking: '', images: [], qty: 1
+  });
+  const [isSubmittingService, setIsSubmittingService] = useState(false);
+
 
   useEffect(() => {
     let unsubscribeSnapshot;
@@ -224,7 +236,99 @@ const TabHistory = () => {
     setTimeout(() => setCopyStatus({}), 2000);
   };
 
-  const filteredOrders = orders.filter(order => {
+
+  const openServiceModal = (actionType, item, order) => {
+    const defaultAction = actionType === 'claim' ? 'เคลมสินค้า' : 'คืนสินค้า (เสีย) คืนเงิน ค้างยอด';
+    setServiceModal({ type: actionType, item, order });
+    setServiceForm({
+      transactionId: `DH-${Math.random().toString(16).substr(2, 8)}`,
+      timestamp: new Date().toLocaleString('th-TH'),
+      customerInfo: `${order.shippingAddress?.fullName || 'ลูกค้า'} / ${order.shippingAddress?.phone || '-'}`,
+      productInfo: `${item.name} (SKU: ${item.sku})`,
+      actionType: defaultAction,
+      warrantyDate: order.createdAt?.toDate ? order.createdAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      reasonCode: '', details: '', inspectorName: 'ลูกค้า (หน้าเว็บ)', currentStatus: 'รอรับสินค้าคืน / รอตรวจสอบ',
+      tracking: '', images: [], qty: 1
+    });
+  };
+
+  const handleServiceImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setIsUploading(true);
+    try {
+        const uploadFn = driveService.uploadImage || driveService.uploadSlip;
+        if (typeof uploadFn === 'function') {
+           const uploadedUrls = await Promise.all(files.map(file => uploadFn(file)));
+           setServiceForm(prev => ({ ...prev, images: [...prev.images, ...uploadedUrls] }));
+        } else {
+           throw new Error("upload function not available");
+        }
+    } catch (error) {
+        alert('อัปโหลดภาพล้มเหลว: ' + error.message);
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
+  const handleSubmitService = async (e) => {
+    e.preventDefault();
+    if (serviceForm.qty < 1 || serviceForm.qty > serviceModal.item.quantity) return alert('ระบุจำนวนไม่ถูกต้อง');
+    if (!serviceForm.reasonCode) return alert('กรุณาระบุ สาเหตุ / อาการ');
+
+    setIsSubmittingService(true);
+    try {
+      const payload = {
+        claimId: serviceModal.type === 'claim' ? serviceForm.transactionId : undefined,
+        returnId: serviceModal.type === 'return' ? serviceForm.transactionId : undefined,
+        orderId: serviceModal.order.id,
+        orderDocId: serviceModal.order.id,
+        customerUid: auth.currentUser.uid,
+        customerName: serviceModal.order.shippingAddress?.fullName || 'ลูกค้าทั่วไป',
+        sku: serviceModal.item.sku,
+        productName: serviceModal.item.name,
+        purchaseDate: serviceForm.warrantyDate,
+        purchasePrice: serviceModal.item.price,
+        symptomCode: serviceModal.type === 'claim' ? serviceForm.reasonCode : undefined,
+        symptomDetails: serviceModal.type === 'claim' ? serviceForm.details : undefined,
+        returnReason: serviceModal.type === 'return' ? serviceForm.reasonCode : undefined,
+        returnDetails: serviceModal.type === 'return' ? serviceForm.details : undefined,
+        trackingNo: serviceForm.tracking || '',
+        qty: serviceForm.qty || 1,
+        status: serviceForm.currentStatus,
+        actionType: serviceForm.actionType,
+        inspectorName: serviceForm.inspectorName,
+        images: serviceForm.images || [],
+        requestedBy: auth.currentUser.uid,
+        requestedByName: auth.currentUser.displayName || auth.currentUser.email || 'ลูกค้า'
+      };
+
+      await addDoc(collection(db, 'todos'), {
+        type: serviceModal.type === 'claim' ? "CLAIM_APPROVAL" : "RETURN_APPROVAL",
+        title: `แจ้ง${serviceModal.type === 'claim' ? 'เคลม' : 'คืน'}สินค้า: ${serviceModal.item.name} (${serviceForm.transactionId})`,
+        description: `บิลอ้างอิง: ${serviceModal.order.id}\nอาการ/เหตุผล: ${serviceForm.reasonCode}\nรายละเอียด: ${serviceForm.details || '-'}\nการกระทำ: ${serviceForm.actionType}\nจำนวน: ${payload.qty} ชิ้น`,
+        priority: "High",
+        status: "pending_manager",
+        referenceType: "Order",
+        referenceId: serviceModal.order.id,
+        payload: payload,
+        createdByUid: auth.currentUser.uid,
+        handledBy: null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      alert(`ส่งเรื่องแจ้ง${serviceModal.type === 'claim' ? 'เคลม' : 'คืน'}สินค้าเรียบร้อย รอเจ้าหน้าที่ติดต่อกลับ!`);
+      setServiceModal(null);
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+      setIsSubmittingService(false);
+    }
+  };
+
+  const filteredOrders =
+ orders.filter(order => {
     if (filter === 'all') return true;
     if (filter === 'pending') return ['pending_payment', 'awaiting_wholesale_price'].includes(order.status);
     if (filter === 'processing') return ['pending_payment_verification', 'paid', 'processing'].includes(order.status);
@@ -388,6 +492,7 @@ const TabHistory = () => {
                               <div className="flex justify-between mt-1.5 items-end">
                                 <span className="text-gray-500 bg-gray-200/60 px-2 py-0.5 rounded font-medium text-xs">x{item.quantity}</span>
                                 
+
                                 {isWholesaleApplied ? (
                                   <div className="flex flex-col items-end">
                                     <span className="text-xs text-gray-400 line-through">ปกติ: ฿{(item.price * item.quantity).toLocaleString()}</span>
@@ -397,8 +502,20 @@ const TabHistory = () => {
                                   <span className="font-bold text-gray-900">฿{(priceToShow * item.quantity).toLocaleString()}</span>
                                 )}
                               </div>
+                              {/* Action Buttons for Claim/Return */}
+                              {['shipped', 'completed'].includes(order.status) && (
+                                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                                  <button onClick={(e) => { e.stopPropagation(); openServiceModal('claim', item, order); }} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded text-[11px] font-bold flex items-center gap-1.5 transition-all border border-orange-200">
+                                    <Wrench size={12}/> แจ้งเคลม
+                                  </button>
+                                  <button onClick={(e) => { e.stopPropagation(); openServiceModal('return', item, order); }} className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded text-[11px] font-bold flex items-center gap-1.5 transition-all border border-purple-200">
+                                    <ArrowLeftRight size={12}/> แจ้งคืนสินค้า
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
+
                         );
                       })}
                     </div>
@@ -567,6 +684,89 @@ const TabHistory = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+
+      {/* 🛠️ Modal: บริการหลังการขาย (เคลม/คืน) */}
+      {serviceModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setServiceModal(null)}></div>
+          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 custom-scrollbar">
+             <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    {serviceModal.type === 'claim' ? <Wrench className="w-6 h-6 text-orange-500"/> : <ArrowLeftRight className="w-6 h-6 text-purple-500"/>}
+                    แบบฟอร์มแจ้ง{serviceModal.type === 'claim' ? 'เคลมสินค้า' : 'คืนสินค้า'}
+                  </h3>
+                  <button onClick={() => setServiceModal(null)} className="text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+             </div>
+
+             <div className="space-y-4">
+                <div className="flex gap-5">
+                    <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">ชื่อสินค้า / SKU</label>
+                        <input type="text" value={serviceForm.productInfo} readOnly className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none font-bold shadow-inner" />
+                    </div>
+                    <div className="w-32 shrink-0">
+                        <label className="text-xs font-bold uppercase tracking-widest mb-1 block">จำนวน <span className="text-red-500">*</span></label>
+                        <input type="number" min="1" max={serviceModal.item.quantity} value={serviceForm.qty} onChange={e => setServiceForm({...serviceForm, qty: Number(e.target.value)})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm text-center font-black transition-all" />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-xs font-bold uppercase tracking-widest mb-1 block">สาเหตุ / อาการ <span className="text-red-500">*</span></label>
+                    <select value={serviceForm.reasonCode} onChange={e => setServiceForm({...serviceForm, reasonCode: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm font-bold transition-all" required>
+                        <option value="" disabled>เลือกสาเหตุ...</option>
+                        <option value="(E) สินค้า ไม่ตรงปก / ผิดสเป็ค / การผลิตผิดพลาด">(E) สินค้า ไม่ตรงปก / ผิดสเป็ค / การผลิตผิดพลาด</option>
+                        <option value="(S1) Screen : จอกระพริบ /ภาพสั่น">(S1) Screen : จอกระพริบ /ภาพสั่น</option>
+                        <option value="(S2) Screen : เปิดไม่ติด / ไม่มีสัญญาณภาพ / ไม่มีแสงอะไรเลย">(S2) Screen : เปิดไม่ติด / ไม่มีสัญญาณภาพ / ไม่มีแสงอะไรเลย</option>
+                        <option value="สาเหตุอื่นๆ">สาเหตุอื่นๆ (โปรดระบุในรายละเอียด)</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="text-xs font-bold uppercase tracking-widest mb-1 block">รายละเอียดเพิ่มเติม</label>
+                    <textarea rows="3" value={serviceForm.details} onChange={e => setServiceForm({...serviceForm, details: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm font-bold transition-all" placeholder="ระบุเพิ่มเติม..."></textarea>
+                </div>
+                <div>
+                    <label className="text-xs font-bold uppercase tracking-widest mb-1 block">Tracking พัสดุ (ถ้ามี)</label>
+                    <input type="text" placeholder="ระบุเลขพัสดุ หากส่งของแล้ว" value={serviceForm.tracking} onChange={e => setServiceForm({...serviceForm, tracking: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm font-bold transition-all" />
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                    <label className="text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <UploadCloud size={14}/> อัพโหลดรูปภาพหลักฐาน
+                    </label>
+                    <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-xl border border-dashed border-gray-300 hover:bg-gray-100 transition-colors cursor-pointer relative">
+                        <input type="file" multiple accept="image/*" onChange={handleServiceImageUpload} className="w-full opacity-0 absolute inset-0 cursor-pointer z-10" />
+                        <div className="flex items-center justify-center w-full py-3 gap-2 text-sm font-bold text-gray-500">
+                            {isUploading ? <><Loader2 className="w-5 h-5 animate-spin text-indigo-500"/> กำลังอัพโหลด...</> : "คลิกเพื่อเลือกไฟล์ภาพ"}
+                        </div>
+                    </div>
+                    {serviceForm.images.length > 0 && (
+                        <div className="flex gap-3 mt-4 overflow-x-auto pb-2 custom-scrollbar">
+                            {serviceForm.images.map((img, i) => (
+                                <div key={i} className="relative w-20 h-20 shrink-0 group">
+                                    <img src={img} className="w-full h-full object-cover rounded-xl border border-gray-200 shadow-sm" />
+                                    <button type="button" onClick={() => setServiceForm(prev => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }))} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 shadow-md transition-all">
+                                        <X size={12} strokeWidth={3}/>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button onClick={() => setServiceModal(null)} className="px-5 py-2.5 text-gray-500 font-bold rounded-xl hover:bg-gray-100 border border-transparent text-sm transition-all">
+                        ยกเลิก
+                    </button>
+                    <button onClick={handleSubmitService} disabled={isSubmittingService || isUploading} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-all text-sm disabled:opacity-50 flex items-center gap-2">
+                        {isSubmittingService ? <Loader2 size={16} className="animate-spin"/> : <Check size={16}/>} ส่งเรื่อง
+                    </button>
+                </div>
+             </div>
           </div>
         </div>
       )}

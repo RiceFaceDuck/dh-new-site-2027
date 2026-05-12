@@ -20,7 +20,7 @@ const ClaimPrintView = ({ req }) => {
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(payload.claimId || payload.returnId)}`;
 
   return (
-    <div className="hidden print:block print:fixed print:inset-0 print:bg-white print:z-[99999] w-[148mm] mx-auto text-black font-sans bg-white px-2 py-4">
+    <div id="printable-claim" className="hidden w-[148mm] mx-auto text-black font-sans bg-white px-2 py-4">
       <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4">
         <div className="flex items-center gap-3">
           <img src="/DH Notebook Logo ดีเอช โน๊ตบุ๊ค_โลโก้.png" alt="DH Logo" className="h-12 w-auto object-contain" />
@@ -194,7 +194,65 @@ export default function ClaimMain() {
     }
   };
 
-  const handlePrint = () => window.print();
+
+  const handlePrint = () => {
+    const printContent = document.getElementById('printable-claim');
+    if (!printContent) return;
+
+    const oldIframe = document.getElementById('dh-print-iframe-claim');
+    if (oldIframe) oldIframe.remove();
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'dh-print-iframe-claim';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+        .map(style => style.outerHTML)
+        .join('\n');
+
+    const iframeDoc = iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(`
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+            <meta charset="utf-8">
+            <title>A5 Claim Form - ${selectedRequest?.payload?.claimId || selectedRequest?.payload?.returnId || 'Print'}</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            ${styles}
+            <style>
+                @page { size: A5 portrait; margin: 5mm; }
+                body { background: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                .print-page { page-break-after: always; position: relative; padding: 5px; }
+                .copy-page { filter: grayscale(100%); }
+                .watermark-text {
+                    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
+                    font-size: 80px; color: rgba(0, 0, 0, 0.05); font-weight: 900; z-index: 0; pointer-events: none; white-space: nowrap;
+                }
+                #printable-claim { display: block !important; width: 100% !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
+                tr { page-break-inside: avoid; }
+            </style>
+        </head>
+        <body>
+            <div class="print-page">${printContent.innerHTML}</div>
+            <div class="print-page copy-page"><div class="watermark-text">สำเนา</div>${printContent.innerHTML}</div>
+            <script>
+                window.onload = function() {
+                    setTimeout(function() { window.focus(); window.print(); }, 800);
+                };
+            </script>
+        </body>
+        </html>
+    `);
+    iframeDoc.close();
+  };
+
 
   // ✨ อัปเกรดลูกเล่นที่ 1: ระบบคำนวณหลอดประกัน (Warranty Progress)
   const getWarrantyInfo = (purchaseDateStr, createdAt) => {
