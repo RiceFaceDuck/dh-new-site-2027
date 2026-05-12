@@ -10,7 +10,9 @@ import {
   serverTimestamp, 
   runTransaction, 
   getDoc, 
-  increment 
+  increment, 
+  where, 
+  getDocs 
 } from 'firebase/firestore';
 import { db, auth } from './config';
 import { historyService } from './historyService';
@@ -34,6 +36,64 @@ export const billingService = {
     });
 
     return unsubscribe;
+  },
+
+  // ค้นหาบิลแบบเจาะจง (ประหยัด Reads แต่ครอบคลุม)
+  searchOrders: async (searchTerm) => {
+    try {
+      if (!searchTerm || searchTerm.length < 3) return [];
+      
+      const term = searchTerm.trim();
+      const isPhone = /^[0-9]+$/.test(term);
+      const isOrderNum = term.toUpperCase().startsWith('DH-') || term.toUpperCase().startsWith('TEMP-');
+      
+      let results = [];
+      const colRef = collection(db, COLLECTION_NAME);
+
+      if (isOrderNum) {
+        const q = query(colRef, where('orderId', '==', term.toUpperCase()));
+        const snap = await getDocs(q);
+        results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } else if (isPhone) {
+        const q1 = query(colRef, where('customer.phone', '==', term));
+        const q2 = query(colRef, where('customerInfo.phone', '==', term));
+        const q3 = query(colRef, where('walkInPhone', '==', term));
+
+        const [snap1, snap2, snap3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
+        
+        results = [
+          ...snap1.docs.map(d => ({ id: d.id, ...d.data() })),
+          ...snap2.docs.map(d => ({ id: d.id, ...d.data() })),
+          ...snap3.docs.map(d => ({ id: d.id, ...d.data() }))
+        ];
+      } else {
+        // Search by Name (Exact match or prefix)
+        // Note: Firebase doesn't support generic 'LIKE %term%' efficiently.
+        // We will query common name fields.
+        const q1 = query(colRef, where('customer.firstName', '==', term));
+        const q2 = query(colRef, where('customer.accountName', '==', term));
+        const q3 = query(colRef, where('customerInfo.fullName', '==', term));
+        const q4 = query(colRef, where('walkInName', '==', term));
+
+        const [snap1, snap2, snap3, snap4] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4)]);
+
+        results = [
+          ...snap1.docs.map(d => ({ id: d.id, ...d.data() })),
+          ...snap2.docs.map(d => ({ id: d.id, ...d.data() })),
+          ...snap3.docs.map(d => ({ id: d.id, ...d.data() })),
+          ...snap4.docs.map(d => ({ id: d.id, ...d.data() }))
+        ];
+      }
+
+      // Deduplicate
+      const uniqueResults = results.filter((v,i,a) => a.findIndex(t => (t.id === v.id)) === i);
+      
+      // If no exact match found from DB, return null so the UI can at least try client-side filtering on recent orders
+      return uniqueResults.length > 0 ? uniqueResults : null;
+    } catch (error) {
+      console.error("🔥 Error searching orders:", error);
+      return [];
+    }
   },
 
   /**
