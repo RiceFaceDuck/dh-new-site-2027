@@ -14,7 +14,7 @@ export const todoService = {
       const allTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       const pendingTodos = allTodos
-        .filter(t => ['todo', 'in_progress', 'pending'].includes(t.status))
+        .filter(t => ['todo', 'in_progress', 'pending', 'pending_manager'].includes(t.status))
         .sort((a, b) => {
             const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
             const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
@@ -37,8 +37,8 @@ export const todoService = {
       
       const managerTodos = allTodos
         .filter(t => 
-            ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type) && 
-            ['todo', 'in_progress', 'pending'].includes(t.status)
+            ['WHOLESALE_APPROVAL', 'wholesale_request', 'CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL'].includes(t.type) &&
+            ['todo', 'in_progress', 'pending', 'pending_manager'].includes(t.status)
         )
         .sort((a, b) => {
             const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
