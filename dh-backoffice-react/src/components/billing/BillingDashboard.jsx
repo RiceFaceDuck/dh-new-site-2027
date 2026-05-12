@@ -48,13 +48,47 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft }) {
         qty: 1
     });
 
+
+    const [isSearching, setIsSearching] = useState(false);
+    const [recentOrders, setRecentOrders] = useState([]);
+
     useEffect(() => {
+        setLoading(true);
         const unsubscribe = billingService.subscribeRecentOrders(limitAmount, (data) => {
-            setOrders(data);
+            setRecentOrders(data);
             setLoading(false);
         });
         return () => unsubscribe();
     }, [limitAmount]);
+
+    useEffect(() => {
+        if (!isSearching && (!searchQuery || searchQuery.length < 3)) {
+            setOrders(recentOrders);
+        }
+    }, [recentOrders, isSearching, searchQuery]);
+
+    useEffect(() => {
+        if (!searchQuery || searchQuery.length < 3) {
+            setIsSearching(false);
+            setOrders(recentOrders); // Restore recent orders
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(async () => {
+            setIsSearching(true);
+            const searchResults = await billingService.searchOrders(searchQuery);
+            if (searchResults) {
+                setOrders(searchResults);
+            } else {
+                // Fallback: If it's a generic text search (not ID or phone), use the local recentOrders array for client-side filtering
+                setOrders(recentOrders);
+            }
+            setIsSearching(false);
+        }, 500);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery, recentOrders]);
+
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -249,7 +283,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {loading && orders.length === 0 ? (
+                            {(loading || isSearching) && orders.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" className="p-20 text-center text-[var(--dh-text-muted)] font-bold">
                                         <div className="flex flex-col items-center justify-center gap-4">
