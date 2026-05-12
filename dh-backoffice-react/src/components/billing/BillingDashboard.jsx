@@ -124,7 +124,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft }) {
 
     const handleVoidOrder = async () => {
         if (!selectedOrder) return;
-        if (selectedOrder.orderStatus === 'Cancelled') {
+        if (selectedOrder.orderStatus === 'Cancelled' || selectedOrder.status === 'cancelled') {
             alert('บิลนี้ถูกยกเลิกไปแล้ว ไม่สามารถยกเลิกซ้ำได้');
             return;
         }
@@ -422,7 +422,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft }) {
                                 )}
                             </h3>
                             <div className="flex gap-2">
-                                {selectedOrder.orderStatus !== 'Cancelled' && (
+                                {selectedOrder.orderStatus !== 'Cancelled' && selectedOrder.status !== 'cancelled' && selectedOrder.orderStatus !== 'Approved' && (
                                     <button 
                                         onClick={handleVoidOrder} 
                                         disabled={isVoiding} 
@@ -432,7 +432,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft }) {
                                         <span className="hidden sm:inline">ยกเลิกบิล</span>
                                     </button>
                                 )}
-                                {selectedOrder.orderStatus !== 'Cancelled' && (
+                                {selectedOrder.orderStatus !== 'Cancelled' && selectedOrder.status !== 'cancelled' && selectedOrder.orderStatus !== 'Approved' && (
                                     <button 
                                         onClick={() => { handleCloseModal(); if (onResumeDraft) onResumeDraft(selectedOrder); }} 
                                         className="flex items-center gap-1.5 text-white font-black px-4 py-2.5 bg-[var(--dh-accent)] hover:bg-[var(--dh-accent-hover)] rounded-xl shadow-md transition-all active:scale-95 text-sm"
