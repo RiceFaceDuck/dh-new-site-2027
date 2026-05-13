@@ -1,236 +1,255 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, X, Headphones, MapPin, Store, Radar, ExternalLink, AlertCircle, Navigation } from 'lucide-react';
-import { partnerService } from '../../firebase/partnerService';
+import { 
+  MessageCircle, X, MapPin, Phone, 
+  Wrench, Loader2, Navigation, AlertCircle, Sparkles, ExternalLink, Headphones
+} from 'lucide-react';
+
+// ใช้ Service ใหม่ที่เราเพิ่งสร้างเพื่อความแม่นยำและประหยัด Reads
+import { findNearestPartner, getUserCurrentLocation } from '../../firebase/partnerLocationService'; 
 
 const FloatingMessenger = () => {
+  // ================= State Management =================
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState('menu'); // 'menu' | 'radar' | 'result'
-  // // eslint-disable-next-line no-unused-vars
-  const [isSearching, setIsSearching] = useState(false);
-  const [partnerResult, setPartnerResult] = useState(null);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [partner, setPartner] = useState(null);
+  const [error, setError] = useState(null);
+  const [showTooltip, setShowTooltip] = useState(true);
 
-  // 1. ฟังก์ชันสแกนหาพาร์ทเนอร์ (GPS)
-  const handleFindPartner = () => {
+  // ซ่อน Tooltip อัตโนมัติหลังจาก 8 วินาที
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTooltip(false), 8000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // ================= Core Logic =================
+  const handleFindNearestPartner = async () => {
     setMode('radar');
-    setIsSearching(true);
-    setErrorMsg('');
+    setLoading(true);
+    setError(null);
+    setPartner(null);
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          try {
-            // 🚀 ค้นหาพาร์ทเนอร์ที่ใกล้ที่สุดผ่าน Service
-            const nearest = await partnerService.findNearestPartner(latitude, longitude);
-            
-            // หน่วงเวลาจำลองการสแกนเรดาร์ให้ดูเท่ขึ้น (1.5 วินาที)
-            setTimeout(() => {
-              if (nearest) {
-                setPartnerResult(nearest);
-              } else {
-                setPartnerResult(null);
-                setErrorMsg('ขออภัย ไม่พบพาร์ทเนอร์ใกล้เคียงที่เปิดรับการสนับสนุนในขณะนี้');
-              }
-              setIsSearching(false);
-              setMode('result');
-            }, 1500);
-
-          } catch (error) {
-            console.error(error);
-            setErrorMsg('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
-            setIsSearching(false);
-            setMode('result');
-          }
-        },
-        (error) => {
-          setIsSearching(false);
-          setMode('result');
-          setErrorMsg('ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาเปิดการระบุตำแหน่ง (GPS) หรืออนุญาตในเบราว์เซอร์');
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      setIsSearching(false);
-      setMode('result');
-      setErrorMsg('อุปกรณ์ของคุณไม่รองรับการระบุตำแหน่ง');
-    }
-  };
-
-  // 2. รีเซ็ตสถานะเมื่อปิดแชท
-  const toggleMessenger = () => {
-    if (isOpen) {
-      setTimeout(() => {
-        setMode('menu');
-        setPartnerResult(null);
-      }, 300);
-    }
-    setIsOpen(!isOpen);
-  };
-
-  return (
-    <div className="fixed bottom-20 right-4 md:bottom-8 md:right-8 z-50 flex flex-col items-end">
+    try {
+      const location = await getUserCurrentLocation();
+      const nearest = await findNearestPartner(location.latitude, location.longitude, 30);
       
-      {/* ==========================================
-          🌟 Popup Menu (เมนูหลักแบบ Glassmorphism)
-          ========================================== */}
+      // หน่วงเวลาจำลองเรดาร์ให้ผู้ใช้เห็นว่าระบบกำลังทำงาน 1.5 วิ
+      setTimeout(() => {
+        if (nearest) {
+          setPartner(nearest);
+          setMode('result');
+        } else {
+          setError("ขออภัยครับ ยังไม่มีร้านซ่อมพาร์ทเนอร์ ในรัศมีพื้นที่ของคุณในขณะนี้");
+          setMode('menu');
+        }
+        setLoading(false);
+      }, 1500);
+
+    } catch (err) {
+      console.error("Error locating partner:", err);
+      if (err.message.includes("Permission Denied") || err.message.includes("ไม่อนุญาต")) {
+        setError("กรุณาเปิด GPS เพื่อค้นหาร้านซ่อมใกล้คุณครับ");
+      } else {
+        setError("เกิดข้อผิดพลาดในการค้นหาพิกัด");
+      }
+      setLoading(false);
+      setMode('menu');
+    }
+  };
+
+  const toggleMessenger = () => {
+    const nextState = !isOpen;
+    setIsOpen(nextState);
+    setShowTooltip(false);
+    
+    // ถ้าปิด ให้รีเซ็ตกลับหน้าเมนู
+    if (!nextState) {
+        setTimeout(() => setMode('menu'), 300); // รอให้ transition เสร็จก่อน
+    }
+  };
+
+  const handleContactClick = () => {
+    if (!partner) return;
+    console.log(`[Action] ลูกค้ากดติดต่อร้าน: ${partner.storeName} (รอเชื่อมระบบหัก Credit Point)`);
+    window.location.href = `tel:${partner.phone}`;
+  };
+
+  // ================= RENDER =================
+  return (
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end pointer-events-none">
+      
+      {/* 🌟 กล่องหน้าต่างรายละเอียด (โชว์เมื่อ isOpen = true) */}
       <div 
-        className={`mb-4 overflow-hidden transition-all duration-300 ease-in-out origin-bottom-right ${
-          isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-75 opacity-0 translate-y-10 pointer-events-none'
+        className={`pointer-events-auto mb-4 w-[320px] sm:w-[360px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transition-all duration-300 transform origin-bottom-right ${
+          isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10'
         }`}
       >
-        <div className="w-[300px] sm:w-[340px] bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 overflow-hidden flex flex-col">
-          
-          {/* Header */}
-          <div className="bg-gradient-to-r from-[#0870B8] to-[#054D80] p-4 text-white flex justify-between items-center shadow-md relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl -translate-y-10 translate-x-10 pointer-events-none"></div>
-            <div className="relative z-10">
-              <h3 className="font-bold text-lg leading-tight">ติดต่อสอบถาม</h3>
-              <p className="text-white/80 text-xs">เลือกช่องทางการติดต่อที่สะดวก</p>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#0870B8] to-[#0A85DA] p-4 text-white flex justify-between items-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl -translate-y-10 translate-x-10"></div>
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/10">
+              <Headphones size={20} className="text-white"/>
             </div>
-            <button onClick={toggleMessenger} className="relative z-10 p-1.5 hover:bg-white/20 rounded-full transition-colors">
-              <X size={20} />
-            </button>
+            <div>
+              <h3 className="font-bold text-sm">บริการช่วยเหลือ</h3>
+              <p className="text-[10px] text-blue-100 opacity-90 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                ออนไลน์พร้อมให้บริการ
+              </p>
+            </div>
           </div>
+          <button onClick={toggleMessenger} className="p-1 hover:bg-white/20 rounded-full transition-colors relative z-10"><X size={20} /></button>
+        </div>
 
-          {/* Body Content */}
-          <div className="p-2 min-h-[220px] flex flex-col justify-center">
-            
-            {/* โหมด 1: เมนูหลัก */}
-            {mode === 'menu' && (
-              <div className="space-y-2 p-2 animate-in fade-in duration-300">
-                <a 
-                  href="#" // TODO: ใส่ลิงก์ Line OA หรือ Facebook ของบริษัท
-                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-[#F0F7FC] border border-transparent hover:border-[#0870B8]/20 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#E6F0F9] text-[#0870B8] flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Headphones size={20} />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-800 text-sm group-hover:text-[#0870B8] transition-colors">ติดต่อแอดมิน (DH Official)</h4>
-                    <p className="text-[11px] text-slate-500">สอบถามสินค้า, เคลม, แจ้งปัญหา</p>
-                  </div>
-                  <ExternalLink size={16} className="text-slate-300 group-hover:text-[#0870B8]" />
-                </a>
-
-                <div className="relative flex items-center justify-center py-1">
-                  <div className="border-t border-slate-100 w-full"></div>
-                  <span className="absolute bg-white px-2 text-[10px] text-slate-400 font-medium">หรือ</span>
+        {/* Body */}
+        <div className="p-5 bg-slate-50 min-h-[250px] flex flex-col">
+          
+          {/* State 1: เมนูเริ่มต้น */}
+          {mode === 'menu' && (
+            <div className="space-y-3 animate-in fade-in duration-300">
+               {error && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3 rounded-xl flex items-start gap-2 mb-4">
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                  <span>{error}</span>
                 </div>
+              )}
+              <p className="text-sm font-bold text-slate-700 mb-2">คุณต้องการติดต่อเรื่องใด?</p>
+              
+              <button 
+                onClick={handleFindNearestPartner}
+                className="w-full bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 p-4 rounded-2xl flex items-center gap-4 transition-all group shadow-sm hover:shadow-md"
+              >
+                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <Wrench size={18} />
+                </div>
+                <div className="text-left flex-1">
+                  <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-700 transition-colors">หาร้านซ่อมใกล้ฉัน</h4>
+                  <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">ค้นหาพาร์ทเนอร์ในพื้นที่ของคุณ</p>
+                </div>
+              </button>
 
-                <button 
-                  onClick={handleFindPartner}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all group text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform relative">
-                    <MapPin size={20} />
-                    <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full animate-ping"></span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-800 text-sm group-hover:text-emerald-700 transition-colors">หาตัวแทนใกล้คุณ</h4>
-                    <p className="text-[11px] text-slate-500">ค้นหาพาร์ทเนอร์ในพื้นที่ (ใช้ GPS)</p>
-                  </div>
-                  <ExternalLink size={16} className="text-slate-300 group-hover:text-emerald-600" />
+              <a 
+                href="https://lin.ee/your-line-id" target="_blank" rel="noreferrer"
+                className="w-full bg-white hover:bg-[#00B900]/5 border border-slate-200 hover:border-[#00B900]/30 p-4 rounded-2xl flex items-center gap-4 transition-all group shadow-sm hover:shadow-md"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#00B900]/10 text-[#00B900] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <MessageCircle size={18} />
+                </div>
+                <div className="text-left flex-1">
+                  <h4 className="font-bold text-sm text-slate-800 group-hover:text-[#00B900] transition-colors">ติดต่อแอดมิน DH</h4>
+                  <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">สอบถามเรื่องสินค้า / เคลมประกัน</p>
+                </div>
+                <ExternalLink size={14} className="text-slate-300 group-hover:text-[#00B900]" />
+              </a>
+            </div>
+          )}
+
+          {/* State 2: เรดาร์กำลังค้นหา */}
+          {mode === 'radar' && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in duration-300 my-auto py-8">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute w-24 h-24 bg-emerald-400 rounded-full blur-xl animate-ping opacity-20"></div>
+                <div className="absolute w-16 h-16 border-2 border-emerald-500 rounded-full animate-ping opacity-40"></div>
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center z-10 shadow-lg">
+                  <Navigation size={24} className="text-emerald-600 animate-pulse" />
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-700">กำลังสแกนหาพิกัด...</p>
+                <p className="text-xs text-slate-400 mt-1">ค้นหาร้านที่ใกล้คุณที่สุด</p>
+              </div>
+            </div>
+          )}
+
+          {/* State 3: เจอพาร์ทเนอร์แล้ว */}
+          {mode === 'result' && partner && (
+            <div className="space-y-4 animate-in slide-in-from-right-8 duration-500">
+              <div className="flex items-center gap-2 mb-2">
+                <button onClick={() => setMode('menu')} className="text-xs text-slate-400 hover:text-[#0870B8] flex items-center gap-1">
+                   กลับ
                 </button>
               </div>
-            )}
 
-            {/* โหมด 2: กำลังสแกนเรดาร์ (Radar Animation) */}
-            {mode === 'radar' && (
-              <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in-95 duration-300">
-                <div className="relative w-20 h-20 flex items-center justify-center mt-2">
-                  <div className="absolute inset-0 bg-emerald-200 rounded-full animate-ping opacity-40 scale-150"></div>
-                  <div className="absolute inset-0 bg-emerald-100 rounded-full animate-pulse scale-110"></div>
-                  <div className="w-14 h-14 bg-gradient-to-tr from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center relative z-10 text-white shadow-lg">
-                    <Radar size={28} className="animate-[spin_3s_linear_infinite]" />
+              <div className="text-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0"></div>
+                
+                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full mb-3 border border-emerald-200 relative z-10">
+                  <Sparkles size={12}/> ร้านที่ใกล้ที่สุด
+                </div>
+                
+                <h4 className="font-extrabold text-lg text-slate-800 leading-tight relative z-10">
+                  {partner.storeName}
+                </h4>
+                
+                <div className="flex justify-center items-center gap-1 mt-2 text-xs text-slate-500 font-medium">
+                   <MapPin size={12} className="text-rose-500" /> ห่างจากคุณเพียง <span className="font-bold text-[#0870B8]">{partner.formattedDistance}</span>
+                </div>
+                
+                {partner.services && (
+                  <div className="mt-3 pt-3 border-t border-slate-50 text-left">
+                    <p className="text-xs text-slate-400 mb-1">รับบริการ:</p>
+                    <p className="text-xs text-slate-700 font-medium line-clamp-2">{partner.services}</p>
                   </div>
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm mt-4">กำลังสแกนพื้นที่...</h4>
-                  <p className="text-[10px] text-slate-500 mt-1 max-w-[200px] mx-auto">ระบบกำลังค้นหาตัวแทนพาร์ทเนอร์ที่ใกล้พิกัดของคุณมากที่สุด</p>
-                </div>
-              </div>
-            )}
-
-            {/* โหมด 3: แสดงผลลัพธ์พาร์ทเนอร์ */}
-            {mode === 'result' && (
-              <div className="p-4 flex flex-col items-center text-center space-y-3 animate-in fade-in duration-500">
-                {partnerResult ? (
-                  <>
-                    <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-1 shadow-sm border border-emerald-200">
-                      <Store size={28} />
-                    </div>
-                    <div>
-                      <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full mb-1 border border-amber-200 shadow-sm">พบตัวแทนใกล้คุณ!</span>
-                      <h4 className="font-bold text-slate-800 text-base leading-tight mt-1 line-clamp-1">{partnerResult.storeName || partnerResult.contactName}</h4>
-                      <p className="text-[11px] text-[#0870B8] font-bold mt-1 flex items-center justify-center gap-1 bg-[#f8fbff] px-2 py-1 rounded-md w-fit mx-auto border border-[#E6F0F9]">
-                        <MapPin size={12} /> ห่างจากคุณ {partnerResult.distanceKm} กม.
-                      </p>
-                    </div>
-                    
-                    <div className="w-full flex gap-2 mt-2">
-                      <button 
-                        onClick={() => window.open(partnerResult.googleMapsUrl || partnerResult.mapsUrl, '_blank')}
-                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 border border-slate-200"
-                      >
-                        <Navigation size={14} /> นำทาง
-                      </button>
-                      <button 
-                        onClick={() => alert(`คุณสามารถติดต่อได้ที่: ${partnerResult.contactEmail || partnerResult.phone || 'ไม่ระบุ'}`)}
-                        className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl transition-all shadow-md text-xs flex items-center justify-center gap-1.5"
-                      >
-                        <MessageCircle size={14} /> ติดต่อร้าน
-                      </button>
-                    </div>
-                    <button onClick={() => setMode('menu')} className="text-[10px] text-slate-400 hover:text-slate-600 mt-2">กลับไปหน้าเมนู</button>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-1 border border-slate-100">
-                      <AlertCircle size={28} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">ค้นหาไม่สำเร็จ</h4>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed max-w-[220px]">{errorMsg}</p>
-                    </div>
-                    <button onClick={() => setMode('menu')} className="w-full bg-[#0870B8] hover:bg-[#054D80] text-white font-bold py-2.5 rounded-xl transition-all shadow-md mt-2 text-xs">
-                      ติดต่อ DH Official แทน
-                    </button>
-                  </>
                 )}
               </div>
-            )}
-          </div>
+
+              <button 
+                onClick={handleContactClick}
+                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <Phone size={18} className="animate-bounce"/> โทรติดต่อร้านนี้
+              </button>
+              <p className="text-[10px] text-center text-slate-400 mt-1">
+                * พาร์ทเนอร์นี้ได้รับการยืนยันจาก DH Notebook แล้ว
+              </p>
+            </div>
+          )}
+
         </div>
       </div>
 
-      {/* ==========================================
-          🌟 Main Floating Button (ปุ่มแชทลอยตัวหลัก)
-          ========================================== */}
-      <div className="relative group cursor-pointer" onClick={toggleMessenger}>
-        {/* แสงเรืองรองด้านหลัง (Glow Effect) */}
-        <div className={`absolute inset-0 rounded-full blur-md opacity-40 transition-opacity duration-300 pointer-events-none ${
-          isOpen ? 'bg-red-500 opacity-20' : 'bg-[#0870B8] group-hover:opacity-60 animate-pulse'
-        }`}></div>
+      {/* 🌟 ปุ่มวงกลมลอย (Floating Button) */}
+      <div className="relative flex items-center pointer-events-auto">
         
-        {/* ตัวปุ่มหลัก */}
-        <button 
-          className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform ${
-            isOpen 
-            ? 'bg-slate-800 rotate-90 scale-90 shadow-none hover:bg-rose-500' 
-            : 'bg-gradient-to-tr from-[#054D80] to-[#0A85DA] hover:scale-110 hover:-translate-y-1'
+        {/* Tooltip */}
+        <div 
+          className={`absolute right-full mr-4 bg-white text-slate-700 px-4 py-2.5 rounded-2xl shadow-lg border border-slate-100 whitespace-nowrap flex items-center gap-2 transition-all duration-500 ${
+            showTooltip ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
           }`}
-          aria-label="Open Messenger"
         >
-          {isOpen ? <X size={26} /> : <MessageCircle size={28} className="drop-shadow-md" />}
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <p className="text-sm font-bold">หาร้านซ่อมใกล้คุณไหม?</p>
+          <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 transform -rotate-45"></div>
+        </div>
+
+        {/* วงกลมหลัก */}
+        <div className="relative group cursor-pointer" onClick={toggleMessenger}>
+          <div className={`absolute inset-0 rounded-full blur-md opacity-40 transition-opacity duration-300 pointer-events-none ${
+            isOpen ? 'bg-rose-500 opacity-20' : 'bg-[#0870B8] group-hover:opacity-60 animate-pulse'
+          }`}></div>
           
-          {/* Notification Dot (จุดแดงเตือนความจำ) */}
-          {!isOpen && (
-             <span className="absolute top-0 right-0 w-3.5 h-3.5 md:w-4 md:h-4 bg-red-500 border-2 border-white rounded-full animate-bounce"></span>
-          )}
-        </button>
+          <button 
+            className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform ${
+              isOpen 
+              ? 'bg-slate-800 rotate-90 scale-90 shadow-none hover:bg-rose-500' 
+              : 'bg-gradient-to-tr from-[#054D80] to-[#0A85DA] hover:scale-110 hover:-translate-y-1'
+            }`}
+          >
+            {isOpen ? <X size={26} /> : <MessageCircle size={28} className="drop-shadow-md" />}
+            
+            {/* Notification Dot */}
+            {!isOpen && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 border-2 border-white rounded-full animate-bounce"></span>
+            )}
+          </button>
+        </div>
       </div>
+
     </div>
   );
 };

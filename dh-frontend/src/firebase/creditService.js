@@ -1,7 +1,7 @@
-import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
+/* eslint-disable */
+import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, runTransaction, increment, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from './config';
 import { where } from 'firebase/firestore';
-
 
 // กำหนด App ID
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
@@ -68,15 +68,15 @@ export const getWalletBalance = async (userId) => {
 export const subscribeToWallet = (userId, callback) => {
   if (!userId) return () => {};
 
-  const userRef = doc(db, 'users', userId);
+  const userRef = doc(db, 'artifacts', appId, 'users', userId);
   
   const unsubscribe = onSnapshot(
     userRef, 
     (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
-        // รองรับทั้งแบบที่เก็บใน points โดยตรงและใน stats
-        const balance = data.points || data.stats?.creditBalance || data.partnerCredit || 0;
+        // รองรับทั้งแบบที่เก็บใน creditPoint โดยตรง
+        const balance = data.creditPoint || 0;
         callback({
           balance: balance,
           totalAccumulated: data.totalAccumulated || 0,
@@ -139,29 +139,30 @@ export const getCreditHistory = async (userId, forceRefresh = false) => {
     return userCache ? userCache.data : []; // หากเกิด Error ให้ดึง Cache เก่ามาใช้กันหน้าพัง
   }
 };
+
 // ==========================================
-// 💡 Point Consumption Logic: หักแต้มสำหรับการโฆษณา
+// 💡 Point Consumption Logic: หักแต้มสำหรับการโฆษณา (ระบบเก่า/Affiliate)
 // ==========================================
 export const consumeAdCredit = async (userId, amount, referenceId = null) => {
   if (!userId || amount <= 0) return false;
 
-  const userRef = doc(db, 'users', userId);
-  const txRef = doc(collection(db, 'credit_transactions'));
+  const userRef = doc(db, 'artifacts', appId, 'users', userId);
+  const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
 
   try {
     await runTransaction(db, async (transaction) => {
       const userDoc = await transaction.get(userRef);
       if (!userDoc.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้");
 
-      const currentPoints = userDoc.data().points || 0;
+      const currentPoints = userDoc.data().creditPoint || 0;
       if (currentPoints < amount) throw new Error("แต้มสะสมไม่เพียงพอสำหรับการโฆษณา");
 
       const newBalance = currentPoints - amount;
 
       // 1. หักแต้มผู้ใช้
       transaction.update(userRef, {
-        points: newBalance,
-        updatedAt: new Date().toISOString()
+        creditPoint: newBalance,
+        updatedAt: serverTimestamp()
       });
 
       // 2. บันทึกประวัติการหักแต้ม
@@ -177,23 +178,6 @@ export const consumeAdCredit = async (userId, amount, referenceId = null) => {
         timestamp: serverTimestamp()
       });
       
-      // 3. บันทึกสถิติลง sub-collection ของพาร์ทเนอร์ (Lead Generation Tracking)
-      const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', userId, 'stats', `${new Date().getFullYear()}-${new Date().getMonth()+1}`);
-      const partnerStatsDoc = await transaction.get(partnerStatsRef);
-      if (partnerStatsDoc.exists()) {
-        transaction.update(partnerStatsRef, {
-           impressions: increment(1),
-           spentCredits: increment(amount),
-           updatedAt: new Date().toISOString()
-        });
-      } else {
-        transaction.set(partnerStatsRef, {
-           impressions: 1,
-           clicks: 0,
-           spentCredits: amount,
-           updatedAt: new Date().toISOString()
-        });
-      }
     });
     return true;
   } catch (error) {
@@ -202,8 +186,83 @@ export const consumeAdCredit = async (userId, amount, referenceId = null) => {
   }
 };
 
+
 // ==========================================
-// 💡 Track Ad Click: บันทึกเมื่อมีการคลิกโฆษณาพาร์ทเนอร์
+// 🌟 [ระบบใหม่] หักแต้มสำหรับการโปรโมทร้านซ่อม (Partner Store) 🌟
+// ==========================================
+/**
+ * ตัด Credit Point ของร้านซ่อม เมื่อมีคนคลิก "ติดต่อร้านนี้" หรือโชว์ป้าย
+ * พร้อมทั้งเช็คว่าถ้า Credit หมด ให้ปิดสถานะ Active อัตโนมัติ
+ * @param {string} partnerId - ไอดีของร้านซ่อม
+ * @param {number} cost - จำนวนแต้มที่ต้องการหัก (เช่น 10 แต้มต่อการกดโทร)
+ * @param {string} actionType - 'click_contact' หรือ 'impression'
+ */
+export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'click_contact') => {
+  if (!partnerId || cost <= 0) return false;
+
+  const userRef = doc(db, 'artifacts', appId, 'users', partnerId);
+  const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+  const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+  const storeProfileRef = doc(db, 'artifacts', appId, 'users', partnerId, 'storeProfile', 'main');
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) return;
+
+      const currentPoints = userDoc.data().creditPoint || 0;
+      
+      // ถ้าเครดิตหมดแล้ว (<= 0) ระบบจะถอดป้ายโฆษณาร้านออกทันที และไม่ทำรายการต่อ
+      if (currentPoints <= 0) {
+        transaction.delete(activePartnerRef); // ถอดออกจากเรดาร์ค้นหา
+        transaction.update(storeProfileRef, { isSupportActive: false }); // ปิดสวิตช์ในหน้า Profile
+        console.warn(`[Auto-Disable] ปิดสถานะโฆษณาของร้าน ${partnerId} เนื่องจาก Credit หมด`);
+        return; 
+      }
+
+      // หักแต้ม (ถ้าแต้มน้อยกว่าค่าโฆษณา ก็หักเท่าที่มีให้เหลือ 0 พอดี)
+      const actualDeduct = Math.min(currentPoints, cost);
+      const newBalance = currentPoints - actualDeduct;
+
+      // 1. หักแต้มที่กระเป๋าพาร์ทเนอร์
+      transaction.update(userRef, {
+        creditPoint: newBalance,
+        updatedAt: serverTimestamp()
+      });
+
+      // 2. ถ้าหักแล้วเหลือ 0 ให้ถอดป้ายออกใน Transaction เดียวกันเลย
+      if (newBalance <= 0) {
+        transaction.delete(activePartnerRef);
+        transaction.update(storeProfileRef, { isSupportActive: false });
+        console.warn(`[Auto-Disable] ปิดสถานะโฆษณาของร้าน ${partnerId} อัตโนมัติ (Credit เป็น 0)`);
+      }
+
+      // 3. บันทึกประวัติ (Log) ให้พาร์ทเนอร์ตรวจสอบได้
+      transaction.set(txRef, {
+        transactionId: `PARTNER-${actionType.toUpperCase()}-${Date.now()}`,
+        uid: partnerId,
+        type: 'spend',
+        amount: actualDeduct,
+        balanceAfter: newBalance,
+        action: actionType,
+        note: actionType === 'click_contact' ? 'ค่าธรรมเนียมลูกค้ากดติดต่อร้านซ่อม' : 'ค่าธรรมเนียมแสดงป้ายร้าน (Impression)',
+        timestamp: serverTimestamp()
+      });
+      
+    });
+    
+    console.log(`✅ [Credit] หัก Credit สำเร็จ ${cost} แต้ม สำหรับพาร์ทเนอร์ ${partnerId}`);
+    return true;
+
+  } catch (error) {
+    console.error("🔥 Error in deductPartnerCredit:", error);
+    return false;
+  }
+};
+
+
+// ==========================================
+// 💡 Track Ad Click: บันทึกเมื่อมีการคลิกโฆษณาสินค้า Affiliate
 // ==========================================
 export const trackAdClick = async (partnerId) => {
   if (!partnerId) return;
@@ -217,14 +276,14 @@ export const trackAdClick = async (partnerId) => {
       if (docSnap.exists()) {
         transaction.update(partnerStatsRef, {
           clicks: increment(1),
-          updatedAt: new Date().toISOString()
+          updatedAt: serverTimestamp()
         });
       } else {
         transaction.set(partnerStatsRef, {
           impressions: 0,
           clicks: 1,
           spentCredits: 0,
-          updatedAt: new Date().toISOString()
+          updatedAt: serverTimestamp()
         });
       }
     });
@@ -240,7 +299,7 @@ export const trackAdClick = async (partnerId) => {
  */
 export const getCreditSettings = async () => {
   try {
-    const docRef = doc(db, 'settings', 'credit_config');
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
@@ -273,7 +332,7 @@ export const getPointsHistory = async (userId, limitCount = 30) => {
   if (!userId) return [];
   try {
     const q = query(
-      collection(db, 'credit_transactions'),
+      collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'),
       where('uid', '==', userId),
       orderBy('timestamp', 'desc'),
       limit(limitCount)
@@ -292,8 +351,8 @@ export const getPointsHistory = async (userId, limitCount = 30) => {
 export const handlePaymentCompletion = async (orderId, userId) => {
   try {
     await runTransaction(db, async (transaction) => {
-      const orderRef = doc(db, 'orders', orderId);
-      const userRef = doc(db, 'users', userId);
+      const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
+      const userRef = doc(db, 'artifacts', appId, 'users', userId);
       
       const [orderDoc, userDoc] = await Promise.all([
         transaction.get(orderRef),
@@ -307,7 +366,7 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       
       if (pendingPoints <= 0) return;
 
-      const currentPoints = userDoc.data().points || 0;
+      const currentPoints = userDoc.data().creditPoint || 0;
       const newBalance = currentPoints + pendingPoints;
 
       transaction.update(orderRef, {
@@ -316,10 +375,10 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       });
 
       transaction.update(userRef, {
-        points: newBalance
+        creditPoint: newBalance
       });
 
-      const txRef = doc(collection(db, 'credit_transactions'));
+      const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
       transaction.set(txRef, {
         transactionId: `EARN-${Date.now()}`,
         uid: userId,
