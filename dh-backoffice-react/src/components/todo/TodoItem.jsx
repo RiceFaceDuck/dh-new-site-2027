@@ -1,104 +1,170 @@
 import React from 'react';
-import { Check, X, Clock, UserPlus, Tag, Info, AlertCircle, Calendar, Receipt } from 'lucide-react';
-import WholesaleCard from './WholesaleCard';
-import PaymentCard from './PaymentCard';
-import ServiceTaskCard from './ServiceTaskCard';
+import { Check, X, Play, Clock, UserPlus, Tag, Info, AlertCircle, Calendar, Receipt, Package, Truck, MessageSquare } from 'lucide-react';
 
-export default function TodoItem({ todo, processingId, handleApprove, handleReject, fetchedPrices, wholesaleInputs, setWholesaleInputs }) {
+export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClass, handleAction }) {
   
+  // 🌟 แมปปิ้งไอคอนให้ตรงกับประเภทงาน
   const getIconForType = (type) => {
     switch (type) {
-      case 'STAFF_APPROVAL': return <UserPlus size={18} className="text-blue-500" />;
-      case 'WHOLESALE_APPROVAL': return <Tag size={18} className="text-indigo-500" />;
-      case 'PAYMENT_VERIFICATION': return <Receipt size={18} className="text-emerald-500" />;
-      case 'KNOWLEDGE_UPDATE_APPROVAL': return <Info size={18} className="text-purple-500" />;
-      case 'MANUAL_TASK': return <Calendar size={18} className="text-dh-accent" />;
-      case 'PACKING_TASK': return <Calendar size={18} className="text-orange-500" />;
-      default: return <AlertCircle size={18} className="text-slate-400" />;
+      case 'STAFF_APPROVAL': return <UserPlus size={20} className="text-blue-500" />;
+      case 'MANUAL_TASK': return <Calendar size={20} className="text-dh-accent" />;
+      case 'PACKING_TASK': return <Package size={20} className="text-orange-500" />;
+      case 'FOLLOW_UP': return <MessageSquare size={20} className="text-teal-500" />;
+      case 'INVENTORY': return <Truck size={20} className="text-purple-500" />;
+      case 'CLAIM_APPROVAL': 
+      case 'RETURN_APPROVAL': return <AlertCircle size={20} className="text-rose-500" />;
+      default: return <Info size={20} className="text-slate-400" />;
     }
   };
 
   const formatDate = (timestamp) => {
-    if (!timestamp || !timestamp.toMillis) return '-';
-    const date = new Date(timestamp.toMillis());
-    return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) + ' ' + date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    if (!timestamp) return '-';
+    // รองรับทั้งแบบ Firestore Timestamp และ ISO String
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleString('th-TH', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
   };
 
-  // ✨ แทนที่คำสั่งแสดงผลตรงตามข้อกำหนดใหม่ (โดยไม่แก้ Database จริง)
-  const displayTitle = todo.title ? todo.title.replace('ขอราคาส่ง (B2B)', 'ขอราคาส่ง จากลูกค้าหน้าเว็บ') : 'คำร้องขอไม่มีชื่อ';
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'todo': return <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-xs font-bold">รอเริ่มงาน</span>;
+      case 'in_progress': return <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse">กำลังดำเนินการ</span>;
+      case 'pending_manager': return <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-xs font-bold">รอผู้จัดการอนุมัติ</span>;
+      default: return <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold">{status}</span>;
+    }
+  };
 
   return (
-    <div className={`p-4 flex flex-col transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30 ${processingId === todo.id ? 'opacity-50 pointer-events-none' : ''}`}>
-      <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center">
-        <div className="flex-1 flex gap-3 items-start min-w-0 w-full">
-          <div className="mt-1 bg-white dark:bg-slate-900 border border-dh-border p-2 rounded-lg shrink-0 shadow-sm">
+    <div className={`bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border ${urgencyClass} flex flex-col h-full relative overflow-hidden transition-all hover:shadow-md`}>
+      
+      {/* Loading Overlay (ป้องกันการกดเบิ้ลเวลาเน็ตช้า) */}
+      {isProcessing && (
+        <div className="absolute inset-0 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm z-10 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dh-main"></div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
             {getIconForType(todo.type)}
           </div>
-          <div className="min-w-0 w-full">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h4 className="font-bold text-sm text-dh-main truncate">{displayTitle}</h4>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 ${
-                todo.priority === 'High' ? 'bg-red-100 text-red-700' : todo.type === 'PACKING_TASK' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 dark:bg-slate-800 text-dh-muted'
-              }`}>
-                {todo.type === 'PAYMENT_VERIFICATION' ? 'ตรวจสอบยอดโอน' : todo.type === 'PACKING_TASK' ? 'PACKING_TASK' : todo.type.replace('_APPROVAL', '')}
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base leading-tight">
+              {todo.title || 'งานทั่วไป'}
+            </h3>
+            <div className="flex items-center flex-wrap gap-2 mt-1.5">
+              <span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                #{todo.id?.slice(-6).toUpperCase()}
               </span>
+              {getStatusBadge(todo.status)}
+              {todo.priority === 'High' && (
+                <span className="text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded-md">ด่วนมาก</span>
+              )}
             </div>
-            <p className="text-xs text-dh-muted whitespace-pre-line line-clamp-2">{todo.description}</p>
-            
-            {todo.type === 'MANUAL_TASK' && todo.payload?.dueDate && (
-              <div className="mt-2 text-[11px] text-dh-accent font-medium flex items-center gap-1">
-                <Clock size={12} /> กำหนดส่ง: {new Date(todo.payload.dueDate).toLocaleString('th-TH')}
-              </div>
-            )}
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center justify-between w-full xl:w-auto xl:justify-end gap-4 shrink-0 pl-12 xl:pl-0">
-          <div className="flex items-center gap-1.5 text-[11px] text-dh-muted whitespace-nowrap">
-            <Clock size={12} /> {formatDate(todo.createdAt)}
+      {/* Content */}
+      <div className="flex-1 space-y-3 mb-5">
+        {todo.description && (
+          <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 line-clamp-3">
+            {todo.description}
+          </p>
+        )}
+
+        <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">วันที่สร้าง</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <Clock size={12} /> {formatDate(todo.createdAt || todo.requestedAt)}
+            </span>
           </div>
-          {!(todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type.startsWith('CANCEL_')) && (
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleApprove(todo)}
-                title={todo.type === 'PAYMENT_VERIFICATION' ? 'ยืนยันรับยอดโอน' : 'ดำเนินการเสร็จสิ้น / อนุมัติ'}
-                className={`flex items-center gap-1.5 font-bold px-4 py-2.5 rounded-xl transition-all shadow-md text-sm text-white hover:-translate-y-0.5 active:translate-y-0 ${todo.type === 'PAYMENT_VERIFICATION' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20'}`}
-              >
-                <Check size={16} strokeWidth={3} /> {todo.type === 'PAYMENT_VERIFICATION' ? 'ยืนยันรับยอดโอน' : 'อนุมัติราคาส่ง'}
-              </button>
-              <button 
-                onClick={() => handleReject(todo.id)}
-                title="ปฏิเสธ / ยกเลิก"
-                className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 px-3 py-2.5 rounded-xl transition-all shadow-sm"
-              >
-                <X size={18} strokeWidth={2.5} />
-              </button>
+          
+          {todo.dueDate && (
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">กำหนดเสร็จ</span>
+              <span className={`font-medium flex items-center gap-1 ${todo.priority === 'High' ? 'text-red-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                <Calendar size={12} /> {formatDate(todo.dueDate)}
+              </span>
+            </div>
+          )}
+          
+          {todo.customerName && (
+            <div className="flex flex-col gap-1 col-span-2 mt-1 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">ลูกค้าที่เกี่ยวข้อง</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">{todo.customerName}</span>
             </div>
           )}
         </div>
       </div>
 
-      {todo.type === 'WHOLESALE_APPROVAL' && todo.payload && (
-        <WholesaleCard 
-          todo={todo} 
-          fetchedData={fetchedPrices[todo.id]} 
-          inputs={wholesaleInputs[todo.id] || {}} 
-          setWholesaleInputs={setWholesaleInputs} 
-        />
-      )}
+      {/* Action Buttons (อัจฉริยะเปลี่ยนตามสถานะ) */}
+      <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-2">
+        {isManagerTab ? (
+          // ปุ่มสำหรับ "แท็บผู้จัดการ" (อนุมัติ / ปฏิเสธ)
+          <>
+            <button 
+              onClick={() => handleAction(todo.id, 'approve', todo.type, todo.payload || todo)}
+              disabled={isProcessing}
+              className="flex-1 flex justify-center items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-50"
+            >
+              <Check size={16} strokeWidth={3} /> อนุมัติ
+            </button>
+            <button 
+              onClick={() => {
+                const reason = prompt('กรุณาระบุเหตุผลที่ปฏิเสธคำขอนี้:');
+                if (reason !== null) handleAction(todo.id, 'reject', todo.type, { ...todo.payload, reason });
+              }}
+              disabled={isProcessing}
+              className="flex justify-center items-center gap-2 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 px-4 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-50"
+              title="ปฏิเสธคำขอ"
+            >
+              <X size={18} strokeWidth={2.5} />
+            </button>
+          </>
+        ) : (
+          // ปุ่มสำหรับ "แท็บปฏิบัติการ" (เริ่มงาน / เสร็จสิ้น / ยกเลิก)
+          <>
+            {todo.status === 'todo' && (
+              <button 
+                onClick={() => handleAction(todo.id, 'start', todo.type)}
+                disabled={isProcessing}
+                className="flex-1 flex justify-center items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-500/20 disabled:opacity-50"
+              >
+                <Play size={16} fill="currentColor" /> เริ่มดำเนินการ
+              </button>
+            )}
+            
+            {todo.status === 'in_progress' && (
+              <button 
+                onClick={() => handleAction(todo.id, 'complete', todo.type)}
+                disabled={isProcessing}
+                className="flex-1 flex justify-center items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-50"
+              >
+                <Check size={16} strokeWidth={3} /> เสร็จสิ้นภารกิจ
+              </button>
+            )}
+            
+            <button 
+              onClick={() => {
+                const reason = prompt('กรุณาระบุเหตุผลที่ยกเลิกงานนี้:');
+                if (reason !== null) handleAction(todo.id, 'reject', todo.type, { reason });
+              }}
+              disabled={isProcessing}
+              className="flex justify-center items-center gap-2 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 px-4 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-50"
+              title="ยกเลิกงาน"
+            >
+              <X size={18} strokeWidth={2.5} />
+            </button>
+          </>
+        )}
+      </div>
 
-
-      {todo.type === 'PAYMENT_VERIFICATION' && todo.payload && (
-         <PaymentCard todo={todo} />
-      )}
-
-      {(todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type.startsWith('CANCEL_')) && todo.payload && (
-          <ServiceTaskCard 
-              task={todo} 
-              onApprove={handleApprove} 
-              onReject={() => handleReject(todo.id)} 
-          />
-      )}
     </div>
   );
 }

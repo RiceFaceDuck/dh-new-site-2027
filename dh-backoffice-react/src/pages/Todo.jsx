@@ -14,7 +14,7 @@ import TodoItem from '../components/todo/TodoItem';
 import HistoryPanel from '../components/todo/HistoryPanel';
 import WholesaleCard from '../components/todo/WholesaleCard';
 import PaymentCard from '../components/todo/PaymentCard'; 
-import TaxInvoiceCard from '../components/todo/TaxInvoiceCard'; // 🟡 เพิ่ม TaxInvoiceCard
+import TaxInvoiceCard from '../components/todo/TaxInvoiceCard';
 
 export default function Todo() {
   const [todos, setTodos] = useState([]);
@@ -39,6 +39,10 @@ export default function Todo() {
   const [completedTodos, setCompletedTodos] = useState([]);
   const [loadingCompleted, setLoadingCompleted] = useState(false);
 
+  // 🌟 [ฟีเจอร์ใหม่] ค้นหาอัจฉริยะ & สถานะเชื่อมต่อแบบเรียลไทม์
+  const [searchQuery, setSearchQuery] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
   useEffect(() => {
     let unsubscribeApprovals;
     let unsubscribeTasks;
@@ -51,6 +55,7 @@ export default function Todo() {
         unsubscribeApprovals = todoService.subscribeManagerApprovals(
           (data) => {
             setTodos(data);
+            setLastUpdated(new Date()); // อัปเดตเวลาไฟสถานะ
             setLoading(false);
             setFetchError('');
           },
@@ -66,6 +71,7 @@ export default function Todo() {
             // กรองงาน WHOLESALE ออก ให้ไปอยู่แท็บ approvals ให้หมด
             const tasks = data.filter(t => !['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type));
             setTodos(tasks);
+            setLastUpdated(new Date()); // อัปเดตเวลาไฟสถานะ
             setLoading(false);
             setFetchError('');
           },
@@ -89,38 +95,63 @@ export default function Todo() {
   }, [activeTab]);
 
   useEffect(() => {
+    // 🌟 [อัปเกรดประสิทธิภาพ] แก้ปัญหา N+1 Query ดึงข้อมูลราคาส่งแบบ Batch ป้องกัน Re-render รัวๆ
     const fetchPricesForWholesale = async () => {
-      const wholesaleTasks = todos.filter(t => t.type === 'WHOLESALE_APPROVAL' && t.items);
+      const wholesaleTasks = todos.filter(t => ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type) && t.items);
+      if (wholesaleTasks.length === 0) return;
       
-      const newFetchedPrices = { ...fetchedPrices };
+      let newFetchedPrices = { ...fetchedPrices };
       let hasChanges = false;
+      
+      const productIdsToFetch = new Set();
+      const taskProductMap = {};
 
-      for (const task of wholesaleTasks) {
+      // รวบรวม ID สินค้าทั้งหมดที่ไม่เคยดึง
+      wholesaleTasks.forEach(task => {
         if (!newFetchedPrices[task.id]) {
           newFetchedPrices[task.id] = {};
+          hasChanges = true; 
         }
 
         const productIds = task.items.map(item => item.productId).filter(Boolean);
-        
-        if (productIds.length > 0) {
-           for(let i=0; i < productIds.length; i+=10) {
-              const batchIds = productIds.slice(i, i+10);
-              try {
-                const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));
-                const snapshot = await getDocs(q);
-                
-                snapshot.forEach(doc => {
-                  const data = doc.data();
-                  if (data.wholesalePrice) {
-                    newFetchedPrices[task.id][doc.id] = data.wholesalePrice;
-                    hasChanges = true;
-                  }
-                });
-              } catch (err) {
-                console.error("Error fetching wholesale prices for task", task.id, err);
-              }
+        productIds.forEach(pId => {
+           if (newFetchedPrices[task.id][pId] === undefined) {
+               productIdsToFetch.add(pId);
+               if (!taskProductMap[pId]) taskProductMap[pId] = [];
+               taskProductMap[pId].push(task.id);
            }
-        }
+        });
+      });
+
+      const uniqueIds = Array.from(productIdsToFetch);
+      
+      if (uniqueIds.length > 0) {
+          // ดึงทีละ 10 ชุด (Batch) ตามข้อจำกัด Firebase 'in' clause
+          for(let i=0; i < uniqueIds.length; i+=10) {
+              const batchIds = uniqueIds.slice(i, i+10);
+              try {
+                  const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));
+                  const snapshot = await getDocs(q);
+                  
+                  const foundPrices = {};
+                  snapshot.forEach(doc => {
+                      foundPrices[doc.id] = doc.data().wholesalePrice || null;
+                  });
+
+                  // จับคู่ข้อมูลกลับไปที่ Task เพื่อไม่ให้ดึงซ้ำในรอบหน้า
+                  batchIds.forEach(pId => {
+                     const taskIds = taskProductMap[pId] || [];
+                     const price = foundPrices[pId] !== undefined ? foundPrices[pId] : null; 
+                     taskIds.forEach(tId => {
+                         newFetchedPrices[tId][pId] = price;
+                         hasChanges = true;
+                     });
+                  });
+
+              } catch (err) {
+                  console.error("Error fetching wholesale prices batch", err);
+              }
+          }
       }
 
       if (hasChanges) {
@@ -206,6 +237,19 @@ export default function Todo() {
     return true;
   });
 
+  // 🌟 [ระบบค้นหาอัจฉริยะ]
+  const displayTodos = filteredTodos.filter(todo => {
+    const searchLower = searchQuery.toLowerCase();
+    const matchSearch = searchQuery.trim() === '' || 
+      todo.id?.toLowerCase().includes(searchLower) ||
+      todo.customerName?.toLowerCase().includes(searchLower) ||
+      todo.shippingAddress?.fullName?.toLowerCase().includes(searchLower) ||
+      todo.orderId?.toLowerCase().includes(searchLower) ||
+      todo.title?.toLowerCase().includes(searchLower);
+      
+    return matchSearch;
+  });
+
   const getUrgencyColor = (createdAt) => {
     if (!createdAt) return 'bg-gray-100 text-gray-500';
     const hours = (new Date() - createdAt.toDate()) / (1000 * 60 * 60);
@@ -263,7 +307,7 @@ export default function Todo() {
         <div className="flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl w-full md:w-auto border border-dh-border">
           <button 
             className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'approvals' ? 'bg-white text-dh-accent shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
-            onClick={() => { setActiveTab('approvals'); setFilterType('ALL'); }}
+            onClick={() => { setActiveTab('approvals'); setFilterType('ALL'); setSearchQuery(''); }}
           >
             <CheckCircle2 className="w-4 h-4" />
             รอการอนุมัติ 
@@ -271,7 +315,7 @@ export default function Todo() {
           </button>
           <button 
             className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'tasks' ? 'bg-white text-dh-main shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
-            onClick={() => { setActiveTab('tasks'); setFilterType('ALL'); }}
+            onClick={() => { setActiveTab('tasks'); setFilterType('ALL'); setSearchQuery(''); }}
           >
             <PackageSearch className="w-4 h-4" />
             งานปฏิบัติการ
@@ -334,8 +378,38 @@ export default function Todo() {
               </button>
             </>
           )}
-          
         </div>
+      </div>
+
+      {/* 🌟 [UI อัปเกรด] แถบค้นหาอัจฉริยะ และ ไฟสถานะการเชื่อมต่อ */}
+      <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <PackageSearch className="h-4 w-4 text-slate-400" />
+                  </div>
+                  <input 
+                      type="text" 
+                      placeholder="ค้นหา (ชื่อลูกค้า, Order ID...)" 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-dh-accent/50 w-full sm:w-72 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all"
+                  />
+              </div>
+              {searchQuery && (
+                  <span className="text-xs text-dh-main font-bold bg-dh-accent/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                      พบ {displayTodos.length} รายการ
+                  </span>
+              )}
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-700 whitespace-nowrap">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              เชื่อมต่อฐานข้อมูลแล้ว (ล่าสุด: {lastUpdated.toLocaleTimeString('th-TH')})
+          </div>
       </div>
 
       {/* Todo List Content */}
@@ -344,19 +418,24 @@ export default function Todo() {
           <Loader2 className="w-10 h-10 text-dh-accent animate-spin mb-4" />
           <p className="text-dh-muted font-medium animate-pulse">กำลังโหลดรายการงาน...</p>
         </div>
-      ) : filteredTodos.length === 0 ? (
+      ) : displayTodos.length === 0 ? (
         <div className="text-center py-24 bg-white dark:bg-slate-800 rounded-3xl border border-dh-border shadow-sm flex flex-col items-center">
           <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-4">
             <CheckCircle2 className="w-10 h-10 text-green-500" />
           </div>
-          <h3 className="text-xl font-bold text-dh-main mb-2">ยอดเยี่ยม! เคลียร์งานหมดแล้ว</h3>
+          <h3 className="text-xl font-bold text-dh-main mb-2">
+             {searchQuery ? 'ไม่พบรายการที่ค้นหา' : 'ยอดเยี่ยม! เคลียร์งานหมดแล้ว'}
+          </h3>
           <p className="text-dh-muted max-w-sm">
-            {activeTab === 'approvals' ? 'ไม่มีรายการรอพิจารณาอนุมัติในขณะนี้' : 'ไม่มีงานปฏิบัติการค้างในระบบ'}
+            {searchQuery 
+               ? `ไม่มีข้อมูลที่ตรงกับคำว่า "${searchQuery}"` 
+               : (activeTab === 'approvals' ? 'ไม่มีรายการรอพิจารณาอนุมัติในขณะนี้' : 'ไม่มีงานปฏิบัติการค้างในระบบ')
+            }
           </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredTodos.map(todo => {
+          {displayTodos.map(todo => {
             const isProcessing = processingId === todo.id;
             const isManagerTab = activeTab === 'approvals';
             const urgencyClass = getUrgencyColor(todo.createdAt || todo.requestedAt);
@@ -368,6 +447,9 @@ export default function Todo() {
                   <WholesaleCard 
                     task={todo} 
                     currentUser={auth.currentUser}
+                    fetchedData={fetchedPrices[todo.id] || {}}
+                    inputs={wholesaleInputs[todo.id] || {}}
+                    setWholesaleInputs={setWholesaleInputs}
                     onReject={() => handleAction(todo.id, 'reject', todo.type, { orderId: todo.orderId || todo.payload?.orderId })}
                   />
                 </div>
@@ -386,7 +468,7 @@ export default function Todo() {
               );
             }
 
-            // 🟡 3. การออกใบกำกับภาษี (ใหม่)
+            // 🟡 3. การออกใบกำกับภาษี
             if (todo.type === 'issue_tax_invoice') {
                return (
                   <div key={todo.id} className="md:col-span-2 xl:col-span-3">
