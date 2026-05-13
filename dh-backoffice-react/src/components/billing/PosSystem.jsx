@@ -40,8 +40,45 @@ const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) 
 
 const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, slate: {} };
 
-export default function PosSystem({ products = [], customers = [], cartTabs = [], setCartTabs, activeTabId, setActiveTabId, onSwitchView }) {
+export default function PosSystem({ products = [], customers = [], cartTabs = [], setCartTabs, activeTabId, setActiveTabId, onSwitchView, initialDraft }) {
     const [searchQuery, setSearchQuery] = useState('');
+    
+    useEffect(() => {
+        if (initialDraft) {
+            // Check if draft already exists in cartTabs
+            const exists = cartTabs.some(tab => tab.id === initialDraft.id);
+            if (!exists) {
+                const newTab = {
+                    id: initialDraft.id,
+                    name: `บิล #${initialDraft.id.slice(-4)}`,
+                    customer: initialDraft.customerInfo || initialDraft.customer || null,
+                    items: initialDraft.items || [],
+                    walkInPhone: initialDraft.walkInPhone || '',
+                    hidePhone: initialDraft.hidePhone || false,
+                    slipImage: initialDraft.slipImage || '',
+                    note: initialDraft.note || '',
+                    noteColor: initialDraft.noteColor || 'slate',
+                    priceMode: initialDraft.priceMode || 'retail',
+                    shippingCost: initialDraft.shippingCost || 0,
+                    customDiscount: initialDraft.customDiscount || 0,
+                    customDiscountType: initialDraft.customDiscountType || 'amount',
+                    useWallet: initialDraft.useWallet || 0,
+                    walletAmount: initialDraft.walletAmount || 0,
+                    promoDiscount: initialDraft.promoDiscount || 0,
+                    appliedPromoId: initialDraft.appliedPromoId || null,
+                    appliedPromoDetails: initialDraft.appliedPromoDetails || null,
+                    autoPromoEnabled: initialDraft.autoPromoEnabled ?? true,
+                    transactionRef: initialDraft.transactionRef || '',
+                    transferDateTime: initialDraft.transferDateTime || ''
+                };
+                setCartTabs(prev => [...prev, newTab]);
+                setActiveTabId(initialDraft.id);
+            } else {
+                setActiveTabId(initialDraft.id);
+            }
+        }
+    }, [initialDraft]); // only run when initialDraft changes
+
     const [showDropdown, setShowDropdown] = useState(false);
     const [actionBoxItem, setActionBoxItem] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);

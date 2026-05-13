@@ -4,6 +4,7 @@ import { Loader2, Wrench, ArrowLeftRight, X, UploadCloud, Check } from 'lucide-r
 import { collection, query, where, onSnapshot, doc, writeBatch, serverTimestamp, addDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { driveService } from '../../../firebase/driveService';
+import { cancelOrder } from '../../../firebase/checkoutService';
 
 const TabHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -214,6 +215,21 @@ const TabHistory = () => {
     setUploadSuccess(false);
   };
 
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('คุณต้องการยกเลิกคำสั่งซื้อนี้ใช่หรือไม่?')) return;
+    setCancellingOrderId(orderId);
+    try {
+      await cancelOrder(orderId, auth.currentUser.uid);
+      alert('ยกเลิกคำสั่งซื้อสำเร็จ');
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
   const toggleOrderDetails = (orderId) => {
     if (expandedOrderId === orderId) {
       setExpandedOrderId(null);
@@ -416,6 +432,15 @@ const TabHistory = () => {
                   
                   {/* ปุ่ม Action */}
                   <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 mt-2 sm:mt-0">
+                    {['awaiting_wholesale_price', 'pending_payment'].includes(order.status) && (
+                      <button 
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancellingOrderId === order.id}
+                        className="w-full sm:w-auto px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold border border-red-200 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      >
+                         ยกเลิกคำสั่งซื้อ
+                      </button>
+                    )}
                     <button 
                       onClick={() => toggleOrderDetails(order.id)}
                       className="w-full sm:w-auto px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-semibold border border-gray-200 rounded-lg transition-colors flex items-center justify-center gap-1.5"
