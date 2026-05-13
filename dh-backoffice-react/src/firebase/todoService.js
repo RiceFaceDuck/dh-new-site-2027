@@ -73,8 +73,18 @@ export const todoService = {
         const logRef = doc(collection(db, 'system_logs')); 
 
         const orderDoc = await transaction.get(orderRef);
-        // 🛡️ ตรงนี้คือจุดที่ทำให้เกิด Error "ไม่พบออเดอร์"
-        if (!orderDoc.exists()) throw new Error("ไม่พบข้อมูลคำสั่งซื้อในระบบ (ออเดอร์อาจถูกลบไปแล้ว)");
+        
+        // ✨ UX UPGRADE: จัดการงานกำพร้าอัตโนมัติ (Auto-clean Orphaned Task)
+        // เปลี่ยนจากการโยน Error หน้าเว็บพัง เป็นการจัดการเคลียร์ทิ้งให้อัตโนมัติ
+        if (!orderDoc.exists()) {
+          transaction.update(taskRef, {
+            status: 'cancelled',
+            rejectReason: 'ระบบปิดงานอัตโนมัติ: ไม่พบข้อมูลออเดอร์ต้นทาง (ออเดอร์อาจถูกลบทิ้งไปแล้ว)',
+            completedAt: serverTimestamp(),
+            actionBy: 'System Auto-Clean'
+          });
+          return { success: false, orphanedCleared: true, message: "ไม่พบข้อมูลคำสั่งซื้อในระบบ ระบบได้ทำการเคลียร์รายการที่ค้างอยู่นี้ออกให้แล้วครับ" };
+        }
         
         const orderData = orderDoc.data();
         const userId = orderData.userId;
@@ -150,7 +160,17 @@ export const todoService = {
         const logRef = doc(collection(db, 'system_logs'));
 
         const orderDoc = await transaction.get(orderRef);
-        if (!orderDoc.exists()) throw new Error("ไม่พบออเดอร์ในระบบ (ข้อมูลอาจไม่สมบูรณ์)");
+        
+        // ✨ UX UPGRADE: จัดการงานกำพร้าอัตโนมัติ
+        if (!orderDoc.exists()) {
+          transaction.update(taskRef, {
+            status: 'cancelled',
+            rejectReason: 'ระบบปิดงานอัตโนมัติ: ไม่พบข้อมูลออเดอร์ต้นทาง (ออเดอร์อาจถูกลบทิ้งไปแล้ว)',
+            completedAt: serverTimestamp(),
+            actionBy: 'System Auto-Clean'
+          });
+          return { success: false, orphanedCleared: true, message: "ไม่พบข้อมูลคำสั่งซื้อในระบบ ระบบได้ทำการเคลียร์รายการที่ค้างอยู่นี้ออกให้แล้วครับ" };
+        }
         
         const orderData = orderDoc.data();
         const userId = orderData.userId;
@@ -197,36 +217,46 @@ export const todoService = {
 
   // ❌ 5. ปฏิเสธการขอราคาส่ง
   rejectWholesale: async (taskId, orderId, reason = 'ไม่ระบุเหตุผล', currentUser) => {
-     try {
-         return await runTransaction(db, async (transaction) => {
-             const taskRef = doc(db, 'todos', taskId);
-             const orderRef = doc(db, 'orders', orderId);
-             
-             const orderDoc = await transaction.get(orderRef);
-             // 🛡️ จุดสำคัญ: ถ้าไม่มี Order ให้โยน Error เฉพาะทางเพื่อให้ UI จับได้
-             if (!orderDoc.exists()) throw new Error("ไม่พบข้อมูลออเดอร์ที่เกี่ยวข้อง (Orphaned Task)");
-             
-             const userId = orderDoc.data().userId;
-             
-             transaction.update(taskRef, {
-                 status: 'rejected',
-                 rejectReason: reason,
-                 completedAt: serverTimestamp(),
-                 actionBy: currentUser?.displayName || 'Admin'
-             });
+      try {
+          return await runTransaction(db, async (transaction) => {
+              const taskRef = doc(db, 'todos', taskId);
+              const orderRef = doc(db, 'orders', orderId);
+              
+              const orderDoc = await transaction.get(orderRef);
+              
+              // ✨ UX UPGRADE: จัดการงานกำพร้าอัตโนมัติ แทนการ Throw Error ให้ระบบพัง
+              if (!orderDoc.exists()) {
+                  transaction.update(taskRef, {
+                      status: 'cancelled',
+                      rejectReason: 'ระบบปิดงานอัตโนมัติ: ไม่พบข้อมูลออเดอร์ต้นทาง (ออเดอร์อาจถูกลบทิ้งไปแล้ว)',
+                      completedAt: serverTimestamp(),
+                      actionBy: 'System Auto-Clean'
+                  });
+                  // คืนค่าแบบ Custom กลับไปให้ UI (งานจะหายไปจากกระดานทันทีอย่างนิ่มนวล)
+                  return { success: false, orphanedCleared: true, message: "ไม่พบข้อมูลออเดอร์ที่เกี่ยวข้อง (ออเดอร์นี้อาจถูกลบไปแล้ว)\n\nระบบได้ทำการเคลียร์งานที่ค้างอยู่นี้ออกจากกระดานให้เรียบร้อยแล้วครับ" };
+              }
+              
+              const userId = orderDoc.data().userId;
+              
+              transaction.update(taskRef, {
+                  status: 'rejected',
+                  rejectReason: reason,
+                  completedAt: serverTimestamp(),
+                  actionBy: currentUser?.displayName || 'Admin'
+              });
 
-             transaction.update(orderRef, {
-                 status: 'pending_payment',
-                 wholesaleRejected: true,
-                 updatedAt: serverTimestamp()
-             });
+              transaction.update(orderRef, {
+                  status: 'pending_payment',
+                  wholesaleRejected: true,
+                  updatedAt: serverTimestamp()
+              });
 
-             return { success: true };
-         });
-     } catch(err) {
-         console.error("🔥 rejectWholesale Error:", err);
-         throw err;
-     }
+              return { success: true };
+          });
+      } catch(err) {
+          console.error("🔥 rejectWholesale Error:", err);
+          throw err;
+      }
   },
 
   getCompletedTodos: async (limitCount = 50) => {

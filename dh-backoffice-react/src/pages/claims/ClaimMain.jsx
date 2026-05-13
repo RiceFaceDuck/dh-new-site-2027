@@ -5,7 +5,7 @@ import {
   ShieldAlert, Search, Clock, CheckCircle, XCircle, 
   Package, ArrowLeftRight, Wrench, FileText, Receipt, 
   Printer, Ban, Eye, AlertTriangle, User, X, Calendar, Image as ImageIcon, Copy, Check, RefreshCw,
-  Flame, Zap, Timer, UploadCloud, Loader2
+  Flame, Zap, Timer, UploadCloud, Loader2, Plus // ✨ FIX: เพิ่มการ Import 'Plus' แก้ปัญหา Uncaught ReferenceError
 } from 'lucide-react';
 import { claimService } from '../../firebase/claimService';
 import { billingService } from '../../firebase/billingService';
@@ -417,11 +417,15 @@ export default function ClaimMain() {
                     // เรียกใช้ระบบคำนวณประกัน
                     const warranty = getWarrantyInfo(payload.purchaseDate, req.createdAt);
 
+                    // ✨ FIX & UX UPGRADE: ค้นหาเวลาเพื่อตรวจสอบความล่าช้า ดึงดูดสายตาผู้จัดการ
+                    const hoursDiff = dateObj ? (new Date() - dateObj) / (1000 * 60 * 60) : 0;
+                    const isUrgent = req.status === 'pending_manager' && hoursDiff > 48;
+
                     return (
                       <tr 
                         key={req.id} 
                         onClick={() => setSelectedRequest(req)} 
-                        className="group hover:bg-dh-base/60 transition-colors cursor-pointer relative"
+                        className={`group transition-colors cursor-pointer relative ${isUrgent ? 'bg-rose-50/50 hover:bg-rose-100/50 dark:bg-rose-900/10 dark:hover:bg-rose-900/20' : 'hover:bg-dh-base/60'}`}
                       >
                         {/* 1. Date */}
                         <td className="px-4 py-3 align-middle relative">
