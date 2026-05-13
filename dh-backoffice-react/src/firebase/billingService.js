@@ -3,6 +3,7 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
+  deleteDoc,
   onSnapshot, 
   query, 
   orderBy, 
@@ -38,7 +39,6 @@ export const billingService = {
     return unsubscribe;
   },
 
-  // ค้นหาบิลแบบเจาะจง (ประหยัด Reads แต่ครอบคลุม)
   searchOrders: async (searchTerm) => {
     try {
       if (!searchTerm || searchTerm.length < 3) return [];
@@ -67,9 +67,6 @@ export const billingService = {
           ...snap3.docs.map(d => ({ id: d.id, ...d.data() }))
         ];
       } else {
-        // Search by Name (Exact match or prefix)
-        // Note: Firebase doesn't support generic 'LIKE %term%' efficiently.
-        // We will query common name fields.
         const q1 = query(colRef, where('customer.firstName', '==', term));
         const q2 = query(colRef, where('customer.accountName', '==', term));
         const q3 = query(colRef, where('customerInfo.fullName', '==', term));
@@ -85,10 +82,7 @@ export const billingService = {
         ];
       }
 
-      // Deduplicate
       const uniqueResults = results.filter((v,i,a) => a.findIndex(t => (t.id === v.id)) === i);
-      
-      // If no exact match found from DB, return null so the UI can at least try client-side filtering on recent orders
       return uniqueResults.length > 0 ? uniqueResults : null;
     } catch (error) {
       console.error("🔥 Error searching orders:", error);
@@ -96,24 +90,17 @@ export const billingService = {
     }
   },
 
-  /**
-   * ✨ Atomic Order Creation (Production Ready)
-   * ตัดสต็อก (เช็ค Buffer), หัก Wallet, แจก Credit Points, สร้างบิล ใน Transaction เดียว!
-   */
   createOrder: async (orderData, actorUid, actorName) => {
     try {
       let finalOrderId = orderData.orderId;
       let newDocId = null;
 
       await runTransaction(db, async (transaction) => {
-        // ==========================================
-        // 1. PHASE READS (อ่านข้อมูลเตรียมไว้ก่อน)
-        // ==========================================
         const productRefs = [];
         const productSnaps = [];
         const statusLower = (orderData.orderStatus || orderData.status || '').toLowerCase();
 
-        for (const item of orderData.items) {
+        for (const item of (orderData.items || [])) {
           const itemIdentifier = item.id || item.sku; 
           if (item.isFreebie || !itemIdentifier) continue;
           
@@ -128,7 +115,6 @@ export const billingService = {
 
         let userRef = null;
         let userSnap = null;
-        // 🚀 [อัปเกรด]: รองรับ Data Structure ทั้งจากหน้าบ้านและหลังบ้าน
         const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
         
         if (customerUid && customerUid !== 'WALK-IN') {
@@ -139,9 +125,6 @@ export const billingService = {
           }
         }
 
-        // ==========================================
-        // 2. PHASE VALIDATION (ตรวจสอบเงื่อนไขสต๊อกและ Wallet)
-        // ==========================================
         const updates = [];
         productSnaps.forEach((snap, index) => {
           if (snap.exists()) {
@@ -149,7 +132,6 @@ export const billingService = {
             const requiredQty = productRefs[index].item.qty;
             const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : defaultBuffer;
 
-            // ตรวจสอบ Buffer เฉพาะกรณีที่จะตัดสต๊อกเลย (Paid)
             if ((currentStock - requiredQty) < itemBuffer && statusLower === 'paid') {
               throw new Error(`สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
             }
@@ -180,12 +162,7 @@ export const billingService = {
                 }
             }
         }
-
-        // ==========================================
-        // 3. PHASE WRITES (บันทึกข้อมูล)
-        // ==========================================
         
-        // ตัดสต๊อกเฉพาะเมื่อจ่ายเงินเลย (หน้า POS)
         if (statusLower === 'paid') {
             updates.forEach(u => {
               transaction.update(u.ref, { 
@@ -204,7 +181,6 @@ export const billingService = {
         
         newDocId = newOrderRef.id;
 
-        // รันเลขบิลใหม่หากมีการชำระหรือค้างชำระ
         if (statusLower === 'paid' || statusLower === 'pending') {
             const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
             const runNum = Math.floor(1000 + Math.random() * 9000);
@@ -227,7 +203,6 @@ export const billingService = {
         
         transaction.set(newOrderRef, finalOrderData, { merge: true });
 
-        // อัปเดตสถิติยอดขาย (ถ้าชำระแล้ว)
         if (statusLower === 'paid') {
             const now = new Date();
             const yyyyMM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -248,7 +223,6 @@ export const billingService = {
             }, { merge: true });
         }
 
-        // จัดการ Wallet และ Points ลูกค้า
         if (customerUid && customerUid !== 'WALK-IN' && userRef) {
             let newWalletBalance = currentWallet - walletToUse;
             let currentPoints = userSnap.data().stats?.rewardPoints || 0;
@@ -290,7 +264,6 @@ export const billingService = {
             }
         }
 
-        // บันทึก Audit Log
         const netForLog = orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0;
         transaction.set(doc(collection(db, 'history_logs')), {
             module: 'Billing', 
@@ -309,13 +282,8 @@ export const billingService = {
     }
   },
 
-  /**
-   * ✨ Atomic Update Order Status
-   * ตัดสต๊อกและแจกแต้ม "เมื่อพนักงานยืนยันยอดโอน (Paid)"
-   */
   updateOrderStatus: async (orderId, newStatus, currentStatus, actorUid) => {
     try {
-      // 🚀 [อัปเกรด]: ป้องกันกรณี Argument ถูกส่งมาขาดจาก todoService
       const actualActorUid = actorUid || (typeof currentStatus === 'string' && currentStatus.length > 15 ? currentStatus : 'system');
       const normalizedNewStatus = (newStatus || '').toLowerCase();
 
@@ -330,9 +298,12 @@ export const billingService = {
           const orderData = docSnap.data();
           const normalizedCurrentStatus = (orderData.orderStatus || orderData.status || '').toLowerCase();
 
-          // 🚀 [อัปเกรด]: จัดการสถานะแบบ Case-Insensitive (รองรับทั้งหน้าบ้านและหลังบ้าน)
           const isCancelling = normalizedNewStatus === 'cancelled' && normalizedCurrentStatus !== 'cancelled';
           const isConfirmingPayment = normalizedNewStatus === 'paid' && normalizedCurrentStatus !== 'paid';
+
+          if (isCancelling && (normalizedCurrentStatus === 'approved' || normalizedCurrentStatus === 'completed')) {
+              throw new Error("ไม่อนุญาตให้ยกเลิกบิลที่อนุมัติหรือเสร็จสิ้นไปแล้ว");
+          }
 
           const productRefs = [];
           const productSnaps = [];
@@ -343,11 +314,8 @@ export const billingService = {
           let inventorySettingsRef = null;
           let inventorySettingsSnap = null;
           
-          // ==========================================
-          // 1. PHASE READS
-          // ==========================================
           if (isCancelling || isConfirmingPayment) {
-              for (const item of orderData.items) {
+              for (const item of (orderData.items || [])) {
                   const itemIdentifier = item.id || item.sku;
                   if (item.isFreebie || !itemIdentifier) continue;
                   
@@ -356,7 +324,6 @@ export const billingService = {
                   productSnaps.push(await transaction.get(pRef));
               }
 
-              // 🚀 [อัปเกรด]: ดึง uid ได้จากทั้ง 2 ฟอร์แมต (หน้าบ้าน = customerInfo, หลังบ้าน = customer)
               const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
               if (customerUid && customerUid !== 'WALK-IN') {
                   userRef = doc(db, 'users', customerUid);
@@ -377,29 +344,23 @@ export const billingService = {
               inventorySettingsSnap = await transaction.get(inventorySettingsRef);
           }
 
-          // ==========================================
-          // 2. PHASE WRITES & VALIDATION
-          // ==========================================
           let updates = { 
-            orderStatus: normalizedNewStatus, // บังคับเป็นพิมพ์เล็กทั้งหมด
+            orderStatus: normalizedNewStatus, 
             status: normalizedNewStatus, 
             updatedAt: serverTimestamp() 
           };
 
-          // อัปเดตเลขบิลถ้ารหัสเดิมเป็น TEMP
           if ((orderData.orderId || '').startsWith('TEMP-') && normalizedNewStatus === 'paid') {
              const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
              const runNum = Math.floor(1000 + Math.random() * 9000);
              updates.orderId = `DH-${dateStr}-${runNum}`;
           }
 
-          // 🌟 กรณีพนักงานกดยืนยันการโอนเงิน (Paid)
           if (isConfirmingPayment) {
              const defaultBuffer = inventorySettingsSnap && inventorySettingsSnap.exists() 
                 ? inventorySettingsSnap.data().defaultBufferStock || 0 
                 : 0;
              
-             // ตัดสต๊อก
              productSnaps.forEach((pSnap, index) => {
                  if (pSnap.exists()) {
                      const currentStock = pSnap.data().stockQuantity || 0;
@@ -421,7 +382,6 @@ export const billingService = {
 
              const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
              
-             // เพิ่มสถิติยอดขาย
              if (totalSaleAmount > 0) {
                  const now = new Date();
                  const yyyyMM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -441,7 +401,6 @@ export const billingService = {
                  }, { merge: true });
              }
 
-             // แจกแต้ม
              if (userSnap && userSnap.exists()) {
                  const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
                  const amountForPoints = totalSaleAmount - walletUsed;
@@ -476,21 +435,20 @@ export const billingService = {
              }
           }
 
-          // 🌟 กรณียกเลิกบิล (Cancelled)
           if (isCancelling) {
-             // คืนสต๊อก
-             productSnaps.forEach((pSnap, index) => {
-                 if (pSnap.exists()) {
-                     const currentStock = pSnap.data().stockQuantity || 0;
-                     const qtyToReturn = productRefs[index].qty;
-                     transaction.update(productRefs[index].ref, { 
-                       stockQuantity: currentStock + qtyToReturn, 
-                       'stats.sold': increment(-qtyToReturn) 
-                     });
-                 }
-             });
+             if (normalizedCurrentStatus === 'paid') {
+                 productSnaps.forEach((pSnap, index) => {
+                     if (pSnap.exists()) {
+                         const currentStock = pSnap.data().stockQuantity || 0;
+                         const qtyToReturn = productRefs[index].qty;
+                         transaction.update(productRefs[index].ref, { 
+                           stockQuantity: currentStock + qtyToReturn, 
+                           'stats.sold': increment(-qtyToReturn) 
+                         });
+                     }
+                 });
+             }
 
-             // หักสถิติยอดขายคืน
              if (normalizedCurrentStatus === 'paid') {
                  const createdAt = orderData.createdAt?.toDate() || new Date(); 
                  const yyyyMM = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}`;
@@ -505,6 +463,7 @@ export const billingService = {
                      }, { merge: true });
                      
                      transaction.set(doc(db, 'sales_stats', yyyyMMdd), { 
+                       date: yyyyMMdd, 
                        totalSales: increment(-totalSaleAmount), 
                        orderCount: increment(-1), 
                        updatedAt: serverTimestamp() 
@@ -512,7 +471,6 @@ export const billingService = {
                  }
              }
 
-             // คืน Wallet / ยึด Point
              if (userSnap && userSnap.exists()) {
                  let refundAmount = 0;
                  if (normalizedCurrentStatus === 'paid') {
@@ -521,13 +479,12 @@ export const billingService = {
                      refundAmount = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
                  }
                  
-                 // 11-Day Delay Safety Net: ดึงแต้มคืน หากแต้มยัง Pending อยู่ให้เคลียร์
                  let clawbackPoints = Number(orderData.earnedPoints || 0); 
                  let cancelledPending = 0;
                  if (orderData.pendingCredits && orderData.pendingCredits > 0 && orderData.status !== 'received') {
                      cancelledPending = orderData.pendingCredits;
-                     clawbackPoints = 0; // ไม่หักแต้มในบัญชีเพราะยังไม่เข้า
-                     updates.pendingCredits = 0; // เคลียร์ใน Order
+                     clawbackPoints = 0; 
+                     updates.pendingCredits = 0; 
                  }
 
                  if (refundAmount > 0 || clawbackPoints > 0 || cancelledPending > 0) {
@@ -588,7 +545,6 @@ export const billingService = {
 
           transaction.update(docRef, updates);
 
-          // บันทึก Log เปลี่ยนสถานะ
           let logMessage = `เปลี่ยนสถานะบิลเป็น: ${normalizedNewStatus}`;
           if (isCancelling) logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม กลับสู่ระบบเรียบร้อยแล้ว)';
           if (isConfirmingPayment) logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
@@ -615,7 +571,7 @@ export const billingService = {
     try {
       const docRef = doc(db, COLLECTION_NAME, docId);
       await updateDoc(docRef, {
-        printCount: increment(1), // ✨ ใช้ increment ป้องกัน Race Condition เวลากดปริ้นท์รัวๆ
+        printCount: increment(1), 
         lastPrintedAt: serverTimestamp()
       });
       return true;
@@ -623,5 +579,85 @@ export const billingService = {
       console.error("🔥 Error updating print count:", error);
       return false; 
     }
+  },
+
+  // ✨ ฟังก์ชันสำหรับลบข้อมูลบิลถาวร 
+  deleteOrderPermanently: async (orderId, actorUid) => {
+    try {
+      const docRef = doc(db, COLLECTION_NAME, orderId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) throw new Error("ไม่พบบิลนี้ในระบบ");
+
+      const orderData = docSnap.data();
+      const stat = (orderData.orderStatus || orderData.status || '').toLowerCase();
+
+      if (stat === 'paid' || stat === 'approved' || stat === 'completed') {
+         throw new Error("ไม่อนุญาตให้ลบทิ้งบิลที่ชำระเงินหรือดำเนินการเสร็จสิ้นแล้ว");
+      }
+
+      const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+      const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
+
+      if (walletUsed > 0 && customerUid && customerUid !== 'WALK-IN') {
+         await runTransaction(db, async (transaction) => {
+             const userRef = doc(db, 'users', customerUid);
+             const userSnap = await transaction.get(userRef);
+             if (userSnap.exists()) {
+                 const currentWallet = userSnap.data().stats?.creditBalance || userSnap.data().partnerCredit || 0;
+                 const newWalletBalance = currentWallet + walletUsed;
+                 
+                 transaction.update(userRef, {
+                   'stats.creditBalance': newWalletBalance,
+                   'partnerCredit': newWalletBalance
+                 });
+
+                 transaction.set(doc(collection(db, 'credit_transactions')), {
+                     transactionId: `TXR-${Date.now()}`,
+                     uid: customerUid,
+                     type: 'refund',
+                     amount: walletUsed,
+                     balanceAfter: newWalletBalance,
+                     referenceId: orderId,
+                     note: 'คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร)',
+                     recordedBy: actorUid || 'system',
+                     timestamp: serverTimestamp()
+                 });
+             }
+             transaction.delete(docRef);
+         });
+      } else {
+         await deleteDoc(docRef);
+      }
+
+      await addDoc(collection(db, 'history_logs'), {
+          module: 'Billing',
+          action: 'Delete',
+          targetId: orderId,
+          details: `ลบบิลถาวรออกจากระบบ (รหัสอ้างอิง: ${orderData.orderId || orderId})`,
+          byUid: actorUid || 'system',
+          timestamp: serverTimestamp()
+      });
+
+      return true;
+    } catch (error) {
+      console.error("🔥 Error deleting order:", error);
+      throw error;
+    }
+  },
+
+  // ✨ ฟังก์ชันใหม่: ดึงประวัติเฉพาะของบิลนั้นๆ
+  getOrderHistory: async (orderId) => {
+      try {
+          const q = query(
+              collection(db, 'history_logs'), 
+              where('targetId', '==', orderId), 
+              orderBy('timestamp', 'desc')
+          );
+          const snap = await getDocs(q);
+          return snap.docs.map(d => ({id: d.id, ...d.data()}));
+      } catch (error) {
+          console.error("Error fetching order history:", error);
+          return [];
+      }
   }
 };
