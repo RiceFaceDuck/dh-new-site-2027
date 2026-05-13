@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { todoService } from '../firebase/todoService';
 import { claimService } from '../firebase/claimService';
 import { auth, db } from '../firebase/config';
-import { collection, doc, getDoc, getDocs, query, where, documentId } from 'firebase/firestore'; 
+// 🌟 เพิ่ม deleteDoc เข้ามาเพื่อใช้กำจัดงานขยะ
+import { collection, doc, getDoc, getDocs, query, where, documentId, deleteDoc } from 'firebase/firestore'; 
 import NonExistingProducts from './todo/NonExistingProducts';
 import { 
-  Check, X, Clock, UserPlus, Tag, Info, AlertCircle, 
+  Check, X, Clock, UserPlus, Tag, Info, AlertCircle, Trash2,
   Inbox, ListFilter, HelpCircle, Plus, History, XCircle, 
   RotateCcw, Calendar, Receipt, ChevronRight, Calculator, Loader2, PackageSearch, CheckCircle2, Filter, FileText
 } from 'lucide-react';
@@ -68,8 +69,10 @@ export default function Todo() {
       } else {
         unsubscribeTasks = todoService.subscribePendingTodos(
           (data) => {
-            // กรองงาน WHOLESALE ออก ให้ไปอยู่แท็บ approvals ให้หมด
-            const tasks = data.filter(t => !['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type));
+            // 🛡️ อัปเกรด: กรองงานของผู้จัดการทุกประเภทออก ไม่ให้หลุดมาแท็บปฏิบัติการ
+            const managerTypes = ['WHOLESALE_APPROVAL', 'wholesale_request', 'CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL'];
+            const tasks = data.filter(t => !managerTypes.includes(t.type));
+            
             setTodos(tasks);
             setLastUpdated(new Date()); // อัปเดตเวลาไฟสถานะ
             setLoading(false);
@@ -181,6 +184,7 @@ export default function Todo() {
     }
   }, [showCompletedPanel]);
 
+  // 🛡️ อัปเกรด: ฟังก์ชันหลักที่แก้ไขปัญหา H-627089 ค้างได้ 100%
   const handleAction = async (taskId, action, actionType, payload = {}) => {
     setProcessingId(taskId);
     try {
@@ -207,9 +211,31 @@ export default function Todo() {
       }
     } catch (error) {
       console.error(`Error performing ${action} on task ${taskId}:`, error);
-      alert(`ทำรายการไม่สำเร็จ: ${error.message}`);
+      
+      const errMsg = error.message || '';
+      
+      // 💡 [ฟังก์ชันใหม่] ตรวจจับงานค้างสถิต (Ghost Task) และเสนอลบทิ้งทันที
+      if (errMsg.includes('ไม่พบออเดอร์') || errMsg.includes('ไม่พบข้อมูล') || errMsg.includes('not found')) {
+        const confirmClear = window.confirm(
+          `⚠️ ระบบแจ้งว่า: "${errMsg}"\n\n📌 ปัญหา: ออเดอร์หลักน่าจะถูกลบหรือโยกย้ายไปแล้ว ทำให้งานบนกระดานนี้ (รหัส: ${taskId.slice(-6).toUpperCase()}) กลายเป็น "งานค้าง" ทำอะไรไม่ได้\n\n💡 คุณต้องการ "ลบงานนี้ทิ้งถาวร" เพื่อเคลียร์กระดานหรือไม่?`
+        );
+        
+        if (confirmClear) {
+           try {
+             // สั่งลบเอกสารตรงๆ จากหน้าบ้านเลย
+             await deleteDoc(doc(db, 'todos', taskId));
+             alert('🗑️ ลบงานที่ค้างออกจากระบบเรียบร้อยแล้วครับ');
+           } catch (deleteError) {
+             alert(`ลบงานไม่สำเร็จ: ${deleteError.message}`);
+           }
+        }
+      } else {
+        alert(`ทำรายการไม่สำเร็จ: ${errMsg}`);
+      }
+    } finally {
+      // 🚨 จุดสำคัญที่สุด: บังคับให้ปลดล็อกหน้าจอเสมอ ไม่ว่าจะพังหรือสำเร็จ
+      setProcessingId(null);
     }
-    setProcessingId(null);
   };
 
   const handleCreateTask = async (e) => {
@@ -450,7 +476,12 @@ export default function Todo() {
                     fetchedData={fetchedPrices[todo.id] || {}}
                     inputs={wholesaleInputs[todo.id] || {}}
                     setWholesaleInputs={setWholesaleInputs}
-                    onReject={() => handleAction(todo.id, 'reject', todo.type, { orderId: todo.orderId || todo.payload?.orderId })}
+                    // 💡 ลูกเล่นความปลอดภัย: เพิ่มหน้าต่างยืนยันก่อนกดเทออเดอร์
+                    onReject={() => {
+                        if (window.confirm(`ยืนยันการปฏิเสธคำขอราคาส่ง #${todo.orderId || ''} ใช่หรือไม่?`)) {
+                           handleAction(todo.id, 'reject', todo.type, { orderId: todo.orderId || todo.payload?.orderId });
+                        }
+                    }}
                   />
                 </div>
               );
