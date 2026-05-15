@@ -298,6 +298,7 @@ export const creditService = {
         transaction.update(userRef, {
           'stats.creditBalance': newWalletBalance,
           'partnerCredit': newWalletBalance, // ซิงค์ฟิลด์เก่าเผื่อระบบอื่นเรียกใช้
+          'creditPoint': newWalletBalance,   // ซิงค์ให้ตรงกับระบบ Frontend (TabAdManager)
           updatedAt: serverTimestamp()
         });
 
