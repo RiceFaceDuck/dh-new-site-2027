@@ -4,9 +4,27 @@ import {
   addDoc, deleteDoc, serverTimestamp, onSnapshot, runTransaction 
 } from 'firebase/firestore';
 
+// ----------------------------------------------------------------------
+// 🏷️ ประกาศตัวแปรกลุ่มงานของ "ผู้จัดการ" (Manager Task Types)
+// สร้างไว้เพื่อให้แก้ไขง่าย และแยกระบบระหว่าง "ส่วนกลาง" กับ "ผู้จัดการ" ได้เด็ดขาด
+// ----------------------------------------------------------------------
+export const MANAGER_TASK_TYPES = [
+  'WHOLESALE_APPROVAL',
+  'wholesale_request',
+  'CLAIM_APPROVAL',
+  'RETURN_APPROVAL',
+  'CANCEL_CLAIM_APPROVAL',
+  'CANCEL_RETURN_APPROVAL',
+  // ✨ เพิ่มรายการงานใหม่ตาม Master Plan
+  'USER_SKU_APPROVAL',   // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า
+  'BILLBOARD_APPROVAL',  // งานตรวจสอบ/อนุมัติ ฝากแผ่นป้ายโฆษณา
+  'PARTNER_APPROVAL',    // งานตรวจสอบ/อนุมัติ Partner รับการสนับสนุน
+  'ACCOUNT_APPROVAL'     // งานตรวจสอบ Account สมัครใหม่
+];
+
 export const todoService = {
   
-  // 📥 1. ระบบ Subscribe งาน (ประหยัด Reads กรองจาก Server)
+  // 📥 1. ระบบ Subscribe งาน "ส่วนกลาง" (ประหยัด Reads กรองจาก Server)
   subscribePendingTodos: (callback, onError) => {
     const q = query(
       collection(db, 'todos'),
@@ -14,7 +32,10 @@ export const todoService = {
     );
     
     return onSnapshot(q, (snapshot) => {
-      const pendingTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const pendingTodos = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        // 🚀 [อัปเกรด] กรองงานที่เป็นของ "ผู้จัดการ" ออกไป เพื่อให้กระดานส่วนกลางสะอาด
+        .filter(t => !MANAGER_TASK_TYPES.includes(t.type))
         .sort((a, b) => {
             const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
             const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
@@ -27,7 +48,7 @@ export const todoService = {
     });
   },
 
-  // 📥 2. ระบบ Subscribe ของผู้จัดการ
+  // 📥 2. ระบบ Subscribe งาน "ผู้จัดการ"
   subscribeManagerApprovals: (callback, onError) => {
     const q = query(
       collection(db, 'todos'),
@@ -35,11 +56,10 @@ export const todoService = {
     ); 
     
     return onSnapshot(q, (snapshot) => {
-      const allPending = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const managerTodos = allPending
-        .filter(t => 
-            ['WHOLESALE_APPROVAL', 'wholesale_request', 'CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL'].includes(t.type)
-        )
+      const managerTodos = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        // 🚀 [อัปเกรด] ดึงเฉพาะงานที่มี Type ตรงกับกลุ่มงานของผู้จัดการเท่านั้น
+        .filter(t => MANAGER_TASK_TYPES.includes(t.type))
         .sort((a, b) => {
             const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
             const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
@@ -52,7 +72,7 @@ export const todoService = {
     });
   },
 
-  // 🗑️ [ฟังก์ชันใหม่!] ลบงานที่ค้าง/กำพร้า (แก้ไขปัญหา H-627089)
+  // 🗑️ ลบงานที่ค้าง/กำพร้า (แก้ไขปัญหา H-627089)
   deleteTask: async (taskId) => {
     try {
       const taskRef = doc(db, 'todos', taskId);

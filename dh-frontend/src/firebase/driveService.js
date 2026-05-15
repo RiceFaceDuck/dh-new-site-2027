@@ -156,5 +156,55 @@ export const driveService = {
       };
       reader.onerror = error => reject(error);
     });
+  },
+
+  /**
+   * 📸 4. อัปโหลดรูปภาพสินค้าของลูกค้า (User SKU / ฝากโฆษณาสินค้า)
+   * 🚀 อัปเดต: ใช้หลักการเดียวกับ uploadProductImage 100%
+   */
+  uploadUserSkuImage: async (file) => {
+    if (!file) throw new Error("กรุณาเลือกไฟล์รูปภาพโฆษณาสินค้าของคุณ");
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        try {
+          // 🚀 ใช้หลักการเดียวกับ Product Image คือตัดเอาเฉพาะ Base64
+          const base64Data = reader.result.split(',')[1];
+          const payload = {
+            base64: base64Data,
+            contentType: file.type, // ส่ง Content Type แยกไปเลย
+            fileName: `USER_SKU_${Date.now()}_${file.name.replace(/\s+/g, '_')}`
+          };
+
+          // ใช้ Endpoint ของ AD_URL
+          const response = await fetch(DRIVE_AD_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+
+          const result = await response.json();
+
+          if (result.status === 'success') {
+            console.log("✅ DH-Drive: อัปโหลดภาพสินค้า User SKU สำเร็จ!");
+            const fileId = result.fileId || (result.link ? result.link.match(/id=([a-zA-Z0-9_-]+)/)?.[1] : null);
+            if (fileId) {
+              resolve(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
+            } else {
+              resolve(result.url || result.link);
+            }
+          } else {
+            console.error("Drive User SKU Upload Error:", result.message);
+            reject(new Error(result.message || "อัปโหลดภาพไม่สำเร็จ"));
+          }
+        } catch (error) {
+          console.error("Fetch User SKU Error:", error);
+          reject(new Error("การเชื่อมต่อขัดข้อง ไม่สามารถส่งรูปภาพได้"));
+        }
+      };
+      reader.onerror = () => reject(new Error("เกิดข้อผิดพลาดในการอ่านไฟล์ภาพของคุณ"));
+    });
   }
 };

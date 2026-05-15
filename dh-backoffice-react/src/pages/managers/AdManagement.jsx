@@ -65,10 +65,14 @@ const AdManagement = () => {
           await runTransaction(db, async (transaction) => {
             const userDoc = await transaction.get(userRef);
             if (userDoc.exists()) {
-              const currentPoints = userDoc.data().creditPoint || 0;
+              const currentPoints = userDoc.data().creditPoint || userDoc.data().stats?.creditBalance || userDoc.data().partnerCredit || 0;
               const newBalance = currentPoints + amount;
               
-              transaction.update(userRef, { creditPoint: newBalance });
+              transaction.update(userRef, { 
+                creditPoint: newBalance,
+                'stats.creditBalance': newBalance,
+                partnerCredit: newBalance 
+              });
               transaction.set(txRef, {
                 transactionId: `REFUND-AD-${Date.now()}`,
                 uid: ad.partnerId,

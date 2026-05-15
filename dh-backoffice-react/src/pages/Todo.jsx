@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // 🌟 นำเข้า useNavigate เพื่อการลิงก์ข้ามหน้า
 import { todoService } from '../firebase/todoService';
 import { claimService } from '../firebase/claimService';
 import { auth, db } from '../firebase/config';
-// 🌟 เพิ่ม deleteDoc เข้ามาเพื่อใช้กำจัดงานขยะ
 import { collection, doc, getDoc, getDocs, query, where, documentId, deleteDoc } from 'firebase/firestore'; 
 import NonExistingProducts from './todo/NonExistingProducts';
 import { 
   Check, X, Clock, UserPlus, Tag, Info, AlertCircle, Trash2,
   Inbox, ListFilter, HelpCircle, Plus, History, XCircle, 
-  RotateCcw, Calendar, Receipt, ChevronRight, Calculator, Loader2, PackageSearch, CheckCircle2, Filter, FileText
+  RotateCcw, Calendar, Receipt, ChevronRight, Calculator, Loader2, PackageSearch, CheckCircle2, Filter, FileText,
+  Megaphone, UserCheck // 🌟 เพิ่มไอคอนใหม่
 } from 'lucide-react';
 
 import TodoItem from '../components/todo/TodoItem';
@@ -18,6 +19,7 @@ import PaymentCard from '../components/todo/PaymentCard';
 import TaxInvoiceCard from '../components/todo/TaxInvoiceCard';
 
 export default function Todo() {
+  const navigate = useNavigate(); // 🌟 สำหรับลิงก์ไปหน้าจัดการโฆษณา
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(''); 
@@ -70,7 +72,11 @@ export default function Todo() {
         unsubscribeTasks = todoService.subscribePendingTodos(
           (data) => {
             // 🛡️ อัปเกรด: กรองงานของผู้จัดการทุกประเภทออก ไม่ให้หลุดมาแท็บปฏิบัติการ
-            const managerTypes = ['WHOLESALE_APPROVAL', 'wholesale_request', 'CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL'];
+            const managerTypes = [
+                'WHOLESALE_APPROVAL', 'wholesale_request', 'CLAIM_APPROVAL', 
+                'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL',
+                'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'
+            ];
             const tasks = data.filter(t => !managerTypes.includes(t.type));
             
             setTodos(tasks);
@@ -253,13 +259,22 @@ export default function Todo() {
     }
   };
 
+  // 🌟 [อัปเกรด] ระบบ Filter เพิ่มหมวดหมู่ ADS และ PARTNER
   const filteredTodos = todos.filter(todo => {
     if (filterType === 'ALL') return true;
-    if (filterType === 'RETAIL') return todo.customerType === 'retail';
-    if (filterType === 'DEALER') return todo.customerType === 'dealer';
+    
+    if (activeTab === 'approvals') {
+        if (filterType === 'RETAIL') return todo.customerType === 'retail';
+        if (filterType === 'DEALER') return todo.customerType === 'dealer';
+        if (filterType === 'ADS') return ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(todo.type);
+        if (filterType === 'PARTNER') return ['PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'].includes(todo.type);
+    }
+    
     // กรองประเภทงานใน Tab งานปฏิบัติการ
-    if (filterType === 'TAX_INVOICE' && activeTab === 'tasks') return todo.type === 'issue_tax_invoice';
-    if (filterType === 'PAYMENT' && activeTab === 'tasks') return todo.type === 'verify_slip';
+    if (activeTab === 'tasks') {
+        if (filterType === 'TAX_INVOICE') return todo.type === 'issue_tax_invoice';
+        if (filterType === 'PAYMENT') return todo.type === 'verify_slip';
+    }
     return true;
   });
 
@@ -384,7 +399,7 @@ export default function Todo() {
                 </button>
              </>
           ) : (
-            // ตัวกรองเฉพาะของ "รอการอนุมัติ"
+            // 🌟 [อัปเกรด] ตัวกรองเฉพาะของ "รอการอนุมัติ" เพิ่มโฆษณา และ พาร์ทเนอร์
             <>
                <button
                 onClick={() => setFilterType('RETAIL')}
@@ -400,14 +415,30 @@ export default function Todo() {
                   filterType === 'DEALER' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
                 }`}
               >
-                ลูกค้าส่ง (Dealer)
+                ลูกค้าส่ง
+              </button>
+              <button
+                onClick={() => setFilterType('ADS')}
+                className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+                  filterType === 'ADS' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                }`}
+              >
+                <Megaphone size={12} /> ฝากโฆษณา
+              </button>
+              <button
+                onClick={() => setFilterType('PARTNER')}
+                className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
+                  filterType === 'PARTNER' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'
+                }`}
+              >
+                <UserCheck size={12} /> พาร์ทเนอร์
               </button>
             </>
           )}
         </div>
       </div>
 
-      {/* 🌟 [UI อัปเกรด] แถบค้นหาอัจฉริยะ และ ไฟสถานะการเชื่อมต่อ */}
+      {/* แถบค้นหาอัจฉริยะ และ ไฟสถานะการเชื่อมต่อ */}
       <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="relative flex-1 sm:flex-none">
@@ -476,7 +507,6 @@ export default function Todo() {
                     fetchedData={fetchedPrices[todo.id] || {}}
                     inputs={wholesaleInputs[todo.id] || {}}
                     setWholesaleInputs={setWholesaleInputs}
-                    // 💡 ลูกเล่นความปลอดภัย: เพิ่มหน้าต่างยืนยันก่อนกดเทออเดอร์
                     onReject={() => {
                         if (window.confirm(`ยืนยันการปฏิเสธคำขอราคาส่ง #${todo.orderId || ''} ใช่หรือไม่?`)) {
                            handleAction(todo.id, 'reject', todo.type, { orderId: todo.orderId || todo.payload?.orderId });
@@ -511,7 +541,32 @@ export default function Todo() {
                )
             }
 
-            // 🟡 4. Fallback สำหรับงานประเภทอื่นๆ
+            // 🌟 4. การจัดการคำขอโฆษณา (User SKU) - UI เฉพาะตัวส่งต่อไปหน้า Manager Ads
+            if (todo.type === 'USER_SKU_APPROVAL') {
+               return (
+                  <div key={todo.id} className="bg-white border border-emerald-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
+                     <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm">
+                        <Megaphone size={12} /> ระบบโฆษณา
+                     </div>
+                     <div>
+                       <h3 className="font-bold text-gray-800 text-lg mb-1 leading-tight pr-16">{todo.title}</h3>
+                       <div className="flex flex-col gap-1 mt-3 mb-5">
+                          <p className="text-xs text-gray-500 font-medium">🛒 รหัสสินค้า: <span className="text-emerald-600 font-bold">{todo.targetSkuId}</span></p>
+                          <p className="text-xs text-gray-500 font-medium">👤 ลูกค้า: <span className="text-gray-700 font-bold">{todo.customerName}</span></p>
+                          <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><Clock size={10}/> รอการตรวจสอบและอนุมัติ</p>
+                       </div>
+                     </div>
+                     <button 
+                        onClick={() => navigate('/managers/ads')} 
+                        className="w-full bg-emerald-50 text-emerald-600 font-bold py-2.5 rounded-xl hover:bg-emerald-100 hover:text-emerald-700 transition-colors border border-emerald-200 flex items-center justify-center gap-2 group shadow-sm active:scale-95"
+                     >
+                        ไปที่หน้าจัดการโฆษณา <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                     </button>
+                  </div>
+               )
+            }
+
+            // 🟡 5. Fallback สำหรับงานประเภทอื่นๆ
             return (
               <TodoItem 
                 key={todo.id}

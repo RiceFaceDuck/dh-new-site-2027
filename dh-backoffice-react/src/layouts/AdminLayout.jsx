@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Search, Receipt, Undo2, 
   CheckSquare, History, Image as ImageIcon, 
   Boxes, Users, Settings, LogOut, Sun, Moon,
-  UserCog // นำเข้าไอคอนสำหรับการตั้งค่าโปรไฟล์
+  UserCog, Megaphone, CreditCard // ✨ นำเข้าไอคอนใหม่สำหรับจัดการโฆษณาและเครดิต
 } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { signOut, onAuthStateChanged } from 'firebase/auth'; 
@@ -115,18 +115,25 @@ export default function AdminLayout() {
     };
   }, [currentUser]);
 
-  // --- โครงสร้างเมนู ---
+  // --- 🚀 โครงสร้างเมนูแบบจัดกลุ่มหมวดหมู่ (อัปเกรด UX/UI) ---
   const navItems = [
+    { category: 'ส่วนงานหลัก' },
     { path: '/overview', label: 'ภาพรวม', icon: LayoutDashboard },
-    { path: '/search', label: 'ค้นหาสินค้า', icon: Search },
+    { path: '/todo', label: 'To-do', icon: CheckSquare, badge: todoCount },
     { path: '/billing', label: 'ระบบบิล', icon: Receipt },
     { path: '/claims', label: 'รับเคลม/คืน', icon: Undo2 },
-    { path: '/todo', label: 'To-do', icon: CheckSquare, badge: todoCount },
-    { path: '/history', label: 'ประวัติ', icon: History },
-    { path: '/gallery', label: 'คลังภาพ', icon: ImageIcon },
+    
+    { category: 'คลังข้อมูล' },
+    { path: '/search', label: 'ค้นหาสินค้า', icon: Search },
     { path: '/inventory', label: 'สต๊อกสินค้า', icon: Boxes },
+    { path: '/gallery', label: 'คลังภาพ', icon: ImageIcon },
+    { path: '/history', label: 'ประวัติ', icon: History },
     { path: '/customers', label: 'ลูกค้า/ทีมงาน', icon: Users },
-    { path: '/managers', label: 'ตั้งค่า/จัดการ', icon: Settings }
+    
+    { category: 'ส่วนงานผู้จัดการ' },
+    { path: '/managers/ads', label: 'จัดการโฆษณา', icon: Megaphone },     // ✨ กู้คืน/เพิ่มเมนูจัดการโฆษณา
+    { path: '/managers/credit', label: 'Credit Point', icon: CreditCard }, // ✨ กู้คืนเมนูเครดิตพอยท์
+    { path: '/managers', label: 'ตั้งค่า/จัดการรวม', icon: Settings }
   ];
 
   // --- UI: หน้าจอตอนถูกปฏิเสธการเข้าถึง (รอการอนุมัติ) ---
@@ -180,9 +187,23 @@ export default function AdminLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
+            // Render หมวดหมู่ (Category Header)
+            if (item.category) {
+              return (
+                <div key={`cat-${index}`} className="px-3 pt-4 pb-1">
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    {item.category}
+                  </p>
+                </div>
+              );
+            }
+
             const Icon = item.icon;
-            const isActive = location.pathname.startsWith(item.path);
+            // 🚀 แก้ไขให้ Active Menu แม่นยำขึ้น ป้องกัน /managers ค้างตอนเข้าเมนูย่อย
+            const isActive = item.path === '/managers' 
+              ? location.pathname === '/managers' 
+              : location.pathname.startsWith(item.path);
 
             return (
               <Link
