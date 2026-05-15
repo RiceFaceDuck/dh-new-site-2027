@@ -199,7 +199,8 @@ export default function WalletManagement() {
             setSelectedUser(prev => ({
                 ...prev,
                 stats: { ...(prev.stats || {}), creditBalance: newBalance },
-                partnerCredit: newBalance
+                partnerCredit: newBalance,
+                creditPoint: newBalance
             }));
 
             await loadTransactions(selectedUser.id);
