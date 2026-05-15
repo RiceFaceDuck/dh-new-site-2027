@@ -9,6 +9,9 @@ const DRIVE_PRODUCT_URL = "https://script.google.com/macros/s/AKfycbzD3KW7juo-XN
 // 🧾 URL สำหรับอัปโหลดภาพสลิป (อ้างอิงจาก source: 388)
 const DRIVE_SLIP_URL = "https://script.google.com/macros/s/AKfycbwccHnMx5LQ6zUUh8rQ8AUbs983rpA-2mTPccyF9qwWov_M94zfKwW81YcJykj8NNTj/exec";
 
+// 📢 URL สำหรับอัปโหลดภาพโฆษณา (Ads & Banners)
+const DRIVE_AD_URL = "https://script.google.com/macros/s/AKfycbxz279aWlFHgMtvT_barDasX9-_VVNtZaMWzhesuiTBK0Vdd35xy2FGay3YSsZ30-hy7Q/exec";
+
 export const driveService = {
   /**
    * 📸 1. อัปโหลดสลิปโอนเงิน (Slip Image)
@@ -101,6 +104,51 @@ export const driveService = {
             }
           } else {
             reject(new Error(result.message || "อัปโหลดไม่สำเร็จ"));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = error => reject(error);
+    });
+  },
+
+  /**
+   * 📸 3. อัปโหลดภาพโฆษณา (Ad Image / Billboard)
+   */
+  uploadAdImage: async (file) => {
+    if (!file) throw new Error("กรุณาเลือกไฟล์ภาพโฆษณา");
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result.split(',')[1];
+          
+          const payload = {
+            base64: base64Data,
+            contentType: file.type,
+            fileName: `AD_FRONTEND_${Date.now()}_${file.name.replace(/\s+/g, '_')}`
+          };
+
+          const response = await fetch(DRIVE_AD_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+
+          const result = await response.json();
+
+          if (result.status === 'success') {
+            const fileId = result.fileId || (result.link ? result.link.match(/id=([a-zA-Z0-9_-]+)/)?.[1] : null);
+            if (fileId) {
+              resolve(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
+            } else {
+              resolve(result.url || result.link);
+            }
+          } else {
+            reject(new Error(result.message || "อัปโหลดภาพโฆษณาไม่สำเร็จ"));
           }
         } catch (error) {
           reject(error);

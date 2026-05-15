@@ -48,20 +48,69 @@ const AdManagement = () => {
   });
 
   // ฟังก์ชันอัปเดตสถานะโฆษณา
-  const handleUpdateStatus = async (adId, newStatus) => {
+  const handleUpdateStatus = async (ad, newStatus) => {
     if (!window.confirm(`ยืนยันการเปลี่ยนสถานะโฆษณานี้เป็น ${newStatus} ใช่หรือไม่?`)) return;
 
-    setActionLoading(adId);
+    setActionLoading(ad.id);
     try {
-      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'marketing_ads', adId);
-      await updateDoc(adRef, {
-        status: newStatus,
-        updatedAt: new Date().toISOString()
-      });
+      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'marketing_ads', ad.id);
       
-      // รีเฟรชข้อมูลเฉพาะใน Local State เพื่อความรวดเร็ว
-      setAds(prevAds => prevAds.map(ad => 
-        ad.id === adId ? { ...ad, status: newStatus } : ad
+      // ถ้าแอดมิน Reject โฆษณาที่กำลัง pending ให้คืนแต้มให้พาร์ทเนอร์
+      if (newStatus === 'rejected' && ad.status === 'pending_approval') {
+        const amount = ad.creditCost || 0;
+        if (amount > 0 && ad.partnerId) {
+          const userRef = doc(db, 'artifacts', appId, 'users', ad.partnerId);
+          const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+          
+          await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (userDoc.exists()) {
+              const currentPoints = userDoc.data().creditPoint || 0;
+              const newBalance = currentPoints + amount;
+              
+              transaction.update(userRef, { creditPoint: newBalance });
+              transaction.set(txRef, {
+                transactionId: `REFUND-AD-${Date.now()}`,
+                uid: ad.partnerId,
+                type: 'deposit',
+                amount: amount,
+                balanceAfter: newBalance,
+                referenceTitle: ad.title || 'โฆษณา',
+                note: 'คืนแต้ม (โฆษณาถูกปฏิเสธ)',
+                recordedBy: 'admin',
+                timestamp: serverTimestamp()
+              });
+            }
+            transaction.update(adRef, { status: newStatus, updatedAt: serverTimestamp() });
+          });
+        } else {
+          await updateDoc(adRef, { status: newStatus, updatedAt: serverTimestamp() });
+        }
+      } else {
+        await updateDoc(adRef, { status: newStatus, updatedAt: serverTimestamp() });
+      }
+
+      // ปิดงานใน Todos
+      try {
+        const todosRef = collection(db, 'todos');
+        const qTodos = query(todosRef); // ในการทำงานจริงควรมี index แต่เราใช้วิธีดึงทั้งหมดแล้วหา หรือถ้าจำ adId ได้ก็ยิ่งดี
+        const querySnapshot = await getDocs(qTodos);
+        querySnapshot.forEach(async (todoDoc) => {
+          if (todoDoc.data().adId === ad.id) {
+            await updateDoc(todoDoc.ref, { 
+              status: newStatus === 'active' ? 'completed' : 'rejected',
+              completedAt: serverTimestamp(),
+              actionBy: 'Manager' 
+            });
+          }
+        });
+      } catch (err) {
+        console.error("Error updating todo task:", err);
+      }
+      
+      // รีเฟรชข้อมูลเฉพาะใน Local State
+      setAds(prevAds => prevAds.map(a => 
+        a.id === ad.id ? { ...a, status: newStatus } : a
       ));
       
     } catch (error) {
@@ -173,15 +222,29 @@ const AdManagement = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
+                    
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase text-white ${
-                        ad.platform === 'shopee' ? 'bg-[#ee4d2d]' : ad.platform === 'lazada' ? 'bg-[#0f146d]' : ad.platform === 'tiktok' ? 'bg-black' : 'bg-gray-500'
+                        ad.type === 'billboard' ? 'bg-purple-500' : 'bg-blue-500'
+                      }`}>
+                        {ad.type || 'PRODUCT'}
+                      </span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase text-white ${
+                        ad.platform === 'shopee' ? 'bg-[#ee4d2d]' : 
+                        ad.platform === 'lazada' ? 'bg-[#0f146d]' : 
+                        ad.platform === 'tiktok' ? 'bg-black' : 
+                        ad.platform === 'facebook' ? 'bg-[#1877F2]' : 
+                        ad.platform === 'thisshop' ? 'bg-[#E31E24]' : 
+                        ad.platform === 'lineshopping' ? 'bg-[#06C755]' : 
+                        'bg-gray-500'
                       }`}>
                         {ad.platform || 'OTHER'}
                       </span>
+                      {ad.durationDays && <span className="text-[10px] px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded font-bold">โฆษณา {ad.durationDays} วัน</span>}
                     </div>
                     <h4 className="font-bold text-gray-800 text-sm line-clamp-2" title={ad.title}>{ad.title || 'ไม่มีชื่อโฆษณา'}</h4>
                     {ad.description && <p className="text-xs text-gray-500 line-clamp-1 mt-1">{ad.description}</p>}
+                    {ad.youtubeUrl && <a href={ad.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-red-500 hover:underline mt-1 block">🎥 ดู Video Review (YouTube)</a>}
                   </div>
                 </div>
 
@@ -199,14 +262,14 @@ const AdManagement = () => {
                 {activeTab === 'pending_approval' && (
                   <>
                     <button 
-                      onClick={() => handleUpdateStatus(ad.id, 'rejected')}
+                      onClick={() => handleUpdateStatus(ad, 'rejected')}
                       disabled={actionLoading === ad.id}
                       className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
                     >
                       <XCircle size={14} /> ปฏิเสธ
                     </button>
                     <button 
-                      onClick={() => handleUpdateStatus(ad.id, 'active')}
+                      onClick={() => handleUpdateStatus(ad, 'active')}
                       disabled={actionLoading === ad.id}
                       className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
                     >
@@ -218,7 +281,7 @@ const AdManagement = () => {
                 
                 {activeTab === 'active' && (
                   <button 
-                    onClick={() => handleUpdateStatus(ad.id, 'rejected')}
+                    onClick={() => handleUpdateStatus(ad, 'rejected')}
                     disabled={actionLoading === ad.id}
                     className="px-3 py-1.5 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1"
                   >
@@ -228,7 +291,7 @@ const AdManagement = () => {
 
                 {activeTab === 'rejected' && (
                   <button 
-                    onClick={() => handleUpdateStatus(ad.id, 'pending_approval')}
+                    onClick={() => handleUpdateStatus(ad, 'pending_approval')}
                     disabled={actionLoading === ad.id}
                     className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-1"
                   >

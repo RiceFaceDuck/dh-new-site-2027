@@ -36,7 +36,7 @@ const ProductList = ({ products, loading, error }) => {
   useEffect(() => {
     const fetchAdsForList = async () => {
       try {
-        const activeAds = await marketingService.getActiveAds();
+        const activeAds = await marketingService.getActiveProductAds();
         setAds(activeAds || []);
       } catch (err) {
         console.error("Failed to load ads for list:", err);

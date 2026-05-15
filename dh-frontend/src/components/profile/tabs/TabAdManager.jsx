@@ -8,6 +8,9 @@ import {
 import { getAuth } from 'firebase/auth';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
+import { driveService } from '../../../firebase/driveService';
+import { holdAdCredit } from '../../../firebase/creditService';
+import { Video, UploadCloud } from 'lucide-react';
 
 // นำเข้า Component การ์ดโฆษณา
 import ProductAdCard from '../../ads/ProductAdCard';
@@ -36,9 +39,11 @@ const TabAdManager = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [submittingAd, setSubmittingAd] = useState(false);
   const [formData, setFormData] = useState({
-    title: '', description: '', imageUrl: '', link: '', platform: 'shopee'
+    title: '', description: '', imageUrl: '', link: '', platform: 'shopee', type: 'product', youtubeUrl: ''
   });
   const [previewError, setPreviewError] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [durationDays, setDurationDays] = useState(7);
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -52,6 +57,9 @@ const TabAdManager = () => {
       fetchMyAds();
     }
   }, [user]);
+
+  const DAILY_AD_COST = 10; // หักวันละ 10 แต้ม
+  const requiredCredit = durationDays * DAILY_AD_COST;
 
   // --- Fetch Credit (จำลองการดึงจาก User Document) ---
   const fetchUserCredit = async () => {
@@ -200,20 +208,60 @@ const TabAdManager = () => {
   const handleLinkChange = (e) => {
     const url = e.target.value;
     let detectedPlatform = formData.platform;
-    if (url.toLowerCase().includes('shopee')) detectedPlatform = 'shopee';
-    else if (url.toLowerCase().includes('lazada')) detectedPlatform = 'lazada';
-    else if (url.toLowerCase().includes('tiktok')) detectedPlatform = 'tiktok';
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes('shopee')) detectedPlatform = 'shopee';
+    else if (lowerUrl.includes('lazada')) detectedPlatform = 'lazada';
+    else if (lowerUrl.includes('tiktok')) detectedPlatform = 'tiktok';
+    else if (lowerUrl.includes('facebook')) detectedPlatform = 'facebook';
+    else if (lowerUrl.includes('thisshop')) detectedPlatform = 'thisshop';
+    else if (lowerUrl.includes('line.me') || lowerUrl.includes('lineshopping')) detectedPlatform = 'lineshopping';
     setFormData({ ...formData, link: url, platform: detectedPlatform });
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // เช็คขนาดไฟล์เบื้องต้นไม่เกิน 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert("กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 5MB");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const url = await driveService.uploadAdImage(file);
+      setFormData({ ...formData, imageUrl: url });
+      setPreviewError(false);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert(error.message || "อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmitAd = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.link) {
-      alert("กรุณากรอกชื่อสินค้าและลิงก์ให้ครบถ้วน");
+    if (!formData.title || !formData.link || !formData.imageUrl) {
+      alert("กรุณากรอกข้อมูลและอัปโหลดรูปภาพให้ครบถ้วน");
       return;
     }
+    
+    if (userCredit < requiredCredit) {
+      alert(`แต้มเครดิตของคุณไม่เพียงพอ (ต้องการ ${requiredCredit} แต้ม แต่คุณมี ${userCredit} แต้ม)`);
+      return;
+    }
+
     setSubmittingAd(true);
     try {
+      // 1. กันแต้ม (Hold Credit) ทันที
+      const isCreditHeld = await holdAdCredit(user.uid, requiredCredit, formData.title);
+      if (!isCreditHeld) {
+        throw new Error("ไม่สามารถหักแต้มเครดิตได้ กรุณาลองใหม่อีกครั้ง");
+      }
+
+      // 2. บันทึกข้อมูลโฆษณา
       const adPayload = {
         ...formData,
         partnerId: user.uid,
@@ -221,23 +269,43 @@ const TabAdManager = () => {
         status: 'pending_approval',
         clicks: 0,
         impressions: 0,
+        durationDays: durationDays,
+        creditCost: requiredCredit,
         createdAt: serverTimestamp()
       };
-      await addDoc(
+      
+      const adDocRef = await addDoc(
         collection(db, 'artifacts', appId, 'public', 'data', 'marketing_ads'), 
         adPayload
       );
-      alert("ส่งข้อมูลโฆษณาเรียบร้อยแล้ว แอดมินจะทำการตรวจสอบลิงก์ก่อนอนุมัติครับ");
+
+      // 3. สร้าง Task ให้ผู้จัดการตรวจสอบ
+      await addDoc(collection(db, 'todos'), {
+        type: 'AD_APPROVAL',
+        title: `ตรวจสอบโฆษณา: ${formData.title}`,
+        description: `พาร์ทเนอร์ ${adPayload.partnerName} ต้องการลงโฆษณาประเภท ${formData.type} เป็นเวลา ${durationDays} วัน (ใช้ไป ${requiredCredit} แต้ม)`,
+        status: 'todo',
+        priority: 'Medium',
+        adId: adDocRef.id,
+        partnerId: user.uid,
+        adPayload: adPayload,
+        createdAt: serverTimestamp()
+      });
+
+      alert("ส่งข้อมูลโฆษณาเรียบร้อยแล้ว แอดมินจะทำการตรวจสอบก่อนอนุมัติ (แต้มถูกกันไว้แล้ว)");
       setIsFormOpen(false);
-      setFormData({ title: '', description: '', imageUrl: '', link: '', platform: 'shopee' });
+      setFormData({ title: '', description: '', imageUrl: '', link: '', platform: 'shopee', type: 'product', youtubeUrl: '' });
+      setDurationDays(7);
+      fetchUserCredit(); // อัปเดตแต้มใหม่
       fetchMyAds();
     } catch (error) {
       console.error("Error submitting ad:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกโฆษณา");
+      alert(error.message || "เกิดข้อผิดพลาดในการบันทึกโฆษณา");
     } finally {
       setSubmittingAd(false);
     }
   };
+
 
   const getStatusBadge = (status) => {
     if (status === 'active') return <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1"><CheckCircle2 size={12}/> ออนไลน์</span>;
@@ -462,6 +530,18 @@ const TabAdManager = () => {
               <div className="flex flex-col lg:flex-row gap-8">
                 {/* ฟอร์มกรอกข้อมูล (เหมือนเดิม แต่อยู่ใน Tab 2) */}
                 <form onSubmit={handleSubmitAd} className="w-full lg:w-1/2 space-y-4">
+
+                  <div className="flex gap-4 p-3 bg-slate-50 border border-slate-200 rounded-xl mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="adType" value="product" checked={formData.type === 'product'} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-4 h-4 text-[#0870B8]" />
+                      <span className="text-sm font-bold text-slate-700">Product Ad (1:1)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="adType" value="billboard" checked={formData.type === 'billboard'} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-4 h-4 text-[#0870B8]" />
+                      <span className="text-sm font-bold text-slate-700">Billboard Ad (16:9)</span>
+                    </label>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">1. ชื่อสินค้าที่จะโปรโมท <span className="text-rose-500">*</span></label>
                     <input 
@@ -475,7 +555,13 @@ const TabAdManager = () => {
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center justify-between">
                       <span>2. ลิงก์ร้านค้า (Shopee/Lazada/Tiktok) <span className="text-rose-500">*</span></span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold text-white uppercase ${
-                        formData.platform === 'shopee' ? 'bg-[#EE4D2D]' : formData.platform === 'lazada' ? 'bg-[#0F146D]' : formData.platform === 'tiktok' ? 'bg-black' : 'bg-slate-300 text-slate-600'
+                        formData.platform === 'shopee' ? 'bg-[#EE4D2D]' : 
+                        formData.platform === 'lazada' ? 'bg-[#0F146D]' : 
+                        formData.platform === 'tiktok' ? 'bg-black' : 
+                        formData.platform === 'facebook' ? 'bg-[#1877F2]' : 
+                        formData.platform === 'thisshop' ? 'bg-[#E31E24]' : 
+                        formData.platform === 'lineshopping' ? 'bg-[#06C755]' : 
+                        'bg-slate-300 text-slate-600'
                       }`}>
                         {formData.platform}
                       </span>
@@ -491,16 +577,29 @@ const TabAdManager = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">3. ลิงก์รูปภาพสินค้า</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><ImageIcon size={16}/></div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                      3. อัปโหลดรูปภาพ <span className="text-rose-500">*</span> 
+                      <span className="text-[10px] text-slate-400 font-normal ml-2">
+                        ({formData.type === 'product' ? 'แนะนำ 1:1' : 'แนะนำ 16:9'})
+                      </span>
+                    </label>
+                    <label className="relative flex items-center justify-center w-full px-4 py-3 bg-slate-50 border border-slate-200 border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
                       <input 
-                        type="url" value={formData.imageUrl} onChange={(e) => { setFormData({...formData, imageUrl: e.target.value}); setPreviewError(false); }}
-                        placeholder="https://..."
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] text-sm"
+                        type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage}
+                        className="hidden" 
                       />
-                    </div>
+                      {uploadingImage ? (
+                        <div className="flex items-center gap-2 text-slate-500 text-sm">
+                          <Loader2 size={16} className="animate-spin"/> กำลังอัปโหลด...
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-slate-500 text-sm">
+                          <UploadCloud size={18}/> {formData.imageUrl ? 'เปลี่ยนรูปภาพ' : 'คลิกเพื่อเลือกไฟล์รูปภาพ'}
+                        </div>
+                      )}
+                    </label>
                   </div>
+
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">4. ข้อความกระตุ้น (สั้นๆ)</label>
@@ -510,7 +609,37 @@ const TabAdManager = () => {
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] text-sm"
                     />
                   </div>
+                  {formData.type === 'product' && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">5. Video Review (YouTube Link)</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Video size={16}/></div>
+                        <input 
+                          type="url" value={formData.youtubeUrl} onChange={(e) => setFormData({...formData, youtubeUrl: e.target.value})}
+                          placeholder="https://youtube.com/watch?v=..."
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
 
+                                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-4">
+                    <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">ระยะเวลาที่ต้องการลงโฆษณา</label>
+                    <div className="flex items-center gap-4">
+                      <select 
+                        value={durationDays} 
+                        onChange={(e) => setDurationDays(Number(e.target.value))}
+                        className="px-4 py-2 border border-blue-200 rounded-lg text-sm font-bold text-blue-900 bg-white"
+                      >
+                        <option value={7}>7 วัน (70 Credit)</option>
+                        <option value={15}>15 วัน (150 Credit)</option>
+                        <option value={30}>30 วัน (300 Credit)</option>
+                      </select>
+                      <div className="text-sm">
+                        ใช้แต้ม: <span className="font-bold text-rose-500">{requiredCredit}</span> Credit
+                      </div>
+                    </div>
+                  </div>
                   <div className="pt-4 mt-2 border-t border-slate-100">
                     <button type="submit" disabled={submittingAd} className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
                       {submittingAd ? <><Loader2 size={18} className="animate-spin"/> ส่งข้อมูล...</> : <><CheckCircle2 size={18}/> ส่งแอดมินตรวจสอบ</>}
@@ -523,16 +652,30 @@ const TabAdManager = () => {
                   <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
                     <Eye size={16}/> ตัวอย่างการแสดงผล
                   </h4>
-                  <div className="w-full max-w-[240px] pointer-events-none transform scale-105 origin-top shadow-2xl rounded-2xl">
-                    <ProductAdCard 
-                      ad={{
-                        title: formData.title || 'ชื่อสินค้าจำลอง',
-                        description: formData.description,
-                        imageUrl: formData.imageUrl || 'https://placehold.co/400x400/f8fafc/94a3b8?text=Image',
-                        platform: formData.platform,
-                        partnerName: storeData.storeName || 'ชื่อร้านของคุณ'
-                      }}
-                    />
+                  <div className={`w-full ${formData.type === 'product' ? 'max-w-[240px]' : 'max-w-full'} pointer-events-none transform scale-105 origin-top shadow-2xl rounded-2xl overflow-hidden`}>
+                    {formData.type === 'product' ? (
+                      <ProductAdCard 
+                        ad={{
+                          title: formData.title || 'ชื่อสินค้าจำลอง',
+                          description: formData.description,
+                          imageUrl: formData.imageUrl || 'https://placehold.co/400x400/f8fafc/94a3b8?text=Image',
+                          platform: formData.platform,
+                          partnerName: storeData.storeName || 'ชื่อร้านของคุณ',
+                          youtubeUrl: formData.youtubeUrl
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full aspect-video bg-slate-100 flex items-center justify-center relative border border-slate-200">
+                        {formData.imageUrl ? (
+                           <img src={formData.imageUrl} className="w-full h-full object-cover" alt="Billboard Preview" />
+                        ) : (
+                           <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Billboard 16:9</div>
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                           <h3 className="text-white font-bold line-clamp-1">{formData.title || 'ป้ายแบนเนอร์จำลอง'}</h3>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

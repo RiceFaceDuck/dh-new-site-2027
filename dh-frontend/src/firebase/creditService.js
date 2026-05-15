@@ -396,3 +396,97 @@ export const handlePaymentCompletion = async (orderId, userId) => {
     throw error;
   }
 };
+
+// ==========================================
+// 💡 Ad Credit System: ระบบหักแต้มโฆษณาแบบกันวงเงิน (Hold Credit)
+// ==========================================
+
+/**
+ * กันแต้ม (Hold Credit) เมื่อ Partner ส่งคำขอลงโฆษณา
+ */
+export const holdAdCredit = async (userId, amount, adTitle) => {
+  if (!userId || amount <= 0) return false;
+
+  const userRef = doc(db, 'artifacts', appId, 'users', userId);
+  const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้");
+
+      const currentPoints = userDoc.data().creditPoint || 0;
+      if (currentPoints < amount) throw new Error("แต้มสะสมไม่เพียงพอสำหรับการโฆษณา");
+
+      const newBalance = currentPoints - amount;
+
+      // 1. หักแต้มผู้ใช้
+      transaction.update(userRef, {
+        creditPoint: newBalance,
+        updatedAt: serverTimestamp()
+      });
+
+      // 2. บันทึกประวัติการหักแต้ม (สถานะ pending_ad)
+      transaction.set(txRef, {
+        transactionId: `HOLD-AD-${Date.now()}`,
+        uid: userId,
+        type: 'spend',
+        amount: amount,
+        balanceAfter: newBalance,
+        referenceTitle: adTitle,
+        note: 'กันแต้มสำหรับการขอลงโฆษณา (รออนุมัติ)',
+        recordedBy: userId,
+        timestamp: serverTimestamp()
+      });
+      
+    });
+    return true;
+  } catch (error) {
+    console.error("🔥 Error holding ad credit:", error);
+    throw error;
+  }
+};
+
+/**
+ * คืนแต้ม (Refund Credit) เมื่อแอดมิน Reject โฆษณา
+ */
+export const refundAdCredit = async (userId, amount, adTitle) => {
+  if (!userId || amount <= 0) return false;
+
+  const userRef = doc(db, 'artifacts', appId, 'users', userId);
+  const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้");
+
+      const currentPoints = userDoc.data().creditPoint || 0;
+      const newBalance = currentPoints + amount;
+
+      // 1. คืนแต้มให้ผู้ใช้
+      transaction.update(userRef, {
+        creditPoint: newBalance,
+        updatedAt: serverTimestamp()
+      });
+
+      // 2. บันทึกประวัติการคืนแต้ม
+      transaction.set(txRef, {
+        transactionId: `REFUND-AD-${Date.now()}`,
+        uid: userId,
+        type: 'deposit',
+        amount: amount,
+        balanceAfter: newBalance,
+        referenceTitle: adTitle,
+        note: 'คืนแต้ม (โฆษณาไม่ผ่านการอนุมัติ)',
+        recordedBy: 'system',
+        timestamp: serverTimestamp()
+      });
+      
+    });
+    return true;
+  } catch (error) {
+    console.error("🔥 Error refunding ad credit:", error);
+    throw error;
+  }
+};

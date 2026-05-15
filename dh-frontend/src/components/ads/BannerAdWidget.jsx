@@ -24,7 +24,7 @@ const BannerAdWidget = () => {
     let isMounted = true;
     const loadBanners = async () => {
       try {
-        const data = await marketingService.getActiveBanners();
+        const data = await marketingService.getActiveBillboardAds();
         if (isMounted) {
           setBanners(data || []);
         }

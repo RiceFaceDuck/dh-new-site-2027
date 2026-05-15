@@ -98,7 +98,68 @@ export const clearMarketingCache = () => {
 // ==========================================
 // ส่งออก Object หลัก เพื่อป้องกัน Error กับระบบเก่าที่ import { marketingService }
 // ==========================================
+
+/**
+ * ดึงข้อมูลโฆษณาสินค้า (Product Ad - 1:1)
+ */
+export const getActiveProductAds = async (forceRefresh = false) => {
+  const now = Date.now();
+  if (!forceRefresh && cachedAds && (now - adsFetchTime < CACHE_DURATION)) {
+    return cachedAds;
+  }
+
+  try {
+    const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'marketing_ads');
+    // ดึงเฉพาะโฆษณาที่เปิดใช้งานอยู่และเป็นประเภท product
+    const q = query(adsRef, where('status', '==', 'active'), where('type', '==', 'product'));
+    const snapshot = await getDocs(q);
+
+    const ads = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    cachedAds = ads;
+    adsFetchTime = now;
+    return ads;
+  } catch (error) {
+    console.error("MarketingService: Error fetching active product ads:", error);
+    return cachedAds || [];
+  }
+};
+
+/**
+ * ดึงข้อมูลแผ่นป้ายโฆษณา (Billboard Ad - 16:9)
+ */
+export const getActiveBillboardAds = async (forceRefresh = false) => {
+  const now = Date.now();
+  if (!forceRefresh && cachedBanners && (now - bannersFetchTime < CACHE_DURATION)) {
+    return cachedBanners;
+  }
+
+  try {
+    const bannersRef = collection(db, 'artifacts', appId, 'public', 'data', 'marketing_ads');
+    // ดึงเฉพาะแบนเนอร์ที่เปิดใช้งานอยู่และเป็นประเภท billboard
+    const q = query(bannersRef, where('status', '==', 'active'), where('type', '==', 'billboard'));
+    const snapshot = await getDocs(q);
+
+    const banners = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    cachedBanners = banners;
+    bannersFetchTime = now;
+    return banners;
+  } catch (error) {
+    console.error("MarketingService: Error fetching active billboard ads:", error);
+    return cachedBanners || [];
+  }
+};
+
 export const marketingService = {
+  getActiveProductAds,
+  getActiveBillboardAds,
   getActiveAds,
   getActiveBanners,
   clearMarketingCache
