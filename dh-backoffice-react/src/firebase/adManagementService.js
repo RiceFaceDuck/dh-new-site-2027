@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { db } from './config';
 import { 
   collection, 
@@ -9,26 +10,42 @@ import {
   getDoc,
   setDoc,
   serverTimestamp,
-  increment,
-  writeBatch
+  orderBy
 } from 'firebase/firestore';
 
 const AD_COLLECTION = 'user_skus';
-const USERS_COLLECTION = 'users'; 
 const SETTINGS_COLLECTION = 'system_settings';
 const AD_SETTINGS_DOC = 'ad_configuration';
 
+// 📌 สถานะของ User SKU (ซิงค์ให้ตรงกับ Frontend และ Backend UI)
 export const AD_STATUS = {
-  PENDING: 'pending',   
-  APPROVED: 'approved', 
-  REJECTED: 'rejected', 
+  PENDING: 'PENDING',     // รอตรวจสอบ
+  APPROVED: 'APPROVED',   // อนุมัติแล้ว
+  REJECTED: 'REJECTED',   // ไม่อนุมัติ
+  INACTIVE: 'INACTIVE'    // ปิดการใช้งานชั่วคราว
 };
 
 export const adManagementService = {
   
+  // 🚀 1. โหลดรายการโฆษณาทั้งหมด (ดึงครั้งเดียว ประหยัด Reads แล้วไป Filter ฝั่ง Client เอา)
+  getAllAds: async () => {
+    try {
+      const q = query(collection(db, AD_COLLECTION), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error("❌ [adManagementService] Error fetching all ads:", error);
+      throw new Error("ไม่สามารถโหลดรายการโฆษณาทั้งหมดได้");
+    }
+  },
+
+  // 🚀 2. โหลดเฉพาะรายการที่รอตรวจสอบ
   getPendingAds: async () => {
     try {
-      // 🚀 ปลดล็อก orderBy
+      // เลี่ยงปัญหา Index ด้วยการ Query where ก่อน แล้วค่อย Sort ด้วย JavaScript
       const q = query(
         collection(db, AD_COLLECTION),
         where("status", "==", AD_STATUS.PENDING)
@@ -38,7 +55,7 @@ export const adManagementService = {
         id: doc.id,
         ...doc.data()
       }));
-      // 🚀 เรียงลำดับด้วย JavaScript (ล่าสุดขึ้นก่อน)
+      // เรียงลำดับล่าสุดขึ้นก่อน
       return ads.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     } catch (error) {
       console.error("❌ [adManagementService] Error fetching pending ads:", error);
@@ -46,9 +63,9 @@ export const adManagementService = {
     }
   },
 
+  // 🚀 3. โหลดแยกตามสถานะอื่นๆ
   getAdsByStatus: async (status) => {
     try {
-      // 🚀 ปลดล็อก orderBy
       const q = query(
         collection(db, AD_COLLECTION),
         where("status", "==", status)
@@ -58,7 +75,6 @@ export const adManagementService = {
         id: doc.id,
         ...doc.data()
       }));
-      // 🚀 เรียงลำดับด้วย JavaScript
       return ads.sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
     } catch (error) {
       console.error(`❌ [adManagementService] Error fetching ads by status ${status}:`, error);
@@ -66,12 +82,13 @@ export const adManagementService = {
     }
   },
 
+  // 🚀 4. อนุมัติโฆษณา
   approveAd: async (adId, managerId) => {
     try {
       const adRef = doc(db, AD_COLLECTION, adId);
       await updateDoc(adRef, {
         status: AD_STATUS.APPROVED,
-        approvedBy: managerId,
+        approvedBy: managerId || 'System',
         approvedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -82,34 +99,25 @@ export const adManagementService = {
     }
   },
 
-  rejectAdAndRefund: async (adId, userId, refundAmount, managerId, reason = "") => {
+  // 🚀 5. ไม่อนุมัติโฆษณา (ตัดระบบ Refund ออก เนื่องจากสร้างโฆษณาได้ฟรีตามเงื่อนไขใหม่)
+  rejectAd: async (adId, managerId, reason = "ผิดเงื่อนไขข้อตกลงการลงโฆษณา") => {
     try {
-      const batch = writeBatch(db);
-
       const adRef = doc(db, AD_COLLECTION, adId);
-      batch.update(adRef, {
+      await updateDoc(adRef, {
         status: AD_STATUS.REJECTED,
         rejectReason: reason,
-        rejectedBy: managerId,
+        rejectedBy: managerId || 'System',
         rejectedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-
-      if (userId && refundAmount > 0) {
-        const userRef = doc(db, USERS_COLLECTION, userId);
-        batch.update(userRef, {
-          creditPoints: increment(refundAmount) 
-        });
-      }
-
-      await batch.commit();
       return true;
     } catch (error) {
-      console.error("❌ [adManagementService] Error rejecting ad and refunding:", error);
-      throw new Error("การทำรายการปฏิเสธและคืนเครดิตล้มเหลว โปรดตรวจสอบระบบ");
+      console.error("❌ [adManagementService] Error rejecting ad:", error);
+      throw new Error("การทำรายการปฏิเสธโฆษณาล้มเหลว โปรดตรวจสอบระบบอีกครั้ง");
     }
   },
 
+  // 🚀 6. ดึงข้อมูลตั้งค่าระบบโฆษณา (Ad Configurations)
   getAdSettings: async () => {
     try {
       const docRef = doc(db, SETTINGS_COLLECTION, AD_SETTINGS_DOC);
@@ -118,9 +126,11 @@ export const adManagementService = {
       if (docSnap.exists()) {
         return docSnap.data();
       } else {
+        // ค่า Configuration เริ่มต้น กรณีระบบใหม่เอี่ยม
         return {
-          displayRatio: 10,       
-          creditCostPerDisplay: 1, 
+          displayRatio: 10,           // แทรกโฆษณา 1 ชิ้น ทุกๆ สินค้าทั่วไป 10 ชิ้น
+          creditCostPerClick: 1,      // ค่าธรรมเนียม เครดิต/การคลิก
+          creditCostPerImpression: 0, // ค่าธรรมเนียม เครดิต/การมองเห็น (อาจจะฟรี ปล่อย 0 ไว้ก่อน)
           isActive: true
         };
       }
@@ -130,18 +140,19 @@ export const adManagementService = {
     }
   },
 
+  // 🚀 7. บันทึกข้อมูลตั้งค่าระบบโฆษณา
   saveAdSettings: async (newSettings, managerId) => {
     try {
       const docRef = doc(db, SETTINGS_COLLECTION, AD_SETTINGS_DOC);
       await setDoc(docRef, {
         ...newSettings,
-        updatedBy: managerId,
+        updatedBy: managerId || 'Admin',
         updatedAt: serverTimestamp()
       }, { merge: true }); 
       return true;
     } catch (error) {
       console.error("❌ [adManagementService] Error saving ad settings:", error);
-      throw new Error("บันทึกการตั้งค่าล้มเหลว");
+      throw new Error("บันทึกการตั้งค่าระบบโฆษณาล้มเหลว");
     }
   }
 };

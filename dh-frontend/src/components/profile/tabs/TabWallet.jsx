@@ -1,215 +1,190 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
-import { Coins, Star, History, Zap, Loader2, Trophy, TrendingUp, ArrowUpRight, ArrowDownRight, Crown } from 'lucide-react';
+import { Wallet, History, TrendingUp, TrendingDown, Clock, ShieldCheck, Award, Loader2 } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
-// 🚀 เรียกใช้ Credit Service ที่เราสร้างไว้
-import { subscribeToWallet, getPointsHistory, getUserTier, formatCredit } from '../../../firebase/creditService';
 
-const TabWallet = () => {
-  const [activeTab, setActiveTab] = useState('history'); 
+// 🚀 นำเข้า Hook และ Services ตัวใหม่ล่าสุดจาก creditService
+import { useUserCredit, getCreditHistory, formatCredit } from '../../../firebase/creditService';
+
+const TabWallet = ({ userProfile }) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  // ⚡ ใช้ Custom Hook สำหรับดึงข้อมูล Wallet แบบ Real-time
+  const { balance, tier, totalAccumulated, pendingCredits, loading: walletLoading } = useUserCredit(user?.uid);
   
-  // State ข้อมูลจาก Firebase
-  const [walletData, setWalletData] = useState({ balance: 0, totalAccumulated: 0, tier: getUserTier(0) });
-  const [historyList, setHistoryList] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [historyLogs, setHistoryLogs] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return;
-
-    // 1. 📡 สมัครรับข้อมูล Wallet แบบ Real-time
-    const unsubscribe = subscribeToWallet(user.uid, (data) => {
-      setWalletData(data);
-    });
-
-    // 2. 📡 ดึงประวัติผ่าน Smart Cache
     const fetchHistory = async () => {
-      setIsLoading(true);
+      if (!user?.uid) return;
+      setLoadingHistory(true);
       try {
-        const history = await getCreditHistory(user.uid);
-        setHistoryList(history || []);
+        // ใช้ชื่อฟังก์ชันใหม่ getCreditHistory (มีระบบ Smart Cache ในตัว)
+        const logs = await getCreditHistory(user.uid);
+        setHistoryLogs(logs);
       } catch (error) {
-        console.error("Error loading credit history:", error);
+        console.error("🔥 Error loading history:", error);
       } finally {
-        setIsLoading(false);
+        setLoadingHistory(false);
       }
     };
 
     fetchHistory();
-
-    // เคลียร์ Listener ป้องกัน Memory Leak
-    return () => unsubscribe();
-  }, []);
-
-  // 🧮 ฟังก์ชันคำนวณหลอดพลัง VIP 
-  const calculateProgress = (points) => {
-    if (points >= 10000) return { percent: 100, next: 'MAX', needed: 0 }; // Platinum
-    if (points >= 5000) return { percent: (points/10000)*100, next: 'Platinum', needed: 10000 - points }; // Gold
-    if (points >= 1000) return { percent: (points/5000)*100, next: 'Gold', needed: 5000 - points }; // Silver
-    return { percent: (points/1000)*100, next: 'Silver', needed: 1000 - points }; // Member
-  };
-
-  const progress = calculateProgress(walletData.balance);
+  }, [user?.uid]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-in fade-in duration-500 relative">
       
-      {/* ==========================================
-          🌟 ส่วนที่ 1: บัตร VIP กระเป๋าเงิน (Glassmorphism Card)
-          ========================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-black p-6 sm:p-8 shadow-xl border border-slate-700">
-        
-        {/* เอฟเฟกต์แสงออโรร่า */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#0870B8] rounded-full blur-[100px] opacity-30 -translate-y-20 translate-x-20 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full blur-[80px] opacity-10 translate-y-10 -translate-x-10 pointer-events-none"></div>
-
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          
-          {/* ข้อมูลยอดเงินและระดับ */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 backdrop-blur-md ${walletData.tier.bg} ${walletData.tier.color} border border-white/20 shadow-sm`}>
-                <span className="text-sm">{walletData.tier.icon}</span> {walletData.tier.name} TIER
-              </span>
-              <span className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1 bg-white/5 px-2 py-1 rounded-full border border-white/5">
-                <Crown size={12} className="text-amber-400" /> DH Privileges
-              </span>
-            </div>
-            
-            <div className="flex items-baseline gap-2 mt-1">
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight drop-shadow-md font-tech">
-                {formatCredit(walletData.balance)}
-              </h2>
-              <span className="text-slate-400 font-bold uppercase tracking-widest">Points</span>
-            </div>
-            
-            {/* โชว์คะแนนรอดำเนินการ (Pending Points) ถ้ามี */}
-            {(walletData.pendingCredits || 0) > 0 && (
-              <div className="mt-2 text-sm font-medium text-amber-300">
-                รออนุมัติ: {formatCredit(walletData.pendingCredits)} Pts
-              </div>
-            )}
-          </div>
-
-          {/* ปุ่ม Action */}
-          <div className="w-full md:w-auto flex flex-col gap-3">
-            <button 
-               onClick={() => alert("แต้มสะสมจะได้จากการสั่งซื้อสินค้า และการเข้าร่วมกิจกรรมของพาร์ทเนอร์ครับ")}
-               className="w-full md:w-auto px-6 py-3 bg-[#0870B8] hover:bg-[#0A85DA] text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(8,112,184,0.4)] hover:shadow-[0_6px_20px_rgba(8,112,184,0.6)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-            >
-              <Zap size={16} /> วิธีรับคะแนนเพิ่ม
-            </button>
-          </div>
+      {/* 🎯 Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Wallet size={22} className="text-[#0870B8]" /> กระเป๋าเงินเครดิต (My Wallet)
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">จัดการยอดเครดิตพอยต์และตรวจสอบประวัติการทำรายการ</p>
         </div>
-
-        {/* 🚀 หลอดพลังเลื่อนขั้น (VIP Progress Bar) */}
-        {progress.next !== 'MAX' ? (
-          <div className="mt-8 relative z-10 bg-slate-800/60 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 shadow-inner">
-            <div className="flex justify-between items-end mb-2.5">
-              <span className="text-xs text-slate-400 font-medium">สะสมคะแนนเพื่ออัปเกรดระดับ</span>
-              <span className="text-[10px] sm:text-xs font-bold text-white flex items-center gap-1.5">
-                <Trophy size={14} className="text-amber-400" /> ขาดอีก <span className="text-amber-400 font-tech">{formatCredit(progress.needed)} Pts</span> สู่ระดับ {progress.next}
-              </span>
-            </div>
-            <div className="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50 shadow-inner relative">
-              <div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#0870B8] via-cyan-400 to-emerald-400 rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${progress.percent}%` }}
-              >
-                {/* แอนิเมชันแสงวิ่งในหลอด */}
-                <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite] -skew-x-12"></div>
-              </div>
-            </div>
-          </div>
-        ) : (
-           <div className="mt-8 relative z-10 bg-gradient-to-r from-amber-500/20 to-amber-600/20 backdrop-blur-md rounded-2xl p-4 border border-amber-500/30 flex items-center gap-3">
-             <Trophy className="text-amber-400 w-8 h-8" />
-             <div>
-               <h4 className="text-white font-bold text-sm">ยินดีด้วย! คุณอยู่ระดับสูงสุดแล้ว</h4>
-               <p className="text-amber-200/80 text-xs mt-0.5">คุณได้รับสิทธิพิเศษสูงสุดของ DH System</p>
-             </div>
-           </div>
-        )}
       </div>
 
-      {/* ==========================================
-          🌟 ส่วนที่ 2: ประวัติการใช้งาน (Smart Cache History)
-          ========================================== */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         
-        <div className="border-b border-slate-100 px-4 py-4 bg-slate-50 flex items-center gap-2">
-          <History size={18} className="text-[#0870B8]" /> 
-          <h3 className="font-bold text-slate-800">ประวัติ DH Credit Points</h3>
+        {/* 💳 บัตรกระเป๋าเงิน (Wallet Card) - ซิงค์ข้อมูล Real-time */}
+        <div className="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-xl p-6 md:p-8">
+           {/* Decorative Background */}
+           <div className="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
+           <div className="absolute bottom-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+           
+           <div className="relative z-10 flex flex-col h-full justify-between">
+              <div className="flex justify-between items-start mb-8">
+                 <div>
+                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                     <ShieldCheck size={14} className="text-emerald-400" /> ยอดเครดิตคงเหลือ
+                   </p>
+                   {walletLoading ? (
+                     <div className="h-12 flex items-center"><Loader2 className="animate-spin text-emerald-400" size={24}/></div>
+                   ) : (
+                     <div className="flex items-baseline gap-2">
+                       <h3 className="text-4xl md:text-5xl font-black font-tech text-emerald-400 tracking-tight">
+                         {formatCredit(balance)}
+                       </h3>
+                       <span className="text-lg font-bold text-slate-300">Pts</span>
+                     </div>
+                   )}
+                 </div>
+
+                 {/* 🏆 Tier Badge (Gamification) */}
+                 {!walletLoading && tier && (
+                   <div className={`px-3 py-1.5 rounded-xl border ${tier.border} ${tier.bg} ${tier.color} flex items-center gap-1.5 shadow-sm transform transition-transform hover:scale-105 cursor-default`}>
+                     <span className="text-lg">{tier.icon}</span>
+                     <span className="text-xs font-bold uppercase tracking-wider">{tier.name}</span>
+                   </div>
+                 )}
+              </div>
+
+              <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-auto">
+                 <div>
+                   <p className="text-[10px] text-slate-400 font-medium">ชื่อบัญชีผู้ใช้</p>
+                   <p className="text-sm font-bold text-white tracking-wide">{userProfile?.accountName || userProfile?.displayName || 'DH Member'}</p>
+                 </div>
+                 <div className="text-right">
+                   <p className="text-[10px] text-slate-400 font-medium">แต้มสะสมทั้งหมด</p>
+                   <p className="text-sm font-bold text-white tracking-wide">{formatCredit(totalAccumulated)} Pts</p>
+                 </div>
+              </div>
+           </div>
+        </div>
+
+        {/* ⏳ Pending Credits Card */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+              <Clock size={80} className="text-amber-500" />
+           </div>
+           <div className="relative z-10">
+             <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+               <Clock size={20} />
+             </div>
+             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">รออนุมัติ (Pending)</p>
+             <h3 className="text-3xl font-black text-gray-800 font-tech mb-2">
+               {formatCredit(pendingCredits)} <span className="text-sm text-gray-500 font-bold">Pts</span>
+             </h3>
+             <p className="text-[10px] text-gray-400 leading-relaxed max-w-[200px]">
+               แต้มที่รอการตรวจสอบจากระบบ (ใช้เวลา 11 วันหลังสั่งซื้อ)
+             </p>
+           </div>
+        </div>
+      </div>
+
+      {/* 📜 ประวัติการทำรายการ (History) */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+          <h3 className="font-bold text-gray-800 flex items-center gap-2">
+            <History size={18} className="text-[#0870B8]" /> ประวัติการทำรายการ
+          </h3>
+          <span className="text-xs text-gray-500 font-medium bg-white px-2.5 py-1 rounded-md border border-gray-200 shadow-sm">
+            30 รายการล่าสุด
+          </span>
         </div>
 
         <div className="p-0">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Loader2 size={32} className="animate-spin mb-3 text-[#0870B8]" />
-              <p className="text-xs font-tech font-bold tracking-widest uppercase">Fetching Transactions...</p>
-            </div>
-          ) : historyList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-slate-50/30">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 border border-slate-200">
-                <Star size={28} className="text-slate-300" />
-              </div>
-              <h4 className="font-bold text-slate-700">ยังไม่มีประวัติเครดิต</h4>
-              <p className="text-xs font-medium text-slate-500 mt-1 max-w-[200px] text-center">คุณจะได้รับคะแนนสะสมเมื่อสั่งซื้อสินค้าสำเร็จ</p>
-            </div>
+          {loadingHistory ? (
+             <div className="flex flex-col items-center justify-center py-16">
+               <Loader2 size={32} className="animate-spin text-[#0870B8] mb-3" />
+               <p className="text-sm font-bold text-gray-500">กำลังโหลดประวัติ...</p>
+             </div>
+          ) : historyLogs.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                 <History size={24} className="text-gray-300" />
+               </div>
+               <p className="text-sm font-bold text-gray-600">ยังไม่มีประวัติการทำรายการ</p>
+               <p className="text-xs text-gray-400 mt-1">รายการสะสมหรือใช้แต้มของคุณจะแสดงที่นี่</p>
+             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
-              {historyList.map((tx) => {
-                const isEarn = tx.type === 'earn'; // ตรวจสอบว่าเป็นรายรับ หรือรายจ่าย
-                
-                // สกัดเวลาแบบสวยงาม
-                const txDate = tx.createdAt?.toDate ? tx.createdAt.toDate() : new Date(tx.createdAt || Date.now());
-                const formattedDate = txDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
-                const formattedTime = txDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
-                return (
-                  <div key={tx.id} className="p-4 sm:p-5 hover:bg-[#f8fbff] transition-colors flex items-center justify-between group">
-                    <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-                      
-                      {/* ไอคอนแสดงสถานะ (เขียว = ได้รับ, แดง = ใช้ไป) */}
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border ${
-                        isEarn ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
-                      }`}>
-                        {isEarn ? <TrendingUp size={20} className="sm:w-6 sm:h-6" /> : <TrendingUp size={20} className="rotate-180 sm:w-6 sm:h-6" />}
-                      </div>
-                      
-                      {/* รายละเอียด */}
-                      <div className="flex flex-col justify-center">
-                        <h4 className="text-sm sm:text-base font-bold text-slate-800 group-hover:text-[#0870B8] transition-colors line-clamp-1">
-                          {tx.note || (isEarn ? 'ได้รับคะแนนสะสม' : 'ใช้งานคะแนน')}
-                        </h4>
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-                          <span className="text-[10px] sm:text-xs text-slate-500 font-tech flex items-center">
-                            {formattedDate} <span className="mx-1">•</span> {formattedTime}
-                          </span>
-                          {tx.referenceId && (
-                            <span className="text-[9px] sm:text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider border border-slate-200">
-                              REF: {tx.referenceId.substring(0,8)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* จำนวนแต้มที่ขึ้น/ลง */}
-                    <div className="text-right flex-shrink-0 ml-2">
-                      <div className={`text-sm sm:text-lg font-black font-tech flex items-center justify-end gap-0.5 ${
-                        isEarn ? 'text-emerald-500' : 'text-rose-500'
-                      }`}>
-                        {isEarn ? <ArrowUpRight size={14} className="sm:w-5 sm:h-5" /> : <ArrowDownRight size={14} className="sm:w-5 sm:h-5" />}
-                        {isEarn ? '+' : '-'}{formatCredit(tx.points)}
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest block mt-0.5">Pts</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+             <div className="divide-y divide-gray-50">
+               {historyLogs.map((log) => {
+                 // แยกแยะประเภทรายการ
+                 const isEarn = log.type === 'deposit' || log.type === 'earn';
+                 const isSpend = log.type === 'spend' || log.type === 'deduct';
+                 
+                 return (
+                   <div key={log.id} className="p-4 sm:px-6 hover:bg-gray-50/50 transition-colors flex items-center justify-between gap-4">
+                     <div className="flex items-center gap-4">
+                       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                         isEarn ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                         'bg-rose-50 text-rose-600 border border-rose-100'
+                       }`}>
+                         {isEarn ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+                       </div>
+                       <div>
+                         <p className="text-sm font-bold text-gray-800">{log.note || (isEarn ? 'ได้รับเครดิต' : 'ใช้เครดิต')}</p>
+                         <div className="flex items-center gap-2 mt-1">
+                           <span className="text-[10px] text-gray-400 font-medium">
+                             {log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('th-TH') : (log.createdAt?.toDate ? log.createdAt.toDate().toLocaleString('th-TH') : '-')}
+                           </span>
+                           {log.referenceId && (
+                             <>
+                               <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                               <span className="text-[10px] text-gray-400 font-mono tracking-wider text-ellipsis overflow-hidden max-w-[120px]">
+                                 Ref: {log.referenceId}
+                               </span>
+                             </>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                     <div className="text-right shrink-0">
+                       <p className={`text-base font-black font-tech ${isEarn ? 'text-emerald-600' : 'text-rose-600'}`}>
+                         {isEarn ? '+' : '-'}{formatCredit(log.amount || log.points)}
+                       </p>
+                       <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                         คงเหลือ: {formatCredit(log.balanceAfter)}
+                       </p>
+                     </div>
+                   </div>
+                 );
+               })}
+             </div>
           )}
         </div>
       </div>

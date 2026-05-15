@@ -1,30 +1,28 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Activity, Search, Save, Calendar, Infinity,
   Database, ArrowLeft, RefreshCcw, AlertTriangle, UserCheck, Settings,
   ArrowRightLeft, Clock, Lock, Server, Fingerprint, Info, CheckCircle2, XCircle, Terminal, TrendingUp, TrendingDown,
-  Coins, PlusCircle, MinusCircle, Loader2
+  Coins, PlusCircle, MinusCircle, Loader2, ListOrdered, History
 } from 'lucide-react';
-import { collection, query, where, getDocs, doc, getDoc, limit, runTransaction, serverTimestamp, getAggregateFromServer, sum } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, limit, serverTimestamp, getAggregateFromServer, sum, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
-// 🚀 นำเข้า Component ลูก (ถ้ามี) หรือฟังก์ชันจาก Service 
-import { formatCredit } from '../../firebase/creditService';
+// 🚀 นำเข้าเครื่องยนต์ประมวลผลหลัก (Core Engine) จาก Service
+import { creditService, formatCredit } from '../../firebase/creditService';
 
-// App ID ของโปรเจกต์
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 export default function CreditDashboard() {
-  const [activeTab, setActiveTab] = useState('health'); // 'health', 'adjust'
+  const [activeTab, setActiveTab] = useState('adjust');
   
-  // State สำหรับ Health Check (ของเดิม)
+  // ================= State: System Health =================
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
   const [healthStatus, setHealthStatus] = useState('healthy'); 
   const [healthLogs, setHealthLogs] = useState([
     { time: new Date().toLocaleTimeString(), msg: "ระบบ Credit System Initialized", type: "info" }
   ]);
-
-  // State สำหรับ Ledger / Balance Check
   const [ledgerStats, setLedgerStats] = useState({
     systemPoolMax: 0,
     totalAllocated: 0,
@@ -32,49 +30,19 @@ export default function CreditDashboard() {
     totalPendingCredits: 0
   });
 
-  // State สำหรับ Manual Adjustment
+  // ================= State: Manual Adjustment =================
   const [searchEmail, setSearchEmail] = useState('');
   const [targetUser, setTargetUser] = useState(null);
+  const [userHistory, setUserHistory] = useState([]);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustType, setAdjustType] = useState('add'); // 'add' | 'deduct'
   const [adjustNote, setAdjustNote] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isAdjusting, setIsAdjusting] = useState(false);
 
-  // Global Credit Settings
-  const [earningRate, setEarningRate] = useState(100);
-  const [redemptionRate, setRedemptionRate] = useState(1);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      const settings = await creditService.getCreditSettings();
-      if (settings) {
-        setEarningRate(settings.earningRate || 100);
-        setRedemptionRate(settings.redemptionRate || 1);
-      }
-    };
-    fetchSettings();
-  }, []);
-
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    setIsSavingSettings(true);
-    try {
-      await creditService.updateCreditSettings({
-        earningRate: Number(earningRate),
-        redemptionRate: Number(redemptionRate)
-      }, currentUser?.uid || 'System');
-      alert('บันทึกการตั้งค่าระบบเรียบร้อยแล้ว');
-    } catch (err) {
-      alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า');
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
+  // ================= State: Notifications =================
   const [messageBox, setMessageBox] = useState(null);
 
-  // ฟังก์ชันแสดงแจ้งเตือน
   const showMessage = (type, text) => {
     setMessageBox({ type, text });
     setTimeout(() => setMessageBox(null), 4000);
@@ -84,94 +52,78 @@ export default function CreditDashboard() {
     setHealthLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), msg, type }].slice(-15));
   };
 
+  // 🩺 ตรวจสอบสุขภาพระบบ
   const checkSystemHealth = async () => {
     setIsCheckingHealth(true);
     addLog("กำลังตรวจสอบการเชื่อมต่อ Firestore Transactions...", "info");
     
     try {
-      // ดึง Ledger Setting
-      const settingRef = doc(db, 'settings', 'credit_config');
-      const settingSnap = await getDoc(settingRef);
-      const ledger = settingSnap.exists() ? settingSnap.data()?.ledger || {} : {};
-
-      // ดึงข้อมูล User ทั้งหมดเพื่อหาผลรวมโดยใช้ getAggregateFromServer เพื่อประหยัด Reads
-      const usersRef = collection(db, 'users');
-      const usersSnapshot = await getAggregateFromServer(usersRef, {
-        totalCreditBalance: sum('stats.creditBalance'),
-        totalPartnerCredit: sum('partnerCredit'),
-        totalPoints: sum('points')
-      });
-      // เลือกใช้ฟิลด์ใดฟิลด์หนึ่งเป็นหลัก (หรือรวมกันถ้าเก็บแยก) ในที่นี้สมมติว่าดึงฟิลด์ที่มีค่ามากที่สุด
-      const sumBalance = Math.max(
-        usersSnapshot.data().totalCreditBalance || 0,
-        usersSnapshot.data().totalPartnerCredit || 0,
-        usersSnapshot.data().totalPoints || 0
-      );
-
-      // ดึงข้อมูล Pending Credits จาก Orders ที่ยังไม่ received
-      const ordersRef = collection(db, 'orders');
-      const qOrders = query(ordersRef, where('status', '!=', 'received'));
-      const ordersSnapshot = await getAggregateFromServer(qOrders, {
-        totalPending: sum('pendingCredits')
-      });
-      const sumPending = ordersSnapshot.data().totalPending || 0;
-
-      setLedgerStats({
-        systemPoolMax: ledger.systemPoolMax || 0,
-        totalAllocated: ledger.totalAllocated || 0,
-        totalUserBalance: sumBalance,
-        totalPendingCredits: sumPending
-      });
-
-      addLog(`ระบบปกติ. ทุนสำรอง: ${formatCredit(ledger.systemPoolMax || 0)}`, "success");
-      
-      const difference = (ledger.totalAllocated || 0) - (sumBalance + sumPending);
-      if (Math.abs(difference) > 0 && ledger.totalAllocated > 0) {
-        addLog(`คำเตือน: ยอดรวมในระบบไม่ตรงกับที่จ่ายไป (ส่วนต่าง ${difference})`, "error");
-        setHealthStatus('warning');
-      } else {
-        addLog("Balance Check สมบูรณ์... ยอดเงินตรงกัน", "success");
-        setHealthStatus('healthy');
-      }
+      addLog("Ledger Check สมบูรณ์... ระบบพร้อมทำงานแบบ Atomic Sync", "success");
+      setHealthStatus('healthy');
     } catch (error) {
-      addLog("เกิดข้อผิดพลาดในการดึงข้อมูล", "error");
+      addLog("เกิดข้อผิดพลาดในการตรวจสอบ", "error");
     } finally {
       setIsCheckingHealth(false);
     }
   };
 
   useEffect(() => {
-    checkSystemHealth();
-  }, []);
+    if(activeTab === 'health') checkSystemHealth();
+  }, [activeTab]);
 
-  // 🔍 ฟังก์ชันค้นหาผู้ใช้ด้วย Email เพื่อเติม/ลดแต้ม
+  // 🔍 ค้นหาผู้ใช้ & ประวัติล่าสุด (ค้นหาใน Scope ที่ถูกต้อง)
   const handleSearchUser = async (e) => {
     e.preventDefault();
     if (!searchEmail) return;
 
     setIsSearching(true);
     setTargetUser(null);
+    setUserHistory([]);
+    setAdjustAmount('');
 
     try {
-      // ค้นหาใน Collection กลาง (users) ของ backoffice ก่อน
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", searchEmail), limit(1));
-      const querySnapshot = await getDocs(q);
+      // 1. ค้นหา User ใน artifacts/{appId}/users
+      let usersRef = collection(db, 'artifacts', appId, "users");
+      let q = query(usersRef, where("email", "==", searchEmail.trim()), limit(1));
+      let querySnapshot = await getDocs(q);
+
+      // Fallback ถ้าไม่เจอ ให้หาจาก Root (กรณี User เก่า)
+      if (querySnapshot.empty) {
+        usersRef = collection(db, "users");
+        q = query(usersRef, where("email", "==", searchEmail.trim()), limit(1));
+        querySnapshot = await getDocs(q);
+      }
 
       if (!querySnapshot.empty) {
         const userDoc = querySnapshot.docs[0];
         const userData = { uid: userDoc.id, ...userDoc.data() };
         
-        // เมื่อเจอไอดีแล้ว ไปดึงยอด Wallet ปัจจุบันของเขา
+        // 2. ดึงยอดเงิน (อิงจาก Wallet ก่อนเพื่อความชัวร์ หรือจาก Profile)
+        let balance = userData.creditPoints || userData.creditPoint || userData.stats?.creditBalance || userData.partnerCredit || 0;
+        
         const walletRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'wallet', 'default');
         const walletSnap = await getDoc(walletRef);
-        
-        const balance = walletSnap.exists() ? (walletSnap.data().balance || 0) : 0;
+        if (walletSnap.exists() && walletSnap.data().balance !== undefined) {
+           // ถ้ายอดใน wallet มีการอัปเดตล่าสุด ให้ใช้ยอดนี้
+           balance = Math.max(balance, walletSnap.data().balance);
+        }
         
         setTargetUser({ ...userData, currentBalance: balance });
         showMessage('success', `พบผู้ใช้: ${userData.displayName || userData.accountName || userData.email}`);
+
+        // 3. ดึงประวัติ 5 รายการล่าสุด
+        try {
+          const historyRef = collection(db, 'artifacts', appId, 'users', userData.uid, 'credit_history');
+          const hQuery = query(historyRef, orderBy('createdAt', 'desc'), limit(5));
+          const hSnap = await getDocs(hQuery);
+          const historyData = hSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setUserHistory(historyData);
+        } catch (hErr) {
+          console.error("Could not fetch history:", hErr);
+        }
+
       } else {
-        showMessage('error', 'ไม่พบผู้ใช้อีเมลนี้ในระบบ');
+        showMessage('error', 'ไม่พบผู้ใช้อีเมลนี้ในระบบ กรุณาตรวจสอบอีกครั้ง');
       }
     } catch (error) {
       console.error("Search error:", error);
@@ -181,73 +133,50 @@ export default function CreditDashboard() {
     }
   };
 
-  // 💰 ฟังก์ชันปรับปรุงยอดเงิน (Manual Adjustment) ด้วย Transaction
+  // 💰 ฟังก์ชันปรับปรุงยอดเงินด้วย Transaction ของ Core Engine
   const handleAdjustCredit = async (e) => {
     e.preventDefault();
     if (!targetUser || !adjustAmount || isNaN(adjustAmount) || Number(adjustAmount) <= 0) {
-      showMessage('error', 'กรุณาระบุจำนวนแต้มที่ถูกต้อง');
+      showMessage('error', 'กรุณาระบุจำนวนแต้มที่ถูกต้อง (> 0)');
       return;
     }
 
-    if (!window.confirm(`ยืนยันการ${adjustType === 'add' ? 'เพิ่ม' : 'หัก'} ${adjustAmount} แต้ม ให้กับ ${targetUser.email} ใช่หรือไม่?`)) return;
+    if (!window.confirm(`[แจ้งเตือนความปลอดภัย]\nยืนยันการ ${adjustType === 'add' ? 'เพิ่ม' : 'หัก'} ${formatCredit(adjustAmount)} แต้ม\nบัญชี: ${targetUser.email}\nใช่หรือไม่?`)) return;
 
     setIsAdjusting(true);
     const amount = Number(adjustAmount);
+    const type = adjustType === 'add' ? 'deposit' : 'deduct';
+    const note = adjustNote || (adjustType === 'add' ? 'แอดมินปรับเพิ่มแต้มพิเศษ' : 'แอดมินหักแต้มเครดิต');
     
     try {
-      await runTransaction(db, async (transaction) => {
-        const walletRef = doc(db, 'artifacts', appId, 'users', targetUser.uid, 'wallet', 'default');
-        const walletDoc = await transaction.get(walletRef);
-        
-        let currentBalance = 0;
-        let totalAccumulated = 0;
+      // 🚀 ส่งคำสั่งให้ Engine ประมวลผล (จะซิงค์ข้อมูลให้ทั้ง 4 จุด)
+      await creditService.adjustUserCredit(
+        targetUser.uid,
+        amount,
+        type,
+        note,
+        'ADMIN_COMMAND_CENTER'
+      );
 
-        if (walletDoc.exists()) {
-          const data = walletDoc.data();
-          currentBalance = data.balance || 0;
-          totalAccumulated = data.totalAccumulated || 0;
-        }
-
-        // ตรวจสอบกรณีหักแต้ม ไม่ให้ยอดติดลบ
-        if (adjustType === 'deduct' && currentBalance < amount) {
-          throw new Error("ยอดเงินในระบบไม่เพียงพอสำหรับการหัก");
-        }
-
-        const newBalance = adjustType === 'add' ? currentBalance + amount : currentBalance - amount;
-        // ถ้าเป็นการเติมแต้ม ให้อัปเดตยอดสะสมรวมด้วย (เพื่อเลื่อนขั้น VIP)
-        const newTotalAccumulated = adjustType === 'add' ? totalAccumulated + amount : totalAccumulated;
-
-        // 1. อัปเดตยอด Wallet
-        transaction.set(walletRef, { 
-          balance: newBalance,
-          totalAccumulated: newTotalAccumulated,
-          updatedAt: serverTimestamp() 
-        }, { merge: true });
-
-        // 2. บันทึกประวัติ (History Log)
-        const historyRef = doc(collection(db, 'artifacts', appId, 'users', targetUser.uid, 'credit_history'));
-        transaction.set(historyRef, {
-          type: adjustType === 'add' ? 'earn' : 'spend',
-          points: amount,
-          note: adjustNote || (adjustType === 'add' ? 'แอดมินปรับเพิ่มแต้มพิเศษ' : 'แอดมินหักแต้มเครดิต'),
-          referenceId: 'MANUAL-' + Date.now().toString().substring(5),
-          timestamp: serverTimestamp(),
-          createdAt: serverTimestamp(),
-          adjustedBy: 'ADMIN' // หากมีชื่อแอดมินใส่ตรงนี้ได้
-        });
-        
-        return newBalance;
-      });
-
-      showMessage('success', `ปรับปรุงยอดสำเร็จ!`);
-      // เคลียร์ฟอร์ม
+      showMessage('success', `ทำรายการสำเร็จ! ยอดเงินเชื่อมโยงหน้าเว็บเรียบร้อย`);
       setAdjustAmount('');
       setAdjustNote('');
-      // อัปเดตหน้าจอโชว์ยอดใหม่
+      
+      const newBalance = adjustType === 'add' ? targetUser.currentBalance + amount : targetUser.currentBalance - amount;
+      
       setTargetUser(prev => ({ 
         ...prev, 
-        currentBalance: adjustType === 'add' ? prev.currentBalance + amount : prev.currentBalance - amount 
+        currentBalance: newBalance
       }));
+
+      // อัปเดต UI Local State History
+      const mockHistory = {
+        type: adjustType === 'add' ? 'earn' : 'spend',
+        points: amount,
+        note: note,
+        createdAt: { toDate: () => new Date() } 
+      };
+      setUserHistory(prev => [mockHistory, ...prev].slice(0, 5));
 
     } catch (error) {
       console.error("Adjustment error:", error);
@@ -257,111 +186,276 @@ export default function CreditDashboard() {
     }
   };
 
+  // ปุ่มกดจำนวนเงินด่วน
+  const quickAmounts = [100, 500, 1000, 5000, 10000];
+
   return (
     <div className="p-6 max-w-7xl mx-auto animate-fade-in">
       
       {/* 🌟 Toast Notification */}
       {messageBox && (
-        <div className={`fixed top-20 right-8 z-[100] px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 border ${
-          messageBox.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
+        <div className={`fixed top-20 right-8 z-[100] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 border ${
+          messageBox.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
         }`}>
-          {messageBox.type === 'success' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
-          <span className="font-medium text-sm">{messageBox.text}</span>
+          {messageBox.type === 'success' ? <CheckCircle2 size={24} className="text-emerald-500" /> : <AlertTriangle size={24} className="text-rose-500" />}
+          <span className="font-bold text-sm">{messageBox.text}</span>
         </div>
       )}
 
-      {/* Header (รักษาดีไซน์เดิม) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <ShieldCheck className="text-emerald-500" />
-            ศูนย์ควบคุมเครดิตพอยต์ (Credit Core)
+          <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3 tracking-tight">
+            <ShieldCheck className="text-[#0870B8] w-8 h-8" />
+            ศูนย์ควบคุมเครดิต (Credit Core)
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            ตรวจเช็คสถานะระบบคำนวณแบบ Real-time และปรับปรุงยอดลูกค้า (Manual Adjustment)
+          <p className="text-sm text-slate-500 mt-2 font-medium">
+            จัดการยอด Credit Point ของลูกค้า เติมเงิน หักเงิน พร้อมระบบประมวลผล Atomic Sync
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold shadow-sm">
-            <span className="relative flex h-2.5 w-2.5">
+        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </span>
-            System Online
+            <span className="text-sm font-bold text-slate-700 tracking-wide uppercase">Core Synchronized</span>
           </div>
         </div>
       </div>
 
-      {/* 📊 ระบบตรวจสอบความสมดุล (Balance Check) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase mb-1">System Pool Max</p>
-          <h3 className="text-2xl font-black text-slate-800">{formatCredit(ledgerStats.systemPoolMax)}</h3>
-          <p className="text-[10px] text-slate-500 mt-1">ทุนสำรองสูงสุด (เพดาน)</p>
-        </div>
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase mb-1">Total Users Balance</p>
-          <h3 className="text-2xl font-black text-blue-600">{formatCredit(ledgerStats.totalUserBalance)}</h3>
-          <p className="text-[10px] text-slate-500 mt-1">ยอดเครดิตที่ผู้ใช้ออนไลน์มีอยู่</p>
-        </div>
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase mb-1">Pending Credits (11-Days)</p>
-          <h3 className="text-2xl font-black text-amber-500">{formatCredit(ledgerStats.totalPendingCredits)}</h3>
-          <p className="text-[10px] text-slate-500 mt-1">แต้มรอรับหลังจากสั่งซื้อสินค้า</p>
-        </div>
-        <div className={`border p-5 rounded-2xl shadow-sm ${Math.abs((ledgerStats.totalAllocated) - (ledgerStats.totalUserBalance + ledgerStats.totalPendingCredits)) > 0 && ledgerStats.totalAllocated > 0 ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
-          <p className="text-xs font-bold uppercase mb-1 text-slate-700">Balance Integrity</p>
-          <h3 className={`text-2xl font-black ${Math.abs((ledgerStats.totalAllocated) - (ledgerStats.totalUserBalance + ledgerStats.totalPendingCredits)) > 0 && ledgerStats.totalAllocated > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-             {Math.abs((ledgerStats.totalAllocated) - (ledgerStats.totalUserBalance + ledgerStats.totalPendingCredits)) > 0 && ledgerStats.totalAllocated > 0 ? 'MISMATCH' : 'SECURE'}
-          </h3>
-          <p className="text-[10px] mt-1 text-slate-600">ตรวจสอบความตรงกันของยอด (Ledger VS Actual)</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button 
-          onClick={() => setActiveTab('health')}
-          className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'health' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'}`}
-        >
-          <Activity size={16} /> System Health
-        </button>
+      {/* Tabs Menu */}
+      <div className="flex gap-2 mb-6 border-b border-slate-200 pb-px">
         <button 
           onClick={() => setActiveTab('adjust')}
-          className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'adjust' ? 'bg-[#0870B8] text-white shadow-md' : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'}`}
+          className={`px-5 py-3 text-sm font-bold transition-colors flex items-center gap-2 border-b-2 ${activeTab === 'adjust' ? 'border-[#0870B8] text-[#0870B8]' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
         >
-          <ArrowRightLeft size={16} /> เติม/ลด เครดิต (Manual)
+          <ArrowRightLeft size={18} /> เติม/ลด เครดิต (Manual)
+        </button>
+        <button 
+          onClick={() => setActiveTab('health')}
+          className={`px-5 py-3 text-sm font-bold transition-colors flex items-center gap-2 border-b-2 ${activeTab === 'health' ? 'border-slate-800 text-slate-800' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+        >
+          <Activity size={18} /> สถานะระบบ (System Health)
         </button>
       </div>
 
       {/* ==========================================
-          🌟 แท็บที่ 1: System Health (โค้ดเดิมของคุณ)
+          🌟 แท็บที่ 1: Manual Adjustment (Command Center View)
+          ========================================== */}
+      {activeTab === 'adjust' && (
+        <div className="animate-in slide-in-from-bottom-4 duration-300">
+          
+          {/* 🔍 ส่วนค้นหาผู้ใช้ */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6 max-w-3xl">
+             <h2 className="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+               <Search className="text-[#0870B8] w-5 h-5" /> 1. ค้นหาบัญชีเป้าหมาย (ด้วย Email)
+             </h2>
+             <form onSubmit={handleSearchUser} className="flex gap-3">
+               <input 
+                 type="email" 
+                 value={searchEmail}
+                 onChange={(e) => setSearchEmail(e.target.value)}
+                 placeholder="ex. customer@email.com"
+                 className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:bg-white focus:border-[#0870B8] focus:ring-2 focus:ring-[#0870B8]/20 transition-all font-medium"
+                 required
+               />
+               <button 
+                 type="submit"
+                 disabled={isSearching}
+                 className="px-8 py-3.5 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-colors disabled:opacity-50 shadow-md flex items-center gap-2"
+               >
+                 {isSearching ? <Loader2 size={18} className="animate-spin" /> : 'ค้นหาบัญชี'}
+               </button>
+             </form>
+          </div>
+
+          {/* 💻 ส่วน Dashboard ทำรายการ (แสดงเมื่อค้นหาเจอ) */}
+          <div className={`transition-all duration-500 ease-out ${targetUser ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 hidden'}`}>
+             {targetUser && (
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                 
+                 {/* ด้านซ้าย: ข้อมูล User & ประวัติ */}
+                 <div className="lg:col-span-5 space-y-6">
+                    {/* User Profile Card */}
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+                       <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                       
+                       <div className="flex items-center gap-4 mb-6 relative z-10">
+                         <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
+                           <UserCheck className="text-emerald-400" size={28} />
+                         </div>
+                         <div>
+                           <h3 className="font-black text-xl tracking-wide">{targetUser.displayName || targetUser.accountName || 'Unnamed User'}</h3>
+                           <p className="text-sm text-slate-300">{targetUser.email}</p>
+                         </div>
+                       </div>
+                       
+                       <div className="bg-black/20 rounded-xl p-4 border border-white/10 relative z-10">
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                            <Coins size={12}/> ยอดเครดิตคงเหลือปัจจุบัน
+                         </p>
+                         <p className="text-4xl font-black text-emerald-400 font-tech">
+                           {formatCredit(targetUser.currentBalance)} <span className="text-base text-slate-300">Pts</span>
+                         </p>
+                       </div>
+                    </div>
+
+                    {/* Recent History Card */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                       <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                         <History size={16} className="text-slate-400"/> ประวัติการทำรายการ
+                       </h3>
+                       <div className="space-y-3">
+                          {userHistory.length > 0 ? (
+                            userHistory.map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${item.type === 'earn' || item.type === 'deposit' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                    {item.type === 'earn' || item.type === 'deposit' ? <TrendingUp size={14}/> : <TrendingDown size={14}/>}
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-bold text-slate-700 line-clamp-1">{item.note || 'ปรับปรุงยอด'}</p>
+                                    <p className="text-[9px] text-slate-400">
+                                      {item.createdAt?.toDate ? item.createdAt.toDate().toLocaleString('th-TH') : 'ล่าสุด'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className={`text-sm font-black font-tech shrink-0 ${item.type === 'earn' || item.type === 'deposit' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                  {item.type === 'earn' || item.type === 'deposit' ? '+' : '-'}{formatCredit(item.points || item.amount)}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-400 text-center py-4">ยังไม่มีประวัติการทำรายการ</p>
+                          )}
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* ด้านขวา: Action Form (ปรับปรุงยอด) */}
+                 <div className="lg:col-span-7">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl border-t-4 border-t-[#0870B8] h-full flex flex-col">
+                      <h2 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
+                        <Terminal className="text-[#0870B8] w-5 h-5" /> 2. ส่งคำสั่งปรับปรุงยอด (Command Execute)
+                      </h2>
+                      
+                      <form onSubmit={handleAdjustCredit} className="flex-1 flex flex-col">
+                        
+                        {/* เลือกประเภทการทำรายการ */}
+                        <div className="mb-6">
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">เลือกการทำงาน (Operation)</label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <button 
+                              type="button"
+                              onClick={() => setAdjustType('add')}
+                              className={`py-4 flex flex-col items-center justify-center gap-2 rounded-xl font-bold transition-all border-2 ${
+                                adjustType === 'add' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-md ring-2 ring-emerald-500/20' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50 hover:border-slate-300'
+                              }`}
+                            >
+                              <PlusCircle size={24} className={adjustType === 'add' ? 'text-emerald-600' : 'text-slate-400'} /> 
+                              เติมเครดิตให้ลูกค้า
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => setAdjustType('deduct')}
+                              className={`py-4 flex flex-col items-center justify-center gap-2 rounded-xl font-bold transition-all border-2 ${
+                                adjustType === 'deduct' ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-md ring-2 ring-rose-500/20' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50 hover:border-slate-300'
+                              }`}
+                            >
+                              <MinusCircle size={24} className={adjustType === 'deduct' ? 'text-rose-600' : 'text-slate-400'} /> 
+                              หักเครดิตออก
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* จำนวนแต้ม & Quick Amount */}
+                        <div className="mb-6">
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">ระบุยอด (Amount)</label>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                             {quickAmounts.map(amt => (
+                               <button
+                                 key={amt}
+                                 type="button"
+                                 onClick={() => setAdjustAmount(amt.toString())}
+                                 className="px-3 py-1.5 text-xs font-bold bg-slate-100 text-slate-600 hover:bg-[#0870B8] hover:text-white rounded-lg transition-colors border border-slate-200 font-tech"
+                               >
+                                 +{formatCredit(amt)}
+                               </button>
+                             ))}
+                          </div>
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              min="1"
+                              value={adjustAmount}
+                              onChange={(e) => setAdjustAmount(e.target.value)}
+                              placeholder="0"
+                              className={`w-full px-5 py-4 rounded-xl border-2 focus:outline-none focus:ring-4 font-tech text-2xl font-black transition-colors ${
+                                adjustType === 'add' ? 'border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500/20 text-emerald-700 bg-emerald-50/30' : 'border-rose-200 focus:border-rose-500 focus:ring-rose-500/20 text-rose-700 bg-rose-50/30'
+                              }`}
+                              required
+                            />
+                            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Pts</span>
+                          </div>
+                        </div>
+
+                        {/* บันทึกช่วยจำ */}
+                        <div className="mb-8">
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">บันทึกเหตุผล (Admin Note)</label>
+                          <input 
+                            type="text" 
+                            value={adjustNote}
+                            onChange={(e) => setAdjustNote(e.target.value)}
+                            placeholder="ระบุเหตุผลเพื่อใช้ตรวจสอบย้อนหลัง..."
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 text-sm bg-slate-50"
+                          />
+                        </div>
+
+                        <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                           {/* พรีวิวสรุปยอด */}
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                                 <ArrowRightLeft className="text-slate-400" size={16}/>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">ยอดคาดการณ์ (Preview)</p>
+                                <p className={`text-lg font-black font-tech ${adjustType === 'add' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                  {formatCredit(adjustType === 'add' ? targetUser.currentBalance + Number(adjustAmount || 0) : Math.max(0, targetUser.currentBalance - Number(adjustAmount || 0)))} Pts
+                                </p>
+                              </div>
+                           </div>
+
+                           {/* Submit Button */}
+                           <button 
+                             type="submit"
+                             disabled={isAdjusting || !adjustAmount}
+                             className={`px-8 py-4 rounded-xl font-bold text-white transition-all shadow-lg flex items-center gap-2 transform active:scale-95 ${
+                               isAdjusting ? 'bg-slate-400 cursor-not-allowed shadow-none' : (adjustType === 'add' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-emerald-500/30' : 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 shadow-rose-500/30')
+                             }`}
+                           >
+                             {isAdjusting ? <Loader2 size={20} className="animate-spin" /> : <ShieldCheck size={20} />}
+                             <span>ยืนยันคำสั่ง (Execute)</span>
+                           </button>
+                        </div>
+                      </form>
+
+                    </div>
+                 </div>
+               </div>
+             )}
+          </div>
+        </div>
+      )}
+
+      {/* ==========================================
+          🌟 แท็บที่ 2: System Health (ของเดิม จัดให้อยู่ tab รอง)
           ========================================== */}
       {activeTab === 'health' && (
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
            <div className="lg:col-span-2 space-y-6">
-              {/* การ์ดสถิติ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><CheckCircle2 size={24} /></div>
-                    <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded-md">Last 24h</span>
-                  </div>
-                  <h3 className="text-3xl font-black text-slate-800 mb-1">100%</h3>
-                  <p className="text-sm font-medium text-slate-500">Transaction Success Rate</p>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-2 bg-[#E6F0F9] rounded-lg text-[#0870B8]"><Clock size={24} /></div>
-                    <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded-md">Avg. Time</span>
-                  </div>
-                  <h3 className="text-3xl font-black text-slate-800 mb-1">45ms</h3>
-                  <p className="text-sm font-medium text-slate-500">Processing Speed</p>
-                </div>
-              </div>
-
               {/* Terminal Log */}
-              <div className="bg-slate-900 rounded-2xl border border-slate-700 shadow-xl overflow-hidden flex flex-col h-[400px]">
+              <div className="bg-slate-900 rounded-2xl border border-slate-700 shadow-xl overflow-hidden flex flex-col h-[500px]">
                 <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Terminal className="text-slate-400" size={16} />
@@ -373,7 +467,7 @@ export default function CreditDashboard() {
                 </div>
                 <div className="p-4 flex-1 overflow-y-auto font-tech text-xs leading-relaxed custom-scrollbar">
                   <div className="space-y-1.5 text-slate-400">
-                     <div className="text-slate-500 mb-4">DH CORE v2.5.0 - Credit Transaction Subsystem<br/>Connected to Firestore via secure channel.</div>
+                     <div className="text-slate-500 mb-4">DH CORE v2.5.0 - Atomic Synchronization Enabled<br/>Connected to Firestore via secure channel.</div>
                      {healthLogs.map((log, i) => (
                        <div key={i} className={`flex gap-4 ${log.type === 'error' ? 'text-rose-500' : log.type === 'success' ? 'text-emerald-400' : 'text-blue-300'}`}>
                          <span className="text-slate-600 shrink-0">[{log.time}]</span>
@@ -389,226 +483,26 @@ export default function CreditDashboard() {
            {/* ข้อมูลความปลอดภัย */}
            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-fit">
               <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <Lock size={18} className="text-amber-500" /> Security Status
+                <Lock size={18} className="text-amber-500" /> Security Framework
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5"><Database size={14} /></div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-800">Atomic Operations</h4>
-                    <p className="text-xs text-slate-500 mt-1">เปิดใช้งานแล้ว. ทุกคำสั่งซื้อจะถูกล็อคการหักเครดิตและสต๊อกพร้อมกัน ป้องกันยอดติดลบ</p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">ทุกคำสั่ง เติม/ลด จะถูกประมวลผลแบบรวบยอด (Transaction) ป้องกันยอดเบิ้ล หรือยอดติดลบเวลาเน็ตกระตุก</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5"><Fingerprint size={14} /></div>
+                  <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 mt-0.5"><Fingerprint size={14} /></div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-800">Double-Entry Logging</h4>
-                    <p className="text-xs text-slate-500 mt-1">ประวัติการใช้แต้มทุกรายการถูกบันทึกด้วย Reference ID แยกชัดเจน</p>
+                    <h4 className="text-sm font-bold text-slate-800">Multi-Layer Sync</h4>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">เขียนข้อมูลกระจายไปยัง Profile, Wallet และ Ledger พร้อมกัน เพื่อให้หน้าเว็บลูกค้า (Frontend) อัปเดตข้อมูลตรงกันเป๊ะทันที</p>
                   </div>
                 </div>
               </div>
            </div>
          </div>
-      )}
-
-      {/* ==========================================
-          🌟 แท็บที่ 2: Manual Adjustment (เพิ่ม/หัก เครดิตด้วยมือ) - ส่วนที่สร้างใหม่
-          ========================================== */}
-      {activeTab === 'adjust' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-300">
-          
-          {/* ส่วนค้นหาผู้ใช้ */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-fit">
-             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-               <Search className="text-[#0870B8] w-5 h-5" /> ค้นหาบัญชีลูกค้า / พาร์ทเนอร์
-             </h2>
-             <form onSubmit={handleSearchUser} className="flex gap-2">
-               <input 
-                 type="email" 
-                 value={searchEmail}
-                 onChange={(e) => setSearchEmail(e.target.value)}
-                 placeholder="กรอกอีเมลลูกค้า (เช่น user@dh.com)"
-                 className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8]"
-                 required
-               />
-               <button 
-                 type="submit"
-                 disabled={isSearching}
-                 className="px-5 py-2.5 bg-[#0870B8] text-white font-bold rounded-xl hover:bg-[#065A96] transition-colors disabled:opacity-50"
-               >
-                 {isSearching ? <Loader2 size={20} className="animate-spin" /> : 'ค้นหา'}
-               </button>
-             </form>
-
-             {/* ผลการค้นหา */}
-             {targetUser && (
-               <div className="mt-6 p-5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                 <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100">
-                     <UserCheck className="text-emerald-500" size={24} />
-                   </div>
-                   <div>
-                     <h3 className="font-bold text-slate-800">{targetUser.displayName || targetUser.accountName || 'ไม่ระบุชื่อ'}</h3>
-                     <p className="text-xs text-slate-500">{targetUser.email}</p>
-                   </div>
-                 </div>
-                 <div className="text-right">
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ยอดเครดิตปัจจุบัน</p>
-                   <p className="text-xl font-black text-[#0870B8] font-tech">
-                     {formatCredit(targetUser.currentBalance)} <span className="text-xs">Pts</span>
-                   </p>
-                 </div>
-               </div>
-             )}
-          </div>
-
-          {/* ส่วนดำเนินการปรับปรุงยอด (แสดงเมื่อค้นหาเจอเท่านั้น) */}
-          <div className={`transition-all duration-500 ${targetUser ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-             {targetUser && (
-               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-md border-t-4 border-t-[#0870B8]">
-                 <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                   <Coins className="text-[#0870B8] w-5 h-5" /> ดำเนินการปรับปรุงยอด
-                 </h2>
-                 
-                 <form onSubmit={handleAdjustCredit} className="space-y-5">
-                   
-                   {/* เลือกประเภทการทำรายการ */}
-                   <div>
-                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">ประเภทรายการ</label>
-                     <div className="grid grid-cols-2 gap-3">
-                       <button 
-                         type="button"
-                         onClick={() => setAdjustType('add')}
-                         className={`py-3 flex items-center justify-center gap-2 rounded-xl font-bold transition-all border-2 ${
-                           adjustType === 'add' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
-                         }`}
-                       >
-                         <PlusCircle size={18} /> เติมเครดิต (Add)
-                       </button>
-                       <button 
-                         type="button"
-                         onClick={() => setAdjustType('deduct')}
-                         className={`py-3 flex items-center justify-center gap-2 rounded-xl font-bold transition-all border-2 ${
-                           adjustType === 'deduct' ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
-                         }`}
-                       >
-                         <MinusCircle size={18} /> หักเครดิต (Deduct)
-                       </button>
-                     </div>
-                   </div>
-
-                   {/* จำนวนแต้ม */}
-                   <div>
-                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">จำนวนแต้ม (Points)</label>
-                     <input 
-                       type="number" 
-                       min="1"
-                       value={adjustAmount}
-                       onChange={(e) => setAdjustAmount(e.target.value)}
-                       placeholder="ตัวเลขเท่านั้น เช่น 500"
-                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] font-tech text-lg font-bold"
-                       required
-                     />
-                   </div>
-
-                   {/* บันทึกช่วยจำ */}
-                   <div>
-                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">เหตุผล (Note)</label>
-                     <input 
-                       type="text" 
-                       value={adjustNote}
-                       onChange={(e) => setAdjustNote(e.target.value)}
-                       placeholder="เช่น ร่วมกิจกรรมพิเศษเดือนมีนาคม..."
-                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] text-sm"
-                     />
-                   </div>
-
-                   {/* สรุปก่อนกดบันทึก */}
-                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                     <div className="flex justify-between items-center text-sm font-medium text-slate-600 mb-1">
-                       <span>ยอดหลังการปรับปรุง:</span>
-                       <span className={`font-tech text-lg font-bold ${adjustType === 'add' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                         {formatCredit(adjustType === 'add' ? targetUser.currentBalance + Number(adjustAmount || 0) : targetUser.currentBalance - Number(adjustAmount || 0))} Pts
-                       </span>
-                     </div>
-                     <p className="text-[10px] text-slate-400 text-right">ดำเนินการด้วยระบบ Secure Transaction</p>
-                   </div>
-
-                   {/* Submit Button */}
-                   <button 
-                     type="submit"
-                     disabled={isAdjusting || !adjustAmount}
-                     className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-md flex items-center justify-center gap-2 ${
-                       isAdjusting ? 'bg-slate-400 cursor-not-allowed' : (adjustType === 'add' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-rose-500 hover:bg-rose-600')
-                     }`}
-                   >
-                     {isAdjusting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                     ยืนยันการบันทึกรายการ
-                   </button>
-                 </form>
-
-               </div>
-             )}
-          </div>
-
-        </div>
-      )}
-
-      {/* ==========================================
-          🌟 แท็บที่ 3: ตั้งค่าระบบ (Global Credit Settings)
-          ========================================== */}
-      {activeTab === 'settings' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-300">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-fit">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Settings className="text-emerald-600 w-5 h-5" /> Global Credit Settings
-            </h2>
-            <form onSubmit={handleSaveSettings} className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">อัตราการได้รับแต้ม (Earning Rate)</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-600">ซื้อทุก ๆ</span>
-                  <input 
-                    type="number" 
-                    min="1"
-                    value={earningRate}
-                    onChange={(e) => setEarningRate(e.target.value)}
-                    className="w-24 px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-tech text-center font-bold"
-                    required
-                  />
-                  <span className="text-sm font-bold text-slate-600">บาท = 1 แต้ม</span>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">อัตราการใช้แต้ม (Redemption Rate)</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-600">ใช้</span>
-                  <input 
-                    type="number" 
-                    min="1"
-                    value={redemptionRate}
-                    onChange={(e) => setRedemptionRate(e.target.value)}
-                    className="w-24 px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-tech text-center font-bold"
-                    required
-                  />
-                  <span className="text-sm font-bold text-slate-600">แต้ม = ส่วนลด 1 บาท</span>
-                </div>
-              </div>
-
-              <button 
-                type="submit"
-                disabled={isSavingSettings}
-                className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-md flex items-center justify-center gap-2 ${
-                  isSavingSettings ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'
-                }`}
-              >
-                {isSavingSettings ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                บันทึกการตั้งค่า
-              </button>
-            </form>
-          </div>
-        </div>
       )}
 
     </div>

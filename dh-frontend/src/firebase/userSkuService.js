@@ -1,122 +1,109 @@
+/* eslint-disable */
+import { collection, addDoc, getDocs, query, where, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './config';
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  deleteDoc, 
-  query, 
-  where, 
-  serverTimestamp 
-} from 'firebase/firestore';
 
-const COLLECTION_NAME = 'user_skus';
+const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
-// ----------------------------------------------------------------------
-// 🏷️ ค่าคงที่สำหรับสถานะต่างๆ (Constants)
-// ----------------------------------------------------------------------
 export const SKU_STATUS = {
-  INACTIVE: 'inactive', // สร้างไว้เฉยๆ ยังไม่หักเครดิต/ยังไม่ส่งให้ ผจก.
-  PENDING: 'pending',   // หักเครดิตแล้ว รอผู้จัดการอนุมัติ
-  APPROVED: 'approved', // อนุมัติแล้ว (แสดงบนเว็บได้)
-  REJECTED: 'rejected', // ไม่อนุมัติ
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  INACTIVE: 'INACTIVE'
 };
 
 // ----------------------------------------------------------------------
-// 🧠 Smart Caching System
+// 🧠 Smart Caching System (ประหยัด Reads ลดภาระ Database)
 // ----------------------------------------------------------------------
-const approvedAdsCache = {
+const activeAdsCache = {
   data: [],
   lastFetched: null,
-  ttl: 5 * 60 * 1000, // 5 นาที
+  ttl: 5 * 60 * 1000, // แคชไว้ 5 นาที
 };
 
-// ----------------------------------------------------------------------
-// 🚀 Main Service Object
-// ----------------------------------------------------------------------
 export const userSkuService = {
-  
   createAdRequest: async (userId, adData) => {
     try {
-      const payload = {
-        userId,
+      const docRef = await addDoc(collection(db, 'user_skus'), {
         ...adData,
-        status: adData.status || SKU_STATUS.INACTIVE, 
-        clicks: 0, 
-        views: 0,  
+        ownerUid: userId,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), payload);
+        updatedAt: serverTimestamp()
+      });
       return docRef.id;
     } catch (error) {
-      console.error("❌ [userSkuService] Error creating ad request:", error);
-      throw new Error("ไม่สามารถสร้างรายการฝากโฆษณาได้ โปรดลองใหม่อีกครั้ง");
+      console.error("Error creating ad request:", error);
+      throw error;
     }
   },
 
   getUserAds: async (userId) => {
     try {
-      // 🚀 ปลดล็อก orderBy ออกเพื่อแก้ปัญหา Firebase Missing Index
       const q = query(
-        collection(db, COLLECTION_NAME),
-        where("userId", "==", userId)
+        collection(db, 'user_skus'), 
+        where("ownerUid", "==", userId)
       );
-
       const querySnapshot = await getDocs(q);
-      const ads = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      // 🚀 นำข้อมูลมาเรียงลำดับด้วย JavaScript แทน
+      const ads = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       return ads.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     } catch (error) {
-      console.error("❌ [userSkuService] Error fetching user ads:", error);
-      throw new Error("เกิดข้อผิดพลาดในการดึงข้อมูลโฆษณาของคุณ");
+      console.error("Error fetching user ads:", error);
+      throw error;
     }
   },
 
-  getApprovedAdsForDisplay: async (forceRefresh = false, maxLimit = 50) => {
+  // 🚀 ฟังก์ชันดึงโฆษณาโชว์หน้าเว็บ (ปลดล็อกข้อจำกัด Firebase Index)
+  getActiveAdsForDisplay: async (forceRefresh = false) => {
     const now = Date.now();
-    if (!forceRefresh && approvedAdsCache.lastFetched && (now - approvedAdsCache.lastFetched < approvedAdsCache.ttl)) {
-      return approvedAdsCache.data;
+
+    // 1. เช็ค Cache ก่อน เพื่อลดภาระ Database
+    if (!forceRefresh && activeAdsCache.lastFetched && (now - activeAdsCache.lastFetched < activeAdsCache.ttl)) {
+      let cachedAds = [...activeAdsCache.data];
+      // สุ่มตำแหน่งใหม่ทุกครั้ง
+      for (let i = cachedAds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cachedAds[i], cachedAds[j]] = [cachedAds[j], cachedAds[i]];
+      }
+      return cachedAds;
     }
 
     try {
-      // 🚀 ปลดล็อก orderBy
+      // 🚀 แก้ปัญหา Missing Index และ รองรับข้อมูลเก่า: 
+      // ใช้ 'in' เพื่อหาทั้งพิมพ์เล็กและใหญ่ และหลีกเลี่ยงการใช้ where("isActive") คู่กัน
       const q = query(
-        collection(db, COLLECTION_NAME),
-        where("status", "==", SKU_STATUS.APPROVED)
+        collection(db, 'user_skus'),
+        where("status", "in", ['APPROVED', 'approved'])
       );
-
+      
       const querySnapshot = await getDocs(q);
-      let ads = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      let ads = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        // กรอง isActive ด้วย JavaScript แทน เพื่อหลีกเลี่ยง Error หน้าบ้าน
+        .filter(ad => ad.isActive === true); 
+      
+      activeAdsCache.data = [...ads];
+      activeAdsCache.lastFetched = now;
 
-      // 🚀 นำข้อมูลมาเรียงลำดับและตัดจำนวน limit ด้วย JavaScript แทน
-      ads = ads.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).slice(0, maxLimit);
-
-      approvedAdsCache.data = ads;
-      approvedAdsCache.lastFetched = now;
-
+      // ✨ สุ่มลำดับการแสดงผลโฆษณา (Fisher-Yates Shuffle) 
+      for (let i = ads.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ads[i], ads[j]] = [ads[j], ads[i]];
+      }
+      
       return ads;
     } catch (error) {
-      console.error("❌ [userSkuService] Error fetching approved ads:", error);
-      if (approvedAdsCache.data.length > 0) return approvedAdsCache.data;
+      console.error("🔥 Error fetching active ads for display:", error);
+      if (activeAdsCache.data.length > 0) return activeAdsCache.data;
       return [];
     }
   },
 
   deleteUserAd: async (adId) => {
     try {
-      const docRef = doc(db, COLLECTION_NAME, adId);
+      const docRef = doc(db, 'user_skus', adId);
       await deleteDoc(docRef);
       return true;
     } catch (error) {
-      console.error("❌ [userSkuService] Error deleting ad:", error);
+      console.error("❌ Error deleting ad:", error);
       throw new Error("ไม่สามารถลบรายการได้ โปรดลองใหม่อีกครั้ง");
     }
   }
