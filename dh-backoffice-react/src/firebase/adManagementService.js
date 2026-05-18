@@ -71,32 +71,17 @@ export const adManagementService = {
   },
 
   /**
-   * 3. ปฏิเสธโฆษณา คืนแต้ม และยกเลิกงาน To-do (Safe Refund Transaction)
+   * 3. ปฏิเสธโฆษณา และยกเลิกงาน To-do (ไม่คืนแต้ม เนื่องจากเราไม่ได้หักตอนส่งคำขอ)
    */
-  rejectAd: async (adId, userId, refundAmount, reason = 'ผิดเงื่อนไขการให้บริการ') => {
+  rejectAd: async (adId, reason = 'ผิดเงื่อนไขการให้บริการ') => {
     try {
       const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', adId);
-      const userRef = doc(db, 'artifacts', appId, 'users', userId);
-
-      await runTransaction(db, async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        
-        if (!userDoc.exists()) {
-          throw new Error("ไม่พบข้อมูลบัญชีผู้ใช้เพื่อทำการคืนแต้มเครดิต");
-        }
-
-        const currentCredit = Number(userDoc.data().creditPoint) || 0;
-
-        transaction.update(userRef, {
-          creditPoint: currentCredit + refundAmount,
-          updatedAt: serverTimestamp()
-        });
-
-        transaction.update(adRef, {
-          status: 'rejected',
-          rejectReason: reason,
-          updatedAt: serverTimestamp()
-        });
+      
+      // อัปเดตสถานะโฆษณาเป็น rejected
+      await updateDoc(adRef, {
+        status: 'rejected',
+        rejectReason: reason,
+        updatedAt: serverTimestamp()
       });
 
       // 🔗 ระบบ Auto-Sync: ปรับสถานะ To-do ให้เป็น cancelled เพื่องานจะได้ออกจากหน้ากระดานผู้จัดการ
@@ -109,12 +94,12 @@ export const adManagementService = {
 
       return { 
         success: true, 
-        message: `ปฏิเสธคำขอและคืนแต้มจำนวน ${refundAmount} เครดิต เรียบร้อยแล้ว` 
+        message: `ปฏิเสธคำขอโฆษณาเรียบร้อยแล้ว` 
       };
 
     } catch (error) {
-      console.error("❌ Transaction Failed [rejectAd]:", error);
-      return { success: false, message: error.message || 'เกิดข้อผิดพลาดในการปฏิเสธและคืนแต้ม' };
+      console.error("❌ Failed [rejectAd]:", error);
+      return { success: false, message: error.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ' };
     }
   },
 

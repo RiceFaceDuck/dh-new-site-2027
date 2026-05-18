@@ -266,7 +266,7 @@ export default function Todo() {
     if (activeTab === 'approvals') {
         if (filterType === 'RETAIL') return todo.customerType === 'retail';
         if (filterType === 'DEALER') return todo.customerType === 'dealer';
-        if (filterType === 'ADS') return ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(todo.type);
+        if (filterType === 'ADS') return ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(todo.type);
         if (filterType === 'PARTNER') return ['PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'].includes(todo.type);
     }
     
@@ -542,7 +542,7 @@ export default function Todo() {
             }
 
             // 🌟 4. การจัดการคำขอโฆษณา (User SKU) - UI เฉพาะตัวส่งต่อไปหน้า Manager Ads
-            if (todo.type === 'USER_SKU_APPROVAL') {
+            if (todo.type === 'USER_SKU_APPROVAL' || todo.type === 'AD_APPROVAL') {
                return (
                   <div key={todo.id} className="bg-white border border-emerald-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
                      <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm">
@@ -551,8 +551,8 @@ export default function Todo() {
                      <div>
                        <h3 className="font-bold text-gray-800 text-lg mb-1 leading-tight pr-16">{todo.title}</h3>
                        <div className="flex flex-col gap-1 mt-3 mb-5">
-                          <p className="text-xs text-gray-500 font-medium">🛒 รหัสสินค้า: <span className="text-emerald-600 font-bold">{todo.targetSkuId}</span></p>
-                          <p className="text-xs text-gray-500 font-medium">👤 ลูกค้า: <span className="text-gray-700 font-bold">{todo.customerName}</span></p>
+                          <p className="text-xs text-gray-500 font-medium">🛒 รหัสสินค้า: <span className="text-emerald-600 font-bold">{todo.adPayload?.title || todo.targetSkuId || 'โฆษณา'}</span></p>
+                          <p className="text-xs text-gray-500 font-medium">👤 ลูกค้า: <span className="text-gray-700 font-bold">{todo.customerName || todo.adPayload?.partnerName}</span></p>
                           <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><Clock size={10}/> รอการตรวจสอบและอนุมัติ</p>
                        </div>
                      </div>
