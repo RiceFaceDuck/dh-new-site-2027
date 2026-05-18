@@ -16,7 +16,8 @@ export const MANAGER_TASK_TYPES = [
   'CANCEL_CLAIM_APPROVAL',
   'CANCEL_RETURN_APPROVAL',
   // ✨ เพิ่มรายการงานใหม่ตาม Master Plan
-  'USER_SKU_APPROVAL',   // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า
+  'AD_APPROVAL',         // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า
+  'USER_SKU_APPROVAL',   // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า (Legacy)
   'BILLBOARD_APPROVAL',  // งานตรวจสอบ/อนุมัติ ฝากแผ่นป้ายโฆษณา
   'PARTNER_APPROVAL',    // งานตรวจสอบ/อนุมัติ Partner รับการสนับสนุน
   'ACCOUNT_APPROVAL'     // งานตรวจสอบ Account สมัครใหม่

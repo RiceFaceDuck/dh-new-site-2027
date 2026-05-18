@@ -63,10 +63,14 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
       const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', ad.id);
       batch.update(adRef, { impressions: increment(1) });
       
-      // หักแต้มที่บัญชีของเจ้าของโฆษณา
+      // หักแต้มที่บัญชีของเจ้าของโฆษณา (ตัดพร้อมกันทั้ง 3 ฟิลด์ให้ตรงกับ Memory System)
       if (ad.userId) {
         const userRef = doc(db, 'artifacts', appId, 'users', ad.userId);
-        batch.update(userRef, { creditPoint: increment(-cost) });
+        batch.update(userRef, {
+          creditPoint: increment(-cost),
+          'stats.creditBalance': increment(-cost),
+          partnerCredit: increment(-cost)
+        });
       }
 
       await batch.commit();

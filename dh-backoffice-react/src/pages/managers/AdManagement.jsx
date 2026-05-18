@@ -83,8 +83,6 @@ export default function AdManagement() {
     setProcessingId(selectedAd.id);
     const res = await adManagementService.rejectAd(
       selectedAd.id, 
-      selectedAd.userId, 
-      Number(refundAmount), 
       rejectReason
     );
 
@@ -193,6 +191,12 @@ export default function AdManagement() {
                     <div className="flex justify-between">
                       <span className="text-gray-400">Owner ID:</span>
                       <span className="font-mono text-xs truncate max-w-[120px]">{ad.userId}</span>
+                    </div>
+                    <div className="flex justify-between text-indigo-700 font-medium">
+                      <span className="text-gray-400">Budget:</span>
+                      <span>
+                        {ad.impressions || 0} / {Math.floor((ad.creditLimit || 0) / (ad.costPerImpression || 1))} Views
+                      </span>
                     </div>
                     {ad.youtubeUrl && (
                       <div className="flex justify-between items-center text-red-600">
