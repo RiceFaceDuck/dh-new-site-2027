@@ -1,15 +1,10 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
-import { ExternalLink, Store, Info, Youtube, X, Tag } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useRef } from 'react';
+import { ExternalLink, Store, Info, Youtube, X, Tag, MousePointerClick } from 'lucide-react';
+import { doc, updateDoc, increment, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { trackAdClick, consumeAdCredit } from '../../firebase/creditService';
 
-const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
-
-// 🧠 Smart In-Memory Cache: ลดจำนวนการอ่าน Database (Reads) สแกนเครดิตแค่ 2 นาทีครั้ง
-const creditCache = {};
-const CACHE_TTL = 1000 * 60 * 2; 
+const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
 
 const extractYouTubeId = (url) => {
   if (!url) return null;
@@ -22,195 +17,194 @@ const extractYouTubeId = (url) => {
 const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
   const [showVideo, setShowVideo] = useState(false);
   
-  const [isAdVisible, setIsAdVisible] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(true);
+  // Ref สำหรับระบบตรวจจับการมองเห็น (Intersection Observer)
+  const cardRef = useRef(null);
+  const hasRecordedImpression = useRef(false);
 
+  // 1. ตรวจสอบความถูกต้องและงบประมาณ (Smart Budget Checking)
+  // หมายเหตุ: รองรับทั้ง Schema เก่าและใหม่ (link/targetUrl, partnerName/storeName)
+  const targetUrl = ad?.targetUrl || ad?.link || '#';
+  const sponsorName = ad?.partnerName || ad?.storeName || ad?.ownerName || 'Official Partner';
+  const platform = ad?.platform || 'other';
+  const cost = ad?.costPerImpression || 1;
+  const maxImpressions = Math.floor((ad?.creditLimit || 0) / cost);
+
+  // ถ้างบหมด หรือ สถานะไม่ใช่ active ให้ซ่อนการ์ดไปเลย (คืนพื้นที่ให้สินค้าปกติ)
+  if (!ad || ad.status !== 'active' || (ad.impressions || 0) >= maxImpressions) {
+    return null;
+  }
+
+  // 2. ระบบนับ Impression เมื่อลูกค้าเลื่อนมาเห็น (Intersection Observer)
   useEffect(() => {
-    let isMounted = true;
+    if (!cardRef.current || hasRecordedImpression.current) return;
 
-    const verifyAdVisibility = async () => {
-      // 1. เช็คสถานะโฆษณา (ต้องเป็น APPROVED และเปิดสวิตช์)
-      if (!ad || (ad.status !== 'APPROVED' && ad.status !== 'approved') || ad.isActive !== true) {
-        if(isMounted) { setIsAdVisible(false); setIsVerifying(false); }
-        return;
+    const observer = new IntersectionObserver((entries) => {
+      // หากการ์ดโผล่เข้ามาในจอเกิน 50%
+      if (entries[0].isIntersecting) {
+        recordImpression();
+        observer.disconnect(); // นับแค่ครั้งเดียวต่อการโหลด 1 ครั้ง
       }
+    }, { threshold: 0.5 });
 
-      const ownerId = ad.ownerUid || ad.partnerId;
-      if (!ownerId) {
-        if(isMounted) { setIsAdVisible(false); setIsVerifying(false); }
-        return;
-      }
+    observer.observe(cardRef.current);
 
-      const now = Date.now();
+    return () => observer.disconnect();
+  }, [ad.id]);
+
+  // ฟังก์ชันยิงข้อมูลบันทึกยอด Impression และหักแต้ม (Atomic Batch Update)
+  const recordImpression = async () => {
+    if (hasRecordedImpression.current) return;
+    hasRecordedImpression.current = true;
+    
+    try {
+      const batch = writeBatch(db);
       
-      // 2. เช็ค Cache ก่อนดึงใหม่
-      if (creditCache[ownerId] && (now - creditCache[ownerId].timestamp < CACHE_TTL)) {
-         if (creditCache[ownerId].balance > 0) {
-            if(isMounted) setIsAdVisible(true);
-         } else {
-            if(isMounted) setIsAdVisible(false);
-         }
-         if(isMounted) setIsVerifying(false);
-         return;
+      // อัปเดตยอดวิวที่ตัวโฆษณา
+      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', ad.id);
+      batch.update(adRef, { impressions: increment(1) });
+      
+      // หักแต้มที่บัญชีของเจ้าของโฆษณา
+      if (ad.userId) {
+        const userRef = doc(db, 'artifacts', appId, 'users', ad.userId);
+        batch.update(userRef, { creditPoint: increment(-cost) });
       }
 
-      try {
-        // 3. 🎯 เจาะเข้า "ตู้เซฟกระเป๋าเงิน (Wallet)" ใน Sandbox โดยตรงเพื่อความชัวร์ที่สุด
-        const walletRef = doc(db, 'artifacts', appId, 'users', ownerId, 'wallet', 'default');
-        const walletSnap = await getDoc(walletRef);
-        
-        let currentCredit = 0;
-        
-        if (walletSnap.exists() && walletSnap.data().balance !== undefined) {
-          currentCredit = Number(walletSnap.data().balance);
-        } else {
-          // Fallback เช็คจาก Profile
-          const profileRef = doc(db, 'artifacts', appId, 'users', ownerId);
-          const profileSnap = await getDoc(profileRef);
-          if (profileSnap.exists()) {
-            currentCredit = Number(profileSnap.data().creditPoints || profileSnap.data().creditPoint || profileSnap.data().stats?.creditBalance || 0);
-          }
-        }
-        
-        // 4. บันทึก Cache
-        creditCache[ownerId] = { balance: currentCredit, timestamp: now };
+      await batch.commit();
+    } catch (error) {
+      console.error("🔥 Error recording ad impression:", error);
+    }
+  };
 
-        if (currentCredit > 0) {
-          if(isMounted) setIsAdVisible(true);
-        } else {
-          if(isMounted) setIsAdVisible(false);
-        }
-      } catch (error) {
-        console.error("🔥 Error verifying ad credit visibility:", error);
-        if(isMounted) setIsAdVisible(false);
-      } finally {
-        if(isMounted) setIsVerifying(false);
-      }
-    };
+  // 3. ฟังก์ชันบันทึกยอดการคลิก
+  const handleAdClick = async (e) => {
+    if (!showVideo) {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    }
+    
+    try {
+      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', ad.id);
+      await updateDoc(adRef, { clicks: increment(1) });
+    } catch (err) {
+      console.error("🔥 Error recording ad click:", err);
+    }
+  };
 
-    verifyAdVisibility();
-
-    return () => { isMounted = false; };
-  }, [ad]);
-
-  // 🛑 หากระบบซ่อนการ์ด มันจะ Return Null "ทั้งก้อน" ทำให้ Grid ของ ProductList ไม่เกิดช่องโหว่แหว่งๆ
-  if (isVerifying || !isAdVisible) return null;
-
-  const { imageUrl, title, link, platform, storeName, badgeText, youtubeUrl, price } = ad;
-
+  // ================= UI STYLING =================
   const getPlatformStyle = (p) => {
     switch (p?.toLowerCase()) {
       case 'shopee': return { bg: 'bg-[#ee4d2d]', text: 'text-[#ee4d2d]', label: 'Shopee' };
       case 'lazada': return { bg: 'bg-[#0f146d]', text: 'text-[#0f146d]', label: 'Lazada' };
       case 'tiktok': return { bg: 'bg-black', text: 'text-black', label: 'TikTok Shop' };
+      case 'facebook': return { bg: 'bg-[#1877F2]', text: 'text-[#1877F2]', label: 'Facebook' };
+      case 'thisshop': return { bg: 'bg-[#E31E24]', text: 'text-[#E31E24]', label: 'ThisShop' };
+      case 'lineshopping': return { bg: 'bg-[#06C755]', text: 'text-[#06C755]', label: 'LINE' };
       default: return { bg: 'bg-emerald-600', text: 'text-emerald-600', label: 'Official Partner' };
     }
   };
 
   const pStyle = getPlatformStyle(platform);
 
-  const handleClick = (e) => {
-    const targetId = ad.ownerUid || ad.partnerId;
-    if (targetId) {
-      trackAdClick(targetId).catch(e => console.error(e)); 
-      consumeAdCredit(targetId, 1, `CLICK_AD_${ad.skuId || ad.id}`).catch(err => console.error(err));
-    }
-  };
-
   return (
-    <div className={wrapperClassName}>
+    <div className={wrapperClassName} ref={cardRef}>
       <div
-        onClick={(e) => {
-           if (!showVideo) {
-              handleClick(e);
-              window.open(link, '_blank', 'noopener,noreferrer');
-           }
-        }}
-        className="group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-amber-100/50 overflow-hidden relative cursor-pointer h-full"
-        title={title}
+        onClick={handleAdClick}
+        className="group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-indigo-100/60 overflow-hidden relative cursor-pointer h-full"
+        title={ad.title}
       >
+        {/* ป้าย Sponsored มุมขวาบน */}
         <div className="absolute top-3 right-3 z-10">
-          <span className="bg-white/95 backdrop-blur-md text-[9px] font-bold px-2.5 py-1.5 rounded-full text-amber-600 shadow-md border border-amber-200/60 flex items-center gap-1.5 uppercase tracking-wider">
-            <Info size={12} className="text-amber-500 animate-pulse" />
-            <span>{badgeText || 'Sponsored'}</span>
+          <span className="bg-white/95 backdrop-blur-md text-[9px] font-bold px-2.5 py-1.5 rounded-full text-indigo-600 shadow-sm border border-indigo-200 flex items-center gap-1.5 uppercase tracking-wider">
+            <Info size={12} className="text-indigo-500" />
+            <span>{ad.badgeText || 'ได้รับการสนับสนุน'}</span>
           </span>
         </div>
 
+        {/* ป้ายแพลตฟอร์ม มุมซ้ายบน */}
         <div className="absolute top-3 left-3 z-10">
           <span className={`${pStyle.bg} text-white text-[10px] font-bold px-2.5 py-1.5 rounded-full shadow-md tracking-wide flex items-center gap-1`}>
             <Store size={12} /> {pStyle.label}
           </span>
         </div>
 
-        <div className="relative w-full aspect-square bg-gray-50 overflow-hidden flex items-center justify-center">
-          {imageUrl ? (
+        {/* รูปภาพสินค้า 1:1 */}
+        <div className="relative w-full aspect-square bg-slate-50 overflow-hidden flex items-center justify-center">
+          {ad.imageUrl ? (
             <img
-              src={imageUrl}
-              alt={title || 'Advertisement'}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+              src={ad.imageUrl}
+              alt={ad.title || 'Advertisement'}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
               loading="lazy"
-              onError={(e) => { e.target.src = 'https://placehold.co/400x400/f3f4f6/a1a1aa?text=Ad+Image'; }}
+              onError={(e) => { e.target.src = 'https://placehold.co/400x400/f8fafc/94a3b8?text=Ad+Image'; }}
             />
           ) : (
-            <div className="text-gray-400 text-xs font-bold">ไม่มีรูปภาพโฆษณา</div>
+            <div className="text-slate-400 text-xs font-bold">ไม่มีรูปภาพโฆษณา</div>
           )}
           
-          {youtubeUrl && extractYouTubeId(youtubeUrl) && (
+          {/* ปุ่ม Play Video ถ้าใส่ลิงก์ Youtube มา */}
+          {ad.youtubeUrl && extractYouTubeId(ad.youtubeUrl) && (
              <div 
-               className="absolute inset-0 bg-black/30 backdrop-blur-[1px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+               className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                onClick={(e) => {
                   e.stopPropagation();
-                  handleClick(e);
+                  handleAdClick(e);
                   setShowVideo(true);
                }}
              >
-                <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300">
+                <div className="w-14 h-14 bg-red-600/90 hover:bg-red-600 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300">
                    <Youtube size={28} className="text-white ml-1" />
                 </div>
              </div>
           )}
         </div>
 
-        <div className="p-4 flex flex-col flex-grow bg-gradient-to-b from-amber-50/20 to-white">
-          <h3 className="text-sm font-bold text-gray-800 line-clamp-2 mb-2 group-hover:text-amber-600 transition-colors leading-snug">
-            {title || 'สินค้าพิเศษจากพาร์ทเนอร์ของเรา'}
+        {/* รายละเอียดเนื้อหา */}
+        <div className="p-4 flex flex-col flex-grow bg-gradient-to-b from-indigo-50/10 to-white">
+          <h3 className="text-sm font-bold text-slate-800 line-clamp-2 mb-1 group-hover:text-indigo-600 transition-colors leading-snug">
+            {ad.title || 'สินค้าพิเศษจากพาร์ทเนอร์ของเรา'}
           </h3>
+          
+          {ad.description && (
+             <p className="text-xs text-rose-500 font-medium line-clamp-1 mb-2">
+               {ad.description}
+             </p>
+          )}
 
-          {price && (
+          {ad.price && (
             <div className="flex items-center gap-1 mb-2">
                <Tag size={12} className="text-emerald-500" />
-               <span className="text-sm font-bold text-emerald-600">฿{Number(price).toLocaleString()}</span>
+               <span className="text-sm font-bold text-emerald-600">฿{Number(ad.price).toLocaleString()}</span>
             </div>
           )}
 
-          <div className="mt-auto pt-3 flex flex-col gap-2.5 border-t border-gray-100">
-             {youtubeUrl && extractYouTubeId(youtubeUrl) && (
+          <div className="mt-auto pt-3 flex flex-col gap-2.5 border-t border-slate-100">
+             {ad.youtubeUrl && extractYouTubeId(ad.youtubeUrl) && (
                 <button 
-                  onClick={(e) => { e.stopPropagation(); handleClick(e); setShowVideo(true); }}
+                  onClick={(e) => { e.stopPropagation(); handleAdClick(e); setShowVideo(true); }}
                   className="w-full py-2 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-bold rounded-xl transition-colors border border-red-100"
                 >
                   <Youtube size={16} /> ชมวิดีโอรีวิว
                 </button>
              )}
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center justify-between text-xs text-slate-500">
               <div className="flex items-center gap-1.5 truncate pr-2">
                 <Store size={14} className={pStyle.text} />
-                <span className="truncate font-medium">{storeName || ad.ownerName || 'Official Partner'}</span>
+                <span className="truncate font-medium">{sponsorName}</span>
               </div>
-              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-50 group-hover:bg-amber-100 transition-colors flex-shrink-0">
-                 <ExternalLink size={14} className="text-amber-600" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 group-hover:text-indigo-700 transition-colors flex-shrink-0">
+                 <ExternalLink size={14} />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {showVideo && youtubeUrl && extractYouTubeId(youtubeUrl) && (
+      {/* Video Modal (Popup) */}
+      {showVideo && ad.youtubeUrl && extractYouTubeId(ad.youtubeUrl) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-3xl bg-slate-900 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="w-full max-w-3xl bg-slate-900 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-800">
             <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900">
                <h3 className="text-white font-bold truncate flex-1 flex items-center gap-2">
-                 <Youtube className="text-red-500"/> {title}
+                 <Youtube className="text-red-500"/> {ad.title}
                </h3>
                <button 
                  onClick={(e) => { e.stopPropagation(); setShowVideo(false); }}
@@ -224,8 +218,8 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
               <iframe
                 width="100%"
                 height="100%"
-                src={`https://www.youtube.com/embed/${extractYouTubeId(youtubeUrl)}?autoplay=1`}
-                title={title}
+                src={`https://www.youtube.com/embed/${extractYouTubeId(ad.youtubeUrl)}?autoplay=1`}
+                title={ad.title}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -235,10 +229,10 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
             
             <div className="p-5 bg-slate-900 border-t border-slate-800">
                <a 
-                 href={link} 
+                 href={targetUrl} 
                  target="_blank" 
                  rel="noopener noreferrer"
-                 onClick={() => handleClick()} 
+                 onClick={() => handleAdClick()} 
                  className="w-full py-3.5 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-1"
                >
                  <ExternalLink size={18} /> สั่งซื้อสินค้านี้ผ่าน {pStyle.label}

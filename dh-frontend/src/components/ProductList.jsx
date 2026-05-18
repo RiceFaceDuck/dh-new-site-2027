@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight, ShoppingCart, CheckCircle2, Loader2, Cpu, ShieldAlert, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { cartService } from '../firebase/cartService';
 
 import ProductAdCard from './ads/ProductAdCard';
-import { userSkuService } from '../firebase/userSkuService';
-import { getCreditSettings } from '../firebase/creditService';
+
+const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
 
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
 
@@ -31,27 +33,48 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
   const navigate = useNavigate();
   const [addingState, setAddingState] = useState({}); 
   
+  // 📢 Ad System States
   const [ads, setAds] = useState([]); 
-  const [displayRatio, setDisplayRatio] = useState(10); 
+  const [displayRatio, setDisplayRatio] = useState(10); // ค่าเริ่มต้น 10:1
 
   useEffect(() => {
     const fetchAdsAndSettings = async () => {
       try {
-        const activeAds = await userSkuService.getActiveAdsForDisplay();
-        setAds(activeAds || []);
-
-        const settings = await getCreditSettings();
-        if (settings?.ledger?.displayRatio) {
-          setDisplayRatio(settings.ledger.displayRatio);
-        } else if (settings?.displayRatio) {
-          setDisplayRatio(settings.displayRatio);
+        // 1. ดึงการตั้งค่าพื้นที่โฆษณา (Global Settings)
+        const settingsSnap = await getDoc(doc(db, 'settings', 'marketing'));
+        if (settingsSnap.exists() && settingsSnap.data().displayRatio) {
+           setDisplayRatio(Number(settingsSnap.data().displayRatio));
         }
+
+        // 2. ดึงโฆษณาที่กำลัง Active
+        const adsQuery = query(
+          collection(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads'),
+          where('status', '==', 'active')
+        );
+        const snapshot = await getDocs(adsQuery);
+        const fetchedAds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // 3. 🎯 กรองเฉพาะโฆษณาที่ "งบยังไม่หมด" (Smart Pre-filtering)
+        const validAds = fetchedAds.filter(ad => {
+           const cost = Number(ad.costPerImpression) || 1;
+           const maxImp = Math.floor((Number(ad.creditLimit) || 0) / cost);
+           return (ad.impressions || 0) < maxImp;
+        });
+
+        // 4. สลับลำดับโฆษณา (Shuffle) เพื่อความยุติธรรมในการแสดงผล
+        const shuffledAds = validAds.sort(() => 0.5 - Math.random());
+        setAds(shuffledAds);
+
       } catch (err) {
-        console.error("🔥 Failed to load ads for list:", err);
+        console.error("🔥 Failed to load ads and settings for list:", err);
       }
     };
-    fetchAdsAndSettings();
-  }, []);
+
+    // โหลดโฆษณาเฉพาะเมื่อมีสินค้ากำลังจะแสดงผล เพื่อประหยัด Reads
+    if (!loading && products?.length > 0) {
+       fetchAdsAndSettings();
+    }
+  }, [loading, products?.length]);
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation(); 
@@ -121,6 +144,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     );
   }
 
+  // 🧠 Core Display Engine: ผสมสินค้า + โฆษณา
   const renderMixedGrid = () => {
     if (!products || products.length === 0) return [];
     
@@ -128,7 +152,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     let adIndex = 0;
     
     products.forEach((product, index) => {
-      // --- 2.1 เรนเดอร์สินค้าหลักของบริษัท ---
+      // --- 1. เรนเดอร์สินค้าหลักของบริษัท (ของเดิม) ---
       const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
       const imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
       
@@ -152,7 +176,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
 
       displayElements.push(
         <div 
-          key={`product-${product.id}`} 
+          key={`product-${product.id}-${index}`} 
           onClick={() => navigate(`/product/${product.id}`, { state: { product: mappedProduct } })} 
           className="group cursor-pointer bg-white rounded-md border border-slate-200 overflow-hidden flex flex-col hover:border-cyber-emerald hover:shadow-glow-emerald transition-all duration-300 relative animate-in fade-in"
         >
@@ -223,28 +247,30 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
         </div>
       );
       
-      // --- 2.2 แทรกป้ายโฆษณา (ส่ง className คลุมไปให้ ProductAdCard จัดการตัวเอง ป้องกัน Grid แหว่ง) ---
+      // --- 2. แทรกป้ายโฆษณา (Ad Injection) ---
+      // แทรกโฆษณาเมื่อจำนวนสินค้าครบตาม displayRatio ที่ตั้งไว้ และยังมีโฆษณาที่งบเหลืออยู่
       if (displayRatio > 0 && (index + 1) % displayRatio === 0 && ads.length > 0) {
         const adToDisplay = ads[adIndex % ads.length];
         displayElements.push(
            <ProductAdCard 
-              key={`ad-${adToDisplay.id}-${index}`} 
+              key={`ad-inject-${adToDisplay.id}-${index}`} 
               ad={adToDisplay} 
-              wrapperClassName="col-span-1 h-full animate-in fade-in duration-500" 
+              wrapperClassName="col-span-1 h-full animate-in fade-in zoom-in duration-500" 
            />
         );
         adIndex++;
       }
     });
 
-    // ✨ Smart Fallback: ถ้าร้านมีสินค้าน้อยกว่าอัตราส่วน ให้บังคับยัดโฆษณา 1 ชิ้นต่อท้ายเสมอ!
+    // ✨ Smart Fallback: ถ้าร้านมีสินค้าน้อยกว่าอัตราส่วน แต่เรามีโฆษณาที่พร้อมแสดง ให้ยัดโฆษณาปิดท้ายให้ 1 ตัว
+    // เพื่อให้คนที่จ่ายค่าโฆษณามีโอกาสได้แสดงผล แม้หน้านั้นจะมีสินค้าน้อย
     if (products.length > 0 && displayRatio > 0 && products.length < displayRatio && ads.length > 0) {
         const adToDisplay = ads[adIndex % ads.length];
         displayElements.push(
            <ProductAdCard 
               key={`ad-fallback-${adToDisplay.id}`} 
               ad={adToDisplay} 
-              wrapperClassName="col-span-1 h-full animate-in fade-in duration-500" 
+              wrapperClassName="col-span-1 h-full animate-in fade-in zoom-in duration-500" 
            />
         );
     }

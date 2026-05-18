@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Lock, Unlock, ShieldAlert, Save, AlertTriangle, 
-    Box, Link as LinkIcon, ShieldCheck, Loader2, Info 
+    Box, Link as LinkIcon, ShieldCheck, Loader2, Info,
+    Megaphone
 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -29,6 +30,12 @@ export default function GlobalSettingsPanel() {
         categories: {}
     });
 
+    // 📢 Ad Settings State (ตั้งค่าพื้นที่โฆษณา)
+    const [adConfig, setAdConfig] = useState({
+        costPerImpression: 1,
+        displayRatio: 10
+    });
+
     // 📥 โหลดข้อมูลทั้งหมดเมื่อ Component ทำงาน
     useEffect(() => {
         fetchAllSettings();
@@ -48,6 +55,15 @@ export default function GlobalSettingsPanel() {
             // 3. Warranty Settings
             const warrantyData = await warrantyService.getWarrantySettings();
             if (warrantyData) setWarrantyConfig(warrantyData);
+
+            // 4. Ad Settings
+            const adSnap = await getDoc(doc(db, 'settings', 'marketing'));
+            if (adSnap.exists()) {
+                setAdConfig({
+                    costPerImpression: adSnap.data().costPerImpression || 1,
+                    displayRatio: adSnap.data().displayRatio || 10
+                });
+            }
 
         } catch (error) {
             console.error("🔥 Error fetching global settings:", error);
@@ -93,6 +109,19 @@ export default function GlobalSettingsPanel() {
             else if (activeTab === 'warranty') {
                 await warrantyService.updateWarrantySettings(warrantyConfig, uid);
                 alert("✅ บันทึกกติกาประกันพื้นฐานสำเร็จ");
+            }
+            else if (activeTab === 'ads') {
+                const cost = Number(adConfig.costPerImpression);
+                const ratio = Number(adConfig.displayRatio);
+                if (cost <= 0) throw new Error("ค่า Credit Point ต่อการแสดงผลต้องมากกว่า 0");
+                if (ratio <= 0) throw new Error("อัตราส่วนความถี่ในการแสดงผลต้องมากกว่า 0");
+
+                await setDoc(doc(db, 'settings', 'marketing'), { 
+                    costPerImpression: cost, 
+                    displayRatio: ratio 
+                }, { merge: true });
+                await historyService.addLog('SystemConfig', 'Update', 'marketing', `อัปเดตเรทโฆษณา PPI: ${cost}, Ratio: 1:${ratio}`, uid);
+                alert("✅ บันทึกการตั้งค่าพื้นที่โฆษณาสำเร็จ");
             }
 
             // ล็อกกลับอัตโนมัติหลังเซฟเสร็จ เพื่อความปลอดภัย
@@ -165,6 +194,10 @@ export default function GlobalSettingsPanel() {
                     </button>
                     <button onClick={() => setActiveTab('warranty')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'warranty' ? 'bg-amber-100 text-amber-700 shadow-sm border border-amber-200' : 'text-slate-600 hover:bg-slate-200'}`}>
                         <ShieldCheck size={16} strokeWidth={2.5}/> กติกาการรับประกัน
+                    </button>
+                    {/* ปุ่มใหม่: ตั้งค่าโฆษณา */}
+                    <button onClick={() => setActiveTab('ads')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'ads' ? 'bg-indigo-100 text-indigo-700 shadow-sm border border-indigo-200' : 'text-slate-600 hover:bg-slate-200'}`}>
+                        <Megaphone size={16} strokeWidth={2.5}/> ตั้งค่าพื้นที่โฆษณา
                     </button>
                 </div>
 
@@ -260,6 +293,47 @@ export default function GlobalSettingsPanel() {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- TAB 4: ADS (ระบบจัดการเรทโฆษณา) --- */}
+                    {activeTab === 'ads' && (
+                        <div className="space-y-6 max-w-lg animate-in fade-in">
+                            <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex gap-3 text-indigo-800">
+                                <Megaphone size={20} className="shrink-0 mt-0.5"/>
+                                <p className="text-xs font-bold leading-relaxed">ตั้งค่าเรทราคาสำหรับการลงโฆษณาแบบหักตามการมองเห็น (Pay-Per-Impression) และตั้งค่าอัตราส่วนความถี่ในการแทรกโฆษณา</p>
+                            </div>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5 block">อัตราค่าโฆษณา (Cost Per Impression)</label>
+                                    <div className="relative">
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-indigo-500 text-xs">Credit / 1 View</span>
+                                        <input 
+                                            type="number" min="0.1" step="0.1" disabled={!isUnlocked}
+                                            value={adConfig.costPerImpression}
+                                            onChange={(e) => setAdConfig({...adConfig, costPerImpression: e.target.value})}
+                                            className="w-full pl-4 pr-32 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-2xl text-indigo-600 outline-none focus:border-indigo-500 disabled:bg-slate-50 disabled:text-slate-400 transition-all"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1.5 font-bold">ระบบจะหักเครดิตตามยอดนี้ ทุกๆ 1 ครั้งที่โฆษณาแสดงผลผ่านหน้าจอผู้ใช้งาน</p>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5 block">ความถี่ในการแสดงผล (Display Ratio)</label>
+                                    <div className="relative">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-2xl">1 :</div>
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] sm:text-xs">โฆษณา 1 ชิ้น : สินค้าปกติ N ชิ้น</span>
+                                        <input 
+                                            type="number" min="1" step="1" disabled={!isUnlocked}
+                                            value={adConfig.displayRatio}
+                                            onChange={(e) => setAdConfig({...adConfig, displayRatio: e.target.value})}
+                                            className="w-full pl-14 pr-48 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-2xl text-slate-700 outline-none focus:border-indigo-500 disabled:bg-slate-50 disabled:text-slate-400 transition-all"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1.5 font-bold">ตัวอย่าง 1:10 หมายถึง ระบบจะแสดงสินค้า 10 ตัว แล้วค่อยแทรกการ์ดโฆษณา 1 ตัว</p>
+                                </div>
                             </div>
                         </div>
                     )}

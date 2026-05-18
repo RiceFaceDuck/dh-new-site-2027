@@ -1,166 +1,137 @@
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './config';
-
-// กำหนด App ID ตามโครงสร้างของระบบ
-const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
-
-// ==========================================
-// In-memory Cache System (ประหยัด Reads)
-// ==========================================
-let cachedAds = null;
-let cachedBanners = null;
-let adsFetchTime = 0;
-let bannersFetchTime = 0;
-const CACHE_DURATION = 1000 * 60 * 5; // แคชข้อมูลไว้ 5 นาที (300,000 ms)
-
-/**
- * ดึงข้อมูลโฆษณาสินค้า (อัตราส่วน 1:1) ที่มีสถานะ 'active'
- * @param {boolean} forceRefresh - บังคับดึงข้อมูลใหม่จาก Firestore โดยไม่ใช้ Cache
- * @returns {Promise<Array>} - Array ของข้อมูลโฆษณา
- */
-export const getActiveAds = async (forceRefresh = false) => {
-  const now = Date.now();
-
-  // ตรวจสอบว่ามี Cache และยังไม่หมดอายุหรือไม่
-  if (!forceRefresh && cachedAds && (now - adsFetchTime < CACHE_DURATION)) {
-    console.log("MarketingService: Loaded ads from cache (Saved Firestore Reads)");
-    return cachedAds;
-  }
-
-  try {
-    const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'marketing_ads');
-    // ดึงเฉพาะโฆษณาที่เปิดใช้งานอยู่
-    const q = query(adsRef, where('status', '==', 'active'));
-    const snapshot = await getDocs(q);
-
-    const ads = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    // บันทึกลง Cache
-    cachedAds = ads;
-    adsFetchTime = now;
-    
-    return ads;
-  } catch (error) {
-    console.error("MarketingService: Error fetching active ads:", error);
-    // หาก Error ให้ส่งคืน Cache เก่า (ถ้ามี) เพื่อไม่ให้หน้าเว็บพัง
-    return cachedAds || [];
-  }
-};
-
-/**
- * ดึงข้อมูลแผ่นป้ายโฆษณา (Banners) ที่มีสถานะ 'active'
- * @param {boolean} forceRefresh - บังคับดึงข้อมูลใหม่จาก Firestore โดยไม่ใช้ Cache
- * @returns {Promise<Array>} - Array ของข้อมูลแบนเนอร์
- */
-export const getActiveBanners = async (forceRefresh = false) => {
-  const now = Date.now();
-
-  if (!forceRefresh && cachedBanners && (now - bannersFetchTime < CACHE_DURATION)) {
-    console.log("MarketingService: Loaded banners from cache (Saved Firestore Reads)");
-    return cachedBanners;
-  }
-
-  try {
-    const bannersRef = collection(db, 'artifacts', appId, 'public', 'data', 'marketing_banners');
-    // ดึงเฉพาะแบนเนอร์ที่เปิดใช้งานอยู่
-    const q = query(bannersRef, where('status', '==', 'active'));
-    const snapshot = await getDocs(q);
-
-    const banners = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    cachedBanners = banners;
-    bannersFetchTime = now;
-    
-    return banners;
-  } catch (error) {
-    console.error("MarketingService: Error fetching active banners:", error);
-    return cachedBanners || [];
-  }
-};
-
-/**
- * ล้าง Cache ทั้งหมด (เรียกใช้เมื่อแอดมินหรือระบบต้องการบังคับล้างเพื่ออัปเดตทันที)
- */
-export const clearMarketingCache = () => {
-  cachedAds = null;
-  cachedBanners = null;
-  adsFetchTime = 0;
-  bannersFetchTime = 0;
-  console.log("MarketingService: Cache cleared");
-};
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy,
+  runTransaction, 
+  serverTimestamp 
+} from 'firebase/firestore';
 
 // ==========================================
-// ส่งออก Object หลัก เพื่อป้องกัน Error กับระบบเก่าที่ import { marketingService }
+// Helper Functions (ลูกเล่นเสริมการทำงาน)
 // ==========================================
 
 /**
- * ดึงข้อมูลโฆษณาสินค้า (Product Ad - 1:1)
+ * ฟังก์ชันตรวจจับ Platform จาก URL อัตโนมัติ
+ * ช่วยให้ระบบรู้ว่าจะต้องแสดง Icon หรือหน้าตา UI แบบไหน
  */
-export const getActiveProductAds = async (forceRefresh = false) => {
-  const now = Date.now();
-  if (!forceRefresh && cachedAds && (now - adsFetchTime < CACHE_DURATION)) {
-    return cachedAds;
-  }
-
-  try {
-    const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'marketing_ads');
-    // ดึงเฉพาะโฆษณาที่เปิดใช้งานอยู่และเป็นประเภท product
-    const q = query(adsRef, where('status', '==', 'active'), where('type', '==', 'product'));
-    const snapshot = await getDocs(q);
-
-    const ads = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    cachedAds = ads;
-    adsFetchTime = now;
-    return ads;
-  } catch (error) {
-    console.error("MarketingService: Error fetching active product ads:", error);
-    return cachedAds || [];
-  }
+const detectPlatform = (url) => {
+  if (!url) return 'other';
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes('shopee.')) return 'shopee';
+  if (lowerUrl.includes('lazada.')) return 'lazada';
+  if (lowerUrl.includes('tiktok.')) return 'tiktok';
+  if (lowerUrl.includes('facebook.')) return 'facebook';
+  if (lowerUrl.includes('thisshop.')) return 'thisshop';
+  if (lowerUrl.includes('line.')) return 'lineshopping';
+  return 'other';
 };
 
-/**
- * ดึงข้อมูลแผ่นป้ายโฆษณา (Billboard Ad - 16:9)
- */
-export const getActiveBillboardAds = async (forceRefresh = false) => {
-  const now = Date.now();
-  if (!forceRefresh && cachedBanners && (now - bannersFetchTime < CACHE_DURATION)) {
-    return cachedBanners;
-  }
-
-  try {
-    const bannersRef = collection(db, 'artifacts', appId, 'public', 'data', 'marketing_ads');
-    // ดึงเฉพาะแบนเนอร์ที่เปิดใช้งานอยู่และเป็นประเภท billboard
-    const q = query(bannersRef, where('status', '==', 'active'), where('type', '==', 'billboard'));
-    const snapshot = await getDocs(q);
-
-    const banners = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    cachedBanners = banners;
-    bannersFetchTime = now;
-    return banners;
-  } catch (error) {
-    console.error("MarketingService: Error fetching active billboard ads:", error);
-    return cachedBanners || [];
-  }
-};
+// ==========================================
+// Marketing & Ad Services
+// ==========================================
 
 export const marketingService = {
-  getActiveProductAds,
-  getActiveBillboardAds,
-  getActiveAds,
-  getActiveBanners,
-  clearMarketingCache
+  
+  // ... (หากมี Service การตลาดอื่นๆ ในอนาคตสามารถนำมาต่อตรงนี้ได้ ห้ามลบโครงสร้างนี้) ...
+
+  /**
+   * 1. ส่งคำขอลงโฆษณา (Atomic Transaction)
+   * @param {Object} adData - ข้อมูลโฆษณา (title, description, imageUrl, youtubeUrl, targetUrl)
+   * @param {String} userId - ID ของผู้ใช้งานที่ส่งคำขอ
+   * @param {Number} adCost - ราคาเครดิตที่ต้องจ่ายต่อ 1 โฆษณา (ดึงจาก Global Settings)
+   * @returns {Object} { success: boolean, message/error: string, adId?: string }
+   */
+  submitAdRequest: async (adData, userId, adCost) => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const newAdRef = doc(collection(db, 'sponsored_ads')); // สร้าง Reference และ ID รอไว้เลย
+
+      // เริ่มทำ Transaction (ต้องทำสำเร็จทั้งหมด หรือยกเลิกทั้งหมด)
+      await runTransaction(db, async (transaction) => {
+        // 1. อ่านข้อมูล User ล่าสุดจาก Database ป้องกันการโกงหรือยอดไม่ตรง
+        const userDoc = await transaction.get(userRef);
+        
+        if (!userDoc.exists()) {
+          throw new Error("ระบบไม่พบข้อมูลผู้ใช้งานของคุณ");
+        }
+
+        const currentCredit = userDoc.data().creditPoint || 0;
+
+        // 2. ตรวจสอบเงื่อนไข
+        if (currentCredit < adCost) {
+          throw new Error("Credit Point ของคุณไม่เพียงพอสำหรับการลงโฆษณา");
+        }
+
+        // 3. หักแต้ม Credit
+        transaction.update(userRef, {
+          creditPoint: currentCredit - adCost,
+          updatedAt: serverTimestamp()
+        });
+
+        // 4. บันทึกคำขอโฆษณาลง Database
+        const platform = detectPlatform(adData.targetUrl);
+        transaction.set(newAdRef, {
+          ...adData,
+          userId: userId,
+          platform: platform,
+          status: 'pending', // รอผู้จัดการอนุมัติผ่าน To-do
+          clicks: 0,         // Database เตรียมพร้อมสำหรับเก็บสถิติ
+          impressions: 0,    // Database เตรียมพร้อมสำหรับเก็บสถิติ
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      });
+
+      return { 
+        success: true, 
+        message: 'ส่งคำขอสำเร็จ! ระบบได้หัก Credit ของคุณแล้ว กรุณารอผู้จัดการอนุมัติ',
+        adId: newAdRef.id 
+      };
+
+    } catch (error) {
+      console.error("❌ Transaction Failed [submitAdRequest]:", error);
+      return { 
+        success: false, 
+        error: error.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อระบบ กรุณาลองใหม่อีกครั้ง' 
+      };
+    }
+  },
+
+  /**
+   * 2. ดึงโฆษณาที่ Active เพื่อนำไปแสดงผลแทรกกับสินค้า
+   * @returns {Array} Array ของโฆษณาที่สุ่มลำดับมาแล้ว (Shuffle)
+   */
+  fetchActiveAds: async () => {
+    try {
+      // ดึงเฉพาะโฆษณาที่อนุมัติแล้ว
+      const adsQuery = query(
+        collection(db, 'sponsored_ads'),
+        where('status', '==', 'active'),
+        orderBy('updatedAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(adsQuery);
+      const activeAds = [];
+      
+      querySnapshot.forEach((doc) => {
+        activeAds.push({ id: doc.id, ...doc.data() });
+      });
+
+      // ลูกเล่นเสริม: สับเปลี่ยนลำดับ (Fisher-Yates Shuffle) แบบง่าย
+      // เพื่อให้โฆษณาแต่ละตัวมีโอกาสแสดงผลเป็นอันดับแรกเท่าๆ กัน ไม่กระจุกตัว
+      const shuffledAds = activeAds.sort(() => 0.5 - Math.random());
+
+      return shuffledAds;
+    } catch (error) {
+      console.error("❌ Error fetching active ads:", error);
+      throw error;
+    }
+  }
+
 };
+
+export default marketingService;

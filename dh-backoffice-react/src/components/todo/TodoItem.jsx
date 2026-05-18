@@ -1,11 +1,16 @@
 import React from 'react';
-import { Check, X, Play, Clock, UserPlus, Tag, Info, AlertCircle, Calendar, Receipt, Package, Truck, MessageSquare } from 'lucide-react';
+import { 
+  Check, X, Play, Clock, UserPlus, Tag, Info, AlertCircle, 
+  Calendar, Receipt, Package, Truck, MessageSquare, 
+  Megaphone, ExternalLink, Image as ImageIcon 
+} from 'lucide-react';
 
 export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClass, handleAction }) {
   
-  // 🌟 แมปปิ้งไอคอนให้ตรงกับประเภทงาน
+  // 🌟 แมปปิ้งไอคอนให้ตรงกับประเภทงาน (รองรับทั้งตัวพิมพ์เล็ก-ใหญ่)
   const getIconForType = (type) => {
-    switch (type) {
+    const normalizedType = type?.toUpperCase();
+    switch (normalizedType) {
       case 'STAFF_APPROVAL': return <UserPlus size={20} className="text-blue-500" />;
       case 'MANUAL_TASK': return <Calendar size={20} className="text-dh-accent" />;
       case 'PACKING_TASK': return <Package size={20} className="text-orange-500" />;
@@ -13,6 +18,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
       case 'INVENTORY': return <Truck size={20} className="text-purple-500" />;
       case 'CLAIM_APPROVAL': 
       case 'RETURN_APPROVAL': return <AlertCircle size={20} className="text-rose-500" />;
+      case 'AD_APPROVAL': return <Megaphone size={20} className="text-indigo-500" />; // 👈 เพิ่มหมวดหมู่งานโฆษณา
       default: return <Info size={20} className="text-slate-400" />;
     }
   };
@@ -51,8 +57,10 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
     }
 
     // ส่งโครงสร้างที่ถูกต้องให้ Todo.jsx
-    handleAction(todo.id, 'reject', todo.type, { reason: reason.trim() });
+    handleAction(todo.id, 'reject', todo.type, { reason: reason.trim(), payload: todo.adPayload });
   };
+
+  const isAdTask = todo.type?.toUpperCase() === 'AD_APPROVAL';
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border ${urgencyClass} flex flex-col h-full relative overflow-hidden transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600`}>
@@ -94,6 +102,37 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
           <p className="text-sm text-slate-600 dark:text-slate-300 bg-blue-50/50 dark:bg-slate-900/50 p-3 rounded-xl border border-blue-100 dark:border-slate-700/50 line-clamp-3">
             {todo.description}
           </p>
+        )}
+
+        {/* 🌟 Quick Ad Preview (แสดงเฉพาะงานโฆษณา) */}
+        {isAdTask && todo.adPayload && (
+          <div className="bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-3 rounded-xl flex gap-3 items-center transition-all hover:bg-indigo-50">
+            <div className="w-12 h-12 rounded-lg bg-white overflow-hidden shadow-sm shrink-0 border border-slate-200 flex items-center justify-center">
+              {todo.adPayload.imageUrl ? (
+                <img src={todo.adPayload.imageUrl} alt="Ad Preview" className="w-full h-full object-cover" />
+              ) : (
+                <ImageIcon size={20} className="text-slate-300" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-indigo-900 dark:text-indigo-300 truncate">
+                งบ: {todo.adPayload.creditLimit || 0} แต้ม
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold text-white bg-indigo-500 shrink-0">
+                  {todo.adPayload.platform || 'OTHER'}
+                </span>
+                <a 
+                  href={todo.adPayload.targetUrl} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5 truncate"
+                >
+                  <ExternalLink size={10} /> ตรวจสอบลิงก์
+                </a>
+              </div>
+            </div>
+          </div>
         )}
 
         <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
