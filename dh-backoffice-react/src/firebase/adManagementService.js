@@ -1,40 +1,44 @@
+/* eslint-disable */
 import { db } from './config';
 import { 
   collection, 
   doc, 
   getDocs, 
   updateDoc,
-  runTransaction,
   serverTimestamp,
   query,
-  where
+  where,
+  writeBatch
 } from 'firebase/firestore';
 
-// ดึงสิทธิ์การเข้าถึงรหัส Sandbox App ID ที่ถูกต้อง
+// 🔐 ดึงสิทธิ์การเข้าถึงรหัส Sandbox App ID ที่ถูกต้อง (ยึดตามโครงสร้างความปลอดภัย)
 const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
+
+// 🚀 ฟังก์ชันช่วยเหลือสำหรับเรียก Collection ให้ตรงกับ Master Plan (v2.3)
+const getAdsCollection = () => collection(db, 'artifacts', appId, 'public', 'data', 'user_skus');
+const getTodosCollection = () => collection(db, 'artifacts', appId, 'public', 'data', 'manager_todos');
 
 export const adManagementService = {
 
   /**
-   * 1. ดึงข้อมูลโฆษณาตามสถานะ 
+   * 1. ดึงข้อมูลโฆษณาตามสถานะ (ค่าเริ่มต้นคือ pending - รอตรวจสอบ)
    */
   getAdsByStatus: async (status = 'pending') => {
     try {
-      const adsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads');
-      const querySnapshot = await getDocs(adsCollectionRef);
+      // 💡 ประหยัด Indexing ด้วยการ Query แค่ Status แล้วค่อยมา Sort ด้วย JavaScript Memory
+      const q = query(getAdsCollection(), where('status', '==', status));
+      const querySnapshot = await getDocs(q);
       const adsList = [];
       
       querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.status === status) {
-          adsList.push({ id: doc.id, ...data });
-        }
+        adsList.push({ id: doc.id, ...doc.data() });
       });
 
+      // เรียงลำดับจากใหม่สุด ไป เก่าสุด
       adsList.sort((a, b) => {
         const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
         const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
-        return timeA - timeB;
+        return timeB - timeA; 
       });
 
       return adsList;
@@ -45,25 +49,36 @@ export const adManagementService = {
   },
 
   /**
-   * 2. อนุมัติโฆษณา (Approve) & ปิดงาน To-do อัตโนมัติ
+   * 2. อนุมัติโฆษณา (Approve) & ปิดงาน To-do อัตโนมัติด้วย Batch Write
+   * การใช้ Batch ทำให้มั่นใจว่า โฆษณาเปิด + งานถูกเคลียร์ พร้อมกัน 100%
    */
-  approveAd: async (adId) => {
+  approveAd: async (adId, targetSkuId) => {
     try {
-      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', adId);
-      await updateDoc(adRef, {
+      const batch = writeBatch(db);
+      const adRef = doc(getAdsCollection(), adId);
+      
+      // 2.1 อัปเดตสถานะโฆษณาเป็นพร้อมใช้งาน
+      batch.update(adRef, {
         status: 'active',
+        isActive: true, // เผื่อกรณี User ปิดสวิตช์ไว้ ให้บังคับเปิดหลังอนุมัติทันที
         updatedAt: serverTimestamp()
       });
 
-      // 🔗 ระบบ Auto-Sync: ไปค้นหาการ์ด To-do ที่ผูกกับโฆษณานี้ แล้วปรับสถานะให้เป็น completed ทันที
-      const todosRef = collection(db, 'artifacts', appId, 'public', 'data', 'todos');
-      const q = query(todosRef, where('adId', '==', adId));
-      const snapshot = await getDocs(q);
-      snapshot.forEach((todoDoc) => {
-        updateDoc(todoDoc.ref, { status: 'completed', updatedAt: serverTimestamp() });
-      });
+      // 2.2 ค้นหา To-do ของผู้จัดการที่เกี่ยวข้อง เพื่อปิดงาน (Auto-sync)
+      if (targetSkuId) {
+        const q = query(getTodosCollection(), where('targetSkuId', '==', targetSkuId), where('status', '==', 'pending'));
+        const snapshot = await getDocs(q);
+        snapshot.forEach((todoDoc) => {
+          batch.update(todoDoc.ref, { 
+            status: 'resolved', 
+            resolution: 'approved',
+            updatedAt: serverTimestamp() 
+          });
+        });
+      }
 
-      return { success: true, message: 'อนุมัติโฆษณาสำเร็จ โฆษณาจะเริ่มแสดงผลทันที' };
+      await batch.commit(); // สั่งรันทุกคำสั่งพร้อมกัน
+      return { success: true, message: '✅ อนุมัติโฆษณาสำเร็จ โฆษณาพร้อมแสดงผลทันที' };
     } catch (error) {
       console.error("❌ Error approving ad:", error);
       return { success: false, message: 'เกิดข้อผิดพลาดในการอนุมัติโฆษณา' };
@@ -71,52 +86,75 @@ export const adManagementService = {
   },
 
   /**
-   * 3. ปฏิเสธโฆษณา และยกเลิกงาน To-do (ไม่คืนแต้ม เนื่องจากเราไม่ได้หักตอนส่งคำขอ)
+   * 3. ปฏิเสธโฆษณา (Reject) & ระบุเหตุผลให้ User ทราบ
    */
-  rejectAd: async (adId, reason = 'ผิดเงื่อนไขการให้บริการ') => {
+  rejectAd: async (adId, targetSkuId, reason = 'ผิดเงื่อนไขการให้บริการของ DH Notebook') => {
     try {
-      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', adId);
+      const batch = writeBatch(db);
+      const adRef = doc(getAdsCollection(), adId);
       
-      // อัปเดตสถานะโฆษณาเป็น rejected
-      await updateDoc(adRef, {
+      // 3.1 อัปเดตสถานะเป็นถูกปฏิเสธ พร้อมแนบเหตุผล
+      batch.update(adRef, {
         status: 'rejected',
+        isActive: false,
         rejectReason: reason,
         updatedAt: serverTimestamp()
       });
 
-      // 🔗 ระบบ Auto-Sync: ปรับสถานะ To-do ให้เป็น cancelled เพื่องานจะได้ออกจากหน้ากระดานผู้จัดการ
-      const todosRef = collection(db, 'artifacts', appId, 'public', 'data', 'todos');
-      const q = query(todosRef, where('adId', '==', adId));
-      const snapshot = await getDocs(q);
-      snapshot.forEach((todoDoc) => {
-        updateDoc(todoDoc.ref, { status: 'cancelled', updatedAt: serverTimestamp() });
-      });
+      // 3.2 ปิดงานใน To-do ของผู้จัดการเช่นกัน
+      if (targetSkuId) {
+        const q = query(getTodosCollection(), where('targetSkuId', '==', targetSkuId), where('status', '==', 'pending'));
+        const snapshot = await getDocs(q);
+        snapshot.forEach((todoDoc) => {
+          batch.update(todoDoc.ref, { 
+            status: 'resolved', 
+            resolution: 'rejected', 
+            updatedAt: serverTimestamp() 
+          });
+        });
+      }
 
-      return { 
-        success: true, 
-        message: `ปฏิเสธคำขอโฆษณาเรียบร้อยแล้ว` 
-      };
-
+      await batch.commit();
+      return { success: true, message: `🛑 ปฏิเสธคำขอโฆษณาเรียบร้อยแล้ว` };
     } catch (error) {
       console.error("❌ Failed [rejectAd]:", error);
       return { success: false, message: error.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ' };
     }
   },
 
+  /**
+   * 4. สั่งระงับการแสดงผลฉุกเฉิน (โดยผู้จัดการ)
+   * ใช้ในกรณีที่โฆษณาผ่านการอนุมัติไปแล้ว แต่พบปัญหาภายหลัง
+   */
   pauseAd: async (adId) => {
     try {
-      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', adId);
+      const adRef = doc(getAdsCollection(), adId);
       await updateDoc(adRef, {
         status: 'paused',
+        isActive: false, // ปิดสวิตช์การแสดงผล
+        pauseReason: 'ถูกระงับโดยผู้ดูแลระบบ',
         updatedAt: serverTimestamp()
       });
-      return { success: true, message: 'ระงับการแสดงผลชั่วคราวสำเร็จ' };
+      return { success: true, message: 'ระงับการแสดงผลโฆษณานี้ชั่วคราวสำเร็จ' };
     } catch (error) {
       console.error("❌ Error pausing ad:", error);
       return { success: false, message: 'เกิดข้อผิดพลาดในการระงับโฆษณา' };
     }
-  }
+  },
 
+  /**
+   * 5. [NEW] ฟังก์ชันสำหรับ Dashboard: นับจำนวนคำขอที่รออนุมัติ
+   */
+  getPendingCount: async () => {
+    try {
+      const q = query(getAdsCollection(), where('status', '==', 'pending'));
+      const snapshot = await getDocs(q);
+      return snapshot.size; // คืนค่าตัวเลขจำนวนคำขอไปแสดงบน Widget
+    } catch (error) {
+      console.error("❌ Error getting pending count:", error);
+      return 0;
+    }
+  }
 };
 
 export default adManagementService;

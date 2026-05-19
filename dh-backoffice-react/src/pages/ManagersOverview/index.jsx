@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, X } from 'lucide-react';
@@ -11,6 +12,9 @@ import QuickAccessTools from './QuickAccessTools';
 import StaffApprovalModal from './StaffApprovalModal';
 import VipManagementModal from './VipManagementModal';
 import GlobalSettingsPanel from '../../components/managers/GlobalSettingsPanel';
+
+// 🚀 [NEW] นำเข้า Widget สรุปงานค้างของผู้จัดการ
+import ManagerTodoSummary from '../../components/todo/ManagerTodoSummary';
 
 /**
  * 🏢 ศูนย์บัญชาการผู้จัดการ (Managers Overview)
@@ -59,7 +63,7 @@ const ManagersOverview = () => {
   }, [navigate]);
 
   if (isLoadingAuth) {
-    return <div className="p-6 text-center text-[var(--dh-text-muted)] font-bold">กำลังตรวจสอบสิทธิ์...</div>;
+    return <div className="p-6 text-center text-[var(--dh-text-muted)] font-bold animate-pulse">กำลังตรวจสอบสิทธิ์ความปลอดภัย...</div>;
   }
 
   // ==========================================
@@ -69,7 +73,7 @@ const ManagersOverview = () => {
     const result = await dashboardLogic.approveStaff(userId);
     if (result.success) {
       alert('อนุมัติพนักงานเรียบร้อยแล้ว');
-      // หากต้องการปิด Modal ทันทีเมื่ออนุมัติคนสุดท้ายเสร็จ สามารถใส่ Logic ตรวจสอบความยาว Array ได้
+      // หากต้องการปิด Modal ทันทีเมื่ออนุมัติคนสุดท้ายเสร็จ
       if (dashboardLogic.pendingStaffs.length <= 1) {
           setIsStaffModalOpen(false);
       }
@@ -88,18 +92,33 @@ const ManagersOverview = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto animate-in fade-in duration-300">
+    // 🛠️ [UX] ใช้ space-y-6 เพื่อจัดการช่องไฟอัตโนมัติให้ดูโปร่งและทันสมัย
+    <div className="p-6 max-w-7xl mx-auto animate-in fade-in duration-300 space-y-6">
       
       {/* 🟢 Header Section */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <h1 className="text-2xl font-black text-[var(--dh-text-main)] tracking-tight flex items-center gap-3">
-            <ShieldCheck size={28} className="text-[var(--dh-accent)]" />
+            <ShieldCheck size={28} className="text-[#0870B8]" />
             ภาพรวมการบริหารจัดการ
           </h1>
-          <p className="text-[13px] font-medium text-[var(--dh-text-muted)] mt-1">
+          <p className="text-[13px] font-medium text-[var(--dh-text-muted)] mt-1 ml-10">
             ศูนย์บัญชาการสำหรับตั้งค่าและตรวจสอบภาพรวมระบบทั้งหมด
           </p>
+        </div>
+      </div>
+
+      {/* 🚨 [NEW] งานด่วนที่ต้องดำเนินการ (Manager Notifications) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          {/* นำ Widget มาวางตรงนี้ จะโชว์เตือนทันทีที่ User หน้าบ้านส่งขอโฆษณามา */}
+          <ManagerTodoSummary />
+        </div>
+        <div className="md:col-span-2 hidden md:block">
+           {/* พื้นที่ว่าง เผื่ออนาคตใส่วิดเจ็ตอื่นๆ เช่น กราฟรายได้ */}
+           <div className="h-full w-full rounded-2xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 border-dashed flex items-center justify-center p-6 text-center">
+              <p className="text-sm font-medium text-gray-400">พื้นที่แสดงสถิติเพิ่มเติม (Coming Soon)</p>
+           </div>
         </div>
       </div>
 
@@ -145,7 +164,7 @@ const ManagersOverview = () => {
         onRevokeVip={handleRevokeVip}
       />
 
-      {/* 3. แผงตั้งค่า Global Settings (ของเดิม) */}
+      {/* 3. แผงตั้งค่า Global Settings */}
       {isGlobalSettingsOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-transparent w-full max-w-5xl flex flex-col items-end gap-2">
