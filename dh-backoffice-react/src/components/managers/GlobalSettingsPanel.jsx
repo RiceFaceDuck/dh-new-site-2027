@@ -1,8 +1,9 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { 
     Lock, Unlock, ShieldAlert, Save, AlertTriangle, 
     Box, Link as LinkIcon, ShieldCheck, Loader2, Info,
-    Megaphone
+    Megaphone, Eye, MousePointerClick, LayoutTemplate
 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -15,7 +16,7 @@ export default function GlobalSettingsPanel() {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState('inventory'); // เปลี่ยน Default เป็น Inventory
+    const [activeTab, setActiveTab] = useState('inventory');
 
     // 📊 Data States
     const [inventoryConfig, setInventoryConfig] = useState({
@@ -30,9 +31,10 @@ export default function GlobalSettingsPanel() {
         categories: {}
     });
 
-    // 📢 Ad Settings State (ตั้งค่าพื้นที่โฆษณา)
+    // 📢 Ad Settings State (ตั้งค่าพื้นที่โฆษณาแบบ Dynamic Pricing)
     const [adConfig, setAdConfig] = useState({
-        costPerImpression: 1,
+        costPerView: 1,
+        costPerClick: 5,
         displayRatio: 10
     });
 
@@ -56,12 +58,13 @@ export default function GlobalSettingsPanel() {
             const warrantyData = await warrantyService.getWarrantySettings();
             if (warrantyData) setWarrantyConfig(warrantyData);
 
-            // 4. Ad Settings
-            const adSnap = await getDoc(doc(db, 'settings', 'marketing'));
-            if (adSnap.exists()) {
+            // 4. Ad Settings (ใช้ Service ที่เพิ่งอัปเกรดมา)
+            const adData = await settingsService.getAdRates();
+            if (adData) {
                 setAdConfig({
-                    costPerImpression: adSnap.data().costPerImpression || 1,
-                    displayRatio: adSnap.data().displayRatio || 10
+                    costPerView: adData.costPerView ?? 1,
+                    costPerClick: adData.costPerClick ?? 5,
+                    displayRatio: adData.displayRatio ?? 10
                 });
             }
 
@@ -111,17 +114,22 @@ export default function GlobalSettingsPanel() {
                 alert("✅ บันทึกกติกาประกันพื้นฐานสำเร็จ");
             }
             else if (activeTab === 'ads') {
-                const cost = Number(adConfig.costPerImpression);
+                // ตรวจสอบความถูกต้องของตัวเลขก่อนบันทึก
+                const cView = Number(adConfig.costPerView);
+                const cClick = Number(adConfig.costPerClick);
                 const ratio = Number(adConfig.displayRatio);
-                if (cost <= 0) throw new Error("ค่า Credit Point ต่อการแสดงผลต้องมากกว่า 0");
+                
+                if (cView < 0) throw new Error("ค่า Credit ต่อ View ห้ามติดลบ");
+                if (cClick < 0) throw new Error("ค่า Credit ต่อ Click ห้ามติดลบ");
                 if (ratio <= 0) throw new Error("อัตราส่วนความถี่ในการแสดงผลต้องมากกว่า 0");
 
-                await setDoc(doc(db, 'settings', 'marketing'), { 
-                    costPerImpression: cost, 
-                    displayRatio: ratio 
-                }, { merge: true });
-                await historyService.addLog('SystemConfig', 'Update', 'marketing', `อัปเดตเรทโฆษณา PPI: ${cost}, Ratio: 1:${ratio}`, uid);
-                alert("✅ บันทึกการตั้งค่าพื้นที่โฆษณาสำเร็จ");
+                const res = await settingsService.updateAdRates(adConfig);
+                if (res.success) {
+                    await historyService.addLog('SystemConfig', 'Update', 'marketing', `อัปเดตเรทโฆษณา V:${cView}, C:${cClick}, Ratio: 1:${ratio}`, uid);
+                    alert("✅ บันทึกการตั้งค่าพื้นที่โฆษณาสำเร็จ");
+                } else {
+                    throw new Error(res.message);
+                }
             }
 
             // ล็อกกลับอัตโนมัติหลังเซฟเสร็จ เพื่อความปลอดภัย
@@ -195,7 +203,6 @@ export default function GlobalSettingsPanel() {
                     <button onClick={() => setActiveTab('warranty')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'warranty' ? 'bg-amber-100 text-amber-700 shadow-sm border border-amber-200' : 'text-slate-600 hover:bg-slate-200'}`}>
                         <ShieldCheck size={16} strokeWidth={2.5}/> กติกาการรับประกัน
                     </button>
-                    {/* ปุ่มใหม่: ตั้งค่าโฆษณา */}
                     <button onClick={() => setActiveTab('ads')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'ads' ? 'bg-indigo-100 text-indigo-700 shadow-sm border border-indigo-200' : 'text-slate-600 hover:bg-slate-200'}`}>
                         <Megaphone size={16} strokeWidth={2.5}/> ตั้งค่าพื้นที่โฆษณา
                     </button>
@@ -297,42 +304,65 @@ export default function GlobalSettingsPanel() {
                         </div>
                     )}
 
-                    {/* --- TAB 4: ADS (ระบบจัดการเรทโฆษณา) --- */}
+                    {/* --- TAB 4: ADS (ระบบจัดการเรทโฆษณาอัจฉริยะ) --- */}
                     {activeTab === 'ads' && (
-                        <div className="space-y-6 max-w-lg animate-in fade-in">
+                        <div className="space-y-6 max-w-2xl animate-in fade-in">
                             <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex gap-3 text-indigo-800">
                                 <Megaphone size={20} className="shrink-0 mt-0.5"/>
-                                <p className="text-xs font-bold leading-relaxed">ตั้งค่าเรทราคาสำหรับการลงโฆษณาแบบหักตามการมองเห็น (Pay-Per-Impression) และตั้งค่าอัตราส่วนความถี่ในการแทรกโฆษณา</p>
+                                <p className="text-xs font-bold leading-relaxed">ตั้งค่าเรทราคา (Credit Points) สำหรับหักผู้ลงโฆษณาเมื่อมีผู้เข้าชมหรือคลิก รวมถึงตั้งค่าอัตราส่วนการสุ่มโฆษณาไปแสดงผล</p>
                             </div>
 
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5 block">อัตราค่าโฆษณา (Cost Per Impression)</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                {/* ค่า Credit / 1 View */}
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Eye size={16} className="text-indigo-500"/> หักเครดิตเมื่อมองเห็น
+                                    </label>
                                     <div className="relative">
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-indigo-500 text-xs">Credit / 1 View</span>
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs">แต้ม / 1 ครั้ง</span>
                                         <input 
-                                            type="number" min="0.1" step="0.1" disabled={!isUnlocked}
-                                            value={adConfig.costPerImpression}
-                                            onChange={(e) => setAdConfig({...adConfig, costPerImpression: e.target.value})}
-                                            className="w-full pl-4 pr-32 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-2xl text-indigo-600 outline-none focus:border-indigo-500 disabled:bg-slate-50 disabled:text-slate-400 transition-all"
+                                            type="number" min="0" step="0.1" disabled={!isUnlocked}
+                                            value={adConfig.costPerView}
+                                            onChange={(e) => setAdConfig({...adConfig, costPerView: e.target.value})}
+                                            className="w-full pl-4 pr-24 py-3 bg-slate-50 border border-slate-200 rounded-lg font-black text-xl text-indigo-600 outline-none focus:border-indigo-500 focus:bg-white disabled:opacity-60 transition-all"
                                         />
                                     </div>
-                                    <p className="text-[10px] text-slate-400 mt-1.5 font-bold">ระบบจะหักเครดิตตามยอดนี้ ทุกๆ 1 ครั้งที่โฆษณาแสดงผลผ่านหน้าจอผู้ใช้งาน</p>
+                                    <p className="text-[10px] text-slate-500 mt-2 font-medium leading-relaxed">หักเครดิตตามยอดนี้ เมื่อลูกค้าเลื่อนผ่านโฆษณาเกิน 50% ของขนาดภาพ</p>
                                 </div>
 
-                                <div>
-                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5 block">ความถี่ในการแสดงผล (Display Ratio)</label>
+                                {/* ค่า Credit / 1 Click */}
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <MousePointerClick size={16} className="text-indigo-500"/> หักเครดิตเมื่อถูกคลิก
+                                    </label>
                                     <div className="relative">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-2xl">1 :</div>
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs">แต้ม / 1 ครั้ง</span>
+                                        <input 
+                                            type="number" min="0" step="0.1" disabled={!isUnlocked}
+                                            value={adConfig.costPerClick}
+                                            onChange={(e) => setAdConfig({...adConfig, costPerClick: e.target.value})}
+                                            className="w-full pl-4 pr-24 py-3 bg-slate-50 border border-slate-200 rounded-lg font-black text-xl text-indigo-600 outline-none focus:border-indigo-500 focus:bg-white disabled:opacity-60 transition-all"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-2 font-medium leading-relaxed">หักเครดิตตามยอดนี้ เมื่อลูกค้ากดดูรายละเอียด หรือกดออกไปซื้อสินค้านอกเว็บ</p>
+                                </div>
+
+                                {/* อัตราส่วน 10:1 */}
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm sm:col-span-2">
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <LayoutTemplate size={16} className="text-indigo-500"/> ความถี่ในการแสดงผล (Display Ratio)
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xl">1 :</div>
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] sm:text-xs">โฆษณา 1 ชิ้น : สินค้าปกติ N ชิ้น</span>
                                         <input 
                                             type="number" min="1" step="1" disabled={!isUnlocked}
                                             value={adConfig.displayRatio}
                                             onChange={(e) => setAdConfig({...adConfig, displayRatio: e.target.value})}
-                                            className="w-full pl-14 pr-48 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-2xl text-slate-700 outline-none focus:border-indigo-500 disabled:bg-slate-50 disabled:text-slate-400 transition-all"
+                                            className="w-full pl-12 pr-48 py-3 bg-slate-50 border border-slate-200 rounded-lg font-black text-xl text-slate-700 outline-none focus:border-indigo-500 focus:bg-white disabled:opacity-60 transition-all"
                                         />
                                     </div>
-                                    <p className="text-[10px] text-slate-400 mt-1.5 font-bold">ตัวอย่าง 1:10 หมายถึง ระบบจะแสดงสินค้า 10 ตัว แล้วค่อยแทรกการ์ดโฆษณา 1 ตัว</p>
+                                    <p className="text-[10px] text-slate-500 mt-2 font-medium">ตัวอย่าง 1:10 หมายถึง ระบบจะแทรกโฆษณาแบบสุ่มตำแหน่ง 1 ชิ้น ในทุกๆ กลุ่มสินค้าปกติ 10 ชิ้น</p>
                                 </div>
                             </div>
                         </div>
