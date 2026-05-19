@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React from 'react';
-import { Image as ImageIcon, Youtube, Edit2, Trash2 } from 'lucide-react';
+import { Image as ImageIcon, Youtube, Edit2, Trash2, Eye, MousePointerClick } from 'lucide-react';
 import { SKU_STATUS } from '../../../firebase/userSkuService';
 
 // 🚀 รับ Props เพิ่มเติม: onEdit, onDelete เพื่อเรียกใช้จากหน้าหลัก
@@ -83,14 +83,17 @@ const UserSkuCard = ({ sku, balance, onToggleActive, onEdit, onDelete }) => {
             </button>
           </div>
           
-          {/* สถิติการคลิก */}
-          {sku.status === SKU_STATUS.APPROVED && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-gray-500 font-medium bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
-                คลิก: <span className="font-bold text-gray-800">{sku.stats?.clicks || 0}</span>
-              </span>
-            </div>
-          )}
+          {/* 📊 สถิติการใช้งานจริง (Views & Clicks) */}
+          <div className="flex flex-col items-end gap-1 mt-2">
+             <span className="flex items-center gap-1.5 text-[10px] text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
+               <Eye size={12} className="text-slate-500"/>
+               วิว: <span className="text-slate-800">{sku.stats?.impressions?.toLocaleString() || sku.impressions?.toLocaleString() || 0}</span>
+             </span>
+             <span className="flex items-center gap-1.5 text-[10px] text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
+               <MousePointerClick size={12} className="text-slate-500"/>
+               คลิก: <span className="text-slate-800">{sku.stats?.clicks?.toLocaleString() || 0}</span>
+             </span>
+          </div>
         </div>
       </td>
     </tr>

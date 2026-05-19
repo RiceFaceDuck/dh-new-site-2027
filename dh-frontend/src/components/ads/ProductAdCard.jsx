@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useRef } from 'react';
-import { ExternalLink, Store, Info, Youtube, X, Tag, MousePointerClick, TrendingUp } from 'lucide-react';
+import { ExternalLink, Store, Info, Youtube, X, Tag } from 'lucide-react';
 import { marketingService } from '../../firebase/marketingService';
 
 // ฟังก์ชันสกัด ID วิดีโอ YouTube
@@ -14,50 +14,47 @@ const extractYouTubeId = (url) => {
 const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
   const [showVideo, setShowVideo] = useState(false);
   
-  // Ref สำหรับระบบตรวจจับการมองเห็น (Intersection Observer)
+  // Ref สำหรับระบบตรวจจับการมองเห็น
   const cardRef = useRef(null);
   const hasRecordedImpression = useRef(false);
 
-  // 1. Map ข้อมูลให้รองรับทั้ง Schema เก่าและใหม่
+  // ข้อมูลโฆษณา
   const name = ad?.name || ad?.title || 'Sponsored Product';
   const price = ad?.price || 0;
   const imageUrl = ad?.imageUrl || null;
   const sponsorName = ad?.ownerName || ad?.storeName || ad?.partnerName || 'Official Partner';
-  const cost = ad?.costPerImpression || 1; // สมมติว่าตั้งค่าหัก 1 แต้มต่อคลิก (แก้ตาม Global Settings ได้)
+  const ownerUid = ad?.ownerUid || ad?.userId;
 
-  // ดึงลิงก์หลัก (Primary Link) เพื่อให้ปุ่มคลิกทำงาน
+  // ลิงก์ปลายทาง
   const links = ad?.links || {};
   const primaryLink = links.shopee || links.lazada || links.tiktok || ad?.targetUrl || '#';
   const youtubeLink = links.youtube || ad?.youtubeUrl || null;
   
-  // ใช้ฟังก์ชันฉลาดจาก Service ตรวจจับสีและ Platform
   const platformName = marketingService.detectPlatform(primaryLink);
 
-  // ถ้างบหมด หรือ สถานะไม่ใช่ active ให้ซ่อนการ์ดไปเลย
+  // ถ้างบหมด หรือ สถานะไม่ใช่ active ให้ซ่อนการ์ด
   if (!ad || ad.status !== 'active') {
     return null;
   }
 
-  // 2. ระบบนับ Impression เมื่อลูกค้าเลื่อนมาเห็น (Intersection Observer)
+  // 2. ระบบนับ Impression (ส่งเข้า Memory Batching อัตโนมัติ)
   useEffect(() => {
     if (!cardRef.current || hasRecordedImpression.current) return;
 
     const observer = new IntersectionObserver((entries) => {
-      // หากการ์ดโผล่เข้ามาในจอเกิน 50%
       if (entries[0].isIntersecting) {
-        // 🚀 ส่งเข้า Memory Queue ของ Marketing Service (ไม่เปลือง Reads/Writes)
-        marketingService.logImpression(ad.id);
+        // 🚀 ส่งข้อมูลไปที่ Queue ของ Marketing Service (รองรับ Batching)
+        marketingService.logImpression(ad.id, ownerUid);
         hasRecordedImpression.current = true;
-        observer.disconnect(); // นับแค่ครั้งเดียวต่อการโหลดหน้าเว็บ
+        observer.disconnect(); 
       }
     }, { threshold: 0.5 });
 
     observer.observe(cardRef.current);
-
     return () => observer.disconnect();
-  }, [ad.id]);
+  }, [ad.id, ownerUid]);
 
-  // 3. ฟังก์ชันบันทึกยอดการคลิก และตัดเครดิตทันที
+  // 3. ฟังก์ชันบันทึกยอดการคลิก
   const handleAdClick = (e, customUrl = null) => {
     e?.stopPropagation();
     const target = customUrl || primaryLink;
@@ -66,8 +63,8 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
       window.open(target, '_blank', 'noopener,noreferrer');
     }
     
-    // 🚀 ยิง Transaction หักเครดิตผ่าน Service
-    marketingService.logClickAndDeductCredit(ad.id, ad.ownerUid || ad.userId, cost);
+    // 🚀 ยิง Transaction หักเครดิตผ่าน Service (Dynamic Pricing)
+    marketingService.logClickAndDeductCredit(ad.id, ownerUid);
   };
 
   // ================= UI STYLING =================
@@ -91,14 +88,12 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
         className="group flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-blue-100 overflow-hidden relative cursor-pointer h-full"
         title={name}
       >
-        {/* ป้าย Sponsored มุมขวาบน (แอบเนียนๆ แต่ดูพรีเมียม) */}
-        <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
+        <div className="absolute top-2 right-2 z-10">
           <span className="bg-white/90 backdrop-blur-md text-[9px] font-black px-2 py-1 rounded-md text-blue-600 shadow-sm border border-blue-100 flex items-center gap-1 uppercase tracking-wider">
             <Info size={10} className="text-blue-500" /> Sponsored
           </span>
         </div>
 
-        {/* รูปภาพสินค้า 1:1 */}
         <div className="relative w-full aspect-square bg-slate-50 overflow-hidden flex items-center justify-center">
           {imageUrl ? (
             <img
@@ -112,15 +107,13 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
             <div className="text-slate-400 text-xs font-bold">ไม่มีรูปภาพโฆษณา</div>
           )}
           
-          {/* ปุ่ม Play Video ถ้าใส่ลิงก์ Youtube มา */}
           {youtubeLink && extractYouTubeId(youtubeLink) && (
              <div 
                className="absolute inset-0 bg-black/10 backdrop-blur-[1px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                onClick={(e) => {
                   e.stopPropagation();
                   setShowVideo(true);
-                  // แจ้งเก็บบันทึกคลิกด้วยเมื่อดูวิดีโอ
-                  marketingService.logClickAndDeductCredit(ad.id, ad.ownerUid || ad.userId, cost);
+                  marketingService.logClickAndDeductCredit(ad.id, ownerUid);
                }}
              >
                 <div className="w-14 h-14 bg-red-600/90 hover:bg-red-600 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300">
@@ -130,7 +123,6 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
           )}
         </div>
 
-        {/* รายละเอียดเนื้อหา */}
         <div className="p-4 flex flex-col flex-grow bg-gradient-to-b from-blue-50/30 to-white">
           <div className="mb-2">
              <div className="flex items-center gap-1.5 mb-1.5">
@@ -147,7 +139,6 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
           </div>
 
           <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-1 gap-2">
-             {/* ปุ่มช้อปปิ้ง แพลตฟอร์ม */}
              <button 
                onClick={(e) => handleAdClick(e)}
                className={`w-full py-1.5 flex items-center justify-center gap-1.5 ${pStyle.bg} bg-opacity-10 hover:bg-opacity-20 ${pStyle.text} text-[11px] font-black rounded-lg transition-colors border border-current`}
@@ -158,7 +149,6 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
         </div>
       </div>
 
-      {/* Video Modal (Popup) */}
       {showVideo && youtubeLink && extractYouTubeId(youtubeLink) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-3xl bg-slate-900 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-800">
