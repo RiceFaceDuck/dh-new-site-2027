@@ -12,8 +12,10 @@ import { db } from '../../../firebase/config';
 import { driveService } from '../../../firebase/driveService';
 import { consumeAdCredit } from '../../../firebase/creditService'; // 🚀 อัปเกรด: เชื่อมต่อ Service หักแต้มใหม่
 
-// นำเข้า Component การ์ดโฆษณา
-import ProductAdCard from '../../ads/ProductAdCard';
+// นำเข้า Sub-components
+import AdStatsOverview from './ad-manager/AdStatsOverview';
+import AdListTable from './ad-manager/AdListTable';
+import AdFormModal from './ad-manager/AdFormModal';
 
 // 🛡️ ระบบสแกนข้อมูลขั้นสูง: แปลงค่า undefined เป็น null
 const sanitizeData = (obj) => {
@@ -234,7 +236,6 @@ const TabAdManager = () => {
     }
   };
 
-  // 🛡️ Submit Function (อัปเกรดเชื่อมระบบ Credit Service 100%)
   const handleSubmitAd = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.targetUrl || !formData.imageUrl) {
@@ -319,12 +320,16 @@ const TabAdManager = () => {
     }
   };
 
-
-  const getStatusBadge = (status) => {
-    if (status === 'active') return <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 w-max"><CheckCircle2 size={12}/> ออนไลน์</span>;
-    if (status === 'rejected') return <span className="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 w-max"><ShieldAlert size={12}/> ไม่ผ่านอนุมัติ</span>;
-    if (status === 'paused') return <span className="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 w-max"><AlertCircle size={12}/> ถูกระงับ</span>;
-    return <span className="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 w-max"><Loader2 size={12} className="animate-spin"/> รอตรวจสอบ</span>;
+  const handleDeleteAd = async (adId) => {
+    if(window.confirm("คุณต้องการลบโฆษณานี้ใช่หรือไม่?")) {
+      try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', adId);
+        await deleteDoc(docRef);
+        fetchMyAds();
+      } catch (error) {
+        alert("ลบไม่สำเร็จ กรุณาลองใหม่");
+      }
+    }
   };
 
   if (loading) {
@@ -505,337 +510,39 @@ const TabAdManager = () => {
       {activeSubTab === 'ads' && (
         <div className="space-y-4 animate-in fade-in duration-300">
           
+          {/* ส่วนสถิติและเครดิตคงเหลือ */}
           {!isFormOpen && (
-            <div className="flex flex-col sm:flex-row items-center justify-between bg-gradient-to-r from-blue-50 to-[#0870B8]/10 p-5 rounded-2xl border border-[#0870B8]/20">
-              <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-[#0870B8]">
-                  <Store size={24} />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-wide">Credit Point ของคุณ</p>
-                  <p className="text-2xl font-black text-[#0870B8]">{userCredit.toLocaleString()} <span className="text-base font-medium text-slate-600">แต้ม</span></p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsFormOpen(true)}
-                className="w-full sm:w-auto px-6 py-3 bg-[#0870B8] hover:bg-[#0A85DA] text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-              >
-                <Plus size={20} /> ลงโฆษณาสินค้าใหม่
-              </button>
-            </div>
+            <AdStatsOverview 
+              userCredit={userCredit} 
+              onOpenForm={() => setIsFormOpen(true)} 
+            />
           )}
 
+          {/* ฟอร์มการสร้างโฆษณาใหม่ */}
           {isFormOpen && (
-            <div className="bg-white border border-[#0870B8]/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#0870B8] opacity-5 rounded-full blur-2xl -translate-y-10 translate-x-10"></div>
-              
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                <div>
-                  <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2">
-                    <Megaphone className="text-[#0870B8]"/> ฝากลิงก์โปรโมทสินค้า
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-1">ตั้งค่างบประมาณโฆษณาของคุณ ระบบจะหักแต้มเมื่อมีการแสดงผลจริงเท่านั้น</p>
-                </div>
-                <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-rose-500">
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="flex flex-col lg:flex-row gap-8">
-                <form onSubmit={handleSubmitAd} className="w-full lg:w-1/2 space-y-5">
-
-                  <div className="flex gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                    <label className="flex items-center gap-2 cursor-pointer flex-1 justify-center">
-                      <input type="radio" name="adType" value="product" checked={formData.type === 'product'} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-4 h-4 text-[#0870B8]" />
-                      <span className="text-sm font-bold text-slate-700">Product Ad (1:1)</span>
-                    </label>
-                    <div className="w-px bg-slate-200"></div>
-                    <label className="flex items-center gap-2 cursor-pointer flex-1 justify-center">
-                      <input type="radio" name="adType" value="billboard" checked={formData.type === 'billboard'} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-4 h-4 text-[#0870B8]" />
-                      <span className="text-sm font-bold text-slate-700">Billboard Ad (16:9)</span>
-                    </label>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">1. ชื่อสินค้าที่จะโปรโมท <span className="text-rose-500">*</span></label>
-                      <input 
-                        type="text" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})}
-                        placeholder="เช่น กล้องวงจรปิดไร้สาย WiFi รุ่นใหม่ล่าสุด" required maxLength={50}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center justify-between">
-                        <span>2. ลิงก์ร้านค้าปลายทาง <span className="text-rose-500">*</span></span>
-                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold text-white uppercase shadow-sm transition-colors ${
-                          formData.platform === 'shopee' ? 'bg-[#EE4D2D]' : 
-                          formData.platform === 'lazada' ? 'bg-[#0F146D]' : 
-                          formData.platform === 'tiktok' ? 'bg-black' : 
-                          formData.platform === 'facebook' ? 'bg-[#1877F2]' : 
-                          formData.platform === 'thisshop' ? 'bg-[#E31E24]' : 
-                          formData.platform === 'lineshopping' ? 'bg-[#06C755]' : 
-                          'bg-slate-400'
-                        }`}>
-                          {formData.platform || 'OTHER'}
-                        </span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><LinkIcon size={16}/></div>
-                        <input 
-                          type="url" value={formData.targetUrl || ''} onChange={handleLinkChange}
-                          placeholder="วางลิงก์ Shopee, Lazada, Tiktok ที่นี่..." required
-                          className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] text-sm font-mono"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                        3. อัปโหลดรูปภาพ <span className="text-rose-500">*</span> 
-                        <span className="text-[10px] text-slate-400 font-normal ml-2">
-                          ({formData.type === 'product' ? 'อัตราส่วน 1:1' : 'อัตราส่วน 16:9'}) ขนาดไม่เกิน 5MB
-                        </span>
-                      </label>
-                      <label className={`relative flex items-center justify-center w-full px-4 py-4 bg-slate-50 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <input 
-                          type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage}
-                          className="hidden" 
-                        />
-                        {uploadingImage ? (
-                          <div className="flex flex-col items-center gap-2 text-[#0870B8] font-medium">
-                            <Loader2 size={24} className="animate-spin"/> กำลังอัปโหลดภาพ...
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-2 text-slate-500">
-                            <UploadCloud size={28} className={formData.imageUrl ? 'text-emerald-500' : 'text-slate-400'}/> 
-                            <span className="font-bold text-sm">
-                              {formData.imageUrl ? 'เปลี่ยนรูปภาพใหม่' : 'คลิกเพื่อเลือกไฟล์รูปภาพ'}
-                            </span>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">4. ข้อความกระตุ้นยอดขาย (สั้นๆ)</label>
-                      <input 
-                        type="text" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        placeholder="เช่น โค้ดลด 50%, ส่งฟรี, Flash Sale!" maxLength={30}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] text-sm"
-                      />
-                    </div>
-
-                    {formData.type === 'product' && (
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">5. Video Review (YouTube Link) - <span className="font-normal lowercase text-slate-400">Optional</span></label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-rose-500"><Video size={16}/></div>
-                          <input 
-                            type="url" value={formData.youtubeUrl || ''} onChange={(e) => setFormData({...formData, youtubeUrl: e.target.value})}
-                            placeholder="https://youtube.com/watch?v=..."
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ตั้งค่างบประมาณ (Pay Per Impression Logic) */}
-                  <div className={`p-5 rounded-xl mb-4 border ${remainingCredit < 0 ? 'bg-rose-50 border-rose-200' : 'bg-blue-50 border-blue-200'}`}>
-                    <label className={`block text-xs font-bold uppercase tracking-wide mb-3 ${remainingCredit < 0 ? 'text-rose-800' : 'text-blue-800'}`}>
-                      ตั้งค่างบประมาณโฆษณา (Credit Limit)
-                    </label>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                      <div className="flex-1 w-full">
-                        <div className="relative flex items-center">
-                          <input 
-                            type="number" 
-                            min="10" 
-                            step="10"
-                            value={creditLimit === 0 ? '' : creditLimit} 
-                            onChange={(e) => setCreditLimit(Number(e.target.value) || 0)}
-                            className="w-full pl-4 pr-12 py-2 border border-blue-200 rounded-lg text-sm font-bold text-slate-700 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                          />
-                          <span className="absolute right-3 text-sm text-slate-400 font-medium">แต้ม</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
-                          <Activity size={12}/> หัก 1 Credit ต่อการแสดงผล 1 ครั้ง
-                        </p>
-                      </div>
-                      
-                      <div className="text-right whitespace-nowrap min-w-[120px]">
-                        <div className="text-sm font-bold text-slate-600">แสดงผลได้: <span className="text-xl text-[#0870B8]">{targetImpressions.toLocaleString()}</span> <span className="text-xs font-normal">ครั้ง</span></div>
-                        <div className={`text-[11px] mt-1 font-medium ${remainingCredit < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                          {remainingCredit < 0 ? `แต้มไม่พอ (ขาดอีก ${Math.abs(remainingCredit)})` : `คงเหลือ(ถ้ารันเต็มงบ): ${remainingCredit}`}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <button 
-                      type="submit" 
-                      disabled={submittingAd || remainingCredit < 0 || creditLimit <= 0} 
-                      className={`w-full py-4 text-white font-bold rounded-xl shadow-md transition-all flex justify-center items-center gap-2 text-base sm:text-lg ${
-                        (remainingCredit < 0 || creditLimit <= 0)
-                          ? 'bg-slate-300 cursor-not-allowed text-slate-500' 
-                          : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg'
-                      }`}
-                    >
-                      {submittingAd ? (
-                        <><Loader2 size={20} className="animate-spin"/> กำลังดำเนินการ...</>
-                      ) : remainingCredit < 0 ? (
-                        <><Lock size={20}/> เครดิตไม่เพียงพอ</>
-                      ) : (
-                        <><CheckCircle2 size={20}/> ส่งคำร้อง (ยังไม่หักแต้ม)</>
-                      )}
-                    </button>
-                    <p className="text-center text-xs text-slate-400 mt-3 font-medium">
-                      * ไม่หักแต้มตอนกดส่ง ระบบจะหักเฉพาะตอนที่โฆษณาถูกมองเห็นหน้าเว็บจริงๆ
-                    </p>
-                  </div>
-                </form>
-
-                {/* ---------------- Live Preview (แสดงผลแบบเรียลไทม์) ---------------- */}
-                <div className="w-full lg:w-1/2 bg-[#f8fbff] rounded-3xl border-2 border-dashed border-[#0870B8]/30 p-8 flex flex-col items-center justify-center sticky top-6 self-start">
-                  <h4 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6 bg-white px-4 py-2 rounded-full shadow-sm">
-                    <Eye size={16} className="text-[#0870B8]"/> Live Preview (พรีวิวโฆษณา)
-                  </h4>
-                  
-                  <div className={`w-full ${formData.type === 'product' ? 'max-w-[280px]' : 'max-w-full'} pointer-events-none transform origin-top shadow-2xl rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100`}>
-                    {formData.type === 'product' ? (
-                      <ProductAdCard 
-                        ad={{
-                          title: formData.title || 'ชื่อสินค้าจำลองที่น่าสนใจ',
-                          description: formData.description,
-                          imageUrl: formData.imageUrl || 'https://placehold.co/400x400/f1f5f9/94a3b8?text=1:1+Image',
-                          platform: formData.platform,
-                          partnerName: storeData.storeName || 'ร้านซ่อมคอมพิวเตอร์ของคุณ',
-                          youtubeUrl: formData.youtubeUrl,
-                          targetUrl: '#'
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full aspect-video bg-slate-100 flex items-center justify-center relative group">
-                        {formData.imageUrl ? (
-                           <img src={formData.imageUrl} className="w-full h-full object-cover" alt="Billboard Preview" />
-                        ) : (
-                           <div className="flex flex-col items-center text-slate-400">
-                             <ImageIcon size={48} className="mb-2 opacity-50"/>
-                             <div className="text-xs font-bold uppercase tracking-wider">Billboard 16:9</div>
-                           </div>
-                        )}
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5">
-                            <h3 className="text-white font-bold text-lg line-clamp-1">{formData.title || 'ข้อความป้ายแบนเนอร์โฆษณา'}</h3>
-                            <p className="text-blue-200 text-sm mt-1 flex items-center gap-1 font-medium"><ExternalLink size={14}/> คลิกเพื่อไปยังร้านค้า</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <p className="text-xs text-slate-400 mt-6 text-center max-w-[250px]">
-                    รูปแบบการแสดงผลจริงอาจปรับเปลี่ยนเล็กน้อยเพื่อให้เข้ากับหน้าจอของลูกค้า
-                  </p>
-                </div>
-              </div>
-            </div>
+            <AdFormModal 
+              formData={formData}
+              setFormData={setFormData}
+              storeData={storeData}
+              handleSubmitAd={handleSubmitAd}
+              onCloseForm={() => setIsFormOpen(false)}
+              handleLinkChange={handleLinkChange}
+              handleImageUpload={handleImageUpload}
+              uploadingImage={uploadingImage}
+              submittingAd={submittingAd}
+              creditLimit={creditLimit}
+              setCreditLimit={setCreditLimit}
+              remainingCredit={remainingCredit}
+              targetImpressions={targetImpressions}
+            />
           )}
 
-          {/* รายการโฆษณาที่ส่งไปแล้ว */}
+          {/* รายการโฆษณาที่เคยส่งไปแล้ว */}
           {!isFormOpen && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h3 className="font-bold text-slate-700 flex items-center gap-2"><Megaphone size={18} className="text-[#0870B8]"/> ประวัติโฆษณาของฉัน</h3>
-              </div>
-              
-              {ads.length === 0 ? (
-                <div className="p-16 flex flex-col items-center justify-center text-center bg-slate-50/30">
-                  <div className="w-20 h-20 bg-white shadow-sm rounded-full flex items-center justify-center mb-4 border border-slate-100"><Megaphone size={32} className="text-slate-300"/></div>
-                  <h3 className="font-bold text-slate-700 text-lg">ยังไม่เคยสร้างโฆษณาสินค้า</h3>
-                  <p className="text-slate-500 text-sm mt-2 max-w-sm">กำหนดงบประมาณ และสร้างโฆษณาแรกของคุณวันนี้ เพื่อดันยอดขาย!</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">รายละเอียดโฆษณา</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center whitespace-nowrap">สถานะ</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center whitespace-nowrap">การแสดงผล / งบประมาณ</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center whitespace-nowrap">คลิกสะสม</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center whitespace-nowrap">จัดการ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {ads.map((ad) => (
-                        <tr key={ad.id} className="hover:bg-slate-50/80 transition-colors group">
-                          <td className="p-4 min-w-[250px]">
-                            <div className="flex items-center gap-4">
-                              <div className="w-14 h-14 rounded-lg bg-white border border-slate-200 p-0.5 flex-shrink-0 shadow-sm">
-                                <img src={ad.imageUrl || '/logo.png'} alt="Ad" className="w-full h-full object-cover rounded-md" onError={(e)=>{e.target.src='https://placehold.co/100x100?text=No+Img'}}/>
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-slate-800 line-clamp-1" title={ad.title}>{ad.title}</p>
-                                <div className="flex items-center gap-2 mt-1.5">
-                                  <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold text-white shadow-sm ${
-                                    ad.platform === 'shopee' ? 'bg-[#EE4D2D]' : ad.platform === 'lazada' ? 'bg-[#0F146D]' : ad.platform === 'tiktok' ? 'bg-black' : ad.platform === 'thisshop' ? 'bg-[#E31E24]' : 'bg-slate-400'
-                                  }`}>{ad.platform}</span>
-                                  <a href={ad.targetUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                    ดูลิงก์ <ExternalLink size={10}/>
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4 text-center">
-                            <div className="flex justify-center">{getStatusBadge(ad.status)}</div>
-                            {ad.status === 'rejected' && ad.rejectReason && (
-                              <p className="text-[10px] text-rose-500 mt-1 max-w-[150px] truncate mx-auto" title={ad.rejectReason}>
-                                เหตุผล: {ad.rejectReason}
-                              </p>
-                            )}
-                          </td>
-                          <td className="p-4 text-center">
-                            <div className="inline-flex items-center bg-blue-50 text-blue-800 rounded-lg px-3 py-1.5 border border-blue-100 font-mono text-sm">
-                               <span className="font-black">{ad.impressions || 0}</span>
-                               <span className="mx-1 text-blue-300">/</span>
-                               <span className="text-slate-500">{Math.floor((ad.creditLimit || 0) / (ad.costPerImpression || 1))}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-sm font-black text-slate-700">{ad.clicks || 0}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-center">
-                            <button 
-                              onClick={async () => {
-                                if(window.confirm("คุณต้องการลบโฆษณานี้ใช่หรือไม่?")) {
-                                  try {
-                                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', ad.id);
-                                    await deleteDoc(docRef);
-                                    fetchMyAds();
-                                  } catch (error) {
-                                    alert("ลบไม่สำเร็จ กรุณาลองใหม่");
-                                  }
-                                }
-                              }}
-                              className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center justify-center opacity-0 group-hover:opacity-100"
-                              title="ลบโฆษณา"
-                            >
-                              <X size={18} strokeWidth={3} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <AdListTable 
+              ads={ads} 
+              onDeleteAd={handleDeleteAd} 
+            />
           )}
         </div>
       )}
