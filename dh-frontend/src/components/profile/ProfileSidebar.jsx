@@ -1,9 +1,12 @@
 import React from 'react';
 import { 
   Store, CreditCard, Package, History, 
-  LogOut, Settings, Megaphone, Heart, ShoppingCart, ChevronRight 
+  LogOut, Settings, Megaphone, Heart, ShoppingCart, ChevronRight, Loader2 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+// ⚡ นำเข้า Service จัดการเครดิตแบบ Real-time
+import { useUserCredit, formatCredit } from '../../firebase/creditService';
 
 const MenuButton = ({ icon, label, active, onClick }) => (
   <button 
@@ -24,6 +27,9 @@ const MenuButton = ({ icon, label, active, onClick }) => (
 
 const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
   const navigate = useNavigate();
+
+  // ⚡ ดึงข้อมูลเครดิตพอยต์ปัจจุบันจากตู้เซฟ Wallet โดยตรง
+  const { balance, tier, loading: creditLoading } = useUserCredit(user?.uid);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -51,24 +57,42 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
 
           {/* Partner Stats Grid */}
           <div className="grid grid-cols-3 gap-2 w-full border-t border-slate-800 pt-4">
+            
+            {/* 💎 ระดับ Tier อัปเดต Real-time ตามพอยต์ */}
             <div>
               <p className="text-[9px] text-slate-500 font-tech uppercase tracking-widest mb-1">Tier</p>
-              <p className="text-[11px] font-bold text-cyber-blue font-tech uppercase">
-                {user?.stats?.level || 'STANDARD'}
-              </p>
+              {creditLoading ? (
+                 <Loader2 size={12} className="animate-spin text-slate-400 mx-auto mt-1" />
+              ) : (
+                 <p className={`text-[11px] font-bold ${tier?.color || 'text-cyber-blue'} font-tech uppercase`}>
+                   {tier?.name || user?.stats?.level || 'STANDARD'}
+                 </p>
+              )}
             </div>
-            <div className="border-x border-slate-800 px-1">
-              <p className="text-[9px] text-slate-500 font-tech uppercase tracking-widest mb-1">Points</p>
-              <p className="text-[11px] font-bold text-amber-500 font-tech">
-                {user?.stats?.points?.toLocaleString() || 0}
+
+            {/* 🪙 เครดิตพอยต์ (แสดงผลเรืองแสงแบบ Real-time) */}
+            <div className="border-x border-slate-800 px-1 flex flex-col items-center justify-center">
+              <p className="text-[9px] text-slate-500 font-tech uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5">
+                Points
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.8)]" title="Live Syncing"></span>
               </p>
+              {creditLoading ? (
+                 <Loader2 size={14} className="animate-spin text-amber-500 mx-auto mt-1" />
+              ) : (
+                 <p className={`text-[13px] font-black font-tech tracking-wider drop-shadow-[0_0_8px_rgba(251,191,36,0.3)] ${balance > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
+                   {formatCredit(balance)}
+                 </p>
+              )}
             </div>
+
+            {/* 📦 ออเดอร์ (ยังคงใช้ข้อมูลเดิม) */}
             <div>
               <p className="text-[9px] text-slate-500 font-tech uppercase tracking-widest mb-1">Orders</p>
               <p className="text-[11px] font-bold text-white font-tech">
                 {user?.stats?.totalOrders?.toLocaleString() || 0}
               </p>
             </div>
+
           </div>
         </div>
       </div>

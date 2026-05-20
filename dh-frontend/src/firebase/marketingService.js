@@ -3,16 +3,19 @@ import { db } from './config';
 import { 
   collection, 
   doc, 
-  getDoc,
-  getDocs, 
-  query, 
-  where, 
+  getDoc, 
   runTransaction, 
   serverTimestamp,
   writeBatch,
   increment,
+  query,
+  where,
+  getDocs,
   limit
 } from 'firebase/firestore';
+
+// 🚀 นำเข้า Transaction Helper สำหรับหักเครดิต
+import { consumeAdCreditWithTransaction } from './creditService';
 
 // 🔐 ดึงสิทธิ์ App ID
 const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
@@ -21,7 +24,7 @@ const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id
 // Helper Functions
 // ==========================================
 
-const detectPlatform = (url) => {
+export const detectPlatform = (url) => {
   if (!url) return 'other';
   const lowerUrl = url.toLowerCase();
   if (lowerUrl.includes('shopee.')) return 'shopee';
@@ -43,83 +46,79 @@ const shuffleArray = (array) => {
   return newArr;
 };
 
-// 📥 ฟังก์ชันดึงเรทราคาจากหลังบ้าน (Marketing Settings)
+// 📥 ฟังก์ชันดึงเรทราคาจากหลังบ้าน
 const getMarketingSettings = async () => {
   try {
-    const snap = await getDoc(doc(db, 'settings', 'marketing'));
+    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'marketing_rates');
+    const snap = await getDoc(settingsRef);
     if (snap.exists()) {
+      const data = snap.data();
       return {
-        costPerView: Number(snap.data().costPerView) || 1, // Default: 1 View = 1 Credit
-        costPerClick: Number(snap.data().costPerClick) || 5, // Default: 1 Click = 5 Credits
+        costPerView: Number(data.costPerView) || 1, 
+        costPerClick: Number(data.costPerClick) || 5,
       };
     }
   } catch (error) {
     console.error("🔥 Error fetching ad settings:", error);
   }
-  return { costPerView: 1, costPerClick: 5 }; // Fallback ป้องกันระบบพัง
+  return { costPerView: 1, costPerClick: 5 };
 };
 
-
 // ==========================================
-// Impression Batching Engine (ระบบประหยัด Database อัจฉริยะ)
+// Impression Batching Engine
 // ==========================================
-let impressionQueue = {}; // ตัวอย่าง: { 'sku_123': { count: 5, ownerUid: 'user_001' } }
+let impressionQueue = {}; 
 let batchTimer = null;
-const BATCH_INTERVAL = 15000; // รวบยอดส่งและหักเงินทุก 15 วินาที
+const BATCH_INTERVAL = 15000; 
 
 const flushImpressions = async () => {
   if (Object.keys(impressionQueue).length === 0) return;
   
-  // 1. ก๊อปปี้คิวปัจจุบัน และรีเซ็ตคิวหลักให้ว่างเพื่อรับรอบใหม่
   const queueToProcess = { ...impressionQueue };
   impressionQueue = {}; 
 
   try {
-    // 2. ดึงเรทโฆษณาปัจจุบัน (ค่า Credit / View)
     const settings = await getMarketingSettings();
     const batch = writeBatch(db);
     let hasOps = false;
 
-    // 3. วนลูปบวกยอด View และ หักเงินตามเรท
     for (const [adId, data] of Object.entries(queueToProcess)) {
       if (data.count > 0) {
+        // แก้ไข Path: อ้างอิงตาราง user_skus ที่เราใช้งานจริง
         const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_skus', adId);
         
-        // ก. บันทึกยอด Impression ของโฆษณา
+        // 1. อัปเดตสถิติ View
         batch.update(adRef, {
-          'stats.impressions': increment(data.count)
+          'viewsCount': increment(data.count)
         });
 
-        // ข. หักยอดเครดิตจากกระเป๋าเงินเจ้าของ (ตามเรท costPerView * จำนวนที่มองเห็น)
+        // 2. หักเงินในกระเป๋า (Wallet)
         if (data.ownerUid && settings.costPerView > 0) {
           const totalDeduction = data.count * settings.costPerView;
-          const walletRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_wallets', data.ownerUid);
+          // แก้ไข Path: วิ่งไปหักเงินที่กระเป๋า Wallet จริงๆ ของ User
+          const walletRef = doc(db, 'artifacts', appId, 'users', data.ownerUid, 'wallet', 'default');
           batch.update(walletRef, {
             balance: increment(-totalDeduction),
-            lastUpdatedAt: serverTimestamp()
+            updatedAt: serverTimestamp()
           });
         }
-        
         hasOps = true;
       }
     }
 
     if (hasOps) {
       await batch.commit();
-      console.log(`👁️ [Marketing Engine] Flushed ${Object.keys(queueToProcess).length} ad impressions successfully.`);
+      console.log(`👁️ [Marketing Engine] Flushed ${Object.keys(queueToProcess).length} ad impressions.`);
     }
   } catch (error) {
     console.error("❌ Failed to flush impressions:", error);
-    // ถ้ายิง DB พัง ให้เอาข้อมูลกลับคืนคิว เพื่อรอส่งรอบหน้า (รักษาผลประโยชน์บริษัท)
+    // Rollback คิว
     for (const [adId, data] of Object.entries(queueToProcess)) {
-      if (!impressionQueue[adId]) {
-        impressionQueue[adId] = { count: 0, ownerUid: data.ownerUid };
-      }
+      if (!impressionQueue[adId]) impressionQueue[adId] = { count: 0, ownerUid: data.ownerUid };
       impressionQueue[adId].count += data.count;
     }
   }
 };
-
 
 // ==========================================
 // Marketing & Ad Services
@@ -127,9 +126,6 @@ const flushImpressions = async () => {
 
 export const marketingService = {
   
-  /**
-   * 1. ดึงโฆษณาที่ Active เพื่อนำไปแทรกกับสินค้า
-   */
   fetchActiveAds: async (limitAds = 30) => {
     try {
       const adsQuery = query(
@@ -138,14 +134,11 @@ export const marketingService = {
         where('isActive', '==', true),
         limit(limitAds) 
       );
-      
       const querySnapshot = await getDocs(adsQuery);
       const activeAds = [];
-      
       querySnapshot.forEach((doc) => {
         activeAds.push({ id: doc.id, ...doc.data() });
       });
-
       return shuffleArray(activeAds);
     } catch (error) {
       console.error("❌ Error fetching active ads:", error);
@@ -153,19 +146,14 @@ export const marketingService = {
     }
   },
 
-  /**
-   * 2. บันทึกยอดการมองเห็น (Impression) เข้าสู่คิว (รับ ownerUid เพื่อนำไปหักเงิน)
-   */
   logImpression: (adId, ownerUid) => {
     if (!adId || !ownerUid) return;
     
-    // บวกเลขใน Memory Queue
     if (!impressionQueue[adId]) {
       impressionQueue[adId] = { count: 0, ownerUid: ownerUid };
     }
     impressionQueue[adId].count += 1;
 
-    // ตั้งเวลาให้ส่งข้อมูลอัตโนมัติ
     if (!batchTimer) {
       batchTimer = setTimeout(() => {
         flushImpressions();
@@ -174,43 +162,20 @@ export const marketingService = {
     }
   },
 
-  /**
-   * 3. บันทึกยอดการคลิก และ หักเครดิตเจ้าของโฆษณาแบบ Real-time (Dynamic Rate)
-   */
-  logClickAndDeductCredit: async (adId, ownerUid) => {
+  logClickAndDeductCredit: async (adId, ownerUid, adTitle = "Ad Click") => {
     try {
-      // 1. ดึงเรทการคลิกจาก Settings ก่อน
       const settings = await getMarketingSettings();
-      const clickCost = settings.costPerClick; // Dynamic Click Cost (e.g., 5)
-
-      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_skus', adId);
-      const walletRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_wallets', ownerUid);
+      const clickCost = settings.costPerClick;
 
       await runTransaction(db, async (transaction) => {
-        // 2. อ่านกระเป๋าเงิน
-        const walletDoc = await transaction.get(walletRef);
-        
-        // 3. ถ้ากระเป๋าไม่มีเงิน หรือเครดิตน้อยกว่าค่าคลิก ให้ระงับโฆษณาทันที
-        if (!walletDoc.exists() || (walletDoc.data().balance || 0) < clickCost) {
-           transaction.update(adRef, { 
-             isActive: false, 
-             status: 'paused_no_credit',
-             updatedAt: serverTimestamp()
-           });
-           throw new Error("Ad disabled: Owner out of credits");
-        }
+        // 1. หักเครดิตแบบ Atomic
+        await consumeAdCreditWithTransaction(transaction, ownerUid, clickCost, adId, `คลิกโฆษณา: ${adTitle}`);
 
-        const currentBalance = walletDoc.data().balance;
-
-        // 4. หักเครดิตการคลิก
-        transaction.update(walletRef, {
-          balance: currentBalance - clickCost,
-          lastUpdatedAt: serverTimestamp()
-        });
-
-        // 5. เพิ่มยอด Click ให้โฆษณา
+        // 2. อัปเดตสถิติ Click
+        const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_skus', adId);
         transaction.update(adRef, {
-          'stats.clicks': increment(1)
+          'clicksCount': increment(1),
+          'updatedAt': serverTimestamp()
         });
       });
 
@@ -222,7 +187,6 @@ export const marketingService = {
   },
 
   detectPlatform: detectPlatform
-
 };
 
 export default marketingService;

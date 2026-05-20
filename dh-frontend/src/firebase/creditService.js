@@ -303,44 +303,104 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
   }
 };
 
-export const consumeAdCredit = async (userId, amount, referenceId = null) => {
-  if (!userId || amount <= 0) return false;
+// ==========================================
+// 🚀 Ad & Marketing Credit Core (ระบบตัดแต้มโฆษณา 100% Atomic)
+// ==========================================
 
+/**
+ * ⚡ Core Transaction: ใช้หักแต้มร่วมกับฟังก์ชันอื่น (เช่น ตอนสร้างโฆษณา) เพื่อให้การทำงานเสร็จสมบูรณ์รวดเดียว
+ * ลูกเล่น: จัดการบันทึกประวัติแบบละเอียดยิบ เพื่อความโปร่งใส
+ */
+export const consumeAdCreditWithTransaction = async (transaction, userId, amount, referenceId = null, adTitle = null) => {
   const userRef = doc(db, 'artifacts', appId, 'users', userId);
+  const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
+  
+  // Reference สำหรับเก็บ Log ประวัติการทำงาน
   const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+  const historyRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'credit_history'));
+
+  const [userDoc, walletDoc] = await Promise.all([
+    transaction.get(userRef),
+    transaction.get(walletRef)
+  ]);
+
+  let currentPoints = 0;
+  const isWalletExist = walletDoc.exists();
+
+  if (isWalletExist) {
+    currentPoints = Number(walletDoc.data().balance) || 0;
+  } else if (userDoc.exists()) {
+    currentPoints = Number(userDoc.data().creditPoints || userDoc.data().creditPoint || 0);
+  } else {
+    throw new Error("ระบบไม่พบข้อมูลกระเป๋าเงินของคุณ");
+  }
+
+  if (currentPoints < amount) throw new Error("Credit Point ของคุณไม่เพียงพอ กรุณาเติมแต้มก่อนทำการโปรโมท");
+
+  const newBalance = currentPoints - amount;
+  const noteDisplay = adTitle ? `หักแต้มสำหรับโปรโมท: ${adTitle}` : 'หักแต้มสำหรับการฝากโฆษณาสินค้า';
+
+  // 1. อัปเดตกระเป๋าเงินหลัก (Wallet) ด้วยคำสั่ง increment เพื่อป้องกันปัญหากดซ้ำ (Race Condition)
+  if (isWalletExist) {
+    transaction.update(walletRef, {
+      balance: increment(-amount),
+      updatedAt: serverTimestamp()
+    });
+  } else {
+    transaction.set(walletRef, {
+      balance: newBalance,
+      totalAccumulated: newBalance,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  // 2. อัปเดตข้อมูลผู้ใช้ (Profile Fallback)
+  if (userDoc.exists()) {
+    transaction.update(userRef, {
+      creditPoints: increment(-amount),
+      creditPoint: increment(-amount), 
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  const txData = {
+    transactionId: `TX-AD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    uid: userId,
+    type: 'spend',
+    amount: amount,
+    balanceAfter: newBalance,
+    referenceId: referenceId,
+    note: noteDisplay,
+    recordedBy: userId,
+    timestamp: serverTimestamp()
+  };
+
+  // 3. บันทึก Transaction Log ส่วนกลาง (ให้แอดมินดู)
+  transaction.set(txRef, txData);
+  
+  // 4. บันทึก History Log ส่วนตัว (ให้ลูกค้าดูในหน้าประวัติได้แบบ Real-time)
+  transaction.set(historyRef, {
+    ...txData,
+    createdAt: serverTimestamp()
+  });
+
+  return newBalance;
+};
+
+/**
+ * ⚡ Standalone Function: ใช้หักแต้มโฆษณาแบบเพียวๆ 
+ */
+export const consumeAdCredit = async (userId, amount, referenceId = null, adTitle = null) => {
+  if (!userId || amount <= 0) return false;
 
   try {
     await runTransaction(db, async (transaction) => {
-      const userDoc = await transaction.get(userRef);
-      if (!userDoc.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้");
-
-      const currentPoints = userDoc.data().creditPoints || userDoc.data().creditPoint || 0;
-      if (currentPoints < amount) throw new Error("แต้มสะสมไม่เพียงพอ");
-
-      const newBalance = currentPoints - amount;
-
-      transaction.update(userRef, {
-        creditPoints: newBalance,
-        creditPoint: newBalance, 
-        updatedAt: serverTimestamp()
-      });
-
-      transaction.set(txRef, {
-        transactionId: `TX-${Date.now()}`,
-        uid: userId,
-        type: 'spend',
-        amount: amount,
-        balanceAfter: newBalance,
-        referenceId: referenceId,
-        note: 'หักแต้มสำหรับโฆษณา',
-        recordedBy: userId,
-        timestamp: serverTimestamp()
-      });
+      await consumeAdCreditWithTransaction(transaction, userId, amount, referenceId, adTitle);
     });
     return true;
   } catch (error) {
-    console.error("🔥 Error consuming ad credit:", error);
-    throw error;
+    console.error("🔥 Error consuming ad credit:", error.message);
+    throw error; // โยน Error ออกไปให้หน้า UI แจ้งเตือนผู้ใช้งาน (เช่น แต้มไม่พอ)
   }
 };
 

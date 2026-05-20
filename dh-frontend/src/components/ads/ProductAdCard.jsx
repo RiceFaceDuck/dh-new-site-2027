@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useRef } from 'react';
-import { ExternalLink, Store, Info, Youtube, X, Tag } from 'lucide-react';
+import { ExternalLink, Store, Info, Youtube, X, ShoppingCart } from 'lucide-react';
 import { marketingService } from '../../firebase/marketingService';
 
 // ฟังก์ชันสกัด ID วิดีโอ YouTube
@@ -32,18 +32,18 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
   
   const platformName = marketingService.detectPlatform(primaryLink);
 
-  // ถ้างบหมด หรือ สถานะไม่ใช่ active ให้ซ่อนการ์ด
-  if (!ad || ad.status !== 'active') {
+  // ตรวจสอบสถานะการทำงาน (ถ้าปิดใช้งาน หรือระงับ จะไม่แสดงผล)
+  if (!ad || (ad.status !== 'active' && ad.isActive === false)) {
     return null;
   }
 
-  // 2. ระบบนับ Impression (ส่งเข้า Memory Batching อัตโนมัติ)
+  // 1. ระบบนับ Impression (ส่งเข้า Memory Batching โดย Marketing Service)
   useEffect(() => {
     if (!cardRef.current || hasRecordedImpression.current) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        // 🚀 ส่งข้อมูลไปที่ Queue ของ Marketing Service (รองรับ Batching)
+        // บันทึก Impression ทันทีเมื่อเห็นโฆษณาเกิน 50%
         marketingService.logImpression(ad.id, ownerUid);
         hasRecordedImpression.current = true;
         observer.disconnect(); 
@@ -54,17 +54,16 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
     return () => observer.disconnect();
   }, [ad.id, ownerUid]);
 
-  // 3. ฟังก์ชันบันทึกยอดการคลิก
+  // 2. ฟังก์ชันบันทึกยอดการคลิก และตัดเครดิต
   const handleAdClick = (e, customUrl = null) => {
     e?.stopPropagation();
     const target = customUrl || primaryLink;
 
     if (target && target !== '#') {
+      // บันทึกการคลิกและหักแต้มเครดิตทันที
+      marketingService.logClickAndDeductCredit(ad.id, ownerUid);
       window.open(target, '_blank', 'noopener,noreferrer');
     }
-    
-    // 🚀 ยิง Transaction หักเครดิตผ่าน Service (Dynamic Pricing)
-    marketingService.logClickAndDeductCredit(ad.id, ownerUid);
   };
 
   // ================= UI STYLING =================
@@ -74,7 +73,6 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
       case 'lazada': return { bg: 'bg-[#0f146d]', text: 'text-[#0f146d]', label: 'Lazada' };
       case 'tiktok': return { bg: 'bg-black', text: 'text-black', label: 'TikTok Shop' };
       case 'facebook': return { bg: 'bg-[#1877F2]', text: 'text-[#1877F2]', label: 'Facebook' };
-      case 'lineshopping': return { bg: 'bg-[#06C755]', text: 'text-[#06C755]', label: 'LINE' };
       default: return { bg: 'bg-emerald-600', text: 'text-emerald-600', label: 'Partner' };
     }
   };
@@ -104,7 +102,7 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
               onError={(e) => { e.target.src = 'https://placehold.co/400x400/f8fafc/94a3b8?text=Ad+Image'; }}
             />
           ) : (
-            <div className="text-slate-400 text-xs font-bold">ไม่มีรูปภาพโฆษณา</div>
+            <div className="text-slate-400 text-xs font-bold">ไม่มีรูปภาพ</div>
           )}
           
           {youtubeLink && extractYouTubeId(youtubeLink) && (
@@ -116,9 +114,9 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
                   marketingService.logClickAndDeductCredit(ad.id, ownerUid);
                }}
              >
-                <div className="w-14 h-14 bg-red-600/90 hover:bg-red-600 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300">
+               <div className="w-14 h-14 bg-red-600/90 hover:bg-red-600 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300">
                    <Youtube size={28} className="text-white ml-1" />
-                </div>
+               </div>
              </div>
           )}
         </div>
@@ -141,7 +139,7 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
           <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-1 gap-2">
              <button 
                onClick={(e) => handleAdClick(e)}
-               className={`w-full py-1.5 flex items-center justify-center gap-1.5 ${pStyle.bg} bg-opacity-10 hover:bg-opacity-20 ${pStyle.text} text-[11px] font-black rounded-lg transition-colors border border-current`}
+               className={`w-full py-2 flex items-center justify-center gap-1.5 ${pStyle.bg} bg-opacity-10 hover:bg-opacity-20 ${pStyle.text} text-[11px] font-black rounded-lg transition-colors border border-current active:scale-95`}
              >
                ดูสินค้าที่ {pStyle.label} <ExternalLink size={12} />
              </button>
@@ -149,6 +147,7 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
         </div>
       </div>
 
+      {/* Video Modal สำหรับดูรีวิว */}
       {showVideo && youtubeLink && extractYouTubeId(youtubeLink) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-3xl bg-slate-900 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-800">
@@ -178,15 +177,12 @@ const ProductAdCard = ({ ad, wrapperClassName = "" }) => {
             </div>
             
             <div className="p-5 bg-slate-900 border-t border-slate-800 flex justify-end">
-               <a 
-                 href={primaryLink} 
-                 target="_blank" 
-                 rel="noopener noreferrer"
+               <button 
                  onClick={() => handleAdClick()} 
-                 className={`px-6 py-2.5 flex items-center justify-center gap-2 ${pStyle.bg} text-white font-bold text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-1`}
+                 className={`px-6 py-2.5 flex items-center justify-center gap-2 ${pStyle.bg} text-white font-bold text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-1 active:scale-95`}
                >
                  <ExternalLink size={16} /> ซื้อผ่าน {pStyle.label}
-               </a>
+               </button>
             </div>
           </div>
         </div>

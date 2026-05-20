@@ -1,11 +1,11 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Search, Info, AlertTriangle, Coins, Loader2 } from 'lucide-react';
+import { Package, Plus, Search, Info, AlertTriangle, Coins, Loader2, BarChart3, Eye, MousePointerClick, TrendingUp, Activity } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { getAuth } from 'firebase/auth';
 
-import { userSkuService } from '../../../firebase/userSkuService'; 
+import { userSkuService, SKU_STATUS } from '../../../firebase/userSkuService'; 
 import { useUserCredit, formatCredit } from '../../../firebase/creditService'; 
 
 // นำเข้า Sub-components ที่ถูกแยกส่วนแล้ว (Modular)
@@ -44,6 +44,21 @@ const TabUserSku = ({ userProfile }) => {
   useEffect(() => {
     fetchMySkus();
   }, [user]);
+
+  // ==========================================
+  // 📊 คำนวณสถิติ Analytics แบบ Real-time
+  // ==========================================
+  const stats = skus.reduce((acc, sku) => {
+    acc.views += (sku.viewsCount || 0);
+    acc.clicks += (sku.clicksCount || 0);
+    // นับโฆษณาที่เปิดใช้งานและระบบอนุมัติแล้ว
+    if (sku.isActive && (sku.status === SKU_STATUS.APPROVED || sku.status === 'active')) {
+        acc.activeAds++;
+    }
+    return acc;
+  }, { views: 0, clicks: 0, activeAds: 0 });
+
+  const ctr = stats.views > 0 ? ((stats.clicks / stats.views) * 100).toFixed(1) : "0.0";
 
   // ==========================================
   // Action Handlers
@@ -112,9 +127,9 @@ const TabUserSku = ({ userProfile }) => {
        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
          <div>
            <h2 className="text-xl font-black text-gray-800 flex items-center gap-2 tracking-tight">
-             <Package size={24} className="text-[#0870B8]" /> สินค้าของฉัน (User SKU)
+             <Package size={24} className="text-[#0870B8]" /> พื้นที่โฆษณาสินค้า
            </h2>
-           <p className="text-sm text-gray-500 mt-1">จัดการพื้นที่ฝากโฆษณาสินค้าและช่องทางการขายของท่าน</p>
+           <p className="text-sm text-gray-500 mt-1">จัดการและตรวจสอบประสิทธิภาพโฆษณาสินค้าของคุณ</p>
          </div>
          <button 
            onClick={() => { setEditingAd(null); setIsModalOpen(true); }}
@@ -124,36 +139,69 @@ const TabUserSku = ({ userProfile }) => {
          </button>
        </div>
        
-       {/* 💳 แสดงยอดเครดิต (Real-time) */}
-       <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6 mb-4 shadow-lg flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
-         <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-5 rounded-full blur-3xl -mr-10 -mt-10"></div>
+       {/* 💳 Dashboard Section: Credit + Analytics */}
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
          
-         <div className="bg-slate-950/50 p-4 rounded-2xl border border-white/10 shadow-inner shrink-0 text-center min-w-[140px] relative z-10">
-           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-1 mb-1">
-              <Coins size={12}/> Credit Point
-           </p>
-           {creditLoading ? (
-             <div className="flex justify-center py-2"><Loader2 className="animate-spin text-emerald-400" size={24} /></div>
-           ) : (
-             <p className={`text-3xl font-black font-tech tracking-tight ${balance > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {formatCredit(balance)}
+         {/* Card 1: Credit Balance */}
+         <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-5 shadow-lg relative overflow-hidden flex flex-col justify-center">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
+           
+           <div className="flex items-center justify-between mb-2 relative z-10">
+             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                <Coins size={14} className="text-emerald-400"/> Credit Balance
              </p>
-           )}
-         </div>
-         
-         <div className="relative z-10 text-center md:text-left">
-           <h3 className="text-lg font-bold text-white flex items-center justify-center md:justify-start gap-2">
-             ขยายช่องทางการขายด้วยพื้นที่โฆษณาพิเศษ
              {!creditLoading && tier && (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${tier.border} ${tier.bg} ${tier.color} uppercase tracking-wider`}>
+                <span className={`text-[9px] px-2 py-0.5 rounded-full border ${tier.border} ${tier.bg} ${tier.color} uppercase font-bold tracking-wider`}>
                   {tier.name}
                 </span>
              )}
-           </h3>
-           <p className="text-sm text-slate-300 mt-2 leading-relaxed max-w-3xl">
-             ระบบจะแทรกสินค้าของคุณ (รหัส <span className="text-emerald-400 font-bold">PV-XXXX</span>) ปะปนไปกับหน้าสินค้าของบริษัท 
-             คุณสามารถเพิ่มสินค้าได้ <strong>ไม่จำกัดจำนวน</strong> โดยระบบจะคำนวณและตัดเครดิตเฉพาะตอนที่มีลูกค้าเห็นหรือคลิกหน้าเว็บจริงเท่านั้น
+           </div>
+
+           {creditLoading ? (
+             <div className="flex items-center gap-3 py-2"><Loader2 className="animate-spin text-emerald-400" size={24} /> <span className="text-sm text-slate-400">กำลังโหลด...</span></div>
+           ) : (
+             <div className="relative z-10 flex items-baseline gap-2">
+               <p className={`text-4xl font-black font-tech tracking-tight ${balance > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {formatCredit(balance)}
+               </p>
+               <span className="text-sm text-slate-400 font-medium mb-1">พอยต์</span>
+             </div>
+           )}
+           
+           <p className="text-[10px] text-slate-400 mt-3 relative z-10 leading-relaxed">
+             ใช้เพื่อลงโฆษณาใหม่ (หักพอยต์ตอนสร้าง) <br/>สถิติผู้เข้าชมอัปเดตแบบเรียลไทม์ฟรี
            </p>
+         </div>
+
+         {/* Card 2: Mini Analytics Dashboard */}
+         <div className="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <BarChart3 size={16} className="text-[#0870B8]"/> ภาพรวมประสิทธิภาพโฆษณา
+              </h3>
+              <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2 py-1 rounded-md font-bold flex items-center gap-1">
+                 <Activity size={10} className="animate-pulse"/> Live
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-50 transition-transform hover:scale-105">
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1 flex items-center gap-1"><Eye size={12} className="text-blue-500"/> ผู้เข้าชมรวม</p>
+                <p className="text-xl font-black text-blue-700">{stats.views.toLocaleString()}</p>
+              </div>
+              <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-50 transition-transform hover:scale-105">
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1 flex items-center gap-1"><MousePointerClick size={12} className="text-emerald-500"/> ยอดคลิกรวม</p>
+                <p className="text-xl font-black text-emerald-700">{stats.clicks.toLocaleString()}</p>
+              </div>
+              <div className="bg-purple-50/50 rounded-xl p-3 border border-purple-50 transition-transform hover:scale-105">
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1 flex items-center gap-1"><TrendingUp size={12} className="text-purple-500"/> อัตราคลิก (CTR)</p>
+                <p className="text-xl font-black text-purple-700">{ctr}%</p>
+              </div>
+              <div className="bg-orange-50/50 rounded-xl p-3 border border-orange-50 transition-transform hover:scale-105">
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-1 flex items-center gap-1"><Package size={12} className="text-orange-500"/> กำลังทำงาน</p>
+                <p className="text-xl font-black text-orange-700">{stats.activeAds} <span className="text-xs font-normal text-gray-500">โฆษณา</span></p>
+              </div>
+            </div>
          </div>
        </div>
 
@@ -164,8 +212,8 @@ const TabUserSku = ({ userProfile }) => {
            <div>
              <h4 className="text-sm font-bold text-rose-800">⚠️ เครดิตพอยต์ของคุณหมดแล้ว!</h4>
              <p className="text-xs text-rose-600 mt-1 leading-relaxed">
-               สินค้าโฆษณาของคุณทั้งหมดจะ <strong>ถูกระงับการแสดงผลบนหน้าเว็บไซต์ชั่วคราว</strong> (แม้ว่าจะเปิดสวิตช์ไว้ก็ตาม) <br/>
-               กรุณาเติมเครดิตเข้าสู่ระบบเพื่อให้โฆษณากลับมาแสดงผลตามปกติครับ
+               คุณจะไม่สามารถสร้างโฆษณาใหม่ หรือเปิดสวิตช์โฆษณาที่หยุดพักไว้ได้ <br/>
+               กรุณาเติมเครดิตเข้าสู่ระบบเพื่อให้สามารถทำรายการได้อย่างต่อเนื่อง
              </p>
            </div>
          </div>
@@ -176,7 +224,7 @@ const TabUserSku = ({ userProfile }) => {
          <div className="bg-blue-50 border border-blue-100 rounded-xl p-3.5 mb-6 flex items-start gap-3 shadow-sm">
             <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-800 leading-relaxed">
-               <strong>เงื่อนไขการแสดงผลหน้าเว็บ:</strong> สินค้าของคุณจะแสดงผลให้ลูกค้าเห็นก็ต่อเมื่อได้รับ <strong>"การอนุมัติ"</strong> จากผู้จัดการ, มีการ <strong>"เปิดสวิตช์โฆษณา"</strong> (สีเขียว), และ <strong>ยอดเครดิตพอยต์ต้องมากกว่า 0</strong> 
+               <strong>เงื่อนไขโฆษณา:</strong> สินค้าของคุณจะแสดงผลให้ลูกค้าเห็นก็ต่อเมื่อได้รับ <strong>"การอนุมัติ"</strong> จากผู้จัดการ, มีการ <strong>"เปิดสวิตช์โฆษณา"</strong> (สีเขียว), และ <strong>ยอดเครดิตพอยต์ต้องมากกว่า 0</strong> 
             </p>
          </div>
        )}
@@ -186,7 +234,7 @@ const TabUserSku = ({ userProfile }) => {
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="ค้นหารหัส PV-XXXX หรือชื่อสินค้าโฆษณา..." 
+            placeholder="ค้นหารหัส หรือชื่อสินค้าโฆษณา..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#0870B8]/20 focus:border-[#0870B8] focus:outline-none shadow-sm transition-all" 

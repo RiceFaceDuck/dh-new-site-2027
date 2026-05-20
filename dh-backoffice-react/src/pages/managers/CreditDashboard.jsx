@@ -166,7 +166,7 @@ export default function CreditDashboard() {
       
       setTargetUser(prev => ({ 
         ...prev, 
-        currentBalance: newBalance
+        currentBalance: newBalance 
       }));
 
       // อัปเดต UI Local State History
@@ -439,7 +439,6 @@ export default function CreditDashboard() {
                            </button>
                         </div>
                       </form>
-
                     </div>
                  </div>
                </div>
@@ -449,24 +448,24 @@ export default function CreditDashboard() {
       )}
 
       {/* ==========================================
-          🌟 แท็บที่ 2: System Health (ของเดิม จัดให้อยู่ tab รอง)
+          🌟 แท็บที่ 2: System Health (System Health & Logs)
           ========================================== */}
       {activeTab === 'health' && (
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
            <div className="lg:col-span-2 space-y-6">
-              {/* Terminal Log */}
-              <div className="bg-slate-900 rounded-2xl border border-slate-700 shadow-xl overflow-hidden flex flex-col h-[500px]">
-                <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="text-slate-400" size={16} />
-                    <span className="text-xs font-tech font-bold text-slate-300 uppercase tracking-widest">Transaction Engine Diagnostics</span>
-                  </div>
-                  <button onClick={checkSystemHealth} disabled={isCheckingHealth} className="text-slate-400 hover:text-emerald-400 transition-colors">
-                    <RefreshCcw size={14} className={isCheckingHealth ? 'animate-spin' : ''} />
-                  </button>
-                </div>
-                <div className="p-4 flex-1 overflow-y-auto font-tech text-xs leading-relaxed custom-scrollbar">
-                  <div className="space-y-1.5 text-slate-400">
+             {/* Terminal Log */}
+             <div className="bg-slate-900 rounded-2xl border border-slate-700 shadow-xl overflow-hidden flex flex-col h-[500px]">
+               <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                   <Terminal className="text-slate-400" size={16} />
+                   <span className="text-xs font-tech font-bold text-slate-300 uppercase tracking-widest">Transaction Engine Diagnostics</span>
+                 </div>
+                 <button onClick={checkSystemHealth} disabled={isCheckingHealth} className="text-slate-400 hover:text-emerald-400 transition-colors">
+                   <RefreshCcw size={14} className={isCheckingHealth ? 'animate-spin' : ''} />
+                 </button>
+               </div>
+               <div className="p-4 flex-1 overflow-y-auto font-tech text-xs leading-relaxed custom-scrollbar">
+                 <div className="space-y-1.5 text-slate-400">
                      <div className="text-slate-500 mb-4">DH CORE v2.5.0 - Atomic Synchronization Enabled<br/>Connected to Firestore via secure channel.</div>
                      {healthLogs.map((log, i) => (
                        <div key={i} className={`flex gap-4 ${log.type === 'error' ? 'text-rose-500' : log.type === 'success' ? 'text-emerald-400' : 'text-blue-300'}`}>
@@ -475,32 +474,32 @@ export default function CreditDashboard() {
                        </div>
                      ))}
                      {isCheckingHealth && <div className="text-blue-500 animate-pulse mt-3">_</div>}
-                  </div>
-                </div>
-              </div>
+                 </div>
+               </div>
+             </div>
            </div>
            
            {/* ข้อมูลความปลอดภัย */}
            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-fit">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <Lock size={18} className="text-amber-500" /> Security Framework
-              </h3>
-              <div className="space-y-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5"><Database size={14} /></div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">Atomic Operations</h4>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">ทุกคำสั่ง เติม/ลด จะถูกประมวลผลแบบรวบยอด (Transaction) ป้องกันยอดเบิ้ล หรือยอดติดลบเวลาเน็ตกระตุก</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 mt-0.5"><Fingerprint size={14} /></div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">Multi-Layer Sync</h4>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">เขียนข้อมูลกระจายไปยัง Profile, Wallet และ Ledger พร้อมกัน เพื่อให้หน้าเว็บลูกค้า (Frontend) อัปเดตข้อมูลตรงกันเป๊ะทันที</p>
-                  </div>
-                </div>
-              </div>
+             <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+               <Lock size={18} className="text-amber-500" /> Security Framework
+             </h3>
+             <div className="space-y-5">
+               <div className="flex items-start gap-3">
+                 <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5"><Database size={14} /></div>
+                 <div>
+                   <h4 className="text-sm font-bold text-slate-800">Atomic Operations</h4>
+                   <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">ทุกคำสั่ง เติม/ลด จะถูกประมวลผลแบบรวบยอด (Transaction) ป้องกันยอดเบิ้ล หรือยอดติดลบเวลาเน็ตกระตุก</p>
+                 </div>
+               </div>
+               <div className="flex items-start gap-3">
+                 <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0 mt-0.5"><Fingerprint size={14} /></div>
+                 <div>
+                   <h4 className="text-sm font-bold text-slate-800">Multi-Layer Sync</h4>
+                   <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">เขียนข้อมูลกระจายไปยัง Profile, Wallet และ Ledger พร้อมกัน เพื่อให้หน้าเว็บลูกค้า (Frontend) อัปเดตข้อมูลตรงกันเป๊ะทันที</p>
+                 </div>
+               </div>
+             </div>
            </div>
          </div>
       )}

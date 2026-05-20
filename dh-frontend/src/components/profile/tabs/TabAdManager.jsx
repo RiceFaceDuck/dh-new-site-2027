@@ -10,6 +10,7 @@ import { getAuth } from 'firebase/auth';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { driveService } from '../../../firebase/driveService';
+import { consumeAdCredit } from '../../../firebase/creditService'; // 🚀 อัปเกรด: เชื่อมต่อ Service หักแต้มใหม่
 
 // นำเข้า Component การ์ดโฆษณา
 import ProductAdCard from '../../ads/ProductAdCard';
@@ -233,7 +234,7 @@ const TabAdManager = () => {
     }
   };
 
-  // 🛡️ Submit Function
+  // 🛡️ Submit Function (อัปเกรดเชื่อมระบบ Credit Service 100%)
   const handleSubmitAd = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.targetUrl || !formData.imageUrl) {
@@ -255,6 +256,7 @@ const TabAdManager = () => {
 
     setSubmittingAd(true);
     try {
+      // 1. สร้างเอกสารโฆษณา
       const baseAdData = sanitizeData({
         title: formData.title || '',
         description: formData.description || '',
@@ -281,6 +283,7 @@ const TabAdManager = () => {
         }
       );
 
+      // 2. สร้างรายการ Todo ให้แอดมินอนุมัติ
       const baseTodoData = sanitizeData({
         type: 'AD_APPROVAL', 
         title: `ตรวจสอบโฆษณาใหม่: ${baseAdData.title}`,
@@ -293,7 +296,6 @@ const TabAdManager = () => {
         adPayload: baseAdData 
       });
 
-      // 🎯 FIX สำคัญ: ยิงข้อมูลเข้า Path ของตู้เซฟ Sandbox อย่างถูกต้อง เพื่อให้ Todo.jsx ของผู้จัดการมองเห็น 100%
       await addDoc(
         collection(db, 'artifacts', appId, 'public', 'data', 'todos'), 
         {
@@ -727,8 +729,8 @@ const TabAdManager = () => {
                            </div>
                         )}
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5">
-                           <h3 className="text-white font-bold text-lg line-clamp-1">{formData.title || 'ข้อความป้ายแบนเนอร์โฆษณา'}</h3>
-                           <p className="text-blue-200 text-sm mt-1 flex items-center gap-1 font-medium"><ExternalLink size={14}/> คลิกเพื่อไปยังร้านค้า</p>
+                            <h3 className="text-white font-bold text-lg line-clamp-1">{formData.title || 'ข้อความป้ายแบนเนอร์โฆษณา'}</h3>
+                            <p className="text-blue-200 text-sm mt-1 flex items-center gap-1 font-medium"><ExternalLink size={14}/> คลิกเพื่อไปยังร้านค้า</p>
                         </div>
                       </div>
                     )}
@@ -837,7 +839,6 @@ const TabAdManager = () => {
           )}
         </div>
       )}
-
     </div>
   );
 };
