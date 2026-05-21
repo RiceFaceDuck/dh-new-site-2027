@@ -1,144 +1,185 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../../../firebase/config';
-import { 
-  Search, Users, MoreVertical, ArrowRightLeft, 
-  CheckCircle2, XCircle, Loader2
-} from 'lucide-react';
+import { Search, Loader2, Copy, Check } from 'lucide-react';
 
 export default function PartnerCreditsTab() {
   const [searchTerm, setSearchTerm] = useState('');
   const [partners, setPartners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState(null);
 
-  // ดึงข้อมูลลูกค้า/พาร์ทเนอร์แบบ Realtime
+  // ==========================================================
+  // ดึงข้อมูลบัญชีพาร์ทเนอร์/ลูกค้าที่มียอดเครดิตแบบ Real-time
+  // ==========================================================
   useEffect(() => {
     const q = query(collection(db, 'users'));
-    const unsub = onSnapshot(q, (snap) => {
+    
+    const unsubscribe = onSnapshot(q, (snap) => {
       const data = [];
       snap.forEach(doc => {
         const d = doc.data();
-        const bal = Number(d.credit || d.creditBalance || 0);
-        // โชว์คนที่เป็นพาร์ทเนอร์ หรือมีเครดิตค้างอยู่
-        if (d.role === 'partner' || bal > 0) {
+        const balance = Number(d.credit || d.creditBalance || 0);
+        
+        // ดึงเฉพาะ Partner หรือ ผู้ใช้งานทั่วไปที่มีเครดิตค้างอยู่
+        if (d.role === 'partner' || balance > 0) {
           data.push({
             id: doc.id,
-            name: d.firstName ? `${d.firstName} ${d.lastName || ''}` : 'ไม่ระบุชื่อ',
+            name: d.firstName ? `${d.firstName} ${d.lastName || ''}` : 'Unknown Account',
             phone: d.phone || '-',
-            balance: bal,
+            balance: balance,
             status: d.status || 'active',
-            lastActive: 'อยู่ในระบบ'
           });
         }
       });
+
+      // เรียงลำดับยอดเงินจากมากไปน้อย (Top Holders)
+      data.sort((a, b) => b.balance - a.balance);
+      
       setPartners(data);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("🔥 DH-Core System Error [Fetch Partners]:", error);
       setIsLoading(false);
     });
 
-    return () => unsub();
+    return () => unsubscribe();
   }, []);
 
+  // กรองข้อมูลด้วยคำค้นหา
   const filteredPartners = partners.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.phone.includes(searchTerm)
   );
 
+  // คำนวณยอดเงินรวมของตารางที่แสดงผลอยู่ปัจจุบัน
+  const totalDisplayedCredit = filteredPartners.reduce((sum, p) => sum + p.balance, 0);
+
+  // ฟังก์ชัน Copy ID ไปคลิปบอร์ด
+  const handleCopyId = (id) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
+
   return (
-    // นำ h-full ออกเพื่อให้ไหลตามหน้าจออิสระ
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    // ดีไซน์ ERP ทรงเหลี่ยม แบนราบ ไร้ขอบมน
+    <div className="flex flex-col bg-white border border-slate-300">
       
-      <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <Users size={18} className="text-blue-600" />
-            Partner Ledger (สรุปยอดพาร์ทเนอร์)
-          </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            ฐานข้อมูล Realtime เชื่อมต่อกับ Firebase โดยตรง
-          </p>
+      {/* 🚀 Toolbar & Search Bar */}
+      <div className="p-2 border-b border-slate-300 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div className="px-1">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Client Ledger Database</h3>
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={14} className="text-slate-400" />
+        <div className="relative w-full md:w-64">
+          <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+            <Search size={12} className="text-slate-400" />
           </div>
           <input 
             type="text" 
-            placeholder="ค้นหา ชื่อ, ID, เบอร์โทร..." 
+            placeholder="Search by Name, ID, Phone..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
+            className="w-full pl-7 pr-2 py-1 bg-white border border-slate-300 text-xs text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-none placeholder:text-slate-400"
           />
         </div>
       </div>
 
-      {/* บล็อคความสูงของตารางไว้ที่ max-h-[60vh] และใส่ overflow-y-auto เพื่อให้ตารางเลื่อนได้ในตัว */}
-      <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
-        <table className="w-full text-left border-collapse min-w-[600px]">
-          <thead className="sticky top-0 bg-white shadow-sm z-10">
-            <tr className="text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-200">
-              <th className="px-5 py-3 font-semibold">พาร์ทเนอร์</th>
-              <th className="px-5 py-3 font-semibold text-right">ยอดเครดิตคงเหลือ</th>
-              <th className="px-5 py-3 font-semibold text-center">สถานะ</th>
-              <th className="px-5 py-3 font-semibold text-right">จัดการ</th>
+      {/* 🚀 Data Grid (ตารางข้อมูล): ล็อคความสูงและให้เลื่อน Scroll ภายในได้ */}
+      <div className="flex-1 overflow-y-auto max-h-[500px]">
+        <table className="w-full text-left border-collapse min-w-[700px]">
+          <thead className="sticky top-0 bg-slate-200 border-b border-slate-300 z-10 shadow-sm">
+            <tr className="text-[10px] uppercase tracking-wider text-slate-700">
+              <th className="px-3 py-1.5 font-bold w-10 text-center border-r border-slate-300">No.</th>
+              <th className="px-3 py-1.5 font-bold border-r border-slate-300 whitespace-nowrap">Account ID (UID)</th>
+              <th className="px-3 py-1.5 font-bold border-r border-slate-300">Partner / Client Name</th>
+              <th className="px-3 py-1.5 font-bold border-r border-slate-300 whitespace-nowrap">Contact</th>
+              <th className="px-3 py-1.5 font-bold border-r border-slate-300 text-center">Status</th>
+              <th className="px-3 py-1.5 font-bold text-right">Current Balance (THB)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200 text-xs text-slate-700 bg-white">
             {isLoading ? (
               <tr>
-                <td colSpan="4" className="px-5 py-12 text-center text-slate-400">
-                  <Loader2 size={32} className="mx-auto text-blue-400 mb-3 animate-spin" />
-                  <p className="text-sm">กำลังซิงค์ข้อมูลบัญชี...</p>
+                <td colSpan="6" className="px-4 py-8 text-center text-slate-500 bg-slate-50">
+                  <Loader2 size={18} className="animate-spin text-blue-600 mx-auto mb-2" />
+                  <span className="text-xs font-mono">Synchronizing database...</span>
                 </td>
               </tr>
             ) : filteredPartners.length === 0 ? (
               <tr>
-                <td colSpan="4" className="px-5 py-12 text-center text-slate-400">
-                  <Search size={32} className="mx-auto text-slate-200 mb-3" />
-                  <p className="text-sm">ไม่พบพาร์ทเนอร์ในระบบ</p>
+                <td colSpan="6" className="px-4 py-8 text-center text-slate-500 bg-slate-50">
+                  <span className="text-xs font-mono">No records found matching criteria.</span>
                 </td>
               </tr>
             ) : (
-              filteredPartners.map((partner) => (
-                <tr key={partner.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-sm shrink-0">
-                        {partner.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-800 text-sm">{partner.name}</div>
-                        <div className="text-[11px] text-slate-500 font-mono mt-0.5">{partner.id} • {partner.phone}</div>
-                      </div>
-                    </div>
+              filteredPartners.map((partner, index) => (
+                <tr key={partner.id} className="hover:bg-blue-50 transition-none group">
+                  
+                  {/* ลำดับ */}
+                  <td className="px-3 py-2 text-center text-slate-400 font-mono text-[10px] border-r border-slate-200">
+                    {(index + 1).toString().padStart(3, '0')}
                   </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <div className="font-black text-slate-800 text-base">
-                      ฿{partner.balance.toLocaleString('th-TH')}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-center">
-                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide
-                      ${partner.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}
-                    >
-                      {partner.status === 'active' ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
-                      {partner.status === 'active' ? 'Active' : 'Suspended'}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold">
-                        <ArrowRightLeft size={14} />
-                        <span className="hidden sm:inline-block">ปรับยอด</span>
+                  
+                  {/* Account ID + Copy Action */}
+                  <td className="px-3 py-2 border-r border-slate-200">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[11px] text-slate-600 truncate max-w-[120px]" title={partner.id}>
+                        {partner.id}
+                      </span>
+                      <button 
+                        onClick={() => handleCopyId(partner.id)}
+                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-100 opacity-0 group-hover:opacity-100 transition-none"
+                        title="Copy UID"
+                      >
+                        {copiedId === partner.id ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
                       </button>
                     </div>
                   </td>
+                  
+                  {/* Name */}
+                  <td className="px-3 py-2 border-r border-slate-200 font-semibold text-slate-800">
+                    {partner.name}
+                  </td>
+                  
+                  {/* Phone */}
+                  <td className="px-3 py-2 border-r border-slate-200 font-mono text-slate-600">
+                    {partner.phone}
+                  </td>
+                  
+                  {/* Status */}
+                  <td className="px-3 py-2 border-r border-slate-200 text-center">
+                    <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide border
+                      ${partner.status === 'active' ? 'text-emerald-700 bg-emerald-50 border-emerald-300' : 'text-red-700 bg-red-50 border-red-300'}`}
+                    >
+                      {partner.status === 'active' ? 'Active' : 'Suspended'}
+                    </span>
+                  </td>
+                  
+                  {/* Balance */}
+                  <td className="px-3 py-2 text-right">
+                    <span className="font-bold text-slate-900 font-mono text-sm">
+                      {partner.balance.toLocaleString('th-TH')}
+                    </span>
+                  </td>
+                  
                 </tr>
               ))
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* 🚀 Smart Footer: สรุปผลรวม Data Aggregation (Classic ERP Style) */}
+      <div className="p-2 border-t border-slate-300 bg-slate-100 flex items-center justify-between text-[11px] text-slate-600 font-mono">
+        <div>
+          <span className="font-bold text-slate-800">{filteredPartners.length}</span> Records Displayed
+        </div>
+        <div>
+          Total Visible Liability: <span className="font-bold text-slate-900 text-xs ml-1">฿ {totalDisplayedCredit.toLocaleString('th-TH')}</span>
+        </div>
       </div>
     </div>
   );

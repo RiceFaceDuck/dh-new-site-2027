@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, runTransaction, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, runTransaction, collection, query, where, orderBy, limit, getDocs, increment } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 
@@ -43,7 +43,8 @@ export const creditService = {
 
   getCreditSettings: async () => {
     try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings_credit_config');
+      // 🛠️ FIX: ปรับ Path เป็น 6 ระดับ (settings, credit_config) ป้องกัน Firebase Crash
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) return docSnap.data();
@@ -68,7 +69,8 @@ export const creditService = {
 
   updateCreditSettings: async (settingsData, uid) => {
     try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings_credit_config');
+      // 🛠️ FIX: ปรับ Path เป็น 6 ระดับ
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
       const payload = { ...settingsData, updatedAt: serverTimestamp(), updatedBy: uid || 'Admin' };
       await setDoc(docRef, payload, { merge: true });
 
@@ -84,13 +86,13 @@ export const creditService = {
 
   /**
    * ✨ Atomic Dual-Sync Credit Adjustment (SECURED)
-   * อัปเกรด: บันทึกข้อมูลลงทั้ง Sandbox และ Root Database เพื่อให้หน้าเว็บเก่า/ใหม่เห็นยอดตรงกันเป๊ะ 100%
    */
   adjustUserCredit: async (uid, amount, type, note, actorUid, referenceId = null) => {
     try {
       let transactionId = null;
       await runTransaction(db, async (transaction) => {
-        const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings_credit_config');
+        // 🛠️ FIX: ปรับ Path เป็น 6 ระดับ
+        const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
         
         // 🔗 References สำหรับ Dual-Sync
         const userRef = doc(db, 'artifacts', appId, 'users', uid); // Sandbox (ระบบใหม่)
@@ -107,7 +109,6 @@ export const creditService = {
           txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
         }
 
-        // ดึงข้อมูลพร้อมกันทั้งหมด
         const [settingsSnap, userSnap, rootUserSnap, walletSnap] = await Promise.all([
           transaction.get(settingsRef),
           transaction.get(userRef),
@@ -195,12 +196,14 @@ export const creditService = {
           transactionId: `TXM-${refSuffix}`,
           uid: uid,
           userEmail: userEmail,
-          type: type,
+          type: type === 'deposit' ? 'add' : 'deduct', // 🛠️ แมปให้ตรงกับที่หน้า UI ดึงไปโชว์
           amount: numAmount,
           balanceAfter: newWalletBalance,
           referenceId: referenceId || 'MANUAL_ADJUST',
           note: note || (type === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
+          remark: note || (type === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'), // 🛠️ เพิ่มฟิลด์ให้ UI หน้าประวัติ
           recordedBy: actorUid || 'System',
+          operatorUid: actorUid || 'System', // 🛠️ เพิ่มฟิลด์ให้ UI หน้าประวัติ
           timestamp: serverTimestamp()
         });
 
@@ -241,10 +244,10 @@ export const creditService = {
         
         if (orderData.pointsAwarded || pendingPoints <= 0) return;
 
-        await creditService.adjustUserCredit(userId, pendingPoints, 'deposit', `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`, 'System_Order_Completion', orderId);
-
         transaction.update(orderRef, { pendingCredits: 0, pointsAwarded: true, awardedAt: serverTimestamp() });
       });
+      // เรียกใช้หลังจบ transaction หลักเพื่อป้องกัน Nested Transaction Timeout
+      await creditService.adjustUserCredit(userId, pendingPoints, 'deposit', `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`, 'System_Order_Completion', orderId);
       return true;
     } catch (error) {
       console.error("🔥 System Error [handlePaymentCompletion]:", error);

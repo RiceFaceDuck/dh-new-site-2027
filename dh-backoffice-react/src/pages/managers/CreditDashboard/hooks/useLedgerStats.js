@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-// 👇 แก้ไข: ปรับ Path ถอยหลัง 4 ระดับ เพื่อชี้ไปที่ src/firebase/config ได้อย่างถูกต้อง
+import { doc, onSnapshot, collection, getDocs } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 export default function useLedgerStats() {
   const [stats, setStats] = useState({
@@ -9,46 +10,104 @@ export default function useLedgerStats() {
     systemLedgerBalance: 0,
     discrepancy: 0,
     totalPartnersWithCredit: 0,
+    ledgerStatus: 'INITIALIZING',
+    lastUpdated: null
   });
   
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const fetchStats = useCallback(async () => {
-    setIsLoading(true);
+  // ดึงยอดผู้ใช้งานจริง 100% (รองรับชื่อฟิลด์เงินทุกเวอร์ชันเก่า-ใหม่)
+  const fetchRealUserStats = async () => {
     try {
-      // ดึงข้อมูลผู้ใช้ทั้งหมดเพื่อคำนวณยอดรวมเครดิตแบบ Real Data
       const snap = await getDocs(collection(db, 'users'));
       let totalCredit = 0;
-      let partnerCount = 0;
+      let activeCount = 0;
 
       snap.forEach(doc => {
-        const data = doc.data();
-        const credit = Number(data.credit || data.creditBalance || 0);
-        // นับเฉพาะคนที่มีเครดิต หรือเป็น partner
-        if (credit > 0 || data.role === 'partner') {
-          totalCredit += credit;
-          partnerCount++;
+        const d = doc.data();
+        const bal = Number(
+          d.credit || 
+          d.creditBalance || 
+          d.creditPoints || 
+          d.creditPoint || 
+          d.partnerCredit || 
+          d.stats?.creditBalance || 
+          0
+        );
+        
+        if (bal > 0 || d.role === 'partner') {
+          totalCredit += bal;
+          activeCount += 1;
         }
       });
-
-      setStats({
-        totalUserCredits: totalCredit,
-        systemLedgerBalance: totalCredit, // ยอดบัญชีกลางอ้างอิงตรงกัน
-        discrepancy: 0,
-        totalPartnersWithCredit: partnerCount,
-      });
+      
+      return { totalCredit, activeCount };
     } catch (err) {
-      console.error("Fetch Stats Error:", err);
-      setError("ไม่สามารถดึงข้อมูลสถิติจาก Database ได้");
-    } finally {
-      setIsLoading(false);
+      console.error("Failed to fetch real users:", err);
+      return { totalCredit: 0, activeCount: 0 };
     }
+  };
+
+  const refetch = useCallback(async () => {
+    setIsLoading(true);
+    const userStats = await fetchRealUserStats();
+    setStats(prev => ({ 
+      ...prev, 
+      totalUserCredits: userStats.totalCredit,
+      totalPartnersWithCredit: userStats.activeCount 
+    }));
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    let isActive = true;
+    setIsLoading(true);
 
-  return { stats, isLoading, error, refetch: fetchStats, setStats };
+    const initStats = async () => {
+      const userStats = await fetchRealUserStats();
+      if (!isActive) return;
+      
+      setStats(prev => ({ 
+        ...prev, 
+        totalUserCredits: userStats.totalCredit,
+        totalPartnersWithCredit: userStats.activeCount 
+      }));
+
+      // 👇 FIX: แก้ Path ให้เป็น 6 ระดับ (เลขคู่)
+      const ledgerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+      onSnapshot(ledgerRef, (docSnap) => {
+        if (!isActive) return;
+        
+        let systemPoolMax = 1000000;
+        let status = 'SECURE';
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const ledger = data.ledger || {};
+          systemPoolMax = Number(ledger.systemPoolMax || 1000000);
+          status = ledger.status || 'SECURE';
+        }
+
+        setStats(current => ({
+          ...current,
+          systemLedgerBalance: systemPoolMax,
+          discrepancy: systemPoolMax > 0 ? (systemPoolMax - current.totalUserCredits) : 0,
+          ledgerStatus: status,
+          lastUpdated: new Date()
+        }));
+        setIsLoading(false);
+      }, (err) => {
+        console.error("🔥 System Error [Master Ledger]:", err);
+        if (isActive) setIsLoading(false);
+      });
+    };
+
+    initStats();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  return { stats, isLoading, error: null, refetch, setStats };
 }
