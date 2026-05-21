@@ -1,127 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // 🌟 นำเข้า useNavigate เพื่อการลิงก์ข้ามหน้า
-import { todoService } from '../firebase/todoService';
-import { claimService } from '../firebase/claimService';
+import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase/config';
-import { collection, doc, getDoc, getDocs, query, where, documentId, deleteDoc } from 'firebase/firestore'; 
-import NonExistingProducts from './todo/NonExistingProducts';
+import { collection, doc, getDocs, query, where, documentId, deleteDoc } from 'firebase/firestore'; 
 import { 
-  Check, X, Clock, UserPlus, Tag, Info, AlertCircle, Trash2,
-  Inbox, ListFilter, HelpCircle, Plus, History, XCircle, 
-  RotateCcw, Calendar, Receipt, ChevronRight, Calculator, Loader2, PackageSearch, CheckCircle2, Filter, FileText,
-  Megaphone, UserCheck // 🌟 เพิ่มไอคอนใหม่
+  CheckCircle2, Inbox, History, Plus, HelpCircle, AlertCircle, 
+  PackageSearch, Filter, Loader2, Receipt, ReceiptText, ShieldAlert,
+  Tags, LayoutList
 } from 'lucide-react';
 
+// 📦 Services
+import { todoService } from '../firebase/todoService';
+import { claimService } from '../firebase/claimService';
+
+// 🧩 Components
 import TodoItem from '../components/todo/TodoItem';
 import HistoryPanel from '../components/todo/HistoryPanel';
 import WholesaleCard from '../components/todo/WholesaleCard';
 import PaymentCard from '../components/todo/PaymentCard'; 
 import TaxInvoiceCard from '../components/todo/TaxInvoiceCard';
+import NewTaskModal from '../components/todo/forms/NewTaskModal'; // 🌟 นำเข้า Modal แบบใหม่
+import { useCentralTodo } from './todo/hooks/useCentralTodo'; // 🌟 นำเข้า Custom Hook
 
 export default function Todo() {
-  const navigate = useNavigate(); // 🌟 สำหรับลิงก์ไปหน้าจัดการโฆษณา
-  const [todos, setTodos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(''); 
-  const [activeTab, setActiveTab] = useState('approvals'); 
-  const [filterType, setFilterType] = useState('ALL');
+  const navigate = useNavigate();
   
+  // 🌟 1. เรียกใช้งานข้อมูลจาก Custom Hook (Data Layer)
+  const { 
+    activeTodos, 
+    completedTodos: hookCompletedTodos, 
+    loading, 
+    error: fetchError, 
+    isSubmitting: isHookSubmitting,
+    addManualTodo
+  } = useCentralTodo();
+
+  // 📝 2. Local UI States
+  const [filterType, setFilterType] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [processingId, setProcessingId] = useState(null);
+  
+  // States สำหรับ Components ย่อย
+  const [showHelp, setShowHelp] = useState(false);
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [showCompletedPanel, setShowCompletedPanel] = useState(false);
+  
+  // States สำหรับจัดการราคาส่งแบบ Batch (Performance Optimization)
   const [wholesaleInputs, setWholesaleInputs] = useState({});
   const [fetchedPrices, setFetchedPrices] = useState({}); 
 
-  const [showHelp, setShowHelp] = useState(false);
-  const [helpPage, setHelpPage] = useState(1);
-
-  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [taskForm, setTaskForm] = useState({
-    title: '', description: '', priority: 'Medium', type: 'GENERAL', dueDate: ''
-  });
-
-  const [showCompletedPanel, setShowCompletedPanel] = useState(false);
-  const [completedTodos, setCompletedTodos] = useState([]);
-  const [loadingCompleted, setLoadingCompleted] = useState(false);
-
-  // 🌟 [ฟีเจอร์ใหม่] ค้นหาอัจฉริยะ & สถานะเชื่อมต่อแบบเรียลไทม์
-  const [searchQuery, setSearchQuery] = useState('');
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-
+  // 🔄 3. ระบบดึงราคาส่งแบบ Batch (ป้องกัน N+1 Query)
   useEffect(() => {
-    let unsubscribeApprovals;
-    let unsubscribeTasks;
-  
-    setLoading(true);
-    setFetchError('');
-  
-    try {
-      if (activeTab === 'approvals') {
-        unsubscribeApprovals = todoService.subscribeManagerApprovals(
-          (data) => {
-            setTodos(data);
-            setLastUpdated(new Date()); // อัปเดตเวลาไฟสถานะ
-            setLoading(false);
-            setFetchError('');
-          },
-          (error) => {
-            console.error("Subscription Error (Approvals):", error);
-            setFetchError('ไม่สามารถดึงข้อมูลรายการอนุมัติได้ กรุณาตรวจสอบสิทธิ์การเข้าถึง หรือดัชนีฐานข้อมูล (Index)');
-            setLoading(false);
-          }
-        );
-      } else {
-        unsubscribeTasks = todoService.subscribePendingTodos(
-          (data) => {
-            // 🛡️ อัปเกรด: กรองงานของผู้จัดการทุกประเภทออก ไม่ให้หลุดมาแท็บปฏิบัติการ
-            const managerTypes = [
-                'WHOLESALE_APPROVAL', 'wholesale_request', 'CLAIM_APPROVAL', 
-                'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL',
-                'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'
-            ];
-            const tasks = data.filter(t => !managerTypes.includes(t.type));
-            
-            setTodos(tasks);
-            setLastUpdated(new Date()); // อัปเดตเวลาไฟสถานะ
-            setLoading(false);
-            setFetchError('');
-          },
-          (error) => {
-            console.error("Subscription Error (Tasks):", error);
-            setFetchError('ไม่สามารถดึงข้อมูลรายการปฏิบัติงานได้ กรุณาตรวจสอบสิทธิ์การเข้าถึง');
-            setLoading(false);
-          }
-        );
-      }
-    } catch (err) {
-      console.error("Try-Catch Error:", err);
-      setFetchError('เกิดข้อผิดพลาดร้ายแรงในการเชื่อมต่อฐานข้อมูล');
-      setLoading(false);
-    }
-  
-    return () => {
-      if (unsubscribeApprovals) unsubscribeApprovals();
-      if (unsubscribeTasks) unsubscribeTasks();
-    };
-  }, [activeTab]);
-
-  useEffect(() => {
-    // 🌟 [อัปเกรดประสิทธิภาพ] แก้ปัญหา N+1 Query ดึงข้อมูลราคาส่งแบบ Batch ป้องกัน Re-render รัวๆ
     const fetchPricesForWholesale = async () => {
-      const wholesaleTasks = todos.filter(t => ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type) && t.items);
+      const wholesaleTasks = activeTodos.filter(t => ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type) && t.items);
       if (wholesaleTasks.length === 0) return;
       
       let newFetchedPrices = { ...fetchedPrices };
       let hasChanges = false;
-      
       const productIdsToFetch = new Set();
       const taskProductMap = {};
 
-      // รวบรวม ID สินค้าทั้งหมดที่ไม่เคยดึง
       wholesaleTasks.forEach(task => {
         if (!newFetchedPrices[task.id]) {
           newFetchedPrices[task.id] = {};
           hasChanges = true; 
         }
-
         const productIds = task.items.map(item => item.productId).filter(Boolean);
         productIds.forEach(pId => {
            if (newFetchedPrices[task.id][pId] === undefined) {
@@ -135,19 +77,14 @@ export default function Todo() {
       const uniqueIds = Array.from(productIdsToFetch);
       
       if (uniqueIds.length > 0) {
-          // ดึงทีละ 10 ชุด (Batch) ตามข้อจำกัด Firebase 'in' clause
           for(let i=0; i < uniqueIds.length; i+=10) {
               const batchIds = uniqueIds.slice(i, i+10);
               try {
                   const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));
                   const snapshot = await getDocs(q);
-                  
                   const foundPrices = {};
-                  snapshot.forEach(doc => {
-                      foundPrices[doc.id] = doc.data().wholesalePrice || null;
-                  });
+                  snapshot.forEach(doc => { foundPrices[doc.id] = doc.data().wholesalePrice || null; });
 
-                  // จับคู่ข้อมูลกลับไปที่ Task เพื่อไม่ให้ดึงซ้ำในรอบหน้า
                   batchIds.forEach(pId => {
                      const taskIds = taskProductMap[pId] || [];
                      const price = foundPrices[pId] !== undefined ? foundPrices[pId] : null; 
@@ -156,57 +93,32 @@ export default function Todo() {
                          hasChanges = true;
                      });
                   });
-
               } catch (err) {
                   console.error("Error fetching wholesale prices batch", err);
               }
           }
       }
 
-      if (hasChanges) {
-        setFetchedPrices(newFetchedPrices);
-      }
+      if (hasChanges) setFetchedPrices(newFetchedPrices);
     };
 
-    if (todos.length > 0) {
-      fetchPricesForWholesale();
-    }
-  }, [todos]);
+    if (activeTodos.length > 0) fetchPricesForWholesale();
+  }, [activeTodos, fetchedPrices]);
 
-  const loadCompletedTodos = async () => {
-    setLoadingCompleted(true);
-    try {
-      const data = await todoService.getCompletedTodos(50);
-      setCompletedTodos(data);
-    } catch (error) {
-      console.error("Error loading history", error);
-    }
-    setLoadingCompleted(false);
-  };
 
-  useEffect(() => {
-    if (showCompletedPanel) {
-      loadCompletedTodos();
-    }
-  }, [showCompletedPanel]);
-
-  // 🛡️ อัปเกรด: ฟังก์ชันหลักที่แก้ไขปัญหา H-627089 ค้างได้ 100%
+  // ⚡ 4. Action Handler (จัดการเมื่อมีการกดปุ่มทำรายการ)
   const handleAction = async (taskId, action, actionType, payload = {}) => {
     setProcessingId(taskId);
     try {
       if (action === 'approve') {
-        if (actionType === 'VERIFY_DEALER') {
-          await todoService.approveDealer(taskId, payload.userId);
-        } else if (actionType === 'CREDIT_APPROVAL') {
-          await todoService.approveCredit(taskId, payload.userId, payload.amount, payload.points);
-        } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
+        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
           await claimService.approveRequest(payload, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
         }
       } else if (action === 'reject') {
         if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {
            await todoService.rejectWholesale(taskId, payload.orderId);
         } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
-           await claimService.rejectRequest(payload, payload.reason || 'ปฏิเสธโดยผู้จัดการ', auth.currentUser.uid);
+           await claimService.rejectRequest(payload, payload.reason || 'ปฏิเสธโดยแอดมิน', auth.currentUser.uid);
         } else {
            await todoService.rejectTask(taskId, payload.reason);
         }
@@ -217,20 +129,14 @@ export default function Todo() {
       }
     } catch (error) {
       console.error(`Error performing ${action} on task ${taskId}:`, error);
-      
       const errMsg = error.message || '';
       
-      // 💡 [ฟังก์ชันใหม่] ตรวจจับงานค้างสถิต (Ghost Task) และเสนอลบทิ้งทันที
+      // 💡 ระบบกำจัด Ghost Task
       if (errMsg.includes('ไม่พบออเดอร์') || errMsg.includes('ไม่พบข้อมูล') || errMsg.includes('not found')) {
-        const confirmClear = window.confirm(
-          `⚠️ ระบบแจ้งว่า: "${errMsg}"\n\n📌 ปัญหา: ออเดอร์หลักน่าจะถูกลบหรือโยกย้ายไปแล้ว ทำให้งานบนกระดานนี้ (รหัส: ${taskId.slice(-6).toUpperCase()}) กลายเป็น "งานค้าง" ทำอะไรไม่ได้\n\n💡 คุณต้องการ "ลบงานนี้ทิ้งถาวร" เพื่อเคลียร์กระดานหรือไม่?`
-        );
-        
-        if (confirmClear) {
+        if (window.confirm(`⚠️ เกิดข้อผิดพลาด: ออเดอร์หลักอาจถูกลบไปแล้ว\n\nรหัสงาน: ${taskId.slice(-6).toUpperCase()}\n\nต้องการลบงานค้างนี้ทิ้งถาวรหรือไม่?`)) {
            try {
-             // สั่งลบเอกสารตรงๆ จากหน้าบ้านเลย
              await deleteDoc(doc(db, 'todos', taskId));
-             alert('🗑️ ลบงานที่ค้างออกจากระบบเรียบร้อยแล้วครับ');
+             alert('🗑️ ลบงานที่ค้างออกจากระบบเรียบร้อยแล้ว');
            } catch (deleteError) {
              alert(`ลบงานไม่สำเร็จ: ${deleteError.message}`);
            }
@@ -239,265 +145,175 @@ export default function Todo() {
         alert(`ทำรายการไม่สำเร็จ: ${errMsg}`);
       }
     } finally {
-      // 🚨 จุดสำคัญที่สุด: บังคับให้ปลดล็อกหน้าจอเสมอ ไม่ว่าจะพังหรือสำเร็จ
       setProcessingId(null);
     }
   };
 
-  const handleCreateTask = async (e) => {
-    e.preventDefault();
-    if(!taskForm.title) return alert('กรุณาระบุหัวข้องาน');
-    
-    try {
-      await todoService.createManualTask(taskForm, auth.currentUser);
+  // 📝 5. จัดการรับค่าจาก Modal สร้างงานใหม่
+  const handleCreateTask = async (formData) => {
+    const success = await addManualTodo(formData);
+    if (success) {
       setShowNewTaskModal(false);
-      setTaskForm({ title: '', description: '', priority: 'Medium', type: 'GENERAL', dueDate: '' });
-      alert('สร้างงานสำเร็จ');
-    } catch (err) {
-      console.error(err);
-      alert('สร้างงานไม่สำเร็จ');
     }
   };
 
-  // 🌟 [อัปเกรด] ระบบ Filter เพิ่มหมวดหมู่ ADS และ PARTNER
-  const filteredTodos = todos.filter(todo => {
+  // 🔍 6. ระบบ Filter สำหรับศูนย์ปฏิบัติการ
+  const filteredTodos = activeTodos.filter(todo => {
+    // 🛡️ [ความปลอดภัย] กรองงานของผู้จัดการออก เพื่อไม่ให้แสดงในหน้านี้โดยเด็ดขาด
+    const managerTypes = ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL', 'AD_APPROVAL'];
+    if (managerTypes.includes(todo.type)) return false;
+
     if (filterType === 'ALL') return true;
+    if (filterType === 'TAX_INVOICE') return todo.type === 'issue_tax_invoice';
+    if (filterType === 'PAYMENT') return todo.type === 'verify_slip';
+    if (filterType === 'CLAIM') return ['CLAIM_APPROVAL', 'RETURN_APPROVAL'].includes(todo.type) || todo.type?.startsWith('CANCEL_');
+    if (filterType === 'WHOLESALE') return ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(todo.type);
+    if (filterType === 'MANUAL') return todo.type === 'MANUAL';
     
-    if (activeTab === 'approvals') {
-        if (filterType === 'RETAIL') return todo.customerType === 'retail';
-        if (filterType === 'DEALER') return todo.customerType === 'dealer';
-        if (filterType === 'ADS') return ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(todo.type);
-        if (filterType === 'PARTNER') return ['PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'].includes(todo.type);
-    }
-    
-    // กรองประเภทงานใน Tab งานปฏิบัติการ
-    if (activeTab === 'tasks') {
-        if (filterType === 'TAX_INVOICE') return todo.type === 'issue_tax_invoice';
-        if (filterType === 'PAYMENT') return todo.type === 'verify_slip';
-    }
     return true;
   });
 
-  // 🌟 [ระบบค้นหาอัจฉริยะ]
+  // 🔍 7. ระบบค้นหาอัจฉริยะ (Smart Search)
   const displayTodos = filteredTodos.filter(todo => {
     const searchLower = searchQuery.toLowerCase();
-    const matchSearch = searchQuery.trim() === '' || 
+    return searchQuery.trim() === '' || 
       todo.id?.toLowerCase().includes(searchLower) ||
       todo.customerName?.toLowerCase().includes(searchLower) ||
       todo.shippingAddress?.fullName?.toLowerCase().includes(searchLower) ||
       todo.orderId?.toLowerCase().includes(searchLower) ||
       todo.title?.toLowerCase().includes(searchLower);
-      
-    return matchSearch;
   });
 
+  // 🎨 Helper: สีกำหนดความด่วน
   const getUrgencyColor = (createdAt) => {
-    if (!createdAt) return 'bg-gray-100 text-gray-500';
+    if (!createdAt) return 'bg-slate-100 text-slate-500';
     const hours = (new Date() - createdAt.toDate()) / (1000 * 60 * 60);
     if (hours > 24) return 'bg-red-100 text-red-700 border border-red-200';
     if (hours > 12) return 'bg-orange-100 text-orange-700 border border-orange-200';
-    return 'bg-green-100 text-green-700 border border-green-200';
+    return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
   };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-dh-border relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-dh-accent opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+      {/* --- 🌟 Header Section --- */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
         <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-dh-main flex items-center gap-3">
-            <Inbox className="w-8 h-8 text-dh-accent" />
-            ศูนย์ปฏิบัติการ (To-Do & Approvals)
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
+            <Inbox className="w-8 h-8 text-blue-600" />
+            ศูนย์ปฏิบัติการ (Operations)
           </h1>
-          <p className="text-dh-muted mt-1 font-medium flex items-center gap-2">
-            จัดการคำขออนุมัติ, ตรวจสอบการชำระเงิน และเอกสารภาษี
-            <button onClick={() => setShowHelp(true)} className="text-dh-accent hover:bg-orange-50 p-1 rounded-full transition-colors" title="คู่มือการใช้งาน">
+          <p className="text-slate-500 mt-1 font-medium flex items-center gap-2 text-sm">
+            จัดการงานเอกสาร, เคลมสินค้า, บัญชี และงานประจำวัน
+            <button onClick={() => setShowHelp(true)} className="text-blue-500 hover:bg-blue-50 p-1 rounded-full transition-colors" title="คู่มือ">
               <HelpCircle className="w-4 h-4" />
             </button>
           </p>
         </div>
-        <div className="flex gap-2 relative z-10 w-full sm:w-auto">
+        <div className="flex gap-3 relative z-10 w-full sm:w-auto">
           <button 
             onClick={() => setShowCompletedPanel(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-dh-border text-dh-main font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
           >
-            <History className="w-4 h-4 text-slate-500" />
-            ประวัติการทำงาน
+            <History className="w-4 h-4" /> ประวัติ
           </button>
           <button 
             onClick={() => setShowNewTaskModal(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-dh-main text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-md"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            สร้างงาน
+            <Plus className="w-4 h-4" /> สร้างงาน
           </button>
         </div>
       </div>
 
-      {/* 🚨 แสดง Error ถ้ามี */}
+      {/* --- 🚨 Error Alert --- */}
       {fetchError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3 shadow-sm animate-pulse">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <p className="text-sm font-semibold">{fetchError}</p>
         </div>
       )}
 
-      {/* Tabs & Filters */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl w-full md:w-auto border border-dh-border">
-          <button 
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'approvals' ? 'bg-white text-dh-accent shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
-            onClick={() => { setActiveTab('approvals'); setFilterType('ALL'); setSearchQuery(''); }}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            รอการอนุมัติ 
-            {activeTab === 'approvals' && todos.length > 0 && <span className="bg-orange-100 text-dh-accent px-2 py-0.5 rounded-full text-xs ml-1">{todos.length}</span>}
-          </button>
-          <button 
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'tasks' ? 'bg-white text-dh-main shadow-sm' : 'text-dh-muted hover:text-dh-main'}`}
-            onClick={() => { setActiveTab('tasks'); setFilterType('ALL'); setSearchQuery(''); }}
-          >
-            <PackageSearch className="w-4 h-4" />
-            งานปฏิบัติการ
-            {activeTab === 'tasks' && todos.length > 0 && <span className="bg-slate-100 text-dh-main px-2 py-0.5 rounded-full text-xs ml-1">{todos.length}</span>}
-          </button>
+      {/* --- 🎛️ Navigation & Filters --- */}
+      <div className="bg-white dark:bg-slate-800 p-2 sm:p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col gap-4">
+        
+        {/* แถบค้นหา */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+            <div className="relative w-full sm:max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <PackageSearch className="h-4 w-4 text-slate-400" />
+                </div>
+                <input 
+                    type="text" 
+                    placeholder="ค้นหา (ชื่อลูกค้า, Order ID, หัวข้องาน)..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-full bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all"
+                />
+            </div>
+            {searchQuery && (
+                <span className="text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-lg whitespace-nowrap self-end sm:self-auto">
+                    พบ {displayTodos.length} รายการ
+                </span>
+            )}
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
-          <div className="flex items-center gap-2 text-sm font-medium text-dh-muted mr-2">
-            <Filter className="w-4 h-4" /> กรอง:
-          </div>
-          
-          <button
-            onClick={() => setFilterType('ALL')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-              filterType === 'ALL' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
-            }`}
-          >
-            ทั้งหมด
-          </button>
-
-          {activeTab === 'tasks' ? (
-             // ตัวกรองเฉพาะของ "งานปฏิบัติการ"
-             <>
-               <button
-                  onClick={() => setFilterType('PAYMENT')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-                    filterType === 'PAYMENT' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
-                  }`}
-                >
-                  ตรวจสลิป
-                </button>
-                <button
-                  onClick={() => setFilterType('TAX_INVOICE')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-                    filterType === 'TAX_INVOICE' ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-teal-600 border-teal-200 hover:bg-teal-50'
-                  }`}
-                >
-                  ออกใบกำกับภาษี
-                </button>
-             </>
-          ) : (
-            // 🌟 [อัปเกรด] ตัวกรองเฉพาะของ "รอการอนุมัติ" เพิ่มโฆษณา และ พาร์ทเนอร์
-            <>
-               <button
-                onClick={() => setFilterType('RETAIL')}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-                  filterType === 'RETAIL' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
-                }`}
-              >
-                ลูกค้าปลีก
-              </button>
-              <button
-                onClick={() => setFilterType('DEALER')}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-                  filterType === 'DEALER' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
-                }`}
-              >
-                ลูกค้าส่ง
-              </button>
-              <button
-                onClick={() => setFilterType('ADS')}
-                className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-                  filterType === 'ADS' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
-                }`}
-              >
-                <Megaphone size={12} /> ฝากโฆษณา
-              </button>
-              <button
-                onClick={() => setFilterType('PARTNER')}
-                className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border ${
-                  filterType === 'PARTNER' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'
-                }`}
-              >
-                <UserCheck size={12} /> พาร์ทเนอร์
-              </button>
-            </>
-          )}
+        {/* หมวดหมู่งาน (Operations Specific) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar w-full">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 mr-1 uppercase tracking-wider">
+              <Filter className="w-3.5 h-3.5" /> จัดกลุ่ม:
+            </div>
+            
+            <button onClick={() => setFilterType('ALL')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'ALL' ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+              <LayoutList size={14} className="inline mr-1" /> ทั้งหมด
+            </button>
+            <button onClick={() => setFilterType('PAYMENT')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'PAYMENT' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}>
+              <Receipt size={14} className="inline mr-1" /> ตรวจสลิป
+            </button>
+            <button onClick={() => setFilterType('TAX_INVOICE')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'TAX_INVOICE' ? 'bg-teal-600 text-white border-teal-600 shadow-sm' : 'bg-white text-teal-600 border-teal-200 hover:bg-teal-50'}`}>
+              <ReceiptText size={14} className="inline mr-1" /> ใบกำกับภาษี
+            </button>
+            <button onClick={() => setFilterType('CLAIM')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'CLAIM' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'}`}>
+              <ShieldAlert size={14} className="inline mr-1" /> เคลม/คืน
+            </button>
+            <button onClick={() => setFilterType('WHOLESALE')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'WHOLESALE' ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-white text-orange-600 border-orange-200 hover:bg-orange-50'}`}>
+              <Tags size={14} className="inline mr-1" /> ขอราคาส่ง
+            </button>
         </div>
       </div>
 
-      {/* แถบค้นหาอัจฉริยะ และ ไฟสถานะการเชื่อมต่อ */}
-      <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 gap-4">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-none">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <PackageSearch className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <input 
-                      type="text" 
-                      placeholder="ค้นหา (ชื่อลูกค้า, Order ID...)" 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-dh-accent/50 w-full sm:w-72 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all"
-                  />
-              </div>
-              {searchQuery && (
-                  <span className="text-xs text-dh-main font-bold bg-dh-accent/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
-                      พบ {displayTodos.length} รายการ
-                  </span>
-              )}
-          </div>
-          
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-700 whitespace-nowrap">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              เชื่อมต่อฐานข้อมูลแล้ว (ล่าสุด: {lastUpdated.toLocaleTimeString('th-TH')})
-          </div>
-      </div>
-
-      {/* Todo List Content */}
+      {/* --- 📋 Data Display --- */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-3xl border border-dh-border/50">
-          <Loader2 className="w-10 h-10 text-dh-accent animate-spin mb-4" />
-          <p className="text-dh-muted font-medium animate-pulse">กำลังโหลดรายการงาน...</p>
+        // Loading Skeleton
+        <div className="flex flex-col items-center justify-center py-24 bg-white/50 backdrop-blur-sm rounded-3xl border border-slate-200">
+          <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+          <p className="text-slate-500 font-medium animate-pulse">กำลังโหลดข้อมูลศูนย์ปฏิบัติการ...</p>
         </div>
       ) : displayTodos.length === 0 ? (
-        <div className="text-center py-24 bg-white dark:bg-slate-800 rounded-3xl border border-dh-border shadow-sm flex flex-col items-center">
-          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle2 className="w-10 h-10 text-green-500" />
+        // Empty State
+        <div className="text-center py-24 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center animate-in fade-in duration-500">
+          <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-dh-main mb-2">
-             {searchQuery ? 'ไม่พบรายการที่ค้นหา' : 'ยอดเยี่ยม! เคลียร์งานหมดแล้ว'}
+          <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
+             {searchQuery ? 'ไม่พบรายการที่ค้นหา' : 'ยอดเยี่ยม! ไม่มีงานปฏิบัติการค้าง'}
           </h3>
-          <p className="text-dh-muted max-w-sm">
+          <p className="text-slate-500 max-w-sm text-sm">
             {searchQuery 
                ? `ไม่มีข้อมูลที่ตรงกับคำว่า "${searchQuery}"` 
-               : (activeTab === 'approvals' ? 'ไม่มีรายการรอพิจารณาอนุมัติในขณะนี้' : 'ไม่มีงานปฏิบัติการค้างในระบบ')
+               : 'คุณจัดการเอกสารและรายการทั้งหมดเรียบร้อยแล้ว พักผ่อนได้เลย!'
             }
           </p>
         </div>
       ) : (
+        // Task Grid
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {displayTodos.map(todo => {
             const isProcessing = processingId === todo.id;
-            const isManagerTab = activeTab === 'approvals';
             const urgencyClass = getUrgencyColor(todo.createdAt || todo.requestedAt);
 
-            // 🟡 1. การอนุมัติราคาส่ง
+            // 🟡 1. การขอราคาส่ง
             if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
               return (
                 <div key={todo.id} className="md:col-span-2 xl:col-span-3">
@@ -521,10 +337,7 @@ export default function Todo() {
             if (todo.type === 'verify_slip') {
               return (
                 <div key={todo.id} className="md:col-span-2 xl:col-span-3">
-                  <PaymentCard 
-                    task={todo} 
-                    currentUser={auth.currentUser} 
-                  />
+                  <PaymentCard task={todo} currentUser={auth.currentUser} />
                 </div>
               );
             }
@@ -533,46 +346,18 @@ export default function Todo() {
             if (todo.type === 'issue_tax_invoice') {
                return (
                   <div key={todo.id} className="md:col-span-2 xl:col-span-3">
-                     <TaxInvoiceCard
-                        task={todo}
-                        currentUser={auth.currentUser}
-                     />
+                     <TaxInvoiceCard task={todo} currentUser={auth.currentUser} />
                   </div>
                )
             }
 
-            // 🌟 4. การจัดการคำขอโฆษณา (User SKU) - UI เฉพาะตัวส่งต่อไปหน้า Manager Ads
-            if (todo.type === 'USER_SKU_APPROVAL' || todo.type === 'AD_APPROVAL') {
-               return (
-                  <div key={todo.id} className="bg-white border border-emerald-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
-                     <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm">
-                        <Megaphone size={12} /> ระบบโฆษณา
-                     </div>
-                     <div>
-                       <h3 className="font-bold text-gray-800 text-lg mb-1 leading-tight pr-16">{todo.title}</h3>
-                       <div className="flex flex-col gap-1 mt-3 mb-5">
-                          <p className="text-xs text-gray-500 font-medium">🛒 รหัสสินค้า: <span className="text-emerald-600 font-bold">{todo.adPayload?.title || todo.targetSkuId || 'โฆษณา'}</span></p>
-                          <p className="text-xs text-gray-500 font-medium">👤 ลูกค้า: <span className="text-gray-700 font-bold">{todo.customerName || todo.adPayload?.partnerName}</span></p>
-                          <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><Clock size={10}/> รอการตรวจสอบและอนุมัติ</p>
-                       </div>
-                     </div>
-                     <button 
-                        onClick={() => navigate('/managers/ads')} 
-                        className="w-full bg-emerald-50 text-emerald-600 font-bold py-2.5 rounded-xl hover:bg-emerald-100 hover:text-emerald-700 transition-colors border border-emerald-200 flex items-center justify-center gap-2 group shadow-sm active:scale-95"
-                     >
-                        ไปที่หน้าจัดการโฆษณา <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                     </button>
-                  </div>
-               )
-            }
-
-            // 🟡 5. Fallback สำหรับงานประเภทอื่นๆ
+            // 🟡 4. Fallback สำหรับงานเคลมและงาน Manual ทั่วไป
             return (
               <TodoItem 
                 key={todo.id}
                 todo={todo}
                 isProcessing={isProcessing}
-                isManagerTab={isManagerTab}
+                isManagerTab={false} // บังคับเป็น false เพราะหน้านี้ลบระบบผู้จัดการออกแล้ว
                 urgencyClass={urgencyClass}
                 handleAction={handleAction}
               />
@@ -581,64 +366,22 @@ export default function Todo() {
         </div>
       )}
 
-      {/* New Task Modal */}
-      {showNewTaskModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-4 border-b border-dh-border bg-slate-50 dark:bg-slate-900/50">
-              <h3 className="font-bold text-dh-main flex items-center gap-2">
-                <Plus className="w-5 h-5 text-dh-accent" />
-                สร้างงานใหม่ (Manual Task)
-              </h3>
-              <button onClick={() => setShowNewTaskModal(false)} className="text-dh-muted hover:text-dh-main transition-colors bg-white p-1 rounded-full shadow-sm border border-dh-border">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateTask} className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">หัวข้องาน <span className="text-red-500">*</span></label>
-                <input required type="text" placeholder="เช่น ติดต่อลูกค้าคุณเอ, ตรวจสอบสต็อก" value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-4 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-1 focus:ring-dh-accent/30 transition-all font-medium" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">รายละเอียดเพิ่มเติม</label>
-                <textarea rows="3" placeholder="ใส่ข้อมูลที่จำเป็นสำหรับการทำงานนี้..." value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-4 py-3 text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-1 focus:ring-dh-accent/30 transition-all resize-none"></textarea>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">ความสำคัญ</label>
-                  <select value={taskForm.priority} onChange={e => setTaskForm({...taskForm, priority: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent font-medium">
-                    <option value="Low">Low (ทั่วไป)</option>
-                    <option value="Medium">Medium (ปานกลาง)</option>
-                    <option value="High" className="text-red-500 font-bold">High (ด่วนมาก)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">ประเภทงาน</label>
-                  <select value={taskForm.type} onChange={e => setTaskForm({...taskForm, type: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-3 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent font-medium">
-                    <option value="GENERAL">งานทั่วไป</option>
-                    <option value="FOLLOW_UP">ติดตามลูกค้า</option>
-                    <option value="INVENTORY">ตรวจสอบสต็อก</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-dh-muted mb-1 uppercase tracking-wide">กำหนดส่ง (Due Date)</label>
-                <input type="datetime-local" value={taskForm.dueDate} onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-dh-border rounded-lg px-4 py-2.5 text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-1 focus:ring-dh-accent/30 transition-all font-medium" />
-              </div>
-              <div className="pt-5 border-t border-dh-border flex gap-3">
-                <button type="button" onClick={() => setShowNewTaskModal(false)} className="px-5 py-2.5 text-sm font-bold text-dh-muted hover:text-dh-main bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">ยกเลิก</button>
-                <button type="submit" className="flex-1 bg-dh-main hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">บันทึกและสร้างงาน</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* --- 🧩 Modals & Panels --- */}
+      
+      {/* Modal สร้างงานใหม่ ที่ถูกแยก Component ออกไปใน Step 2 */}
+      <NewTaskModal 
+        isOpen={showNewTaskModal} 
+        onClose={() => setShowNewTaskModal(false)} 
+        onSubmit={handleCreateTask}
+        isSubmitting={isHookSubmitting}
+      />
 
+      {/* Panel ประวัติการทำงาน */}
       <HistoryPanel 
         showCompletedPanel={showCompletedPanel} 
         setShowCompletedPanel={setShowCompletedPanel} 
-        loadingCompleted={loadingCompleted} 
-        completedTodos={completedTodos} 
+        loadingCompleted={loading} // ใช้ loading จาก hook ได้เลย (หรือจะสร้าง function ย่อยใน hook สำหรับ history ก็ได้)
+        completedTodos={hookCompletedTodos} 
       />
 
     </div>
