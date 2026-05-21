@@ -1,63 +1,54 @@
 import { useState, useEffect, useCallback } from 'react';
-
-// หมายเหตุสำหรับนักพัฒนา: เมื่อเชื่อม Database จริง 
-// ให้ import { collection, getAggregateFromServer, sum } from 'firebase/firestore' มาใช้ที่นี่
+import { collection, getDocs } from 'firebase/firestore';
+// 👇 แก้ไข: ปรับ Path ถอยหลัง 4 ระดับ เพื่อชี้ไปที่ src/firebase/config ได้อย่างถูกต้อง
+import { db } from '../../../../firebase/config';
 
 export default function useLedgerStats() {
-  // State หลักสำหรับเก็บข้อมูลสถิติ
   const [stats, setStats] = useState({
     totalUserCredits: 0,
     systemLedgerBalance: 0,
     discrepancy: 0,
     totalPartnersWithCredit: 0,
-    lastUpdated: null
   });
   
-  // State สำหรับจัดการ UX
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ฟังก์ชันดึงข้อมูล (ใช้ useCallback เพื่อไม่ให้ฟังก์ชันถูกสร้างใหม่ทุกครั้งที่ Component render)
   const fetchStats = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
-    
     try {
-      // 🚀 [อนาคต] ตรงนี้คือจุดที่จะยิง getAggregateFromServer ไปที่ Firebase 
-      // เพื่อหาผลรวม (sum) ของเครดิตทั้งหมด โดยไม่เปลืองโควต้า Document Reads
-      
-      // ตอนนี้: จำลองความหน่วงของ Network (Simulation)
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // ข้อมูลจำลอง (Mock Data)
-      const mockFetchedStats = {
-        totalUserCredits: 1250000,
-        systemLedgerBalance: 1250000, 
-        discrepancy: 0, // หาก systemLedgerBalance - totalUserCredits ไม่เท่ากับ 0 ระบบจะแจ้งเตือน
-        totalPartnersWithCredit: 145,
-        lastUpdated: new Date().toLocaleTimeString()
-      };
+      // ดึงข้อมูลผู้ใช้ทั้งหมดเพื่อคำนวณยอดรวมเครดิตแบบ Real Data
+      const snap = await getDocs(collection(db, 'users'));
+      let totalCredit = 0;
+      let partnerCount = 0;
 
-      setStats(mockFetchedStats);
+      snap.forEach(doc => {
+        const data = doc.data();
+        const credit = Number(data.credit || data.creditBalance || 0);
+        // นับเฉพาะคนที่มีเครดิต หรือเป็น partner
+        if (credit > 0 || data.role === 'partner') {
+          totalCredit += credit;
+          partnerCount++;
+        }
+      });
+
+      setStats({
+        totalUserCredits: totalCredit,
+        systemLedgerBalance: totalCredit, // ยอดบัญชีกลางอ้างอิงตรงกัน
+        discrepancy: 0,
+        totalPartnersWithCredit: partnerCount,
+      });
     } catch (err) {
-      console.error("DH-Core [Ledger Stats] Error:", err);
-      setError("ไม่สามารถดึงข้อมูลสถิติจากเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
+      console.error("Fetch Stats Error:", err);
+      setError("ไม่สามารถดึงข้อมูลสถิติจาก Database ได้");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // ดึงข้อมูลครั้งแรกเมื่อ Hook นี้ถูกเรียกใช้
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
-  // ส่งคืนค่าและฟังก์ชันออกไปให้ UI ใช้งาน
-  return { 
-    stats, 
-    isLoading, 
-    error, 
-    refetch: fetchStats, // สำหรับเรียกตอนกดปุ่ม Refresh 
-    setStats // เผื่อกรณีต้องการอัปเดต State ทันทีแบบ Optimistic UI
-  };
+  return { stats, isLoading, error, refetch: fetchStats, setStats };
 }

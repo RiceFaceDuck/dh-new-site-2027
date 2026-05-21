@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { db, auth } from '../../../firebase/config';
 
-// -------------------------------------------------------------
-// นำเข้า Components ย่อยที่เราได้ทำการแยกไฟล์ไว้อย่างเป็นระเบียบ
-// -------------------------------------------------------------
 import DashboardTabs from './components/DashboardTabs';
 import SecurityFrameworkInfo from './components/SecurityFrameworkInfo';
 import SystemHealthPanel from './components/SystemHealthPanel';
@@ -12,152 +11,140 @@ import CreditHistoryTab from './components/tabs/CreditHistoryTab';
 import PartnerCreditsTab from './components/tabs/PartnerCreditsTab';
 import CreditSettingsTab from './components/tabs/CreditSettingsTab';
 
+import useLedgerStats from './hooks/useLedgerStats';
+import useSystemHealth from './hooks/useSystemHealth';
+
 export default function CreditDashboard() {
-  // ==========================================
-  // 1. States สำหรับควบคุม UI และ Navigation
-  // ==========================================
   const [activeTab, setActiveTab] = useState('adjust');
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ==========================================
-  // 2. States สำหรับ System Health & Logs
-  // ==========================================
-  const [healthStatus, setHealthStatus] = useState('healthy'); // 'healthy', 'warning', 'critical'
-  const [isCheckingHealth, setIsCheckingHealth] = useState(false);
-  const [healthLogs, setHealthLogs] = useState([
-    { time: new Date().toLocaleTimeString(), msg: "DH-Core: Authentication successful.", type: "success" },
-    { time: new Date().toLocaleTimeString(), msg: "Credit Engine: Standing by.", type: "info" }
-  ]);
+  const { stats: ledgerStats, isLoading: isStatsLoading, refetch: refetchStats } = useLedgerStats();
+  const { healthStatus, isCheckingHealth, healthLogs, checkHealth, addLog } = useSystemHealth();
 
-  // ==========================================
-  // 3. States สำหรับสถิติ Ledger (ตัวเลขสรุป)
-  // ==========================================
-  const [ledgerStats, setLedgerStats] = useState({
-    totalUserCredits: 1250000,
-    systemLedgerBalance: 1250000,
-    discrepancy: 0,
-    totalPartnersWithCredit: 145,
-  });
-
-  // ==========================================
-  // Effects
-  // ==========================================
-  // จำลองการโหลดระบบตอนเปิดหน้าเว็บครั้งแรก (UX Improvement)
   useEffect(() => {
-    const timer = setTimeout(() => setIsInitializing(false), 800);
+    const timer = setTimeout(() => setIsInitializing(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  // ==========================================
-  // Handlers (ฟังก์ชันการทำงาน)
-  // ==========================================
-  
-  // กดปุ่มเช็คสถานะเซิร์ฟเวอร์ (Diagnostics)
-  const handleRefreshHealth = () => {
-    setIsCheckingHealth(true);
-    // จำลองการดึงข้อมูล API 1.2 วินาที
-    setTimeout(() => {
-      setHealthLogs(prev => [
-         { time: new Date().toLocaleTimeString(), msg: "System health check OK. DB Latency: 24ms", type: "success" },
-         ...prev
-      ].slice(0, 15)); // เก็บประวัติแค่ 15 บรรทัดล่าสุดกัน UI รก
-      setIsCheckingHealth(false);
-    }, 1200);
-  };
-
-  // รับข้อมูลจากการกดปุ่ม ยืนยันทำรายการ ใน CreditAdjustTab
   const handleSubmitTransaction = async (txData) => {
-    // เพิ่ม Log ว่ากำลังทำงาน
-    const logMsg = `Transaction [${txData.actionType.toUpperCase()}] for ${txData.partnerId} amount ฿${txData.amount.toLocaleString()} processing...`;
-    setHealthLogs(prev => [{ time: new Date().toLocaleTimeString(), msg: logMsg, type: "warning" }, ...prev]);
+    if (!txData.partnerId) return;
+    setIsSubmitting(true);
+    addLog(`Processing [${txData.actionType.toUpperCase()}] for ${txData.partnerId}...`, "warning");
 
-    // จำลองการรอ API (ในของจริงตรงนี้คือการเรียก creditService)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      let userRef, userSnap;
+      let targetUid = txData.partnerId;
 
-    // อัปเดตตัวเลขสถิติแบบ Real-time หลังจากทำรายการเสร็จ
-    setLedgerStats(prev => {
-       const newCredits = txData.actionType === 'add' 
-          ? prev.totalUserCredits + txData.amount 
-          : prev.totalUserCredits - txData.amount;
-       
-       return {
-         ...prev,
-         totalUserCredits: newCredits,
-         systemLedgerBalance: newCredits, // สมมติว่า Sync ตรงกันเป๊ะ
-         discrepancy: 0
-       }
-    });
+      userRef = doc(db, 'users', targetUid);
+      userSnap = await getDoc(userRef);
 
-    // แจ้งเตือนความสำเร็จลง Terminal
-    setHealthLogs(prev => [
-        { time: new Date().toLocaleTimeString(), msg: `Transaction SUCCESS for ${txData.partnerId}. UID generated.`, type: "success" },
-        ...prev
-    ]);
+      if (!userSnap.exists()) {
+        const qPhone = query(collection(db, 'users'), where('phone', '==', txData.partnerId));
+        const phoneSnap = await getDocs(qPhone);
+        if (!phoneSnap.empty) {
+          targetUid = phoneSnap.docs[0].id;
+          userRef = doc(db, 'users', targetUid);
+          userSnap = phoneSnap.docs[0];
+        } else {
+          throw new Error("ไม่พบข้อมูล Partner ID หรือเบอร์โทรศัพท์นี้ในระบบ");
+        }
+      }
+
+      const userData = userSnap.data();
+      const currentCredit = Number(userData.credit || userData.creditBalance || 0);
+      const amount = Number(txData.amount);
+      
+      if (txData.actionType === 'deduct' && currentCredit < amount) {
+        throw new Error("ยอดเครดิตคงเหลือไม่เพียงพอให้หัก");
+      }
+
+      const newCredit = txData.actionType === 'add' ? currentCredit + amount : currentCredit - amount;
+
+      await updateDoc(userRef, {
+        credit: newCredit,
+        creditBalance: newCredit,
+        updatedAt: serverTimestamp()
+      });
+
+      await addDoc(collection(db, 'credit_transactions'), {
+        partnerId: targetUid,
+        partnerName: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}` : 'ไม่ระบุชื่อ',
+        type: txData.actionType,
+        amount: amount,
+        balanceAfter: newCredit,
+        remark: txData.remark,
+        operator: auth.currentUser?.email || 'System Admin',
+        timestamp: serverTimestamp()
+      });
+
+      addLog(`Transaction SUCCESS: ฿${amount.toLocaleString('th-TH')} updated.`, "success");
+      refetchStats(); 
+      alert("ทำรายการสำเร็จเรียบร้อย");
+      
+    } catch (error) {
+      console.error("TX Error:", error);
+      addLog(`TX Failed: ${error.message}`, "error");
+      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // ==========================================
-  // Render
-  // ==========================================
   if (isInitializing) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 space-y-4">
-        <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-        <p className="font-medium animate-pulse tracking-wide">Initializing Credit Core System...</p>
+      <div className="flex items-center justify-center min-h-[50vh] text-slate-500">
+        <p className="text-sm font-medium">Loading System...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+    // ลบการจำกัดความสูงออกทั้งหมด และใช้ช่องว่าง (gap/space) แค่ 4
+    <div className="w-full pb-10 space-y-4">
       
-      {/* Header Section */}
-      <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      {/* Header: เรียบง่าย ทรงเหลี่ยม ไม่กินพื้นที่ */}
+      <div className="bg-white border-b border-slate-300 px-6 py-4 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-            Credit Management <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">Core</span>
-          </h1>
-          <p className="text-sm text-slate-500 mt-1.5">ศูนย์กลางจัดการระบบเครดิตและตรวจสอบกระเป๋าเงินพาร์ทเนอร์ (DH-Core)</p>
+          <h1 className="text-lg font-bold text-slate-800 uppercase tracking-wide">Credit Control System</h1>
+          <p className="text-xs text-slate-500">Centralized Financial Operations</p>
+        </div>
+        <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-sm">
+          System Online
         </div>
       </div>
 
-      {/* Row 1: สถิติตัวเลขด้านบนสุด */}
-      <LedgerStatsCards stats={ledgerStats} isLoading={isInitializing} />
+      <div className="px-6 space-y-4">
+        {/* สถิติ */}
+        <LedgerStatsCards stats={ledgerStats} isLoading={isStatsLoading} />
 
-      {/* Row 2: เลย์เอาต์หลัก แบ่ง 3:1 */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        
-        {/* คอลัมน์ซ้าย (กว้าง 3 ส่วน): พื้นที่ทำงานหลัก */}
-        <div className="xl:col-span-3 space-y-6 flex flex-col h-full">
-          <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        {/* Layout หลัก แบ่ง 8:4 ไม่มี Sticky ไม่มี Lock Scroll */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
           
-          {/* พื้นที่แสดงเนื้อหาของแต่ละ Tab */}
-          <div className="flex-1">
-            {activeTab === 'adjust' && (
-              <CreditAdjustTab 
-                onSubmitTransaction={handleSubmitTransaction} 
-                isSubmitting={false} 
-              />
-            )}
+          {/* คอลัมน์ซ้าย */}
+          <div className="xl:col-span-8 flex flex-col space-y-0 bg-white border border-slate-300 rounded-sm">
+            <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
             
-            {activeTab === 'history' && <CreditHistoryTab />}
-            
-            {activeTab === 'partners' && <PartnerCreditsTab />}
-            
-            {activeTab === 'settings' && <CreditSettingsTab />}
+            <div className="p-4 bg-white">
+              {activeTab === 'adjust' && <CreditAdjustTab onSubmitTransaction={handleSubmitTransaction} isSubmitting={isSubmitting} />}
+              {activeTab === 'history' && <CreditHistoryTab />}
+              {activeTab === 'partners' && <PartnerCreditsTab />}
+              {activeTab === 'settings' && <CreditSettingsTab />}
+            </div>
           </div>
-        </div>
 
-        {/* คอลัมน์ขวา (กว้าง 1 ส่วน): แผงควบคุมระบบ (Sticky Sidebar) */}
-        <div className="space-y-6 xl:sticky xl:top-6 self-start">
-          <SystemHealthPanel 
-            healthStatus={healthStatus}
-            isCheckingHealth={isCheckingHealth}
-            healthLogs={healthLogs}
-            onRefresh={handleRefreshHealth}
-          />
-          <SecurityFrameworkInfo />
-        </div>
+          {/* คอลัมน์ขวา: ปล่อยไหลตามธรรมชาติ */}
+          <div className="xl:col-span-4 space-y-4">
+            <SystemHealthPanel 
+              healthStatus={healthStatus}
+              isCheckingHealth={isCheckingHealth}
+              healthLogs={healthLogs}
+              onRefresh={checkHealth}
+            />
+            <SecurityFrameworkInfo />
+          </div>
 
+        </div>
       </div>
     </div>
   );
