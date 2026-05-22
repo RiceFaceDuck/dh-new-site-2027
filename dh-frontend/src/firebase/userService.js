@@ -1,11 +1,13 @@
 import { db } from './config';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 // ==========================================
 // 🧠 Smart Memory Cache (ประหยัดค่าใช้จ่าย Firebase Reads)
 // ==========================================
 let userProfileCache = {};
+let taxInfoCache = {}; // 🛡️ แคชแยกสำหรับข้อมูลลับ (Tax/ID Card)
 let lastFetchTime = {};
+let lastTaxFetchTime = {};
 const CACHE_DURATION = 5 * 60 * 1000; // แคชข้อมูลไว้ 5 นาที
 
 /**
@@ -14,10 +16,14 @@ const CACHE_DURATION = 5 * 60 * 1000; // แคชข้อมูลไว้ 5 
 export const clearUserCache = (uid = null) => {
   if (uid) {
     delete userProfileCache[uid];
+    delete taxInfoCache[uid];
     delete lastFetchTime[uid];
+    delete lastTaxFetchTime[uid];
   } else {
     userProfileCache = {};
+    taxInfoCache = {};
     lastFetchTime = {};
+    lastTaxFetchTime = {};
   }
 };
 
@@ -37,39 +43,67 @@ export const userService = {
     }
 
     try {
+      console.log('☁️ [userService] Fetching profile from Firestore for:', uid);
       const userRef = doc(db, 'users', uid);
-      const snap = await getDoc(userRef);
+      const docSnap = await getDoc(userRef);
       
-      if (snap.exists()) {
-        const data = snap.data();
-        // บันทึกข้อมูลลง Cache
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        // บันทึกลง Cache
         userProfileCache[uid] = data;
         lastFetchTime[uid] = now;
         return data;
       }
       return null;
     } catch (error) {
-      console.error('❌ [userService] Error fetching profile:', error);
+      console.error('❌ [userService] Error fetching user profile:', error);
       throw error;
     }
   },
 
   // ==========================================
-  // 2. อัปเดตข้อมูล Profile (ระบบรักษาความปลอดภัยข้อมูล)
+  // 2. อัปเดตข้อมูล Profile (ฉลาดขึ้น - รองรับ Nested Object เช่น address)
   // ==========================================
   updateUserProfile: async (uid, data) => {
     if (!uid) throw new Error('User ID is required');
-
+    
     try {
       const userRef = doc(db, 'users', uid);
-      // บังคับใช้ merge: true เพื่อป้องกันข้อมูลสูญหาย 100%
-      await setDoc(userRef, data, { merge: true });
       
-      // อัปเดต Cache ทันทีเพื่อให้ UI ตอบสนองไม่ต้องรอรอบดึงใหม่
-      if (userProfileCache[uid]) {
-        userProfileCache[uid] = { ...userProfileCache[uid], ...data };
+      // ดึงข้อมูลเดิมมาเทียบ (ประหยัด Write ถ้าไม่มีอะไรเปลี่ยน)
+      const currentProfile = userProfileCache[uid] || (await getDoc(userRef)).data() || {};
+      let hasChanges = false;
+      const updatePayload = {};
+
+      for (const key in data) {
+        // 🚀 [NEW FEATURE] Deep Compare สำหรับ Object เช่น address: { addressLine, subDistrict... }
+        if (typeof data[key] === 'object' && data[key] !== null) {
+          if (JSON.stringify(currentProfile[key]) !== JSON.stringify(data[key])) {
+            updatePayload[key] = data[key];
+            hasChanges = true;
+          }
+        } 
+        // เปรียบเทียบค่าทั่วไป (String, Number, Boolean)
+        else if (currentProfile[key] !== data[key]) {
+          updatePayload[key] = data[key];
+          hasChanges = true;
+        }
       }
-      return true;
+
+      if (hasChanges) {
+        updatePayload.updatedAt = serverTimestamp(); // 🕒 แทรกลายเซ็นเวลาอัตโนมัติ
+        await setDoc(userRef, updatePayload, { merge: true });
+        
+        // อัปเดต Cache ทันทีโดยไม่ต้องดึงใหม่
+        userProfileCache[uid] = { ...currentProfile, ...updatePayload };
+        lastFetchTime[uid] = Date.now();
+        
+        console.log('✅ [userService] Profile updated successfully');
+        return true;
+      } else {
+        console.log('⏭️ [userService] No changes detected, skipped Firestore write.');
+        return false;
+      }
     } catch (error) {
       console.error('❌ [userService] Error updating profile:', error);
       throw error;
@@ -77,13 +111,13 @@ export const userService = {
   },
 
   // ==========================================
-  // 3. จัดการเฉพาะส่วน Ecosystem (เช่น Google Maps)
+  // 3. จัดการ Ecosystem (เชื่อมลิงก์ Google Maps)
   // ==========================================
   updateEcosystem: async (uid, ecosystemData) => {
     if (!uid) throw new Error('User ID is required');
     try {
       const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, { ecosystem: ecosystemData }, { merge: true });
+      await setDoc(userRef, { ecosystem: ecosystemData, updatedAt: serverTimestamp() }, { merge: true });
       
       if (userProfileCache[uid]) {
         userProfileCache[uid].ecosystem = { 
@@ -117,11 +151,70 @@ export const userService = {
       } else {
         callback(null);
       }
-    }, (error) => {
-      console.error('❌ [userService] Real-time listener error:', error);
     });
 
-    // คืนค่าฟังก์ชันสำหรับ Unsubscribe เมื่อ Component ถูกทำลาย
     return unsubscribe;
+  },
+
+  // ==========================================
+  // 5. 🛡️ [NEW] ดึงข้อมูลความลับ (Tax/ID Card)
+  // ==========================================
+  getPrivateTaxInfo: async (uid, forceRefresh = false) => {
+    if (!uid) return null;
+
+    const now = Date.now();
+    
+    // ตรวจสอบ Cache ลับ
+    if (!forceRefresh && taxInfoCache[uid] && (now - lastTaxFetchTime[uid] < CACHE_DURATION)) {
+      console.log('⚡ [userService] Returning cached Private Tax Info for:', uid);
+      return taxInfoCache[uid];
+    }
+
+    try {
+      console.log('☁️ [userService] Fetching Private Tax Info from Firestore for:', uid);
+      // 🔥 ดึงจาก Sub-collection ลับที่จำกัดสิทธิ์ด้วย Security Rules
+      const taxRef = doc(db, 'users', uid, 'private', 'taxInfo');
+      const docSnap = await getDoc(taxRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        taxInfoCache[uid] = data;
+        lastTaxFetchTime[uid] = now;
+        return data;
+      }
+      return null;
+    } catch (error) {
+      // ไม่โยน Error เพื่อไม่ให้ UI แคช แต่ให้ Log ไว้แทน (กรณี User อาจจะยังไม่เคยตั้งค่า)
+      console.warn('ℹ️ [userService] No Private Tax Info found or permission denied:', error.message);
+      return null;
+    }
+  },
+
+  // ==========================================
+  // 6. 🛡️ [NEW] บันทึกข้อมูลความลับ (Tax/ID Card)
+  // ==========================================
+  updatePrivateTaxInfo: async (uid, taxData) => {
+    if (!uid) throw new Error('User ID is required');
+    
+    try {
+      // 🔥 บันทึกลง Sub-collection ลับ
+      const taxRef = doc(db, 'users', uid, 'private', 'taxInfo');
+      const payload = {
+        ...taxData,
+        updatedAt: serverTimestamp() // ฝังเวลาเสมอ
+      };
+
+      await setDoc(taxRef, payload, { merge: true });
+      
+      // อัปเดต Cache ลับทันที
+      taxInfoCache[uid] = { ...(taxInfoCache[uid] || {}), ...taxData };
+      lastTaxFetchTime[uid] = Date.now();
+      
+      console.log('✅ [userService] Private Tax Info secured successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ [userService] Error securing Private Tax Info:', error);
+      throw error;
+    }
   }
 };

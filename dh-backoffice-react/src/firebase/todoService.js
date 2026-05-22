@@ -1,7 +1,8 @@
+/* eslint-disable */
 import { db } from './config';
 import { 
   collection, query, where, orderBy, limit, getDocs, doc, updateDoc, 
-  addDoc, deleteDoc, serverTimestamp, onSnapshot, runTransaction 
+  addDoc, deleteDoc, serverTimestamp, onSnapshot, runTransaction, increment 
 } from 'firebase/firestore';
 
 // ----------------------------------------------------------------------
@@ -15,12 +16,12 @@ export const MANAGER_TASK_TYPES = [
   'RETURN_APPROVAL',
   'CANCEL_CLAIM_APPROVAL',
   'CANCEL_RETURN_APPROVAL',
-  // ✨ เพิ่มรายการงานใหม่ตาม Master Plan
   'AD_APPROVAL',         // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า
   'USER_SKU_APPROVAL',   // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า (Legacy)
   'BILLBOARD_APPROVAL',  // งานตรวจสอบ/อนุมัติ ฝากแผ่นป้ายโฆษณา
   'PARTNER_APPROVAL',    // งานตรวจสอบ/อนุมัติ Partner รับการสนับสนุน
-  'ACCOUNT_APPROVAL'     // งานตรวจสอบ Account สมัครใหม่
+  'ACCOUNT_APPROVAL',    // งานตรวจสอบ Account สมัครใหม่
+  'WALLET_WITHDRAWAL'    // ✨ [NEW] งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า
 ];
 
 export const todoService = {
@@ -36,7 +37,7 @@ export const todoService = {
       const pendingTodos = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         // 🚀 [อัปเกรด] กรองงานที่เป็นของ "ผู้จัดการ" ออกไป เพื่อให้กระดานส่วนกลางสะอาด
-        .filter(t => !MANAGER_TASK_TYPES.includes(t.type))
+        .filter(t => !MANAGER_TASK_TYPES.includes(t.type) && !MANAGER_TASK_TYPES.includes(t.taskType))
         .sort((a, b) => {
             const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
             const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
@@ -60,7 +61,7 @@ export const todoService = {
       const managerTodos = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         // 🚀 [อัปเกรด] ดึงเฉพาะงานที่มี Type ตรงกับกลุ่มงานของผู้จัดการเท่านั้น
-        .filter(t => MANAGER_TASK_TYPES.includes(t.type))
+        .filter(t => MANAGER_TASK_TYPES.includes(t.type) || MANAGER_TASK_TYPES.includes(t.taskType))
         .sort((a, b) => {
             const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
             const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
@@ -96,7 +97,6 @@ export const todoService = {
         const orderDoc = await transaction.get(orderRef);
         
         // ✨ UX UPGRADE: จัดการงานกำพร้าอัตโนมัติ (Auto-clean Orphaned Task)
-        // เปลี่ยนจากการโยน Error หน้าเว็บพัง เป็นการจัดการเคลียร์ทิ้งให้อัตโนมัติ
         if (!orderDoc.exists()) {
           transaction.update(taskRef, {
             status: 'cancelled',
@@ -253,11 +253,8 @@ export const todoService = {
                       completedAt: serverTimestamp(),
                       actionBy: 'System Auto-Clean'
                   });
-                  // คืนค่าแบบ Custom กลับไปให้ UI (งานจะหายไปจากกระดานทันทีอย่างนิ่มนวล)
                   return { success: false, orphanedCleared: true, message: "ไม่พบข้อมูลออเดอร์ที่เกี่ยวข้อง (ออเดอร์นี้อาจถูกลบไปแล้ว)\n\nระบบได้ทำการเคลียร์งานที่ค้างอยู่นี้ออกจากกระดานให้เรียบร้อยแล้วครับ" };
               }
-              
-              const userId = orderDoc.data().userId;
               
               transaction.update(taskRef, {
                   status: 'rejected',
@@ -280,10 +277,135 @@ export const todoService = {
       }
   },
 
+  // 🏦 6. ประมวลผลคำขอถอนเงิน Wallet [NEW & HIGHLY SECURE]
+  processWalletWithdrawal: async (taskId, action, adminInfo, extraData = {}) => {
+      try {
+          return await runTransaction(db, async (transaction) => {
+              const taskRef = doc(db, 'todos', taskId);
+              const taskSnap = await transaction.get(taskRef);
+
+              if (!taskSnap.exists()) {
+                  return { success: false, orphanedCleared: true, message: "ไม่พบคำขอถอนเงินนี้ในระบบ" };
+              }
+
+              const taskData = taskSnap.data();
+              // ดักจับทั้งแบบเก่า(type) และแบบใหม่(taskType)
+              const currentType = taskData.type || taskData.taskType;
+              
+              if (currentType !== 'WALLET_WITHDRAWAL') {
+                  throw new Error("ประเภทงานไม่ถูกต้อง");
+              }
+              
+              if (taskData.status !== 'pending' && taskData.status !== 'PENDING' && taskData.status !== 'todo') {
+                  throw new Error("รายการนี้ถูกดำเนินการไปแล้ว");
+              }
+
+              // ค้นหา Customer ID 
+              const customerId = taskData.customer?.uid || taskData.withdrawalDetails?.uid || taskData.createdBy;
+              const amount = Number(taskData.withdrawalDetails?.amount || 0);
+
+              if (!customerId || amount <= 0) throw new Error("ข้อมูลลูกค้าหรือจำนวนเงินไม่ถูกต้อง");
+
+              const userRef = doc(db, 'users', customerId);
+              const userSnap = await transaction.get(userRef);
+              
+              // ✨ UX UPGRADE: Auto-Clean กรณีลูกค้าถูกลบออกจากระบบ
+              if (!userSnap.exists()) {
+                 transaction.update(taskRef, {
+                      status: 'cancelled',
+                      rejectReason: 'ระบบปิดงานอัตโนมัติ: บัญชีลูกค้ารายนี้ไม่มีอยู่ในระบบแล้ว',
+                      completedAt: serverTimestamp(),
+                      actionBy: 'System Auto-Clean'
+                  });
+                  return { success: false, orphanedCleared: true, message: "ไม่พบบัญชีลูกค้าในระบบ ระบบได้เคลียร์รายการให้แล้วครับ" };
+              }
+
+              const txId = `WD-${action}-${Date.now()}`;
+              const userTxRef = doc(collection(db, `users/${customerId}/wallet_transactions`));
+              const logRef = doc(collection(db, 'system_logs'));
+
+              if (action === 'APPROVE') {
+                  // ✅ กรณีอนุมัติโอนเงิน (หักเงินรอถอนออกอย่างถาวร)
+                  transaction.update(userRef, {
+                      pendingWithdrawal: increment(-amount),
+                      updatedAt: serverTimestamp()
+                  });
+
+                  transaction.set(userTxRef, {
+                      transactionId: txId,
+                      type: 'WITHDRAWAL_COMPLETED',
+                      amount: amount,
+                      status: 'SUCCESS',
+                      note: extraData.note || 'โอนเงินเข้าบัญชีสำเร็จเรียบร้อย',
+                      slipUrl: extraData.slipUrl || null,
+                      adminId: adminInfo?.uid || 'Manager',
+                      timestamp: serverTimestamp()
+                  });
+
+                  transaction.update(taskRef, {
+                      status: 'completed',
+                      'withdrawalDetails.slipUrl': extraData.slipUrl || null,
+                      adminNote: extraData.note || 'โอนเงินสำเร็จ',
+                      completedAt: serverTimestamp(),
+                      actionBy: adminInfo?.displayName || 'Manager'
+                  });
+
+                  transaction.set(logRef, {
+                      actionType: 'WALLET_WITHDRAWAL_APPROVED',
+                      taskId,
+                      details: `อนุมัติโอนเงิน ฿${amount} ให้ลูกค้าสำเร็จ`,
+                      createdBy: adminInfo?.uid || 'Manager',
+                      createdAt: serverTimestamp()
+                  });
+
+              } else if (action === 'REJECT') {
+                  // ❌ กรณีปฏิเสธ (ดึงเงินรอถอน คืนกลับเข้ากระเป๋า Wallet ให้ลูกค้าอัตโนมัติ)
+                  transaction.update(userRef, {
+                      pendingWithdrawal: increment(-amount),
+                      walletBalance: increment(amount), // คืนเงินเข้าระบบให้ลูกค้า
+                      updatedAt: serverTimestamp()
+                  });
+
+                  transaction.set(userTxRef, {
+                      transactionId: txId,
+                      type: 'WITHDRAWAL_REJECTED',
+                      amount: amount,
+                      status: 'REFUNDED',
+                      note: extraData.note || 'คำขอถูกปฏิเสธ (เงินถูกคืนกลับเข้าระบบแล้ว)',
+                      adminId: adminInfo?.uid || 'Manager',
+                      timestamp: serverTimestamp()
+                  });
+
+                  transaction.update(taskRef, {
+                      status: 'rejected',
+                      rejectReason: extraData.note || 'ปฏิเสธคำขอ และคืนเงิน',
+                      completedAt: serverTimestamp(),
+                      actionBy: adminInfo?.displayName || 'Manager'
+                  });
+
+                  transaction.set(logRef, {
+                      actionType: 'WALLET_WITHDRAWAL_REJECTED',
+                      taskId,
+                      details: `ปฏิเสธโอนเงิน ฿${amount} (เงินถูกคืนให้ลูกค้าแล้ว)`,
+                      createdBy: adminInfo?.uid || 'Manager',
+                      createdAt: serverTimestamp()
+                  });
+              } else {
+                  throw new Error("Action ไม่ถูกต้อง (ต้องเป็น APPROVE หรือ REJECT เท่านั้น)");
+              }
+              
+              return { success: true };
+          });
+      } catch (error) {
+          console.error("🔥 processWalletWithdrawal Error:", error);
+          throw error;
+      }
+  },
+
   getCompletedTodos: async (limitCount = 50) => {
       const q = query(
           collection(db, 'todos'),
-          where('status', 'in', ['completed', 'rejected']),
+          where('status', 'in', ['completed', 'rejected', 'cancelled']),
           orderBy('completedAt', 'desc'),
           limit(limitCount)
       );

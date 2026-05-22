@@ -1,27 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { getAuth, updateProfile } from 'firebase/auth';
-import { User, Phone, Save, CheckCircle2, AlertCircle, Loader2, FileText, MapPin, Map, Navigation } from 'lucide-react';
+import { 
+  User, Phone, Save, CheckCircle2, AlertCircle, 
+  Loader2, MapPin, Map, Navigation, Home, 
+  Building, Building2, Hash 
+} from 'lucide-react';
 
 export default function PersonalInfoForm({ user, initialData, onRefresh }) {
+  // 🚀 โครงสร้าง State ใหม่ รองรับ Address แบบแยกส่วน
   const [formData, setFormData] = useState({
     displayName: '',
     phoneNumber: '',
-    taxId: '',
-    mapUrl: ''
+    mapUrl: '',
+    address: {
+      addressLine: '',
+      subDistrict: '',
+      district: '',
+      province: '',
+      zipCode: ''
+    }
   });
   
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
 
-  // 1. โหลดข้อมูลเริ่มต้นและแกะโครงสร้าง Ecosystem
+  // 1. โหลดข้อมูลเริ่มต้นและแกะโครงสร้าง Ecosystem & Address
   useEffect(() => {
     if (initialData || user) {
       setFormData({
         displayName: initialData?.displayName || user?.displayName || '',
         phoneNumber: initialData?.phoneNumber || '',
-        taxId: initialData?.taxId || '',
-        mapUrl: initialData?.ecosystem?.mapUrl || ''
+        mapUrl: initialData?.ecosystem?.mapUrl || '',
+        address: {
+          addressLine: initialData?.address?.addressLine || '',
+          subDistrict: initialData?.address?.subDistrict || '',
+          district: initialData?.address?.district || '',
+          province: initialData?.address?.province || '',
+          zipCode: initialData?.address?.zipCode || ''
+        }
       });
     }
   }, [initialData, user]);
@@ -32,29 +49,42 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
     
     // ดักให้กรอกเฉพาะตัวเลข และจำกัดความยาว
     if (name === 'phoneNumber' && value && !/^\d{0,10}$/.test(value)) return;
-    if (name === 'taxId' && value && !/^\d{0,13}$/.test(value)) return;
+    if (name === 'address.zipCode' && value && !/^\d{0,5}$/.test(value)) return;
     
-    setFormData(prev => ({ ...prev, [name]: value }));
+    // 🧠 จัดการ State ที่เป็น Nested Object (Address)
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        address: { ...prev.address, [addressField]: value }
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+
     if (status.message) setStatus({ type: '', message: '' });
   };
 
-  // เช็คว่าลิงก์แผนที่มาจาก Google Maps จริงหรือไม่
   const isValidMapUrl = (url) => {
     if (!url) return true;
     return /^(https?:\/\/)?(www\.)?(goo\.gl\/maps|maps\.app\.goo\.gl|google\.com\/maps).*$/.test(url);
   };
 
-  // เช็คว่ามีการแก้ไขข้อมูลหรือไม่ (ประหยัด Firebase Writes)
+  // 🧠 เช็คว่ามีการแก้ไขข้อมูลหรือไม่ (Deep Compare ประหยัด Firebase Writes)
   const hasChanges = () => {
     const initName = initialData?.displayName || user?.displayName || '';
     const initPhone = initialData?.phoneNumber || '';
-    const initTaxId = initialData?.taxId || '';
     const initMap = initialData?.ecosystem?.mapUrl || '';
+    const initAddr = initialData?.address || {};
     
     return formData.displayName !== initName ||
            formData.phoneNumber !== initPhone ||
-           formData.taxId !== initTaxId ||
-           formData.mapUrl !== initMap;
+           formData.mapUrl !== initMap ||
+           formData.address.addressLine !== (initAddr.addressLine || '') ||
+           formData.address.subDistrict !== (initAddr.subDistrict || '') ||
+           formData.address.district !== (initAddr.district || '') ||
+           formData.address.province !== (initAddr.province || '') ||
+           formData.address.zipCode !== (initAddr.zipCode || '');
   };
 
   // 3. บันทึกข้อมูล
@@ -74,14 +104,15 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
       const db = getFirestore();
       const userRef = doc(db, 'users', user.uid);
       
-      // อัปเดตข้อมูลลง Firestore (จัดโครงสร้างให้รองรับ Ecosystem)
+      // อัปเดตข้อมูลลง Firestore (โครงสร้างใหม่ ไม่มี taxId, เพิ่ม address)
       await setDoc(userRef, {
         displayName: formData.displayName,
         phoneNumber: formData.phoneNumber,
-        taxId: formData.taxId,
+        address: formData.address,
         ecosystem: {
           mapUrl: formData.mapUrl
-        }
+        },
+        updatedAt: new Date()
       }, { merge: true });
 
       // ซิงค์ชื่อใหม่เข้ากับระบบ Authentication กลางของ Firebase
@@ -96,7 +127,6 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
       setStatus({ type: 'error', message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' });
     } finally {
       setIsSaving(false);
-      // Gimmick: เคลียร์ข้อความสำเร็จอัตโนมัติหลัง 3 วินาที
       setTimeout(() => {
         if (status.type === 'success') setStatus({ type: '', message: '' });
       }, 3000);
@@ -104,86 +134,175 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <User className="w-5 h-5 text-[#0870B8]" />
           ข้อมูลส่วนตัวพื้นฐาน
         </h3>
-        <p className="text-sm text-slate-500 mt-1">จัดการข้อมูลการติดต่อ ข้อมูลภาษี และพิกัดร้านค้าของคุณ</p>
+        <p className="text-sm text-slate-500 mt-1">จัดการข้อมูลการติดต่อ และที่อยู่สำหรับการจัดส่ง</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-6 space-y-8">
         
-        {/* แถวที่ 1: ชื่อ และ เบอร์โทร */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">ชื่อ - นามสกุล / ชื่อร้านค้า</label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-slate-400 group-focus-within:text-[#0870B8] transition-colors" />
+        {/* =========================================
+            Section 1: ข้อมูลการติดต่อพื้นฐาน
+        ========================================= */}
+        <div className="space-y-5">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0870B8]"></span>
+            ข้อมูลผู้ติดต่อ (Contact Info)
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">ชื่อ - นามสกุล / ชื่อร้านค้า</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-slate-400 group-focus-within:text-[#0870B8] transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="displayName"
+                  value={formData.displayName}
+                  onChange={handleChange}
+                  className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0870B8]/10 focus:border-[#0870B8] transition-all bg-slate-50 focus:bg-white text-slate-800"
+                  placeholder="ระบุชื่อที่ต้องการให้แสดง"
+                  required
+                />
               </div>
-              <input
-                type="text"
-                name="displayName"
-                value={formData.displayName}
-                onChange={handleChange}
-                className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0870B8]/20 focus:border-[#0870B8] transition-all bg-slate-50 focus:bg-white text-slate-800"
-                placeholder="ระบุชื่อที่ต้องการให้แสดง"
-                required
-              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">เบอร์โทรศัพท์ติดต่อ</label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <Phone className="h-5 w-5 text-slate-400 group-focus-within:text-[#0870B8] transition-colors" />
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">เบอร์โทรศัพท์ติดต่อ</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-slate-400 group-focus-within:text-[#0870B8] transition-colors" />
+                </div>
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0870B8]/10 focus:border-[#0870B8] transition-all bg-slate-50 focus:bg-white text-slate-800 font-medium"
+                  placeholder="08X-XXX-XXXX"
+                />
               </div>
-              <input
-                type="tel"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0870B8]/20 focus:border-[#0870B8] transition-all bg-slate-50 focus:bg-white text-slate-800 font-medium"
-                placeholder="08X-XXX-XXXX"
-              />
             </div>
           </div>
         </div>
 
-        {/* แถวที่ 2: เลขที่ผู้เสียภาษี */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            เลขประจำตัวผู้เสียภาษี (13 หลัก) <span className="text-slate-400 font-normal ml-1">(ถ้ามี)</span>
-          </label>
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <FileText className="h-5 w-5 text-slate-400 group-focus-within:text-[#0870B8] transition-colors" />
+        {/* =========================================
+            Section 2: ข้อมูลที่อยู่ (อัปเกรดใหม่)
+        ========================================= */}
+        <div className="space-y-5 pt-4 border-t border-slate-100">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            ที่อยู่จัดส่งสินค้า (Shipping Address)
+          </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* บ้านเลขที่ ซอย ถนน */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">บ้านเลขที่ / หมู่ / ซอย / ถนน / อาคาร</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-start pt-3 pointer-events-none">
+                  <Home className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                </div>
+                <textarea
+                  name="address.addressLine"
+                  value={formData.address.addressLine}
+                  onChange={handleChange}
+                  rows="2"
+                  className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50 focus:bg-white text-slate-800 resize-none"
+                  placeholder="เช่น 123/45 หมู่ 6 ซอยสุขุมวิท 1 ถ.สุขุมวิท อาคารเอ ชั้น 2..."
+                ></textarea>
+              </div>
             </div>
-            <input
-              type="text"
-              name="taxId"
-              value={formData.taxId}
-              onChange={handleChange}
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0870B8]/20 focus:border-[#0870B8] transition-all bg-slate-50 focus:bg-white text-slate-800 font-mono tracking-widest"
-              placeholder="XXXXXXXXXXXXX"
-            />
+
+            {/* แขวง/ตำบล */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">แขวง / ตำบล</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Building className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="address.subDistrict"
+                  value={formData.address.subDistrict}
+                  onChange={handleChange}
+                  className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50 focus:bg-white text-slate-800"
+                  placeholder="ตำบล / แขวง"
+                />
+              </div>
+            </div>
+
+            {/* เขต/อำเภอ */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">เขต / อำเภอ</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Building2 className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="address.district"
+                  value={formData.address.district}
+                  onChange={handleChange}
+                  className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50 focus:bg-white text-slate-800"
+                  placeholder="อำเภอ / เขต"
+                />
+              </div>
+            </div>
+
+            {/* จังหวัด */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">จังหวัด</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <MapPin className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="address.province"
+                  value={formData.address.province}
+                  onChange={handleChange}
+                  className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50 focus:bg-white text-slate-800"
+                  placeholder="จังหวัด"
+                />
+              </div>
+            </div>
+
+            {/* รหัสไปรษณีย์ */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">รหัสไปรษณีย์</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Hash className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="address.zipCode"
+                  value={formData.address.zipCode}
+                  onChange={handleChange}
+                  maxLength={5}
+                  className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50 focus:bg-white text-slate-800 font-mono tracking-widest"
+                  placeholder="10XXX"
+                />
+              </div>
+            </div>
           </div>
-          {formData.taxId && formData.taxId.length > 0 && formData.taxId.length < 13 && (
-             <p className="text-xs text-amber-500 mt-1.5 flex items-center gap-1">
-               <AlertCircle className="w-3 h-3" /> กรุณาระบุให้ครบ 13 หลัก
-             </p>
-          )}
         </div>
 
-        {/* แถวที่ 3: แผนที่ Google Maps */}
-        <div className="bg-emerald-50/50 border border-emerald-100 p-5 rounded-xl">
+        {/* =========================================
+            Section 3: แผนที่ Google Maps
+        ========================================= */}
+        <div className="bg-emerald-50/50 border border-emerald-100/60 p-5 rounded-xl mt-6">
           <label className="block text-sm font-bold text-emerald-800 mb-1 flex items-center gap-2">
-            <MapPin className="w-4 h-4" /> พิกัดร้านค้า / สถานที่จัดส่ง (Google Maps)
+            <Map className="w-4 h-4" /> พิกัดร้านค้า (Google Maps)
           </label>
-          <p className="text-xs text-emerald-600 mb-3">ใช้สำหรับการจัดส่งสินค้าและเข้าสู่ระบบ Ecosystem ของ DH Notebook</p>
+          <p className="text-xs text-emerald-600 mb-3">ใช้สำหรับการเข้าร่วมระบบ Partner Ecosystem ของ DH Notebook</p>
           
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -197,12 +316,12 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
               className={`block w-full pl-11 pr-12 py-2.5 border rounded-xl transition-all focus:bg-white text-slate-800 ${
                 formData.mapUrl && !isValidMapUrl(formData.mapUrl) 
                   ? 'border-rose-300 focus:ring-rose-500/20 bg-rose-50' 
-                  : 'border-emerald-200 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white'
+                  : 'border-emerald-200/60 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white'
               }`}
               placeholder="https://maps.app.goo.gl/..."
             />
             
-            {/* Gimmick: ปุ่มพรีวิวแผนที่สีเขียว (คลิกเพื่อทดสอบลิงก์ได้เลย) */}
+            {/* Gimmick: ปุ่มพรีวิวแผนที่สีเขียว */}
             {formData.mapUrl && isValidMapUrl(formData.mapUrl) && (
               <a 
                 href={formData.mapUrl} 
@@ -216,7 +335,6 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
             )}
           </div>
           
-          {/* ข้อความแจ้งเตือนลิงก์ผิด */}
           {formData.mapUrl && !isValidMapUrl(formData.mapUrl) && (
             <p className="text-xs text-rose-500 mt-1.5 flex items-center gap-1 font-medium animate-fade-in">
               <AlertCircle className="w-3 h-3" /> กรุณาตรวจสอบลิงก์ (ต้องเป็น Google Maps เท่านั้น)
@@ -239,12 +357,12 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
           <button
             type="submit"
             disabled={isSaving || !hasChanges()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-black text-white font-medium rounded-xl transition-all duration-300 focus:ring-4 focus:ring-slate-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed hover:shadow-lg"
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-black text-white font-medium rounded-xl transition-all duration-300 focus:ring-4 focus:ring-slate-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95"
           >
             {isSaving ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> กำลังบันทึก...</>
             ) : (
-              <><Save className="w-5 h-5" /> บันทึกข้อมูล</>
+              <><Save className="w-5 h-5" /> บันทึกการเปลี่ยนแปลง</>
             )}
           </button>
         </div>

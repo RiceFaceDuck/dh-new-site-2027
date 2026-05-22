@@ -1,6 +1,9 @@
 /* eslint-disable */
 import { useState, useEffect } from 'react';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, runTransaction, increment, serverTimestamp, deleteDoc, where } from 'firebase/firestore';
+import { 
+  collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, 
+  runTransaction, increment, serverTimestamp, deleteDoc, where, startAfter 
+} from 'firebase/firestore';
 import { db } from './config';
 
 // 🛡️ กำหนด App ID สำหรับการเข้าถึงแบบ Enterprise Sandbox
@@ -10,7 +13,18 @@ const appId = typeof window !== "undefined" && typeof window.__app_id !== "undef
 // 🧠 Smart Cache System (สำหรับประวัติการใช้งาน)
 // ==========================================
 let historyCache = {}; 
-const CACHE_LIFETIME = 1000 * 60 * 5; 
+const CACHE_LIFETIME = 1000 * 60 * 5; // แคชมีอายุ 5 นาที
+
+/**
+ * 🧹 ล้างข้อมูล Cache แบบเจาะจง User
+ * (ลูกเล่น: จะถูกเรียกใช้อัตโนมัติเมื่อมีการเปลี่ยนแปลงยอดเงิน เพื่อให้ประวัติอัปเดตใหม่เสมอ)
+ */
+export const invalidateCreditHistoryCache = (userId) => {
+  if (userId) {
+    delete historyCache[`${userId}_first_page`];
+    console.log(`🧹 [CreditService] History cache forcefully invalidated for: ${userId}`);
+  }
+};
 
 // ==========================================
 // 🎮 Gamification & Formatting 
@@ -33,17 +47,12 @@ export const formatCredit = (points = 0) => {
 // 📡 Real-time Data Sync (หัวใจสำคัญแก้ปัญหาเงินไม่ขึ้น)
 // ==========================================
 
-/**
- * ⚡ ดึงข้อมูลยอดเครดิตปัจจุบันแบบ Real-time (Dual-Listener)
- * เจาะเข้าไปดูในตู้เซฟ Wallet โดยตรง! รับประกันยอดเงินอัปเดตตรงกัน 100%
- */
 export const listenToUserCredit = (userId, callback) => {
   if (!userId) {
     callback({ balance: 0, tier: getUserTier(0), totalAccumulated: 0, pendingCredits: 0 });
     return () => {};
   }
 
-  // 🔥 อัปเกรด: ชี้เป้าไปที่ "ตู้เซฟกระเป๋าเงิน (Wallet)" โดยตรง แทนการดูแค่ป้ายชื่อหน้าโปรไฟล์
   const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
   const profileRef = doc(db, 'artifacts', appId, 'users', userId);
 
@@ -62,24 +71,20 @@ export const listenToUserCredit = (userId, callback) => {
     });
   };
 
-  // 🎧 Listener 1: ฟังการเคลื่อนไหวของกระเป๋าเงินหลัก (The Absolute Source of Truth)
   const unsubWallet = onSnapshot(walletRef, (snap) => {
     if (snap.exists()) {
       const data = snap.data();
-      // อัปเดต state ด้วยยอดเงินล่าสุดที่แอดมินเพิ่งกดเพิ่มให้
       state.balance = Number(data.balance) || 0;
       state.totalAccumulated = Number(data.totalAccumulated) || state.balance;
-      notifyUI(); // แจ้งหน้าเว็บให้อัปเดตตัวเลขทันที
+      notifyUI(); 
     }
   });
 
-  // 🎧 Listener 2: ฟังโปรไฟล์ (เพื่อดึงยอด Pending หรือใช้เป็นระบบสำรองกรณีบัญชีเก่ามาก)
   const unsubProfile = onSnapshot(profileRef, (snap) => {
     if (snap.exists()) {
       const data = snap.data();
       state.pendingCredits = Number(data.pendingCredits) || 0;
       
-      // Fallback: ถ้ายอดในตู้เซฟ Wallet เป็น 0 ให้ลองสแกนหาใน Profile เผื่อเป็นบัญชีเก่าที่ยังไม่โดน Migrate
       if (state.balance === 0) {
         state.balance = Number(data.creditPoints || data.creditPoint || data.stats?.creditBalance || data.partnerCredit || 0);
       }
@@ -87,16 +92,12 @@ export const listenToUserCredit = (userId, callback) => {
     }
   });
 
-  // คืนค่าฟังก์ชันสำหรับปิดหูฟังทั้ง 2 ตัวเมื่อลูกค้าออกจากหน้าเว็บ
   return () => {
     unsubWallet();
     unsubProfile();
   };
 };
 
-/**
- * 🪝 React Hook อัจฉริยะ (Custom Hook) 
- */
 export const useUserCredit = (userId) => {
   const [creditInfo, setCreditInfo] = useState({
     balance: 0,
@@ -128,7 +129,7 @@ export const useUserCredit = (userId) => {
 };
 
 // ==========================================
-// 📜 History & Management Services 
+// 📜 History & Management Services (อัปเกรด Pagination!)
 // ==========================================
 
 export const getWalletBalance = async (userId) => {
@@ -144,36 +145,71 @@ export const getWalletBalance = async (userId) => {
   }
 };
 
-export const getCreditHistory = async (userId, forceRefresh = false) => {
-  if (!userId) return [];
+/**
+ * ⚡ อัปเกรด: ระบบโหลดประวัติแบบ Pagination ประหยัด Reads
+ * @param {string} userId - ไอดีผู้ใช้งาน
+ * @param {object} lastDoc - Document อ้างอิงจากรอบก่อนหน้า (สำหรับทำหน้าถัดไป)
+ * @param {number} pageSize - จำนวนรายการต่อหน้า
+ * @param {boolean} forceRefresh - บังคับโหลดใหม่ข้าม Cache
+ */
+export const getCreditHistory = async (userId, lastDoc = null, pageSize = 10, forceRefresh = false) => {
+  if (!userId) return { logs: [], lastDoc: null, hasMore: false };
 
   const now = Date.now();
-  const userCache = historyCache[userId];
+  const cacheKey = `${userId}_first_page`;
 
-  if (!forceRefresh && userCache && (now - userCache.fetchTime < CACHE_LIFETIME)) {
-    return userCache.data;
+  // 1. ถ้าเป็นการโหลดหน้าแรกสุด และมีแคช ให้ส่งแคชกลับไปเลย
+  if (!lastDoc && !forceRefresh && historyCache[cacheKey] && (now - historyCache[cacheKey].fetchTime < CACHE_LIFETIME)) {
+    console.log('⚡ [CreditService] Returning cached history (First Page) for:', userId);
+    return historyCache[cacheKey].data;
   }
 
   try {
+    console.log(`☁️ [CreditService] Fetching history from Firestore... (Page: ${lastDoc ? 'Next' : 'First'})`);
     const historyRef = collection(db, 'artifacts', appId, 'users', userId, 'credit_history');
-    const q = query(historyRef, orderBy('createdAt', 'desc'), limit(30));
-    const snapshot = await getDocs(q);
-    
-    let historyList = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    let q;
 
-    historyCache[userId] = { data: historyList, fetchTime: now };
-    return historyList;
+    if (lastDoc) {
+      // โหลดหน้าถัดไป
+      q = query(historyRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+    } else {
+      // โหลดหน้าแรก
+      q = query(historyRef, orderBy('createdAt', 'desc'), limit(pageSize));
+    }
+
+    const snapshot = await getDocs(q);
+    const logs = [];
+    let newLastDoc = null;
+
+    snapshot.forEach((docSnap) => {
+      logs.push({ id: docSnap.id, ...docSnap.data() });
+      newLastDoc = docSnap; 
+    });
+
+    const result = {
+      logs,
+      lastDoc: newLastDoc,
+      hasMore: snapshot.docs.length === pageSize 
+    };
+
+    // 2. จำลง Cache เฉพาะการโหลดหน้าแรก
+    if (!lastDoc) {
+      historyCache[cacheKey] = { data: result, fetchTime: now };
+    }
+
+    return result;
   } catch (error) {
-    console.error("❌ Error fetching credit history:", error);
-    return userCache ? userCache.data : []; 
+    console.error("❌ [CreditService] Error fetching credit history:", error);
+    
+    // Fallback: ถ้า Error ให้ลองส่งแคชเก่าให้ถ้ามี
+    if (!lastDoc && historyCache[cacheKey]) return historyCache[cacheKey].data;
+    
+    throw error;
   }
 };
 
 // ==========================================
-// 🛍️ Order & Payment Credit Logic (ใช้สำหรับตะกร้าสินค้า Cart / Checkout)
+// 🛍️ Order & Payment Credit Logic
 // ==========================================
 
 export const getCreditSettings = async () => {
@@ -239,6 +275,10 @@ export const handlePaymentCompletion = async (orderId, userId) => {
         timestamp: serverTimestamp()
       });
     });
+
+    // 🧹 ล้างแคชประวัติทันทีเมื่อได้เงิน เพื่อให้ผู้ใช้เห็นรายการใหม่
+    invalidateCreditHistoryCache(userId);
+
     return true;
   } catch (error) {
     console.error("🔥 System Error [handlePaymentCompletion]:", error);
@@ -296,6 +336,10 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
         timestamp: serverTimestamp()
       });
     });
+
+    // 🧹 ล้างแคชเมื่อพาร์ทเนอร์เสียค่าธรรมเนียม
+    invalidateCreditHistoryCache(partnerId);
+
     return true;
   } catch (error) {
     console.error("🔥 Error in deductPartnerCredit:", error);
@@ -304,18 +348,13 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
 };
 
 // ==========================================
-// 🚀 Ad & Marketing Credit Core (ระบบตัดแต้มโฆษณา 100% Atomic)
+// 🚀 Ad & Marketing Credit Core 
 // ==========================================
 
-/**
- * ⚡ Core Transaction: ใช้หักแต้มร่วมกับฟังก์ชันอื่น (เช่น ตอนสร้างโฆษณา) เพื่อให้การทำงานเสร็จสมบูรณ์รวดเดียว
- * ลูกเล่น: จัดการบันทึกประวัติแบบละเอียดยิบ เพื่อความโปร่งใส
- */
 export const consumeAdCreditWithTransaction = async (transaction, userId, amount, referenceId = null, adTitle = null) => {
   const userRef = doc(db, 'artifacts', appId, 'users', userId);
   const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
   
-  // Reference สำหรับเก็บ Log ประวัติการทำงาน
   const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
   const historyRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'credit_history'));
 
@@ -340,7 +379,6 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   const newBalance = currentPoints - amount;
   const noteDisplay = adTitle ? `หักแต้มสำหรับโปรโมท: ${adTitle}` : 'หักแต้มสำหรับการฝากโฆษณาสินค้า';
 
-  // 1. อัปเดตกระเป๋าเงินหลัก (Wallet) ด้วยคำสั่ง increment เพื่อป้องกันปัญหากดซ้ำ (Race Condition)
   if (isWalletExist) {
     transaction.update(walletRef, {
       balance: increment(-amount),
@@ -354,7 +392,6 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     });
   }
 
-  // 2. อัปเดตข้อมูลผู้ใช้ (Profile Fallback)
   if (userDoc.exists()) {
     transaction.update(userRef, {
       creditPoints: increment(-amount),
@@ -375,10 +412,8 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     timestamp: serverTimestamp()
   };
 
-  // 3. บันทึก Transaction Log ส่วนกลาง (ให้แอดมินดู)
   transaction.set(txRef, txData);
   
-  // 4. บันทึก History Log ส่วนตัว (ให้ลูกค้าดูในหน้าประวัติได้แบบ Real-time)
   transaction.set(historyRef, {
     ...txData,
     createdAt: serverTimestamp()
@@ -387,9 +422,6 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   return newBalance;
 };
 
-/**
- * ⚡ Standalone Function: ใช้หักแต้มโฆษณาแบบเพียวๆ 
- */
 export const consumeAdCredit = async (userId, amount, referenceId = null, adTitle = null) => {
   if (!userId || amount <= 0) return false;
 
@@ -397,10 +429,14 @@ export const consumeAdCredit = async (userId, amount, referenceId = null, adTitl
     await runTransaction(db, async (transaction) => {
       await consumeAdCreditWithTransaction(transaction, userId, amount, referenceId, adTitle);
     });
+    
+    // 🧹 ล้างแคชประวัติเพราะเงินออก
+    invalidateCreditHistoryCache(userId);
+
     return true;
   } catch (error) {
     console.error("🔥 Error consuming ad credit:", error.message);
-    throw error; // โยน Error ออกไปให้หน้า UI แจ้งเตือนผู้ใช้งาน (เช่น แต้มไม่พอ)
+    throw error; 
   }
 };
 

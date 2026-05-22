@@ -1,11 +1,13 @@
 import React from 'react';
-import { Search, Filter, RefreshCw, UserPlus, Loader2 } from 'lucide-react';
+import { Search, Filter, RefreshCw, UserPlus, Wallet, Star, FileText, Coins } from 'lucide-react';
 
 export default function CustomerHeader({ 
   searchTerm, 
   onSearchChange, 
   dateFilter, 
   onDateFilterChange, 
+  quickFilter,          // 💎 NEW: รับค่า State ตัวกรองอัจฉริยะ
+  onQuickFilterChange,  // 💎 NEW: รับฟังก์ชันเปลี่ยนตัวกรองอัจฉริยะ
   onRefresh, 
   isRefreshing, 
   onAddCustomer 
@@ -23,35 +25,50 @@ export default function CustomerHeader({
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
-        {searchTerm && (
-          <button 
-            onClick={() => onSearchChange('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-dh-muted hover:text-dh-main bg-gray-100 rounded-full p-0.5"
-          >
-            <X size={14} />
-          </button>
-        )}
       </div>
 
-      {/* ฝั่งขวา: ตัวกรองและปุ่มเครื่องมือ */}
-      <div className="flex w-full md:w-auto items-center gap-2">
-        {/* Dropdown กรองวันที่ */}
-        <div className="relative flex-1 md:flex-none">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-dh-muted pointer-events-none" size={16} />
+      {/* ฝั่งขวา: ตัวกรองและปุ่มต่างๆ */}
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
+        
+        {/* 💎 NEW: ตัวกรองอัจฉริยะ (Smart Filters) */}
+        <div className="relative flex-1 md:flex-none min-w-[170px]">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+            {quickFilter === 'has_wallet' ? <Wallet size={16} className="text-emerald-500" /> :
+             quickFilter === 'is_partner' ? <Star size={16} className="text-blue-500" /> :
+             quickFilter === 'has_tax' ? <FileText size={16} className="text-indigo-500" /> :
+             quickFilter === 'has_points' ? <Coins size={16} className="text-amber-500" /> :
+             <Filter size={16} className="text-dh-muted" />}
+          </div>
           <select 
-            className="w-full pl-9 pr-8 py-2.5 bg-white border border-dh-border rounded-xl text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 appearance-none shadow-sm font-medium cursor-pointer"
+            className="w-full pl-9 pr-8 py-2.5 bg-white border border-dh-border rounded-xl text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 appearance-none shadow-sm font-bold cursor-pointer transition-all"
+            value={quickFilter || 'all'}
+            onChange={(e) => onQuickFilterChange && onQuickFilterChange(e.target.value)}
+          >
+            <option value="all">หมวดหมู่ทั้งหมด</option>
+            <option value="has_wallet">💰 มีเงินค้าง (Wallet)</option>
+            <option value="has_points">🪙 มีแต้มสะสม (Points)</option>
+            <option value="is_partner">🤝 พาร์ทเนอร์ (Partner)</option>
+            <option value="has_tax">📝 พร้อมออกบิล (Tax Info)</option>
+          </select>
+        </div>
+
+        {/* ตัวกรองวันที่ (ของเดิม) */}
+        <div className="relative flex-1 md:flex-none min-w-[160px] hidden sm:block">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-dh-muted" size={16} />
+          <select 
+            className="w-full pl-9 pr-8 py-2.5 bg-white border border-dh-border rounded-xl text-sm text-dh-main outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 appearance-none shadow-sm font-medium cursor-pointer transition-all"
             value={dateFilter}
             onChange={(e) => onDateFilterChange(e.target.value)}
           >
-            <option value="all">ลูกค้าทั้งหมด</option>
-            <option value="30days">อัปเดต 30 วันล่าสุด</option>
+            <option value="all">เวลาทั้งหมด</option>
+            <option value="30days">30 วันล่าสุด</option>
             <option value="thisMonth">เพิ่มเดือนนี้</option>
           </select>
         </div>
 
         {/* ปุ่ม Refresh */}
         <button 
-          onClick={() => onRefresh(false)} // false = บังคับดึงข้อมูลใหม่จาก Firebase ไม่ใช้ Cache
+          onClick={() => onRefresh(false)} 
           disabled={isRefreshing}
           className="p-2.5 bg-white border border-dh-border text-dh-muted hover:text-dh-main hover:bg-gray-50 hover:border-gray-300 rounded-xl transition-all shadow-sm disabled:opacity-50"
           title="ดึงข้อมูลใหม่"
@@ -62,12 +79,13 @@ export default function CustomerHeader({
         {/* ปุ่มเพิ่มลูกค้าใหม่ */}
         <button 
           onClick={onAddCustomer}
-          className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-dh-accent hover:bg-dh-accent-hover text-white rounded-xl font-bold shadow-sm transition-all active:scale-95 text-sm"
+          className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-dh-accent hover:bg-dh-accent-hover text-white rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95"
         >
-          <UserPlus size={18} strokeWidth={2.5}/>
-          <span className="hidden sm:inline">เพิ่มลูกค้า</span>
+          <UserPlus size={18} />
+          <span>เพิ่มลูกค้าใหม่</span>
         </button>
       </div>
+
     </div>
   );
 }

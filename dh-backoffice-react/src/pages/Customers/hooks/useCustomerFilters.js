@@ -1,95 +1,62 @@
 import { useState, useEffect, useMemo } from 'react';
 
-/**
- * Hook สำหรับจัดการการค้นหา (Search), การกรอง (Filter) และการทำ Infinite Scroll
- * แยกออกมาจาก Master Hook เพื่อจัดการเรื่อง UI Logic โดยเฉพาะ
- */
 export const useCustomerFilters = (customers) => {
-  // ==========================================
-  // 1. States สำหรับการควบคุม UI
-  // ==========================================
+  // 1. States (ลำดับ Hooks ต้องคงที่ ห้ามสลับ เพื่อป้องกันบั๊ก React)
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all'); 
-  const [visibleCount, setVisibleCount] = useState(21); // Lazy Loading (หน้าละ 21 รายการ)
+  const [quickFilter, setQuickFilter] = useState('all'); // 💎 ตัวกรองอัจฉริยะ (Smart Filter)
+  const [visibleCount, setVisibleCount] = useState(21);
 
-  // ==========================================
-  // 2. Logic การกรองข้อมูล (Search Filtering)
-  // ==========================================
+  // 2. Logic การกรองข้อมูล
   const filteredCustomers = useMemo(() => {
-    if (!searchTerm.trim()) return customers;
+    let result = customers;
 
-    const lowercasedSearch = searchTerm.toLowerCase();
-    return customers.filter(c => 
-      (c.customerCode && c.customerCode.toLowerCase().includes(lowercasedSearch)) ||
-      (c.accountName && c.accountName.toLowerCase().includes(lowercasedSearch)) ||
-      (c.contactName && c.contactName.toLowerCase().includes(lowercasedSearch)) ||
-      (c.phone && c.phone.includes(lowercasedSearch)) ||
-      (c.id && c.id.toLowerCase().includes(lowercasedSearch))
-    );
-  }, [searchTerm, customers]);
+    // 💎 กรองด้วยปุ่มลัด (Smart Filter)
+    if (quickFilter === 'has_wallet') result = result.filter(c => (c.walletBalance || 0) > 0);
+    else if (quickFilter === 'is_partner') result = result.filter(c => (c.role || '').toLowerCase().includes('partner') || (c.rank || '').toLowerCase().includes('partner'));
+    else if (quickFilter === 'has_tax') result = result.filter(c => c.hasTaxInfo === true);
+    else if (quickFilter === 'has_points') result = result.filter(c => (c.creditPoints || 0) > 0);
 
-  // Reset pagination เมื่อมีการค้นหาใหม่
-  useEffect(() => {
-    setVisibleCount(21);
-  }, [searchTerm]);
+    // 🔍 กรองด้วย Text Search
+    if (searchTerm.trim()) {
+      const lower = searchTerm.toLowerCase();
+      result = result.filter(c => 
+        (c.customerCode && c.customerCode.toLowerCase().includes(lower)) ||
+        (c.accountName && c.accountName.toLowerCase().includes(lower)) ||
+        (c.displayName && c.displayName.toLowerCase().includes(lower)) ||
+        (c.contactName && c.contactName.toLowerCase().includes(lower)) ||
+        (c.phone && c.phone.includes(lower)) ||
+        (c.id && c.id.toLowerCase().includes(lower))
+      );
+    }
+    return result;
+  }, [searchTerm, quickFilter, customers]);
 
-  // ==========================================
-  // 3. Handlers สำหรับ UI Events
-  // ==========================================
-  
-  // จัดการการเลื่อน Scroll เพื่อโหลดข้อมูลเพิ่ม (Infinite Scroll)
+  // Reset pagination อัตโนมัติเมื่อเปลี่ยนตัวกรอง
+  useEffect(() => setVisibleCount(21), [searchTerm, quickFilter]);
+
   const handleScroll = (e) => {
     const { scrollTop, clientHeight, scrollHeight } = e.target;
-    // เมื่อเลื่อนถึงเกือบขอบล่าง (เหลือ 100px)
-    if (scrollHeight - scrollTop <= clientHeight + 100) {
-      if (visibleCount < filteredCustomers.length) {
-        setVisibleCount(prev => prev + 21);
-      }
+    if (scrollHeight - scrollTop <= clientHeight + 100 && visibleCount < filteredCustomers.length) {
+      setVisibleCount(prev => prev + 21);
     }
   };
 
-  // ==========================================
-  // 4. Utility สำหรับการกรองประวัติ (ใช้ใน Detail Panel)
-  // ==========================================
   const filterDataByDate = (dataArray, dateFilterType) => {
     if (!dataArray || dateFilterType === 'all') return dataArray || [];
-    
     const now = new Date();
     return dataArray.filter(item => {
       if (!item.createdAt) return false;
-      
-      // แปลง Timestamp (Firestore/Number) เป็น Date Object
-      const itemDate = typeof item.createdAt === 'number' 
-        ? new Date(item.createdAt) 
-        : (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt));
-      
-      if (dateFilterType === '30days') {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-        return itemDate >= thirtyDaysAgo;
-      }
-      if (dateFilterType === 'thisMonth') {
-        return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
-      }
+      const itemDate = typeof item.createdAt === 'number' ? new Date(item.createdAt) : (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt));
+      if (dateFilterType === '30days') return itemDate >= new Date(now.setDate(now.getDate() - 30));
+      if (dateFilterType === 'thisMonth') return itemDate.getMonth() === new Date().getMonth() && itemDate.getFullYear() === new Date().getFullYear();
       return true;
     });
   };
 
   return {
-    state: {
-      searchTerm,
-      dateFilter,
-      visibleCount,
-      filteredCustomers
-    },
-    actions: {
-      setSearchTerm,
-      setDateFilter,
-      setVisibleCount,
-      handleScroll
-    },
-    utils: {
-      filterDataByDate
-    }
+    state: { searchTerm, dateFilter, quickFilter, visibleCount, filteredCustomers },
+    actions: { setSearchTerm, setDateFilter, setQuickFilter, setVisibleCount, handleScroll },
+    utils: { filterDataByDate }
   };
 };

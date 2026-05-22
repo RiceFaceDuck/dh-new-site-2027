@@ -23,6 +23,8 @@ export default function Customers() {
         onSearchChange={actions.setSearchTerm}
         dateFilter={state.dateFilter}
         onDateFilterChange={actions.setDateFilter}
+        quickFilter={state.quickFilter}                  // 💎 ตัวกรองอัจฉริยะ (Wallet, Points, Partner)
+        onQuickFilterChange={actions.setQuickFilter}     // 💎 รับค่าการเปลี่ยนตัวกรอง
         onRefresh={actions.fetchCustomers}
         isRefreshing={state.isRefreshing}
         onAddCustomer={() => actions.setIsAddModalOpen(true)}
@@ -32,10 +34,7 @@ export default function Customers() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* ฝั่งซ้าย: ตารางรายชื่อลูกค้า */}
-        <div 
-          className={`flex-1 flex flex-col transition-all duration-300 
-          ${state.selectedCustomer ? 'hidden md:flex md:w-1/2 lg:w-2/3' : 'w-full'}`}
-        >
+        <div className={`transition-all duration-300 ${state.selectedCustomer ? 'w-full md:w-1/2 lg:w-2/3 hidden md:flex flex-col' : 'w-full flex flex-col'}`}>
           <CustomerTable 
             filteredCustomers={displayCustomers}
             visibleCount={state.visibleCount}
@@ -70,10 +69,9 @@ export default function Customers() {
         isEditMode={state.isEditMode}
         formData={state.isEditMode ? state.editFormData : state.newCustomer}
         setFormData={state.isEditMode ? actions.setEditFormData : actions.setNewCustomer}
-        onSubmit={state.isEditMode ? actions.saveCustomerEdit : actions.handleCreateCustomer}
+        onSubmit={state.isEditMode ? actions.handleEditSubmit : actions.handleAddCustomer}
         isSubmitting={state.isSubmitting || state.isSavingEdit}
       />
-
     </div>
   );
 }
