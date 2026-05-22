@@ -8,7 +8,8 @@ import {
     serverTimestamp,
     setDoc,
     deleteDoc,
-    onSnapshot 
+    onSnapshot,
+    writeBatch // ✅ เพิ่ม writeBatch
 } from 'firebase/firestore';
 
 // 📍 Helper: Path อ้างอิงถึงข้อมูลผู้ใช้ (รองรับทั้ง Local และ Production)
@@ -268,6 +269,111 @@ export const updateUserLoginStatus = async (uid, isOnline = true) => {
 };
 
 // ============================================================================
+// 🌟 ส่วนที่ 3: ระบบ Ecosystem & การเงิน (เพิ่มใหม่สำหรับแผนพัฒนา Account)
+// ============================================================================
+
+export const updateUserEcosystem = async (uid, data) => {
+    if (!uid) throw new Error("User ID is required");
+    try {
+        const userRef = getUserDocRef(uid);
+        
+        // อัปเดตเฉพาะฟิลด์ที่ส่งมา ป้องกันการทับข้อมูลอื่น
+        const updatePayload = { updatedAt: serverTimestamp() };
+        if (data.accountId) updatePayload.accountId = data.accountId;
+        if (data.mapUrl !== undefined) updatePayload.ecosystem = { mapUrl: data.mapUrl };
+        if (data.role) updatePayload.role = data.role;
+
+        await updateDoc(userRef, updatePayload);
+        console.log(`✅ [Backoffice] User ${uid} ecosystem updated.`);
+        return true;
+    } catch (error) {
+        console.error("❌ [Backoffice] Error updating ecosystem:", error);
+        throw error;
+    }
+};
+
+export const adminAdjustFinancials = async (uid, adminId, adjustments) => {
+    if (!uid || !adminId) throw new Error("User ID and Admin ID are required");
+    if (!adjustments.reason) throw new Error("ต้องระบุเหตุผลในการปรับปรุงยอดเสมอ (Audit Trail)");
+
+    const batch = writeBatch(db);
+    const userRef = getUserDocRef(uid);
+    
+    // สร้าง Reference โดยใช้ getCollectionPath ตามมาตรฐานระบบเดิม
+    const historyRef = doc(collection(db, getCollectionPath('users'), uid, 'credit_history'));
+    const adminAuditRef = doc(collection(db, getCollectionPath('admin_audit_logs')));
+
+    try {
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) throw new Error("User not found");
+
+        const userData = userSnap.data();
+        const currentCredit = userData.creditPoint || userData.points || 0;
+        const currentWallet = userData.walletBalance || 0;
+
+        let newCredit = currentCredit;
+        let newWallet = currentWallet;
+        let updatePayload = { updatedAt: serverTimestamp() };
+
+        // 1. ตรรกะการปรับแต้ม (Credit Point)
+        if (adjustments.creditAmount !== undefined && adjustments.creditAmount !== 0) {
+            newCredit = Math.max(0, currentCredit + adjustments.creditAmount);
+            updatePayload.creditPoint = newCredit;
+            updatePayload.points = newCredit; // อัปเดตทั้งฟิลด์เก่าและใหม่
+            
+            // บันทึกประวัติให้ลูกค้าเห็น
+            batch.set(historyRef, {
+                transactionId: `ADJ-CR-${Date.now()}`,
+                uid: uid,
+                type: adjustments.creditAmount > 0 ? 'earn' : 'spend', // เขียวหรือแดง
+                amount: Math.abs(adjustments.creditAmount),
+                balanceAfter: newCredit,
+                note: `แอดมินปรับปรุงยอด: ${adjustments.reason}`,
+                recordedBy: adminId,
+                timestamp: serverTimestamp()
+            });
+        }
+
+        // 2. ตรรกะการปรับยอดเงินสด (Wallet Balance)
+        if (adjustments.walletAmount !== undefined && adjustments.walletAmount !== 0) {
+            newWallet = Math.max(0, currentWallet + adjustments.walletAmount);
+            updatePayload.walletBalance = newWallet;
+
+            // ถ้ามีบัญชี Wallet ย่อยให้ไปอัปเดตด้วย
+            const walletRef = doc(db, getCollectionPath('users'), uid, 'wallet', 'default');
+            batch.set(walletRef, {
+                balance: newWallet,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        }
+
+        // อัปเดต Profile หลัก
+        batch.update(userRef, updatePayload);
+
+        // 3. บันทึกหลักฐานตรวจสอบแอดมิน (Audit Trail)
+        batch.set(adminAuditRef, {
+            action: 'FINANCIAL_ADJUSTMENT',
+            targetUid: uid,
+            performedBy: adminId,
+            reason: adjustments.reason,
+            changes: {
+                credit: { from: currentCredit, to: newCredit, diff: adjustments.creditAmount || 0 },
+                wallet: { from: currentWallet, to: newWallet, diff: adjustments.walletAmount || 0 }
+            },
+            timestamp: serverTimestamp()
+        });
+
+        await batch.commit();
+        console.log(`✅ [Backoffice] Financials adjusted securely for user ${uid}`);
+        return { success: true, newCredit, newWallet };
+
+    } catch (error) {
+        console.error("❌ [Backoffice] Financial adjustment failed:", error);
+        throw error;
+    }
+};
+
+// ============================================================================
 // 🟠 Object Export: รวมฟังก์ชันทั้งหมดไว้ที่ userService เผื่อการเรียกใช้แบบออบเจกต์
 // ============================================================================
 export const userService = {
@@ -282,5 +388,7 @@ export const userService = {
     suspendUser,
     restoreUser,
     deleteUser,
-    updateUserLoginStatus
+    updateUserLoginStatus,
+    updateUserEcosystem,   // ✅ NEW: รองรับระบบ Partner Map / Account ID
+    adminAdjustFinancials  // ✅ NEW: รองรับระบบกระเป๋าเงิน (Double Entry)
 };

@@ -1,6 +1,10 @@
 import { db } from './config';
 import { doc, collection, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
 
+// 🚀 [NEW] นำเข้าระบบจัดการใหม่ สำหรับ Ecosystem เครดิต
+import { earnPendingCredit } from './walletService';
+import { getCreditSettings, calculateEarnedPoints } from './creditService';
+
 /**
  * ⚡️ Smart Checkout Service
  * บริการจัดการคำสั่งซื้อแบบรัดกุม ใช้ระบบ Double-entry Transaction
@@ -24,11 +28,18 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     const counterDoc = await transaction.get(counterRef);
     const userData = userDoc.exists() ? userDoc.data() : {};
     
+    // 🚀 [NEW] อ่านบัญชีกลางเตรียมทำ Double-entry Bookkeeping
+    const systemPoolRef = doc(db, 'system_accounts', 'DH_CREDIT_POOL');
+    const sysSnap = await transaction.get(systemPoolRef);
+
     // ตรวจสอบแต้ม/Wallet (ถ้ามีการใช้) ว่ามีพอหรือไม่ ป้องกันการแฮกแก้ไขตัวเลขจากหน้าบ้าน
     const usePoints = checkoutState?.usePoints || 0;
     const useWallet = checkoutState?.useWallet || 0;
     
-    if (usePoints > 0 && (userData.points || 0) < usePoints) {
+    // อัปเกรด: รองรับการเช็คจากฟิลด์ creditPoint ด้วยเพื่อความเข้ากันได้
+    const availablePoints = userData.creditPoint || userData.points || 0;
+    
+    if (usePoints > 0 && availablePoints < usePoints) {
       throw new Error("แต้มสะสมของคุณไม่เพียงพอ");
     }
     if (useWallet > 0 && (userData.walletBalance || 0) < useWallet) {
@@ -67,7 +78,30 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     // 3. [WRITE] ตัดแต้ม / ตัด Wallet ผู้ใช้งาน
     if (usePoints > 0 || useWallet > 0 || saveProfile) {
       const userUpdateData = {};
-      if (usePoints > 0) userUpdateData.points = (userData.points || 0) - usePoints;
+      
+      if (usePoints > 0) {
+        // อัปเดตทั้งฟิลด์เก่าและใหม่เพื่อไม่ให้ระบบเดิมพัง
+        userUpdateData.points = availablePoints - usePoints;
+        userUpdateData.creditPoint = availablePoints - usePoints;
+        
+        // 🚀 [NEW] Double Entry: คืนเงินแต้มกลับเข้ากองกลางของบริษัท
+        const sysBalance = sysSnap.exists() ? (sysSnap.data().balance || 0) : 0;
+        transaction.set(systemPoolRef, { 
+          balance: sysBalance + usePoints, 
+          lastUpdated: serverTimestamp() 
+        }, { merge: true });
+        
+        // 🚀 [NEW] บันทึกประวัติการคืนเงินของกองกลาง (Audit Trail)
+        const sysHistoryRef = doc(collection(db, 'system_accounts', 'DH_CREDIT_POOL', 'transactions'));
+        transaction.set(sysHistoryRef, { 
+          amount: usePoints, 
+          type: 'RECOVERED_FROM_SPEND', 
+          referenceId: orderRef.id,
+          userUid: user.uid, 
+          timestamp: serverTimestamp() 
+        });
+      }
+
       if (useWallet > 0) userUpdateData.walletBalance = (userData.walletBalance || 0) - useWallet;
       
       // Auto-save Profile 
@@ -124,7 +158,24 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       createdAt: serverTimestamp()
     });
 
-    return { success: true, orderId: orderRef.id, message: "สร้างคำสั่งซื้อสำเร็จ" };
+    return { success: true, orderId: orderRef.id, message: "สร้างคำสั่งซื้อสำเร็จ", netTotal: totals?.netTotal || 0 };
+  }).then(async (result) => {
+    // =========================================================
+    // 🎁 [NEW] POST-TRANSACTION: แจกแต้ม Pending 11 วัน (แยกออกมาทำข้างนอกเพื่อความเร็วและไม่อุดตัน Transaction)
+    // =========================================================
+    if (result.success && result.netTotal > 0) {
+      try {
+        const config = await getCreditSettings();
+        const earnedPoints = calculateEarnedPoints(result.netTotal, config);
+        if (earnedPoints > 0) {
+          await earnPendingCredit(user.uid, earnedPoints, result.orderId);
+        }
+      } catch (err) {
+        console.error("🔥 System Error [earnPendingCredit fallback]:", err);
+        // ไม่หยุดการทำงานของฝั่งผู้ใช้งานหากแจกแต้มมีปัญหา
+      }
+    }
+    return result;
   });
 };
 
@@ -236,6 +287,7 @@ export const createWholesaleRequest = async (user, cartItems, checkoutState, tot
     message: "ส่งคำขอราคาส่งเรียบร้อยแล้ว กรุณารอเจ้าหน้าที่ติดต่อกลับ" 
   };
 };
+
 // ==========================================
 // 📦 11-Day Delay Logic: ยืนยันรับสินค้าและรับแต้มสะสม
 // ==========================================

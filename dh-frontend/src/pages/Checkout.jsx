@@ -5,6 +5,11 @@ import { submitOrder, createWholesaleRequest } from '../firebase/checkoutService
 import { auth } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 
+// 🚀 [NEW] นำเข้าระบบ Credit Service และ Wallet
+import { formatCredit } from '../firebase/creditService';
+import { useWalletBalance } from '../firebase/walletService';
+import { Award, CheckCircle2 } from 'lucide-react';
+
 // นำเข้า Components ย่อย (อ้างอิงจากโครงสร้างโปรเจกต์)
 import AddressSelector from '../components/checkout/AddressSelector';
 import ShippingMethod from '../components/checkout/ShippingMethod';
@@ -20,6 +25,10 @@ const Checkout = () => {
   const { cartItems, totals, clearCart } = useCart();
   const [user, setUser] = useState(null);
 
+  // 🚀 [NEW] ดึงข้อมูลเครดิตของผู้ใช้อัตโนมัติด้วยระบบ Ecosystem ใหม่
+  const { balance: creditBalance, loading: creditLoading } = useWalletBalance(user?.uid);
+  const [useCreditToggle, setUseCreditToggle] = useState(false); // ควบคุมปุ่มเปิด-ปิดการใช้เครดิต
+
   // 1. Centralized State (ศูนย์รวมข้อมูลของหน้า Checkout)
   const [checkoutState, setCheckoutState] = useState({
     customerData: null, // ข้อมูลที่อยู่จัดส่ง
@@ -28,7 +37,7 @@ const Checkout = () => {
     shippingCost: 0,
     appliedPromotions: [],
     discountAmount: 0,
-    usePoints: 0,
+    usePoints: 0, // 🚀 เพิ่มสถานะการใช้เครดิต
     useWallet: 0,
     wholesaleReason: '', // เหตุผลประกอบการขอราคาส่ง
   });
@@ -68,6 +77,27 @@ const Checkout = () => {
     // ลบ Error Message ทิ้งเมื่อผู้ใช้เริ่มแก้ไขข้อมูล
     if (errorMessage) setErrorMessage('');
   };
+
+  // ==========================================
+  // 🧮 [NEW] Logic คำนวณ Credit Point อัตโนมัติ (ป้องกันยอดติดลบ)
+  // ==========================================
+  useEffect(() => {
+    if (useCreditToggle && creditBalance > 0) {
+      // คำนวณยอดเงินสุทธิที่ต้องจ่าย (ก่อนหักเครดิต)
+      const currentNetBeforeCredit = 
+        (totals?.subtotal || 0) + 
+        (checkoutState.shippingCost || 0) - 
+        (checkoutState.discountAmount || 0);
+
+      // ระบบอัจฉริยะ: ใช้เครดิตแค่ "เท่าที่จำเป็น" เพื่อจ่ายบิลนี้ (ไม่ให้หักเกินยอดบิล)
+      const maxApplicablePoints = Math.min(creditBalance, Math.max(0, currentNetBeforeCredit));
+      
+      setCheckoutState(prev => ({ ...prev, usePoints: maxApplicablePoints }));
+    } else {
+      setCheckoutState(prev => ({ ...prev, usePoints: 0 }));
+    }
+  }, [useCreditToggle, creditBalance, totals, checkoutState.shippingCost, checkoutState.discountAmount]);
+
 
   // 3. ฟังก์ชันตรวจสอบความถูกต้องก่อนส่ง (Validation)
   const validateOrder = () => {
@@ -232,6 +262,45 @@ const Checkout = () => {
           {/* Right Column: Order Summary & Actions */}
           <div className="lg:col-span-4">
             <div className="sticky top-6">
+              
+              {/* 💎 [NEW] Gimmick: กล่องเปิด-ปิด การใช้ DH Point แบบ Premium */}
+              {user && !creditLoading && creditBalance > 0 && (
+                <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-5 border border-indigo-100 shadow-sm animate-fade-in relative overflow-hidden transition-all duration-300 mb-6">
+                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-100/50 rounded-full blur-2xl pointer-events-none"></div>
+                  
+                  <div className="flex justify-between items-center relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm transition-colors ${useCreditToggle ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}>
+                        <Award className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900">ใช้แต้มสะสม DH Point</h4>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">มีแต้ม: <span className="text-indigo-600 font-bold">{formatCredit(creditBalance)}</span> PTS</p>
+                      </div>
+                    </div>
+                    
+                    {/* Tailwind Toggle Switch */}
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={useCreditToggle} 
+                        onChange={(e) => setUseCreditToggle(e.target.checked)} 
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+
+                  {/* ข้อความยืนยันเมื่อเปิดใช้งาน */}
+                  {useCreditToggle && checkoutState.usePoints > 0 && (
+                    <div className="mt-4 text-xs text-indigo-700 bg-indigo-50 p-2.5 rounded-lg flex items-center gap-2 font-medium animate-fade-in border border-indigo-100">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" /> 
+                      ใช้แต้มลดราคาไป <strong>฿{formatCredit(checkoutState.usePoints)}</strong> ในออเดอร์นี้
+                    </div>
+                  )}
+                </div>
+              )}
+
               <CheckoutSummary 
                 cartItems={cartItems}
                 totals={totals}
@@ -250,7 +319,7 @@ const Checkout = () => {
                   <span>ข้อมูลทั้งหมดถูกเข้ารหัส 256-bit อย่างปลอดภัย</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <span className="flex-shrink-0 bg-blue-100 p-1.5 rounded-full text-blue-600">
+                  <span className="flex-shrink-0 bg-indigo-100 p-1.5 rounded-full text-indigo-600">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </span>
                   <span>รับประกันสินค้าคุณภาพโดย DH Notebook</span>

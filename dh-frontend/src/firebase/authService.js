@@ -14,98 +14,129 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// ------------------------------------
-// 1. เข้าสู่ระบบด้วย Google
-// ------------------------------------
-export const loginWithGoogle = async () => {
+// ==========================================
+// 🛠️ Core Utility: ระบบจัดการ Profile แบบรัดกุม (Auto-Healing Schema)
+// ==========================================
+
+// ฟังก์ชันสุ่มรหัสลูกค้าแบบมืออาชีพ (เช่น DH-UID-A1B2C3)
+const generateAccountId = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'DH-UID-';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
+// ฟังก์ชันตรวจสอบและซ่อมแซม Profile (ป้องกัน Data Corrupted 100%)
+const ensureUserProfile = async (user, additionalData = {}) => {
+  if (!user) return null;
+  
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-    
-    // ตรวจสอบข้อมูลใน Firestore (ประหยัด Writes ไม่เขียนทับข้อมูลกระเป๋าเงินเดิม)
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
     
+    // ข้อมูลพื้นฐานที่ต้องอัปเดตทุกครั้งที่ Login
+    const loginData = {
+      email: user.email,
+      lastLogin: serverTimestamp(),
+      ...additionalData
+    };
+
     if (!userSnap.exists()) {
-      // กรณีผู้ใช้ใหม่ สร้าง Profile ใหม่
+      // 🌟 กรณี User ใหม่: สร้าง Schema ให้สมบูรณ์แบบ
+      console.log('✨ [Auth] Creating new professional profile...');
       await setDoc(userRef, {
         uid: user.uid,
-        name: user.displayName || 'ผู้ใช้งานใหม่',
-        email: user.email,
+        accountId: generateAccountId(), // รหัสลูกค้าสุดเท่
+        name: user.displayName || additionalData.name || 'ผู้ใช้งานใหม่',
         photoURL: user.photoURL || '',
-        role: 'customer', 
-        wallet: 0,
+        role: 'customer',
+        // 💰 เตรียมโครงสร้างการเงิน (Ecosystem)
+        walletBalance: 0,
         creditPoint: 0,
+        // 🗺️ เตรียมโครงสร้างแผนที่สำหรับ Partner
+        ecosystem: {
+          mapUrl: ''
+        },
         createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
+        ...loginData
       });
     } else {
-      // กรณีมีบัญชีอยู่แล้ว อัปเดตเฉพาะเวลาเข้าสู่ระบบล่าสุดและรูปภาพ
-      await setDoc(userRef, { 
-        lastLogin: serverTimestamp(),
-        photoURL: user.photoURL 
-      }, { merge: true });
+      // 🛡️ กรณี User เดิม: ตรวจสอบฟิลด์ที่หายไป และ Merge เข้าไป (Data Healing)
+      const existingData = userSnap.data();
+      const updateData = { ...loginData };
+
+      // ถ้าไม่มี Account ID (User เก่า) ให้สร้างให้ใหม่
+      if (!existingData.accountId) updateData.accountId = generateAccountId();
+      // การันตีว่ามีฟิลด์การเงิน ไม่พังตอนเรียกใช้
+      if (existingData.walletBalance === undefined) updateData.walletBalance = 0;
+      if (existingData.creditPoint === undefined) updateData.creditPoint = 0;
+      if (!existingData.ecosystem) updateData.ecosystem = { mapUrl: '' };
+
+      // ใช้ { merge: true } เพื่อไม่ให้ทับข้อมูลอื่นๆ ที่ลูกค้าเคยกรอกไว้ (เช่น เบอร์โทร)
+      await setDoc(userRef, updateData, { merge: true });
+      console.log('🔒 [Auth] Profile secured and synchronized.');
     }
-    
-    return user;
+    return userRef;
   } catch (error) {
-    console.error("Google Login Error: ", error);
-    // เพิ่มการดักจับกรณี Popup โดนบล็อคโดยเบราว์เซอร์
-    if (error.code === 'auth/popup-blocked') {
-      throw new Error('เบราว์เซอร์ของคุณบล็อคหน้าต่าง Popup กรุณาอนุญาตให้แสดง Popup สำหรับเว็บนี้');
-    }
+    console.error('❌ [Auth Error] Failed to ensure profile:', error);
     throw error;
   }
 };
 
-// ------------------------------------
+// ==========================================
+// 1. เข้าสู่ระบบด้วย Google
+// ==========================================
+export const loginWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    // เรียกใช้ระบบรักษาความปลอดภัยข้อมูลทันทีที่ Login สำเร็จ
+    await ensureUserProfile(result.user);
+    return result.user;
+  } catch (error) {
+    console.error('Google Login Error:', error);
+    throw error;
+  }
+};
+
+// ==========================================
 // 2. เข้าสู่ระบบด้วย Email
-// ------------------------------------
+// ==========================================
 export const loginWithEmail = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const userRef = doc(db, 'users', userCredential.user.uid);
-    await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+    // เรียกใช้ระบบรักษาความปลอดภัยข้อมูลอัปเดต Last Login และซ่อมแซม Schema
+    await ensureUserProfile(userCredential.user);
     return userCredential.user;
   } catch (error) {
     throw error;
   }
 };
 
-// ------------------------------------
+// ==========================================
 // 3. สมัครสมาชิกด้วย Email
-// ------------------------------------
+// ==========================================
 export const registerWithEmail = async (email, password, name) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    
-    await setDoc(doc(db, 'users', user.uid), {
-      uid: user.uid,
-      name: name || 'ผู้ใช้งานใหม่',
-      email: user.email,
-      photoURL: '',
-      role: 'customer',
-      wallet: 0,
-      creditPoint: 0,
-      createdAt: serverTimestamp(),
-      lastLogin: serverTimestamp(),
-    });
-    
-    return user;
+    // สร้าง Profile ใหม่พร้อมแนบชื่อที่กรอกเข้ามา
+    await ensureUserProfile(userCredential.user, { name: name });
+    return userCredential.user;
   } catch (error) {
     throw error;
   }
 };
 
-// ------------------------------------
+// ==========================================
 // 4. ออกจากระบบ
-// ------------------------------------
+// ==========================================
 export const logoutUser = async () => {
   try {
     await signOut(auth);
+    console.log("👋 [Auth] User signed out successfully");
   } catch (error) {
-    console.error("Logout Error: ", error);
+    console.error("Error signing out: ", error);
     throw error;
   }
 };

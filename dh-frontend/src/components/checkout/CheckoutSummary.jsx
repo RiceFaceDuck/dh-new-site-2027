@@ -1,4 +1,7 @@
 import React from 'react';
+// 🚀 [NEW] นำเข้า formatCredit และไอคอน เพื่อยกระดับ UI
+import { formatCredit } from '../../firebase/creditService';
+import { Award } from 'lucide-react';
 
 const CheckoutSummary = ({ 
   cartItems, 
@@ -115,17 +118,22 @@ const CheckoutSummary = ({
             <span className="text-gray-400 text-xs">รวมในยอดสุทธิแล้ว</span>
           </div>
 
-          {/* 5. ใช้แต้มสะสม */}
-          <div className="flex justify-between items-center">
-            <span>5. ใช้แต้มสะสม (Credit Points)</span>
-            <span className="text-gray-400">0 <span className="text-[10px]">(ยังไม่รองรับ)</span></span>
+          {/* 5. ใช้แต้มสะสม (🔥 Gimmick: รองรับแล้ว และไฮไลท์สีพรีเมียมเมื่อถูกใช้งาน) */}
+          <div className={`flex justify-between items-center transition-all duration-300 ${usedPoints > 0 ? 'bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 -mx-2 px-2 shadow-sm mt-1' : ''}`}>
+            <span className={`flex items-center gap-1.5 ${usedPoints > 0 ? 'text-[#0870B8] font-bold' : ''}`}>
+              5. ใช้แต้มสะสม (DH Point)
+              {usedPoints > 0 && <Award className="w-4 h-4 text-[#0870B8] animate-pulse" />}
+            </span>
+            <span className={usedPoints > 0 ? "text-[#0870B8] font-bold text-base" : "text-gray-400"}>
+              {usedPoints > 0 ? `- ฿${formatCredit(usedPoints)}` : '0'}
+            </span>
           </div>
 
           {/* 6. ใช้ยอดเงินคงเหลือ */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mt-2">
             <span>6. ใช้ยอดเงินคงเหลือ (Wallet)</span>
             <span className={usedWallet > 0 ? "text-indigo-600 font-medium" : "text-gray-400"}>
-              {usedWallet > 0 ? `- ฿${usedWallet.toLocaleString()}` : '0'}
+              {usedWallet > 0 ? `- ฿${formatCredit(usedWallet)}` : '0'}
             </span>
           </div>
 
@@ -165,7 +173,8 @@ const CheckoutSummary = ({
         <div className="flex justify-between items-end mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
           <span className="text-base font-bold text-indigo-950">ยอดชำระสุทธิ</span>
           <div className="text-right">
-            <span className="text-3xl font-black text-indigo-700">฿{calculatedNetTotal.toLocaleString()}</span>
+            {/* 🚀 อัปเดตการแสดงผลให้ใช้ formatCredit รองรับทศนิยม */}
+            <span className="text-3xl font-black text-indigo-700">฿{formatCredit(calculatedNetTotal)}</span>
           </div>
         </div>
 
