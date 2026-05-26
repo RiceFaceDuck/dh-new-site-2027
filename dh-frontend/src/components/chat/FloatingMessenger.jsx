@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   MessageCircle, X, MapPin, Phone, 
-  Wrench, Loader2, Navigation, AlertCircle, Sparkles, ExternalLink, Headphones, Store, ShieldCheck
+  Loader2, Navigation, AlertCircle, Sparkles, ExternalLink, Headphones, Store, ShieldCheck
 } from 'lucide-react';
 import { findNearestPartner, getUserCurrentLocation } from '../../firebase/partnerLocationService'; 
 
@@ -15,6 +15,7 @@ const FloatingMessenger = () => {
   const [showTooltip, setShowTooltip] = useState(true);
 
   useEffect(() => {
+    // รับสัญญาณเมื่อคลิกนามบัตรจากหน้าเว็บ
     const handleOpenPartnerChat = (event) => {
       const partnerData = event.detail?.partner;
       if (partnerData) {
@@ -68,9 +69,12 @@ const FloatingMessenger = () => {
     if (!nextState) setTimeout(() => setMode('menu'), 300); 
   };
 
-  // 🚀 อัปเดต: เชื่อมลิงก์ Messenger 
-  const openMessenger = (url) => {
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  // 🚀 ระบบเปิดลิงก์อัตโนมัติ (เติม https:// ให้ทันทีถ้าไม่มี เพื่อแก้บั๊ก m.me)
+  const openLink = (url) => {
+    if (!url) return;
+    let finalUrl = url;
+    if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -94,6 +98,7 @@ const FloatingMessenger = () => {
 
         <div className="p-5 bg-slate-50/50 min-h-[260px] flex flex-col relative">
           
+          {/* ==================== MENU MODE ==================== */}
           {mode === 'menu' && (
             <div className="space-y-3.5 animate-in fade-in duration-300">
                {error && (<div className="bg-rose-50 border border-rose-100 text-rose-600 text-[11px] font-medium p-3 rounded-xl flex items-start gap-2 shadow-sm"><AlertCircle size={14} className="shrink-0 mt-0.5" /><span>{error}</span></div>)}
@@ -110,6 +115,7 @@ const FloatingMessenger = () => {
             </div>
           )}
 
+          {/* ==================== RADAR MODE ==================== */}
           {mode === 'radar' && (
             <div className="flex-1 flex flex-col items-center justify-center text-center space-y-5 animate-in zoom-in duration-300 py-6">
               <div className="relative flex items-center justify-center w-32 h-32">
@@ -120,6 +126,7 @@ const FloatingMessenger = () => {
             </div>
           )}
 
+          {/* ==================== RESULT MODE ==================== */}
           {(mode === 'result' || mode === 'partner_context') && partner && (
             <div className="space-y-4 animate-in slide-in-from-right-8 duration-500 flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-1">
@@ -130,7 +137,9 @@ const FloatingMessenger = () => {
               <div className="text-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden flex-1 flex flex-col justify-center">
                 <Store className="absolute -bottom-4 -right-4 w-24 h-24 text-slate-50 rotate-12 z-0" />
                 <div className="relative z-10">
-                  <h4 className="font-black text-xl text-slate-800 leading-tight mb-2">{partner.storeName || 'DH Partner'}</h4>
+                  <h4 className="font-black text-xl text-slate-800 leading-tight mb-2">
+                    {partner.storeName || partner.partnerName || partner.customerName || 'DH Partner'}
+                  </h4>
                   {partner.formattedDistance && (<div className="flex justify-center items-center gap-1.5 text-xs text-slate-500 font-medium bg-slate-50 w-max mx-auto px-3 py-1 rounded-lg"><MapPin size={12} className="text-rose-500" /> ห่างจากคุณ <span className="font-bold text-emerald-600">{partner.formattedDistance}</span></div>)}
                   {partner.services && (
                     <div className="mt-3 pt-3 border-t border-slate-100 text-left">
@@ -138,17 +147,34 @@ const FloatingMessenger = () => {
                       <p className="text-xs text-slate-600 font-medium bg-slate-50 p-2.5 rounded-xl border border-slate-100">{partner.services}</p>
                     </div>
                   )}
+                  {partner.description && (
+                     <div className="mt-2 text-left">
+                       <p className="text-xs text-slate-600 font-medium bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/50">{partner.description}</p>
+                     </div>
+                  )}
                 </div>
               </div>
 
-              {/* 🚀 อัปเดต: แยกปุ่ม โทรศัพท์ และ Messenger (ถ้ามีลิงก์) */}
-              <div className="flex gap-2 mt-auto">
-                <button onClick={() => window.location.href = `tel:${partner.phone}`} className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
-                  <Phone size={16}/> โทรติดต่อ
-                </button>
+              {/* 🚀 ปุ่มโทร และ ปุ่ม FB Messenger */}
+              <div className="flex flex-col gap-2 mt-auto">
+                {/* ปุ่มแชท FB (ดึงจาก Store Data โดยตรง) */}
                 {(partner.messengerUrl || partner.facebookMapLink) && (
-                  <button onClick={() => openMessenger(partner.messengerUrl || partner.facebookMapLink)} className="flex-1 py-3 bg-[#1877F2] hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
-                    <MessageCircle size={16}/> แชท Messenger
+                  <button onClick={() => openLink(partner.messengerUrl || partner.facebookMapLink)} className="w-full py-3.5 bg-[#1877F2] hover:bg-[#166FE5] text-white font-bold rounded-xl shadow-[0_4px_15px_rgba(24,119,242,0.3)] transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
+                    <MessageCircle size={18}/> ทักแชท Facebook Messenger
+                  </button>
+                )}
+                
+                {/* ปุ่มโทรศัพท์ */}
+                {partner.phone && (
+                  <button onClick={() => window.location.href = `tel:${partner.phone}`} className="w-full py-3.5 bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
+                    <Phone size={18}/> โทร: {partner.phone}
+                  </button>
+                )}
+                
+                {/* ลิงก์ทั่วไป (Website/Shopee/Map) */}
+                {partner.targetUrl && partner.targetUrl !== partner.messengerUrl && (
+                  <button onClick={() => openLink(partner.targetUrl)} className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-xs">
+                    <ExternalLink size={14}/> ดูข้อมูลเพิ่มเติม
                   </button>
                 )}
               </div>

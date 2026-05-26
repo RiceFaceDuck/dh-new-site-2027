@@ -1,348 +1,238 @@
-/* eslint-disable */
 import React, { useState, useEffect } from 'react';
-import { adManagementService } from '../../firebase/adManagementService';
+import { collection, doc, onSnapshot, serverTimestamp, writeBatch } from 'firebase/firestore';
+
+// 🛠️ นำเข้า db ให้ตรงกับโครงสร้างโปรเจกต์
+import { db } from '../../firebase/config'; 
 import { 
-  CheckCircle, 
-  XCircle, 
-  ExternalLink, 
-  Image as ImageIcon, 
-  PauseCircle,
-  AlertCircle,
-  Loader2,
-  Search,
-  MessageSquare,
-  ShieldCheck,
-  Youtube,
-  ShoppingBag,
-  Store,
-  Clock
+  Loader2, CheckCircle, XCircle, Megaphone, ExternalLink, 
+  Image as ImageIcon, CreditCard, ShoppingBag, MonitorPlay, 
+  Search, ShieldCheck, Clock 
 } from 'lucide-react';
+
+const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
 
 export default function AdManagement() {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending'); // pending, active, rejected
+  const [activeTab, setActiveTab] = useState('PENDING'); // PENDING, APPROVED, REJECTED
   const [processingId, setProcessingId] = useState(null);
-  
-  // Reject Modal State
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [selectedAd, setSelectedAd] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
 
+  // 🚀 1. ดึงข้อมูลโฆษณาจากระบบ Unified Ads ทั้ง 3 ระบบแบบ Real-time
   useEffect(() => {
-    fetchAds();
-  }, [activeTab]);
-
-  const fetchAds = async () => {
     setLoading(true);
-    try {
-      const data = await adManagementService.getAdsByStatus(activeTab);
-      setAds(data);
-    } catch (error) {
-      console.error("Fetch Ads Error:", error);
-      alert('ไม่สามารถโหลดข้อมูลโฆษณาได้');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const collections = ['partner_ads', 'user_sku_ads', 'billboard_ads'];
+    const unsubscribes = [];
+    let allData = { partner_ads: [], user_sku_ads: [], billboard_ads: [] };
 
-  const handleApprove = async (ad) => {
-    if (!window.confirm(`ยืนยันการอนุมัติโฆษณา [${ad.skuId}] ให้เริ่มแสดงผลทันทีใช่หรือไม่?\n\n*โปรดตรวจสอบลิงก์ปลายทางให้แน่ใจว่าไม่ใช่ Scammer ก่อนอนุมัติ*`)) return;
+    const updateUI = () => {
+      let combined = [ ...allData.partner_ads, ...allData.user_sku_ads, ...allData.billboard_ads ];
+      
+      // กรองเอกสารที่ซ้ำกันออก
+      const uniqueAds = Array.from(new Map(combined.map(item => [item.id, item])).values());
+      
+      // เรียงจากใหม่ไปเก่า
+      uniqueAds.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      
+      setAds(uniqueAds);
+      setLoading(false);
+    };
+
+    collections.forEach(colName => {
+      const colRef = collection(db, 'artifacts', appId, 'public', 'data', colName);
+      const unsub = onSnapshot(colRef, (snapshot) => {
+        allData[colName] = snapshot.docs.map(d => ({ id: d.id, _collection: colName, ...d.data() }));
+        updateUI();
+      }, (error) => {
+        console.error(`❌ Error fetching ${colName}:`, error);
+      });
+      unsubscribes.push(unsub);
+    });
+
+    return () => unsubscribes.forEach(unsub => unsub());
+  }, []);
+
+  // 🚀 2. ฟังก์ชัน อนุมัติ / ปฏิเสธ (ใช้ Merge True ป้องกัน Error)
+  const handleAction = async (ad, action) => {
+    if (!window.confirm(`ยืนยันการ ${action === 'APPROVED' ? 'อนุมัติให้แสดงผล' : 'ปฏิเสธคำขอ'} โฆษณานี้?`)) return;
     
     setProcessingId(ad.id);
-    const res = await adManagementService.approveAd(ad.id, ad.skuId);
-    if (res.success) {
-      fetchAds(); // รีโหลดข้อมูลใหม่
-    } else {
-      alert(res.message);
+    try {
+      const batch = writeBatch(db);
+      const actionData = { status: action, updatedAt: serverTimestamp() };
+
+      // 2.1 อัปเดตสถานะในตารางโฆษณาโดยตรง
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', ad._collection, ad.id), actionData, { merge: true });
+      
+      // อัปเดต Fallback ระบบเก่ากันเหนียว
+      batch.set(doc(db, ad._collection, ad.id), actionData, { merge: true });
+
+      // 2.2 อัปเดตสถานะในกระดาน To-do เพื่อเคลียร์แถบแจ้งเตือนซ้ายมือ
+      const taskId = `TODO-${ad.id}`;
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), actionData, { merge: true });
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), actionData, { merge: true });
+      batch.set(doc(db, 'todos', taskId), actionData, { merge: true }); 
+
+      await batch.commit();
+      // ไม่ต้อง alert เพราะ UI จะย้ายแท็บอัตโนมัติแบบ Real-time
+    } catch (error) {
+      console.error("🔥 Action error:", error);
+      alert("เกิดข้อผิดพลาด: " + error.message);
+    } finally {
+      setProcessingId(null);
     }
-    setProcessingId(null);
   };
 
-  const handlePause = async (id) => {
-    if (!window.confirm('คุณต้องการระงับการแสดงผลโฆษณานี้ชั่วคราวใช่หรือไม่?')) return;
-    
-    setProcessingId(id);
-    const res = await adManagementService.pauseAd(id);
-    if (res.success) {
-      fetchAds();
-    } else {
-      alert(res.message);
-    }
-    setProcessingId(null);
+  const filteredAds = ads.filter(ad => String(ad.status).toUpperCase() === activeTab);
+
+  const getTypeBadge = (type) => {
+    const t = String(type).toUpperCase();
+    if (t.includes('BUSINESS_CARD')) return <span className="flex items-center gap-1 text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full text-[10px] font-bold"><CreditCard size={12}/> นามบัตร</span>;
+    if (t.includes('PRODUCT_LINK') || t.includes('SKU')) return <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-[10px] font-bold"><ShoppingBag size={12}/> สินค้าโปรโมท</span>;
+    if (t.includes('BILLBOARD')) return <span className="flex items-center gap-1 text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full text-[10px] font-bold"><MonitorPlay size={12}/> แผ่นป้าย</span>;
+    return <span className="text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full text-[10px] font-bold">ทั่วไป</span>;
   };
 
-  const openRejectModal = (ad) => {
-    setSelectedAd(ad);
-    setRejectReason('');
-    setIsRejectModalOpen(true);
-  };
-
-  const submitReject = async () => {
-    if (!rejectReason.trim()) {
-      alert('กรุณาระบุเหตุผลที่ไม่อนุมัติ เพื่อให้ลูกค้าทราบและนำไปแก้ไข');
-      return;
-    }
-
-    setProcessingId(selectedAd.id);
-    const res = await adManagementService.rejectAd(
-      selectedAd.id, 
-      selectedAd.skuId, // ส่งไปเพื่อปิดงานใน Manager Todos
-      rejectReason
-    );
-
-    if (res.success) {
-      setIsRejectModalOpen(false);
-      fetchAds();
-    } else {
-      alert(res.message);
-    }
-    setProcessingId(null);
-  };
-
-  // Helper: ตรวจสอบแพลตฟอร์มจาก Object links
-  const renderPlatformLinks = (links) => {
-    if (!links) return <span className="text-gray-400 text-xs">ไม่มีลิงก์ปลายทาง</span>;
-    
+  if (loading) {
     return (
-      <div className="flex flex-col gap-2 w-full mt-2">
-        <p className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
-          <ShieldCheck size={14} className="text-emerald-500"/> ตรวจสอบความปลอดภัยลิงก์
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {links.shopee && (
-            <a href={links.shopee} target="_blank" rel="noreferrer" className="flex items-center justify-between px-2 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded text-[11px] font-bold hover:bg-orange-100 transition-colors">
-              <span className="flex items-center gap-1"><ShoppingBag size={12}/> Shopee</span> <ExternalLink size={10}/>
-            </a>
-          )}
-          {links.lazada && (
-            <a href={links.lazada} target="_blank" rel="noreferrer" className="flex items-center justify-between px-2 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[11px] font-bold hover:bg-blue-100 transition-colors">
-              <span className="flex items-center gap-1"><ShoppingBag size={12}/> Lazada</span> <ExternalLink size={10}/>
-            </a>
-          )}
-          {links.tiktok && (
-            <a href={links.tiktok} target="_blank" rel="noreferrer" className="flex items-center justify-between px-2 py-1.5 bg-gray-100 text-gray-800 border border-gray-300 rounded text-[11px] font-bold hover:bg-gray-200 transition-colors">
-              <span className="flex items-center gap-1"><Store size={12}/> TikTok</span> <ExternalLink size={10}/>
-            </a>
-          )}
-          {links.youtube && (
-            <a href={links.youtube} target="_blank" rel="noreferrer" className="flex items-center justify-between px-2 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded text-[11px] font-bold hover:bg-red-100 transition-colors">
-              <span className="flex items-center gap-1"><Youtube size={12}/> YouTube</span> <ExternalLink size={10}/>
-            </a>
-          )}
-        </div>
+      <div className="h-[calc(100vh-64px)] w-full flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+        <p className="text-sm font-bold text-slate-500 tracking-widest uppercase">กำลังโหลดข้อมูลโฆษณา...</p>
       </div>
     );
-  };
+  }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
-      
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-xl">
-               <ShieldCheck className="w-6 h-6 text-blue-600" />
-            </div>
-            การจัดการพื้นที่โฆษณา (Sponsored Ads)
-          </h1>
-          <p className="text-sm text-gray-500 mt-2 font-medium">
-            ศูนย์ตรวจสอบ อนุมัติ และจัดการโฆษณาสินค้าที่ Partner ส่งเข้ามา เพื่อความปลอดภัยของระบบ
-          </p>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="flex space-x-1 bg-white p-1.5 rounded-xl shadow-sm border border-gray-100 w-full max-w-md">
-        {[
-          { id: 'pending', label: 'รอตรวจสอบ', icon: Clock },
-          { id: 'active', label: 'กำลังแสดงผล', icon: CheckCircle },
-          { id: 'rejected', label: 'ถูกปฏิเสธ', icon: XCircle }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all duration-200 ${
-              activeTab === tab.id
-                ? 'bg-blue-50 text-blue-700 shadow-sm border border-blue-100/50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'}`} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Main Content Area */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[500px] overflow-hidden">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 text-blue-500" />
-            <p className="font-bold text-gray-500">กำลังโหลดข้อมูลคำขอโฆษณา...</p>
+    // 🚀 HOTFIX: ครอบด้วย Container ที่กำหนดความสูงและเปิด overflow-y-auto เพื่อแก้ปัญหา Scroll ไม่ได้
+    <div className="h-[calc(100vh-64px)] w-full overflow-y-auto pb-20 bg-slate-50/30">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
+        
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center mb-8">
+          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-indigo-100">
+             <ShieldCheck size={24} />
           </div>
-        ) : ads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-gray-300" />
+          <h2 className="text-xl font-bold text-slate-800 mb-2">การจัดการพื้นที่โฆษณา (Sponsored Ads)</h2>
+          <p className="text-sm text-slate-500">ศูนย์ตรวจสอบ อนุมัติ และจัดการโฆษณาสินค้าที่ Partner ส่งเข้ามา (รองรับ 3 ระบบ)</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex justify-center mb-8 sticky top-0 z-10 py-2 bg-slate-50/90 backdrop-blur-md">
+          <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+            <button 
+              onClick={() => setActiveTab('PENDING')}
+              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg transition-colors ${activeTab === 'PENDING' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+              <Clock size={16}/> รอตรวจสอบ {ads.filter(a => String(a.status).toUpperCase() === 'PENDING').length > 0 && `(${ads.filter(a => String(a.status).toUpperCase() === 'PENDING').length})`}
+            </button>
+            <button 
+              onClick={() => setActiveTab('APPROVED')}
+              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg transition-colors ${activeTab === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+              <CheckCircle size={16}/> กำลังแสดงผล
+            </button>
+            <button 
+              onClick={() => setActiveTab('REJECTED')}
+              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg transition-colors ${activeTab === 'REJECTED' ? 'bg-rose-50 text-rose-600' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+              <XCircle size={16}/> ถูกปฏิเสธ
+            </button>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        {filteredAds.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-slate-100 p-16 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+               <Search size={28} className="text-slate-300" />
             </div>
-            <p className="text-lg font-bold text-gray-600">ไม่มีรายการโฆษณาในหมวดหมู่นี้</p>
-            <p className="text-sm mt-1">เมื่อ Partner ส่งคำขอโฆษณา ข้อมูลจะแสดงที่นี่</p>
+            <h3 className="text-lg font-bold text-slate-600 mb-1">ไม่มีรายการโฆษณาในหมวดหมู่นี้</h3>
+            <p className="text-sm text-slate-400">เมื่อ Partner ส่งคำขอโฆษณา ข้อมูลจะแสดงที่นี่</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 p-6 bg-gray-50/50 min-h-[500px]">
-            {ads.map((ad) => (
-              <div key={ad.id} className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-white flex flex-col hover:-translate-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAds.map((ad) => (
+              <div key={ad.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
                 
-                {/* Image / Thumbnail Placeholder */}
-                <div className="relative h-56 bg-gray-100 flex items-center justify-center overflow-hidden border-b border-gray-100">
+                {/* รูปภาพพรีวิว */}
+                <div className="aspect-video w-full bg-slate-50 relative overflow-hidden group">
                   {ad.imageUrl ? (
-                    <img src={ad.imageUrl} alt={ad.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={ad.imageUrl} alt="Ad Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
-                    <ImageIcon className="w-12 h-12 text-gray-300" />
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                      <ImageIcon size={32} className="mb-2 opacity-50"/>
+                    </div>
                   )}
-                  {/* SKU Badge */}
-                  <div className="absolute top-3 left-3 px-3 py-1.5 text-xs font-black font-tech rounded-lg shadow-sm backdrop-blur-md bg-white/90 text-[#0870B8] border border-white/20">
-                    {ad.skuId}
+                  <div className="absolute top-2 right-2 bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-md border border-white/10">
+                     งบ: {ad.creditLimit === -1 ? 'ไม่จำกัด' : `${ad.creditLimit} Pts`}
                   </div>
                 </div>
 
-                {/* Content */}
+                {/* ข้อมูลโฆษณา */}
                 <div className="p-5 flex-1 flex flex-col">
-                  <div className="mb-4">
-                    <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight min-h-[40px]">{ad.name}</h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <p className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">฿{ad.price?.toLocaleString() || 0}</p>
-                      <p className="text-xs text-gray-500 truncate flex-1">โดย: {ad.ownerName}</p>
-                    </div>
+                  <div className="flex justify-between items-start mb-3">
+                     {getTypeBadge(ad.type)}
+                     <span className="text-[10px] text-slate-400">
+                       {new Date(ad.createdAt?.toMillis() || Date.now()).toLocaleDateString('th-TH')}
+                     </span>
                   </div>
-
-                  <div className="mb-5 flex-1">
-                    {/* Render Links to Verify */}
-                    {renderPlatformLinks(ad.links)}
-                  </div>
-
-                  {/* Stats (แสดงเฉพาะตอน Active) */}
-                  {activeTab === 'active' && (
-                     <div className="grid grid-cols-2 gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <div className="text-center">
-                           <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">การมองเห็น</p>
-                           <p className="text-sm font-black text-slate-800">{ad.stats?.impressions?.toLocaleString() || 0}</p>
-                        </div>
-                        <div className="text-center border-l border-slate-200">
-                           <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">การคลิก</p>
-                           <p className="text-sm font-black text-[#0870B8]">{ad.stats?.clicks?.toLocaleString() || 0}</p>
-                        </div>
-                     </div>
-                  )}
-
-                  {/* Rejected Reason */}
-                  {activeTab === 'rejected' && ad.rejectReason && (
-                    <div className="mt-auto mb-4 p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-100 flex items-start gap-2">
-                      <MessageSquare className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span><strong>เหตุผล:</strong> {ad.rejectReason}</span>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
-                    {activeTab === 'pending' && (
-                      <>
-                        <button
-                          disabled={processingId === ad.id}
-                          onClick={() => openRejectModal(ad)}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-white text-rose-600 border-2 border-rose-100 hover:bg-rose-50 hover:border-rose-200 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
-                        >
-                          <XCircle className="w-4 h-4" /> ปฏิเสธ
-                        </button>
-                        <button
-                          disabled={processingId === ad.id}
-                          onClick={() => handleApprove(ad)}
-                          className="flex-[1.5] flex items-center justify-center gap-1.5 bg-emerald-600 text-white border-2 border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50"
-                        >
-                          {processingId === ad.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                          ยืนยันอนุมัติ
-                        </button>
-                      </>
+                  
+                  <h3 className="font-bold text-slate-800 text-base leading-tight mb-2 line-clamp-2">
+                    {ad.title || ad.productName || 'ไม่มีหัวข้อ'}
+                  </h3>
+                  
+                  <div className="text-xs text-slate-500 mb-4 space-y-1.5 flex-1 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                    <p className="line-clamp-2"><span className="font-bold text-slate-600">รายละเอียด:</span> {ad.description || '-'}</p>
+                    <p className="line-clamp-1"><span className="font-bold text-slate-600">ผู้ขอ:</span> {ad.partnerName || ad.customerName || 'DH Partner'}</p>
+                    
+                    {ad.targetUrl && (
+                      <p className="text-indigo-600 font-medium truncate pt-1">
+                        🔗 <a href={ad.targetUrl} target="_blank" rel="noreferrer" className="hover:underline">{ad.targetUrl}</a>
+                      </p>
                     )}
+                    {ad.messengerUrl && (
+                      <p className="text-[#1877F2] font-medium truncate pt-1">
+                        💬 <a href={ad.messengerUrl} target="_blank" rel="noreferrer" className="hover:underline">{ad.messengerUrl}</a>
+                      </p>
+                    )}
+                  </div>
 
-                    {activeTab === 'active' && (
-                      <button
+                  {/* ปุ่มจัดการ (แสดงเฉพาะสถานะรอตรวจสอบ) */}
+                  {activeTab === 'PENDING' && (
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <button 
+                        onClick={() => handleAction(ad, 'REJECTED')}
                         disabled={processingId === ad.id}
-                        onClick={() => handlePause(ad.id)}
-                        className="w-full flex items-center justify-center gap-2 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
+                        className="py-2.5 rounded-xl border border-rose-200 text-rose-600 font-bold hover:bg-rose-50 flex justify-center items-center gap-1.5 transition-all text-sm"
                       >
-                        {processingId === ad.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <PauseCircle className="w-4 h-4" />}
-                        ระงับการแสดงผลชั่วคราว (ฉุกเฉิน)
+                        {processingId === ad.id ? <Loader2 size={16} className="animate-spin"/> : <XCircle size={16}/>} ปฏิเสธ
                       </button>
-                    )}
+                      <button 
+                        onClick={() => handleAction(ad, 'APPROVED')}
+                        disabled={processingId === ad.id}
+                        className="py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 flex justify-center items-center gap-1.5 transition-all text-sm"
+                      >
+                        {processingId === ad.id ? <Loader2 size={16} className="animate-spin"/> : <CheckCircle size={16}/>} อนุมัติ
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* ปุ่มยกเลิก/ลบ (สำหรับสถานะอื่นๆ) */}
+                  {activeTab !== 'PENDING' && (
+                    <button 
+                      onClick={() => handleAction(ad, 'PENDING')}
+                      disabled={processingId === ad.id}
+                      className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 flex justify-center items-center gap-1.5 transition-all text-sm mt-2"
+                    >
+                      {processingId === ad.id ? <Loader2 size={16} className="animate-spin"/> : <Clock size={16}/>} ดึงกลับไปรอตรวจสอบใหม่
+                    </button>
+                  )}
 
-                    {activeTab === 'rejected' && (
-                      <div className="w-full text-center text-xs font-bold text-gray-400 py-2.5 bg-gray-50 rounded-xl">
-                        รายการนี้ถูกปฏิเสธแล้ว
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* Reject Modal */}
-      {isRejectModalOpen && selectedAd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-rose-50">
-              <h3 className="text-lg font-black text-rose-700 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                ระบุเหตุผลการไม่อนุมัติ
-              </h3>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                 <p className="text-xs text-gray-500 mb-1">รหัสโฆษณา: <span className="font-bold text-[#0870B8]">{selectedAd.skuId}</span></p>
-                 <p className="text-sm font-bold text-gray-900 line-clamp-1">{selectedAd.name}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  เหตุผลแจ้งให้ Partner ทราบ (เพื่อนำไปแก้ไข) <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows="4"
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="เช่น ภาพไม่ชัดเจน, ลิงก์ปลายทางเสีย หรือเป็นลิงก์หลอกลวง, สินค้าผิดกฎหมาย..."
-                  className="w-full p-4 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none resize-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
-              <button
-                onClick={() => setIsRejectModalOpen(false)}
-                className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors"
-                disabled={processingId !== null}
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={submitReject}
-                disabled={processingId !== null}
-                className="flex items-center gap-2 px-6 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50 shadow-md shadow-rose-500/20"
-              >
-                {processingId !== null ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                ยืนยันการปฏิเสธ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

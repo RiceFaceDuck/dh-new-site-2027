@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-import { Trash2, ExternalLink, Activity, Image as ImageIcon, Eye, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Trash2, ExternalLink, Activity, Image as ImageIcon, CheckCircle2, Clock, XCircle, Edit } from 'lucide-react';
 
-const AdListTable = ({ ads, onDeleteAd }) => {
+const AdListTable = ({ ads, onEditAd, onDeleteAd }) => {
   if (!ads || ads.length === 0) {
     return (
       <div className="bg-slate-50 border border-slate-100 rounded-3xl p-12 text-center flex flex-col items-center justify-center h-64 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
@@ -43,6 +43,7 @@ const AdListTable = ({ ads, onDeleteAd }) => {
               <th className="p-4">แคมเปญ / ประเภท</th>
               <th className="p-4">สถานะ</th>
               <th className="p-4 text-center">ยอดวิว (Views)</th>
+              <th className="p-4 text-center">ยอดคลิก (Clicks)</th> {/* 🚀 อัปเกรด: เพิ่มคอลัมน์ Clicks */}
               <th className="p-4 text-center">งบ (Limit)</th>
               <th className="p-4 text-right">จัดการ</th>
             </tr>
@@ -72,13 +73,25 @@ const AdListTable = ({ ads, onDeleteAd }) => {
                     {Number(ad.stats?.views || 0).toLocaleString()}
                   </span>
                 </td>
+                <td className="p-4 text-center">
+                  {/* 🚀 ยอดคลิกที่สวยงาม */}
+                  <span className="font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+                    {Number(ad.stats?.clicks || 0).toLocaleString()}
+                  </span>
+                </td>
                 <td className="p-4 text-center text-xs font-bold text-slate-500">
                   {ad.creditLimit === -1 ? '∞ ไม่จำกัด' : (ad.creditLimit ? `${ad.creditLimit} Pts` : 'N/A')}
                 </td>
                 <td className="p-4 text-right">
-                  <button onClick={() => onDeleteAd(ad.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="ลบโฆษณา">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex justify-end gap-1.5">
+                    {/* 🚀 อัปเกรด: ปุ่มแก้ไขโฆษณา */}
+                    <button onClick={() => onEditAd(ad)} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all shadow-sm border border-transparent hover:border-indigo-100" title="ดูรายละเอียด / แก้ไขโฆษณา">
+                      <Edit size={16} />
+                    </button>
+                    <button onClick={() => onDeleteAd(ad.id)} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all shadow-sm border border-transparent hover:border-rose-100" title="ลบโฆษณา">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

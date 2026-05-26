@@ -1,11 +1,15 @@
 /* eslint-disable */
 import { db } from './config';
 import { 
-  collection, doc, getDocs, query, where, 
-  serverTimestamp, increment, writeBatch 
+  collection, doc, getDocs, getDoc, query, where, 
+  serverTimestamp, runTransaction, increment,
+  writeBatch 
 } from 'firebase/firestore';
 
-// 🛡️ กำหนด App ID ที่ถูกต้องตาม Security Rules
+// 🚀 นำเข้าระบบตัดเงินจาก Credit Service
+import { deductPartnerCredit } from './creditService';
+
+// 🛡️ กำหนด App ID
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
 // ==========================================
@@ -17,6 +21,7 @@ let flushInterval = null;
 let activeAdsCache = { data: {}, lastFetch: 0 };
 const CACHE_LIFETIME = 5 * 60 * 1000; 
 
+// 🚀 อัปเกรดขั้นสุด: ยิงยอดวิว + หักเครดิต + เช็คงบประมาณ ใน Batch เดียว!
 export const flushAdStatsBatch = async () => {
   if (Object.keys(adStatsBuffer).length === 0) return;
   const statsToProcess = { ...adStatsBuffer };
@@ -31,17 +36,42 @@ export const flushAdStatsBatch = async () => {
         const stats = statsToProcess[collectionName][adId];
         if (stats.views > 0 || stats.clicks > 0) {
           const adRef = doc(db, 'artifacts', appId, 'public', 'data', collectionName, adId);
-          const updateData = {};
-          if (stats.views > 0) updateData['stats.views'] = increment(stats.views);
-          if (stats.clicks > 0) updateData['stats.clicks'] = increment(stats.clicks);
-          batch.update(adRef, updateData);
-          hasUpdates = true;
+          
+          // 🔍 ดึงข้อมูลโฆษณามาเช็คสถานะการเงิน (Real-time Validation)
+          const adSnap = await getDoc(adRef);
+          
+          if (adSnap.exists()) {
+            const adData = adSnap.data();
+            const updateData = {};
+            if (stats.views > 0) updateData['stats.views'] = increment(stats.views);
+            if (stats.clicks > 0) updateData['stats.clicks'] = increment(stats.clicks);
+
+            // 🛑 เช็คว่า "งบประมาณชนเพดาน" หรือยัง? (ถ้าชนเพดาน ให้หยุดโฆษณาทันที)
+            if (adData.creditLimit !== -1 && adData.creditLimit > 0) {
+               const currentViews = adData.stats?.views || 0;
+               if ((currentViews + stats.views) >= adData.creditLimit) {
+                  updateData['status'] = 'COMPLETED'; // ตัดจบแคมเปญ
+               }
+            }
+
+            batch.update(adRef, updateData);
+            hasUpdates = true;
+
+            // 💸 หักเครดิต Pay-per-view (1 View = 1 Point) จากกระเป๋าเจ้าของ
+            if (adData.ownerId && stats.views > 0) {
+               await deductPartnerCredit(adData.ownerId, stats.views, 'ad_impression');
+            }
+          }
         }
       }
     }
-    if (hasUpdates) await batch.commit();
+    if (hasUpdates) {
+      await batch.commit();
+      console.log("✅ [Marketing] Ads stats flushed & credits deducted perfectly.");
+    }
   } catch (error) {
     console.error("🔥 [Marketing] Error flushing ad stats:", error);
+    // คืนค่าเข้า Buffer หากพัง
     for (const col in statsToProcess) {
       if (!adStatsBuffer[col]) adStatsBuffer[col] = {};
       for (const id in statsToProcess[col]) {
@@ -107,7 +137,6 @@ export const marketingService = {
     }
   },
 
-  // 🚀 THE BULLETPROOF FIX: ปรับ โครงสร้าง Payload ให้ตรงกับระบบ Manager Panel (หลังบ้าน) 100%
   submitPartnerAd: async (userId, adType, adData, creditLimitVal) => {
     if (!userId || !adType || !adData) throw new Error("ข้อมูลไม่ครบถ้วน");
 
@@ -116,7 +145,6 @@ export const marketingService = {
       const adId = `AD-${adType}-${Date.now()}`;
       const taskId = `TODO-${adId}`;
 
-      // 1. จัดเตรียม Payload ของโฆษณา
       const adPayload = {
         ...adData,
         type: adType, 
@@ -127,7 +155,6 @@ export const marketingService = {
         createdAt: serverTimestamp()
       };
 
-      // 2. กำหนดประเภทและชื่อให้ตรงกับ Backend
       let legacyTaskType = 'AD_APPROVAL';
       let oldCollectionName = 'partner_ads';
       let taskTitle = `ตรวจสอบโฆษณา: ${adData.title || 'นามบัตร'}`;
@@ -142,39 +169,30 @@ export const marketingService = {
           taskTitle = `ตรวจสอบแผ่นป้ายโฆษณา: ${adData.title}`;
       }
 
-      // 🎯 3. สร้าง Todo Payload ที่หน้าตาเหมือนของเก่าเป๊ะๆ (Flat Structure)
-      // ฟิลด์เหล่านี้คือสิ่งที่ตารางหลังบ้านต้องการเพื่อนำไปแสดงผล
       const todoPayload = {
         taskId: taskId,
         type: legacyTaskType,
         taskType: legacyTaskType, 
         status: 'pending',
         priority: 'High',
-        
-        // 🚨 ฟิลด์บังคับที่ระบบหลังบ้านต้องใช้
         title: taskTitle,
         description: `พาร์ทเนอร์ ${adData.partnerName || 'DH Partner'} ฝากโปรโมท (งบ: ${creditLimitVal === -1 ? 'ไม่จำกัด' : creditLimitVal + ' Pts'})`,
-        targetSkuId: adId,    // 🔑 สำคัญมาก: หลังบ้านใช้คีย์นี้เป็น ID เพื่อเปิดดูข้อมูล
-        partnerId: userId,    // 🔑 สำคัญมาก
+        targetSkuId: adId,    
+        partnerId: userId,    
         customerName: adData.partnerName || 'พาร์ทเนอร์',
-        
-        // ข้อมูลสำรอง (ส่งไปเผื่อไว้)
         adDetails: adPayload,
         skuDetails: adPayload,
         adPayload: adPayload,
-        
-        requestedAt: serverTimestamp(), // 🔑 สำคัญมาก
+        requestedAt: serverTimestamp(), 
         createdAt: serverTimestamp(),
         createdBy: userId
       };
 
-      // 4. เขียนข้อมูลลงตารางโฆษณา
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId), adPayload);
       if (oldCollectionName !== 'partner_ads') {
          batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload);
       }
 
-      // 5. ส่งงานเข้ากระดานผู้จัดการ (ยิงเข้า manager_todos ที่เดียวกับที่หลังบ้านอ่าน)
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), todoPayload);         
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), todoPayload); 
 
@@ -189,16 +207,89 @@ export const marketingService = {
     }
   },
 
+  // 🚀 [อัปเกรด] อัปเดต/แก้ไข โฆษณาที่เคยสร้างไว้ และส่งกลับไปให้แอดมินอนุมัติใหม่!
+  updatePartnerAd: async (userId, adId, adType, adData, creditLimitVal) => {
+    if (!userId || !adId || !adType || !adData) throw new Error("ข้อมูลไม่ครบถ้วน");
+
+    try {
+      const batch = writeBatch(db); 
+      const taskId = `TODO-${adId}`;
+
+      const adPayload = {
+        ...adData,
+        type: adType, 
+        ownerId: userId,
+        status: 'pending', // ถอยสถานะกลับไปรอตรวจสอบใหม่
+        creditLimit: creditLimitVal, 
+        updatedAt: serverTimestamp()
+      };
+
+      let legacyTaskType = 'AD_APPROVAL';
+      let oldCollectionName = 'partner_ads';
+      let taskTitle = `[แก้ไข] ตรวจสอบโฆษณา: ${adData.title || 'นามบัตร'}`;
+
+      if (adType === 'PRODUCT_LINK') {
+          legacyTaskType = 'USER_SKU_APPROVAL';
+          oldCollectionName = 'user_sku_ads';
+          taskTitle = `[แก้ไข] ตรวจสอบสินค้า: ${adData.title}`;
+      } else if (adType === 'BILLBOARD') {
+          legacyTaskType = 'BILLBOARD_APPROVAL';
+          oldCollectionName = 'billboard_ads';
+          taskTitle = `[แก้ไข] ตรวจสอบแผ่นป้าย: ${adData.title}`;
+      }
+
+      const todoPayload = {
+        taskId: taskId,
+        type: legacyTaskType,
+        taskType: legacyTaskType, 
+        status: 'pending',
+        priority: 'High',
+        title: taskTitle,
+        description: `พาร์ทเนอร์ขอแก้ไขโฆษณา (งบ: ${creditLimitVal === -1 ? 'ไม่จำกัด' : creditLimitVal + ' Pts'})`,
+        targetSkuId: adId,    
+        partnerId: userId,    
+        customerName: adData.partnerName || 'พาร์ทเนอร์',
+        adDetails: adPayload,
+        skuDetails: adPayload,
+        adPayload: adPayload,
+        requestedAt: serverTimestamp(), 
+        updatedAt: serverTimestamp(),
+        createdBy: userId
+      };
+
+      // เขียนทับโฆษณา (ใช้ merge เพื่อไม่ให้ยอด view/click หายไป)
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId), adPayload, { merge: true });
+      if (oldCollectionName !== 'partner_ads') {
+         batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload, { merge: true });
+      }
+
+      // ดันงานกลับเข้ากระดาน Manager
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), todoPayload, { merge: true });         
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), todoPayload, { merge: true }); 
+
+      await batch.commit();
+
+      console.log(`✅ [Marketing] ${adType} Ad updated perfectly!`);
+      activeAdsCache.lastFetch = 0; 
+      return true;
+    } catch (error) {
+      console.error(`🔥 [Marketing] ${adType} update failed:`, error.message);
+      throw error;
+    }
+  },
+
   getUserPartnerAds: async (userId) => {
     try {
       const p1 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('ownerId', '==', userId)));
       const p2 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads'), where('ownerId', '==', userId)));
+      const p3 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'billboard_ads'), where('ownerId', '==', userId)));
 
-      const [s1, s2] = await Promise.all([p1, p2]);
+      const [s1, s2, s3] = await Promise.all([p1, p2, p3]);
       
       const adsList = [
         ...s1.docs.map(d => ({ id: d.id, ...d.data() })),
-        ...s2.docs.map(d => ({ id: d.id, type: 'PRODUCT_LINK', ...d.data() }))
+        ...s2.docs.map(d => ({ id: d.id, type: 'PRODUCT_LINK', ...d.data() })),
+        ...s3.docs.map(d => ({ id: d.id, type: 'BILLBOARD', ...d.data() }))
       ];
 
       const uniqueAds = Array.from(new Map(adsList.map(item => [item.id, item])).values());
@@ -242,7 +333,7 @@ export const marketingService = {
 };
 
 export const { 
-  detectPlatform, getActivePartnerAds, submitPartnerAd, 
+  detectPlatform, getActivePartnerAds, submitPartnerAd, updatePartnerAd,
   getUserPartnerAds, trackAdView, trackAdClick,
   logImpression, logClick 
 } = marketingService;
