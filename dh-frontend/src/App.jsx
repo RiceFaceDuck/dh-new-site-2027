@@ -17,10 +17,13 @@ import { marketingService } from './firebase/marketingService';
 // ==========================================
 // 🌟 Smart UX Feature: Auto Scroll to Top
 // ==========================================
+// ฮุกอัจฉริยะสำหรับ React Router: เมื่อลูกค้าคลิกเปลี่ยนหน้าต่าง 
+// ระบบจะทำการสมูทหน้าจอเลื่อนกลับขึ้นบนสุดอัตโนมัติ (ลดอาการงงหน้าจอค้างด้านล่าง)
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   
   useEffect(() => {
+    // หน่วงเวลาเล็กน้อยเพื่อให้ DOM เรนเดอร์เฟรมแรกเสร็จสมบูรณ์ก่อนเลื่อน
     const timer = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
@@ -63,6 +66,7 @@ function App() {
     <CartProvider>
       <OrderProvider>
       <Router>
+        {/* ฝังลูกเล่น ScrollToTop ทำงานเงียบๆ ทุกครั้งที่ Route เปลี่ยน */}
         <ScrollToTop />
         
         <MainLayout>
@@ -71,6 +75,7 @@ function App() {
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/profile" element={<Profile />} />
             
+            {/* 🚀 ลงทะเบียน Route สำหรับ E-Commerce Core */}
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
           </Routes>

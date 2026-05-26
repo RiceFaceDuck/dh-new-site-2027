@@ -1,33 +1,24 @@
 /* eslint-disable */
 import { db } from './config';
 import { 
-  collection, doc, getDocs, getDoc, query, where, 
-  serverTimestamp, runTransaction, increment, limit,
-  writeBatch 
+  collection, doc, getDocs, query, where, 
+  serverTimestamp, increment, writeBatch 
 } from 'firebase/firestore';
 
-// 🚀 นำเข้าฟังก์ชันหักเครดิตแบบ Transaction จาก Credit Service
-import { consumeAdCreditWithTransaction } from './creditService';
-
-// 🛡️ กำหนด App ID สำหรับการเข้าถึงแบบ Enterprise Sandbox
+// 🛡️ กำหนด App ID ที่ถูกต้องตาม Security Rules
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
 // ==========================================
 // 🧠 SMART CACHE & ANTI-FRAUD BUFFER SYSTEM
 // ==========================================
-
 let adStatsBuffer = {}; 
 let flushInterval = null;
 
-let activeAdsCache = {
-  data: {},
-  lastFetch: 0
-};
+let activeAdsCache = { data: {}, lastFetch: 0 };
 const CACHE_LIFETIME = 5 * 60 * 1000; 
 
 export const flushAdStatsBatch = async () => {
   if (Object.keys(adStatsBuffer).length === 0) return;
-
   const statsToProcess = { ...adStatsBuffer };
   adStatsBuffer = {}; 
 
@@ -43,16 +34,12 @@ export const flushAdStatsBatch = async () => {
           const updateData = {};
           if (stats.views > 0) updateData['stats.views'] = increment(stats.views);
           if (stats.clicks > 0) updateData['stats.clicks'] = increment(stats.clicks);
-          
           batch.update(adRef, updateData);
           hasUpdates = true;
         }
       }
     }
-
-    if (hasUpdates) {
-      await batch.commit();
-    }
+    if (hasUpdates) await batch.commit();
   } catch (error) {
     console.error("🔥 [Marketing] Error flushing ad stats:", error);
     for (const col in statsToProcess) {
@@ -67,40 +54,24 @@ export const flushAdStatsBatch = async () => {
 };
 
 const startFlushInterval = () => {
-  if (!flushInterval) {
-    flushInterval = setInterval(flushAdStatsBatch, 15000);
-  }
+  if (!flushInterval) flushInterval = setInterval(flushAdStatsBatch, 15000);
 };
 
 if (typeof window !== "undefined") {
-  window.addEventListener('beforeunload', () => {
-    flushAdStatsBatch();
-  });
+  window.addEventListener('beforeunload', flushAdStatsBatch);
 }
 
 const checkAntiFraud = (actionType, adId) => {
   const sessionKey = `dh_ad_${actionType}_${adId}`;
   const lastAction = sessionStorage.getItem(sessionKey);
   const now = Date.now();
-  
-  if (lastAction && (now - parseInt(lastAction)) < 300000) {
-    return false; 
-  }
-  
+  if (lastAction && (now - parseInt(lastAction)) < 300000) return false; 
   sessionStorage.setItem(sessionKey, now.toString());
   return true; 
 };
 
-
 export const marketingService = {
   
-  // ==========================================
-  // 🌟 UNIFIED ARCHITECTURE (รองรับ 3 ระบบ)
-  // ==========================================
-
-  /**
-   * 🤖 [NEW] ฟังก์ชันวิเคราะห์ Platform อัตโนมัติ (แก้บั๊ก ProductAdCard)
-   */
   detectPlatform: (url) => {
     if (!url) return 'other';
     const lowerUrl = String(url).toLowerCase();
@@ -118,116 +89,131 @@ export const marketingService = {
     if (activeAdsCache.data[adType] && (now - activeAdsCache.lastFetch) < CACHE_LIFETIME) {
       return activeAdsCache.data[adType];
     }
-
     try {
       const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads');
-      // 🚀 HOTFIX: ลบ orderBy ออกเพื่อแก้ Firebase Composite Index Error
-      const q = query(
-        adsRef, 
-        where('status', '==', 'APPROVED'),
-        where('type', '==', adType)
-      );
+      const q = query(adsRef, where('status', '==', 'APPROVED'), where('type', '==', adType));
       const snapshot = await getDocs(q);
       const adsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      // 🚀 ทำการ Sort ใหม่ล่าสุด ฝั่ง Client ทันที
-      adsList.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis() || 0;
-        const timeB = b.createdAt?.toMillis() || 0;
-        return timeB - timeA;
-      });
-
-      // ดึงไปแสดงแค่ 30 รายการล่าสุด
+      adsList.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
       const limitedAds = adsList.slice(0, 30);
 
       activeAdsCache.data[adType] = limitedAds;
       activeAdsCache.lastFetch = now;
-
       return limitedAds;
     } catch (error) {
-      console.error(`❌ [Marketing] Error fetching active ${adType} ads:`, error);
+      console.error(`❌ Error fetching active ${adType}:`, error);
       return []; 
     }
   },
 
-  submitPartnerAd: async (userId, adType, adData, creditCost) => {
-    if (!userId || !adType || !adData || creditCost <= 0) throw new Error("ข้อมูลไม่ครบถ้วน");
+  // 🚀 THE BULLETPROOF FIX: ปรับ โครงสร้าง Payload ให้ตรงกับระบบ Manager Panel (หลังบ้าน) 100%
+  submitPartnerAd: async (userId, adType, adData, creditLimitVal) => {
+    if (!userId || !adType || !adData) throw new Error("ข้อมูลไม่ครบถ้วน");
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const adId = `AD-${adType}-${Date.now()}`;
-        const taskId = `TODO-${adId}`;
+      const batch = writeBatch(db); 
+      const adId = `AD-${adType}-${Date.now()}`;
+      const taskId = `TODO-${adId}`;
+
+      // 1. จัดเตรียม Payload ของโฆษณา
+      const adPayload = {
+        ...adData,
+        type: adType, 
+        ownerId: userId,
+        status: 'pending', 
+        creditLimit: creditLimitVal, 
+        stats: { views: 0, clicks: 0 },
+        createdAt: serverTimestamp()
+      };
+
+      // 2. กำหนดประเภทและชื่อให้ตรงกับ Backend
+      let legacyTaskType = 'AD_APPROVAL';
+      let oldCollectionName = 'partner_ads';
+      let taskTitle = `ตรวจสอบโฆษณา: ${adData.title || 'นามบัตร'}`;
+
+      if (adType === 'PRODUCT_LINK') {
+          legacyTaskType = 'USER_SKU_APPROVAL';
+          oldCollectionName = 'user_sku_ads';
+          taskTitle = `ตรวจสอบสินค้าโปรโมท: ${adData.title}`;
+      } else if (adType === 'BILLBOARD') {
+          legacyTaskType = 'BILLBOARD_APPROVAL';
+          oldCollectionName = 'billboard_ads';
+          taskTitle = `ตรวจสอบแผ่นป้ายโฆษณา: ${adData.title}`;
+      }
+
+      // 🎯 3. สร้าง Todo Payload ที่หน้าตาเหมือนของเก่าเป๊ะๆ (Flat Structure)
+      // ฟิลด์เหล่านี้คือสิ่งที่ตารางหลังบ้านต้องการเพื่อนำไปแสดงผล
+      const todoPayload = {
+        taskId: taskId,
+        type: legacyTaskType,
+        taskType: legacyTaskType, 
+        status: 'pending',
+        priority: 'High',
         
-        let adTitle = adData.businessName || adData.productName || adData.title || 'โฆษณา';
-        await consumeAdCreditWithTransaction(transaction, userId, creditCost, adId, `ซื้อพื้นที่โฆษณา: ${adTitle}`);
+        // 🚨 ฟิลด์บังคับที่ระบบหลังบ้านต้องใช้
+        title: taskTitle,
+        description: `พาร์ทเนอร์ ${adData.partnerName || 'DH Partner'} ฝากโปรโมท (งบ: ${creditLimitVal === -1 ? 'ไม่จำกัด' : creditLimitVal + ' Pts'})`,
+        targetSkuId: adId,    // 🔑 สำคัญมาก: หลังบ้านใช้คีย์นี้เป็น ID เพื่อเปิดดูข้อมูล
+        partnerId: userId,    // 🔑 สำคัญมาก
+        customerName: adData.partnerName || 'พาร์ทเนอร์',
+        
+        // ข้อมูลสำรอง (ส่งไปเผื่อไว้)
+        adDetails: adPayload,
+        skuDetails: adPayload,
+        adPayload: adPayload,
+        
+        requestedAt: serverTimestamp(), // 🔑 สำคัญมาก
+        createdAt: serverTimestamp(),
+        createdBy: userId
+      };
 
-        const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);
-        const adPayload = {
-          ...adData,
-          type: adType, 
-          ownerId: userId,
-          status: 'PENDING', 
-          cost: creditCost,
-          stats: { views: 0, clicks: 0 },
-          createdAt: serverTimestamp()
-        };
-        transaction.set(adRef, adPayload);
+      // 4. เขียนข้อมูลลงตารางโฆษณา
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId), adPayload);
+      if (oldCollectionName !== 'partner_ads') {
+         batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload);
+      }
 
-        const todoRef = doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId);
-        transaction.set(todoRef, {
-          taskId: taskId,
-          taskType: `${adType}_AD_APPROVAL`, 
-          status: 'PENDING',
-          priority: 'NORMAL',
-          customer: { uid: userId },
-          adDetails: adPayload,
-          createdAt: serverTimestamp(),
-          createdBy: userId
-        });
-      });
+      // 5. ส่งงานเข้ากระดานผู้จัดการ (ยิงเข้า manager_todos ที่เดียวกับที่หลังบ้านอ่าน)
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), todoPayload);         
+      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), todoPayload); 
 
-      console.log(`✅ [Marketing] ${adType} Ad requested successfully`);
+      await batch.commit();
+
+      console.log(`✅ [Marketing] ${adType} Ad submitted perfectly matching Manager's schema!`);
       activeAdsCache.lastFetch = 0; 
       return true;
     } catch (error) {
-      console.error(`🔥 [Marketing] ${adType} Ad request failed:`, error.message);
+      console.error(`🔥 [Marketing] ${adType} submit failed:`, error.message);
       throw error;
     }
   },
 
   getUserPartnerAds: async (userId) => {
     try {
-      const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads');
-      // 🚀 HOTFIX: ลบ orderBy ออกเช่นกัน
-      const q = query(adsRef, where('ownerId', '==', userId));
-      const snapshot = await getDocs(q);
-      
-      const adsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      adsList.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis() || 0;
-        const timeB = b.createdAt?.toMillis() || 0;
-        return timeB - timeA;
-      });
+      const p1 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('ownerId', '==', userId)));
+      const p2 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads'), where('ownerId', '==', userId)));
 
-      return adsList;
+      const [s1, s2] = await Promise.all([p1, p2]);
+      
+      const adsList = [
+        ...s1.docs.map(d => ({ id: d.id, ...d.data() })),
+        ...s2.docs.map(d => ({ id: d.id, type: 'PRODUCT_LINK', ...d.data() }))
+      ];
+
+      const uniqueAds = Array.from(new Map(adsList.map(item => [item.id, item])).values());
+      uniqueAds.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      return uniqueAds;
     } catch (error) {
-      console.error("❌ [Marketing] Error fetching user unified ads:", error);
       return [];
     }
   },
 
-  // ==========================================
-  // 📊 3. ฟังก์ชัน Tracking (Anti-Fraud & Batch)
-  // ==========================================
-
   trackAdView: async (collectionName, adId) => {
     if (!adId || !collectionName) return;
     if (!checkAntiFraud('view', adId)) return;
-
     if (!adStatsBuffer[collectionName]) adStatsBuffer[collectionName] = {};
     if (!adStatsBuffer[collectionName][adId]) adStatsBuffer[collectionName][adId] = { views: 0, clicks: 0 };
-    
     adStatsBuffer[collectionName][adId].views += 1;
     startFlushInterval(); 
   },
@@ -235,122 +221,28 @@ export const marketingService = {
   trackAdClick: async (collectionName, adId) => {
     if (!adId || !collectionName) return;
     if (!checkAntiFraud('click', adId)) return;
-
     if (!adStatsBuffer[collectionName]) adStatsBuffer[collectionName] = {};
     if (!adStatsBuffer[collectionName][adId]) adStatsBuffer[collectionName][adId] = { views: 0, clicks: 0 };
-    
     adStatsBuffer[collectionName][adId].clicks += 1;
     startFlushInterval();
     flushAdStatsBatch();
   },
 
-  // ==========================================
-  // ⚠️ ฟังก์ชัน Legacy (เก็บไว้รองรับระบบเก่า)
-  // ==========================================
+  logImpression: async (adId) => {
+    if (!adId) return;
+    const col = String(adId).includes('SKU') ? 'user_sku_ads' : (String(adId).includes('BB') ? 'billboard_ads' : 'partner_ads');
+    return marketingService.trackAdView(col, adId);
+  },
   
-  getActiveBillboardAds: async () => {
-    try {
-      const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'billboard_ads');
-      const q = query(adsRef, where('status', '==', 'APPROVED'));
-      const snapshot = await getDocs(q);
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      list.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      return list.slice(0, 5);
-    } catch (error) {
-      return []; 
-    }
-  },
-
-  getActiveAds: async () => {
-    try {
-      const skuRef = collection(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads');
-      const q = query(skuRef, where('status', '==', 'APPROVED'));
-      const snapshot = await getDocs(q);
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      list.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      return list.slice(0, 20);
-    } catch (error) {
-      return []; 
-    }
-  },
-
-  requestBillboardAd: async (userId, adData, creditCost) => {
-    if (!userId || !adData || creditCost <= 0) throw new Error("ข้อมูลไม่ครบถ้วน");
-    try {
-      await runTransaction(db, async (transaction) => {
-        const adId = `AD-BB-${Date.now()}`;
-        const taskId = `TODO-${adId}`;
-        await consumeAdCreditWithTransaction(transaction, userId, creditCost, adId, `ซื้อป้ายโฆษณา: ${adData.title}`);
-        const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'billboard_ads', adId);
-        const adPayload = { ...adData, ownerId: userId, status: 'PENDING', cost: creditCost, stats: { views: 0, clicks: 0 }, createdAt: serverTimestamp() };
-        transaction.set(adRef, adPayload);
-        const todoRef = doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId);
-        transaction.set(todoRef, { taskId: taskId, taskType: 'BILLBOARD_APPROVAL', status: 'PENDING', priority: 'NORMAL', customer: { uid: userId }, adDetails: adPayload, createdAt: serverTimestamp(), createdBy: userId });
-      });
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  requestUserSkuAd: async (userId, skuData, creditCost) => {
-    if (!userId || !skuData || creditCost <= 0) throw new Error("ข้อมูลไม่ครบถ้วน");
-    try {
-      await runTransaction(db, async (transaction) => {
-        const skuId = `SKU-${Date.now()}`;
-        const taskId = `TODO-${skuId}`;
-        await consumeAdCreditWithTransaction(transaction, userId, creditCost, skuId, `ฝากโปรโมทสินค้า: ${skuData.productName}`);
-        const skuRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads', skuId);
-        const skuPayload = { ...skuData, ownerId: userId, status: 'PENDING', cost: creditCost, stats: { views: 0, clicks: 0 }, createdAt: serverTimestamp() };
-        transaction.set(skuRef, skuPayload);
-        const todoRef = doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId);
-        transaction.set(todoRef, { taskId: taskId, taskType: 'USER_SKU_APPROVAL', status: 'PENDING', priority: 'NORMAL', customer: { uid: userId }, skuDetails: skuPayload, createdAt: serverTimestamp(), createdBy: userId });
-      });
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  getUserBillboards: async (userId) => {
-    try {
-      const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'billboard_ads');
-      const q = query(adsRef, where('ownerId', '==', userId));
-      const snapshot = await getDocs(q);
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      list.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      return list;
-    } catch (error) {
-      return [];
-    }
-  },
-
-  getUserSkuAds: async (userId) => {
-    try {
-      const skuRef = collection(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads');
-      const q = query(skuRef, where('ownerId', '==', userId));
-      const snapshot = await getDocs(q);
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      list.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      return list;
-    } catch (error) {
-      return [];
-    }
+  logClick: async (adId) => {
+    if (!adId) return;
+    const col = String(adId).includes('SKU') ? 'user_sku_ads' : (String(adId).includes('BB') ? 'billboard_ads' : 'partner_ads');
+    return marketingService.trackAdClick(col, adId);
   }
-
 };
 
 export const { 
-  getActiveBillboardAds, 
-  getActiveAds, 
-  requestBillboardAd, 
-  requestUserSkuAd,
-  trackAdView,
-  trackAdClick,
-  getUserBillboards,
-  getUserSkuAds,
-  submitPartnerAd,
-  getActivePartnerAds,
-  getUserPartnerAds,
-  detectPlatform // 🚀 ส่งออกเพื่อให้ ProductAdCard ใช้งานได้
+  detectPlatform, getActivePartnerAds, submitPartnerAd, 
+  getUserPartnerAds, trackAdView, trackAdClick,
+  logImpression, logClick 
 } = marketingService;
