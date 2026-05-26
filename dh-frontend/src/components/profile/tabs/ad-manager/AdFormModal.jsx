@@ -40,7 +40,6 @@ const AdFormModal = ({
           <div className="space-y-3">
             <label className="block text-[11px] font-bold text-slate-500 uppercase">1. เลือกรูปแบบโฆษณา <span className="text-rose-500">*</span></label>
             <div className="grid grid-cols-2 gap-3">
-              {/* 🚀 อัปเกรด: ตัด "นามบัตร" ออกไปแล้ว ย้ายไปอยู่หน้าตั้งค่าร้านค้าแทน */}
               {[
                 { id: 'PRODUCT_LINK', label: 'สินค้าโปรโมท', icon: <ShoppingBag size={20}/>, color: 'emerald' },
                 { id: 'BILLBOARD', label: 'แผ่นป้าย (แบนเนอร์)', icon: <MonitorPlay size={20}/>, color: 'rose' }
@@ -60,20 +59,30 @@ const AdFormModal = ({
           </div>
 
           <div className="space-y-5 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+            
+            {/* 🚀 [HOTFIX แก้บั๊ก]: ปลดล็อกช่องชื่อหัวข้อและคำอธิบาย ให้โชว์ในโหมด BILLBOARD ด้วย จะได้เซฟผ่าน! */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">
+                {formData.type === 'BILLBOARD' ? 'หัวข้อโฆษณา / แคมเปญแบนเนอร์' : 'ชื่อสินค้า'} <span className="text-rose-500">*</span>
+              </label>
+              <input type="text" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} required placeholder={formData.type === 'BILLBOARD' ? 'เช่น โปรโมชั่นซ่อมลด 50% เดือนนี้' : 'เช่น หน้าจอ iPhone 13 แท้'} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" />
+            </div>
+
+            {formData.type === 'BILLBOARD' && (
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">คำอธิบายสั้นๆ (จุดเด่น หรือเงื่อนไข)</label>
+                <input type="text" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} maxLength={60} placeholder="เช่น ลดเฉพาะลูกค้าที่จองผ่านลิงก์นี้เท่านั้น" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" />
+              </div>
+            )}
+
             {formData.type === 'PRODUCT_LINK' && (
-              <>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ชื่อสินค้า <span className="text-rose-500">*</span></label>
-                  <input type="text" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} required className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" />
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ราคาโปรโมชั่น (บาท)</label>
+                <div className="relative">
+                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><Tag size={16}/></div>
+                   <input type="number" value={formData.price || ''} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 text-emerald-600 font-bold" />
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ราคาโปรโมชั่น (บาท)</label>
-                  <div className="relative">
-                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><Tag size={16}/></div>
-                     <input type="number" value={formData.price || ''} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 text-emerald-600 font-bold" />
-                  </div>
-                </div>
-              </>
+              </div>
             )}
 
             {formData.type === 'BILLBOARD' && (
@@ -90,13 +99,13 @@ const AdFormModal = ({
             )}
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ลิงก์ปลายทาง (Website/Shopee/Lazada) <span className="text-rose-500">*</span></label>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ลิงก์ปลายทาง (Website/Shopee/YouTube) <span className="text-rose-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><LinkIcon size={16}/></div>
                 <input 
                   type="text" 
                   value={formData.targetUrl || ''} onChange={handleLinkChange} required 
-                  placeholder="วางลิงก์ Shopee, Lazada ที่นี่..."
+                  placeholder={formData.type === 'BILLBOARD' ? "วางลิงก์วิดีโอ YouTube หรือเว็บร้านค้า" : "วางลิงก์ Shopee, Lazada ที่นี่..."}
                   className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" 
                 />
               </div>

@@ -18,7 +18,8 @@ const appId = typeof window !== "undefined" && typeof window.__app_id !== "undef
 let adStatsBuffer = {}; 
 let flushInterval = null;
 
-let activeAdsCache = { data: {}, lastFetch: 0 };
+// 🚀 HOTFIX: แยก Cache ตามประเภทโฆษณาเพื่อป้องกันการจำค่าทับซ้อนกัน
+let activeAdsCache = { data: {}, lastFetch: {} };
 const CACHE_LIFETIME = 5 * 60 * 1000; 
 
 // 🚀 อัปเกรดขั้นสุด: ยิงยอดวิว + หักเครดิต + เช็คงบประมาณ ใน Batch เดียว!
@@ -116,20 +117,34 @@ export const marketingService = {
 
   getActivePartnerAds: async (adType = 'BUSINESS_CARD') => {
     const now = Date.now();
-    if (activeAdsCache.data[adType] && (now - activeAdsCache.lastFetch) < CACHE_LIFETIME) {
+    const lastFetchTime = activeAdsCache.lastFetch[adType] || 0;
+    
+    // ใช้ Cache ถ้ายังไม่หมดอายุ
+    if (activeAdsCache.data[adType] && (now - lastFetchTime) < CACHE_LIFETIME) {
       return activeAdsCache.data[adType];
     }
+    
     try {
-      const adsRef = collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads');
+      // 🚀 HOTFIX: ชี้เป้าคิวรี่ไปที่ Collection ที่ถูกต้อง เพื่อให้ตรงกับสถานะที่ถูกอัปเดตจากระบบ Backoffice
+      let collectionName = 'partner_ads';
+      if (adType === 'PRODUCT_LINK') collectionName = 'user_sku_ads';
+      if (adType === 'BILLBOARD') collectionName = 'billboard_ads';
+
+      const adsRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
       const q = query(adsRef, where('status', '==', 'APPROVED'), where('type', '==', adType));
       const snapshot = await getDocs(q);
-      const adsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      const adsList = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        _collection: collectionName, // แนบ collection กลับไปให้ trackView หักเครดิตถูกตาราง
+        ...doc.data() 
+      }));
 
       adsList.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      const limitedAds = adsList.slice(0, 30);
+      const limitedAds = adsList.slice(0, 30); // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
 
       activeAdsCache.data[adType] = limitedAds;
-      activeAdsCache.lastFetch = now;
+      activeAdsCache.lastFetch[adType] = now;
       return limitedAds;
     } catch (error) {
       console.error(`❌ Error fetching active ${adType}:`, error);
@@ -199,7 +214,8 @@ export const marketingService = {
       await batch.commit();
 
       console.log(`✅ [Marketing] ${adType} Ad submitted perfectly matching Manager's schema!`);
-      activeAdsCache.lastFetch = 0; 
+      // เคลียร์แคชเพื่อให้โหลดข้อมูลใหม่รอบถัดไป
+      activeAdsCache.lastFetch[adType] = 0; 
       return true;
     } catch (error) {
       console.error(`🔥 [Marketing] ${adType} submit failed:`, error.message);
@@ -207,7 +223,6 @@ export const marketingService = {
     }
   },
 
-  // 🚀 [อัปเกรด] อัปเดต/แก้ไข โฆษณาที่เคยสร้างไว้ และส่งกลับไปให้แอดมินอนุมัติใหม่!
   updatePartnerAd: async (userId, adId, adType, adData, creditLimitVal) => {
     if (!userId || !adId || !adType || !adData) throw new Error("ข้อมูลไม่ครบถ้วน");
 
@@ -219,7 +234,7 @@ export const marketingService = {
         ...adData,
         type: adType, 
         ownerId: userId,
-        status: 'pending', // ถอยสถานะกลับไปรอตรวจสอบใหม่
+        status: 'pending', 
         creditLimit: creditLimitVal, 
         updatedAt: serverTimestamp()
       };
@@ -257,20 +272,18 @@ export const marketingService = {
         createdBy: userId
       };
 
-      // เขียนทับโฆษณา (ใช้ merge เพื่อไม่ให้ยอด view/click หายไป)
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId), adPayload, { merge: true });
       if (oldCollectionName !== 'partner_ads') {
          batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload, { merge: true });
       }
 
-      // ดันงานกลับเข้ากระดาน Manager
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), todoPayload, { merge: true });         
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), todoPayload, { merge: true }); 
 
       await batch.commit();
 
       console.log(`✅ [Marketing] ${adType} Ad updated perfectly!`);
-      activeAdsCache.lastFetch = 0; 
+      activeAdsCache.lastFetch[adType] = 0; 
       return true;
     } catch (error) {
       console.error(`🔥 [Marketing] ${adType} update failed:`, error.message);

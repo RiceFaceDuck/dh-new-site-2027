@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { ChevronRight, ShoppingCart, CheckCircle2, Loader2, Cpu, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,8 +6,8 @@ import { getAuth } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
 
 import ProductAdCard from './ads/ProductAdCard';
-// 🚀 นำเข้าสมองกลจัดการสัดส่วนโฆษณา (10:1 Rule Engine)
-import { useAdInjection } from '../hooks/useAdInjection';
+// 🚀 HOTFIX: แก้ไขการ Import ให้ถูกต้อง (Default Import)
+import useAdInjection from '../hooks/useAdInjection';
 
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
 
@@ -31,9 +31,14 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
   const navigate = useNavigate();
   const [addingState, setAddingState] = useState({}); 
   
-  // 🧠 เรียกใช้งานสมองกลผสมโฆษณาเข้ากับสินค้าอัตโนมัติ
-  // สมองกลจะจัดการแทรกโฆษณาตัวแรกสุด (Index 0) และแทรกทุกๆ 10 ชิ้นให้ทันที
-  const { productsWithAds, loadingAds } = useAdInjection(products);
+  // 🧠 1. เรียกใช้งานสมองกลแทรกโฆษณา (จะดึงสินค้าโปรโมทและนามบัตรมาให้)
+  const { productsWithAds, loadingAds } = useAdInjection(products || []);
+
+  // 🧠 2. ผสานสถานะ Loading ทั้งจากฝั่งสินค้าและฝั่งโฆษณา
+  const isLoading = loading || loadingAds;
+  
+  // 🧠 3. ป้องกันกรณีโฆษณาโหลดไม่ขึ้น ให้มี fallback ไปแสดงสินค้าเพียวๆ ได้
+  const displayProducts = productsWithAds && productsWithAds.length > 0 ? productsWithAds : (products || []);
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation(); 
@@ -105,21 +110,17 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
 
   // 🧠 Core Display Engine: ลูปจาก Array ที่ถูกผสมโฆษณามาแล้ว
   const renderMixedGrid = () => {
-    if (!productsWithAds || productsWithAds.length === 0) return [];
-    
-    return productsWithAds.map((item, index) => {
+    return displayProducts.map((item, index) => {
       // 🟢 ตรวจจับโฆษณา: หากเป็นโฆษณา ให้โยนเข้า Component ProductAdCard
       if (item.isSponsoredAd) {
         return (
-          <ProductAdCard 
-             key={`ad-inject-${item.id || index}-${index}`} 
-             ad={item} 
-             wrapperClassName="col-span-1 h-full animate-in fade-in zoom-in duration-500" 
-          />
+          <div key={`ad-inject-${item.id || index}-${index}`} className="col-span-1 h-full animate-in fade-in zoom-in duration-500">
+            <ProductAdCard ad={item} />
+          </div>
         );
       }
 
-      // 🔵 หากไม่ใช่โฆษณา ให้แสดงเป็นสินค้าปกติ (โครงสร้างเดิม)
+      // 🔵 หากไม่ใช่โฆษณา ให้แสดงเป็นสินค้าปกติ (คงโครงสร้างเดิมของท่านไว้ 100%)
       const product = item;
       const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
       const imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
@@ -232,11 +233,11 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
         </div>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 px-1">
           {[...Array(10)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : products.length === 0 ? ( 
+      ) : displayProducts.length === 0 ? ( 
         <div className="w-full bg-slate-50 border border-slate-200 rounded-sm p-10 flex flex-col items-center justify-center shadow-inner">
            <Cpu size={32} className="text-slate-300 mb-3" />
            <p className="text-slate-500 font-tech uppercase tracking-widest text-xs font-bold">No Products Found</p>
