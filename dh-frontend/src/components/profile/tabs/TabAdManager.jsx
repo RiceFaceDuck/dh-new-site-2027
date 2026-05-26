@@ -4,20 +4,20 @@ import {
   Megaphone, Plus, Search, Loader2, Link as LinkIcon, Image as ImageIcon, 
   CheckCircle2, ShieldAlert, X, Eye, Store, MapPin, Phone, 
   Settings2, Power, AlertCircle, MapPinned, Lock, ExternalLink, Activity,
-  Video, UploadCloud
+  Video, UploadCloud, Sparkles
 } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { driveService } from '../../../firebase/driveService';
-import { consumeAdCredit } from '../../../firebase/creditService'; // 🚀 อัปเกรด: เชื่อมต่อ Service หักแต้มใหม่
+import { marketingService } from '../../../firebase/marketingService'; // 🚀 อัปเกรด: ใช้ Unified Service
 
 // นำเข้า Sub-components
 import AdStatsOverview from './ad-manager/AdStatsOverview';
 import AdListTable from './ad-manager/AdListTable';
 import AdFormModal from './ad-manager/AdFormModal';
 
-// 🛡️ ระบบสแกนข้อมูลขั้นสูง: แปลงค่า undefined เป็น null
+// 🛡️ ระบบสแกนข้อมูลขั้นสูง: แปลงค่า undefined เป็น null ป้องกัน Firestore Error
 const sanitizeData = (obj) => {
   const cleaned = {};
   for (let key in obj) {
@@ -49,16 +49,26 @@ const TabAdManager = () => {
   const [savingStore, setSavingStore] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  // ================= State สำหรับระบบโฆษณาสินค้า =================
+  // ================= State สำหรับระบบ Unified Ads =================
   const [ads, setAds] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [submittingAd, setSubmittingAd] = useState(false);
+  
+  // 🚀 อัปเกรด: State รองรับ 3 ระบบ (นามบัตร, สินค้า, ป้าย)
   const [formData, setFormData] = useState({
-    title: '', description: '', imageUrl: '', targetUrl: '', platform: 'shopee', type: 'product', youtubeUrl: ''
+    type: 'BUSINESS_CARD', // Default: นามบัตร
+    title: '', 
+    description: '', 
+    imageUrl: '', 
+    targetUrl: '', 
+    platform: 'other', 
+    billboardRatio: '16:9', // สำหรับแผ่นป้าย
+    price: '' // สำหรับสินค้า
   });
+  
   const [uploadingImage, setUploadingImage] = useState(false);
   
-  // ระบบงบประมาณ
+  // ระบบงบประมาณ (Budgeting)
   const [creditLimit, setCreditLimit] = useState(100); 
   const COST_PER_IMPRESSION = 1; 
 
@@ -77,15 +87,21 @@ const TabAdManager = () => {
   const targetImpressions = Math.floor((creditLimit || 0) / COST_PER_IMPRESSION);
   const remainingCredit = userCredit - (creditLimit || 0);
 
+  // ดึงข้อมูลเครดิตล่าสุดมาคำนวณงบ
   const fetchUserCredit = async () => {
     try {
       const userRef = doc(db, 'artifacts', appId, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists() && userSnap.data().creditPoint !== undefined) {
-        setUserCredit(Number(userSnap.data().creditPoint) || 0);
-      } else {
-        setUserCredit(0);
+      const walletRef = doc(db, 'artifacts', appId, 'users', user.uid, 'wallet', 'default');
+      
+      const [userSnap, walletSnap] = await Promise.all([getDoc(userRef), getDoc(walletRef)]);
+      
+      let currentPoints = 0;
+      if (walletSnap.exists()) {
+        currentPoints = Number(walletSnap.data().balance) || 0;
+      } else if (userSnap.exists()) {
+        currentPoints = Number(userSnap.data().creditPoints || userSnap.data().creditPoint || 0);
       }
+      setUserCredit(currentPoints);
     } catch (error) {
       console.error("Error fetching credit:", error);
     }
@@ -107,13 +123,8 @@ const TabAdManager = () => {
 
   const fetchMyAds = async () => {
     try {
-      const q = query(
-        collection(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads'),
-        where('userId', '==', user.uid)
-      );
-      const snapshot = await getDocs(q);
-      const myAds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      myAds.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      // 🚀 ดึงข้อมูลด้วย Unified Service
+      const myAds = await marketingService.getUserPartnerAds(user.uid);
       setAds(myAds);
     } catch (error) {
       console.error("Error fetching my ads:", error);
@@ -220,13 +231,14 @@ const TabAdManager = () => {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 5MB");
+      alert("กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 5MB เพื่อประสิทธิภาพสูงสุด");
       return;
     }
 
     setUploadingImage(true);
     try {
-      const url = await driveService.uploadAdImage(file);
+      // 🚀 ส่ง formData.type ไปให้ Drive จัดระเบียบ
+      const url = await driveService.uploadAdImage(file, formData.type);
       setFormData({ ...formData, imageUrl: url });
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -257,73 +269,47 @@ const TabAdManager = () => {
 
     setSubmittingAd(true);
     try {
-      // 1. สร้างเอกสารโฆษณา
-      const baseAdData = sanitizeData({
-        title: formData.title || '',
+      // ทำความสะอาดข้อมูลก่อนส่งให้ Service
+      const adPayload = sanitizeData({
+        title: formData.title,
         description: formData.description || '',
-        imageUrl: formData.imageUrl || '',
-        targetUrl: formData.targetUrl || '', 
-        youtubeUrl: formData.youtubeUrl || '',
+        imageUrl: formData.imageUrl,
+        targetUrl: formData.targetUrl, 
         platform: formData.platform || 'other',
-        type: formData.type || 'product',
-        userId: user?.uid || 'unknown', 
+        billboardRatio: formData.type === 'BILLBOARD' ? formData.billboardRatio : null,
+        price: formData.type === 'PRODUCT_LINK' ? formData.price : null,
         partnerName: storeData?.storeName || user?.displayName || 'พาร์ทเนอร์',
-        status: 'pending',
-        clicks: 0,
-        impressions: 0,
         creditLimit: safeCreditLimit,
-        costPerImpression: COST_PER_IMPRESSION || 1
+        costPerImpression: COST_PER_IMPRESSION
       });
       
-      const adDocRef = await addDoc(
-        collection(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads'), 
-        {
-          ...baseAdData,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }
-      );
-
-      // 2. สร้างรายการ Todo ให้แอดมินอนุมัติ
-      const baseTodoData = sanitizeData({
-        type: 'AD_APPROVAL', 
-        title: `ตรวจสอบโฆษณาใหม่: ${baseAdData.title}`,
-        description: `พาร์ทเนอร์ ${baseAdData.partnerName} ฝากโปรโมทสินค้า (งบประมาณ ${baseAdData.creditLimit} แต้ม)`,
-        status: 'todo',
-        priority: 'High',
-        adId: adDocRef.id,
-        partnerId: user?.uid || 'unknown',
-        customerName: baseAdData.partnerName,
-        adPayload: baseAdData 
-      });
-
-      await addDoc(
-        collection(db, 'artifacts', appId, 'public', 'data', 'todos'), 
-        {
-          ...baseTodoData,
-          createdAt: serverTimestamp(),
-          requestedAt: serverTimestamp()
-        }
-      );
+      // 🚀 เรียกใช้ Unified Service ตัวใหม่! (ทำงานแบบ Atomic Transaction ประหยัด R/W)
+      await marketingService.submitPartnerAd(user.uid, formData.type, adPayload, safeCreditLimit);
 
       alert("สร้างโฆษณาและส่งให้แอดมินตรวจสอบเรียบร้อยแล้ว!");
       setIsFormOpen(false);
-      setFormData({ title: '', description: '', imageUrl: '', targetUrl: '', platform: 'shopee', type: 'product', youtubeUrl: '' });
+      
+      // รีเซ็ตฟอร์ม
+      setFormData({ 
+        type: 'BUSINESS_CARD', title: '', description: '', imageUrl: '', targetUrl: '', platform: 'other', billboardRatio: '16:9', price: ''
+      });
       setCreditLimit(100);
       
+      // ดึงสถิติใหม่
+      fetchUserCredit();
       fetchMyAds();
     } catch (error) {
       console.error("Error submitting ad:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกโฆษณา กรุณาลองใหม่อีกครั้ง (Error: " + error.message + ")");
+      alert("เกิดข้อผิดพลาดในการบันทึกโฆษณา (Error: " + error.message + ")");
     } finally {
       setSubmittingAd(false);
     }
   };
 
   const handleDeleteAd = async (adId) => {
-    if(window.confirm("คุณต้องการลบโฆษณานี้ใช่หรือไม่?")) {
+    if(window.confirm("คุณต้องการลบโฆษณานี้ใช่หรือไม่? (หากลบแล้วจะใช้งานไม่ได้อีก)")) {
       try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sponsored_ads', adId);
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);
         await deleteDoc(docRef);
         fetchMyAds();
       } catch (error) {
@@ -335,40 +321,43 @@ const TabAdManager = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-         <Loader2 size={32} className="animate-spin mb-3 text-[#0870B8]" />
-         <p className="text-sm font-tech">LOADING PARTNER DATA...</p>
+         <Loader2 size={32} className="animate-spin mb-3 text-indigo-500 drop-shadow-md" />
+         <p className="text-sm font-tech tracking-widest uppercase">INITIALIZING AD MANAGER...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative z-10">
       
-      {/* Header & Main Tabs */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
+      {/* Header & Main Tabs (Corporate Premium Style) */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200/60 pb-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <Store className="text-[#0870B8]" size={24} /> ศูนย์ควบคุมพาร์ทเนอร์
+          <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2 tracking-tight">
+            <Megaphone className="text-indigo-600 drop-shadow-sm" size={28} /> ศูนย์จัดการโฆษณา
           </h2>
-          <p className="text-sm text-slate-500 mt-1">จัดการหน้าร้านและการโปรโมทสินค้าของคุณ</p>
+          <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+             <Sparkles size={14} className="text-amber-400"/>
+             จัดการหน้าร้าน, นามบัตร, โปรโมทสินค้า และแผ่นป้าย
+          </p>
         </div>
         
-        <div className="flex bg-slate-100 p-1 rounded-xl">
+        <div className="flex bg-slate-100/80 p-1 rounded-xl shadow-inner border border-slate-200/50">
           <button 
             onClick={() => setActiveSubTab('store')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
-              activeSubTab === 'store' ? 'bg-white text-[#0870B8] shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
+              activeSubTab === 'store' ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             <Settings2 size={16} /> ข้อมูลร้านซ่อม
           </button>
           <button 
             onClick={() => setActiveSubTab('ads')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
-              activeSubTab === 'ads' ? 'bg-white text-[#0870B8] shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
+              activeSubTab === 'ads' ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            <Megaphone size={16} /> โฆษณาสินค้า
+            <Activity size={16} /> โฆษณาทั้งหมด
           </button>
         </div>
       </div>
@@ -377,28 +366,28 @@ const TabAdManager = () => {
           TAB 1: PARTNER STORE (ข้อมูลร้านซ่อม และสวิตช์รับการสนับสนุน)
           ======================================================================= */}
       {activeSubTab === 'store' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-300">
+        <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-300">
           
-          <div className={`p-4 flex items-center justify-between border-b ${
-            storeData.isSupportActive ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-200'
+          <div className={`p-5 flex items-center justify-between border-b transition-colors duration-500 ${
+            storeData.isSupportActive ? 'bg-gradient-to-r from-emerald-50 to-transparent border-emerald-100/50' : 'bg-slate-50 border-slate-200/50'
           }`}>
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                storeData.isSupportActive ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+                storeData.isSupportActive ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-white border border-slate-200 text-slate-400'
               }`}>
-                <Power size={20} />
+                <Power size={24} />
               </div>
               <div>
-                <h3 className={`font-bold ${storeData.isSupportActive ? 'text-emerald-700' : 'text-slate-600'}`}>
-                  {storeData.isSupportActive ? 'กำลังรับการสนับสนุน' : 'ปิดรับการสนับสนุน'}
+                <h3 className={`text-lg font-bold ${storeData.isSupportActive ? 'text-emerald-700' : 'text-slate-600'}`}>
+                  {storeData.isSupportActive ? 'กำลังรับการสนับสนุน (Active)' : 'ปิดรับการสนับสนุน'}
                 </h3>
-                <p className="text-xs text-slate-500 flex items-center gap-1">
-                  Credit Point ปัจจุบัน: <span className="font-bold text-[#0870B8] text-sm">{userCredit.toLocaleString()}</span> Credit
+                <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                  Credit Point ปัจจุบัน: <span className="font-black text-indigo-600 text-sm tracking-wide">{userCredit.toLocaleString()}</span> แต้ม
                 </p>
               </div>
             </div>
 
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex items-center cursor-pointer hover:scale-105 transition-transform">
               <input 
                 type="checkbox" 
                 className="sr-only peer" 
@@ -409,82 +398,79 @@ const TabAdManager = () => {
             </label>
           </div>
 
-          <form onSubmit={handleSaveStore} className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSaveStore} className="p-6 md:p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
-              <div className="space-y-4">
-                <h4 className="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Store size={18} className="text-slate-400"/> ข้อมูลร้านของคุณ
+              <div className="space-y-5">
+                <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <Store size={18} className="text-indigo-500"/> ข้อมูลประจำตัวร้าน
                 </h4>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">ชื่อร้านซ่อม / ชื่อกิจการ <span className="text-rose-500">*</span></label>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">ชื่อร้านซ่อม / ชื่อกิจการ <span className="text-rose-500">*</span></label>
                   <input 
                     type="text" value={storeData.storeName} onChange={(e) => setStoreData({...storeData, storeName: e.target.value})}
                     placeholder="เช่น สมหมาย คอมพิวเตอร์เซอร์วิส" required
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8]"
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium text-slate-700"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">เบอร์โทรศัพท์ติดต่อ <span className="text-rose-500">*</span></label>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">เบอร์โทรศัพท์ติดต่อ <span className="text-rose-500">*</span></label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Phone size={16}/></div>
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><Phone size={18}/></div>
                     <input 
                       type="tel" value={storeData.phone} onChange={(e) => setStoreData({...storeData, phone: e.target.value})}
                       placeholder="08X-XXX-XXXX" required
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8]"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium text-slate-700"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">รายละเอียดบริการ (ย่อๆ)</label>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">รายละเอียดบริการ (ย่อๆ)</label>
                   <textarea 
                     value={storeData.services} onChange={(e) => setStoreData({...storeData, services: e.target.value})}
                     placeholder="เช่น ซ่อมคอม ซ่อมโน้ตบุ๊ก ปรึกษาฟรี บริการนอกสถานที่" rows="3"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8] resize-none"
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium text-slate-700 resize-none"
                   ></textarea>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h4 className="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <MapPinned size={18} className="text-slate-400"/> ตำแหน่งที่ตั้ง (สำคัญมาก)
+              <div className="space-y-5">
+                <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <MapPinned size={18} className="text-indigo-500"/> ตำแหน่งที่ตั้ง (สำคัญมาก)
                 </h4>
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 flex gap-3">
+                <div className="bg-amber-50/80 border border-amber-200/60 rounded-xl p-4 text-sm text-amber-800 flex gap-3 shadow-sm">
                   <AlertCircle className="shrink-0 mt-0.5 text-amber-500" size={18} />
-                  <p>ระบบจำเป็นต้องใช้พิกัด <strong>Latitude / Longitude</strong> เพื่อแสดงร้านของคุณให้กับลูกค้าที่อยู่ในพื้นที่ใกล้เคียง</p>
+                  <p>ระบบจำเป็นต้องใช้พิกัด <strong>Latitude / Longitude</strong> เพื่อโชว์ให้ลูกค้าใกล้เคียงเห็นนามบัตรของคุณ</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">ลิงก์ Google Maps (ถ้ามี)</label>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">ลิงก์ Google Maps (ถ้ามี)</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><MapPin size={16}/></div>
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><MapPin size={18}/></div>
                     <input 
                       type="url" value={storeData.googleMapLink} onChange={(e) => setStoreData({...storeData, googleMapLink: e.target.value})}
                       placeholder="https://maps.app.goo.gl/..."
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#0870B8] focus:ring-1 focus:ring-[#0870B8]"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium text-slate-700"
                     />
                   </div>
                 </div>
                 <div className="pt-2">
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">พิกัด GPS อัตโนมัติ <span className="text-rose-500">*</span></label>
-                  <div className="flex gap-2">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">พิกัด GPS อัตโนมัติ <span className="text-rose-500">*</span></label>
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <input 
                       type="text" value={storeData.latitude ? `${storeData.latitude.toFixed(6)}, ${storeData.longitude.toFixed(6)}` : ''} 
-                      placeholder="ยังไม่มีข้อมูลพิกัด" readOnly
-                      className="flex-1 px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl font-tech text-sm cursor-not-allowed"
+                      placeholder="ยังไม่มีพิกัด" readOnly
+                      className="flex-1 px-4 py-3 bg-slate-100/80 border border-slate-200 text-slate-500 rounded-xl font-tech text-sm cursor-not-allowed text-center sm:text-left"
                     />
                     <button 
                       type="button" 
                       onClick={handleGetLocation}
                       disabled={locationLoading}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl shadow-md transition-colors flex items-center gap-2 whitespace-nowrap text-sm font-bold"
+                      className="px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold active:scale-95"
                     >
                       {locationLoading ? <Loader2 size={16} className="animate-spin"/> : <MapPin size={16}/>}
                       ดึงพิกัดปัจจุบัน
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-2">
-                    * แนะนำให้กดปุ่มนี้เมื่อคุณอยู่ที่ร้านของคุณ เพื่อความแม่นยำสูงสุด
-                  </p>
                 </div>
               </div>
             </div>
@@ -493,10 +479,10 @@ const TabAdManager = () => {
               <button 
                 type="submit" 
                 disabled={savingStore}
-                className="px-8 py-3 bg-[#0870B8] hover:bg-[#0A85DA] text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2"
+                className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2 w-full sm:w-auto justify-center"
               >
                 {savingStore ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle2 size={18}/>}
-                บันทึกข้อมูลร้าน
+                บันทึกข้อมูลร้านค้า
               </button>
             </div>
           </form>
@@ -505,10 +491,10 @@ const TabAdManager = () => {
 
 
       {/* =======================================================================
-          TAB 2: AD MANAGER (โฆษณาสินค้า)
+          TAB 2: AD MANAGER (ระบบจัดการโฆษณาแบบรวมศูนย์ - นามบัตร/สินค้า/ป้าย)
           ======================================================================= */}
       {activeSubTab === 'ads' && (
-        <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="space-y-6 animate-in fade-in duration-300">
           
           {/* ส่วนสถิติและเครดิตคงเหลือ */}
           {!isFormOpen && (
@@ -518,7 +504,7 @@ const TabAdManager = () => {
             />
           )}
 
-          {/* ฟอร์มการสร้างโฆษณาใหม่ */}
+          {/* ฟอร์มการสร้างโฆษณาใหม่ (Dynamic Form) */}
           {isFormOpen && (
             <AdFormModal 
               formData={formData}

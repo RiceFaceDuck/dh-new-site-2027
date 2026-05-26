@@ -1,8 +1,9 @@
+/* eslint-disable */
 import React from 'react';
 import { 
   Store, CreditCard, Package, History, 
   LogOut, Settings, Megaphone, Heart, ShoppingCart, ChevronRight, Loader2,
-  Wallet, Coins, Award
+  Wallet, Coins, Award, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,18 +11,25 @@ import { useNavigate } from 'react-router-dom';
 import { useUserCredit, formatCredit } from '../../firebase/creditService';
 import { useWalletBalance } from '../../firebase/walletService';
 
-const MenuButton = ({ icon, label, active, onClick, badge }) => (
+/**
+ * 🎨 Premium Menu Button Component
+ * อัปเกรด UI: ใช้ Gradient สมูทๆ เวลา Active แทนสีทึบ ให้ความรู้สึกพรีเมียม
+ */
+const MenuButton = ({ icon, label, active, onClick, badge, highlight }) => (
   <button 
     onClick={onClick}
     className={`w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all border-l-[3px] rounded-r-xl mb-1 ${
       active 
-        ? 'bg-indigo-50/80 text-indigo-700 border-indigo-600 shadow-[inset_4px_0_0_rgba(79,70,229,0.1)]' 
+        ? 'bg-gradient-to-r from-indigo-50 to-transparent text-indigo-700 border-indigo-600 shadow-[inset_4px_0_0_rgba(79,70,229,0.1)]' 
         : 'bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-transparent hover:border-slate-300'
     }`}
   >
-    <div className={`flex items-center gap-3 ${active ? 'text-indigo-600' : 'text-slate-400'}`}>
+    <div className={`flex items-center gap-3 ${active ? 'text-indigo-600' : 'text-slate-400'} ${highlight && !active ? 'text-amber-500' : ''}`}>
       {icon} 
-      <span className="mt-0.5 tracking-wide">{label}</span>
+      <span className="mt-0.5 tracking-wide flex items-center gap-2">
+        {label}
+        {highlight && !active && <Sparkles size={12} className="text-amber-400 animate-pulse" />}
+      </span>
     </div>
     <div className="flex items-center gap-2">
       {badge && (
@@ -46,75 +54,76 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
     <div className="space-y-4 md:space-y-6 sticky top-24">
       
       {/* 1. Partner ID Badge (Profile Card Summary) - ดีไซน์ Deep Luxury */}
-      <div className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-5 text-center relative overflow-hidden group">
+      <div className="bg-slate-900 rounded-2xl shadow-xl border border-slate-700/50 p-5 text-center relative overflow-hidden group">
         
-        {/* Background Effects */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-        <div className="absolute -left-10 -top-10 w-32 h-32 bg-slate-500/10 blur-[40px] rounded-full pointer-events-none"></div>
+        {/* ✨ Background Premium Effects */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
+        <div className="absolute -left-10 -top-10 w-32 h-32 bg-slate-400/10 blur-[40px] rounded-full pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
         <div className="relative z-10 flex flex-col items-center">
           {/* Avatar Icon */}
-          <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 p-1 mb-3 flex items-center justify-center relative shadow-inner">
-             {user?.photoURL ? (
+          <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-600 p-1 mb-3 flex items-center justify-center relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
+              {user?.photoURL ? (
                 <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl" />
-             ) : (
+              ) : (
                 <Store size={32} className="text-indigo-400" />
-             )}
+              )}
           </div>
           
-          <h2 className="text-base md:text-lg font-bold text-white tracking-wide truncate w-full px-2">
+          <h2 className="text-base md:text-lg font-bold text-white tracking-wide truncate w-full px-2 drop-shadow-md">
             {user?.storeName || user?.displayName || 'DH Partner'}
           </h2>
-          <p className="text-[10px] text-slate-400 font-mono mt-1 mb-5 uppercase tracking-widest bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+          <p className="text-[10px] text-slate-400 font-mono mt-1 mb-5 uppercase tracking-widest bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700 shadow-sm">
             ID: {user?.uid?.substring(0,8) || 'SYS-ADMIN'}
           </p>
 
-          {/* Partner Stats Grid (คืนค่า Tier, Points, Orders ตามฉบับดั้งเดิม) */}
-          <div className="grid grid-cols-4 gap-1 w-full border-t border-slate-800/80 pt-4">
+          {/* Partner Stats Grid */}
+          <div className="grid grid-cols-4 gap-1 w-full border-t border-slate-700/80 pt-4">
             
             {/* 💎 ระดับ Tier */}
-            <div className="flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center transition-transform hover:scale-105">
               <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Tier</p>
               {creditLoading ? (
                  <Loader2 size={12} className="animate-spin text-slate-400 mx-auto mt-1" />
               ) : (
-                 <p className={`text-[10px] font-bold ${tier?.color ? tier.color.replace('text-', 'text-') : 'text-indigo-400'} uppercase truncate w-full`}>
+                 <p className={`text-[10px] font-bold ${tier?.color ? tier.color.replace('text-', 'text-') : 'text-indigo-400'} uppercase truncate w-full drop-shadow-sm`}>
                    {tier?.name || user?.stats?.level || 'MEMBER'}
                  </p>
               )}
             </div>
 
-            {/* 🪙 เครดิตพอยต์ */}
-            <div className="border-l border-slate-800 px-1 flex flex-col items-center justify-center">
+            {/* 🪙 เครดิตพอยต์ (เน้นให้เด่น) */}
+            <div className="border-l border-slate-700/80 px-1 flex flex-col items-center justify-center transition-transform hover:scale-105">
               <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
                 Points
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_4px_rgba(99,102,241,0.8)]"></span>
               </p>
               {creditLoading ? (
                  <Loader2 size={14} className="animate-spin text-indigo-400 mx-auto mt-1" />
               ) : (
-                 <p className={`text-xs font-black tracking-wider ${balance > 0 ? 'text-indigo-300' : 'text-slate-400'}`}>
+                 <p className={`text-xs font-black tracking-wider ${balance > 0 ? 'text-indigo-300' : 'text-slate-400'} drop-shadow-sm`}>
                    {formatCredit(balance)}
                  </p>
               )}
             </div>
 
-            {/* 🏦 Wallet (เพิ่มเข้ามาให้ครบระบบการเงิน) */}
-            <div className="border-l border-slate-800 px-1 flex flex-col items-center justify-center">
+            {/* 🏦 Wallet */}
+            <div className="border-l border-slate-700/80 px-1 flex flex-col items-center justify-center transition-transform hover:scale-105">
               <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Wallet</p>
               {walletLoading ? (
                  <Loader2 size={14} className="animate-spin text-emerald-400 mx-auto mt-1" />
               ) : (
-                 <p className={`text-xs font-black tracking-wider ${walletBalance > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                 <p className={`text-xs font-black tracking-wider ${walletBalance > 0 ? 'text-emerald-400' : 'text-slate-400'} drop-shadow-sm`}>
                    {formatCredit(walletBalance)}
                  </p>
               )}
             </div>
 
             {/* 📦 ออเดอร์ */}
-            <div className="border-l border-slate-800 px-1 flex flex-col items-center justify-center">
+            <div className="border-l border-slate-700/80 px-1 flex flex-col items-center justify-center transition-transform hover:scale-105">
               <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Orders</p>
-              <p className="text-xs font-bold text-white">
+              <p className="text-xs font-bold text-white drop-shadow-sm">
                 {user?.stats?.totalOrders?.toLocaleString() || 0}
               </p>
             </div>
@@ -123,7 +132,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
         </div>
       </div>
 
-      {/* 2. Control Menu Navigation (คืนค่าเมนูเดิมให้ครบ 100%) */}
+      {/* 2. Control Menu Navigation */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col">
         <MenuButton 
           icon={<Store size={18} strokeWidth={2.5} />} 
@@ -138,18 +147,20 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
           onClick={() => setActiveTab('wallet')} 
           badge={pendingWithdrawal > 0}
         />
-        <MenuButton 
-          icon={<Package size={18} strokeWidth={2.5} />} 
-          label="My SKU" 
-          active={activeTab === 'usersku'} 
-          onClick={() => setActiveTab('usersku')} 
-        />
+        
+        {/* 🗑️ [REMOVED]: เมนู My SKU (usersku) ถูกลบออกอย่างถาวรตามแผน Phase 2
+          ย้ายการจัดการสินค้าไปรวมที่ Ads & Marketing (Unified Architecture) 
+        */}
+
+        {/* 🚀 [UPGRADED]: เปลี่ยนชื่อเป็น Ads & Marketing เพื่อให้ครอบคลุม 3 ระบบ */}
         <MenuButton 
           icon={<Megaphone size={18} strokeWidth={2.5} />} 
-          label="Ad Manager" 
+          label="Ads & Marketing" 
           active={activeTab === 'ads'} 
           onClick={() => setActiveTab('ads')} 
+          highlight={true} // เพิ่มประกายวิ้งๆ ให้ดึงดูดสายตา Partner
         />
+
         <MenuButton 
           icon={<History size={18} strokeWidth={2.5} />} 
           label="Order History" 

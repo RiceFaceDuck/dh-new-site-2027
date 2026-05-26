@@ -129,7 +129,7 @@ export const useUserCredit = (userId) => {
 };
 
 // ==========================================
-// 📜 History & Management Services (อัปเกรด Pagination!)
+// 📜 History & Management Services 
 // ==========================================
 
 export const getWalletBalance = async (userId) => {
@@ -145,13 +145,6 @@ export const getWalletBalance = async (userId) => {
   }
 };
 
-/**
- * ⚡ อัปเกรด: ระบบโหลดประวัติแบบ Pagination ประหยัด Reads
- * @param {string} userId - ไอดีผู้ใช้งาน
- * @param {object} lastDoc - Document อ้างอิงจากรอบก่อนหน้า (สำหรับทำหน้าถัดไป)
- * @param {number} pageSize - จำนวนรายการต่อหน้า
- * @param {boolean} forceRefresh - บังคับโหลดใหม่ข้าม Cache
- */
 export const getCreditHistory = async (userId, lastDoc = null, pageSize = 10, forceRefresh = false) => {
   if (!userId) return { logs: [], lastDoc: null, hasMore: false };
 
@@ -170,10 +163,8 @@ export const getCreditHistory = async (userId, lastDoc = null, pageSize = 10, fo
     let q;
 
     if (lastDoc) {
-      // โหลดหน้าถัดไป
       q = query(historyRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
     } else {
-      // โหลดหน้าแรก
       q = query(historyRef, orderBy('createdAt', 'desc'), limit(pageSize));
     }
 
@@ -200,10 +191,7 @@ export const getCreditHistory = async (userId, lastDoc = null, pageSize = 10, fo
     return result;
   } catch (error) {
     console.error("❌ [CreditService] Error fetching credit history:", error);
-    
-    // Fallback: ถ้า Error ให้ลองส่งแคชเก่าให้ถ้ามี
     if (!lastDoc && historyCache[cacheKey]) return historyCache[cacheKey].data;
-    
     throw error;
   }
 };
@@ -276,9 +264,7 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       });
     });
 
-    // 🧹 ล้างแคชประวัติทันทีเมื่อได้เงิน เพื่อให้ผู้ใช้เห็นรายการใหม่
     invalidateCreditHistoryCache(userId);
-
     return true;
   } catch (error) {
     console.error("🔥 System Error [handlePaymentCompletion]:", error);
@@ -337,9 +323,7 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
       });
     });
 
-    // 🧹 ล้างแคชเมื่อพาร์ทเนอร์เสียค่าธรรมเนียม
     invalidateCreditHistoryCache(partnerId);
-
     return true;
   } catch (error) {
     console.error("🔥 Error in deductPartnerCredit:", error);
@@ -348,9 +332,42 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
 };
 
 // ==========================================
-// 🚀 Ad & Marketing Credit Core 
+// 🚀 NEW: Ad & Marketing Credit Core (Unified Architecture)
 // ==========================================
 
+/**
+ * ⚡ [NEW] ฟังก์ชันตรวจสอบเครดิตล่วงหน้าอย่างรวดเร็ว (Pre-Validation)
+ * ป้องกันผู้ใช้งานที่ไม่มีเครดิตพยายามกรอกข้อมูลโฆษณา
+ */
+export const checkAdCreditSufficiency = async (userId, requiredAmount) => {
+  if (!userId || requiredAmount <= 0) return false;
+  try {
+    const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
+    const userRef = doc(db, 'artifacts', appId, 'users', userId);
+    
+    // ลองเช็คจาก wallet ก่อน
+    const walletSnap = await getDoc(walletRef);
+    if (walletSnap.exists()) {
+      return (Number(walletSnap.data().balance) || 0) >= requiredAmount;
+    }
+    
+    // ถ้าไม่มีให้เช็คจาก profile
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      return (Number(userSnap.data().creditPoints || userSnap.data().creditPoint || 0)) >= requiredAmount;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("🔥 Error pre-validating ad credit:", error);
+    return false;
+  }
+};
+
+/**
+ * 🔒 [UPGRADE] ฟังก์ชันหักเครดิตสำหรับโฆษณาแบบ Atomic Transaction (แม่นยำ 100%)
+ * เพิ่ม Category และ Module เพื่อให้ประวัติแสดงผลได้สวยงาม
+ */
 export const consumeAdCreditWithTransaction = async (transaction, userId, amount, referenceId = null, adTitle = null) => {
   const userRef = doc(db, 'artifacts', appId, 'users', userId);
   const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
@@ -374,11 +391,14 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     throw new Error("ระบบไม่พบข้อมูลกระเป๋าเงินของคุณ");
   }
 
-  if (currentPoints < amount) throw new Error("Credit Point ของคุณไม่เพียงพอ กรุณาเติมแต้มก่อนทำการโปรโมท");
+  if (currentPoints < amount) {
+    throw new Error(`Credit Point ของคุณไม่เพียงพอ (ต้องการ ${amount} แต้ม) กรุณาเติมเครดิตก่อนทำรายการ`);
+  }
 
   const newBalance = currentPoints - amount;
-  const noteDisplay = adTitle ? `หักแต้มสำหรับโปรโมท: ${adTitle}` : 'หักแต้มสำหรับการฝากโฆษณาสินค้า';
+  const noteDisplay = adTitle ? `หักแต้มสำหรับโปรโมท: ${adTitle}` : 'หักแต้มสำหรับการฝากโฆษณา';
 
+  // 1. ตัดเงิน
   if (isWalletExist) {
     transaction.update(walletRef, {
       balance: increment(-amount),
@@ -392,6 +412,7 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     });
   }
 
+  // 2. ตัดเงินสำรอง (Legacy support)
   if (userDoc.exists()) {
     transaction.update(userRef, {
       creditPoints: increment(-amount),
@@ -400,10 +421,13 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     });
   }
 
+  // 3. สร้าง Log ข้อมูลที่หรูหราและระบุหมวดหมู่ชัดเจน
   const txData = {
-    transactionId: `TX-AD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    transactionId: `TX-ADS-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
     uid: userId,
     type: 'spend',
+    category: 'ads', // 🏷️ ระบุหมวดหมู่เป็น ads ชัดเจน
+    module: 'partner_support', 
     amount: amount,
     balanceAfter: newBalance,
     referenceId: referenceId,
@@ -413,7 +437,6 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   };
 
   transaction.set(txRef, txData);
-  
   transaction.set(historyRef, {
     ...txData,
     createdAt: serverTimestamp()
@@ -430,7 +453,7 @@ export const consumeAdCredit = async (userId, amount, referenceId = null, adTitl
       await consumeAdCreditWithTransaction(transaction, userId, amount, referenceId, adTitle);
     });
     
-    // 🧹 ล้างแคชประวัติเพราะเงินออก
+    // 🧹 ล้างแคชประวัติเพราะเงินออก (Trigger UI Update ทันที)
     invalidateCreditHistoryCache(userId);
 
     return true;
@@ -460,11 +483,11 @@ export const trackAdClick = async (partnerId) => {
 };
 
 export const holdAdCredit = async (userId, amount, adTitle) => {
-  console.log(`[Legacy Bypass] ข้ามการกันเครดิต ${amount} Pts (ระบบใหม่สร้างฟรี)`);
+  console.log(`[Legacy Bypass] ข้ามการกันเครดิต ${amount} Pts (ระบบใหม่สร้างโฆษณาฟรีก่อน ค่อยเก็บเงินตอนแสดงผลจริง)`);
   return true; 
 };
 
 export const refundAdCredit = async (userId, amount, adTitle) => {
-  console.log(`[Legacy Bypass] ข้ามการคืนเครดิต ${amount} Pts (เพราะไม่ได้หักแต่แรก)`);
+  console.log(`[Legacy Bypass] ข้ามการคืนเครดิต ${amount} Pts (เพราะไม่ได้หักตอนแรก)`);
   return true;
 };

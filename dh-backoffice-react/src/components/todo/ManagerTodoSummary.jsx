@@ -1,112 +1,91 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { Megaphone, ArrowRight, Loader2, CheckCircle2, ShieldAlert, Activity } from 'lucide-react';
 
-// 🛠️ แก้ไข Path นำเข้า db ถอยกลับ 2 ระดับ (../../) ไปที่ src/firebase/config
-import { db } from '../../firebase/config';
-import { Megaphone, ArrowRight, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-
-// 🔐 ดึงสิทธิ์การเข้าถึงรหัส Sandbox App ID
-const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
+// 🚀 นำเข้า Hook อัจฉริยะที่เพิ่งสร้างใน Phase 3 เพื่อป้องกันการ Query ซ้ำซ้อน
+import { useManagerTodo } from '../../pages/todo/hooks/useManagerTodo';
 
 export default function ManagerTodoSummary() {
-  const [pendingCount, setPendingCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // 💡 อ้างอิงไปยัง Collection manager_todos (แยกขาดจาก todos ส่วนกลาง)
-    const todosRef = collection(db, 'artifacts', appId, 'public', 'data', 'manager_todos');
-    
-    // ดึงเฉพาะงานที่เป็นการขออนุมัติโฆษณา และสถานะรอตรวจสอบ
-    const q = query(
-      todosRef, 
-      where('type', '==', 'USER_SKU_APPROVAL'),
-      where('status', '==', 'pending')
-    );
-
-    // 🚀 ใช้ onSnapshot เพื่อให้ตัวเลขเด้งอัปเดตแบบ Real-time ทันทีที่มี User ส่งคำขอ
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setPendingCount(snapshot.size);
-      setLoading(false);
-    }, (error) => {
-      console.error("❌ Error fetching manager todos:", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // 📥 ใช้ State ส่วนกลางที่ประมวลผลไว้แล้ว (ลดการอ่าน Firebase R/W 100%)
+  const { stats, loading } = useManagerTodo();
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center min-h-[140px]">
-        <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+      <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center min-h-[160px]">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-3" />
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Scanning Tasks...</span>
       </div>
     );
   }
 
+  // ดึงสถิติรวมของโฆษณาทั้ง 3 ระบบ (นามบัตร, สินค้า, ป้าย) ที่รออนุมัติ
+  const pendingCount = stats?.pendingAds || 0;
   const hasPending = pendingCount > 0;
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl p-6 border transition-all duration-300 ${
+    <div className={`relative overflow-hidden rounded-3xl p-6 lg:p-8 border transition-all duration-500 group ${
       hasPending 
-        ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-md shadow-blue-100/50 hover:shadow-lg' 
-        : 'bg-white border-gray-100 shadow-sm'
+        ? 'bg-gradient-to-br from-white via-indigo-50/30 to-rose-50/30 border-indigo-200/60 shadow-xl shadow-indigo-900/5 hover:shadow-2xl hover:shadow-indigo-900/10 hover:-translate-y-1' 
+        : 'bg-white border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300'
     }`}>
       
-      {/* Background Decoration */}
-      {hasPending && (
-        <div className="absolute -right-6 -top-6 text-blue-500/10 rotate-12 pointer-events-none">
-          <Megaphone size={120} />
-        </div>
-      )}
+      {/* ✨ Premium Background Decorative Elements */}
+      <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl pointer-events-none transition-all duration-700 ${hasPending ? 'bg-rose-400/10 group-hover:bg-rose-400/20' : 'bg-slate-200/20'}`}></div>
+      <div className={`absolute -bottom-10 -left-10 w-40 h-40 rounded-full blur-3xl pointer-events-none transition-all duration-700 ${hasPending ? 'bg-indigo-400/10 group-hover:bg-indigo-400/20' : 'bg-slate-200/20'}`}></div>
 
-      <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+      <div className="relative z-10 flex flex-col h-full justify-between gap-5">
         
-        {/* Header */}
+        {/* Header Section */}
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`p-2 rounded-lg ${hasPending ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-              <Megaphone size={20} />
+          <div className="flex items-center gap-3">
+            <div className={`p-3 rounded-2xl shadow-sm ${hasPending ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              {hasPending ? <Megaphone size={22} className={hasPending ? 'animate-pulse' : ''} /> : <CheckCircle2 size={22} />}
             </div>
-            <h3 className="font-bold text-gray-800 tracking-tight">คำขอลงโฆษณาสินค้า</h3>
+            <div>
+              <h3 className="font-black text-slate-800 tracking-tight text-lg">ด่านตรวจโฆษณา</h3>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 mt-0.5">
+                <ShieldAlert size={12}/> Quality Control
+              </p>
+            </div>
           </div>
           
-          {/* Status Indicator */}
-          {hasPending ? (
-            <span className="flex h-3 w-3 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
-            </span>
-          ) : (
-            <CheckCircle2 size={18} className="text-emerald-500" />
+          {/* Status Indicator Badge */}
+          {hasPending && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full border border-rose-200 shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              </span>
+              <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest mt-0.5">Action Required</span>
+            </div>
           )}
         </div>
 
-        {/* Content */}
-        <div>
+        {/* Content & Numbers */}
+        <div className="mt-2">
           <div className="flex items-baseline gap-2">
-            <span className={`text-4xl font-black font-tech tracking-tighter ${hasPending ? 'text-blue-700' : 'text-gray-400'}`}>
+            <span className={`text-5xl font-black tracking-tighter ${hasPending ? 'text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-rose-500 drop-shadow-sm' : 'text-slate-300'}`}>
               {pendingCount}
             </span>
-            <span className="text-sm font-medium text-gray-500">รายการ</span>
+            <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">รายการ</span>
           </div>
-          <p className={`text-xs mt-1 font-medium ${hasPending ? 'text-blue-600/80' : 'text-gray-400'}`}>
-            {hasPending ? 'รอการตรวจสอบและอนุมัติจากคุณ' : 'ไม่มีคำขอโฆษณาใหม่ในขณะนี้'}
+          <p className={`text-xs mt-2 font-medium flex items-center gap-1.5 ${hasPending ? 'text-indigo-600/80' : 'text-slate-400'}`}>
+            {hasPending ? <><Activity size={14}/> มีโฆษณาใหม่รอการตรวจสอบและอนุมัติ</> : 'ตรวจสอบโฆษณาทั้งหมดครบถ้วนแล้ว'}
           </p>
         </div>
 
         {/* Action Button */}
         <Link 
-          to="/managers/ads" 
-          className={`mt-2 flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold transition-all group ${
+          to="/todo" // 🚀 อัปเดตชี้ไปที่ศูนย์รวมงาน (To-do) ของผู้จัดการ
+          className={`mt-4 flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm font-bold transition-all group w-full sm:w-auto ${
             hasPending 
-              ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20' 
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+              ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-md hover:shadow-lg' 
+              : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
           }`}
         >
-          <span>ไปหน้าจัดการโฆษณา</span>
-          <ArrowRight size={16} className={`transition-transform ${hasPending ? 'group-hover:translate-x-1' : ''}`} />
+          <span>{hasPending ? 'เปิดด่านตรวจสอบ' : 'ดูประวัติการอนุมัติ'}</span>
+          <ArrowRight size={18} className={`transition-transform ${hasPending ? 'group-hover:translate-x-1' : ''}`} />
         </Link>
         
       </div>
