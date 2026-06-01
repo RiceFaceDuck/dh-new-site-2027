@@ -258,62 +258,13 @@ export default function WalletManagement() {
 
         setIsSubmitting(true);
         try {
-            await runTransaction(db, async (transaction) => {
-                const userRef = doc(db, 'artifacts', appId, 'users', selectedUser.id);
-                const userSnap = await transaction.get(userRef);
-                
-                if (!userSnap.exists()) throw new Error("ไม่พบข้อมูลลูกค้า");
-                
-                const currentBalance = Number(userSnap.data().walletBalance || 0);
-                let newBalance = currentBalance;
-
-                if (adjType === 'deduct' || adjType === 'cash_withdrawal') {
-                    if (currentBalance < amount) throw new Error("ยอดเงินไม่พอให้หัก");
-                    newBalance -= amount;
-                } else {
-                    newBalance += amount;
-                }
-
-                // 🌟 FIX: Dual-Sync Support for Wallet
-                // เราทำการอัปเดตไปที่ root user (ระบบเก่า) ควบคู่ไปกับ sandbox (ระบบใหม่) ด้วย เพื่อป้องกัน data desync
-                const rootUserRef = doc(db, 'users', selectedUser.id);
-                const rootUserSnap = await transaction.get(rootUserRef);
-                
-                transaction.update(userRef, {
-                    walletBalance: newBalance,
-                    updatedAt: serverTimestamp()
-                });
-                
-                if (rootUserSnap.exists()) {
-                    transaction.update(rootUserRef, {
-                        walletBalance: newBalance,
-                        updatedAt: serverTimestamp()
-                    });
-                }
-
-                const txRef = doc(collection(db, 'artifacts', appId, 'users', selectedUser.id, 'wallet_transactions'));
-                transaction.set(txRef, {
-                    transactionId: `MANUAL-${Date.now()}`,
-                    type: adjType === 'deposit' ? 'deposit' : adjType === 'cash_withdrawal' ? 'cash_withdrawal' : 'spend',
-                    amount: amount,
-                    status: 'SUCCESS',
-                    balanceAfter: newBalance,
-                    note: adjNote,
-                    adminId: auth.currentUser?.uid || 'Admin',
-                    timestamp: serverTimestamp()
-                });
-                
-                // เก็บลงส่วนกลางด้วย
-                const globalTxRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
-                transaction.set(globalTxRef, {
-                    transactionId: `MANUAL-${Date.now()}`,
-                    uid: selectedUser.id,
-                    type: adjType === 'deposit' ? 'deposit' : 'spend',
-                    amount: amount,
-                    note: `[Wallet] ${adjNote}`,
-                    timestamp: serverTimestamp()
-                });
-            });
+            await creditService.adjustUserCredit(
+                selectedUser.id, 
+                amount, 
+                adjType === 'deposit' ? 'deposit' : 'deduct', 
+                `[Wallet] ${adjNote}`, 
+                auth.currentUser?.uid || 'Admin'
+            );
 
             showNotification(`✅ ทำรายการสำเร็จ`);
             setIsModalOpen(false);

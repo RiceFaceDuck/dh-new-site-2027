@@ -175,6 +175,7 @@ export const creditService = {
         const syncPayload = {
           creditPoints: newWalletBalance,  // รองรับ Field ของหน้าเว็บใหม่
           creditPoint: newWalletBalance,   // รองรับ Field ของหน้าเว็บเก่า
+          walletBalance: newWalletBalance,
           partnerCredit: newWalletBalance, // เผื่อระบบพาร์ทเนอร์
           stats: { creditBalance: newWalletBalance },
           updatedAt: serverTimestamp()
