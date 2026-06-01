@@ -158,11 +158,13 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
         throw new Error("ยอดเงินค้างในระบบไม่เพียงพอต่อการถอน");
       }
 
+      const newBalance = currentBalance - amount;
+
       const txId = `WD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
       // 2. ล็อกยอดเงินทันที! หักจาก walletBalance ไปไว้ที่ pendingWithdrawal
       transaction.update(userRef, {
-        walletBalance: increment(-amount),
+        walletBalance: newBalance,
         pendingWithdrawal: increment(amount),
         updatedAt: serverTimestamp()
       });
