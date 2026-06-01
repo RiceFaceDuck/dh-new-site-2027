@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Search, Receipt, Undo2, 
   CheckSquare, History, Image as ImageIcon, 
   Boxes, Users, Settings, LogOut, Sun, Moon,
-  UserCog, Megaphone, CreditCard, ShieldCheck // ✨ เพิ่ม ShieldCheck เข้ามาเพื่อแก้ Error
+  UserCog, Megaphone, CreditCard, ShieldCheck 
 } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { signOut, onAuthStateChanged } from 'firebase/auth'; 
@@ -349,7 +349,8 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-slate-900/50 transition-colors duration-200 relative">
+      {/* 🛠️ แก้ไข: เปลี่ยน overflow-hidden เป็น overflow-y-auto overflow-x-hidden และเติม scroll-smooth */}
+      <main className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden bg-slate-50/50 dark:bg-slate-900/50 transition-colors duration-200 relative scroll-smooth custom-scrollbar">
         {/* Background Gradients for Depth */}
         <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-50/50 to-transparent dark:from-blue-900/10 dark:to-transparent pointer-events-none -z-10"></div>
         <Outlet />

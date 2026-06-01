@@ -59,33 +59,37 @@ export default function CreditDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
+    // 🛠️ แก้ไข: เพิ่ม h-full และ flex-col ให้เต็มจอพอดี ไม่ดันทะลุ
+    <div className="h-full flex flex-col max-w-7xl mx-auto space-y-6 pb-6 animate-in fade-in duration-500">
       
       {/* ==========================================
-          1. Header Section (Executive Theme)
+          1. Header Section (Enterprise Premium Theme)
       ========================================== */}
-      <div className="bg-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-slate-800">
+      <div className="shrink-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-slate-700/50">
         {/* Abstract Background Effects */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl translate-y-1/2 pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none transition-all duration-700"></div>
+        <div className="absolute bottom-0 left-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl translate-y-1/3 pointer-events-none transition-all duration-700"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
         
         <div className="relative z-10">
-          <h1 className="text-2xl font-black text-white flex items-center gap-3 tracking-wide">
-            <ShieldCheck className="w-8 h-8 text-indigo-400" />
+          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 flex items-center gap-3 tracking-wide drop-shadow-sm">
+            <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30 shadow-inner">
+              <ShieldCheck className="w-6 h-6 text-indigo-400" />
+            </div>
             Credit Core Engine
           </h1>
-          <p className="text-sm text-slate-400 mt-1.5 flex items-center gap-2 font-medium">
-            <Server className="w-4 h-4" /> ศูนย์ปฏิบัติการและควบคุมระบบการเงินกองกลาง (System Ledger)
+          <p className="text-sm text-slate-400 mt-2 flex items-center gap-2 font-medium tracking-wide">
+            <Server className="w-4 h-4 text-slate-500" /> ศูนย์ปฏิบัติการและควบคุมระบบการเงินกองกลาง (System Ledger)
           </p>
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-bold text-xs uppercase tracking-wider ${
-            healthStatus === 'healthy' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
-            healthStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' :
-            'bg-rose-500/10 border-rose-500/30 text-rose-400'
+          <div className={`px-4 py-2.5 rounded-xl border backdrop-blur-md flex items-center gap-2 font-bold text-xs uppercase tracking-wider shadow-lg transition-all duration-300 ${
+            healthStatus === 'healthy' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/5' :
+            healthStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-amber-500/5' :
+            'bg-rose-500/10 border-rose-500/30 text-rose-400 shadow-rose-500/5'
           }`}>
-            <Activity className="w-4 h-4" />
+            <Activity className={`w-4 h-4 ${healthStatus === 'healthy' ? 'animate-pulse' : ''}`} />
             {healthStatus === 'healthy' ? 'System Optimal' : healthStatus === 'warning' ? 'Warning' : 'Critical'}
           </div>
         </div>
@@ -94,35 +98,39 @@ export default function CreditDashboard() {
       {/* ==========================================
           2. Ledger Statistics (ตัวเลขกองกลาง)
       ========================================== */}
-      <div className="relative z-20">
+      <div className="shrink-0 relative z-20">
         <LedgerStatsCards stats={ledgerStats} isLoading={isStatsLoading} />
       </div>
 
       {/* ==========================================
           3. Main Dashboard Content (Grid Layout)
       ========================================== */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      {/* 🛠️ แก้ไข: ใส่ flex-1 min-h-0 เพื่อบังคับให้ Scroll อยู่ภายในกล่อง Grid */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-6">
         
         {/* Left Column: Operations & Tabs (8 cols) */}
-        <div className="xl:col-span-8 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+        {/* 🛠️ แก้ไข: ใส่ h-full และ flex-col ให้ตู้ฝั่งซ้าย */}
+        <div className="xl:col-span-8 flex flex-col bg-white rounded-2xl shadow-md border border-slate-200/80 overflow-hidden h-full">
           
           <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
           
-          <div className="p-6 bg-slate-50/30 flex-1 relative min-h-[500px]">
+          {/* 🛠️ แก้ไข: เปลี่ยน p-6 เป็นกล่องที่รองรับ overflow-y-auto เพื่อให้ตารางหรือเนื้อหาข้างในเลื่อนได้เอง */}
+          <div className="p-0 sm:p-6 bg-slate-50/50 flex-1 relative overflow-y-auto scroll-smooth">
+            
             {/* Global Notification Toast */}
             {notification && (
-              <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-lg border flex items-center gap-3 text-sm font-bold tracking-wide animate-in slide-in-from-top-4 fade-in duration-300 ${
+              <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl shadow-2xl border flex items-center gap-3 text-sm font-bold tracking-wide animate-in slide-in-from-top-4 fade-in duration-300 backdrop-blur-md ${
                 notification.type === 'success' 
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-                  : 'bg-rose-50 border-rose-200 text-rose-800'
+                  ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800' 
+                  : 'bg-rose-50/90 border-rose-200 text-rose-800'
               }`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5 text-rose-600" />}
                 {notification.msg}
               </div>
             )}
 
-            {/* Tab Contents */}
-            <div className={`transition-opacity duration-300 ${isSubmitting ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            {/* Tab Contents - ใส่ div ครอบเพิ่ม padding ให้มือถือถ้าตั้ง p-0 ด้านบน */}
+            <div className={`p-4 sm:p-0 transition-all duration-300 h-full ${isSubmitting ? 'opacity-40 scale-[0.99] pointer-events-none' : 'opacity-100 scale-100'}`}>
               {activeTab === 'adjust' && (
                 <CreditAdjustTab 
                   onSubmitTransaction={handleSubmitTransaction} 
@@ -134,12 +142,15 @@ export default function CreditDashboard() {
               {activeTab === 'settings' && <CreditSettingsTab />}
             </div>
 
-            {/* Loading Overlay during submit */}
+            {/* Loading Overlay during submit - Enterprise Style */}
             {isSubmitting && (
-              <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-b-2xl">
-                <div className="flex flex-col items-center gap-3 bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-                  <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                  <span className="text-sm font-bold text-slate-700">กำลังประมวลผลธุรกรรมทางการเงิน...</span>
+              <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/40 backdrop-blur-sm rounded-b-2xl">
+                <div className="flex flex-col items-center gap-4 bg-white/90 p-8 rounded-3xl shadow-2xl border border-slate-100/50 backdrop-blur-md">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-indigo-500 rounded-full blur animate-ping opacity-20"></div>
+                    <Loader2 className="w-10 h-10 text-indigo-600 animate-spin relative z-10" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-700 tracking-wider">กำลังประมวลผลธุรกรรมทางการเงิน...</span>
                 </div>
               </div>
             )}
@@ -147,7 +158,8 @@ export default function CreditDashboard() {
         </div>
 
         {/* Right Column: System Health & Security (4 cols) */}
-        <div className="xl:col-span-4 flex flex-col gap-6">
+        {/* 🛠️ แก้ไข: ใส่ sticky เพื่อให้เลื่อนตามหน้าจอเมื่อพื้นที่ข้างในยาวเกิน */}
+        <div className="xl:col-span-4 flex flex-col gap-6 sticky top-6 h-fit">
           <SystemHealthPanel 
             healthStatus={healthStatus}
             isCheckingHealth={isCheckingHealth}

@@ -43,7 +43,7 @@ export const creditService = {
 
   getCreditSettings: async () => {
     try {
-      // 🛠️ FIX: ปรับ Path เป็น 6 ระดับ (settings, credit_config) ป้องกัน Firebase Crash
+      // 🛠️ ปรับ Path เป็น 6 ระดับ (settings, credit_config) ป้องกัน Firebase Crash
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
       const docSnap = await getDoc(docRef);
       
@@ -69,7 +69,6 @@ export const creditService = {
 
   updateCreditSettings: async (settingsData, uid) => {
     try {
-      // 🛠️ FIX: ปรับ Path เป็น 6 ระดับ
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
       const payload = { ...settingsData, updatedAt: serverTimestamp(), updatedBy: uid || 'Admin' };
       await setDoc(docRef, payload, { merge: true });
@@ -85,13 +84,28 @@ export const creditService = {
   },
 
   /**
-   * ✨ Atomic Dual-Sync Credit Adjustment (SECURED)
+   * ✨ Atomic Dual-Sync Credit Adjustment (SECURED & FINANCIAL GRADE)
+   * อัปเกรดระบบเพื่อความแม่นยำสูงสุดระดับธุรกรรมการเงิน
    */
   adjustUserCredit: async (uid, amount, type, note, actorUid, referenceId = null) => {
     try {
+      // 🛡️ Security Checks: คัดกรองข้อมูลตั้งแต่ต้นทาง
+      if (!uid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
+      
+      const numAmount = Number(amount);
+      if (isNaN(numAmount) || numAmount <= 0) {
+        throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตไม่ถูกต้อง ต้องมากกว่า 0");
+      }
+      if (numAmount > 10000000) {
+        throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตเกินเพดานสูงสุดที่กำหนดต่อครั้ง (Anti-Fraud Lock)");
+      }
+
+      // 🧮 Financial Math: จัดการทศนิยม 2 ตำแหน่งให้เป๊ะที่สุด ป้องกัน JS Float Error
+      const safeAmount = Math.round(numAmount * 100) / 100;
+
       let transactionId = null;
       await runTransaction(db, async (transaction) => {
-        // 🛠️ FIX: ปรับ Path เป็น 6 ระดับ
+        
         const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
         
         // 🔗 References สำหรับ Dual-Sync
@@ -99,12 +113,13 @@ export const creditService = {
         const rootUserRef = doc(db, 'users', uid); // Root (ระบบดั้งเดิม หน้าเว็บหลัก)
         const walletRef = doc(db, 'artifacts', appId, 'users', uid, 'wallet', 'default');
         
+        // 🚧 Idempotency Check: ตรวจสอบการทำรายการซ้ำซ้อน
         let txRef;
         const refSuffix = referenceId ? referenceId : Date.now().toString();
         if (referenceId) {
           txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
           const txSnap = await transaction.get(txRef);
-          if (txSnap.exists()) throw new Error("รายการนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
+          if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
         } else {
           txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
         }
@@ -131,28 +146,34 @@ export const creditService = {
           currentWallet = Number(rootUserSnap.data().creditPoints || rootUserSnap.data().creditPoint || rootUserSnap.data().stats?.creditBalance || rootUserSnap.data().partnerCredit || 0);
         }
 
-        const numAmount = Number(amount);
+        // 🧮 จัดการ Float Error ของยอดปัจจุบัน
+        const safeCurrentWallet = Math.round(currentWallet * 100) / 100;
         const sysMax = Number(ledger.systemPoolMax) || 1000000;
         let newTotalAllocated = Number(ledger.totalAllocated) || 0;
         
-        let newWalletBalance = currentWallet;
-        let newTotalAccumulated = totalAccumulated;
+        let newWalletBalance = safeCurrentWallet;
+        let newTotalAccumulated = Number(totalAccumulated) || 0;
 
-        // 🧮 Validation & Calculation
+        // ⚖️ Core Calculation
         if (type === 'deposit') {
-          if (sysMax > 0 && (newTotalAllocated + numAmount) > sysMax) {
-            throw new Error(`ไม่อนุมัติการทำรายการ! ทุนสำรองกลางไม่เพียงพอ`);
+          if (sysMax > 0 && (newTotalAllocated + safeAmount) > sysMax) {
+            throw new Error(`ไม่อนุมัติการทำรายการ: ทุนสำรองกลางไม่เพียงพอ`);
           }
-          newWalletBalance += numAmount;
-          newTotalAccumulated += numAmount;
-          newTotalAllocated += numAmount; 
+          newWalletBalance += safeAmount;
+          newTotalAccumulated += safeAmount;
+          newTotalAllocated += safeAmount; 
         } else if (type === 'deduct' || type === 'cash_withdrawal' || type === 'spend') {
-          if (currentWallet < numAmount) throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (มียอดเพียง ${currentWallet} Pts)`);
-          newWalletBalance -= numAmount;
-          newTotalAllocated = Math.max(0, newTotalAllocated - numAmount);
+          if (safeCurrentWallet < safeAmount) {
+            throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (ต้องการ ${safeAmount} Pts, มียอดเพียง ${safeCurrentWallet} Pts)`);
+          }
+          newWalletBalance -= safeAmount;
+          newTotalAllocated = Math.max(0, newTotalAllocated - safeAmount);
         } else {
-          throw new Error("ประเภทการปรับปรุงเครดิตไม่ถูกต้อง");
+          throw new Error("ประเภทการปรับปรุงเครดิตไม่ถูกต้องในระบบ");
         }
+
+        // สรุปยอดสุดท้ายให้ทศนิยมสะอาด
+        newWalletBalance = Math.round(newWalletBalance * 100) / 100;
 
         let newLedgerStatus = 'SECURE';
         const utilization = sysMax > 0 ? (newTotalAllocated / sysMax) : 0;
@@ -196,15 +217,15 @@ export const creditService = {
         transaction.set(txRef, {
           transactionId: `TXM-${refSuffix}`,
           uid: uid,
-          userEmail: userEmail,
-          type: type === 'deposit' ? 'add' : 'deduct', // 🛠️ แมปให้ตรงกับที่หน้า UI ดึงไปโชว์
-          amount: numAmount,
+          userEmail: userEmail || 'unknown@system.local',
+          type: type === 'deposit' ? 'add' : 'deduct', // แมปให้ตรงกับที่หน้า UI ดึงไปโชว์
+          amount: safeAmount,
           balanceAfter: newWalletBalance,
           referenceId: referenceId || 'MANUAL_ADJUST',
           note: note || (type === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
-          remark: note || (type === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'), // 🛠️ เพิ่มฟิลด์ให้ UI หน้าประวัติ
+          remark: note || (type === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'), // เพิ่มฟิลด์ให้ UI หน้าประวัติ
           recordedBy: actorUid || 'System',
-          operatorUid: actorUid || 'System', // 🛠️ เพิ่มฟิลด์ให้ UI หน้าประวัติ
+          operatorUid: actorUid || 'System', // เพิ่มฟิลด์ให้ UI หน้าประวัติ
           timestamp: serverTimestamp()
         });
 
@@ -212,8 +233,8 @@ export const creditService = {
         const personalHistoryRef = doc(collection(db, 'artifacts', appId, 'users', uid, 'credit_history'));
         transaction.set(personalHistoryRef, {
           type: type === 'deposit' ? 'earn' : 'spend',
-          points: numAmount,
-          amount: numAmount, // เพิ่ม Field ให้รองรับโค้ดเก่า
+          points: safeAmount,
+          amount: safeAmount, // เพิ่ม Field ให้รองรับโค้ดเก่า
           note: note || 'ทำรายการกระเป๋าเงิน',
           referenceId: `TXM-${refSuffix}`,
           adjustedBy: actorUid || 'System',
@@ -222,9 +243,11 @@ export const creditService = {
         });
       });
 
+      console.info(`✅ [Credit Engine] Transaction TXM-${referenceId || 'MANUAL'} Completed for UID: ${uid} | Amount: ${amount}`);
+
       // 💾 4. Audit Log ของแอดมิน
       if (historyService && historyService.addLog) {
-        await historyService.addLog('CyberAuditCore', type === 'deposit' ? 'CreditDeposit' : 'CreditDeduct', uid, `${type === 'deposit' ? 'เพิ่ม' : 'ลด'}เครดิต ฿${amount.toLocaleString()}`, actorUid);
+        await historyService.addLog('CyberAuditCore', type === 'deposit' ? 'CreditDeposit' : 'CreditDeduct', uid, `${type === 'deposit' ? 'เพิ่ม' : 'ลด'}เครดิต ฿${safeAmount.toLocaleString()}`, actorUid);
       }
       return { success: true, transactionId };
     } catch (error) {
@@ -235,6 +258,10 @@ export const creditService = {
 
   handlePaymentCompletion: async (orderId, userId) => {
     try {
+      if (!orderId || !userId) throw new Error("ข้อมูลคำสั่งซื้อหรือผู้ใช้ไม่ครบถ้วน");
+
+      let pendingPointsToAward = 0;
+
       await runTransaction(db, async (transaction) => {
         const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
         const orderDoc = await transaction.get(orderRef);
@@ -245,10 +272,17 @@ export const creditService = {
         
         if (orderData.pointsAwarded || pendingPoints <= 0) return;
 
+        // ดึงแต้มออกมาเพื่อให้ฟังก์ชันภายนอกจัดการ
+        pendingPointsToAward = pendingPoints;
+
         transaction.update(orderRef, { pendingCredits: 0, pointsAwarded: true, awardedAt: serverTimestamp() });
       });
+      
       // เรียกใช้หลังจบ transaction หลักเพื่อป้องกัน Nested Transaction Timeout
-      await creditService.adjustUserCredit(userId, pendingPoints, 'deposit', `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`, 'System_Order_Completion', orderId);
+      if (pendingPointsToAward > 0) {
+        await creditService.adjustUserCredit(userId, pendingPointsToAward, 'deposit', `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`, 'System_Order_Completion', orderId);
+      }
+      
       return true;
     } catch (error) {
       console.error("🔥 System Error [handlePaymentCompletion]:", error);
@@ -311,11 +345,11 @@ export const trackAdClick = async (partnerId) => {
 };
 
 export const holdAdCredit = async (userId, amount, adTitle) => {
-  console.log(`[Legacy Bypass] ข้ามการกันเครดิต ${amount} Pts (ระบบใหม่สร้างฟรี)`);
+  console.info(`[Legacy Bypass] ข้ามการกันเครดิต ${amount} Pts (ระบบใหม่เปิดให้ใช้งานฟรี)`);
   return true; 
 };
 
 export const refundAdCredit = async (userId, amount, adTitle) => {
-  console.log(`[Legacy Bypass] ข้ามการคืนเครดิต ${amount} Pts (เพราะไม่ได้หักแต่แรก)`);
+  console.info(`[Legacy Bypass] ข้ามการคืนเครดิต ${amount} Pts (เพราะไม่ได้ถูกหักออกแต่แรก)`);
   return true;
 };
