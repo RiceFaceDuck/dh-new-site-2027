@@ -1,4 +1,4 @@
-/* eslint-disable */
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';

@@ -248,7 +248,10 @@ export const handlePaymentCompletion = async (orderId, userId) => {
 
       transaction.update(userRef, {
         creditPoints: newBalance,
-        creditPoint: newBalance
+        creditPoint: newBalance,
+        walletBalance: newBalance,
+        partnerCredit: newBalance,
+        'stats.creditBalance': newBalance
       });
 
       const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
@@ -303,6 +306,9 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
       transaction.update(userRef, {
         creditPoints: newBalance,
         creditPoint: newBalance,
+        walletBalance: newBalance,
+        partnerCredit: newBalance,
+        'stats.creditBalance': newBalance,
         updatedAt: serverTimestamp()
       });
 
@@ -401,7 +407,7 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   // 1. ตัดเงิน
   if (isWalletExist) {
     transaction.update(walletRef, {
-      balance: increment(-amount),
+      balance: newBalance,
       updatedAt: serverTimestamp()
     });
   } else {
@@ -415,8 +421,11 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   // 2. ตัดเงินสำรอง (Legacy support)
   if (userDoc.exists()) {
     transaction.update(userRef, {
-      creditPoints: increment(-amount),
-      creditPoint: increment(-amount), 
+      creditPoints: newBalance,
+      creditPoint: newBalance,
+      walletBalance: newBalance,
+      partnerCredit: newBalance,
+      'stats.creditBalance': newBalance,
       updatedAt: serverTimestamp()
     });
   }
