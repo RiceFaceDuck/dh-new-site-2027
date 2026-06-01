@@ -274,10 +274,22 @@ export default function WalletManagement() {
                     newBalance += amount;
                 }
 
+                // 🌟 FIX: Dual-Sync Support for Wallet
+                // เราทำการอัปเดตไปที่ root user (ระบบเก่า) ควบคู่ไปกับ sandbox (ระบบใหม่) ด้วย เพื่อป้องกัน data desync
+                const rootUserRef = doc(db, 'users', selectedUser.id);
+                const rootUserSnap = await transaction.get(rootUserRef);
+
                 transaction.update(userRef, {
                     walletBalance: newBalance,
                     updatedAt: serverTimestamp()
                 });
+
+                if (rootUserSnap.exists()) {
+                    transaction.update(rootUserRef, {
+                        walletBalance: newBalance,
+                        updatedAt: serverTimestamp()
+                    });
+                }
 
                 const txRef = doc(collection(db, 'artifacts', appId, 'users', selectedUser.id, 'wallet_transactions'));
                 transaction.set(txRef, {
