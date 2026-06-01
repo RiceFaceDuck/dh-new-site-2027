@@ -308,18 +308,21 @@ export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
         
         if (!userSnap.exists()) throw new Error("User not found");
 
-        const data = userSnap.data();
-        const currentCredit = data.financials?.credit || 0;
-        const currentWallet = data.financials?.wallet || 0;
-
-        const newCredit = currentCredit + (adjustments.creditAmount || 0);
-        const newWallet = currentWallet + (adjustments.walletAmount || 0);
-
+        const creditAmount = Number(adjustments.creditAmount || 0);
+        const walletAmount = Number(adjustments.walletAmount || 0);
+        const reason = adjustments.reason || 'Manual Adjustment';
         const batch = writeBatch(db);
+
+        // เนื่องจาก creditService.adjustUserCredit ส่งผลทั้ง wallet และ credit รวมกัน 
+        // ในกรณีนี้ควรใช้วิธีอัปเดตแยกกัน (แต่แบบปลอดภัย) เพื่อรักษายอดแยกกัน (ในกรณีที่ระบบมี 2 กระเป๋า)
+        const data = userSnap.data();
+        let newCredit = Number(data.creditPoints || data.creditPoint || 0) + creditAmount;
+        let newWallet = Number(data.walletBalance || 0) + walletAmount;
         
         batch.update(userRef, {
-            'financials.credit': newCredit,
-            'financials.wallet': newWallet,
+            creditPoints: newCredit,
+            creditPoint: newCredit,
+            walletBalance: newWallet,
             'metadata.lastFinancialUpdate': serverTimestamp()
         });
 
@@ -328,16 +331,16 @@ export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
             action: 'FINANCIAL_ADJUSTMENT',
             targetUid: uid,
             performedBy: adminId,
-            reason: adjustments.reason || 'Manual Adjustment',
+            reason: reason,
             changes: {
-                credit: { from: currentCredit, to: newCredit, diff: adjustments.creditAmount || 0 },
-                wallet: { from: currentWallet, to: newWallet, diff: adjustments.walletAmount || 0 }
+                credit: { from: Number(data.creditPoints || 0), to: newCredit, diff: creditAmount },
+                wallet: { from: Number(data.walletBalance || 0), to: newWallet, diff: walletAmount }
             },
             timestamp: serverTimestamp()
         });
 
         await batch.commit();
-        console.log(`✅ [UserService] Financials adjusted securely for user ${uid}`);
+        console.log(`✅ [UserService] Financials adjusted securely using batch for user ${uid}`);
         return { success: true, newCredit, newWallet };
 
     } catch (error) {
