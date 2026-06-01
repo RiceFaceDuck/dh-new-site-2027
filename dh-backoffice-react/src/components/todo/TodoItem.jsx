@@ -2,7 +2,8 @@ import React from 'react';
 import { 
   Check, X, Play, Clock, UserPlus, Tag, Info, AlertCircle, 
   Calendar, Receipt, Package, Truck, MessageSquare, 
-  Megaphone, ExternalLink, Image as ImageIcon 
+  Megaphone, ExternalLink, Image as ImageIcon,
+  Briefcase, Mail // ✅ เพิ่ม Icon สำหรับงานบุคลากร
 } from 'lucide-react';
 
 export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClass, handleAction }) {
@@ -18,7 +19,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
       case 'INVENTORY': return <Truck size={20} className="text-purple-500" />;
       case 'CLAIM_APPROVAL': 
       case 'RETURN_APPROVAL': return <AlertCircle size={20} className="text-rose-500" />;
-      case 'AD_APPROVAL': return <Megaphone size={20} className="text-indigo-500" />; // 👈 เพิ่มหมวดหมู่งานโฆษณา
+      case 'AD_APPROVAL': return <Megaphone size={20} className="text-indigo-500" />; 
       default: return <Info size={20} className="text-slate-400" />;
     }
   };
@@ -37,7 +38,8 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
     switch (status) {
       case 'todo': return <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-xs font-bold border border-slate-200">รอเริ่มงาน</span>;
       case 'in_progress': return <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse border border-blue-200">⏳ กำลังดำเนินการ</span>;
-      case 'pending_manager': return <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-xs font-bold border border-orange-200">👑 รอผู้จัดการอนุมัติ</span>;
+      case 'pending_manager': 
+      case 'pending': return <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-xs font-bold border border-orange-200">👑 รอผู้จัดการอนุมัติ</span>;
       default: return <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold">{status}</span>;
     }
   };
@@ -61,6 +63,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
   };
 
   const isAdTask = todo.type?.toUpperCase() === 'AD_APPROVAL';
+  const isStaffApprovalTask = todo.type?.toUpperCase() === 'STAFF_APPROVAL'; // ✅ เช็คว่าเป็นงานอนุมัติพนักงานหรือไม่
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border ${urgencyClass} flex flex-col h-full relative overflow-hidden transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600`}>
@@ -98,7 +101,48 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
 
       {/* Content */}
       <div className="flex-1 space-y-3 mb-5">
-        {todo.description && (
+        
+        {/* 🌟 แสดงรายละเอียดคำขออนุมัติพนักงานใหม่ (Staff Approval UI) */}
+        {isStaffApprovalTask && todo.metadata && (
+          <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-slate-800 dark:to-slate-700/50 border border-blue-100/80 dark:border-slate-600/80 p-4 rounded-2xl flex flex-col gap-3 transition-all">
+            <div className="flex items-center gap-3 border-b border-blue-100/50 dark:border-slate-600/50 pb-3">
+              <div className="w-11 h-11 rounded-full bg-blue-100 dark:bg-slate-700 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg shadow-inner">
+                {todo.metadata.name ? todo.metadata.name.charAt(0).toUpperCase() : <UserPlus size={20} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{todo.metadata.name || 'ไม่ระบุชื่อ'}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+                  <Mail size={10} /> {todo.targetEmail || 'ไม่ระบุอีเมล'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 mt-1">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">ตำแหน่งที่ขอ</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-700 w-fit">
+                  <Briefcase size={12} className="text-blue-500" />
+                  <span className="capitalize">{todo.metadata.requestedRole || 'Staff'}</span>
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">เพศ</span>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 pl-1 mt-1">
+                  {todo.metadata.gender === 'male' ? 'ชาย 👨' : todo.metadata.gender === 'female' ? 'หญิง 👩' : 'ไม่ระบุ 👤'}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">วันเริ่มงานที่ต้องการ</span>
+                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 pl-1 mt-0.5">
+                  <Calendar size={13} /> {todo.metadata.startDate || 'ไม่ระบุ'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Description สำหรับงานทั่วไป */}
+        {!isStaffApprovalTask && todo.description && (
           <p className="text-sm text-slate-600 dark:text-slate-300 bg-blue-50/50 dark:bg-slate-900/50 p-3 rounded-xl border border-blue-100 dark:border-slate-700/50 line-clamp-3">
             {todo.description}
           </p>
@@ -135,6 +179,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
           </div>
         )}
 
+        {/* Footer Data Grid */}
         <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
           <div className="flex flex-col gap-1">
             <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">วันที่สร้าง</span>

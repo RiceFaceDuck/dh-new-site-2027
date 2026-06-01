@@ -9,10 +9,12 @@ import {
     setDoc,
     deleteDoc,
     onSnapshot,
-    writeBatch // ✅ เพิ่ม writeBatch
+    writeBatch
 } from 'firebase/firestore';
 
-// 📍 Helper: Path อ้างอิงถึงข้อมูลผู้ใช้ (รองรับทั้ง Local และ Production)
+// ============================================================================
+// 📍 Helper Paths
+// ============================================================================
 const getCollectionPath = (colName) => {
     if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
         return `artifacts/${__app_id}/public/data/${colName}`;
@@ -23,339 +25,310 @@ const getCollectionPath = (colName) => {
 const getUsersCollectionRef = () => collection(db, getCollectionPath('users'));
 const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
 
-// 🛡️ รายชื่ออีเมลเจ้าของระบบ (Super Admin) ที่จะไม่ถูกจำกัดสิทธิ์ในทุกกรณี
-const SUPER_ADMINS = [
-    'dh1notebook@gmail.com', 
-    'dh2notebook@gmail.com', // ✅ เพิ่ม dh2notebook อย่างเป็นทางการ
-    'zhoulinjuan1@gmail.com'
+// 🛡️ Super Admins & Valid Roles (อัปเกรดแผนงาน #2)
+// ส่งออกให้ AdminLayout ใช้เพื่อ Bypass Gatekeeper ทันที
+export const SUPER_ADMINS = [
+    'zhoulinjuan1@gmail.com', // 👑 Owner (เจ้าของ - มีสิทธิ์สูงสุด)
+    'dh1notebook@gmail.com'   // 💼 VP 1 (รองประธาน 1 - มีอำนาจจัดการทุกอย่าง)
 ];
 
-const VALID_STAFF_ROLES = ['admin', 'manager', 'staff', 'packer', 'pending', 'pending-staff', 'developer', 'owner', 'ผู้จัดการ', 'เจ้าของ'];
+const VALID_STAFF_ROLES = [
+    'admin', 'manager', 'staff', 'packer', 
+    'pending', 'pending_approval', 'pending-staff', 
+    'developer', 'owner', 'ผู้จัดการ', 'เจ้าของ'
+];
 
 // ============================================================================
-// 🟢 ส่วนที่ 1: ระบบ Auth และตรวจสอบสิทธิ์ (Gatekeeper Logic)
+// 👤 Core Profile Sync & Listening
 // ============================================================================
 
 export const syncUserProfile = async (user) => {
-    if (!user || !user.uid) return;
-  
-    const userRef = getUserDocRef(user.uid);
-    const userEmail = (user.email || '').toLowerCase();
-    const isOwner = SUPER_ADMINS.map(e => e.toLowerCase()).includes(userEmail);
-  
+    if (!user) return null;
+    
     try {
-      const docSnap = await getDoc(userRef);
-      
-      const userData = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || 'ผู้ใช้ใหม่',
-        photoURL: user.photoURL || '',
-        updatedAt: serverTimestamp(),
-      };
-  
-      if (isOwner) {
-        // หากเป็นเจ้าของ ยัดยศสูงสุดให้ทันที
-        userData.isStaff = true;
-        userData.roles = docSnap.exists() && docSnap.data().roles 
-          ? docSnap.data().roles 
-          : ['Owner', 'Admin', 'Manager'];
-        userData.role = 'owner';
-        userData.isActive = true;
-      } else if (!docSnap.exists()) {
-        // ✅ หากเป็นคนสมัครใหม่ กำหนดสถานะเป็น Pending รอผู้จัดการอนุมัติ
-        userData.isStaff = false;
-        userData.roles = ['Pending'];
-        userData.role = 'pending';
-        userData.isActive = true;
-      }
-  
-      await setDoc(userRef, userData, { merge: true });
+        const userRef = getUserDocRef(user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            // สร้าง Profile พื้นฐานหากเพิ่ง Login ครั้งแรกโดยไม่ได้ผ่านฟอร์มพนักงาน
+            const newUserData = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || user.email.split('@')[0],
+                photoURL: user.photoURL || null,
+                role: 'user', // Default role
+                status: 'active',
+                financials: { credit: 0, wallet: 0 },
+                metadata: {
+                    createdAt: serverTimestamp(),
+                    lastLogin: serverTimestamp(),
+                    source: 'auto_sync'
+                }
+            };
+            await setDoc(userRef, newUserData);
+            console.log(`✅ [UserService] Created new profile for: ${user.email}`);
+            return newUserData;
+        } else {
+            // อัปเดตเวลาเข้าสู่ระบบ
+            const currentData = userSnap.data();
+            await updateDoc(userRef, {
+                'metadata.lastLogin': serverTimestamp()
+            });
+            return currentData;
+        }
     } catch (error) {
-      console.error("❌ Error syncing profile:", error);
+        console.error("❌ [UserService] Sync Profile Error:", error);
+        throw error;
     }
 };
 
-export const listenToUserRole = (user, callback, errorCallback) => {
-    if (!user || !user.uid) {
-      callback(null);
-      return () => {}; 
+export const listenToUserRole = (uid, callback) => {
+    if (!uid) {
+        callback('user', null, new Error('No UID provided'));
+        return () => {};
     }
-  
-    const userEmail = (user.email || '').toLowerCase();
-    const isOwner = SUPER_ADMINS.map(e => e.toLowerCase()).includes(userEmail);
-    const userRef = getUserDocRef(user.uid);
-  
-    const unsubscribe = onSnapshot(
-      userRef,
-      (docSnap) => {
+    
+    const userRef = getUserDocRef(uid);
+    
+    return onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (isOwner) {
-            data.isStaff = true;
-            data.roles = ['Owner'];
-            data.role = 'owner';
-          }
-          callback(data);
+            const data = docSnap.data();
+            
+            // 🌟 Legacy Check: คืนชีพพนักงานเก่าที่มีแค่ isStaff: true
+            let currentRole = data.role || 'user';
+            if (data.isStaff === true && (currentRole === 'user' || !data.role)) {
+                currentRole = 'staff'; // ผลักดันให้เข้าถึงระบบได้ทันที
+            }
+            
+            // ส่งค่ากลับไปหา AdminLayout (role, data, error)
+            callback(currentRole, data, null);
         } else {
-          if (isOwner) {
-            callback({ uid: user.uid, email: user.email, isStaff: true, roles: ['Owner'], role: 'owner' });
-          } else {
-            callback(null); 
-          }
+            callback('user', null, null);
         }
-      },
-      (error) => {
-        console.error("❌ Error real-time role listener:", error);
-        if (errorCallback) errorCallback(error);
-      }
-    );
-  
-    return unsubscribe;
+    }, (error) => {
+        console.error("❌ [UserService] Listen Role Error:", error);
+        // 🚨 ส่ง Error กลับไปที่ UI เพื่อปิด Loading ป้องกันหน้าจอค้างตลอดกาล
+        callback('user', null, error); 
+    });
 };
 
 // ============================================================================
-// 🔵 ส่วนที่ 2: ฟังก์ชันจัดการพนักงาน (Staff Management Data)
+// 🚀 NEW: Staff Onboarding System (ระบบลงทะเบียนพนักงานใหม่)
+// ============================================================================
+
+export const registerPendingStaff = async (uid, email, staffData) => {
+    try {
+        const userRef = getUserDocRef(uid);
+        const snap = await getDoc(userRef);
+
+        const newStaffPayload = {
+            uid: uid,
+            email: email,
+            displayName: staffData.name || email.split('@')[0],
+            gender: staffData.gender || 'unspecified',
+            startDate: staffData.startDate || null,
+            requestedRole: staffData.position || 'staff',
+            role: 'pending_approval', // 🔒 ล็อกสถานะไว้รอการอนุมัติ
+            status: 'active', 
+            metadata: {
+                createdAt: snap.exists() ? snap.data().metadata?.createdAt : serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                registeredVia: 'staff_onboarding_portal'
+            }
+        };
+
+        // ใช้ setDoc แบบ merge เพื่ออัปเดตข้อมูลหรือสร้างใหม่ได้อย่างปลอดภัย
+        await setDoc(userRef, newStaffPayload, { merge: true });
+        console.log(`✅ [UserService] Staff Onboarding Submitted for: ${email}`);
+        
+        return { success: true, message: 'Registration submitted successfully' };
+    } catch (error) {
+        console.error("❌ [UserService] Register Pending Staff Error:", error);
+        throw error;
+    }
+};
+
+export const updateStaffDetails = async (adminId, targetUid, updates) => {
+    try {
+        const userRef = getUserDocRef(targetUid);
+        await updateDoc(userRef, {
+            ...updates,
+            'metadata.updatedAt': serverTimestamp(),
+            'metadata.updatedBy': adminId
+        });
+        console.log(`✅ [UserService] Staff details updated for UID: ${targetUid}`);
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserService] Update Staff Details Error:", error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// 🔍 User Data Retrievals
 // ============================================================================
 
 export const getUserProfile = async (uid) => {
-    if (!uid) return null;
     try {
         const userRef = getUserDocRef(uid);
         const snap = await getDoc(userRef);
         if (snap.exists()) {
-            return { id: snap.id, ...snap.data() };
+            const data = snap.data();
+            
+            // 🌟 Legacy Support: จัดการ Role พนักงานเก่าตอนดึง Profile ปกติ
+            if (data.isStaff === true && (!data.role || data.role === 'user')) {
+                data.role = 'staff';
+            }
+            return { id: snap.id, ...data };
         }
         return null;
     } catch (error) {
-        console.error("Error fetching user profile:", error);
-        return null;
+        console.error("❌ [UserService] Get User Profile Error:", error);
+        throw error;
     }
 };
 
-export const getUserById = async (uid) => {
-    return await getUserProfile(uid);
-};
+export const getUserById = getUserProfile; // Alias
 
 export const getAllStaff = async () => {
     try {
         const usersRef = getUsersCollectionRef();
-        const snapshot = await getDocs(usersRef);
+        const snap = await getDocs(usersRef);
+        const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        return snapshot.docs
-            .map(doc => {
-                const data = doc.data();
-                let rawRole = data.role || (data.roles && data.roles[0]) || data.userType || data.type || '';
-                let cleanRole = String(rawRole).toLowerCase().trim();
-
-                return { 
-                    id: doc.id, 
-                    isActive: data.isActive !== false,
-                    computedRole: cleanRole,
-                    ...data 
-                };
-            })
-            .filter(user => {
-                // ตัดลูกค้า (customer) ออกจากการแสดงผลตารางพนักงาน
-                if (!user.computedRole) return false;
-                if (user.computedRole === 'customer' || user.computedRole === 'user') return false;
-                return true;
-            });
+        // Filter in memory เพื่อหลีกเลี่ยง Index Requirement ที่ซับซ้อน
+        return allUsers.filter(u => VALID_STAFF_ROLES.includes(u.role) || u.isStaff === true);
     } catch (error) {
-        console.error("Error fetching staff:", error);
+        console.error("❌ [UserService] Get All Staff Error:", error);
         throw error;
     }
 };
 
-// ✅ ฟังก์ชันใหม่: ดึงรายชื่อพนักงานที่รออนุมัติ (ใช้ในหน้า Manager Overview)
 export const getPendingStaff = async () => {
     try {
         const usersRef = getUsersCollectionRef();
-        const snapshot = await getDocs(usersRef);
-        return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(user => {
-                const role = String(user.role || (user.roles && user.roles[0]) || '').toLowerCase().trim();
-                return role === 'pending' || role === 'pending-staff';
-            });
+        const snap = await getDocs(usersRef);
+        const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        return allUsers.filter(u => u.role === 'pending_approval' || u.role === 'pending');
     } catch (error) {
-        console.error("Error fetching pending staff:", error);
-        return [];
-    }
-};
-
-export const updateUserProfile = async (uid, updateData) => {
-    try {
-        const userRef = getUserDocRef(uid);
-        await updateDoc(userRef, { 
-            ...updateData,
-            updatedAt: serverTimestamp() 
-        });
-        return true;
-    } catch (error) {
-        console.error("Error updating user profile:", error);
+        console.error("❌ [UserService] Get Pending Staff Error:", error);
         throw error;
     }
 };
 
-export const updateUserRole = async (uid, newRole) => {
+// ============================================================================
+// ⚙️ Management & Administrative Actions
+// ============================================================================
+
+export const updateUserProfile = async (uid, data) => {
     try {
         const userRef = getUserDocRef(uid);
+        await updateDoc(userRef, {
+            ...data,
+            'metadata.updatedAt': serverTimestamp()
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserService] Update Profile Error:", error);
+        throw error;
+    }
+};
+
+export const updateUserRole = async (adminId, targetUid, newRole) => {
+    try {
+        const userRef = getUserDocRef(targetUid);
         await updateDoc(userRef, { 
             role: newRole,
-            roles: [newRole.charAt(0).toUpperCase() + newRole.slice(1)],
-            isStaff: true, // บังคับเปิดสิทธิ์
-            updatedAt: serverTimestamp() 
+            'metadata.roleUpdatedAt': serverTimestamp(),
+            'metadata.roleUpdatedBy': adminId
         });
-        return true;
+        console.log(`✅ [UserService] Role updated to ${newRole} for UID: ${targetUid}`);
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserService] Update Role Error:", error);
+        throw error;
+    }
+};
+
+export const suspendUser = async (adminId, targetUid) => {
+    try {
+        const userRef = getUserDocRef(targetUid);
+        await updateDoc(userRef, { status: 'suspended' });
+        return { success: true };
     } catch (error) {
         throw error;
     }
 };
 
-export const suspendUser = async (uid) => {
+export const restoreUser = async (adminId, targetUid) => {
     try {
-        const oneYearFromNow = new Date();
-        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-
-        const userRef = getUserDocRef(uid);
-        await updateDoc(userRef, {
-            isActive: false, 
-            suspendedAt: serverTimestamp(),
-            suspendedUntil: oneYearFromNow.toISOString(), 
-            updatedAt: serverTimestamp()
-        });
-        return true;
+        const userRef = getUserDocRef(targetUid);
+        await updateDoc(userRef, { status: 'active' });
+        return { success: true };
     } catch (error) {
         throw error;
     }
 };
 
-export const restoreUser = async (uid) => {
+export const deleteUser = async (adminId, targetUid) => {
     try {
-        const userRef = getUserDocRef(uid);
-        await updateDoc(userRef, {
-            isActive: true,
-            updatedAt: serverTimestamp()
-        });
-        return true;
+        const userRef = getUserDocRef(targetUid);
+        await deleteDoc(userRef);
+        return { success: true };
     } catch (error) {
         throw error;
     }
 };
 
-export const deleteUser = async (uid) => {
+export const updateUserLoginStatus = async (uid, isOnline) => {
     try {
         const userRef = getUserDocRef(uid);
-        await deleteDoc(userRef); 
-        return true;
+        await updateDoc(userRef, { isOnline });
     } catch (error) {
-        console.error("Error deleting user:", error);
+        // เงียบไว้เพื่อไม่ให้รก Console
+    }
+};
+
+export const updateUserEcosystem = async (uid, ecoData) => {
+    try {
+        const userRef = getUserDocRef(uid);
+        await updateDoc(userRef, { ecosystem: ecoData });
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserService] Update Ecosystem Error:", error);
         throw error;
     }
 };
 
-export const updateUserLoginStatus = async (uid, isOnline = true) => {
-    if(!uid) return;
+export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
     try {
         const userRef = getUserDocRef(uid);
-        await setDoc(userRef, { 
-            lastLogin: serverTimestamp(),
-            isOnline: isOnline
-        }, { merge: true });
-    } catch (error) {
-        console.error("Error updating login status:", error);
-    }
-};
-
-// ============================================================================
-// 🌟 ส่วนที่ 3: ระบบ Ecosystem & การเงิน (เพิ่มใหม่สำหรับแผนพัฒนา Account)
-// ============================================================================
-
-export const updateUserEcosystem = async (uid, data) => {
-    if (!uid) throw new Error("User ID is required");
-    try {
-        const userRef = getUserDocRef(uid);
-        
-        // อัปเดตเฉพาะฟิลด์ที่ส่งมา ป้องกันการทับข้อมูลอื่น
-        const updatePayload = { updatedAt: serverTimestamp() };
-        if (data.accountId) updatePayload.accountId = data.accountId;
-        if (data.mapUrl !== undefined) updatePayload.ecosystem = { mapUrl: data.mapUrl };
-        if (data.role) updatePayload.role = data.role;
-
-        await updateDoc(userRef, updatePayload);
-        console.log(`✅ [Backoffice] User ${uid} ecosystem updated.`);
-        return true;
-    } catch (error) {
-        console.error("❌ [Backoffice] Error updating ecosystem:", error);
-        throw error;
-    }
-};
-
-export const adminAdjustFinancials = async (uid, adminId, adjustments) => {
-    if (!uid || !adminId) throw new Error("User ID and Admin ID are required");
-    if (!adjustments.reason) throw new Error("ต้องระบุเหตุผลในการปรับปรุงยอดเสมอ (Audit Trail)");
-
-    const batch = writeBatch(db);
-    const userRef = getUserDocRef(uid);
-    
-    // สร้าง Reference โดยใช้ getCollectionPath ตามมาตรฐานระบบเดิม
-    const historyRef = doc(collection(db, getCollectionPath('users'), uid, 'credit_history'));
-    const adminAuditRef = doc(collection(db, getCollectionPath('admin_audit_logs')));
-
-    try {
         const userSnap = await getDoc(userRef);
+        
         if (!userSnap.exists()) throw new Error("User not found");
 
-        const userData = userSnap.data();
-        const currentCredit = userData.creditPoint || userData.points || 0;
-        const currentWallet = userData.walletBalance || 0;
+        const data = userSnap.data();
+        const currentCredit = data.financials?.credit || 0;
+        const currentWallet = data.financials?.wallet || 0;
 
-        let newCredit = currentCredit;
-        let newWallet = currentWallet;
-        let updatePayload = { updatedAt: serverTimestamp() };
+        const newCredit = currentCredit + (adjustments.creditAmount || 0);
+        const newWallet = currentWallet + (adjustments.walletAmount || 0);
 
-        // 1. ตรรกะการปรับแต้ม (Credit Point)
-        if (adjustments.creditAmount !== undefined && adjustments.creditAmount !== 0) {
-            newCredit = Math.max(0, currentCredit + adjustments.creditAmount);
-            updatePayload.creditPoint = newCredit;
-            updatePayload.points = newCredit; // อัปเดตทั้งฟิลด์เก่าและใหม่
-            
-            // บันทึกประวัติให้ลูกค้าเห็น
-            batch.set(historyRef, {
-                transactionId: `ADJ-CR-${Date.now()}`,
-                uid: uid,
-                type: adjustments.creditAmount > 0 ? 'earn' : 'spend', // เขียวหรือแดง
-                amount: Math.abs(adjustments.creditAmount),
-                balanceAfter: newCredit,
-                note: `แอดมินปรับปรุงยอด: ${adjustments.reason}`,
-                recordedBy: adminId,
-                timestamp: serverTimestamp()
-            });
-        }
+        const batch = writeBatch(db);
+        
+        batch.update(userRef, {
+            'financials.credit': newCredit,
+            'financials.wallet': newWallet,
+            'metadata.lastFinancialUpdate': serverTimestamp()
+        });
 
-        // 2. ตรรกะการปรับยอดเงินสด (Wallet Balance)
-        if (adjustments.walletAmount !== undefined && adjustments.walletAmount !== 0) {
-            newWallet = Math.max(0, currentWallet + adjustments.walletAmount);
-            updatePayload.walletBalance = newWallet;
-
-            // ถ้ามีบัญชี Wallet ย่อยให้ไปอัปเดตด้วย
-            const walletRef = doc(db, getCollectionPath('users'), uid, 'wallet', 'default');
-            batch.set(walletRef, {
-                balance: newWallet,
-                updatedAt: serverTimestamp()
-            }, { merge: true });
-        }
-
-        // อัปเดต Profile หลัก
-        batch.update(userRef, updatePayload);
-
-        // 3. บันทึกหลักฐานตรวจสอบแอดมิน (Audit Trail)
-        batch.set(adminAuditRef, {
+        const auditRef = doc(collection(db, getCollectionPath('admin_audits')));
+        batch.set(auditRef, {
             action: 'FINANCIAL_ADJUSTMENT',
             targetUid: uid,
             performedBy: adminId,
-            reason: adjustments.reason,
+            reason: adjustments.reason || 'Manual Adjustment',
             changes: {
                 credit: { from: currentCredit, to: newCredit, diff: adjustments.creditAmount || 0 },
                 wallet: { from: currentWallet, to: newWallet, diff: adjustments.walletAmount || 0 }
@@ -364,17 +337,17 @@ export const adminAdjustFinancials = async (uid, adminId, adjustments) => {
         });
 
         await batch.commit();
-        console.log(`✅ [Backoffice] Financials adjusted securely for user ${uid}`);
+        console.log(`✅ [UserService] Financials adjusted securely for user ${uid}`);
         return { success: true, newCredit, newWallet };
 
     } catch (error) {
-        console.error("❌ [Backoffice] Financial adjustment failed:", error);
+        console.error("❌ [UserService] Financial adjustment failed:", error);
         throw error;
     }
 };
 
 // ============================================================================
-// 🟠 Object Export: รวมฟังก์ชันทั้งหมดไว้ที่ userService เผื่อการเรียกใช้แบบออบเจกต์
+// 🟠 Object Export
 // ============================================================================
 export const userService = {
     syncUserProfile,
@@ -382,13 +355,15 @@ export const userService = {
     getUserProfile,
     getUserById,
     getAllStaff,
-    getPendingStaff, // ✅ ส่งออกให้ ManagersOverview ใช้งาน
+    getPendingStaff,
     updateUserProfile,
     updateUserRole,
     suspendUser,
     restoreUser,
     deleteUser,
     updateUserLoginStatus,
-    updateUserEcosystem,   // ✅ NEW: รองรับระบบ Partner Map / Account ID
-    adminAdjustFinancials  // ✅ NEW: รองรับระบบกระเป๋าเงิน (Double Entry)
+    updateUserEcosystem,
+    adminAdjustFinancials,
+    registerPendingStaff, 
+    updateStaffDetails    
 };

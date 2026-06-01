@@ -8,7 +8,14 @@ export const useManagerTodo = () => {
   const [managerTodos, setManagerTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stats, setStats] = useState({ pendingAds: 0, pendingPartners: 0, total: 0 });
+  
+  // ✨ UX UPGRADE: เพิ่ม pendingStaff เข้าไปใน Stats เพื่อทำ Badge แจ้งเตือนพนักงานใหม่
+  const [stats, setStats] = useState({ 
+      pendingAds: 0, 
+      pendingPartners: 0, 
+      pendingStaff: 0, 
+      total: 0 
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -18,10 +25,23 @@ export const useManagerTodo = () => {
     const todosRef = collection(db, 'artifacts', appId, 'public', 'data', 'todos');
 
     const unsubscribe = onSnapshot(todosRef, (snapshot) => {
-      const managerTypes = ['BUSINESS_CARD_AD_APPROVAL', 'PRODUCT_LINK_AD_APPROVAL', 'BILLBOARD_AD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL', 'WHOLESALE_APPROVAL', 'USER_SKU_APPROVAL', 'AD_APPROVAL'];
+      // 🚀 THE FIX: เพิ่ม 'STAFF_APPROVAL' และ 'WALLET_WITHDRAWAL' ลงใน Filter
+      const managerTypes = [
+          'BUSINESS_CARD_AD_APPROVAL', 
+          'PRODUCT_LINK_AD_APPROVAL', 
+          'BILLBOARD_AD_APPROVAL', 
+          'PARTNER_APPROVAL', 
+          'ACCOUNT_APPROVAL', 
+          'WHOLESALE_APPROVAL', 
+          'USER_SKU_APPROVAL', 
+          'AD_APPROVAL',
+          'WALLET_WITHDRAWAL',
+          'STAFF_APPROVAL' // ✅ รองรับพนักงานใหม่
+      ];
       
       let countAds = 0;
       let countPartners = 0;
+      let countStaff = 0; // ✅ ตัวนับคำขอพนักงานใหม่
 
       const fetchedTodos = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -29,16 +49,26 @@ export const useManagerTodo = () => {
           const taskType = todo.taskType || todo.type || '';
           const status = (todo.status || '').toUpperCase();
           
+          // คัดเฉพาะงานของผู้จัดการ
           if (!managerTypes.some(t => taskType.includes(t))) return false;
+          // ปิดบังงานที่เสร็จสิ้นหรือถูกยกเลิกไปแล้ว
           if (status === 'COMPLETED' || status === 'CANCELLED' || status === 'REJECTED' || status === 'APPROVED') return false;
 
-          if (taskType.includes('AD_APPROVAL') || taskType.includes('SKU_APPROVAL')) countAds++;
+          // จัดกลุ่มสถิติ
+          if (taskType.includes('AD_APPROVAL') || taskType.includes('SKU_APPROVAL') || taskType.includes('BILLBOARD')) countAds++;
           if (taskType.includes('PARTNER_APPROVAL')) countPartners++;
+          if (taskType === 'STAFF_APPROVAL') countStaff++; // ✅ นับจำนวนพนักงานที่รออนุมัติ
+
           return true;
         })
         .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
       
-      setStats({ pendingAds: countAds, pendingPartners: countPartners, total: fetchedTodos.length });
+      setStats({ 
+          pendingAds: countAds, 
+          pendingPartners: countPartners, 
+          pendingStaff: countStaff, // ✅ อัปเดต State
+          total: fetchedTodos.length 
+      });
       setManagerTodos(fetchedTodos);
       setError(null);
       setLoading(false);

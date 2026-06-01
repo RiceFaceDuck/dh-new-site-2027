@@ -21,10 +21,46 @@ export const MANAGER_TASK_TYPES = [
   'BILLBOARD_APPROVAL',  // งานตรวจสอบ/อนุมัติ ฝากแผ่นป้ายโฆษณา
   'PARTNER_APPROVAL',    // งานตรวจสอบ/อนุมัติ Partner รับการสนับสนุน
   'ACCOUNT_APPROVAL',    // งานตรวจสอบ Account สมัครใหม่
-  'WALLET_WITHDRAWAL'    // ✨ [NEW] งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า
+  'WALLET_WITHDRAWAL',   // งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า
+  'STAFF_APPROVAL'       // ✨ [NEW] งานตรวจสอบ/อนุมัติ พนักงานใหม่เข้าทำงาน
 ];
 
 export const todoService = {
+
+  // ============================================================================
+  // 🧑‍💼 ✨ [NEW] STAFF ONBOARDING TASKS (ระบบพนักงานใหม่)
+  // ============================================================================
+  
+  createStaffApprovalTask: async (staffData) => {
+      try {
+          // จัดรูปแบบข้อมูลเพื่อให้แสดงผลบนแผง To-do ได้อย่างหรูหราและอ่านง่าย
+          const todoPayload = {
+              type: 'STAFF_APPROVAL',
+              status: 'pending',
+              title: `🌟 คำร้องขออนุมัติพนักงานใหม่: ${staffData.name || staffData.email}`,
+              description: `พนักงานขอเข้าทำงานในตำแหน่ง "${staffData.position}" | วันเริ่มงาน: ${staffData.startDate || 'ยังไม่ระบุ'}`,
+              priority: 'High', // ตั้งเป็น High เพื่อให้ผู้จัดการสังเกตเห็นทันที
+              targetUid: staffData.uid,
+              targetEmail: staffData.email,
+              metadata: {
+                  name: staffData.name,
+                  gender: staffData.gender,
+                  requestedRole: staffData.position,
+                  startDate: staffData.startDate,
+                  source: 'staff_onboarding_portal'
+              },
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+          };
+
+          const docRef = await addDoc(collection(db, 'todos'), todoPayload);
+          console.log(`✅ [TodoService] Staff Approval Task Created ID: ${docRef.id}`);
+          return { success: true, taskId: docRef.id };
+      } catch (error) {
+          console.error("❌ [TodoService] Create Staff Task Error:", error);
+          throw error;
+      }
+  },
   
   // 📥 1. ระบบ Subscribe งาน "ส่วนกลาง" (ประหยัด Reads กรองจาก Server)
   subscribePendingTodos: (callback, onError) => {

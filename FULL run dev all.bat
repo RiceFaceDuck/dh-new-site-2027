@@ -23,4 +23,4 @@ echo.
 echo =========================================
 echo All servers are starting in separate windows!
 echo =========================================
-pause
+exit
