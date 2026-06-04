@@ -183,16 +183,17 @@ export default function ManagersOverview() {
     return 'bg-emerald-50 text-emerald-700 border-emerald-200';
   };
 
+  // 🎨 [Color-Coding Upgrade]: ปรับชุดสีให้มีความพรีเมียม เพิ่ม ring บางๆ ให้เหมือนป้ายชื่อที่ดูมีราคา
   const getTaskStyles = (type) => {
     switch (true) {
       case ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'AD_APPROVAL'].includes(type):
-        return { icon: <Megaphone className="w-5 h-5 text-emerald-600"/>, label: 'โฆษณา', path: '/managers/ads', bg: 'bg-emerald-50', text: 'text-emerald-700' };
+        return { icon: <Megaphone className="w-5 h-5 text-emerald-600"/>, label: 'โฆษณา', path: '/managers/ads', bg: 'bg-emerald-50/80', text: 'text-emerald-700', ring: 'ring-1 ring-emerald-600/20' };
       case ['PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'].includes(type):
-        return { icon: <UserCheck className="w-5 h-5 text-purple-600"/>, label: 'บัญชี', path: '/managers/partners', bg: 'bg-purple-50', text: 'text-purple-700' };
+        return { icon: <UserCheck className="w-5 h-5 text-purple-600"/>, label: 'บัญชี', path: '/managers/partners', bg: 'bg-purple-50/80', text: 'text-purple-700', ring: 'ring-1 ring-purple-600/20' };
       case ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(type):
-        return { icon: <Tags className="w-5 h-5 text-orange-600"/>, label: 'ราคาส่ง', path: '/managers/pricing', bg: 'bg-orange-50', text: 'text-orange-700' };
+        return { icon: <Tags className="w-5 h-5 text-orange-600"/>, label: 'ราคาส่ง', path: '/managers/pricing', bg: 'bg-orange-50/80', text: 'text-orange-700', ring: 'ring-1 ring-orange-600/20' };
       default:
-        return { icon: <AlertCircle className="w-5 h-5 text-blue-600"/>, label: 'ตรวจสอบ', path: '/managers', bg: 'bg-blue-50', text: 'text-blue-700' };
+        return { icon: <AlertCircle className="w-5 h-5 text-blue-600"/>, label: 'ตรวจสอบ', path: '/managers', bg: 'bg-blue-50/80', text: 'text-blue-700', ring: 'ring-1 ring-blue-600/20' };
     }
   };
 
@@ -243,42 +244,48 @@ export default function ManagersOverview() {
           />
         </div>
 
-        {/* 👉 ฝั่งขวา: กล่องข้อความรอพิจารณา */}
-        <div className="w-full lg:w-1/3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col">
+        {/* 👉 ฝั่งขวา: กล่องข้อความรอพิจารณา ✨ [Enterprise Upgrade: แผงควบคุมวงกลมที่ 3] */}
+        <div className="w-full lg:w-1/3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-indigo-500/10 border border-white/60 dark:border-slate-700/60 flex flex-col relative overflow-hidden">
           
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-t-2xl shrink-0">
+          {/* พื้นหลังตกแต่ง (Glow Effect) */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/5 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="p-5 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between bg-gradient-to-r from-slate-50/50 to-transparent dark:from-slate-800/50 rounded-t-3xl shrink-0 z-10 relative">
             <h2 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-500" />
+              <Clock className="w-5 h-5 text-indigo-500" />
               วาระพิจารณาอนุมัติ
             </h2>
             {!loading && managerTodos.length > 0 && (
-              <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-bold border border-blue-200 dark:border-blue-800">
+              <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-3 py-1 rounded-full text-[11px] tracking-wide font-bold border border-indigo-200 dark:border-indigo-800/50 shadow-sm">
                 {managerTodos.length} รายการ
               </span>
             )}
           </div>
 
           {error && (
-            <div className="m-4 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg flex items-center gap-2 text-sm font-medium shrink-0">
+            <div className="m-4 bg-red-50/80 backdrop-blur-md border border-red-200 text-red-600 p-3 rounded-xl flex items-center gap-2 text-sm font-medium shrink-0 relative z-10">
               <AlertCircle size={16} /> {error}
             </div>
           )}
 
-          {/* 📋 พื้นที่รายการ เลื่อน scroll เฉพาะจุดนี้เท่านั้น (ป้องกันเลยขอบจอ) */}
-          <div className="overflow-y-auto p-4 space-y-4 max-h-[500px] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+          {/* 📋 พื้นที่รายการ เลื่อน scroll พร้อมตกแต่ง Scrollbar */}
+          <div className="overflow-y-auto p-4 space-y-3.5 max-h-[500px] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200/80 hover:[&::-webkit-scrollbar-thumb]:bg-slate-300/80 [&::-webkit-scrollbar-thumb]:rounded-full relative z-10">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-10">
-                <Loader2 className="w-8 h-8 text-slate-300 animate-spin mb-3" />
-                <p className="text-slate-500 text-sm">กำลังซิงค์รายการ...</p>
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mb-4" />
+                <p className="text-slate-500 text-sm font-medium tracking-wide">กำลังซิงค์ข้อมูล...</p>
               </div>
             ) : managerTodos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3 border border-slate-100 dark:border-slate-700">
-                  <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+              
+              /* ✨ [Empty State Upgrade]: ออกแบบให้ดูพรีเมียมและเป็นมืออาชีพ */
+              <div className="flex flex-col items-center justify-center py-12 text-center relative">
+                <div className="w-20 h-20 bg-gradient-to-tr from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/50 rounded-full flex items-center justify-center mb-4 border border-slate-200/60 dark:border-slate-700 shadow-inner">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-500 drop-shadow-sm" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">ไม่มีรายการค้าง</h3>
-                <p className="text-slate-500 text-xs mt-1">อัปเดตเรียบร้อยแล้ว</p>
+                <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">ไม่มีรายการค้างพิจารณา</h3>
+                <p className="text-slate-400 text-xs mt-1.5 max-w-[200px] leading-relaxed">งานทุกรายการถูกจัดการเรียบร้อยแล้ว ยอดเยี่ยมมากครับ!</p>
               </div>
+
             ) : (
               managerTodos.map((todo) => {
                 const isProcessing = processingId === todo.id;
@@ -308,44 +315,49 @@ export default function ManagersOverview() {
                 // 🌟 2. การจัดการคำขอโฆษณา / พาร์ทเนอร์
                 if (['USER_SKU_APPROVAL', 'AD_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'].includes(todo.type)) {
                   return (
-                    <div key={todo.id} className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
+                    /* ✨ [Hover Effect Upgrade]: การ์ดยกตัวและสว่างขึ้น */
+                    <div key={todo.id} className="group border border-slate-200/60 dark:border-slate-700/60 rounded-2xl overflow-hidden bg-white/60 dark:bg-slate-800/40 shadow-sm hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-0.5 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 relative z-10">
                       <div 
                         onClick={() => toggleExpand(todo.id)} 
-                        className="p-3.5 cursor-pointer flex items-start gap-3 select-none"
+                        className="p-4 cursor-pointer flex items-start gap-3 select-none"
                       >
-                        <div className={`p-2 rounded-lg ${styles.bg} ${styles.text} shrink-0`}>
+                        <div className={`p-2.5 rounded-xl ${styles.bg} ${styles.text} ${styles.ring} shrink-0 transition-transform group-hover:scale-105`}>
                           {styles.icon}
                         </div>
                         <div className="flex-1 min-w-0 pt-0.5">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${styles.bg} ${styles.text}`}>
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${styles.bg} ${styles.text} ${styles.ring}`}>
                               {styles.label}
                             </span>
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] font-medium text-slate-400">
                               {todo.createdAt ? new Date(todo.createdAt.toDate()).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : 'Now'}
                             </span>
                           </div>
-                          {/* ซ่อนให้เป็น 1 บรรทัด */}
-                          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 line-clamp-1 leading-tight">{todo.title}</h3>
+                          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 line-clamp-1 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{todo.title}</h3>
                         </div>
-                        <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        {/* หมุนลูกศรนุ่มนวลเวลาคลิก */}
+                        <div className={`p-1.5 rounded-full text-slate-400 mt-1 transition-all duration-300 ${isExpanded ? 'rotate-180 bg-indigo-50 text-indigo-500' : 'bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100 group-hover:text-slate-600'}`}>
+                          <ChevronDown className="w-4 h-4 shrink-0" />
+                        </div>
                       </div>
                       
-                      {/* ข้อมูลขยายตัว */}
-                      {isExpanded && (
-                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                          <div className="text-xs space-y-1.5 mb-3 text-slate-600 dark:text-slate-300">
-                            {todo.customerName && <p><strong>ผู้ขอ:</strong> {todo.customerName}</p>}
-                            {(todo.adPayload?.title || todo.targetSkuId) && <p><strong>อ้างอิง:</strong> {todo.adPayload?.title || todo.targetSkuId}</p>}
+                      {/* ✨ [Smooth Dropdown]: ใช้ grid-rows ปรับความสูง เพื่อให้ Animation กางออกอย่างนุ่มนวล */}
+                      <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                        <div className="overflow-hidden">
+                          <div className="p-4 border-t border-slate-100/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30">
+                            <div className="text-xs space-y-2 mb-4 text-slate-600 dark:text-slate-300">
+                              {todo.customerName && <p className="flex justify-between"><span className="text-slate-400">ผู้ขอ:</span> <span className="font-medium">{todo.customerName}</span></p>}
+                              {(todo.adPayload?.title || todo.targetSkuId) && <p className="flex justify-between"><span className="text-slate-400">อ้างอิง:</span> <span className="font-medium truncate ml-4 text-right">{todo.adPayload?.title || todo.targetSkuId}</span></p>}
+                            </div>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); navigate(styles.path); }} 
+                              className="w-full py-2.5 bg-slate-800 hover:bg-indigo-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-indigo-500/25 active:scale-95"
+                            >
+                              เปิดดูรายละเอียด <ChevronRight size={14} />
+                            </button>
                           </div>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); navigate(styles.path); }} 
-                            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-colors"
-                          >
-                            เปิดดูรายละเอียด <ChevronRight size={14} />
-                          </button>
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 }

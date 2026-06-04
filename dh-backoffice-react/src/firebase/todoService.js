@@ -64,50 +64,70 @@ export const todoService = {
   
   // 📥 1. ระบบ Subscribe งาน "ส่วนกลาง" (ประหยัด Reads กรองจาก Server)
   subscribePendingTodos: (callback, onError) => {
-    const q = query(
-      collection(db, 'todos'),
-      where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager'])
-    );
-    
-    return onSnapshot(q, (snapshot) => {
-      const pendingTodos = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        // 🚀 [อัปเกรด] กรองงานที่เป็นของ "ผู้จัดการ" ออกไป เพื่อให้กระดานส่วนกลางสะอาด
-        .filter(t => !MANAGER_TASK_TYPES.includes(t.type) && !MANAGER_TASK_TYPES.includes(t.taskType))
-        .sort((a, b) => {
-            const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
-            return timeB - timeA;
-        });
-      callback(pendingTodos);
-    }, (error) => {
-      console.error("🔥 Snapshot Error (Pending Todos):", error);
-      if (onError) onError(error);
-    });
+    try {
+      const q = query(
+        collection(db, 'todos'),
+        where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager'])
+      );
+      
+      return onSnapshot(q, (snapshot) => {
+        const pendingTodos = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          // 🚀 [อัปเกรด-ความปลอดภัย] คัดกรองงานขยะ และกรองงานของผู้จัดการออกไป เพื่อให้กระดานส่วนกลางสะอาด
+          .filter(t => {
+              const currentType = t.type || t.taskType;
+              if (!currentType) return false; // สกัดกั้น: งานที่ไม่มี Type (งานขยะ)
+              return !MANAGER_TASK_TYPES.includes(currentType);
+          })
+          .sort((a, b) => {
+              const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
+              const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
+              return timeB - timeA;
+          });
+        callback(pendingTodos);
+      }, (error) => {
+        console.error("🔥 Snapshot Error (Pending Todos):", error);
+        if (onError) onError(new Error("เกิดปัญหาการเชื่อมต่อ ดึงรายการงานส่วนกลางไม่สำเร็จ"));
+      });
+    } catch (err) {
+      console.error("🔥 Query Setup Error (Pending Todos):", err);
+      if (onError) onError(new Error("การตั้งค่าดึงข้อมูลผิดพลาด"));
+      return () => {}; // คืนค่าฟังก์ชันว่างเพื่อไม่ให้เกิด Error
+    }
   },
 
   // 📥 2. ระบบ Subscribe งาน "ผู้จัดการ"
   subscribeManagerApprovals: (callback, onError) => {
-    const q = query(
-      collection(db, 'todos'),
-      where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager'])
-    ); 
-    
-    return onSnapshot(q, (snapshot) => {
-      const managerTodos = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        // 🚀 [อัปเกรด] ดึงเฉพาะงานที่มี Type ตรงกับกลุ่มงานของผู้จัดการเท่านั้น
-        .filter(t => MANAGER_TASK_TYPES.includes(t.type) || MANAGER_TASK_TYPES.includes(t.taskType))
-        .sort((a, b) => {
-            const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
-            return timeB - timeA;
-        });
-      callback(managerTodos);
-    }, (error) => {
-      console.error("🔥 Snapshot Error (Manager):", error);
-      if (onError) onError(error);
-    });
+    try {
+      const q = query(
+        collection(db, 'todos'),
+        where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager'])
+      ); 
+      
+      return onSnapshot(q, (snapshot) => {
+        const managerTodos = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          // 🚀 [อัปเกรด-ความปลอดภัย] ดึงเฉพาะงานที่มี Type ตรงกับกลุ่มงานของผู้จัดการเท่านั้น 
+          .filter(t => {
+              const currentType = t.type || t.taskType;
+              if (!currentType) return false; // สกัดกั้น: ป้องกันงานผิดประเภท หรือโครงสร้างพัง
+              return MANAGER_TASK_TYPES.includes(currentType);
+          })
+          .sort((a, b) => {
+              const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
+              const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
+              return timeB - timeA;
+          });
+        callback(managerTodos);
+      }, (error) => {
+        console.error("🔥 Snapshot Error (Manager):", error);
+        if (onError) onError(new Error("เกิดปัญหาการเชื่อมต่อ ดึงงานผู้จัดการไม่สำเร็จ"));
+      });
+    } catch (err) {
+      console.error("🔥 Query Setup Error (Manager):", err);
+      if (onError) onError(new Error("การตั้งค่าดึงข้อมูลผิดพลาด"));
+      return () => {};
+    }
   },
 
   // 🗑️ ลบงานที่ค้าง/กำพร้า (แก้ไขปัญหา H-627089)
@@ -465,11 +485,30 @@ export const todoService = {
   },
 
   createManualTask: async (taskForm, user) => {
+      // 🚀 [อัปเกรด-ความปลอดภัย] สกัดกั้นการสร้างงานของผู้จัดการผ่าน Manual Form ทั่วไป
+      const typeToCheck = taskForm.type || taskForm.taskType;
+      
+      if (!typeToCheck) {
+          throw new Error("ข้อมูลไม่สมบูรณ์: กรุณาระบุประเภทของงานให้ชัดเจน");
+      }
+      
+      if (MANAGER_TASK_TYPES.includes(typeToCheck)) {
+          console.error(`🚨 Security Alert: ตรวจพบความพยายามสร้างงานสงวนสิทธิ์ (${typeToCheck})`);
+          throw new Error(`ไม่อนุญาตให้สร้างงานประเภท "${typeToCheck}" โดยพลการ โปรดใช้ระบบคำร้องเฉพาะของงานนั้นๆ ครับ`);
+      }
+
       await addDoc(collection(db, 'todos'), {
           ...taskForm,
           status: 'todo',
           createdAt: serverTimestamp(),
           createdBy: user?.uid || 'Admin'
       });
+  },
+  
+  // ----------------------------------------------------------------------
+  // 🛡️ Helper Function สำหรับระบบภายนอกเพื่อเช็คว่าเป็นงานของ Manager หรือไม่
+  // ----------------------------------------------------------------------
+  isManagerTask: (taskType) => {
+      return MANAGER_TASK_TYPES.includes(taskType);
   }
 };

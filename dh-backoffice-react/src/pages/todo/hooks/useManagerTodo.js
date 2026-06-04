@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebase/config';
-import { collection, onSnapshot, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
-
-const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+// 🚀 THE FIX: นำเข้า todoService เพื่อเรียกใช้ Query หลัก และหลีกเลี่ยงการสร้าง Query ซ้ำซ้อน
+import { todoService } from '../../../firebase/todoService';
 
 export const useManagerTodo = () => {
   const [managerTodos, setManagerTodos] = useState([]);
@@ -20,65 +20,54 @@ export const useManagerTodo = () => {
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     
-    // ดึงงานจากแหล่งรวมศูนย์
-    const todosRef = collection(db, 'artifacts', appId, 'public', 'data', 'todos');
+    // 🚀 THE FIX [ลด Reads & แก้บั๊กข้อมูลไม่ตรง]: 
+    // ใช้ subscribeManagerApprovals จาก Service แทนการสร้าง Query ใหม่ที่ชี้ไปผิด Collection
+    // Service จะทำหน้าที่ดึงข้อมูลจาก Root Collection 'todos' ให้ถูกต้อง
+    const unsubscribe = todoService.subscribeManagerApprovals(
+      (fetchedTodos) => {
+          let countAds = 0;
+          let countPartners = 0;
+          let countStaff = 0; // ✅ ตัวนับคำขอพนักงานใหม่
 
-    const unsubscribe = onSnapshot(todosRef, (snapshot) => {
-      // 🚀 THE FIX: เพิ่ม 'STAFF_APPROVAL' และ 'WALLET_WITHDRAWAL' ลงใน Filter
-      const managerTypes = [
-          'BUSINESS_CARD_AD_APPROVAL', 
-          'PRODUCT_LINK_AD_APPROVAL', 
-          'BILLBOARD_AD_APPROVAL', 
-          'PARTNER_APPROVAL', 
-          'ACCOUNT_APPROVAL', 
-          'WHOLESALE_APPROVAL', 
-          'USER_SKU_APPROVAL', 
-          'AD_APPROVAL',
-          'WALLET_WITHDRAWAL',
-          'STAFF_APPROVAL' // ✅ รองรับพนักงานใหม่
-      ];
-      
-      let countAds = 0;
-      let countPartners = 0;
-      let countStaff = 0; // ✅ ตัวนับคำขอพนักงานใหม่
+          // ข้อมูลถูกกรอง MANAGER_TASK_TYPES และ Sort มาแล้วจาก Service ชั้นแรก
+          // กรองข้อมูล Status ขยะ หรือที่ทำเสร็จแล้วออกไป (Double Check)
+          const activeTodos = fetchedTodos.filter(todo => {
+              const status = (todo.status || '').toUpperCase();
+              if (status === 'COMPLETED' || status === 'CANCELLED' || status === 'REJECTED' || status === 'APPROVED') return false;
+              
+              const taskType = todo.taskType || todo.type || '';
+              // จัดกลุ่มสถิติ
+              if (taskType.includes('AD_APPROVAL') || taskType.includes('SKU_APPROVAL') || taskType.includes('BILLBOARD')) countAds++;
+              if (taskType.includes('PARTNER_APPROVAL')) countPartners++;
+              if (taskType === 'STAFF_APPROVAL') countStaff++; // ✅ นับจำนวนพนักงานที่รออนุมัติ
 
-      const fetchedTodos = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(todo => {
-          const taskType = todo.taskType || todo.type || '';
-          const status = (todo.status || '').toUpperCase();
-          
-          // คัดเฉพาะงานของผู้จัดการ
-          if (!managerTypes.some(t => taskType.includes(t))) return false;
-          // ปิดบังงานที่เสร็จสิ้นหรือถูกยกเลิกไปแล้ว
-          if (status === 'COMPLETED' || status === 'CANCELLED' || status === 'REJECTED' || status === 'APPROVED') return false;
+              return true;
+          });
 
-          // จัดกลุ่มสถิติ
-          if (taskType.includes('AD_APPROVAL') || taskType.includes('SKU_APPROVAL') || taskType.includes('BILLBOARD')) countAds++;
-          if (taskType.includes('PARTNER_APPROVAL')) countPartners++;
-          if (taskType === 'STAFF_APPROVAL') countStaff++; // ✅ นับจำนวนพนักงานที่รออนุมัติ
+          setStats({ 
+              pendingAds: countAds, 
+              pendingPartners: countPartners, 
+              pendingStaff: countStaff, // ✅ อัปเดต State
+              total: activeTodos.length 
+          });
+          setManagerTodos(activeTodos);
+          setLoading(false);
+      },
+      (err) => {
+          console.error("🔥 Error fetching manager todos:", err);
+          // 🛡️ THE FIX [Error Handling]: ข้อความที่อ่านรู้เรื่องสำหรับผู้จัดการ
+          setError("เกิดปัญหาเชื่อมต่อกับเซิร์ฟเวอร์ ไม่สามารถโหลดรายการแจ้งเตือนได้");
+          setLoading(false);
+      }
+    );
 
-          return true;
-        })
-        .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      
-      setStats({ 
-          pendingAds: countAds, 
-          pendingPartners: countPartners, 
-          pendingStaff: countStaff, // ✅ อัปเดต State
-          total: fetchedTodos.length 
-      });
-      setManagerTodos(fetchedTodos);
-      setError(null);
-      setLoading(false);
-    }, (err) => {
-      console.error("🔥 Error fetching manager todos:", err);
-      setError("ไม่สามารถโหลดข้อมูลได้");
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    return () => {
+        if (typeof unsubscribe === 'function') {
+            unsubscribe();
+        }
+    };
   }, []);
 
   const updateTaskStatus = useCallback(async (taskId, newStatus, payload = {}) => {
@@ -86,19 +75,19 @@ export const useManagerTodo = () => {
     setIsSubmitting(true);
     
     try {
-      const batch = writeBatch(db);
       const actionData = { status: newStatus, ...payload, updatedAt: serverTimestamp() };
       
-      // 🚀 The Bulletproof Fix: ใช้ set() แบบ merge: true เขียนทุกกระดาน ป้องกัน Error หาไฟล์ไม่เจอ 100%
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), actionData, { merge: true });
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), actionData, { merge: true });
-      batch.set(doc(db, 'todos', taskId), actionData, { merge: true });
+      // 🚀 THE FIX [ลด Writes จาก 3 เหลือ 1]: 
+      // เลิกใช้ writeBatch อัปเดตแฟ้มงานผิดปกติ 3 ตำแหน่ง 
+      // ปรับมาเป็นการเขียนข้อมูลตรงเข้า Collection 'todos' อย่างถูกต้องแค่ที่เดียว
+      const taskRef = doc(db, 'todos', taskId);
+      await updateDoc(taskRef, actionData);
       
-      await batch.commit();
       return true;
     } catch (err) {
       console.error("🔥 Error updating manager task:", err);
-      setError("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+      // 🛡️ THE FIX [Error Handling]
+      setError("การบันทึกสถานะล้มเหลว โปรดลองใหม่อีกครั้ง");
       return false;
     } finally {
       setIsSubmitting(false);
