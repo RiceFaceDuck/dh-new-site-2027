@@ -90,9 +90,10 @@ const BannerAdWidget = () => {
   if (!loading && banners.length === 0) return null;
 
   // โหมดกำลังโหลด (Skeleton Loading)
+  // ลบ mb-8 และบังคับให้กินพื้นที่ h-full เพื่อเตรียมเข้า Grid
   if (loading) {
     return (
-      <div className="w-full aspect-video md:aspect-[21/9] bg-slate-100/50 rounded-3xl animate-pulse flex items-center justify-center border border-slate-200/60 shadow-sm mb-8 backdrop-blur-md">
+      <div className="w-full h-full min-h-[200px] aspect-video lg:aspect-auto bg-slate-100/50 rounded-2xl md:rounded-3xl animate-pulse flex items-center justify-center border border-slate-200/60 shadow-sm backdrop-blur-md">
         <ImageIcon className="text-slate-300 w-12 h-12 opacity-40" />
       </div>
     );
@@ -103,10 +104,11 @@ const BannerAdWidget = () => {
   const youtubeId = extractYouTubeId(currentBanner?.targetUrl || currentBanner?.videoUrl || currentBanner?.link);
   const isVideo = !!youtubeId;
 
-  // กำหนดสัดส่วนตามที่ User เลือกมาตอนสร้าง (Fallback ไปที่ 16:9 ถ้าพัง)
-  let aspectClass = 'aspect-video md:aspect-[21/9]'; 
-  if (currentBanner.billboardRatio === '1:1') aspectClass = 'aspect-square md:aspect-[2/1]';
-  if (currentBanner.billboardRatio === '9:16') aspectClass = 'aspect-[9/16] md:aspect-[16/9] max-h-[80vh] mx-auto';
+  // กำหนดสัดส่วนตามที่ User เลือกมาตอนสร้าง
+  // เพิ่ม lg:aspect-auto เพื่อให้ Desktop ยืดหยุ่นตาม Grid ทันที โดยไม่โดนล็อกด้วย aspect ratio
+  let aspectClass = 'aspect-video lg:aspect-auto'; 
+  if (currentBanner.billboardRatio === '1:1') aspectClass = 'aspect-square lg:aspect-auto';
+  if (currentBanner.billboardRatio === '9:16') aspectClass = 'aspect-[9/16] lg:aspect-auto';
 
   // 🖱️ 4. ฟังก์ชันจัดการเมื่อคลิกแบนเนอร์
   const handleBannerClick = () => {
@@ -136,7 +138,8 @@ const BannerAdWidget = () => {
     <>
       <div 
         ref={bannerRef}
-        className={`w-full relative mb-8 rounded-3xl overflow-hidden shadow-lg hover:shadow-xl group border border-slate-200/80 bg-slate-900 animate-in fade-in zoom-in-95 duration-700 transition-all`}
+        // ลบ mb-8 ใส่ w-full h-full flex flex-col เพื่อควบคุมความสูงให้อยู่ใน Grid เสมอ
+        className={`w-full h-full min-h-[200px] relative rounded-2xl md:rounded-3xl overflow-hidden shadow-lg hover:shadow-xl group border border-slate-200/80 bg-slate-900 animate-in fade-in zoom-in-95 duration-700 transition-all flex flex-col`}
       >
         
         {/* 🏷️ Premium Sponsored Badge */}
@@ -148,17 +151,18 @@ const BannerAdWidget = () => {
 
         {/* 🖼️ แผ่นภาพแบนเนอร์ */}
         <div 
-          className={`relative w-full cursor-pointer overflow-hidden ${aspectClass}`}
+          className={`relative w-full h-full flex-1 cursor-pointer overflow-hidden ${aspectClass}`}
           onClick={handleBannerClick}
         >
+          {/* บังคับ absolute inset-0 และ object-cover เพื่อให้รูปภาพไม่เพี้ยนเวลา Grid ยืด */}
           <img 
             src={currentBanner.imageUrl} 
             alt={currentBanner.title || "Advertisement"} 
-            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]"
+            className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]"
             loading="lazy"
           />
           
-          {/* 🌌 Overlay อัจฉริยะ: สร้างมิติไล่ระดับสีดำจากด้านล่างเพื่อให้อ่านข้อความชัด */}
+          {/* 🌌 Overlay อัจฉริยะ */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-500"></div>
 
           {/* 🎬 ไอคอนสำหรับวิดีโอ (เรืองแสงและกระเพื่อม) */}
@@ -201,10 +205,10 @@ const BannerAdWidget = () => {
         {/* ⬅️ ➡️ ปุ่มลูกศรนำทาง (แสดงเมื่อมีหลายรูปและ Hover) */}
         {banners.length > 1 && (
           <>
-            <button onClick={prevSlide} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/20 hover:bg-black/60 backdrop-blur-md text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-4 group-hover:translate-x-0 border border-white/10 shadow-lg active:scale-95">
+            <button onClick={prevSlide} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/20 hover:bg-black/60 backdrop-blur-md text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-4 group-hover:translate-x-0 border border-white/10 shadow-lg active:scale-95 z-20">
               <ChevronLeft size={24} className="mr-0.5" />
             </button>
-            <button onClick={nextSlide} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/20 hover:bg-black/60 backdrop-blur-md text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 border border-white/10 shadow-lg active:scale-95">
+            <button onClick={nextSlide} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/20 hover:bg-black/60 backdrop-blur-md text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 border border-white/10 shadow-lg active:scale-95 z-20">
               <ChevronRight size={24} className="ml-0.5" />
             </button>
 
