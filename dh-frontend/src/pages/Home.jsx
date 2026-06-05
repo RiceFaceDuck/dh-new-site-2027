@@ -2,23 +2,47 @@ import React, { useState, useEffect } from 'react';
 import HeroBanner from '../components/HeroBanner';
 import CategoryList from '../components/CategoryList';
 import ProductList from '../components/ProductList';
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+// 🚀 ใช้ where แบบครอบคลุม
+import { collection, getDocs, query, limit, where } from 'firebase/firestore'; 
 import { db } from '../firebase/config';
 
-// 🚀 นำเข้า Component ป้ายแบนเนอร์โฆษณา (BILLBOARD)
+// นำเข้า Component ป้ายแบนเนอร์โฆษณา (BILLBOARD)
 import BannerAdWidget from '../components/ads/BannerAdWidget';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // State ไว้เก็บ Type ของหมวดหมู่ที่ถูกกด
+  const [selectedType, setSelectedType] = useState(null); 
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const productsRef = collection(db, "products");
-        // จำกัดแค่ 12 ตัวเพื่อให้หน้าแรกโหลดไว (สามารถทำ Pagination หรือ Load More เพิ่มได้ในอนาคต)
-        const q = query(productsRef, limit(12)); 
+        let q;
+
+        // 🚀 SMART QUERY: ค้นหาครอบคลุมทุกรูปแบบ (ตัวเล็ก, ตัวใหญ่, ตัวพิมพ์ใหญ่ตัวแรก, มีเว้นวรรค)
+        if (selectedType) {
+          const exact = selectedType.trim();
+          const lowerCase = exact.toLowerCase();
+          const upperCase = exact.toUpperCase();
+          const capitalized = exact.charAt(0).toUpperCase() + exact.slice(1).toLowerCase();
+          const withSpace = exact + " "; // เผื่อเผลอเคาะวรรคตอนสร้างสินค้า
+          
+          console.log("🔍 [Debug] กำลังค้นหาสินค้าที่ตรงกับ:", [exact, lowerCase, upperCase, capitalized, withSpace]); 
+          
+          // ใช้คำสั่ง "in" เพื่อให้ Firebase ค้นหาเจอแน่นอนไม่ว่าจะบันทึกมาแบบไหน
+          q = query(productsRef, 
+            where("category", "in", [exact, lowerCase, upperCase, capitalized, withSpace]), 
+            limit(12)
+          );
+        } else {
+          // ถ้าไม่ได้กด (ดูหน้าแรกปกติ) ให้ดึงสินค้า 12 ชิ้นแรก
+          q = query(productsRef, limit(12)); 
+        }
+
         const querySnapshot = await getDocs(q);
         
         const fetchedProducts = querySnapshot.docs.map(doc => ({
@@ -36,65 +60,51 @@ const Home = () => {
     };
 
     fetchProducts();
-  }, []);
+  }, [selectedType]); // สั่งให้ Effect ทำงานใหม่ทันทีที่มีการกดเปลี่ยนหมวดหมู่
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">
       
-      {/* Wrap เนื้อหาทั้งหมดด้วย max-w-7xl เพื่อให้ตรงกับมาตรฐานความกว้างเว็บ */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 md:pt-8 space-y-8 md:space-y-12">
         
         {/* ========================================================
-            🚀 โครงสร้าง 4 ป้าย (Grid Layout) - Hero + 3 BannerAds
+            โครงสร้าง 4 ป้าย (Grid Layout) - Hero + 3 BannerAds
             ======================================================== */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2 gap-4 lg:gap-5">
-          
-          {/* 1. แบนเนอร์หลัก (HeroBanner) 
-              - Desktop: กินพื้นที่ 2 Col x 2 Row ซ้ายมือ
-              - Tablet: กินพื้นที่ 2 Col แถวบนสุด
-          */}
           <div className="md:col-span-2 lg:row-span-2 h-full">
             <HeroBanner />
           </div>
-          
-          {/* 2. แบนเนอร์ย่อยป้ายที่ 1 (แสดงทุกหน้าจอ)
-              - มือถือจะเห็นป้ายนี้ต่อจาก Hero ทันที
-          */}
           <div className="h-full">
             <BannerAdWidget />
           </div>
-          
-          {/* 3. แบนเนอร์ย่อยป้ายที่ 2 
-              - ซ่อนใน Mobile (hidden md:block) เพื่อลด Scroll fatigue
-          */}
           <div className="hidden md:block h-full">
             <BannerAdWidget />
           </div>
-          
-          {/* 4. แบนเนอร์ย่อยป้ายที่ 3 
-              - ซ่อนใน Tablet ลงไป แสดงเฉพาะ Desktop และให้กว้าง 2 Col ด้านล่าง
-          */}
           <div className="hidden lg:block lg:col-span-2 lg:row-span-1 h-full">
             <BannerAdWidget />
           </div>
-
         </div>
         {/* ======================================================== */}
 
-        {/* 🚀 ส่วนที่ 3: หมวดหมู่ยอดนิยม */}
+        {/* หมวดหมู่ยอดนิยม */}
         <div>
           <div className="flex justify-between items-end mb-4 md:mb-6">
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">หมวดหมู่ยอดนิยม</h2>
             <button className="text-dh-blue hover:text-blue-700 font-semibold text-sm md:text-base transition-colors">ดูทั้งหมด</button>
           </div>
-          <CategoryList />
+          <div className="-mx-4 sm:mx-0">
+            {/* ส่ง State และ ฟังก์ชัน ให้ CategoryList ไปทำงานเวลากด */}
+            <CategoryList selectedType={selectedType} onSelectType={setSelectedType} />
+          </div>
         </div>
 
-        {/* 🚀 ส่วนที่ 4: สินค้าใหม่ / แนะนำ */}
+        {/* สินค้าใหม่ / แนะนำ */}
         <div>
           <div className="flex justify-between items-end mb-4 md:mb-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight mb-1">สินค้าใหม่ล่าสุด</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight mb-1">
+                {selectedType ? 'สินค้าในหมวดหมู่นี้' : 'สินค้าใหม่ล่าสุด'}
+              </h2>
               <p className="text-slate-500 text-sm md:text-base">อะไหล่และอุปกรณ์ไอทีคุณภาพสูง คัดสรรมาเพื่อคุณ</p>
             </div>
             <button className="text-dh-blue hover:text-blue-700 font-semibold text-sm md:text-base transition-colors whitespace-nowrap">ดูสินค้าทั้งหมด</button>
@@ -120,7 +130,7 @@ const Home = () => {
             <ProductList products={products} />
           ) : (
             <div className="bg-slate-50 text-slate-500 p-8 rounded-2xl text-center border border-slate-100 shadow-sm">
-              <p className="text-lg font-medium">ยังไม่มีสินค้าในระบบ</p>
+              <p className="text-lg font-medium">ยังไม่มีสินค้าในหมวดหมู่นี้</p>
             </div>
           )}
         </div>

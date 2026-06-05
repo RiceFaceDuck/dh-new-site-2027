@@ -11,6 +11,9 @@ import { settingsService } from '../../firebase/settingsService';
 import { warrantyService } from '../../firebase/warrantyService';
 import { historyService } from '../../firebase/historyService';
 
+// 🚀 นำเข้า CategoryManager ตัวใหม่
+import CategoryManager from './category/CategoryManager';
+
 export default function GlobalSettingsPanel() {
     // 🛡️ Security State
     const [isUnlocked, setIsUnlocked] = useState(false);
@@ -22,7 +25,6 @@ export default function GlobalSettingsPanel() {
     const [inventoryConfig, setInventoryConfig] = useState({
         defaultBufferStock: 2
     });
-
     const [regexConfig, setRegexConfig] = useState({
         shopee: '', lazada: '', tiktok: '', facebook: ''
     });
@@ -131,6 +133,7 @@ export default function GlobalSettingsPanel() {
                     throw new Error(res.message);
                 }
             }
+            // หมายเหตุ: activeTab === 'category' ไม่ต้องจัดการตรงนี้ เพราะมันมี Auto-save ในตัว CategoryManager เองแล้ว
 
             // ล็อกกลับอัตโนมัติหลังเซฟเสร็จ เพื่อความปลอดภัย
             setIsUnlocked(false); 
@@ -179,14 +182,17 @@ export default function GlobalSettingsPanel() {
                         {isUnlocked ? 'ปลดล็อกแล้ว (อันตราย)' : 'คลิกเพื่อปลดล็อกแก้ไข'}
                     </button>
                     
-                    <button 
-                        onClick={handleSave}
-                        disabled={!isUnlocked || isSaving}
-                        className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-sm disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-500 active:scale-95"
-                    >
-                        {isSaving ? <Loader2 size={14} className="animate-spin"/> : <Save size={14} strokeWidth={2.5}/>}
-                        บันทึกข้อมูล
-                    </button>
+                    {/* ซ่อนปุ่ม บันทึกข้อมูล กรณีที่อยู่หน้า จัดการหมวดหมู่ (เพราะจัดการแยกไปแล้ว) */}
+                    {activeTab !== 'category' && (
+                        <button 
+                            onClick={handleSave}
+                            disabled={!isUnlocked || isSaving}
+                            className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-sm disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-500 active:scale-95"
+                        >
+                            {isSaving ? <Loader2 size={14} className="animate-spin"/> : <Save size={14} strokeWidth={2.5}/>}
+                            บันทึกข้อมูล
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -197,6 +203,12 @@ export default function GlobalSettingsPanel() {
                     <button onClick={() => setActiveTab('inventory')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'inventory' ? 'bg-rose-100 text-rose-700 shadow-sm border border-rose-200' : 'text-slate-600 hover:bg-slate-200'}`}>
                         <Box size={16} strokeWidth={2.5}/> บัฟเฟอร์คลังสินค้า
                     </button>
+                    
+                    {/* 🚀 Tab จัดการหมวดหมู่หน้าแรก */}
+                    <button onClick={() => setActiveTab('category')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'category' ? 'bg-emerald-100 text-emerald-700 shadow-sm border border-emerald-200' : 'text-slate-600 hover:bg-slate-200'}`}>
+                        <LayoutTemplate size={16} strokeWidth={2.5}/> จัดการหมวดหมู่หน้าแรก
+                    </button>
+
                     <button onClick={() => setActiveTab('regex')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'regex' ? 'bg-sky-100 text-sky-700 shadow-sm border border-sky-200' : 'text-slate-600 hover:bg-slate-200'}`}>
                         <LinkIcon size={16} strokeWidth={2.5}/> กฎความถูกต้องลิงก์
                     </button>
@@ -217,6 +229,13 @@ export default function GlobalSettingsPanel() {
                             <div className="bg-slate-800 text-white px-4 py-2 rounded-lg font-black text-xs shadow-lg flex items-center gap-2 opacity-80">
                                 <Lock size={14}/> ถูกล็อกเพื่อความปลอดภัย
                             </div>
+                        </div>
+                    )}
+
+                    {/* --- TAB: CATEGORY --- */}
+                    {activeTab === 'category' && (
+                        <div className="h-full animate-in fade-in flex flex-col">
+                            <CategoryManager />
                         </div>
                     )}
 

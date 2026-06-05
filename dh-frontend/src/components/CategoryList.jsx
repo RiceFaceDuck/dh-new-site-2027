@@ -1,70 +1,116 @@
-import React from 'react';
-import { Cpu, MonitorSmartphone, PenTool, Wrench } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Package, AlertCircle } from 'lucide-react';
+import { categoryService } from '../firebase/categoryService';
 
-// อัปเกรดสีและเอฟเฟกต์ Hover ให้เป็นสไตล์ Tech Dashboard
-const categories = [
-  { 
-    id: 1, 
-    name: 'อะไหล่ภายใน', 
-    icon: <Cpu size={26} strokeWidth={1.5} />, 
-    color: 'text-cyber-blue group-hover:text-white', 
-    bg: 'bg-white border-slate-200 group-hover:bg-cyber-blue group-hover:border-cyber-blue group-hover:shadow-[0_0_15px_rgba(14,165,233,0.4)]' 
-  },
-  { 
-    id: 2, 
-    name: 'อุปกรณ์ภายนอก', 
-    icon: <MonitorSmartphone size={26} strokeWidth={1.5} />, 
-    color: 'text-purple-500 group-hover:text-white', 
-    bg: 'bg-white border-slate-200 group-hover:bg-purple-500 group-hover:border-purple-500 group-hover:shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
-  },
-  { 
-    id: 3, 
-    name: 'เครื่องมือช่าง', 
-    icon: <PenTool size={26} strokeWidth={1.5} />, 
-    color: 'text-amber-500 group-hover:text-white', 
-    bg: 'bg-white border-slate-200 group-hover:bg-amber-500 group-hover:border-amber-500 group-hover:shadow-[0_0_15px_rgba(245,158,11,0.4)]' 
-  },
-  { 
-    id: 4, 
-    name: 'บริการรับซ่อม', 
-    icon: <Wrench size={26} strokeWidth={1.5} />, 
-    color: 'text-cyber-emerald group-hover:text-white', 
-    bg: 'bg-white border-slate-200 group-hover:bg-cyber-emerald group-hover:border-cyber-emerald group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
-  },
-];
+// 🚀 รับ Props selectedType และ onSelectType มาจากหน้า Home
+const CategoryList = ({ selectedType, onSelectType }) => {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const CategoryList = () => {
-  return (
-    <div className="mb-10 md:mb-16">
-      
-      {/* Tech Heading */}
-      <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight mb-4 px-1 flex items-center">
-        <span className="w-1.5 h-5 bg-cyber-emerald rounded-sm mr-3 inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-        หมวดหมู่หลัก
-      </h2>
-      
-      {/* Mobile: แสดงแบบแนวนอนปัดซ้ายขวาได้ (Swipe) พร้อมซ่อน Scrollbar
-        Desktop: แสดงผลแบบ Grid 4 ช่อง
-      */}
-      <div className="flex overflow-x-auto hide-scrollbar md:grid md:grid-cols-4 gap-4 pb-2 md:pb-0 px-1 pt-1">
-        {categories.map((cat) => (
-          <div key={cat.id} className="flex flex-col items-center cursor-pointer group min-w-[85px] sm:min-w-[100px] md:min-w-0 flex-shrink-0">
-            
-            {/* Tech Button Box */}
-            <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-md border flex items-center justify-center mb-3 shadow-sm transition-all duration-300 ${cat.bg}`}>
-              <div className={`transition-colors duration-300 ${cat.color}`}>
-                {cat.icon}
-              </div>
-            </div>
-            
-            {/* Label */}
-            <span className="text-xs sm:text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
-              {cat.name}
-            </span>
-          </div>
-        ))}
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await categoryService.getActiveCategories();
+        setCategories(data);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+        setError('ไม่สามารถโหลดหมวดหมู่ได้');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  if (error) {
+    return (
+      <div className="mb-8 md:mb-12">
+        <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight mb-4 px-1 flex items-center">
+          <span className="w-1.5 h-5 bg-cyber-emerald rounded-sm mr-3 inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+          หมวดหมู่ยอดนิยม
+        </h2>
+        <div className="flex items-center justify-center p-4 bg-red-50 rounded-xl border border-red-100 text-red-500 text-sm">
+          <AlertCircle size={18} className="mr-2" />
+          <span>{error}</span>
+        </div>
       </div>
-      
+    );
+  }
+
+  return (
+    <div className="mb-8 md:mb-12">
+      <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight mb-4 px-4 flex items-center">
+        <span className="w-1.5 h-5 bg-cyber-emerald rounded-sm mr-3 inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+        หมวดหมู่ยอดนิยม
+      </h2>
+
+      <div 
+        className="flex flex-row overflow-x-auto gap-4 px-4 py-2 [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {loading ? (
+          Array.from({ length: 5 }).map((_, index) => (
+            <div key={`skeleton-${index}`} className="flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] flex-shrink-0 animate-pulse">
+              <div className="w-14 h-14 bg-slate-200 rounded-full shadow-sm mb-2"></div>
+              <div className="w-12 h-3 bg-slate-200 rounded-md"></div>
+            </div>
+          ))
+        ) : categories.length === 0 ? (
+          <div className="w-full text-center text-sm text-slate-500 py-4">
+            ยังไม่มีหมวดหมู่เปิดใช้งาน
+          </div>
+        ) : (
+          categories.map((cat) => {
+            // เช็คว่าการ์ดนี้กำลังถูกเลือก (คลิก) อยู่หรือไม่
+            const isSelected = selectedType === cat.type;
+            
+            return (
+              <div 
+                key={cat.id} 
+                // 🚀 เมื่อคลิก ให้ส่งค่า type ไป หากคลิกซ้ำอันเดิมให้ส่ง null (ยกเลิกการกรอง)
+                onClick={() => onSelectType && onSelectType(isSelected ? null : cat.type)}
+                className={`flex flex-col items-center justify-start min-w-[72px] sm:min-w-[80px] flex-shrink-0 cursor-pointer group active:scale-95 transition-all duration-200 ${
+                  selectedType && !isSelected ? 'opacity-50 hover:opacity-100' : 'opacity-100'
+                }`}
+              >
+                {/* 🚀 เปลี่ยนสีขอบและพื้นหลังให้ชัดเจนว่าถูกคลิกอยู่ */}
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-2 shadow-sm border transition-all duration-200 overflow-hidden ${
+                  isSelected 
+                    ? 'border-blue-500 shadow-md bg-blue-50 ring-2 ring-blue-500/20' 
+                    : 'bg-white border-slate-100 group-hover:shadow-md group-hover:border-blue-400'
+                }`}>
+                  {cat.imageUrl ? (
+                    <img 
+                      src={cat.imageUrl} 
+                      alt={cat.name} 
+                      className={`w-8 h-8 object-contain transition-transform duration-200 ${isSelected ? 'scale-110' : 'group-hover:scale-110'}`}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <Package 
+                    size={24} 
+                    strokeWidth={1.5} 
+                    className={`transition-colors duration-200 ${cat.imageUrl ? 'hidden' : 'block'} ${isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}`} 
+                  />
+                </div>
+                
+                <span className={`text-xs font-medium text-center line-clamp-2 leading-tight transition-colors duration-200 ${
+                  isSelected ? 'text-blue-600' : 'text-slate-700 group-hover:text-blue-600'
+                }`}>
+                  {cat.name}
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };
