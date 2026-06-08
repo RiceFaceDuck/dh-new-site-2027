@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { walletService } from '../../../../firebase/walletService';
+import { walletService } from '../../../firebase/walletService';
 
 /**
  * Custom Hook สำหรับดึงข้อมูลการเงิน (Wallet & Credit Points) ของลูกค้าแบบ Real-time
