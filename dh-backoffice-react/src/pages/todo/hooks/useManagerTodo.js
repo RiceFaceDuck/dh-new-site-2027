@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db } from '../../../firebase/config';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-// 🚀 THE FIX: นำเข้า todoService เพื่อเรียกใช้ Query หลัก และหลีกเลี่ยงการสร้าง Query ซ้ำซ้อน
-import { todoService } from '../../../firebase/todoService';
+// 🚀 THE FIX [Clean Architecture]: 
+// เปลี่ยนจาก todoService มาใช้ managerTodoService ที่แยกไว้เฉพาะสำหรับผู้จัดการ
+import { managerTodoService } from '../../../firebase/managerTodoService';
 
 export const useManagerTodo = () => {
   const [managerTodos, setManagerTodos] = useState([]);
@@ -23,42 +22,33 @@ export const useManagerTodo = () => {
     setError(null);
     
     // 🚀 THE FIX [ลด Reads & แก้บั๊กข้อมูลไม่ตรง]: 
-    // ใช้ subscribeManagerApprovals จาก Service แทนการสร้าง Query ใหม่ที่ชี้ไปผิด Collection
-    // Service จะทำหน้าที่ดึงข้อมูลจาก Root Collection 'todos' ให้ถูกต้อง
-    const unsubscribe = todoService.subscribeManagerApprovals(
+    // เรียกใช้ Service สำหรับ Manager โดยเฉพาะ
+    const unsubscribe = managerTodoService.subscribeManagerApprovals(
       (fetchedTodos) => {
           let countAds = 0;
           let countPartners = 0;
-          let countStaff = 0; // ✅ ตัวนับคำขอพนักงานใหม่
+          let countStaff = 0;
 
-          // ข้อมูลถูกกรอง MANAGER_TASK_TYPES และ Sort มาแล้วจาก Service ชั้นแรก
-          // กรองข้อมูล Status ขยะ หรือที่ทำเสร็จแล้วออกไป (Double Check)
-          const activeTodos = fetchedTodos.filter(todo => {
-              const status = (todo.status || '').toUpperCase();
-              if (status === 'COMPLETED' || status === 'CANCELLED' || status === 'REJECTED' || status === 'APPROVED') return false;
-              
-              const taskType = todo.taskType || todo.type || '';
-              // จัดกลุ่มสถิติ
-              if (taskType.includes('AD_APPROVAL') || taskType.includes('SKU_APPROVAL') || taskType.includes('BILLBOARD')) countAds++;
-              if (taskType.includes('PARTNER_APPROVAL')) countPartners++;
-              if (taskType === 'STAFF_APPROVAL') countStaff++; // ✅ นับจำนวนพนักงานที่รออนุมัติ
-
-              return true;
+          // 🚀 [ประสิทธิภาพ]: ทำการนับเฉพาะงานผู้จัดการ (ส่วนที่ 3) 
+          fetchedTodos.forEach(todo => {
+              const type = todo.type || todo.taskType;
+              if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type)) {
+                  countAds++;
+              } else if (type === 'PARTNER_APPROVAL') {
+                  countPartners++;
+              } else if (type === 'STAFF_APPROVAL') {
+                  countStaff++;
+              }
           });
 
-          setStats({ 
-              pendingAds: countAds, 
-              pendingPartners: countPartners, 
-              pendingStaff: countStaff, // ✅ อัปเดต State
-              total: activeTodos.length 
+          setStats({
+              pendingAds: countAds,
+              pendingPartners: countPartners,
+              pendingStaff: countStaff,
+              total: fetchedTodos.length
           });
-          setManagerTodos(activeTodos);
-          setLoading(false);
-      },
-      (err) => {
-          console.error("🔥 Error fetching manager todos:", err);
-          // 🛡️ THE FIX [Error Handling]: ข้อความที่อ่านรู้เรื่องสำหรับผู้จัดการ
-          setError("เกิดปัญหาเชื่อมต่อกับเซิร์ฟเวอร์ ไม่สามารถโหลดรายการแจ้งเตือนได้");
+
+          setManagerTodos(fetchedTodos);
           setLoading(false);
       }
     );
@@ -70,19 +60,16 @@ export const useManagerTodo = () => {
     };
   }, []);
 
+  // ----------------------------------------------------------------------
+  // 📝 แก้บั๊ค "บันทึก/เปลี่ยนสถานะงานไม่ได้" 
+  // โดยผูกการทำงานเข้ากับ Service ใหม่
+  // ----------------------------------------------------------------------
   const updateTaskStatus = useCallback(async (taskId, newStatus, payload = {}) => {
     if (isSubmitting) return false;
     setIsSubmitting(true);
     
     try {
-      const actionData = { status: newStatus, ...payload, updatedAt: serverTimestamp() };
-      
-      // 🚀 THE FIX [ลด Writes จาก 3 เหลือ 1]: 
-      // เลิกใช้ writeBatch อัปเดตแฟ้มงานผิดปกติ 3 ตำแหน่ง 
-      // ปรับมาเป็นการเขียนข้อมูลตรงเข้า Collection 'todos' อย่างถูกต้องแค่ที่เดียว
-      const taskRef = doc(db, 'todos', taskId);
-      await updateDoc(taskRef, actionData);
-      
+      await managerTodoService.updateTaskStatus(taskId, newStatus, payload);
       return true;
     } catch (err) {
       console.error("🔥 Error updating manager task:", err);
@@ -94,8 +81,32 @@ export const useManagerTodo = () => {
     }
   }, [isSubmitting]);
 
-  const startProcessing = useCallback(() => setIsSubmitting(true), []);
-  const stopProcessing = useCallback(() => setIsSubmitting(false), []);
+  // ----------------------------------------------------------------------
+  // 🗑️ แก้บั๊ค "ลบงานไม่ได้"
+  // ส่งให้ Service ยิงคำสั่ง Delete ตรงๆ ไม่ผ่าน Transaction ที่ซับซ้อน
+  // ----------------------------------------------------------------------
+  const deleteManagerTask = useCallback(async (taskId) => {
+    if (isSubmitting) return false;
+    setIsSubmitting(true);
 
-  return { managerTodos, stats, loading, error, isSubmitting, updateTaskStatus, startProcessing, stopProcessing };
+    try {
+      await managerTodoService.deleteManagerTask(taskId);
+      return true;
+    } catch (err) {
+      console.error("🔥 Error deleting manager task:", err);
+      setError("ไม่สามารถลบรายการได้ โปรดลองใหม่อีกครั้ง");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [isSubmitting]);
+
+  return {
+    managerTodos,
+    loading,
+    error,
+    stats,
+    updateTaskStatus,
+    deleteManagerTask
+  };
 };

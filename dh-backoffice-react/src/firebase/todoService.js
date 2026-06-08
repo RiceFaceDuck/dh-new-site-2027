@@ -6,24 +6,11 @@ import {
 } from 'firebase/firestore';
 
 // ----------------------------------------------------------------------
-// 🏷️ ประกาศตัวแปรกลุ่มงานของ "ผู้จัดการ" (Manager Task Types)
-// สร้างไว้เพื่อให้แก้ไขง่าย และแยกระบบระหว่าง "ส่วนกลาง" กับ "ผู้จัดการ" ได้เด็ดขาด
+// 🚀 THE FIX [Clean Architecture]:
+// นำเข้า MANAGER_TASK_TYPES จาก Manager Service แทนการสร้างซ้ำซ้อนในไฟล์นี้
+// เพื่อให้ todoService โฟกัสเฉพาะงาน "ส่วนกลาง" ตามหลัก Single Responsibility
 // ----------------------------------------------------------------------
-export const MANAGER_TASK_TYPES = [
-  'WHOLESALE_APPROVAL',
-  'wholesale_request',
-  'CLAIM_APPROVAL',
-  'RETURN_APPROVAL',
-  'CANCEL_CLAIM_APPROVAL',
-  'CANCEL_RETURN_APPROVAL',
-  'AD_APPROVAL',         // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า
-  'USER_SKU_APPROVAL',   // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า (Legacy)
-  'BILLBOARD_APPROVAL',  // งานตรวจสอบ/อนุมัติ ฝากแผ่นป้ายโฆษณา
-  'PARTNER_APPROVAL',    // งานตรวจสอบ/อนุมัติ Partner รับการสนับสนุน
-  'ACCOUNT_APPROVAL',    // งานตรวจสอบ Account สมัครใหม่
-  'WALLET_WITHDRAWAL',   // งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า
-  'STAFF_APPROVAL'       // ✨ [NEW] งานตรวจสอบ/อนุมัติ พนักงานใหม่เข้าทำงาน
-];
+import { MANAGER_TASK_TYPES } from './managerTodoService';
 
 export const todoService = {
 
@@ -93,40 +80,6 @@ export const todoService = {
       console.error("🔥 Query Setup Error (Pending Todos):", err);
       if (onError) onError(new Error("การตั้งค่าดึงข้อมูลผิดพลาด"));
       return () => {}; // คืนค่าฟังก์ชันว่างเพื่อไม่ให้เกิด Error
-    }
-  },
-
-  // 📥 2. ระบบ Subscribe งาน "ผู้จัดการ"
-  subscribeManagerApprovals: (callback, onError) => {
-    try {
-      const q = query(
-        collection(db, 'todos'),
-        where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager'])
-      ); 
-      
-      return onSnapshot(q, (snapshot) => {
-        const managerTodos = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          // 🚀 [อัปเกรด-ความปลอดภัย] ดึงเฉพาะงานที่มี Type ตรงกับกลุ่มงานของผู้จัดการเท่านั้น 
-          .filter(t => {
-              const currentType = t.type || t.taskType;
-              if (!currentType) return false; // สกัดกั้น: ป้องกันงานผิดประเภท หรือโครงสร้างพัง
-              return MANAGER_TASK_TYPES.includes(currentType);
-          })
-          .sort((a, b) => {
-              const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
-              const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
-              return timeB - timeA;
-          });
-        callback(managerTodos);
-      }, (error) => {
-        console.error("🔥 Snapshot Error (Manager):", error);
-        if (onError) onError(new Error("เกิดปัญหาการเชื่อมต่อ ดึงงานผู้จัดการไม่สำเร็จ"));
-      });
-    } catch (err) {
-      console.error("🔥 Query Setup Error (Manager):", err);
-      if (onError) onError(new Error("การตั้งค่าดึงข้อมูลผิดพลาด"));
-      return () => {};
     }
   },
 
@@ -507,6 +460,7 @@ export const todoService = {
   
   // ----------------------------------------------------------------------
   // 🛡️ Helper Function สำหรับระบบภายนอกเพื่อเช็คว่าเป็นงานของ Manager หรือไม่
+  // (เก็บเอาไว้เพื่อให้ Backward Compatibility กับ Component ตัวอื่นๆ ที่ยังใช้งานอยู่)
   // ----------------------------------------------------------------------
   isManagerTask: (taskType) => {
       return MANAGER_TASK_TYPES.includes(taskType);
