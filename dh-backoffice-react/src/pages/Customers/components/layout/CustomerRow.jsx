@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Crown, Star, Building2, User, FileText, Copy, CheckCircle2 } from 'lucide-react';
+import WalletDisplay from '../displays/WalletDisplay';
+import PointDisplay from '../displays/PointDisplay';
 
 export default function CustomerRow({ customer, isSelected, onSelect, gridLayout }) {
   const [copied, setCopied] = useState(false);
@@ -28,9 +30,10 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   const logisticText = customer.logisticProvider || '-';
   const hasTax = Boolean(customer.hasTaxInfo);
   
-  // ข้อมูลตัวเลขการเงิน
-  const walletBalance = Number(customer.walletBalance || 0);
-  const creditPoints = Number(customer.creditPoints || 0);
+  // รหัสลูกค้าสำหรับการดึงข้อมูล Real-time (Wallet & Points)
+  const customerId = customer.uid || customer.id;
+
+  // ข้อมูลตัวเลขยอดสั่งซื้อ 30 วัน
   const sales30Days = Number(customer.stats?.sales30Days || customer.stats?.monthlySales || 0);
 
   // คำนวณวันที่สั่งซื้อล่าสุด
@@ -116,26 +119,14 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           </div>
         </div>
 
-        {/* 6. Wallet */}
+        {/* 6. Wallet (เรียกใช้ Real-time Component แทน) */}
         <div className="text-right min-w-0">
-          {walletBalance > 0 ? (
-            <span className="text-[13px] font-mono font-bold text-emerald-600 tracking-tight">
-              ฿{walletBalance.toLocaleString('th-TH', {minimumFractionDigits: 2})}
-            </span>
-          ) : (
-            <span className="text-[12px] font-mono font-normal text-slate-300">0.00</span>
-          )}
+          <WalletDisplay customerId={customerId} />
         </div>
 
-        {/* 7. Points */}
+        {/* 7. Points (เรียกใช้ Real-time Component แทน) */}
         <div className="text-right min-w-0">
-          {creditPoints > 0 ? (
-            <span className="text-[13px] font-mono font-bold text-amber-600 tracking-tight">
-              {creditPoints.toLocaleString('th-TH')}
-            </span>
-          ) : (
-            <span className="text-[12px] font-mono font-normal text-slate-300">-</span>
-          )}
+          <PointDisplay customerId={customerId} />
         </div>
 
         {/* 8. วันที่สั่งซื้อล่าสุด */}
