@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Settings, Receipt, History, Users, Calculator, ShieldCheck
+  Settings, Receipt, History, Users, Calculator 
 } from 'lucide-react';
 
 /**
@@ -40,7 +40,7 @@ const ToolCard = ({ title, subtitle, icon: Icon, colorTheme, onClick, badge }) =
 /**
  * 🛠️ ส่วนแผงเครื่องมือควบคุม (Quick Access Tools)
  */
-const QuickAccessTools = ({ onOpenGlobalSettings, onNavigatePricing, onNavigateStaff, onNavigateTodo, onNavigateHistory, pendingStaffCount, pendingTasksCount }) => {
+const QuickAccessTools = ({ onOpenGlobalSettings, onNavigatePricing, onNavigateStaff, onNavigateHistory, pendingStaffCount }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <ToolCard 
@@ -66,15 +66,6 @@ const QuickAccessTools = ({ onOpenGlobalSettings, onNavigatePricing, onNavigateS
           colorTheme="orange"
           onClick={onNavigateStaff}
           badge={pendingStaffCount}
-        />
-
-        <ToolCard 
-          title="ตรวจสอบคำร้อง (Todo)" 
-          subtitle="อนุมัติราคาส่ง, อนุมัติลบสินค้า"
-          icon={ShieldCheck} 
-          colorTheme="rose"
-          onClick={onNavigateTodo}
-          badge={pendingTasksCount}
         />
 
         <ToolCard 
