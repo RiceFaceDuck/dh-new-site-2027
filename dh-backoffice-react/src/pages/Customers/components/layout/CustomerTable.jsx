@@ -25,16 +25,16 @@ export default function CustomerTable({
           
           {/* 👑 Table Header (แถวบนสุด - ปักหมุดไว้ด้านบนเสมอ) */}
           <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-            <div className={`px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider ${gridLayout}`}>
+            <div className={`px-4 py-3.5 text-[13px] font-bold text-slate-700 uppercase tracking-wider ${gridLayout}`}>
               <div className="flex items-center">Customer ID</div>
               <div className="flex items-center">Profile</div>
-              <div className="flex items-center">Role/Tier</div>
               <div className="flex items-center">Phone</div>
-              <div className="text-right">Orders</div>
+              <div className="flex items-center">Logistic</div>
+              <div className="flex items-center justify-center">Role/Tier</div>
               <div className="text-right">DH ค้างยอด</div>
               <div className="text-right">Points</div>
-              <div className="text-center">Last Order</div>
-              <div className="text-right">30d Sales</div>
+              <div className="text-center">บิลล่าสุด</div>
+              <div className="text-right">30D Paid Out</div>
             </div>
           </div>
           

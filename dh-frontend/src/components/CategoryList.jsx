@@ -28,11 +28,7 @@ const CategoryList = ({ selectedType, onSelectType }) => {
 
   if (error) {
     return (
-      <div className="mb-8 md:mb-12">
-        <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight mb-4 px-1 flex items-center">
-          <span className="w-1.5 h-5 bg-cyber-emerald rounded-sm mr-3 inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-          หมวดหมู่ยอดนิยม
-        </h2>
+      <div className="w-full">
         <div className="flex items-center justify-center p-4 bg-red-50 rounded-xl border border-red-100 text-red-500 text-sm">
           <AlertCircle size={18} className="mr-2" />
           <span>{error}</span>
@@ -42,14 +38,9 @@ const CategoryList = ({ selectedType, onSelectType }) => {
   }
 
   return (
-    <div className="mb-8 md:mb-12">
-      <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight mb-4 px-4 flex items-center">
-        <span className="w-1.5 h-5 bg-cyber-emerald rounded-sm mr-3 inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-        หมวดหมู่ยอดนิยม
-      </h2>
-
+    <div className="w-full">
       <div 
-        className="flex flex-row overflow-x-auto gap-4 px-4 py-2 [&::-webkit-scrollbar]:hidden"
+        className="flex flex-row overflow-x-auto md:flex-wrap gap-4 px-4 py-2 [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {loading ? (

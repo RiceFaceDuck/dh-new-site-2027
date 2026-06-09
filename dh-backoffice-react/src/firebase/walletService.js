@@ -25,9 +25,27 @@ export const walletService = {
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
+          
+          // ค้นหาค่า Wallet จากหลายๆ ฟิลด์ที่เป็นไปได้ในฐานข้อมูล
+          const wallet = Number(
+            data.walletBalance ?? 
+            data.partnerCredit ?? 
+            data.stats?.creditBalance ?? 
+            data.financials?.wallet ?? 
+            0
+          );
+
+          // ค้นหาค่า Points จากหลายๆ ฟิลด์ที่เป็นไปได้
+          const points = Number(
+            data.creditPoints ?? 
+            data.creditPoint ?? 
+            data.financials?.credit ?? 
+            0
+          );
+
           callback({
-            walletBalance: typeof data.walletBalance === 'number' ? data.walletBalance : 0,
-            creditPoints: typeof data.creditPoints === 'number' ? data.creditPoints : 0
+            walletBalance: isNaN(wallet) ? 0 : wallet,
+            creditPoints: isNaN(points) ? 0 : points
           });
         } else {
           callback({ walletBalance: 0, creditPoints: 0 });
@@ -56,9 +74,25 @@ export const walletService = {
       
       if (docSnap.exists()) {
         const data = docSnap.data();
+        
+        const wallet = Number(
+          data.walletBalance ?? 
+          data.partnerCredit ?? 
+          data.stats?.creditBalance ?? 
+          data.financials?.wallet ?? 
+          0
+        );
+
+        const points = Number(
+          data.creditPoints ?? 
+          data.creditPoint ?? 
+          data.financials?.credit ?? 
+          0
+        );
+
         return {
-          walletBalance: typeof data.walletBalance === 'number' ? data.walletBalance : 0,
-          creditPoints: typeof data.creditPoints === 'number' ? data.creditPoints : 0
+          walletBalance: isNaN(wallet) ? 0 : wallet,
+          creditPoints: isNaN(points) ? 0 : points
         };
       }
       return { walletBalance: 0, creditPoints: 0 };
