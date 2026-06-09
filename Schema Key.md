@@ -42,4 +42,28 @@ To create these, go to **Firestore Database -> Indexes -> Composite** in your Fi
 
 ---
 
+## 2. Collection: `orders`
+
+The `orders` collection stores all billing and POS transaction data. It has been optimized for fast querying by splitting responsibilities.
+
+### Schema Fields (Key Fields)
+
+| Field Name    | Type      | Description                                                                 | Example Value                       |
+|---------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
+| `orderId`     | String    | Human-readable ID generated for the bill. Starts with DH- or TEMP-          | `"DH-261215-1234"`, `"TEMP-261215"` |
+| `orderStatus` | String    | Status of the order lifecycle.                                              | `"Paid"`, `"Pending"`, `"Cancelled"`|
+| `paymentStatus`| String   | Status of the payment.                                                      | `"Paid"`, `"Unpaid"`                |
+| `netTotal`    | Number    | The final payable amount after all discounts and fees.                      | `15000`                             |
+| `createdAt`   | Timestamp | When the order was created.                                                 | `December 15, 2026 at 10:30:00 AM UTC+7` |
+| `customer`    | Map       | Denormalized customer information to prevent N+1 queries.                   | `{ uid: "123", accountName: "John"}`|
+
+### Architectural Note
+The logic for interacting with the `orders` collection has been separated into:
+- **`billingService.js`**: A facade pattern entrypoint that unifies the Query, Update, and Transaction services so components only need a single import.
+- **`billingQueryService.js`**: Handles read-only operations (`subscribeRecentOrders`, `searchOrders`) to keep UI snappy.
+- **`billingUpdateService.js`**: Handles simpler updates (like marking as complete or cancelled) without complex side-effects.
+- **`billingTransactionService.js`**: Handles complex atomic transactions (Stock updates, Wallet deductions, History logging, Sales stats) using Firestore `runTransaction`.
+
+---
+
 *(Additional schemas will be documented here as the system evolves)*

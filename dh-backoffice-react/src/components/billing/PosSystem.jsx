@@ -1,8 +1,6 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Plus, ArrowLeft, Eye, QrCode, X, Megaphone, Check, Gift } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Plus, ArrowLeft, X } from 'lucide-react';
 import { billingService } from '../../firebase/billingService';
-import { promotionService } from '../../firebase/promotionService'; 
-import { freebieService } from '../../firebase/freebieService'; 
 import { auth } from '../../firebase/config';
 import { driveService } from '../../firebase/driveService'; 
 
@@ -10,6 +8,7 @@ import CartPanel from './pos/CartPanel';
 import PaymentPanel from './pos/PaymentPanel';
 import SettingsPanel from './pos/SettingsPanel';
 import ReceiptTemplate from './pos/ReceiptTemplate'; 
+import usePosState from './pos/hooks/usePosState';
 
 const convertToThaiBahtText = (number) => {
     if (isNaN(number) || number === 0) return "ศูนย์บาทถ้วน";
@@ -41,70 +40,24 @@ const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) 
 const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, slate: {} };
 
 export default function PosSystem({ products = [], customers = [], cartTabs = [], setCartTabs, activeTabId, setActiveTabId, onSwitchView, initialDraft }) {
-    const [searchQuery, setSearchQuery] = useState('');
-    
-    useEffect(() => {
-        if (initialDraft) {
-            // Check if draft already exists in cartTabs
-            const exists = cartTabs.some(tab => tab.id === initialDraft.id);
-            if (!exists) {
-                const newTab = {
-                    id: initialDraft.id,
-                    name: `บิล #${initialDraft.id.slice(-4)}`,
-                    customer: initialDraft.customerInfo || initialDraft.customer || null,
-                    items: initialDraft.items || [],
-                    walkInPhone: initialDraft.walkInPhone || '',
-                    hidePhone: initialDraft.hidePhone || false,
-                    slipImage: initialDraft.slipImage || '',
-                    note: initialDraft.note || '',
-                    noteColor: initialDraft.noteColor || 'slate',
-                    priceMode: initialDraft.priceMode || 'retail',
-                    shippingCost: initialDraft.shippingCost || 0,
-                    customDiscount: initialDraft.customDiscount || 0,
-                    customDiscountType: initialDraft.customDiscountType || 'amount',
-                    useWallet: initialDraft.useWallet || 0,
-                    walletAmount: initialDraft.walletAmount || 0,
-                    promoDiscount: initialDraft.promoDiscount || 0,
-                    appliedPromoId: initialDraft.appliedPromoId || null,
-                    appliedPromoDetails: initialDraft.appliedPromoDetails || null,
-                    autoPromoEnabled: initialDraft.autoPromoEnabled ?? true,
-                    transactionRef: initialDraft.transactionRef || '',
-                    transferDateTime: initialDraft.transferDateTime || ''
-                };
-                setCartTabs(prev => [...prev, newTab]);
-                setActiveTabId(initialDraft.id);
-            } else {
-                setActiveTabId(initialDraft.id);
-            }
-        }
-    }, [initialDraft]); // only run when initialDraft changes
-
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [actionBoxItem, setActionBoxItem] = useState(null);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
-    const [previewSlip, setPreviewSlip] = useState(null); 
-    const [isUploadingSlip, setIsUploadingSlip] = useState(false);
-    const [customerSearchText, setCustomerSearchText] = useState('');
-    const [showCustDropdown, setShowCustDropdown] = useState(false);
-    const [activePromotions, setActivePromotions] = useState([]);
-    const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
-    const [activeFreebies, setActiveFreebies] = useState([]);
+    const posState = usePosState(products, customers, cartTabs, setCartTabs, activeTabId, setActiveTabId, initialDraft);
+    const {
+        searchQuery, setSearchQuery, showDropdown, setShowDropdown,
+        actionBoxItem, setActionBoxItem, isProcessing, setIsProcessing,
+        showPreview, setShowPreview, previewSlip, setPreviewSlip,
+        isUploadingSlip, setIsUploadingSlip, customerSearchText, setCustomerSearchText,
+        showCustDropdown, setShowCustDropdown, activePromotions,
+        isPromoModalOpen, setIsPromoModalOpen,
+        createNewTab, safeCartTabs, activeTab, updateActiveTab,
+        handlePriceModeChange, searchResults, filteredCustomers,
+        itemSubTotal, manualDiscount, promoDiscount, totalDiscount,
+        shippingFee, otherFeeAmount, vatAmount, netTotal,
+        walletUsed, remainingToPay, earnedPoints, changeAmount, eligibleFreebies
+    } = posState;
 
     const searchRef = useRef(null);
     const custSearchRef = useRef(null);
     const submitLockRef = useRef(false);
-
-    const createNewTab = () => ({
-        id: Date.now().toString(), orderId: null, docId: null, items: [], customer: null, priceMode: 'wholesale',
-        walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
-        overallDiscount: 0, promoDiscount: 0, autoPromoEnabled: true, otherFeeName: '', otherFeeAmount: 0, 
-        paymentMethod: 'Transfer', bankAccount: 'KBANK', cashReceived: '', slipImage: null, billNote: '', receiptFormat: 'short',
-        appliedPromoId: null, appliedPromoDetails: null, walletUsed: 0 
-    });
-
-    const safeCartTabs = Array.isArray(cartTabs) && cartTabs.length > 0 ? cartTabs : [createNewTab()];
-    const activeTab = safeCartTabs.find(t => t.id === activeTabId) || safeCartTabs[0];
 
     const getTabTitle = (tab, index) => {
         if (tab.customer) return tab.customer.accountName || tab.customer.firstName || `ลูกค้า ${index + 1}`;
@@ -122,16 +75,6 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
         const handleKeyDown = (e) => { if (e.key === 'F3') { e.preventDefault(); searchRef.current?.querySelector('input')?.focus(); } };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
-
-    useEffect(() => {
-        const fetchMarketingData = async () => {
-            try {
-                const [promos, freebies] = await Promise.all([promotionService.getActivePromotions(), freebieService.getActiveFreebies()]);
-                setActivePromotions(promos || []); setActiveFreebies(freebies || []);
-            } catch(e) { console.error(e); }
-        };
-        fetchMarketingData();
     }, []);
 
     useEffect(() => {
@@ -173,7 +116,6 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
             updateActiveTab({ items: validatedItems });
             if (alertMessages.length > 0) setTimeout(() => alert(`⚠️ อัปเดตข้อมูลบิลร่าง:\n\n${alertMessages.join('\n')}`), 500);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTabId, products, activeTab?.priceMode]); 
 
     useEffect(() => {
@@ -190,7 +132,6 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
         };
         window.addEventListener('paste', handleGlobalPaste);
         return () => window.removeEventListener('paste', handleGlobalPaste);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTabId]);
 
     const handleFileUpload = async (e) => {
@@ -203,33 +144,12 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
         } catch (error) { alert(`อัปโหลดไม่สำเร็จ: ${error.message}`); } finally { setIsUploadingSlip(false); }
     };
 
-    const searchResults = useMemo(() => {
-        if (!searchQuery.trim()) return products.slice(0, 15);
-        const q = searchQuery.toLowerCase();
-        return products.filter(p => p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q)).slice(0, 15);
-    }, [searchQuery, products]);
-
     const handleSearchKeyDown = (e) => {
         if (e.key === 'Enter' && searchQuery.trim() !== '') {
             const exactMatch = products.find(p => p.sku.toLowerCase() === searchQuery.trim().toLowerCase());
             if (exactMatch) addItemToCart(exactMatch); else if (searchResults.length > 0) addItemToCart(searchResults[0]);
         }
         if (e.key === 'Escape') { setShowDropdown(false); setSearchQuery(''); }
-    };
-
-    const filteredCustomers = useMemo(() => {
-        if (!customerSearchText.trim()) return customers.slice(0, 10);
-        const q = customerSearchText.toLowerCase();
-        return customers.filter(c => (c.accountName || '').toLowerCase().includes(q) || (c.firstName || '').toLowerCase().includes(q) || (c.phone || '').includes(q)).slice(0, 15);
-    }, [customerSearchText, customers]);
-
-    const updateActiveTab = (updates) => {
-        if (typeof setCartTabs === 'function') setCartTabs(prev => prev.map(tab => tab.id === activeTabId ? { ...tab, ...updates } : tab));
-    };
-
-    const handlePriceModeChange = (mode) => {
-        const updatedItems = activeTab.items.map(item => { const newPrice = mode === 'wholesale' ? item.baseWholesale : item.baseRetail; return { ...item, price: newPrice }; });
-        updateActiveTab({ priceMode: mode, items: updatedItems });
     };
 
     const addItemToCart = (product) => {
@@ -273,28 +193,6 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
         setShowCustDropdown(false);
     };
 
-    const itemSubTotal = activeTab.items.reduce((sum, item) => sum + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty))), 0);
-    const manualDiscount = sanitizeNum(activeTab.overallDiscount);
-    const promoDiscount = sanitizeNum(activeTab.promoDiscount);
-    const totalDiscount = manualDiscount + promoDiscount;
-    const shippingFee = sanitizeNum(activeTab.shippingFee);
-    const otherFeeAmount = sanitizeNum(activeTab.otherFeeAmount);
-    
-    let baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
-    let taxableAmount = baseTotal + (activeTab.vatOnShipping ? shippingFee : 0);
-    let vatAmount = 0; let netTotal = 0;
-
-    if (activeTab.vatType === 'included') { vatAmount = taxableAmount - (taxableAmount / 1.07); netTotal = baseTotal + shippingFee; } 
-    else if (activeTab.vatType === 'excluded') { vatAmount = taxableAmount * 0.07; netTotal = baseTotal + shippingFee + vatAmount; } 
-    else { vatAmount = 0; netTotal = baseTotal + shippingFee; }
-
-    const walletUsed = sanitizeNum(activeTab.walletUsed);
-    const remainingToPay = Math.max(0, netTotal - walletUsed);
-    const earnedPoints = activeTab.customer ? Math.floor(remainingToPay / 100) : 0;
-    const changeAmount = (activeTab.paymentMethod === 'Cash' && activeTab.cashReceived) ? (sanitizeNum(activeTab.cashReceived) - remainingToPay) : 0;
-
-    const eligibleFreebies = activeFreebies.filter(f => itemSubTotal > 0 && itemSubTotal >= f.minSpend);
-
     const applyPromotionLogic = (promo, subTotalAmount) => {
         let calculatedDiscount = promo.type === 'PERCENTAGE' ? subTotalAmount * (promo.value / 100) : promo.value;
         return Math.floor(calculatedDiscount);
@@ -326,7 +224,6 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
         if (bestPromo) {
             if (bestPromo.id !== currentPromoId || currentDiscount !== maxDiscount) updateActiveTab({ promoDiscount: maxDiscount, appliedPromoId: bestPromo.id, appliedPromoDetails: { ...bestPromo } });
         } else if (currentPromoId) updateActiveTab({ promoDiscount: 0, appliedPromoId: null, appliedPromoDetails: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemSubTotal, activePromotions, activeTab?.autoPromoEnabled, activeTab?.appliedPromoId, activeTab?.promoDiscount]); 
 
     const activePhone = activeTab.customer ? activeTab.customer.phone : activeTab.walkInPhone;
@@ -390,60 +287,59 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
     };
 
     return (
-        // ✨ UI/UX: ธรรมดามากที่สุด Edge-to-Edge Layout สะอาดตา
-        <div className="flex flex-col h-full bg-white font-sans relative">
-            
-            {/* Header - Simple & Clean */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50/50 shrink-0 z-20">
+        <div className="flex flex-col h-full bg-[var(--dh-bg-base)] font-sans relative text-[var(--dh-text-main)] transition-colors duration-300">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--dh-border)] bg-[var(--dh-glass-bg)] dh-glass shrink-0 z-20">
                 <div className="flex items-center gap-3">
-                    <button onClick={onSwitchView} disabled={isProcessing} className="p-1 text-gray-500 hover:text-gray-800 transition-colors"><ArrowLeft size={20}/></button>
-                    <h1 className="font-bold text-gray-800 text-sm">หน้าจอจุดขาย (POS)</h1>
+                    <button onClick={onSwitchView} disabled={isProcessing} className="p-1 text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)] transition-colors dh-active-press"><ArrowLeft size={20}/></button>
+                    <h1 className="font-black text-sm tracking-wide dh-text-glow">หน้าจอจุดขาย (POS)</h1>
                 </div>
                 
                 <div className="flex items-center gap-1 overflow-x-auto max-w-[60vw] custom-scrollbar">
                     {safeCartTabs.map((tab, idx) => (
                         <button key={tab.id} onClick={() => !isProcessing && setActiveTabId(tab.id)}
-                            className={`px-3 py-1 text-xs font-semibold transition-colors border-b-2 rounded-t-sm
-                                ${activeTabId === tab.id ? 'border-[var(--dh-accent)] text-[var(--dh-accent)] bg-white' : 'border-transparent text-gray-500 hover:bg-gray-100'}`}>
-                            {getTabTitle(tab, idx)} {tab.orderId && <span className="ml-1 text-[9px] text-gray-400 font-mono">(Draft)</span>}
+                            className={`px-4 py-1.5 text-xs font-black transition-all border-b-2 rounded-t-lg
+                                ${activeTabId === tab.id ? 'border-[var(--dh-accent)] text-[var(--dh-accent)] bg-[var(--dh-bg-surface)] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]' : 'border-transparent text-[var(--dh-text-muted)] hover:bg-[var(--dh-bg-surface)]/50'}`}>
+                            {getTabTitle(tab, idx)} {tab.orderId && <span className="ml-1 text-[9px] opacity-60 font-mono">(Draft)</span>}
                         </button>
                     ))}
-                    <button onClick={() => { if (!isProcessing) { const newTab = createNewTab(); if(typeof setCartTabs === 'function') { setCartTabs([...safeCartTabs, newTab]); setActiveTabId(newTab.id); } } }} className="p-1 ml-1 text-gray-400 hover:text-blue-500 transition-colors"><Plus size={16}/></button>
+                    <button onClick={() => { if (!isProcessing) { const newTab = createNewTab(); if(typeof setCartTabs === 'function') { setCartTabs([...safeCartTabs, newTab]); setActiveTabId(newTab.id); } } }} className="p-1.5 ml-1 text-[var(--dh-text-muted)] hover:text-[var(--dh-accent)] transition-colors bg-[var(--dh-bg-surface)]/50 rounded-md dh-active-press"><Plus size={16}/></button>
                 </div>
             </div>
 
-            {/* 3 Panels - Solid Borders */}
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-gray-100">
-                <div className="w-full lg:w-[68%] flex flex-col h-full border-r border-gray-200">
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                <div className="w-full lg:w-[68%] flex flex-col h-full border-r border-[var(--dh-border)] shadow-md z-10 relative">
                     <CartPanel searchRef={searchRef} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDropdown={showDropdown} setShowDropdown={setShowDropdown} handleSearchKeyDown={handleSearchKeyDown} clearCart={clearCart} activeTab={activeTab} searchResults={searchResults} addItemToCart={addItemToCart} actionBoxItem={actionBoxItem} setActionBoxItem={setActionBoxItem} updateItemAction={updateItemAction} removeItem={removeItem} eligibleFreebies={eligibleFreebies} noteColorMap={noteColorMap} isProcessing={isProcessing} />
                     <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab.vatOnShipping} vatAmount={vatAmount} vatType={activeTab.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} />
                 </div>
-                <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={handleRemovePromotion} isProcessing={isProcessing} />
+                <div className="w-full lg:w-[32%] bg-[var(--dh-bg-surface)] h-full overflow-y-auto">
+                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={handleRemovePromotion} isProcessing={isProcessing} />
+                </div>
             </div>
 
-            {/* Promo Modal - Minimalist */}
             {isPromoModalOpen && (
-                <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-md shadow-xl w-full max-w-lg flex flex-col overflow-hidden">
-                        <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                            <h2 className="text-sm font-bold text-gray-800">โปรโมชันที่มี</h2>
-                            <button onClick={() => setIsPromoModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
+                <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
+                    <div className="bg-[var(--dh-bg-surface)] dh-glass border border-[var(--dh-glass-border)] rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden dh-hover-lift">
+                        <div className="p-4 border-b border-[var(--dh-border)] flex justify-between items-center bg-[var(--dh-bg-base)]">
+                            <h2 className="text-sm font-black text-[var(--dh-text-main)] dh-text-glow">โปรโมชันที่มี</h2>
+                            <button onClick={() => setIsPromoModalOpen(false)} className="text-[var(--dh-text-muted)] hover:text-rose-500 dh-active-press"><X size={18}/></button>
                         </div>
-                        <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
-                            {activePromotions.length === 0 ? (<p className="text-center py-6 text-gray-500 text-sm">ไม่มีโปรโมชัน</p>) : (
+                        <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3 custom-scrollbar">
+                            {activePromotions.length === 0 ? (<p className="text-center py-6 text-[var(--dh-text-muted)] text-sm font-bold">ไม่มีโปรโมชัน</p>) : (
                                 activePromotions.map(promo => {
                                     const isEligible = promo.minSpend <= 0 || itemSubTotal >= promo.minSpend;
                                     const isApplied = activeTab.appliedPromoId === promo.id;
                                     return (
-                                        <div key={promo.id} className={`p-3 rounded-sm border flex justify-between items-center ${isApplied ? 'border-blue-500 bg-blue-50' : isEligible ? 'border-gray-200 hover:bg-gray-50 cursor-pointer' : 'border-gray-100 bg-gray-50 opacity-50'}`}>
-                                            <div>
-                                                <h3 className={`font-bold text-sm ${isApplied ? 'text-blue-700' : 'text-gray-800'}`}>{promo.title}</h3>
-                                                <p className="text-xs text-gray-500 mt-0.5">{promo.description}</p>
-                                                {promo.minSpend > 0 && <p className="text-[10px] text-gray-500 mt-1">ขั้นต่ำ {promo.minSpend.toLocaleString()} ฿</p>}
+                                        <div key={promo.id} className={`p-4 rounded-xl border-2 transition-all ${isApplied ? 'border-[var(--dh-accent)] bg-[var(--dh-accent-light)]' : isEligible ? 'border-[var(--dh-border)] hover:border-[var(--dh-text-main)] bg-[var(--dh-bg-base)] cursor-pointer dh-active-press' : 'border-[var(--dh-border)] bg-[var(--dh-bg-base)] opacity-50'}`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 className={`font-black text-sm ${isApplied ? 'text-[var(--dh-accent)]' : 'text-[var(--dh-text-main)]'}`}>{promo.title}</h3>
+                                                    <p className="text-[11px] text-[var(--dh-text-muted)] mt-1 font-bold">{promo.description}</p>
+                                                </div>
+                                                <div className={`font-black text-lg ${isApplied ? 'text-[var(--dh-accent)]' : 'text-[var(--dh-text-main)]'}`}>ลด {promo.value}{promo.type === 'PERCENTAGE' ? '%' : ' ฿'}</div>
                                             </div>
-                                            <div className="text-right">
-                                                <div className={`font-bold text-base ${isApplied ? 'text-blue-700' : 'text-gray-800'}`}>ลด {promo.value}{promo.type === 'PERCENTAGE' ? '%' : ' ฿'}</div>
-                                                <button onClick={() => isEligible ? handleApplyPromotion(promo) : null} disabled={!isEligible} className={`mt-1 px-3 py-1 text-xs font-semibold rounded-sm transition-colors ${isApplied ? 'bg-blue-600 text-white' : isEligible ? 'bg-white border border-gray-300 text-gray-700' : 'bg-gray-100 text-gray-400'}`}>
+                                            <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--dh-border)]/50">
+                                                <p className="text-[10px] text-[var(--dh-text-muted)] font-black uppercase tracking-wider">{promo.minSpend > 0 ? `ขั้นต่ำ ${promo.minSpend.toLocaleString()} ฿` : 'ไม่มีขั้นต่ำ'}</p>
+                                                <button onClick={() => isEligible ? handleApplyPromotion(promo) : null} disabled={!isEligible} className={`px-4 py-1.5 text-[11px] font-black rounded-lg transition-colors dh-active-press ${isApplied ? 'bg-[var(--dh-accent)] text-white shadow-md' : isEligible ? 'bg-[var(--dh-bg-surface)] border border-[var(--dh-border)] text-[var(--dh-text-main)] hover:bg-[var(--dh-text-main)] hover:text-[var(--dh-bg-surface)]' : 'bg-[var(--dh-bg-base)] text-[var(--dh-text-muted)] border border-[var(--dh-border)]'}`}>
                                                     {isApplied ? 'ใช้งานอยู่' : isEligible ? 'เลือก' : 'ยอดไม่ถึง'}
                                                 </button>
                                             </div>
@@ -457,8 +353,8 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
             )}
 
             {previewSlip && (
-                <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 animate-in fade-in" onClick={() => setPreviewSlip(null)}>
-                    <div className="relative max-w-2xl"><button onClick={() => setPreviewSlip(null)} className="absolute -top-10 right-0 text-white opacity-70 hover:opacity-100"><X size={24}/></button><img src={previewSlip} alt="Slip" className="max-w-full max-h-[85vh] object-contain rounded-sm" /></div>
+                <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-sm" onClick={() => setPreviewSlip(null)}>
+                    <div className="relative max-w-2xl"><button onClick={() => setPreviewSlip(null)} className="absolute -top-12 right-0 text-white opacity-70 hover:opacity-100 dh-active-press bg-black/50 p-2 rounded-full"><X size={24}/></button><img src={previewSlip} alt="Slip" className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl" /></div>
                 </div>
             )}
 

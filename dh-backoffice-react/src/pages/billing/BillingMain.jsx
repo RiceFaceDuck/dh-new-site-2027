@@ -8,14 +8,14 @@ const BillingMain = () => {
 
   if (viewMode === 'pos') {
     return (
-      <div className="h-[calc(100vh-64px)] overflow-hidden">
+      <div className="h-full overflow-hidden">
          <PosSystem onSwitchView={() => setViewMode('dashboard')} initialDraft={draftOrder} />
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] overflow-hidden w-full max-w-full mx-auto">
+    <div className="h-full overflow-hidden w-full max-w-full mx-auto">
       <BillingDashboard 
         onSwitchView={() => { setDraftOrder(null); setViewMode('pos'); }} 
         onResumeDraft={(draft) => { setDraftOrder(draft); setViewMode('pos'); }}
