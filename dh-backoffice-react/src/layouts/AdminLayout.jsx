@@ -242,17 +242,21 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 transition-colors duration-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         {/* Logo */}
-        <div className="h-[72px] flex items-center justify-center border-b border-slate-100 dark:border-slate-700/50 shrink-0">
-          <img src="/dh-logo.png" alt="DH Logo" className="h-9 object-contain" />
+        <div className="h-[72px] flex items-center justify-start px-5 border-b border-slate-100 dark:border-slate-700/50 shrink-0 gap-3 bg-white dark:bg-slate-800">
+          <img src="/dh-logo.png" alt="DH Logo" className="h-9 object-contain drop-shadow-sm" />
+          <div className="flex flex-col">
+            <span className="text-[15px] font-black leading-tight text-slate-800 dark:text-white tracking-tight">DH Notebook</span>
+            <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">System Command v1.0</span>
+          </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5 custom-scrollbar">
           {navItems.map((item, index) => {
             if (item.category) {
               return (
-                <div key={`cat-${index}`} className="px-3 pt-5 pb-2 first:pt-0">
-                  <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                <div key={`cat-${index}`} className="px-3 pt-3 pb-1 first:pt-1">
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                     {item.category}
                   </p>
                 </div>
@@ -268,22 +272,23 @@ export default function AdminLayout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold transition-all group ${
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-[13.5px] font-bold transition-all group ${
                   isActive 
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
                     : 'text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400 transition-colors'} strokeWidth={isActive ? 2.5 : 2} />
+                <div className="flex items-center gap-2.5">
+                  <Icon size={17} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400 transition-colors'} strokeWidth={isActive ? 2.5 : 2} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge > 0 && (
-                  <span className={`px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm ${
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${
                     isActive 
                       ? 'bg-white/20 text-white' 
                       : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'
-                  }`}>
+                  }`}
+                >
                     {item.badge}
                   </span>
                 )}
@@ -293,28 +298,28 @@ export default function AdminLayout() {
         </nav>
 
         {/* Profile & Settings Area */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-700/50 shrink-0 bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="p-3 border-t border-slate-100 dark:border-slate-700/50 shrink-0 bg-slate-50/50 dark:bg-slate-800/50">
           
           {/* User Info Block */}
-          <div className="relative group flex items-start gap-3 p-2.5 -mx-2 mb-4 rounded-2xl hover:bg-white dark:hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-sm">
+          <div className="relative group flex items-start gap-2.5 p-2 -mx-1 mb-3 rounded-2xl hover:bg-white dark:hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-sm">
             
             {currentUser?.photoURL ? (
               <img 
                 src={currentUser.photoURL} 
                 alt="Profile" 
-                className="w-11 h-11 rounded-[14px] object-cover shrink-0 border border-slate-200 dark:border-slate-600 shadow-sm"
+                className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-slate-600 shadow-sm"
               />
             ) : (
-              <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-black text-xl shrink-0 shadow-sm border border-indigo-400 dark:border-indigo-500">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-sm border border-indigo-400 dark:border-indigo-500">
                 {profile?.firstName?.charAt(0) || currentUser?.email?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
             
-            <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-              <p className="text-sm font-black text-slate-900 dark:text-white truncate tracking-tight">
+            <div className="flex-1 min-w-0 flex flex-col justify-center py-0">
+              <p className="text-[13px] font-black text-slate-900 dark:text-white truncate tracking-tight">
                 {profile ? `${profile.firstName} ${profile.nickname ? `(${profile.nickname})` : ''}` : (currentUser?.displayName || 'กำลังโหลด...')}
               </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title={currentUser?.email}>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title={currentUser?.email}>
                 {currentUser?.email || 'ไม่มีอีเมล'}
               </p>
             </div>

@@ -17,36 +17,26 @@ export default function PartnerCreditsTab() {
   // ==========================================================
   useEffect(() => {
     setIsLoading(true);
-    const usersRef = collection(db, 'artifacts', appId, 'users');
+    const usersColPath = typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof __app_id !== 'undefined'
+      ? `artifacts/${__app_id}/public/data/users`
+      : 'users';
+    const usersRef = collection(db, usersColPath);
     
-    let q;
-    try {
-      // ใช้ or() เพื่อดึงคนที่มีเครดิต > 0 หรือเป็นพาร์ทเนอร์ ประหยัดยอด Reads 100%
-      q = query(
-        usersRef,
-        or(
-          where('creditPoints', '>', 0),
-          where('role', '==', 'partner')
-        )
-      );
-    } catch (e) {
-      // Fallback ป้องกันแอปพัง หาก Firebase SDK เวอร์ชั่นเก่ากว่า v9.4
-      console.warn("⚠️ [Credit System] or() query not supported, falling back to creditPoints > 0");
-      q = query(usersRef, where('creditPoints', '>', 0));
-    }
+    // ดึงข้อมูลทั้งหมดเพื่อการันตีความถูกต้องของยอดเงินจากทุก Field ที่อาจบันทึกต่างชื่อกัน
+    const q = query(usersRef);
     
     const unsubscribe = onSnapshot(q, (snap) => {
       const data = [];
       snap.forEach(doc => {
         const d = doc.data();
         // รวบรวมฟิลด์เครดิตทุกรูปแบบ (ป้องกันข้อมูลตกหล่นจากระบบเก่า)
-        const balance = Number(d.creditPoints || d.creditPoint || d.credit || d.creditBalance || d.partnerCredit || 0);
+        const balance = Number(d.creditPoints || 0);
         
         // Double Check กรองอีกชั้น
         if (d.role === 'partner' || balance > 0) {
           data.push({
             id: doc.id,
-            name: d.firstName ? `${d.firstName} ${d.lastName || ''}` : d.displayName || 'Unknown Account',
+            name: d.firstName ? `${d.firstName} ${d.lastName || ''}` : d.accountName || d.displayName || 'Unknown Account',
             phone: d.phone || '-',
             email: d.email || '-',
             role: d.role || 'user',
@@ -135,15 +125,15 @@ export default function PartnerCreditsTab() {
 
       {/* 🚀 Data Grid (ตารางข้อมูล) */}
       <div className="flex-1 overflow-auto bg-slate-50/30">
-        <table className="w-full text-left border-collapse min-w-[850px]">
+        <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-200 z-10 shadow-sm">
-            <tr className="text-[11px] uppercase tracking-wider text-slate-500">
-              <th className="px-4 py-3 font-bold w-12 text-center border-r border-slate-100">No.</th>
-              <th className="px-4 py-3 font-bold border-r border-slate-100 whitespace-nowrap">Account Detail</th>
-              <th className="px-4 py-3 font-bold border-r border-slate-100 text-center w-28">Role</th>
-              <th className="px-4 py-3 font-bold border-r border-slate-100 whitespace-nowrap w-40">Contact Info</th>
-              <th className="px-4 py-3 font-bold border-r border-slate-100 text-center w-28">Status</th>
-              <th className="px-4 py-3 font-bold text-right w-44">Current Balance</th>
+            <tr className="text-[10px] uppercase tracking-wider text-slate-500">
+              <th className="px-2 py-2.5 font-bold w-10 text-center border-r border-slate-100">No.</th>
+              <th className="px-3 py-2.5 font-bold border-r border-slate-100 whitespace-nowrap">Account Detail</th>
+              <th className="px-2 py-2.5 font-bold border-r border-slate-100 text-center w-20">Role</th>
+              <th className="px-3 py-2.5 font-bold border-r border-slate-100 whitespace-nowrap w-36">Contact Info</th>
+              <th className="px-2 py-2.5 font-bold border-r border-slate-100 text-center w-24">Status</th>
+              <th className="px-3 py-2.5 font-bold text-right w-36">Current Balance</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
@@ -170,17 +160,17 @@ export default function PartnerCreditsTab() {
                 <tr key={partner.id} className="hover:bg-indigo-50/30 transition-colors duration-200 group">
                   
                   {/* ลำดับ */}
-                  <td className="px-4 py-3 text-center text-slate-400 font-mono text-xs border-r border-slate-100">
+                  <td className="px-2 py-2.5 text-center text-slate-400 font-mono text-[11px] border-r border-slate-100">
                     {(index + 1).toString().padStart(3, '0')}
                   </td>
                   
                   {/* Account Detail + Copy Action */}
-                  <td className="px-4 py-3 border-r border-slate-100">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-bold text-slate-800 tracking-wide">{partner.name}</span>
+                  <td className="px-3 py-2.5 border-r border-slate-100">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-bold text-slate-800 tracking-wide text-sm">{partner.name}</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded" title={partner.id}>
-                          {partner.id.substring(0, 15)}...
+                        <span className="font-mono text-[9px] text-slate-400 bg-slate-100 px-1 py-0.5 rounded" title={partner.id}>
+                          {partner.id.substring(0, 10)}...
                         </span>
                         <button 
                           onClick={() => handleCopyId(partner.id)}
@@ -194,7 +184,7 @@ export default function PartnerCreditsTab() {
                   </td>
 
                   {/* Role Badge */}
-                  <td className="px-4 py-3 border-r border-slate-100 text-center">
+                  <td className="px-2 py-2.5 border-r border-slate-100 text-center">
                     <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border
                       ${partner.role === 'partner' 
                         ? 'text-purple-700 bg-purple-50 border-purple-200' 
@@ -205,11 +195,11 @@ export default function PartnerCreditsTab() {
                   </td>
                   
                   {/* Contact */}
-                  <td className="px-4 py-3 border-r border-slate-100">
+                  <td className="px-3 py-2.5 border-r border-slate-100">
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-xs text-slate-600">{partner.phone}</span>
+                      <span className="font-mono text-[11px] text-slate-600">{partner.phone}</span>
                       {partner.email !== '-' && (
-                        <span className="text-[10px] text-slate-400 truncate max-w-[140px]" title={partner.email}>
+                        <span className="text-[9px] text-slate-400 truncate max-w-[120px]" title={partner.email}>
                           {partner.email}
                         </span>
                       )}
@@ -217,7 +207,7 @@ export default function PartnerCreditsTab() {
                   </td>
                   
                   {/* Status */}
-                  <td className="px-4 py-3 border-r border-slate-100 text-center">
+                  <td className="px-2 py-2.5 border-r border-slate-100 text-center">
                     <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider
                       ${partner.status === 'active' ? 'text-emerald-700 bg-emerald-50/50' : 'text-rose-700 bg-rose-50/50'}`}
                     >
@@ -227,8 +217,8 @@ export default function PartnerCreditsTab() {
                   </td>
                   
                   {/* Balance */}
-                  <td className="px-4 py-3 text-right">
-                    <span className="font-bold text-slate-900 font-mono text-[15px] tracking-tight">
+                  <td className="px-3 py-2.5 text-right">
+                    <span className="font-bold text-slate-900 font-mono text-[14px] tracking-tight">
                       {partner.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </td>

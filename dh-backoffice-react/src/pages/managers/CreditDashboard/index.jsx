@@ -18,7 +18,7 @@ import useLedgerStats from './hooks/useLedgerStats';
 import useSystemHealth from './hooks/useSystemHealth';
 
 export default function CreditDashboard() {
-  const [activeTab, setActiveTab] = useState('adjust');
+  const [activeTab, setActiveTab] = useState('partners');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState(null);
 

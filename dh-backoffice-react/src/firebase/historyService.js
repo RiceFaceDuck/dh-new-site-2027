@@ -1,15 +1,16 @@
-import { collection, addDoc, getDocs, query, orderBy, limit, startAfter, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, startAfter, serverTimestamp, where } from 'firebase/firestore';
 import { db, auth } from './config.js';
 
 const COLLECTION_NAME = 'history_logs';
 
 export const historyService = {
-  // ✨ บันทึก Audit Log (ปรับให้เก็บชื่อ ActorName ลงไปเลย ไม่ต้องไปดึงตาราง User ใหม่ตอนแสดงผล)
+  // ✨ บันทึก Audit Log (ปรับให้เก็บชื่อและอีเมล ลงไปเลย ไม่ต้องไปดึงตาราง User ใหม่ตอนแสดงผล)
   addLog: async (arg1, arg2, arg3, arg4, arg5) => {
     try {
       const currentUser = auth.currentUser;
       const actorUid = currentUser?.uid || 'System';
-      const actorName = currentUser?.displayName || currentUser?.email || 'Unknown User';
+      const actorName = currentUser?.displayName || 'Unknown User';
+      const actorEmail = currentUser?.email || '';
 
       let logData = { timestamp: serverTimestamp() };
 
@@ -22,7 +23,8 @@ export const historyService = {
           details: arg4,
           actionBy: arg5 || actorUid,
           performedBy: arg5 || actorUid,
-          actorName: actorName // จำชื่อลง DB ไปเลย
+          actorName: actorName,
+          actorEmail: actorEmail // บันทึกอีเมลลง DB
         };
       } else {
         logData = {
@@ -33,7 +35,8 @@ export const historyService = {
           module: 'System',
           targetId: arg2?.sku || arg2?.todoId || '-',
           performedBy: arg3 || actorUid,
-          actorName: actorName // จำชื่อลง DB ไปเลย
+          actorName: actorName,
+          actorEmail: actorEmail // บันทึกอีเมลลง DB
         };
       }
 
@@ -43,15 +46,28 @@ export const historyService = {
     }
   },
 
-  // ✨ ดึงประวัติมาแสดงผลแบบ Pagination (เรียกดูเท่าที่มองเห็น)
-  getRecentLogs: async (maxLimit = 50, lastDocRef = null) => {
+  // ✨ ดึงประวัติมาแสดงผลแบบ Pagination (รองรับ Server-side Filtering)
+  getRecentLogs: async (maxLimit = 50, lastDocRef = null, moduleFilter = 'all', actionFilter = 'all') => {
     try {
-      let q;
-      if (lastDocRef) {
-        q = query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'), startAfter(lastDocRef), limit(maxLimit));
-      } else {
-        q = query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'), limit(maxLimit));
+      let constraints = [];
+      
+      if (moduleFilter !== 'all') {
+        constraints.push(where('module', '==', moduleFilter));
       }
+      
+      if (actionFilter !== 'all') {
+        constraints.push(where('action', '==', actionFilter));
+      }
+      
+      constraints.push(orderBy('timestamp', 'desc'));
+      
+      if (lastDocRef) {
+        constraints.push(startAfter(lastDocRef));
+      }
+      
+      constraints.push(limit(maxLimit));
+
+      const q = query(collection(db, COLLECTION_NAME), ...constraints);
       
       const snapshot = await getDocs(q);
       const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

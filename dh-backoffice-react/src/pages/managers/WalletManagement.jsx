@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { collection, query, where, getDocs, doc, getDoc, limit, orderBy, getCountFromServer, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
-import { creditService } from '../../firebase/creditService';
+import { creditCoreService } from '../../firebase/creditCoreService';
 import { userService } from '../../firebase/userService';
 import { todoService } from '../../firebase/todoService';
 
@@ -258,7 +258,7 @@ export default function WalletManagement() {
 
         setIsSubmitting(true);
         try {
-            await creditService.adjustUserCredit(
+            await creditCoreService.adjustUserCredit(
                 selectedUser.id, 
                 amount, 
                 adjType === 'deposit' ? 'deposit' : 'deduct', 
@@ -300,7 +300,7 @@ export default function WalletManagement() {
     };
 
     const currentWalletBalance = selectedUser ? (selectedUser.walletBalance || 0) : 0;
-    const currentPointsBalance = selectedUser ? (selectedUser.creditPoints || selectedUser.creditPoint || 0) : 0;
+    const currentPointsBalance = selectedUser ? (selectedUser.creditPoints || 0) : 0;
     const displayUsers = hasSearched ? searchResults : defaultUsers;
 
     return (

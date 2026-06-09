@@ -36,8 +36,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     const usePoints = checkoutState?.usePoints || 0;
     const useWallet = checkoutState?.useWallet || 0;
     
-    // อัปเกรด: รองรับการเช็คจากฟิลด์ creditPoint ด้วยเพื่อความเข้ากันได้
-    const availablePoints = userData.creditPoint || userData.points || 0;
+    const availablePoints = userData.creditPoints || 0;
     
     if (usePoints > 0 && availablePoints < usePoints) {
       throw new Error("แต้มสะสมของคุณไม่เพียงพอ");
@@ -82,7 +81,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       if (usePoints > 0) {
         // อัปเดตทั้งฟิลด์เก่าและใหม่เพื่อไม่ให้ระบบเดิมพัง
         userUpdateData.points = availablePoints - usePoints;
-        userUpdateData.creditPoint = availablePoints - usePoints;
+        userUpdateData.creditPoints = availablePoints - usePoints;
         
         // 🚀 [NEW] Double Entry: คืนเงินแต้มกลับเข้ากองกลางของบริษัท
         const sysBalance = sysSnap.exists() ? (sysSnap.data().balance || 0) : 0;

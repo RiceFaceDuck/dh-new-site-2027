@@ -31,7 +31,8 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   const hasTax = Boolean(customer.hasTaxInfo);
   
   // รหัสลูกค้าสำหรับการดึงข้อมูล Real-time (Wallet & Points)
-  const customerId = customer.uid || customer.id;
+  // บังคับใช้ Document ID (customer.id) เท่านั้น เพื่อป้องกันการวิ่งไปหาบัญชีผีจาก Short UID
+  const customerId = customer.id;
 
   // ข้อมูลตัวเลขยอดสั่งซื้อ 30 วัน
   const sales30Days = Number(customer.stats?.sales30Days || customer.stats?.monthlySales || 0);

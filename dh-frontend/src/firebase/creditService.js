@@ -9,6 +9,13 @@ import { db } from './config';
 // 🛡️ กำหนด App ID สำหรับการเข้าถึงแบบ Enterprise Sandbox
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
+const getUsersPath = () => {
+    if (typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof window.__app_id !== 'undefined') {
+        return `artifacts/${window.__app_id}/public/data/users`;
+    }
+    return 'users';
+};
+
 // ==========================================
 // 🧠 Smart Cache System (สำหรับประวัติการใช้งาน)
 // ==========================================
@@ -53,8 +60,9 @@ export const listenToUserCredit = (userId, callback) => {
     return () => {};
   }
 
-  const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
-  const profileRef = doc(db, 'artifacts', appId, 'users', userId);
+  const usersPath = getUsersPath();
+  const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
+  const profileRef = doc(db, usersPath, userId);
 
   let state = {
     balance: 0,
@@ -86,7 +94,7 @@ export const listenToUserCredit = (userId, callback) => {
       state.pendingCredits = Number(data.pendingCredits) || 0;
       
       if (state.balance === 0) {
-        state.balance = Number(data.creditPoints || data.creditPoint || data.stats?.creditBalance || data.partnerCredit || 0);
+        state.balance = Number(data.creditPoints || 0);
       }
       notifyUI();
     }
@@ -135,7 +143,8 @@ export const useUserCredit = (userId) => {
 export const getWalletBalance = async (userId) => {
   if (!userId) return { balance: 0, totalAccumulated: 0 };
   try {
-    const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
+    const usersPath = getUsersPath();
+    const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
     const snapshot = await getDoc(walletRef);
     if (snapshot.exists()) return snapshot.data();
     return { balance: 0, totalAccumulated: 0 };
@@ -159,7 +168,8 @@ export const getCreditHistory = async (userId, lastDoc = null, pageSize = 10, fo
 
   try {
     console.log(`☁️ [CreditService] Fetching history from Firestore... (Page: ${lastDoc ? 'Next' : 'First'})`);
-    const historyRef = collection(db, 'artifacts', appId, 'users', userId, 'credit_history');
+    const usersPath = getUsersPath();
+    const historyRef = collection(db, usersPath, userId, 'credit_history');
     let q;
 
     if (lastDoc) {
@@ -224,7 +234,8 @@ export const handlePaymentCompletion = async (orderId, userId) => {
   try {
     await runTransaction(db, async (transaction) => {
       const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
-      const userRef = doc(db, 'artifacts', appId, 'users', userId);
+      const usersPath = getUsersPath();
+      const userRef = doc(db, usersPath, userId);
       
       const [orderDoc, userDoc] = await Promise.all([
         transaction.get(orderRef),
@@ -238,22 +249,18 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       
       if (pendingPoints <= 0 || orderData.pointsAwarded) return;
 
-      const currentPoints = userDoc.data().creditPoints || userDoc.data().creditPoint || 0;
+      const currentPoints = userDoc.data().creditPoints || 0;
       const newBalance = currentPoints + pendingPoints;
 
       transaction.update(orderRef, {
-        pendingCredits: 0,
-        pointsAwarded: true
+        pointsAwarded: true,
+        pointsAwardedAt: serverTimestamp()
       });
 
       transaction.update(userRef, {
         creditPoints: newBalance,
-        creditPoint: newBalance,
-        walletBalance: newBalance,
-        partnerCredit: newBalance,
-        'stats.creditBalance': newBalance
+        updatedAt: serverTimestamp()
       });
-
       const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
       transaction.set(txRef, {
         transactionId: `EARN-${Date.now()}`,
@@ -282,10 +289,11 @@ export const handlePaymentCompletion = async (orderId, userId) => {
 export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'click_contact') => {
   if (!partnerId || cost <= 0) return false;
 
-  const userRef = doc(db, 'artifacts', appId, 'users', partnerId);
+  const usersPath = getUsersPath();
+  const userRef = doc(db, usersPath, partnerId);
   const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
   const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
-  const storeProfileRef = doc(db, 'artifacts', appId, 'users', partnerId, 'storeProfile', 'main');
+  const storeProfileRef = doc(db, usersPath, partnerId, 'storeProfile', 'main');
 
   try {
     await runTransaction(db, async (transaction) => {
@@ -305,10 +313,6 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
 
       transaction.update(userRef, {
         creditPoints: newBalance,
-        creditPoint: newBalance,
-        walletBalance: newBalance,
-        partnerCredit: newBalance,
-        'stats.creditBalance': newBalance,
         updatedAt: serverTimestamp()
       });
 
@@ -348,8 +352,9 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
 export const checkAdCreditSufficiency = async (userId, requiredAmount) => {
   if (!userId || requiredAmount <= 0) return false;
   try {
-    const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
-    const userRef = doc(db, 'artifacts', appId, 'users', userId);
+    const usersPath = getUsersPath();
+    const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
+    const userRef = doc(db, usersPath, userId);
     
     // ลองเช็คจาก wallet ก่อน
     const walletSnap = await getDoc(walletRef);
@@ -360,7 +365,7 @@ export const checkAdCreditSufficiency = async (userId, requiredAmount) => {
     // ถ้าไม่มีให้เช็คจาก profile
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
-      return (Number(userSnap.data().creditPoints || userSnap.data().creditPoint || 0)) >= requiredAmount;
+      return (Number(userSnap.data().creditPoints || 0)) >= requiredAmount;
     }
     
     return false;
@@ -375,11 +380,12 @@ export const checkAdCreditSufficiency = async (userId, requiredAmount) => {
  * เพิ่ม Category และ Module เพื่อให้ประวัติแสดงผลได้สวยงาม
  */
 export const consumeAdCreditWithTransaction = async (transaction, userId, amount, referenceId = null, adTitle = null) => {
-  const userRef = doc(db, 'artifacts', appId, 'users', userId);
-  const walletRef = doc(db, 'artifacts', appId, 'users', userId, 'wallet', 'default');
+  const usersPath = getUsersPath();
+  const userRef = doc(db, usersPath, userId);
+  const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
   
   const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
-  const historyRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'credit_history'));
+  const historyRef = doc(collection(db, usersPath, userId, 'credit_history'));
 
   const [userDoc, walletDoc] = await Promise.all([
     transaction.get(userRef),
@@ -392,7 +398,7 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   if (isWalletExist) {
     currentPoints = Number(walletDoc.data().balance) || 0;
   } else if (userDoc.exists()) {
-    currentPoints = Number(userDoc.data().creditPoints || userDoc.data().creditPoint || 0);
+    currentPoints = Number(userDoc.data().creditPoints || 0);
   } else {
     throw new Error("ระบบไม่พบข้อมูลกระเป๋าเงินของคุณ");
   }
@@ -422,10 +428,6 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   if (userDoc.exists()) {
     transaction.update(userRef, {
       creditPoints: newBalance,
-      creditPoint: newBalance,
-      walletBalance: newBalance,
-      partnerCredit: newBalance,
-      'stats.creditBalance': newBalance,
       updatedAt: serverTimestamp()
     });
   }

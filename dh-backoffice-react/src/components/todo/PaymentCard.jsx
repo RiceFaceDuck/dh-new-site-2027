@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { todoService } from '../../firebase/todoService';
+import { creditCoreService } from '../../firebase/creditCoreService';
 import { db } from '../../firebase/config';
 import { doc, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
 
@@ -20,7 +21,7 @@ const PaymentCard = ({ task, currentUser, onSuccess }) => {
       
       // อัปเดตการได้แต้มสะสม
       try {
-        await creditService.handlePaymentCompletion(task.orderId, task.userId);
+        await creditCoreService.handlePaymentCompletion(task.orderId, task.userId);
       } catch (creditError) {
         console.error("Failed to update credit points:", creditError);
         // ถึงแม้จะให้แต้มไม่สำเร็จ ก็ควรอนุมัติสลิปผ่านไปก่อน แล้วให้ระบบไปรันอัปเดตย้อนหลัง

@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 export default function PointDisplay({ customerId, className = '' }) {
   // ดึงข้อมูล Real-time ผ่าน Custom Hook ที่สร้างไว้
   const { creditPoints, loading } = useCustomerFinancials(customerId);
+  console.log('PointDisplay for customer:', customerId, 'points:', creditPoints);
 
   // สถานะกำลังโหลดข้อมูล
   if (loading) {
@@ -31,7 +32,7 @@ export default function PointDisplay({ customerId, className = '' }) {
   // กรณีไม่มีแต้มสะสม (0 แต้ม)
   return (
     <span className={`text-[12px] font-mono font-normal text-slate-300 ${className}`}>
-      -
+      0
     </span>
   );
 }

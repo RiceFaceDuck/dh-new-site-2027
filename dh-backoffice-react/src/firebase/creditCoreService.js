@@ -1,10 +1,14 @@
-/* eslint-disable */
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, runTransaction, collection, query, where, orderBy, limit, getDocs, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, runTransaction, collection, serverTimestamp, query, where, getDocs, documentId, limit } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 
-// 🛡️ App ID สำหรับกำหนด Scope การเข้าถึง Database (Enterprise Sandbox)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const getUsersPath = () => {
+    if (typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof __app_id !== 'undefined') {
+        return `artifacts/${__app_id}/public/data/users`;
+    }
+    return 'users';
+};
 
 // ==========================================
 // 🎮 Gamification & Formatting
@@ -27,8 +31,7 @@ export const formatCredit = (points = 0) => {
 // ⚙️ Core Credit Service (เครื่องยนต์ประมวลผลหลัก)
 // ==========================================
 
-export const creditService = {
-
+export const creditCoreService = {
   formatCredit,
   getUserTier,
 
@@ -41,56 +44,40 @@ export const creditService = {
     return Math.floor(basePoints * multiplier);
   },
 
-  getCreditSettings: async () => {
-    try {
-      // 🛠️ ปรับ Path เป็น 6 ระดับ (settings, credit_config) ป้องกัน Firebase Crash
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) return docSnap.data();
-      
-      const defaultSettings = {
-        ledger: { systemPoolMax: 1000000, totalAllocated: 0, lastAuditTime: serverTimestamp(), status: 'SECURE' },
-        earningRate: 100,      
-        redemptionRate: 1,     
-        pointToCashRatio: 1, 
-        pendingDays: 11,       
-        rewardRules: { review: 10, knowledgeSharing: 50, referral: 100 },
-        updatedAt: serverTimestamp()
-      };
-
-      await setDoc(docRef, defaultSettings);
-      return defaultSettings;
-    } catch (error) {
-      console.error("🔥 System Error [getCreditSettings]:", error);
-      throw error;
-    }
-  },
-
-  updateCreditSettings: async (settingsData, uid) => {
-    try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
-      const payload = { ...settingsData, updatedAt: serverTimestamp(), updatedBy: uid || 'Admin' };
-      await setDoc(docRef, payload, { merge: true });
-
-      if (historyService && historyService.addLog) {
-        await historyService.addLog('CyberAuditCore', 'SystemConfigAltered', 'settings_credit_config', `ปรับปรุงตัวแปรระบบ Credit`, uid || 'System');
-      }
-      return true;
-    } catch (error) {
-      console.error("🔥 System Error [updateCreditSettings]:", error);
-      throw error;
-    }
-  },
-
   /**
    * ✨ Atomic Dual-Sync Credit Adjustment (SECURED & FINANCIAL GRADE)
    * อัปเกรดระบบเพื่อความแม่นยำสูงสุดระดับธุรกรรมการเงิน
    */
-  adjustUserCredit: async (uid, amount, type, note, actorUid, referenceId = null) => {
+  adjustUserCredit: async (inputUid, amount, type, note, actorUid, referenceId = null) => {
     try {
-      // 🛡️ Security Checks: คัดกรองข้อมูลตั้งแต่ต้นทาง
-      if (!uid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
+      if (!inputUid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
+
+      // ✨ Smart UID Resolver (รองรับ รหัสสั้น 8 ตัว, เบอร์โทร, customerCode)
+      const cleanInput = inputUid.trim();
+      let resolvedUid = cleanInput;
+      const usersColPath = getUsersPath();
+      const usersRefColl = collection(db, usersColPath);
+      
+      // ถ้าไม่ใช่ UID เต็มยาวๆ ให้ลองค้นหาดูเผื่อเป็นรหัสย่อ
+      if (cleanInput.length < 20) {
+        let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput)));
+        if (!snap.empty) resolvedUid = snap.docs[0].id;
+        else {
+          snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase())));
+          if (!snap.empty) resolvedUid = snap.docs[0].id;
+          else {
+            snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput)));
+            if (!snap.empty) resolvedUid = snap.docs[0].id;
+            else {
+              // ค้นหาแบบ StartsWith ของ Document ID 
+              snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
+              if (!snap.empty) resolvedUid = snap.docs[0].id;
+            }
+          }
+        }
+      }
+      const uid = resolvedUid;
+
       
       const numAmount = Number(amount);
       if (isNaN(numAmount) || numAmount <= 0) {
@@ -100,7 +87,6 @@ export const creditService = {
         throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตเกินเพดานสูงสุดที่กำหนดต่อครั้ง (Anti-Fraud Lock)");
       }
 
-      // 🧮 Financial Math: จัดการทศนิยม 2 ตำแหน่งให้เป๊ะที่สุด ป้องกัน JS Float Error
       const safeAmount = Math.round(numAmount * 100) / 100;
 
       let transactionId = null;
@@ -108,12 +94,10 @@ export const creditService = {
         
         const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
         
-        // 🔗 References สำหรับ Dual-Sync
-        const userRef = doc(db, 'artifacts', appId, 'users', uid); // Sandbox (ระบบใหม่)
-        const rootUserRef = doc(db, 'users', uid); // Root (ระบบดั้งเดิม หน้าเว็บหลัก)
-        const walletRef = doc(db, 'artifacts', appId, 'users', uid, 'wallet', 'default');
+        const usersColPathTx = getUsersPath();
+        const userRef = doc(db, usersColPathTx, uid);
+        const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
         
-        // 🚧 Idempotency Check: ตรวจสอบการทำรายการซ้ำซ้อน
         let txRef;
         const refSuffix = referenceId ? referenceId : Date.now().toString();
         if (referenceId) {
@@ -124,29 +108,24 @@ export const creditService = {
           txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
         }
 
-        const [settingsSnap, userSnap, rootUserSnap, walletSnap] = await Promise.all([
+        const [settingsSnap, userSnap, walletSnap] = await Promise.all([
           transaction.get(settingsRef),
           transaction.get(userRef),
-          transaction.get(rootUserRef),
           transaction.get(walletRef)
         ]);
 
         const settingsData = settingsSnap.exists() ? settingsSnap.data() : null;
         const ledger = settingsData?.ledger || { systemPoolMax: 1000000, totalAllocated: 0, status: 'SECURE' };
 
-        // 🔍 ค้นหายอดเงินปัจจุบันจากทุกแหล่ง (Wallet > Sandbox > Root)
         let currentWallet = 0;
         let totalAccumulated = 0;
         if (walletSnap.exists()) {
           currentWallet = Number(walletSnap.data().balance) || 0;
           totalAccumulated = Number(walletSnap.data().totalAccumulated) || 0;
         } else if (userSnap.exists()) {
-          currentWallet = Number(userSnap.data().creditPoints || userSnap.data().creditPoint || userSnap.data().stats?.creditBalance || userSnap.data().partnerCredit || 0);
-        } else if (rootUserSnap.exists()) {
-          currentWallet = Number(rootUserSnap.data().creditPoints || rootUserSnap.data().creditPoint || rootUserSnap.data().stats?.creditBalance || rootUserSnap.data().partnerCredit || 0);
+          currentWallet = Number(userSnap.data().creditPoints || 0);
         }
 
-        // 🧮 จัดการ Float Error ของยอดปัจจุบัน
         const safeCurrentWallet = Math.round(currentWallet * 100) / 100;
         const sysMax = Number(ledger.systemPoolMax) || 1000000;
         let newTotalAllocated = Number(ledger.totalAllocated) || 0;
@@ -154,8 +133,7 @@ export const creditService = {
         let newWalletBalance = safeCurrentWallet;
         let newTotalAccumulated = Number(totalAccumulated) || 0;
 
-        // ⚖️ Core Calculation
-        if (type === 'deposit') {
+        if (type === 'deposit' || type === 'add') {
           if (sysMax > 0 && (newTotalAllocated + safeAmount) > sysMax) {
             throw new Error(`ไม่อนุมัติการทำรายการ: ทุนสำรองกลางไม่เพียงพอ`);
           }
@@ -172,7 +150,6 @@ export const creditService = {
           throw new Error("ประเภทการปรับปรุงเครดิตไม่ถูกต้องในระบบ");
         }
 
-        // สรุปยอดสุดท้ายให้ทศนิยมสะอาด
         newWalletBalance = Math.round(newWalletBalance * 100) / 100;
 
         let newLedgerStatus = 'SECURE';
@@ -180,13 +157,11 @@ export const creditService = {
         if (utilization >= 0.9) newLedgerStatus = 'WARNING'; 
         if (utilization >= 1) newLedgerStatus = 'BREACHED'; 
 
-        // 💾 3.1 อัปเดต Master Ledger
         transaction.set(settingsRef, {
           ledger: { ...ledger, totalAllocated: newTotalAllocated, status: newLedgerStatus, lastAuditTime: serverTimestamp() },
           updatedAt: serverTimestamp()
         }, { merge: true });
 
-        // 💾 3.2 อัปเดต Wallet ลับ
         transaction.set(walletRef, {
           balance: newWalletBalance,
           totalAccumulated: newTotalAccumulated,
@@ -194,47 +169,35 @@ export const creditService = {
         }, { merge: true });
 
         const syncPayload = {
-          creditPoints: newWalletBalance,  // รองรับ Field ของหน้าเว็บใหม่
-          creditPoint: newWalletBalance,   // รองรับ Field ของหน้าเว็บเก่า
-          walletBalance: newWalletBalance,
-          partnerCredit: newWalletBalance, // เผื่อระบบพาร์ทเนอร์
-          stats: { creditBalance: newWalletBalance },
+          creditPoints: newWalletBalance,  
           updatedAt: serverTimestamp()
         };
 
-        // 💾 3.3 อัปเดต User Profile (Sandbox)
         transaction.set(userRef, syncPayload, { merge: true });
 
-        // 💾 3.4 🌟 DUAL-SYNC: อัปเดต User Profile (Root) เพื่อให้หน้าเว็บหลักเก่าๆ เห็นยอดทันที!
-        if (rootUserSnap.exists()) {
-           transaction.set(rootUserRef, syncPayload, { merge: true });
-        }
+        const userEmail = userSnap.exists() ? userSnap.data().email : 'Migrated User';
 
-        const userEmail = userSnap.exists() ? userSnap.data().email : (rootUserSnap.exists() ? rootUserSnap.data().email : 'Migrated User');
-
-        // 💾 3.5 สร้าง Log ธุรกรรมกองกลาง
         transactionId = txRef.id;
         transaction.set(txRef, {
           transactionId: `TXM-${refSuffix}`,
           uid: uid,
           userEmail: userEmail || 'unknown@system.local',
-          type: type === 'deposit' ? 'add' : 'deduct', // แมปให้ตรงกับที่หน้า UI ดึงไปโชว์
+          type: (type === 'deposit' || type === 'add') ? 'add' : 'deduct',
           amount: safeAmount,
           balanceAfter: newWalletBalance,
           referenceId: referenceId || 'MANUAL_ADJUST',
-          note: note || (type === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
-          remark: note || (type === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'), // เพิ่มฟิลด์ให้ UI หน้าประวัติ
+          note: note || ((type === 'deposit' || type === 'add') ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
+          remark: note || ((type === 'deposit' || type === 'add') ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
           recordedBy: actorUid || 'System',
-          operatorUid: actorUid || 'System', // เพิ่มฟิลด์ให้ UI หน้าประวัติ
+          operatorUid: actorUid || 'System',
           timestamp: serverTimestamp()
         });
 
-        // 💾 3.6 สร้าง Log ประวัติส่วนตัว ให้ลูกค้าเห็นหน้าเว็บ
         const personalHistoryRef = doc(collection(db, 'artifacts', appId, 'users', uid, 'credit_history'));
         transaction.set(personalHistoryRef, {
-          type: type === 'deposit' ? 'earn' : 'spend',
+          type: (type === 'deposit' || type === 'add') ? 'earn' : 'spend',
           points: safeAmount,
-          amount: safeAmount, // เพิ่ม Field ให้รองรับโค้ดเก่า
+          amount: safeAmount,
           note: note || 'ทำรายการกระเป๋าเงิน',
           referenceId: `TXM-${refSuffix}`,
           adjustedBy: actorUid || 'System',
@@ -245,9 +208,8 @@ export const creditService = {
 
       console.info(`✅ [Credit Engine] Transaction TXM-${referenceId || 'MANUAL'} Completed for UID: ${uid} | Amount: ${amount}`);
 
-      // 💾 4. Audit Log ของแอดมิน
       if (historyService && historyService.addLog) {
-        await historyService.addLog('CyberAuditCore', type === 'deposit' ? 'CreditDeposit' : 'CreditDeduct', uid, `${type === 'deposit' ? 'เพิ่ม' : 'ลด'}เครดิต ฿${safeAmount.toLocaleString()}`, actorUid);
+        await historyService.addLog('CyberAuditCore', (type === 'deposit' || type === 'add') ? 'CreditDeposit' : 'CreditDeduct', uid, `${(type === 'deposit' || type === 'add') ? 'เพิ่ม' : 'ลด'}เครดิต ฿${safeAmount.toLocaleString()}`, actorUid);
       }
       return { success: true, transactionId };
     } catch (error) {
@@ -272,15 +234,13 @@ export const creditService = {
         
         if (orderData.pointsAwarded || pendingPoints <= 0) return;
 
-        // ดึงแต้มออกมาเพื่อให้ฟังก์ชันภายนอกจัดการ
         pendingPointsToAward = pendingPoints;
 
         transaction.update(orderRef, { pendingCredits: 0, pointsAwarded: true, awardedAt: serverTimestamp() });
       });
       
-      // เรียกใช้หลังจบ transaction หลักเพื่อป้องกัน Nested Transaction Timeout
       if (pendingPointsToAward > 0) {
-        await creditService.adjustUserCredit(userId, pendingPointsToAward, 'deposit', `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`, 'System_Order_Completion', orderId);
+        await creditCoreService.adjustUserCredit(userId, pendingPointsToAward, 'deposit', `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`, 'System_Order_Completion', orderId);
       }
       
       return true;
@@ -293,7 +253,7 @@ export const creditService = {
   clawbackPoints: async (uid, points, referenceId, actorUid) => {
     if (!points || points <= 0) return true; 
     try {
-      await creditService.adjustUserCredit(uid, points, 'deduct', `ดึงแต้มคืนจากบิลยกเลิก: ${referenceId}`, actorUid || 'System_Clawback', `CB_${referenceId}`);
+      await creditCoreService.adjustUserCredit(uid, points, 'deduct', `ดึงแต้มคืนจากบิลยกเลิก: ${referenceId}`, actorUid || 'System_Clawback', `CB_${referenceId}`);
       if (historyService && historyService.addLog) {
          await historyService.addLog('CyberAuditCore', 'PointClawback', referenceId, `ริบแต้มคืน ${formatCredit(points)} แต้ม จากบิลที่ยกเลิก`, actorUid);
       }
@@ -302,54 +262,5 @@ export const creditService = {
       console.error("🔥 System Error [clawbackPoints]:", error);
       throw error;
     }
-  },
-
-  getPointsHistory: async (userId, limitCount = 30) => {
-    if (!userId) return [];
-    try {
-      const q = query(
-        collection(db, 'artifacts', appId, 'users', userId, 'credit_history'),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.error("🔥 System Error [getPointsHistory]:", error);
-      return [];
-    }
   }
-};
-
-// ==========================================
-// 💡 Track Ad Click & Legacy Support
-// ==========================================
-
-export const trackAdClick = async (partnerId) => {
-  if (!partnerId) return;
-  try {
-    const statDocId = `${new Date().getFullYear()}-${new Date().getMonth()+1}`;
-    const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId, 'stats', statDocId);
-    
-    await runTransaction(db, async (transaction) => {
-      const docSnap = await transaction.get(partnerStatsRef);
-      if (docSnap.exists()) {
-        transaction.update(partnerStatsRef, { clicks: increment(1), updatedAt: serverTimestamp() });
-      } else {
-        transaction.set(partnerStatsRef, { impressions: 0, clicks: 1, spentCredits: 0, updatedAt: serverTimestamp() });
-      }
-    });
-  } catch (error) {
-    console.error("Error tracking ad click:", error);
-  }
-};
-
-export const holdAdCredit = async (userId, amount, adTitle) => {
-  console.info(`[Legacy Bypass] ข้ามการกันเครดิต ${amount} Pts (ระบบใหม่เปิดให้ใช้งานฟรี)`);
-  return true; 
-};
-
-export const refundAdCredit = async (userId, amount, adTitle) => {
-  console.info(`[Legacy Bypass] ข้ามการคืนเครดิต ${amount} Pts (เพราะไม่ได้ถูกหักออกแต่แรก)`);
-  return true;
 };

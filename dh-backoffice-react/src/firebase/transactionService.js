@@ -18,7 +18,7 @@ export const transactionService = {
         let currentBalance = 0;
         if (userDoc.exists()) {
           // รองรับทั้ง field เก่าและใหม่
-          currentBalance = userDoc.data().stats?.creditBalance || userDoc.data().partnerCredit || 0;
+          currentBalance = userDoc.data().creditPoints || 0;
         }
 
         const numAmount = Number(amount);
@@ -50,8 +50,7 @@ export const transactionService = {
         // 3. อัปเดตยอดคงเหลือกลับไปที่ User Profile ทันที
         if (userDoc.exists()) {
           transaction.update(userRef, {
-            'stats.creditBalance': newBalance,
-            'partnerCredit': newBalance, // Sync ของเก่าเพื่อไม่ให้ระบบอื่นพัง
+            'creditPoints': newBalance,
             updatedAt: serverTimestamp()
           });
         }

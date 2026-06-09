@@ -149,7 +149,7 @@ export const billingService = {
         const POINTS_RATE = 100;
 
         if (userSnap && userSnap.exists()) {
-            currentWallet = userSnap.data().stats?.creditBalance || userSnap.data().partnerCredit || 0;
+            currentWallet = userSnap.data().creditPoints || 0;
             
             if (walletToUse > 0 && currentWallet < walletToUse) {
               throw new Error("ยอดเงินใน Wallet ไม่เพียงพอ");
@@ -229,8 +229,7 @@ export const billingService = {
             let newPointsBalance = currentPoints + earnedPoints;
 
             transaction.update(userRef, { 
-              'stats.creditBalance': newWalletBalance, 
-              'partnerCredit': newWalletBalance, 
+              'creditPoints': newWalletBalance, 
               'stats.rewardPoints': newPointsBalance, 
               updatedAt: serverTimestamp() 
             });
@@ -488,15 +487,14 @@ export const billingService = {
                  }
 
                  if (refundAmount > 0 || clawbackPoints > 0 || cancelledPending > 0) {
-                     const currentWallet = userSnap.data().stats?.creditBalance || userSnap.data().partnerCredit || 0;
+                     const currentWallet = userSnap.data().creditPoints || 0;
                      const currentPoints = userSnap.data().stats?.rewardPoints || 0;
                      
                      const newWalletBalance = currentWallet + refundAmount;
                      const newPointsBalance = Math.max(0, currentPoints - clawbackPoints);
 
                      transaction.update(userRef, { 
-                       'stats.creditBalance': newWalletBalance, 
-                       'partnerCredit': newWalletBalance, 
+                       'creditPoints': newWalletBalance, 
                        'stats.rewardPoints': newPointsBalance, 
                        updatedAt: serverTimestamp() 
                      });
@@ -603,12 +601,11 @@ export const billingService = {
              const userRef = doc(db, 'users', customerUid);
              const userSnap = await transaction.get(userRef);
              if (userSnap.exists()) {
-                 const currentWallet = userSnap.data().stats?.creditBalance || userSnap.data().partnerCredit || 0;
+                 const currentWallet = userSnap.data().creditPoints || 0;
                  const newWalletBalance = currentWallet + walletUsed;
                  
                  transaction.update(userRef, {
-                   'stats.creditBalance': newWalletBalance,
-                   'partnerCredit': newWalletBalance
+                   'creditPoints': newWalletBalance
                  });
 
                  transaction.set(doc(collection(db, 'credit_transactions')), {

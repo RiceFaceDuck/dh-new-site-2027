@@ -9,6 +9,13 @@ import { db } from './config';
 // 🛡️ กำหนด App ID สำหรับการเข้าถึงแบบ Enterprise Sandbox
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
+const getUsersPath = () => {
+    if (typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof window.__app_id !== 'undefined') {
+        return `artifacts/${window.__app_id}/public/data/users`;
+    }
+    return 'users';
+};
+
 // ==========================================
 // 🧠 Smart Cache System (สำหรับประวัติ Wallet)
 // ==========================================
@@ -46,13 +53,17 @@ export const useWalletBalance = (uid) => {
       return;
     }
 
-    const userRef = doc(db, 'artifacts', appId, 'users', uid);
+    const usersPath = getUsersPath();
+    const userRef = doc(db, usersPath, uid);
 
     const unsubscribe = onSnapshot(userRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setWalletData({
-          walletBalance: Number(data.walletBalance || data.stats?.currentWallet || 0),
+          walletBalance: Number(
+            data.walletBalance ?? 
+            0
+          ),
           pendingWithdrawal: Number(data.pendingWithdrawal || 0),
           loading: false,
           error: null
@@ -91,7 +102,8 @@ export const getWalletHistory = async (userId, lastDoc = null, pageSize = 10, fo
   }
 
   try {
-    const historyRef = collection(db, 'artifacts', appId, 'users', userId, 'wallet_transactions');
+    const usersPath = getUsersPath();
+    const historyRef = collection(db, usersPath, userId, 'wallet_transactions');
     let q;
 
     if (lastDoc) {
@@ -151,7 +163,7 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
       if (!userSnap.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้งาน");
 
       const userData = userSnap.data();
-      const currentBalance = Number(userData.walletBalance || userData.stats?.currentWallet || 0);
+      const currentBalance = Number(userData.walletBalance || 0);
 
       // 1. ตรวจสอบยอดเงิน (ป้องกันการแก้ HTML เพื่อถอนเงินเกินจริง)
       if (currentBalance < amount) {
@@ -170,7 +182,8 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
       });
 
       // 3. บันทึกประวัติฝั่งลูกค้า
-      const userTxRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'wallet_transactions'));
+      const usersPath = getUsersPath();
+      const userTxRef = doc(collection(db, usersPath, userId, 'wallet_transactions'));
       transaction.set(userTxRef, {
         transactionId: txId,
         type: 'WITHDRAWAL_REQUEST',

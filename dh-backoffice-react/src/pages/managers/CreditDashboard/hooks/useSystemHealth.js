@@ -1,22 +1,51 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../../../firebase/config';
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 export default function useSystemHealth() {
-  // State สำหรับเก็บสถานะเซิร์ฟเวอร์
-  const [healthStatus, setHealthStatus] = useState('healthy'); // 'healthy' | 'warning' | 'critical'
+  const [healthStatus, setHealthStatus] = useState('healthy'); 
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
-  
-  // State สำหรับเก็บประวัติการทำงาน (Logs) เริ่มต้นด้วย Mock Data
-  const [healthLogs, setHealthLogs] = useState([
-    { time: new Date().toLocaleTimeString(), msg: "DH-Core: Authentication successful.", type: "success" },
-    { time: new Date().toLocaleTimeString(), msg: "Credit Engine: Standing by.", type: "info" }
-  ]);
+  const [healthLogs, setHealthLogs] = useState([]);
 
-  // ฟังก์ชันอเนกประสงค์สำหรับเพิ่ม Log ใหม่ (จำกัดไว้ที่ 50 รายการเพื่อไม่ให้กิน RAM)
-  const addLog = useCallback((msg, type = 'info') => {
-    setHealthLogs(prev => {
-      const newLogs = [{ time: new Date().toLocaleTimeString(), msg, type }, ...prev];
-      return newLogs.slice(0, 50); // เก็บแค่ 50 รายการล่าสุด
+  useEffect(() => {
+    const logsRef = collection(db, 'artifacts', appId, 'system_logs');
+    const q = query(logsRef, orderBy('createdAt', 'desc'), limit(50));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedLogs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let timeString = new Date().toLocaleTimeString();
+        if (data.createdAt && data.createdAt.toDate) {
+           timeString = data.createdAt.toDate().toLocaleTimeString('th-TH');
+        }
+        return {
+          id: doc.id,
+          msg: data.msg,
+          type: data.type,
+          time: timeString
+        };
+      });
+      setHealthLogs(fetchedLogs);
+    }, (error) => {
+      console.error("Health logs sync error:", error);
     });
+
+    return () => unsubscribe();
+  }, []);
+
+  const addLog = useCallback(async (msg, type = 'info') => {
+    try {
+      const logsRef = collection(db, 'artifacts', appId, 'system_logs');
+      addDoc(logsRef, {
+        msg,
+        type,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.error("Failed to add log to DB:", e);
+    }
   }, []);
 
   // ฟังก์ชันตรวจสอบสถานะระบบ (Diagnostics)

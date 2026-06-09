@@ -54,7 +54,7 @@ const ensureUserProfile = async (user, additionalData = {}) => {
         role: 'customer',
         // 💰 เตรียมโครงสร้างการเงิน (Ecosystem)
         walletBalance: 0,
-        creditPoint: 0,
+        creditPoints: 0,
         // 🗺️ เตรียมโครงสร้างแผนที่สำหรับ Partner
         ecosystem: {
           mapUrl: ''
@@ -71,7 +71,7 @@ const ensureUserProfile = async (user, additionalData = {}) => {
       if (!existingData.accountId) updateData.accountId = generateAccountId();
       // การันตีว่ามีฟิลด์การเงิน ไม่พังตอนเรียกใช้
       if (existingData.walletBalance === undefined) updateData.walletBalance = 0;
-      if (existingData.creditPoint === undefined) updateData.creditPoint = 0;
+      if (existingData.creditPoints === undefined) updateData.creditPoints = 0;
       if (!existingData.ecosystem) updateData.ecosystem = { mapUrl: '' };
 
       // ใช้ { merge: true } เพื่อไม่ให้ทับข้อมูลอื่นๆ ที่ลูกค้าเคยกรอกไว้ (เช่น เบอร์โทร)

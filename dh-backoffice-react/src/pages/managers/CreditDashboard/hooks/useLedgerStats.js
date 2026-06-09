@@ -25,18 +25,10 @@ export default function useLedgerStats() {
 
       snap.forEach(doc => {
         const d = doc.data();
-        const bal = Number(
-          d.credit || 
-          d.creditBalance || 
-          d.creditPoints || 
-          d.creditPoint || 
-          d.partnerCredit || 
-          d.stats?.creditBalance || 
-          0
-        );
+        let pool = Number(d.creditPoints || 0);
         
-        if (bal > 0 || d.role === 'partner') {
-          totalCredit += bal;
+        if (pool > 0 || d.role === 'partner') {
+          totalCredit += pool;
           activeCount += 1;
         }
       });

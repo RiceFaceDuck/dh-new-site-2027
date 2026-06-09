@@ -153,7 +153,15 @@ dh-new-site-2027/
 │           │   └── hooks/
 │           │       ├── useCentralTodo.js
 │           │       └── useManagerTodo.js
-│           ├── History.jsx
+│           ├── History/
+│           │   ├── index.jsx
+│           │   ├── components/
+│           │   │   ├── HistoryHeader.jsx
+│           │   │   └── HistoryTable.jsx
+│           │   ├── hooks/
+│           │   │   └── useHistoryLogs.js
+│           │   └── utils/
+│           │       └── historyFormatters.jsx
 │           ├── Inventory.jsx
 │           ├── Login.jsx
 │           ├── Overview.jsx

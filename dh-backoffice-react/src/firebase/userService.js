@@ -316,15 +316,12 @@ export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
         // เนื่องจาก creditService.adjustUserCredit ส่งผลทั้ง wallet และ credit รวมกัน 
         // ในกรณีนี้ควรใช้วิธีอัปเดตแยกกัน (แต่แบบปลอดภัย) เพื่อรักษายอดแยกกัน (ในกรณีที่ระบบมี 2 กระเป๋า)
         const data = userSnap.data();
-        let newCredit = Math.max(0, Number(data.creditPoints || data.creditPoint || 0) + creditAmount);
+        let newCredit = Math.max(0, Number(data.creditPoints || 0) + creditAmount);
         let newWallet = Math.max(0, Number(data.walletBalance || 0) + walletAmount);
         
         batch.update(userRef, {
             creditPoints: newCredit,
-            creditPoint: newCredit,
             walletBalance: newWallet,
-            partnerCredit: newWallet,
-            'stats.creditBalance': newWallet,
             'metadata.lastFinancialUpdate': serverTimestamp()
         });
 

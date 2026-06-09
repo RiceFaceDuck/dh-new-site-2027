@@ -3,9 +3,9 @@ import { ArrowRightLeft, History, Users, Settings } from 'lucide-react';
 
 export default function DashboardTabs({ activeTab = 'adjust', onTabChange }) {
   const TABS = [
-    { id: 'adjust', label: 'Operations', icon: ArrowRightLeft },
-    { id: 'history', label: 'Audit Trail', icon: History },
     { id: 'partners', label: 'Ledger', icon: Users },
+    { id: 'history', label: 'Audit Trail', icon: History },
+    { id: 'adjust', label: 'Operations', icon: ArrowRightLeft },
     { id: 'settings', label: 'Config', icon: Settings }
   ];
 

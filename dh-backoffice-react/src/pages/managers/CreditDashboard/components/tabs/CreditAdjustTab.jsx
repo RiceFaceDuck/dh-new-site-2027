@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { auth } from '../../../../../firebase/config';
+import { creditCoreService } from '../../../../../firebase/creditCoreService';
 
 export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = false }) {
   const [partnerId, setPartnerId] = useState('');
@@ -21,9 +23,15 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isFormValid || isSubmitting) return;
-    onSubmitTransaction && onSubmitTransaction({
-      partnerId, amount: parseInt(amount, 10), actionType, remark
-    });
+    
+    const uid = auth.currentUser?.uid || 'Admin';
+    const numAmt = parseInt(amount, 10);
+    const dbType = actionType === 'add' ? 'deposit' : 'deduct';
+    
+    onSubmitTransaction && onSubmitTransaction(
+      async () => await creditCoreService.adjustUserCredit(partnerId, numAmt, dbType, remark, uid),
+      `ทำรายการ ${actionType === 'add' ? 'เพิ่ม' : 'หัก'}เครดิต ${numAmt.toLocaleString('th-TH')} บาท สำเร็จ`
+    );
   };
 
   const numAmount = parseInt(amount || '0', 10);

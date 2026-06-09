@@ -98,7 +98,7 @@ const TabAdManager = () => {
       
       let currentPoints = 0;
       if (walletSnap.exists()) currentPoints = Number(walletSnap.data().balance) || 0;
-      else if (userSnap.exists()) currentPoints = Number(userSnap.data().creditPoints || userSnap.data().creditPoint || 0);
+      else if (userSnap.exists()) currentPoints = Number(userSnap.data().creditPoints || 0);
       setUserCredit(currentPoints);
     } catch (error) { console.error("Error fetching credit:", error); }
   };

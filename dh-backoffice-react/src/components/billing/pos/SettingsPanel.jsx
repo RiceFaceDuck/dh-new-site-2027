@@ -499,20 +499,20 @@ export default function SettingsPanel({
                             <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg">
                                 <div className="flex justify-between items-center mb-1.5">
                                     <span className="text-gray-500 font-bold text-xs flex items-center gap-1.5"><Wallet size={12}/> Wallet (เงินค้าง)</span>
-                                    <span className="font-black text-blue-700 text-[13px]">฿{Number(activeTab.customer.partnerCredit || 0).toLocaleString()}</span>
+                                    <span className="font-black text-blue-700 text-[13px]">฿{Number(activeTab.customer.creditPoints || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center pb-3 mb-3 border-b border-gray-200">
                                     <span className="text-gray-500 font-bold text-xs flex items-center gap-1.5"><Sparkles size={12}/> Credit Points</span>
                                     <span className="font-black text-amber-600 text-xs">{Number(activeTab.customer.points || 0).toLocaleString()} Pts</span>
                                 </div>
-                                {Number(activeTab.customer.partnerCredit || 0) > 0 && (
+                                {Number(activeTab.customer.creditPoints || 0) > 0 && (
                                     <div className="flex justify-between items-center bg-white p-2 rounded border border-gray-200 shadow-sm">
                                         <span className="text-[10px] font-bold text-gray-600">หักจ่ายบิลนี้</span>
                                         <div className="relative w-24">
                                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-[11px]">฿</span>
                                             <input type="number" min="0" value={activeTab.walletUsed || ''} disabled={isProcessing}
                                                 onChange={(e) => {
-                                                    const maxWallet = Number(activeTab.customer.partnerCredit || 0);
+                                                    const maxWallet = Number(activeTab.customer.creditPoints || 0);
                                                     const val = Math.min(Number(e.target.value), maxWallet, netTotal);
                                                     updateActiveTab({ walletUsed: Math.max(0, val) });
                                                 }} 
