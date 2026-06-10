@@ -4,45 +4,54 @@
 
 @layer base {
   :root {
-    /* ☀️ Day Theme - อิงจากภาพ image_80f6a5.png */
-    --dh-bg-base: #EAEFEF; /* สีพื้นหลังหลัก สว่างสบายตา */
-    --dh-bg-surface: #FFFFFF; /* สีพื้นผิวการ์ด ให้ตัดกับพื้นหลังเพิ่มมิติ */
-    --dh-border: #BFC9D1; /* สีเส้นขอบ โทนเทาอมฟ้า */
-    --dh-text-main: #25343F; /* สีข้อความหลัก เข้มแต่นุ่มนวลกว่าสีดำ */
-    --dh-text-muted: #7A8B99; /* สีข้อความรอง ซอฟต์ลงมาจาก Text Main */
-    --dh-accent: #FF9B51; /* สีส้มเอกลักษณ์ DH */
-    --dh-accent-hover: #E88942; /* สีส้มเข้มขึ้นเล็กน้อยเมื่อ Hover */
-    --dh-accent-light: rgba(255, 155, 81, 0.15); /* สีพื้นหลังรองของ Accent */
+    /* 🏢 Corporate Dark Navy & Emerald Theme */
+    --dh-bg-base: #F1F3F6; /* Light gray for background */
+    --dh-bg-surface: #FFFFFF; /* White for cards/panels */
+    --dh-border: #E5E7EB; /* Subtle gray-200 for borders */
+    --dh-text-main: #111827; /* Dark gray-900 for high readability */
+    --dh-text-muted: #6B7280; /* Gray-500 for secondary text */
+    
+    --dh-primary: #2A305A; /* Dark Navy for Headers */
+    --dh-primary-light: #5B6890; /* Muted slate blue for active states */
+    --dh-success: #328A74; /* Emerald green for payments */
+    --dh-success-hover: #266D5B;
+    --dh-secondary: #5C6B89; /* Slate for secondary actions */
+    --dh-secondary-hover: #4A5670;
+    
+    --dh-accent: #2A305A; /* Trustworthy Corporate Navy */
+    --dh-accent-hover: #1A1F3D;
+    --dh-accent-light: rgba(42, 48, 90, 0.1);
 
-    /* เงาสำหรับโหมดกลางวัน (นุ่มนวล หรูหรา) */
-    --dh-shadow-color: rgba(37, 52, 63, 0.08);
+    /* Professional crisp shadows */
+    --dh-shadow-color: rgba(0, 0, 0, 0.04);
+    --dh-shadow-strong: rgba(0, 0, 0, 0.08);
 
-    /* ✨ [UPGRADE 2026] ตัวแปรสำหรับลูกเล่น (Glass, Glow, Motion) */
-    --dh-glass-bg: rgba(255, 255, 255, 0.7);
-    --dh-glass-border: rgba(255, 255, 255, 0.5);
-    --dh-glow-color: rgba(255, 155, 81, 0.25); /* สีส้มฟุ้งๆ */
-    --dh-spring-easing: cubic-bezier(0.34, 1.56, 0.64, 1); /* ความเด้งแบบสปริง */
-    --dh-smooth-easing: cubic-bezier(0.4, 0, 0.2, 1); /* ความนุ่มนวลปกติ */
+    /* Clean UI interactions */
+    --dh-glass-bg: rgba(255, 255, 255, 0.95);
+    --dh-glass-border: rgba(229, 231, 235, 0.8);
+    --dh-glow-color: rgba(37, 99, 235, 0.15);
+    --dh-spring-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    --dh-smooth-easing: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    /* 🌙 Night Theme - อิงจากภาพ image_8101cd.png */
-    --dh-bg-base: #363636; /* ปรับให้พื้นหลังลึกกว่าสี Surface เล็กน้อย */
-    --dh-bg-surface: #454545; /* ใช้สีเทาเข้มจากภาพเป็นพื้นผิวการ์ด */
-    --dh-border: #5A5A5A; /* สีเส้นขอบที่กลืนไปกับโหมดมืด */
-    --dh-text-main: #FFE6C7; /* สีข้อความหลัก ครีมอ่อน สบายตาในที่มืด */
-    --dh-text-muted: #B3A18C; /* สีข้อความรอง */
-    --dh-accent: #FF6000; /* สีส้มสด เด่นชัดในที่มืด */
-    --dh-accent-hover: #FFA559; /* สีส้มอ่อนจากภาพ นำมาใช้ตอน Hover */
-    --dh-accent-light: rgba(255, 96, 0, 0.15); /* สีพื้นหลังรองของ Accent */
+    /* 🌙 Night Theme - Premium SaaS Dark */
+    --dh-bg-base: #0F172A;
+    --dh-bg-surface: #1E293B;
+    --dh-border: #334155;
+    --dh-text-main: #F8FAFC;
+    --dh-text-muted: #94A3B8;
+    --dh-accent: #F97316;
+    --dh-accent-hover: #FB923C;
+    --dh-accent-light: rgba(249, 115, 22, 0.15);
 
     /* เงาสำหรับโหมดกลางคืน (เข้มและลึกขึ้น เพื่อแยกชั้นเลเยอร์) */
-    --dh-shadow-color: rgba(0, 0, 0, 0.4);
+    --dh-shadow-color: rgba(0, 0, 0, 0.5);
 
     /* ✨ [UPGRADE 2026] ตัวแปรสำหรับลูกเล่น (Glass, Glow, Motion) โหมดมืด */
-    --dh-glass-bg: rgba(69, 69, 69, 0.6);
-    --dh-glass-border: rgba(255, 255, 255, 0.05);
-    --dh-glow-color: rgba(255, 96, 0, 0.3); /* สีส้มสว่างฟุ้งๆ */
+    --dh-glass-bg: rgba(30, 41, 59, 0.75);
+    --dh-glass-border: rgba(255, 255, 255, 0.08);
+    --dh-glow-color: rgba(249, 115, 22, 0.3);
   }
 
   body {

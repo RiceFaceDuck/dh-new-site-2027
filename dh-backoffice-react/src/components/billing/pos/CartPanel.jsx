@@ -22,19 +22,18 @@ export default function CartPanel({
     }, [actionBoxItem, setActionBoxItem]);
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-white font-sans">
-            
-            {/* 🔍 Search Bar - Minimalist Flat */}
-            <div className="search-bar-area p-3 border-b border-gray-200 flex items-center gap-3 shrink-0 relative bg-white" ref={searchRef}>
-                {isProcessing && <div className="absolute inset-0 z-20 bg-white/60 flex items-center justify-center"><span className="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-white px-3 py-1.5 rounded-sm border border-gray-200"><Lock size={14} className="text-gray-400" /> ล็อคหน้าจอ...</span></div>}
+        <div className="flex flex-col h-full relative z-10 font-sans">
+            {/* 🔍 ค้นหา & บาร์โค้ด */}
+            <div className="search-bar-area p-3 bg-[#5B6890] shrink-0 flex items-center gap-3 relative z-20 shadow-sm border-b border-[#4A5678]" ref={searchRef}>
+                {isProcessing && <div className="absolute inset-0 z-20 bg-[#5B6890]/60 flex items-center justify-center backdrop-blur-[1px]"><span className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white px-3 py-1.5 rounded-sm shadow-sm"><Lock size={14} className="text-gray-400" /> ล็อคหน้าจอ...</span></div>}
 
                 <div className="relative flex-1 group">
-                    <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} strokeWidth={2}/>
+                    <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#5B6890] transition-colors" size={18} strokeWidth={2}/>
                     <input 
                         type="text" placeholder="ยิง Barcode หรือค้นหาสินค้า (F3)" value={searchQuery} 
                         onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
                         onFocus={() => setShowDropdown(true)} onBlur={() => setTimeout(() => setShowDropdown(false), 200)} onKeyDown={handleSearchKeyDown} disabled={isProcessing}
-                        className="w-full pl-10 pr-4 py-2 rounded-sm border border-gray-300 text-sm text-gray-800 focus:outline-none focus:border-blue-500 transition-all bg-white"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-sm border-none text-sm text-[#2A305A] focus:outline-none focus:ring-2 focus:ring-[#D51C39] transition-all bg-white font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] placeholder-gray-400"
                     />
                     
                     {showDropdown && searchResults.length > 0 && !isProcessing && (
@@ -56,20 +55,26 @@ export default function CartPanel({
                         </div>
                     )}
                 </div>
-                <button onClick={clearCart} disabled={activeTab.items.length === 0 || isProcessing} className="flex items-center gap-1.5 px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-sm font-medium text-sm transition-colors disabled:opacity-40"><Eraser size={14}/> ล้างบิล</button>
+                <button onClick={clearCart} disabled={activeTab.items.length === 0 || isProcessing} 
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-sm font-semibold text-sm transition-all shadow-sm
+                        ${activeTab.items.length > 0 
+                            ? 'text-white bg-[#D51C39] hover:bg-[#A3152B]' 
+                            : 'text-[#D51C39]/60 bg-[#D51C39]/10 border border-[#D51C39]/20 opacity-70'}`}>
+                    <Eraser size={16}/> ล้างบิล
+                </button>
             </div>
 
             {/* 📊 ตารางสินค้า (Flat & Clean) */}
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
                 <table className="w-full border-collapse">
-                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs font-semibold uppercase sticky top-0 z-10">
+                    <thead className="bg-[var(--dh-primary)] border-b border-[var(--dh-primary)] text-white text-xs font-semibold uppercase sticky top-0 z-10">
                         <tr>
                             <th className="py-2.5 px-3 text-center w-12">#</th>
                             <th className="py-2.5 px-3 text-left">รายการสินค้า</th>
                             <th className="py-2.5 px-3 text-center w-20">จำนวน</th>
                             <th className="py-2.5 px-3 text-right w-24">หน่วยละ</th>
                             <th className="py-2.5 px-3 text-right w-24">ส่วนลด</th>
-                            <th className="py-2.5 px-3 text-right w-28 text-gray-700">รวมเงิน</th>
+                            <th className="py-2.5 px-3 text-right w-28 text-white">รวมเงิน</th>
                             <th className="py-2.5 px-3 text-center w-12"></th>
                         </tr>
                     </thead>

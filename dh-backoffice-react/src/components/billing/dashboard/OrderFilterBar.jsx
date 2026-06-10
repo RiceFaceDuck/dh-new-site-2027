@@ -49,9 +49,9 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
     };
 
     return (
-        <div className="flex flex-col gap-4 pb-4">
+        <div className="flex flex-col gap-3 pb-3">
             {/* 🔝 Row 1: Title | Quick Dates | Date Range | Action */}
-            <div className="flex flex-col xl:flex-row gap-3 w-full items-center justify-between border-b border-[var(--dh-border)] pb-4">
+            <div className="flex flex-col xl:flex-row gap-3 w-full items-center justify-between border-b border-[var(--dh-border)] pb-3">
                 
                 {/* Left: Title & Action (Mobile) */}
                 <div className="shrink-0 mr-auto xl:mr-4 w-full xl:w-auto flex justify-between xl:justify-start items-center">
@@ -62,7 +62,7 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
                 </div>
 
                 {/* Center: Quick Dates & Date Range */}
-                <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto xl:mr-auto xl:ml-8 items-center">
+                <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto xl:mr-auto xl:ml-8 items-center">
                     
                     {/* Quick Date Filters */}
                     <div className="flex items-center gap-1.5 bg-[var(--dh-bg-base)] border border-[var(--dh-border)] rounded-md p-1 shadow-inner h-[40px] overflow-x-auto custom-scrollbar shrink-0 w-full sm:w-auto">
@@ -109,6 +109,15 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
                             className="bg-transparent border-none outline-none text-[13px] font-bold text-[var(--dh-text-main)] w-[110px]"
                         />
                     </div>
+                    
+                    {/* Reset Button */}
+                    <button 
+                        onClick={handleReset} 
+                        title="ล้างการกรองทั้งหมด" 
+                        className="h-[40px] w-[40px] flex items-center justify-center bg-[var(--dh-bg-surface)] hover:bg-[var(--dh-accent-light)] text-[var(--dh-text-muted)] hover:text-[var(--dh-accent)] border border-[var(--dh-border)] hover:border-[var(--dh-accent)] rounded-md transition-all shadow-sm group shrink-0"
+                    >
+                        <RefreshCw size={16} strokeWidth={2.5} className="group-hover:rotate-180 transition-transform duration-500" />
+                    </button>
                 </div>
 
                 {/* Right: Action (Desktop) */}
@@ -120,25 +129,26 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
             {/* 📅 Row 2: Status Tabs | Search Box | Total Sales */}
             <div className="flex flex-col xl:flex-row gap-3 w-full items-center justify-between">
                 
-                {/* Left: Status Tabs */}
-                <div className="flex bg-[var(--dh-bg-base)] rounded-md p-1 border border-[var(--dh-border)] w-full sm:w-auto shadow-inner overflow-x-auto custom-scrollbar shrink-0">
-                    {['All', 'Paid', 'Draft', 'Cancelled'].map(f => (
-                        <button 
-                            key={f} 
-                            onClick={() => setFilter(f)} 
-                            className={`whitespace-nowrap px-4 py-2 text-[13px] font-black rounded-md transition-all duration-300 ${
-                                filter === f 
-                                    ? 'bg-[var(--dh-text-main)] text-[var(--dh-bg-surface)] shadow-md transform scale-100' 
-                                    : 'text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)] hover:bg-[var(--dh-bg-surface)]/50 transform scale-95 hover:scale-100'
-                            }`}
-                        >
-                            {f === 'All' ? 'ทั้งหมด' : f === 'Paid' ? 'ชำระแล้ว' : f === 'Draft' ? 'บิลร่าง' : 'ยกเลิก (Void)'}
-                        </button>
-                    ))}
-                </div>
+                {/* Left: Status Tabs & Search Box */}
+                <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto items-center">
+                    {/* Status Tabs */}
+                    <div className="flex bg-[var(--dh-bg-base)] rounded-md p-1 border border-[var(--dh-border)] w-full sm:w-auto shadow-inner overflow-x-auto custom-scrollbar shrink-0">
+                        {['All', 'Paid', 'Draft', 'Cancelled'].map(f => (
+                            <button 
+                                key={f} 
+                                onClick={() => setFilter(f)} 
+                                className={`whitespace-nowrap px-4 py-2 text-[13px] font-black rounded-md transition-all duration-300 ${
+                                    filter === f 
+                                        ? 'bg-[var(--dh-text-main)] text-[var(--dh-bg-surface)] shadow-md transform scale-100' 
+                                        : 'text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)] hover:bg-[var(--dh-bg-surface)]/50 transform scale-95 hover:scale-100'
+                                }`}
+                            >
+                                {f === 'All' ? 'ทั้งหมด' : f === 'Paid' ? 'ชำระแล้ว' : f === 'Draft' ? 'บิลร่าง' : 'ยกเลิก (Void)'}
+                            </button>
+                        ))}
+                    </div>
 
-                {/* Center: Search and Reset */}
-                <div className="flex items-center gap-2 w-full sm:w-auto xl:mx-auto">
+                    {/* Search Box */}
                     <div className="relative w-full sm:w-[300px] shrink-0 group h-[40px]">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--dh-text-muted)] group-focus-within:text-[var(--dh-accent)] transition-colors duration-300" size={16} strokeWidth={2.5}/>
                         <input 
@@ -153,13 +163,6 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
                             <span className="hidden sm:inline-flex items-center justify-center px-2 py-0.5 border border-[var(--dh-border)] rounded text-[10px] font-black text-[var(--dh-text-muted)] bg-[var(--dh-bg-surface)] shadow-sm">/</span>
                         </div>
                     </div>
-                    <button 
-                        onClick={handleReset} 
-                        title="ล้างการกรองทั้งหมด" 
-                        className="h-[40px] w-[40px] flex items-center justify-center bg-[var(--dh-bg-surface)] hover:bg-[var(--dh-accent-light)] text-[var(--dh-text-muted)] hover:text-[var(--dh-accent)] border border-[var(--dh-border)] hover:border-[var(--dh-accent)] rounded-md transition-all shadow-sm group shrink-0"
-                    >
-                        <RefreshCw size={16} strokeWidth={2.5} className="group-hover:rotate-180 transition-transform duration-500" />
-                    </button>
                 </div>
 
                 {/* Right: Total Sales Badge */}

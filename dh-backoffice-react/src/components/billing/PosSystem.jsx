@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Plus, ArrowLeft, X } from 'lucide-react';
+import { Plus, ArrowLeft, X, HelpCircle } from 'lucide-react';
 import { billingService } from '../../firebase/billingService';
 import { auth } from '../../firebase/config';
 import { driveService } from '../../firebase/driveService'; 
@@ -58,6 +58,16 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
     const searchRef = useRef(null);
     const custSearchRef = useRef(null);
     const submitLockRef = useRef(false);
+
+    const [isPaymentPanelCollapsed, setIsPaymentPanelCollapsed] = React.useState(false);
+    const [isPaymentPanelLocked, setIsPaymentPanelLocked] = React.useState(false);
+    const [isGuideModalOpen, setIsGuideModalOpen] = React.useState(false);
+
+    const handleInteractWithOtherPanels = () => {
+        if (!isPaymentPanelLocked && !isPaymentPanelCollapsed) {
+            setIsPaymentPanelCollapsed(true);
+        }
+    };
 
     const getTabTitle = (tab, index) => {
         if (tab.customer) return tab.customer.accountName || tab.customer.firstName || `ลูกค้า ${index + 1}`;
@@ -288,30 +298,35 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
 
     return (
         <div className="flex flex-col h-full bg-[var(--dh-bg-base)] font-sans relative text-[var(--dh-text-main)] transition-colors duration-300">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--dh-border)] bg-[var(--dh-glass-bg)] dh-glass shrink-0 z-20">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-[#D3DCEB] bg-[#EFF2F9] text-[#2A305A] shrink-0 z-20 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <button onClick={onSwitchView} disabled={isProcessing} className="p-1 text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)] transition-colors dh-active-press"><ArrowLeft size={20}/></button>
-                    <h1 className="font-black text-sm tracking-wide dh-text-glow">หน้าจอจุดขาย (POS)</h1>
+                    <button onClick={onSwitchView} disabled={isProcessing} className="p-1 text-gray-500 hover:text-[#2A305A] transition-colors dh-active-press"><ArrowLeft size={20}/></button>
+                    <h1 className="font-black text-sm tracking-wide text-[#2A305A]">เปิดบิลการขาย</h1>
+                    <button onClick={() => setIsGuideModalOpen(true)} className="text-gray-400 hover:text-[#D51C39] transition-colors ml-1" title="คู่มือการใช้งาน">
+                        <HelpCircle size={16}/>
+                    </button>
                 </div>
                 
                 <div className="flex items-center gap-1 overflow-x-auto max-w-[60vw] custom-scrollbar">
                     {safeCartTabs.map((tab, idx) => (
                         <button key={tab.id} onClick={() => !isProcessing && setActiveTabId(tab.id)}
-                            className={`px-4 py-1.5 text-xs font-black transition-all border-b-2 rounded-t-lg
-                                ${activeTabId === tab.id ? 'border-[var(--dh-accent)] text-[var(--dh-accent)] bg-[var(--dh-bg-surface)] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]' : 'border-transparent text-[var(--dh-text-muted)] hover:bg-[var(--dh-bg-surface)]/50'}`}>
-                            {getTabTitle(tab, idx)} {tab.orderId && <span className="ml-1 text-[9px] opacity-60 font-mono">(Draft)</span>}
+                            className={`px-5 py-2 text-xs font-black transition-all border-t-2 rounded-t-lg mt-1 mr-1 flex items-center gap-1.5
+                                ${activeTabId === tab.id ? 'border-t-[#D51C39] text-[#2A305A] bg-[var(--dh-bg-base)] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-10 relative' : 'border-t-transparent text-gray-500 bg-[#D9E2EC] hover:text-gray-800 hover:bg-[#CBD5E1]'}`}>
+                            {getTabTitle(tab, idx)} {tab.orderId && <span className="text-[9px] opacity-60 font-mono bg-black/5 px-1 rounded">(Draft)</span>}
                         </button>
                     ))}
-                    <button onClick={() => { if (!isProcessing) { const newTab = createNewTab(); if(typeof setCartTabs === 'function') { setCartTabs([...safeCartTabs, newTab]); setActiveTabId(newTab.id); } } }} className="p-1.5 ml-1 text-[var(--dh-text-muted)] hover:text-[var(--dh-accent)] transition-colors bg-[var(--dh-bg-surface)]/50 rounded-md dh-active-press"><Plus size={16}/></button>
+                    <button onClick={() => { if (!isProcessing) { const newTab = createNewTab(); if(typeof setCartTabs === 'function') { setCartTabs([...safeCartTabs, newTab]); setActiveTabId(newTab.id); } } }} className="p-1.5 ml-1 text-gray-500 hover:text-[#2A305A] hover:bg-gray-200 transition-colors bg-white/50 border border-gray-200 rounded-md dh-active-press mt-1"><Plus size={16}/></button>
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-                <div className="w-full lg:w-[68%] flex flex-col h-full border-r border-[var(--dh-border)] shadow-md z-10 relative">
-                    <CartPanel searchRef={searchRef} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDropdown={showDropdown} setShowDropdown={setShowDropdown} handleSearchKeyDown={handleSearchKeyDown} clearCart={clearCart} activeTab={activeTab} searchResults={searchResults} addItemToCart={addItemToCart} actionBoxItem={actionBoxItem} setActionBoxItem={setActionBoxItem} updateItemAction={updateItemAction} removeItem={removeItem} eligibleFreebies={eligibleFreebies} noteColorMap={noteColorMap} isProcessing={isProcessing} />
-                    <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab.vatOnShipping} vatAmount={vatAmount} vatType={activeTab.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} />
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-[var(--dh-bg-base)] p-3 gap-4">
+                <div className="w-full flex-1 flex flex-col h-full bg-[var(--dh-bg-surface)] rounded-xl border border-gray-200 z-10 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+                    <div className="flex-1 flex flex-col overflow-hidden" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
+                        <CartPanel searchRef={searchRef} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDropdown={showDropdown} setShowDropdown={setShowDropdown} handleSearchKeyDown={handleSearchKeyDown} clearCart={clearCart} activeTab={activeTab} searchResults={searchResults} addItemToCart={addItemToCart} actionBoxItem={actionBoxItem} setActionBoxItem={setActionBoxItem} updateItemAction={updateItemAction} removeItem={removeItem} eligibleFreebies={eligibleFreebies} noteColorMap={noteColorMap} isProcessing={isProcessing} />
+                    </div>
+                    <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab.vatOnShipping} vatAmount={vatAmount} vatType={activeTab.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} />
                 </div>
-                <div className="w-full lg:w-[32%] bg-[var(--dh-bg-surface)] h-full overflow-y-auto">
+                <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-[var(--dh-bg-surface)] rounded-xl border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
                     <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={handleRemovePromotion} isProcessing={isProcessing} />
                 </div>
             </div>
@@ -360,6 +375,46 @@ export default function PosSystem({ products = [], customers = [], cartTabs = []
 
             {showPreview && (
                 <ReceiptTemplate activeTab={activeTab} updateActiveTab={updateActiveTab} onClose={() => setShowPreview(false)} convertToThaiBahtText={convertToThaiBahtText} itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatAmount={vatAmount} vatType={activeTab.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} />
+            )}
+
+            {isGuideModalOpen && (
+                <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={() => setIsGuideModalOpen(false)}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-[#EFF2F9]">
+                            <h2 className="text-base font-black text-[#2A305A] flex items-center gap-2"><HelpCircle size={18} className="text-[#D51C39]"/> คู่มือการใช้งาน: เปิดบิลการขาย</h2>
+                            <button onClick={() => setIsGuideModalOpen(false)} className="text-gray-400 hover:text-[#D51C39] transition-colors"><X size={20}/></button>
+                        </div>
+                        <div className="p-6 overflow-y-auto custom-scrollbar space-y-6 text-sm text-gray-700">
+                            
+                            <section>
+                                <h3 className="font-bold text-gray-900 mb-2 border-b pb-1">1. โซนตะกร้าสินค้า (ซ้ายบน)</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li><strong>การค้นหาสินค้า:</strong> กด <code>F3</code> เพื่อพิมพ์ค้นหา หรือใช้เครื่องยิงบาร์โค้ดสแกนได้ทันที</li>
+                                    <li><strong>การแก้ไขรายการ:</strong> คลิกที่ชื่อสินค้าเพื่อแก้ไขจำนวนหรือส่วนลดรายชิ้น หรือกดปุ่ม <code>-</code> / <code>+</code> ด้านขวา</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h3 className="font-bold text-gray-900 mb-2 border-b pb-1">2. โซนตั้งค่าบิล (ขวามือ)</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li><strong>การเลือกลูกค้า:</strong> ค้นหาด้วยชื่อหรือเบอร์โทร หากเป็นลูกค้าใหม่สามารถกด "ดึงข้อมูลจากระบบ" เพื่อกรอกอัตโนมัติ</li>
+                                    <li><strong>รูปแบบบิลและ VAT:</strong> เลือกระดับราคา (B2B/ปลีก) และรูปแบบภาษี (ไม่มี VAT, รวม VAT, แยก VAT) ตามที่ต้องการ</li>
+                                    <li><strong>ค่าจัดส่งและส่วนลด:</strong> มีปุ่มลัดสำหรับใส่ค่าส่งด่วน (เช่น +40, +60) หรือส่วนลดทันที</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h3 className="font-bold text-gray-900 mb-2 border-b pb-1">3. โซนชำระเงิน (ด้านล่าง)</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li><strong>การยุบแผง:</strong> แผงสรุปเงินจะยุบอัตโนมัติเพื่อให้หน้าจอกว้างขึ้น คุณสามารถกด <code>ล็อค</code> (ไอคอนกุญแจ) เพื่อเปิดค้างไว้ได้</li>
+                                    <li><strong>การรับชำระ:</strong> ระบุยอดเงินสด หรือกด <code>พอดี</code> เพื่อรับเงินสดแบบรวดเร็ว หากโอนเงินสามารถแนบสลิปผ่านปุ่มแนบไฟล์ หรือกด <code>Ctrl+V</code> เพื่อวางสลิป</li>
+                                    <li><strong>ปุ่มลัดยืนยัน:</strong> สามารถกด <code>Ctrl + Enter</code> เพื่อยืนยันการรับชำระเงิน (Paid) อย่างรวดเร็ว</li>
+                                </ul>
+                            </section>
+
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

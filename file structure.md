@@ -42,7 +42,11 @@ dh-new-site-2027/
 │       │   │   │   └── useBillingOrders.js # State management for Orders list
 │       │   │   └── pos/
 │       │   │       ├── CartPanel.jsx # POS Cart UI
-│       │   │       ├── PaymentPanel.jsx # POS Payment logic
+│       │   │       ├── PaymentPanel.jsx # POS Payment logic container
+│       │   │       ├── payment/ # Extracted payment components
+│       │   │       │   ├── BillSummary.jsx
+│       │   │       │   ├── PaymentMethods.jsx
+│       │   │       │   └── PaymentActions.jsx
 │       │   │       ├── ReceiptTemplate.jsx # Print Layout
 │       │   │       ├── SettingsPanel.jsx # Customer and Pricing settings
 │       │   │       └── hooks/
