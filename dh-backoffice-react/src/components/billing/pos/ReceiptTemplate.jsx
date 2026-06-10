@@ -124,7 +124,7 @@ export default function ReceiptTemplate({
     const displayName = customer ? (customer.accountName || customer.firstName || customer.displayName || 'ลูกค้าทั่วไป') : (data.walkInName || 'ลูกค้าทั่วไป');
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
             
             {/* Toolbar */}
             <div className="w-full max-w-[155mm] flex justify-between items-center bg-white p-3 rounded-t-xl border-b shadow-sm">

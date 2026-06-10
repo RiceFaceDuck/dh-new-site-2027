@@ -24,7 +24,11 @@ export const billingQueryService = {
     const q = query(...qArgs);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const orders = snapshot.docs.map(doc => {
+        const data = doc.data();
+        delete data.id; // Ensure we don't accidentally keep a null/invalid id from data
+        return { ...data, id: doc.id };
+      });
       if (callback) callback(orders);
     }, (error) => {
       console.error("subscribeRecentOrders Error:", error);
@@ -48,7 +52,11 @@ export const billingQueryService = {
       if (isOrderNum) {
         const q = query(colRef, where('orderId', '==', term.toUpperCase()));
         const snap = await getDocs(q);
-        results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        results = snap.docs.map(doc => {
+          const data = doc.data();
+          delete data.id;
+          return { ...data, id: doc.id };
+        });
       } else if (isPhone) {
         const q1 = query(colRef, where('customer.phone', '==', term));
         const q2 = query(colRef, where('customerInfo.phone', '==', term));
@@ -57,9 +65,9 @@ export const billingQueryService = {
         const [snap1, snap2, snap3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
         
         results = [
-          ...snap1.docs.map(d => ({ id: d.id, ...d.data() })),
-          ...snap2.docs.map(d => ({ id: d.id, ...d.data() })),
-          ...snap3.docs.map(d => ({ id: d.id, ...d.data() }))
+          ...snap1.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
+          ...snap2.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
+          ...snap3.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; })
         ];
       } else {
         const q1 = query(colRef, where('customer.firstName', '==', term));
@@ -70,10 +78,10 @@ export const billingQueryService = {
         const [snap1, snap2, snap3, snap4] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4)]);
 
         results = [
-          ...snap1.docs.map(d => ({ id: d.id, ...d.data() })),
-          ...snap2.docs.map(d => ({ id: d.id, ...d.data() })),
-          ...snap3.docs.map(d => ({ id: d.id, ...d.data() })),
-          ...snap4.docs.map(d => ({ id: d.id, ...d.data() }))
+          ...snap1.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
+          ...snap2.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
+          ...snap3.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
+          ...snap4.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; })
         ];
       }
 
@@ -93,7 +101,11 @@ export const billingQueryService = {
               orderBy('timestamp', 'desc')
           );
           const snap = await getDocs(q);
-          return snap.docs.map(d => ({id: d.id, ...d.data()}));
+          return snap.docs.map(d => {
+            const data = d.data();
+            delete data.id;
+            return { ...data, id: d.id };
+          });
       } catch (error) {
           console.error("Error fetching order history:", error);
           return [];

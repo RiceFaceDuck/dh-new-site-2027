@@ -95,14 +95,29 @@ export const billingTransactionService = {
         
         newDocId = newOrderRef.id;
 
-        if (statusLower === 'paid' || statusLower === 'pending') {
+        if (statusLower === 'paid' || statusLower === 'approved') {
+            const yearStr = new Date().getFullYear().toString();
+            const counterRef = doc(db, 'counters', 'receipt_sequence');
+            const counterSnap = await transaction.get(counterRef);
+            let currentSeq = 1;
+            if (counterSnap.exists()) {
+                currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
+            }
+            transaction.set(counterRef, {
+                [yearStr]: currentSeq,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+            
+            finalOrderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
+        } else if (!finalOrderId || (finalOrderId.startsWith('TEMP-') === false && finalOrderId.startsWith('DH-') === false)) {
             const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
             const runNum = Math.floor(1000 + Math.random() * 9000);
-            finalOrderId = `DH-${dateStr}-${runNum}`;
+            finalOrderId = `TEMP-${dateStr}-${runNum}`;
         }
 
+        const { id, ...dataToSave } = orderData; // Remove id from data before saving to prevent overwriting doc.id on read
         const finalOrderData = {
-            ...orderData, 
+            ...dataToSave, 
             orderId: finalOrderId, 
             earnedPoints: earnedPoints,
             walletUsedAmount: walletToUse, 

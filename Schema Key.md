@@ -69,11 +69,24 @@ The `orders` collection stores all billing and POS transaction data. It has been
 ### Architectural Note
 The logic for interacting with the `orders` collection has been separated into:
 - **`billingService.js`**: A facade pattern entrypoint that unifies the Query, Update, and Transaction services so components only need a single import.
-- **`billingQueryService.js`**: Handles read-only operations (`subscribeRecentOrders`, `searchOrders`) to keep UI snappy.
+- **`billingQueryService.js`**: Handles read-only operations (`subscribeRecentOrders`, `searchOrders`) to keep UI snappy. **NOTE**: Mapped `id` should be placed at the end of the spread operator (`...doc.data(), id: doc.id`) to avoid being overwritten by a potentially null ID saved in raw data.
 - **`billingTransactionService.js`**: Handles complex atomic transactions (creating new orders with complex side effects).
 - **`billingStatusTransaction.js`**: Handles atomic status updates (Stock updates, Wallet refunds/deductions, History logging) using Firestore `runTransaction`.
 - **`billingDeleteService.js`**: Handles deleting draft/temporary orders and restoring credits.
 - **`billingPrintService.js`**: Handles simple print count increments.
+
+---
+
+## 3. Collection: `counters`
+
+The `counters` collection stores atomic counters used for generating sequential data such as receipt numbers. 
+
+### Schema Fields: Document `receipt_sequence`
+
+| Field Name | Type   | Description                                                           | Example Value |
+|------------|--------|-----------------------------------------------------------------------|---------------|
+| `[YYYY]`   | Number | A dynamic field where the key is the current year (e.g. "2026"). Tracks the highest sequence generated for that year. | `125` |
+| `updatedAt`| Timestamp | When the counter was last modified.                                   | `December 15, 2026 at 10:30:00 AM UTC+7` |
 
 ---
 

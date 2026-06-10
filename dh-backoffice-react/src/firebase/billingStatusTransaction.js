@@ -72,10 +72,20 @@ export const billingStatusTransaction = {
             updatedAt: serverTimestamp() 
           };
 
-          if ((orderData.orderId || '').startsWith('TEMP-') && normalizedNewStatus === 'paid') {
-             const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
-             const runNum = Math.floor(1000 + Math.random() * 9000);
-             updates.orderId = `DH-${dateStr}-${runNum}`;
+          if ((orderData.orderId || '').startsWith('TEMP-') && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved')) {
+             const yearStr = new Date().getFullYear().toString();
+             const counterRef = doc(db, 'counters', 'receipt_sequence');
+             const counterSnap = await transaction.get(counterRef);
+             let currentSeq = 1;
+             if (counterSnap.exists()) {
+                 currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
+             }
+             transaction.set(counterRef, {
+                 [yearStr]: currentSeq,
+                 updatedAt: serverTimestamp()
+             }, { merge: true });
+             
+             updates.orderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
           }
 
           if (isConfirmingPayment) {

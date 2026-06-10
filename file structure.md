@@ -37,7 +37,10 @@ dh-new-site-2027/
 │       │   │   ├── dashboard/
 │       │   │   │   ├── OrderFilterBar.jsx # Search and Filter UI
 │       │   │   │   ├── OrderListTable.jsx # Data Table for Orders
-│       │   │   │   └── OrderDetailModal.jsx # Detail and History Modal
+│       │   │   │   ├── OrderTableRow.jsx # Extracted table row for Orders
+│       │   │   │   ├── OrderDetailModal.jsx # Detail and History Modal Layout
+│       │   │   │   ├── OrderSummary.jsx # Invoice/Receipt content inside Modal
+│       │   │   │   └── OrderActions.jsx # Action buttons for Modal
 │       │   │   ├── hooks/
 │       │   │   │   └── useBillingOrders.js # State management for Orders list
 │       │   │   └── pos/

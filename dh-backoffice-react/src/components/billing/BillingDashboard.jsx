@@ -7,6 +7,7 @@ import useBillingOrders from './hooks/useBillingOrders';
 import OrderFilterBar from './dashboard/OrderFilterBar';
 import OrderListTable from './dashboard/OrderListTable';
 import OrderDetailModal from './dashboard/OrderDetailModal';
+import ReceiptTemplate from './pos/ReceiptTemplate';
 
 export default function BillingDashboard({ onSwitchView, onResumeDraft }) {
     const {
@@ -140,6 +141,14 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft }) {
                 setShowPrintPreview={setShowPrintPreview} 
                 onResumeDraft={onResumeDraft} 
             />
+
+            {/* Print Preview Modal */}
+            {showPrintPreview && selectedOrder && (
+                <ReceiptTemplate 
+                    orderData={selectedOrder}
+                    onClose={() => setShowPrintPreview(false)}
+                />
+            )}
         </div>
     );
 }
