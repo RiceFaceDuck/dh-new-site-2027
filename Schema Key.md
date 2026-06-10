@@ -58,7 +58,7 @@ The `orders` collection stores all billing and POS transaction data. It has been
 | `overallDiscount` | Number    | Manual discount applied to the entire bill.                                 | `500`                               |
 | `promoDiscount`   | Number    | Discount amount generated from a promotion.                                 | `500`                               |
 | `shippingFee`     | Number    | Shipping or logistics cost.                                                 | `60`                                |
-| `walletUsed`      | Number    | Amount deducted from the customer's DH Wallet.                              | `0`                                 |
+| `walletUsed`      | Number    | Amount deducted from the customer's DH Wallet (Legacy). Now mapped to creditPoints. | `0`                                 |
 | `billNote`        | String    | Text note attached to the bill.                                             | `"จัดส่งด่วน"`                         |
 | `createdAt`       | Timestamp | When the order was created.                                                 | `December 15, 2026 at 10:30:00 AM UTC+7` |
 | `customer`        | Map       | Denormalized customer information to prevent N+1 queries.                   | `{ uid: "123", accountName: "John"}`|
@@ -89,5 +89,45 @@ The `counters` collection stores atomic counters used for generating sequential 
 | `updatedAt`| Timestamp | When the counter was last modified.                                   | `December 15, 2026 at 10:30:00 AM UTC+7` |
 
 ---
+
+## 4. Collection: `todos`
+
+The `todos` collection acts as a central hub for manager approvals, task management, and system requests (such as Claims, Returns, and Service Tasks). It tracks the lifecycle of asynchronous requests.
+
+### Schema Fields (Key Fields)
+
+| Field Name     | Type      | Description                                                                 | Example Value                       |
+|----------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
+| `type`         | String    | Type of the request/task.                                                   | `"CLAIM_APPROVAL"`, `"RETURN_APPROVAL"` |
+| `title`        | String    | Title of the task/request.                                                  | `"ขออนุมัติเคลม: Mouse"`            |
+| `description`  | String    | Detailed description of the task.                                           | `"บิลอ้างอิง: DH-xxx\nอาการ: พัง"`  |
+| `priority`     | String    | Priority level.                                                             | `"High"`, `"Critical"`, `"Normal"`  |
+| `status`       | String    | Current status of the task.                                                 | `"pending_manager"`, `"approved"`, `"rejected"` |
+| `referenceType`| String    | Type of related entity.                                                     | `"Order"`                           |
+| `referenceId`  | String    | ID of the related entity.                                                   | `"DH-261215-1234"`                  |
+| `payload`      | Map       | Specific data required to process the request (e.g. claim details, `trackingNo`). | `{ claimId: "CLM-123", qty: 1, trackingNo: "TH123" }` |
+| `createdByUid` | String    | UID of the user who created the task.                                       | `"uid_xyz123"`                      |
+| `handledBy`    | String    | UID of the user (manager) who handled/approved the task.                    | `"uid_mgr123"`                      |
+| `createdAt`    | Timestamp | When the task was created.                                                  | `December 15, 2026 at 10:30:00 AM UTC+7` |
+| `updatedAt`    | Timestamp | When the task was last updated.                                             | `December 15, 2026 at 10:30:00 AM UTC+7` |
+
+---
+
+## 5. Collection: `credit_transactions`
+
+The `credit_transactions` collection stores all movements of a user's wallet/credit balance (`creditPoints`). It acts as a financial ledger to prevent data race conditions and provide a clear audit trail.
+
+### Schema Fields
+
+| Field Name      | Type      | Description                                                                 | Example Value                       |
+|-----------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
+| `transactionId` | String    | Unique identifier for the transaction.                                      | `"TX-1718012345678"`                |
+| `uid`           | String    | User ID associated with the wallet transaction.                             | `"uid_xyz123"`                      |
+| `type`          | String    | Type of transaction.                                                        | `"deposit"`, `"spend"`, `"refund"`  |
+| `amount`        | Number    | Amount involved in the transaction.                                         | `15000`                             |
+| `balanceAfter`  | Number    | The wallet balance immediately after this transaction.                      | `30000`                             |
+| `referenceId`   | String    | ID of the related order, claim, or return.                                  | `"DH-261215-1234"`                  |
+| `recordedBy`    | String    | ID of the admin/system that recorded the transaction.                       | `"admin_uid"`                       |
+| `timestamp`     | Timestamp | When the transaction occurred.                                              | `December 15, 2026 at 10:30:00 AM UTC+7` |
 
 *(Additional schemas will be documented here as the system evolves)*

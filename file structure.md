@@ -40,6 +40,10 @@ dh-new-site-2027/
 │       │   │   │   ├── OrderTableRow.jsx # Extracted table row for Orders
 │       │   │   │   ├── OrderDetailModal.jsx # Detail and History Modal Layout
 │       │   │   │   ├── OrderSummary.jsx # Invoice/Receipt content inside Modal
+│       │   │   │   ├── order-summary/
+│       │   │   │   │   ├── OrderSummaryItems.jsx # Table list of purchased items
+│       │   │   │   │   ├── OrderSummaryTotals.jsx # Totals summary UI
+│       │   │   │   │   └── ClaimActionForm.jsx # Claim submission form
 │       │   │   │   └── OrderActions.jsx # Action buttons for Modal
 │       │   │   ├── hooks/
 │       │   │   │   └── useBillingOrders.js # State management for Orders list
@@ -122,6 +126,9 @@ dh-new-site-2027/
 │       │   ├── billingPrintService.js # Handle print count updates
 │       │   ├── categoryService.js
 │       │   ├── claimService.js
+│       │   ├── claim/
+│       │   │   ├── claimRequestService.js
+│       │   │   └── claimManagerService.js
 │       │   ├── config.js # DB initialization
 │       │   ├── creditService.js
 │       │   ├── driveService.js # Upload handling
@@ -168,7 +175,24 @@ dh-new-site-2027/
 │           ├── billing/
 │           │   └── BillingMain.jsx # Wrapper switching between Dashboard and POS
 │           ├── claims/
-│           │   └── ClaimMain.jsx
+│           │   ├── ClaimMain.jsx
+│           │   ├── components/
+│           │   │   ├── detail/
+│           │   │   │   ├── ClaimDetailModal.jsx
+│           │   │   │   ├── CustomerInfo.jsx
+│           │   │   │   ├── ProductInfo.jsx
+│           │   │   │   ├── ImageGallery.jsx
+│           │   │   │   └── ModalFooter.jsx
+│           │   │   ├── table/
+│           │   │   │   ├── ClaimTable.jsx
+│           │   │   │   └── ClaimTableRow.jsx
+│           │   │   ├── ClaimHeader.jsx
+│           │   │   ├── ClaimPrintView.jsx
+│           │   │   └── ClaimStatsRow.jsx
+│           │   ├── hooks/
+│           │   │   └── useClaimData.js
+│           │   └── utils/
+│           │       └── claimFormatters.jsx
 │           ├── gallery/
 │           │   └── GalleryMain.jsx
 │           ├── managers/
