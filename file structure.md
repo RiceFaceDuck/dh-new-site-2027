@@ -41,16 +41,43 @@ dh-new-site-2027/
 │       │   │   ├── hooks/
 │       │   │   │   └── useBillingOrders.js # State management for Orders list
 │       │   │   └── pos/
-│       │   │       ├── CartPanel.jsx # POS Cart UI
+│       │   │       ├── CartPanel.jsx # POS Cart UI container
+│       │   │       ├── cart/ # Extracted Cart components
+│       │   │       │   ├── SearchArea.jsx
+│       │   │       │   ├── CartTable.jsx
+│       │   │       │   └── CartTableRow.jsx
+│       │   │       ├── layout/ # Extracted POS layouts
+│       │   │       │   ├── PosHeader.jsx
+│       │   │       │   ├── PromoModal.jsx
+│       │   │       │   └── GuideModal.jsx
 │       │   │       ├── PaymentPanel.jsx # POS Payment logic container
 │       │   │       ├── payment/ # Extracted payment components
 │       │   │       │   ├── BillSummary.jsx
 │       │   │       │   ├── PaymentMethods.jsx
 │       │   │       │   └── PaymentActions.jsx
 │       │   │       ├── ReceiptTemplate.jsx # Print Layout
+│       │   │       ├── receipt/ # Extracted receipt components
+│       │   │       │   ├── ReceiptHeader.jsx
+│       │   │       │   ├── ReceiptItems.jsx
+│       │   │       │   └── ReceiptFooter.jsx
 │       │   │       ├── SettingsPanel.jsx # Customer and Pricing settings
+│       │   │       ├── settings/
+│       │   │       │   ├── CustomerSection.jsx
+│       │   │       │   ├── TerminalConfigDropdown.jsx
+│       │   │       │   ├── customer/
+│       │   │       │   │   ├── CustomerSearchInput.jsx
+│       │   │       │   │   ├── WalkInCustomerCard.jsx
+│       │   │       │   │   └── ActiveCustomerCard.jsx
+│       │   │       │   └── panel/
+│       │   │       │       ├── LogisticsSettings.jsx
+│       │   │       │       ├── DiscountSettings.jsx
+│       │   │       │       ├── PromotionSettings.jsx
+│       │   │       │       ├── NoteSettings.jsx
+│       │   │       │       └── ToggleGroup.jsx
 │       │   │       └── hooks/
-│       │   │           └── usePosState.js # Extracted complex state for POS
+│       │   │           ├── usePosState.js # Extracted complex state for POS
+│       │   │           ├── usePosActions.js # Extracted shortcuts & actions
+│       │   │           └── usePosShortcuts.js # Extracted keyboard event listeners
 │       │   ├── gallery/ # Image management components
 │       │   │   ├── ImageCard.jsx
 │       │   │   ├── InspectionBay.jsx
@@ -87,7 +114,9 @@ dh-new-site-2027/
 │       │   ├── billingService.js # Facade for billing queries and commands
 │       │   ├── billingQueryService.js # Read operations for Billing
 │       │   ├── billingTransactionService.js # Transaction operations (checkout) for Billing
-│       │   ├── billingUpdateService.js # Write operations (update/delete) for Billing
+│       │   ├── billingStatusTransaction.js # Handle status update & inventory/wallet adjustment
+│       │   ├── billingDeleteService.js # Handle delete operations for billing
+│       │   ├── billingPrintService.js # Handle print count updates
 │       │   ├── categoryService.js
 │       │   ├── claimService.js
 │       │   ├── config.js # DB initialization

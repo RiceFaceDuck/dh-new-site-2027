@@ -1,9 +1,13 @@
 import { billingQueryService } from './billingQueryService';
 import { billingTransactionService } from './billingTransactionService';
-import { billingUpdateService } from './billingUpdateService';
+import { billingStatusTransaction } from './billingStatusTransaction';
+import { billingDeleteService } from './billingDeleteService';
+import { billingPrintService } from './billingPrintService';
 
 export const billingService = {
   ...billingQueryService,
   ...billingTransactionService,
-  ...billingUpdateService
+  ...billingStatusTransaction,
+  ...billingDeleteService,
+  ...billingPrintService
 };

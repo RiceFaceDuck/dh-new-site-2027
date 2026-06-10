@@ -4,7 +4,32 @@ import { freebieService } from '../../../../firebase/freebieService';
 
 const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
 
-export default function usePosState(products, customers, cartTabs, setCartTabs, activeTabId, setActiveTabId, initialDraft) {
+const createNewTab = () => ({
+    id: Date.now().toString(), orderId: null, docId: null, items: [], customer: null, priceMode: 'wholesale',
+    walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
+    overallDiscount: 0, promoDiscount: 0, autoPromoEnabled: true, otherFeeName: '', otherFeeAmount: 0, 
+    paymentMethod: 'Transfer', bankAccount: 'KBANK', cashReceived: '', slipImage: null, billNote: '', receiptFormat: 'short',
+    appliedPromoId: null, appliedPromoDetails: null, walletUsed: 0, useWallet: false
+});
+
+const loadSavedState = () => {
+    try {
+        const saved = localStorage.getItem('dh_pos_autosave');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+    } catch (e) { console.error('Failed to load autosave', e); }
+    return [createNewTab()];
+};
+
+export default function usePosState(products, customers, initialDraft) {
+    const [cartTabs, setCartTabs] = useState(() => loadSavedState());
+    const [activeTabId, setActiveTabId] = useState(() => {
+        const state = loadSavedState();
+        return state[0]?.id || Date.now().toString();
+    });
+
     const [searchQuery, setSearchQuery] = useState('');
     const [showDropdown, setShowDropdown] = useState(false);
     const [actionBoxItem, setActionBoxItem] = useState(null);
@@ -19,37 +44,79 @@ export default function usePosState(products, customers, cartTabs, setCartTabs, 
     const [activeFreebies, setActiveFreebies] = useState([]);
 
     useEffect(() => {
+        localStorage.setItem('dh_pos_autosave', JSON.stringify(cartTabs));
+    }, [cartTabs]);
+
+    useEffect(() => {
         if (initialDraft) {
-            const exists = cartTabs.some(tab => tab.id === initialDraft.id);
-            if (!exists) {
+            setCartTabs(prev => {
+                const draftId = (initialDraft.id || initialDraft.orderId) ? String(initialDraft.id || initialDraft.orderId) : Date.now().toString();
+                
+                let fullCustomer = initialDraft.customer || null;
+                if (fullCustomer && fullCustomer.uid && fullCustomer.uid !== 'WALK-IN') {
+                    // ดึงข้อมูลลูกค้าแบบเต็มรูปแบบจากระบบ เพื่อให้ได้ walletBalance, creditPoints, และชื่อที่สมบูรณ์
+                    const matchedCust = customers.find(c => c.uid === fullCustomer.uid || c.id === fullCustomer.uid);
+                    if (matchedCust) fullCustomer = matchedCust;
+                }
+
                 const newTab = {
-                    id: initialDraft.id,
-                    name: `บิล #${initialDraft.id.slice(-4)}`,
-                    customer: initialDraft.customerInfo || initialDraft.customer || null,
-                    items: initialDraft.items || [],
-                    walkInPhone: initialDraft.walkInPhone || '',
-                    hidePhone: initialDraft.hidePhone || false,
+                    id: draftId,
+                    orderId: initialDraft.orderId || null,
+                    docId: initialDraft.id || null,
+                    customer: fullCustomer,
+                    items: (initialDraft.items || []).filter(i => !i.isFreebie), // กรองของแถมออก เพราะระบบจะคำนวณของแถมให้ใหม่เสมอตอนเปิดบิล ป้องกันการซ้ำซ้อน
+                    walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : '',
+                    walkInPhone: initialDraft.customer?.phone || '',
+                    hidePhone: initialDraft.customer?.hidePhone || false,
                     slipImage: initialDraft.slipImage || '',
-                    note: initialDraft.note || '',
-                    noteColor: initialDraft.noteColor || 'slate',
-                    priceMode: initialDraft.priceMode || 'retail',
-                    shippingCost: initialDraft.shippingCost || 0,
-                    customDiscount: initialDraft.customDiscount || 0,
-                    customDiscountType: initialDraft.customDiscountType || 'amount',
-                    useWallet: initialDraft.useWallet || 0,
-                    walletAmount: initialDraft.walletAmount || 0,
+                    billNote: initialDraft.billNote || '',
+                    priceMode: initialDraft.priceMode || 'wholesale',
+                    shippingFee: initialDraft.shippingFee || 0,
+                    otherFeeAmount: initialDraft.otherFeeAmount || 0,
+                    otherFeeName: initialDraft.otherFeeName || '',
+                    vatType: initialDraft.vatType || 'exempt',
+                    vatOnShipping: initialDraft.vatOnShipping || false,
+                    overallDiscount: initialDraft.overallDiscount || 0,
+                    useWallet: Boolean(initialDraft.walletUsed > 0),
+                    walletUsed: initialDraft.walletUsed || 0,
                     promoDiscount: initialDraft.promoDiscount || 0,
-                    appliedPromoId: initialDraft.appliedPromoId || null,
-                    appliedPromoDetails: initialDraft.appliedPromoDetails || null,
-                    autoPromoEnabled: initialDraft.autoPromoEnabled ?? true,
+                    appliedPromoId: initialDraft.appliedPromotion?.id || null,
+                    appliedPromoDetails: initialDraft.appliedPromotion || null,
+                    autoPromoEnabled: false,
+                    paymentMethod: initialDraft.paymentMethod || 'Transfer',
+                    bankAccount: initialDraft.bankAccount || 'KBANK',
+                    fulfillmentType: initialDraft.fulfillmentType || 'Delivery',
+                    courier: initialDraft.courier || 'KEX',
+                    receiptFormat: initialDraft.receiptFormat || 'short',
                     transactionRef: initialDraft.transactionRef || '',
                     transferDateTime: initialDraft.transferDateTime || ''
                 };
-                if(typeof setCartTabs === 'function') setCartTabs(prev => [...prev, newTab]);
-                setActiveTabId(initialDraft.id);
-            } else {
-                setActiveTabId(initialDraft.id);
-            }
+
+                if (prev.some(tab => tab.id === draftId || tab.orderId === draftId)) {
+                    setActiveTabId(draftId);
+                    // ทับข้อมูลเดิมด้วยข้อมูลล่าสุดจากฐานข้อมูล (initialDraft)
+                    // เพื่อป้องกันบั๊กที่ localStorage จำข้อมูลเก่าที่ไม่มีข้อมูลลูกค้า
+                    return prev.map(tab => {
+                        if (tab.id === draftId || tab.orderId === draftId) {
+                            return { ...tab, ...newTab, id: tab.id };
+                        }
+                        return tab;
+                    });
+                }
+
+
+                setActiveTabId(draftId);
+
+                // ถ้ามี tab เปล่าๆ อยู่ ให้เอาบิลร่างไปทับ tab นั้นเลย จะได้ไม่สร้าง tab ใหม่เพิ่ม
+                const emptyTabIndex = prev.findIndex(t => t.items.length === 0 && !t.customer && !t.walkInName && !t.orderId);
+                if (emptyTabIndex !== -1) {
+                    const newPrev = [...prev];
+                    newPrev[emptyTabIndex] = newTab;
+                    return newPrev;
+                }
+
+                return [...prev, newTab];
+            });
         }
     }, [initialDraft]);
 
@@ -63,19 +130,26 @@ export default function usePosState(products, customers, cartTabs, setCartTabs, 
         fetchMarketingData();
     }, []);
 
-    const createNewTab = () => ({
-        id: Date.now().toString(), orderId: null, docId: null, items: [], customer: null, priceMode: 'wholesale',
-        walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
-        overallDiscount: 0, promoDiscount: 0, autoPromoEnabled: true, otherFeeName: '', otherFeeAmount: 0, 
-        paymentMethod: 'Transfer', bankAccount: 'KBANK', cashReceived: '', slipImage: null, billNote: '', receiptFormat: 'short',
-        appliedPromoId: null, appliedPromoDetails: null, walletUsed: 0 
-    });
-
-    const safeCartTabs = Array.isArray(cartTabs) && cartTabs.length > 0 ? cartTabs : [createNewTab()];
+    const safeCartTabs = cartTabs.length > 0 ? cartTabs : [createNewTab()];
     const activeTab = safeCartTabs.find(t => t.id === activeTabId) || safeCartTabs[0];
 
     const updateActiveTab = (updates) => {
-        if (typeof setCartTabs === 'function') setCartTabs(prev => prev.map(tab => tab.id === activeTabId ? { ...tab, ...updates } : tab));
+        setCartTabs(prev => prev.map(tab => tab.id === activeTabId ? { ...tab, ...updates } : tab));
+    };
+
+    const closeTab = (tabId) => {
+        setCartTabs(prev => {
+            const newTabs = prev.filter(t => t.id !== tabId);
+            if (newTabs.length === 0) {
+                const newTab = createNewTab();
+                setActiveTabId(newTab.id);
+                return [newTab];
+            }
+            if (activeTabId === tabId) {
+                setActiveTabId(newTabs[0].id);
+            }
+            return newTabs;
+        });
     };
 
     const handlePriceModeChange = (mode) => {
@@ -84,15 +158,49 @@ export default function usePosState(products, customers, cartTabs, setCartTabs, 
     };
 
     const searchResults = useMemo(() => {
-        if (!searchQuery.trim()) return products.slice(0, 15);
-        const q = searchQuery.toLowerCase();
-        return products.filter(p => p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q)).slice(0, 15);
+        // ถ้าไม่มีคำค้นหา ให้แสดงสินค้าขายดีสุด 15 อันดับแรก
+        if (!searchQuery.trim()) {
+            return [...products]
+                .sort((a, b) => (b.stats?.sold || 0) - (a.stats?.sold || 0))
+                .slice(0, 15)
+                .map(p => ({ ...p, matchType: 'best-seller' }));
+        }
+
+        const q = searchQuery.trim().toLowerCase();
+        
+        // 1. หาคำที่ตรงกันเป๊ะๆ (Exact Match) ปกติพนักงานจะพิมพ์ SKU ตรงๆ
+        const exactMatches = products.filter(p => p.sku?.toLowerCase() === q);
+        
+        // 2. หาคำที่ใกล้เคียง (Similar/Broad Match) โดยไม่เอาอันที่ตรงเป๊ะไปแล้ว
+        const exactSkus = new Set(exactMatches.map(p => p.sku));
+        const similarMatches = products.filter(p => {
+            if (exactSkus.has(p.sku)) return false;
+            return p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q);
+        });
+
+        // จัดเรียง Similar Matches ตามยอดขาย
+        similarMatches.sort((a, b) => (b.stats?.sold || 0) - (a.stats?.sold || 0));
+
+        // คืนค่า Exact Matches ก่อน แล้วค่อยตามด้วย Similar Matches (จำกัดรวม 15 รายการ)
+        const combined = [
+            ...exactMatches.map(p => ({ ...p, matchType: 'exact' })),
+            ...similarMatches.slice(0, Math.max(0, 15 - exactMatches.length)).map(p => ({ ...p, matchType: 'similar' }))
+        ];
+
+        return combined;
     }, [searchQuery, products]);
 
     const filteredCustomers = useMemo(() => {
         if (!customerSearchText.trim()) return customers.slice(0, 10);
         const q = customerSearchText.toLowerCase();
-        return customers.filter(c => (c.accountName || '').toLowerCase().includes(q) || (c.firstName || '').toLowerCase().includes(q) || (c.phone || '').includes(q)).slice(0, 15);
+        return customers.filter(c => 
+            (c.accountName || '').toLowerCase().includes(q) || 
+            (c.firstName || '').toLowerCase().includes(q) || 
+            (c.displayName || '').toLowerCase().includes(q) || 
+            (c.email || '').toLowerCase().includes(q) || 
+            (c.phone || '').includes(q) ||
+            (c.uid || c.id || '').toLowerCase() === q
+        ).slice(0, 15);
     }, [customerSearchText, customers]);
 
     const itemSubTotal = activeTab.items?.reduce((sum, item) => sum + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty))), 0) || 0;
@@ -110,7 +218,10 @@ export default function usePosState(products, customers, cartTabs, setCartTabs, 
     else if (activeTab.vatType === 'excluded') { vatAmount = taxableAmount * 0.07; netTotal = baseTotal + shippingFee + vatAmount; } 
     else { vatAmount = 0; netTotal = baseTotal + shippingFee; }
 
-    const walletUsed = sanitizeNum(activeTab.walletUsed);
+    let walletUsed = sanitizeNum(activeTab.walletUsed);
+    if (activeTab.useWallet && activeTab.customer) {
+        walletUsed = Math.min(sanitizeNum(activeTab.customer.walletBalance), netTotal);
+    }
     const remainingToPay = Math.max(0, netTotal - walletUsed);
     const earnedPoints = activeTab.customer ? Math.floor(remainingToPay / 100) : 0;
     const changeAmount = (activeTab.paymentMethod === 'Cash' && activeTab.cashReceived) ? (sanitizeNum(activeTab.cashReceived) - remainingToPay) : 0;
@@ -118,6 +229,8 @@ export default function usePosState(products, customers, cartTabs, setCartTabs, 
     const eligibleFreebies = activeFreebies.filter(f => itemSubTotal > 0 && itemSubTotal >= f.minSpend);
 
     return {
+        cartTabs, setCartTabs,
+        activeTabId, setActiveTabId,
         searchQuery, setSearchQuery,
         showDropdown, setShowDropdown,
         actionBoxItem, setActionBoxItem,
@@ -130,7 +243,7 @@ export default function usePosState(products, customers, cartTabs, setCartTabs, 
         activePromotions, setActivePromotions,
         isPromoModalOpen, setIsPromoModalOpen,
         activeFreebies, setActiveFreebies,
-        createNewTab, safeCartTabs, activeTab, updateActiveTab,
+        createNewTab, closeTab, safeCartTabs, activeTab, updateActiveTab,
         handlePriceModeChange, searchResults, filteredCustomers,
         itemSubTotal, manualDiscount, promoDiscount, totalDiscount,
         shippingFee, otherFeeAmount, vatAmount, netTotal,

@@ -1,12 +1,9 @@
-import { 
-  collection, doc, addDoc, updateDoc, deleteDoc, 
-  serverTimestamp, runTransaction, getDoc, increment 
-} from 'firebase/firestore';
+import { doc, serverTimestamp, runTransaction, increment, collection } from 'firebase/firestore';
 import { db } from './config';
 
 const COLLECTION_NAME = 'orders';
 
-export const billingUpdateService = {
+export const billingStatusTransaction = {
   updateOrderStatus: async (orderId, newStatus, currentStatus, actorUid) => {
     try {
       const actualActorUid = actorUid || (typeof currentStatus === 'string' && currentStatus.length > 15 ? currentStatus : 'system');
@@ -288,82 +285,6 @@ export const billingUpdateService = {
     } catch (error) { 
       console.error("🔥 Error updating order status:", error);
       throw error; 
-    }
-  },
-
-  updatePrintCount: async (docId, currentCount) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, docId);
-      await updateDoc(docRef, {
-        printCount: increment(1), 
-        lastPrintedAt: serverTimestamp()
-      });
-      return true;
-    } catch (error) { 
-      console.error("🔥 Error updating print count:", error);
-      return false; 
-    }
-  },
-
-  deleteOrderPermanently: async (orderId, actorUid) => {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, orderId);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) throw new Error("ไม่พบบิลนี้ในระบบ");
-
-      const orderData = docSnap.data();
-      const stat = (orderData.orderStatus || orderData.status || '').toLowerCase();
-
-      if (stat === 'paid' || stat === 'approved' || stat === 'completed') {
-         throw new Error("ไม่อนุญาตให้ลบทิ้งบิลที่ชำระเงินหรือดำเนินการเสร็จสิ้นแล้ว");
-      }
-
-      const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
-      const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
-
-      if (walletUsed > 0 && customerUid && customerUid !== 'WALK-IN') {
-         await runTransaction(db, async (transaction) => {
-             const userRef = doc(db, 'users', customerUid);
-             const userSnap = await transaction.get(userRef);
-             if (userSnap.exists()) {
-                 const currentWallet = userSnap.data().creditPoints || 0;
-                 const newWalletBalance = currentWallet + walletUsed;
-                 
-                 transaction.update(userRef, {
-                   'creditPoints': newWalletBalance
-                 });
-
-                 transaction.set(doc(collection(db, 'credit_transactions')), {
-                     transactionId: `TXR-${Date.now()}`,
-                     uid: customerUid,
-                     type: 'refund',
-                     amount: walletUsed,
-                     balanceAfter: newWalletBalance,
-                     referenceId: orderId,
-                     note: 'คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร)',
-                     recordedBy: actorUid || 'system',
-                     timestamp: serverTimestamp()
-                 });
-             }
-             transaction.delete(docRef);
-         });
-      } else {
-         await deleteDoc(docRef);
-      }
-
-      await addDoc(collection(db, 'history_logs'), {
-          module: 'Billing',
-          action: 'Delete',
-          targetId: orderId,
-          details: `ลบบิลถาวรออกจากระบบ (รหัสอ้างอิง: ${orderData.orderId || orderId})`,
-          byUid: actorUid || 'system',
-          timestamp: serverTimestamp()
-      });
-
-      return true;
-    } catch (error) {
-      console.error("🔥 Error deleting order:", error);
-      throw error;
     }
   }
 };

@@ -30,7 +30,7 @@ export default function BillSummary({
                 <div className={`flex justify-between ${otherFeeAmount !== 0 ? 'text-[#2A305A]' : 'text-[#2A305A]/50'}`}><span>{activeTab.otherFeeName || 'ยอดอื่นๆ'}</span><span>{otherFeeAmount > 0 ? '+' : ''} ฿{(otherFeeAmount || 0).toLocaleString()}</span></div>
                 <div className={`flex justify-between ${shippingFee > 0 ? 'text-[#2A305A]' : 'text-[#2A305A]/50'}`}><span>ค่าจัดส่ง {shippingFee > 0 && activeTab.vatOnShipping && '(VAT)'}</span><span>{shippingFee > 0 ? '+' : ''} ฿{(shippingFee || 0).toLocaleString()}</span></div>
                 <div className={`flex justify-between ${vatAmount > 0 ? 'text-[#2A305A]' : 'text-[#2A305A]/50'}`}><span>VAT 7% ({activeTab.vatType || '-'})</span><span>{vatAmount > 0 ? '+' : ''} ฿{(vatAmount || 0).toLocaleString()}</span></div>
-                <div className={`flex justify-between pt-1.5 border-t border-[#D3DCEB] mt-1.5 ${walletUsed > 0 ? 'text-blue-600 font-bold' : 'text-[#2A305A]/50'}`}><span>หักจ่าย Wallet</span><span>{walletUsed > 0 ? '-' : ''} ฿{(walletUsed || 0).toLocaleString()}</span></div>
+                <div className={`flex justify-between pt-1.5 border-t border-[#D3DCEB] mt-1.5 ${walletUsed > 0 ? 'text-blue-600 font-bold' : 'text-[#2A305A]/50'}`}><span>หักจาก DH ค้างยอด</span><span>{walletUsed > 0 ? '-' : ''} ฿{(walletUsed || 0).toLocaleString()}</span></div>
             </div>
             
             <div className="flex justify-between items-end pt-3 border-t border-[#D3DCEB] mt-auto">
