@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Search, Receipt, Undo2, 
   CheckSquare, History, Image as ImageIcon, 
   Boxes, Users, LogOut, Sun, Moon,
-  UserCog, Mail, Calendar, Lock
+  UserCog, Mail, Calendar, Lock, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -29,6 +29,7 @@ export default function Sidebar({
     { category: 'Database', categoryThai: 'คลังข้อมูล' },
     { path: '/search', label: 'Search', labelThai: 'ค้นหาสินค้า', icon: Search },
     { path: '/inventory', label: 'Inventory', labelThai: 'สต๊อกสินค้า', icon: Boxes },
+    { path: '/generate', label: 'Generate', labelThai: 'การซิงค์ข้อมูลสต๊อก', icon: RefreshCw },
     { path: '/gallery', label: 'Gallery', labelThai: 'คลังภาพ', icon: ImageIcon },
     { path: '/history', label: 'History', labelThai: 'ประวัติ', icon: History },
     { path: '/customers', label: 'Customers', labelThai: 'ลูกค้า', icon: Users },

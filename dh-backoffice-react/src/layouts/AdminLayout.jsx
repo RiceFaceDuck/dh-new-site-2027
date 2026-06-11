@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { todoService } from '../firebase/todoService';
 import { userService } from '../firebase/userService';
 import { useGmail } from '../pages/emails/hooks/useGmail';
+import { RefreshCw } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
 import { GatekeeperChecking, GatekeeperDenied } from './components/GatekeeperUI';

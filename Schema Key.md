@@ -98,7 +98,7 @@ The `todos` collection acts as a central hub for manager approvals, task managem
 
 | Field Name     | Type      | Description                                                                 | Example Value                       |
 |----------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
-| `type`         | String    | Type of the request/task.                                                   | `"CLAIM_APPROVAL"`, `"PRODUCT_DELETE_APPROVAL"`, `"BILL_CANCEL_APPROVAL"`, `"RETURN_APPROVAL"` |
+| `type`         | String    | Type of the request/task.                                                   | `"CLAIM_APPROVAL"`, `"PRODUCT_DELETE_APPROVAL"`, `"BILL_CANCEL_APPROVAL"`, `"RETURN_APPROVAL"`, `"PRODUCT_IMPORT_APPROVAL"` |
 | `title`        | String    | Title of the task/request.                                                  | `"ขออนุมัติเคลม: Mouse"`            |
 | `description`  | String    | Detailed description of the task.                                           | `"บิลอ้างอิง: DH-xxx\nอาการ: พัง"`  |
 | `priority`     | String    | Priority level.                                                             | `"High"`, `"Critical"`, `"Normal"`  |

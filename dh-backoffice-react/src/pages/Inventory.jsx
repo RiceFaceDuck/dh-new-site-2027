@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, Boxes } from 'lucide-react';
 import ProductTable from '../components/inventory/ProductTable';
 import ProductModal from '../components/inventory/ProductModal';
+import InventoryImportModal from '../components/inventory/InventoryImportModal';
+import InventoryExportModal from '../components/inventory/InventoryExportModal';
 import InventoryHeader from '../components/inventory/InventoryHeader';
 import { inventoryService } from '../firebase/inventoryService';
 
@@ -11,15 +13,18 @@ export default function Inventory() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
+  const [categories, setCategories] = useState([]);
   
   const [salesPeriod, setSalesPeriod] = useState('30'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
   // ✨ ระบบจัดการหน้า Pagination
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
-  const PAGE_LIMIT = 20;
+  const PAGE_LIMIT = 50;
 
   // ✨ State เก็บค่า Global Buffer 
   const [globalBufferStock, setGlobalBufferStock] = useState(2);
@@ -30,14 +35,15 @@ export default function Inventory() {
 
   const fetchInitialProducts = async () => {
     setLoading(true);
-    // ✨ ดึงข้อมูล Settings (Buffer) และ Products ขนานกันเพื่อความรวดเร็ว
-    const [settingsResult, productsResult] = await Promise.all([
+    const [settingsResult, productsResult, categoriesResult] = await Promise.all([
       inventoryService.getInventorySettings(),
-      inventoryService.getPaginatedProducts(PAGE_LIMIT)
+      inventoryService.getPaginatedProducts(PAGE_LIMIT),
+      import('../firebase/categoryService').then(m => m.categoryService.getAllCategories())
     ]);
     
     setGlobalBufferStock(settingsResult.defaultBufferStock !== undefined ? settingsResult.defaultBufferStock : 2);
     setProducts(productsResult.products);
+    setCategories(categoriesResult.map(c => c.name));
     setLastVisibleDoc(productsResult.lastDoc);
     setHasMore(productsResult.products.length === PAGE_LIMIT);
     
@@ -96,6 +102,8 @@ export default function Inventory() {
         filterCategory={filterCategory} setFilterCategory={setFilterCategory}
         salesPeriod={salesPeriod} setSalesPeriod={setSalesPeriod}
         onAddProduct={handleAddProduct}
+        onImportProduct={() => setIsImportModalOpen(true)}
+        onExportProduct={() => setIsExportModalOpen(true)}
       />
 
       {/* Content Area */}
@@ -141,6 +149,21 @@ export default function Inventory() {
         productData={editingProduct} 
         globalBufferStock={globalBufferStock}
       />
+
+      <InventoryImportModal 
+        isOpen={isImportModalOpen} 
+        onClose={() => setIsImportModalOpen(false)} 
+        onSuccess={() => {
+          setIsImportModalOpen(false);
+          fetchInitialProducts();
+        }}
+      />
+
+      <InventoryExportModal 
+        isOpen={isExportModalOpen} 
+        onClose={() => setIsExportModalOpen(false)} 
+        availableCategories={categories}
+      />
     </div>
   );
-}
+}// trigger 

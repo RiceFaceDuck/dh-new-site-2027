@@ -1,11 +1,13 @@
 import React from 'react';
-import { Search, Filter, Plus, FileSpreadsheet, Boxes, CalendarClock } from 'lucide-react';
+import { Search, Filter, Plus, FileSpreadsheet, FileUp, Boxes, CalendarClock } from 'lucide-react';
 
 export default function InventoryHeader({
   searchTerm, setSearchTerm,
   filterCategory, setFilterCategory,
   salesPeriod, setSalesPeriod,
-  onAddProduct
+  onAddProduct,
+  onImportProduct,
+  onExportProduct
 }) {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-dh-surface p-5 rounded-2xl shadow-dh-card border border-dh-border relative overflow-hidden">
@@ -72,7 +74,17 @@ export default function InventoryHeader({
 
         {/* Action Buttons */}
         <div className="flex gap-2 shrink-0">
-          <button className="flex items-center justify-center gap-2 bg-dh-base text-dh-main border border-dh-border h-[40px] px-3 rounded-xl hover:bg-dh-border transition-all font-bold text-xs shadow-sm">
+          <button 
+            onClick={onImportProduct}
+            className="flex items-center justify-center gap-2 bg-dh-base text-dh-main border border-dh-border h-[40px] px-3 rounded-xl hover:bg-dh-border transition-all font-bold text-xs shadow-sm"
+          >
+            <FileUp size={14} className="text-blue-500" />
+            <span className="hidden xl:inline">Import</span>
+          </button>
+          <button 
+            onClick={onExportProduct}
+            className="flex items-center justify-center gap-2 bg-dh-base text-dh-main border border-dh-border h-[40px] px-3 rounded-xl hover:bg-dh-border transition-all font-bold text-xs shadow-sm"
+          >
             <FileSpreadsheet size={14} />
             <span className="hidden xl:inline">Export</span>
           </button>

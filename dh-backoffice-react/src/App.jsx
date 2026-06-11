@@ -122,6 +122,7 @@ function AppContent() {
         <Route path="history" element={<HistoryPage />}/>
         <Route path="gallery" element={<GalleryMain />}/>
         <Route path="inventory" element={<Inventory/>}/>
+        <Route path="generate" element={<div className="flex items-center justify-center h-full"><h2 className="text-2xl text-gray-500 font-semibold">การ Generate เพื่อซิงค์ข้อมูลสต๊อก อยู่ในระหว่างการพัฒนา</h2></div>}/>
         <Route path="customers" element={<Customers />}/>
         <Route path="emails" element={<EmailMain />}/>
         <Route path="calendar" element={<Placeholder title="Calendar"/>}/>

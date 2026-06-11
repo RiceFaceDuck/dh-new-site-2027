@@ -95,7 +95,13 @@ dh-new-site-2027/
 │       │   ├── inventory/ # Inventory UI components
 │       │   │   ├── InventoryHeader.jsx
 │       │   │   ├── ProductTable.jsx
+│       │   │   ├── ProductTableRow.jsx
 │       │   │   ├── ProductModal.jsx
+│       │   │   ├── InventoryImportModal.jsx
+│       │   │   ├── InventoryExportModal.jsx
+│       │   │   ├── hooks/
+│       │   │   │   ├── useProductForm.js
+│       │   │   │   └── useExcelImport.js
 │       │   │   └── modal/
 │       │   │       ├── ProductBasicInfo.jsx
 │       │   │       ├── ProductImageUpload.jsx
@@ -164,6 +170,12 @@ dh-new-site-2027/
 │       │   ├── gmailService.js # Gmail API Integration (Client-side)
 │       │   ├── historyService.js
 │       │   ├── inventoryService.js
+│       │   ├── inventory/
+│       │   │   ├── inventoryQueryService.js
+│       │   │   ├── inventoryMutationService.js
+│       │   │   ├── inventorySourcingService.js
+│       │   │   ├── inventoryImportService.js
+│       │   │   └── inventoryExportService.js
 │       │   ├── pricingService.js
 │       │   ├── promotionService.js
 │       │   ├── settingsService.js
