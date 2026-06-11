@@ -98,7 +98,7 @@ The `todos` collection acts as a central hub for manager approvals, task managem
 
 | Field Name     | Type      | Description                                                                 | Example Value                       |
 |----------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
-| `type`         | String    | Type of the request/task.                                                   | `"CLAIM_APPROVAL"`, `"RETURN_APPROVAL"` |
+| `type`         | String    | Type of the request/task.                                                   | `"CLAIM_APPROVAL"`, `"PRODUCT_DELETE_APPROVAL"`, `"BILL_CANCEL_APPROVAL"`, `"RETURN_APPROVAL"` |
 | `title`        | String    | Title of the task/request.                                                  | `"ขออนุมัติเคลม: Mouse"`            |
 | `description`  | String    | Detailed description of the task.                                           | `"บิลอ้างอิง: DH-xxx\nอาการ: พัง"`  |
 | `priority`     | String    | Priority level.                                                             | `"High"`, `"Critical"`, `"Normal"`  |
@@ -129,5 +129,32 @@ The `credit_transactions` collection stores all movements of a user's wallet/cre
 | `referenceId`   | String    | ID of the related order, claim, or return.                                  | `"DH-261215-1234"`                  |
 | `recordedBy`    | String    | ID of the admin/system that recorded the transaction.                       | `"admin_uid"`                       |
 | `timestamp`     | Timestamp | When the transaction occurred.                                              | `December 15, 2026 at 10:30:00 AM UTC+7` |
+
+---
+
+## 6. Collection: `system_logs`
+
+The `system_logs` collection tracks critical system-level automated actions and approvals (e.g., Payment Verifications, Wholesale Approvals, Wallet Withdrawals) performed by managers or system routines.
+
+### Schema Fields
+
+| Field Name   | Type      | Description                                                                 | Example Value                       |
+|--------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
+| `actionType` | String    | The type of system action performed.                                        | `"PAYMENT_VERIFIED"`, `"WHOLESALE_APPROVED"`|
+| `taskId`     | String    | ID of the associated To-do task.                                            | `"T-12345"`                         |
+| `orderId`    | String    | ID of the associated Order (if applicable).                                 | `"DH-261215-1234"`                  |
+| `details`    | String    | Description of what occurred.                                               | `"ยืนยันยอดเงินสำเร็จ"`               |
+| `createdBy`  | String    | The UID of the manager or `"System"` if automated.                          | `"uid_mgr123"`                      |
+| `createdAt`  | Timestamp | When the action occurred.                                                   | `December 15, 2026 at 10:30:00 AM UTC+7` |
+
+---
+
+## 7. Email System (Backend Proxy Architecture)
+
+The Email System has been upgraded to use **Firebase Cloud Functions** as a proxy for the Gmail API. This allows all staff to read and reply to company emails without needing to log in to their Google accounts.
+
+- **Storage**: The only data stored in Firestore is the `refresh_token` and `client_secret` in the `system_config` collection (`docId: gmail_auth`).
+- **Emails**: Emails are **NOT** stored in the database. They are fetched on-the-fly via Cloud Functions and sent directly to the frontend.
+- **Authentication**: Admin connects the Gmail account once in the `/managers` dashboard. Cloud Functions handles the token refresh automatically.
 
 *(Additional schemas will be documented here as the system evolves)*

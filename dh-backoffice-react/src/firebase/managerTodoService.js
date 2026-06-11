@@ -21,7 +21,9 @@ export const MANAGER_TASK_TYPES = [
   'PARTNER_APPROVAL',    // งานตรวจสอบ/อนุมัติ Partner รับการสนับสนุน
   'ACCOUNT_APPROVAL',    // งานตรวจสอบ Account สมัครใหม่
   'WALLET_WITHDRAWAL',   // งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า
-  'STAFF_APPROVAL'       // งานตรวจสอบ/อนุมัติ พนักงานใหม่เข้าทำงาน
+  'STAFF_APPROVAL',      // งานตรวจสอบ/อนุมัติ พนักงานใหม่เข้าทำงาน
+  'PRODUCT_DELETE_APPROVAL', // ขออนุมัติการลบสินค้า
+  'BILL_CANCEL_APPROVAL'     // ขออนุมัติการยกเลิกบิล
 ];
 
 export const managerTodoService = {
@@ -62,10 +64,15 @@ export const managerTodoService = {
     try {
       if (!taskId) throw new Error("ไม่พบรหัสงาน (Task ID)");
       
+      // Clean payload: remove any undefined values to prevent FirebaseError
+      const cleanPayload = Object.fromEntries(
+        Object.entries(payload).filter(([_, v]) => v !== undefined)
+      );
+      
       const taskRef = doc(db, 'todos', taskId);
       await updateDoc(taskRef, { 
         status: newStatus, 
-        ...payload, 
+        ...cleanPayload, 
         updatedAt: serverTimestamp() 
       });
       return true;

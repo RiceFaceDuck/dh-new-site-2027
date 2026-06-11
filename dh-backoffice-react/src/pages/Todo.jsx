@@ -14,12 +14,12 @@ import { claimService } from '../firebase/claimService';
 
 // 🧩 Components
 import TodoItem from '../components/todo/TodoItem';
-import HistoryPanel from '../components/todo/HistoryPanel';
 import WholesaleCard from '../components/todo/WholesaleCard';
 import PaymentCard from '../components/todo/PaymentCard'; 
 import TaxInvoiceCard from '../components/todo/TaxInvoiceCard';
 import NewTaskModal from '../components/todo/forms/NewTaskModal'; // 🌟 นำเข้า Modal แบบใหม่
 import { useCentralTodo } from './todo/hooks/useCentralTodo'; // 🌟 นำเข้า Custom Hook
+import { useWholesalePrices } from './todo/hooks/useWholesalePrices'; // 🌟 นำเข้า Custom Hook สำหรับราคาส่ง
 
 export default function Todo() {
   const navigate = useNavigate();
@@ -42,83 +42,29 @@ export default function Todo() {
   // States สำหรับ Components ย่อย
   const [showHelp, setShowHelp] = useState(false);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [showCompletedPanel, setShowCompletedPanel] = useState(false);
   
-  // States สำหรับจัดการราคาส่งแบบ Batch (Performance Optimization)
-  const [wholesaleInputs, setWholesaleInputs] = useState({});
-  const [fetchedPrices, setFetchedPrices] = useState({}); 
-
-  // 🔄 3. ระบบดึงราคาส่งแบบ Batch (ป้องกัน N+1 Query)
-  useEffect(() => {
-    const fetchPricesForWholesale = async () => {
-      const wholesaleTasks = activeTodos.filter(t => ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type) && t.items);
-      if (wholesaleTasks.length === 0) return;
-      
-      let newFetchedPrices = { ...fetchedPrices };
-      let hasChanges = false;
-      const productIdsToFetch = new Set();
-      const taskProductMap = {};
-
-      wholesaleTasks.forEach(task => {
-        if (!newFetchedPrices[task.id]) {
-          newFetchedPrices[task.id] = {};
-          hasChanges = true; 
-        }
-        const productIds = task.items.map(item => item.productId).filter(Boolean);
-        productIds.forEach(pId => {
-           if (newFetchedPrices[task.id][pId] === undefined) {
-               productIdsToFetch.add(pId);
-               if (!taskProductMap[pId]) taskProductMap[pId] = [];
-               taskProductMap[pId].push(task.id);
-           }
-        });
-      });
-
-      const uniqueIds = Array.from(productIdsToFetch);
-      
-      if (uniqueIds.length > 0) {
-          for(let i=0; i < uniqueIds.length; i+=10) {
-              const batchIds = uniqueIds.slice(i, i+10);
-              try {
-                  const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));
-                  const snapshot = await getDocs(q);
-                  const foundPrices = {};
-                  snapshot.forEach(doc => { foundPrices[doc.id] = doc.data().wholesalePrice || null; });
-
-                  batchIds.forEach(pId => {
-                     const taskIds = taskProductMap[pId] || [];
-                     const price = foundPrices[pId] !== undefined ? foundPrices[pId] : null; 
-                     taskIds.forEach(tId => {
-                         newFetchedPrices[tId][pId] = price;
-                         hasChanges = true;
-                     });
-                  });
-              } catch (err) {
-                  console.error("Error fetching wholesale prices batch", err);
-              }
-          }
-      }
-
-      if (hasChanges) setFetchedPrices(newFetchedPrices);
-    };
-
-    if (activeTodos.length > 0) fetchPricesForWholesale();
-  }, [activeTodos, fetchedPrices]);
-
+  // 🔄 3. ระบบดึงราคาส่งแบบ Batch (Performance Optimization - N+1 Query Prevention)
+  const { fetchedPrices, wholesaleInputs, setWholesaleInputs } = useWholesalePrices(activeTodos);
 
   // ⚡ 4. Action Handler (จัดการเมื่อมีการกดปุ่มทำรายการ)
   const handleAction = async (taskId, action, actionType, payload = {}) => {
     setProcessingId(taskId);
     try {
+      // ค้นหางานตัวเต็มจาก State เพื่อส่งให้ Service ที่ต้องการ Object งานแบบเต็ม (เช่น ClaimService)
+      const fullTask = activeTodos.find(t => t.id === taskId);
+      
       if (action === 'approve') {
         if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
-          await claimService.approveRequest(payload, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
+          // แจ้งเตือนหากไม่พบงาน
+          if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
+          await claimService.approveRequest(fullTask, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
         }
       } else if (action === 'reject') {
         if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {
            await todoService.rejectWholesale(taskId, payload.orderId);
         } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
-           await claimService.rejectRequest(payload, payload.reason || 'ปฏิเสธโดยแอดมิน', auth.currentUser.uid);
+           if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
+           await claimService.rejectRequest(fullTask, payload.reason || 'ปฏิเสธโดยแอดมิน', auth.currentUser.uid);
         } else {
            await todoService.rejectTask(taskId, payload.reason);
         }
@@ -213,10 +159,10 @@ export default function Todo() {
         </div>
         <div className="flex gap-3 relative z-10 w-full sm:w-auto">
           <button 
-            onClick={() => setShowCompletedPanel(true)}
+            onClick={() => navigate('/todo/archive')}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
           >
-            <History className="w-4 h-4" /> ประวัติ
+            <History className="w-4 h-4" /> ประวัติ / จัดเก็บ
           </button>
           <button 
             onClick={() => setShowNewTaskModal(true)}
@@ -240,17 +186,27 @@ export default function Todo() {
         
         {/* แถบค้นหา */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
-            <div className="relative w-full sm:max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <PackageSearch className="h-4 w-4 text-slate-400" />
+            <div className="relative w-full sm:max-w-md flex items-center gap-2">
+                <div className="relative w-full">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <PackageSearch className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <input 
+                        type="text" 
+                        placeholder="ค้นหา (ชื่อลูกค้า, Order ID, หัวข้องาน)..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-full bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all"
+                    />
                 </div>
-                <input 
-                    type="text" 
-                    placeholder="ค้นหา (ชื่อลูกค้า, Order ID, หัวข้องาน)..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-full bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all"
-                />
+                {(searchQuery || filterType !== 'ALL') && (
+                    <button 
+                        onClick={() => { setSearchQuery(''); setFilterType('ALL'); }}
+                        className="text-xs text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl whitespace-nowrap transition-all font-bold"
+                    >
+                        ล้างค่า
+                    </button>
+                )}
             </div>
             {searchQuery && (
                 <span className="text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-lg whitespace-nowrap self-end sm:self-auto">
@@ -366,22 +322,12 @@ export default function Todo() {
         </div>
       )}
 
-      {/* --- 🧩 Modals & Panels --- */}
-      
       {/* Modal สร้างงานใหม่ ที่ถูกแยก Component ออกไปใน Step 2 */}
       <NewTaskModal 
         isOpen={showNewTaskModal} 
         onClose={() => setShowNewTaskModal(false)} 
         onSubmit={handleCreateTask}
         isSubmitting={isHookSubmitting}
-      />
-
-      {/* Panel ประวัติการทำงาน */}
-      <HistoryPanel 
-        showCompletedPanel={showCompletedPanel} 
-        setShowCompletedPanel={setShowCompletedPanel} 
-        loadingCompleted={loading} // ใช้ loading จาก hook ได้เลย (หรือจะสร้าง function ย่อยใน hook สำหรับ history ก็ได้)
-        completedTodos={hookCompletedTodos} 
       />
 
     </div>

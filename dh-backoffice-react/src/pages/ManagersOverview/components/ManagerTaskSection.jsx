@@ -1,110 +1,130 @@
 import React from 'react';
-import { Loader2, AlertCircle, CheckCircle2, ClipboardList } from 'lucide-react';
-
-// 🚀 THE FIX [Clean Architecture]: นำเข้า Hook ของผู้จัดการที่เบาและแก้บั๊คเรียบร้อยแล้ว
+import { AlertCircle, CheckCircle2, ClipboardList } from 'lucide-react';
 import { useManagerTodo } from '../../todo/hooks/useManagerTodo';
-
-// 📦 นำเข้า UI Cards สำหรับแสดงผลงานรูปแบบต่างๆ
 import TodoItem from '../../../components/todo/TodoItem';
 import WholesaleCard from '../../../components/todo/WholesaleCard';
 
+// Premium Skeleton Loader
+const PremiumSkeleton = () => (
+  <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 h-[220px] flex flex-col justify-between animate-pulse">
+    <div className="flex items-start gap-4 mb-4">
+      <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-xl shrink-0"></div>
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+      </div>
+    </div>
+    <div className="space-y-2">
+      <div className="h-20 bg-slate-100 dark:bg-slate-900/50 rounded-xl"></div>
+    </div>
+    <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+      <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-xl flex-1"></div>
+      <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-xl flex-1"></div>
+    </div>
+  </div>
+);
+
 export default function ManagerTaskSection() {
-  // ดึงข้อมูลและฟังก์ชันจัดการ (ลบ/อัปเดต) จาก Hook ที่เชื่อมกับ managerTodoService โดยตรง
   const { 
     managerTodos, 
     loading, 
     error, 
     updateTaskStatus, 
-    deleteManagerTask 
+    deleteManagerTask,
+    processingId
   } = useManagerTodo();
 
-  // ----------------------------------------------------------------------
-  // 1. สถานะกำลังโหลดข้อมูล
-  // ----------------------------------------------------------------------
+  const handleAction = async (taskId, action, type, payload) => {
+    if (action === 'delete') {
+      await deleteManagerTask(taskId);
+      return;
+    }
+    
+    let newStatus = '';
+    if (action === 'approve') newStatus = 'completed';
+    if (action === 'reject') newStatus = 'rejected';
+    
+    if (newStatus) {
+      await updateTaskStatus(taskId, newStatus, payload);
+    }
+  };
+
+  const getUrgencyClass = (priority) => {
+    return priority === 'High' ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-blue-500';
+  };
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm min-h-[200px]">
-        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-3" />
-        <span className="text-sm font-semibold text-slate-500 tracking-wide animate-pulse">
-          กำลังประมวลผลงานของ Manager...
-        </span>
+      <div className="space-y-4 animate-in fade-in duration-500">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-48 animate-pulse"></div>
+          <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-16 animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          <PremiumSkeleton />
+          <PremiumSkeleton />
+          <PremiumSkeleton />
+        </div>
       </div>
     );
   }
 
-  // ----------------------------------------------------------------------
-  // 2. สถานะเกิดข้อผิดพลาด
-  // ----------------------------------------------------------------------
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-red-50 rounded-2xl border border-red-100 min-h-[200px]">
+      <div className="flex flex-col items-center justify-center p-8 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/50 min-h-[200px] animate-in zoom-in-95">
         <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
-        <h3 className="text-sm font-bold text-red-800">พบปัญหาการดึงข้อมูล</h3>
+        <h3 className="text-sm font-bold text-red-800 dark:text-red-400">พบปัญหาการดึงข้อมูล</h3>
         <p className="text-xs text-red-600 mt-1">{error}</p>
       </div>
     );
   }
 
-  // ----------------------------------------------------------------------
-  // 3. สถานะไม่มีงานค้าง (Empty State)
-  // ----------------------------------------------------------------------
   if (!managerTodos || managerTodos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white/60 backdrop-blur-md rounded-2xl border border-dashed border-slate-200 shadow-sm min-h-[200px]">
-        <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
-          <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+      <div className="flex flex-col items-center justify-center p-8 h-full min-h-[400px] animate-in fade-in slide-in-from-bottom-4 relative z-10 w-full">
+        <div className="relative mb-6">
+          <div className="absolute inset-0 bg-emerald-400 blur-2xl opacity-20 rounded-full animate-pulse"></div>
+          <div className="w-28 h-28 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-900/40 dark:to-slate-800 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-emerald-100 dark:border-emerald-800 relative z-10">
+            <CheckCircle2 className="w-12 h-12 text-emerald-500 dark:text-emerald-400" strokeWidth={2.5} />
+          </div>
         </div>
-        <h3 className="text-base font-bold text-slate-800">เยี่ยมมาก! ไม่มีงานค้าง</h3>
-        <p className="text-sm text-slate-500 mt-1">รายการที่ต้องอนุมัติทั้งหมดถูกจัดการเรียบร้อยแล้ว</p>
+        <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-2 tracking-tight text-center">ยอดเยี่ยม! ไม่มีงานค้าง</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium text-center leading-relaxed">
+          รายการที่ต้องอนุมัติทั้งหมด<br/>ถูกจัดการเรียบร้อยแล้ว
+        </p>
       </div>
     );
   }
 
-  // ----------------------------------------------------------------------
-  // 4. แสดงผลรายการงาน (Task List)
-  // ----------------------------------------------------------------------
   return (
-    <div className="space-y-4">
-      {/* Header ส่วนของงาน */}
+    <div className="space-y-4 animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-4 px-1">
-        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-indigo-600" />
-          รายการอนุมัติและงานของผู้จัดการ
+        <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <ClipboardList className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          รายการอนุมัติของผู้จัดการ
         </h2>
-        <span className="px-3 py-1 text-xs font-bold bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200">
+        <span className="px-3 py-1.5 text-xs font-black bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full border border-indigo-200 dark:border-indigo-800 shadow-sm">
           {managerTodos.length} รายการ
         </span>
       </div>
       
-      {/* กางรายการ Task Cards */}
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-5">
         {managerTodos.map(task => {
           const type = task.type || task.taskType;
+          const isWholesale = type === 'wholesale_request' || type === 'WHOLESALE_APPROVAL';
           
-          // 🚀 THE FIX [Bug Fix ลบ/ยกเลิก]: 
-          // เราส่ง deleteManagerTask(task.id) ลงไปให้ Card ย่อยใช้งานโดยตรง
-          
-          // ตรวจสอบชนิดของงานเพื่อ Render Card ให้ตรงประเภท
-          if (type === 'wholesale_request' || type === 'WHOLESALE_APPROVAL') {
-            return (
-              <WholesaleCard 
-                key={task.id} 
-                task={task} 
-                onUpdateStatus={(newStatus, payload) => updateTaskStatus(task.id, newStatus, payload)} 
-                onDelete={() => deleteManagerTask(task.id)}
-              />
-            );
+          const props = {
+            todo: task,
+            isProcessing: processingId === task.id,
+            isManagerTab: true,
+            urgencyClass: getUrgencyClass(task.priority),
+            handleAction: handleAction
+          };
+
+          if (isWholesale) {
+            return <WholesaleCard key={task.id} {...props} />;
           }
-          
-          // Fallback: หากเป็นงานประเภทอื่น (เช่น AD_APPROVAL, STAFF_APPROVAL) ให้ใช้ TodoItem มาตรฐาน
-          return (
-            <TodoItem 
-              key={task.id} 
-              todo={task} 
-              onUpdateStatus={(newStatus, payload) => updateTaskStatus(task.id, newStatus, payload)} 
-              onDelete={() => deleteManagerTask(task.id)}
-            />
-          );
+          return <TodoItem key={task.id} {...props} />;
         })}
       </div>
     </div>

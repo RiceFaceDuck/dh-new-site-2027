@@ -108,9 +108,15 @@ export const useCentralTodo = () => {
   // 📊 5. ส่งออกข้อมูลพร้อมหมวดหมู่ที่จัดเตรียมไว้ให้ UI ใช้งานได้ทันที
   return {
     todos,
-    // คัดกรองข้อมูลให้ UI ใช้ได้เลย (ไม่ต้องไปเขียน filter ซ้ำใน Todo.jsx)
-    activeTodos: todos.filter(t => t.status !== 'COMPLETED' && t.status !== 'CANCELLED'),
-    completedTodos: todos.filter(t => t.status === 'COMPLETED' || t.status === 'CANCELLED'),
+    // คัดกรองข้อมูลให้ UI ใช้ได้เลย (รองรับทั้งตัวพิมพ์เล็ก-ใหญ่)
+    activeTodos: todos.filter(t => {
+        const s = typeof t.status === 'string' ? t.status.toLowerCase() : '';
+        return !['completed', 'cancelled', 'rejected', 'done'].includes(s);
+    }),
+    completedTodos: todos.filter(t => {
+        const s = typeof t.status === 'string' ? t.status.toLowerCase() : '';
+        return ['completed', 'cancelled', 'rejected', 'done'].includes(s);
+    }),
     
     // Status
     loading,

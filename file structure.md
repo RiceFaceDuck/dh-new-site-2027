@@ -11,6 +11,9 @@ dh-new-site-2027/
 ├── deploy-staff.bat
 ├── firebase.json
 │
+├── functions/ # Firebase Cloud Functions Backend
+│   ├── index.js # Cloud Functions for Gmail API and others
+│   └── package.json
 ├── dh-backoffice-react/
 │   ├── .env.example
 │   ├── .firebaserc
@@ -103,19 +106,28 @@ dh-new-site-2027/
 │       │   │   ├── ProductDetailPanel.jsx
 │       │   │   ├── ProductListPanel.jsx
 │       │   │   └── SearchHeader.jsx
-│       │   └── todo/ # Task management UI
-│       │       ├── HistoryPanel.jsx
-│       │       ├── ManagerTodoSummary.jsx
-│       │       ├── ManualTaskCard.jsx
-│       │       ├── PaymentCard.jsx
-│       │       ├── ServiceTaskCard.jsx
-│       │       ├── TaxInvoiceCard.jsx
-│       │       ├── TodoFilters.jsx
-│       │       ├── TodoHeader.jsx
-│       │       ├── TodoItem.jsx
-│       │       ├── WholesaleCard.jsx
-│       │       └── forms/
-│       │           └── NewTaskModal.jsx
+│       │   ├── todo/ # Task management UI
+│       │   │   ├── HistoryPanel.jsx
+│       │   │   ├── ManagerTodoSummary.jsx
+│       │   │   ├── ManualTaskCard.jsx
+│       │   │   ├── PaymentCard.jsx
+│       │   │   ├── ServiceTaskCard.jsx
+│       │   │   ├── TaxInvoiceCard.jsx
+│       │   │   ├── TodoFilters.jsx
+│       │   │   ├── TodoHeader.jsx
+│       │   │   ├── TodoItem.jsx
+│       │   │   ├── WholesaleCard.jsx
+│       │   │   ├── cards/
+│       │   │   │   ├── AdApprovalCard.jsx
+│       │   │   │   ├── GenericTodoCard.jsx
+│       │   │   │   ├── ManagerBadge.jsx
+│       │   │   │   ├── StaffApprovalCard.jsx
+│       │   │   │   └── wholesale/
+│       │   │   │       ├── WholesaleSummary.jsx
+│       │   │   │       ├── WholesaleTable.jsx
+│       │   │   │       └── useWholesaleCalculator.js
+│       │   │   └── forms/
+│       │   │       └── NewTaskModal.jsx
 │       ├── firebase/ # Firebase connection and logic
 │       │   ├── adManagementService.js
 │       │   ├── billingService.js # Facade for billing queries and commands
@@ -133,12 +145,20 @@ dh-new-site-2027/
 │       │   ├── creditService.js
 │       │   ├── driveService.js # Upload handling
 │       │   ├── freebieService.js
+│       │   ├── gmailService.js # Gmail API Integration (Client-side)
 │       │   ├── historyService.js
 │       │   ├── inventoryService.js
 │       │   ├── pricingService.js
 │       │   ├── promotionService.js
 │       │   ├── settingsService.js
-│       │   ├── todoService.js
+│       │   ├── todoService.js # Facade pattern for todo services
+│       │   ├── todo/ # Refactored single responsibility todo services
+│       │   │   ├── todoActionService.js
+│       │   │   ├── todoPaymentService.js
+│       │   │   ├── todoQueryService.js
+│       │   │   ├── todoStaffService.js
+│       │   │   ├── todoWalletService.js
+│       │   │   └── todoWholesaleService.js
 │       │   ├── transactionService.js
 │       │   ├── userService.js
 │       │   ├── warrantyService.js
@@ -146,6 +166,14 @@ dh-new-site-2027/
 │       ├── layouts/ # App Layouts
 │       │   └── AdminLayout.jsx
 │       └── pages/ # Main Pages
+│           ├── emails/ # Gmail API Integration
+│           │   ├── EmailMain.jsx
+│           │   ├── components/
+│           │   │   ├── EmailList.jsx
+│           │   │   ├── EmailDetail.jsx
+│           │   │   └── EmailReplyForm.jsx
+│           │   └── hooks/
+│           │       └── useGmail.js
 │           ├── Customers/
 │           │   ├── index.jsx
 │           │   ├── components/
@@ -164,10 +192,12 @@ dh-new-site-2027/
 │           │       ├── useCustomerHistory.js
 │           │       └── useCustomers.js
 │           ├── ManagersOverview/
-│           │   ├── ExecutiveStats.jsx
-│           │   ├── QuickAccessTools.jsx
-│           │   ├── StaffApprovalModal.jsx
-│           │   ├── VipManagementModal.jsx
+│           │   ├── components/
+│           │   │   ├── GlobalSettingsPanel.jsx
+│           │   │   ├── ManagerTaskSection.jsx
+│           │   │   ├── StaffApprovalModal.jsx
+│           │   │   ├── VipManagementModal.jsx
+│           │   │   └── EmailSetupModal.jsx # Admin setup for Gmail API
 │           │   ├── index.jsx
 │           │   └── useManagerDashboard.js
 │           ├── ads/
@@ -223,7 +253,8 @@ dh-new-site-2027/
 │           │   ├── NonExistingProducts.jsx
 │           │   └── hooks/
 │           │       ├── useCentralTodo.js
-│           │       └── useManagerTodo.js
+│           │       ├── useManagerTodo.js
+│           │       └── useWholesalePrices.js
 │           ├── History/
 │           │   ├── index.jsx
 │           │   ├── components/
@@ -238,7 +269,17 @@ dh-new-site-2027/
 │           ├── Overview.jsx
 │           ├── ProfileSetup.jsx
 │           ├── Search.jsx
-│           └── Todo.jsx
+│           ├── Todo.jsx
+│           └── Squad/ # Fantasy Squad Selection UI
+│               ├── Squad.jsx
+│               ├── hooks/
+│               │   └── useSquadSelection.js
+│               └── components/
+│                   ├── SquadHeader.jsx
+│                   ├── Pitch.jsx
+│                   ├── PlayerNode.jsx
+│                   ├── SquadActions.jsx
+│                   └── SquadBottomNav.jsx
 │
 ├── dh-frontend/ # Client-facing Next.js/Vite application
 │   └── ... (omitted for brevity)

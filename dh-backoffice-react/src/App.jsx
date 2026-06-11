@@ -12,6 +12,7 @@ import Login from './pages/Login'
 import ProfileSetup from './pages/ProfileSetup'
 
 import Todo from './pages/Todo'
+import TodoArchive from './pages/todo/TodoArchive'
 import ManagersOverview from './pages/ManagersOverview/index'
 import Customers from './pages/Customers' 
 import HistoryPage from './pages/History/index.jsx' 
@@ -19,6 +20,7 @@ import BillingMain from './pages/billing/BillingMain'
 import ClaimMain from './pages/claims/ClaimMain' 
 import Search from './pages/Search' 
 import GalleryMain from './pages/gallery/GalleryMain' 
+import EmailMain from './pages/emails/EmailMain'
 
 // นำเข้า Components สำหรับ Managers
 import PromotionManagement from './pages/managers/PromotionManagement'
@@ -139,6 +141,7 @@ function AppContent() {
         <Route index element={<Overview />} />
         <Route path="search" element={<Search />} /> 
         <Route path="todo" element={<Todo />} />
+        <Route path="todo/archive" element={<TodoArchive />} />
         <Route path="claims" element={<ClaimMain />} />
         <Route path="billing" element={<BillingMain />} />
         
@@ -158,6 +161,7 @@ function AppContent() {
         <Route path="gallery" element={<GalleryMain />}/>
         <Route path="inventory" element={<Inventory/>}/>
         <Route path="customers" element={<Customers />}/>
+        <Route path="emails" element={<EmailMain />}/>
         <Route path="config" element={<Placeholder title="Config"/>}/>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

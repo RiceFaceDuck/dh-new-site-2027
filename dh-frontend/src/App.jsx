@@ -11,6 +11,10 @@ import Checkout from './pages/Checkout';
 import { CartProvider } from './context/CartProvider';
 import { OrderProvider } from './context/OrderContext';
 
+// 🚀 นำเข้าระบบ Squad Selection (ใหม่ล่าสุด)
+import SquadLayout from './layouts/SquadLayout';
+import Squad from './pages/Squad/Squad';
+
 // 🎯 นำเข้าระบบการตลาด เพื่อใช้งาน Smart Cache ประหยัด Reads
 import { marketingService } from './firebase/marketingService';
 
@@ -69,8 +73,9 @@ function App() {
         {/* ฝังลูกเล่น ScrollToTop ทำงานเงียบๆ ทุกครั้งที่ Route เปลี่ยน */}
         <ScrollToTop />
         
-        <MainLayout>
-          <Routes>
+        <Routes>
+          {/* Routes ที่ใช้โครงสร้างหลัก (มี Header, Footer) */}
+          <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/profile" element={<Profile />} />
@@ -78,8 +83,11 @@ function App() {
             {/* 🚀 ลงทะเบียน Route สำหรับ E-Commerce Core */}
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
-          </Routes>
-        </MainLayout>
+          </Route>
+
+          {/* 🚀 Route แบบพิเศษ: ระบบ Squad แยก Layout เด็ดขาดเพื่อบังคับขนาด 100vh */}
+          <Route path="/squad" element={<SquadLayout><Squad /></SquadLayout>} />
+        </Routes>
       </Router>
       </OrderProvider>
     </CartProvider>

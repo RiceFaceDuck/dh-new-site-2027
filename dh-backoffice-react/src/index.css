@@ -125,4 +125,26 @@
     text-shadow: 0 0 8px rgba(255, 230, 199, 0.3); /* อิงจากสี text-main โหมดมืด */
   }
 
+  /* 7. Menu Item Hover Gradient with Animation */
+  .dh-menu-gradient-hover {
+    background-size: 200% 200%;
+    transition: all 0.3s ease;
+  }
+  .dh-menu-gradient-hover:hover {
+    background-image: linear-gradient(120deg, rgba(255, 161, 144, 0.25) 0%, rgba(178, 214, 221, 0.25) 100%);
+    animation: gradientMove 3s ease infinite;
+    transform: scale(1.03);
+    /* Make active state still readable */
+    color: var(--dh-text-main);
+  }
+  .dark .dh-menu-gradient-hover:hover {
+    background-image: linear-gradient(120deg, rgba(255, 161, 144, 0.15) 0%, rgba(178, 214, 221, 0.15) 100%);
+  }
+  
+  @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
 }

@@ -4,12 +4,13 @@ import {
   LayoutDashboard, Search, Receipt, Undo2, 
   CheckSquare, History, Image as ImageIcon, 
   Boxes, Users, Settings, LogOut, Sun, Moon,
-  UserCog, Megaphone, CreditCard, ShieldCheck 
+  UserCog, Megaphone, CreditCard, ShieldCheck, Mail
 } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { signOut, onAuthStateChanged } from 'firebase/auth'; 
 import { userService, SUPER_ADMINS } from '../firebase/userService'; 
 import { todoService } from '../firebase/todoService';
+import { useGmail } from '../pages/emails/hooks/useGmail';
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -18,6 +19,7 @@ export default function AdminLayout() {
   
   const [profile, setProfile] = useState(null);
   const [todoCount, setTodoCount] = useState(0); 
+  const { unreadCount } = useGmail();
 
   // --- States สำหรับระบบ Guard ---
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -156,23 +158,24 @@ export default function AdminLayout() {
 
   // --- 🚀 โครงสร้างเมนูแบบจัดกลุ่มหมวดหมู่ ---
   const navItems = [
-    { category: 'ส่วนงานหลัก' },
-    { path: '/overview', label: 'ภาพรวม', icon: LayoutDashboard },
-    { path: '/todo', label: 'To-do', icon: CheckSquare, badge: todoCount },
-    { path: '/billing', label: 'ระบบบิล', icon: Receipt },
-    { path: '/claims', label: 'รับเคลม/คืน', icon: Undo2 },
+    { category: 'Main Menu', categoryThai: 'ส่วนงานหลัก' },
+    { path: '/overview', label: 'Overview', labelThai: 'ภาพรวม', icon: LayoutDashboard },
+    { path: '/todo', label: 'To-do', labelThai: 'งานที่ต้องทำ', icon: CheckSquare, badge: todoCount },
+    { path: '/billing', label: 'Billing', labelThai: 'ระบบบิล', icon: Receipt },
+    { path: '/claims', label: 'Claims/Returns', labelThai: 'รับเคลม/คืน', icon: Undo2 },
     
-    { category: 'คลังข้อมูล' },
-    { path: '/search', label: 'ค้นหาสินค้า', icon: Search },
-    { path: '/inventory', label: 'สต๊อกสินค้า', icon: Boxes },
-    { path: '/gallery', label: 'คลังภาพ', icon: ImageIcon },
-    { path: '/history', label: 'ประวัติ', icon: History },
-    { path: '/customers', label: 'ลูกค้า/ทีมงาน', icon: Users },
+    { category: 'Database', categoryThai: 'คลังข้อมูล' },
+    { path: '/search', label: 'Search', labelThai: 'ค้นหาสินค้า', icon: Search },
+    { path: '/inventory', label: 'Inventory', labelThai: 'สต๊อกสินค้า', icon: Boxes },
+    { path: '/gallery', label: 'Gallery', labelThai: 'คลังภาพ', icon: ImageIcon },
+    { path: '/history', label: 'History', labelThai: 'ประวัติ', icon: History },
+    { path: '/customers', label: 'Customers', labelThai: 'ลูกค้า', icon: Users },
+    { path: '/emails', label: 'Emails', labelThai: 'อีเมล', icon: Mail, badge: unreadCount > 0 ? unreadCount : null },
     
-    { category: 'ส่วนงานผู้จัดการ' },
-    { path: '/managers/ads', label: 'จัดการโฆษณา', icon: Megaphone },
-    { path: '/managers/credit', label: 'Credit Point', icon: CreditCard },
-    { path: '/managers', label: 'ตั้งค่า/จัดการรวม', icon: Settings }
+    { category: 'Management', categoryThai: 'ส่วนงานผู้จัดการ' },
+    { path: '/managers/ads', label: 'Ads Manager', labelThai: 'จัดการโฆษณา', icon: Megaphone },
+    { path: '/managers/credit', label: 'Credit Point', labelThai: 'เครดิตพอยต์', icon: CreditCard },
+    { path: '/managers', label: 'Settings', labelThai: 'ตั้งค่า/จัดการรวม', icon: Settings }
   ];
 
   // --- UI: หน้าจอตอนกำลังโหลดเช็คข้อมูล (Checking Auth) ---
@@ -255,9 +258,12 @@ export default function AdminLayout() {
           {navItems.map((item, index) => {
             if (item.category) {
               return (
-                <div key={`cat-${index}`} className="px-3 pt-3 pb-1 first:pt-1">
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                <div key={`cat-${index}`} className="px-3 pt-3 pb-1 first:pt-1 group/cat cursor-default">
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover/cat:hidden">
                     {item.category}
+                  </p>
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden group-hover/cat:block">
+                    {item.categoryThai}
                   </p>
                 </div>
               );
@@ -272,15 +278,16 @@ export default function AdminLayout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-[13.5px] font-bold transition-all group ${
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-[13.5px] font-bold group dh-menu-gradient-hover ${
                   isActive 
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon size={17} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400 transition-colors'} strokeWidth={isActive ? 2.5 : 2} />
-                  <span>{item.label}</span>
+                  <span className="block group-hover:hidden">{item.label}</span>
+                  <span className="hidden group-hover:block">{item.labelThai}</span>
                 </div>
                 {item.badge > 0 && (
                   <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${
