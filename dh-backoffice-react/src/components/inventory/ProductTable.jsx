@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Image as ImageIcon, AlertCircle, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
 
 export default function ProductTable({ products, onEdit, salesPeriod, globalBufferStock = 2 }) {
   
@@ -10,28 +10,35 @@ export default function ProductTable({ products, onEdit, salesPeriod, globalBuff
                               : Number(globalBufferStock);
 
     if (stockNum <= 0) {
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-600 border border-red-500/20 dark:text-red-400"><AlertCircle size={10} className="mr-1"/> หมดสต๊อก</span>;
+      return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-red-500/10 text-red-600 border border-red-500/20 dark:text-red-400"><AlertCircle size={12} className="mr-1"/> หมดสต๊อก</span>;
     }
     if (stockNum <= effectiveBuffer) {
-      return <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-500/10 text-orange-600 border border-orange-500/20 dark:text-orange-400"><AlertCircle size={10} className="mr-1"/> ระวังของหมด</span>;
+      return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-orange-500/10 text-orange-600 border border-orange-500/20 dark:text-orange-400"><AlertCircle size={12} className="mr-1"/> ระวังของหมด</span>;
     }
-    return <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-600 border border-green-500/20 dark:text-green-400">พร้อมขาย</span>;
+    return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-green-500/10 text-green-600 border border-green-500/20 dark:text-green-400">พร้อมขาย</span>;
   };
 
   return (
     <div className="bg-dh-surface rounded-2xl shadow-dh-card border border-dh-border overflow-hidden">
       <div className="overflow-x-auto custom-scrollbar max-h-[calc(100vh-18rem)]">
         <table className="w-full text-sm text-left border-collapse">
-          <thead className="bg-dh-base text-dh-muted text-[10px] font-extrabold uppercase tracking-wider border-b border-dh-border sticky top-0 z-20 backdrop-blur-md bg-opacity-90">
+          {/* ✨ อัปเกรด Header ตาราง */}
+          <thead className="bg-dh-surface text-dh-accent text-[12px] font-black uppercase tracking-wider border-b-2 border-dh-border sticky top-0 z-20 backdrop-blur-md bg-opacity-95 shadow-sm">
             <tr>
-              <th className="px-3 py-2.5 whitespace-nowrap w-12 text-center">รูป</th>
-              <th className="px-3 py-2.5 whitespace-nowrap min-w-[200px]">SKU / ชื่อสินค้า</th>
-              <th className="px-3 py-2.5 whitespace-nowrap">หมวดหมู่</th>
-              <th className="px-3 py-2.5 whitespace-nowrap text-right">ราคาส่ง(ฐาน)</th>
-              <th className="px-3 py-2.5 whitespace-nowrap text-right">ราคาปลีก</th>
-              <th className="px-3 py-2.5 whitespace-nowrap text-center">คงเหลือ</th>
-              <th className="px-3 py-2.5 whitespace-nowrap text-center">ขายแล้ว ({salesPeriod} วัน)</th>
-              <th className="px-3 py-2.5 whitespace-nowrap text-center">สถานะ</th>
+              <th className="px-3 py-3 whitespace-nowrap w-16 text-center">รูป</th>
+              <th className="px-3 py-3 whitespace-nowrap min-w-[220px]">SKU / ชื่อสินค้า</th>
+              <th className="px-3 py-3 whitespace-nowrap min-w-[100px]">หมวดหมู่</th>
+              <th className="px-3 py-3 whitespace-nowrap text-right min-w-[120px]">ราคาส่ง(ฐาน)</th>
+              <th className="px-3 py-3 whitespace-nowrap text-right min-w-[100px] text-dh-muted opacity-80">ราคาปลีก</th>
+              
+              {/* ✨ จัดกลุ่มสถิติเข้าด้วยกันและบีบให้แคบลง */}
+              <th className="px-2 py-3 whitespace-nowrap text-center w-[80px] border-l border-dh-border/50">เข้า {salesPeriod}D</th>
+              <th className="px-2 py-3 whitespace-nowrap text-center w-[80px]">ขาย {salesPeriod}D</th>
+              <th className="px-2 py-3 whitespace-nowrap text-center w-[80px] border-r border-dh-border/50">เคลม {salesPeriod}D</th>
+              
+              {/* สลับสถานะและคงเหลือ */}
+              <th className="px-3 py-3 whitespace-nowrap text-center min-w-[100px]">สถานะ</th>
+              <th className="px-3 py-3 whitespace-nowrap text-center min-w-[90px]">คงเหลือ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-dh-border">
@@ -41,63 +48,126 @@ export default function ProductTable({ products, onEdit, salesPeriod, globalBuff
                                         : Number(globalBufferStock);
 
               return (
-                // ✨ ลูกเล่น: ม้าลาย + แถบสีนำสายตาเมื่อ Hover
+                // ✨ ลูกเล่น: ม้าลาย (Zebra Striping) ใช้สีให้ชัดเจนขึ้น
                 <tr 
                   key={product.id} 
                   onClick={() => onEdit(product)}
-                  className="group cursor-pointer transition-all duration-200 border-b border-dh-border last:border-none even:bg-dh-base/30 hover:bg-dh-accent-light/30 hover:shadow-[inset_4px_0_0_var(--dh-accent)]"
+                  className="group cursor-pointer transition-all duration-200 border-b border-dh-border last:border-none even:bg-black/5 dark:even:bg-white/5 hover:bg-dh-accent-light/30 hover:shadow-[inset_4px_0_0_var(--dh-accent)]"
                 >
-                  <td className="px-3 py-2 align-middle">
-                    <div className="w-9 h-9 bg-dh-base rounded-lg flex items-center justify-center text-dh-muted border border-dh-border overflow-hidden group-hover:border-dh-accent/50 transition-colors shadow-sm mx-auto">
+                  <td className="px-3 py-3 align-middle">
+                    <div className="w-10 h-10 bg-dh-base rounded-xl flex items-center justify-center text-dh-muted border border-dh-border overflow-hidden group-hover:border-dh-accent/50 group-hover:scale-105 transition-all shadow-sm mx-auto">
                       {product.images?.[0] ? (
                         <img src={product.images[0]} alt={product.sku} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = ''; }} />
                       ) : (
-                        <ImageIcon size={16} className="opacity-50" />
+                        <ImageIcon size={18} className="opacity-50" />
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-2 align-middle">
-                    <div className="font-bold text-[13px] text-dh-main flex items-center gap-2 group-hover:text-dh-accent transition-colors leading-tight">
+                  <td className="px-3 py-3 align-middle">
+                    <div className="font-bold text-[14px] text-dh-main flex items-center gap-2 group-hover:text-dh-accent transition-colors leading-tight">
                       {product.sku}
-                      {!product.isActive && <span className="text-[9px] bg-dh-base border border-dh-border text-dh-muted px-1.5 py-0.5 rounded shadow-sm">ปิดการขาย</span>}
+                      {!product.isActive && <span className="text-[10px] bg-red-500/10 border border-red-500/20 text-red-500 px-1.5 py-0.5 rounded shadow-sm">ปิดการขาย</span>}
                     </div>
-                    <div className="text-dh-muted line-clamp-1 text-[11px] mt-0.5 font-medium">{product.name}</div>
-                    <div className="flex gap-1 mt-1 flex-wrap">
-                      {product.tags?.slice(0, 2).map(t => <span key={t} className="text-[9px] bg-dh-base text-dh-muted px-1.5 py-0.5 rounded border border-dh-border group-hover:border-dh-accent/30 group-hover:text-dh-main transition-colors">{t}</span>)}
-                      {product.tags?.length > 2 && <span className="text-[9px] bg-dh-base text-dh-muted px-1.5 py-0.5 rounded border border-dh-border">+{product.tags.length - 2}</span>}
+                    <div className="text-dh-muted line-clamp-1 text-[12px] mt-0.5 font-medium">{product.name}</div>
+                    <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                      {product.tags?.slice(0, 2).map(t => <span key={t} className="text-[10px] bg-dh-base text-dh-muted px-2 py-0.5 rounded-full border border-dh-border group-hover:border-dh-accent/30 group-hover:text-dh-main transition-colors">{t}</span>)}
+                      {product.tags?.length > 2 && <span className="text-[10px] bg-dh-base text-dh-muted px-2 py-0.5 rounded-full border border-dh-border">+{product.tags.length - 2}</span>}
                     </div>
                   </td>
-                  <td className="px-3 py-2 align-middle whitespace-nowrap">
-                    <span className="text-[11px] font-bold text-dh-muted bg-dh-base px-2 py-1 rounded-md border border-dh-border shadow-sm group-hover:bg-dh-surface transition-colors">
+                  <td className="px-3 py-3 align-middle whitespace-nowrap">
+                    <span className="text-[12px] font-bold text-dh-muted bg-dh-base px-2.5 py-1 rounded-lg border border-dh-border shadow-sm group-hover:bg-dh-surface transition-colors">
                       {product.category}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-right align-middle whitespace-nowrap">
-                    <div className="font-bold text-[13px] text-dh-main group-hover:text-dh-accent transition-colors">
-                      ฿{Number(product.Price || 0).toLocaleString()}
+
+                  {/* ✨ ราคาส่ง (ฐาน) - โดดเด่น (สีดำ ตัวหนา ใหญ่ ไม่มีกรอบ) */}
+                  <td className="px-3 py-3 text-right align-middle whitespace-nowrap">
+                    <div className="font-black text-[18px] text-dh-main inline-flex items-baseline gap-0.5 group-hover:text-dh-accent transition-colors">
+                      <span className="text-[12px] opacity-70">฿</span>
+                      {Number(product.Price || 0).toLocaleString()}
                     </div>
-                  </td>
-                  <td className="px-3 py-2 text-right align-middle whitespace-nowrap">
-                    <div className="font-black text-[13px] text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md inline-block border border-green-500/20 group-hover:bg-green-500/20 transition-colors">
-                      ฿{Number(product.retailPrice || 0).toLocaleString()}
-                    </div>
-                  </td>
-                  
-                  <td className="px-3 py-2 text-center align-middle whitespace-nowrap">
-                    <div className={`font-black text-[14px] ${Number(product.stockQuantity) <= effectiveBuffer ? 'text-red-500' : 'text-dh-main group-hover:text-dh-accent'} transition-colors`}>
-                      {product.stockQuantity || 0}
-                    </div>
-                    <div className="text-[9px] text-dh-muted font-bold uppercase tracking-wider">{product.unit || 'ชิ้น'}</div>
                   </td>
 
-                  <td className="px-3 py-2 text-center align-middle whitespace-nowrap">
-                    <span className="font-bold text-[12px] text-dh-main bg-dh-base group-hover:bg-dh-surface px-2.5 py-1 rounded-lg border border-dh-border shadow-sm transition-colors inline-block min-w-[32px]">
-                      {product.salesHistory?.[salesPeriod] || 0}
-                    </span>
+                  {/* ✨ ราคาปลีก - ลดความโดดเด่น */}
+                  <td className="px-3 py-3 text-right align-middle whitespace-nowrap">
+                    <div className="font-medium text-[13px] text-dh-muted opacity-80 group-hover:opacity-100 group-hover:text-dh-main transition-all">
+                      <span className="text-[11px] mr-0.5">฿</span>
+                      {Number(product.retailPrice || 0).toLocaleString()}
+                    </div>
                   </td>
 
-                  <td className="px-3 py-2 text-center align-middle whitespace-nowrap">
+                  {/* ✨ เข้าแล้ว (Stock In) - กระชับ */}
+                  <td className="px-2 py-3 text-center align-middle whitespace-nowrap border-l border-dh-border/50">
+                    <div className="group/tooltip relative inline-flex justify-center">
+                      <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-sm transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
+                        (product.stockInHistory?.[salesPeriod] || 0) > 0 
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                        : 'bg-dh-base text-dh-muted border-dh-border group-hover:bg-dh-surface'
+                      }`}>
+                        {(product.stockInHistory?.[salesPeriod] || 0) > 0 && <TrendingUp size={10} className="opacity-70" />}
+                        {product.stockInHistory?.[salesPeriod] || 0}
+                      </span>
+                      {/* Tooltip Gimmick */}
+                      {(product.stockInHistory?.[salesPeriod] || 0) > 0 && (
+                        <div className="absolute bottom-full mb-2 hidden group-hover/tooltip:block bg-dh-main text-dh-base text-[11px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50">
+                          มีสินค้าเข้า <span className="text-blue-400">{product.stockInHistory?.[salesPeriod]}</span> รายการ ใน {salesPeriod} วัน
+                        </div>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* ✨ ขายแล้ว (Sold) - กระชับ */}
+                  <td className="px-2 py-3 text-center align-middle whitespace-nowrap">
+                    <div className="group/tooltip relative inline-flex justify-center">
+                      <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-sm transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
+                        (product.salesHistory?.[salesPeriod] || 0) > 0 
+                        ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'
+                        : 'bg-dh-base text-dh-muted border-dh-border group-hover:bg-dh-surface'
+                      }`}>
+                        {(product.salesHistory?.[salesPeriod] || 0) > 0 && <TrendingDown size={10} className="opacity-70" />}
+                        {product.salesHistory?.[salesPeriod] || 0}
+                      </span>
+                      {/* Tooltip Gimmick */}
+                      {(product.salesHistory?.[salesPeriod] || 0) > 0 && (
+                        <div className="absolute bottom-full mb-2 hidden group-hover/tooltip:block bg-dh-main text-dh-base text-[11px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50">
+                          ขายออก <span className="text-green-400">{product.salesHistory?.[salesPeriod]}</span> รายการ ใน {salesPeriod} วัน
+                        </div>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* ✨ เคลมแล้ว (Claimed) - กระชับ */}
+                  <td className="px-2 py-3 text-center align-middle whitespace-nowrap border-r border-dh-border/50">
+                    <div className="group/tooltip relative inline-flex justify-center">
+                      <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-sm transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
+                        (product.claimHistory?.[salesPeriod] || 0) > 0 
+                        ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
+                        : 'bg-dh-base text-dh-muted border-dh-border group-hover:bg-dh-surface'
+                      }`}>
+                        {(product.claimHistory?.[salesPeriod] || 0) > 0 && <RefreshCcw size={10} className="opacity-70" />}
+                        {product.claimHistory?.[salesPeriod] || 0}
+                      </span>
+                      {/* Tooltip Gimmick */}
+                      {(product.claimHistory?.[salesPeriod] || 0) > 0 && (
+                        <div className="absolute bottom-full mb-2 hidden group-hover/tooltip:block bg-dh-main text-dh-base text-[11px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50">
+                          มีการเคลม <span className="text-orange-400">{product.claimHistory?.[salesPeriod]}</span> รายการ ใน {salesPeriod} วัน
+                        </div>
+                      )}
+                    </div>
+                  </td>
+
+                  <td className="px-3 py-3 text-center align-middle whitespace-nowrap">
                     {getStatusBadge(product.stockQuantity, product.bufferStock)}
+                  </td>
+
+                  {/* ✨ คงเหลือ - โดดเด่นสุดๆ และมีหน่วยนับเล็กๆ ตามหลัง */}
+                  <td className="px-3 py-3 text-center align-middle whitespace-nowrap">
+                    <div className="inline-flex items-baseline gap-1">
+                      <div className={`font-black text-[22px] tracking-tight ${Number(product.stockQuantity) <= effectiveBuffer ? 'text-red-500' : 'text-dh-main group-hover:text-dh-accent transform group-hover:scale-110'} transition-all`}>
+                        {product.stockQuantity || 0}
+                      </div>
+                      <span className="text-[10px] font-bold text-dh-muted uppercase">{product.unit || 'ชิ้น'}</span>
+                    </div>
                   </td>
                 </tr>
               );
@@ -105,9 +175,10 @@ export default function ProductTable({ products, onEdit, salesPeriod, globalBuff
             
             {products.length === 0 && (
               <tr>
-                <td colSpan="8" className="px-6 py-16 text-center text-dh-muted bg-dh-base/50">
-                  <AlertCircle size={32} className="mx-auto mb-3 opacity-20" />
-                  <p className="font-bold text-sm">ไม่มีรายการสินค้าในคลัง</p>
+                <td colSpan="10" className="px-6 py-20 text-center text-dh-muted bg-dh-base/50">
+                  <AlertCircle size={40} className="mx-auto mb-4 opacity-20 text-dh-accent" />
+                  <p className="font-black text-lg text-dh-main">ไม่มีรายการสินค้าในคลัง</p>
+                  <p className="font-medium text-sm mt-1">ลองเปลี่ยนคำค้นหา หรือเพิ่มสินค้าใหม่</p>
                 </td>
               </tr>
             )}

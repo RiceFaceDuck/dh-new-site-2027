@@ -11,13 +11,16 @@ export const todoStaffService = {
           const todoPayload = {
               type: 'STAFF_APPROVAL',
               status: 'pending',
-              title: `🌟 คำร้องขออนุมัติพนักงานใหม่: ${staffData.name || staffData.email}`,
-              description: `พนักงานขอเข้าทำงานในตำแหน่ง "${staffData.position}" | วันเริ่มงาน: ${staffData.startDate || 'ยังไม่ระบุ'}`,
+              title: `🌟 คำร้องขออนุมัติพนักงานใหม่: ${staffData.firstName} ${staffData.lastName}`,
+              description: `พนักงานขอเข้าทำงานในตำแหน่ง "${staffData.position}" | วันเริ่มงาน: ${staffData.startDate || 'ยังไม่ระบุ'} | อายุ: ${staffData.age || 'ไม่ระบุ'} ปี`,
               priority: 'High', // ตั้งเป็น High เพื่อให้ผู้จัดการสังเกตเห็นทันที
               targetUid: staffData.uid,
               targetEmail: staffData.email,
               metadata: {
-                  name: staffData.name,
+                  firstName: staffData.firstName,
+                  lastName: staffData.lastName,
+                  nickname: staffData.nickname,
+                  age: Number(staffData.age) || null,
                   gender: staffData.gender,
                   requestedRole: staffData.position,
                   startDate: staffData.startDate,

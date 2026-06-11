@@ -15,7 +15,7 @@ export const useManagerTodo = () => {
       pendingStaff: 0, 
       total: 0 
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [processingId, setProcessingId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -65,29 +65,28 @@ export const useManagerTodo = () => {
   // โดยผูกการทำงานเข้ากับ Service ใหม่
   // ----------------------------------------------------------------------
   const updateTaskStatus = useCallback(async (taskId, newStatus, payload = {}) => {
-    if (isSubmitting) return false;
-    setIsSubmitting(true);
+    if (processingId) return false;
+    setProcessingId(taskId);
     
     try {
       await managerTodoService.updateTaskStatus(taskId, newStatus, payload);
       return true;
     } catch (err) {
       console.error("🔥 Error updating manager task:", err);
-      // 🛡️ THE FIX [Error Handling]
       setError("การบันทึกสถานะล้มเหลว โปรดลองใหม่อีกครั้ง");
       return false;
     } finally {
-      setIsSubmitting(false);
+      setProcessingId(null);
     }
-  }, [isSubmitting]);
+  }, [processingId]);
 
   // ----------------------------------------------------------------------
   // 🗑️ แก้บั๊ค "ลบงานไม่ได้"
   // ส่งให้ Service ยิงคำสั่ง Delete ตรงๆ ไม่ผ่าน Transaction ที่ซับซ้อน
   // ----------------------------------------------------------------------
   const deleteManagerTask = useCallback(async (taskId) => {
-    if (isSubmitting) return false;
-    setIsSubmitting(true);
+    if (processingId) return false;
+    setProcessingId(taskId);
 
     try {
       await managerTodoService.deleteManagerTask(taskId);
@@ -97,9 +96,9 @@ export const useManagerTodo = () => {
       setError("ไม่สามารถลบรายการได้ โปรดลองใหม่อีกครั้ง");
       return false;
     } finally {
-      setIsSubmitting(false);
+      setProcessingId(null);
     }
-  }, [isSubmitting]);
+  }, [processingId]);
 
   return {
     managerTodos,
@@ -107,6 +106,7 @@ export const useManagerTodo = () => {
     error,
     stats,
     updateTaskStatus,
-    deleteManagerTask
+    deleteManagerTask,
+    processingId
   };
 };

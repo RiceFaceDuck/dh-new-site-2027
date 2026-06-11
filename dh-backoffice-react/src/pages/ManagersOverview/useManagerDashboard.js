@@ -43,8 +43,7 @@ export const useManagerDashboard = () => {
     const usersRef = collection(db, 'users');
     const pendingStaffQuery = query(
       usersRef, 
-      where('userType', '==', 'staff'), 
-      where('isApproved', '==', false)
+      where('role', 'in', ['pending', 'pending_approval'])
     );
 
     const unsubscribeStaff = onSnapshot(pendingStaffQuery, (snapshot) => {

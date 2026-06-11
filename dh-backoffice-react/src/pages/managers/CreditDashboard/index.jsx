@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, AlertTriangle, CheckCircle2, Activity, Server, Database, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, AlertTriangle, CheckCircle2, Activity, Server, Database, Loader2, ArrowLeft } from 'lucide-react';
 
 // นำเข้า Components ย่อยของ Dashboard
 import DashboardTabs from './components/DashboardTabs';
@@ -18,6 +19,7 @@ import useLedgerStats from './hooks/useLedgerStats';
 import useSystemHealth from './hooks/useSystemHealth';
 
 export default function CreditDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('partners');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -60,8 +62,16 @@ export default function CreditDashboard() {
 
   return (
     // 🛠️ แก้ไข: เพิ่ม h-full และ flex-col ให้เต็มจอพอดี ไม่ดันทะลุ
-    <div className="h-full flex flex-col max-w-7xl mx-auto space-y-6 pb-6 animate-in fade-in duration-500">
+    <div className="h-full flex flex-col max-w-7xl mx-auto space-y-6 pb-6 pt-4 animate-in fade-in duration-500">
       
+      {/* Back Button */}
+      <button 
+        onClick={() => navigate('/managers')}
+        className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm active:scale-95 w-fit"
+      >
+        <ArrowLeft size={18} /> ย้อนกลับ (Settings)
+      </button>
+
       {/* ==========================================
           1. Header Section (Enterprise Premium Theme)
       ========================================== */}

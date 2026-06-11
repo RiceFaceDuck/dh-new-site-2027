@@ -40,12 +40,37 @@ export default function ManagerTaskSection() {
       return;
     }
     
+    // 🌟 THE FIX: Process user approval logic before completing task
+    if (type === 'STAFF_APPROVAL' && action === 'approve') {
+        try {
+            const { auth } = await import('../../../firebase/config');
+            const { userService } = await import('../../../firebase/userService');
+            
+            const adminId = auth.currentUser?.uid || 'Admin';
+            const targetUid = payload.targetUid;
+            const newRole = payload.metadata?.requestedRole || 'staff';
+            
+            // 1. Update Role
+            await userService.updateUserRole(adminId, targetUid, newRole);
+            
+            // 2. Grant Active & Staff Status
+            await userService.updateUserProfile(targetUid, { 
+                isStaff: true, 
+                isActive: true, 
+                roles: [newRole.charAt(0).toUpperCase() + newRole.slice(1)] 
+            });
+        } catch (err) {
+            console.error("Failed to update user profile during staff approval", err);
+            // Optionally could throw here to stop task completion if critical
+        }
+    }
+
     let newStatus = '';
     if (action === 'approve') newStatus = 'completed';
     if (action === 'reject') newStatus = 'rejected';
     
     if (newStatus) {
-      await updateTaskStatus(taskId, newStatus, payload);
+      await updateTaskStatus(taskId, newStatus);
     }
   };
 

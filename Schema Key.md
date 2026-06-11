@@ -157,4 +157,46 @@ The Email System has been upgraded to use **Firebase Cloud Functions** as a prox
 - **Emails**: Emails are **NOT** stored in the database. They are fetched on-the-fly via Cloud Functions and sent directly to the frontend.
 - **Authentication**: Admin connects the Gmail account once in the `/managers` dashboard. Cloud Functions handles the token refresh automatically.
 
+## 8. Collection: `products`
+
+The `products` collection stores all inventory items. It includes stock quantity, pricing, basic product data, and claim tracking information.
+
+### Schema Fields (Key Fields)
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `sku`            | String  | The unique SKU identifier for the product.                                  | `"SCR-001"`                         |
+| `name`           | String  | The product name or description.                                            | `"ASUS 15.6 LED Screen"`            |
+| `stockQuantity`  | Number  | The current available stock quantity.                                       | `15`                                |
+| `claimHistory`   | Array   | List of successful claims (for warranty/defects).                           | `[{ date: "2026-06-11", ... }]`     |
+| `images`         | Array   | List of image URLs.                                                         | `["url1", "url2"]`                  |
+| `Price`          | Number  | The base or wholesale price.                                                | `1000`                              |
+| `retailPrice`    | Number  | The retail price shown on the website.                                      | `1500`                              |
+| `category`       | String  | The product category.                                                       | `"Screen"`                          |
+
+---
+
+## 9. Collection: `users`
+
+The `users` collection stores user profiles, access controls, and staff registration details for both customers and staff members.
+
+### Schema Fields (Key Fields)
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `uid`            | String  | Firebase Authentication UID.                                                | `"uid_xyz123"`                      |
+| `email`          | String  | User's email address.                                                       | `"staff@dhnotebook.com"`            |
+| `firstName`      | String  | User's first name.                                                          | `"สมชาย"`                           |
+| `lastName`       | String  | User's last name.                                                           | `"รักดี"`                           |
+| `nickname`       | String  | User's nickname.                                                            | `"บอย"`                             |
+| `age`            | Number  | User's age.                                                                 | `25`                                |
+| `displayName`    | String  | Full display name (firstName + lastName) or generated from email.           | `"สมชาย รักดี"`                     |
+| `role`           | String  | The current role/permission level of the user.                              | `"admin"`, `"staff"`, `"pending_approval"` |
+| `requestedRole`  | String  | The role the user requested when registering.                               | `"manager"`, `"packer"`             |
+| `isStaff`        | Boolean | Flag indicating if the user is a staff member.                              | `true`, `false`                     |
+| `isActive`       | Boolean | Flag indicating if the user's account is active and approved.               | `true`, `false`                     |
+| `gender`         | String  | User's gender.                                                              | `"male"`, `"female"`, `"unspecified"`|
+| `startDate`      | String  | Date the user started working.                                              | `"2026-06-11"`                      |
+| `metadata`       | Map     | Additional info like creation date and update dates.                        | `{ createdAt: Timestamp, registeredVia: "staff_onboarding_portal" }` |
+
 *(Additional schemas will be documented here as the system evolves)*

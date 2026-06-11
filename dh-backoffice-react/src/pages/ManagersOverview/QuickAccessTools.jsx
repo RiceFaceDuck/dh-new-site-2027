@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
-  ArrowRightLeft, HardHat, Code2, ShieldBan 
+  ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard
 } from 'lucide-react';
 
 /**
@@ -61,6 +61,8 @@ const QuickAccessTools = ({
   onNavigateHistory, 
   onOpenEmailSetup, 
   onOpenVipModal,
+  onNavigateAds,
+  onNavigateCredit,
   pendingStaffCount,
   vipCount
 }) => {
@@ -189,6 +191,22 @@ const QuickAccessTools = ({
           icon={HardHat} 
           colorTheme="orange"
           isComingSoon={true}
+        />
+
+        <ToolCard 
+          title="Ads Manager" 
+          subtitle="จัดการโฆษณาหน้าเว็บ"
+          icon={Megaphone} 
+          colorTheme="rose"
+          onClick={onNavigateAds}
+        />
+
+        <ToolCard 
+          title="Credit Point" 
+          subtitle="จัดการเครดิตของลูกค้า"
+          icon={CreditCard} 
+          colorTheme="indigo"
+          onClick={onNavigateCredit}
         />
 
     </div>

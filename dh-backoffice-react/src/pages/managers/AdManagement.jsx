@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, doc, onSnapshot, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 // 🛠️ นำเข้า db ให้ตรงกับโครงสร้างโปรเจกต์
@@ -6,12 +7,13 @@ import { db } from '../../firebase/config';
 import { 
   Loader2, CheckCircle, XCircle, Megaphone, ExternalLink, 
   Image as ImageIcon, CreditCard, ShoppingBag, MonitorPlay, 
-  Search, ShieldCheck, Clock 
+  Search, ShieldCheck, Clock, ArrowLeft
 } from 'lucide-react';
 
 const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
 
 export default function AdManagement() {
+  const navigate = useNavigate();
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('PENDING'); // PENDING, APPROVED, REJECTED
@@ -106,6 +108,14 @@ export default function AdManagement() {
     <div className="h-[calc(100vh-64px)] w-full overflow-y-auto pb-20 bg-slate-50/30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
         
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate('/managers')}
+          className="mb-4 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm active:scale-95 w-fit"
+        >
+          <ArrowLeft size={18} /> ย้อนกลับ (Settings)
+        </button>
+
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center mb-8">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-indigo-100">

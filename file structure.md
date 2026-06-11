@@ -93,8 +93,15 @@ dh-new-site-2027/
 │       │   │   ├── InspectionBay.jsx
 │       │   │   └── UploadModal.jsx
 │       │   ├── inventory/ # Inventory UI components
+│       │   │   ├── InventoryHeader.jsx
+│       │   │   ├── ProductTable.jsx
 │       │   │   ├── ProductModal.jsx
-│       │   │   └── ProductTable.jsx
+│       │   │   └── modal/
+│       │   │       ├── ProductBasicInfo.jsx
+│       │   │       ├── ProductImageUpload.jsx
+│       │   │       ├── ProductLinks.jsx
+│       │   │       ├── ProductPricingStock.jsx
+│       │   │       └── ProductTags.jsx
 │       │   ├── managers/ # Manager specific components
 │       │   │   ├── GlobalSettingsPanel.jsx
 │       │   │   └── category/
@@ -106,6 +113,13 @@ dh-new-site-2027/
 │       │   │   ├── ProductDetailPanel.jsx
 │       │   │   ├── ProductListPanel.jsx
 │       │   │   └── SearchHeader.jsx
+│       │   ├── login/ # Refactored Login Components
+│       │   │   ├── index.jsx
+│       │   │   ├── LoginForm.jsx
+│       │   │   ├── RegisterForm.jsx
+│       │   │   ├── StatusView.jsx
+│       │   │   └── hooks/
+│       │   │       └── useAuthFlow.js
 │       │   ├── todo/ # Task management UI
 │       │   │   ├── HistoryPanel.jsx
 │       │   │   ├── ManagerTodoSummary.jsx
@@ -128,6 +142,8 @@ dh-new-site-2027/
 │       │   │   │       └── useWholesaleCalculator.js
 │       │   │   └── forms/
 │       │   │       └── NewTaskModal.jsx
+│       ├── contexts/
+│       │   └── AuthContext.jsx # Global Auth and Role state
 │       ├── firebase/ # Firebase connection and logic
 │       │   ├── adManagementService.js
 │       │   ├── billingService.js # Facade for billing queries and commands
@@ -160,11 +176,21 @@ dh-new-site-2027/
 │       │   │   ├── todoWalletService.js
 │       │   │   └── todoWholesaleService.js
 │       │   ├── transactionService.js
+│       │   ├── userManagementService.js
+│       │   ├── userProfileService.js
 │       │   ├── userService.js
+│       │   ├── userStaffService.js
 │       │   ├── warrantyService.js
 │       │   └── warrantyService.test.js
 │       ├── layouts/ # App Layouts
-│       │   └── AdminLayout.jsx
+│       │   ├── AdminLayout.jsx
+│       │   └── components/
+│       │       ├── Sidebar.jsx # Extracted Sidebar
+│       │       └── GatekeeperUI.jsx # Auth checking and denied UI
+│       ├── components/ # Global Components
+│       │   ├── routing/
+│       │   │   └── ManagerRoute.jsx # Route protection
+│       │   └── ... (other component folders)
 │       └── pages/ # Main Pages
 │           ├── emails/ # Gmail API Integration
 │           │   ├── EmailMain.jsx
@@ -233,6 +259,12 @@ dh-new-site-2027/
 │           │   ├── PromotionManagement.jsx
 │           │   ├── ShippingManagement.jsx
 │           │   ├── StaffManagement.jsx
+│           │   ├── components/
+│           │   │   └── staff/
+│           │   │       ├── StaffAddModal.jsx
+│           │   │       ├── StaffDetailModal.jsx
+│           │   │       ├── StaffEditModal.jsx
+│           │   │       └── StaffTable.jsx
 │           │   ├── WalletManagement.jsx
 │           │   └── CreditDashboard/
 │           │       ├── index.jsx

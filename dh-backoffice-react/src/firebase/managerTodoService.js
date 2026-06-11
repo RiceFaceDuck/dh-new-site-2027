@@ -71,8 +71,8 @@ export const managerTodoService = {
       
       const taskRef = doc(db, 'todos', taskId);
       await updateDoc(taskRef, { 
-        status: newStatus, 
         ...cleanPayload, 
+        status: newStatus, 
         updatedAt: serverTimestamp() 
       });
       return true;

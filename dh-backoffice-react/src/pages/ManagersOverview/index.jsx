@@ -84,6 +84,8 @@ export default function ManagersOverview() {
             onNavigateStaff={() => navigate('/managers/staff')}
             onNavigateTodo={() => navigate('/todo')}
             onNavigateHistory={() => navigate('/history')}
+            onNavigateAds={() => navigate('/managers/ads')}
+            onNavigateCredit={() => navigate('/managers/credit')}
             onOpenEmailSetup={() => setIsEmailSetupOpen(true)}
             onOpenVipModal={() => setIsVipModalOpen(true)}
             pendingStaffCount={dashboardLogic.pendingStaffs?.length || 0}
