@@ -95,7 +95,7 @@ export default function ClaimMain() {
   };
 
   return (
-    <div className="animate-in fade-in duration-300 pb-10 bg-dh-base min-h-full">
+    <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
       
       <ClaimHeader 
         startDate={startDate} setStartDate={setStartDate}
@@ -106,11 +106,11 @@ export default function ClaimMain() {
       <ClaimStatsRow stats={stats} activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {activeTab === 'create' ? (
-        <div className="bg-dh-surface rounded-xl shadow-sm border border-dh-border overflow-hidden p-0 h-[80vh]">
-            <BillingDashboard />
+        <div className="flex-1 bg-dh-surface rounded-md shadow-sm border border-dh-border overflow-hidden p-0 relative">
+            <BillingDashboard isSelectorMode={true} onCancelSelector={() => setActiveTab('all')} />
         </div>
       ) : (
-        <div className="bg-dh-surface rounded-xl shadow-sm border border-dh-border overflow-hidden">
+        <div className="flex-1 bg-dh-surface rounded-md shadow-sm border border-dh-border overflow-y-auto custom-scrollbar flex flex-col relative min-h-0">
           {loading ? (
             <div className="flex justify-center py-16"><RefreshCw className="w-6 h-6 animate-spin text-dh-accent"/></div>
           ) : (

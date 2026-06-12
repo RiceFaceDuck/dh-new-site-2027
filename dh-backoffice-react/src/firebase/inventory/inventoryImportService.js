@@ -1,6 +1,6 @@
 import { writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId, setDoc } from 'firebase/firestore';
 import { db, auth } from '../config';
-import { historyService } from '../historyService';
+import { gasHistoryService } from '../gasHistoryService';
 
 export const inventoryImportService = {
   // Check which SKUs already exist (chunked to respect 30 items 'in' limit)
@@ -63,7 +63,31 @@ export const inventoryImportService = {
         await batch.commit();
       }
       
-      await historyService.addLog('Inventory', 'Bulk Import', 'Multiple', `นำเข้าสินค้าสำเร็จ ${toWrite.length} รายการ`, auth.currentUser?.uid);
+      gasHistoryService.log({
+        level: 'INFO',
+        module: 'Inventory',
+        action: 'Bulk Import Summary',
+        target: { id: 'Multiple', type: 'System' },
+        details: {
+          legacy_details: `นำเข้าสินค้าสำเร็จ ${toWrite.length} รายการ`,
+          tags: ['bulk_import', 'summary']
+        }
+      });
+
+      toWrite.forEach(p => {
+        const isNew = !existingSkus.has(p.sku);
+        gasHistoryService.log({
+          level: 'INFO',
+          module: 'Inventory',
+          action: isNew ? 'Create (Import)' : 'Update (Import)',
+          target: { id: p.sku, name: p.name, type: 'Product' },
+          details: {
+            legacy_details: `นำเข้าข้อมูลสินค้า: ${p.sku}`,
+            data: p,
+            tags: ['bulk_import', 'excel_import', p.sku]
+          }
+        });
+      });
     }
     
     // Send to-do if requested

@@ -12,7 +12,7 @@ const ImageCard = ({ image, onCompare, isComparing }) => {
   };
 
   return (
-    <div className={`group relative break-inside-avoid mb-4 rounded-xl overflow-hidden bg-[var(--dh-bg-base)] shadow-sm hover:shadow-xl transition-all duration-300 border ${isComparing ? 'border-[var(--dh-accent)] shadow-[0_0_15px_var(--dh-accent-light)]' : 'border-[var(--dh-border)]'}`}>
+    <div className={`group relative break-inside-avoid mb-4 rounded-md overflow-hidden bg-[var(--dh-bg-base)] shadow-sm hover:shadow-lg transition-all duration-300 border ${isComparing ? 'border-[var(--dh-accent)] shadow-[0_0_15px_var(--dh-accent-light)]' : 'border-[var(--dh-border)]'}`}>
       <img src={image.url} alt={image.title} className="w-full object-cover" loading="lazy" />
       
       {/* Hover Overlay */}
@@ -43,7 +43,7 @@ const ImageCard = ({ image, onCompare, isComparing }) => {
           
           <button 
             onClick={() => onCompare(image)}
-            className={`mt-3 w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+            className={`mt-3 w-full py-2 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition-all ${
               isComparing 
                 ? 'bg-[var(--dh-accent)]/80 text-white border border-white/20 shadow-[0_0_10px_var(--dh-accent)]' 
                 : 'bg-white/10 hover:bg-[var(--dh-accent)] text-white backdrop-blur-md border border-white/10 hover:border-transparent'

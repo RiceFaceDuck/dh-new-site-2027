@@ -135,34 +135,36 @@ export default function GalleryMain() {
   };
 
   return (
-    <div className="h-full w-full bg-[var(--dh-bg-surface)] flex flex-col font-sans overflow-hidden text-[var(--dh-text-main)] rounded-xl border border-[var(--dh-border)] shadow-sm relative">
+    <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
       
-      <header className="bg-[var(--dh-bg-base)] border-b border-[var(--dh-border)] px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 z-10 shadow-sm rounded-t-xl relative">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-[var(--dh-accent)] to-orange-400 p-2.5 rounded-xl text-white shadow-lg shadow-[var(--dh-accent-light)]">
-            <Layers size={22} />
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-dh-border relative transition-colors duration-300">
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-sm">
+            <Layers size={20} strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[var(--dh-text-main)]">Visual Analytics Hub</h1>
-            <p className="text-xs text-[var(--dh-text-muted)] font-medium">ศูนย์บัญชาการสินทรัพย์ดิจิทัล</p>
+            <h1 className="text-xl font-black tracking-tight leading-none text-white">Visual Analytics Hub</h1>
+            <p className="text-slate-300 text-[10px] mt-0.5 font-bold">ศูนย์บัญชาการสินทรัพย์ดิจิทัล</p>
           </div>
         </div>
 
-        <div className="flex-1 max-w-2xl w-full flex items-center gap-3">
-          <div className="relative flex-1 group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--dh-text-muted)] group-focus-within:text-[var(--dh-accent)] transition-colors" size={20} />
+        <div className="flex-1 w-full flex flex-wrap items-center gap-3 relative z-10">
+          <div className="relative group flex-1 md:flex-none md:min-w-[300px]">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-cyan-500 transition-colors z-10">
+              <Search size={16} />
+            </span>
             <input 
               type="text" 
               placeholder="ค้นหาจักรวาลภาพ... (SKU, ชื่อ, Tags, คำอธิบาย)" 
-              className="w-full bg-[var(--dh-bg-surface)] border border-[var(--dh-border)] rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--dh-accent)]/50 focus:border-[var(--dh-accent)] transition-all shadow-inner text-[var(--dh-text-main)] placeholder-[var(--dh-text-muted)]"
+              className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="flex bg-[var(--dh-bg-surface)] p-1 rounded-xl">
-            <button onClick={() => setFilterType('ALL')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${filterType === 'ALL' ? 'bg-[var(--dh-bg-base)] shadow border border-[var(--dh-border)] text-[var(--dh-text-main)]' : 'text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)]'}`}>ทั้งหมด</button>
-            <button onClick={() => setFilterType('ORPHAN')} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 ${filterType === 'ORPHAN' ? 'bg-red-50 shadow border border-red-100 text-red-600' : 'text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)]'}`}>
+          <div className="flex bg-white/10 border border-white/20 p-0.5 rounded-md backdrop-blur-sm h-[36px]">
+            <button onClick={() => setFilterType('ALL')} className={`px-3 py-1 text-xs font-semibold rounded transition-all ${filterType === 'ALL' ? 'bg-white shadow text-slate-900' : 'text-slate-300 hover:text-white'}`}>ทั้งหมด</button>
+            <button onClick={() => setFilterType('ORPHAN')} className={`px-3 py-1 text-xs font-semibold rounded transition-all flex items-center gap-1 ${filterType === 'ORPHAN' ? 'bg-red-500 shadow text-white' : 'text-slate-300 hover:text-white'}`}>
               <AlertCircle size={12}/> ภาพกำพร้า
             </button>
           </div>
@@ -174,31 +176,31 @@ export default function GalleryMain() {
           {compareList.length > 0 && (
             <button 
               onClick={() => setShowInspection(true)}
-              className="relative px-4 py-2.5 bg-[var(--dh-bg-base)] border border-[var(--dh-accent)] text-[var(--dh-accent)] rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[var(--dh-accent-light)] transition-colors animate-pulse"
+              className="relative px-3 py-2 bg-white/10 border border-cyan-400/50 text-cyan-300 rounded-md font-bold text-xs flex items-center gap-2 hover:bg-white/20 transition-colors animate-pulse backdrop-blur-sm h-[36px]"
             >
-              <Eye size={18} />
-              <span>เปิดแท่นเปรียบเทียบ</span>
-              <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow-md">
+              <Eye size={14} />
+              <span className="hidden sm:inline">แท่นเปรียบเทียบ</span>
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] shadow-md">
                 {compareList.length}
               </span>
             </button>
           )}
 
-          <button onClick={fetchImagesFromFirebase} className="p-2.5 bg-[var(--dh-bg-surface)] hover:bg-[var(--dh-border)] text-[var(--dh-text-main)] rounded-xl transition-colors" title="รีเฟรชข้อมูล">
-            <RefreshCw size={18} className={isLoading ? "animate-spin text-[var(--dh-accent)]" : ""} />
+          <button onClick={fetchImagesFromFirebase} className="w-[36px] h-[36px] flex items-center justify-center bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-md transition-colors backdrop-blur-sm shadow-sm" title="รีเฟรชข้อมูล">
+            <RefreshCw size={14} className={isLoading ? "animate-spin text-cyan-300" : ""} />
           </button>
           
           <button 
             onClick={() => setShowUpload(true)}
-            className="bg-[var(--dh-text-main)] hover:brightness-75 text-[var(--dh-bg-base)] px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            className="bg-cyan-600 text-white h-[36px] px-4 rounded-md hover:bg-cyan-500 transition-all font-bold shadow-lg active:scale-95 text-xs ring-1 ring-cyan-400/50 flex items-center gap-2 shrink-0"
           >
-            <Upload size={18} />
-            <span>อัพโหลดภาพ</span>
+            <Upload size={14} strokeWidth={2.5} />
+            <span className="hidden sm:inline">อัพโหลดภาพ</span>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col overflow-hidden relative bg-[var(--dh-bg-surface)]">
+      <main className="flex-1 flex flex-col min-h-0 relative bg-white border border-dh-border">
         
         {/* Grid Images */}
         <div className="flex-1 overflow-y-auto p-6 transition-all duration-300 custom-scrollbar">

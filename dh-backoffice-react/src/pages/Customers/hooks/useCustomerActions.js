@@ -97,7 +97,8 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   };
 
   // บันทึกการแก้ไข (sync ข้อมูลลง Cache ทันทีโดยไม่ต้องดึงใหม่ทั้งหมด)
-  const saveCustomerEdit = async () => {
+  const saveCustomerEdit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!editFormData.accountName.trim()) {
       alert("กรุณากรอกชื่อร้าน/ชื่อบริษัท");
       return;

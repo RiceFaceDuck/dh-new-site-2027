@@ -1,5 +1,6 @@
 import { collection, doc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { db } from './config';
+import { gasHistoryService } from './gasHistoryService';
 
 const COLLECTION_NAME = 'orders';
 
@@ -37,6 +38,13 @@ export const billingTransactionService = {
           if (!userSnap.exists()) {
             throw new Error("ไม่พบข้อมูลสมาชิกระบบ กรุณาตรวจสอบอีกครั้ง");
           }
+        }
+
+        const yearStr = new Date().getFullYear().toString();
+        const counterRef = doc(db, 'counters', 'receipt_sequence');
+        let counterSnap = null;
+        if (statusLower === 'paid' || statusLower === 'approved') {
+            counterSnap = await transaction.get(counterRef);
         }
 
         const updates = [];
@@ -96,11 +104,8 @@ export const billingTransactionService = {
         newDocId = newOrderRef.id;
 
         if (statusLower === 'paid' || statusLower === 'approved') {
-            const yearStr = new Date().getFullYear().toString();
-            const counterRef = doc(db, 'counters', 'receipt_sequence');
-            const counterSnap = await transaction.get(counterRef);
             let currentSeq = 1;
-            if (counterSnap.exists()) {
+            if (counterSnap && counterSnap.exists()) {
                 currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
             }
             transaction.set(counterRef, {
@@ -192,18 +197,19 @@ export const billingTransactionService = {
             }
         }
 
-        const netForLog = orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0;
-        transaction.set(doc(collection(db, 'history_logs')), {
-            module: 'Billing', 
-            action: 'Create', 
-            targetId: finalOrderId, 
-            details: `สร้างบิลใหม่ ยอดสุทธิ ฿${netForLog.toLocaleString()}`, 
-            byUid: actorUid, 
-            timestamp: serverTimestamp()
-        });
-
       });
       
+      const netForLog = orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0;
+      gasHistoryService.log({
+          module: 'Billing', 
+          action: 'Create', 
+          target: { id: finalOrderId },
+          details: { 
+            legacy_details: `สร้างบิลใหม่ ยอดสุทธิ ฿${netForLog.toLocaleString()}`,
+            new_order: orderData
+          }
+      });
+
       return { id: newDocId, orderId: finalOrderId };
     } catch (error) { 
       throw error; 

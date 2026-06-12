@@ -16,6 +16,8 @@ export default function History() {
     setModuleFilter,
     actionFilter,
     setActionFilter,
+    dateFilter,
+    setDateFilter,
     hasMore,
     loadMore
   } = useHistoryLogs();
@@ -33,6 +35,7 @@ export default function History() {
     <div className="absolute inset-0 flex flex-col font-mono bg-[#002b36] p-4 sm:p-6 overflow-hidden z-10">
       
       <HistoryHeader 
+        dateFilter={dateFilter} setDateFilter={setDateFilter}
         moduleFilter={moduleFilter} setModuleFilter={setModuleFilter}
         actionFilter={actionFilter} setActionFilter={setActionFilter}
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}

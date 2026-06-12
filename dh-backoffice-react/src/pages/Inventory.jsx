@@ -94,7 +94,7 @@ export default function Inventory() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-500 pb-10 sm:p-2 min-h-[calc(100vh-80px)] text-dh-main">
+    <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
       
       {/* 🎨 Header Panel แบบแยก Component เรียบร้อย */}
       <InventoryHeader 
@@ -108,36 +108,36 @@ export default function Inventory() {
 
       {/* Content Area */}
       {loading ? (
-        <div className="flex flex-col justify-center items-center h-[50vh]">
+        <div className="flex flex-col justify-center items-center flex-1 bg-white border border-dh-border">
           <Loader2 className="w-10 h-10 animate-spin text-dh-accent mb-4" />
           <p className="text-dh-muted font-medium text-sm">กำลังโหลดคลังสินค้า...</p>
         </div>
       ) : (
-        <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="flex-1 flex flex-col min-h-0 animate-in slide-in-from-bottom-4 duration-500">
           
-          {/* Component ตารางสินค้า (จะเปลี่ยนสีตาม Theme ย่อยถ้ามีการอัปเกรด ProductTable) */}
-          <div className="bg-dh-surface rounded-2xl shadow-dh-card border border-dh-border overflow-hidden">
+          {/* Component ตารางสินค้า */}
+          <div className="flex-1 bg-white dark:bg-slate-900 border border-dh-border overflow-y-auto custom-scrollbar flex flex-col relative">
             <ProductTable 
               products={filteredProducts} 
               salesPeriod={salesPeriod} 
               globalBufferStock={globalBufferStock}
               onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }} 
             />
+            
+            {/* ปุ่ม Load More เข้ากับ Theme */}
+            {hasMore && !searchTerm && filterCategory === 'All' && (
+              <div className="flex justify-center p-4 border-t border-dh-border shrink-0 bg-white">
+                <button 
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full max-w-sm py-2 bg-dh-surface border border-dh-border text-dh-accent font-bold rounded-md hover:bg-dh-accent-light hover:border-dh-accent/30 transition-all text-xs flex justify-center items-center gap-2 shadow-sm active:scale-95"
+                >
+                  {loadingMore ? <Loader2 className="animate-spin w-4 h-4" /> : <Boxes size={14} />}
+                  {loadingMore ? 'กำลังโหลดข้อมูล...' : 'โหลดข้อมูลสินค้าเพิ่มเติม'}
+                </button>
+              </div>
+            )}
           </div>
-          
-          {/* ปุ่ม Load More เข้ากับ Theme */}
-          {hasMore && !searchTerm && filterCategory === 'All' && (
-            <div className="flex justify-center p-2">
-              <button 
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="w-full max-w-sm py-2 bg-dh-surface border border-dh-border text-dh-accent font-bold rounded-xl hover:bg-dh-accent-light hover:border-dh-accent/30 transition-all text-xs flex justify-center items-center gap-2 shadow-sm active:scale-95"
-              >
-                {loadingMore ? <Loader2 className="animate-spin w-4 h-4" /> : <Boxes size={14} />}
-                {loadingMore ? 'กำลังโหลดข้อมูล...' : 'โหลดข้อมูลสินค้าเพิ่มเติม'}
-              </button>
-            </div>
-          )}
         </div>
       )}
 

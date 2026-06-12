@@ -1,4 +1,5 @@
 import { db } from '../config';
+import { gasHistoryService } from '../gasHistoryService';
 import { doc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
 
 export const todoPaymentService = {
@@ -72,12 +73,15 @@ export const todoPaymentService = {
         });
 
         if (userId) {
-            const historyRef = doc(collection(db, `users/${userId}/historyLogs`));
-            transaction.set(historyRef, {
-                orderId, action: "PAYMENT_APPROVED",
-                title: "ตรวจสอบยอดชำระเงินสำเร็จ",
-                description: `กำลังเข้าสู่กระบวนการจัดเตรียมสินค้า (เอกสารอ้างอิง: ${generatedInvoiceId})`,
-                createdAt: serverTimestamp()
+            // Replaced direct Firestore write with GAS History Logger
+            gasHistoryService.log({
+                module: 'Customer History',
+                action: 'PAYMENT_APPROVED',
+                target: { id: orderId },
+                details: { 
+                  legacy_details: `ตรวจสอบยอดชำระเงินสำเร็จ. กำลังเข้าสู่กระบวนการจัดเตรียมสินค้า (เอกสารอ้างอิง: ${generatedInvoiceId})`
+                },
+                actorOverride: { uid: userId, name: 'System (For Customer)', email: 'N/A' }
             });
         }
         return { success: true, invoiceId: generatedInvoiceId };

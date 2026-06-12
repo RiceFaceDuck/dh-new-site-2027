@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { userService, SUPER_ADMINS } from '../firebase/userService';
+import { gasHistoryService } from '../firebase/gasHistoryService';
 
 const AuthContext = createContext();
 
@@ -88,12 +89,16 @@ export const AuthProvider = ({ children }) => {
             if (isExecutive && userEmail === 'zhoulinjuan1@gmail.com') displayRole = 'Owner (เจ้าของ)';
             if (isExecutive && userEmail === 'dh1notebook@gmail.com') displayRole = 'VP 1 (รองประธาน)';
 
-            setProfile({
+            const finalProfile = {
               ...roleData,
               firstName: roleData?.displayName || currentUser.displayName || 'พนักงาน',
               nickname: roleData?.nickname || '',
-              role: displayRole
-            });
+              role: displayRole,
+              uid: currentUser.uid,
+              email: userEmail
+            };
+            setProfile(finalProfile);
+            gasHistoryService.setProfile(finalProfile);
           } else {
              // Access denied (Blocked or unknown non-staff)
              setIsCheckingAuth(false);
@@ -122,6 +127,61 @@ export const AuthProvider = ({ children }) => {
       unsubscribeRole();
     };
   }, []);
+
+  // 🕒 15-Minute Inactivity Timeout (เตะออกเมื่อไม่มีการเคลื่อนไหวเกิน 15 นาที)
+  useEffect(() => {
+    if (!user) return; // Only track if user is logged in
+
+    let intervalId;
+    const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 นาที
+    const ACTIVITY_KEY = 'dh_last_activity';
+
+    const checkInactivity = () => {
+      const lastActivityStr = localStorage.getItem(ACTIVITY_KEY);
+      if (lastActivityStr) {
+        const lastActivity = parseInt(lastActivityStr, 10);
+        const now = Date.now();
+        if (now - lastActivity > INACTIVITY_LIMIT_MS) {
+          console.warn("⚠️ [AuthContext] Inactivity timeout reached. Logging out.");
+          signOut(auth).catch(err => console.error("Logout error:", err));
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Check immediately on mount/refresh
+    if (checkInactivity()) return; 
+
+    const updateActivity = () => {
+      localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
+    };
+
+    // Initial update
+    updateActivity();
+
+    // Throttle update to avoid writing to localStorage too frequently
+    let throttleTimer = false;
+    const throttledUpdateActivity = () => {
+      if (!throttleTimer) {
+        updateActivity();
+        throttleTimer = true;
+        setTimeout(() => { throttleTimer = false; }, 10000); // 10 seconds throttle
+      }
+    };
+
+    // Listen to user interactions
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+    events.forEach(e => window.addEventListener(e, throttledUpdateActivity, { passive: true }));
+
+    // Check every minute
+    intervalId = setInterval(checkInactivity, 60000);
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, throttledUpdateActivity));
+      clearInterval(intervalId);
+    };
+  }, [user]);
 
   const logout = async () => {
     try {

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, ChevronRight, ChevronDown } from 'lucide-react';
 
 export default function HistoryTable({ 
   filteredLogs, 
@@ -10,11 +10,16 @@ export default function HistoryTable({
   moduleFilter,
   actionFilter 
 }) {
+  const [expandedRows, setExpandedRows] = useState({});
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Helper to format date "YY/MM/DD"
   const formatDate = (timestamp) => {
     if (!timestamp) return '00/00/00';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     const yy = String(date.getFullYear()).slice(-2);
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
@@ -24,15 +29,17 @@ export default function HistoryTable({
   // Helper to format time "HH:MM:SS"
   const formatTime = (timestamp) => {
     if (!timestamp) return '00:00:00';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', { hour12: false });
   };
 
-  const getActionFormat = (action) => {
-    const act = action?.toUpperCase() || 'INFO';
-    if (act.includes('DELETE')) return { label: 'ERRR', color: 'text-[#ff5555]' };
-    if (act.includes('UPDATE ROLE')) return { label: 'WARN', color: 'text-[#f1fa8c]' };
-    if (act.includes('UPDATE')) return { label: 'DBUG', color: 'text-white' };
+  const getActionFormat = (action, level) => {
+    const act = (action || '').toUpperCase();
+    const lvl = (level || '').toUpperCase();
+    
+    if (lvl === 'ERROR' || act.includes('DELETE')) return { label: 'ERRR', color: 'text-[#ff5555]' };
+    if (lvl === 'WARN' || act.includes('UPDATE ROLE')) return { label: 'WARN', color: 'text-[#f1fa8c]' };
+    if (act.includes('UPDATE')) return { label: 'DBUG', color: 'text-[#8be9fd]' };
     return { label: 'INFO', color: 'text-white' };
   };
 
@@ -48,46 +55,84 @@ export default function HistoryTable({
             {`> grep "${searchTerm || 'logs'}" ... no results found.`}
           </div>
         ) : (
-          <div className="space-y-0.5">
-            {filteredLogs.map((log) => {
-              const dateStr = formatDate(log.timestamp);
-              const timeStr = formatTime(log.timestamp);
-              const actionFmt = getActionFormat(log.action);
+          <div className="space-y-1">
+            {filteredLogs.map((log, index) => {
+              // Ensure we have a unique key even if GAS doesn't provide an ID yet
+              const keyId = log.id || `log-${index}-${log.timestamp || log.client_timestamp}`;
+              const isExpanded = expandedRows[keyId];
+              
+              const ts = log.timestamp || log.client_timestamp || new Date();
+              const dateStr = formatDate(ts);
+              const timeStr = formatTime(ts);
+              const actionFmt = getActionFormat(log.action, log.level);
               const moduleStr = (log.module || 'SYS').toUpperCase().substring(0, 5);
-              const actor = log.actorName || log.performedBy || 'Unknown';
+              
+              // Handle Actor
+              const actorName = log.actor?.name || log.actorName || log.performedBy || 'Unknown';
+              
+              // Handle Target
+              const targetId = log.target?.id || log.targetId || null;
+              
+              // Handle Details Summary
+              let detailSummary = '';
+              if (log.details?.legacy_details) {
+                detailSummary = log.details.legacy_details;
+              } else if (log.action) {
+                detailSummary = log.action;
+              } else {
+                detailSummary = 'System action';
+              }
               
               return (
-                <div 
-                  key={log.id} 
-                  className="hover:bg-[#002b36] transition-colors flex items-start group"
-                >
-                  <span className="text-[#839496] mr-2 shrink-0">{dateStr}</span>
-                  <span className="text-[#cb4b16] mr-2 shrink-0">{timeStr}</span>
-                  <span className={`${actionFmt.color} mr-2 shrink-0 font-bold w-[45px]`}>{actionFmt.label}</span>
-                  <span className="text-[#2aa198] mr-2 shrink-0">[{moduleStr}]</span>
-                  <span className="text-[#93a1a1] break-words">
-                    <span className="text-[#b58900] cursor-pointer hover:underline" onClick={() => copyToClipboard(actor)} title="Copy User">
-                      {actor}
+                <div key={keyId} className="flex flex-col group">
+                  <div 
+                    className="hover:bg-[#002b36] transition-colors flex items-start p-1 rounded cursor-pointer"
+                    onClick={() => toggleRow(keyId)}
+                  >
+                    <span className="text-[#586e75] mr-1 shrink-0 mt-0.5">
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </span>
-                    <span className="text-[#586e75] mx-1">:</span>
-                    <span className="text-[#839496]">{log.details || 'No Details'}</span>
-                    {log.targetId && (
+                    <span className="text-[#839496] mr-2 shrink-0">{dateStr}</span>
+                    <span className="text-[#cb4b16] mr-2 shrink-0">{timeStr}</span>
+                    <span className={`${actionFmt.color} mr-2 shrink-0 font-bold w-[45px]`}>{actionFmt.label}</span>
+                    <span className="text-[#2aa198] mr-2 shrink-0 w-[60px]">[{moduleStr}]</span>
+                    
+                    <span className="text-[#93a1a1] break-words flex-1">
                       <span 
-                        className="ml-2 text-[#d33682] cursor-pointer hover:underline" 
-                        onClick={() => copyToClipboard(log.targetId)}
-                        title="Copy Ref ID"
+                        className="text-[#b58900] hover:underline" 
+                        onClick={(e) => { e.stopPropagation(); copyToClipboard(actorName); }} 
+                        title="Copy User"
                       >
-                        (ref: {log.targetId})
+                        {actorName}
                       </span>
-                    )}
-                  </span>
+                      <span className="text-[#586e75] mx-1">:</span>
+                      <span className="text-[#839496]">{detailSummary}</span>
+                      {targetId && (
+                        <span 
+                          className="ml-2 text-[#d33682] hover:underline" 
+                          onClick={(e) => { e.stopPropagation(); copyToClipboard(targetId); }}
+                          title="Copy Ref ID"
+                        >
+                          (ref: {targetId})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="ml-[170px] mr-4 mb-2 mt-1 p-3 bg-[#00151a] border border-[#003642] rounded-md text-[#839496] shadow-inner text-[12px] overflow-x-auto">
+                      <pre className="whitespace-pre-wrap font-mono">
+                        {JSON.stringify(log, null, 2)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
         
-        {hasMore && !searchTerm && moduleFilter === 'all' && actionFilter === 'all' && (
+        {hasMore && (
           <div className="mt-4 pt-4 border-t border-[#002b36]">
             <button 
               onClick={loadMore}

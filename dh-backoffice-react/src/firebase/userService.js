@@ -21,7 +21,10 @@ import {
     deleteUser, 
     updateUserLoginStatus, 
     updateUserEcosystem, 
-    adminAdjustFinancials 
+    adminAdjustFinancials,
+    createManualCustomer,
+    updateCustomerProfile,
+    deleteCustomer
 } from './userManagementService';
 
 // 🛡️ Super Admins & Valid Roles 
@@ -50,5 +53,8 @@ export const userService = {
     updateUserEcosystem,
     adminAdjustFinancials,
     registerPendingStaff, 
-    updateStaffDetails    
+    updateStaffDetails,
+    createManualCustomer,
+    updateCustomerProfile,
+    deleteCustomer
 };

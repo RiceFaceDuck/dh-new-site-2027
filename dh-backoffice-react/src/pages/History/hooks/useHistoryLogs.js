@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { historyService } from '../../../firebase/historyService';
+import { gasHistoryService } from '../../../firebase/gasHistoryService';
+
+// Utility to get today's date in YYYY-MM-DD
+const getTodayString = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
 
 export const useHistoryLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -8,29 +14,32 @@ export const useHistoryLogs = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   
   // Filters
+  const [dateFilter, setDateFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [moduleFilter, setModuleFilter] = useState('all');
-  const [actionFilter, setActionFilter] = useState('all'); 
+  const [moduleFilter, setModuleFilter] = useState('ALL');
+  const [actionFilter, setActionFilter] = useState('ALL'); 
   
-  // Pagination
-  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const PAGE_LIMIT = 50;
+  // Pagination (GAS currently returns a bulk list up to 1000 items, so we disable loadMore)
+  const [hasMore, setHasMore] = useState(false);
 
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
     try {
-      const { logs: data, lastDoc } = await historyService.getRecentLogs(PAGE_LIMIT, null, moduleFilter, actionFilter);
-      setLogs(data);
-      setFilteredLogs(data); // Will be filtered locally by search term next
-      setLastVisibleDoc(lastDoc);
-      setHasMore(data.length === PAGE_LIMIT);
+      const data = await gasHistoryService.getLogs({
+        dateStr: dateFilter,
+        module: moduleFilter,
+        level: actionFilter,
+        limit: 1000
+      });
+      setLogs(data || []);
+      setFilteredLogs(data || []); // Will be filtered locally by search term next
+      setHasMore(false); // Disable infinite scroll since we get the whole day
     } catch (error) {
-      console.error("Error loading history:", error);
+      console.error("Error loading history from GAS:", error);
     } finally {
       setLoading(false);
     }
-  }, [moduleFilter, actionFilter]);
+  }, [dateFilter, moduleFilter, actionFilter]);
 
   // Refetch when server-side filters change
   useEffect(() => {
@@ -38,23 +47,10 @@ export const useHistoryLogs = () => {
   }, [fetchInitialData]);
 
   const loadMore = async () => {
-    if (!hasMore || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const { logs: newData, lastDoc } = await historyService.getRecentLogs(PAGE_LIMIT, lastVisibleDoc, moduleFilter, actionFilter);
-      const combinedLogs = [...logs, ...newData];
-      setLogs(combinedLogs);
-      // We don't call applyFilters here immediately because useEffect will catch the logs change and apply search filter
-      setLastVisibleDoc(lastDoc);
-      setHasMore(newData.length === PAGE_LIMIT);
-    } catch (error) {
-      console.error("Error loading more history:", error);
-    } finally {
-      setLoadingMore(false);
-    }
+    // No-op for now as GAS returns the full daily limit.
   };
 
-  // Only apply local text search since module/action are handled server-side
+  // Only apply local text search since module/action are handled by GAS now
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredLogs(logs);
@@ -63,14 +59,19 @@ export const useHistoryLogs = () => {
     
     const lowerSearch = searchTerm.toLowerCase();
     const result = logs.filter(log => {
-      const actorName = (log.actorName || log.performedBy || '').toLowerCase();
-      const actorMail = (log.actorEmail || '').toLowerCase();
+      // Safely search through the new deep JSON structure
+      const actorName = log?.actor?.name?.toLowerCase() || '';
+      const actorMail = log?.actor?.email?.toLowerCase() || '';
+      const action = log?.action?.toLowerCase() || '';
+      const detailsStr = JSON.stringify(log?.details || {}).toLowerCase();
+      const targetId = log?.target?.id?.toLowerCase() || '';
       
       return (
-        (log.details && log.details.toLowerCase().includes(lowerSearch)) ||
-        (log.targetId && log.targetId.toLowerCase().includes(lowerSearch)) ||
+        action.includes(lowerSearch) ||
         actorName.includes(lowerSearch) ||
-        actorMail.includes(lowerSearch)
+        actorMail.includes(lowerSearch) ||
+        detailsStr.includes(lowerSearch) ||
+        targetId.includes(lowerSearch)
       );
     });
     
@@ -88,6 +89,8 @@ export const useHistoryLogs = () => {
     setModuleFilter,
     actionFilter,
     setActionFilter,
+    dateFilter,
+    setDateFilter,
     hasMore,
     loadMore
   };

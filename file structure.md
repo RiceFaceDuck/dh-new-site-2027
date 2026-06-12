@@ -115,10 +115,16 @@ dh-new-site-2027/
 │       │   │       ├── CategoryFormModal.jsx
 │       │   │       └── CategoryManager.jsx
 │       │   ├── search/ # Advanced Search UI
+│       │   │   ├── HighlightText.jsx
 │       │   │   ├── HistoryLogPanel.jsx
 │       │   │   ├── ProductDetailPanel.jsx
 │       │   │   ├── ProductListPanel.jsx
-│       │   │   └── SearchHeader.jsx
+│       │   │   ├── SearchHeader.jsx
+│       │   │   └── detail/
+│       │   │       ├── ProductDetailAttributes.jsx
+│       │   │       ├── ProductDetailComments.jsx
+│       │   │       ├── ProductDetailHeader.jsx
+│       │   │       └── ProductDetailSubstitutes.jsx
 │       │   ├── login/ # Refactored Login Components
 │       │   │   ├── index.jsx
 │       │   │   ├── LoginForm.jsx
@@ -168,7 +174,8 @@ dh-new-site-2027/
 │       │   ├── driveService.js # Upload handling
 │       │   ├── freebieService.js
 │       │   ├── gmailService.js # Gmail API Integration (Client-side)
-│       │   ├── historyService.js
+│       │   ├── historyService.js # Legacy proxy to GAS for backward compatibility
+│       │   ├── gasHistoryService.js # Main batching logger to Google Apps Script
 │       │   ├── inventoryService.js
 │       │   ├── inventory/
 │       │   │   ├── inventoryQueryService.js
@@ -313,6 +320,8 @@ dh-new-site-2027/
 │           ├── Overview.jsx
 │           ├── ProfileSetup.jsx
 │           ├── Search.jsx
+│           ├── hooks/
+│           │   └── useProductSearch.js
 │           ├── Todo.jsx
 │           └── Squad/ # Fantasy Squad Selection UI
 │               ├── Squad.jsx

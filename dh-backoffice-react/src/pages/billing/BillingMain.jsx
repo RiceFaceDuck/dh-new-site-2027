@@ -4,7 +4,7 @@ import PosSystem from '../../components/billing/PosSystem';
 import { inventoryService } from '../../firebase/inventoryService';
 import { useCustomerData } from '../Customers/hooks/useCustomerData';
 
-const BillingMain = () => {
+const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   const [viewMode, setViewMode] = useState('dashboard');
   const [draftOrder, setDraftOrder] = useState(null);
   const [products, setProducts] = useState([]);
@@ -54,6 +54,8 @@ const BillingMain = () => {
       <BillingDashboard 
         onSwitchView={() => { setDraftOrder(null); setViewMode('pos'); }} 
         onResumeDraft={(draft) => { setDraftOrder(draft); setViewMode('pos'); }}
+        isSelectorMode={isSelectorMode}
+        onCancelSelector={onCancelSelector}
       />
     </div>
   );

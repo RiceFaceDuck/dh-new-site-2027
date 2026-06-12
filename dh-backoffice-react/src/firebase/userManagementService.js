@@ -1,5 +1,6 @@
 import { db } from './config';
-import { collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
+import { gasHistoryService } from './gasHistoryService';
 
 const getCollectionPath = (colName) => {
     if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
@@ -131,6 +132,90 @@ export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
 
     } catch (error) {
         console.error("❌ [UserManagementService] Financial adjustment failed:", error);
+        throw error;
+    }
+};
+
+export const createManualCustomer = async (data) => {
+    try {
+        const usersRef = collection(db, getCollectionPath('users'));
+        const docRef = await addDoc(usersRef, {
+            ...data,
+            isManualCustomer: true,
+            role: data.rank || 'Customer',
+            status: 'active',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            source: 'manual_entry'
+        });
+        
+        gasHistoryService.log({
+            level: 'INFO',
+            module: 'Customer',
+            action: 'Create',
+            target: { id: docRef.id, name: data.accountName || data.displayName || 'Unknown', type: 'Customer' },
+            details: {
+                legacy_details: `เพิ่มรายชื่อลูกค้าใหม่: ${data.accountName || data.displayName || 'Unknown'}`,
+                data: data,
+                tags: ['customer_management', 'create']
+            }
+        });
+
+        console.log(`✅ [UserManagementService] Created manual customer with ID: ${docRef.id}`);
+        return docRef.id;
+    } catch (error) {
+        console.error("❌ [UserManagementService] Create Manual Customer Error:", error);
+        throw error;
+    }
+};
+
+export const updateCustomerProfile = async (uid, data) => {
+    try {
+        const userRef = getUserDocRef(uid);
+        await updateDoc(userRef, {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
+        
+        gasHistoryService.log({
+            level: 'WARN',
+            module: 'Customer',
+            action: 'Update',
+            target: { id: uid, name: data.accountName || data.displayName || uid, type: 'Customer' },
+            details: {
+                legacy_details: `แก้ไขข้อมูลลูกค้า: ${data.accountName || data.displayName || uid}`,
+                data: data,
+                tags: ['customer_management', 'update']
+            }
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserManagementService] Update Customer Profile Error:", error);
+        throw error;
+    }
+};
+
+export const deleteCustomer = async (targetUid, customerName) => {
+    try {
+        const userRef = getUserDocRef(targetUid);
+        await deleteDoc(userRef);
+        
+        gasHistoryService.log({
+            level: 'ERROR',
+            module: 'Customer',
+            action: 'Delete',
+            target: { id: targetUid, name: customerName, type: 'Customer' },
+            details: {
+                legacy_details: `ลบรายชื่อลูกค้า: ${customerName}`,
+                tags: ['customer_management', 'delete']
+            }
+        });
+
+        console.log(`✅ [UserManagementService] Deleted customer ${customerName} (${targetUid})`);
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserManagementService] Delete Customer Error:", error);
         throw error;
     }
 };

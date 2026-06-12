@@ -15,7 +15,7 @@ export default function Customers() {
   const displayCustomers = utils.filterDataByDate(state.filteredCustomers, state.dateFilter);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-dh-base">
+    <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
       
       {/* 1. ส่วนหัวของหน้า (เครื่องมือค้นหา และปุ่มเพิ่มลูกค้า) */}
       <CustomerHeader 
@@ -34,7 +34,7 @@ export default function Customers() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* ฝั่งซ้าย: ตารางรายชื่อลูกค้า */}
-        <div className={`transition-all duration-300 ${state.selectedCustomer ? 'w-full md:w-1/2 lg:w-2/3 hidden md:flex flex-col' : 'w-full flex flex-col'}`}>
+        <div className={`transition-all duration-300 ${state.selectedCustomer ? 'w-full md:w-1/2 lg:w-2/3 hidden md:flex flex-col' : 'w-full flex flex-col'} bg-white border border-dh-border`}>
           <CustomerTable 
             filteredCustomers={displayCustomers}
             visibleCount={state.visibleCount}
@@ -47,7 +47,7 @@ export default function Customers() {
 
         {/* ฝั่งขวา: แผงรายละเอียดลูกค้า (จะโผล่มาเมื่อกดเลือกจากตาราง) */}
         {state.selectedCustomer && (
-          <div className="w-full md:w-1/2 lg:w-1/3 bg-white shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 transition-all duration-300 border-l border-dh-border flex flex-col">
+          <div className="w-full md:w-1/2 lg:w-1/3 bg-white shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 transition-all duration-300 border border-dh-border flex flex-col ml-1 md:ml-1.5">
             <DetailPanel 
               customer={state.selectedCustomer}
               history={state.customerHistory}
@@ -69,7 +69,7 @@ export default function Customers() {
         isEditMode={state.isEditMode}
         formData={state.isEditMode ? state.editFormData : state.newCustomer}
         setFormData={state.isEditMode ? actions.setEditFormData : actions.setNewCustomer}
-        onSubmit={state.isEditMode ? actions.handleEditSubmit : actions.handleAddCustomer}
+        onSubmit={state.isEditMode ? actions.saveCustomerEdit : actions.handleCreateCustomer}
         isSubmitting={state.isSubmitting || state.isSavingEdit}
       />
     </div>

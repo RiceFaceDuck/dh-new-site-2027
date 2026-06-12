@@ -1,4 +1,5 @@
 import { db } from '../config';
+import { gasHistoryService } from '../gasHistoryService.js';
 import { doc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
 
 export const todoWholesaleService = {
@@ -49,13 +50,15 @@ export const todoWholesaleService = {
         });
 
         if (userId) {
-            const historyRef = doc(collection(db, `users/${userId}/historyLogs`));
-            transaction.set(historyRef, {
-                orderId, action: "WHOLESALE_APPROVED",
-                title: "คำขอราคาส่งได้รับการอนุมัติ!",
-                description: `ออเดอร์ #${orderId.slice(-6)} อัปเดตราคาใหม่แล้ว`,
-                amount: newTotals.netTotal,
-                createdAt: serverTimestamp()
+            gasHistoryService.log({
+                module: 'Customer History',
+                action: 'WHOLESALE_APPROVED',
+                target: { id: orderId },
+                details: { 
+                  legacy_details: `คำขอราคาส่งได้รับการอนุมัติ! ออเดอร์ #${orderId.slice(-6)} อัปเดตราคาใหม่แล้ว`,
+                  amount: newTotals.netTotal
+                },
+                actorOverride: { uid: userId, name: 'System (For Customer)', email: 'N/A' }
             });
         }
         return { success: true };

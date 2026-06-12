@@ -62,20 +62,25 @@
     transition: background-color 0.4s var(--dh-smooth-easing), color 0.4s var(--dh-smooth-easing);
   }
 
-  /* Custom Scrollbar - เรียบหรู ไม่เกะกะสายตา */
+  /* Custom Scrollbar - ซ่อนโดยค่าเริ่มต้น และโผล่มาเมื่อ hover ขนาดใหญ่พอให้คลิกง่าย */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--dh-border);
+    background-color: transparent;
     border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5); /* Muted gray */
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: var(--dh-text-muted);
+    background-color: rgba(107, 114, 128, 0.8); /* Darker on hover */
   }
 }
 
@@ -142,6 +147,27 @@
   }
   
   @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* 8. Subtle Header Animated Gradient */
+  .dh-header-gradient {
+    /* เฉดสีน้ำเงินไล่ไปฟ้าสว่าง (Royal Blue to Cyan) ตามภาพอ้างอิง */
+    background: linear-gradient(-45deg, #223485, #296eb4, #32a1d8, #3bc7ec);
+    background-size: 400% 400%;
+    animation: subtleGradientMove 15s ease infinite; /* ปรับความเร็วเป็น 15s ให้เห็นการไหลของสีชัดขึ้นนิดนึง */
+    color: #ffffff;
+  }
+  .dark .dh-header-gradient {
+    background: linear-gradient(-45deg, #0f172a, #1a2980, #2678c6, #1e3a8a);
+    background-size: 400% 400%;
+    animation: subtleGradientMove 15s ease infinite;
+    color: #ffffff;
+  }
+
+  @keyframes subtleGradientMove {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }

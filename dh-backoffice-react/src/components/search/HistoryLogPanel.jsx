@@ -1,90 +1,131 @@
-import React from 'react';
-import { History, Maximize2, RefreshCw, Clock, Activity } from 'lucide-react';
+import React, { useState } from 'react';
+import { History, Maximize2, X, ChevronRight, ChevronDown } from 'lucide-react';
+
+const LogItem = ({ log, dateStr, actionMethod, actor }) => {
+  // เริ่มต้นด้วยการย่อ (false)
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div 
+      className="group px-1 py-1.5 hover:bg-[#F8F9FA] transition-colors border-l-[3px] border-transparent hover:border-[#007ACC] cursor-pointer flex"
+      onClick={() => setIsExpanded(!isExpanded)}
+    >
+      {/* Code Folding Icon */}
+      <div className="w-4 shrink-0 flex items-start justify-center pt-[3px] text-[#A8A8A8] group-hover:text-[#333333] transition-colors">
+        {isExpanded ? <ChevronDown size={12} strokeWidth={3} /> : <ChevronRight size={12} strokeWidth={3} />}
+      </div>
+      
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        {isExpanded ? (
+          <>
+            <div className="flex flex-wrap items-baseline break-all">
+              <span className="text-[#AF00DB] font-semibold mr-1.5">def</span>
+              <span className="text-[#0000FF]">{actionMethod}</span>
+              <span className="text-[#000000]">(</span>
+              <span className="text-[#001080]">module</span>
+              <span className="text-[#000000]">=</span>
+              <span className="text-[#A31515]">"{log.module}"</span>
+              <span className="text-[#000000]">):</span>
+            </div>
+            <div className="pl-4 break-all">
+              <span className="text-[#AF00DB]">await</span> <span className="text-[#795E26]">Log</span>.<span className="text-[#0000FF]">save</span><span className="text-[#000000]">(</span>
+            </div>
+            <div className="pl-8 break-all">
+              <span className="text-[#001080]">date</span><span className="text-[#000000]">=</span><span className="text-[#A31515]">"{dateStr}"</span><span className="text-[#000000]">,</span>
+            </div>
+            <div className="pl-8 break-all">
+              <span className="text-[#001080]">actor</span><span className="text-[#000000]">=</span><span className="text-[#A31515]">"{actor}"</span>
+            </div>
+            <div className="pl-4 break-all text-[#000000]">)</div>
+            <div className="pl-4 break-words text-[#008000] mt-0.5 leading-snug">
+              # {log.details}
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center min-w-0 overflow-hidden">
+             {/* ชื่อเหตุการณ์ (Event Name) */}
+             <span className="text-[#0000FF] font-bold shrink-0 mr-2 tracking-wide">
+               {log.action?.toUpperCase() || 'RECORD'}
+             </span>
+             {/* คำอธิบายสั้นๆ (Short Description) */}
+             <span className="text-[#333333] truncate opacity-90" title={log.details}>
+               {log.details}
+             </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function HistoryLogPanel({ selectedProduct, setIsHistoryModalOpen, loadingHistory, historyLogs }) {
   return (
-    <div className="w-[20%] min-w-[220px] max-w-[280px] bg-dh-surface rounded-2xl border border-dh-border shadow-dh-card flex flex-col overflow-hidden shrink-0 transition-colors duration-300">
+    <div className="w-[20%] min-w-[220px] max-w-[280px] bg-[#FFFFFF] flex flex-col overflow-hidden shrink-0 transition-colors duration-300 border-l border-[#E2E8F0] z-10 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)]">
       
-      {/* --- Panel Header --- */}
-      <div className="px-4 py-2.5 border-b border-dh-border bg-dh-base/50 flex justify-between items-center shrink-0">
-        <span className="text-[10px] font-bold text-dh-muted uppercase tracking-widest flex items-center gap-1.5">
-          <History size={12} className="text-dh-muted"/> History Log
-        </span>
+      {/* --- Editor File Tab Header (VS Code Style) --- */}
+      <div className="flex bg-[#F3F3F3] items-end px-2 pt-2 border-b border-[#CCCCCC] shrink-0 select-none justify-between">
+        <div className="bg-[#FFFFFF] px-3 py-1.5 text-[10px] font-mono text-[#333333] border-t-2 border-t-[#007ACC] border-l border-r border-[#CCCCCC] border-b border-b-transparent -mb-[1px] flex items-center gap-1.5 cursor-default relative">
+          <History size={12} className="text-[#007ACC]"/> 
+          <span>history_log.py</span>
+          <div className="ml-1 p-0.5 hover:bg-[#EAEAEA] rounded-sm cursor-pointer transition-colors text-slate-400">
+            <X size={10} />
+          </div>
+        </div>
         <button 
           onClick={() => setIsHistoryModalOpen(true)}
-          className="p-1 text-dh-muted hover:text-dh-main hover:bg-dh-border/50 rounded-md transition-colors active:scale-95"
+          className="p-1 mb-1 text-slate-400 hover:text-slate-700 hover:bg-[#EAEAEA] rounded-md transition-colors active:scale-95"
           title="ขยายประวัติแบบเต็มจอ"
         >
           <Maximize2 size={12} strokeWidth={2}/>
         </button>
       </div>
       
-      {/* --- Panel Content --- */}
-      <div className="flex-1 p-3 bg-dh-base overflow-y-auto custom-scrollbar relative">
+      {/* --- Panel Content (Code Editor Window) --- */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-[#FFFFFF] font-mono text-[10.5px] leading-[1.6]">
         {selectedProduct ? (
-          <>
-            {/* Target SKU Badge - Compact */}
-            <div className="flex items-center justify-center gap-1.5 mb-3 bg-dh-surface p-1.5 rounded-lg border border-dh-border shadow-sm">
-              <span className="text-[8px] font-bold text-dh-muted bg-dh-base border border-dh-border px-1.5 py-0.5 rounded uppercase">Target</span>
-              <span className="text-[11px] font-bold text-dh-main truncate">{selectedProduct.sku}</span>
+          <div className="py-2">
+            {/* Target SKU as a python comment */}
+            <div className="px-3 mb-2 opacity-90">
+              <span className="text-[#008000]"># Target Product: {selectedProduct.sku}</span>
             </div>
-            
+
             {loadingHistory ? (
-              <div className="flex justify-center items-center py-10">
-                <RefreshCw className="animate-spin text-dh-muted" size={18}/>
+              <div className="px-3 text-[#0000FF] animate-pulse">
+                <span className="text-[#AF00DB]">await</span> System.load_history()...
               </div>
             ) : historyLogs.length > 0 ? (
-              <div className="space-y-2">
-                {historyLogs.map(log => (
-                  <div key={log.id} className="group p-2.5 bg-dh-surface border border-dh-border rounded-xl shadow-sm hover:border-dh-border/80 hover:shadow-dh-card transition-all duration-200 relative overflow-hidden">
-                    
-                    {/* Color Indicator Strip (Subtle) */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                      log.action === 'Create' ? 'bg-emerald-400' : 
-                      log.action === 'Update' ? 'bg-blue-400' : 
-                      log.action === 'Approve' ? 'bg-teal-400' : 'bg-slate-300'
-                    } opacity-50 group-hover:opacity-100 transition-opacity`} />
-                    
-                    <div className="pl-1.5 flex flex-col h-full">
-                      <div className="flex justify-between items-start mb-1.5">
-                        <span className="text-[8px] font-bold text-dh-muted bg-dh-base px-1.5 py-0.5 rounded uppercase border border-dh-border">
-                          {log.module}
-                        </span>
-                        <span className="text-[8px] font-medium text-dh-muted flex items-center gap-0.5">
-                          <Clock size={8}/> {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleDateString('th-TH') : '-'}
-                        </span>
-                      </div>
-                      
-                      <p className="text-[10px] font-semibold text-dh-main leading-relaxed mb-2 line-clamp-3">
-                        {log.details}
-                      </p>
-                      
-                      {/* Actor Info - Minimal */}
-                      <div className="mt-auto pt-1.5 border-t border-dh-border/50 flex items-center gap-1">
-                        <div className="w-[14px] h-[14px] rounded-full bg-dh-base border border-dh-border flex items-center justify-center text-[7px] font-bold text-dh-muted">
-                          {log.actorName?.substring(0, 1) || log.performedBy?.substring(0, 1) || '?'}
-                        </div>
-                        <span className="text-[9px] font-medium text-dh-muted truncate">
-                          {log.actorName || log.performedBy}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex flex-col pb-4">
+                {historyLogs.map((log) => {
+                  const dateStr = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleDateString('th-TH') : '-';
+                  const actionMethod = log.action ? log.action.toLowerCase() : 'record';
+                  const actor = log.actorName || log.performedBy || 'System';
+                  
+                  return (
+                    <LogItem 
+                      key={log.id} 
+                      log={log} 
+                      dateStr={dateStr} 
+                      actionMethod={actionMethod} 
+                      actor={actor} 
+                    />
+                  );
+                })}
+                <div className="px-3 mt-3 opacity-60 text-[#008000]"># EOF</div>
               </div>
             ) : (
-              /* Empty History State */
-              <div className="flex flex-col items-center justify-center py-12 opacity-50">
-                <Activity size={20} className="text-dh-muted mb-2" />
-                <p className="text-[10px] font-bold text-dh-muted">ไม่มีประวัติการเคลื่อนไหว</p>
+              <div className="px-3 mt-2">
+                <span className="text-[#008000]"># No history logs found.</span>
+                <br/>
+                <span className="text-[#0000FF]">print</span><span className="text-[#000000]">(</span><span className="text-[#A31515]">"Empty"</span><span className="text-[#000000]">)</span>
               </div>
             )}
-          </>
+          </div>
         ) : (
-          /* Waiting for Selection State */
-          <div className="flex flex-col items-center justify-center h-full text-center opacity-40">
-            <History size={24} className="text-dh-muted mb-2" strokeWidth={1.5} />
-            <p className="text-[11px] font-bold text-dh-muted">รอเลือกสินค้า</p>
+          <div className="px-3 py-4">
+            <span className="text-[#008000]"># Please select a product to view its history log.</span>
+            <br/>
+            <span className="text-[#001080]">target_product</span> <span className="text-[#000000]">=</span> <span className="text-[#0000FF]">None</span>
           </div>
         )}
       </div>

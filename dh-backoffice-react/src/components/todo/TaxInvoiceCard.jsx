@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { db } from '../../firebase/config';
-import { doc, updateDoc, collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { driveService } from '../../firebase/driveService';
+import { gasHistoryService } from '../../firebase/gasHistoryService';
 
 const TaxInvoiceCard = ({ task, currentUser, onSuccess }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -76,13 +77,12 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess }) => {
 
       // 3. แจ้งเตือนลูกค้าผ่าน History Log
       if (task.userId) {
-          const historyRef = doc(collection(db, `users/${task.userId}/historyLogs`));
-          batch.set(historyRef, {
-              orderId: orderId,
-              action: "TAX_INVOICE_ISSUED",
-              title: "ใบกำกับภาษีพร้อมดาวน์โหลด",
-              description: `เจ้าหน้าที่ได้อัปโหลดใบกำกับภาษีสำหรับออเดอร์ #${orderId.slice(-6).toUpperCase()} เรียบร้อยแล้ว`,
-              createdAt: serverTimestamp()
+          gasHistoryService.log({
+            module: 'Customer History',
+            action: 'TAX_INVOICE_ISSUED',
+            target: { id: orderId },
+            details: { legacy_details: `ใบกำกับภาษีพร้อมดาวน์โหลด เจ้าหน้าที่ได้อัปโหลดใบกำกับภาษีสำหรับออเดอร์ #${orderId.slice(-6).toUpperCase()} เรียบร้อยแล้ว` },
+            actorOverride: { uid: task.userId, name: 'System (For Customer)', email: 'N/A' }
           });
       }
       

@@ -1,5 +1,6 @@
 import { doc, serverTimestamp, runTransaction, increment, collection } from 'firebase/firestore';
 import { db } from './config';
+import { gasHistoryService } from './gasHistoryService';
 
 const COLLECTION_NAME = 'orders';
 
@@ -276,20 +277,23 @@ export const billingStatusTransaction = {
 
           transaction.update(docRef, updates);
 
-          let logMessage = `เปลี่ยนสถานะบิลเป็น: ${normalizedNewStatus}`;
-          if (isCancelling) logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม กลับสู่ระบบเรียบร้อยแล้ว)';
-          if (isConfirmingPayment) logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
-
-          transaction.set(doc(collection(db, 'history_logs')), {
-              module: 'Billing', 
-              action: 'Update', 
-              targetId: orderId, 
-              details: logMessage, 
-              byUid: actualActorUid, 
-              timestamp: serverTimestamp()
-          });
-
       });
+
+      let logMessage = `เปลี่ยนสถานะบิลเป็น: ${normalizedNewStatus}`;
+      if (normalizedNewStatus === 'cancelled') logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม กลับสู่ระบบเรียบร้อยแล้ว)';
+      if (normalizedNewStatus === 'paid') logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
+
+      gasHistoryService.log({
+          module: 'Billing', 
+          action: 'Update', 
+          target: { id: orderId },
+          details: { 
+            legacy_details: logMessage,
+            status_change: { from: currentStatus, to: normalizedNewStatus },
+            updates_applied: updates
+          }
+      });
+
       
       return orderId;
     } catch (error) { 

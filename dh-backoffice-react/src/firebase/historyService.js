@@ -1,49 +1,36 @@
 import { collection, addDoc, getDocs, query, orderBy, limit, startAfter, serverTimestamp, where } from 'firebase/firestore';
 import { db, auth } from './config.js';
+import { gasHistoryService } from './gasHistoryService.js';
 
 const COLLECTION_NAME = 'history_logs';
 
 export const historyService = {
-  // ✨ บันทึก Audit Log (ปรับให้เก็บชื่อและอีเมล ลงไปเลย ไม่ต้องไปดึงตาราง User ใหม่ตอนแสดงผล)
+  // ✨ บันทึก Audit Log (Forwarded to GAS)
   addLog: async (arg1, arg2, arg3, arg4, arg5) => {
-    try {
-      const currentUser = auth.currentUser;
-      const actorUid = currentUser?.uid || 'System';
-      const actorName = currentUser?.displayName || 'Unknown User';
-      const actorEmail = currentUser?.email || '';
-
-      let logData = { timestamp: serverTimestamp() };
-
-      if (arg4 !== undefined) {
-        logData = {
-          ...logData,
-          module: arg1,
-          action: arg2,
-          targetId: arg3,
-          details: arg4,
-          actionBy: arg5 || actorUid,
-          performedBy: arg5 || actorUid,
-          actorName: actorName,
-          actorEmail: actorEmail // บันทึกอีเมลลง DB
-        };
-      } else {
-        logData = {
-          ...logData,
-          action: arg1,
-          details: arg2,
-          actionBy: arg3 || actorUid,
-          module: 'System',
-          targetId: arg2?.sku || arg2?.todoId || '-',
-          performedBy: arg3 || actorUid,
-          actorName: actorName,
-          actorEmail: actorEmail // บันทึกอีเมลลง DB
-        };
-      }
-
-      await addDoc(collection(db, COLLECTION_NAME), logData);
-    } catch (error) {
-      console.error("🔥 Error adding history log: ", error);
+    let module = 'System';
+    let action = '';
+    let targetId = '-';
+    let detailsStr = '';
+    
+    // Mapping legacy arguments to new structure
+    if (arg4 !== undefined) {
+      module = arg1;
+      action = arg2;
+      targetId = arg3;
+      detailsStr = arg4;
+    } else {
+      action = arg1;
+      detailsStr = arg2;
+      targetId = arg2?.sku || arg2?.todoId || '-';
     }
+
+    gasHistoryService.log({
+      level: 'INFO',
+      module: module,
+      action: action,
+      target: { id: targetId },
+      details: { legacy_details: detailsStr }
+    });
   },
 
   // ✨ ดึงประวัติมาแสดงผลแบบ Pagination (รองรับ Server-side Filtering)

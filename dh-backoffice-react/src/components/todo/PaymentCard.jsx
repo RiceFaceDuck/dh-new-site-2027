@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { todoService } from '../../firebase/todoService';
 import { creditCoreService } from '../../firebase/creditCoreService';
 import { db } from '../../firebase/config';
+import { gasHistoryService } from '../../firebase/gasHistoryService';
 import { doc, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 const PaymentCard = ({ task, currentUser, onSuccess }) => {
@@ -62,14 +63,12 @@ const PaymentCard = ({ task, currentUser, onSuccess }) => {
       });
 
       // 2.3 ส่ง History Log ไปแจ้งเตือนลูกค้าหน้าบ้าน
-      const historyRef = doc(collection(db, `users/${task.userId}/historyLogs`));
-      batch.set(historyRef, {
-        orderId: task.orderId,
-        action: "SLIP_REJECTED",
-        title: "หลักฐานการชำระเงินไม่ถูกต้อง",
-        description: `เจ้าหน้าที่ตรวจสอบสลิปของออเดอร์ #${task.orderId.slice(-6).toUpperCase()} แล้วพบว่าไม่ถูกต้อง/ไม่ชัดเจน กรุณาอัปโหลดหลักฐานใหม่ครับ`,
-        amount: task.amount || 0,
-        createdAt: serverTimestamp()
+      gasHistoryService.log({
+        module: 'Customer History',
+        action: 'SLIP_REJECTED',
+        target: { id: task.orderId },
+        details: { legacy_details: `หลักฐานการชำระเงินไม่ถูกต้อง เจ้าหน้าที่ตรวจสอบสลิปของออเดอร์ #${task.orderId?.slice(-6).toUpperCase()} แล้วพบว่าไม่ถูกต้อง/ไม่ชัดเจน กรุณาอัปโหลดหลักฐานใหม่ครับ` },
+        actorOverride: { uid: task.userId, name: 'System (For Customer)', email: 'N/A' }
       });
 
       // ยิงข้อมูลทั้งหมด

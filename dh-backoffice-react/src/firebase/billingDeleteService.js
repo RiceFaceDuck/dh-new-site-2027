@@ -1,5 +1,6 @@
-import { doc, getDoc, deleteDoc, serverTimestamp, runTransaction, addDoc, collection } from 'firebase/firestore';
+import { doc, deleteDoc, getDoc, runTransaction, serverTimestamp, collection, increment } from 'firebase/firestore';
 import { db } from './config';
+import { gasHistoryService } from './gasHistoryService';
 
 const COLLECTION_NAME = 'orders';
 
@@ -50,13 +51,12 @@ export const billingDeleteService = {
          await deleteDoc(docRef);
       }
 
-      await addDoc(collection(db, 'history_logs'), {
+      gasHistoryService.log({
           module: 'Billing',
           action: 'Delete',
-          targetId: orderId,
-          details: `ลบบิลถาวรออกจากระบบ (รหัสอ้างอิง: ${orderData.orderId || orderId})`,
-          byUid: actorUid || 'system',
-          timestamp: serverTimestamp()
+          target: { id: orderId },
+          details: { legacy_details: `ลบบิลถาวรออกจากระบบ (รหัสอ้างอิง: ${orderData.orderId || orderId})` },
+          actorOverride: { uid: actorUid || 'system', name: 'Unknown', email: 'N/A' }
       });
 
       return true;

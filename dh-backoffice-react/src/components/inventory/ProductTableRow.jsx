@@ -2,21 +2,6 @@ import React from 'react';
 import { Image as ImageIcon, AlertCircle, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
 
 export default function ProductTableRow({ product, onEdit, salesPeriod, globalBufferStock }) {
-  const getStatusBadge = (stock, buffer) => {
-    const stockNum = Number(stock || 0);
-    const effectiveBuffer = (buffer !== undefined && buffer !== null && buffer !== '') 
-                              ? Number(buffer) 
-                              : Number(globalBufferStock);
-
-    if (stockNum <= 0) {
-      return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-red-500/10 text-red-600 border border-red-500/20 dark:text-red-400"><AlertCircle size={12} className="mr-1"/> หมดสต๊อก</span>;
-    }
-    if (stockNum <= effectiveBuffer) {
-      return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-orange-500/10 text-orange-600 border border-orange-500/20 dark:text-orange-400"><AlertCircle size={12} className="mr-1"/> ระวังของหมด</span>;
-    }
-    return <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-green-500/10 text-green-600 border border-green-500/20 dark:text-green-400">พร้อมขาย</span>;
-  };
-
   const effectiveBuffer = (product.bufferStock !== undefined && product.bufferStock !== null && product.bufferStock !== '') 
                             ? Number(product.bufferStock) 
                             : Number(globalBufferStock);
@@ -120,17 +105,13 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
         </div>
       </td>
 
-      <td className="px-3 py-3 text-center align-middle whitespace-nowrap border-r border-dh-border/50">
+      <td className="px-3 py-3 text-center align-middle whitespace-nowrap">
         <div className="inline-flex items-baseline gap-1">
           <div className={`font-black text-[22px] tracking-tight ${Number(product.stockQuantity) <= effectiveBuffer ? 'text-red-500' : 'text-dh-main group-hover:text-dh-accent transform group-hover:scale-110'} transition-all`}>
             {product.stockQuantity || 0}
           </div>
           <span className="text-[10px] font-bold text-dh-muted uppercase">{product.unit || 'ชิ้น'}</span>
         </div>
-      </td>
-
-      <td className="px-3 py-3 text-center align-middle whitespace-nowrap">
-        {getStatusBadge(product.stockQuantity, product.bufferStock)}
       </td>
     </tr>
   );

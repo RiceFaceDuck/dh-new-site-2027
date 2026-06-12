@@ -1,6 +1,6 @@
 // นำเข้า functions ที่จำเป็นจาก Firebase SDK
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth"; // [UPDATE] เพิ่ม GoogleAuthProvider
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth"; // [UPDATE] เพิ่ม GoogleAuthProvider และ Persistence
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
@@ -22,6 +22,10 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Services (Export ไปใช้งานใน Service อื่นๆ ของ Backoffice)
 export const auth = getAuth(app);
+// บังคับให้ใช้ Local Persistence เพื่อป้องกันปัญหาเด้งหลุดตอน refresh
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Error setting persistence:", error);
+});
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider(); // [UPDATE] Export ตัวแปร googleProvider สำหรับ Login

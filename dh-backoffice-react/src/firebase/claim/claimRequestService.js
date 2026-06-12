@@ -1,6 +1,6 @@
 import { collection, doc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config';
-import { historyService } from '../historyService';
+import { gasHistoryService } from '../gasHistoryService';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -48,7 +48,17 @@ export const claimRequestService = {
         updatedAt: serverTimestamp()
       });
 
-      await historyService.addLog('Claim', 'Request', claimId, `พนักงาน ${userName} ทำรายการแจ้งเคลมสินค้า ${item.sku} รหัส ${claimId} (รออนุมัติ)`, userUid);
+      gasHistoryService.log({
+        level: 'INFO',
+        module: 'Claim',
+        action: 'Request',
+        target: { id: claimId, type: 'Task' },
+        details: {
+          legacy_details: `พนักงาน ${userName} ทำรายการแจ้งเคลมสินค้า ${item.sku} รหัส ${claimId} (รออนุมัติ)`,
+          payload: payload
+        },
+        actorOverride: { uid: userUid, name: userName, email: 'N/A' }
+      });
       return claimId;
     } catch (error) { throw error; }
   },
@@ -97,7 +107,17 @@ export const claimRequestService = {
         updatedAt: serverTimestamp()
       });
 
-      await historyService.addLog('Return', 'Request', returnId, `พนักงาน ${userName} ทำรายการแจ้งคืนสินค้า ${item.sku} (รออนุมัติ)`, userUid);
+      gasHistoryService.log({
+        level: 'INFO',
+        module: 'Return',
+        action: 'Request',
+        target: { id: returnId, type: 'Task' },
+        details: {
+          legacy_details: `พนักงาน ${userName} ทำรายการแจ้งคืนสินค้า ${item.sku} (รออนุมัติ)`,
+          payload: payload
+        },
+        actorOverride: { uid: userUid, name: userName, email: 'N/A' }
+      });
       return returnId;
     } catch (error) { throw error; }
   },
@@ -129,7 +149,18 @@ export const claimRequestService = {
         updatedAt: serverTimestamp()
       });
 
-      await historyService.addLog('Claim/Return', 'RequestCancel', refId, `พนักงานขออนุมัติยกเลิกรายการ: ${reason}`, userUid);
+      gasHistoryService.log({
+        level: 'WARN',
+        module: 'Claim/Return',
+        action: 'RequestCancel',
+        target: { id: refId, type: 'Task' },
+        details: {
+          legacy_details: `พนักงานขออนุมัติยกเลิกรายการ: ${reason}`,
+          reason: reason,
+          task_id: task.id
+        },
+        actorOverride: { uid: userUid, name: userName, email: 'N/A' }
+      });
       return true;
     } catch (error) { throw error; }
   }

@@ -1,6 +1,8 @@
 import React from 'react';
+import MigrationButton from './MigrationButton';
 
 export default function HistoryHeader({
+  dateFilter, setDateFilter,
   moduleFilter, setModuleFilter,
   actionFilter, setActionFilter,
   searchTerm, setSearchTerm,
@@ -17,6 +19,16 @@ export default function HistoryHeader({
         
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto text-[13px]">
           
+          <div className="flex items-center">
+            <span className="text-[#b58900] mr-2">--date=</span>
+            <input 
+              type="date"
+              className="bg-[#002b36] border border-[#003642] text-[#839496] outline-none p-1 rounded focus:border-[#2aa198]"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+          </div>
+
           <div className="flex items-center">
             <span className="text-[#b58900] mr-2">--module=</span>
             <select 
@@ -67,7 +79,7 @@ export default function HistoryHeader({
               &gt; export.csv
             </button>
           )}
-
+          <MigrationButton />
         </div>
       </div>
     </div>
