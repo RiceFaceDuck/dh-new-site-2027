@@ -55,7 +55,7 @@ The `orders` collection stores all billing and POS transaction data. It has been
 ### Architectural Note
 The logic for interacting with the `orders` collection has been separated into:
 - **`billingService.js`**: A facade pattern entrypoint that unifies the Query, Update, and Transaction services so components only need a single import.
-- **`billingQueryService.js`**: Handles read-only operations (`subscribeRecentOrders`, `searchOrders`) to keep UI snappy. **NOTE**: Mapped `id` should be placed at the end of the spread operator (`...doc.data(), id: doc.id`) to avoid being overwritten by a potentially null ID saved in raw data.
+- **`billingQueryService.js`**: Handles read-only operations (`subscribeRecentOrders`, `searchOrders`) to keep UI snappy. **NOTE**: Mapped `id` should be placed at the end of the spread operator (`...doc.data(), id: doc.id`) to avoid being overwritten by a potentially null ID saved in raw data. *Optimization:* Dashboards should use the `dateRange` parameter in `subscribeRecentOrders` to strictly fetch only today's data, drastically reducing read costs.
 - **`billingTransactionService.js`**: Handles complex atomic transactions (creating new orders with complex side effects).
 - **`billingStatusTransaction.js`**: Handles atomic status updates (Stock updates, Wallet refunds/deductions, History logging) using Firestore `runTransaction`.
 - **`billingDeleteService.js`**: Handles deleting draft/temporary orders and restoring credits.

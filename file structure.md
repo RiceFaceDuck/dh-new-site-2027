@@ -207,6 +207,14 @@ dh-new-site-2027/
 │       │       ├── Sidebar.jsx # Extracted Sidebar
 │       │       └── GatekeeperUI.jsx # Auth checking and denied UI
 │       ├── components/ # Global Components
+│       │   ├── overview/ # Overview page components
+│       │   │   ├── hooks/
+│       │   │   │   └── useOverviewData.js
+│       │   │   ├── BestSellersPanel.jsx
+│       │   │   ├── OverviewHeader.jsx
+│       │   │   ├── SalesTargetCard.jsx
+│       │   │   ├── SocialFeedPanel.jsx
+│       │   │   └── StatCard.jsx
 │       │   ├── routing/
 │       │   │   └── ManagerRoute.jsx # Route protection
 │       │   └── ... (other component folders)
