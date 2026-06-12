@@ -22,22 +22,8 @@ export const useGmail = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [nextStart, setNextStart] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-
-  // Helper to build Gmail search query string
-  const buildQuery = useCallback(() => {
-    let query = '';
-    switch (activeTab) {
-      case 'inbox': query = 'in:inbox'; break;
-      case 'sent': query = 'in:sent'; break;
-      case 'starred': query = 'is:starred'; break;
-      case 'important': query = 'is:important'; break;
-      default: query = 'in:inbox';
-    }
-    if (searchQuery.trim()) {
-      query += ` ${searchQuery.trim()}`;
-    }
-    return query;
-  }, [activeTab, searchQuery]);
+  const [inboxPhase, setInboxPhase] = useState('unread'); // 'unread' or 'read'
+  const [isMarkingAllAsRead, setIsMarkingAllAsRead] = useState(false);
 
   const init = useCallback(async () => {
     try {
@@ -69,22 +55,57 @@ export const useGmail = () => {
       } else {
         setIsLoadingEmails(true);
         setNextStart(0);
+        setInboxPhase('unread');
       }
       setError(null);
       
-      const query = buildQuery();
       const currentStart = isLoadMore ? nextStart : 0;
+      const currentPhase = isLoadMore ? inboxPhase : 'unread';
       
-      const result = await fetchEmailsList(currentStart, 20, query);
-      
+      const getQuery = (tab, phase) => {
+        let q = '';
+        switch (tab) {
+          case 'inbox': q = phase === 'unread' ? 'in:inbox is:unread' : 'in:inbox is:read'; break;
+          case 'read': q = 'in:inbox is:read'; break;
+          case 'sent': q = 'in:sent'; break;
+          case 'starred': q = 'is:starred'; break;
+          case 'important': q = 'is:important'; break;
+          default: q = 'in:inbox';
+        }
+        if (searchQuery.trim()) {
+          q += ` ${searchQuery.trim()}`;
+        }
+        return q;
+      };
+
+      const result = await fetchEmailsList(currentStart, 20, getQuery(activeTab, currentPhase));
+      let newEmails = result.emails;
+      let newNextStart = result.nextStart;
+      let newHasMore = result.hasMore;
+      let newPhase = currentPhase;
+
+      if (activeTab === 'inbox' && currentPhase === 'unread' && !result.hasMore) {
+         newPhase = 'read';
+         newNextStart = 0;
+         newHasMore = true;
+         
+         if (newEmails.length < 10) {
+            const readResult = await fetchEmailsList(0, 20 - newEmails.length, getQuery('inbox', 'read'));
+            newEmails = [...newEmails, ...readResult.emails];
+            newNextStart = readResult.nextStart;
+            newHasMore = readResult.hasMore;
+         }
+      }
+
       if (isLoadMore) {
-        setEmails(prev => [...prev, ...result.emails]);
+        setEmails(prev => [...prev, ...newEmails]);
       } else {
-        setEmails(result.emails);
+        setEmails(newEmails);
       }
       
-      setNextStart(result.nextStart);
-      setHasMore(result.hasMore);
+      setNextStart(newNextStart);
+      setHasMore(newHasMore);
+      setInboxPhase(newPhase);
       
     } catch (err) {
       console.error("Error fetching gmail data:", err);
@@ -93,7 +114,7 @@ export const useGmail = () => {
       setIsLoadingEmails(false);
       setIsLoadingMore(false);
     }
-  }, [isConfigured, buildQuery, nextStart]);
+  }, [isConfigured, activeTab, searchQuery, nextStart, inboxPhase]);
 
   // Refetch when tab or search changes
   useEffect(() => {
@@ -110,11 +131,14 @@ export const useGmail = () => {
 
   const markAllAsRead = async () => {
     try {
+      setIsMarkingAllAsRead(true);
       await markAllAsReadService();
       setUnreadCount(0);
       setEmails(prev => prev.map(e => ({ ...e, isUnread: false })));
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsMarkingAllAsRead(false);
     }
   };
 
@@ -163,6 +187,7 @@ export const useGmail = () => {
     refreshEmails,
     loadMore,
     markAllAsRead,
+    isMarkingAllAsRead,
     toggleStar,
     toggleImportant,
     error,

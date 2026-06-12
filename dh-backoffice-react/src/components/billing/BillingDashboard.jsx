@@ -88,7 +88,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
             <div className="flex flex-col h-full w-full bg-[var(--dh-bg-surface)] overflow-hidden transition-all duration-300">
                 
                 {/* 🏷️ Header Area (Edge to Edge Design Support) */}
-                <div className="p-4 sm:p-6 pb-0 relative z-10 bg-[var(--dh-glass-bg)] dh-glass">
+                <div className="dh-header-gradient p-4 sm:p-6 pb-0 relative z-10 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] transition-colors duration-300">
                     <OrderFilterBar 
                         filter={filter} 
                         setFilter={setFilter} 
@@ -98,7 +98,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                         setDateRange={setDateRange}
                         totalSales={totalSales}
                         headerTitle={
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 relative z-10">
                                 {isSelectorMode ? (
                                     <div className="relative p-3 bg-rose-100 text-rose-600 rounded-md shadow-inner flex items-center justify-center shrink-0 overflow-visible">
                                         <div className="absolute inset-0 rounded-md border-2 border-rose-500 animate-ping opacity-50 duration-1000"></div>
@@ -106,15 +106,15 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                                         <AlertTriangle size={24} strokeWidth={2.5} className="relative z-10 animate-[bounce_2s_infinite]" />
                                     </div>
                                 ) : (
-                                    <div className="p-3 bg-[var(--dh-accent-light)] text-[var(--dh-accent)] rounded-md shadow-inner dh-inner-shadow dh-hover-lift hidden md:block">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
+                                    <div className="w-11 h-11 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-sm hidden md:flex">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
                                     </div>
                                 )}
                                 <div>
-                                    <h1 className="text-xl lg:text-2xl font-black text-[var(--dh-text-main)] tracking-tight leading-none dh-text-glow whitespace-nowrap">
+                                    <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight leading-none whitespace-nowrap">
                                         {isSelectorMode ? 'เลือกบิลที่ต้องการเคลม/คืน' : 'รายการบิล (Orders)'}
                                     </h1>
-                                    <p className="text-[12px] text-[var(--dh-text-muted)] mt-1.5 font-bold uppercase tracking-wider hidden sm:block">
+                                    <p className="text-[12px] text-slate-300 mt-1.5 font-bold uppercase tracking-wider hidden sm:block">
                                         {isSelectorMode ? 'ค้นหาบิลจากรหัส หรือชื่อลูกค้า เพื่อทำรายการ' : 'จัดการและตรวจสอบบิลการขาย'}
                                     </p>
                                 </div>

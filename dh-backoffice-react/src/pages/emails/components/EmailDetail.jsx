@@ -48,7 +48,7 @@ export default function EmailDetail({ id, onBack }) {
       <div className="p-8 flex flex-col items-center justify-center h-full">
         <AlertCircle className="text-red-500 w-12 h-12 mb-4" />
         <p className="text-red-500 font-bold">{error || 'ไม่พบข้อมูล'}</p>
-        <button onClick={onBack} className="mt-4 px-4 py-2 bg-slate-200 dark:bg-slate-700 rounded-xl font-bold">กลับ</button>
+        <button onClick={onBack} className="mt-4 px-4 py-2 bg-slate-200 dark:bg-slate-700 rounded-md font-bold text-slate-800 dark:text-slate-200">กลับ</button>
       </div>
     );
   }
@@ -74,14 +74,14 @@ export default function EmailDetail({ id, onBack }) {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
-        <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+        <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           {/* Email Header */}
-          <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-700">
+          <div className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-6 leading-snug">{subject}</h2>
             
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                <div className="w-12 h-12 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 shrink-0 border border-slate-300 dark:border-slate-600">
                   <User size={24} />
                 </div>
                 <div className="min-w-0">
@@ -107,10 +107,10 @@ export default function EmailDetail({ id, onBack }) {
 
           {/* Action Bar */}
           {!isReplying && (
-            <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
+            <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700">
               <button 
                 onClick={() => setIsReplying(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-sm shadow-blue-500/20 active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-md font-bold transition-all shadow-sm active:scale-95"
               >
                 <Reply size={18} />
                 <span>ตอบกลับ (Reply)</span>

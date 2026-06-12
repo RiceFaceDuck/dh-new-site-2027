@@ -140,6 +140,7 @@ The `system_logs` collection tracks critical system-level automated actions and 
 The Email System has been upgraded to use **Firebase Cloud Functions** as a proxy for the Gmail API. This allows all staff to read and reply to company emails without needing to log in to their Google accounts.
 
 - **Storage**: The only data stored in Firestore is the `refresh_token` and `client_secret` in the `system_config` collection (`docId: gmail_auth`).
+- **Optimization**: The client-side (`gmailService.js`) uses **local caching** for the `web_app_url` to prevent duplicate Firestore document reads per session, significantly reducing read costs.
 - **Emails**: Emails are **NOT** stored in the database. They are fetched on-the-fly via Cloud Functions and sent directly to the frontend.
 - **Authentication**: Admin connects the Gmail account once in the `/managers` dashboard. Cloud Functions handles the token refresh automatically.
 

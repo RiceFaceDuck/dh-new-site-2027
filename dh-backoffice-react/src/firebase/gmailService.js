@@ -1,6 +1,8 @@
 import { db } from './config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
+let cachedWebAppUrl = null;
+
 /**
  * Check if the Gmail credentials have been set up by the admin.
  */
@@ -10,7 +12,8 @@ export const checkGmailConfigured = async () => {
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) return false;
     
-    return !!docSnap.data().web_app_url;
+    cachedWebAppUrl = docSnap.data().web_app_url || null;
+    return !!cachedWebAppUrl;
   } catch (err) {
     console.error(err);
     return false;
@@ -26,19 +29,24 @@ export const saveGmailCredentials = async (webAppUrl) => {
     web_app_url: webAppUrl,
     updated_at: serverTimestamp()
   }, { merge: true });
+  cachedWebAppUrl = webAppUrl;
 };
 
 /**
  * Helper to fetch from GAS Web App
  */
 const fetchFromGAS = async (action, data = {}) => {
-  const docRef = doc(db, 'system_config', 'gmail_auth');
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists() || !docSnap.data().web_app_url) {
-    throw new Error("ระบบยังไม่ได้ตั้งค่า Web App URL");
-  }
+  let url = cachedWebAppUrl;
   
-  const url = docSnap.data().web_app_url;
+  if (!url) {
+    const docRef = doc(db, 'system_config', 'gmail_auth');
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists() || !docSnap.data().web_app_url) {
+      throw new Error("ระบบยังไม่ได้ตั้งค่า Web App URL");
+    }
+    url = docSnap.data().web_app_url;
+    cachedWebAppUrl = url;
+  }
   
   // Using POST method. For GAS Web App, we use text/plain to avoid CORS preflight issues 
   // if standard headers cause problems, but we added CORS to the GAS script so JSON is fine.

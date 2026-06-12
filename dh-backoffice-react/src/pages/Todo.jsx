@@ -140,38 +140,45 @@ export default function Todo() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col h-full w-full bg-[var(--dh-bg-surface)] relative overflow-hidden font-sans transition-colors duration-300">
       
       {/* --- 🌟 Header Section --- */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
-            <Inbox className="w-8 h-8 text-blue-600" />
-            ศูนย์ปฏิบัติการ (Operations)
-          </h1>
-          <p className="text-slate-500 mt-1 font-medium flex items-center gap-2 text-sm">
-            จัดการงานเอกสาร, เคลมสินค้า, บัญชี และงานประจำวัน
-            <button onClick={() => setShowHelp(true)} className="text-blue-500 hover:bg-blue-50 p-1 rounded-full transition-colors" title="คู่มือ">
-              <HelpCircle className="w-4 h-4" />
+      <div className="dh-header-gradient p-4 sm:p-6 relative z-10 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] transition-colors duration-300">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-11 h-11 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-sm hidden md:flex">
+              <Inbox size={22} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight leading-none whitespace-nowrap flex items-center gap-2">
+                ศูนย์ปฏิบัติการ (Operations)
+                <button onClick={() => setShowHelp(true)} className="text-white/70 hover:text-white transition-colors" title="คู่มือ">
+                  <HelpCircle className="w-5 h-5" />
+                </button>
+              </h1>
+              <p className="text-[12px] text-slate-300 mt-1.5 font-bold uppercase tracking-wider hidden sm:block">
+                จัดการงานเอกสาร, เคลมสินค้า, บัญชี และงานประจำวัน
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 relative z-10 w-full sm:w-auto mt-4 sm:mt-0">
+            <button 
+              onClick={() => navigate('/todo/archive')}
+              className="px-5 py-2.5 bg-slate-800/50 hover:bg-slate-800/70 text-white border border-slate-700/50 font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
+            >
+              <History size={18} strokeWidth={3} /> ประวัติ / จัดเก็บ
             </button>
-          </p>
-        </div>
-        <div className="flex gap-3 relative z-10 w-full sm:w-auto">
-          <button 
-            onClick={() => navigate('/todo/archive')}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-          >
-            <History className="w-4 h-4" /> ประวัติ / จัดเก็บ
-          </button>
-          <button 
-            onClick={() => setShowNewTaskModal(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95"
-          >
-            <Plus className="w-4 h-4" /> สร้างงาน
-          </button>
+            <button 
+              onClick={() => setShowNewTaskModal(true)}
+              className="px-5 py-2.5 bg-[var(--dh-accent)] hover:bg-[var(--dh-accent-hover)] text-white font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:shadow-[0_4px_15px_var(--dh-glow-color)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
+            >
+              <Plus size={18} strokeWidth={3} /> สร้างงาน
+            </button>
+          </div>
         </div>
       </div>
+
+      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-slate-50/50 dark:bg-slate-900/20">
 
       {/* --- 🚨 Error Alert --- */}
       {fetchError && (
@@ -182,10 +189,10 @@ export default function Todo() {
       )}
 
       {/* --- 🎛️ Navigation & Filters --- */}
-      <div className="bg-white dark:bg-slate-800 p-2 sm:p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col gap-4">
+      <div className="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-lg shadow-md ring-1 ring-slate-900/5 border border-slate-200/80 dark:border-slate-700/80 flex flex-col gap-3 transition-all duration-300 relative z-0">
         
         {/* แถบค้นหา */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
             <div className="relative w-full sm:max-w-md flex items-center gap-2">
                 <div className="relative w-full">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -196,20 +203,20 @@ export default function Todo() {
                         placeholder="ค้นหา (ชื่อลูกค้า, Order ID, หัวข้องาน)..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-full bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all"
+                        className="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--dh-accent)]/50 w-full bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all font-medium"
                     />
                 </div>
                 {(searchQuery || filterType !== 'ALL') && (
                     <button 
                         onClick={() => { setSearchQuery(''); setFilterType('ALL'); }}
-                        className="text-xs text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl whitespace-nowrap transition-all font-bold"
+                        className="text-xs text-rose-500 hover:text-white bg-rose-50 hover:bg-rose-500 px-3 py-2 rounded-md whitespace-nowrap transition-all font-bold"
                     >
                         ล้างค่า
                     </button>
                 )}
             </div>
             {searchQuery && (
-                <span className="text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-lg whitespace-nowrap self-end sm:self-auto">
+                <span className="text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-md whitespace-nowrap self-end sm:self-auto border border-blue-100">
                     พบ {displayTodos.length} รายการ
                 </span>
             )}
@@ -217,23 +224,23 @@ export default function Todo() {
 
         {/* หมวดหมู่งาน (Operations Specific) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar w-full">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 mr-1 uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 mr-1 uppercase tracking-wider shrink-0">
               <Filter className="w-3.5 h-3.5" /> จัดกลุ่ม:
             </div>
             
-            <button onClick={() => setFilterType('ALL')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'ALL' ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+            <button onClick={() => setFilterType('ALL')} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap border shrink-0 ${filterType === 'ALL' ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
               <LayoutList size={14} className="inline mr-1" /> ทั้งหมด
             </button>
-            <button onClick={() => setFilterType('PAYMENT')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'PAYMENT' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}>
+            <button onClick={() => setFilterType('PAYMENT')} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap border shrink-0 ${filterType === 'PAYMENT' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}>
               <Receipt size={14} className="inline mr-1" /> ตรวจสลิป
             </button>
-            <button onClick={() => setFilterType('TAX_INVOICE')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'TAX_INVOICE' ? 'bg-teal-600 text-white border-teal-600 shadow-sm' : 'bg-white text-teal-600 border-teal-200 hover:bg-teal-50'}`}>
+            <button onClick={() => setFilterType('TAX_INVOICE')} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap border shrink-0 ${filterType === 'TAX_INVOICE' ? 'bg-teal-600 text-white border-teal-600 shadow-sm' : 'bg-white text-teal-600 border-teal-200 hover:bg-teal-50'}`}>
               <ReceiptText size={14} className="inline mr-1" /> ใบกำกับภาษี
             </button>
-            <button onClick={() => setFilterType('CLAIM')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'CLAIM' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'}`}>
+            <button onClick={() => setFilterType('CLAIM')} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap border shrink-0 ${filterType === 'CLAIM' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'}`}>
               <ShieldAlert size={14} className="inline mr-1" /> เคลม/คืน
             </button>
-            <button onClick={() => setFilterType('WHOLESALE')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${filterType === 'WHOLESALE' ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-white text-orange-600 border-orange-200 hover:bg-orange-50'}`}>
+            <button onClick={() => setFilterType('WHOLESALE')} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap border shrink-0 ${filterType === 'WHOLESALE' ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-white text-orange-600 border-orange-200 hover:bg-orange-50'}`}>
               <Tags size={14} className="inline mr-1" /> ขอราคาส่ง
             </button>
         </div>
@@ -242,20 +249,20 @@ export default function Todo() {
       {/* --- 📋 Data Display --- */}
       {loading ? (
         // Loading Skeleton
-        <div className="flex flex-col items-center justify-center py-24 bg-white/50 backdrop-blur-sm rounded-3xl border border-slate-200">
-          <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+        <div className="flex flex-col items-center justify-center py-20 bg-white/80 backdrop-blur-sm rounded-lg shadow-md ring-1 ring-slate-900/5 border border-slate-200/80 dark:border-slate-700/80 relative z-0">
+          <Loader2 className="w-10 h-10 text-[var(--dh-accent)] animate-spin mb-4" />
           <p className="text-slate-500 font-medium animate-pulse">กำลังโหลดข้อมูลศูนย์ปฏิบัติการ...</p>
         </div>
       ) : displayTodos.length === 0 ? (
         // Empty State
-        <div className="text-center py-24 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center animate-in fade-in duration-500">
-          <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
+        <div className="text-center py-20 bg-white dark:bg-slate-800 rounded-lg shadow-md ring-1 ring-slate-900/5 border border-slate-200/80 dark:border-slate-700/80 flex flex-col items-center animate-in fade-in duration-500 relative z-0">
+          <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4 border border-emerald-100">
             <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
           <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
              {searchQuery ? 'ไม่พบรายการที่ค้นหา' : 'ยอดเยี่ยม! ไม่มีงานปฏิบัติการค้าง'}
           </h3>
-          <p className="text-slate-500 max-w-sm text-sm">
+          <p className="text-slate-500 max-w-sm text-sm font-medium">
             {searchQuery 
                ? `ไม่มีข้อมูลที่ตรงกับคำว่า "${searchQuery}"` 
                : 'คุณจัดการเอกสารและรายการทั้งหมดเรียบร้อยแล้ว พักผ่อนได้เลย!'
@@ -330,6 +337,7 @@ export default function Todo() {
         isSubmitting={isHookSubmitting}
       />
 
+      </div>
     </div>
   );
 }

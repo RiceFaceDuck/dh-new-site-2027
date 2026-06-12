@@ -39,22 +39,31 @@ export default function EmailList({ emails, isLoading, onSelect, activeTab, isLo
     return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
   };
 
+  const sortedEmails = [...emails].sort((a, b) => {
+    if (activeTab === 'inbox') {
+      if (a.isUnread && !b.isUnread) return -1;
+      if (!a.isUnread && b.isUnread) return 1;
+    }
+    return new Date(b.date) - new Date(a.date);
+  });
+
   return (
     <div className="h-full overflow-y-auto custom-scrollbar p-3">
       <div className="flex flex-col gap-1.5 max-w-4xl mx-auto">
-        {emails.map((email) => {
+        {sortedEmails.map((email) => {
           const isUnread = email.isUnread && activeTab !== 'sent';
           
           return (
             <div 
               key={email.id}
               onClick={() => onSelect(email.id)}
-              className={`flex items-start gap-3 p-4 rounded-2xl cursor-pointer transition-all border group ${
+              className={`flex items-start gap-3 p-4 rounded-md cursor-pointer transition-all group relative overflow-hidden ${
                 isUnread 
-                  ? 'bg-white dark:bg-slate-800 border-blue-100 dark:border-slate-600 shadow-sm' 
-                  : 'bg-white/60 dark:bg-slate-800/60 border-transparent hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-700'
+                  ? 'bg-white dark:bg-slate-800 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.1)] ring-1 ring-slate-200 dark:ring-slate-600 z-10' 
+                  : 'bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 opacity-90 hover:opacity-100'
               }`}
             >
+              {isUnread && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 dark:bg-blue-500 rounded-l-md"></div>}
               {/* Badges/Icons (Star, Important) */}
               <div className="flex flex-col gap-2 pt-1 shrink-0 px-1 opacity-60 group-hover:opacity-100 transition-opacity">
                 <button 
@@ -77,7 +86,7 @@ export default function EmailList({ emails, isLoading, onSelect, activeTab, isLo
                 </button>
               </div>
 
-              <div className="w-10 h-10 ml-1 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg shrink-0 border border-blue-200/50 dark:border-blue-700/30">
+              <div className="w-10 h-10 ml-1 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-lg shrink-0 border border-slate-300 dark:border-slate-600">
                 {formatSender(email.from).charAt(0).toUpperCase()}
               </div>
               
@@ -112,7 +121,7 @@ export default function EmailList({ emails, isLoading, onSelect, activeTab, isLo
             <button 
               onClick={(e) => { e.stopPropagation(); onLoadMore(); }}
               disabled={isLoadingMore}
-              className="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md text-sm font-bold text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {isLoadingMore ? <Loader2 size={16} className="animate-spin" /> : null}
               {isLoadingMore ? 'กำลังโหลดเพิ่ม...' : 'โหลดเพิ่มเติม'}

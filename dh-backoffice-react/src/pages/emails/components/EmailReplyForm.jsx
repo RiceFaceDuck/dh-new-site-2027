@@ -38,8 +38,8 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-      <div className="h-14 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-900/50">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in duration-300">
+      <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-900/50">
         <h3 className="font-black text-slate-800 dark:text-white">
           {isNew ? 'เขียนอีเมลใหม่' : 'ตอบกลับอีเมล'}
         </h3>
@@ -53,7 +53,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
 
       <form onSubmit={handleSend} className="p-6">
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium flex items-center gap-2">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-md text-sm font-medium flex items-center gap-2">
             <AlertCircle size={16} />
             <span>{error}</span>
           </div>
@@ -67,7 +67,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
               value={to}
               onChange={(e) => setTo(e.target.value)}
               placeholder="example@email.com"
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-sm text-slate-900 dark:text-white"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-none transition-all font-medium text-sm text-slate-900 dark:text-white"
             />
           </div>
 
@@ -78,7 +78,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="หัวข้ออีเมล..."
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-sm text-slate-900 dark:text-white"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-none transition-all font-medium text-sm text-slate-900 dark:text-white"
             />
           </div>
 
@@ -89,7 +89,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
               onChange={(e) => setBody(e.target.value)}
               placeholder="พิมพ์ข้อความตอบกลับที่นี่..."
               rows={8}
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-sm resize-y custom-scrollbar text-slate-900 dark:text-white"
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-none transition-all font-medium text-sm resize-y custom-scrollbar text-slate-900 dark:text-white"
             />
           </div>
         </div>
@@ -99,14 +99,14 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
             type="button"
             onClick={onCancel}
             disabled={isSending}
-            className="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            className="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
           >
             ยกเลิก
           </button>
           <button 
             type="submit"
             disabled={isSending}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-md font-bold transition-all shadow-sm active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSending ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

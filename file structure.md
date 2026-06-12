@@ -214,6 +214,8 @@ dh-new-site-2027/
 │           ├── emails/ # Gmail API Integration
 │           │   ├── EmailMain.jsx
 │           │   ├── components/
+│           │   │   ├── EmailSidebar.jsx
+│           │   │   ├── EmailHeader.jsx
 │           │   │   ├── EmailList.jsx
 │           │   │   ├── EmailDetail.jsx
 │           │   │   └── EmailReplyForm.jsx
