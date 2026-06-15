@@ -37,13 +37,27 @@ export const todoQueryService = {
     }
   },
 
-  getCompletedTodos: async (limitCount = 50) => {
-      const q = query(
+  getCompletedTodos: async (limitCount = 50, dateRange = null) => {
+      let qArgs = [
           collection(db, 'todos'),
-          where('status', 'in', ['completed', 'rejected', 'cancelled']),
-          orderBy('completedAt', 'desc'),
-          limit(limitCount)
-      );
+          where('status', 'in', ['completed', 'rejected', 'cancelled'])
+      ];
+
+      if (dateRange?.start) {
+          const start = new Date(dateRange.start); 
+          start.setHours(0, 0, 0, 0);
+          qArgs.push(where('completedAt', '>=', start));
+      }
+      if (dateRange?.end) {
+          const end = new Date(dateRange.end); 
+          end.setHours(23, 59, 59, 999);
+          qArgs.push(where('completedAt', '<=', end));
+      }
+
+      qArgs.push(orderBy('completedAt', 'desc'));
+      qArgs.push(limit(limitCount));
+
+      const q = query(...qArgs);
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }

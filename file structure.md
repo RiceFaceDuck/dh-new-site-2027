@@ -285,6 +285,13 @@ dh-new-site-2027/
 │           │   ├── FreebieManagement.jsx
 │           │   ├── PartnerSettings.jsx
 │           │   ├── PricingSettings.jsx
+│           │   ├── pricing/
+│           │   │   ├── hooks/
+│           │   │   │   └── usePricingSettings.js
+│           │   │   ├── PricingHistoryLog.jsx
+│           │   │   ├── PricingRulesTable.jsx
+│           │   │   ├── PricingSimulation.jsx
+│           │   │   └── SmartRoundingPolicy.jsx
 │           │   ├── PromotionManagement.jsx
 │           │   ├── ShippingManagement.jsx
 │           │   ├── StaffManagement.jsx
@@ -295,6 +302,14 @@ dh-new-site-2027/
 │           │   │       ├── StaffEditModal.jsx
 │           │   │       └── StaffTable.jsx
 │           │   ├── WalletManagement.jsx
+│           │   ├── wallet/
+│           │   │   ├── hooks/
+│           │   │   │   └── useWalletManagement.js
+│           │   │   ├── CustomerSearchList.jsx
+│           │   │   ├── PendingWithdrawals.jsx
+│           │   │   ├── WalletDashboardStats.jsx
+│           │   │   ├── WalletDetailPanel.jsx
+│           │   │   └── WalletModals.jsx
 │           │   └── CreditDashboard/
 │           │       ├── index.jsx
 │           │       ├── components/
@@ -345,7 +360,38 @@ dh-new-site-2027/
 │                   └── SquadBottomNav.jsx
 │
 ├── dh-frontend/ # Client-facing Next.js/Vite application
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── cart/ # 🚀 Extracted components for Cart page SRP
+│   │   │   │   ├── CartEmptyState.jsx
+│   │   │   │   ├── CartFreebieProgress.jsx
+│   │   │   │   ├── CartItemCard.jsx
+│   │   │   │   └── CartSummaryPanel.jsx
+│   │   │   ├── CategoryList.jsx
+│   │   │   └── ProductList.jsx
+│   │   ├── pages/
+│   │   │   ├── Home.jsx
+│   │   │   └── CategoryPage.jsx # New dedicated category routing page
+│   │   └── App.jsx
 │   └── ... (omitted for brevity)
 │
 └── dh-staff-app/ # Mobile-first staff utility application
-    └── ... (omitted for brevity)
+    └── src/
+        ├── App.jsx
+        ├── components/
+        │   ├── packing/
+        │   │   ├── PackingTaskCard.jsx
+        │   │   └── TrackingModal.jsx
+        │   └── stock/
+        │       ├── BarcodeScanner.jsx
+        │       ├── CategoryFilter.jsx
+        │       └── ProductCard.jsx
+        ├── firebase/
+        │   ├── config.js
+        │   ├── inventoryService.js
+        │   └── packingService.js
+        ├── layouts/
+        │   └── MobileLayout.jsx
+        └── pages/
+            ├── PackingTasks.jsx
+            └── StockMain.jsx

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -8,21 +8,47 @@ import FloatingMessenger from '../components/chat/FloatingMessenger';
 // 🚀 นำเข้า Component ป้ายแบนเนอร์ผู้สนับสนุน
 import TopPartnerBanner from '../components/partner/TopPartnerBanner';
 
+// 🎨 นำเข้า Theme Hook
+import { useStorefrontTheme } from '../hooks/useStorefrontTheme';
+
 /**
  * MainLayout - โครงสร้างหลักของหน้าเว็บหน้าบ้าน
  * ประกอบด้วย Navbar ด้านบน, พื้นที่เนื้อหาตรงกลาง, Footer และระบบแชทลอยตัว
  */
 const MainLayout = ({ children }) => {
+  const theme = useStorefrontTheme();
+
+  // จัดการ Background ภาพแบบ Dynamic
+  useEffect(() => {
+    if (theme.backgroundUrl) {
+      document.body.style.backgroundImage = `url('${theme.backgroundUrl}')`;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundAttachment = 'fixed';
+      document.body.style.backgroundPosition = 'center';
+    }
+    return () => {
+      document.body.style.backgroundImage = '';
+    };
+  }, [theme.backgroundUrl]);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 relative selection:bg-[#E6F0F9] selection:text-[#054D80]">
+    <div className="min-h-screen flex flex-col font-sans text-gray-800 relative selection:bg-[#E6F0F9] selection:text-[#054D80]">
       
+      {/* พื้นหลังเบลอแบบไล่ระดับความโปร่งแสง (Dynamic Gradient Frosted Glass) */}
+      <div 
+        className="fixed inset-0 z-[-1] pointer-events-none"
+        style={{
+          backdropFilter: `blur(${theme.blurLevel}px)`,
+          WebkitBackdropFilter: `blur(${theme.blurLevel}px)`, // For Safari support
+          background: `linear-gradient(to bottom, rgba(255,255,255,${theme.opacityTop / 100}), rgba(255,255,255,${theme.opacityMid / 100}), rgba(255,255,255,${theme.opacityBottom / 100}))`
+        }}
+      ></div>
+
       {/* 🚀 0. Top Banner: พื้นที่โปรโมทพาร์ทเนอร์ด้านบนสุด (อยู่เหนือ Navbar) */}
       <TopPartnerBanner />
 
-      {/* 1. Header: ยึดติดด้านบน พร้อมเอฟเฟกต์กระจกพรีเมียม (glass-header) */}
-      <header className="sticky top-0 z-50 w-full glass-header">
-        <Navbar />
-      </header>
+      {/* 1. Header: ยึดติดด้านบน พร้อมเอฟเฟกต์กระจกพรีเมียม (จัดการ styles ภายใน Navbar.jsx) */}
+      <Navbar />
       
       {/* 2. Main Content: พื้นที่แสดงเนื้อหาหลัก
           - เพิ่ม pb-28 ในมือถือเพื่อเว้นที่ให้ BottomNav และ Floating Messenger ไม่บังปุ่มสำคัญด้านล่าง

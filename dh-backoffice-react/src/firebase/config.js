@@ -22,10 +22,6 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Services (Export ไปใช้งานใน Service อื่นๆ ของ Backoffice)
 export const auth = getAuth(app);
-// บังคับให้ใช้ Local Persistence เพื่อป้องกันปัญหาเด้งหลุดตอน refresh
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Error setting persistence:", error);
-});
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider(); // [UPDATE] Export ตัวแปร googleProvider สำหรับ Login

@@ -13,35 +13,14 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // State ไว้เก็บ Type ของหมวดหมู่ที่ถูกกด
-  const [selectedType, setSelectedType] = useState(null); 
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         const productsRef = collection(db, "products");
-        let q;
-
-        // 🚀 SMART QUERY: ค้นหาครอบคลุมทุกรูปแบบ (ตัวเล็ก, ตัวใหญ่, ตัวพิมพ์ใหญ่ตัวแรก, มีเว้นวรรค)
-        if (selectedType) {
-          const exact = selectedType.trim();
-          const lowerCase = exact.toLowerCase();
-          const upperCase = exact.toUpperCase();
-          const capitalized = exact.charAt(0).toUpperCase() + exact.slice(1).toLowerCase();
-          const withSpace = exact + " "; // เผื่อเผลอเคาะวรรคตอนสร้างสินค้า
-          
-          console.log("🔍 [Debug] กำลังค้นหาสินค้าที่ตรงกับ:", [exact, lowerCase, upperCase, capitalized, withSpace]); 
-          
-          // ใช้คำสั่ง "in" เพื่อให้ Firebase ค้นหาเจอแน่นอนไม่ว่าจะบันทึกมาแบบไหน
-          q = query(productsRef, 
-            where("category", "in", [exact, lowerCase, upperCase, capitalized, withSpace]), 
-            limit(12)
-          );
-        } else {
-          // ถ้าไม่ได้กด (ดูหน้าแรกปกติ) ให้ดึงสินค้า 12 ชิ้นแรก
-          q = query(productsRef, limit(12)); 
-        }
+        // ดึงสินค้า 12 ชิ้นแรกมาเป็นสินค้าแนะนำ
+        const q = query(productsRef, limit(12)); 
 
         const querySnapshot = await getDocs(q);
         
@@ -60,7 +39,7 @@ const Home = () => {
     };
 
     fetchProducts();
-  }, [selectedType]); // สั่งให้ Effect ทำงานใหม่ทันทีที่มีการกดเปลี่ยนหมวดหมู่
+  }, []); // 🚀 โหลดแค่ตอนแรกเท่านั้น
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">
@@ -93,8 +72,8 @@ const Home = () => {
             <button className="text-dh-blue hover:text-blue-700 font-semibold text-sm md:text-base transition-colors">ดูทั้งหมด</button>
           </div>
           <div className="-mx-4 sm:mx-0">
-            {/* ส่ง State และ ฟังก์ชัน ให้ CategoryList ไปทำงานเวลากด */}
-            <CategoryList selectedType={selectedType} onSelectType={setSelectedType} />
+            {/* 🚀 CategoryList จะดูแลตัวเองเรื่องการเปลี่ยนหน้าผ่าน React Router <Link> */}
+            <CategoryList />
           </div>
         </div>
 
@@ -103,7 +82,7 @@ const Home = () => {
           <div className="flex justify-between items-end mb-4 md:mb-6">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight mb-1">
-                {selectedType ? 'สินค้าในหมวดหมู่นี้' : 'สินค้าใหม่ล่าสุด'}
+                สินค้าใหม่ล่าสุด
               </h2>
               <p className="text-slate-500 text-sm md:text-base">อะไหล่และอุปกรณ์ไอทีคุณภาพสูง คัดสรรมาเพื่อคุณ</p>
             </div>

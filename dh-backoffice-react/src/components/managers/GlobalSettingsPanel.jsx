@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Lock, Unlock, ShieldAlert, Save, AlertTriangle, 
     Box, Link as LinkIcon, ShieldCheck, Loader2, Info,
-    Megaphone, Eye, MousePointerClick, LayoutTemplate
+    Megaphone, Eye, MousePointerClick, LayoutTemplate, Image as ImageIcon
 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -40,6 +40,15 @@ export default function GlobalSettingsPanel() {
         displayRatio: 10
     });
 
+    // 🎨 Theme Settings State (ตั้งค่าหน้าบ้าน)
+    const [themeConfig, setThemeConfig] = useState({
+        backgroundUrl: '/user-bg.jpg',
+        blurLevel: '16',
+        opacityTop: 75,
+        opacityMid: 55,
+        opacityBottom: 35
+    });
+
     // 📥 โหลดข้อมูลทั้งหมดเมื่อ Component ทำงาน
     useEffect(() => {
         fetchAllSettings();
@@ -69,6 +78,10 @@ export default function GlobalSettingsPanel() {
                     displayRatio: adData.displayRatio ?? 10
                 });
             }
+
+            // 5. Theme Settings
+            const themeData = await settingsService.getStorefrontTheme();
+            if (themeData) setThemeConfig(themeData);
 
         } catch (error) {
             console.error("🔥 Error fetching global settings:", error);
@@ -132,6 +145,18 @@ export default function GlobalSettingsPanel() {
                 } else {
                     throw new Error(res.message);
                 }
+            }
+            else if (activeTab === 'theme') {
+                const cleanTheme = {
+                    backgroundUrl: themeConfig.backgroundUrl.trim() || '/user-bg.jpg',
+                    blurLevel: String(themeConfig.blurLevel),
+                    opacityTop: Number(themeConfig.opacityTop),
+                    opacityMid: Number(themeConfig.opacityMid),
+                    opacityBottom: Number(themeConfig.opacityBottom),
+                };
+                await settingsService.updateStorefrontTheme(cleanTheme);
+                await historyService.addLog('SystemConfig', 'Update', 'theme', 'อัปเดตธีมหน้าบ้านสำเร็จ', uid);
+                alert("✅ บันทึกธีมหน้าบ้านสำเร็จ (หน้าบ้านจะเปลี่ยนตามทันที)");
             }
             // หมายเหตุ: activeTab === 'category' ไม่ต้องจัดการตรงนี้ เพราะมันมี Auto-save ในตัว CategoryManager เองแล้ว
 
@@ -217,6 +242,9 @@ export default function GlobalSettingsPanel() {
                     </button>
                     <button onClick={() => setActiveTab('ads')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'ads' ? 'bg-indigo-100 text-indigo-700 shadow-sm border border-indigo-200' : 'text-slate-600 hover:bg-slate-200'}`}>
                         <Megaphone size={16} strokeWidth={2.5}/> ตั้งค่าพื้นที่โฆษณา
+                    </button>
+                    <button onClick={() => setActiveTab('theme')} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-black text-xs transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'theme' ? 'bg-fuchsia-100 text-fuchsia-700 shadow-sm border border-fuchsia-200' : 'text-slate-600 hover:bg-slate-200'}`}>
+                        <ImageIcon size={16} strokeWidth={2.5}/> ธีมและพื้นหลังหน้าบ้าน
                     </button>
                 </div>
 
@@ -382,6 +410,94 @@ export default function GlobalSettingsPanel() {
                                         />
                                     </div>
                                     <p className="text-[10px] text-slate-500 mt-2 font-medium">ตัวอย่าง 1:10 หมายถึง ระบบจะแทรกโฆษณาแบบสุ่มตำแหน่ง 1 ชิ้น ในทุกๆ กลุ่มสินค้าปกติ 10 ชิ้น</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- TAB 5: THEME (ตั้งค่าภาพพื้นหลัง ความเบลอ และสีหน้าบ้าน) --- */}
+                    {activeTab === 'theme' && (
+                        <div className="space-y-6 max-w-2xl animate-in fade-in">
+                            <div className="bg-fuchsia-50 border border-fuchsia-100 p-4 rounded-xl flex gap-3 text-fuchsia-800">
+                                <ImageIcon size={20} className="shrink-0 mt-0.5"/>
+                                <p className="text-xs font-bold leading-relaxed">ปรับเปลี่ยนภาพพื้นหลัง และการไล่สี (Gradient) ขาวแบบกระจกฝ้าหน้าบ้าน การตั้งค่านี้จะส่งผลต่อ Storefront โดยอัตโนมัติทันที</p>
+                            </div>
+
+                            <div className="space-y-5">
+                                {/* Background URL */}
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 block">
+                                        ลิงก์รูปภาพพื้นหลัง (Background URL)
+                                    </label>
+                                    <input 
+                                        type="text" disabled={!isUnlocked}
+                                        value={themeConfig.backgroundUrl}
+                                        onChange={(e) => setThemeConfig({...themeConfig, backgroundUrl: e.target.value})}
+                                        placeholder="ตัวอย่าง: /user-bg.jpg หรือ https://.../image.jpg"
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm text-slate-700 outline-none focus:border-fuchsia-500 focus:bg-white disabled:opacity-60 transition-all"
+                                    />
+                                    <p className="text-[10px] text-slate-500 mt-2 font-medium leading-relaxed">
+                                        ใช้พาร์ทในระบบเช่น `/user-bg.jpg` หรือนำภาพไปฝากไว้ที่อื่นแล้วนำ URL วางได้เลย
+                                    </p>
+                                </div>
+
+                                {/* Blur & Opacity */}
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    {/* Blur */}
+                                    <div>
+                                        <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                            <span>ระดับความเบลอภาพ (Blur)</span>
+                                            <span className="text-fuchsia-600">{themeConfig.blurLevel} px</span>
+                                        </label>
+                                        <input 
+                                            type="range" min="0" max="60" step="2" disabled={!isUnlocked}
+                                            value={themeConfig.blurLevel}
+                                            onChange={(e) => setThemeConfig({...themeConfig, blurLevel: e.target.value})}
+                                            className="w-full accent-fuchsia-600 disabled:opacity-60"
+                                        />
+                                    </div>
+
+                                    {/* Top Opacity */}
+                                    <div>
+                                        <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                            <span>ความขาวด้านบน (Top Opacity)</span>
+                                            <span className="text-fuchsia-600">{themeConfig.opacityTop}%</span>
+                                        </label>
+                                        <input 
+                                            type="range" min="0" max="100" step="5" disabled={!isUnlocked}
+                                            value={themeConfig.opacityTop}
+                                            onChange={(e) => setThemeConfig({...themeConfig, opacityTop: e.target.value})}
+                                            className="w-full accent-fuchsia-600 disabled:opacity-60"
+                                        />
+                                    </div>
+
+                                    {/* Mid Opacity */}
+                                    <div>
+                                        <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                            <span>ความขาวตรงกลาง (Mid Opacity)</span>
+                                            <span className="text-fuchsia-600">{themeConfig.opacityMid}%</span>
+                                        </label>
+                                        <input 
+                                            type="range" min="0" max="100" step="5" disabled={!isUnlocked}
+                                            value={themeConfig.opacityMid}
+                                            onChange={(e) => setThemeConfig({...themeConfig, opacityMid: e.target.value})}
+                                            className="w-full accent-fuchsia-600 disabled:opacity-60"
+                                        />
+                                    </div>
+
+                                    {/* Bottom Opacity */}
+                                    <div>
+                                        <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                            <span>ความขาวด้านล่าง (Bottom Opacity)</span>
+                                            <span className="text-fuchsia-600">{themeConfig.opacityBottom}%</span>
+                                        </label>
+                                        <input 
+                                            type="range" min="0" max="100" step="5" disabled={!isUnlocked}
+                                            value={themeConfig.opacityBottom}
+                                            onChange={(e) => setThemeConfig({...themeConfig, opacityBottom: e.target.value})}
+                                            className="w-full accent-fuchsia-600 disabled:opacity-60"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

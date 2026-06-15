@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
-  ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard
+  ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload
 } from 'lucide-react';
 
 /**
@@ -60,6 +60,7 @@ const QuickAccessTools = ({
   onNavigateStaff, 
   onNavigateHistory, 
   onOpenEmailSetup, 
+  onOpenDrivePanel,
   onOpenVipModal,
   onNavigateAds,
   onNavigateCredit,
@@ -143,6 +144,14 @@ const QuickAccessTools = ({
           icon={Mail} 
           colorTheme="blue"
           onClick={onOpenEmailSetup}
+        />
+
+        <ToolCard 
+          title="จัดการ Google Drive" 
+          subtitle="คลังรูปภาพและสินทรัพย์"
+          icon={CloudUpload} 
+          colorTheme="cyan"
+          onClick={onOpenDrivePanel}
         />
 
         <ToolCard 

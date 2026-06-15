@@ -67,7 +67,7 @@ export default function useLedgerStats() {
 
       // 👇 FIX: แก้ Path ให้เป็น 6 ระดับ (เลขคู่)
       const ledgerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
-      onSnapshot(ledgerRef, (docSnap) => {
+      const unsubscribe = onSnapshot(ledgerRef, (docSnap) => {
         if (!isActive) return;
         
         let systemPoolMax = 1000000;
@@ -92,12 +92,19 @@ export default function useLedgerStats() {
         console.error("🔥 System Error [Master Ledger]:", err);
         if (isActive) setIsLoading(false);
       });
+
+      return unsubscribe;
     };
 
-    initStats();
+    const unsubscribe = initStats();
 
     return () => {
       isActive = false;
+      if (unsubscribe && typeof unsubscribe.then === 'function') {
+        unsubscribe.then(unsub => unsub && unsub());
+      } else if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
     };
   }, []);
 

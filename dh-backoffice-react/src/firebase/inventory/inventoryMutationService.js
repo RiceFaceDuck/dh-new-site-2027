@@ -1,4 +1,4 @@
-import { doc, setDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { db, auth } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 
@@ -12,6 +12,14 @@ export const inventoryMutationService = {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+
+    // 🚀 เพิ่ม Category ลงในรายชื่อกลางอัตโนมัติ (ประหยัด Reads)
+    if (productData.category) {
+      const settingsRef = doc(db, 'settings', 'product_categories');
+      await setDoc(settingsRef, {
+        categories: arrayUnion(productData.category)
+      }, { merge: true });
+    }
     
     gasHistoryService.log({
       level: 'INFO',
@@ -77,6 +85,14 @@ export const inventoryMutationService = {
           changes: changes
         }
       });
+
+      // 🚀 เพิ่ม Category ลงในรายชื่อกลางอัตโนมัติ
+      if (newData.category && newData.category !== oldData.category) {
+        const settingsRef = doc(db, 'settings', 'product_categories');
+        await setDoc(settingsRef, {
+          categories: arrayUnion(newData.category)
+        }, { merge: true });
+      }
     } else {
       // Fallback if doc didn't exist before
       await updateDoc(docRef, {
@@ -93,6 +109,14 @@ export const inventoryMutationService = {
           new_data: newData
         }
       });
+
+      // 🚀 เพิ่ม Category ลงในรายชื่อกลางอัตโนมัติ
+      if (newData.category) {
+        const settingsRef = doc(db, 'settings', 'product_categories');
+        await setDoc(settingsRef, {
+          categories: arrayUnion(newData.category)
+        }, { merge: true });
+      }
     }
   },
 

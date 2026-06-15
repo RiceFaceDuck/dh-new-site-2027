@@ -1,30 +1,48 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ImagePlus, Loader2 } from 'lucide-react';
 import { categoryService } from '../../../firebase/categoryService';
+import { driveService } from '../../../firebase/driveService';
+import { inventoryQueryService } from '../../../firebase/inventory/inventoryQueryService';
 
 const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState(''); // 🚀 State สำหรับ Type
+  const [buttonShape, setButtonShape] = useState('circle'); // 🚀 State สำหรับรูปทรงปุ่ม
+  const [filtersText, setFiltersText] = useState(''); // 🚀 State สำหรับตัวกรอง (comma separated)
   const [isActive, setIsActive] = useState(true);
   const [iconFile, setIconFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [availableTypes, setAvailableTypes] = useState([]); // 🚀 เก็บ Type ที่มีในระบบ
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    // 🚀 โหลดรายการ Category ทั้งหมดจากแคช
+    const fetchTypes = async () => {
+      const types = await inventoryQueryService.getUniqueProductCategories();
+      setAvailableTypes(types);
+    };
+    fetchTypes();
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       setError('');
       if (initialData) {
         setName(initialData.name || '');
-        setType(initialData.type || ''); // 🚀 ดึง Type เดิมมาแสดง
+        setType(initialData.type || ''); 
+        setButtonShape(initialData.buttonShape || 'circle'); 
+        setFiltersText(initialData.filters ? initialData.filters.join(', ') : '');
         setIsActive(initialData.isActive !== false);
         setPreviewUrl(initialData.imageUrl || '');
         setIconFile(null);
       } else {
         setName('');
         setType('');
+        setButtonShape('circle');
+        setFiltersText('');
         setIsActive(true);
         setPreviewUrl('');
         setIconFile(null);
@@ -81,58 +99,29 @@ const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
         // ☁️ 1. ขั้นตอนอัปโหลดไปยัง Google Drive
         if (iconFile) {
           console.log("☁️ [Debug] กำลังอัปโหลดรูปภาพไปยัง Google Drive...");
-          
-          const base64Data = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]); 
-            reader.onerror = err => reject(err);
-            reader.readAsDataURL(iconFile);
-          });
-
-          // Google Apps Script URL ของ DH-Image-Upload-Service
-          const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzD3KW7juo-XNtw_kmPTPi2Pp4OtNVCAIQMGHdBVeUL1QPBQXgUhv3E_wRISEkOzML7/exec";
-
-          const uploadRes = await fetch(SCRIPT_URL, {
-            method: "POST",
-            body: JSON.stringify({
-              name: `CAT_${Date.now()}_${iconFile.name}`,
-              mimeType: iconFile.type,
-              data: base64Data,
-              file: base64Data 
-            })
-          });
-
-          const responseText = await uploadRes.text();
-          
-          try {
-            const result = JSON.parse(responseText);
-            finalImageUrl = result.url || result.link || result.imageUrl || responseText;
-          } catch(err) {
-            if(responseText.startsWith('http')) {
-              finalImageUrl = responseText;
-            } else {
-              throw new Error("อัปโหลดไม่สำเร็จ หรือ Server ตอบกลับผิดพลาด");
-            }
-          }
+          finalImageUrl = await driveService.uploadImage(iconFile);
         }
+
+        // เตรียมข้อมูล Array ของ filters
+        const filtersArray = filtersText.split(',').map(s => s.trim()).filter(s => s);
 
         // 📦 2. ขั้นตอนบันทึกข้อมูล พร้อมส่ง type ไปด้วย
         if (initialData) {
           await categoryService.updateCategory(
             initialData.id,
-            { name: name.trim(), type: type.trim(), isActive, imageUrl: finalImageUrl }, // 🚀 เพิ่ม type
+            { name: name.trim(), type: type.trim(), buttonShape, filters: filtersArray, isActive, imageUrl: finalImageUrl }, // 🚀 เพิ่ม type, buttonShape, filters
             null, 
             null  
           );
         } else {
           const newCat = await categoryService.createCategory(
-            { name: name.trim(), type: type.trim(), isActive }, // 🚀 เพิ่ม type
+            { name: name.trim(), type: type.trim(), buttonShape, filters: filtersArray, isActive }, // 🚀 เพิ่ม type, buttonShape, filters
             null
           );
           if (finalImageUrl) {
             await categoryService.updateCategory(
               newCat.id,
-              { name: name.trim(), type: type.trim(), isActive, imageUrl: finalImageUrl },
+              { name: name.trim(), type: type.trim(), buttonShape, filters: filtersArray, isActive, imageUrl: finalImageUrl },
               null,
               null
             );
@@ -241,17 +230,84 @@ const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
               <label htmlFor="categoryType" className="text-sm font-medium text-slate-700">
                 ประเภทสินค้า / คำค้นหา (Type) <span className="text-red-500">*</span>
               </label>
-              <input
+              <select
                 id="categoryType"
-                type="text"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                placeholder="เช่น case, motherboard, ram"
                 disabled={isSubmitting}
                 className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
+              >
+                <option value="">-- กรุณาเลือกประเภทสินค้า --</option>
+                {availableTypes.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">
+                ดึงข้อมูลจากสินค้าในคลัง เพื่อให้เชื่อมโยงได้ตรงกัน 100%
+              </p>
+            </div>
+
+            {/* 🚀 Button Shape */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-slate-700">
+                รูปทรงปุ่ม (หน้าร้าน)
+              </label>
+              <div className="flex gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="buttonShape" 
+                    value="circle" 
+                    checked={buttonShape === 'circle'} 
+                    onChange={(e) => setButtonShape(e.target.value)} 
+                    disabled={isSubmitting} 
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                  />
+                  <span className="text-sm text-slate-700">วงกลม</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="buttonShape" 
+                    value="rounded" 
+                    checked={buttonShape === 'rounded'} 
+                    onChange={(e) => setButtonShape(e.target.value)} 
+                    disabled={isSubmitting} 
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                  />
+                  <span className="text-sm text-slate-700">สี่เหลี่ยมขอบมน</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="buttonShape" 
+                    value="square" 
+                    checked={buttonShape === 'square'} 
+                    onChange={(e) => setButtonShape(e.target.value)} 
+                    disabled={isSubmitting} 
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                  />
+                  <span className="text-sm text-slate-700">สี่เหลี่ยม</span>
+                </label>
+              </div>
+            </div>
+
+            {/* 🚀 Filters Recommendation */}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="categoryFilters" className="text-sm font-medium text-slate-700">
+                ตัวกรองแนะนำ (แนะนำให้ระบุ)
+              </label>
+              <input
+                id="categoryFilters"
+                type="text"
+                value={filtersText}
+                onChange={(e) => setFiltersText(e.target.value)}
+                placeholder="เช่น 14.0 นิ้ว, 15.6 นิ้ว, 30 PIN, 40 PIN (คั่นด้วยลูกน้ำ)"
+                disabled={isSubmitting}
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
               />
               <p className="text-xs text-slate-500">
-                ระบบจะใช้ค่านี้ไปดึงข้อมูลสินค้าที่ตรงกันมาแสดงผลที่หน้าเว็บ
+                ฟังก์ชันแนะนำการกรองสำหรับประเภทสินค้านี้ จะไปแสดงเป็นปุ่มด้านหลังชื่อหมวดหมู่ในหน้าร้าน
               </p>
             </div>
 

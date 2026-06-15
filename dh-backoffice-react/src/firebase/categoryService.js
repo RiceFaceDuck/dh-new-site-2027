@@ -90,6 +90,8 @@ export const categoryService = {
       const newData = {
         name: categoryData.name,
         type: categoryData.type || '', // 🚀 ฟิลด์ Type
+        buttonShape: categoryData.buttonShape || 'circle', // 🚀 ทรงของปุ่ม
+        filters: categoryData.filters || [], // 🚀 ตัวกรองแนะนำ
         imageUrl: imageUrl, 
         isActive: isActive, 
         status: isActive ? 'active' : 'inactive', 
@@ -122,6 +124,8 @@ export const categoryService = {
       const updatePayload = {
         name: categoryData.name,
         type: categoryData.type || '', // 🚀 ฟิลด์ Type
+        buttonShape: categoryData.buttonShape || 'circle', // 🚀 ทรงของปุ่ม
+        filters: categoryData.filters || [], // 🚀 ตัวกรองแนะนำ
         imageUrl: imageUrl,
         updatedAt: serverTimestamp()
       };

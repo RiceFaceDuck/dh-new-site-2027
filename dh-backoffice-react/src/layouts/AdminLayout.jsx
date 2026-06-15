@@ -73,7 +73,19 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+    <div className="flex h-screen overflow-hidden transition-colors duration-200 relative">
+      {/* 🌌 พื้นหลังอวกาศ (Starry Sky) แบบเบลอจัดๆ ตามคำขอ */}
+      <div 
+        className="absolute inset-0 z-[-1] bg-cover bg-center bg-no-repeat"
+        style={{ 
+          backgroundImage: "url('/bg-starry.png')",
+          filter: "blur(30px)",
+          transform: "scale(1.1)" // ขยายเพื่อกันขอบเบลอ
+        }}
+      ></div>
+      {/* Overlay สำหรับปรับสมดุลแสง ให้ตัวหนังสืออ่านง่าย */}
+      <div className="absolute inset-0 z-[-1] bg-slate-50/60 dark:bg-slate-900/75 pointer-events-none mix-blend-overlay"></div>
+      
       <Sidebar 
         todoCount={todoCount}
         unreadCount={unreadCount}
@@ -83,9 +95,9 @@ export default function AdminLayout() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden bg-slate-50/50 dark:bg-slate-900/50 transition-colors duration-200 relative scroll-smooth custom-scrollbar">
+      <main className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden bg-transparent transition-colors duration-200 relative scroll-smooth custom-scrollbar dh-glass">
         {/* Background Gradients for Depth */}
-        <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-50/50 to-transparent dark:from-blue-900/10 dark:to-transparent pointer-events-none -z-10"></div>
+        <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-50/30 to-transparent dark:from-blue-900/20 dark:to-transparent pointer-events-none -z-10"></div>
         <Outlet />
       </main>
     </div>

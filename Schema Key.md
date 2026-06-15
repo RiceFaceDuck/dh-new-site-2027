@@ -186,4 +186,47 @@ The `users` collection stores user profiles, access controls, and staff registra
 | `startDate`      | String  | Date the user started working.                                              | `"2026-06-11"`                      |
 | `metadata`       | Map     | Additional info like creation date and update dates.                        | `{ createdAt: Timestamp, registeredVia: "staff_onboarding_portal" }` |
 
+---
+
+## 10. Collection: `homepage_categories`
+
+The `homepage_categories` collection manages the display of categories on the Storefront. Managers can customize the layout, UI shape, and connection to backend product types.
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `name`           | String  | The display name of the category shown to customers.                        | `"อุปกรณ์ภายใน (Inside)"`           |
+| `type`           | String  | The exact category type matching inventory products (`products.category`).  | `"case"`                            |
+| `buttonShape`    | String  | Visual style of the category button (`circle`, `rounded`, `square`).        | `"circle"`                          |
+| `imageUrl`       | String  | The URL of the uploaded category icon/image (Google Drive).                 | `"https://drive.google.com/..."`    |
+| `isActive`       | Boolean | Toggle for whether to show on Storefront.                                   | `true`                              |
+| `status`         | String  | String representation of status.                                            | `"active"`, `"inactive"`            |
+| `order`          | Number  | The display order sequence (drag and drop).                                 | `1`                                 |
+
+---
+
+## 11. Document: `settings/product_categories`
+
+This specific document serves as an aggregated cache of all unique product categories that exist in the inventory. It optimizes reads by providing a single document to fetch dropdown options, instead of reading all products.
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `categories`     | Array   | List of unique category string names. Maintained via `arrayUnion`.          | `["case", "monitor", "ram"]`        |
+
+## 12. Collection: `freebies`
+
+The `freebies` collection stores promotional items that are given to customers when their cart subtotal reaches a certain threshold (`minSpend`).
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `title`          | String  | The display name of the freebie item.                                       | `"สายชาร์จแท้ (แถมฟรี)"`            |
+| `minSpend`       | Number  | The minimum subtotal required to unlock this freebie.                       | `5000`                              |
+| `isActive`       | Boolean | Toggle for whether this freebie is currently active.                        | `true`                              |
+| `imageUrl`       | String  | (Optional) The URL of the uploaded freebie icon/image.                      | `"https://drive.google.com/..."`    |
+
 *(Additional schemas will be documented here as the system evolves)*

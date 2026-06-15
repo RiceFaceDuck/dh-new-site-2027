@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
+import CategoryPage from './pages/CategoryPage';
 import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
 
@@ -77,6 +78,7 @@ function App() {
           {/* Routes ที่ใช้โครงสร้างหลัก (มี Header, Footer) */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/category/:type" element={<CategoryPage />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/profile" element={<Profile />} />
             

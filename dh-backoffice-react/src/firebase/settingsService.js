@@ -3,6 +3,7 @@ import { db } from './config';
 
 const SETTINGS_DOC = 'platform_links';
 const MARKETING_DOC = 'marketing'; // 🎯 อ้างอิงเอกสารสำหรับการตั้งค่าการตลาดโฆษณา
+const THEME_DOC = 'storefrontTheme'; // 🎨 อ้างอิงเอกสารสำหรับการตั้งค่าธีมหน้าบ้าน
 
 // 💡 Default Regex ในกรณีที่ยังไม่มีข้อมูลใน Database (ป้องกัน Error)
 export const DEFAULT_REGEX = {
@@ -18,6 +19,15 @@ export const DEFAULT_AD_RATES = {
   costPerView: 1,     // ค่าเริ่มต้น: 1 Credit / 1 View
   costPerClick: 5,    // ค่าเริ่มต้น: 5 Credits / 1 Click
   displayRatio: 10    // ค่าเริ่มต้น: อัตราส่วนโฆษณา 10:1
+};
+
+// 💡 Default Storefront Theme (ถ้ายังไม่ได้ตั้งค่าจากหลังบ้าน)
+export const DEFAULT_THEME_CONFIG = {
+  backgroundUrl: '/user-bg.jpg',
+  blurLevel: '16', // px
+  opacityTop: 75,
+  opacityMid: 55,
+  opacityBottom: 35
 };
 
 export const settingsService = {
@@ -97,6 +107,38 @@ export const settingsService = {
     } catch (error) {
       console.error("🔥 Error updating ad rates:", error);
       return { success: false, message: 'เกิดข้อผิดพลาดในการบันทึกการตั้งค่าโฆษณา' };
+    }
+  },
+
+  // ==========================================
+  // 3. ระบบจัดการธีมหน้าบ้าน (Storefront Theme) [ใหม่]
+  // ==========================================
+  
+  getStorefrontTheme: async () => {
+    try {
+      const docRef = doc(db, 'settings', THEME_DOC);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return { ...DEFAULT_THEME_CONFIG, ...snap.data() };
+      }
+      return DEFAULT_THEME_CONFIG;
+    } catch (error) {
+      console.error("🔥 Error fetching storefront theme:", error);
+      return DEFAULT_THEME_CONFIG;
+    }
+  },
+
+  updateStorefrontTheme: async (themeConfig) => {
+    try {
+      const docRef = doc(db, 'settings', THEME_DOC);
+      await setDoc(docRef, {
+        ...themeConfig,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      return { success: true, message: 'บันทึกการตั้งค่าธีมหน้าบ้านสำเร็จ' };
+    } catch (error) {
+      console.error("🔥 Error updating storefront theme:", error);
+      throw error;
     }
   }
 };

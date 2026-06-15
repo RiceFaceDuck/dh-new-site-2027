@@ -118,6 +118,7 @@ export const AuthProvider = ({ children }) => {
         setIsPendingApproval(false);
         setIsProfileSetupRequired(false);
         setAccessDenied(false);
+        localStorage.removeItem('dh_last_activity');
       }
     });
 
@@ -185,6 +186,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      localStorage.removeItem('dh_last_activity');
       await signOut(auth);
     } catch (error) {
       console.error('Error logging out:', error);

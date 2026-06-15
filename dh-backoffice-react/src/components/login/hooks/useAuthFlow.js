@@ -86,6 +86,9 @@ export const useAuthFlow = () => {
             });
             setViewMode('status');
 
+            // 🔄 ป้องกันปัญหาเด้งหลุดทันทีหลัง Login ด้วยข้อมูลเก่า
+            localStorage.setItem('dh_last_activity', Date.now().toString());
+
             setTimeout(() => {
                 window.location.replace('/overview'); 
             }, 1500);

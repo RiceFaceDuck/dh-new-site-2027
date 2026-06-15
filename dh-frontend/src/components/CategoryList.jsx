@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Package, AlertCircle } from 'lucide-react';
 import { categoryService } from '../firebase/categoryService';
 
@@ -56,20 +57,24 @@ const CategoryList = ({ selectedType, onSelectType }) => {
           </div>
         ) : (
           categories.map((cat) => {
-            // เช็คว่าการ์ดนี้กำลังถูกเลือก (คลิก) อยู่หรือไม่
+            // เช็คว่าการ์ดนี้กำลังถูกเลือก (อิงจาก URL)
             const isSelected = selectedType === cat.type;
             
+            // 🚀 แปลง shape เป็น CSS Class
+            let shapeClass = "rounded-full"; // default circle
+            if (cat.buttonShape === "square") shapeClass = "rounded-none";
+            else if (cat.buttonShape === "rounded") shapeClass = "rounded-2xl";
+
             return (
-              <div 
+              <Link 
                 key={cat.id} 
-                // 🚀 เมื่อคลิก ให้ส่งค่า type ไป หากคลิกซ้ำอันเดิมให้ส่ง null (ยกเลิกการกรอง)
-                onClick={() => onSelectType && onSelectType(isSelected ? null : cat.type)}
+                to={`/category/${cat.type}`}
                 className={`flex flex-col items-center justify-start min-w-[72px] sm:min-w-[80px] flex-shrink-0 cursor-pointer group active:scale-95 transition-all duration-200 ${
                   selectedType && !isSelected ? 'opacity-50 hover:opacity-100' : 'opacity-100'
                 }`}
               >
-                {/* 🚀 เปลี่ยนสีขอบและพื้นหลังให้ชัดเจนว่าถูกคลิกอยู่ */}
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-2 shadow-sm border transition-all duration-200 overflow-hidden ${
+                {/* 🚀 เปลี่ยนสีขอบและพื้นหลังให้ชัดเจนว่าถูกคลิกอยู่ พร้อมประยุกต์ใช้ buttonShape */}
+                <div className={`w-14 h-14 ${shapeClass} flex items-center justify-center mb-2 shadow-sm border transition-all duration-200 overflow-hidden ${
                   isSelected 
                     ? 'border-blue-500 shadow-md bg-blue-50 ring-2 ring-blue-500/20' 
                     : 'bg-white border-slate-100 group-hover:shadow-md group-hover:border-blue-400'
@@ -97,7 +102,7 @@ const CategoryList = ({ selectedType, onSelectType }) => {
                 }`}>
                   {cat.name}
                 </span>
-              </div>
+              </Link>
             );
           })
         )}

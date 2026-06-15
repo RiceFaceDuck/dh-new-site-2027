@@ -11,6 +11,7 @@ import GlobalSettingsPanel from '../../components/managers/GlobalSettingsPanel';
 // 🌟 THE FIX [Clean Architecture]: นำเข้า Component To-do ที่แยกส่วนไว้
 import ManagerTaskSection from './components/ManagerTaskSection';
 import EmailSetupModal from './components/EmailSetupModal';
+import ManagerDrivePanel from './components/ManagerDrivePanel';
 
 // 🌟 นำเข้า Hook ของ Dashboard
 import { useManagerDashboard } from './useManagerDashboard';
@@ -26,6 +27,7 @@ export default function ManagersOverview() {
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
   const [isGlobalSettingsOpen, setIsGlobalSettingsOpen] = useState(false);
   const [isEmailSetupOpen, setIsEmailSetupOpen] = useState(false);
+  const [isDrivePanelOpen, setIsDrivePanelOpen] = useState(false);
 
   // 🌟 ฟังก์ชันดั้งเดิมสำหรับจัดการหน้าต่าง Staff
   const handleApproveStaff = async (staffId) => {
@@ -87,6 +89,7 @@ export default function ManagersOverview() {
             onNavigateAds={() => navigate('/managers/ads')}
             onNavigateCredit={() => navigate('/managers/credit')}
             onOpenEmailSetup={() => setIsEmailSetupOpen(true)}
+            onOpenDrivePanel={() => setIsDrivePanelOpen(true)}
             onOpenVipModal={() => setIsVipModalOpen(true)}
             pendingStaffCount={dashboardLogic.pendingStaffs?.length || 0}
             pendingTasksCount={dashboardLogic.stats?.pendingTasksCount || 0}
@@ -124,6 +127,11 @@ export default function ManagersOverview() {
       <EmailSetupModal 
         isOpen={isEmailSetupOpen} 
         onClose={() => setIsEmailSetupOpen(false)} 
+      />
+
+      <ManagerDrivePanel
+        isOpen={isDrivePanelOpen}
+        onClose={() => setIsDrivePanelOpen(false)}
       />
 
       {/* --- 🧩 แผงตั้งค่า Global Settings --- */}

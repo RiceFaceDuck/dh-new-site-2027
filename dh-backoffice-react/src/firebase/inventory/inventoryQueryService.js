@@ -59,5 +59,37 @@ export const inventoryQueryService = {
     } catch (error) {
       return { sold: 0, returned: 0, viewed: 0 };
     }
+  },
+
+  getUniqueProductCategories: async () => {
+    try {
+      // 🚀 ประหยัด Reads โดยดึงจาก settings/product_categories
+      const docRef = doc(db, 'settings', 'product_categories');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          return data.categories.sort();
+        }
+      }
+
+      // Fallback: ถ้ายังไม่มีข้อมูลใน settings หรือข้อมูลว่าง ให้ไปอ่านจาก products ทั้งหมด
+      console.log("⚠️ [Fallback] ไม่พบข้อมูลใน settings/product_categories กำลังดึงจาก products ทั้งหมด...");
+      const q = query(collection(db, COLLECTION_NAME));
+      const snapshot = await getDocs(q);
+      const uniqueCategories = new Set();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.category) {
+          // เก็บค่าเป็น lowercase เพื่อไม่ให้ซ้ำซ้อน
+          uniqueCategories.add(data.category.toLowerCase().trim());
+        }
+      });
+      return Array.from(uniqueCategories).sort();
+
+    } catch (error) {
+      console.error("🔥 Error fetching unique categories:", error);
+      return [];
+    }
   }
 };
