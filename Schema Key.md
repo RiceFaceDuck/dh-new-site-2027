@@ -78,13 +78,14 @@ The `counters` collection stores atomic counters used for generating sequential 
 
 ## 4. Collection: `todos`
 
-The `todos` collection acts as a central hub for manager approvals, task management, and system requests (such as Claims, Returns, and Service Tasks). It tracks the lifecycle of asynchronous requests.
+The `todos` collection acts as a central hub for manager approvals, task management, and system requests (such as Claims, Returns, Ad Approvals, and Service Tasks). It tracks the lifecycle of asynchronous requests. 
+**Note:** All approval requests (including Ads which formerly used a duplicate `manager_todos` collection) must be routed to this root `todos` collection to prevent data redundancy and ensure proper sync with the Central Todo board.
 
 ### Schema Fields (Key Fields)
 
 | Field Name     | Type      | Description                                                                 | Example Value                       |
 |----------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
-| `type`         | String    | Type of the request/task.                                                   | `"CLAIM_APPROVAL"`, `"PRODUCT_DELETE_APPROVAL"`, `"BILL_CANCEL_APPROVAL"`, `"RETURN_APPROVAL"`, `"PRODUCT_IMPORT_APPROVAL"` |
+| `type`         | String    | Type of the request/task.                                                   | `"CLAIM_APPROVAL"`, `"PRODUCT_DELETE_APPROVAL"`, `"BILL_CANCEL_APPROVAL"`, `"RETURN_APPROVAL"`, `"PRODUCT_IMPORT_APPROVAL"`, `"PRODUCT_KNOWLEDGE_APPROVAL"` |
 | `title`        | String    | Title of the task/request.                                                  | `"ขออนุมัติเคลม: Mouse"`            |
 | `description`  | String    | Detailed description of the task.                                           | `"บิลอ้างอิง: DH-xxx\nอาการ: พัง"`  |
 | `priority`     | String    | Priority level.                                                             | `"High"`, `"Critical"`, `"Normal"`  |
@@ -144,6 +145,26 @@ The Email System has been upgraded to use **Firebase Cloud Functions** as a prox
 - **Emails**: Emails are **NOT** stored in the database. They are fetched on-the-fly via Cloud Functions and sent directly to the frontend.
 - **Authentication**: Admin connects the Gmail account once in the `/managers` dashboard. Cloud Functions handles the token refresh automatically.
 
+---
+
+## 8. Collection: `partners`
+
+The `partners` collection stores information about affiliated repair shops and partners. It is used to display nearby services to customers based on distance and credit points.
+
+### Schema Fields
+
+| Field Name   | Type      | Description                                                                 | Example Value                       |
+|--------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
+| `storeName`  | String    | The name of the partner's store.                                            | `"ช่างแอร์ตำนาน"`                       |
+| `phone`      | String    | Contact phone number for the store.                                         | `"0812345678"`                      |
+| `services`   | String    | Comma-separated list of services provided.                                  | `"เปลี่ยนจอ, อัปเกรด RAM, ล้างเครื่อง"`       |
+| `isActive`   | Boolean   | Whether the partner is active and accepting customers.                      | `true`                              |
+| `lat`        | Number    | Latitude of the store's location.                                           | `13.7563`                           |
+| `lng`        | Number    | Longitude of the store's location.                                          | `100.5018`                          |
+| `points`     | Number    | Credit points used to rank the partner when searching.                      | `150`                               |
+| `mapsUrl`    | String    | Google Maps URL for the store.                                              | `"https://goo.gl/maps/..."`         |
+
+
 ## 8. Collection: `products`
 
 The `products` collection stores all inventory items. It includes stock quantity, pricing, basic product data, and claim tracking information.
@@ -160,6 +181,13 @@ The `products` collection stores all inventory items. It includes stock quantity
 | `Price`          | Number  | The base or wholesale price.                                                | `1000`                              |
 | `retailPrice`    | Number  | The retail price shown on the website.                                      | `1500`                              |
 | `category`       | String  | The product category.                                                       | `"Screen"`                          |
+| `shortDescription`| String | A short highlighting description displayed under the name.                  | `"หน้าจอแท้ สีสด"`                     |
+| `compatibleModels`| Array/String | Devices or models that this part can be used with.                      | `["Acer Swift 3", "Asus VivoBook"]` |
+| `compatiblePartNumbers`| Array/String| Part numbers that this product is compatible with or replaces.        | `["PT123", "PT124"]`                |
+| `fullDescription` | String | A detailed description of the product.                                      | `"<p>รายละเอียดแบบเต็มๆ</p>"`       |
+| `youtubeUrl`     | String  | A link to a YouTube video review or tutorial.                               | `"https://youtu.be/..."`            |
+| `shopeeUrl`      | String  | Link to the product listing on Shopee marketplace.                          | `"https://shopee.co.th/..."`        |
+| `lazadaUrl`      | String  | Link to the product listing on Lazada marketplace.                          | `"https://lazada.co.th/..."`        |
 
 ---
 
@@ -228,5 +256,42 @@ The `freebies` collection stores promotional items that are given to customers w
 | `minSpend`       | Number  | The minimum subtotal required to unlock this freebie.                       | `5000`                              |
 | `isActive`       | Boolean | Toggle for whether this freebie is currently active.                        | `true`                              |
 | `imageUrl`       | String  | (Optional) The URL of the uploaded freebie icon/image.                      | `"https://drive.google.com/..."`    |
+
+---
+
+## 13. Document: `settings/manager_menus`
+
+This document stores the layout configuration (Drag & Drop grouping) for the Quick Access Tools in the Manager Dashboard.
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `zones`          | Array   | List of zone objects. Each zone contains an `id`, `title`, and `menuIds` array. | `[{ id: "z1", title: "HR", menuIds: ["staff"] }]` |
+
+## 14. Document: `settings/footer_config`
+
+This document stores the dynamic layout and configuration for the Storefront Footer.
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `colors`         | Map     | Tailwind color classes for the footer styling.                              | `{ bgDark: "slate-900", primaryAccent: "cyber-blue" }` |
+| `company`        | Map     | Brand info (logoUrl, description, address, lineId, phone, lineAddFriendUrl).| `{ logoUrl: "/logo.png", lineAddFriendUrl: "https://line..." }` |
+| `quickLinks`     | Array   | Array of objects for the "หมวดหมู่สินค้า" section.                        | `[{ id: "q1", label: "อะไหล่ภายใน", url: "/link" }]` |
+| `supportLinks`   | Array   | Array of objects for the "ศูนย์ช่วยเหลือ" section.                        | `[{ id: "s1", label: "คู่มือ", url: "/help" }]` |
+
+---
+
+## 15. Document: `settings/knowledge_config`
+
+This document stores the configuration for the "Add Knowledge" feature where users can suggest compatible models/parts to earn credits.
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `compatibleCreditReward` | Number | The number of credit points given when a compatible model/part suggestion is approved. Defaults to 2. | `2` |
 
 *(Additional schemas will be documented here as the system evolves)*

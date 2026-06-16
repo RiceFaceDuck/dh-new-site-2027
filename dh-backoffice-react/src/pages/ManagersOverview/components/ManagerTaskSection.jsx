@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, ClipboardList } from 'lucide-react';
 import { useManagerTodo } from '../../todo/hooks/useManagerTodo';
 import TodoItem from '../../../components/todo/TodoItem';
 import WholesaleCard from '../../../components/todo/WholesaleCard';
+import KnowledgeApprovalCard from '../../../components/todo/KnowledgeApprovalCard';
 
 // Premium Skeleton Loader
 const PremiumSkeleton = () => (
@@ -62,6 +63,25 @@ export default function ManagerTaskSection() {
         } catch (err) {
             console.error("Failed to update user profile during staff approval", err);
             // Optionally could throw here to stop task completion if critical
+        }
+    }
+
+    if (type === 'PRODUCT_KNOWLEDGE_APPROVAL' && action === 'approve') {
+        try {
+            const { auth } = await import('../../../firebase/config');
+            const { productKnowledgeAdminService } = await import('../../../firebase/productKnowledgeAdminService');
+            const adminId = auth.currentUser?.uid || 'Admin';
+            
+            const originalTask = managerTodos.find(t => t.id === taskId);
+            if (!originalTask) throw new Error("ไม่พบข้อมูลงานต้นฉบับ");
+
+            // Pass the original task object, which contains id, payload, createdByUid, etc.
+            await productKnowledgeAdminService.approveKnowledgeTask(originalTask, adminId);
+            return; // approveKnowledgeTask changes status already via transaction
+        } catch (err) {
+            console.error("Failed to approve product knowledge", err);
+            alert("เกิดข้อผิดพลาดในการอนุมัติ กรุณาลองใหม่: " + err.message);
+            return;
         }
     }
 
@@ -140,6 +160,7 @@ export default function ManagerTaskSection() {
           
           const props = {
             todo: task,
+            task: task, // KnowledgeApprovalCard expects 'task' prop
             isProcessing: processingId === task.id,
             isManagerTab: true,
             urgencyClass: getUrgencyClass(task.priority),
@@ -148,6 +169,9 @@ export default function ManagerTaskSection() {
 
           if (isWholesale) {
             return <WholesaleCard key={task.id} {...props} />;
+          }
+          if (type === 'PRODUCT_KNOWLEDGE_APPROVAL') {
+            return <KnowledgeApprovalCard key={task.id} {...props} />;
           }
           return <TodoItem key={task.id} {...props} />;
         })}

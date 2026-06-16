@@ -208,8 +208,7 @@ export const marketingService = {
          batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload);
       }
 
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), todoPayload);         
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), todoPayload); 
+      batch.set(doc(db, 'todos', taskId), todoPayload); 
 
       await batch.commit();
 
@@ -277,8 +276,7 @@ export const marketingService = {
          batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload, { merge: true });
       }
 
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), todoPayload, { merge: true });         
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), todoPayload, { merge: true }); 
+      batch.set(doc(db, 'todos', taskId), todoPayload, { merge: true }); 
 
       await batch.commit();
 

@@ -1,14 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
-  ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload
+  ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen
 } from 'lucide-react';
+import { menuConfigService } from '../../firebase/menuConfigService';
+
+// --- Icon Mapping ---
+const iconMap = {
+  Settings, History, Users, Calculator, Mail, Crown, 
+  Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
+  ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen
+};
 
 /**
  * 🎨 Component ปุ่มกดแบบฉบับย่อ (สกัดออกมาจากไฟล์หลัก)
  */
-const ToolCard = ({ title, subtitle, icon: Icon, colorTheme, onClick, badge, isComingSoon }) => {
+const ToolCard = ({ title, subtitle, iconName, colorTheme, onClick, badge, isComingSoon }) => {
+  const Icon = iconMap[iconName] || Settings;
+
   const themes = {
     indigo: 'text-indigo-600 bg-indigo-500/10 group-hover:bg-indigo-500/20 border-indigo-200',
     orange: 'text-orange-600 bg-orange-500/10 group-hover:bg-orange-500/20 border-orange-200',
@@ -20,30 +32,32 @@ const ToolCard = ({ title, subtitle, icon: Icon, colorTheme, onClick, badge, isC
     cyan: 'text-cyan-600 bg-cyan-500/10 group-hover:bg-cyan-500/20 border-cyan-200',
     red: 'text-red-600 bg-red-500/10 group-hover:bg-red-500/20 border-red-200',
     slate: 'text-slate-600 bg-slate-500/10 group-hover:bg-slate-500/20 border-slate-200',
+    sky: 'text-sky-600 bg-sky-500/10 group-hover:bg-sky-500/20 border-sky-200',
+    fuchsia: 'text-fuchsia-600 bg-fuchsia-500/10 group-hover:bg-fuchsia-500/20 border-fuchsia-200',
   };
 
   return (
     <button
       onClick={isComingSoon ? undefined : onClick}
       disabled={isComingSoon}
-      className={`relative flex flex-col items-center justify-start p-4 bg-[var(--dh-bg-surface)] rounded-xl border border-[var(--dh-border)] transition-all duration-300 text-center overflow-hidden h-full
-        ${isComingSoon ? 'opacity-60 cursor-not-allowed grayscale-[30%]' : 'hover:border-transparent hover:shadow-md group'}
+      className={`relative flex flex-col items-center justify-start p-5 bg-[var(--dh-bg-surface)] rounded-2xl border-2 border-[var(--dh-border)] transition-all duration-300 text-center overflow-hidden h-full shadow-sm
+        ${isComingSoon ? 'opacity-60 cursor-not-allowed grayscale-[30%]' : 'hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xl hover:-translate-y-1 group'}
       `}
     >
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform duration-300 border ${themes[colorTheme]} ${!isComingSoon && 'group-hover:scale-110 group-hover:-rotate-3'}`}>
-        <Icon size={20} />
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 border-2 ${themes[colorTheme] || themes.slate} ${!isComingSoon && 'group-hover:scale-110 group-hover:-rotate-3 shadow-md'}`}>
+        <Icon size={24} />
       </div>
-      <h3 className={`text-[13px] font-bold text-[var(--dh-text-main)] mb-1 transition-colors leading-tight ${!isComingSoon && 'group-hover:text-[var(--dh-accent)]'}`}>{title}</h3>
-      <p className="text-[10px] font-medium text-[var(--dh-text-muted)] line-clamp-2 leading-tight">{subtitle}</p>
+      <h3 className={`text-[14px] font-black text-[var(--dh-text-main)] mb-1.5 transition-colors leading-tight ${!isComingSoon && 'group-hover:text-[var(--dh-accent)]'}`}>{title}</h3>
+      <p className="text-[11px] font-semibold text-[var(--dh-text-muted)] line-clamp-2 leading-tight px-1">{subtitle}</p>
 
       {badge > 0 && !isComingSoon && (
-        <div className="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full animate-bounce shadow-sm">
+        <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full animate-bounce shadow-md">
           {badge}
         </div>
       )}
 
       {isComingSoon && (
-        <div className="absolute top-0 right-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-bl-xl rounded-tr-xl">
+        <div className="absolute top-0 right-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black px-2.5 py-1 rounded-bl-xl rounded-tr-2xl shadow-sm">
           รอพัฒนา
         </div>
       )}
@@ -51,11 +65,14 @@ const ToolCard = ({ title, subtitle, icon: Icon, colorTheme, onClick, badge, isC
   );
 };
 
+// --- Definitions (same as Layout Manager) ---
+import { AVAILABLE_MENUS } from './components/MenuLayoutManager';
+import { useNavigate } from 'react-router-dom';
+
 /**
- * 🛠️ ส่วนแผงเครื่องมือควบคุม (Quick Access Tools)
+ * 🛠️ ส่วนแผงเครื่องมือควบคุม (Quick Access Tools) แบบ Dynamic Layout
  */
 const QuickAccessTools = ({ 
-  onOpenGlobalSettings, 
   onNavigatePricing, 
   onNavigateStaff, 
   onNavigateHistory, 
@@ -64,160 +81,98 @@ const QuickAccessTools = ({
   onOpenVipModal,
   onNavigateAds,
   onNavigateCredit,
+  onOpenLayoutManager,
   pendingStaffCount,
-  vipCount
+  vipCount,
+  refreshTrigger // ใช้สำหรับสั่งโหลดใหม่หลังจากเซฟ Layout
 }) => {
+  const [layout, setLayout] = useState({ zones: [] });
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchLayout = async () => {
+      setIsLoading(true);
+      const data = await menuConfigService.getMenuLayout();
+      setLayout(data);
+      setIsLoading(false);
+    };
+    fetchLayout();
+  }, [refreshTrigger]);
+
+  const getClickHandler = (menuId) => {
+    switch (menuId) {
+      case 'vip': return onOpenVipModal;
+      case 'staff': return onNavigateStaff;
+      case 'pricing': return onNavigatePricing;
+      case 'history': return onNavigateHistory;
+      case 'email': return onOpenEmailSetup;
+      case 'drive': return onOpenDrivePanel;
+      case 'ads': return onNavigateAds;
+      case 'credit': return onNavigateCredit;
+      // เมนูย่อยจากนโยบายกลาง (จะเปิด Global Settings Panel โดยระบุ Tab)
+      case 'buffer': return () => navigate('/managers/buffer');
+      case 'category': return () => navigate('/managers/category');
+      case 'regex': return () => navigate('/managers/regex');
+      case 'warranty': return () => navigate('/managers/warranty');
+      case 'ads_config': return () => navigate('/managers/ads-config');
+      case 'theme': return () => navigate('/managers/theme');
+      case 'knowledge': return () => navigate('/managers/knowledge');
+      case 'footer': return () => navigate('/managers/footer-settings');
+      default: return undefined;
+    }
+  };
+
+  const getBadge = (menuId) => {
+    if (menuId === 'staff') return pendingStaffCount;
+    // if (menuId === 'vip') return vipCount; // Optional: show VIP count
+    return 0;
+  };
+
+  if (isLoading) {
+    return <div className="h-64 flex items-center justify-center font-bold text-slate-400">กำลังโหลดแผงเมนู...</div>;
+  }
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 h-full">
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-end mb-[-1rem] z-10 relative">
+        <button 
+          onClick={onOpenLayoutManager}
+          className="text-[11px] font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-blue-600 px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors"
+        >
+          <LayoutGrid size={14} /> ตั้งค่าแผงเมนู
+        </button>
+      </div>
+
+      {layout.zones.map(zone => {
+        if (!zone.menuIds || zone.menuIds.length === 0) return null;
         
-        {/* === หมวดหมู่ผู้ใช้งาน === */}
-        <ToolCard 
-          title="ลูกค้า VIP" 
-          subtitle="ข้อมูลและออเดอร์คนสำคัญ"
-          icon={Crown} 
-          colorTheme="amber"
-          onClick={onOpenVipModal}
-        />
-
-        <ToolCard 
-          title="จัดการพนักงาน" 
-          subtitle="อนุมัติและตั้งค่าตำแหน่ง"
-          icon={Users} 
-          colorTheme="orange"
-          onClick={onNavigateStaff}
-          badge={pendingStaffCount}
-        />
-
-        {/* === หมวดหมู่ตั้งค่าหลัก === */}
-        <ToolCard 
-          title="นโยบายกลาง" 
-          subtitle="สต็อกกันชน, รับประกัน, ร้านค้า"
-          icon={Settings} 
-          colorTheme="indigo"
-          onClick={onOpenGlobalSettings}
-        />
-        
-        <ToolCard 
-          title="นโยบายราคาปลีก" 
-          subtitle="ตั้งค่าคำนวณกำไรและราคา"
-          icon={Calculator} 
-          colorTheme="emerald"
-          onClick={onNavigatePricing}
-        />
-
-        <ToolCard 
-          title="ประวัติระบบ" 
-          subtitle="ตรวจสอบ History Log"
-          icon={History} 
-          colorTheme="purple"
-          onClick={onNavigateHistory}
-        />
-
-        {/* === หมวดหมู่ใหม่ (เตรียมพร้อม) === */}
-        <ToolCard 
-          title="แบนเนอร์โฆษณา" 
-          subtitle="จัดการป้ายโฆษณาหน้าเว็บ"
-          icon={Megaphone} 
-          colorTheme="rose"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="SEO & ค้นหา" 
-          subtitle="ปรับแต่ง SEO และ SGE"
-          icon={Search} 
-          colorTheme="blue"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="API Keys" 
-          subtitle="ตั้งค่าเชื่อมต่อระบบภายนอก"
-          icon={Code} 
-          colorTheme="cyan"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="อีเมลบริษัท" 
-          subtitle="ตั้งค่าตอบอีเมลทีมงาน"
-          icon={Mail} 
-          colorTheme="blue"
-          onClick={onOpenEmailSetup}
-        />
-
-        <ToolCard 
-          title="จัดการ Google Drive" 
-          subtitle="คลังรูปภาพและสินทรัพย์"
-          icon={CloudUpload} 
-          colorTheme="cyan"
-          onClick={onOpenDrivePanel}
-        />
-
-        <ToolCard 
-          title="Privacy & Cookies" 
-          subtitle="นโยบายข้อมูลและคุกกี้"
-          icon={ShieldCheck} 
-          colorTheme="emerald"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="หน้า 404 Error" 
-          subtitle="ปรับแต่งหน้าไม่พบข้อมูล"
-          icon={AlertTriangle} 
-          colorTheme="amber"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="Redirect URLs" 
-          subtitle="จัดการการเปลี่ยนเส้นทางลิงก์"
-          icon={ArrowRightLeft} 
-          colorTheme="indigo"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="Custom Scripts" 
-          subtitle="จัดการโค้ดหน้าบ้าน (Head/Body)"
-          icon={Code2} 
-          colorTheme="slate"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="Security & Block" 
-          subtitle="บล็อค IP และอีเมลอันตราย"
-          icon={ShieldBan} 
-          colorTheme="red"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="ปิดปรับปรุง" 
-          subtitle="เปิด/ปิดโหมด Maintenance"
-          icon={HardHat} 
-          colorTheme="orange"
-          isComingSoon={true}
-        />
-
-        <ToolCard 
-          title="Ads Manager" 
-          subtitle="จัดการโฆษณาหน้าเว็บ"
-          icon={Megaphone} 
-          colorTheme="rose"
-          onClick={onNavigateAds}
-        />
-
-        <ToolCard 
-          title="Credit Point" 
-          subtitle="จัดการเครดิตของลูกค้า"
-          icon={CreditCard} 
-          colorTheme="indigo"
-          onClick={onNavigateCredit}
-        />
-
+        return (
+          <div key={zone.id} className="space-y-3">
+            <h3 className="text-[15px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest pl-2 border-l-4 border-blue-500 mb-2">
+              {zone.title}
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+              {zone.menuIds.map(menuId => {
+                const menuDef = AVAILABLE_MENUS[menuId];
+                if (!menuDef) return null;
+                return (
+                  <ToolCard 
+                    key={menuId}
+                    title={menuDef.title} 
+                    subtitle={menuDef.subtitle}
+                    iconName={menuDef.iconName} 
+                    colorTheme={menuDef.colorTheme}
+                    isComingSoon={menuDef.isComingSoon}
+                    badge={getBadge(menuId)}
+                    onClick={getClickHandler(menuId)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

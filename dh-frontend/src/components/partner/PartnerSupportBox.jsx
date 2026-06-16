@@ -1,34 +1,80 @@
- 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, MapPin, Phone, Star, Wrench, Navigation, AlertCircle } from 'lucide-react';
-// 🚀 นำเข้า Service ตัวเก่งของเรา (หาตำแหน่งที่ใกล้ที่สุด)
+import { ShieldCheck, Phone, CheckCircle2 } from 'lucide-react';
 import { findNearestPartner, getUserCurrentLocation } from '../../firebase/partnerLocationService';
+
+// ==========================================
+// 🧩 Sub-Components (SRP)
+// ==========================================
+
+const PartnerServiceBadges = ({ servicesText }) => {
+  if (!servicesText) return null;
+  const servicesList = servicesText.split(',').map(s => s.trim()).filter(Boolean);
+  
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {servicesList.map((service, idx) => (
+        <span key={idx} className="flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded border border-emerald-100 line-clamp-1">
+          <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+          {service}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const SkeletonLoader = () => (
+  <div className="w-full bg-white border-y border-slate-200 animate-pulse flex overflow-hidden shadow-sm -mx-6 md:-mx-10 -mt-4 md:-mt-6 mb-0 h-48 sm:h-56 md:h-48">
+    <div className="w-1/3 bg-slate-200 h-full"></div>
+    <div className="w-2/3 p-4 flex flex-col justify-between">
+      <div className="h-6 w-3/4 bg-slate-200 rounded"></div>
+      <div className="h-10 w-48 bg-slate-200 rounded-lg"></div>
+    </div>
+  </div>
+);
+
+// ==========================================
+// 📦 Main Component
+// ==========================================
 
 const PartnerSupportBox = () => {
   const [partner, setPartner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ทำงานทันทีที่ Component ถูกแสดงในหน้าจอ (เช่น เข้าหน้า Detail สินค้า)
   useEffect(() => {
     const fetchPartner = async () => {
       try {
         setLoading(true);
-        // 1. แอบขอพิกัดผู้ใช้อย่างเงียบๆ
         const location = await getUserCurrentLocation();
-        
-        // 2. ส่งไปคำนวณหาร้านซ่อมที่อยู่ในรัศมี (สมมติ 30 กม.)
         const nearest = await findNearestPartner(location.latitude, location.longitude, 30);
         
         if (nearest) {
+          // 🚀 [THE FIX] ดึงรูปภาพจาก partner_ads (เหมือนหน้าสินค้า/โฮมเพจ) เพื่อให้รองรับร้านค้าเก่าที่เซฟข้อมูลไว้ก่อนอัปเดตระบบ
+          try {
+            const { doc, getDoc } = await import('firebase/firestore');
+            const { db } = await import('../../firebase/config');
+            const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
+            const adId = `AD-CARD-${nearest.partnerId || nearest.id}`;
+            const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);
+            const adSnap = await getDoc(adRef);
+            
+            if (adSnap.exists()) {
+              const adData = adSnap.data();
+              if (adData.imageUrl) nearest.fallbackAdImage = adData.imageUrl;
+              if (!nearest.lineUrl && adData.lineUrl) nearest.lineUrl = adData.lineUrl;
+              if (!nearest.messengerUrl && adData.messengerUrl) nearest.messengerUrl = adData.messengerUrl;
+            }
+          } catch (imgError) {
+            console.error("Failed to fetch fallback ad image:", imgError);
+          }
+
           setPartner(nearest);
         } else {
-          // ถ้าหาไม่เจอ ให้ซ่อนตัวไปเงียบๆ (ไม่ต้องแสดง Error น่าเกลียด)
           setError("No partners nearby"); 
         }
       } catch (err) {
         console.error("Partner Box - Location Error:", err);
-        setError("Location permission denied or unavailable");
+        setError("Location permission denied");
       } finally {
         setLoading(false);
       }
@@ -37,95 +83,85 @@ const PartnerSupportBox = () => {
     fetchPartner();
   }, []);
 
-  // ฟังก์ชันกดโทรติดต่อ (จุดนี้เตรียมไว้หัก Credit Point)
   const handleContactClick = () => {
     if (!partner) return;
-    
-    // โตไปเราจะเพิ่มโค้ดเรียก deductCredit() ตรงนี้
-    console.log(`[Action] ลูกค้าหน้า Detail กดติดต่อร้าน: ${partner.storeName} (รอเชื่อมระบบหัก Credit Point)`);
-    
-    // สั่งเปิดเบอร์โทรศัพท์
     window.location.href = `tel:${partner.phone}`;
   };
 
-  // ================= RENDER =================
+  if (loading) return <SkeletonLoader />;
+  if (error || !partner) return null; 
 
-  // 1. สถานะกำลังโหลด: แสดงโครงร่าง (Skeleton) สวยๆ เพื่อไม่ให้ UI กระโดด
-  if (loading) {
-    return (
-      <div className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 animate-pulse">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-200 rounded-full shrink-0"></div>
-          <div className="flex-1 space-y-2">
-            <div className="h-3 w-1/3 bg-slate-200 rounded"></div>
-            <div className="h-4 w-2/3 bg-slate-200 rounded"></div>
-          </div>
+  return (
+    <div className="-mx-6 md:-mx-10 -mt-4 md:-mt-6 mb-0 bg-white border-b border-slate-200 shadow-sm relative overflow-hidden flex flex-col sm:flex-row group">
+      
+      {/* 🖼️ ฝั่งซ้าย/บน: ภาพร้านค้า */}
+      <div className="w-full sm:w-[40%] md:w-[35%] relative h-48 sm:h-auto overflow-hidden bg-slate-50 flex shrink-0 items-center justify-center sm:border-r border-slate-200">
+        <img 
+          src={partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage || "/logo.png"} 
+          alt="Shop Profile" 
+          className={`w-full h-full ${partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage ? 'object-cover' : 'object-contain p-6 opacity-30'} transition-transform duration-700 group-hover:scale-105`}
+        />
+        <div className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-sm px-2 py-1 rounded text-white flex items-center gap-1 shadow-sm">
+           <ShieldCheck size={12} className="text-emerald-400" />
+           <span className="font-bold text-[9px] uppercase tracking-wider">DH Verified</span>
         </div>
       </div>
-    );
-  }
 
-  // 2. สถานะเกิด Error หรือ ไม่มีร้านใกล้เคียง: (ซ่อนตัวไปเลย ไม่ต้องแสดงให้เกะกะสายตา)
-  if (error || !partner) {
-    return null; 
-  }
+      {/* 🔴 ฝั่งขวา/ล่าง: ข้อมูลไฮไลท์และปุ่มติดต่อ */}
+      <div className="flex-1 p-4 sm:p-5 flex flex-col justify-center bg-white relative z-10 overflow-hidden">
+         
+         <div className="flex flex-col gap-2">
+           {/* Row 1: เจอร้านซ่อมใกล้คุณ */}
+           <h3 className="text-lg sm:text-xl font-black text-slate-800 leading-tight">
+             เจอร้านซ่อมใกล้คุณ <span className="text-[#0870B8]">{partner.formattedDistance}</span>
+           </h3>
+           
+           {/* Row 2: ชื่อร้าน */}
+           <div>
+             <h2 className="text-2xl sm:text-3xl font-black leading-tight line-clamp-2 tracking-wide" style={{ color: '#E53935', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,0.2)' }}>
+               {partner.storeName}
+             </h2>
+           </div>
 
-  // 3. เจอร้านที่ใกล้ที่สุดแล้ว! แสดงผลให้สวยงาม
-  return (
-    <div className="w-full bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 rounded-2xl p-4 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-      
-      {/* ลวดลายตกแต่งพื้นหลัง */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500 opacity-5 rounded-bl-full pointer-events-none transition-transform group-hover:scale-110"></div>
-      
-      <div className="relative z-10 flex flex-col gap-3">
-        
-        {/* ส่วนหัว: โลโก้ และ ชื่อร้าน */}
-        <div className="flex items-start justify-between">
-          <div className="flex gap-3">
-            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0 border border-emerald-200 shadow-inner">
-              <Wrench size={18} />
+           {/* Row 3: บริการ */}
+           <div className="mt-0">
+             <PartnerServiceBadges servicesText={partner.services} />
+           </div>
+         </div>
+
+         {/* Row 4: ปุ่มติดต่อ */}
+         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 mt-4">
+            <button 
+              onClick={handleContactClick}
+              className="w-auto px-6 bg-[#0870B8] hover:bg-[#065A96] text-white font-bold py-2.5 sm:py-3 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95"
+            >
+              <Phone size={18} className="animate-pulse shrink-0" /> 
+              <span className="tracking-wide text-sm sm:text-base">โทรติดต่อร้าน ทันที</span>
+            </button>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button 
+                onClick={() => partner.lineUrl ? window.open(partner.lineUrl, '_blank') : alert('คุณยังไม่ได้เพิ่มลิงก์ LINE ในหน้าตั้งค่าร้านค้าครับ')} 
+                className={`w-11 h-11 sm:w-12 sm:h-12 text-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg active:scale-95 transition-all ${partner.lineUrl ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-slate-300 cursor-not-allowed'}`}
+                title={partner.lineUrl ? "ติดต่อผ่าน LINE" : "ยังไม่มีข้อมูล LINE"}
+              >
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                  <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.122.302.079.771.038 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.573-3.843 2.573-5.992z"/>
+                </svg>
+              </button>
+
+              <button 
+                onClick={() => partner.messengerUrl ? window.open(partner.messengerUrl, '_blank') : alert('คุณยังไม่ได้เพิ่มลิงก์ Messenger ในหน้าตั้งค่าร้านค้าครับ')} 
+                className={`w-11 h-11 sm:w-12 sm:h-12 text-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg active:scale-95 transition-all ${partner.messengerUrl ? 'bg-[#0084FF] hover:bg-[#0073e6]' : 'bg-slate-300 cursor-not-allowed'}`}
+                title={partner.messengerUrl ? "ติดต่อผ่าน Messenger" : "ยังไม่มีข้อมูล Messenger"}
+              >
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                  <path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.3 2.246.464 3.443.464 6.627 0 12-4.974 12-11.111C24 4.974 18.627 0 12 0zm1.191 14.963l-3.056-3.26-5.963 3.26 6.559-6.963 3.13 3.259 5.888-3.259-6.558 6.963z"/>
+                </svg>
+              </button>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="text-[10px] font-black tracking-widest text-emerald-600 uppercase bg-emerald-100 px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
-                  <ShieldCheck size={10} /> DH Verified
-                </span>
-                <span className="text-[10px] text-slate-400 font-medium">ร้านซ่อมใกล้คุณ</span>
-              </div>
-              <h4 className="font-bold text-slate-800 text-sm leading-tight line-clamp-1">
-                {partner.storeName}
-              </h4>
-            </div>
-          </div>
-        </div>
-
-        {/* ส่วนข้อมูล: ระยะทาง และ บริการ */}
-        <div className="bg-white/60 p-2.5 rounded-xl border border-white space-y-1.5">
-          <div className="flex justify-between items-center text-xs">
-            <div className="flex items-center gap-1.5 text-slate-600">
-              <Navigation size={12} className="text-emerald-500" /> ระยะทาง
-            </div>
-            <span className="font-bold text-[#0870B8]">{partner.formattedDistance}</span>
-          </div>
-          
-          {partner.services && (
-            <div className="flex justify-between items-start text-xs pt-1.5 border-t border-emerald-100/50">
-              <div className="flex items-start gap-1.5 text-slate-600 shrink-0">
-                <Star size={12} className="text-amber-400 mt-0.5" /> บริการ
-              </div>
-              <span className="text-slate-500 font-medium text-right line-clamp-1">{partner.services}</span>
-            </div>
-          )}
-        </div>
-
-        {/* ส่วนปุ่มกดติดต่อ */}
-        <button 
-          onClick={handleContactClick}
-          className="w-full mt-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2.5 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-        >
-          <Phone size={14} className="animate-pulse" /> โทรให้ช่างประกอบให้ (ติดต่อร้าน)
-        </button>
-
+         </div>
+         
       </div>
     </div>
   );

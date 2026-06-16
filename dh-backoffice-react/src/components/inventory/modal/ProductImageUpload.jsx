@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, Loader2, Star, Trash2 } from 'lucide-react';
+import { UploadCloud, Loader2, Star, Trash2, Eye, EyeOff } from 'lucide-react';
 import { driveService } from '../../../firebase/driveService';
 
 export default function ProductImageUpload({ 
@@ -81,6 +81,17 @@ export default function ProductImageUpload({
     });
   };
 
+  const toggleVisibility = (imgUrl) => {
+    setForm(prev => {
+      const hidden = prev.hiddenImages || [];
+      if (hidden.includes(imgUrl)) {
+        return { ...prev, hiddenImages: hidden.filter(url => url !== imgUrl) };
+      } else {
+        return { ...prev, hiddenImages: [...hidden, imgUrl] };
+      }
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div 
@@ -127,24 +138,32 @@ export default function ProductImageUpload({
       
       {form.images.length > 0 && (
         <div className="grid grid-cols-5 gap-2">
-          {form.images.map((imgUrl, idx) => (
-            <div key={idx} 
-                 onClick={() => setActiveImageUrl(imgUrl)}
-                 className={`aspect-square rounded-lg border-2 overflow-hidden relative group cursor-pointer transition-all bg-dh-base
-                 ${activeImageUrl === imgUrl ? 'border-dh-accent shadow-sm scale-[1.02]' : 'border-dh-border hover:border-dh-accent/50'}`}>
-              
-              <img src={getRenderableImageUrl(imgUrl)} alt={`Thumb ${idx}`} className="w-full h-full object-cover" 
-                   onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Err'; }} />
-              
-              {idx === 0 && <div className="absolute top-0 left-0 bg-yellow-400 text-white p-0.5 rounded-br-lg"><Star size={10}/></div>}
-              <div className="absolute inset-0 bg-dh-main/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 backdrop-blur-[1px]">
-                {idx !== 0 && (
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setCoverImage(idx); }} className="p-1.5 bg-dh-surface text-yellow-500 rounded-full hover:bg-yellow-50 hover:text-yellow-600 shadow-sm transition-colors" title="ตั้งเป็นภาพปก"><Star size={12}/></button>
-                )}
-                <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(idx, imgUrl); }} className="p-1.5 bg-dh-surface text-red-500 rounded-full hover:bg-red-50 hover:text-red-600 shadow-sm transition-colors" title="ลบภาพ"><Trash2 size={12}/></button>
+          {form.images.map((imgUrl, idx) => {
+            const isHidden = form.hiddenImages?.includes(imgUrl);
+            return (
+              <div key={idx} 
+                   onClick={() => setActiveImageUrl(imgUrl)}
+                   className={`aspect-square rounded-lg border-2 overflow-hidden relative group cursor-pointer transition-all bg-dh-base
+                   ${activeImageUrl === imgUrl ? 'border-dh-accent shadow-sm scale-[1.02]' : 'border-dh-border hover:border-dh-accent/50'}`}>
+                
+                <img src={getRenderableImageUrl(imgUrl)} alt={`Thumb ${idx}`} className={`w-full h-full object-cover ${isHidden ? 'opacity-40 grayscale' : ''}`} 
+                     onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Err'; }} />
+                
+                {idx === 0 && <div className="absolute top-0 left-0 bg-yellow-400 text-white p-0.5 rounded-br-lg z-10"><Star size={10}/></div>}
+                {isHidden && <div className="absolute top-0 right-0 bg-slate-500 text-white p-0.5 rounded-bl-lg z-10"><EyeOff size={10}/></div>}
+                
+                <div className="absolute inset-0 bg-dh-main/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-wrap items-center justify-center gap-1.5 backdrop-blur-[1px] p-1">
+                  {idx !== 0 && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setCoverImage(idx); }} className="p-1.5 bg-dh-surface text-yellow-500 rounded-full hover:bg-yellow-50 hover:text-yellow-600 shadow-sm transition-colors" title="ตั้งเป็นภาพปก"><Star size={12}/></button>
+                  )}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); toggleVisibility(imgUrl); }} className="p-1.5 bg-dh-surface text-blue-500 rounded-full hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-colors" title={isHidden ? "เปิดแสดงผล" : "ซ่อนภาพนี้"}>
+                    {isHidden ? <Eye size={12}/> : <EyeOff size={12}/>}
+                  </button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(idx, imgUrl); }} className="p-1.5 bg-dh-surface text-red-500 rounded-full hover:bg-red-50 hover:text-red-600 shadow-sm transition-colors" title="ลบภาพ"><Trash2 size={12}/></button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

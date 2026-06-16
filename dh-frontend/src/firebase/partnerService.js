@@ -76,7 +76,12 @@ export const findNearestPartner = async (userLat, userLng) => {
 
       if (score > maxScore) {
         maxScore = score;
-        bestPartner = { ...partner, distanceKm: distance.toFixed(2), score: score.toFixed(2) };
+        bestPartner = { 
+          ...partner, 
+          distanceKm: distance.toFixed(2), 
+          score: score.toFixed(2),
+          formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${distance.toFixed(1)} กม.`
+        };
       }
     }
   });

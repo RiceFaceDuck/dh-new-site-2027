@@ -8,7 +8,7 @@ export const INITIAL_FORM = {
   sku: '', name: '', brand: '', category: 'Screen', unit: 'ชิ้น',
   Price: 0, retailPrice: 0,
   stockQuantity: 0, bufferStock: '', warehouseLocation: '',
-  images: [], 
+  images: [], hiddenImages: [],
   compatibleModels: [], compatiblePartNumbers: [], 
   sellingModel: '', 
   substituteSkus: [], 
@@ -44,6 +44,7 @@ export default function useProductForm(productData, isOpen) {
       if (!initData.internalComments) initData.internalComments = [];
       if (!initData.sellingModel) initData.sellingModel = '';
       if (!initData.landingPageUrl) initData.landingPageUrl = '';
+      if (!initData.hiddenImages) initData.hiddenImages = [];
       
       setForm(initData);
       setIsUploading(false);

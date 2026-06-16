@@ -23,7 +23,8 @@ export const MANAGER_TASK_TYPES = [
   'WALLET_WITHDRAWAL',   // งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า
   'STAFF_APPROVAL',      // งานตรวจสอบ/อนุมัติ พนักงานใหม่เข้าทำงาน
   'PRODUCT_DELETE_APPROVAL', // ขออนุมัติการลบสินค้า
-  'BILL_CANCEL_APPROVAL'     // ขออนุมัติการยกเลิกบิล
+  'BILL_CANCEL_APPROVAL',    // ขออนุมัติการยกเลิกบิล
+  'PRODUCT_KNOWLEDGE_APPROVAL' // ขออนุมัติเพิ่มข้อมูลรุ่น/พาร์ทที่รองรับ
 ];
 
 export const managerTodoService = {

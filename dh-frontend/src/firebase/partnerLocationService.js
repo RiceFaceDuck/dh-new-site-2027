@@ -66,12 +66,10 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
   }
 };
 
+import { partnerService } from './partnerService';
+
 /**
- * 🎯 ค้นหาร้านพาร์ทเนอร์ที่อยู่ใกล้ลูกค้ามากที่สุด (Nearest Partner)
- * @param {number} userLat - ละติจูดของลูกค้า
- * @param {number} userLon - ลองจิจูดของลูกค้า
- * @param {number} maxDistanceKm - รัศมีสูงสุดในการค้นหา (กิโลเมตร)
- * @returns {Object|null} คืนค่า Object พาร์ทเนอร์ที่ใกล้ที่สุด (พร้อมแนบระยะทาง) หรือ null ถ้าไม่มีใครอยู่ในรัศมี
+ * 🎯 ค้นหาร้านพาร์ทเนอร์ที่อยู่ใกล้ลูกค้ามากที่สุด (Nearest Partner) 
  */
 export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) => {
   if (!userLat || !userLon) return null;
@@ -84,7 +82,6 @@ export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) =
   let minDistance = Infinity;
 
   partners.forEach(partner => {
-    // ข้ามคนที่ไม่มีพิกัด
     if (!partner.latitude || !partner.longitude) return;
 
     const distance = calculateDistance(
@@ -94,18 +91,17 @@ export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) =
       partner.longitude
     );
 
-    // เลือกร้านที่ระยะทางน้อยกว่าที่เคยเจอมา และต้องไม่เกิน maxDistanceKm
     if (distance < minDistance && distance <= maxDistanceKm) {
       minDistance = distance;
       nearestPartner = { 
         ...partner, 
-        distanceKm: distance, // แนบระยะทางเข้าไปด้วยเพื่อไปแสดงผล (เช่น 2.5 กม.)
+        distanceKm: distance,
         formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${distance.toFixed(1)} กม.`
       };
     }
   });
 
-  return nearestPartner; // คืนค่าเฉพาะร้านที่ใกล้และอยู่ในรัศมีที่สุด
+  return nearestPartner;
 };
 
 /**

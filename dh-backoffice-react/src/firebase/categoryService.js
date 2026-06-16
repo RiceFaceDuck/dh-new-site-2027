@@ -16,7 +16,8 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
-import { db, storage } from './config';
+import { db, storage, auth } from './config';
+import { historyService } from './historyService';
 
 const COLLECTION_NAME = 'homepage_categories';
 
@@ -100,6 +101,10 @@ export const categoryService = {
       };
 
       const docRef = await addDoc(collection(db, COLLECTION_NAME), newData);
+      
+      const uid = auth.currentUser?.uid;
+      await historyService.addLog('Category', 'Create', 'category', `เพิ่มหมวดหมู่ใหม่: ${categoryData.name}`, uid);
+      
       return { id: docRef.id, ...newData };
     } catch (error) {
       console.error('Error in createCategory:', error);
@@ -138,6 +143,9 @@ export const categoryService = {
       const docRef = doc(db, COLLECTION_NAME, id);
       await updateDoc(docRef, updatePayload);
       
+      const uid = auth.currentUser?.uid;
+      await historyService.addLog('Category', 'Update', 'category', `แก้ไขหมวดหมู่: ${categoryData.name}`, uid);
+      
       return { id, ...updatePayload };
     } catch (error) {
       console.error('Error in updateCategory:', error);
@@ -155,6 +163,10 @@ export const categoryService = {
       }
       const docRef = doc(db, COLLECTION_NAME, id);
       await deleteDoc(docRef);
+      
+      const uid = auth.currentUser?.uid;
+      await historyService.addLog('Category', 'Delete', 'category', `ลบหมวดหมู่: ID=${id}`, uid);
+      
       return true;
     } catch (error) {
       console.error('Error in deleteCategory:', error);
@@ -195,6 +207,9 @@ export const categoryService = {
         isActive: newIsActive,
         updatedAt: serverTimestamp()
       });
+
+      const uid = auth.currentUser?.uid;
+      await historyService.addLog('Category', 'Update', 'category', `เปลี่ยนสถานะหมวดหมู่ ID=${id} เป็น ${newStatus}`, uid);
 
       return { status: newStatus, isActive: newIsActive };
     } catch (error) {

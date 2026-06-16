@@ -33,6 +33,15 @@ import ShippingManagement from './pages/managers/ShippingManagement'
 import AdManagement from './pages/managers/AdManagement'
 import PartnerSettings from './pages/managers/PartnerSettings'
 
+import GlobalBufferSettings from './pages/managers/GlobalBufferSettings'
+import GlobalCategorySettings from './pages/managers/GlobalCategorySettings'
+import GlobalRegexSettings from './pages/managers/GlobalRegexSettings'
+import GlobalWarrantySettings from './pages/managers/GlobalWarrantySettings'
+import GlobalAdsConfig from './pages/managers/GlobalAdsConfig'
+import GlobalThemeSettings from './pages/managers/GlobalThemeSettings'
+import GlobalKnowledgeSettings from './pages/managers/GlobalKnowledgeSettings'
+import GlobalFooterSettings from './pages/managers/GlobalFooterSettings'
+
 const Placeholder = ({ title }) => (
   <div className="flex items-center justify-center h-full">
     <h2 className="text-2xl text-gray-500 font-semibold">{title} (กำลังพัฒนา)</h2>
@@ -117,6 +126,16 @@ function AppContent() {
           <Route path="managers/shipping" element={<ShippingManagement />} />
           <Route path="managers/ads" element={<AdManagement />} />
           <Route path="managers/partners" element={<PartnerSettings />} />
+
+          {/* ⚙️ Global Settings Pages */}
+          <Route path="managers/buffer" element={<GlobalBufferSettings />} />
+          <Route path="managers/category" element={<GlobalCategorySettings />} />
+          <Route path="managers/regex" element={<GlobalRegexSettings />} />
+          <Route path="managers/warranty" element={<GlobalWarrantySettings />} />
+          <Route path="managers/ads-config" element={<GlobalAdsConfig />} />
+          <Route path="managers/theme" element={<GlobalThemeSettings />} />
+          <Route path="managers/knowledge" element={<GlobalKnowledgeSettings />} />
+          <Route path="managers/footer-settings" element={<GlobalFooterSettings />} />
         </Route>
         
         <Route path="history" element={<HistoryPage />}/>

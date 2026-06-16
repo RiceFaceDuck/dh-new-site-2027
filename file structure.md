@@ -109,7 +109,6 @@ dh-new-site-2027/
 │       │   │       ├── ProductPricingStock.jsx
 │       │   │       └── ProductTags.jsx
 │       │   ├── managers/ # Manager specific components
-│       │   │   ├── GlobalSettingsPanel.jsx
 │       │   │   └── category/
 │       │   │       ├── CategoryCard.jsx
 │       │   │       ├── CategoryFormModal.jsx
@@ -183,9 +182,11 @@ dh-new-site-2027/
 │       │   │   ├── inventorySourcingService.js
 │       │   │   ├── inventoryImportService.js
 │       │   │   └── inventoryExportService.js
+│       │   ├── menuConfigService.js # Service for managing Manager Dashboard Layout
 │       │   ├── pricingService.js
 │       │   ├── promotionService.js
 │       │   ├── settingsService.js
+│       │   ├── footerSettingsService.js
 │       │   ├── todoService.js # Facade pattern for todo services
 │       │   ├── todo/ # Refactored single responsibility todo services
 │       │   │   ├── todoActionService.js
@@ -219,6 +220,15 @@ dh-new-site-2027/
 │       │   │   └── ManagerRoute.jsx # Route protection
 │       │   └── ... (other component folders)
 │       └── pages/ # Main Pages
+│           ├── managers/
+│           │   ├── GlobalAdsConfig.jsx
+│           │   ├── GlobalBufferSettings.jsx
+│           │   ├── GlobalCategorySettings.jsx
+│           │   ├── GlobalFooterSettings.jsx
+│           │   ├── GlobalRegexSettings.jsx
+│           │   ├── GlobalThemeSettings.jsx
+│           │   ├── GlobalWarrantySettings.jsx
+│           │   └── ... (other manager pages)
 │           ├── emails/ # Gmail API Integration
 │           │   ├── EmailMain.jsx
 │           │   ├── components/
@@ -248,12 +258,14 @@ dh-new-site-2027/
 │           │       └── useCustomers.js
 │           ├── ManagersOverview/
 │           │   ├── components/
-│           │   │   ├── GlobalSettingsPanel.jsx
+│           │   │   ├── GlobalSettingsHeader.jsx
 │           │   │   ├── ManagerTaskSection.jsx
+│           │   │   ├── MenuLayoutManager.jsx
 │           │   │   ├── StaffApprovalModal.jsx
 │           │   │   ├── VipManagementModal.jsx
 │           │   │   └── EmailSetupModal.jsx # Admin setup for Gmail API
 │           │   ├── index.jsx
+│           │   ├── QuickAccessTools.jsx
 │           │   └── useManagerDashboard.js
 │           ├── ads/
 │           │   └── ManagerAds.jsx
@@ -367,8 +379,30 @@ dh-new-site-2027/
 │   │   │   │   ├── CartFreebieProgress.jsx
 │   │   │   │   ├── CartItemCard.jsx
 │   │   │   │   └── CartSummaryPanel.jsx
+│   │   │   ├── footer/
+│   │   │   │   ├── FooterBrand.jsx
+│   │   │   │   ├── FooterContact.jsx
+│   │   │   │   └── FooterLinkZone.jsx
+│   │   │   ├── product/ # 🚀 Extracted Product Detail components
+│   │   │   │   ├── ProductDescriptionSection.jsx
+│   │   │   │   ├── ProductVideoSection.jsx
+│   │   │   │   ├── ProductPricingSection.jsx
+│   │   │   │   └── ... (other product sections)
+│   │   │   ├── profile/ # 🚀 Extracted Profile Components
+│   │   │   │   └── tabs/
+│   │   │   │       ├── TabAdManager.jsx
+│   │   │   │       └── store-profile/
+│   │   │   │           ├── StoreProfileForm.jsx
+│   │   │   │           ├── StoreProfileBasicInfo.jsx
+│   │   │   │           ├── StoreProfileSocialLinks.jsx
+│   │   │   │           └── StoreProfileLocation.jsx
 │   │   │   ├── CategoryList.jsx
+│   │   │   ├── Footer.jsx
 │   │   │   └── ProductList.jsx
+│   │   ├── firebase/
+│   │   │   ├── config.js
+│   │   │   ├── productService.js # 🚀 Extracted Product Fetch & Smart Mapper
+│   │   │   └── footerClientService.js
 │   │   ├── pages/
 │   │   │   ├── Home.jsx
 │   │   │   └── CategoryPage.jsx # New dedicated category routing page

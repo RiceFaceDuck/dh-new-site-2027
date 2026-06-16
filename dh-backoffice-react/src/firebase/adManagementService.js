@@ -14,9 +14,20 @@ import {
 // 🔐 ดึงสิทธิ์การเข้าถึงรหัส Sandbox App ID ที่ถูกต้อง (ยึดตามโครงสร้างความปลอดภัย)
 const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
-// 🚀 ฟังก์ชันช่วยเหลือสำหรับเรียก Collection ให้ตรงกับ Master Plan (v2.3)
-const getAdsCollection = () => collection(db, 'artifacts', appId, 'public', 'data', 'user_skus');
-const getTodosCollection = () => collection(db, 'artifacts', appId, 'public', 'data', 'manager_todos');
+// 🚀 ฟังก์ชันช่วยเหลือสำหรับเรียก Collection
+// ตอนนี้ใช้ todos ที่ root level เพื่อลดความซ้ำซ้อน
+const getTodosCollection = () => collection(db, 'todos');
+
+// ฟังก์ชันหา Collection หลักของ Ad ตาม ID
+const getSpecificAdsCollectionPath = (adId) => {
+  if (String(adId).includes('PRODUCT_LINK') || String(adId).includes('SKU')) {
+      return 'user_sku_ads';
+  }
+  if (String(adId).includes('BILLBOARD') || String(adId).includes('BB')) {
+      return 'billboard_ads';
+  }
+  return 'partner_ads';
+};
 
 export const adManagementService = {
 
@@ -25,8 +36,8 @@ export const adManagementService = {
    */
   getAdsByStatus: async (status = 'pending') => {
     try {
-      // 💡 ประหยัด Indexing ด้วยการ Query แค่ Status แล้วค่อยมา Sort ด้วย JavaScript Memory
-      const q = query(getAdsCollection(), where('status', '==', status));
+      // 💡 ดึงจาก partner_ads เป็นหลัก เพราะ marketingService เซฟไว้ที่นี่ทั้งหมด
+      const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('status', '==', status));
       const querySnapshot = await getDocs(q);
       const adsList = [];
       
@@ -50,19 +61,26 @@ export const adManagementService = {
 
   /**
    * 2. อนุมัติโฆษณา (Approve) & ปิดงาน To-do อัตโนมัติด้วย Batch Write
-   * การใช้ Batch ทำให้มั่นใจว่า โฆษณาเปิด + งานถูกเคลียร์ พร้อมกัน 100%
    */
   approveAd: async (adId, targetSkuId) => {
     try {
       const batch = writeBatch(db);
-      const adRef = doc(getAdsCollection(), adId);
       
-      // 2.1 อัปเดตสถานะโฆษณาเป็นพร้อมใช้งาน
-      batch.update(adRef, {
+      const specificCol = getSpecificAdsCollectionPath(adId);
+      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      
+      const updatePayload = {
         status: 'active',
-        isActive: true, // เผื่อกรณี User ปิดสวิตช์ไว้ ให้บังคับเปิดหลังอนุมัติทันที
+        isActive: true,
         updatedAt: serverTimestamp()
-      });
+      };
+      
+      batch.update(adRef, updatePayload);
+
+      if (specificCol !== 'partner_ads') {
+        const partnerAdRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), adId);
+        batch.update(partnerAdRef, updatePayload);
+      }
 
       // 2.2 ค้นหา To-do ของผู้จัดการที่เกี่ยวข้อง เพื่อปิดงาน (Auto-sync)
       if (targetSkuId) {
@@ -91,15 +109,23 @@ export const adManagementService = {
   rejectAd: async (adId, targetSkuId, reason = 'ผิดเงื่อนไขการให้บริการของ DH Notebook') => {
     try {
       const batch = writeBatch(db);
-      const adRef = doc(getAdsCollection(), adId);
       
-      // 3.1 อัปเดตสถานะเป็นถูกปฏิเสธ พร้อมแนบเหตุผล
-      batch.update(adRef, {
+      const specificCol = getSpecificAdsCollectionPath(adId);
+      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      
+      const updatePayload = {
         status: 'rejected',
         isActive: false,
         rejectReason: reason,
         updatedAt: serverTimestamp()
-      });
+      };
+      
+      batch.update(adRef, updatePayload);
+
+      if (specificCol !== 'partner_ads') {
+        const partnerAdRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), adId);
+        batch.update(partnerAdRef, updatePayload);
+      }
 
       // 3.2 ปิดงานใน To-do ของผู้จัดการเช่นกัน
       if (targetSkuId) {
@@ -124,17 +150,25 @@ export const adManagementService = {
 
   /**
    * 4. สั่งระงับการแสดงผลฉุกเฉิน (โดยผู้จัดการ)
-   * ใช้ในกรณีที่โฆษณาผ่านการอนุมัติไปแล้ว แต่พบปัญหาภายหลัง
    */
   pauseAd: async (adId) => {
     try {
-      const adRef = doc(getAdsCollection(), adId);
-      await updateDoc(adRef, {
+      const specificCol = getSpecificAdsCollectionPath(adId);
+      const updatePayload = {
         status: 'paused',
         isActive: false, // ปิดสวิตช์การแสดงผล
         pauseReason: 'ถูกระงับโดยผู้ดูแลระบบ',
         updatedAt: serverTimestamp()
-      });
+      };
+      
+      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      await updateDoc(adRef, updatePayload);
+
+      if (specificCol !== 'partner_ads') {
+        const partnerAdRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), adId);
+        await updateDoc(partnerAdRef, updatePayload).catch(()=>{});
+      }
+
       return { success: true, message: 'ระงับการแสดงผลโฆษณานี้ชั่วคราวสำเร็จ' };
     } catch (error) {
       console.error("❌ Error pausing ad:", error);
@@ -147,7 +181,7 @@ export const adManagementService = {
    */
   getPendingCount: async () => {
     try {
-      const q = query(getAdsCollection(), where('status', '==', 'pending'));
+      const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('status', '==', 'pending'));
       const snapshot = await getDocs(q);
       return snapshot.size; // คืนค่าตัวเลขจำนวนคำขอไปแสดงบน Widget
     } catch (error) {

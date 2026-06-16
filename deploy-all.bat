@@ -19,6 +19,15 @@ call npm run build
 cd ..
 
 echo ===============================
+echo BUILD STAFF APP
+echo ===============================
+
+cd dh-staff-app
+call npm run build
+
+cd ..
+
+echo ===============================
 echo DEPLOY FIREBASE
 echo ===============================
 
