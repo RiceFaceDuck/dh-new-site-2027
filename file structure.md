@@ -112,7 +112,11 @@ dh-new-site-2027/
 │       │   │   └── category/
 │       │   │       ├── CategoryCard.jsx
 │       │   │       ├── CategoryFormModal.jsx
-│       │   │       └── CategoryManager.jsx
+│       │   │       ├── CategoryManager.jsx
+│       │   │       └── form/ # Extracted form sections
+│       │   │           ├── ImageUploadSection.jsx
+│       │   │           ├── BasicInfoSection.jsx
+│       │   │           └── DisplaySettingsSection.jsx
 │       │   ├── search/ # Advanced Search UI
 │       │   │   ├── HighlightText.jsx
 │       │   │   ├── HistoryLogPanel.jsx
@@ -360,6 +364,11 @@ dh-new-site-2027/
 │           ├── hooks/
 │           │   └── useProductSearch.js
 │           ├── Todo.jsx
+│           ├── todo/
+│           │   ├── components/
+│           │   │   ├── TodoPageFilterBar.jsx
+│           │   │   ├── TodoPageHeader.jsx
+│           │   │   └── TodoPageList.jsx
 │           └── Squad/ # Fantasy Squad Selection UI
 │               ├── Squad.jsx
 │               ├── hooks/
@@ -379,6 +388,13 @@ dh-new-site-2027/
 │   │   │   │   ├── CartFreebieProgress.jsx
 │   │   │   │   ├── CartItemCard.jsx
 │   │   │   │   └── CartSummaryPanel.jsx
+│   │   │   ├── checkout/ # 🚀 Extracted Checkout components
+│   │   │   │   ├── AddressSelector.jsx
+│   │   │   │   ├── PaymentMethod.jsx
+│   │   │   │   ├── ShippingMethod.jsx
+│   │   │   │   ├── TaxInvoiceForm.jsx
+│   │   │   │   ├── CreditToggleBox.jsx
+│   │   │   │   └── TrustBadges.jsx
 │   │   │   ├── footer/
 │   │   │   │   ├── FooterBrand.jsx
 │   │   │   │   ├── FooterContact.jsx
@@ -389,8 +405,30 @@ dh-new-site-2027/
 │   │   │   │   ├── ProductPricingSection.jsx
 │   │   │   │   └── ... (other product sections)
 │   │   │   ├── profile/ # 🚀 Extracted Profile Components
+│   │   │   │   ├── forms/
+│   │   │   │   │   ├── PersonalInfoForm.jsx
+│   │   │   │   │   ├── ProfileTaxForm.jsx
+│   │   │   │   │   └── sections/
+│   │   │   │   │       ├── ContactInfoSection.jsx
+│   │   │   │   │       ├── ShippingAddressSection.jsx
+│   │   │   │   │       └── MapEcosystemSection.jsx
 │   │   │   │   └── tabs/
 │   │   │   │       ├── TabAdManager.jsx
+│   │   │   │       ├── history/
+│   │   │   │       │   ├── HistoryFilterBar.jsx
+│   │   │   │       │   ├── HistoryItemCard.jsx
+│   │   │   │       │   ├── HistoryList.jsx
+│   │   │   │       │   ├── HistoryStatusUtil.js
+│   │   │   │       │   ├── ServiceActionModal.jsx
+│   │   │   │       │   ├── UploadSlipModal.jsx
+│   │   │   │       │   ├── useHistoryOrders.js
+│   │   │   │       │   ├── useServiceAction.js
+│   │   │   │       │   └── useUploadSlip.js
+│   │   │   │       ├── wallet/
+│   │   │   │       │   ├── WalletCard.jsx
+│   │   │   │       │   ├── WalletHistory.jsx
+│   │   │   │       │   ├── WithdrawModal.jsx
+│   │   │   │       │   └── useWalletData.js
 │   │   │   │       └── store-profile/
 │   │   │   │           ├── StoreProfileForm.jsx
 │   │   │   │           ├── StoreProfileBasicInfo.jsx
@@ -401,6 +439,16 @@ dh-new-site-2027/
 │   │   │   └── ProductList.jsx
 │   │   ├── firebase/
 │   │   │   ├── config.js
+│   │   │   ├── checkout/
+│   │   │   │   ├── checkoutOrderActionService.js
+│   │   │   │   ├── checkoutSubmitService.js
+│   │   │   │   └── checkoutWholesaleService.js
+│   │   │   ├── credit/
+│   │   │   │   ├── creditActionService.js
+│   │   │   │   ├── creditConfig.js
+│   │   │   │   ├── creditFormatService.js
+│   │   │   │   ├── creditHistoryService.js
+│   │   │   │   └── creditRealtimeService.js
 │   │   │   ├── productService.js # 🚀 Extracted Product Fetch & Smart Mapper
 │   │   │   └── footerClientService.js
 │   │   ├── pages/

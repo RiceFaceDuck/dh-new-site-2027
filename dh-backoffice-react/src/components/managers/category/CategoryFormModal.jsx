@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ImagePlus, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { categoryService } from '../../../firebase/categoryService';
 import { driveService } from '../../../firebase/driveService';
 import { inventoryQueryService } from '../../../firebase/inventory/inventoryQueryService';
+
+import ImageUploadSection from './form/ImageUploadSection';
+import BasicInfoSection from './form/BasicInfoSection';
+import DisplaySettingsSection from './form/DisplaySettingsSection';
 
 const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
   const [name, setName] = useState('');
@@ -177,139 +181,31 @@ const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
             )}
 
             {/* Image Uploader */}
-            <div className="flex flex-col items-center gap-3">
-              <label className="text-sm font-medium text-slate-700 self-start">ไอคอน/รูปภาพหมวดหมู่</label>
-              <div 
-                onClick={() => !isSubmitting && fileInputRef.current?.click()}
-                className={`w-32 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-200 overflow-hidden relative group ${
-                  previewUrl ? 'border-transparent bg-slate-50' : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50 bg-slate-50'
-                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {previewUrl ? (
-                  <>
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-contain p-2" />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-white text-xs font-medium">เปลี่ยนรูปภาพ</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <ImagePlus size={32} className="text-slate-400 mb-2 group-hover:text-blue-500 transition-colors" />
-                    <span className="text-xs font-medium text-slate-500 group-hover:text-blue-600 text-center px-2">คลิกเพื่อเลือกรูปภาพ</span>
-                  </>
-                )}
-              </div>
-              <input 
-                type="file" 
-                accept="image/*" 
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                className="hidden"
-                disabled={isSubmitting}
-              />
-            </div>
+            <ImageUploadSection 
+              isSubmitting={isSubmitting}
+              fileInputRef={fileInputRef}
+              previewUrl={previewUrl}
+              handleImageChange={handleImageChange}
+            />
 
-            {/* Category Name */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="categoryName" className="text-sm font-medium text-slate-700">
-                ชื่อหมวดหมู่ที่แสดง <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="categoryName"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="เช่น อุปกรณ์ภายใน, สินค้าแนะนำ"
-                disabled={isSubmitting}
-                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
-              />
-            </div>
+            {/* Basic Info */}
+            <BasicInfoSection 
+              name={name}
+              setName={setName}
+              type={type}
+              setType={setType}
+              availableTypes={availableTypes}
+              isSubmitting={isSubmitting}
+            />
 
-            {/* 🚀 Category Type (เพื่อใช้ในการ Query สินค้า) */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="categoryType" className="text-sm font-medium text-slate-700">
-                ประเภทสินค้า / คำค้นหา (Type) <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="categoryType"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                disabled={isSubmitting}
-                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
-              >
-                <option value="">-- กรุณาเลือกประเภทสินค้า --</option>
-                {availableTypes.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              <p className="text-xs text-slate-500">
-                ดึงข้อมูลจากสินค้าในคลัง เพื่อให้เชื่อมโยงได้ตรงกัน 100%
-              </p>
-            </div>
-
-            {/* 🚀 Button Shape */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-700">
-                รูปทรงปุ่ม (หน้าร้าน)
-              </label>
-              <div className="flex gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="buttonShape" 
-                    value="circle" 
-                    checked={buttonShape === 'circle'} 
-                    onChange={(e) => setButtonShape(e.target.value)} 
-                    disabled={isSubmitting} 
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
-                  />
-                  <span className="text-sm text-slate-700">วงกลม</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="buttonShape" 
-                    value="rounded" 
-                    checked={buttonShape === 'rounded'} 
-                    onChange={(e) => setButtonShape(e.target.value)} 
-                    disabled={isSubmitting} 
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
-                  />
-                  <span className="text-sm text-slate-700">สี่เหลี่ยมขอบมน</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="buttonShape" 
-                    value="square" 
-                    checked={buttonShape === 'square'} 
-                    onChange={(e) => setButtonShape(e.target.value)} 
-                    disabled={isSubmitting} 
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
-                  />
-                  <span className="text-sm text-slate-700">สี่เหลี่ยม</span>
-                </label>
-              </div>
-            </div>
-
-            {/* 🚀 Filters Recommendation */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="categoryFilters" className="text-sm font-medium text-slate-700">
-                ตัวกรองแนะนำ (แนะนำให้ระบุ)
-              </label>
-              <input
-                id="categoryFilters"
-                type="text"
-                value={filtersText}
-                onChange={(e) => setFiltersText(e.target.value)}
-                placeholder="เช่น 14.0 นิ้ว, 15.6 นิ้ว, 30 PIN, 40 PIN (คั่นด้วยลูกน้ำ)"
-                disabled={isSubmitting}
-                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
-              />
-              <p className="text-xs text-slate-500">
-                ฟังก์ชันแนะนำการกรองสำหรับประเภทสินค้านี้ จะไปแสดงเป็นปุ่มด้านหลังชื่อหมวดหมู่ในหน้าร้าน
-              </p>
-            </div>
+            {/* Display Settings */}
+            <DisplaySettingsSection 
+              buttonShape={buttonShape}
+              setButtonShape={setButtonShape}
+              filtersText={filtersText}
+              setFiltersText={setFiltersText}
+              isSubmitting={isSubmitting}
+            />
 
             {/* Active Status Toggle */}
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">

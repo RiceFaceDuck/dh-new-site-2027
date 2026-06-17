@@ -117,6 +117,14 @@ The `credit_transactions` collection stores all movements of a user's wallet/cre
 | `recordedBy`    | String    | ID of the admin/system that recorded the transaction.                       | `"admin_uid"`                       |
 | `timestamp`     | Timestamp | When the transaction occurred.                                              | `December 15, 2026 at 10:30:00 AM UTC+7` |
 
+### Architectural Note
+The logic for managing credits and the `credit_transactions` collection is modularized:
+- **`creditService.js`**: Facade module exporting all credit functionalities.
+- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments.
+- **`creditHistoryService.js`**: Handles fetching wallet balance and paginated credit history.
+- **`creditRealtimeService.js`**: Manages real-time listeners for user's wallet balance and pending credits.
+- **`creditFormatService.js`**: Gamification and data formatting utilities.
+
 ---
 
 ## 6. Collection: `system_logs`
@@ -165,7 +173,7 @@ The `partners` collection stores information about affiliated repair shops and p
 | `mapsUrl`    | String    | Google Maps URL for the store.                                              | `"https://goo.gl/maps/..."`         |
 
 
-## 8. Collection: `products`
+## 9. Collection: `products`
 
 The `products` collection stores all inventory items. It includes stock quantity, pricing, basic product data, and claim tracking information.
 
@@ -191,7 +199,7 @@ The `products` collection stores all inventory items. It includes stock quantity
 
 ---
 
-## 9. Collection: `users`
+## 10. Collection: `users`
 
 The `users` collection stores user profiles, access controls, and staff registration details for both customers and staff members.
 
@@ -216,7 +224,7 @@ The `users` collection stores user profiles, access controls, and staff registra
 
 ---
 
-## 10. Collection: `homepage_categories`
+## 11. Collection: `homepage_categories`
 
 The `homepage_categories` collection manages the display of categories on the Storefront. Managers can customize the layout, UI shape, and connection to backend product types.
 
@@ -234,7 +242,7 @@ The `homepage_categories` collection manages the display of categories on the St
 
 ---
 
-## 11. Document: `settings/product_categories`
+## 12. Document: `settings/product_categories`
 
 This specific document serves as an aggregated cache of all unique product categories that exist in the inventory. It optimizes reads by providing a single document to fetch dropdown options, instead of reading all products.
 
@@ -244,7 +252,7 @@ This specific document serves as an aggregated cache of all unique product categ
 |------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
 | `categories`     | Array   | List of unique category string names. Maintained via `arrayUnion`.          | `["case", "monitor", "ram"]`        |
 
-## 12. Collection: `freebies`
+## 13. Collection: `freebies`
 
 The `freebies` collection stores promotional items that are given to customers when their cart subtotal reaches a certain threshold (`minSpend`).
 
@@ -259,7 +267,7 @@ The `freebies` collection stores promotional items that are given to customers w
 
 ---
 
-## 13. Document: `settings/manager_menus`
+## 14. Document: `settings/manager_menus`
 
 This document stores the layout configuration (Drag & Drop grouping) for the Quick Access Tools in the Manager Dashboard.
 
@@ -269,7 +277,7 @@ This document stores the layout configuration (Drag & Drop grouping) for the Qui
 |------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
 | `zones`          | Array   | List of zone objects. Each zone contains an `id`, `title`, and `menuIds` array. | `[{ id: "z1", title: "HR", menuIds: ["staff"] }]` |
 
-## 14. Document: `settings/footer_config`
+## 15. Document: `settings/footer_config`
 
 This document stores the dynamic layout and configuration for the Storefront Footer.
 
@@ -284,7 +292,7 @@ This document stores the dynamic layout and configuration for the Storefront Foo
 
 ---
 
-## 15. Document: `settings/knowledge_config`
+## 16. Document: `settings/knowledge_config`
 
 This document stores the configuration for the "Add Knowledge" feature where users can suggest compatible models/parts to earn credits.
 

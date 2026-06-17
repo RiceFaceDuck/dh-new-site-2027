@@ -19,6 +19,8 @@ import CheckoutSummary from '../components/checkout/CheckoutSummary';
 import CheckoutSuccess from '../components/checkout/CheckoutSuccess';
 import WholesaleRequestModal from '../components/checkout/WholesaleRequestModal';
 import PaymentUploader from '../components/checkout/PaymentUploader';
+import CreditToggleBox from '../components/checkout/CreditToggleBox';
+import TrustBadges from '../components/checkout/TrustBadges';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -264,42 +266,14 @@ const Checkout = () => {
             <div className="sticky top-6">
               
               {/* 💎 [NEW] Gimmick: กล่องเปิด-ปิด การใช้ DH Point แบบ Premium */}
-              {user && !creditLoading && creditBalance > 0 && (
-                <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-5 border border-indigo-100 shadow-sm animate-fade-in relative overflow-hidden transition-all duration-300 mb-6">
-                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-100/50 rounded-full blur-2xl pointer-events-none"></div>
-                  
-                  <div className="flex justify-between items-center relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm transition-colors ${useCreditToggle ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}>
-                        <Award className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900">ใช้แต้มสะสม DH Point</h4>
-                        <p className="text-xs text-gray-500 font-medium mt-0.5">มีแต้ม: <span className="text-indigo-600 font-bold">{formatCredit(creditBalance)}</span> PTS</p>
-                      </div>
-                    </div>
-                    
-                    {/* Tailwind Toggle Switch */}
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={useCreditToggle} 
-                        onChange={(e) => setUseCreditToggle(e.target.checked)} 
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                    </label>
-                  </div>
-
-                  {/* ข้อความยืนยันเมื่อเปิดใช้งาน */}
-                  {useCreditToggle && checkoutState.usePoints > 0 && (
-                    <div className="mt-4 text-xs text-indigo-700 bg-indigo-50 p-2.5 rounded-lg flex items-center gap-2 font-medium animate-fade-in border border-indigo-100">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" /> 
-                      ใช้แต้มลดราคาไป <strong>฿{formatCredit(checkoutState.usePoints)}</strong> ในออเดอร์นี้
-                    </div>
-                  )}
-                </div>
-              )}
+              <CreditToggleBox 
+                user={user}
+                creditLoading={creditLoading}
+                creditBalance={creditBalance}
+                useCreditToggle={useCreditToggle}
+                setUseCreditToggle={setUseCreditToggle}
+                usePoints={checkoutState.usePoints}
+              />
 
               <CheckoutSummary 
                 cartItems={cartItems}
@@ -311,20 +285,7 @@ const Checkout = () => {
               />
               
               {/* Trust Badges - ย้ำความเชื่อมั่นก่อนกดชำระเงิน */}
-              <div className="mt-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 text-sm text-gray-600 mb-3">
-                  <span className="flex-shrink-0 bg-green-100 p-1.5 rounded-full text-green-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                  </span>
-                  <span>ข้อมูลทั้งหมดถูกเข้ารหัส 256-bit อย่างปลอดภัย</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <span className="flex-shrink-0 bg-indigo-100 p-1.5 rounded-full text-indigo-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  </span>
-                  <span>รับประกันสินค้าคุณภาพโดย DH Notebook</span>
-                </div>
-              </div>
+              <TrustBadges />
             </div>
           </div>
 

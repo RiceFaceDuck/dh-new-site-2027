@@ -86,8 +86,20 @@ export function useProductSearch() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
+        const cachedProducts = sessionStorage.getItem('cachedSearchProducts');
+        const cachedTime = sessionStorage.getItem('cachedSearchProductsTime');
+        
+        // ใช้ Cache เป็นเวลา 1 ชั่วโมงเพื่อประหยัด Firebase Reads
+        if (cachedProducts && cachedTime && (Date.now() - parseInt(cachedTime) < 3600000)) {
+          setAllProducts(JSON.parse(cachedProducts));
+          setLoading(false);
+          return;
+        }
+
         const data = await inventoryService.getAllActiveProductsForSearch();
         setAllProducts(data);
+        sessionStorage.setItem('cachedSearchProducts', JSON.stringify(data));
+        sessionStorage.setItem('cachedSearchProductsTime', Date.now().toString());
       } catch (error) {
         console.error("Error fetching products", error);
       }

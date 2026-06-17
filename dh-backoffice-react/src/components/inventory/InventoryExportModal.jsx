@@ -1,7 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, Loader2, FileSpreadsheet, Settings2, CheckCircle2, ListFilter, Search, UploadCloud, CheckSquare, Square } from 'lucide-react';
+import { X, Download, Loader2, FileSpreadsheet, Settings2, CheckCircle2, ListFilter, Search } from 'lucide-react';
 import { inventoryExportService } from '../../firebase/inventory/inventoryExportService';
 import * as XLSX from 'xlsx';
+
+import ExportFiltersTab from './export/ExportFiltersTab';
+import ExportSkusTab from './export/ExportSkusTab';
+import ExportColumnsTab from './export/ExportColumnsTab';
 
 const AVAILABLE_COLUMNS = [
   { key: 'sku', label: 'SKU' },
@@ -181,121 +185,38 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
                 
                 {/* 1. Filters Tab */}
                 {activeTab === 'filters' && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <div>
-                      <h3 className="font-bold text-lg border-b border-dh-border pb-2 mb-4">คัดกรองตามหมวดหมู่</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {availableCategories.map(cat => {
-                          const isSelected = selectedCategories.includes(cat);
-                          return (
-                            <div 
-                              key={cat} onClick={() => handleToggleCategory(cat)}
-                              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${isSelected ? 'bg-dh-accent/10 border-dh-accent text-dh-accent' : 'bg-dh-surface border-dh-border text-dh-muted hover:border-dh-accent/50 hover:bg-dh-base'}`}
-                            >
-                              {isSelected ? <CheckSquare size={18} /> : <Square size={18} className="opacity-50" />}
-                              <span className="font-bold text-sm">{cat}</span>
-                            </div>
-                          )
-                        })}
-                        {availableCategories.length === 0 && <p className="text-sm text-dh-muted">ไม่พบข้อมูลหมวดหมู่ (โปรดรีเฟรชหน้าเว็บ)</p>}
-                      </div>
-                      <p className="text-xs text-dh-muted mt-2">* หากไม่เลือกเลย ระบบจะดึงข้อมูลมาทุกหมวดหมู่</p>
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-lg border-b border-dh-border pb-2 mb-4">ช่วงจำนวนสินค้าคงเหลือ</h3>
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <label className="text-[10px] font-bold text-dh-muted uppercase mb-1 block">ตั้งแต่ (Min)</label>
-                          <input type="number" placeholder="0" value={stockMin} onChange={e => setStockMin(e.target.value)} className="w-24 p-2.5 bg-dh-base border border-dh-border rounded-xl outline-none focus:border-dh-accent text-sm font-bold text-center" />
-                        </div>
-                        <span className="text-dh-muted font-bold mt-4">-</span>
-                        <div>
-                          <label className="text-[10px] font-bold text-dh-muted uppercase mb-1 block">ถึง (Max)</label>
-                          <input type="number" placeholder="10" value={stockMax} onChange={e => setStockMax(e.target.value)} className="w-24 p-2.5 bg-dh-base border border-dh-border rounded-xl outline-none focus:border-dh-accent text-sm font-bold text-center" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <ExportFiltersTab 
+                    availableCategories={availableCategories}
+                    selectedCategories={selectedCategories}
+                    handleToggleCategory={handleToggleCategory}
+                    stockMin={stockMin}
+                    setStockMin={setStockMin}
+                    stockMax={stockMax}
+                    setStockMax={setStockMax}
+                  />
                 )}
 
                 {/* 2. Specific SKUs Tab */}
                 {activeTab === 'skus' && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-xl text-orange-600 dark:text-orange-400">
-                      <p className="text-sm font-bold">⚠️ หากมีการระบุ SKU ในหน้านี้ ระบบจะเพิกเฉยต่อตัวกรองหมวดหมู่และสต๊อก (จะดึงมาแค่ SKU ที่ระบุเท่านั้น)</p>
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-lg border-b border-dh-border pb-2 mb-4 flex justify-between items-end">
-                        <span>อัปโหลดไฟล์ Excel / CSV</span>
-                        {parsedSpecificSkus.length > 0 && <span className="text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded-lg">พบ {parsedSpecificSkus.length} SKUs ในไฟล์</span>}
-                      </h3>
-                      <div className="border-2 border-dashed border-dh-border rounded-xl p-6 text-center hover:bg-dh-base hover:border-dh-accent/50 transition-colors relative cursor-pointer group">
-                        <input type="file" accept=".xlsx, .csv" onChange={handleFileUpload} ref={fileInputRef} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                        <UploadCloud size={32} className="text-dh-muted mx-auto mb-2 group-hover:text-dh-accent group-hover:scale-110 transition-transform" />
-                        <p className="font-bold text-sm text-dh-main">คลิกหรือลากไฟล์ Excel มาวางที่นี่</p>
-                        <p className="text-xs text-dh-muted mt-1">คอลัมน์แรก หรือคอลัมน์ที่มีหัวข้อ 'SKU' จะถูกนำมาใช้</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-lg border-b border-dh-border pb-2 mb-4">หรือ พิมพ์ระบุ SKU แบบ Manual</h3>
-                      <textarea 
-                        value={specificSkusInput}
-                        onChange={e => setSpecificSkusInput(e.target.value)}
-                        placeholder="EXM-001&#10;KB-1234&#10;BAT-999&#10;(พิมพ์บรรทัดละรายการ หรือคั่นด้วยลูกน้ำ)"
-                        className="w-full h-32 p-4 bg-dh-base border border-dh-border rounded-xl outline-none focus:border-dh-accent resize-none custom-scrollbar text-sm font-medium uppercase"
-                      />
-                    </div>
-                  </div>
+                  <ExportSkusTab 
+                    parsedSpecificSkus={parsedSpecificSkus}
+                    handleFileUpload={handleFileUpload}
+                    fileInputRef={fileInputRef}
+                    specificSkusInput={specificSkusInput}
+                    setSpecificSkusInput={setSpecificSkusInput}
+                  />
                 )}
 
                 {/* 3. Sort & Columns Tab */}
                 {activeTab === 'columns' && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <div>
-                      <h3 className="font-bold text-lg border-b border-dh-border pb-2 mb-4">รูปแบบการจัดเรียง</h3>
-                      <select 
-                        value={sortOption}
-                        onChange={(e) => setSortOption(e.target.value)}
-                        className="w-full p-3 bg-dh-surface border border-dh-border rounded-xl text-sm font-bold outline-none focus:border-dh-accent cursor-pointer"
-                      >
-                        <option value="sku_asc">SKU (A-Z)</option>
-                        <option value="sku_desc">SKU (Z-A)</option>
-                        <option value="stock_asc">คงเหลือ (น้อยไปมาก)</option>
-                        <option value="stock_desc">คงเหลือ (มากไปน้อย)</option>
-                        <option value="price_desc">ราคา (มากไปน้อย)</option>
-                        <option value="price_asc">ราคา (น้อยไปมาก)</option>
-                        <option value="sales_desc">ยอดขาย 30 วัน (มากไปน้อย)</option>
-                        <option value="claims_desc">เคลม 30 วัน (มากไปน้อย)</option>
-                        <option value="stockin_desc">สินค้าเข้า 30 วัน (มากไปน้อย)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-center mb-4 border-b border-dh-border pb-2">
-                        <h3 className="font-bold text-lg">คอลัมน์ที่จะ Export</h3>
-                        <button onClick={() => setSelectedColumns(AVAILABLE_COLUMNS.map(c => c.key))} className="text-xs text-dh-accent font-bold hover:underline">เลือกทั้งหมด</button>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {AVAILABLE_COLUMNS.map((col) => {
-                          const isSelected = selectedColumns.includes(col.key);
-                          return (
-                            <div 
-                              key={col.key} onClick={() => handleToggleColumn(col.key)}
-                              className={`p-2.5 rounded-xl border cursor-pointer text-xs font-bold transition-all flex items-center gap-2 select-none ${isSelected ? 'bg-dh-accent/10 border-dh-accent text-dh-accent shadow-sm' : 'bg-dh-base border-dh-border text-dh-muted hover:border-dh-accent/50'}`}
-                            >
-                              <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${isSelected ? 'bg-dh-accent border-dh-accent text-white' : 'border-dh-muted/50 bg-white'}`}>
-                                {isSelected && <CheckCircle2 size={12} />}
-                              </div>
-                              {col.label}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                  <ExportColumnsTab 
+                    sortOption={sortOption}
+                    setSortOption={setSortOption}
+                    selectedColumns={selectedColumns}
+                    setSelectedColumns={setSelectedColumns}
+                    AVAILABLE_COLUMNS={AVAILABLE_COLUMNS}
+                    handleToggleColumn={handleToggleColumn}
+                  />
                 )}
               </div>
             </>

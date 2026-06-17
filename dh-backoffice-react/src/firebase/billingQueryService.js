@@ -1,4 +1,4 @@
-import { collection, onSnapshot, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, getDocs, where, Timestamp } from 'firebase/firestore';
 import { db } from './config';
 
 const COLLECTION_NAME = 'orders';
@@ -10,12 +10,12 @@ export const billingQueryService = {
     if (dateRange?.start) {
       const start = new Date(dateRange.start); 
       start.setHours(0, 0, 0, 0);
-      qArgs.push(where('createdAt', '>=', start));
+      qArgs.push(where('createdAt', '>=', Timestamp.fromDate(start)));
     }
     if (dateRange?.end) {
       const end = new Date(dateRange.end); 
       end.setHours(23, 59, 59, 999);
-      qArgs.push(where('createdAt', '<=', end));
+      qArgs.push(where('createdAt', '<=', Timestamp.fromDate(end)));
     }
     
     qArgs.push(orderBy('createdAt', 'desc'));
