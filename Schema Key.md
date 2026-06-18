@@ -11,7 +11,7 @@ The `history_logs` system has been completely migrated out of Firestore to save 
 | Field Name    | Type      | Description                                                                 | Example Value                       |
 |---------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
 | `level`       | String    | Log severity level.                                                         | `"INFO"`, `"WARN"`, `"ERROR"`       |
-| `module`      | String    | The main system component where the action happened.                        | `"Inventory"`, `"Billing"`          |
+| `module`      | String    | The main system component where the action happened.                        | `"Inventory"`, `"Inventory Adjustment"`     |
 | `action`      | String    | The specific operation performed.                                           | `"Create"`, `"Update"`, `"Delete"`  |
 | `actor`       | Object    | Deep object containing `uid`, `name`, `email`, and `userAgent`.             | `{ "uid": "123", "name": "สมชาย" }` |
 | `context`     | Object    | Deep object containing URL and routing path where the action occurred.      | `{ "path": "/inventory" }`          |
@@ -57,7 +57,10 @@ The logic for interacting with the `orders` collection has been separated into:
 - **`billingService.js`**: A facade pattern entrypoint that unifies the Query, Update, and Transaction services so components only need a single import.
 - **`billingQueryService.js`**: Handles read-only operations (`subscribeRecentOrders`, `searchOrders`) to keep UI snappy. **NOTE**: Mapped `id` should be placed at the end of the spread operator (`...doc.data(), id: doc.id`) to avoid being overwritten by a potentially null ID saved in raw data. *Optimization:* Dashboards should use the `dateRange` parameter in `subscribeRecentOrders` to strictly fetch only today's data, drastically reducing read costs.
 - **`billingTransactionService.js`**: Handles complex atomic transactions (creating new orders with complex side effects).
-- **`billingStatusTransaction.js`**: Handles atomic status updates (Stock updates, Wallet refunds/deductions, History logging) using Firestore `runTransaction`.
+- **`billingStatusTransaction.js`**: Facade for status updates. Delegates specific atomic updates to sub-handlers:
+  - **`statusStockHandler.js`**: Handles stock deduction, restoration, and tracking.
+  - **`statusWalletHandler.js`**: Handles credit/wallet deductions and refunds.
+  - **`statusSalesHandler.js`**: Handles sales stats calculation.
 - **`billingDeleteService.js`**: Handles deleting draft/temporary orders and restoring credits.
 - **`billingPrintService.js`**: Handles simple print count increments.
 
@@ -98,6 +101,10 @@ The `todos` collection acts as a central hub for manager approvals, task managem
 | `createdAt`    | Timestamp | When the task was created.                                                  | `December 15, 2026 at 10:30:00 AM UTC+7` |
 | `updatedAt`    | Timestamp | When the task was last updated.                                             | `December 15, 2026 at 10:30:00 AM UTC+7` |
 
+### Architectural Note
+- **`managerTodoService.js`**: Handles real-time subscription to Manager-specific tasks.
+- **`managerActionService.js`**: (SRP) Handles the actual business logic of Manager approvals and rejections (e.g., Staff roles, Ads, Knowledge), keeping the UI components clean and reducing redundant queries via direct updates.
+
 ---
 
 ## 5. Collection: `credit_transactions`
@@ -120,7 +127,7 @@ The `credit_transactions` collection stores all movements of a user's wallet/cre
 ### Architectural Note
 The logic for managing credits and the `credit_transactions` collection is modularized:
 - **`creditService.js`**: Facade module exporting all credit functionalities.
-- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments.
+- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments. **NOTE**: The canonical source of truth for a user's balance is `userDoc.creditPoints`. The legacy `wallet` subcollection is deprecated and no longer updated during Ad transactions to prevent split-brain desyncs.
 - **`creditHistoryService.js`**: Handles fetching wallet balance and paginated credit history.
 - **`creditRealtimeService.js`**: Manages real-time listeners for user's wallet balance and pending credits.
 - **`creditFormatService.js`**: Gamification and data formatting utilities.
@@ -159,6 +166,12 @@ The Email System has been upgraded to use **Firebase Cloud Functions** as a prox
 
 The `partners` collection stores information about affiliated repair shops and partners. It is used to display nearby services to customers based on distance and credit points.
 
+### Architectural Note: `ActivePartners` & Map Radar
+- The Storefront radar map fetches from the `ActivePartners` collection, not the main `partners` collection, to ensure only approved and active partners are displayed.
+- **`storeProfileSubmitService.js`**: Handles the submission of a partner's profile. When a profile is updated or edited, the partner is **removed** from `ActivePartners` (disappearing from the map) and their Ad status is set to `PENDING`. This enforces a strict security policy where any edits require re-approval.
+- **`adManagementService.js`**: When a Manager approves the `AD_APPROVAL` task, the service copies the data to `ActivePartners`, making them live on the map.
+- **Caching & Proximity (`partnerLocationService.js`)**: To save read operations, `ActivePartners` is cached in the client's `localStorage`. The function `findNearestPartner` uses a **Weighted Algorithm** (combining `points` and `distance`) to determine the best partner to display, preventing duplicate logic across services. `partnerService.js` is kept strictly for profile data mutations.
+
 ### Schema Fields
 
 | Field Name   | Type      | Description                                                                 | Example Value                       |
@@ -196,6 +209,7 @@ The `products` collection stores all inventory items. It includes stock quantity
 | `youtubeUrl`     | String  | A link to a YouTube video review or tutorial.                               | `"https://youtu.be/..."`            |
 | `shopeeUrl`      | String  | Link to the product listing on Shopee marketplace.                          | `"https://shopee.co.th/..."`        |
 | `lazadaUrl`      | String  | Link to the product listing on Lazada marketplace.                          | `"https://lazada.co.th/..."`        |
+| `randomSeed`     | Number  | A random decimal between 0 and 1 used for true random querying.             | `0.123456789`                       |
 
 ---
 
@@ -292,6 +306,19 @@ This document stores the dynamic layout and configuration for the Storefront Foo
 
 ---
 
+## 16. Document: `settings/featured_config`
+
+This document stores the configuration for the "Featured Spares" section on the Storefront.
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `isActive`       | Boolean | Toggle for whether to show the Featured Spares section.                     | `true`                              |
+| `displayLimit`   | Number  | Number of products to display in the section.                               | `8`                                 |
+
+---
+
 ## 16. Document: `settings/knowledge_config`
 
 This document stores the configuration for the "Add Knowledge" feature where users can suggest compatible models/parts to earn credits.
@@ -301,5 +328,38 @@ This document stores the configuration for the "Add Knowledge" feature where use
 | Field Name       | Type    | Description                                                                 | Example Value                       |
 |------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
 | `compatibleCreditReward` | Number | The number of credit points given when a compatible model/part suggestion is approved. Defaults to 2. | `2` |
+
+---
+
+## 17. Document: `system_config/storefrontTheme`
+
+This document stores global configuration for the frontend theme settings.
+
+### Schema Fields
+
+| Field Name      | Type   | Description                                                                 | Example Value                       |
+|-----------------|--------|-----------------------------------------------------------------------------|-------------------------------------|
+| `themeId`       | String | The active CSS theme class name.                                            | `"theme-trusted-partner"`           |
+| `backgroundUrl` | String | URL of the background image to display behind the main layout.              | `"/images/bg.jpg"`                  |
+| `blurLevel`     | String | The backdrop-blur level for the background.                                 | `"16"`                              |
+| `opacityTop`    | Number | Gradient opacity for the top section (0-100).                               | `75`                                |
+| `opacityMid`    | Number | Gradient opacity for the middle section (0-100).                            | `55`                                |
+| `opacityBottom` | Number | Gradient opacity for the bottom section (0-100).                            | `35`                                |
+
+---
+
+## 18. Document: `settings/hero_config`
+
+This document stores the configuration for the main Hero Billboard (Banner) on the Storefront Home page.
+
+### Schema Fields
+
+| Field Name        | Type    | Description                                                                 | Example Value                       |
+|-------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `isActive`        | Boolean | Toggle for whether to show the custom Hero Banner. If false, shows default. | `true`                              |
+| `title`           | String  | The main title text (supports basic HTML tags like `<br />` and `<span>`).  | `"TEQFIX: YOUR CERTIFIED PARTNER"`  |
+| `imageUrl`        | String  | URL of the background image for the billboard.                              | `"https://drive.google.com/..."`    |
+| `primaryButton`   | Object  | Config for the primary action button (`label`, `link`, `isActive`).         | `{ label: "BOOK", link: "/squad" }` |
+| `secondaryButton` | Object  | Config for the secondary action button (`label`, `link`, `isActive`).       | `{ label: "SHOP", link: "/all" }`   |
 
 *(Additional schemas will be documented here as the system evolves)*

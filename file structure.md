@@ -99,6 +99,15 @@ dh-new-site-2027/
 │       │   │   ├── ProductModal.jsx
 │       │   │   ├── InventoryImportModal.jsx
 │       │   │   ├── InventoryExportModal.jsx
+│       │   │   ├── import/ # Extracted Import components
+│       │   │   │   ├── ImportConfig.jsx
+│       │   │   │   ├── ImportPreviewTable.jsx
+│       │   │   │   ├── ImportResultSummary.jsx
+│       │   │   │   └── ImportUploader.jsx
+│       │   │   ├── export/ # Extracted Export components
+│       │   │   │   ├── ExportColumnsTab.jsx
+│       │   │   │   ├── ExportFiltersTab.jsx
+│       │   │   │   └── ExportSkusTab.jsx
 │       │   │   ├── hooks/
 │       │   │   │   ├── useProductForm.js
 │       │   │   │   └── useExcelImport.js
@@ -161,10 +170,15 @@ dh-new-site-2027/
 │       │   └── AuthContext.jsx # Global Auth and Role state
 │       ├── firebase/ # Firebase connection and logic
 │       │   ├── adManagementService.js
+│       │   ├── managerActionService.js # 🚀 Handles Manager Approval SRP
 │       │   ├── billingService.js # Facade for billing queries and commands
 │       │   ├── billingQueryService.js # Read operations for Billing
 │       │   ├── billingTransactionService.js # Transaction operations (checkout) for Billing
-│       │   ├── billingStatusTransaction.js # Handle status update & inventory/wallet adjustment
+│       │   ├── billingStatusTransaction.js # Facade for status updates
+│       │   ├── billing/
+│       │   │   ├── statusSalesHandler.js
+│       │   │   ├── statusStockHandler.js
+│       │   │   └── statusWalletHandler.js
 │       │   ├── billingDeleteService.js # Handle delete operations for billing
 │       │   ├── billingPrintService.js # Handle print count updates
 │       │   ├── categoryService.js
@@ -183,6 +197,7 @@ dh-new-site-2027/
 │       │   ├── inventory/
 │       │   │   ├── inventoryQueryService.js
 │       │   │   ├── inventoryMutationService.js
+│       │   │   ├── inventoryAdjustmentService.js # 🚀 Handles special manual stock adjustments
 │       │   │   ├── inventorySourcingService.js
 │       │   │   ├── inventoryImportService.js
 │       │   │   └── inventoryExportService.js
@@ -232,6 +247,12 @@ dh-new-site-2027/
 │           │   ├── GlobalRegexSettings.jsx
 │           │   ├── GlobalThemeSettings.jsx
 │           │   ├── GlobalWarrantySettings.jsx
+│           │   │   └── StockAdjustment.jsx # 🚀 Manager tool for handling manual stock adjustments
+│           │   ├── GlobalThemeSettings.jsx
+│           │   ├── components/
+│           │   │   └── theme/ # Extracted Theme settings
+│           │   │       ├── ThemeConfigTab.jsx
+│           │   │       └── HeroConfigTab.jsx
 │           │   └── ... (other manager pages)
 │           ├── emails/ # Gmail API Integration
 │           │   ├── EmailMain.jsx
@@ -247,7 +268,12 @@ dh-new-site-2027/
 │           │   ├── index.jsx
 │           │   ├── components/
 │           │   │   ├── details/
-│           │   │   │   └── DetailPanel.jsx
+│           │   │   │   ├── DetailPanel.jsx
+│           │   │   │   ├── ContactInfo.jsx
+│           │   │   │   ├── ShippingInfo.jsx
+│           │   │   │   ├── TaxInfo.jsx
+│           │   │   │   ├── StatsInfo.jsx
+│           │   │   │   └── HistoryInfo.jsx
 │           │   │   ├── forms/
 │           │   │   │   └── CustomerModal.jsx
 │           │   │   └── layout/
@@ -321,6 +347,10 @@ dh-new-site-2027/
 │           │   ├── wallet/
 │           │   │   ├── hooks/
 │           │   │   │   └── useWalletManagement.js
+│           │   │   ├── components/
+│           │   │   │   ├── WalletStatusCard.jsx
+│           │   │   │   ├── TransactionTable.jsx
+│           │   │   │   └── PointTransactionTable.jsx
 │           │   │   ├── CustomerSearchList.jsx
 │           │   │   ├── PendingWithdrawals.jsx
 │           │   │   ├── WalletDashboardStats.jsx
@@ -383,6 +413,11 @@ dh-new-site-2027/
 ├── dh-frontend/ # Client-facing Next.js/Vite application
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── chat/ # 🚀 Extracted components for Chat UI SRP
+│   │   │   │   ├── FloatingMessenger.jsx
+│   │   │   │   ├── MessengerMenu.jsx
+│   │   │   │   ├── MessengerRadar.jsx
+│   │   │   │   └── MessengerResult.jsx
 │   │   │   ├── cart/ # 🚀 Extracted components for Cart page SRP
 │   │   │   │   ├── CartEmptyState.jsx
 │   │   │   │   ├── CartFreebieProgress.jsx
@@ -393,8 +428,13 @@ dh-new-site-2027/
 │   │   │   │   ├── PaymentMethod.jsx
 │   │   │   │   ├── ShippingMethod.jsx
 │   │   │   │   ├── TaxInvoiceForm.jsx
+│   │   │   │   ├── tax-invoice/
+│   │   │   │   │   ├── TaxTypeSelector.jsx
+│   │   │   │   │   └── TaxFormFields.jsx
 │   │   │   │   ├── CreditToggleBox.jsx
-│   │   │   │   └── TrustBadges.jsx
+│   │   │   │   ├── TrustBadges.jsx
+│   │   │   │   └── hooks/
+│   │   │   │       └── useCheckoutLogic.js
 │   │   │   ├── footer/
 │   │   │   │   ├── FooterBrand.jsx
 │   │   │   │   ├── FooterContact.jsx
@@ -429,16 +469,6 @@ dh-new-site-2027/
 │   │   │   │       │   ├── WalletHistory.jsx
 │   │   │   │       │   ├── WithdrawModal.jsx
 │   │   │   │       │   └── useWalletData.js
-│   │   │   │       └── store-profile/
-│   │   │   │           ├── StoreProfileForm.jsx
-│   │   │   │           ├── StoreProfileBasicInfo.jsx
-│   │   │   │           ├── StoreProfileSocialLinks.jsx
-│   │   │   │           └── StoreProfileLocation.jsx
-│   │   │   ├── CategoryList.jsx
-│   │   │   ├── Footer.jsx
-│   │   │   └── ProductList.jsx
-│   │   ├── firebase/
-│   │   │   ├── config.js
 │   │   │   ├── checkout/
 │   │   │   │   ├── checkoutOrderActionService.js
 │   │   │   │   ├── checkoutSubmitService.js
@@ -450,9 +480,28 @@ dh-new-site-2027/
 │   │   │   │   ├── creditHistoryService.js
 │   │   │   │   └── creditRealtimeService.js
 │   │   │   ├── productService.js # 🚀 Extracted Product Fetch & Smart Mapper
+│   │   │   ├── marketingService.js
+│   │   │   ├── marketingAnalyticsService.js
 │   │   │   └── footerClientService.js
 │   │   ├── pages/
-│   │   │   ├── Home.jsx
+│   │   │   ├── Home/
+│   │   │   │   ├── Home.jsx
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── HeroSection.jsx
+│   │   │   │   │   ├── QuickActions.jsx
+│   │   │   │   │   ├── FeaturedSpares.jsx
+│   │   │   │   │   ├── SquadHighlight.jsx
+│   │   │   │   │   └── PartnerCard.jsx # 🚀 Extracted component for displaying nearby partner with distance
+│   │   │   │   └── hooks/
+│   │   │   │       ├── useHomeProducts.js
+│   │   │   │       └── useNearbyPartners.js # 🚀 Hook for mapping and local UI state
+│   │   ├── hooks/
+│   │   │   └── useGeolocation.js # 🚀 Custom hook for interacting with Browser GPS
+│   │   ├── utils/
+│   │   │   └── geoUtils.js # 🚀 Pure functions for mathematical distance calculations
+│   │   ├── pages/
+│   │   │   ├── StoreProfile/
+│   │   │   │   └── StoreProfilePage.jsx # 🚀 New premium public page for viewing technician profiles
 │   │   │   └── CategoryPage.jsx # New dedicated category routing page
 │   │   └── App.jsx
 │   └── ... (omitted for brevity)

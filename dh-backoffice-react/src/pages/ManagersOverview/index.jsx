@@ -89,7 +89,7 @@ export default function ManagersOverview() {
             onNavigateStaff={() => navigate('/managers/staff')}
             onNavigateHistory={() => navigate('/history')}
             onNavigateAds={() => navigate('/managers/ads')}
-            onNavigateCredit={() => navigate('/managers/credit')}
+            onNavigateCredit={() => navigate('/managers/credit-dashboard')}
             onOpenEmailSetup={() => setIsEmailSetupOpen(true)}
             onOpenDrivePanel={() => setIsDrivePanelOpen(true)}
             onOpenVipModal={() => setIsVipModalOpen(true)}

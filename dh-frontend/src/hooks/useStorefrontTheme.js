@@ -3,7 +3,8 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 export const DEFAULT_THEME_CONFIG = {
-  backgroundUrl: '/user-bg.jpg',
+  themeId: 'theme-trusted-partner', // เปลี่ยนค่าเริ่มต้นเป็น theme ใหม่
+  backgroundUrl: '',
   blurLevel: '16',
   opacityTop: 75,
   opacityMid: 55,

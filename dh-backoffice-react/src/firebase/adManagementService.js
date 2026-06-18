@@ -3,6 +3,7 @@ import { db } from './config';
 import { 
   collection, 
   doc, 
+  getDoc,
   getDocs, 
   updateDoc,
   serverTimestamp,
@@ -62,12 +63,16 @@ export const adManagementService = {
   /**
    * 2. อนุมัติโฆษณา (Approve) & ปิดงาน To-do อัตโนมัติด้วย Batch Write
    */
-  approveAd: async (adId, targetSkuId) => {
+  approveAd: async (adId, taskId) => {
     try {
-      const batch = writeBatch(db);
-      
       const specificCol = getSpecificAdsCollectionPath(adId);
       const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      
+      const adSnap = await getDoc(adRef);
+      if (!adSnap.exists()) throw new Error("ไม่พบข้อมูลโฆษณา");
+      const adData = adSnap.data();
+
+      const batch = writeBatch(db);
       
       const updatePayload = {
         status: 'active',
@@ -82,16 +87,32 @@ export const adManagementService = {
         batch.update(partnerAdRef, updatePayload);
       }
 
-      // 2.2 ค้นหา To-do ของผู้จัดการที่เกี่ยวข้อง เพื่อปิดงาน (Auto-sync)
-      if (targetSkuId) {
-        const q = query(getTodosCollection(), where('targetSkuId', '==', targetSkuId), where('status', '==', 'pending'));
-        const snapshot = await getDocs(q);
-        snapshot.forEach((todoDoc) => {
-          batch.update(todoDoc.ref, { 
-            status: 'resolved', 
-            resolution: 'approved',
-            updatedAt: serverTimestamp() 
-          });
+      // 🌟 THE FIX [Data Relationship]: Sync to ActivePartners only upon approval
+      if (adData.type === 'BUSINESS_CARD') {
+         const partnerId = adData.ownerId;
+         const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+         batch.set(activePartnerRef, {
+            partnerId: partnerId,
+            storeName: adData.partnerName || adData.title || '',
+            services: adData.services || adData.description || '',
+            phone: adData.phone || '',
+            messengerUrl: adData.messengerUrl || '',
+            lineUrl: adData.lineUrl || '',
+            googleMapLink: adData.googleMapLink || '',
+            latitude: Number(adData.latitude || 0),
+            longitude: Number(adData.longitude || 0),
+            storeImage: adData.imageUrl || '',
+            updatedAt: serverTimestamp()
+         }, { merge: true });
+      }
+
+      // 2.2 ปิดงานใน To-do ของผู้จัดการโดยตรง (Direct Update ไม่ต้อง Query)
+      if (taskId) {
+        const todoRef = doc(getTodosCollection(), taskId);
+        batch.update(todoRef, { 
+          status: 'completed', 
+          resolution: 'approved',
+          updatedAt: serverTimestamp() 
         });
       }
 
@@ -106,12 +127,15 @@ export const adManagementService = {
   /**
    * 3. ปฏิเสธโฆษณา (Reject) & ระบุเหตุผลให้ User ทราบ
    */
-  rejectAd: async (adId, targetSkuId, reason = 'ผิดเงื่อนไขการให้บริการของ DH Notebook') => {
+  rejectAd: async (adId, taskId, reason = 'ผิดเงื่อนไขการให้บริการของ DH Notebook') => {
     try {
-      const batch = writeBatch(db);
-      
       const specificCol = getSpecificAdsCollectionPath(adId);
       const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      
+      const adSnap = await getDoc(adRef);
+      const adData = adSnap.exists() ? adSnap.data() : null;
+
+      const batch = writeBatch(db);
       
       const updatePayload = {
         status: 'rejected',
@@ -127,16 +151,19 @@ export const adManagementService = {
         batch.update(partnerAdRef, updatePayload);
       }
 
-      // 3.2 ปิดงานใน To-do ของผู้จัดการเช่นกัน
-      if (targetSkuId) {
-        const q = query(getTodosCollection(), where('targetSkuId', '==', targetSkuId), where('status', '==', 'pending'));
-        const snapshot = await getDocs(q);
-        snapshot.forEach((todoDoc) => {
-          batch.update(todoDoc.ref, { 
-            status: 'resolved', 
-            resolution: 'rejected', 
-            updatedAt: serverTimestamp() 
-          });
+      // 🌟 THE FIX [Data Relationship]: Remove from ActivePartners if rejected
+      if (adData && adData.type === 'BUSINESS_CARD') {
+         const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', adData.ownerId);
+         batch.delete(activePartnerRef);
+      }
+
+      // 3.2 ปิดงานใน To-do ของผู้จัดการโดยตรง (Direct Update)
+      if (taskId) {
+        const todoRef = doc(getTodosCollection(), taskId);
+        batch.update(todoRef, { 
+          status: 'rejected', 
+          resolution: 'rejected', 
+          updatedAt: serverTimestamp() 
         });
       }
 
@@ -154,6 +181,10 @@ export const adManagementService = {
   pauseAd: async (adId) => {
     try {
       const specificCol = getSpecificAdsCollectionPath(adId);
+      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      
+      const adSnap = await getDoc(adRef);
+      
       const updatePayload = {
         status: 'paused',
         isActive: false, // ปิดสวิตช์การแสดงผล
@@ -161,12 +192,22 @@ export const adManagementService = {
         updatedAt: serverTimestamp()
       };
       
-      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
       await updateDoc(adRef, updatePayload);
 
       if (specificCol !== 'partner_ads') {
         const partnerAdRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), adId);
         await updateDoc(partnerAdRef, updatePayload).catch(()=>{});
+      }
+
+      // 🌟 THE FIX [Data Relationship]: Remove from ActivePartners if paused
+      if (adSnap.exists()) {
+        const adData = adSnap.data();
+        if (adData.type === 'BUSINESS_CARD') {
+           const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', adData.ownerId);
+           // We have to use updateDoc or simple deleteDoc since pauseAd didn't use batch
+           const { deleteDoc } = await import('firebase/firestore');
+           await deleteDoc(activePartnerRef).catch(()=>{});
+        }
       }
 
       return { success: true, message: 'ระงับการแสดงผลโฆษณานี้ชั่วคราวสำเร็จ' };

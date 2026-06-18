@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Phone, CheckCircle2 } from 'lucide-react';
-import { findNearestPartner, getUserCurrentLocation } from '../../firebase/partnerLocationService';
+import { findNearestPartner } from '../../firebase/partnerLocationService';
+import { useGeolocation } from '../../hooks/useGeolocation';
 
 // ==========================================
 // 🧩 Sub-Components (SRP)
@@ -37,6 +38,7 @@ const SkeletonLoader = () => (
 // ==========================================
 
 const PartnerSupportBox = () => {
+  const { getUserCurrentLocation } = useGeolocation();
   const [partner, setPartner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

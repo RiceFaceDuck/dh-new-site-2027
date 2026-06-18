@@ -12,6 +12,23 @@
     -moz-osx-font-smoothing: grayscale;
   }
   
+  /* =========================================
+     Dynamic Themes
+  ========================================= */
+  :root, .theme-tech-professional {
+    --color-brand: #0870B8;
+    --color-brand-dark: #054D80;
+    --color-brand-light: #E6F0F9;
+    --color-brand-accent: #D4AF37;
+  }
+
+  .theme-trusted-partner {
+    --color-brand: #1B365D;       /* Navy Blue */
+    --color-brand-dark: #112240;  
+    --color-brand-light: #A7F3D0; /* Mint */
+    --color-brand-accent: #F59E0B;/* Amber */
+  }
+
   body {
     @apply text-gray-800 font-sans;
   }
@@ -28,7 +45,7 @@
     @apply bg-gray-300 rounded-full transition-colors duration-200;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background-color: #0870B8; /* Brand Color Fix */
+    background-color: var(--color-brand);
     @apply rounded-full;
   }
 }
@@ -71,14 +88,14 @@
   /* Interactive Buttons & Badges (ป้ายเรืองแสง) */
   .badge-premium {
     @apply relative overflow-hidden font-semibold bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 shadow-lg px-3 py-1 rounded-md;
-    color: #D4AF37; /* Gold Color Fix */
+    color: var(--color-brand-accent);
   }
   
   /* Floating Action Button (ปุ่มลอยมีแสงเรืองรอง) */
   .fab-button {
     @apply flex items-center justify-center text-white rounded-full transition-all duration-300 hover:scale-105 active:scale-95;
-    background-color: #0870B8; /* Fix */
-    box-shadow: 0 0 15px rgba(8, 112, 184, 0.4); /* Glow Brand Fix */
+    background-color: var(--color-brand);
+    box-shadow: 0 0 15px var(--color-brand);
   }
 }
 
@@ -98,10 +115,10 @@
 
   /* Text Glow */
   .text-glow-brand {
-    text-shadow: 0 0 10px rgba(8, 112, 184, 0.5);
+    text-shadow: 0 0 10px var(--color-brand);
   }
   .text-glow-gold {
-    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    text-shadow: 0 0 10px var(--color-brand-accent);
   }
 
   /* Skeleton Shimmer (แสงวิ่งผ่านระหว่างรอโหลดข้อมูล) */

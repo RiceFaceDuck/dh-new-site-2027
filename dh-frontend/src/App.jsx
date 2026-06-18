@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
-import Home from './pages/Home';
+import Home from './pages/Home/Home';
 import CategoryPage from './pages/CategoryPage';
 import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
+import StoreProfilePage from './pages/StoreProfile/StoreProfilePage';
 
 // 🚀 เพิ่มหน้าตะกร้าสินค้า และหน้าสั่งซื้อ (Checkout)
 import Cart from './pages/Cart';
@@ -81,6 +82,7 @@ function App() {
             <Route path="/category/:type" element={<CategoryPage />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/store/:id" element={<StoreProfilePage />} />
             
             {/* 🚀 ลงทะเบียน Route สำหรับ E-Commerce Core */}
             <Route path="/cart" element={<Cart />} />

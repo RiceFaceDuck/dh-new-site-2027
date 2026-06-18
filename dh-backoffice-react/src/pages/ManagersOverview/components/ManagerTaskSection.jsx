@@ -4,6 +4,8 @@ import { useManagerTodo } from '../../todo/hooks/useManagerTodo';
 import TodoItem from '../../../components/todo/TodoItem';
 import WholesaleCard from '../../../components/todo/WholesaleCard';
 import KnowledgeApprovalCard from '../../../components/todo/KnowledgeApprovalCard';
+import { managerActionService } from '../../../firebase/managerActionService';
+import { auth } from '../../../firebase/config';
 
 // Premium Skeleton Loader
 const PremiumSkeleton = () => (
@@ -41,56 +43,29 @@ export default function ManagerTaskSection() {
       return;
     }
     
-    // 🌟 THE FIX: Process user approval logic before completing task
-    if (type === 'STAFF_APPROVAL' && action === 'approve') {
-        try {
-            const { auth } = await import('../../../firebase/config');
-            const { userService } = await import('../../../firebase/userService');
-            
-            const adminId = auth.currentUser?.uid || 'Admin';
-            const targetUid = payload.targetUid;
-            const newRole = payload.metadata?.requestedRole || 'staff';
-            
-            // 1. Update Role
-            await userService.updateUserRole(adminId, targetUid, newRole);
-            
-            // 2. Grant Active & Staff Status
-            await userService.updateUserProfile(targetUid, { 
-                isStaff: true, 
-                isActive: true, 
-                roles: [newRole.charAt(0).toUpperCase() + newRole.slice(1)] 
-            });
-        } catch (err) {
-            console.error("Failed to update user profile during staff approval", err);
-            // Optionally could throw here to stop task completion if critical
-        }
-    }
+    // 🌟 THE FIX [SRP Refactoring]: Delegate to the dedicated service
+    try {
+      const adminId = auth.currentUser?.uid || 'Admin';
+      const originalTask = managerTodos.find(t => t.id === taskId);
+      if (!originalTask) throw new Error("ไม่พบข้อมูลงานต้นฉบับ");
 
-    if (type === 'PRODUCT_KNOWLEDGE_APPROVAL' && action === 'approve') {
-        try {
-            const { auth } = await import('../../../firebase/config');
-            const { productKnowledgeAdminService } = await import('../../../firebase/productKnowledgeAdminService');
-            const adminId = auth.currentUser?.uid || 'Admin';
-            
-            const originalTask = managerTodos.find(t => t.id === taskId);
-            if (!originalTask) throw new Error("ไม่พบข้อมูลงานต้นฉบับ");
+      let newStatus = '';
 
-            // Pass the original task object, which contains id, payload, createdByUid, etc.
-            await productKnowledgeAdminService.approveKnowledgeTask(originalTask, adminId);
-            return; // approveKnowledgeTask changes status already via transaction
-        } catch (err) {
-            console.error("Failed to approve product knowledge", err);
-            alert("เกิดข้อผิดพลาดในการอนุมัติ กรุณาลองใหม่: " + err.message);
-            return;
-        }
-    }
-
-    let newStatus = '';
-    if (action === 'approve') newStatus = 'completed';
-    if (action === 'reject') newStatus = 'rejected';
-    
-    if (newStatus) {
-      await updateTaskStatus(taskId, newStatus);
+      if (action === 'approve') {
+        const result = await managerActionService.handleApproval(taskId, type, payload, originalTask, adminId);
+        newStatus = result.newStatus;
+      } else if (action === 'reject') {
+        const result = await managerActionService.handleRejection(taskId, type, payload, originalTask, adminId, payload?.reason);
+        newStatus = result.newStatus;
+      }
+      
+      // If the service indicates a status should be updated via legacy updateTaskStatus method
+      if (newStatus) {
+        await updateTaskStatus(taskId, newStatus);
+      }
+    } catch (err) {
+      console.error(`Failed to handle ${action} for ${type}`, err);
+      alert("เกิดข้อผิดพลาดในการดำเนินการ: " + err.message);
     }
   };
 

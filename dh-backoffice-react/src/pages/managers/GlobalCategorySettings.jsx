@@ -1,10 +1,12 @@
-import React from 'react';
-import { LayoutTemplate, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { LayoutTemplate, ArrowLeft, Layers, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CategoryManager from '../../components/managers/category/CategoryManager';
+import FeaturedSettings from '../../components/managers/featured/FeaturedSettings';
 
 export default function GlobalCategorySettings() {
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('categories');
 
     return (
         <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 h-[calc(100vh-4rem)] flex flex-col">
@@ -22,18 +24,42 @@ export default function GlobalCategorySettings() {
                         <div>
                             <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2">
                                 <LayoutTemplate size={24} className="text-emerald-600" />
-                                จัดการหมวดหมู่หน้าแรก
+                                จัดการส่วนแสดงผลหน้าแรก
                             </h2>
                             <p className="text-[11px] font-bold text-emerald-600/70 mt-1 uppercase tracking-widest">
-                                ลากวางเพื่อเรียงลำดับ ซ่อน/แสดงหมวดหมู่ (บันทึกอัตโนมัติ)
+                                ตั้งค่าหมวดหมู่และสินค้าแนะนำ
                             </p>
                         </div>
                     </div>
                 </div>
 
+                {/* Tabs */}
+                <div className="flex px-5 pt-3 border-b border-slate-200 bg-slate-50/50 shrink-0 gap-2">
+                    <button 
+                        onClick={() => setActiveTab('categories')}
+                        className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'categories' ? 'border-emerald-500 text-emerald-700 bg-white rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-t-lg'}`}
+                    >
+                        <Layers size={16} />
+                        หมวดหมู่ (Categories)
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('featured')}
+                        className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'featured' ? 'border-emerald-500 text-emerald-700 bg-white rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-t-lg'}`}
+                    >
+                        <Sparkles size={16} />
+                        แผงสินค้าแนะนำ (Featured Spares)
+                    </button>
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-hidden relative bg-slate-50/30 flex flex-col">
-                    <CategoryManager />
+                    {activeTab === 'categories' ? (
+                        <CategoryManager />
+                    ) : (
+                        <div className="overflow-y-auto h-full w-full">
+                            <FeaturedSettings />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

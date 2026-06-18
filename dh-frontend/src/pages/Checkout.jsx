@@ -1,16 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../hooks/useCart';
-import { submitOrder, createWholesaleRequest } from '../firebase/checkoutService';
-import { auth } from '../firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
+import React from 'react';
+import { useCheckoutLogic } from '../components/checkout/hooks/useCheckoutLogic';
 
-// 🚀 [NEW] นำเข้าระบบ Credit Service และ Wallet
-import { formatCredit } from '../firebase/creditService';
-import { useWalletBalance } from '../firebase/walletService';
-import { Award, CheckCircle2 } from 'lucide-react';
-
-// นำเข้า Components ย่อย (อ้างอิงจากโครงสร้างโปรเจกต์)
 import AddressSelector from '../components/checkout/AddressSelector';
 import ShippingMethod from '../components/checkout/ShippingMethod';
 import PaymentMethod from '../components/checkout/PaymentMethod';
@@ -23,162 +13,28 @@ import CreditToggleBox from '../components/checkout/CreditToggleBox';
 import TrustBadges from '../components/checkout/TrustBadges';
 
 const Checkout = () => {
-  const navigate = useNavigate();
-  const { cartItems, totals, clearCart } = useCart();
-  const [user, setUser] = useState(null);
-
-  // 🚀 [NEW] ดึงข้อมูลเครดิตของผู้ใช้อัตโนมัติด้วยระบบ Ecosystem ใหม่
-  const { balance: creditBalance, loading: creditLoading } = useWalletBalance(user?.uid);
-  const [useCreditToggle, setUseCreditToggle] = useState(false); // ควบคุมปุ่มเปิด-ปิดการใช้เครดิต
-
-  // 1. Centralized State (ศูนย์รวมข้อมูลของหน้า Checkout)
-  const [checkoutState, setCheckoutState] = useState({
-    customerData: null, // ข้อมูลที่อยู่จัดส่ง
-    taxData: null, // ข้อมูลใบกำกับภาษี
-    paymentMethod: 'transfer', // ค่าเริ่มต้น: โอนเงิน
-    shippingCost: 0,
-    appliedPromotions: [],
-    discountAmount: 0,
-    usePoints: 0, // 🚀 เพิ่มสถานะการใช้เครดิต
-    useWallet: 0,
-    wholesaleReason: '', // เหตุผลประกอบการขอราคาส่ง
-  });
-
-  const [slipUrl, setSlipUrl] = useState(null);
-  const [saveProfile, setSaveProfile] = useState(true); // Default ให้จดจำข้อมูลลง Profile
-  
-  // 2. UI & UX States
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [orderResult, setOrderResult] = useState(null); // เก็บผลลัพธ์เมื่อสำเร็จ { orderId, isWholesale, message }
-  const [isWholesaleModalOpen, setIsWholesaleModalOpen] = useState(false);
-
-  // ตรวจสอบสถานะ User และ ตะกร้าสินค้า
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        // บังคับ Login หากยังไม่เข้าระบบ
-        navigate('/profile?tab=login', { state: { returnUrl: '/checkout' } });
-      }
-    });
-    return () => unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
-    // ป้องกันการเข้าหน้า Checkout เมื่อตะกร้าว่างเปล่า (ยกเว้นเพิ่งสั่งซื้อสำเร็จ)
-    if (!orderResult && (!cartItems || cartItems.length === 0)) {
-      navigate('/cart');
-    }
-  }, [cartItems, orderResult, navigate]);
-
-  // Handler: อัปเดตข้อมูลจาก Component ลูก
-  const handleUpdateCheckoutState = (key, value) => {
-    setCheckoutState((prev) => ({ ...prev, [key]: value }));
-    // ลบ Error Message ทิ้งเมื่อผู้ใช้เริ่มแก้ไขข้อมูล
-    if (errorMessage) setErrorMessage('');
-  };
-
-  // ==========================================
-  // 🧮 [NEW] Logic คำนวณ Credit Point อัตโนมัติ (ป้องกันยอดติดลบ)
-  // ==========================================
-  useEffect(() => {
-    if (useCreditToggle && creditBalance > 0) {
-      // คำนวณยอดเงินสุทธิที่ต้องจ่าย (ก่อนหักเครดิต)
-      const currentNetBeforeCredit = 
-        (totals?.subtotal || 0) + 
-        (checkoutState.shippingCost || 0) - 
-        (checkoutState.discountAmount || 0);
-
-      // ระบบอัจฉริยะ: ใช้เครดิตแค่ "เท่าที่จำเป็น" เพื่อจ่ายบิลนี้ (ไม่ให้หักเกินยอดบิล)
-      const maxApplicablePoints = Math.min(creditBalance, Math.max(0, currentNetBeforeCredit));
-      
-      setCheckoutState(prev => ({ ...prev, usePoints: maxApplicablePoints }));
-    } else {
-      setCheckoutState(prev => ({ ...prev, usePoints: 0 }));
-    }
-  }, [useCreditToggle, creditBalance, totals, checkoutState.shippingCost, checkoutState.discountAmount]);
-
-
-  // 3. ฟังก์ชันตรวจสอบความถูกต้องก่อนส่ง (Validation)
-  const validateOrder = () => {
-    if (!checkoutState.customerData) {
-      setErrorMessage('กรุณาระบุที่อยู่สำหรับจัดส่งสินค้า');
-      return false;
-    }
-    if (checkoutState.paymentMethod === 'transfer' && !slipUrl) {
-      // หมายเหตุ: กรณีระบบอนุญาตให้ส่งออเดอร์ก่อนโอนทีหลังได้ สามารถเอาเงื่อนไขนี้ออกได้
-      // แต่เพื่อความสมบูรณ์ แนะนำให้อัปโหลดสลิปก่อน หรือ ให้สถานะเป็น "pending_payment"
-    }
-    return true;
-  };
-
-  // 4. กระแสการสั่งซื้อปกติ
-  const handlePlaceOrder = async () => {
-    if (!validateOrder()) {
-      // เลื่อนหน้าจอขึ้นไปบนสุดเพื่อให้เห็น Error
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage('');
-
-    try {
-      const result = await submitOrder(
-        user,
-        cartItems,
-        checkoutState,
-        totals,
-        slipUrl,
-        saveProfile
-      );
-
-      if (result.success) {
-        clearCart();
-        setOrderResult(result);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } catch (error) {
-      console.error("Order Error:", error);
-      setErrorMessage(error.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // 5. กระแสการขอราคาส่ง
-  const handleSubmitWholesale = async (reasonText) => {
-    setIsSubmitting(true);
-    setErrorMessage('');
-    setIsWholesaleModalOpen(false);
-
-    try {
-      // อัปเดตเหตุผลลงใน State ก่อนส่ง
-      const updatedState = { ...checkoutState, wholesaleReason: reasonText };
-      
-      const result = await createWholesaleRequest(
-        user,
-        cartItems,
-        updatedState,
-        totals
-      );
-
-      if (result.success) {
-        clearCart();
-        setOrderResult({ ...result, isWholesale: true });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } catch (error) {
-      console.error("Wholesale Request Error:", error);
-      setErrorMessage(error.message || 'เกิดข้อผิดพลาดในการส่งคำขอราคาส่ง');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    user,
+    cartItems,
+    totals,
+    creditBalance,
+    creditLoading,
+    useCreditToggle,
+    setUseCreditToggle,
+    checkoutState,
+    handleUpdateCheckoutState,
+    slipUrl,
+    setSlipUrl,
+    saveProfile,
+    setSaveProfile,
+    isSubmitting,
+    errorMessage,
+    orderResult,
+    isWholesaleModalOpen,
+    setIsWholesaleModalOpen,
+    handlePlaceOrder,
+    handleSubmitWholesale
+  } = useCheckoutLogic();
 
   // -------------------------------------------------------------
   // RENDER: หน้า Success (เมื่อสั่งซื้อหรือส่งคำขอสำเร็จ)

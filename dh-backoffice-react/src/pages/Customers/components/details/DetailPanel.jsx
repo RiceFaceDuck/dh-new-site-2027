@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, Edit2, Trash2, MapPin, Phone, Building2, 
-  Mail, User, ShoppingBag, ShieldAlert, Loader2, 
-  TrendingUp, Copy, CheckCircle2, FileText, Hash 
-} from 'lucide-react';
+import { X, Edit2, Trash2, Building2, User } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
-import WalletDisplay from '../displays/WalletDisplay';
-import PointDisplay from '../displays/PointDisplay';
+
+import ContactInfo from './ContactInfo';
+import ShippingInfo from './ShippingInfo';
+import TaxInfo from './TaxInfo';
+import StatsInfo from './StatsInfo';
+import HistoryInfo from './HistoryInfo';
 
 export default function DetailPanel({
   customer,
@@ -102,187 +102,31 @@ export default function DetailPanel({
       {/* 2. เนื้อหาหลัก (Scrollable Content) */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-5 space-y-6">
+          <ContactInfo customer={customer} />
           
-          {/* ข้อมูลการติดต่อ (Contact Info) */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> ข้อมูลติดต่อ
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <p className="text-[10px] text-slate-500 font-semibold mb-1 flex items-center gap-1.5"><Phone size={12}/> เบอร์โทรศัพท์</p>
-                <p className="text-sm font-bold text-slate-800">{customer.phoneNumber || customer.phone || '-'}</p>
-              </div>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <p className="text-[10px] text-slate-500 font-semibold mb-1 flex items-center gap-1.5"><Mail size={12}/> อีเมล</p>
-                <p className="text-sm font-bold text-slate-800 truncate" title={customer.email}>{customer.email || '-'}</p>
-              </div>
-            </div>
-          </div>
+          <ShippingInfo 
+            getFormattedAddress={getFormattedAddress} 
+            handleCopy={handleCopy} 
+            copiedField={copiedField} 
+          />
 
-          {/* ข้อมูลจัดส่ง (Shipping Address) - รองรับ 1-Click Copy */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ข้อมูลจัดส่งสินค้า
-            </h3>
-            <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 relative group">
-              <p className="text-[10px] text-emerald-600 font-bold mb-1.5 flex items-center gap-1.5">
-                <MapPin size={12}/> ที่อยู่เริ่มต้น
-              </p>
-              <p className="text-sm text-slate-700 leading-relaxed pr-8">{getFormattedAddress()}</p>
-              
-              <button 
-                onClick={() => handleCopy(getFormattedAddress(), 'address')}
-                className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-emerald-600 bg-white shadow-sm border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                title="คัดลอกที่อยู่"
-              >
-                {copiedField === 'address' ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}
-              </button>
-            </div>
-          </div>
+          <TaxInfo 
+            isLoadingTax={isLoadingTax}
+            secureTaxInfo={secureTaxInfo}
+            handleCopy={handleCopy}
+            copiedField={copiedField}
+          />
 
-          {/* 🛡️ ข้อมูลผู้เสียภาษี (Private Tax Info) */}
-          <div className="space-y-3 pt-4 border-t border-slate-100">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> ข้อมูลภาษี (Tax Info)
-            </h3>
-            
-            {isLoadingTax ? (
-              <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-400">
-                <Loader2 className="w-6 h-6 animate-spin text-indigo-400 mb-2" />
-                <span className="text-xs font-medium">กำลังดึงข้อมูลความปลอดภัย...</span>
-              </div>
-            ) : secureTaxInfo ? (
-              <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-3 relative group">
-                <div>
-                  <p className="text-[10px] text-indigo-600 font-bold mb-1 flex items-center gap-1.5">
-                    {secureTaxInfo.type === 'company' ? <Building2 size={12}/> : <User size={12}/>} 
-                    {secureTaxInfo.type === 'company' ? 'นิติบุคคล' : 'บุคคลธรรมดา'}
-                  </p>
-                  <p className="text-sm font-bold text-slate-800 pr-8">{secureTaxInfo.name}</p>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] text-slate-500 font-semibold mb-0.5">เลขประจำตัวผู้เสียภาษี</p>
-                    <p className="text-sm font-mono font-bold text-slate-700 tracking-widest">{secureTaxInfo.taxId}</p>
-                  </div>
-                  {secureTaxInfo.type === 'company' && (
-                    <div className="text-right">
-                      <p className="text-[10px] text-slate-500 font-semibold mb-0.5">สาขา</p>
-                      <p className="text-xs font-bold text-slate-700 bg-white border border-indigo-100 px-2 py-0.5 rounded">
-                        {secureTaxInfo.isHeadOffice ? 'สำนักงานใหญ่' : `สาขา ${secureTaxInfo.branchCode}`}
-                      </p>
-                    </div>
-                  )}
-                </div>
+          <StatsInfo 
+            customer={customer} 
+            formatCurrency={formatCurrency} 
+          />
 
-                <div className="pt-2 border-t border-indigo-100/50">
-                  <p className="text-[10px] text-slate-500 font-semibold mb-0.5">ที่อยู่ออกใบกำกับภาษี</p>
-                  <p className="text-xs text-slate-600 leading-relaxed pr-8">{secureTaxInfo.address}</p>
-                </div>
-
-                <button 
-                  onClick={() => handleCopy(`${secureTaxInfo.name} | เลขผู้เสียภาษี: ${secureTaxInfo.taxId} | ${secureTaxInfo.isHeadOffice ? 'สำนักงานใหญ่' : `สาขา ${secureTaxInfo.branchCode}`} | ที่อยู่: ${secureTaxInfo.address}`, 'tax')}
-                  className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-indigo-600 bg-white shadow-sm border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                  title="คัดลอกข้อมูลภาษีทั้งหมด"
-                >
-                  {copiedField === 'tax' ? <CheckCircle2 size={16} className="text-indigo-500" /> : <Copy size={16} />}
-                </button>
-              </div>
-            ) : (
-              <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 border-dashed flex flex-col items-center justify-center text-slate-400">
-                <FileText className="w-6 h-6 mb-2 opacity-50" />
-                <span className="text-xs font-medium">ลูกค้ายังไม่ได้ระบุข้อมูลภาษี</span>
-              </div>
-            )}
-          </div>
-
-          {/* สถิติการใช้งาน (Overview Stats) */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-             <div className="grid grid-cols-2 gap-4">
-              {/* ยอดเงินค้างชำระ (แสดงผล Real-time) */}
-              <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100 flex flex-col justify-between min-h-[72px]">
-                <p className="text-[10px] text-emerald-600 font-bold mb-1 flex items-center gap-1.5">
-                  <TrendingUp size={12}/> DH ค้างยอด
-                </p>
-                <div className="text-lg font-black font-mono text-emerald-600">
-                  <WalletDisplay customerId={customer.id} />
-                </div>
-              </div>
-
-              {/* เครดิตพอยต์ (แสดงผล Real-time) */}
-              <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-100 flex flex-col justify-between min-h-[72px]">
-                <p className="text-[10px] text-amber-600 font-bold mb-1 flex items-center gap-1.5">
-                  <TrendingUp size={12}/> เครดิตพอยต์ (Point)
-                </p>
-                <div className="text-lg font-black font-mono text-amber-600">
-                  <PointDisplay customerId={customer.id} />
-                </div>
-              </div>
-
-              {/* ยอดสั่งซื้อรวม */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 col-span-2">
-                <p className="text-[10px] text-slate-500 font-bold mb-1 flex items-center gap-1.5">
-                  <ShoppingBag size={12}/> ยอดสั่งซื้อรวม
-                </p>
-                <p className="text-lg font-black font-mono text-slate-700">
-                  {formatCurrency(customer.stats?.totalOrders || 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ประวัติย้อนหลัง (History Preview) คงของเดิมไว้ตามคำสั่ง */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-             {/* รายการสั่งซื้อ (Orders) */}
-             {history?.orders?.length > 0 ? (
-                <div>
-                  <h4 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-3">
-                    <ShoppingBag size={14} /> ประวัติสั่งซื้อล่าสุด
-                  </h4>
-                  {history.orders.slice(0, 3).map(order => (
-                    <div key={order.id} className="p-3 bg-white border border-slate-100 rounded-xl flex justify-between items-center mb-2 shadow-sm">
-                      <div>
-                        <span className="text-xs font-bold text-slate-700 block">#{order.id.substring(0,8).toUpperCase()}</span>
-                        <span className="text-[10px] text-slate-400">{formatDate(order.createdAt)}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-indigo-600 block">฿{formatCurrency(order.totals?.netTotal)}</span>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{order.status}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {history.orders.length > 3 && (
-                    <button className="w-full text-center text-[11px] text-indigo-600 hover:text-indigo-800 font-bold py-2 bg-indigo-50/50 rounded-lg mt-1 transition-colors">
-                      ดูประวัติทั้งหมด ({history.orders.length})
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-xs font-medium text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  ยังไม่มีประวัติการสั่งซื้อ
-                </div>
-              )}
-
-              {/* รายการเคลม (Claims) */}
-              {history?.claims?.length > 0 && (
-                <div className="pt-2">
-                  <h4 className="text-xs font-bold text-rose-500 flex items-center gap-1.5 mb-3">
-                    <ShieldAlert size={14} /> ประวัติการเคลมสินค้า
-                  </h4>
-                  {history.claims.slice(0, 2).map(claim => (
-                    <div key={claim.id} className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl flex justify-between items-center text-xs mb-2">
-                      <span className="font-bold text-rose-700">เคลม #{claim.claimId || claim.id.substring(0,8)}</span>
-                      <span className="font-bold bg-white text-rose-600 px-2 py-0.5 rounded shadow-sm border border-rose-100/50">
-                        {claim.status || 'รอดำเนินการ'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-          </div>
-
+          <HistoryInfo 
+            history={history}
+            formatDate={formatDate}
+            formatCurrency={formatCurrency}
+          />
         </div>
       </div>
 

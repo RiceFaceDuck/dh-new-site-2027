@@ -50,6 +50,10 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
     } else {
       dataToSave.bufferStock = Number(dataToSave.bufferStock);
     }
+    
+    // Create or update randomSeed for True Randomization query
+    dataToSave.randomSeed = Math.random();
+
     onSave(dataToSave);
   };
 

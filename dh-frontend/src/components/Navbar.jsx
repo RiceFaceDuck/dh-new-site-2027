@@ -73,34 +73,23 @@ const Navbar = () => {
 
   return (
     <header 
-      className={`bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50 transition-all duration-300 shadow-sm ${
+      className={`bg-brand-dark border-b border-white/10 sticky top-0 z-50 transition-all duration-300 shadow-md ${
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-      {/* Top utility bar (Optional - สามารถลบได้ถ้าไม่ใช้ แต่ใส่ไว้ให้ดู Premium) */}
-      <div className="bg-slate-900 text-slate-300 text-[10px] md:text-xs py-1.5 px-4 flex justify-between items-center hidden sm:flex">
-        <div className="flex gap-4">
-          <span className="hover:text-white cursor-pointer transition-colors">ฝ่ายบริการลูกค้า</span>
-          <span className="hover:text-white cursor-pointer transition-colors">ติดตามสถานะการจัดส่ง</span>
-        </div>
-        <div className="flex gap-4">
-          <span className="text-emerald-400 font-medium">✨ พาร์ทเนอร์รับเครดิตเงินคืนสูงสุด 5%</span>
-        </div>
-      </div>
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="flex justify-between items-center h-16 md:h-20">
           
-          {/* Logo Section */}
           <div className="flex items-center shrink-0">
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-md group-hover:scale-105 transition-transform duration-300">
-                DH
-              </div>
-              <div className="hidden sm:flex flex-col">
-                <span className="text-lg font-bold text-slate-800 leading-tight">Notebook</span>
-                <span className="text-[10px] text-emerald-600 font-medium tracking-wider">ECOSYSTEM</span>
-              </div>
+            <Link to="/" className="flex items-center group">
+              <img 
+                src="/logo.jpg" 
+                alt="DH Notebook Logo" 
+                className="h-10 md:h-12 w-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => { e.target.src = '/logo.png' }}
+              />
             </Link>
           </div>
 
@@ -110,9 +99,9 @@ const Navbar = () => {
               <input 
                 type="text" 
                 placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-500 text-white p-1.5 rounded-full hover:bg-emerald-600 transition-colors shadow-sm">
+              <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-full hover:bg-brand-dark transition-colors shadow-sm">
                 <Search size={16} strokeWidth={2.5} />
               </button>
             </div>
@@ -122,24 +111,24 @@ const Navbar = () => {
           <div className="flex items-center space-x-3 md:space-x-5">
             
             {/* Search Icon (Mobile Only) */}
-            <button className="md:hidden text-slate-600 hover:text-emerald-600 p-2">
+            <button className="md:hidden text-slate-300 hover:text-white p-2">
               <Search size={22} strokeWidth={1.5} />
             </button>
 
             {/* Shopping Cart Button */}
             <div 
-              className="relative cursor-pointer text-slate-600 hover:text-emerald-600 transition-colors p-2 hover:bg-slate-50 rounded-xl"
+              className="relative cursor-pointer text-slate-300 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-xl"
               onClick={() => navigate('/cart')}
             >
               <ShoppingCart size={22} strokeWidth={1.5} />
               {cartTotalQty > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-sm animate-fade-in">
+                <span className="absolute -top-1 -right-1 bg-brand-accent text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-sm animate-fade-in">
                   {cartTotalQty > 99 ? '99+' : cartTotalQty}
                 </span>
               )}
             </div>
 
-            <div className="h-6 w-px bg-slate-200 hidden sm:block mx-1"></div>
+            <div className="h-6 w-px bg-white/20 hidden sm:block mx-1"></div>
 
             {/* 🌟 User Profile / Auth Area 🌟 */}
             <div className="relative" ref={dropdownRef}>
@@ -147,7 +136,7 @@ const Navbar = () => {
                 // 🔴 ยังไม่ล็อกอิน: แสดงปุ่มเข้าสู่ระบบ
                 <button 
                   onClick={() => navigate('/profile')}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#0870B8] hover:bg-[#065a96] text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow active:scale-95"
+                  className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow active:scale-95"
                 >
                   <User size={18} />
                   <span className="hidden sm:inline">เข้าสู่ระบบ</span>
@@ -158,14 +147,14 @@ const Navbar = () => {
                   <button 
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className={`flex items-center gap-2.5 p-1.5 pr-3 rounded-full border transition-all duration-300 ${
-                      isDropdownOpen ? 'bg-slate-50 border-emerald-200 shadow-inner' : 'bg-white border-slate-200 hover:border-emerald-300 hover:bg-slate-50 shadow-sm'
+                      isDropdownOpen ? 'bg-white/10 border-brand-accent shadow-inner' : 'bg-transparent border-white/20 hover:border-brand-accent hover:bg-white/10 shadow-sm'
                     }`}
                   >
                     <div className="relative">
                       {currentUser.photoURL ? (
                         <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-slate-200" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-700 flex items-center justify-center font-bold text-sm border border-emerald-200">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-light to-white text-brand flex items-center justify-center font-bold text-sm border border-brand-light">
                           {getInitial(currentUser.email)}
                         </div>
                       )}
@@ -177,12 +166,12 @@ const Navbar = () => {
                     </div>
                     
                     <div className="hidden lg:flex flex-col items-start">
-                      <span className="text-xs font-bold text-slate-700 truncate max-w-[100px] leading-none mb-0.5">
+                      <span className="text-xs font-bold text-white truncate max-w-[100px] leading-none mb-0.5">
                         {currentUser.displayName || 'พาร์ทเนอร์'}
                       </span>
-                      <span className="text-[10px] text-emerald-600 font-medium leading-none">Online</span>
+                      <span className="text-[10px] text-brand-light font-medium leading-none">Online</span>
                     </div>
-                    <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 hidden sm:block ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 hidden sm:block ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {/* 🔽 Dropdown Menu */}
@@ -200,18 +189,18 @@ const Navbar = () => {
                         <Link 
                           to="/profile?tab=overview" 
                           onClick={() => setIsDropdownOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-colors ${location.search.includes('tab=overview') || !location.search ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-600'}`}
+                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-colors ${location.search.includes('tab=overview') || !location.search ? 'bg-brand-light/30 text-brand' : 'text-slate-600 hover:bg-slate-50 hover:text-brand'}`}
                         >
-                          <LayoutDashboard size={18} className={location.search.includes('tab=overview') || !location.search ? 'text-emerald-600' : 'text-slate-400'} /> 
+                          <LayoutDashboard size={18} className={location.search.includes('tab=overview') || !location.search ? 'text-brand' : 'text-slate-400'} /> 
                           แดชบอร์ดส่วนตัว
                         </Link>
                         
                         <Link 
                           to="/profile?tab=wallet" 
                           onClick={() => setIsDropdownOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-colors ${location.search.includes('tab=wallet') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-600'}`}
+                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-colors ${location.search.includes('tab=wallet') ? 'bg-brand-light/30 text-brand' : 'text-slate-600 hover:bg-slate-50 hover:text-brand'}`}
                         >
-                          <Wallet size={18} className={location.search.includes('tab=wallet') ? 'text-emerald-600' : 'text-slate-400'} /> 
+                          <Wallet size={18} className={location.search.includes('tab=wallet') ? 'text-brand' : 'text-slate-400'} /> 
                           เครดิต & กระเป๋าเงิน
                           {/* 🔴 Badge ย้ำเตือนในเมนู */}
                           <span className="ml-auto bg-rose-100 text-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">มีรายการรอรับ</span>

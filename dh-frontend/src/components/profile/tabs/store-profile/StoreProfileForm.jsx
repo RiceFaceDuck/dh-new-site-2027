@@ -3,162 +3,34 @@ import { Store, Power, Loader2 } from 'lucide-react';
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { driveService } from '../../../../firebase/driveService';
+import { storeProfileSubmitService } from '../../../../firebase/storeProfileSubmitService';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
 
+import { useStoreProfile } from './hooks/useStoreProfile';
+import { useGeolocation } from '../../../../hooks/useGeolocation';
+
 const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd, fetchMyAds }) => {
-  const [savingStore, setSavingStore] = useState(false);
-  const [uploadingStoreImage, setUploadingStoreImage] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
+  const {
+    savingStore,
+    uploadingStoreImage,
+    isAdPending,
+    handleStoreImageUpload,
+    handleToggleSupport,
+    handleSaveStore
+  } = useStoreProfile(storeData, setStoreData, user, appId, businessCardAd, fetchMyAds);
 
-  const handleStoreImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return alert("ไฟล์ใหญ่เกินไป (Max 5MB)");
-    setUploadingStoreImage(true);
+  const { getUserCurrentLocation, isLocating } = useGeolocation();
+
+  const handleGetLocation = async () => {
     try {
-      const url = await driveService.uploadAdImage(file, 'STORE_PROFILE');
-      setStoreData({ ...storeData, storeImage: url });
+      const coords = await getUserCurrentLocation();
+      setStoreData({ ...storeData, latitude: coords.latitude, longitude: coords.longitude });
     } catch (error) {
-      alert("อัปโหลดไม่สำเร็จ: " + error.message);
-    } finally { setUploadingStoreImage(false); }
+      alert(error.message);
+    }
   };
-
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) return alert("เบราว์เซอร์ของคุณไม่รองรับการดึงพิกัดแผนที่");
-    setLocationLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setStoreData({ ...storeData, latitude: position.coords.latitude, longitude: position.coords.longitude });
-        setLocationLoading(false);
-      },
-      (error) => {
-        alert("ไม่สามารถดึงพิกัดได้ กรุณาอนุญาตให้เข้าถึงตำแหน่งที่ตั้ง");
-        setLocationLoading(false);
-      }
-    );
-  };
-
-  const handleToggleSupport = () => {
-    setStoreData({ ...storeData, isSupportActive: !storeData.isSupportActive });
-  };
-
-  const handleSaveStore = async (e) => {
-    e.preventDefault();
-    if (!storeData.storeName || !storeData.phone) return alert("กรุณากรอกข้อมูล ชื่อร้าน และ เบอร์โทร ให้ครบถ้วน");
-    
-    setSavingStore(true);
-    try {
-      const finalStoreData = { ...storeData };
-      const urlFields = ['messengerUrl', 'lineUrl', 'youtubeUrl', 'tiktokUrl', 'shopeeUrl', 'lazadaUrl', 'websiteUrl'];
-      urlFields.forEach(field => {
-        if (finalStoreData[field] && !finalStoreData[field].startsWith('http')) {
-          if (field === 'messengerUrl' && finalStoreData[field].includes('m.me')) {
-            finalStoreData[field] = 'https://' + finalStoreData[field];
-          } else {
-             finalStoreData[field] = 'https://' + finalStoreData[field];
-          }
-        }
-      });
-
-      const batch = writeBatch(db); 
-
-      // 1. บันทึกข้อมูลร้านลงระบบ Profile
-      const storeRef = doc(db, 'artifacts', appId, 'users', user.uid, 'storeProfile', 'main');
-      batch.set(storeRef, { ...finalStoreData, updatedAt: serverTimestamp() }, { merge: true });
-
-      // 2. จัดการ ActivePartners (เรดาร์)
-      const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', user.uid);
-      
-      // 3. จัดการโฆษณานามบัตร (BUSINESS_CARD)
-      const adId = `AD-CARD-${user.uid}`;
-      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);
-      const taskId = `TODO-${adId}`;
-      
-      if (finalStoreData.isSupportActive) {
-        if (!finalStoreData.latitude || !finalStoreData.longitude) {
-           alert("กรุณากดปุ่ม 'ดึงพิกัดปัจจุบัน' ก่อนเปิดรับการสนับสนุน");
-           setSavingStore(false);
-           return;
-        }
-
-        batch.set(activePartnerRef, {
-          partnerId: user.uid, 
-          storeName: finalStoreData.storeName, 
-          services: finalStoreData.services,
-          phone: finalStoreData.phone, 
-          messengerUrl: finalStoreData.messengerUrl || '',
-          lineUrl: finalStoreData.lineUrl || '',
-          googleMapLink: finalStoreData.googleMapLink, 
-          latitude: finalStoreData.latitude, 
-          longitude: finalStoreData.longitude, 
-          storeImage: finalStoreData.storeImage || '',
-          updatedAt: serverTimestamp()
-        });
-
-        const adPayload = {
-           id: adId,
-           type: 'BUSINESS_CARD',
-           ownerId: user.uid,
-           title: finalStoreData.storeName,
-           description: finalStoreData.description || finalStoreData.services || '',
-           imageUrl: finalStoreData.storeImage || 'https://placehold.co/400x400/e2e8f0/475569?text=Store',
-           targetUrl: finalStoreData.websiteUrl || finalStoreData.messengerUrl || finalStoreData.lineUrl || finalStoreData.googleMapLink || '#',
-           messengerUrl: finalStoreData.messengerUrl || '',
-           lineUrl: finalStoreData.lineUrl || '',
-           phone: finalStoreData.phone || '',
-           partnerName: finalStoreData.storeName,
-           status: 'PENDING', 
-           creditLimit: -1, 
-           updatedAt: serverTimestamp()
-        };
-
-        if (!businessCardAd) {
-           adPayload.stats = { views: 0, clicks: 0 };
-        }
-
-        const todoPayload = {
-          taskId: taskId,
-          type: 'AD_APPROVAL',
-          taskType: 'AD_APPROVAL',
-          status: 'pending',
-          priority: 'High',
-          title: `ตรวจสอบนามบัตร: ${finalStoreData.storeName}`,
-          description: `พาร์ทเนอร์อัปเดตข้อมูลและขอเปิดใช้นามบัตรโฆษณา`,
-          targetSkuId: adId,
-          partnerId: user.uid,
-          customerName: finalStoreData.storeName,
-          adDetails: adPayload,
-          requestedAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-          createdBy: user.uid
-        };
-
-        batch.set(adRef, adPayload, { merge: true });
-        // ใช้ todos ที่ root level เพียงที่เดียวเพื่อลดความซ้ำซ้อน 
-        batch.set(doc(db, 'todos', taskId), todoPayload, { merge: true });
-
-      } else {
-        batch.delete(activePartnerRef);
-        batch.set(adRef, { status: 'INACTIVE', updatedAt: serverTimestamp() }, { merge: true });
-        // ลบ todo หากผู้ใช้ปิดการโฆษณา
-        batch.delete(doc(db, 'todos', taskId));
-      }
-      
-      await batch.commit();
-      
-      sessionStorage.removeItem(`active_partners_cache_${appId}`);
-      
-      setStoreData(finalStoreData);
-      if (fetchMyAds) fetchMyAds();
-      alert("บันทึกข้อมูลเรียบร้อยแล้ว");
-    } catch (error) {
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + error.message);
-    } finally { setSavingStore(false); }
-  };
-
-  const isAdPending = businessCardAd?.status?.toUpperCase() === 'PENDING';
 
   return (
     <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-sm overflow-hidden animate-in fade-in duration-300">
@@ -219,7 +91,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           storeData={storeData} 
           setStoreData={setStoreData} 
           handleGetLocation={handleGetLocation} 
-          locationLoading={locationLoading} 
+          locationLoading={isLocating} 
         />
 
         {/* ปุ่ม Submit: กดได้ตลอดเวลาเพื่ออัปเดตข้อมูล แม้ว่าจะรออนุมัติโฆษณาอยู่ก็ตาม */}

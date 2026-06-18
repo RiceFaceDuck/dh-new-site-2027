@@ -4,6 +4,7 @@ import { db } from './config';
 const SETTINGS_DOC = 'platform_links';
 const MARKETING_DOC = 'marketing'; // 🎯 อ้างอิงเอกสารสำหรับการตั้งค่าการตลาดโฆษณา
 const THEME_DOC = 'storefrontTheme'; // 🎨 อ้างอิงเอกสารสำหรับการตั้งค่าธีมหน้าบ้าน
+const HERO_DOC = 'hero_config'; // 🖼️ อ้างอิงเอกสารสำหรับป้ายโฆษณาหน้าแรก
 
 // 💡 Default Regex ในกรณีที่ยังไม่มีข้อมูลใน Database (ป้องกัน Error)
 export const DEFAULT_REGEX = {
@@ -28,6 +29,23 @@ export const DEFAULT_THEME_CONFIG = {
   opacityTop: 75,
   opacityMid: 55,
   opacityBottom: 35
+};
+
+// 💡 Default Hero Banner Config
+export const DEFAULT_HERO_CONFIG = {
+  isActive: true,
+  title: '<span class="text-yellow-400">TEQFIX:</span> YOUR CERTIFIED PARTNER <br class="hidden md:block" /> FOR ELECTRONIC REPAIRS & <br class="hidden md:block" /> GENUINE SPARES.',
+  imageUrl: 'https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80',
+  primaryButton: {
+    label: 'BOOK A SQUAD',
+    link: '/squad',
+    isActive: true
+  },
+  secondaryButton: {
+    label: 'SHOP SPARES',
+    link: '/category/all',
+    isActive: true
+  }
 };
 
 export const settingsService = {
@@ -138,6 +156,38 @@ export const settingsService = {
       return { success: true, message: 'บันทึกการตั้งค่าธีมหน้าบ้านสำเร็จ' };
     } catch (error) {
       console.error("🔥 Error updating storefront theme:", error);
+      throw error;
+    }
+  },
+
+  // ==========================================
+  // 4. ระบบจัดการป้ายโฆษณาหน้าแรก (Hero Billboard) [ใหม่]
+  // ==========================================
+  
+  getHeroConfig: async () => {
+    try {
+      const docRef = doc(db, 'settings', HERO_DOC);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return { ...DEFAULT_HERO_CONFIG, ...snap.data() };
+      }
+      return DEFAULT_HERO_CONFIG;
+    } catch (error) {
+      console.error("🔥 Error fetching hero config:", error);
+      return DEFAULT_HERO_CONFIG;
+    }
+  },
+
+  updateHeroConfig: async (heroConfig) => {
+    try {
+      const docRef = doc(db, 'settings', HERO_DOC);
+      await setDoc(docRef, {
+        ...heroConfig,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      return { success: true, message: 'บันทึกการตั้งค่าป้ายหน้าแรกสำเร็จ' };
+    } catch (error) {
+      console.error("🔥 Error updating hero config:", error);
       throw error;
     }
   }

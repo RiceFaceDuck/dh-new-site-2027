@@ -32,7 +32,7 @@ const MainLayout = ({ children }) => {
   }, [theme.backgroundUrl]);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-800 relative selection:bg-[#E6F0F9] selection:text-[#054D80]">
+    <div className={`min-h-screen flex flex-col font-sans text-gray-800 relative selection:bg-brand-light selection:text-brand-dark ${theme.themeId || 'theme-tech-professional'}`}>
       
       {/* พื้นหลังเบลอแบบไล่ระดับความโปร่งแสง (Dynamic Gradient Frosted Glass) */}
       <div 
@@ -43,9 +43,6 @@ const MainLayout = ({ children }) => {
           background: `linear-gradient(to bottom, rgba(255,255,255,${theme.opacityTop / 100}), rgba(255,255,255,${theme.opacityMid / 100}), rgba(255,255,255,${theme.opacityBottom / 100}))`
         }}
       ></div>
-
-      {/* 🚀 0. Top Banner: พื้นที่โปรโมทพาร์ทเนอร์ด้านบนสุด (อยู่เหนือ Navbar) */}
-      <TopPartnerBanner />
 
       {/* 1. Header: ยึดติดด้านบน พร้อมเอฟเฟกต์กระจกพรีเมียม (จัดการ styles ภายใน Navbar.jsx) */}
       <Navbar />

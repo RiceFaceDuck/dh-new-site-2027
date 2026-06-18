@@ -61,6 +61,21 @@ export const inventoryQueryService = {
     }
   },
 
+  getProductBySku: async (sku) => {
+    try {
+      const q = query(collection(db, COLLECTION_NAME), where('sku', '==', sku), limit(1));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        return { id: doc.id, ...doc.data() };
+      }
+      return null;
+    } catch (error) {
+      console.error("🔥 Error fetching product by SKU:", error);
+      throw error;
+    }
+  },
+
   getUniqueProductCategories: async () => {
     try {
       // 🚀 ประหยัด Reads โดยดึงจาก settings/product_categories

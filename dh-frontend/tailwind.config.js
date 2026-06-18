@@ -7,22 +7,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ชุดสี Brand สำหรับความพรีเมียม
+        // ชุดสี Brand สำหรับความพรีเมียม (Dynamic Theming via CSS Variables)
         brand: {
-          DEFAULT: '#0870B8', // สีน้ำเงินหลักของ DH
-          dark: '#054D80',
-          light: '#E6F0F9',
-          gold: '#D4AF37',    // สีทองสำหรับ Badge/Premium
-          silver: '#E0E0E0',  // สีเงินสำหรับ Skeleton/Shimmer
+          DEFAULT: 'var(--color-brand)',       // สีหลัก
+          dark: 'var(--color-brand-dark)',     // สีหลักแบบเข้ม
+          light: 'var(--color-brand-light)',   // สีสว่าง/ตัด (Mint/Light Blue)
+          accent: 'var(--color-brand-accent)', // สีเน้น (Amber/Gold) สำหรับปุ่ม/Badge
+          silver: '#E0E0E0',  // สีเงินสำหรับ Skeleton/Shimmer (คงไว้เป็นสีกลาง)
         }
       },
       boxShadow: {
-        // มิติ แสง และเงา (Depth & Lighting)
-        'premium': '0 20px 50px rgba(8, 112, 184, 0.07)',
-        'premium-hover': '0 25px 60px rgba(8, 112, 184, 0.15)',
+        // มิติ แสง และเงา (Depth & Lighting) อิงตามสี Brand Accent
+        'premium': '0 20px 50px rgba(0, 0, 0, 0.07)',
+        'premium-hover': '0 25px 60px rgba(0, 0, 0, 0.12)',
         'premium-inner': 'inset 0 2px 10px rgba(0, 0, 0, 0.05)',
-        'glow-brand': '0 0 15px rgba(8, 112, 184, 0.4)',
-        'glow-gold': '0 0 15px rgba(212, 175, 55, 0.4)',
+        'glow-brand': '0 0 15px var(--color-brand)',
+        'glow-accent': '0 0 15px var(--color-brand-accent)',
       },
       keyframes: {
         shimmer: {

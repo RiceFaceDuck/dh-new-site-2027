@@ -110,6 +110,7 @@ const QuickAccessTools = ({
       case 'drive': return onOpenDrivePanel;
       case 'ads': return onNavigateAds;
       case 'credit': return onNavigateCredit;
+      case 'inventory_adjustment': return () => navigate('/managers/inventory-adjustment');
       // เมนูย่อยจากนโยบายกลาง (จะเปิด Global Settings Panel โดยระบุ Tab)
       case 'buffer': return () => navigate('/managers/buffer');
       case 'category': return () => navigate('/managers/category');

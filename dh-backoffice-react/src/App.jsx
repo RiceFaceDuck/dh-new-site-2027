@@ -23,11 +23,13 @@ import GalleryMain from './pages/gallery/GalleryMain'
 import EmailMain from './pages/emails/EmailMain'
 
 // นำเข้า Components สำหรับ Managers
+import StockAdjustment from './pages/managers/inventory/StockAdjustment'
 import PromotionManagement from './pages/managers/PromotionManagement'
 import PricingSettings from './pages/managers/PricingSettings'
 import StaffManagement from './pages/managers/StaffManagement'
 import FreebieManagement from './pages/managers/FreebieManagement'
-import CreditDashboard from './pages/managers/CreditDashboard/index.jsx' 
+import CreditDashboard from './pages/managers/CreditDashboard/index.jsx'
+import { ErrorBoundary } from './components/ErrorBoundary.jsx' 
 import WalletManagement from './pages/managers/WalletManagement'
 import ShippingManagement from './pages/managers/ShippingManagement'
 import AdManagement from './pages/managers/AdManagement'
@@ -120,8 +122,9 @@ function AppContent() {
           <Route path="managers/promotions" element={<PromotionManagement />} />
           <Route path="managers/pricing" element={<PricingSettings />} />
           <Route path="managers/staff" element={<StaffManagement />} />
-          <Route path="managers/freebies" element={<FreebieManagement />} />
-          <Route path="managers/credit" element={<CreditDashboard />} /> 
+          <Route path="managers/freebie" element={<FreebieManagement />} />
+          <Route path="managers/credit-dashboard" element={<CreditDashboard />} />
+          <Route path="managers/inventory-adjustment" element={<StockAdjustment />} />
           <Route path="managers/wallet" element={<WalletManagement />} />
           <Route path="managers/shipping" element={<ShippingManagement />} />
           <Route path="managers/ads" element={<AdManagement />} />

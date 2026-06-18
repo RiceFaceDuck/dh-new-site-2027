@@ -88,7 +88,7 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
       const userDoc = await transaction.get(userRef);
       if (!userDoc.exists()) return;
 
-      const currentPoints = userDoc.data().creditPoints || userDoc.data().creditPoint || 0;
+      const currentPoints = Number(userDoc.data().creditPoints) || 0;
       
       if (currentPoints <= 0) {
         transaction.delete(activePartnerRef); 
@@ -133,13 +133,7 @@ export const checkAdCreditSufficiency = async (userId, requiredAmount) => {
   if (!userId || requiredAmount <= 0) return false;
   try {
     const usersPath = getUsersPath();
-    const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
     const userRef = doc(db, usersPath, userId);
-    
-    const walletSnap = await getDoc(walletRef);
-    if (walletSnap.exists()) {
-      return (Number(walletSnap.data().balance) || 0) >= requiredAmount;
-    }
     
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
@@ -156,26 +150,17 @@ export const checkAdCreditSufficiency = async (userId, requiredAmount) => {
 export const consumeAdCreditWithTransaction = async (transaction, userId, amount, referenceId = null, adTitle = null) => {
   const usersPath = getUsersPath();
   const userRef = doc(db, usersPath, userId);
-  const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
   
   const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
   const historyRef = doc(collection(db, usersPath, userId, 'credit_history'));
 
-  const [userDoc, walletDoc] = await Promise.all([
-    transaction.get(userRef),
-    transaction.get(walletRef)
-  ]);
+  const userDoc = await transaction.get(userRef);
 
-  let currentPoints = 0;
-  const isWalletExist = walletDoc.exists();
-
-  if (isWalletExist) {
-    currentPoints = Number(walletDoc.data().balance) || 0;
-  } else if (userDoc.exists()) {
-    currentPoints = Number(userDoc.data().creditPoints || 0);
-  } else {
+  if (!userDoc.exists()) {
     throw new Error("ระบบไม่พบข้อมูลกระเป๋าเงินของคุณ");
   }
+
+  let currentPoints = Number(userDoc.data().creditPoints || 0);
 
   if (currentPoints < amount) {
     throw new Error(`Credit Point ของคุณไม่เพียงพอ (ต้องการ ${amount} แต้ม) กรุณาเติมเครดิตก่อนทำรายการ`);
@@ -184,25 +169,10 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   const newBalance = currentPoints - amount;
   const noteDisplay = adTitle ? `หักแต้มสำหรับโปรโมท: ${adTitle}` : 'หักแต้มสำหรับการฝากโฆษณา';
 
-  if (isWalletExist) {
-    transaction.update(walletRef, {
-      balance: newBalance,
-      updatedAt: serverTimestamp()
-    });
-  } else {
-    transaction.set(walletRef, {
-      balance: newBalance,
-      totalAccumulated: newBalance,
-      updatedAt: serverTimestamp()
-    });
-  }
-
-  if (userDoc.exists()) {
-    transaction.update(userRef, {
-      creditPoints: newBalance,
-      updatedAt: serverTimestamp()
-    });
-  }
+  transaction.update(userRef, {
+    creditPoints: newBalance,
+    updatedAt: serverTimestamp()
+  });
 
   const txData = {
     transactionId: `TX-ADS-${Date.now()}-${Math.floor(Math.random() * 10000)}`,

@@ -40,6 +40,7 @@ export const AVAILABLE_MENUS = {
   drive: { title: "จัดการ Google Drive", iconName: "CloudUpload", colorTheme: "cyan" },
   ads: { title: "Ads Manager", iconName: "Megaphone", colorTheme: "rose" },
   credit: { title: "Credit Point", iconName: "CreditCard", colorTheme: "indigo" },
+  inventory_adjustment: { title: "จัดการสต๊อคกรณีพิเศษ", iconName: "ShieldAlert", colorTheme: "orange" },
   banner: { title: "แบนเนอร์โฆษณา", iconName: "Megaphone", colorTheme: "rose", isComingSoon: true },
   seo: { title: "SEO & ค้นหา", iconName: "Search", colorTheme: "blue", isComingSoon: true },
   apikey: { title: "API Keys", iconName: "Code", colorTheme: "cyan", isComingSoon: true },
