@@ -54,29 +54,22 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
     <div className="space-y-4 md:space-y-6 sticky top-24">
       
       {/* 1. Partner ID Badge (Profile Card Summary) - ดีไซน์ Deep Luxury */}
-      <div className="bg-slate-900 rounded-2xl shadow-xl border border-slate-700/50 p-5 text-center relative overflow-hidden group">
-        
-        {/* ✨ Background Premium Effects */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
-        <div className="absolute -left-10 -top-10 w-32 h-32 bg-slate-400/10 blur-[40px] rounded-full pointer-events-none"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
-
-        <div className="relative z-10 flex flex-col items-center">
-          {/* Avatar Icon */}
-          <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-600 p-1 mb-3 flex items-center justify-center relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl" />
-              ) : (
-                <Store size={32} className="text-indigo-400" />
-              )}
-          </div>
+      <div className="relative mt-10">
+        <div className="bg-slate-900 rounded-2xl shadow-xl border border-slate-700/50 p-5 pt-12 text-center relative overflow-hidden group">
           
-          <h2 className="text-base md:text-lg font-bold text-white tracking-wide truncate w-full px-2 drop-shadow-md">
-            {user?.storeName || user?.displayName || 'DH Partner'}
-          </h2>
-          <p className="text-[10px] text-slate-400 font-mono mt-1 mb-5 uppercase tracking-widest bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700 shadow-sm">
-            ID: {user?.uid?.substring(0,8) || 'SYS-ADMIN'}
-          </p>
+          {/* ✨ Background Premium Effects */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
+          <div className="absolute -left-10 -top-10 w-32 h-32 bg-slate-400/10 blur-[40px] rounded-full pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+
+          <div className="relative z-10 flex flex-col items-center">
+            
+            <h2 className="text-base md:text-lg font-bold text-white tracking-wide truncate w-full px-2 drop-shadow-md">
+              {user?.storeName || user?.displayName || 'DH Partner'}
+            </h2>
+            <p className="text-[10px] text-slate-400 font-mono mt-1 mb-5 uppercase tracking-widest bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700 shadow-sm">
+              ID: {user?.uid?.substring(0,8) || 'SYS-ADMIN'}
+            </p>
 
           {/* Partner Stats Grid */}
           <div className="grid grid-cols-4 gap-1 w-full border-t border-slate-700/80 pt-4">
@@ -129,6 +122,16 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
             </div>
 
           </div>
+        </div>
+        </div>
+
+        {/* Avatar Icon - Popped Out */}
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-2xl bg-slate-800 border-4 border-slate-900 p-1 flex items-center justify-center shadow-2xl z-20 transition-transform hover:scale-105">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl" />
+            ) : (
+              <Store size={36} className="text-indigo-400" />
+            )}
         </div>
       </div>
 

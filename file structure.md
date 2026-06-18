@@ -118,7 +118,9 @@ dh-new-site-2027/
 │       │   │       ├── ProductPricingStock.jsx
 │       │   │       └── ProductTags.jsx
 │       │   ├── managers/ # Manager specific components
-│       │   │   └── category/
+│       │   │   ├── squad/                    # 🚀 New Squad Highlight Settings
+│       │   │   │   └── SquadHighlightSettings.jsx
+│       │   │   ├── category/
 │       │   │       ├── CategoryCard.jsx
 │       │   │       ├── CategoryFormModal.jsx
 │       │   │       ├── CategoryManager.jsx
@@ -206,6 +208,8 @@ dh-new-site-2027/
 │       │   ├── promotionService.js
 │       │   ├── settingsService.js
 │       │   ├── footerSettingsService.js
+│       │   ├── squad/ # 🚀 New Squad Settings
+│       │   │   └── squadConfigService.js
 │       │   ├── todoService.js # Facade pattern for todo services
 │       │   ├── todo/ # Refactored single responsibility todo services
 │       │   │   ├── todoActionService.js
@@ -482,7 +486,8 @@ dh-new-site-2027/
 │   │   │   ├── productService.js # 🚀 Extracted Product Fetch & Smart Mapper
 │   │   │   ├── marketingService.js
 │   │   │   ├── marketingAnalyticsService.js
-│   │   │   └── footerClientService.js
+│   │   │   ├── footerClientService.js
+│   │   │   └── squadConfigService.js # 🚀 New Squad Config Fetcher
 │   │   ├── pages/
 │   │   │   ├── Home/
 │   │   │   │   ├── Home.jsx

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchAllActivePartners } from '../../../firebase/partnerLocationService';
 
 import { calculateDistance } from '../../../utils/geoUtils';
+import { squadConfigService } from '../../../firebase/squadConfigService';
 
 export const useNearbyPartners = () => {
   const [partners, setPartners] = useState([]);
@@ -9,10 +10,22 @@ export const useNearbyPartners = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [permissionRequested, setPermissionRequested] = useState(false);
+  const [config, setConfig] = useState({ isActive: true, displayLimit: 3 });
 
   const fetchPartnersAndCalculate = useCallback(async (lat, lng) => {
     try {
       setLoading(true);
+      
+      // 1. Fetch Config
+      const currentConfig = await squadConfigService.getConfig();
+      setConfig(currentConfig);
+      
+      if (!currentConfig.isActive) {
+        setPartners([]);
+        return;
+      }
+
+      // 2. Fetch Active Partners
       const activePartners = await fetchAllActivePartners();
       let partnersWithDistance = activePartners.map(partner => {
         let distanceKm = null;
@@ -24,14 +37,16 @@ export const useNearbyPartners = () => {
         return { ...partner, distanceKm, formattedDistance };
       });
 
-      // Sort by distance if location available, otherwise random or by points
+      // 3. Sort by distance or points
       if (lat && lng) {
         partnersWithDistance.sort((a, b) => (a.distanceKm || Infinity) - (b.distanceKm || Infinity));
       } else {
         partnersWithDistance.sort((a, b) => (b.points || 0) - (a.points || 0)); // Fallback sort by points
       }
 
-      setPartners(partnersWithDistance);
+      // 4. Limit based on config
+      const limitedPartners = partnersWithDistance.slice(0, currentConfig.displayLimit);
+      setPartners(limitedPartners);
     } catch (error) {
       console.error("Error fetching nearby partners:", error);
     } finally {
@@ -80,6 +95,7 @@ export const useNearbyPartners = () => {
     loading,
     userLocation,
     locationError,
-    requestLocation // expose this to call manually when clicking a button
+    requestLocation, // expose this to call manually when clicking a button
+    config // Expose config so component knows if it's active
   };
 };

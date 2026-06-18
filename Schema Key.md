@@ -362,4 +362,17 @@ This document stores the configuration for the main Hero Billboard (Banner) on t
 | `primaryButton`   | Object  | Config for the primary action button (`label`, `link`, `isActive`).         | `{ label: "BOOK", link: "/squad" }` |
 | `secondaryButton` | Object  | Config for the secondary action button (`label`, `link`, `isActive`).       | `{ label: "SHOP", link: "/all" }`   |
 
+---
+
+## 19. Document: `settings/squadConfig`
+
+This document stores the configuration for the "Squad Highlight" (ผู้ให้บริการ บริเวณใกล้เคียง) section on the Storefront Home page.
+
+### Schema Fields
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `isActive`       | Boolean | Toggle for whether to show the Squad Highlight section.                     | `true`                              |
+| `displayLimit`   | Number  | Number of partner profiles to display in the section (e.g., 3, 6, 9).       | `3`                                 |
+
 *(Additional schemas will be documented here as the system evolves)*

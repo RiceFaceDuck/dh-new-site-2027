@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { LayoutTemplate, ArrowLeft, Layers, Sparkles } from 'lucide-react';
+import { LayoutTemplate, ArrowLeft, Layers, Sparkles, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CategoryManager from '../../components/managers/category/CategoryManager';
 import FeaturedSettings from '../../components/managers/featured/FeaturedSettings';
+import SquadHighlightSettings from '../../components/managers/squad/SquadHighlightSettings';
 
 export default function GlobalCategorySettings() {
     const navigate = useNavigate();
@@ -27,27 +28,34 @@ export default function GlobalCategorySettings() {
                                 จัดการส่วนแสดงผลหน้าแรก
                             </h2>
                             <p className="text-[11px] font-bold text-emerald-600/70 mt-1 uppercase tracking-widest">
-                                ตั้งค่าหมวดหมู่และสินค้าแนะนำ
+                                ตั้งค่าหมวดหมู่ สินค้าแนะนำ และผู้ให้บริการ
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex px-5 pt-3 border-b border-slate-200 bg-slate-50/50 shrink-0 gap-2">
+                <div className="flex px-5 pt-3 border-b border-slate-200 bg-slate-50/50 shrink-0 gap-2 overflow-x-auto custom-scrollbar">
                     <button 
                         onClick={() => setActiveTab('categories')}
-                        className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'categories' ? 'border-emerald-500 text-emerald-700 bg-white rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-t-lg'}`}
+                        className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'categories' ? 'border-emerald-500 text-emerald-700 bg-white rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-t-lg'}`}
                     >
                         <Layers size={16} />
                         หมวดหมู่ (Categories)
                     </button>
                     <button 
                         onClick={() => setActiveTab('featured')}
-                        className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'featured' ? 'border-emerald-500 text-emerald-700 bg-white rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-t-lg'}`}
+                        className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'featured' ? 'border-emerald-500 text-emerald-700 bg-white rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-t-lg'}`}
                     >
                         <Sparkles size={16} />
-                        แผงสินค้าแนะนำ (Featured Spares)
+                        แผงสินค้าแนะนำ (Featured)
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('squad')}
+                        className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'squad' ? 'border-emerald-500 text-emerald-700 bg-white rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-t-lg'}`}
+                    >
+                        <Users size={16} />
+                        แผงช่างแนะนำ (Squad Highlight)
                     </button>
                 </div>
 
@@ -55,9 +63,13 @@ export default function GlobalCategorySettings() {
                 <div className="flex-1 overflow-hidden relative bg-slate-50/30 flex flex-col">
                     {activeTab === 'categories' ? (
                         <CategoryManager />
-                    ) : (
+                    ) : activeTab === 'featured' ? (
                         <div className="overflow-y-auto h-full w-full">
                             <FeaturedSettings />
+                        </div>
+                    ) : (
+                        <div className="overflow-y-auto h-full w-full">
+                            <SquadHighlightSettings />
                         </div>
                     )}
                 </div>

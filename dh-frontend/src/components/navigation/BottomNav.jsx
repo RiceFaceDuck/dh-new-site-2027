@@ -16,7 +16,7 @@ const BottomNav = () => {
   const navItems = [
     { path: '/', label: 'หน้าแรก', icon: Home },
     { path: '/category/all', label: 'หมวดหมู่', icon: Search },
-    { path: '/squad', label: 'ทีมช่าง', icon: User }, // Reuse User icon or find another if needed, maybe we keep it simple
+    { path: '#', label: 'บริการ', icon: User, disabled: true },
     { path: '/cart', label: 'ตะกร้า', icon: ShoppingCart, badge: cartTotalQty },
     { path: '/profile', label: 'โปรไฟล์', icon: User },
   ];
@@ -24,10 +24,27 @@ const BottomNav = () => {
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md border-t border-slate-200/60 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] pb-safe">
       <div className="flex justify-around items-center h-[60px] px-2">
-        {navItems.map((item) => {
-          const active = isActive(item.path);
+        {navItems.map((item, index) => {
+          const active = !item.disabled && isActive(item.path);
           const Icon = item.icon;
           
+          if (item.disabled) {
+            return (
+              <div
+                key={`disabled-${index}`}
+                className="relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 text-slate-300 opacity-70 cursor-not-allowed"
+                onClick={() => alert('รอการพัฒนาในอนาคต')}
+              >
+                <div className="relative mt-1">
+                  <Icon size={22} strokeWidth={1.5} />
+                </div>
+                <span className="text-[10px] font-medium">
+                  {item.label}
+                </span>
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.path}

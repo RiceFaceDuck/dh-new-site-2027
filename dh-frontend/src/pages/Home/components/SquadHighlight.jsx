@@ -4,7 +4,12 @@ import PartnerCard from './PartnerCard';
 import { useNearbyPartners } from '../hooks/useNearbyPartners';
 
 const SquadHighlight = () => {
-  const { partners, loading, locationError, requestLocation } = useNearbyPartners();
+  const { partners, loading, locationError, requestLocation, config } = useNearbyPartners();
+
+  // ถ้าโหลด config เสร็จแล้ว และปิดใช้งานอยู่ ให้ซ่อนทั้งแผงเลย
+  if (!loading && config && !config.isActive) {
+    return null;
+  }
 
   return (
     <div className="w-full">
@@ -37,8 +42,8 @@ const SquadHighlight = () => {
         </div>
       ) : partners.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Show top 6 nearby partners */}
-          {partners.slice(0, 6).map((partner) => (
+          {/* Display partners limited by config in the hook */}
+          {partners.map((partner) => (
             <PartnerCard key={partner.id || partner.userId} partner={partner} />
           ))}
         </div>
