@@ -47,21 +47,19 @@ export default function CartTableRow({
                 
                 <td className="py-2 px-3">
                     <div className="flex items-center gap-2">
-                        <p className={`text-sm font-bold truncate max-w-[250px] lg:max-w-[350px] ${isActive ? 'text-amber-700' : (isFreebie ? 'text-emerald-700' : 'text-slate-800')}`} title={isFreebie ? `[แถมฟรี] ${item.itemName}` : item.name}>
-                            {isFreebie ? `[แถมฟรี] ${item.itemName}` : item.name}
+                        <p className={`text-sm font-bold truncate max-w-[250px] lg:max-w-[350px] ${isActive ? 'text-amber-700' : (isFreebie ? 'text-emerald-700' : 'text-slate-800')}`} title={item.name}>
+                            {item.name}
                         </p>
                         {isFreebie && <span className="px-1.5 py-0.5 rounded-sm bg-emerald-100 text-emerald-700 text-[9px] font-black tracking-wide border border-emerald-200">แถมฟรี</span>}
                     </div>
-                    {!isFreebie && (
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[11px] font-mono text-slate-500">{item.sku}</p>
-                            {item.note && !isActive && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium tracking-wide border ${noteColorMap[item.noteColor || 'slate']?.badge || noteColorMap['slate'].badge}`}>
-                                    {item.note}
-                                </span>
-                            )}
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[11px] font-mono text-slate-500">{item.sku}</p>
+                        {item.note && !isActive && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium tracking-wide border ${noteColorMap[item.noteColor || 'slate']?.badge || noteColorMap['slate'].badge}`}>
+                                {item.note}
+                            </span>
+                        )}
+                    </div>
                 </td>
                 
                 <td className="py-2 px-3 text-center">

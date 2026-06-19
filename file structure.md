@@ -110,7 +110,9 @@ dh-new-site-2027/
 │       │   │   │   └── ExportSkusTab.jsx
 │       │   │   ├── hooks/
 │       │   │   │   ├── useProductForm.js
-│       │   │   │   └── useExcelImport.js
+│       │   │   │   ├── useExcelImport.js
+│       │   │   │   ├── useInventoryData.js
+│       │   │   │   └── useInventorySearch.js
 │       │   │   └── modal/
 │       │   │       ├── ProductBasicInfo.jsx
 │       │   │       ├── ProductImageUpload.jsx
@@ -194,15 +196,18 @@ dh-new-site-2027/
 │       │   ├── freebieService.js
 │       │   ├── gmailService.js # Gmail API Integration (Client-side)
 │       │   ├── historyService.js # Legacy proxy to GAS for backward compatibility
-│       │   ├── gasHistoryService.js # Main batching logger to Google Apps Script
+│       │   ├── gasHistoryService.js
+│       │   ├── gasStockService.js
 │       │   ├── inventoryService.js
 │       │   ├── inventory/
-│       │   │   ├── inventoryQueryService.js
 │       │   │   ├── inventoryMutationService.js
-│       │   │   ├── inventoryAdjustmentService.js # 🚀 Handles special manual stock adjustments
-│       │   │   ├── inventorySourcingService.js
-│       │   │   ├── inventoryImportService.js
-│       │   │   └── inventoryExportService.js
+│       │   │   ├── inventoryQueryService.js
+│       │   │   ├── inventorySyncService.js
+│       │   │   └── index.js
+│       │   ├── inventoryAdjustmentService.js # 🚀 Handles special manual stock adjustments
+│       │   ├── inventorySourcingService.js
+│       │   ├── inventoryImportService.js
+│       │   ├── inventoryExportService.js
 │       │   ├── menuConfigService.js # Service for managing Manager Dashboard Layout
 │       │   ├── pricingService.js
 │       │   ├── promotionService.js
@@ -231,6 +236,8 @@ dh-new-site-2027/
 │       │       ├── Sidebar.jsx # Extracted Sidebar
 │       │       └── GatekeeperUI.jsx # Auth checking and denied UI
 │       ├── components/ # Global Components
+│       │   ├── common/ # Extracted reusable generic components
+│       │   │   └── GuideModal.jsx # Premium In-App Documentation Modal
 │       │   ├── overview/ # Overview page components
 │       │   │   ├── hooks/
 │       │   │   │   └── useOverviewData.js
@@ -251,7 +258,10 @@ dh-new-site-2027/
 │           │   ├── GlobalRegexSettings.jsx
 │           │   ├── GlobalThemeSettings.jsx
 │           │   ├── GlobalWarrantySettings.jsx
-│           │   │   └── StockAdjustment.jsx # 🚀 Manager tool for handling manual stock adjustments
+│           │   ├── inventory/
+│           │   │   ├── StockAdjustment.jsx # 🚀 Manager tool for handling manual stock adjustments
+│           │   │   └── hooks/
+│           │   │       └── useStockAdjustment.js
 │           │   ├── GlobalThemeSettings.jsx
 │           │   ├── components/
 │           │   │   └── theme/ # Extracted Theme settings
@@ -295,6 +305,9 @@ dh-new-site-2027/
 │           │   │   ├── GlobalSettingsHeader.jsx
 │           │   │   ├── ManagerTaskSection.jsx
 │           │   │   ├── MenuLayoutManager.jsx
+│           │   │   ├── SortableMenuItem.jsx
+│           │   │   ├── hooks/
+│           │   │   │   └── useMenuDragAndDrop.js
 │           │   │   ├── StaffApprovalModal.jsx
 │           │   │   ├── VipManagementModal.jsx
 │           │   │   └── EmailSetupModal.jsx # Admin setup for Gmail API
@@ -329,6 +342,13 @@ dh-new-site-2027/
 │           ├── managers/
 │           │   ├── AdManagement.jsx
 │           │   ├── FreebieManagement.jsx
+│           │   ├── components/
+│           │   │   ├── freebie/
+│           │   │   │   ├── FreebieModal.jsx
+│           │   │   │   └── FreebieTable.jsx
+│           │   ├── hooks/
+│           │   │   ├── useFreebies.js
+│           │   │   └── usePromotions.js
 │           │   ├── PartnerSettings.jsx
 │           │   ├── PricingSettings.jsx
 │           │   ├── pricing/
@@ -396,6 +416,8 @@ dh-new-site-2027/
 │           ├── ProfileSetup.jsx
 │           ├── Search.jsx
 │           ├── hooks/
+│           │   ├── useProductComments.js
+│           │   ├── useProductHistory.js
 │           │   └── useProductSearch.js
 │           ├── Todo.jsx
 │           ├── todo/

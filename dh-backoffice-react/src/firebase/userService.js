@@ -33,6 +33,16 @@ export const SUPER_ADMINS = [
     'dh1notebook@gmail.com'   // 💼 VP 1
 ];
 
+export const ROLES = {
+    OWNER: 'owner',
+    ADMIN: 'admin',
+    MANAGER: 'manager',
+    STAFF: 'staff',
+    PACKER: 'packer',
+    DEVELOPER: 'developer',
+    CUSTOMER: 'customer'
+};
+
 // ============================================================================
 // 🟠 Object Export (Facade Pattern)
 // ============================================================================

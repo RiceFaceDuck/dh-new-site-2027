@@ -19,24 +19,57 @@ export default function PromotionSettings({
             </label>
 
             {activeTab.appliedPromoDetails && (
-                <div className="bg-fuchsia-50 border border-fuchsia-200 rounded p-2.5 flex items-center justify-between mt-2 animate-in slide-in-from-bottom-2">
-                    <span className="text-[11px] font-bold text-fuchsia-700 flex items-center gap-1.5 truncate pr-2">
-                        <div className="bg-fuchsia-200 p-0.5 rounded-full shrink-0"><Check size={10} className="text-fuchsia-700"/></div>
-                        {activeTab.appliedPromoDetails.title}
-                    </span>
-                    <button disabled={isProcessing} onClick={handleRemovePromotion} className="p-1 hover:bg-fuchsia-200 text-fuchsia-500 rounded transition-colors shrink-0"><X size={12}/></button>
+                <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 border-2 border-fuchsia-200 shadow-sm rounded-lg p-3 flex flex-col mt-3 animate-in slide-in-from-bottom-2 relative overflow-hidden">
+                    <div className="absolute -right-4 -top-4 w-12 h-12 bg-fuchsia-100 rounded-full opacity-50"></div>
+                    <div className="flex items-center justify-between relative z-10">
+                        <span className="text-[12px] font-black text-fuchsia-700 flex items-center gap-1.5 truncate pr-2">
+                            <div className="bg-fuchsia-600 text-white p-0.5 rounded-full shrink-0 shadow-sm"><Check size={10} /></div>
+                            {activeTab.appliedPromoDetails.title}
+                        </span>
+                        <button disabled={isProcessing} onClick={handleRemovePromotion} className="p-1 hover:bg-fuchsia-200 text-fuchsia-500 rounded transition-colors shrink-0"><X size={14}/></button>
+                    </div>
+                    <div className="mt-1.5 relative z-10">
+                        <p className="text-[10px] font-medium text-fuchsia-600 leading-tight">
+                            {activeTab.autoPromoEnabled ? "✨ ระบบเลือกโปรโมชันที่ลดเยอะที่สุดให้อัตโนมัติ" : "🎯 พนักงานเลือกโปรโมชันนี้"}
+                        </p>
+                        {activeTab.appliedPromoDetails.minSpend > 0 && (
+                            <p className="text-[9px] font-bold text-fuchsia-500/80 mt-0.5 border-l-2 border-fuchsia-300 pl-1">
+                                ปลดล็อคจากยอดซื้อ {activeTab.appliedPromoDetails.minSpend.toLocaleString()} บาทขึ้นไป
+                            </p>
+                        )}
+                        {activeTab.appliedPromoDetails.applicableSkus?.length > 0 && (
+                            <p className="text-[9px] font-bold text-fuchsia-500/80 mt-0.5 border-l-2 border-fuchsia-300 pl-1">
+                                ปลดล็อคเฉพาะสินค้า: {activeTab.appliedPromoDetails.applicableSkus.join(', ')}
+                            </p>
+                        )}
+                    </div>
                 </div>
             )}
             
             {/* ของแถม */}
             {eligibleFreebies && eligibleFreebies.length > 0 && (
-                <div className="bg-rose-50 border border-rose-200 rounded p-2.5 mt-2 animate-in slide-in-from-bottom-2">
-                    <span className="text-[10px] font-black text-rose-700 uppercase mb-1.5 block">ได้รับของแถม:</span>
+                <div className="bg-rose-50 border border-rose-200 shadow-sm rounded-lg p-3 mt-3 animate-in slide-in-from-bottom-2">
+                    <span className="text-[11px] font-black text-rose-700 mb-2 flex items-center gap-1.5">
+                        <span className="text-[14px]">🎁</span> ได้รับของแถม:
+                    </span>
                     <div className="flex flex-col gap-1.5">
                         {eligibleFreebies.map(f => (
-                            <div key={f.id} className="flex justify-between items-center text-[11px]">
-                                <span className="font-bold text-rose-600 truncate">{f.itemName}</span>
-                                <span className="font-black text-rose-700 bg-rose-100 px-1.5 rounded">x{f.qty}</span>
+                            <div key={f.id} className="flex flex-col bg-white/80 p-2 rounded-md border border-rose-100 shadow-sm">
+                                <div className="flex justify-between items-center text-[11px]">
+                                    <span className="font-bold text-rose-600 truncate flex-1 pr-2">{f.itemName}</span>
+                                    <span className="font-black text-rose-700 bg-rose-200/50 px-2 py-0.5 rounded-full">x{f.qty}</span>
+                                </div>
+                                <div className="mt-1 flex flex-col gap-0.5">
+                                    <p className="text-[9px] font-medium text-rose-500/80">
+                                        ได้รับเพราะ {f.minSpend > 0 ? `ยอดซื้อถึง ${f.minSpend.toLocaleString()} บาท` : "เงื่อนไขเข้าเกณฑ์"}
+                                        {f.minQty > 0 ? ` และครบ ${f.minQty} ชิ้น` : ""}
+                                    </p>
+                                    {f.applicableSkus?.length > 0 && (
+                                        <p className="text-[8px] font-bold text-rose-400">
+                                            *(เฉพาะสินค้า: {f.applicableSkus.join(', ')})
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>

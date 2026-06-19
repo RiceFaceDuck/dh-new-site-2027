@@ -52,20 +52,36 @@ export default function CartTable({
                                         removeItem={removeItem}
                                     />
                                 ))}
-                                {eligibleFreebies?.map((freebie, index) => (
-                                    <CartTableRow 
-                                        key={`freebie-${freebie.id}-${index}`}
-                                        item={{ ...freebie, name: freebie.itemName, qty: freebie.qty || 1, price: 0, discount: 0 }}
-                                        index={activeTab.items.length + index}
-                                        isFreebie={true}
-                                        isProcessing={isProcessing}
-                                        isActive={false}
-                                        actionBoxItem={actionBoxItem}
-                                        setActionBoxItem={setActionBoxItem}
-                                        updateItemAction={updateItemAction}
-                                        removeItem={removeItem}
-                                    />
-                                ))}
+                                {eligibleFreebies?.map((freebie, index) => {
+                                    let conditionText = [];
+                                    if (freebie.minSpend > 0) conditionText.push(`ยอด${freebie.minSpend}฿`);
+                                    if (freebie.minQty > 0) conditionText.push(`ครบ${freebie.minQty}ชิ้น`);
+                                    if (freebie.applicableSkus?.length > 0) conditionText.push(`เฉพาะรุ่น`);
+                                    const reasonStr = conditionText.length > 0 ? ` (${conditionText.join(', ')})` : '';
+                                    return (
+                                        <CartTableRow 
+                                            key={`freebie-${freebie.id}-${index}`}
+                                            item={{ 
+                                                ...freebie, 
+                                                sku: freebie.itemName,
+                                                name: `[แถมฟรี] ${freebie.itemName}`, 
+                                                qty: freebie.qty || 1, 
+                                                price: 0, 
+                                                discount: 0,
+                                                note: `${freebie.title}${reasonStr}`,
+                                                noteColor: 'rose'
+                                            }}
+                                            index={activeTab.items.length + index}
+                                            isFreebie={true}
+                                            isProcessing={isProcessing}
+                                            isActive={false}
+                                            actionBoxItem={actionBoxItem}
+                                            setActionBoxItem={setActionBoxItem}
+                                            updateItemAction={updateItemAction}
+                                            removeItem={removeItem}
+                                        />
+                                    );
+                                })}
                             </>
                         )}
                     </tbody>

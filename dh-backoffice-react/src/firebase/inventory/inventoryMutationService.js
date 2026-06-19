@@ -1,6 +1,7 @@
-import { doc, setDoc, updateDoc, getDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../config';
-import { gasHistoryService } from '../gasHistoryService';
+import { inventorySyncService } from './inventorySyncService';
+import { historyService } from '../historyService';
 
 const COLLECTION_NAME = 'products';
 
@@ -13,24 +14,11 @@ export const inventoryMutationService = {
       updatedAt: serverTimestamp()
     });
 
-    // 🚀 เพิ่ม Category ลงในรายชื่อกลางอัตโนมัติ (ประหยัด Reads)
-    if (productData.category) {
-      const settingsRef = doc(db, 'settings', 'product_categories');
-      await setDoc(settingsRef, {
-        categories: arrayUnion(productData.category)
-      }, { merge: true });
-    }
-    
-    gasHistoryService.log({
-      level: 'INFO',
-      module: 'Inventory',
-      action: 'Create',
-      target: { id: productData.sku, name: productData.name, type: 'Product' },
-      details: {
-        legacy_details: `เพิ่มสินค้าใหม่: ${productData.name}`,
-        new_data: productData
-      }
-    });
+    // 🚀 บันทึก History
+    await historyService.addLog('Inventory', 'CreateProduct', productData.sku, `เพิ่มสินค้าใหม่ SKU: ${productData.sku}`, auth.currentUser?.uid);
+
+    inventorySyncService.broadcastCreate(productData);
+    await inventorySyncService.syncCategory(productData.category);
   },
 
   updateProduct: async (sku, newData) => {
@@ -65,58 +53,24 @@ export const inventoryMutationService = {
         ...newData,
         updatedAt: serverTimestamp()
       });
-      
-      // Calculate diff for maximum detail
-      const changes = {};
-      for (const key in newData) {
-        if (key === 'updatedAt') continue;
-        if (JSON.stringify(newData[key]) !== JSON.stringify(oldData[key])) {
-          changes[key] = { from: oldData[key], to: newData[key] };
-        }
-      }
 
-      gasHistoryService.log({
-        level: 'WARN',
-        module: 'Inventory',
-        action: 'Update',
-        target: { id: sku, name: newData.name || oldData.name, type: 'Product' },
-        details: {
-          legacy_details: `แก้ไขข้อมูล: ${newData.name || oldData.name}`,
-          changes: changes
-        }
-      });
+      // 🚀 บันทึก History
+      await historyService.addLog('Inventory', 'UpdateProduct', sku, `แก้ไขข้อมูลสินค้า SKU: ${sku}`, auth.currentUser?.uid);
 
-      // 🚀 เพิ่ม Category ลงในรายชื่อกลางอัตโนมัติ
-      if (newData.category && newData.category !== oldData.category) {
-        const settingsRef = doc(db, 'settings', 'product_categories');
-        await setDoc(settingsRef, {
-          categories: arrayUnion(newData.category)
-        }, { merge: true });
-      }
+      inventorySyncService.broadcastUpdate(sku, newData, oldData);
+      await inventorySyncService.syncCategory(newData.category, oldData.category);
     } else {
       // Fallback if doc didn't exist before
       await updateDoc(docRef, {
         ...newData,
         updatedAt: serverTimestamp()
       });
-      gasHistoryService.log({
-        level: 'WARN',
-        module: 'Inventory',
-        action: 'Update',
-        target: { id: sku, name: newData.name, type: 'Product' },
-        details: {
-          legacy_details: `แก้ไขข้อมูล: ${newData.name}`,
-          new_data: newData
-        }
-      });
 
-      // 🚀 เพิ่ม Category ลงในรายชื่อกลางอัตโนมัติ
-      if (newData.category) {
-        const settingsRef = doc(db, 'settings', 'product_categories');
-        await setDoc(settingsRef, {
-          categories: arrayUnion(newData.category)
-        }, { merge: true });
-      }
+      // 🚀 บันทึก History
+      await historyService.addLog('Inventory', 'UpdateProduct', sku, `แก้ไขข้อมูลสินค้า (Fallback Create) SKU: ${sku}`, auth.currentUser?.uid);
+
+      inventorySyncService.broadcastUpdate(sku, newData, null);
+      await inventorySyncService.syncCategory(newData.category);
     }
   },
 
@@ -124,15 +78,9 @@ export const inventoryMutationService = {
     const docRef = doc(db, COLLECTION_NAME, sku);
     await updateDoc(docRef, { isActive: false, updatedAt: serverTimestamp() });
     
-    gasHistoryService.log({
-      level: 'ERROR',
-      module: 'Inventory',
-      action: 'Delete (Soft)',
-      target: { id: sku, name: productName, type: 'Product' },
-      details: {
-        legacy_details: `ปิดการขายสินค้า: ${productName}`,
-        changes: { isActive: { from: true, to: false } }
-      }
-    });
+    // 🚀 บันทึก History
+    await historyService.addLog('Inventory', 'DeleteProduct', sku, `ลบสินค้า SKU: ${sku} - ${productName}`, auth.currentUser?.uid);
+
+    inventorySyncService.broadcastDelete(sku, productName);
   }
 };

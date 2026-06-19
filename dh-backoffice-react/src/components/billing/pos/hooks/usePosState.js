@@ -204,11 +204,92 @@ export default function usePosState(products, customers, initialDraft) {
     }, [customerSearchText, customers]);
 
     const itemSubTotal = activeTab.items?.reduce((sum, item) => sum + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty))), 0) || 0;
+    const itemTotalQty = activeTab.items?.reduce((sum, item) => sum + Math.max(1, sanitizeNum(item.qty)), 0) || 0;
     const manualDiscount = sanitizeNum(activeTab.overallDiscount);
-    const promoDiscount = sanitizeNum(activeTab.promoDiscount);
-    const totalDiscount = manualDiscount + promoDiscount;
     const shippingFee = sanitizeNum(activeTab.shippingFee);
     const otherFeeAmount = sanitizeNum(activeTab.otherFeeAmount);
+
+    const determineCustomerType = (customer) => {
+        if (!customer) return 'RETAIL';
+        if (customer.customerType === 'VIP') return 'VIP';
+        if (customer.customerType === 'WHOLESALE' || customer.level === 'agent' || activeTab.priceMode === 'wholesale') return 'WHOLESALE';
+        return 'RETAIL';
+    };
+    const currentCustomerType = determineCustomerType(activeTab.customer);
+
+    const getEligibleTotals = (skus) => {
+        if (!skus || skus.length === 0) return { subtotal: itemSubTotal, qty: itemTotalQty };
+        let eligibleSubtotal = 0;
+        let eligibleQty = 0;
+        activeTab.items?.forEach(item => {
+            if (skus.includes(item.sku)) {
+                eligibleSubtotal += ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty)));
+                eligibleQty += Math.max(1, sanitizeNum(item.qty));
+            }
+        });
+        return { subtotal: eligibleSubtotal, qty: eligibleQty };
+    };
+
+    const eligibleFreebies = activeFreebies.filter(f => {
+        const { subtotal, qty } = getEligibleTotals(f.applicableSkus);
+
+        if (subtotal <= 0) return false;
+        if (f.minSpend && subtotal < f.minSpend) return false;
+        if (f.minQty && qty < f.minQty) return false;
+        
+        // Date Check
+        if (f.startDate && new Date(f.startDate) > new Date()) return false;
+        if (f.endDate && new Date(f.endDate) < new Date()) return false;
+        
+        // Quota Check
+        if (f.quotaLimit && (f.quotaUsed || 0) >= f.quotaLimit) return false;
+        
+        // Customer Type Check
+        if (f.customerType && f.customerType !== 'ALL') {
+            if (f.customerType !== currentCustomerType) return false;
+        }
+        
+        return true;
+    });
+
+    // We should also filter activePromotions that are actually eligible to be auto-applied
+    const validPromotions = activePromotions.filter(p => {
+        const { subtotal, qty } = getEligibleTotals(p.applicableSkus);
+
+        if (p.minSpend > 0 && subtotal < p.minSpend) return false;
+        if (p.minQty > 0 && qty < p.minQty) return false;
+        if (p.startDate && new Date(p.startDate) > new Date()) return false;
+        if (p.endDate && new Date(p.endDate) < new Date()) return false;
+        if (p.quotaLimit && (p.quotaUsed || 0) >= p.quotaLimit) return false;
+        if (p.customerType && p.customerType !== 'ALL' && p.customerType !== currentCustomerType) return false;
+        return true;
+    });
+
+    // Auto Apply Best Promotion Logic
+    let autoPromoDiscount = 0;
+    let autoPromoDetails = null;
+    
+    if (activeTab.autoPromoEnabled && validPromotions.length > 0) {
+        let bestDiscount = 0;
+        let bestPromo = null;
+        validPromotions.forEach(promo => {
+            const { subtotal } = getEligibleTotals(promo.applicableSkus);
+            let calculated = promo.type === 'PERCENTAGE' ? subtotal * (promo.value / 100) : promo.value;
+            if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
+                calculated = Math.min(calculated, promo.maxDiscount);
+            }
+            if (calculated > bestDiscount) {
+                bestDiscount = calculated;
+                bestPromo = promo;
+            }
+        });
+        autoPromoDiscount = Math.floor(bestDiscount);
+        autoPromoDetails = bestPromo;
+    }
+
+    const promoDiscount = activeTab.autoPromoEnabled ? autoPromoDiscount : sanitizeNum(activeTab.promoDiscount);
+    const appliedPromoDetails = activeTab.autoPromoEnabled ? autoPromoDetails : activeTab.appliedPromoDetails;
+    const totalDiscount = manualDiscount + promoDiscount;
     
     let baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
     let taxableAmount = baseTotal + (activeTab.vatOnShipping ? shippingFee : 0);
@@ -226,8 +307,6 @@ export default function usePosState(products, customers, initialDraft) {
     const earnedPoints = activeTab.customer ? Math.floor(remainingToPay / 100) : 0;
     const changeAmount = (activeTab.paymentMethod === 'Cash' && activeTab.cashReceived) ? (sanitizeNum(activeTab.cashReceived) - remainingToPay) : 0;
 
-    const eligibleFreebies = activeFreebies.filter(f => itemSubTotal > 0 && itemSubTotal >= f.minSpend);
-
     return {
         cartTabs, setCartTabs,
         activeTabId, setActiveTabId,
@@ -240,13 +319,14 @@ export default function usePosState(products, customers, initialDraft) {
         isUploadingSlip, setIsUploadingSlip,
         customerSearchText, setCustomerSearchText,
         showCustDropdown, setShowCustDropdown,
-        activePromotions, setActivePromotions,
+        activePromotions, setActivePromotions, validPromotions,
         isPromoModalOpen, setIsPromoModalOpen,
         activeFreebies, setActiveFreebies,
         createNewTab, closeTab, safeCartTabs, activeTab, updateActiveTab,
         handlePriceModeChange, searchResults, filteredCustomers,
         itemSubTotal, manualDiscount, promoDiscount, totalDiscount,
         shippingFee, otherFeeAmount, vatAmount, netTotal,
-        walletUsed, remainingToPay, earnedPoints, changeAmount, eligibleFreebies
+        walletUsed, remainingToPay, earnedPoints, changeAmount, eligibleFreebies,
+        appliedPromoDetails
     };
 }

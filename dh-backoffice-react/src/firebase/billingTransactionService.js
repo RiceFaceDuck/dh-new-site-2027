@@ -1,6 +1,6 @@
 import { collection, doc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { db } from './config';
-import { gasHistoryService } from './gasHistoryService';
+import { historyService } from './historyService';
 
 const COLLECTION_NAME = 'orders';
 
@@ -120,7 +120,7 @@ export const billingTransactionService = {
             finalOrderId = `TEMP-${dateStr}-${runNum}`;
         }
 
-        const { id, ...dataToSave } = orderData; // Remove id from data before saving to prevent overwriting doc.id on read
+        const { id, ...dataToSave } = orderData; 
         const finalOrderData = {
             ...dataToSave, 
             orderId: finalOrderId, 
@@ -200,15 +200,7 @@ export const billingTransactionService = {
       });
       
       const netForLog = orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0;
-      gasHistoryService.log({
-          module: 'Billing', 
-          action: 'Create', 
-          target: { id: finalOrderId },
-          details: { 
-            legacy_details: `สร้างบิลใหม่ ยอดสุทธิ ฿${netForLog.toLocaleString()}`,
-            new_order: orderData
-          }
-      });
+      await historyService.addLog('Billing', 'Create', finalOrderId, `สร้างบิลใหม่ ยอดสุทธิ ฿${netForLog.toLocaleString()}`, actorUid);
 
       return { id: newDocId, orderId: finalOrderId };
     } catch (error) { 

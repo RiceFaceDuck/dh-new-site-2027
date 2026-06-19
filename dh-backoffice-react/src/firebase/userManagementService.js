@@ -1,6 +1,6 @@
-import { db } from './config';
+import { db, auth } from './config';
 import { collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
-import { gasHistoryService } from './gasHistoryService';
+import { historyService } from './historyService';
 
 const getCollectionPath = (colName) => {
     if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
@@ -18,6 +18,8 @@ export const updateUserProfile = async (uid, data) => {
             ...data,
             'metadata.updatedAt': serverTimestamp()
         });
+        
+        await historyService.addLog('UserManagement', 'UpdateProfile', uid, `แก้ไขโปรไฟล์ผู้ใช้ UID: ${uid}`, auth.currentUser?.uid);
         return { success: true };
     } catch (error) {
         console.error("❌ [UserManagementService] Update Profile Error:", error);
@@ -33,6 +35,8 @@ export const updateUserRole = async (adminId, targetUid, newRole) => {
             'metadata.roleUpdatedAt': serverTimestamp(),
             'metadata.roleUpdatedBy': adminId
         });
+        
+        await historyService.addLog('UserManagement', 'UpdateRole', targetUid, `เปลี่ยนตำแหน่งผู้ใช้ UID: ${targetUid} เป็น ${newRole}`, adminId || auth.currentUser?.uid);
         console.log(`✅ [UserManagementService] Role updated to ${newRole} for UID: ${targetUid}`);
         return { success: true };
     } catch (error) {
@@ -45,6 +49,8 @@ export const suspendUser = async (adminId, targetUid) => {
     try {
         const userRef = getUserDocRef(targetUid);
         await updateDoc(userRef, { status: 'suspended' });
+        
+        await historyService.addLog('UserManagement', 'SuspendUser', targetUid, `ระงับบัญชีผู้ใช้ UID: ${targetUid}`, adminId || auth.currentUser?.uid);
         return { success: true };
     } catch (error) {
         throw error;
@@ -55,6 +61,8 @@ export const restoreUser = async (adminId, targetUid) => {
     try {
         const userRef = getUserDocRef(targetUid);
         await updateDoc(userRef, { status: 'active' });
+        
+        await historyService.addLog('UserManagement', 'RestoreUser', targetUid, `ยกเลิกระงับบัญชีผู้ใช้ UID: ${targetUid}`, adminId || auth.currentUser?.uid);
         return { success: true };
     } catch (error) {
         throw error;
@@ -65,6 +73,8 @@ export const deleteUser = async (adminId, targetUid) => {
     try {
         const userRef = getUserDocRef(targetUid);
         await deleteDoc(userRef);
+        
+        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid}`, adminId || auth.currentUser?.uid);
         return { success: true };
     } catch (error) {
         throw error;
@@ -127,6 +137,8 @@ export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
         });
 
         await batch.commit();
+        
+        await historyService.addLog('UserManagement', 'AdjustFinancials', uid, `ปรับยอดเงิน/แต้มให้ผู้ใช้ UID: ${uid} (Credit: ${creditAmount}, Wallet: ${walletAmount}) เหตุผล: ${reason}`, adminId || auth.currentUser?.uid);
         console.log(`✅ [UserManagementService] Financials adjusted securely using batch for user ${uid}`);
         return { success: true, newCredit, newWallet };
 
@@ -149,17 +161,8 @@ export const createManualCustomer = async (data) => {
             source: 'manual_entry'
         });
         
-        gasHistoryService.log({
-            level: 'INFO',
-            module: 'Customer',
-            action: 'Create',
-            target: { id: docRef.id, name: data.accountName || data.displayName || 'Unknown', type: 'Customer' },
-            details: {
-                legacy_details: `เพิ่มรายชื่อลูกค้าใหม่: ${data.accountName || data.displayName || 'Unknown'}`,
-                data: data,
-                tags: ['customer_management', 'create']
-            }
-        });
+        const customerName = data.accountName || data.displayName || 'Unknown';
+        await historyService.addLog('Customer', 'Create', docRef.id, `เพิ่มรายชื่อลูกค้าใหม่: ${customerName}`, auth.currentUser?.uid);
 
         console.log(`✅ [UserManagementService] Created manual customer with ID: ${docRef.id}`);
         return docRef.id;
@@ -177,17 +180,8 @@ export const updateCustomerProfile = async (uid, data) => {
             updatedAt: serverTimestamp()
         });
         
-        gasHistoryService.log({
-            level: 'WARN',
-            module: 'Customer',
-            action: 'Update',
-            target: { id: uid, name: data.accountName || data.displayName || uid, type: 'Customer' },
-            details: {
-                legacy_details: `แก้ไขข้อมูลลูกค้า: ${data.accountName || data.displayName || uid}`,
-                data: data,
-                tags: ['customer_management', 'update']
-            }
-        });
+        const customerName = data.accountName || data.displayName || uid;
+        await historyService.addLog('Customer', 'Update', uid, `แก้ไขข้อมูลลูกค้า: ${customerName}`, auth.currentUser?.uid);
 
         return { success: true };
     } catch (error) {
@@ -201,16 +195,7 @@ export const deleteCustomer = async (targetUid, customerName) => {
         const userRef = getUserDocRef(targetUid);
         await deleteDoc(userRef);
         
-        gasHistoryService.log({
-            level: 'ERROR',
-            module: 'Customer',
-            action: 'Delete',
-            target: { id: targetUid, name: customerName, type: 'Customer' },
-            details: {
-                legacy_details: `ลบรายชื่อลูกค้า: ${customerName}`,
-                tags: ['customer_management', 'delete']
-            }
-        });
+        await historyService.addLog('Customer', 'Delete', targetUid, `ลบรายชื่อลูกค้า: ${customerName}`, auth.currentUser?.uid);
 
         console.log(`✅ [UserManagementService] Deleted customer ${customerName} (${targetUid})`);
         return { success: true };

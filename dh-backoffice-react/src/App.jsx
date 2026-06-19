@@ -109,7 +109,8 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/" element={<AdminLayout />}>
-        <Route index element={<Overview />} />
+        <Route index element={<Navigate to="/overview" replace />} />
+        <Route path="overview" element={<Overview />} />
         <Route path="search" element={<Search />} /> 
         <Route path="todo" element={<Todo />} />
         <Route path="todo/archive" element={<TodoArchive />} />

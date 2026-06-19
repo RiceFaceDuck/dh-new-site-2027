@@ -1,4 +1,6 @@
 import { adManagementService } from './adManagementService';
+import { historyService } from './historyService';
+import { auth } from './config';
 
 // ----------------------------------------------------------------------
 // 📦 Manager Action Service
@@ -10,10 +12,10 @@ export const managerActionService = {
   handleApproval: async (taskId, type, payload, originalTask, adminId) => {
     // 1. STAFF_APPROVAL
     if (type === 'STAFF_APPROVAL') {
-      const { auth } = await import('./config');
+      const { auth: dynamicAuth } = await import('./config');
       const { userService } = await import('./userService');
       
-      const currentAdminId = adminId || auth.currentUser?.uid || 'Admin';
+      const currentAdminId = adminId || dynamicAuth.currentUser?.uid || 'Admin';
       const targetUid = payload.targetUid;
       const newRole = payload.metadata?.requestedRole || 'staff';
       
@@ -23,6 +25,8 @@ export const managerActionService = {
           isActive: true, 
           roles: [newRole.charAt(0).toUpperCase() + newRole.slice(1)] 
       });
+
+      await historyService.addLog('ManagerAction', 'ApproveStaff', targetUid, `อนุมัติคำขอแต่งตั้งพนักงานเป็น ${newRole}`, auth.currentUser?.uid);
       return { success: true, newStatus: 'completed' };
     }
 
@@ -30,24 +34,24 @@ export const managerActionService = {
     if (type === 'PRODUCT_KNOWLEDGE_APPROVAL') {
       const { productKnowledgeAdminService } = await import('./productKnowledgeAdminService');
       await productKnowledgeAdminService.approveKnowledgeTask(originalTask, adminId);
-      // Status is already updated by the service's transaction
+      
+      await historyService.addLog('ManagerAction', 'ApproveKnowledge', originalTask.id, `อนุมัติข้อมูลความรู้สินค้า: ${originalTask.title}`, auth.currentUser?.uid);
       return { success: true, newStatus: null }; 
     }
 
     // 3. AD_APPROVAL (Partner, User SKU, Billboard)
     if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type)) {
-      // payload in TodoItem is usually the adPayload, but the adId is typically stored in targetSkuId
-      // In StoreProfileForm.jsx, targetSkuId is set to adId.
       const adId = originalTask.targetSkuId || originalTask.payload?.adId || originalTask.adPayload?.id || originalTask.id;
       
       const result = await adManagementService.approveAd(adId, taskId);
       if (!result.success) throw new Error(result.message);
       
-      // Status is updated within the approveAd batch
+      await historyService.addLog('ManagerAction', 'ApproveAd', adId, `อนุมัติคำขอโฆษณา: ${type}`, auth.currentUser?.uid);
       return { success: true, newStatus: null };
     }
 
     // Default fallback
+    await historyService.addLog('ManagerAction', 'ApproveTask', taskId, `อนุมัติคำขอ: ${type}`, auth.currentUser?.uid);
     return { success: true, newStatus: 'completed' };
   },
 
@@ -58,10 +62,12 @@ export const managerActionService = {
       const result = await adManagementService.rejectAd(adId, taskId, reason);
       if (!result.success) throw new Error(result.message);
       
+      await historyService.addLog('ManagerAction', 'RejectAd', adId, `ปฏิเสธคำขอโฆษณา: ${type} เหตุผล: ${reason}`, auth.currentUser?.uid);
       return { success: true, newStatus: null };
     }
 
     // Default fallback
+    await historyService.addLog('ManagerAction', 'RejectTask', taskId, `ปฏิเสธคำขอ: ${type} เหตุผล: ${reason}`, auth.currentUser?.uid);
     return { success: true, newStatus: 'rejected' };
   }
 };

@@ -7,7 +7,7 @@ import PaymentPanel from './pos/PaymentPanel';
 import SettingsPanel from './pos/SettingsPanel';
 import ReceiptTemplate from './pos/ReceiptTemplate'; 
 import PosHeader from './pos/layout/PosHeader';
-import GuideModal from './pos/layout/GuideModal';
+import GuideModal from '../common/GuideModal';
 import PromoModal from './pos/layout/PromoModal';
 import usePosState from './pos/hooks/usePosState';
 import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
@@ -208,11 +208,29 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
             )}
 
             {showPreview && (
-                <ReceiptTemplate activeTab={activeTab} updateActiveTab={updateActiveTab} onClose={() => setShowPreview(false)} convertToThaiBahtText={convertToThaiBahtText} itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} />
+                <ReceiptTemplate activeTab={activeTab} updateActiveTab={updateActiveTab} onClose={() => setShowPreview(false)} convertToThaiBahtText={convertToThaiBahtText} itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} eligibleFreebies={eligibleFreebies} />
             )}
 
             {isGuideModalOpen && (
-                <GuideModal setIsGuideModalOpen={setIsGuideModalOpen} />
+                <GuideModal 
+                    isOpen={isGuideModalOpen} 
+                    onClose={() => setIsGuideModalOpen(false)} 
+                    title="คู่มือการใช้งาน: เปิดบิลการขาย"
+                    config={{
+                        description: "ระบบเปิดบิลการขาย (POS) รองรับการสร้างหลายบิลพร้อมกัน (Multi-tabs) การตัดสต็อกและจัดการส่วนลด/ภาษี",
+                        howTo: [
+                            "<strong>โซนตะกร้าสินค้า (ซ้ายบน):</strong> กด <code>F3</code> เพื่อพิมพ์ค้นหาสินค้า หรือใช้เครื่องยิงบาร์โค้ดสแกนได้ทันที สามารถคลิกที่ชื่อสินค้าเพื่อแก้ไขจำนวนหรือส่วนลดรายชิ้น",
+                            "<strong>โซนตั้งค่าบิล (ขวามือ):</strong> ค้นหาลูกค้าด้วยชื่อหรือเบอร์โทร เลือกระดับราคา (B2B/ปลีก) รูปแบบภาษี และเพิ่มค่าจัดส่งหรือส่วนลดท้ายบิล",
+                            "<strong>โซนชำระเงิน (ด้านล่าง):</strong> ระบุยอดเงินสด แนบสลิปโอนเงิน (กด <code>Ctrl+V</code> เพื่อวางรูปสลิป) แผงชำระจะยุบอัตโนมัติ กดปุ่ม <code>ล็อค</code> (ไอคอนกุญแจ) เพื่อเปิดค้างไว้"
+                        ],
+                        tips: [
+                            "สามารถใช้ <code>Ctrl + Enter</code> เพื่อยืนยันการรับชำระเงิน (Paid) อย่างรวดเร็ว",
+                            "หากต้องการเพิ่มบิลร่างใหม่ กดไอคอน <code>+</code> หรือใช้ <code>Alt + N</code>",
+                            "การใช้เมาส์คลิกปุ่มจ่ายพอดี (Exact) ช่วยให้รับเงินได้รวดเร็วขึ้นในกรณีที่ลูกค้าจ่ายเงินพอดี"
+                        ],
+                        expectedResults: "เมื่อกด <strong>ยืนยันชำระเงิน</strong> ระบบจะตัดสต็อกสินค้าทันทีและสร้างบิลหมายเลข (DH-xxxx) พร้อมบันทึกยอดขายและประวัติให้ลูกค้า"
+                    }}
+                />
             )}
         </div>
     );

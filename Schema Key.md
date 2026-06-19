@@ -25,6 +25,7 @@ The `history_logs` system has been completely migrated out of Firestore to save 
 - GAS writes to Google Drive inside a `DH_Notebook_History` folder.
 - File naming convention: `history_YYYY-MM-DD.jsonl`.
 - The History UI reads directly from the GAS Web App URL via GET request, which parses the appropriate `.jsonl` file and filters on the server side.
+- **`historyService.js`**: A centralized facade that applications use (`historyService.addLog()`) to enqueue logs. It abstracts away the `gasHistoryService` implementation, allowing seamless future migrations or testing mocks.
 
 ---
 
@@ -264,20 +265,47 @@ This specific document serves as an aggregated cache of all unique product categ
 
 | Field Name       | Type    | Description                                                                 | Example Value                       |
 |------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
-| `categories`     | Array   | List of unique category string names. Maintained via `arrayUnion`.          | `["case", "monitor", "ram"]`        |
+| `categories`     | Array   | List of unique category string names. Maintained via `arrayUnion`. If missing, the frontend will fallback to a hardcoded `defaultCategories` array to prevent expensive queries across all products.         | `["case", "monitor", "ram"]`        |
 
-## 13. Collection: `freebies`
+## 13. Collection: `freebies` & `promotions`
 
-The `freebies` collection stores promotional items that are given to customers when their cart subtotal reaches a certain threshold (`minSpend`).
+These collections manage the marketing incentives. They have been upgraded to support detailed targeting and automation.
 
-### Schema Fields
+### Schema Fields: `freebies`
 
 | Field Name       | Type    | Description                                                                 | Example Value                       |
 |------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
-| `title`          | String  | The display name of the freebie item.                                       | `"สายชาร์จแท้ (แถมฟรี)"`            |
+| `title`          | String  | The display name of the freebie campaign.                                   | `"แจกสายชาร์จฟรี"`                  |
+| `itemName`       | String  | The actual name of the item being given away.                               | `"สายชาร์จ Type-C"`                 |
 | `minSpend`       | Number  | The minimum subtotal required to unlock this freebie.                       | `5000`                              |
+| `qty`            | Number  | The quantity given per eligible threshold.                                  | `1`                                 |
+| `maxPerBill`     | Number  | The maximum quantity a customer can get per bill.                           | `3`                                 |
+| `startDate`      | String  | Optional start date for the campaign (ISO string).                          | `"2026-06-19T00:00:00Z"`            |
+| `endDate`        | String  | Optional end date for the campaign (ISO string).                            | `"2026-06-30T23:59:59Z"`            |
+| `customerType`   | String  | Target audience restriction.                                                | `"ALL"`, `"RETAIL"`, `"VIP"`, `"WHOLESALE"` |
+| `applicableSkus` | Array   | List of SKUs this campaign is restricted to. Empty means all products.      | `["CASE-01", "RAM-02"]`             |
+| `quotaLimit`     | Number  | Maximum number of times this freebie can be claimed overall.                | `100`                               |
+| `quotaUsed`      | Number  | Current number of times claimed.                                            | `15`                                |
 | `isActive`       | Boolean | Toggle for whether this freebie is currently active.                        | `true`                              |
 | `imageUrl`       | String  | (Optional) The URL of the uploaded freebie icon/image.                      | `"https://drive.google.com/..."`    |
+
+### Schema Fields: `promotions`
+
+| Field Name       | Type    | Description                                                                 | Example Value                       |
+|------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `title`          | String  | The display name of the promotion.                                          | `"ลด 10% ฉลองเปิดร้าน"`             |
+| `code`           | String  | The optional promo code for manual override (Legacy).                       | `"OPEN10"`                          |
+| `type`           | String  | Type of discount.                                                           | `"PERCENTAGE"`, `"FIXED"`           |
+| `value`          | Number  | The discount value.                                                         | `10` (for 10%), or `500` (for ฿500) |
+| `maxDiscount`    | Number  | The maximum discount amount allowed (used with PERCENTAGE).                 | `1000`                              |
+| `minSpend`       | Number  | The minimum subtotal required to unlock this promotion.                     | `10000`                             |
+| `startDate`      | String  | Optional start date for the campaign (ISO string).                          | `"2026-06-19T00:00:00Z"`            |
+| `endDate`        | String  | Optional end date for the campaign (ISO string).                            | `"2026-06-30T23:59:59Z"`            |
+| `customerType`   | String  | Target audience restriction.                                                | `"ALL"`, `"RETAIL"`, `"VIP"`, `"WHOLESALE"` |
+| `applicableSkus` | Array   | List of SKUs this campaign is restricted to. Empty means all products.      | `["CASE-01", "RAM-02"]`             |
+| `quotaLimit`     | Number  | Maximum number of times this promo can be used overall.                     | `50`                                |
+| `quotaUsed`      | Number  | Current number of times used.                                               | `5`                                 |
+| `isActive`       | Boolean | Toggle for whether this promotion is currently active.                      | `true`                              |
 
 ---
 

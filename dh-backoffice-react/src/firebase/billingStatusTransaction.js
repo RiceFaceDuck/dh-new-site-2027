@@ -1,6 +1,6 @@
 import { doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { db } from './config';
-import { gasHistoryService } from './gasHistoryService';
+import { historyService } from './historyService';
 import { handleStockDeduction, handleStockReturn } from './billing/statusStockHandler';
 import { handleSalesStatsUpdate } from './billing/statusSalesHandler';
 import { handleWalletRefundAndClawback, handlePointsEarned } from './billing/statusWalletHandler';
@@ -117,15 +117,7 @@ export const billingStatusTransaction = {
       if (normalizedNewStatus === 'cancelled') logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม กลับสู่ระบบเรียบร้อยแล้ว)';
       if (normalizedNewStatus === 'paid') logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
 
-      gasHistoryService.log({
-          module: 'Billing', 
-          action: 'Update', 
-          target: { id: orderId },
-          details: { 
-            legacy_details: logMessage,
-            status_change: { from: currentStatus, to: normalizedNewStatus }
-          }
-      });
+      await historyService.addLog('Billing', 'Update', orderId, logMessage, actorUid);
       
       return orderId;
     } catch (error) { 

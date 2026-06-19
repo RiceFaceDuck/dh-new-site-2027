@@ -1,172 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { doc, updateDoc } from 'firebase/firestore'; 
-import { db } from '../../firebase/config';
-import { userService, SUPER_ADMINS } from '../../firebase/userService';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Search, AlertCircle, CheckCircle2, UserPlus, Eye, EyeOff, ArrowLeft, Briefcase } from 'lucide-react';
-
+import { ROLES } from '../../firebase/userService';
 import StaffTable from './components/staff/StaffTable';
 import StaffAddModal from './components/staff/StaffAddModal';
 import StaffEditModal from './components/staff/StaffEditModal';
 import StaffDetailModal from './components/staff/StaffDetailModal';
+import { useStaffManagement } from './hooks/useStaffManagement';
+import GuideModal from '../../components/common/GuideModal';
 
-const ROLES = ['Admin', 'Manager', 'Staff', 'Packer', 'Developer'];
-
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+// Ensure ROLES is available, or redefine it here if not exported from userService
+const DISPLAY_ROLES = ['Admin', 'Manager', 'Staff', 'Packer', 'Developer'];
 
 export default function StaffManagement() {
   const navigate = useNavigate();
+  const {
+    loading,
+    searchTerm,
+    setSearchTerm,
+    roleFilter,
+    setRoleFilter,
+    showSuspended,
+    setShowSuspended,
+    toast,
+    modalConfig,
+    closeModal,
+    editingStaff,
+    setEditingStaff,
+    viewingStaff,
+    setViewingStaff,
+    showAddModal,
+    setShowAddModal,
+    filteredStaff,
+    handleRoleChange,
+    handleToggleStatus,
+    handleDeleteStaff,
+    fetchStaff,
+    showToast
+  } = useStaffManagement();
 
-  const [staffList, setStaffList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [showSuspended, setShowSuspended] = useState(false);
-  
-  const [toast, setToast] = useState(null);
-  const [modalConfig, setModalConfig] = useState(null);
-  
-  const [editingStaff, setEditingStaff] = useState(null);
-  const [viewingStaff, setViewingStaff] = useState(null); 
-  const [showAddModal, setShowAddModal] = useState(false);
-
-  useEffect(() => {
-    fetchStaff();
-  }, []);
-
-  const fetchStaff = async () => {
-    setLoading(true);
-    try {
-      const data = await userService.getAllStaff();
-      const sortedData = data.sort((a, b) => {
-        if (SUPER_ADMINS.includes(a.email)) return -1;
-        if (SUPER_ADMINS.includes(b.email)) return 1;
-        return 0;
-      });
-      setStaffList(sortedData);
-    } catch (error) {
-      showToast('error', 'ไม่สามารถดึงข้อมูลพนักงานได้');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const openModal = (title, desc, actionFn, isDanger = false) => {
-    setModalConfig({
-      isOpen: true, title, desc, action: actionFn, type: isDanger ? 'danger' : 'warning'
-    });
-  };
-  const closeModal = () => setModalConfig(null);
-
-  const handleRoleChange = async (uid, newRole, email) => {
-    if (SUPER_ADMINS.includes(email)) {
-      return showToast('error', 'ไม่อนุญาตให้เปลี่ยนสิทธิ์ของเจ้าของระบบ');
-    }
-    openModal(
-      'ยืนยันการปรับเปลี่ยนตำแหน่ง',
-      `คุณต้องการเปลี่ยนตำแหน่งของ ${email} เป็น ${newRole} ใช่หรือไม่?`,
-      async () => {
-        try {
-          await userService.updateUserRole(uid, uid, newRole);
-          try {
-            const userRef = doc(db, getCollectionPath('users'), uid);
-            await updateDoc(userRef, { isStaff: true, isActive: true });
-          } catch(e) { console.error("Force update isStaff failed", e); }
-          
-          setStaffList(prev => prev.map(staff => 
-            staff.id === uid ? { ...staff, role: newRole, computedRole: newRole.toLowerCase(), roles: [newRole], isStaff: true } : staff
-          ));
-          showToast('success', 'อัปเดตตำแหน่งสำเร็จ');
-        } catch (error) {
-          showToast('error', 'เกิดข้อผิดพลาดในการอัปเดตตำแหน่ง');
-        }
-      }
-    );
-  };
-
-  const handleToggleStatus = async (uid, currentStatus, email) => {
-    if (SUPER_ADMINS.includes(email)) {
-      return showToast('error', 'ไม่อนุญาตให้ระงับการใช้งานเจ้าของระบบ');
-    }
-    const isSuspending = currentStatus === true;
-    const actionText = isSuspending ? 'ระงับการใช้งาน' : 'ปลดแบน/คืนสิทธิ์';
-    
-    openModal(
-      `ยืนยันการ${actionText}`,
-      `คุณแน่ใจหรือไม่ที่จะ${actionText}บัญชี ${email}?`,
-      async () => {
-        try {
-          if (isSuspending) {
-            await userService.suspendUser(uid, uid);
-          } else {
-            await userService.restoreUser(uid, uid);
-          }
-          setStaffList(prev => prev.map(staff => 
-            staff.id === uid ? { ...staff, isActive: !isSuspending } : staff
-          ));
-          showToast('success', `ดำเนินการ${actionText}สำเร็จ`);
-        } catch (error) {
-          showToast('error', `ไม่สามารถ${actionText}ได้`);
-        }
-      },
-      isSuspending
-    );
-  };
-
-  const handleDeleteStaff = (uid, email) => {
-    if (SUPER_ADMINS.includes(email)) {
-      return showToast('error', 'ไม่อนุญาตให้ลบเจ้าของระบบ');
-    }
-    openModal(
-      'ยืนยันการลบพนักงาน',
-      `คำเตือน: คุณกำลังจะลบ ${email} ออกจากระบบ ข้อมูลนี้จะไม่สามารถกู้คืนได้ ยืนยันหรือไม่?`,
-      async () => {
-        try {
-          await userService.deleteUser(uid, uid);
-          setStaffList(prev => prev.filter(staff => staff.id !== uid));
-          showToast('success', 'ลบพนักงานสำเร็จ');
-        } catch (error) {
-          showToast('error', 'ลบพนักงานล้มเหลว');
-        }
-      },
-      true 
-    );
-  };
-
-  // --- Derived Data ---
-  const filteredStaff = staffList.filter(staff => {
-    const isPending = staff.role === 'pending_approval' || staff.role === 'pending';
-    
-    // FIX: Show pending_approval regardless of isActive flag if showSuspended is false
-    // If showSuspended is true, show everyone (including inactive and pending).
-    if (!showSuspended && !staff.isActive && !isPending) return false;
-    
-    const matchesSearch = 
-      (staff.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (staff.displayName || staff.firstName || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const staffRole = staff.computedRole || staff.role || (staff.roles ? staff.roles[0] : '');
-    const matchesRole = roleFilter === 'all' || 
-      (staffRole && staffRole.toLowerCase() === roleFilter.toLowerCase());
-
-    return matchesSearch && matchesRole;
-  });
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 relative h-full overflow-y-auto custom-scrollbar">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <button 
           onClick={() => navigate('/managers')} 
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors w-fit group"
@@ -175,6 +52,9 @@ export default function StaffManagement() {
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           </div>
           ย้อนกลับไปหน้าผู้จัดการ (Overview)
+        </button>
+        <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-sm dh-active-press">
+          <AlertCircle size={16} /> คู่มือการใช้งาน
         </button>
       </div>
 
@@ -234,7 +114,7 @@ export default function StaffManagement() {
         editingStaff={editingStaff} 
         setEditingStaff={setEditingStaff} 
         showToast={showToast} 
-        setStaffList={setStaffList} 
+        fetchStaff={fetchStaff} 
       />
 
       <StaffDetailModal 
@@ -283,7 +163,7 @@ export default function StaffManagement() {
             >
               <option value="all">ทุกตำแหน่ง (All Roles)</option>
               <option value="owner">Owner (เจ้าของ)</option>
-              {ROLES.map(r => <option key={r} value={r.toLowerCase()}>{r}</option>)}
+              {DISPLAY_ROLES.map(r => <option key={r} value={r.toLowerCase()}>{r}</option>)}
             </select>
           </div>
           
@@ -309,6 +189,26 @@ export default function StaffManagement() {
         handleRoleChange={handleRoleChange}
         handleToggleStatus={handleToggleStatus}
         handleDeleteStaff={handleDeleteStaff}
+      />
+
+      <GuideModal 
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        title="คู่มือ: ทะเบียนเจ้าหน้าที่ (Staff Management)"
+        config={{
+          description: "ระบบสำหรับบริหารจัดการพนักงานทั้งหมดในระบบ คุณสามารถแต่งตั้งพนักงานใหม่ กำหนดสิทธิ์การเข้าถึง (Roles) และระงับบัญชีเมื่อพนักงานลาออกหรือทำผิดกฎ",
+          howTo: [
+            "<strong>การเพิ่มพนักงานใหม่:</strong> คลิกปุ่ม <code>แต่งตั้งพนักงานใหม่</code> กรอกข้อมูล ชื่อ, อีเมล และเลือกระดับสิทธิ์ที่เหมาะสม",
+            "<strong>การค้นหาและกรอง:</strong> ใช้ช่องค้นหาเพื่อหาชื่อ/อีเมล และใช้ Dropdown <code>ทุกตำแหน่ง</code> เพื่อกรองพนักงานตามแผนก",
+            "<strong>การระงับบัญชี (Suspend):</strong> หากพนักงานพ้นสภาพ ให้กดไอคอนรูปลูกกุญแจ/แบน เพื่อระงับการเข้าถึงระบบชั่วคราวหรือถาวร",
+            "<strong>การลบบัญชี:</strong> ควรกระทำเมื่อมั่นใจว่าไม่มีความเกี่ยวข้องกับเอกสารสำคัญ เนื่องจากอาจมีผลกับ History Log ของพนักงานคนนั้น"
+          ],
+          tips: [
+            "แนะนำให้ <strong>ระงับบัญชี (Suspend)</strong> แทนการ <strong>ลบ (Delete)</strong> เพื่อให้ระบบสามารถอ้างอิงชื่อพนักงานกับบิลการขายเดิมได้",
+            "คุณสามารถตรวจสอบบัญชีที่ถูกแบนไปแล้วได้โดยคลิกปุ่ม <code>บัญชีที่ถูกแบน (ไอคอนดวงตา)</code>"
+          ],
+          expectedResults: "เมื่อคุณปรับเปลี่ยนสถานะหรือระดับสิทธิ์พนักงาน ระบบจะบันทึกประวัติการกระทำของคุณ (Audit Log) และมีผลบังคับใช้กับการเข้าสู่ระบบของพนักงานคนนั้นทันที"
+        }}
       />
       
     </div>

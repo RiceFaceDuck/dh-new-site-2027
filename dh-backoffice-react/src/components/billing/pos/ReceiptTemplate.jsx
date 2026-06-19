@@ -21,7 +21,8 @@ export default function ReceiptTemplate({
     vatType = 'exempt',
     walletUsed = 0,
     remainingToPay = 0,
-    orderData = null 
+    orderData = null,
+    eligibleFreebies = []
 }) {
     // 🛑 [ส่วนที่ห้ามแตะต้อง] - ตรรกะการดึงข้อมูลและการคำนวณเดิม
     const data = orderData || activeTab || {};
@@ -41,6 +42,25 @@ export default function ReceiptTemplate({
     const _paymentStatus = orderData ? orderData.paymentStatus : data.paymentStatus;
     const _thaiBahtText = orderData ? (orderData.thaiBahtText || '') : (convertToThaiBahtText ? convertToThaiBahtText(_remainingToPay) : '');
     
+    // Combine items and freebies if this is a draft bill (orderData is null)
+    let finalItems = items;
+    if (!orderData && eligibleFreebies?.length > 0) {
+        const previewFreebies = eligibleFreebies.map(f => {
+            let conditionText = [];
+            if (f.minSpend > 0) conditionText.push(`ยอด${f.minSpend}฿`);
+            if (f.minQty > 0) conditionText.push(`ครบ${f.minQty}ชิ้น`);
+            if (f.applicableSkus?.length > 0) conditionText.push(`เฉพาะรุ่น`);
+            const reasonStr = conditionText.length > 0 ? ` (${conditionText.join(', ')})` : '';
+            return {
+                sku: f.itemName, 
+                name: `[แถมฟรี] ${f.itemName}`, 
+                qty: Math.min(Number(f.qty) || 1, Number(f.maxPerBill) || Number(f.qty) || 1), 
+                price: 0, discount: 0, total: 0, isFreebie: true, note: `${f.title}${reasonStr}`, noteColor: 'rose'
+            };
+        });
+        finalItems = [...items, ...previewFreebies];
+    }
+
     const staffName = orderData?.actorName || auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'พนักงาน';
 
     const [format, setFormat] = useState(data.receiptFormat || 'short');
@@ -162,7 +182,7 @@ export default function ReceiptTemplate({
                         data={data}
                     />
 
-                    <ReceiptItems items={items} />
+                    <ReceiptItems items={finalItems} />
 
                     <ReceiptFooter 
                         _thaiBahtText={_thaiBahtText}
@@ -173,6 +193,7 @@ export default function ReceiptTemplate({
                         _shippingFee={_shippingFee}
                         _netTotal={_netTotal}
                         staffName={staffName}
+                        appliedPromoDetails={appliedPromoDetails || orderData?.appliedPromotion}
                     />
 
                 </div>

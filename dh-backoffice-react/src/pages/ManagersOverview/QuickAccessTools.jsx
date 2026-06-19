@@ -3,7 +3,7 @@ import {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift
 } from 'lucide-react';
 import { menuConfigService } from '../../firebase/menuConfigService';
 
@@ -12,7 +12,7 @@ const iconMap = {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift
 };
 
 /**
@@ -110,6 +110,8 @@ const QuickAccessTools = ({
       case 'drive': return onOpenDrivePanel;
       case 'ads': return onNavigateAds;
       case 'credit': return onNavigateCredit;
+      case 'promotions': return () => navigate('/managers/promotions');
+      case 'freebie': return () => navigate('/managers/freebie');
       case 'inventory_adjustment': return () => navigate('/managers/inventory-adjustment');
       // เมนูย่อยจากนโยบายกลาง (จะเปิด Global Settings Panel โดยระบุ Tab)
       case 'buffer': return () => navigate('/managers/buffer');

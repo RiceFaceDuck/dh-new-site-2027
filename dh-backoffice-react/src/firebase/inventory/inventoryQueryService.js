@@ -49,6 +49,17 @@ export const inventoryQueryService = {
     }
   },
 
+  getAllProducts: async () => {
+    try {
+      const q = query(collection(db, COLLECTION_NAME));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("🔥 Error fetching all products:", error);
+      return [];
+    }
+  },
+
   getSalesStats30d: async (sku) => {
     try {
       return {
@@ -88,23 +99,15 @@ export const inventoryQueryService = {
         }
       }
 
-      // Fallback: ถ้ายังไม่มีข้อมูลใน settings หรือข้อมูลว่าง ให้ไปอ่านจาก products ทั้งหมด
-      console.log("⚠️ [Fallback] ไม่พบข้อมูลใน settings/product_categories กำลังดึงจาก products ทั้งหมด...");
-      const q = query(collection(db, COLLECTION_NAME));
-      const snapshot = await getDocs(q);
-      const uniqueCategories = new Set();
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.category) {
-          // เก็บค่าเป็น lowercase เพื่อไม่ให้ซ้ำซ้อน
-          uniqueCategories.add(data.category.toLowerCase().trim());
-        }
-      });
-      return Array.from(uniqueCategories).sort();
+      // 🚀 [Optimization] Fallback: ใช้ค่าเริ่มต้นคงที่แทนการดึง products ทั้งหมด เพื่อประหยัด Reads อย่างมหาศาล
+      // หากมีการเพิ่มหมวดหมู่ใหม่ ระบบใน inventoryMutationService จะทำการ Update settings ทันที
+      console.log("⚠️ [Fallback] ไม่พบข้อมูลใน settings/product_categories จะใช้ค่าเริ่มต้นแทนเพื่อป้องกัน Read Spikes");
+      const defaultCategories = ['Screen', 'Battery', 'Keyboard', 'Adapter', 'Hinge', 'Cable', 'Cooling Fan', 'Other'];
+      return defaultCategories.sort();
 
     } catch (error) {
       console.error("🔥 Error fetching unique categories:", error);
-      return [];
+      return ['Screen', 'Battery', 'Keyboard', 'Adapter', 'Hinge', 'Cable', 'Cooling Fan', 'Other'].sort();
     }
   }
 };

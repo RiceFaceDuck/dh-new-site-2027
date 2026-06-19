@@ -9,7 +9,8 @@ export default function ReceiptFooter({
     _manualDiscount,
     _shippingFee,
     _netTotal,
-    staffName
+    staffName,
+    appliedPromoDetails
 }) {
     return (
         <>
@@ -29,10 +30,19 @@ export default function ReceiptFooter({
                                 <td className="text-right font-bold">{_itemSubTotal.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
                             </tr>
                             {(_promoDiscount + _manualDiscount) > 0 && (
+                                <>
                                 <tr>
                                     <td className="text-rose-500 font-bold">ส่วนลด</td>
                                     <td className="text-right font-bold text-rose-600">- {(_promoDiscount + _manualDiscount).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
                                 </tr>
+                                {appliedPromoDetails && (
+                                    <tr>
+                                        <td colSpan="2" className="text-[8px] text-rose-500 leading-tight pb-1 pr-1 text-right">
+                                            (แคมเปญ: {appliedPromoDetails.title} {appliedPromoDetails.minSpend > 0 ? `| ยอดขั้นต่ำ ${appliedPromoDetails.minSpend}฿` : ''})
+                                        </td>
+                                    </tr>
+                                )}
+                                </>
                             )}
                             {_shippingFee > 0 && (
                                 <tr>

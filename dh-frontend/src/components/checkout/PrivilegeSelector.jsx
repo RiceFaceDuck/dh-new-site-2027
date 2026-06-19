@@ -8,49 +8,144 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
   const { checkoutState, updateCheckoutConfig, totals } = useCart();
   const appId = typeof import.meta.env.VITE_FIREBASE_APP_ID !== 'undefined' ? import.meta.env.VITE_FIREBASE_APP_ID : 'dh-notebook-69f3b';
 
-  // 📡 1. ดึงข้อมูลจริงจาก Firebase (Points, Wallet, Promotions)
+  // 📡 1. ดึงข้อมูลจริงจาก Firebase (Points, Wallet, Promotions, Freebies)
   const [availablePoints, setAvailablePoints] = useState(0);
   const [availableWallet, setAvailableWallet] = useState(0);
   const [promotions, setPromotions] = useState([]);
+  const [freebies, setFreebies] = useState([]);
+  const [customerType, setCustomerType] = useState('RETAIL');
 
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
-      // ฟังข้อมูล User Profile (Points & Wallet) แบบ Real-time
       const userRef = doc(db, 'users', user.uid);
       const unsubUser = onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setAvailablePoints(data.creditPoints || 0);
           setAvailableWallet(data.walletBalance || 0);
+          
+          let cType = 'RETAIL';
+          if (data.customerType === 'VIP') cType = 'VIP';
+          else if (data.customerType === 'WHOLESALE' || data.level === 'agent') cType = 'WHOLESALE';
+          setCustomerType(cType);
         }
       });
 
-      // ฟังข้อมูลโปรโมชั่นจากฐานข้อมูลกลาง
       const promoRef = collection(db, 'promotions');
       const unsubPromo = onSnapshot(promoRef, (snap) => {
         setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       });
 
-      return () => { unsubUser(); unsubPromo(); };
+      const freebieRef = collection(db, 'freebies');
+      const unsubFreebie = onSnapshot(freebieRef, (snap) => {
+        setFreebies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+
+      return () => { unsubUser(); unsubPromo(); unsubFreebie(); };
     }
   }, [appId]);
 
   // Local States
-  const [promoCode, setPromoCode] = useState(checkoutState?.discountCode || '');
-  const [promoError, setPromoError] = useState('');
-  const [promoSuccess, setPromoSuccess] = useState(!!checkoutState?.discountCode);
-  
-  const [pointsInput, setPointsInput] = useState(checkoutState?.usePoints || '');
   const [useWallet, setUseWallet] = useState((checkoutState?.useWallet || 0) > 0);
+  
+  // Auto-calculation States for UI Display
+  const [bestPromo, setBestPromo] = useState(null);
+  const [earnedFreebies, setEarnedFreebies] = useState([]);
 
-  // 🛡 2. แก้ไขบั๊ก Infinite Loop (Maximum update depth exceeded)
+  // 🛡 2. Auto-Apply Promotions and Freebies based on subtotal
+  useEffect(() => {
+    const getEligibleTotals = (skus) => {
+      const items = checkoutState?.items || [];
+      if (!skus || skus.length === 0) {
+        const fullSubtotal = totals?.subtotal || 0;
+        const fullQty = items.reduce((sum, item) => sum + Math.max(1, item.qty || 1), 0);
+        return { subtotal: fullSubtotal, qty: fullQty };
+      }
+
+      let eligibleSubtotal = 0;
+      let eligibleQty = 0;
+      items.forEach(item => {
+        if (skus.includes(item.sku)) {
+          // Frontend prices
+          const itemPrice = item.price || 0;
+          const itemQty = Math.max(1, item.qty || 1);
+          eligibleSubtotal += (itemPrice * itemQty);
+          eligibleQty += itemQty;
+        }
+      });
+      return { subtotal: eligibleSubtotal, qty: eligibleQty };
+    };
+    
+    // Evaluate Freebies
+    const validFreebies = freebies.filter(f => {
+      const { subtotal, qty } = getEligibleTotals(f.applicableSkus);
+
+      if (!f.isActive || subtotal <= 0) return false;
+      if (f.minSpend && subtotal < f.minSpend) return false;
+      if (f.minQty && qty < f.minQty) return false;
+      if (f.startDate && new Date(f.startDate) > new Date()) return false;
+      if (f.endDate && new Date(f.endDate) < new Date()) return false;
+      if (f.quotaLimit && (f.quotaUsed || 0) >= f.quotaLimit) return false;
+      if (f.customerType && f.customerType !== 'ALL' && f.customerType !== customerType) return false;
+      return true;
+    });
+
+    setEarnedFreebies(validFreebies);
+
+    // Evaluate Promotions
+    let bestDiscount = 0;
+    let selectedPromo = null;
+
+    const validPromos = promotions.filter(p => {
+      const { subtotal, qty } = getEligibleTotals(p.applicableSkus);
+
+      if (!p.isActive) return false;
+      if (p.minSpend > 0 && subtotal < p.minSpend) return false;
+      if (p.minQty > 0 && qty < p.minQty) return false;
+      if (p.startDate && new Date(p.startDate) > new Date()) return false;
+      if (p.endDate && new Date(p.endDate) < new Date()) return false;
+      if (p.quotaLimit && (p.quotaUsed || 0) >= p.quotaLimit) return false;
+      if (p.customerType && p.customerType !== 'ALL' && p.customerType !== customerType) return false;
+      return true;
+    });
+
+    validPromos.forEach(p => {
+      const { subtotal } = getEligibleTotals(p.applicableSkus);
+      let calc = p.type === 'PERCENTAGE' ? subtotal * (p.value / 100) : p.value;
+      if (p.type === 'PERCENTAGE' && p.maxDiscount > 0) {
+        calc = Math.min(calc, p.maxDiscount);
+      }
+      calc = Math.floor(calc);
+      if (calc > bestDiscount) {
+        bestDiscount = calc;
+        selectedPromo = p;
+      }
+    });
+
+    setBestPromo(selectedPromo);
+
+    // Sync to checkout context
+    if (
+      checkoutState?.discountAmount !== bestDiscount ||
+      JSON.stringify(checkoutState?.qualifiedFreebies) !== JSON.stringify(validFreebies)
+    ) {
+      updateCheckoutConfig({
+        discountAmount: bestDiscount,
+        discountCode: selectedPromo ? selectedPromo.title : null,
+        appliedPromotions: selectedPromo ? [selectedPromo] : [],
+        qualifiedFreebies: validFreebies
+      });
+    }
+
+  }, [totals?.subtotal, promotions, freebies, customerType, checkoutState?.discountAmount]);
+
+  // 🛡 3. Wallet Loop Prevention
   useEffect(() => {
     if (useWallet) {
       const remainingTotal = (totals?.subtotal || 0) + (checkoutState?.shippingCost || 0) - (checkoutState?.discountAmount || 0) - (checkoutState?.usePoints || 0);
       const walletToDeduct = Math.min(availableWallet, Math.max(0, remainingTotal));
       
-      // อัปเดตเฉพาะเมื่อค่าเปลี่ยนจริงๆ เพื่อป้องกัน Loop
       if (checkoutState?.useWallet !== walletToDeduct) {
         updateCheckoutConfig({ useWallet: walletToDeduct });
       }
@@ -59,56 +154,11 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     }
   }, [totals?.subtotal, checkoutState?.shippingCost, checkoutState?.discountAmount, checkoutState?.usePoints, checkoutState?.useWallet, useWallet, availableWallet, updateCheckoutConfig]);
 
-  // 🎟 จัดการโค้ดส่วนลด (เทียบกับ Firebase จริง)
-  const handleApplyPromo = () => {
-    setPromoError('');
-    setPromoSuccess(false);
-
-    if (!promoCode.trim()) {
-      setPromoError('กรุณากรอกโค้ดส่วนลด');
-      return;
-    }
-
-    // หาโปรที่รหัสตรงกัน และเปิดใช้งานอยู่
-    const validPromo = promotions.find(p => (p.code || '').toUpperCase() === promoCode.toUpperCase() && p.isActive !== false);
-
-    if (validPromo) {
-      if ((totals?.subtotal || 0) < (validPromo.minAmount || 0)) {
-        setPromoError(`ต้องมียอดสั่งซื้อขั้นต่ำ ฿${validPromo.minAmount}`);
-        return;
-      }
-      setPromoSuccess(true);
-      updateCheckoutConfig({ 
-        discountCode: promoCode.toUpperCase(),
-        discountAmount: validPromo.discountAmount || 0 
-      });
-    } else {
-      setPromoError('โค้ดส่วนลดไม่ถูกต้อง หรือหมดอายุแล้ว');
-      updateCheckoutConfig({ discountCode: null, discountAmount: 0 });
-    }
-  };
-
-  // 🌟 จัดการ Credit Points
-  const handlePointsChange = (e) => {
-    let val = parseInt(e.target.value.replace(/\D/g, ''), 10) || 0;
-    const maxUsable = Math.min(availablePoints, (totals?.subtotal || 0) + (checkoutState?.shippingCost || 0) - (checkoutState?.discountAmount || 0));
-    if (val > maxUsable) val = maxUsable;
-
-    setPointsInput(val || '');
-    updateCheckoutConfig({ usePoints: val });
-  };
-
-  const handleUseMaxPoints = () => {
-    const maxUsable = Math.min(availablePoints, (totals?.subtotal || 0) + (checkoutState?.shippingCost || 0) - (checkoutState?.discountAmount || 0));
-    setPointsInput(maxUsable);
-    updateCheckoutConfig({ usePoints: maxUsable });
-  };
-
   const handleWalletToggle = (e) => {
     setUseWallet(e.target.checked);
   };
 
-  // 🛡 3. แก้ไขบั๊ก Rendered fewer hooks (ต้องย้าย Early Return มาไว้ล่างสุดเสมอ)
+  // 🛡 4. แก้ไขบั๊ก Rendered fewer hooks (ต้องย้าย Early Return มาไว้ล่างสุดเสมอ)
   if (orderMode === 'wholesale') {
     return null;
   }
@@ -121,33 +171,46 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
       </h2>
 
       <div className="space-y-4">
-        {/* โค้ดส่วนลด */}
+        {/* แสดงส่วนลดอัตโนมัติ */}
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5">โค้ดส่วนลด</label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input 
-                type="text" 
-                value={promoCode}
-                onChange={(e) => { setPromoCode(e.target.value); setPromoSuccess(false); setPromoError(''); }}
-                placeholder="กรอกโค้ดส่วนลด" 
-                className={`w-full px-3 py-2.5 text-sm bg-gray-50 border ${promoError ? 'border-red-300' : promoSuccess ? 'border-emerald-300' : 'border-gray-200 focus:border-blue-500'} rounded-xl focus:bg-white transition-all uppercase outline-none`}
-              />
-              {promoSuccess && <CheckCircle2 className="absolute right-3 top-2.5 w-4 h-4 text-emerald-500" />}
-              {promoError && <XCircle className="absolute right-3 top-2.5 w-4 h-4 text-red-500" />}
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex justify-between">
+            โปรโมชั่นที่ได้รับ
+            <span className="text-emerald-600">คำนวณอัตโนมัติ</span>
+          </label>
+          {bestPromo ? (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-emerald-800">{bestPromo.title}</p>
+                <p className="text-xs text-emerald-600 mt-0.5">ส่วนลด: ฿{(checkoutState?.discountAmount || 0).toLocaleString()}</p>
+              </div>
             </div>
-            <button 
-              type="button"
-              onClick={handleApplyPromo}
-              disabled={!promoCode || promoSuccess}
-              className="px-4 py-2.5 text-sm bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl disabled:bg-gray-300 transition-colors"
-            >
-              ใช้โค้ด
-            </button>
-          </div>
-          {promoError && <p className="text-[10px] text-red-500 mt-1.5 font-medium flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {promoError}</p>}
-          {promoSuccess && <p className="text-[10px] text-emerald-600 mt-1.5 font-bold flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> โค้ดถูกใช้งานแล้ว (ลด ฿{(checkoutState?.discountAmount || 0).toLocaleString()})</p>}
+          ) : (
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
+              <p className="text-xs text-gray-500 text-center py-1">ยังไม่เข้าเงื่อนไขโปรโมชั่นใดๆ ในขณะนี้</p>
+            </div>
+          )}
         </div>
+
+        {/* แสดงของแถมอัตโนมัติ */}
+        {earnedFreebies.length > 0 && (
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">ของแถมที่ได้รับ</label>
+            <div className="space-y-2">
+              {earnedFreebies.map(f => (
+                <div key={f.id} className="p-3 bg-pink-50 border border-pink-200 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎁</span>
+                    <span className="text-sm font-bold text-pink-800">{f.itemName}</span>
+                  </div>
+                  <span className="text-xs font-bold text-pink-600 bg-pink-100 px-2 py-1 rounded-md">
+                    x{Math.min(f.qty, f.maxPerBill || f.qty)} ชิ้น
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <hr className="border-gray-100" />
 

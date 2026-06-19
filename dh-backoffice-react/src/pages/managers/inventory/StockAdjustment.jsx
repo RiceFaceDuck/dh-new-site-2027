@@ -1,118 +1,36 @@
 import React, { useState } from 'react';
 import { Search, AlertTriangle, CheckCircle, Package, ShieldAlert, History, Loader2, Info, ArrowLeft, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { inventoryAdjustmentService } from '../../../firebase/inventory/inventoryAdjustmentService';
-import { inventoryQueryService } from '../../../firebase/inventory/inventoryQueryService';
 import { useNavigate } from 'react-router-dom';
+import { useStockAdjustment } from './hooks/useStockAdjustment';
+
+export const REASON_OPTIONS = [
+  { value: '', label: '-- กรุณาเลือกเหตุผล --' },
+  { value: 'สต๊อคสูญหาย/หาของไม่พบ', label: 'สต๊อคสูญหาย / หาของไม่พบ' },
+  { value: 'สินค้ายกยอดมาคลาดเคลื่อน', label: 'สินค้ายกยอดมาคลาดเคลื่อน (Mismatch)' },
+  { value: 'นับสต๊อคประจำเดือน', label: 'ปรับปรุงจากการนับสต๊อคประจำเดือน' },
+  { value: 'สินค้าชำรุดเสียหาย (นอกระบบเคลม)', label: 'สินค้าชำรุดเสียหาย (นอกระบบเคลม)' },
+  { value: 'อื่นๆ', label: 'อื่นๆ (ระบุในหมายเหตุ)' }
+];
 
 export default function StockAdjustment() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  const [skuInput, setSkuInput] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [product, setProduct] = useState(null);
-  const [searchError, setSearchError] = useState('');
-
-  const [newStock, setNewStock] = useState('');
-  const [reason, setReason] = useState('');
-  const [note, setNote] = useState('');
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [submitError, setSubmitError] = useState('');
-
-  const REASON_OPTIONS = [
-    { value: '', label: '-- กรุณาเลือกเหตุผล --' },
-    { value: 'สต๊อคสูญหาย/หาของไม่พบ', label: 'สต๊อคสูญหาย / หาของไม่พบ' },
-    { value: 'สินค้ายกยอดมาคลาดเคลื่อน', label: 'สินค้ายกยอดมาคลาดเคลื่อน (Mismatch)' },
-    { value: 'นับสต๊อคประจำเดือน', label: 'ปรับปรุงจากการนับสต๊อคประจำเดือน' },
-    { value: 'สินค้าชำรุดเสียหาย (นอกระบบเคลม)', label: 'สินค้าชำรุดเสียหาย (นอกระบบเคลม)' },
-    { value: 'อื่นๆ', label: 'อื่นๆ (ระบุในหมายเหตุ)' }
-  ];
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!skuInput.trim()) return;
-
-    setIsSearching(true);
-    setSearchError('');
-    setProduct(null);
-    setSuccessMessage('');
-    setSubmitError('');
-
-    try {
-      // ดึงข้อมูลสินค้าโดยตรงด้วย SKU (ใช้ query service หรือ getDoc ก็ได้)
-      const foundProduct = await inventoryQueryService.getProductBySku(skuInput.trim());
-      if (foundProduct) {
-        setProduct(foundProduct);
-        setNewStock(foundProduct.stockQuantity || 0);
-      } else {
-        setSearchError(`ไม่พบสินค้า SKU: ${skuInput}`);
-      }
-    } catch (error) {
-      setSearchError('เกิดข้อผิดพลาดในการค้นหา: ' + error.message);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!product) return;
-
-    if (newStock === '') {
-      setSubmitError('กรุณาระบุจำนวนสต๊อคใหม่');
-      return;
-    }
-
-    const numericNewStock = parseInt(newStock, 10);
-    
-    if (isNaN(numericNewStock) || numericNewStock < 0) {
-      setSubmitError('จำนวนสต๊อคไม่สามารถติดลบได้');
-      return;
-    }
-
-    if (numericNewStock === (product.stockQuantity || 0)) {
-      setSubmitError('สต๊อคใหม่มีค่าเท่ากับสต๊อคเดิม ไม่มีการเปลี่ยนแปลง');
-      return;
-    }
-
-    if (!reason) {
-      setSubmitError('กรุณาเลือกเหตุผลในการปรับปรุงสต๊อค');
-      return;
-    }
-
-    if (reason === 'อื่นๆ' && !note.trim()) {
-      setSubmitError('กรุณาระบุหมายเหตุเมื่อเลือกเหตุผล "อื่นๆ"');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmitError('');
-
-    try {
-      await inventoryAdjustmentService.adjustStock(
-        product.sku,
-        numericNewStock,
-        reason,
-        note,
-        user
-      );
-
-      setSuccessMessage(`ปรับปรุงสต๊อค SKU: ${product.sku} เป็น ${numericNewStock} สำเร็จแล้ว`);
-      
-      // Update local state to reflect new stock
-      setProduct(prev => ({ ...prev, stockQuantity: numericNewStock }));
-      setReason('');
-      setNote('');
-      
-    } catch (error) {
-      setSubmitError(error.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    skuInput, setSkuInput,
+    isSearching,
+    product,
+    searchError,
+    newStock, setNewStock,
+    reason, setReason,
+    note, setNote,
+    isSubmitting,
+    successMessage,
+    submitError,
+    handleSearch,
+    handleSubmit
+  } = useStockAdjustment(user);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20 p-4 sm:p-6 animate-in fade-in duration-300">
@@ -259,49 +177,56 @@ export default function StockAdjustment() {
           <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-6">
             <h3 className="text-lg font-black text-blue-600 dark:text-blue-400 mb-4 flex items-center gap-2">
               <Info size={20} />
-              คำแนะนำการใช้งาน
+              คู่มือการใช้งาน (Manual)
             </h3>
             
             <div className="space-y-4 text-sm text-dh-main">
-              <p className="font-bold border-l-2 border-blue-500 pl-3">ทำไมถึงต้องมีหน้านี้?</p>
+              {/* ตำรา / คำอธิบาย */}
+              <p className="font-bold border-l-2 border-blue-500 pl-3">ฟีเจอร์นี้คืออะไร?</p>
               <p className="opacity-90 pl-3.5">
-                ในระบบการขายปกติ สต๊อคจะถูกตัด/เพิ่ม อัตโนมัติและ <b>"ห้ามติดลบ"</b> เด็ดขาด เพราะบริษัทไม่ได้เป็นหนี้สินค้า 
-                แต่ในความเป็นจริง อาจเกิดกรณี <i>"นับของผิดพลาด"</i> หรือ <i>"ของหาย"</i> 
-                เครื่องมือนี้ถูกสร้างมาเพื่อแก้ปัญหาเฉพาะหน้า โดยไม่ต้องไปปลอมการซื้อขายในระบบ
+                เครื่องมือนี้ถูกสร้างมาเพื่อแก้ปัญหา <b>"สต๊อคคลาดเคลื่อน"</b> (เช่น ของหาย, นับผิด, หรือของพังนอกระบบเคลม) 
+                โดยช่วยให้ผู้จัดการสามารถปรับเลขสต๊อคให้ตรงกับความเป็นจริงได้ทันที โดยไม่ต้องทำการซื้อขายปลอมในระบบ
               </p>
 
               <hr className="border-blue-500/20" />
 
-              <p className="font-bold border-l-2 border-blue-500 pl-3">ตัวอย่างการใช้งาน และผลลัพธ์</p>
-              
-              <div className="space-y-3 pl-3.5">
-                <div className="bg-dh-surface p-3 rounded-xl border border-dh-border">
-                  <p className="font-bold text-orange-500 text-xs">สถานการณ์ที่ 1: สต๊อคในระบบติดลบ</p>
-                  <p className="opacity-80 text-xs mt-1">
-                    <b>ปัญหา:</b> ระบบโชว์สต๊อค -2 แต่ของจริงมี 5 ชิ้น<br/>
-                    <b>วิธีแก้:</b> กรอกสต๊อคที่ถูกต้องคือ "5" เลือกเหตุผล "สินค้ายกยอดมาคลาดเคลื่อน"<br/>
-                    <b>ผลลัพธ์:</b> สินค้ากลับมาขายได้ปกติ ระบบจะบันทึก Log การเปลี่ยนจาก -2 → 5
-                  </p>
-                </div>
+              {/* วิธีการใช้งาน */}
+              <p className="font-bold border-l-2 border-blue-500 pl-3">วิธีการใช้งาน (How-to)</p>
+              <ul className="list-decimal pl-8 opacity-90 space-y-1">
+                <li>กรอก <b>SKU</b> ของสินค้าที่ต้องการแก้ แล้วกดค้นหา</li>
+                <li>ดูเลขในช่อง <b>สต๊อคในระบบปัจจุบัน</b> และกรอกเลขใหม่ที่ถูกต้องลงในช่อง <b>ระบุสต๊อคที่ถูกต้อง</b></li>
+                <li>เลือก <b>เหตุผล</b> ที่ต้องปรับ และเขียนหมายเหตุ (ถ้ามี)</li>
+                <li>กด <b>ยืนยันการปรับปรุงสต๊อค</b></li>
+              </ul>
 
+              <hr className="border-blue-500/20" />
+
+              {/* เทคนิคการใช้งาน */}
+              <p className="font-bold border-l-2 border-blue-500 pl-3 flex items-center gap-2">
+                <AlertTriangle size={16} className="text-orange-500"/> เทคนิคและข้อควรระวัง (Tips)
+              </p>
+              <p className="opacity-90 pl-3.5">
+                <b>Tip:</b> คุณสามารถนำเครื่องสแกนบาร์โค้ด (Barcode Scanner) ยิงเข้าช่อง SKU ได้เลย ระบบจะพิมพ์และกด Enter ค้นหาให้อัตโนมัติ<br/><br/>
+                <b>ข้อควรระวัง:</b> การปรับลดสต๊อค ระบบจะบันทึกสถานะเป็น <span className="text-red-500 font-bold">WARN</span> ทันที เพื่อป้องกันทุจริต
+              </p>
+
+              <hr className="border-blue-500/20" />
+
+              {/* ตัวอย่างผลลัพธ์ */}
+              <p className="font-bold border-l-2 border-blue-500 pl-3 flex items-center gap-2">
+                <History size={16} /> ตัวอย่างผลลัพธ์ (Expected Results)
+              </p>
+              
+              <div className="space-y-3 pl-3.5 mt-2">
                 <div className="bg-dh-surface p-3 rounded-xl border border-dh-border">
-                  <p className="font-bold text-red-500 text-xs">สถานการณ์ที่ 2: ของหาย</p>
+                  <p className="font-bold text-orange-500 text-xs">สถานการณ์: ของหาย 2 ชิ้น</p>
                   <p className="opacity-80 text-xs mt-1">
-                    <b>ปัญหา:</b> ระบบโชว์สต๊อค 10 แต่เดินไปนับของจริงมีแค่ 8 ชิ้น<br/>
-                    <b>วิธีแก้:</b> กรอกสต๊อคที่ถูกต้องคือ "8" เลือกเหตุผล "สต๊อคสูญหาย"<br/>
-                    <b>ผลลัพธ์:</b> ป้องกันลูกค้ากดซื้อของที่ไม่มีอยู่จริง ระบบบันทึกพฤติกรรมการปรับลดยอดเป็น WARN
+                    <b>การกระทำ:</b> กรอกสต๊อคใหม่จาก 10 ให้เหลือ 8 และเลือกเหตุผล "ของหาย"<br/>
+                    <b>ผลลัพธ์:</b> ระบบจะหักสต๊อคทันที, บันทึกลง <b>History Log ส่วนกลาง</b> อย่างถาวร และแจ้งเตือนให้บริหารทราบ
                   </p>
                 </div>
               </div>
 
-              <hr className="border-blue-500/20" />
-
-              <p className="font-bold border-l-2 border-blue-500 pl-3 flex items-center gap-2">
-                <History size={16} /> การติดตาม (Audit)
-              </p>
-              <p className="opacity-90 pl-3.5">
-                ทุกครั้งที่กด <b>"ยืนยันการปรับปรุง"</b> ระบบจะส่งข้อมูลทั้งหมด (ผู้แก้ไข, สินค้า, จำนวนเดิม, จำนวนใหม่, และเหตุผล) ไปเก็บใน <b>History Log</b> ส่วนกลางอย่างถาวร เพื่อให้ฝ่ายบริหารตรวจสอบได้เสมอ
-              </p>
             </div>
           </div>
         </div>

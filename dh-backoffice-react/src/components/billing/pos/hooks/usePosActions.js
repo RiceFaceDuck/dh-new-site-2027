@@ -74,7 +74,11 @@ export const usePosActions = ({
     };
 
     const applyPromotionLogic = (promo, subTotalAmount) => {
+        if (!promo) return 0;
         let calculatedDiscount = promo.type === 'PERCENTAGE' ? subTotalAmount * (promo.value / 100) : promo.value;
+        if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
+            calculatedDiscount = Math.min(calculatedDiscount, promo.maxDiscount);
+        }
         return Math.floor(calculatedDiscount);
     };
 
@@ -122,10 +126,21 @@ export const usePosActions = ({
             let finalOrderId = activeTab.orderId || `TEMP-${yy}${mm}${dd}-${hh}${min}${sec}`; 
             if ((status === 'Paid' || status === 'OnAccount') && finalOrderId.startsWith('TEMP-')) finalOrderId = `DH${yy}${mm}${dd}-${hh}${min}${sec}`; 
 
-            let finalNote = activeTab.billNote || '';
-            if (activeTab.appliedPromoDetails) finalNote = finalNote ? `${finalNote}\n[ใช้สิทธิ์โปร: ${activeTab.appliedPromoDetails.title}]` : `[ใช้สิทธิ์โปร: ${activeTab.appliedPromoDetails.title}]`;
+            const finalNote = activeTab.billNote ? `${activeTab.billNote}\n[บันทึกโดยระบบอัตโนมัติ]` : '[บันทึกโดยระบบอัตโนมัติ]';
 
-            const freebieItems = eligibleFreebies.map(f => ({ sku: f.sku || `FREE-${f.id}`, name: `[แถมฟรี] ${f.itemName}`, qty: sanitizeNum(f.qty) || 1, price: 0, discount: 0, total: 0, isFreebie: true, note: f.title, noteColor: 'rose' }));
+            const freebieItems = eligibleFreebies.map(f => {
+                let conditionText = [];
+                if (f.minSpend > 0) conditionText.push(`ยอด${f.minSpend}฿`);
+                if (f.minQty > 0) conditionText.push(`ครบ${f.minQty}ชิ้น`);
+                if (f.applicableSkus?.length > 0) conditionText.push(`เฉพาะรุ่น`);
+                const reasonStr = conditionText.length > 0 ? ` (${conditionText.join(', ')})` : '';
+                return { 
+                    sku: f.itemName, 
+                    name: `[แถมฟรี] ${f.itemName}`, 
+                    qty: Math.min(sanitizeNum(f.qty), sanitizeNum(f.maxPerBill) || sanitizeNum(f.qty)), 
+                    price: 0, discount: 0, total: 0, isFreebie: true, note: `${f.title}${reasonStr}`, noteColor: 'rose' 
+                };
+            });
 
             const finalOrderItems = [
                 ...activeTab.items.map(i => {

@@ -1,105 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Store, Search, Filter, Loader2, MapPin, CheckCircle2, XCircle, ExternalLink, Mail, User } from 'lucide-react';
-import { collection, query, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase/config';
-
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+import React from 'react';
+import { Store, Filter, Loader2 } from 'lucide-react';
+import { usePartnerSettings } from './hooks/usePartnerSettings';
+import PartnerControls from './components/partners/PartnerControls';
+import PartnerCard from './components/partners/PartnerCard';
+import GuideModal from '../../components/common/GuideModal';
 
 export default function PartnerSettings() {
-  const [partners, setPartners] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
-  const [actionLoading, setActionLoading] = useState(null);
+  const {
+    partners,
+    filteredPartners,
+    loading,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    actionLoading,
+    togglePartnerStatus,
+    togglePartnerVerification
+  } = usePartnerSettings();
 
-  // 📡 ดึงข้อมูล Partner ทั้งหมด
-  const fetchPartners = async () => {
-    setLoading(true);
-    try {
-      const partnersRef = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
-      const snapshot = await getDocs(partnersRef);
-      
-      const fetchedPartners = snapshot.docs.map(doc => ({
-        id: doc.id, // UID ของลูกค้า
-        ...doc.data()
-      }));
-      
-      setPartners(fetchedPartners);
-    } catch (error) {
-      console.error("Error fetching partners:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPartners();
-  }, []);
-
-  // 🔍 กรองข้อมูลตาม Search และ Filter
-  const filteredPartners = partners.filter(p => {
-    const matchesSearch = 
-      (p.storeName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.contactName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.contactEmail || '').toLowerCase().includes(searchTerm.toLowerCase());
-      
-    const matchesStatus = 
-      statusFilter === 'all' ? true : 
-      statusFilter === 'active' ? p.isActive === true : 
-      p.isActive === false;
-      
-    return matchesSearch && matchesStatus;
-  });
-
-  // ⚙️ อัปเดตสถานะ Partner (ระงับ/เปิดใช้งาน)
-  const togglePartnerStatus = async (partnerId, currentStatus) => {
-    if (!window.confirm(`คุณต้องการ ${currentStatus ? 'ระงับ' : 'เปิดใช้งาน'} พาร์ทเนอร์รายนี้ใช่หรือไม่?`)) return;
-    
-    setActionLoading(partnerId);
-    try {
-      const newStatus = !currentStatus;
-      const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId);
-      
-      await updateDoc(partnerRef, {
-        isActive: newStatus,
-        updatedAt: new Date().toISOString()
-      });
-      
-      // อัปเดต UI ทันที
-      setPartners(prev => prev.map(p => p.id === partnerId ? { ...p, isActive: newStatus } : p));
-      
-    } catch (error) {
-      console.error("Error updating partner status:", error);
-      alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  // 🛡️ อนุมัติ Verification Badge ให้ร้านค้า
-  const togglePartnerVerification = async (partnerId, currentStatus) => {
-    if (!window.confirm(`คุณต้องการ ${currentStatus ? 'ยกเลิก' : 'อนุมัติ'} การยืนยันตัวตน (Verification Badge) ของพาร์ทเนอร์รายนี้ใช่หรือไม่?`)) return;
-    
-    setActionLoading(`verify_${partnerId}`);
-    try {
-      const newStatus = !currentStatus;
-      const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId);
-      
-      await updateDoc(partnerRef, {
-        isVerified: newStatus,
-        updatedAt: new Date().toISOString()
-      });
-      
-      // อัปเดต UI ทันที
-      setPartners(prev => prev.map(p => p.id === partnerId ? { ...p, isVerified: newStatus } : p));
-      
-    } catch (error) {
-      console.error("Error updating verification status:", error);
-      alert("เกิดข้อผิดพลาดในการอัปเดต Verification Badge");
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   return (
     <div className="p-6 max-w-7xl mx-auto animate-in fade-in duration-300">
@@ -111,7 +31,12 @@ export default function PartnerSettings() {
             <Store className="text-[#0870B8]" />
             จัดการตัวแทนพาร์ทเนอร์ (Partner Directory)
           </h1>
-          <p className="text-sm text-slate-500 mt-1">ดูรายชื่อและบริหารจัดการร้านค้าพาร์ทเนอร์ที่เปิดรับการสนับสนุน</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-sm text-slate-500">ดูรายชื่อและบริหารจัดการร้านค้าพาร์ทเนอร์ที่เปิดรับการสนับสนุน</p>
+            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-sm dh-active-press">
+              <Store size={14} /> คู่มือการใช้งาน
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
            <div className="text-center px-3 border-r border-slate-100">
@@ -125,51 +50,12 @@ export default function PartnerSettings() {
         </div>
       </div>
 
-      {/* ควบคุม (Tabs & Search) */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col lg:flex-row justify-between items-center gap-4">
-        
-        {/* Search */}
-        <div className="relative w-full lg:w-1/3">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-            <Search size={18} />
-          </div>
-          <input
-            type="text"
-            placeholder="ค้นหาชื่อร้าน, ชื่อคนติดต่อ, อีเมล..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0870B8]/50 text-sm font-medium"
-          />
-        </div>
-
-        {/* Filter */}
-        <div className="flex bg-slate-100 p-1 rounded-xl w-full lg:w-auto">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`flex-1 lg:flex-none px-5 py-2 text-sm font-bold rounded-lg transition-all ${
-              statusFilter === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            ทั้งหมด
-          </button>
-          <button
-            onClick={() => setStatusFilter('active')}
-            className={`flex-1 lg:flex-none px-5 py-2 text-sm font-bold rounded-lg transition-all ${
-              statusFilter === 'active' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            ออนไลน์
-          </button>
-          <button
-            onClick={() => setStatusFilter('inactive')}
-            className={`flex-1 lg:flex-none px-5 py-2 text-sm font-bold rounded-lg transition-all ${
-              statusFilter === 'inactive' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            ถูกระงับ
-          </button>
-        </div>
-      </div>
+      <PartnerControls 
+        searchTerm={searchTerm} 
+        setSearchTerm={setSearchTerm} 
+        statusFilter={statusFilter} 
+        setStatusFilter={setStatusFilter} 
+      />
 
       {/* รายการพาร์ทเนอร์ */}
       {loading ? (
@@ -188,92 +74,35 @@ export default function PartnerSettings() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPartners.map((partner) => (
-            <div key={partner.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-md ${
-              partner.isActive ? 'border-[#0870B8]/30' : 'border-rose-200 opacity-80'
-            }`}>
-              
-              {/* Header */}
-              <div className={`px-5 py-4 border-b flex items-center justify-between ${partner.isActive ? 'bg-[#f8fbff] border-[#E6F0F9]' : 'bg-rose-50 border-rose-100'}`}>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${partner.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
-                  <span className={`text-xs font-bold uppercase tracking-widest ${partner.isActive ? 'text-[#0870B8]' : 'text-rose-600'}`}>
-                    {partner.isActive ? 'ONLINE' : 'SUSPENDED'}
-                  </span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-tech">ID: {partner.id.substring(0, 8)}...</div>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex gap-4 items-start mb-4">
-                   <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 p-1">
-                     <img src={partner.storeLogo || '/logo.png'} alt="logo" className="w-full h-full object-contain" onError={(e)=>{e.target.src='https://placehold.co/100x100?text=Logo'}} />
-                   </div>
-                   <div className="min-w-0">
-                     <h3 className="font-bold text-slate-800 text-lg leading-tight truncate">{partner.storeName || 'ไม่ระบุชื่อร้าน'}</h3>
-                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 truncate">
-                       <User size={12}/> {partner.contactName || 'ไม่ระบุชื่อผู้ติดต่อ'}
-                     </p>
-                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                       <Mail size={12}/> {partner.contactEmail || 'ไม่มีอีเมล'}
-                     </p>
-                   </div>
-                </div>
-
-                {/* แผนที่และบริการ */}
-                <div className="space-y-3 mt-auto">
-                   {partner.mapsUrl && (
-                     <button 
-                       onClick={() => window.open(partner.mapsUrl, '_blank')}
-                       className="w-full p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 flex items-center justify-between transition-colors group-hover:border-[#0870B8]/30"
-                     >
-                       <span className="flex items-center gap-1.5 truncate"><MapPin size={14} className="text-[#0870B8]" /> ตรวจสอบพิกัดแผนที่</span>
-                       <ExternalLink size={14} className="text-slate-400" />
-                     </button>
-                   )}
-                   
-                   {partner.services && (
-                     <div className="p-3 bg-amber-50/50 border border-amber-100/50 rounded-lg">
-                       <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1">รายละเอียดบริการ</p>
-                       <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{partner.services}</p>
-                     </div>
-                   )}
-                </div>
-              </div>
-
-              {/* Footer Actions */}
-              <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
-                <button 
-                  onClick={() => togglePartnerStatus(partner.id, partner.isActive)}
-                  disabled={actionLoading === partner.id}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-                    partner.isActive 
-                    ? 'bg-white border border-rose-200 text-rose-600 hover:bg-rose-50' 
-                    : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-md'
-                  }`}
-                >
-                  {actionLoading === partner.id ? <Loader2 size={14} className="animate-spin" /> : (partner.isActive ? <XCircle size={14} /> : <CheckCircle2 size={14} />)}
-                  {partner.isActive ? 'ระงับพาร์ทเนอร์' : 'เปิดใช้งานอีกครั้ง'}
-                </button>
-                
-                <button 
-                  onClick={() => togglePartnerVerification(partner.id, partner.isVerified)}
-                  disabled={actionLoading === `verify_${partner.id}`}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-                    partner.isVerified 
-                    ? 'bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
-                  }`}
-                >
-                  {actionLoading === `verify_${partner.id}` ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-                  {partner.isVerified ? 'ยกเลิก Verification Badge' : 'มอบ Verification Badge'}
-                </button>
-              </div>
-
-            </div>
+            <PartnerCard 
+              key={partner.id} 
+              partner={partner} 
+              togglePartnerStatus={togglePartnerStatus} 
+              togglePartnerVerification={togglePartnerVerification} 
+              actionLoading={actionLoading} 
+            />
           ))}
         </div>
       )}
+
+      <GuideModal 
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        title="คู่มือ: จัดการตัวแทนพาร์ทเนอร์ (Partner Directory)"
+        config={{
+          description: "ระบบสำหรับบริหารจัดการร้านค้าตัวแทนพาร์ทเนอร์ เพื่อดูรายละเอียดการติดต่อและตัดสินใจระงับ/เปิดใช้งานบัญชีพาร์ทเนอร์",
+          howTo: [
+            "<strong>การค้นหา:</strong> พิมพ์ชื่อร้าน ชื่อผู้ติดต่อ หรืออีเมลในช่องค้นหา ระบบจะกรองแบบเรียลไทม์",
+            "<strong>การระงับพาร์ทเนอร์:</strong> หากพาร์ทเนอร์ทำผิดเงื่อนไข คุณสามารถกดปุ่ม <code>ระงับพาร์ทเนอร์</code> เพื่อตัดสิทธิ์ชั่วคราว การ์ดจะเปลี่ยนเป็นสีแดง",
+            "<strong>การให้ Verification Badge:</strong> กดยกเลิกหรือมอบ Badge ให้พาร์ทเนอร์เพื่อใช้ยืนยันความน่าเชื่อถือในระบบตัวแทน"
+          ],
+          tips: [
+            "คุณสามารถตรวจสอบพิกัดหน้าร้านของพาร์ทเนอร์ได้โดยคลิกปุ่ม <code>ตรวจสอบพิกัดแผนที่</code> เพื่อเปิด Google Maps",
+            "การให้ <strong>Verification Badge</strong> (ติ๊กถูกสีฟ้า) จะช่วยสร้างความมั่นใจให้ลูกค้าที่มาซื้อของผ่านพาร์ทเนอร์"
+          ],
+          expectedResults: "การระงับพาร์ทเนอร์จะทำให้พาร์ทเนอร์ไม่สามารถเข้าถึงสิทธิพิเศษบางอย่างหรือได้รับบิลในนามพาร์ทเนอร์ได้ จนกว่าจะได้รับการ <code>เปิดใช้งานอีกครั้ง</code>"
+        }}
+      />
     </div>
   );
 }

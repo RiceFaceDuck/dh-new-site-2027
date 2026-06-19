@@ -1,152 +1,92 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Gift, Save, X, Edit2, Trash2 } from 'lucide-react';
-import { auth } from '../../firebase/config';
-import { freebieService } from '../../firebase/freebieService';
+import { ArrowLeft, Plus, Gift } from 'lucide-react';
+import { useFreebies } from './hooks/useFreebies';
+import FreebieTable from './components/freebie/FreebieTable';
+import FreebieModal from './components/freebie/FreebieModal';
+import GuideModal from '../../components/common/GuideModal';
 
 export default function FreebieManagement() {
   const navigate = useNavigate();
-  const [freebies, setFreebies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const {
+    freebies,
+    loading,
+    isModalOpen,
+    setIsModalOpen,
+    isProcessing,
+    formData,
+    setFormData,
+    handleOpenModal,
+    handleSave,
+    handleToggleActive,
+    handleDelete
+  } = useFreebies();
 
-  const [formData, setFormData] = useState({
-    id: null, title: '', itemName: '', qty: 1, minSpend: ''
-  });
-
-  useEffect(() => { loadFreebies(); }, []);
-
-  const loadFreebies = async () => {
-    setLoading(true);
-    const data = await freebieService.getAllFreebies();
-    setFreebies(data);
-    setLoading(false);
-  };
-
-  const resetForm = () => setFormData({ id: null, title: '', itemName: '', qty: 1, minSpend: '' });
-
-  const handleOpenModal = (item = null) => {
-    if (item) setFormData({ id: item.id, title: item.title, itemName: item.itemName, qty: item.qty, minSpend: item.minSpend });
-    else resetForm();
-    setIsModalOpen(true);
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!formData.title || !formData.itemName || !formData.qty) return alert("กรุณากรอกข้อมูลให้ครบ");
-    setIsProcessing(true);
-    try {
-      const payload = {
-        title: formData.title,
-        itemName: formData.itemName,
-        qty: Number(formData.qty),
-        minSpend: Number(formData.minSpend) || 0,
-      };
-      if (formData.id) await freebieService.updateFreebie(formData.id, payload, auth.currentUser);
-      else await freebieService.createFreebie(payload, auth.currentUser);
-      setIsModalOpen(false);
-      loadFreebies();
-    } catch (error) { alert("Error: " + error.message); } finally { setIsProcessing(false); }
-  };
-
-  const handleToggleActive = async (item) => {
-    await freebieService.updateFreebie(item.id, { isActive: !item.isActive }, auth.currentUser, item.isActive ? 'ปิด' : 'เปิด');
-    loadFreebies();
-  };
-
-  const handleDelete = async (id, title) => {
-    if (!window.confirm(`ยืนยันการลบกฎของแถม "${title}"?`)) return;
-    await freebieService.deleteFreebie(id, title, auth.currentUser);
-    loadFreebies();
-  };
+  const [isGuideOpen, setIsGuideOpen] = React.useState(false);
 
   return (
     <div className="max-w-6xl mx-auto pb-12 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 pb-6">
         <div>
           <button onClick={() => navigate('/managers')} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-blue-600 mb-4 transition-colors">
-            <ArrowLeft size={16} /> กลับศูนย์ควบคุม
+            <ArrowLeft size={16} /> กลับไปหน้าผู้จัดการ (Managers Office)
           </button>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-xs font-bold uppercase tracking-widest mb-3">
             <Gift size={14} /> Freebie Rules
           </div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">ตั้งค่ากฎของแถม</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">กำหนดเงื่อนไขยอดซื้อขั้นต่ำ เพื่อแจกสินค้าฟรีในบิลอัตโนมัติ</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">ตั้งค่ากฎของแถม</h1>
+            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-pink-600 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors border border-pink-200 shadow-sm dh-active-press">
+              <Gift size={16} /> คู่มือการใช้งาน
+            </button>
+          </div>
+          <p className="text-sm text-gray-500 mt-1 font-medium">กำหนดเงื่อนไขยอดซื้อ กลุ่มเป้าหมาย หรือช่วงเวลา เพื่อแจกสินค้าฟรีในบิลอัตโนมัติ</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl shadow-lg shadow-pink-600/20 flex items-center gap-2">
+        <button onClick={() => handleOpenModal()} className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl shadow-lg shadow-pink-600/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
           <Plus size={20} strokeWidth={3} /> สร้างกฎของแถมใหม่
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500">
-            <tr>
-              <th className="px-6 py-4 font-bold">ชื่อแคมเปญ</th>
-              <th className="px-6 py-4 font-bold">ของที่จะแถม</th>
-              <th className="px-6 py-4 font-bold text-center">ยอดซื้อขั้นต่ำ</th>
-              <th className="px-6 py-4 font-bold text-center">สถานะ</th>
-              <th className="px-6 py-4 font-bold text-right">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {loading ? <tr><td colSpan="5" className="p-8 text-center text-gray-400">โหลดข้อมูล...</td></tr> : 
-              freebies.map(item => (
-                <tr key={item.id} className="hover:bg-pink-50/30 group">
-                  <td className="px-6 py-4 font-bold text-gray-900">{item.title}</td>
-                  <td className="px-6 py-4"><span className="text-pink-600 font-bold bg-pink-50 px-2 py-1 rounded">{item.itemName} (x{item.qty})</span></td>
-                  <td className="px-6 py-4 text-center font-bold text-gray-600">{item.minSpend > 0 ? `${item.minSpend.toLocaleString()} ฿` : 'แจกทุกบิล'}</td>
-                  <td className="px-6 py-4 text-center">
-                    <button onClick={() => handleToggleActive(item)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.isActive ? 'bg-pink-600' : 'bg-gray-200'}`}>
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.isActive ? 'translate-x-6' : 'translate-x-1'}`}/>
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-400 hover:text-blue-600"><Edit2 size={16}/></button>
-                    <button onClick={() => handleDelete(item.id, item.title)} className="p-2 text-gray-400 hover:text-rose-600"><Trash2 size={16}/></button>
-                  </td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
-      </div>
+      {/* Content */}
+      <FreebieTable 
+        freebies={freebies}
+        loading={loading}
+        handleToggleActive={handleToggleActive}
+        handleOpenModal={handleOpenModal}
+        handleDelete={handleDelete}
+      />
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="p-5 border-b bg-pink-50 flex justify-between items-center">
-              <h2 className="text-lg font-black text-pink-900 flex items-center gap-2"><Gift/> {formData.id ? 'แก้ไข' : 'สร้าง'}กฎของแถม</h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:text-rose-500 rounded-full"><X size={20}/></button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 bg-gray-50 flex flex-col gap-4">
-              <div>
-                <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">ชื่อแคมเปญ <span className="text-rose-500">*</span></label>
-                <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-3 rounded-xl border border-gray-300 focus:border-pink-500 outline-none text-sm font-bold"/>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2">
-                  <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">ชื่อสินค้าที่แถม <span className="text-rose-500">*</span></label>
-                  <input type="text" required value={formData.itemName} onChange={e => setFormData({...formData, itemName: e.target.value})} className="w-full p-3 rounded-xl border border-gray-300 focus:border-pink-500 outline-none text-sm font-bold"/>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">จำนวน <span className="text-rose-500">*</span></label>
-                  <input type="number" required min="1" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="w-full p-3 rounded-xl border border-gray-300 focus:border-pink-500 outline-none text-sm font-bold text-center"/>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">ยอดซื้อขั้นต่ำ (บาท)</label>
-                <input type="number" min="0" value={formData.minSpend} onChange={e => setFormData({...formData, minSpend: e.target.value})} placeholder="0 = แจกทุกบิล" className="w-full p-3 rounded-xl border border-gray-300 focus:border-pink-500 outline-none text-sm font-bold"/>
-              </div>
-              <div className="flex justify-end gap-3 pt-4 border-t mt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-gray-100 font-bold rounded-xl">ยกเลิก</button>
-                <button type="submit" disabled={isProcessing} className="px-6 py-2.5 bg-pink-600 text-white font-bold rounded-xl shadow-lg flex items-center gap-2"><Save size={18}/> บันทึก</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modal */}
+      <FreebieModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        formData={formData}
+        setFormData={setFormData}
+        handleSave={handleSave}
+        isProcessing={isProcessing}
+      />
+
+      <GuideModal 
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        title="คู่มือ: จัดการกฎของแถม"
+        icon={Gift}
+        config={{
+          description: "ระบบสำหรับสร้างกฎเพื่อแจกของแถมอัตโนมัติ โดยระบบจะคำนวณและเพิ่มของแถมลงในบิล (POS และหน้าร้าน) ให้ทันทีเมื่อลูกค้าซื้อสินค้าตรงตามเงื่อนไขที่คุณกำหนดไว้",
+          howTo: [
+            "<strong>การสร้างกฎ:</strong> คลิก <code>สร้างกฎของแถมใหม่</code> ระบุชื่อของแถม จำนวนชิ้น และเงื่อนไขต่างๆ",
+            "<strong>เงื่อนไขละเอียด:</strong> คุณสามารถจำกัด <code>กลุ่มลูกค้า</code> (เช่น ให้เฉพาะ VIP), ตั้ง <code>วันที่เริ่มต้น-สิ้นสุด</code>, และกำหนด <code>โควต้าทั้งหมด</code> (เช่น แจกแค่ 100 ชิ้นแรก) ได้",
+            "<strong>การเปิด/ปิด:</strong> ใช้สวิตช์ Toggle เพื่อสั่งระงับชั่วคราว หรือถ้าต้องการลบถาวรให้คลิกที่ไอคอนถังขยะ"
+          ],
+          tips: [
+            "หากต้องการแจกของให้ลูกค้าทุกคนในบิลแรกของวัน โดยไม่สนยอดซื้อ ให้กำหนด <code>ยอดซื้อขั้นต่ำ = 0</code>",
+            "ถ้าต้องการแจก '1 ชิ้น ต่อ 1 บิลเท่านั้น' ให้ตั้งค่า <code>สูงสุดต่อบิล = 1</code>",
+            "ใช้โควต้าร่วมกับระยะเวลา เพื่อจัดแคมเปญแบบ Flash Sale (เช่น แจก 50 ชิ้น เฉพาะวันที่ 1-3)"
+          ],
+          expectedResults: "เมื่อลูกค้ามียอดซื้อและคุณสมบัติตรงตามที่ตั้งไว้ ระบบจะบันทึกของแถมลงในบิลนั้นอัตโนมัติ และจะตัดโควต้าลงทีละ 1 (ถ้ามีการตั้งโควต้าไว้)"
+        }}
+      />
     </div>
   );
 }
