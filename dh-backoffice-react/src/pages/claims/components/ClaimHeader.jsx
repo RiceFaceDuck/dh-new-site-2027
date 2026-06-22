@@ -1,7 +1,13 @@
 import React from 'react';
-import { ShieldAlert, Calendar, Search, X } from 'lucide-react';
+import { ShieldAlert, Calendar, Search, X, Download, HelpCircle } from 'lucide-react';
 
-export default function ClaimHeader({ startDate, setStartDate, endDate, setEndDate, searchTerm, setSearchTerm }) {
+export default function ClaimHeader({ 
+  startDate, setStartDate, 
+  endDate, setEndDate, 
+  searchTerm, setSearchTerm,
+  onExport,
+  onOpenGuide
+}) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-dh-border sticky top-0 transition-colors duration-300">
       <div className="flex items-center gap-4 relative z-10">
@@ -9,9 +15,20 @@ export default function ClaimHeader({ startDate, setStartDate, endDate, setEndDa
           <ShieldAlert size={20} strokeWidth={2.5} />
         </div>
         <div>
-          <h2 className="text-xl font-black tracking-tight leading-none text-white">
-            Refund & Claim Dashboard
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-black tracking-tight leading-none text-white">
+              Refund & Claim Dashboard
+            </h2>
+            {onOpenGuide && (
+              <button 
+                onClick={onOpenGuide}
+                className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                title="คู่มือการใช้งาน"
+              >
+                <HelpCircle size={14} />
+              </button>
+            )}
+          </div>
           <p className="text-slate-300 text-[10px] mt-0.5 font-bold flex items-center gap-2">
             ติดตามสถานะการแจ้งเคลม และ คืนสินค้า
             <span className="bg-white/10 border border-white/20 px-1.5 py-0.5 rounded text-[9px] uppercase font-black text-white shadow-sm">View Only</span>
@@ -43,6 +60,18 @@ export default function ClaimHeader({ startDate, setStartDate, endDate, setEndDa
           />
           {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-red-500 z-10"><X className="w-3.5 h-3.5"/></button>}
         </div>
+
+        {/* Export Button */}
+        {onExport && (
+          <button 
+            onClick={onExport}
+            className="h-[36px] px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-md flex items-center gap-2 text-xs font-bold text-slate-700 transition-colors shadow-sm active:scale-95 shrink-0"
+            title="Export เป็นไฟล์ CSV"
+          >
+            <Download className="w-4 h-4 text-cyan-600" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+        )}
       </div>
     </div>
   );

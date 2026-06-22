@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
+import { warrantyService } from '../../../firebase/warrantyService';
 
 export function useClaimData() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [warrantyConfig, setWarrantyConfig] = useState(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all'); 
@@ -15,6 +17,9 @@ export function useClaimData() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
+    // Load warranty config once
+    warrantyService.getWarrantySettings().then(setWarrantyConfig).catch(console.error);
+
     const q = query(
       collection(db, 'todos'),
       where('type', 'in', ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL']),
@@ -43,7 +48,9 @@ export function useClaimData() {
       const matchesTab = 
         activeTab === 'all' ? true :
         activeTab === 'pending' ? (r.status === 'pending_manager' && !isCancelRequest) :
-        activeTab === 'approved' ? r.status === 'approved' :
+        activeTab === 'waiting' ? r.status === 'waiting_item' :
+        activeTab === 'processing' ? r.status === 'processing' :
+        activeTab === 'completed' ? (r.status === 'completed' || r.status === 'approved') :
         activeTab === 'rejected' ? r.status === 'rejected' : 
         activeTab === 'cancelled' ? (r.status === 'cancelled' || isCancelRequest) : true;
 
@@ -63,7 +70,9 @@ export function useClaimData() {
     return {
       all: requests.length,
       pending: requests.filter(r => r.status === 'pending_manager' && !r.type.startsWith('CANCEL_')).length,
-      approved: requests.filter(r => r.status === 'approved').length,
+      waiting: requests.filter(r => r.status === 'waiting_item').length,
+      processing: requests.filter(r => r.status === 'processing').length,
+      completed: requests.filter(r => r.status === 'completed' || r.status === 'approved').length,
       cancelled: requests.filter(r => r.status === 'cancelled' || r.type.startsWith('CANCEL_')).length,
       rejected: requests.filter(r => r.status === 'rejected').length
     };
@@ -79,6 +88,7 @@ export function useClaimData() {
     selectedRequest, setSelectedRequest,
     isProcessing, setIsProcessing,
     filteredRequests,
-    stats
+    stats,
+    warrantyConfig
   };
 }

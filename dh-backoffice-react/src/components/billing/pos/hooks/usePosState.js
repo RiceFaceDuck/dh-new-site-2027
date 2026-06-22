@@ -1,8 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { promotionService } from '../../../../firebase/promotionService';
 import { freebieService } from '../../../../firebase/freebieService';
 
-const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
+import { usePosCart } from './usePosCart';
+import { usePosCustomer } from './usePosCustomer';
+import { usePosPayment } from './usePosPayment';
 
 const createNewTab = () => ({
     id: Date.now().toString(), orderId: null, docId: null, items: [], customer: null, priceMode: 'wholesale',
@@ -30,15 +32,10 @@ export default function usePosState(products, customers, initialDraft) {
         return state[0]?.id || Date.now().toString();
     });
 
-    const [searchQuery, setSearchQuery] = useState('');
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [actionBoxItem, setActionBoxItem] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [previewSlip, setPreviewSlip] = useState(null); 
     const [isUploadingSlip, setIsUploadingSlip] = useState(false);
-    const [customerSearchText, setCustomerSearchText] = useState('');
-    const [showCustDropdown, setShowCustDropdown] = useState(false);
     const [activePromotions, setActivePromotions] = useState([]);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
     const [activeFreebies, setActiveFreebies] = useState([]);
@@ -54,7 +51,6 @@ export default function usePosState(products, customers, initialDraft) {
                 
                 let fullCustomer = initialDraft.customer || null;
                 if (fullCustomer && fullCustomer.uid && fullCustomer.uid !== 'WALK-IN') {
-                    // ดึงข้อมูลลูกค้าแบบเต็มรูปแบบจากระบบ เพื่อให้ได้ walletBalance, creditPoints, และชื่อที่สมบูรณ์
                     const matchedCust = customers.find(c => c.uid === fullCustomer.uid || c.id === fullCustomer.uid);
                     if (matchedCust) fullCustomer = matchedCust;
                 }
@@ -64,7 +60,7 @@ export default function usePosState(products, customers, initialDraft) {
                     orderId: initialDraft.orderId || null,
                     docId: initialDraft.id || null,
                     customer: fullCustomer,
-                    items: (initialDraft.items || []).filter(i => !i.isFreebie), // กรองของแถมออก เพราะระบบจะคำนวณของแถมให้ใหม่เสมอตอนเปิดบิล ป้องกันการซ้ำซ้อน
+                    items: (initialDraft.items || []).filter(i => !i.isFreebie),
                     walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : '',
                     walkInPhone: initialDraft.customer?.phone || '',
                     hidePhone: initialDraft.customer?.hidePhone || false,
@@ -94,8 +90,6 @@ export default function usePosState(products, customers, initialDraft) {
 
                 if (prev.some(tab => tab.id === draftId || tab.orderId === draftId)) {
                     setActiveTabId(draftId);
-                    // ทับข้อมูลเดิมด้วยข้อมูลล่าสุดจากฐานข้อมูล (initialDraft)
-                    // เพื่อป้องกันบั๊กที่ localStorage จำข้อมูลเก่าที่ไม่มีข้อมูลลูกค้า
                     return prev.map(tab => {
                         if (tab.id === draftId || tab.orderId === draftId) {
                             return { ...tab, ...newTab, id: tab.id };
@@ -104,10 +98,8 @@ export default function usePosState(products, customers, initialDraft) {
                     });
                 }
 
-
                 setActiveTabId(draftId);
 
-                // ถ้ามี tab เปล่าๆ อยู่ ให้เอาบิลร่างไปทับ tab นั้นเลย จะได้ไม่สร้าง tab ใหม่เพิ่ม
                 const emptyTabIndex = prev.findIndex(t => t.items.length === 0 && !t.customer && !t.walkInName && !t.orderId);
                 if (emptyTabIndex !== -1) {
                     const newPrev = [...prev];
@@ -118,7 +110,7 @@ export default function usePosState(products, customers, initialDraft) {
                 return [...prev, newTab];
             });
         }
-    }, [initialDraft]);
+    }, [initialDraft, customers]);
 
     useEffect(() => {
         const fetchMarketingData = async () => {
@@ -157,176 +149,57 @@ export default function usePosState(products, customers, initialDraft) {
         updateActiveTab({ priceMode: mode, items: updatedItems });
     };
 
-    const searchResults = useMemo(() => {
-        // ถ้าไม่มีคำค้นหา ให้แสดงสินค้าขายดีสุด 15 อันดับแรก
-        if (!searchQuery.trim()) {
-            return [...products]
-                .sort((a, b) => (b.stats?.sold || 0) - (a.stats?.sold || 0))
-                .slice(0, 15)
-                .map(p => ({ ...p, matchType: 'best-seller' }));
-        }
-
-        const q = searchQuery.trim().toLowerCase();
-        
-        // 1. หาคำที่ตรงกันเป๊ะๆ (Exact Match) ปกติพนักงานจะพิมพ์ SKU ตรงๆ
-        const exactMatches = products.filter(p => p.sku?.toLowerCase() === q);
-        
-        // 2. หาคำที่ใกล้เคียง (Similar/Broad Match) โดยไม่เอาอันที่ตรงเป๊ะไปแล้ว
-        const exactSkus = new Set(exactMatches.map(p => p.sku));
-        const similarMatches = products.filter(p => {
-            if (exactSkus.has(p.sku)) return false;
-            return p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q);
-        });
-
-        // จัดเรียง Similar Matches ตามยอดขาย
-        similarMatches.sort((a, b) => (b.stats?.sold || 0) - (a.stats?.sold || 0));
-
-        // คืนค่า Exact Matches ก่อน แล้วค่อยตามด้วย Similar Matches (จำกัดรวม 15 รายการ)
-        const combined = [
-            ...exactMatches.map(p => ({ ...p, matchType: 'exact' })),
-            ...similarMatches.slice(0, Math.max(0, 15 - exactMatches.length)).map(p => ({ ...p, matchType: 'similar' }))
-        ];
-
-        return combined;
-    }, [searchQuery, products]);
-
-    const filteredCustomers = useMemo(() => {
-        if (!customerSearchText.trim()) return customers.slice(0, 10);
-        const q = customerSearchText.toLowerCase();
-        return customers.filter(c => 
-            (c.accountName || '').toLowerCase().includes(q) || 
-            (c.firstName || '').toLowerCase().includes(q) || 
-            (c.displayName || '').toLowerCase().includes(q) || 
-            (c.email || '').toLowerCase().includes(q) || 
-            (c.phone || '').includes(q) ||
-            (c.uid || c.id || '').toLowerCase() === q
-        ).slice(0, 15);
-    }, [customerSearchText, customers]);
-
-    const itemSubTotal = activeTab.items?.reduce((sum, item) => sum + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty))), 0) || 0;
-    const itemTotalQty = activeTab.items?.reduce((sum, item) => sum + Math.max(1, sanitizeNum(item.qty)), 0) || 0;
-    const manualDiscount = sanitizeNum(activeTab.overallDiscount);
-    const shippingFee = sanitizeNum(activeTab.shippingFee);
-    const otherFeeAmount = sanitizeNum(activeTab.otherFeeAmount);
-
-    const determineCustomerType = (customer) => {
-        if (!customer) return 'RETAIL';
-        if (customer.customerType === 'VIP') return 'VIP';
-        if (customer.customerType === 'WHOLESALE' || customer.level === 'agent' || activeTab.priceMode === 'wholesale') return 'WHOLESALE';
-        return 'RETAIL';
-    };
-    const currentCustomerType = determineCustomerType(activeTab.customer);
-
-    const getEligibleTotals = (skus) => {
-        if (!skus || skus.length === 0) return { subtotal: itemSubTotal, qty: itemTotalQty };
-        let eligibleSubtotal = 0;
-        let eligibleQty = 0;
-        activeTab.items?.forEach(item => {
-            if (skus.includes(item.sku)) {
-                eligibleSubtotal += ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty)));
-                eligibleQty += Math.max(1, sanitizeNum(item.qty));
-            }
-        });
-        return { subtotal: eligibleSubtotal, qty: eligibleQty };
-    };
-
-    const eligibleFreebies = activeFreebies.filter(f => {
-        const { subtotal, qty } = getEligibleTotals(f.applicableSkus);
-
-        if (subtotal <= 0) return false;
-        if (f.minSpend && subtotal < f.minSpend) return false;
-        if (f.minQty && qty < f.minQty) return false;
-        
-        // Date Check
-        if (f.startDate && new Date(f.startDate) > new Date()) return false;
-        if (f.endDate && new Date(f.endDate) < new Date()) return false;
-        
-        // Quota Check
-        if (f.quotaLimit && (f.quotaUsed || 0) >= f.quotaLimit) return false;
-        
-        // Customer Type Check
-        if (f.customerType && f.customerType !== 'ALL') {
-            if (f.customerType !== currentCustomerType) return false;
-        }
-        
-        return true;
-    });
-
-    // We should also filter activePromotions that are actually eligible to be auto-applied
-    const validPromotions = activePromotions.filter(p => {
-        const { subtotal, qty } = getEligibleTotals(p.applicableSkus);
-
-        if (p.minSpend > 0 && subtotal < p.minSpend) return false;
-        if (p.minQty > 0 && qty < p.minQty) return false;
-        if (p.startDate && new Date(p.startDate) > new Date()) return false;
-        if (p.endDate && new Date(p.endDate) < new Date()) return false;
-        if (p.quotaLimit && (p.quotaUsed || 0) >= p.quotaLimit) return false;
-        if (p.customerType && p.customerType !== 'ALL' && p.customerType !== currentCustomerType) return false;
-        return true;
-    });
-
-    // Auto Apply Best Promotion Logic
-    let autoPromoDiscount = 0;
-    let autoPromoDetails = null;
+    // --- Sub-hooks Composition ---
+    const cartState = usePosCart(products);
+    const customerState = usePosCustomer(customers);
     
-    if (activeTab.autoPromoEnabled && validPromotions.length > 0) {
-        let bestDiscount = 0;
-        let bestPromo = null;
-        validPromotions.forEach(promo => {
-            const { subtotal } = getEligibleTotals(promo.applicableSkus);
-            let calculated = promo.type === 'PERCENTAGE' ? subtotal * (promo.value / 100) : promo.value;
-            if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
-                calculated = Math.min(calculated, promo.maxDiscount);
-            }
-            if (calculated > bestDiscount) {
-                bestDiscount = calculated;
-                bestPromo = promo;
-            }
-        });
-        autoPromoDiscount = Math.floor(bestDiscount);
-        autoPromoDetails = bestPromo;
-    }
+    const currentCustomerType = customerState.determineCustomerType(activeTab?.customer, activeTab?.priceMode);
 
-    const promoDiscount = activeTab.autoPromoEnabled ? autoPromoDiscount : sanitizeNum(activeTab.promoDiscount);
-    const appliedPromoDetails = activeTab.autoPromoEnabled ? autoPromoDetails : activeTab.appliedPromoDetails;
-    const totalDiscount = manualDiscount + promoDiscount;
-    
-    let baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
-    let taxableAmount = baseTotal + (activeTab.vatOnShipping ? shippingFee : 0);
-    let vatAmount = 0; let netTotal = 0;
-
-    if (activeTab.vatType === 'included') { vatAmount = taxableAmount - (taxableAmount / 1.07); netTotal = baseTotal + shippingFee; } 
-    else if (activeTab.vatType === 'excluded') { vatAmount = taxableAmount * 0.07; netTotal = baseTotal + shippingFee + vatAmount; } 
-    else { vatAmount = 0; netTotal = baseTotal + shippingFee; }
-
-    let walletUsed = sanitizeNum(activeTab.walletUsed);
-    if (activeTab.useWallet && activeTab.customer) {
-        walletUsed = Math.min(sanitizeNum(activeTab.customer.walletBalance), netTotal);
-    }
-    const remainingToPay = Math.max(0, netTotal - walletUsed);
-    const earnedPoints = activeTab.customer ? Math.floor(remainingToPay / 100) : 0;
-    const changeAmount = (activeTab.paymentMethod === 'Cash' && activeTab.cashReceived) ? (sanitizeNum(activeTab.cashReceived) - remainingToPay) : 0;
+    const paymentState = usePosPayment({
+        activeTab,
+        activePromotions,
+        activeFreebies,
+        currentCustomerType
+    });
 
     return {
+        // Tab Management
         cartTabs, setCartTabs,
         activeTabId, setActiveTabId,
-        searchQuery, setSearchQuery,
-        showDropdown, setShowDropdown,
-        actionBoxItem, setActionBoxItem,
+        createNewTab, closeTab, safeCartTabs, activeTab, updateActiveTab,
+        handlePriceModeChange,
+        
+        // Processing & UI
         isProcessing, setIsProcessing,
         showPreview, setShowPreview,
         previewSlip, setPreviewSlip,
         isUploadingSlip, setIsUploadingSlip,
-        customerSearchText, setCustomerSearchText,
-        showCustDropdown, setShowCustDropdown,
-        activePromotions, setActivePromotions, validPromotions,
         isPromoModalOpen, setIsPromoModalOpen,
+        
+        // Marketing Data
+        activePromotions, setActivePromotions,
         activeFreebies, setActiveFreebies,
-        createNewTab, closeTab, safeCartTabs, activeTab, updateActiveTab,
-        handlePriceModeChange, searchResults, filteredCustomers,
-        itemSubTotal, manualDiscount, promoDiscount, totalDiscount,
-        shippingFee, otherFeeAmount, vatAmount, netTotal,
-        walletUsed, remainingToPay, earnedPoints, changeAmount, eligibleFreebies,
-        appliedPromoDetails
+        
+        // From usePosCart
+        searchQuery: cartState.searchQuery, setSearchQuery: cartState.setSearchQuery,
+        showDropdown: cartState.showDropdown, setShowDropdown: cartState.setShowDropdown,
+        actionBoxItem: cartState.actionBoxItem, setActionBoxItem: cartState.setActionBoxItem,
+        searchResults: cartState.searchResults,
+
+        // From usePosCustomer
+        customerSearchText: customerState.customerSearchText, setCustomerSearchText: customerState.setCustomerSearchText,
+        showCustDropdown: customerState.showCustDropdown, setShowCustDropdown: customerState.setShowCustDropdown,
+        filteredCustomers: customerState.filteredCustomers,
+
+        // From usePosPayment
+        itemSubTotal: paymentState.itemSubTotal, manualDiscount: paymentState.manualDiscount, 
+        promoDiscount: paymentState.promoDiscount, totalDiscount: paymentState.totalDiscount,
+        shippingFee: paymentState.shippingFee, otherFeeAmount: paymentState.otherFeeAmount, 
+        vatAmount: paymentState.vatAmount, netTotal: paymentState.netTotal,
+        walletUsed: paymentState.walletUsed, remainingToPay: paymentState.remainingToPay, 
+        earnedPoints: paymentState.earnedPoints, changeAmount: paymentState.changeAmount, 
+        eligibleFreebies: paymentState.eligibleFreebies, 
+        appliedPromoDetails: paymentState.appliedPromoDetails, 
+        validPromotions: paymentState.validPromotions
     };
 }

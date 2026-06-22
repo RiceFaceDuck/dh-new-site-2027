@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCustomers } from './hooks/useCustomers';
+import GuideModal from '../../components/common/GuideModal';
 
 // นำเข้า UI Components ที่เราเพิ่งสร้างทั้งหมด
 import CustomerHeader from './components/layout/CustomerHeader';
@@ -8,6 +9,7 @@ import DetailPanel from './components/details/DetailPanel';
 import CustomerModal from './components/forms/CustomerModal';
 
 export default function Customers() {
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   // เรียกใช้สมองกลหลัก (Facade Hook)
   const { state, actions, utils } = useCustomers();
 
@@ -28,6 +30,7 @@ export default function Customers() {
         onRefresh={actions.fetchCustomers}
         isRefreshing={state.isRefreshing}
         onAddCustomer={() => actions.setIsAddModalOpen(true)}
+        onGuideOpen={() => setIsGuideOpen(true)}
       />
 
       {/* 2. ส่วนเนื้อหาหลัก (Layout แบบ Split View) */}
@@ -71,6 +74,25 @@ export default function Customers() {
         setFormData={state.isEditMode ? actions.setEditFormData : actions.setNewCustomer}
         onSubmit={state.isEditMode ? actions.saveCustomerEdit : actions.handleCreateCustomer}
         isSubmitting={state.isSubmitting || state.isSavingEdit}
+      />
+
+      <GuideModal 
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        title="คู่มือการใช้งาน: ระบบฐานข้อมูลลูกค้า"
+        config={{
+          description: "หน้านี้ใช้สำหรับจัดการข้อมูลลูกค้า ค้นหาประวัติการซื้อ และดูข้อมูลติดต่อของลูกค้าทั้งหมดในระบบ",
+          howTo: [
+            "1. <b>ค้นหาลูกค้า:</b> พิมพ์ชื่อ เบอร์โทร หรือรหัสลงในช่องค้นหาด้านซ้ายบน",
+            "2. <b>ตัวกรองอัจฉริยะ (Smart Filters):</b> ใช้ Dropdown ขวามือเพื่อกรองเฉพาะ 'คนที่มีเงินค้าง', 'คนที่มีแต้ม', หรือ 'พาร์ทเนอร์'",
+            "3. <b>ดูประวัติ:</b> คลิกที่รายชื่อลูกค้าในตาราง ข้อมูลประวัติการซื้อ (History) จะแสดงที่แผงด้านขวา"
+          ],
+          tips: [
+            "คุณสามารถคัดลอกเบอร์โทรหรือรหัสลูกค้าได้อย่างรวดเร็ว โดยคลิกที่ไอคอน Copy ท้ายข้อมูลนั้นๆ",
+            "แต้มสะสม (Points) จะอัปเดตอัตโนมัติเมื่อลูกค้าซื้อสินค้าหรือถูกยกเลิกบิล"
+          ],
+          expectedResults: "เมื่อแก้ไขข้อมูลลูกค้า ข้อมูลจะอัปเดตแบบเรียลไทม์ และระบบจะเก็บบันทึกประวัติการแก้ไข (History Log) ไว้ตรวจสอบเสมอ"
+        }}
       />
     </div>
   );

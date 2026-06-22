@@ -8,7 +8,7 @@ export default function CreditToggleBox({
   creditBalance,
   useCreditToggle,
   setUseCreditToggle,
-  usePoints
+  useWallet
 }) {
   if (!user || creditLoading || creditBalance <= 0) return null;
 
@@ -22,8 +22,8 @@ export default function CreditToggleBox({
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-gray-900">ใช้แต้มสะสม DH Point</h4>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">มีแต้ม: <span className="text-indigo-600 font-bold">{formatCredit(creditBalance)}</span> PTS</p>
+            <h4 className="text-sm font-bold text-gray-900">ใช้ยอดค้างในระบบ (Wallet)</h4>
+            <p className="text-xs text-gray-500 font-medium mt-0.5">มียอดคงเหลือ: <span className="text-indigo-600 font-bold">฿{formatCredit(creditBalance)}</span></p>
           </div>
         </div>
         
@@ -40,10 +40,10 @@ export default function CreditToggleBox({
       </div>
 
       {/* ข้อความยืนยันเมื่อเปิดใช้งาน */}
-      {useCreditToggle && usePoints > 0 && (
+      {useCreditToggle && useWallet > 0 && (
         <div className="mt-4 text-xs text-indigo-700 bg-indigo-50 p-2.5 rounded-lg flex items-center gap-2 font-medium animate-fade-in border border-indigo-100">
           <CheckCircle2 className="w-4 h-4 shrink-0" /> 
-          ใช้แต้มลดราคาไป <strong>฿{formatCredit(usePoints)}</strong> ในออเดอร์นี้
+          ใช้ยอดเงินในระบบ <strong>฿{formatCredit(useWallet)}</strong> ในออเดอร์นี้
         </div>
       )}
     </div>

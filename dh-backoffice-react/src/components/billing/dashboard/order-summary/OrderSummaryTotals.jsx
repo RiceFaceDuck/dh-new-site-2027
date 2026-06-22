@@ -14,6 +14,7 @@ export default function OrderSummaryTotals({
     paymentStat,
     orderStat
 }) {
+    console.log("OrderSummaryTotals rendered with:", { paymentStat, orderStat });
     return (
         <div className="w-full md:w-[280px] lg:w-[320px] bg-[var(--dh-bg-base)] shrink-0 flex flex-col h-full">
             <div className="bg-[var(--dh-bg-surface)] px-3 py-2 border-b border-[var(--dh-border)] shrink-0">
@@ -78,8 +79,16 @@ export default function OrderSummaryTotals({
                         <div className="text-center text-rose-600 font-black text-[11px] border border-rose-500/30 bg-rose-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1 dh-glow">
                             <Ban size={12}/> บิลยกเลิก (VOIDED)
                         </div>
+                    ) : orderStat === 'completed' ? (
+                        <div className="text-center text-blue-600 font-black text-[11px] border border-blue-500/30 bg-blue-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1 dh-glow">
+                            เสร็จสิ้น
+                        </div>
+                    ) : orderStat === 'approved' ? (
+                        <div className="text-center text-emerald-600 font-black text-[11px] border border-emerald-500/30 bg-emerald-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1 dh-glow">
+                            อนุมัติ / หักสต็อกแล้ว
+                        </div>
                     ) : paymentStat === 'paid' || orderStat === 'paid' ? (
-                        <div className="text-center text-emerald-600 font-black text-[11px] border border-emerald-500/30 bg-emerald-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1">
+                        <div className="text-center text-teal-600 font-black text-[11px] border border-teal-500/30 bg-teal-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1">
                             ชำระเงินเรียบร้อย
                         </div>
                     ) : (

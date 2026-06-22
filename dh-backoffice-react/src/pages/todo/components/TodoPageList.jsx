@@ -54,14 +54,14 @@ const TodoPageList = ({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="flex flex-col gap-3 max-w-5xl mx-auto">
       {displayTodos.map(todo => {
         const isProcessing = processingId === todo.id;
         const urgencyClass = getUrgencyColor(todo.createdAt || todo.requestedAt);
 
         if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
           return (
-            <div key={todo.id} className="md:col-span-2 xl:col-span-3">
+            <div key={todo.id} className="h-full">
               <WholesaleCard 
                 task={todo} 
                 currentUser={auth.currentUser}
@@ -80,7 +80,7 @@ const TodoPageList = ({
 
         if (todo.type === 'verify_slip') {
           return (
-            <div key={todo.id} className="md:col-span-2 xl:col-span-3">
+            <div key={todo.id} className="h-full">
               <PaymentCard task={todo} currentUser={auth.currentUser} />
             </div>
           );
@@ -88,7 +88,7 @@ const TodoPageList = ({
 
         if (todo.type === 'issue_tax_invoice') {
            return (
-              <div key={todo.id} className="md:col-span-2 xl:col-span-3">
+              <div key={todo.id} className="h-full">
                  <TaxInvoiceCard task={todo} currentUser={auth.currentUser} />
               </div>
            )

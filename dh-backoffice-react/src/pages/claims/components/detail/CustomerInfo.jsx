@@ -23,7 +23,7 @@ export default function CustomerInfo({ selectedRequest, copiedText, handleQuickC
           </div>
           <div className="flex justify-between items-center">
             <span className="text-dh-muted font-medium">วันที่ซื้อ:</span> 
-            <span className="font-bold text-dh-main">{selectedRequest.payload.purchaseDate ? new Date(selectedRequest.payload.purchaseDate).toLocaleDateString('th-TH') : '-'}</span>
+            <span className="font-bold text-dh-main">{selectedRequest.payload.purchaseDate && !isNaN(new Date(selectedRequest.payload.purchaseDate)) ? new Date(selectedRequest.payload.purchaseDate).toLocaleDateString('th-TH') : '-'}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-dh-muted font-medium">พนักงานแจ้ง:</span> 

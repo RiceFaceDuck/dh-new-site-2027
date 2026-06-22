@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calculator, Save, ArrowLeft, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Calculator, Save, ArrowLeft, CheckCircle2, RefreshCw, HelpCircle } from 'lucide-react';
+import GuideModal from '../../components/common/GuideModal';
 import { usePricingSettings } from './pricing/hooks/usePricingSettings';
 import PricingRulesTable from './pricing/PricingRulesTable';
 import PricingHistoryLog from './pricing/PricingHistoryLog';
@@ -9,6 +10,7 @@ import PricingSimulation from './pricing/PricingSimulation';
 
 export default function PricingSettings() {
   const navigate = useNavigate();
+  const [showGuide, setShowGuide] = useState(false);
   
   const {
     loading, saving, config, isDirty,
@@ -34,6 +36,12 @@ export default function PricingSettings() {
             </h1>
             <p className="text-[11px] font-bold text-[var(--dh-text-muted)] mt-1.5 uppercase tracking-wider">Retail Pricing Engine Configuration</p>
           </div>
+          <button 
+            onClick={() => setShowGuide(true)} 
+            className="ml-2 p-1.5 bg-[var(--dh-bg-base)] hover:bg-slate-200 text-[var(--dh-text-muted)] rounded-lg transition-colors border border-[var(--dh-border)] shadow-sm"
+          >
+            <HelpCircle size={18} strokeWidth={2.5}/>
+          </button>
         </div>
         
         {/* Smart Save Button */}
@@ -83,6 +91,22 @@ export default function PricingSettings() {
         </div>
 
       </div>
+
+      <GuideModal 
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
+        title="คู่มือตั้งราคาอัตโนมัติ (Pricing Engine)"
+        manualText="หน้านี้ใช้สำหรับตั้งค่าสูตรคำนวณราคาขายปลีกแบบอัตโนมัติ เมื่อเรานำเข้าสินค้าใหม่และใส่ราคาทุน ระบบจะคำนวณราคาขายปลีกให้ทันทีตามกฎที่เราตั้งไว้"
+        howTo={[
+          "1. เลือกหมวดหมู่ (Category) ที่ต้องการตั้งกฎ",
+          "2. กำหนดช่วงราคาทุน (Min - Max)",
+          "3. เลือกรูปแบบการบวกกำไร (Percent % หรือ บวกเงินสดตรงๆ)",
+          "4. ตรวจสอบการปัดเศษ (Rounding) เช่น ปัดเศษให้ลงท้ายด้วย 90",
+          "5. ลองจำลองราคา (Simulation) ทางขวามือเพื่อความมั่นใจก่อนกด Save"
+        ]}
+        tips="การเปลี่ยนกฎตรงนี้ จะไม่มีผลกระทบกับสินค้าที่ตั้งราคาขายไปแล้ว (เพื่อป้องกันราคาเพี้ยนย้อนหลัง) จะมีผลเฉพาะกับสินค้าใหม่ หรือการอัปเดตราคาใหม่เท่านั้น"
+        expectedResult="เมื่อตั้งค่าถูกต้อง ทุกครั้งที่มีการแก้ไขต้นทุนสินค้า ระบบจะเด้งแนะนำราคาขายปลีกใหม่ที่สวยงามและได้กำไรตามเป้าให้เราอัตโนมัติ"
+      />
     </div>
   );
 }

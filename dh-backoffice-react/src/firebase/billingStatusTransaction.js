@@ -23,7 +23,7 @@ export const billingStatusTransaction = {
           const normalizedCurrentStatus = (orderData.orderStatus || orderData.status || '').toLowerCase();
 
           const isCancelling = normalizedNewStatus === 'cancelled' && normalizedCurrentStatus !== 'cancelled';
-          const isConfirmingPayment = normalizedNewStatus === 'paid' && normalizedCurrentStatus !== 'paid';
+          const isConfirmingPayment = (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed') && !orderData.isStockDeducted;
 
           if (isCancelling && (normalizedCurrentStatus === 'approved' || normalizedCurrentStatus === 'completed')) {
               throw new Error("ไม่อนุญาตให้ยกเลิกบิลที่อนุมัติหรือเสร็จสิ้นไปแล้ว");
@@ -73,7 +73,10 @@ export const billingStatusTransaction = {
             updatedAt: serverTimestamp() 
           };
 
-          if ((orderData.orderId || '').startsWith('TEMP-') && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved')) {
+          const currentOrderId = orderData.orderId || orderId || '';
+          const needsNewOrderId = !currentOrderId.startsWith('DH-');
+
+          if (needsNewOrderId && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed')) {
              const yearStr = new Date().getFullYear().toString();
              const counterRef = doc(db, 'counters', 'receipt_sequence');
              const counterSnap = await transaction.get(counterRef);
@@ -93,6 +96,8 @@ export const billingStatusTransaction = {
              if (userSnap && userSnap.exists()) {
                  handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates);
              }
+             
+             updates.isStockDeducted = true;
           }
 
           if (isCancelling) {

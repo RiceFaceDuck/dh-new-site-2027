@@ -10,6 +10,7 @@ export default function ProductPricingSection({
   price,
   salePrice,
   isOutOfStock,
+  isLowStock,
   creditConfig,
   isAdding,
   addSuccess,
@@ -18,8 +19,18 @@ export default function ProductPricingSection({
   shopeeUrl,
   lazadaUrl,
   lineAddFriendUrl,
+  variantOptions,
+  variants,
+  selectedVariant,
+  setSelectedVariant,
   children
 }) {
+  const handleVariantSelect = (optName, val) => {
+    setSelectedVariant(prev => ({
+      ...prev,
+      [optName]: val
+    }));
+  };
   return (
     <div className="p-6 md:p-10 flex flex-col">
       <div className="mb-2 flex items-center justify-start">
@@ -61,14 +72,51 @@ export default function ProductPricingSection({
         </div>
       )}
 
+      {/* Variant Selectors */}
+      {variantOptions && variantOptions.length > 0 && (
+        <div className="mb-6 space-y-4">
+          {variantOptions.map((opt, idx) => (
+            <div key={idx} className="flex flex-col gap-2">
+              <span className="text-sm font-bold text-slate-700">{opt.name}:</span>
+              <div className="flex flex-wrap gap-2">
+                {opt.values.map((val, vIdx) => {
+                  const isSelected = selectedVariant && selectedVariant[opt.name] === val;
+                  // ตรวจสอบว่ามี Variant นี้เปิดขายหรือไม่
+                  const isAvailable = variants && variants.some(v => 
+                    v.isActive && v.attributes[opt.name] === val
+                  );
+
+                  return (
+                    <button
+                      key={vIdx}
+                      onClick={() => handleVariantSelect(opt.name, val)}
+                      disabled={!isAvailable}
+                      className={`px-4 py-2 text-sm font-medium border rounded-md transition-all ${
+                        isSelected 
+                          ? 'border-cyber-blue bg-blue-50 text-cyber-blue shadow-sm' 
+                          : isAvailable 
+                            ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' 
+                            : 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed'
+                      }`}
+                    >
+                      {val}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Status & Shipping */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <Package className={isOutOfStock ? "text-red-400" : "text-cyber-emerald"} size={20} />
+          <Package className={isOutOfStock ? "text-red-400" : isLowStock ? "text-amber-500" : "text-cyber-emerald"} size={20} />
           <div>
             <div className="text-xs text-slate-500">Status</div>
-            <div className={`font-bold text-sm ${isOutOfStock ? "text-red-500" : "text-slate-800"}`}>
-              {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+            <div className={`font-bold text-sm ${isOutOfStock ? "text-red-500" : isLowStock ? "text-amber-600" : "text-slate-800"}`}>
+              {isOutOfStock ? 'OUT OF STOCK' : isLowStock ? 'LOW STOCK (ใกล้หมด)' : 'IN STOCK'}
             </div>
           </div>
         </div>

@@ -69,7 +69,9 @@ export const productService = {
 
     // Stock
     const stockQuantity = getVal(raw, ['stockQuantity', 'stock', 'quantity', 'qty']) || 0;
+    const bufferStock = getVal(raw, ['bufferStock', 'buffer', 'minstock']) || 2; // Default buffer 2
     const isOutOfStock = stockQuantity <= 0;
+    const isLowStock = stockQuantity > 0 && stockQuantity <= bufferStock;
 
     // Descriptions
     const shortDescription = getVal(raw, ['shortDescription', 'shortDesc']);
@@ -91,6 +93,9 @@ export const productService = {
     const shopeeUrl = getVal(raw, ['shopeeUrl', 'shopee', 'shopeelink']) || extLinks.shopee || null;
     const lazadaUrl = getVal(raw, ['lazadaUrl', 'lazada', 'lazadalink']) || extLinks.lazada || null;
 
+    const variantOptions = raw.variantOptions || [];
+    const variants = raw.variants || [];
+
     return {
       id,
       name,
@@ -100,7 +105,9 @@ export const productService = {
       price,
       salePrice,
       stockQuantity,
+      bufferStock,
       isOutOfStock,
+      isLowStock,
       shortDescription,
       fullDescription,
       compatibleModels,
@@ -111,6 +118,8 @@ export const productService = {
       videoId,
       shopeeUrl,
       lazadaUrl,
+      variantOptions,
+      variants,
       _raw: raw // Keep raw data just in case
     };
   },

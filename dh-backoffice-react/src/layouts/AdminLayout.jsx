@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { todoService } from '../firebase/todoService';
 import { userService } from '../firebase/userService';
 import { useGmail } from '../pages/emails/hooks/useGmail';
+import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { RefreshCw } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
@@ -17,6 +18,8 @@ export default function AdminLayout() {
     logout 
   } = useAuth();
   
+  useGlobalShortcuts();
+
   const [todoCount, setTodoCount] = useState(0); 
   const [pendingStaffCount, setPendingStaffCount] = useState(0);
   const { unreadCount } = useGmail();

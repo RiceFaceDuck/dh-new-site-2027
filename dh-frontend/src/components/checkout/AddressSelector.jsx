@@ -4,7 +4,7 @@ import { useCart } from '../../hooks/useCart';
 import { auth, db } from '../../firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 
-export default function AddressSelector({ orderMode = 'retail' }) {
+export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
   const { checkoutState, updateCheckoutConfig } = useCart();
   
   // ⚡️ Local State สำหรับฟอร์ม ดึงค่าเก่ามาจาก Context (ถ้ามี)
@@ -114,9 +114,12 @@ export default function AddressSelector({ orderMode = 'retail' }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       updateCheckoutConfig({ addressInfo: formData });
+      if (onUpdate) {
+        onUpdate(formData);
+      }
     }, 300);
     return () => clearTimeout(timer);
-  }, [formData, updateCheckoutConfig]);
+  }, [formData, updateCheckoutConfig, onUpdate]);
 
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 relative overflow-hidden transition-all duration-300">

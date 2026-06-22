@@ -33,12 +33,33 @@ export const todoPaymentService = {
 
         const date = new Date();
         const yearMonth = `${date.getFullYear().toString().slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase(); 
-        const generatedInvoiceId = `INV-${yearMonth}-${randomStr}`;
+        
+        const yearStr = date.getFullYear().toString();
+        
+        // --- ระบบออกเลขบิลแบบรันตามลำดับ (Sequential Running Number) ---
+        const counterRef = doc(db, 'counters', 'receipt_sequence');
+        const counterDoc = await transaction.get(counterRef);
+
+        let currentSeq = 1;
+        if (counterDoc.exists()) {
+           const data = counterDoc.data();
+           currentSeq = (data[yearStr] || 0) + 1;
+        }
+        
+        const generatedOrderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
+
+        // --- 3. EXECUTE ALL WRITES ---
+        // อัปเดต counter ในระบบ
+        transaction.set(counterRef, { 
+           [yearStr]: currentSeq, 
+           updatedAt: serverTimestamp() 
+        }, { merge: true });
 
         transaction.update(orderRef, {
           status: 'paid', 
-          invoiceId: generatedInvoiceId, 
+          orderStatus: 'paid',
+          orderId: generatedOrderId, 
+          invoiceId: generatedOrderId, 
           paymentVerifiedAt: serverTimestamp(),
           paymentVerifiedBy: currentUser?.uid || 'Admin',
           updatedAt: serverTimestamp()
@@ -50,12 +71,14 @@ export const todoPaymentService = {
           actionBy: currentUser?.displayName || 'Admin'
         });
 
+        // ❌ Stock Deduction is REMOVED from here. It will happen when "Print Bill" is clicked!
+
         const packTaskRef = doc(collection(db, 'todos')); 
         transaction.set(packTaskRef, {
-          orderId,
-          invoiceId: generatedInvoiceId, 
+          orderId: orderId, // The firestore doc id
+          displayOrderId: generatedOrderId, 
           type: 'PACKING_TASK', 
-          title: `แพ็คสินค้า #${orderId.substring(0,8).toUpperCase()}`,
+          title: `แพ็คสินค้า #${generatedOrderId}`,
           status: 'todo',
           priority: 'High', 
           customerName: orderData.shippingAddress?.fullName || 'ไม่ระบุชื่อ',
@@ -66,8 +89,8 @@ export const todoPaymentService = {
 
         transaction.set(logRef, {
           actionType: 'PAYMENT_VERIFIED',
-          orderId, taskId, invoiceId: generatedInvoiceId,
-          details: `ยืนยันยอดเงินสำเร็จ และสร้างใบสั่งแพ็ค ${generatedInvoiceId}`,
+          orderId, taskId, invoiceId: generatedOrderId,
+          details: `ยืนยันยอดเงินสำเร็จ และสร้างใบสั่งแพ็ค ${generatedOrderId}`,
           createdBy: currentUser?.uid || 'System',
           createdAt: serverTimestamp()
         });

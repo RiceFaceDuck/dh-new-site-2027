@@ -5,13 +5,14 @@ import { submitOrder, createWholesaleRequest } from '../../../firebase/checkoutS
 import { auth } from '../../../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useWalletBalance } from '../../../firebase/walletService';
+import { driveService } from '../../../firebase/driveService';
 
 export function useCheckoutLogic() {
   const navigate = useNavigate();
   const { cartItems, totals, clearCart } = useCart();
   const [user, setUser] = useState(null);
 
-  const { balance: creditBalance, loading: creditLoading } = useWalletBalance(user?.uid);
+  const { walletBalance: creditBalance, loading: creditLoading } = useWalletBalance(user?.uid);
   const [useCreditToggle, setUseCreditToggle] = useState(false);
 
   const [checkoutState, setCheckoutState] = useState({
@@ -21,7 +22,6 @@ export function useCheckoutLogic() {
     shippingCost: 0,
     appliedPromotions: [],
     discountAmount: 0,
-    usePoints: 0,
     useWallet: 0,
     wholesaleReason: '',
   });
@@ -63,19 +63,26 @@ export function useCheckoutLogic() {
         (checkoutState.shippingCost || 0) - 
         (checkoutState.discountAmount || 0);
 
-      const maxApplicablePoints = Math.min(creditBalance, Math.max(0, currentNetBeforeCredit));
+      const maxApplicableWallet = Math.min(creditBalance, Math.max(0, currentNetBeforeCredit));
       
-      setCheckoutState(prev => ({ ...prev, usePoints: maxApplicablePoints }));
+      setCheckoutState(prev => ({ ...prev, useWallet: maxApplicableWallet }));
     } else {
-      setCheckoutState(prev => ({ ...prev, usePoints: 0 }));
+      setCheckoutState(prev => ({ ...prev, useWallet: 0 }));
     }
   }, [useCreditToggle, creditBalance, totals, checkoutState.shippingCost, checkoutState.discountAmount]);
 
   const validateOrder = () => {
-    if (!checkoutState.customerData) {
-      setErrorMessage('กรุณาระบุที่อยู่สำหรับจัดส่งสินค้า');
+    const data = checkoutState.customerData;
+    if (!data || !data.fullName || data.fullName.length < 2 || !data.phone || data.phone.length < 10 || !data.address || data.address.length < 10) {
+      setErrorMessage('กรุณาระบุข้อมูลผู้รับและที่อยู่จัดส่งให้ครบถ้วน');
       return false;
     }
+    
+    if (checkoutState.paymentMethod === 'transfer' && !slipUrl) {
+      setErrorMessage('กรุณาแนบสลิปหลักฐานการโอนเงิน');
+      return false;
+    }
+    
     return true;
   };
 
@@ -89,12 +96,19 @@ export function useCheckoutLogic() {
     setErrorMessage('');
 
     try {
+      let uploadedSlipUrl = null;
+      if (slipUrl && typeof slipUrl === 'object' && slipUrl instanceof File) {
+        uploadedSlipUrl = await driveService.uploadSlipImage(slipUrl);
+      } else if (slipUrl) {
+        uploadedSlipUrl = slipUrl; // Fallback in case it's already a string URL
+      }
+
       const result = await submitOrder(
         user,
         cartItems,
         checkoutState,
         totals,
-        slipUrl,
+        uploadedSlipUrl,
         saveProfile
       );
 

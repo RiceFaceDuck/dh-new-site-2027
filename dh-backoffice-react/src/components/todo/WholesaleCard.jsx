@@ -96,30 +96,29 @@ export default function WholesaleCard({ todo, isProcessing, urgencyClass, handle
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-2xl p-5 lg:p-6 shadow-sm border ${urgencyClass} flex flex-col relative overflow-hidden transition-all hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] border-2 border-gray-200 hover:border-blue-400 hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] p-3 sm:p-4 flex flex-col relative overflow-hidden transition-all mb-4 ${urgencyClass}`}>
       
-      <ManagerBadge text="อนุมัติราคาส่ง (Wholesale)" />
+      {isManagerTab && <div className="absolute top-0 right-0 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">Manager</div>}
 
       {isProcessing && (
-        <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center transition-all duration-300">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-500 mb-2"></div>
-          <span className="text-sm font-bold text-blue-500 animate-pulse">กำลังบันทึกข้อมูล...</span>
+        <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center transition-all duration-300">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-2xl border border-blue-100 dark:border-blue-800 shadow-sm shrink-0">
-            <PackageOpen size={24} className="text-blue-600 dark:text-blue-400" />
+      {/* Header Row */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800 shadow-sm flex items-center justify-center shrink-0">
+            <PackageOpen size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-1.5 leading-none mb-1">
               คำขออนุมัติราคาส่ง
-              <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 text-[10px] uppercase px-2 py-0.5 rounded-full font-bold shadow-sm">B2B</span>
+              <span className="bg-blue-100 text-blue-700 text-[9px] uppercase px-1.5 py-0.5 rounded shadow-sm">B2B</span>
             </h3>
-            <div className="flex items-center flex-wrap gap-2 mt-1.5">
-              <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-md shadow-inner border border-slate-200 dark:border-slate-600">
+            <div className="flex items-center flex-wrap gap-2">
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200">
                 Order: #{todo.payload?.orderId?.slice(-6).toUpperCase() || 'N/A'}
               </span>
               {getStatusBadge(todo.status)}
@@ -128,10 +127,10 @@ export default function WholesaleCard({ todo, isProcessing, urgencyClass, handle
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 mb-6 relative z-10">
+      <div className="flex flex-col gap-3 relative z-10">
         
         {/* Customer Reason & Profile */}
-        <div className="bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900/50 dark:to-blue-900/10 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-3">
+        <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded border border-slate-100 flex flex-col gap-2">
           
           <div className="flex items-center gap-2 mb-1">
             <ShieldAlert size={16} className="text-orange-500" />

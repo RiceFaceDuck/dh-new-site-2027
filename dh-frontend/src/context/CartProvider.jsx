@@ -156,7 +156,7 @@ export const CartProvider = ({ children }) => {
   // Calculations
   const cartTotalQty = cartItems.reduce((acc, item) => acc + (item.qty || item.quantity || 0), 0);
   const subtotal = cartItems.reduce((acc, item) => acc + ((item.price || 0) * (item.qty || item.quantity || 0)), 0);
-  const totalDiscount = (checkoutState.discountAmount || 0) + (checkoutState.usePoints || 0) + (checkoutState.useWallet || 0);
+  const totalDiscount = (checkoutState.discountAmount || 0) + (checkoutState.useWallet || 0);
   const grandTotal = checkoutState.isWholesaleRequest ? 0 : Math.max(0, subtotal + (checkoutState.shippingCost || 0) - totalDiscount);
 
   return (

@@ -3,7 +3,7 @@ import React from 'react';
 import { 
   Store, CreditCard, Package, History, 
   LogOut, Settings, Megaphone, Heart, ShoppingCart, ChevronRight, Loader2,
-  Wallet, Coins, Award, Sparkles
+  Wallet, Coins, Award, Sparkles, Wrench
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -169,6 +169,12 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
           label="Order History" 
           active={activeTab === 'history'} 
           onClick={() => setActiveTab('history')} 
+        />
+        <MenuButton 
+          icon={<Wrench size={18} strokeWidth={2.5} />} 
+          label="Claims & Returns" 
+          active={activeTab === 'claims'} 
+          onClick={() => setActiveTab('claims')} 
         />
         <MenuButton 
           icon={<Heart size={18} strokeWidth={2.5} />} 

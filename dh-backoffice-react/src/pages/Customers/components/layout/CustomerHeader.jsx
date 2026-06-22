@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, RefreshCw, UserPlus, Wallet, Star, FileText, Coins } from 'lucide-react';
+import { Search, Filter, RefreshCw, UserPlus, Wallet, Star, FileText, Coins, HelpCircle } from 'lucide-react';
 
 export default function CustomerHeader({ 
   searchTerm, 
@@ -10,7 +10,8 @@ export default function CustomerHeader({
   onQuickFilterChange,  // 💎 NEW: รับฟังก์ชันเปลี่ยนตัวกรองอัจฉริยะ
   onRefresh, 
   isRefreshing, 
-  onAddCustomer 
+  onAddCustomer,
+  onGuideOpen
 }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-dh-border sticky top-0 transition-colors duration-300">
@@ -76,6 +77,16 @@ export default function CustomerHeader({
           title="ดึงข้อมูลใหม่"
         >
           <RefreshCw size={14} className={isRefreshing ? "animate-spin text-cyan-300" : ""} />
+        </button>
+
+        {/* ปุ่มคู่มือ */}
+        <button 
+          onClick={onGuideOpen}
+          className="h-[36px] px-3 flex items-center justify-center gap-2 bg-slate-700/50 hover:bg-slate-700 text-white rounded-md font-bold text-xs transition-colors shadow-sm shrink-0"
+          title="คู่มือการใช้งาน"
+        >
+          <HelpCircle size={14} />
+          <span className="hidden sm:inline">คู่มือ</span>
         </button>
 
         {/* ปุ่มเพิ่มลูกค้าใหม่ */}

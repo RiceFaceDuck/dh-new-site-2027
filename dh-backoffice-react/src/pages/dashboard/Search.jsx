@@ -2,18 +2,18 @@ import React, { useEffect } from 'react';
 import { 
   PlusCircle, X, RefreshCw, HelpCircle, Clock, History, Send, Info
 } from 'lucide-react';
-import { useProductSearch } from './hooks/useProductSearch';
-import { HighlightText } from '../components/search/HighlightText';
+import { useProductSearch } from '../hooks/useProductSearch';
+import { HighlightText } from '../../components/search/HighlightText';
 
 // นำเข้า Components
-import SearchHeader from '../components/search/SearchHeader';
-import ProductListPanel from '../components/search/ProductListPanel';
-import ProductDetailPanel from '../components/search/ProductDetailPanel';
-import HistoryLogPanel from '../components/search/HistoryLogPanel';
-import ManualModal from '../components/search/modal/ManualModal';
-import HistoryModal from '../components/search/modal/HistoryModal';
-import ReportModal from '../components/search/modal/ReportModal';
-import ImageModal from '../components/search/modal/ImageModal';
+import SearchHeader from '../../components/search/SearchHeader';
+import ProductListPanel from '../../components/search/ProductListPanel';
+import ProductDetailPanel from '../../components/search/ProductDetailPanel';
+import HistoryLogPanel from '../../components/search/HistoryLogPanel';
+import ManualModal from '../../components/search/modal/ManualModal';
+import HistoryModal from '../../components/search/modal/HistoryModal';
+import ReportModal from '../../components/search/modal/ReportModal';
+import ImageModal from '../../components/search/modal/ImageModal';
 
 export default function Search() {
   const searchState = useProductSearch();

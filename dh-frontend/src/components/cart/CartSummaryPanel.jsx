@@ -5,14 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const CartSummaryPanel = ({ 
   cartData, 
   currentUser, 
-  creditConfig, 
-  userPoints, 
-  usePoints, 
-  inputPoints, 
-  setInputPoints, 
-  handleApplyPoints, 
   subTotal, 
-  discountFromPoints, 
   netTotal, 
   earnedPoints 
 }) => {
@@ -22,51 +15,11 @@ const CartSummaryPanel = ({
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24 transition-all duration-300 hover:shadow-md">
       <h2 className="text-lg font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100">สรุปคำสั่งซื้อ</h2>
       
-      {/* โซนการใช้แต้ม */}
-      {currentUser && creditConfig && userPoints > 0 && (
-        <div className="mb-6 p-4 bg-gradient-to-br from-indigo-50 to-white rounded-xl border border-indigo-100 shadow-sm relative overflow-hidden group transition-all duration-300 hover:border-indigo-300">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-100 rounded-full blur-xl opacity-40 group-hover:opacity-70 transition-opacity"></div>
-          <div className="flex justify-between items-center mb-3 relative z-10">
-            <span className="text-sm font-bold text-indigo-800 flex items-center gap-1">
-              ✨ ใช้แต้มเป็นส่วนลด
-            </span>
-            <span className="text-xs text-indigo-600 bg-indigo-100/50 px-2 py-0.5 rounded-full font-medium">มี {userPoints.toLocaleString()} แต้ม</span>
-          </div>
-          <div className="flex gap-2 relative z-10">
-            <input 
-              type="number" 
-              value={inputPoints}
-              onChange={(e) => setInputPoints(e.target.value)}
-              placeholder="ระบุจำนวนแต้ม"
-              className="flex-1 px-3 py-2 text-sm border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"
-            />
-            <button 
-              onClick={handleApplyPoints}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 active:scale-95 transition-all shadow-sm hover:shadow"
-            >
-              ตกลง
-            </button>
-          </div>
-          {usePoints > 0 && (
-            <div className="mt-3 text-xs text-indigo-700 bg-indigo-50 p-2 rounded-lg flex items-center gap-2 font-medium animate-fade-in border border-indigo-100/50">
-               <CheckCircle2 className="w-4 h-4 shrink-0 text-indigo-500" /> 
-               ประหยัดไป <strong>฿{discountFromPoints.toLocaleString()}</strong>
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="space-y-4 mb-6 relative">
         <div className="flex justify-between text-sm text-gray-600">
           <span>ยอดรวมสินค้า ({cartData.totalQty || 0} ชิ้น)</span>
           <span className="font-bold text-gray-800 font-tech text-base">฿{subTotal.toLocaleString()}</span>
         </div>
-        {usePoints > 0 && (
-          <div className="flex justify-between text-sm text-emerald-600 animate-fade-in">
-            <span>ส่วนลดจากแต้ม ({usePoints.toLocaleString()} แต้ม)</span>
-            <span className="font-bold font-tech text-base">-฿{discountFromPoints.toLocaleString()}</span>
-          </div>
-        )}
         <div className="flex justify-between text-sm text-gray-600">
           <span>ค่าจัดส่ง</span>
           <span className="font-bold text-gray-400">คำนวณถัดไป</span>

@@ -83,8 +83,12 @@ export default function OrderDetailModal(props) {
                                         </div>
                                         {isCancelled ? (
                                             <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-black">ยกเลิกแล้ว</span>
+                                        ) : orderStat === 'completed' ? (
+                                            <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[10px] font-black">เสร็จสิ้น</span>
+                                        ) : orderStat === 'approved' ? (
+                                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black">อนุมัติ / หักสต็อกแล้ว</span>
                                         ) : isPaid ? (
-                                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black">ชำระเงินแล้ว</span>
+                                            <span className="px-2 py-0.5 rounded bg-teal-500/10 text-teal-600 border border-teal-500/20 text-[10px] font-black">ชำระเงินแล้ว</span>
                                         ) : (
                                             <span className="px-2 py-0.5 rounded bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> รอชำระเงิน</span>
                                         )}

@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 🛡️ ฟังก์ชันตรวจสอบ Role พื้นฐาน
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isStaff() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin']
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true
+      );
+    }
+
+    function isManagerOrAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['manager', 'admin']
+      );
+    }
+    
+    // ============================================
+    // 🌟 กฎของ Collections ต่างๆ
+    // ============================================
+
+    // 1. ผู้ใช้ (Users)
+    match /users/{userId} {
+      // ทุกคนอ่านข้อมูลพื้นฐานได้ (สำหรับหารายชื่อช่าง/ลูกค้า)
+      allow read: if true;
+      // เจ้าของบัญชี หรือ Manager แก้ไขได้
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+    }
+
+    // 2. สินค้าคงคลัง (Products)
+    match /products/{productId} {
+      // ลูกค้าทั่วไปอ่านได้
+      allow read: if true;
+      // เฉพาะพนักงานเท่านั้นที่แก้ไขจำนวนสต๊อก หรือข้อมูลได้
+      allow write: if isStaff();
+    }
+
+    // 3. ระบบบิลและการเงิน (Orders & Credit)
+    match /orders/{orderId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.customer.uid == request.auth.uid);
+      allow write: if isStaff();
+    }
+
+    match /credit_transactions/{txId} {
+      // ลูกค้าดูประวัติกระเป๋าเงินตัวเองได้
+      allow read: if isStaff() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      // เฉพาะระบบและพนักงานเขียนได้
+      allow write: if isStaff();
+    }
+
+    // 4. งานอนุมัติของ Manager (Todos & System Logs)
+    match /todos/{todoId} {
+      allow read: if isStaff() || (isAuthenticated() && (resource.data.createdByUid == request.auth.uid || resource.data.customerUid == request.auth.uid || resource.data.uid == request.auth.uid));
+      allow create: if isStaff() || isAuthenticated();
+      allow update: if isStaff() || (isAuthenticated() && (resource.data.createdByUid == request.auth.uid || resource.data.customerUid == request.auth.uid || resource.data.uid == request.auth.uid));
+      allow delete: if isStaff();
+    }
+    
+    match /system_logs/{logId} {
+      allow read: if isManagerOrAdmin();
+      allow write: if isManagerOrAdmin();
+    }
+
+    // 5. ข้อมูลอื่นๆ ที่เป็น Public (หมวดหมู่, หน้าแรก, โฆษณา)
+    match /homepage_categories/{catId} {
+      allow read: if true;
+      allow write: if isManagerOrAdmin();
+    }
+    match /partners/{partnerId} {
+      allow read: if true;
+      allow write: if isStaff() || (isAuthenticated() && request.auth.uid == partnerId);
+    }
+    match /ActivePartners/{partnerId} {
+      allow read: if true;
+      allow write: if isManagerOrAdmin(); // อนุมัติโดยระบบ
+    }
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if isManagerOrAdmin();
+    }
+    match /freebies/{freebieId} {
+      allow read: if true;
+      allow write: if isManagerOrAdmin();
+    }
+    
+    // 6. การตั้งค่าระบบ (Settings)
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isManagerOrAdmin();
+    }
+    
+    match /system_config/{docId} {
+      // ป้องกันการเข้าถึง Token/Secret ยกเว้น Manager
+      allow read, write: if isManagerOrAdmin();
+    }
+    
+    match /counters/{counterId} {
+      allow read, write: if isStaff();
+    }
+  }
+}

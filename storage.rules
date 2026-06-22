@@ -1,0 +1,41 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ฟังก์ชันตรวจสอบสิทธิ์เบื้องต้น
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 1. ภาพสลิปโอนเงิน (Slips)
+    match /slips/{fileName} {
+      // พนักงานดูสลิปได้ทุกคน
+      allow read: if isAuthenticated();
+      // ลูกค้าหรือพนักงานอัปโหลดได้ แต่ห้ามอัปเดตทับไฟล์เดิม (ป้องกันการปลอมแปลง)
+      allow write: if isAuthenticated() && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // 2. รูปภาพสินค้าและหน้าเว็บ (Public Assets)
+    match /products/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // ให้พนักงานอัปโหลดรูปภาพสินค้า
+    }
+    
+    match /assets/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // 3. รูปภาพโปรไฟล์พนักงานและคู่ค้า
+    match /profiles/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // 4. ค่าเริ่มต้นบล็อกไฟล์ที่ไม่ได้ระบุไว้
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

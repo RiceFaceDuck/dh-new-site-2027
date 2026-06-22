@@ -85,7 +85,10 @@ dh-new-site-2027/
 │       │   │       │       ├── NoteSettings.jsx
 │       │   │       │       └── ToggleGroup.jsx
 │       │   │       └── hooks/
-│       │   │           ├── usePosState.js # Extracted complex state for POS
+│       │   │           ├── usePosCart.js # Extracted cart & product search
+│       │   │           ├── usePosCustomer.js # Extracted customer filtering
+│       │   │           ├── usePosPayment.js # Extracted discount & VAT logic
+│       │   │           ├── usePosState.js # Main orchestrator state for POS
 │       │   │           ├── usePosActions.js # Extracted shortcuts & actions
 │       │   │           └── usePosShortcuts.js # Extracted keyboard event listeners
 │       │   ├── gallery/ # Image management components
@@ -208,6 +211,7 @@ dh-new-site-2027/
 │       │   ├── inventorySourcingService.js
 │       │   ├── inventoryImportService.js
 │       │   ├── inventoryExportService.js
+│       │   ├── bigSellerExportService.js # 🚀 Handles formatting and exporting CSV for Big Seller
 │       │   ├── menuConfigService.js # Service for managing Manager Dashboard Layout
 │       │   ├── pricingService.js
 │       │   ├── promotionService.js
@@ -244,8 +248,11 @@ dh-new-site-2027/
 │       │   │   ├── BestSellersPanel.jsx
 │       │   │   ├── OverviewHeader.jsx
 │       │   │   ├── SalesTargetCard.jsx
-│       │   │   ├── SocialFeedPanel.jsx
-│       │   │   └── StatCard.jsx
+│       │   │       ├── SocialFeedPanel.jsx
+│       │   │       ├── OverviewHeader.jsx
+│       │   │       ├── SalesTargetCard.jsx
+│       │   │       ├── SocialFeedPanel.jsx
+│       │   │       └── StatCard.jsx
 │       │   ├── routing/
 │       │   │   └── ManagerRoute.jsx # Route protection
 │       │   └── ... (other component folders)
@@ -257,7 +264,12 @@ dh-new-site-2027/
 │           │   ├── GlobalFooterSettings.jsx
 │           │   ├── GlobalRegexSettings.jsx
 │           │   ├── GlobalThemeSettings.jsx
-│           │   ├── GlobalWarrantySettings.jsx
+│           │   ├── warranty/           # ระบบตั้งค่ากติกาประกัน
+│           │   │   ├── GlobalWarrantySettings.jsx
+│           │   │   ├── components/
+│           │   │   │   └── WarrantyCategoryCard.jsx
+│           │   │   └── hooks/
+│           │   │       └── useWarrantyManager.js
 │           │   ├── inventory/
 │           │   │   ├── StockAdjustment.jsx # 🚀 Manager tool for handling manual stock adjustments
 │           │   │   └── hooks/
@@ -339,6 +351,10 @@ dh-new-site-2027/
 │           │       └── claimFormatters.jsx
 │           ├── gallery/
 │           │   └── GalleryMain.jsx
+│           ├── GenerateSync/ # 🚀 Big Seller export dashboard
+│           │   ├── index.jsx
+│           │   └── components/
+│           │       └── GenerateActions.jsx
 │           ├── managers/
 │           │   ├── AdManagement.jsx
 │           │   ├── FreebieManagement.jsx

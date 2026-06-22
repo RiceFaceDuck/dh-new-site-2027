@@ -2,32 +2,56 @@ import React from 'react';
 import { Clock, CheckCircle, XCircle, Ban, Flame, Zap, Timer } from 'lucide-react';
 
 // ✨ อัปเกรดลูกเล่นที่ 1: ระบบคำนวณหลอดประกัน (Warranty Progress)
-export const getWarrantyInfo = (purchaseDateStr, createdAt) => {
+export const getWarrantyInfo = (purchaseDateStr, createdAt, warrantyPeriodDays = 365) => {
   if (!purchaseDateStr) return null;
   const pDate = new Date(purchaseDateStr);
   if (isNaN(pDate)) return null;
   
-  const cDate = createdAt?.toDate ? new Date(createdAt.toDate()) : new Date();
-  const diffTime = cDate - pDate;
-  const usedDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+  // ผู้ใช้ต้องการให้นับจนถึงปัจจุบันเสมอ (ซื้อมาแล้วกี่วัน/เหลือเวลาเคลมกี่วัน)
+  const cDate = new Date();
   
-  const warrantyPeriod = 365; // สันนิษฐานประกัน 1 ปี (ปรับเปลี่ยนได้)
+  // ปรับการคำนวณให้เป็น Calendar Days (ไม่สนใจเศษชั่วโมง)
+  const pDateOnly = new Date(pDate.getFullYear(), pDate.getMonth(), pDate.getDate());
+  const cDateOnly = new Date(cDate.getFullYear(), cDate.getMonth(), cDate.getDate());
+  const diffTime = cDateOnly - pDateOnly;
+  const usedDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+  
+  const warrantyPeriod = warrantyPeriodDays > 0 ? warrantyPeriodDays : 365;
   const remainingDays = warrantyPeriod - usedDays;
-  const percentUsed = Math.min((usedDays / warrantyPeriod) * 100, 100);
+  
+  let label = '';
+  let color = '';
+  let textColor = '';
+  let percentUsed = Math.min((usedDays / warrantyPeriod) * 100, 100);
+  let percentRemaining = 100 - percentUsed;
 
-  let color = 'bg-dh-accent'; let textColor = 'text-dh-accent'; let label = `เหลือ ${remainingDays} วัน`;
-
-  if (remainingDays <= 0) {
-    color = 'bg-rose-500'; textColor = 'text-rose-500'; label = 'หมดประกัน';
-  } else if (remainingDays <= 30) {
-    color = 'bg-rose-400'; textColor = 'text-rose-500'; label = `ใกล้หมด (${remainingDays} วัน)`;
-  } else if (usedDays <= 30) {
-    color = 'bg-emerald-400'; textColor = 'text-emerald-500'; label = `ใหม่มาก (${usedDays} วัน)`;
+  if (remainingDays < 0) {
+    label = `หมดอายุแล้ว`;
+    color = 'bg-slate-300';
+    textColor = 'text-slate-400';
+  } else if (remainingDays === 0) {
+    label = `🚨 วันสุดท้าย!`;
+    color = 'bg-red-600 animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.6)]';
+    textColor = 'text-red-600 animate-pulse';
+  } else if (remainingDays <= 3) {
+    label = `⚠️ โค้งสุดท้าย (${remainingDays} วัน)`;
+    color = 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]';
+    textColor = 'text-red-500';
+  } else if (remainingDays <= 7 || percentRemaining <= 15) {
+    label = `ใกล้หมด (${remainingDays} วัน)`;
+    color = 'bg-orange-500';
+    textColor = 'text-orange-500';
+  } else if (percentRemaining >= 70) {
+    label = `🟢 เหลืออีกเยอะ (${remainingDays} วัน)`;
+    color = 'bg-emerald-500';
+    textColor = 'text-emerald-500';
   } else {
-    color = 'bg-amber-400'; textColor = 'text-amber-500';
+    label = `เหลือ ${remainingDays} วัน`;
+    color = 'bg-amber-400';
+    textColor = 'text-amber-500';
   }
 
-  return { percentUsed, label, color, textColor };
+  return { label, color, textColor, percentUsed, usedDays, remainingDays, warrantyPeriod };
 };
 
 // ✨ อัปเกรดลูกเล่นที่ 2: ระบบตรวจจับความล่าช้า (SLA Tracker Gimmick)

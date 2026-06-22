@@ -1,14 +1,10 @@
 import React from 'react';
 import { Trophy, TrendingUp, ArrowUpRight } from 'lucide-react';
 
-export const BestSellersPanel = () => {
-  // Mocked data for Best Selling Products
-  const bestSellers = [
-    { id: 1, name: 'Swift 7520 ADAPTER', category: 'Adapter', sales: 124, trend: '+12%' },
-    { id: 2, name: 'Predator Neo 16 Screen', category: 'Screen', sales: 98, trend: '+5%' },
-    { id: 3, name: 'ASUS ROG Battery', category: 'Battery', sales: 85, trend: '+8%' },
-    { id: 4, name: 'Lenovo Legion Keyboard', category: 'Keyboard', sales: 62, trend: '+2%' },
-    { id: 5, name: 'Dell XPS 13 Charger', category: 'Adapter', sales: 41, trend: '-1%' },
+export const BestSellersPanel = ({ bestSellers = [] }) => {
+  // Use passed data or fallback
+  const displayData = bestSellers.length > 0 ? bestSellers : [
+    { id: 1, name: 'ยังไม่มีข้อมูล', category: '-', sales: 0, trend: '0%' }
   ];
 
   return (
@@ -27,7 +23,7 @@ export const BestSellersPanel = () => {
       </div>
 
       <div className="space-y-3">
-        {bestSellers.map((item, index) => (
+        {displayData.map((item, index) => (
           <div key={item.id} className="flex items-center justify-between p-3.5 rounded-md bg-dh-base border border-dh-border hover:border-yellow-500/50 hover:shadow-md transition-all group cursor-default">
             <div className="flex items-center gap-4">
               <div className={`w-10 h-10 rounded-md flex items-center justify-center font-black text-sm shadow-sm ${index === 0 ? 'bg-gradient-to-br from-[#FF9B51] to-yellow-500 text-white border-none' : index === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-none' : index === 2 ? 'bg-amber-700 text-amber-100 border-none' : 'bg-dh-surface/50 text-dh-muted border border-dh-border'}`}>

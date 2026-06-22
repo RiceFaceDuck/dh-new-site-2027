@@ -1,7 +1,7 @@
 import React from 'react';
-import { Sparkles, Users, Download, Zap } from 'lucide-react';
+import { Sparkles, Users, Download, Zap, HelpCircle } from 'lucide-react';
 
-export const OverviewHeader = ({ metrics, getGreeting, getMotivation }) => {
+export const OverviewHeader = ({ metrics, getGreeting, getMotivation, setShowGuide }) => {
   const handleExportPDF = () => {
     window.print();
   };
@@ -40,6 +40,13 @@ export const OverviewHeader = ({ metrics, getGreeting, getMotivation }) => {
         >
           <Download size={14} className="group-hover:-translate-y-0.5 transition-transform" />
           <span>Export Report</span>
+        </button>
+        <button 
+          onClick={() => setShowGuide(true)}
+          className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 px-4 py-1.5 rounded-md font-bold transition-all shadow-sm active:scale-95 text-xs backdrop-blur-sm"
+        >
+          <HelpCircle size={14} />
+          <span>คู่มือใช้งาน</span>
         </button>
       </div>
     </div>

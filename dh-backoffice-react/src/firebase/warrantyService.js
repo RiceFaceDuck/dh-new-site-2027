@@ -16,21 +16,29 @@ const DEFAULT_WARRANTY = {
   skus: {} // เก็บ SKU พิเศษ เช่น "SKU-999": { claimDays: 365, returnDays: 15 }
 };
 
+let cachedWarrantyConfig = null;
+
 export const warrantyService = {
   // ==========================================
-  // 📥 ดึงข้อมูลกติกาประกัน (อ่าน 1 ครั้ง ได้ข้อมูลทั้งหมด)
+  // 📥 ดึงข้อมูลกติกาประกัน (อ่าน 1 ครั้ง ได้ข้อมูลทั้งหมด และ Cache ไว้ใน Memory)
   // ==========================================
-  getWarrantySettings: async () => {
+  getWarrantySettings: async (forceRefresh = false) => {
+    if (!forceRefresh && cachedWarrantyConfig) {
+      return cachedWarrantyConfig;
+    }
+
     try {
       const docRef = doc(db, 'settings', SETTINGS_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();
-        return {
+        cachedWarrantyConfig = {
           categories: { ...DEFAULT_WARRANTY.categories, ...(data.categories || {}) },
           skus: data.skus || {}
         };
+        return cachedWarrantyConfig;
       }
+      cachedWarrantyConfig = DEFAULT_WARRANTY;
       return DEFAULT_WARRANTY;
     } catch (error) {
       console.error("🔥 Error fetching warranty settings:", error);
@@ -49,6 +57,9 @@ export const warrantyService = {
         updatedAt: serverTimestamp(),
         updatedBy: managerUid
       });
+      
+      // Update cache
+      cachedWarrantyConfig = { ...newData };
       
       // บันทึก History ของผู้จัดการ
       await historyService.addLog('Manager', 'UpdateWarranty', 'System', 'อัปเดตตั้งค่าระยะเวลาประกันสินค้า', managerUid);

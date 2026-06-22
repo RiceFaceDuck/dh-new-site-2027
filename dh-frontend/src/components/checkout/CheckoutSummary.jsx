@@ -21,13 +21,12 @@ const CheckoutSummary = ({
   const extraDiscountAmount = checkoutState?.discountAmount || 0;
   
   // ดึงข้อมูล Credit Point และ Wallet
-  const usedPoints = checkoutState?.usePoints || 0;
   const usedWallet = checkoutState?.useWallet || 0;
 
   // 🧮 การคำนวณยอดเงิน (Real-time Calculation)
   const totalPromoDiscount = appliedPromotions.reduce((sum, promo) => sum + (promo.discountValue || 0), 0);
   const totalDiscount = totalPromoDiscount + extraDiscountAmount;
-  const totalCreditDiscount = usedPoints + usedWallet;
+  const totalCreditDiscount = usedWallet;
 
   // คำนวณยอดสุทธิขั้นสุดท้าย
   const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost - totalCreditDiscount);
@@ -118,16 +117,6 @@ const CheckoutSummary = ({
             <span className="text-gray-400 text-xs">รวมในยอดสุทธิแล้ว</span>
           </div>
 
-          {/* 5. ใช้แต้มสะสม (🔥 Gimmick: รองรับแล้ว และไฮไลท์สีพรีเมียมเมื่อถูกใช้งาน) */}
-          <div className={`flex justify-between items-center transition-all duration-300 ${usedPoints > 0 ? 'bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 -mx-2 px-2 shadow-sm mt-1' : ''}`}>
-            <span className={`flex items-center gap-1.5 ${usedPoints > 0 ? 'text-[#0870B8] font-bold' : ''}`}>
-              5. ใช้แต้มสะสม (DH Point)
-              {usedPoints > 0 && <Award className="w-4 h-4 text-[#0870B8] animate-pulse" />}
-            </span>
-            <span className={usedPoints > 0 ? "text-[#0870B8] font-bold text-base" : "text-gray-400"}>
-              {usedPoints > 0 ? `- ฿${formatCredit(usedPoints)}` : '0'}
-            </span>
-          </div>
 
           {/* 6. ใช้ยอดเงินคงเหลือ */}
           <div className="flex justify-between items-center mt-2">

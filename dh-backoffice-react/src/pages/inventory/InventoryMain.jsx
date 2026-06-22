@@ -1,15 +1,16 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Loader2, Boxes } from 'lucide-react';
-import ProductTable from '../components/inventory/ProductTable';
-import ProductModal from '../components/inventory/ProductModal';
-import InventoryImportModal from '../components/inventory/InventoryImportModal';
-import InventoryExportModal from '../components/inventory/InventoryExportModal';
-import InventoryHeader from '../components/inventory/InventoryHeader';
-import { inventoryService } from '../firebase/inventoryService';
+import ProductTable from '../../components/inventory/ProductTable';
+import ProductModal from '../../components/inventory/ProductModal';
+import InventoryImportModal from '../../components/inventory/InventoryImportModal';
+import InventoryExportModal from '../../components/inventory/InventoryExportModal';
+import InventoryHeader from '../../components/inventory/InventoryHeader';
+import { inventoryService } from '../../firebase/inventoryService';
 
-import useInventoryData from '../components/inventory/hooks/useInventoryData';
-import useInventorySearch from '../components/inventory/hooks/useInventorySearch';
-import useDebounce from '../hooks/useDebounce'; // ✨ Import useDebounce
+import useInventoryData from '../../components/inventory/hooks/useInventoryData';
+import useInventorySearch from '../../components/inventory/hooks/useInventorySearch';
+import useDebounce from '../../hooks/useDebounce'; // ✨ Import useDebounce
+import GuideModal from '../../components/common/GuideModal';
 
 export default function Inventory() {
   const {
@@ -28,6 +29,7 @@ export default function Inventory() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // ✨ ส่ง debouncedSearchTerm ไปใช้ค้นหาแทน searchTerm
   const { 
@@ -102,6 +104,7 @@ export default function Inventory() {
         onAddProduct={handleAddProduct}
         onImportProduct={() => setIsImportModalOpen(true)}
         onExportProduct={() => setIsExportModalOpen(true)}
+        onGuideOpen={() => setIsGuideOpen(true)}
       />
 
       {loading ? (
@@ -165,6 +168,26 @@ export default function Inventory() {
         isOpen={isExportModalOpen} 
         onClose={() => setIsExportModalOpen(false)} 
         availableCategories={categories}
+      />
+
+      <GuideModal 
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        title="คู่มือการใช้งาน: ระบบคลังสินค้า (Inventory)"
+        config={{
+          description: "หน้านี้ใช้สำหรับจัดการสต๊อกสินค้า กำหนดราคาขาย ราคาต้นทุน และซิงค์ข้อมูลกับ Google Sheets เพื่อออกใบเสร็จแบบอัตโนมัติ",
+          howTo: [
+            "1. <b>ค้นหาสินค้า:</b> พิมพ์ SKU หรือชื่อรุ่นในช่องค้นหา ระบบจะค้นหาให้อัตโนมัติ (ไม่ต้องกด Enter)",
+            "2. <b>แก้ไขสต๊อก/ราคา:</b> กดปุ่ม ✏️ หลังชื่อสินค้า เพื่อแก้ไขข้อมูล ข้อมูลจะถูกอัปเดตแบบเรียลไทม์",
+            "3. <b>นำเข้า/ส่งออก (Import/Export):</b> ใช้ปุ่ม Import เพื่อนำเข้าสินค้าหลายรายการพร้อมกันจากไฟล์ Excel/CSV",
+            "4. <b>ซิงค์ข้อมูล (Sync):</b> หากมีการเพิ่มสินค้าใหม่ ควรกดปุ่ม 'Full Sync' เพื่อส่งข้อมูลไปอัปเดตที่ Google Sheets หน้าบ้านด้วย"
+          ],
+          tips: [
+            "คุณสามารถดู 'ยอดขาย 30 วัน' เพื่อประกอบการตัดสินใจเติมสต๊อกได้จากเมนู Dropdown ด้านบน",
+            "หากสินค้าใกล้หมด (ต่ำกว่า Buffer Stock ที่ตั้งไว้) จำนวนสต๊อกจะแสดงเป็นสีแดงเพื่อแจ้งเตือน"
+          ],
+          expectedResults: "การเพิ่มหรือแก้ไขสินค้าที่นี่ จะส่งผลกับหน้า POS ทันที แต่บน Google Sheets ต้องรอระบบซิงค์ (ประมาณ 10 วินาที)"
+        }}
       />
     </div>
   );

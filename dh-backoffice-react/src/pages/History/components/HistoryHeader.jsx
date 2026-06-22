@@ -6,7 +6,8 @@ export default function HistoryHeader({
   moduleFilter, setModuleFilter,
   actionFilter, setActionFilter,
   searchTerm, setSearchTerm,
-  onExport
+  onExport,
+  onGuideOpen
 }) {
   return (
     <div className="bg-[#001e26] border border-[#003642] p-4 rounded font-mono text-[#839496] shadow-lg">
@@ -79,6 +80,13 @@ export default function HistoryHeader({
               &gt; export.csv
             </button>
           )}
+          <button 
+            onClick={onGuideOpen}
+            className="text-[#b58900] hover:text-[#fff] hover:bg-[#b58900] border border-[#b58900] px-2 py-1 rounded transition-colors"
+            title="คู่มือการใช้งาน"
+          >
+            &gt; help
+          </button>
           <MigrationButton />
         </div>
       </div>

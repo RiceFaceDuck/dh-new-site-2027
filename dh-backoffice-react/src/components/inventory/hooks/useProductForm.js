@@ -17,7 +17,9 @@ export const INITIAL_FORM = {
   packageSize: { w: '', l: '', h: '' },
   tags: [], comment: '', internalComments: [],
   isActive: true,
-  externalLinks: { shopee: '', lazada: '', tiktok: '', facebook: '' } 
+  externalLinks: { shopee: '', lazada: '', tiktok: '', facebook: '' },
+  variantOptions: [], // e.g., [{ name: 'สี', values: ['แดง', 'ดำ'] }]
+  variants: [] // e.g., [{ id: '1', attributes: { สี: 'แดง' }, sku: 'SKU-R', retailPrice: 100, stockQuantity: 5 }]
 };
 
 export const DEFAULT_CATEGORIES = ['Screen', 'Battery', 'Keyboard', 'Adapter', 'Hinge', 'Cable', 'Cooling Fan', 'Other'];
@@ -45,6 +47,8 @@ export default function useProductForm(productData, isOpen) {
       if (!initData.sellingModel) initData.sellingModel = '';
       if (!initData.landingPageUrl) initData.landingPageUrl = '';
       if (!initData.hiddenImages) initData.hiddenImages = [];
+      if (!initData.variantOptions) initData.variantOptions = [];
+      if (!initData.variants) initData.variants = [];
       
       setForm(initData);
       setIsUploading(false);

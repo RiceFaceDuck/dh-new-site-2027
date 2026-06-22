@@ -8,6 +8,7 @@ export const getStatusDisplay = (status) => {
         return { text: '⌛ รอตรวจสอบสลิป', color: 'bg-blue-100 text-blue-700 border-blue-200' };
       case 'processing':
       case 'paid':
+      case 'approved':
         return { text: '📦 กำลังเตรียมจัดส่ง', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
       case 'shipped':
         return { text: '🚚 จัดส่งแล้ว', color: 'bg-green-100 text-green-700 border-green-200' };

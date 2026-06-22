@@ -20,13 +20,10 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     const systemPoolRef = doc(db, 'system_accounts', 'DH_CREDIT_POOL');
     const sysSnap = await transaction.get(systemPoolRef);
 
-    const usePoints = checkoutState?.usePoints || 0;
     const useWallet = checkoutState?.useWallet || 0;
     
-    const availablePoints = userData.creditPoints || 0;
-    
-    if (usePoints > 0 && availablePoints < usePoints) {
-      throw new Error("แต้มสะสมของคุณไม่เพียงพอ");
+    if (useWallet > 0 && (userData.walletBalance || 0) < useWallet) {
+      throw new Error("ยอดเงินใน Wallet ของคุณไม่เพียงพอ");
     }
     if (useWallet > 0 && (userData.walletBalance || 0) < useWallet) {
       throw new Error("ยอดเงินใน Wallet ของคุณไม่เพียงพอ");
@@ -49,7 +46,6 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         freebies: checkoutState?.qualifiedFreebies || [],
         discountCode: checkoutState?.discountCode || null,
         discountAmount: checkoutState?.discountAmount || 0,
-        usedPoints: usePoints,
         usedWallet: useWallet,
       },
       createdAt: serverTimestamp(),
@@ -58,29 +54,9 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     transaction.set(orderRef, orderData);
 
-    if (usePoints > 0 || useWallet > 0 || saveProfile) {
+    if (useWallet > 0 || saveProfile) {
       const userUpdateData = {};
       
-      if (usePoints > 0) {
-        userUpdateData.points = availablePoints - usePoints;
-        userUpdateData.creditPoints = availablePoints - usePoints;
-        
-        const sysBalance = sysSnap.exists() ? (sysSnap.data().balance || 0) : 0;
-        transaction.set(systemPoolRef, { 
-          balance: sysBalance + usePoints, 
-          lastUpdated: serverTimestamp() 
-        }, { merge: true });
-        
-        const sysHistoryRef = doc(collection(db, 'system_accounts', 'DH_CREDIT_POOL', 'transactions'));
-        transaction.set(sysHistoryRef, { 
-          amount: usePoints, 
-          type: 'RECOVERED_FROM_SPEND', 
-          referenceId: orderRef.id,
-          userUid: user.uid, 
-          timestamp: serverTimestamp() 
-        });
-      }
-
       if (useWallet > 0) userUpdateData.walletBalance = (userData.walletBalance || 0) - useWallet;
       
       if (saveProfile && checkoutState?.customerData) {
@@ -101,7 +77,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         customerName: checkoutState?.customerData?.fullName || "ลูกค้าทั่วไป",
         amount: totals?.netTotal || 0,
         slipUrl: slipUrl,
-        requestedAt: serverTimestamp()
+        requestedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
       });
     }
 

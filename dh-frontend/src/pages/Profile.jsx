@@ -11,6 +11,7 @@ import TabWallet from '../components/profile/tabs/TabWallet';
 import TabAdManager from '../components/profile/tabs/TabAdManager'; // 🚀 ศูนย์รวมโฆษณาใหม่
 import TabHistory from '../components/profile/tabs/TabHistory';
 import TabFavorites from '../components/profile/tabs/TabFavorites';
+import TabClaims from '../components/profile/tabs/TabClaims';
 import AuthForm from '../components/profile/AuthForm';
 import { Loader2 } from 'lucide-react';
 
@@ -111,6 +112,8 @@ const Profile = () => {
         return <TabAdManager user={user} />;
       case 'history':
         return <TabHistory user={user} />;
+      case 'claims':
+        return <TabClaims user={user} />;
       case 'favorites':
         return <TabFavorites user={user} />;
       default:

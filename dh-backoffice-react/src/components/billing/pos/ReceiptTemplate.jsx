@@ -37,8 +37,14 @@ export default function ReceiptTemplate({
     const _vatType = orderData ? (orderData.vatType || 'exempt') : vatType;
     const _walletUsed = orderData ? (orderData.walletUsed || 0) : walletUsed;
     const _remainingToPay = orderData ? (orderData.remainingToPay || 0) : remainingToPay;
-    const _netTotal = orderData ? (orderData.netTotal || 0) : (_itemSubTotal - _manualDiscount - _promoDiscount + _otherFeeAmount + _shippingFee + _vatAmount);
-    
+    let _netTotal = orderData 
+        ? Number(orderData.netTotal || orderData.summary?.finalTotal || orderData.finalTotal || orderData.finalPayable || orderData.totalPrice || orderData.totalAmount || 0) 
+        : (_itemSubTotal - _manualDiscount - _promoDiscount + _otherFeeAmount + _shippingFee + _vatAmount);
+
+    // 🔥 ULTIMATE FALLBACK: If _netTotal is 0, calculate it from the items array
+    if (_netTotal === 0 && data.items && data.items.length > 0) {
+        _netTotal = data.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0);
+    }
     const _paymentStatus = orderData ? orderData.paymentStatus : data.paymentStatus;
     const _thaiBahtText = orderData ? (orderData.thaiBahtText || '') : (convertToThaiBahtText ? convertToThaiBahtText(_remainingToPay) : '');
     

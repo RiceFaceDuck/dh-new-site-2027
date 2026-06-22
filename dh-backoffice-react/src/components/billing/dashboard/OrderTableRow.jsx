@@ -2,10 +2,11 @@ import React from 'react';
 import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store } from 'lucide-react';
 
 export default function OrderTableRow({ order, setSelectedOrder }) {
-    const isPaid = order.paymentStatus === 'Paid' || order.orderStatus === 'Paid';
+    const statLower = (order.orderStatus || order.status || '').toLowerCase();
+    const payStatLower = (order.paymentStatus || '').toLowerCase();
+    const isPaid = payStatLower === 'paid' || statLower === 'paid';
     const fulfillment = order.fulfillmentType || 'StorePickup'; 
     const shippingName = order.shippingMethod || order.courier || 'จัดส่งเอกชน';
-    const statLower = (order.orderStatus || order.status || '').toLowerCase();
     const isCancelled = statLower === 'cancelled' || statLower === 'void';
 
     return (
@@ -33,8 +34,16 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
                     <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 text-[10px] font-black border border-rose-500/20 shadow-sm transition-transform group-hover:scale-105">
                         <Ban size={12} strokeWidth={2.5} /> ยกเลิกแล้ว
                     </span>
+                ) : statLower === 'completed' ? (
+                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-[10px] font-black border border-blue-500/20 shadow-sm transition-transform group-hover:scale-105 dh-glow">
+                        <CheckCircle2 size={12} strokeWidth={2.5} /> เสร็จสิ้น
+                    </span>
+                ) : statLower === 'approved' ? (
+                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 shadow-sm transition-transform group-hover:scale-105 dh-glow">
+                        <CheckCircle2 size={12} strokeWidth={2.5} /> อนุมัติ / หักสต็อกแล้ว
+                    </span>
                 ) : isPaid ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 shadow-sm transition-transform group-hover:scale-105">
+                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-teal-500/10 text-teal-600 text-[10px] font-black border border-teal-500/20 shadow-sm transition-transform group-hover:scale-105">
                         <CheckCircle2 size={12} strokeWidth={2.5} /> ชำระเงินเรียบร้อย
                     </span>
                 ) : (
@@ -76,7 +85,16 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
             </td>
             <td className="py-2.5 px-6 text-right align-middle">
                 <span className={`font-black text-[15px] transition-colors ${isCancelled ? 'text-[var(--dh-text-muted)] line-through' : 'text-[var(--dh-text-main)] group-hover:text-[var(--dh-accent)] dh-text-glow'}`}>
-                    ฿{order.netTotal?.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) || 0}
+                    {(() => {
+                        let netTotal = Number(order.netTotal || order.summary?.finalTotal || order.finalTotal || order.finalPayable || order.totalPrice || order.totalAmount || 0);
+                        
+                        // 🔥 ULTIMATE FALLBACK: If netTotal is 0, calculate it from the items array
+                        if (netTotal === 0 && order.items && order.items.length > 0) {
+                            netTotal = order.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0);
+                        }
+
+                        return `฿${netTotal.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}`;
+                    })()}
                 </span>
             </td>
         </tr>

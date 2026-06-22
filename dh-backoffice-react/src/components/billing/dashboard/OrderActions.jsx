@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Ban, Trash2, Eye, History, FileEdit, Printer, X, Loader2 } from 'lucide-react';
+import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
+import { auth } from '../../../firebase/config';
 
 export default function OrderActions({ 
     selectedOrder, 
@@ -17,6 +19,28 @@ export default function OrderActions({
     const isApprovedOrCompleted = orderStat === 'approved' || orderStat === 'completed';
     const isCancelled = orderStat === 'cancelled' || orderStat === 'void';
     const isPaid = paymentStat === 'paid' || orderStat === 'paid';
+
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const handlePrintClick = async () => {
+        if (orderStat === 'paid') {
+            const confirmMsg = "⚠️ ยืนยันการพิมพ์บิล?\n\nระบบจะเปลี่ยนสถานะเป็น 'อนุมัติ' และจะทำการหักสต็อกสินค้าทันที\nคุณต้องการดำเนินการต่อหรือไม่?";
+            if (!window.confirm(confirmMsg)) return;
+
+            setIsProcessing(true);
+            try {
+                await billingStatusTransaction.updateOrderStatus(selectedOrder.id, 'approved', orderStat, auth.currentUser?.uid || 'System');
+                alert('✅ ยืนยันบิลและหักสต็อกสำเร็จ!');
+            } catch (error) {
+                alert(`❌ เกิดข้อผิดพลาดในการยืนยันบิล: ${error.message}`);
+                setIsProcessing(false);
+                return;
+            }
+            setIsProcessing(false);
+        }
+        
+        setShowPrintPreview(true);
+    };
 
     return (
         <div className="flex justify-between items-center bg-[var(--dh-bg-base)]/90 backdrop-blur-md px-3 py-2 border-b border-[var(--dh-border)] sticky top-0 z-20 shadow-sm flex-wrap gap-2">
@@ -40,11 +64,12 @@ export default function OrderActions({
                 <div className="h-8 w-px bg-[var(--dh-border)] mx-1 hidden md:block"></div>
 
                 <button 
-                    onClick={() => setShowPrintPreview(true)} 
-                    className="flex items-center gap-1.5 text-[var(--dh-text-main)] hover:text-blue-600 font-bold px-3 py-1.5 bg-[var(--dh-bg-surface)] hover:bg-blue-50 border border-[var(--dh-border)] hover:border-blue-400 rounded-sm transition-all text-xs sm:text-sm shadow-sm active:scale-95 dh-active-press group"
+                    onClick={handlePrintClick} 
+                    disabled={isProcessing}
+                    className="flex items-center gap-1.5 text-[var(--dh-text-main)] hover:text-blue-600 font-bold px-3 py-1.5 bg-[var(--dh-bg-surface)] hover:bg-blue-50 border border-[var(--dh-border)] hover:border-blue-400 rounded-sm transition-all text-xs sm:text-sm shadow-sm active:scale-95 dh-active-press group disabled:opacity-50"
                 >
-                    <Printer size={15} className="text-[var(--dh-text-muted)] group-hover:text-blue-500 transition-colors"/> 
-                    <span className="hidden sm:inline">พิมพ์บิล</span>
+                    {isProcessing ? <Loader2 size={15} className="animate-spin text-blue-500" /> : <Printer size={15} className="text-[var(--dh-text-muted)] group-hover:text-blue-500 transition-colors"/>}
+                    <span className="hidden sm:inline">{isProcessing ? 'กำลังยืนยัน...' : 'พิมพ์บิล'}</span>
                 </button>
             </div>
 

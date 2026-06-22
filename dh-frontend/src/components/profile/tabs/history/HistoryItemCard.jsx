@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Wrench, ArrowLeftRight } from 'lucide-react';
 import { getStatusDisplay } from './HistoryStatusUtil';
+import WarrantyStatusBadge from './WarrantyStatusBadge';
 
 const HistoryItemCard = ({
   order,
@@ -58,7 +59,7 @@ const HistoryItemCard = ({
             {itemsList}
           </p>
           <p className="text-base text-indigo-700 font-black mt-2">
-            ยอดชำระสุทธิ: ฿{order.totals?.netTotal?.toLocaleString() || '0'}
+            ยอดชำระสุทธิ: ฿{(order.totals?.netTotal ?? order.totals?.grandTotal ?? order.totals?.finalTotal ?? order.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) ?? 0).toLocaleString()}
           </p>
         </div>
         
@@ -138,6 +139,7 @@ const HistoryItemCard = ({
               const approvedPrice = order.totals?.wholesaleDetails?.approvedPrices?.[idx];
               const isWholesaleApplied = approvedPrice !== undefined && approvedPrice < item.price;
               const priceToShow = isWholesaleApplied ? approvedPrice : (item.price || 0);
+              const orderDateStr = order.createdAt?.toDate ? order.createdAt.toDate().toISOString() : null;
 
               return (
                 <div key={idx} className="flex gap-3 text-sm bg-gray-50/70 p-3 rounded-xl border border-gray-100">
@@ -182,11 +184,34 @@ const HistoryItemCard = ({
                 <span className="font-semibold text-gray-900">฿{order.totals?.subtotal?.toLocaleString() || 0}</span>
               </div>
               
-              {order.totals?.discount > 0 && (
-                <div className="flex justify-between text-red-500">
-                  <span>ส่วนลดโปรโมชั่น / คูปอง</span>
-                  <span className="font-semibold">-฿{(order.totals.discount - (order.totals?.wholesaleDetails?.itemLevelDiscount || 0) - (order.totals?.wholesaleDetails?.manualExtraDiscount || 0)).toLocaleString()}</span>
-                </div>
+              {order.calculationLog ? (
+                <>
+                  {order.calculationLog.discountAmount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>ส่วนลด ({order.calculationLog.discountCode || 'โปรโมชั่น'})</span>
+                      <span className="font-semibold">-฿{order.calculationLog.discountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {order.calculationLog.usedWallet > 0 && (
+                    <div className="flex justify-between text-purple-600">
+                      <span>หักลบด้วยยอดเงินใน Wallet</span>
+                      <span className="font-semibold">-฿{order.calculationLog.usedWallet.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {order.calculationLog.usedPoints > 0 && (
+                    <div className="flex justify-between text-orange-600">
+                      <span>หักลบด้วย Points สะสม</span>
+                      <span className="font-semibold">-฿{order.calculationLog.usedPoints.toLocaleString()}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                order.totals?.discount > 0 && (
+                  <div className="flex justify-between text-red-500">
+                    <span>ส่วนลดรวม / คูปอง</span>
+                    <span className="font-semibold">-฿{(order.totals.discount - (order.totals?.wholesaleDetails?.itemLevelDiscount || 0) - (order.totals?.wholesaleDetails?.manualExtraDiscount || 0)).toLocaleString()}</span>
+                  </div>
+                )
               )}
 
               {(order.totals?.wholesaleDetails?.itemLevelDiscount > 0 || order.totals?.wholesaleDetails?.manualExtraDiscount > 0) && (
@@ -203,7 +228,7 @@ const HistoryItemCard = ({
               
               <div className="flex justify-between items-end font-black text-indigo-950 text-base pt-3 border-t-2 border-indigo-100 border-dashed mt-3">
                 <span>ยอดชำระสุทธิ</span>
-                <span className="text-2xl text-indigo-700">฿{order.totals?.netTotal?.toLocaleString() || 0}</span>
+                <span className="text-2xl text-indigo-700">฿{(order.totals?.grandTotal ?? order.totals?.netTotal ?? order.totals?.finalTotal ?? order.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) ?? 0).toLocaleString()}</span>
               </div>
           </div>
 

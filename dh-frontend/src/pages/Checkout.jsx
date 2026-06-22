@@ -8,7 +8,7 @@ import TaxInvoiceForm from '../components/checkout/TaxInvoiceForm';
 import CheckoutSummary from '../components/checkout/CheckoutSummary';
 import CheckoutSuccess from '../components/checkout/CheckoutSuccess';
 import WholesaleRequestModal from '../components/checkout/WholesaleRequestModal';
-import PaymentUploader from '../components/checkout/PaymentUploader';
+
 import CreditToggleBox from '../components/checkout/CreditToggleBox';
 import TrustBadges from '../components/checkout/TrustBadges';
 
@@ -106,15 +106,8 @@ const Checkout = () => {
             <PaymentMethod 
               selectedMethod={checkoutState.paymentMethod}
               onUpdate={(method) => handleUpdateCheckoutState('paymentMethod', method)}
+              onSlipChange={setSlipUrl}
             />
-
-            {/* แสดง Uploader เมื่อเลือกโอนเงิน */}
-            {checkoutState.paymentMethod === 'transfer' && (
-              <PaymentUploader 
-                onSlipUploaded={setSlipUrl}
-                slipUrl={slipUrl}
-              />
-            )}
           </div>
 
           {/* Right Column: Order Summary & Actions */}
@@ -128,7 +121,7 @@ const Checkout = () => {
                 creditBalance={creditBalance}
                 useCreditToggle={useCreditToggle}
                 setUseCreditToggle={setUseCreditToggle}
-                usePoints={checkoutState.usePoints}
+                useWallet={checkoutState.useWallet}
               />
 
               <CheckoutSummary 

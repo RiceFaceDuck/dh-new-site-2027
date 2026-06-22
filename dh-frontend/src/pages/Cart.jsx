@@ -32,11 +32,8 @@ const Cart = () => {
   const [cartData, setCartData] = useState({ items: [], total: 0, totalQty: 0 });
   
   const [creditConfig, setCreditConfig] = useState(null);
-  const [userPoints, setUserPoints] = useState(0);
-  const [usePoints, setUsePoints] = useState(0);
-  const [inputPoints, setInputPoints] = useState('');
-  const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [freebies, setFreebies] = useState([]);
 
@@ -129,32 +126,8 @@ const Cart = () => {
   };
 
   const subTotal = parseSafeNumber(cartData.total);
-  const discountFromPoints = (usePoints && creditConfig) ? Math.floor(usePoints / (creditConfig.redemptionRate || 1)) : 0;
-  const netTotal = Math.max(0, subTotal - discountFromPoints);
+  const netTotal = Math.max(0, subTotal);
   const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig) : 0;
-
-  const handleApplyPoints = () => {
-    const pointsToUse = Number(inputPoints);
-    if (isNaN(pointsToUse) || pointsToUse <= 0) {
-      alert('กรุณากรอกจำนวนแต้มที่ถูกต้อง');
-      return;
-    }
-    if (pointsToUse > userPoints) {
-      alert('แต้มสะสมของคุณไม่เพียงพอ');
-      return;
-    }
-    
-    const maxDiscount = subTotal;
-    const maxPointsToUse = maxDiscount * (creditConfig?.redemptionRate || 1);
-    
-    if (pointsToUse > maxPointsToUse) {
-       setUsePoints(maxPointsToUse);
-       setInputPoints(maxPointsToUse.toString());
-       alert(`สามารถใช้แต้มได้สูงสุด ${maxPointsToUse} แต้ม สำหรับคำสั่งซื้อนี้`);
-    } else {
-       setUsePoints(pointsToUse);
-    }
-  };
 
   if (loading) {
     return (
@@ -219,15 +192,8 @@ const Cart = () => {
         <div className="lg:col-span-1">
           <CartSummaryPanel 
             cartData={cartData}
-            currentUser={currentUser}
-            creditConfig={creditConfig}
-            userPoints={userPoints}
-            usePoints={usePoints}
-            inputPoints={inputPoints}
-            setInputPoints={setInputPoints}
-            handleApplyPoints={handleApplyPoints}
+            currentUser={user}
             subTotal={subTotal}
-            discountFromPoints={discountFromPoints}
             netTotal={netTotal}
             earnedPoints={earnedPoints}
           />

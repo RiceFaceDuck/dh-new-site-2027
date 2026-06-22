@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './config';
+import { db, auth } from './config';
+import { historyService } from './historyService';
 
 const SETTINGS_DOC = 'platform_links';
 const MARKETING_DOC = 'marketing'; // 🎯 อ้างอิงเอกสารสำหรับการตั้งค่าการตลาดโฆษณา
@@ -73,6 +74,7 @@ export const settingsService = {
         ...regexData,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await historyService.addLog('Settings', 'Update', SETTINGS_DOC, 'อัปเดตการตั้งค่า Platform Links', auth.currentUser?.uid);
       return true;
     } catch (error) {
       console.error("🔥 Error updating platform regex:", error);
@@ -121,6 +123,7 @@ export const settingsService = {
         updatedAt: serverTimestamp()
       }, { merge: true });
       
+      await historyService.addLog('Settings', 'Update', MARKETING_DOC, 'อัปเดตเรทราคาเครดิตโฆษณา', auth.currentUser?.uid);
       return { success: true, message: 'บันทึกการตั้งค่าเรทโฆษณาสำเร็จ' };
     } catch (error) {
       console.error("🔥 Error updating ad rates:", error);
@@ -153,6 +156,7 @@ export const settingsService = {
         ...themeConfig,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await historyService.addLog('Settings', 'Update', THEME_DOC, 'อัปเดตการตั้งค่าธีมหน้าบ้าน', auth.currentUser?.uid);
       return { success: true, message: 'บันทึกการตั้งค่าธีมหน้าบ้านสำเร็จ' };
     } catch (error) {
       console.error("🔥 Error updating storefront theme:", error);
@@ -185,6 +189,7 @@ export const settingsService = {
         ...heroConfig,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await historyService.addLog('Settings', 'Update', HERO_DOC, 'อัปเดตป้ายโฆษณาหน้าแรก', auth.currentUser?.uid);
       return { success: true, message: 'บันทึกการตั้งค่าป้ายหน้าแรกสำเร็จ' };
     } catch (error) {
       console.error("🔥 Error updating hero config:", error);

@@ -1,25 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Wrench, ArrowLeftRight, Printer, X } from 'lucide-react';
-import { claimService } from '../../../../firebase/claimService';
 import { auth } from '../../../../firebase/config';
 import { userService } from '../../../../firebase/userService';
+import { useClaimActions } from '../../hooks/useClaimActions';
 
 import CustomerInfo from './CustomerInfo';
 import ProductInfo from './ProductInfo';
 import ImageGallery from './ImageGallery';
 import ModalFooter from './ModalFooter';
+import ClaimStepper from './ClaimStepper';
+import PremiumDialog from '../../../../components/common/PremiumDialog';
 
 export default function ClaimDetailModal({ 
   selectedRequest, 
   setSelectedRequest, 
   handlePrint, 
   handleQuickCopy, 
-  copiedText
+  copiedText,
+  getStatusDisplay
 }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [trackingNo, setTrackingNo] = useState(selectedRequest.payload?.trackingNo || '');
+  const [trackingNo, setTrackingNo] = useState('');
   const [userProfile, setUserProfile] = useState(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
+
+  useEffect(() => {
+    if (selectedRequest) {
+      setTrackingNo(selectedRequest.payload?.trackingNo || '');
+    }
+  }, [selectedRequest]);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setSelectedRequest(null);
+      setIsClosing(false);
+    }, 200);
+  };
+
+  const {
+    isProcessing,
+    handleRequestCancel,
+    handleApprove,
+    handleMarkArrived,
+    handleComplete,
+    handleReject
+  } = useClaimActions(selectedRequest, setSelectedRequest, userProfile, handleClose);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -33,71 +59,80 @@ export default function ClaimDetailModal({
 
   const isManager = userProfile && ['Manager', 'Owner', 'manager', 'owner', 'admin', 'Admin', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน'].includes(userProfile.role);
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setSelectedRequest(null);
-      setIsClosing(false);
-    }, 200);
+  const confirmAction = (config) => {
+    setDialogConfig({
+      ...config,
+      isOpen: true,
+      onCancel: () => setDialogConfig({ isOpen: false }),
+      onConfirm: async (val) => {
+        setDialogConfig({ isOpen: false });
+        if (config.actionFn) {
+          await config.actionFn(val);
+        }
+      }
+    });
   };
 
-  const handleRequestCancel = async () => {
-    const reason = window.prompt('กรุณาระบุเหตุผลที่ต้องการขอยกเลิกรายการนี้:');
-    if (!reason) return;
-    
-    setIsProcessing(true);
-    try {
-      const userName = userProfile ? `${userProfile.firstName} (${userProfile.nickname})` : auth.currentUser.email;
-      await claimService.requestCancelTodo(selectedRequest, reason, auth.currentUser.uid, userName);
-      alert('ส่งคำร้องขอยกเลิกไปยังผู้จัดการสำเร็จ\n\nสถานะจะเปลี่ยนเป็น "ยกเลิกสมบูรณ์" เมื่อผู้จัดการอนุมัติ (ระบบจะดึงสต๊อกกลับคืนให้อัตโนมัติ)');
-      handleClose();
-    } catch (error) {
-      alert('เกิดข้อผิดพลาด: ' + error.message);
-    } finally {
-      setIsProcessing(false);
-    }
+  const onAskCancel = () => {
+    confirmAction({
+      title: 'ยกเลิกคำร้อง',
+      message: 'กรุณาระบุเหตุผลที่ต้องการยกเลิกคำร้องนี้',
+      type: 'warning',
+      requireInput: true,
+      inputPlaceholder: 'เหตุผลการยกเลิก...',
+      actionFn: handleRequestCancel
+    });
   };
 
-  const handleApprove = async () => {
-    if (!window.confirm('คุณต้องการอนุมัติรายการนี้ใช่หรือไม่?')) return;
-    
+  const onAskApprove = () => {
     const isReturn = selectedRequest.type === 'RETURN_APPROVAL';
     if (isReturn && !trackingNo) {
-        if (!window.confirm('ยังไม่ได้ระบุเลขพัสดุสำหรับคืนสินค้า คุณต้องการดำเนินการต่อหรือไม่?')) return;
+        confirmAction({
+            title: 'แจ้งเตือน',
+            message: 'คุณยังไม่ได้ระบุเลขพัสดุสำหรับคืนสินค้า หากไม่มีให้ข้ามไป ยืนยันการดำเนินการหรือไม่?',
+            type: 'warning',
+            actionFn: () => handleApprove(trackingNo)
+        });
+        return;
     }
-
-    setIsProcessing(true);
-    try {
-      const taskToApprove = {
-        ...selectedRequest,
-        payload: {
-          ...selectedRequest.payload,
-          trackingNo: trackingNo 
-        }
-      };
-      await claimService.approveRequest(taskToApprove, auth.currentUser.uid, userProfile?.firstName || 'Manager');
-      alert('อนุมัติรายการเรียบร้อย');
-      handleClose();
-    } catch (error) {
-      alert('เกิดข้อผิดพลาดในการอนุมัติ: ' + error.message);
-    } finally {
-      setIsProcessing(false);
-    }
+    confirmAction({
+      title: 'อนุมัติคำร้อง',
+      message: 'คุณต้องการอนุมัติคำร้องนี้ใช่หรือไม่? ระบบจะเปลี่ยนสถานะเป็น "รอรับของ"',
+      type: 'prompt',
+      actionFn: () => handleApprove(trackingNo)
+    });
   };
 
-  const handleReject = async () => {
-    const reason = window.prompt('กรุณาระบุเหตุผลที่ไม่อนุมัติ:');
-    if (!reason) return;
-    setIsProcessing(true);
-    try {
-      await claimService.rejectRequest(selectedRequest, reason, auth.currentUser.uid);
-      alert('ปฏิเสธรายการเรียบร้อย');
-      handleClose();
-    } catch (error) {
-      alert('เกิดข้อผิดพลาด: ' + error.message);
-    } finally {
-      setIsProcessing(false);
-    }
+  const onAskMarkArrived = () => {
+    confirmAction({
+      title: 'รับสินค้าเรียบร้อย',
+      message: 'ยืนยันการรับสินค้าจากลูกค้า ระบบจะเปลี่ยนสถานะเป็น "กำลังตรวจสอบ"',
+      type: 'prompt',
+      actionFn: handleMarkArrived
+    });
+  };
+
+  const onAskComplete = () => {
+    const isReturn = selectedRequest.type === 'RETURN_APPROVAL';
+    confirmAction({
+      title: 'เสร็จสิ้นกระบวนการ',
+      message: isReturn 
+        ? 'ระบบจะทำการ "คืนเงิน" และ "เพิ่มสต๊อก" ทันที ยืนยันใช่หรือไม่?'
+        : 'ระบบจะทำการ "ตัดสต๊อกสินค้าใหม่" เพื่อมอบให้ลูกค้า ยืนยันใช่หรือไม่?',
+      type: 'success',
+      actionFn: handleComplete
+    });
+  };
+
+  const onAskReject = () => {
+    confirmAction({
+      title: 'ไม่อนุมัติคำร้อง',
+      message: 'กรุณาระบุเหตุผลที่ไม่อนุมัติ',
+      type: 'warning',
+      requireInput: true,
+      inputPlaceholder: 'เหตุผล...',
+      actionFn: handleReject
+    });
   };
 
   if (!selectedRequest) return null;
@@ -129,7 +164,8 @@ export default function ClaimDetailModal({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative bg-gradient-to-b from-transparent to-dh-surface/30">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
+          <ClaimStepper status={selectedRequest.status} isCancel={selectedRequest.type.startsWith('CANCEL_')} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10 mt-4">
             <CustomerInfo 
               selectedRequest={selectedRequest}
               copiedText={copiedText}
@@ -152,13 +188,17 @@ export default function ClaimDetailModal({
           selectedRequest={selectedRequest}
           isManager={isManager}
           isProcessing={isProcessing}
-          handleRequestCancel={handleRequestCancel}
-          handleApprove={handleApprove}
-          handleReject={handleReject}
+          handleRequestCancel={onAskCancel}
+          handleApprove={onAskApprove}
+          handleMarkArrived={onAskMarkArrived}
+          handleComplete={onAskComplete}
+          handleReject={onAskReject}
           setSelectedRequest={handleClose}
         />
 
       </div>
+      
+      <PremiumDialog {...dialogConfig} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Plus, AlertTriangle, ArrowLeft, HelpCircle } from 'lucide-react';
+import GuideModal from '../common/GuideModal';
 import { billingService } from '../../firebase/billingService';
 import { auth } from '../../firebase/config';
 
@@ -29,6 +30,20 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
     const [activeTab, setActiveTab] = useState('detail'); 
     const [isVoiding, setIsVoiding] = useState(false);
     const [showPrintPreview, setShowPrintPreview] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
+
+    // Sync selectedOrder with live updates from Firebase
+    React.useEffect(() => {
+        if (selectedOrder && orders.length > 0) {
+            const liveOrder = orders.find(o => o.id === selectedOrder.id);
+            if (liveOrder) {
+                // Only update if something relevant changed (simple check on updatedAt or basic deep comparison could be better, but direct object ref change might cause infinite loops if we just setState on any array change. So we do a shallow JSON comparison to be safe)
+                if (JSON.stringify(liveOrder) !== JSON.stringify(selectedOrder)) {
+                    setSelectedOrder(liveOrder);
+                }
+            }
+        }
+    }, [orders, selectedOrder]);
 
     const totalSales = filteredOrders.reduce((sum, order) => {
         const stat = (order.orderStatus || order.status || '').toLowerCase();
@@ -129,14 +144,22 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                                     <ArrowLeft size={18} strokeWidth={3} /> ย้อนกลับ (หน้ารายการเคลม)
                                 </button>
                             ) : (
-                                onSwitchView && (
+                                <div className="flex gap-2 items-center">
                                     <button 
-                                        onClick={onSwitchView} 
-                                        className="px-5 py-2.5 bg-[var(--dh-accent)] hover:bg-[var(--dh-accent-hover)] text-white font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:shadow-[0_4px_15px_var(--dh-glow-color)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-[13px] dh-active-press shrink-0 whitespace-nowrap"
+                                        onClick={() => setShowGuide(true)}
+                                        className="px-4 py-2.5 bg-slate-800/50 hover:bg-slate-800/70 text-white border border-slate-700/50 font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
                                     >
-                                        <Plus size={18} strokeWidth={3} /> สร้างบิลใหม่
+                                        <HelpCircle size={18} strokeWidth={3} /> คู่มือ
                                     </button>
-                                )
+                                    {onSwitchView && (
+                                        <button 
+                                            onClick={onSwitchView} 
+                                            className="px-5 py-2.5 bg-[var(--dh-accent)] hover:bg-[var(--dh-accent-hover)] text-white font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:shadow-[0_4px_15px_var(--dh-glow-color)] hover:-translate-y-0.5 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
+                                        >
+                                            <Plus size={18} strokeWidth={3} /> สร้างบิลใหม่
+                                        </button>
+                                    )}
+                                </div>
                             )
                         }
                     />
@@ -172,6 +195,20 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                     onClose={() => setShowPrintPreview(false)}
                 />
             )}
+
+            <GuideModal 
+                isOpen={showGuide}
+                onClose={() => setShowGuide(false)}
+                title="คู่มือรายการบิล (Orders Dashboard)"
+                manualText="หน้าจอนี้ใช้สำหรับตรวจสอบรายการบิลทั้งหมดที่ถูกสร้างขึ้นในระบบ ไม่ว่าจะมาจากหน้าร้าน (POS) หรือมาจากการสั่งซื้อล่วงหน้า"
+                howTo={[
+                    "ค้นหาบิลด้วย 'เลขบิล' หรือ 'ชื่อลูกค้า' ในช่องค้นหา",
+                    "สามารถคลิกที่แถวของบิลเพื่อดูรายละเอียด หรือ สั่งพิมพ์ใบเสร็จย้อนหลังได้",
+                    "กด 'สร้างบิลใหม่' เพื่อเข้าสู่หน้าระบบขายหน้าร้าน (POS)"
+                ]}
+                tips="บิลที่เป็นสถานะ 'ฉบับร่าง' (Draft) จะมีปุ่มให้กดทำรายการต่อ (Resume) ได้ทันที!"
+                expectedResult="หากกดยกเลิกบิล (Void) ระบบจะทำการคืนสต็อกสินค้าอัตโนมัติ และคืนยอดเงินเครดิตให้ลูกค้าทันที"
+            />
         </div>
     );
 }

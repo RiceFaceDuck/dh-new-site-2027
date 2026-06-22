@@ -64,6 +64,32 @@ export const useOverviewData = () => {
     const pageViews = 8900;
     const pendingTasks = todos.length;
 
+    // 🚀 คำนวณ Best Sellers จากออเดอร์ที่มีอยู่
+    const bestSellersMap = {};
+    orders.forEach(o => {
+      if (o.paymentStatus === 'Paid' && o.items) {
+        o.items.forEach(item => {
+          if (!item.isFreebie) {
+            if (!bestSellersMap[item.sku]) {
+               bestSellersMap[item.sku] = { id: item.sku, name: item.name, category: item.category || 'General', sales: 0, trend: '+0%' };
+            }
+            bestSellersMap[item.sku].sales += (Number(item.qty) || 1);
+          }
+        });
+      }
+    });
+    
+    const bestSellers = Object.values(bestSellersMap)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5);
+
+    // Fallback ถ้ายังไม่มีออเดอร์
+    if (bestSellers.length === 0) {
+      bestSellers.push(
+        { id: 1, name: 'ยังไม่มีข้อมูลสินค้าขายดี', category: '-', sales: 0, trend: '0%' }
+      );
+    }
+
     return {
       revenueToday,
       ordersToday: todayOrders.length,
@@ -74,7 +100,8 @@ export const useOverviewData = () => {
       pendingStaff,
       websiteViews,
       pageViews,
-      pendingTasks
+      pendingTasks,
+      bestSellers
     };
   }, [orders, todos]);
 

@@ -7,6 +7,7 @@ import ProductImageUpload from './modal/ProductImageUpload';
 import ProductBasicInfo from './modal/ProductBasicInfo';
 import ProductLinks from './modal/ProductLinks';
 import ProductPricingStock from './modal/ProductPricingStock';
+import ProductVariants from './modal/ProductVariants';
 import ProductTags from './modal/ProductTags';
 import useProductForm from './hooks/useProductForm';
 
@@ -129,6 +130,9 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
               isManagerOrOwner={isManagerOrOwner}
               globalBufferStock={globalBufferStock}
             />
+
+            {/* Product Variants Section */}
+            <ProductVariants form={form} setForm={setForm} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ProductTags form={form} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />

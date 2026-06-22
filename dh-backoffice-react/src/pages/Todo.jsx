@@ -8,6 +8,7 @@ import { todoService } from '../firebase/todoService';
 import { claimService } from '../firebase/claimService';
 
 import NewTaskModal from '../components/todo/forms/NewTaskModal'; 
+import GuideModal from '../components/common/GuideModal';
 import { useCentralTodo } from './todo/hooks/useCentralTodo'; 
 import { useWholesalePrices } from './todo/hooks/useWholesalePrices'; 
 import TodoPageHeader from './todo/components/TodoPageHeader';
@@ -57,6 +58,16 @@ export default function Todo() {
         await todoService.startTask(taskId);
       } else if (action === 'complete') {
         await todoService.completeTask(taskId);
+      } else if (action === 'markArrived') {
+        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
+          if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
+          // Save the tracking number locally and remotely for history/reference
+          if (payload.trackingNo) {
+            fullTask.payload = { ...fullTask.payload, trackingNo: payload.trackingNo };
+            await updateDoc(doc(db, 'todos', taskId), { 'payload.trackingNo': payload.trackingNo });
+          }
+          await claimService.markArrived(fullTask, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
+        }
       }
     } catch (error) {
       console.error(`Error performing ${action} on task ${taskId}:`, error);
@@ -151,6 +162,26 @@ export default function Todo() {
           onClose={() => setShowNewTaskModal(false)} 
           onSubmit={handleCreateTask}
           isSubmitting={isHookSubmitting}
+        />
+
+        <GuideModal 
+          isOpen={showHelp}
+          onClose={() => setShowHelp(false)}
+          title="คู่มือศูนย์ปฏิบัติการ (Todo Tasks)"
+          config={{
+            description: "ระบบกระดานงาน (Todo Board) สำหรับจัดการงานต่างๆ แบบรวมศูนย์ ไม่ว่าจะเป็นการอนุมัติเคลม, ตรวจสอบสลิปโอนเงิน หรือคำร้องต่างๆ",
+            howTo: [
+              "<b>1. ภาพรวมการทำงาน:</b> ดูตัวกรอง (Filter) ด้านบนเพื่อเลือกประเภทงานที่ต้องการจัดการ",
+              "<b>2. การเริ่มงาน:</b> กดรับงาน เพื่อแสดงตัวตนว่าใครกำลังดูแลงานนี้อยู่",
+              "<b>3. การตรวจสอบสลิปโอนเงิน:</b> คลิกที่ 'การ์ดตรวจสอบยอด' เพื่อดูรายละเอียดที่มาของยอดชำระสุทธิ จากนั้นให้คลิกที่รูปสลิปเพื่อดูรูปขยาย แล้วตรวจสอบยอดเงิน-บัญชี-เวลา ให้ตรงกัน",
+              "<b>4. การตัดสินใจ:</b> ตรวจสอบข้อมูลให้ละเอียด ก่อนกด <b>'อนุมัติ'</b> หรือ <b>'ปฏิเสธ'</b>"
+            ],
+            tips: [
+              "งานตรวจสอบสลิป: หากมีข้อสงสัยว่าสลิปนี้ซ้ำหรือไม่ หรือรูปภาพไม่ชัดเจน คุณสามารถนำรูปสลิปส่งตรวจสอบกับทางธนาคารหรือบัญชีได้ก่อนกดอนุมัติ",
+              "งานเคลม: จะผูกกับระบบคลังสินค้า หากกดยอมรับ ระบบจะจัดการสต็อกและบันทึกประวัติให้ทันทีโดยอัตโนมัติ"
+            ],
+            expectedResults: "<b>เมื่ออนุมัติสลิป:</b> ระบบจะสร้างเลขที่บิลรันนิ่งอัตโนมัติ แจ้งเตือนโกดัง และตัดสต็อก\n<b>เมื่อจัดการงานสำเร็จ:</b> งานนั้นจะหายไปจากหน้าจอนี้ และถูกเก็บไว้ในเมนู 'ประวัติ / จัดเก็บ' อย่างถาวร"
+          }}
         />
       </div>
     </div>

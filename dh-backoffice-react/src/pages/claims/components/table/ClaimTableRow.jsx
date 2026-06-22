@@ -2,13 +2,47 @@ import React from 'react';
 import { Wrench, ArrowLeftRight, Check, Copy, Eye } from 'lucide-react';
 import { getWarrantyInfo, getSLAIndicator, getStatusDisplay } from '../../utils/claimFormatters';
 
-export default function ClaimTableRow({ req, setSelectedRequest, copiedText, handleQuickCopy }) {
+export default function ClaimTableRow({ req, setSelectedRequest, copiedText, handleQuickCopy, warrantyConfig }) {
   const isClaim = req.originalType === 'CLAIM_APPROVAL' || req.type === 'CLAIM_APPROVAL';
   const payload = req.payload || {};
   const dateObj = req.createdAt?.toDate ? new Date(req.createdAt.toDate()) : null;
   const indicatorColor = isClaim ? 'bg-[#FF9B51]' : 'bg-[#A78BFA]';
   
-  const warranty = getWarrantyInfo(payload.purchaseDate, req.createdAt);
+  let warrantyDays = 365;
+  if (warrantyConfig) {
+    if (warrantyConfig.skus?.[payload.sku]) {
+      warrantyDays = isClaim ? warrantyConfig.skus[payload.sku].claimDays : warrantyConfig.skus[payload.sku].returnDays;
+    } else if (warrantyConfig.categories) {
+      let foundCat = 'General';
+      const skuUpper = payload.sku?.toUpperCase() || '';
+      const categoryFromPayload = payload.category?.toLowerCase() || '';
+
+      for (const cat of Object.keys(warrantyConfig.categories)) {
+        const catLower = cat.toLowerCase();
+        // 1. Check exact match from payload.category
+        if (categoryFromPayload === catLower) {
+          foundCat = cat; break;
+        }
+        // 2. Check substring match in SKU (e.g. ADAC009 includes AD? No, just check prefix)
+        // Some known prefixes: AD=Adapter, KB=Keyboard, PN=Panel, BT=Battery
+        if (catLower === 'adapter' && skuUpper.startsWith('AD')) { foundCat = cat; break; }
+        if (catLower === 'keyboard' && skuUpper.startsWith('KB')) { foundCat = cat; break; }
+        if (catLower === 'panel' && skuUpper.startsWith('PN')) { foundCat = cat; break; }
+        if (catLower === 'battery' && skuUpper.startsWith('BT')) { foundCat = cat; break; }
+        
+        // 3. Fallback: string includes
+        if (payload.sku && payload.sku.toLowerCase().includes(catLower)) {
+          foundCat = cat; break;
+        }
+      }
+      const catConfig = warrantyConfig.categories[foundCat] || warrantyConfig.categories['General'];
+      if (catConfig) {
+        warrantyDays = isClaim ? catConfig.claimDays : catConfig.returnDays;
+      }
+    }
+  }
+
+  const warranty = getWarrantyInfo(payload.purchaseDate, req.createdAt, warrantyDays);
   const hoursDiff = dateObj ? (new Date() - dateObj) / (1000 * 60 * 60) : 0;
   const isUrgent = req.status === 'pending_manager' && hoursDiff > 48;
 
@@ -60,20 +94,27 @@ export default function ClaimTableRow({ req, setSelectedRequest, copiedText, han
       </td>
 
       <td className="px-4 py-3 align-middle border-b border-dh-border group-last:border-none">
-        {payload.purchaseDate ? (
-          <span className="text-[12px] font-bold text-dh-main">
-            {new Date(payload.purchaseDate).toLocaleDateString('th-TH')}
-          </span>
+        {payload.purchaseDate && !isNaN(new Date(payload.purchaseDate)) ? (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[12px] font-bold text-dh-main">
+              {new Date(payload.purchaseDate).toLocaleDateString('th-TH')}
+            </span>
+            {warranty && (
+              <span className="text-[10px] text-dh-muted font-medium">
+                (ซื้อมา {warranty.usedDays} วัน)
+              </span>
+            )}
+          </div>
         ) : (
-          <span className="text-[10px] text-dh-muted italic bg-dh-base px-2 py-0.5 rounded">ไม่ระบุ</span>
+          <span className="text-[10px] text-dh-muted italic bg-dh-base px-2 py-0.5 rounded">ไม่ระบุวันที่ซื้อ</span>
         )}
       </td>
 
       <td className="px-4 py-3 align-middle border-b border-dh-border group-last:border-none">
         {warranty ? (
-          <div className="flex flex-col gap-1 w-28 group-hover:scale-105 transition-transform" title={`อ้างอิงจากวันที่ซื้อ: ${new Date(payload.purchaseDate).toLocaleDateString('th-TH')}`}>
+          <div className="flex flex-col gap-1 min-w-32 max-w-40 group-hover:scale-105 transition-transform" title={`การคำนวณแบบ Real-time ณ ปัจจุบัน\nซื้อเมื่อ: ${payload.purchaseDate && !isNaN(new Date(payload.purchaseDate)) ? new Date(payload.purchaseDate).toLocaleDateString('th-TH') : 'ไม่ระบุวันที่ซื้อ'}\nผ่านไปแล้ว: ${warranty.usedDays} วัน\n(รวมระยะเวลาประกัน ${warranty.warrantyPeriod} วัน)`}>
             <div className="flex justify-between items-end">
-              <span className={`text-[9px] font-black ${warranty.textColor}`}>{warranty.label}</span>
+              <span className={`text-[10px] font-bold ${warranty.textColor}`}>{warranty.label}</span>
             </div>
             <div className="w-full bg-dh-base rounded-full h-1.5 overflow-hidden border border-dh-border shadow-inner">
               <div className={`h-full ${warranty.color} transition-all duration-1000 ease-out`} style={{ width: `${warranty.percentUsed}%` }}></div>

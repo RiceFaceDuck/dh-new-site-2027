@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, FileSpreadsheet, FileUp, Boxes, CalendarClock, RefreshCw, DatabaseBackup } from 'lucide-react';
+import { Search, Filter, Plus, FileSpreadsheet, FileUp, Boxes, CalendarClock, RefreshCw, DatabaseBackup, HelpCircle } from 'lucide-react';
 import { gasStockService } from '../../firebase/gasStockService';
 import { inventoryService } from '../../firebase/inventoryService';
 
@@ -9,7 +9,8 @@ export default function InventoryHeader({
   salesPeriod, setSalesPeriod,
   onAddProduct,
   onImportProduct,
-  onExportProduct
+  onExportProduct,
+  onGuideOpen
 }) {
   const [pendingCount, setPendingCount] = useState(gasStockService.getPendingCount());
   const [isSyncing, setIsSyncing] = useState(false);
@@ -151,6 +152,15 @@ export default function InventoryHeader({
           >
             <DatabaseBackup size={14} className={isSyncing ? "animate-pulse" : ""} />
             <span className="hidden xl:inline">Full Sync</span>
+          </button>
+
+          <button 
+            onClick={onGuideOpen}
+            className="flex items-center justify-center gap-2 bg-slate-700/50 text-white border border-white/20 h-[36px] px-3 rounded-md hover:bg-slate-700 transition-all font-bold text-xs shadow-sm backdrop-blur-sm"
+            title="คู่มือการใช้งาน"
+          >
+            <HelpCircle size={14} />
+            <span className="hidden xl:inline">คู่มือ</span>
           </button>
 
           <button 

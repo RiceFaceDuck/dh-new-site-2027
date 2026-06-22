@@ -67,6 +67,33 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id]);
 
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
+  // หา Variant ที่ถูกเลือกจาก Option ปัจจุบัน
+  const getSelectedVariantData = () => {
+    if (!product?.variants || product.variants.length === 0 || !selectedVariant) return product;
+    
+    const matched = product.variants.find(v => 
+      JSON.stringify(v.attributes) === JSON.stringify(selectedVariant)
+    );
+    
+    if (matched) {
+      return {
+        ...product,
+        id: matched.sku || product.id,
+        price: matched.retailPrice || matched.price || product.price,
+        salePrice: matched.salePrice || null,
+        stockQuantity: matched.stockQuantity,
+        isOutOfStock: matched.stockQuantity <= 0,
+        isLowStock: matched.stockQuantity > 0 && matched.stockQuantity <= (product.bufferStock || 2),
+        variantAttributes: matched.attributes
+      };
+    }
+    return product;
+  };
+
+  const currentProductInfo = getSelectedVariantData();
+
   const handleAddToCart = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -77,9 +104,28 @@ const ProductDetail = () => {
       return;
     }
 
+    // Check if variant selection is complete
+    if (product?.variantOptions?.length > 0) {
+      if (!selectedVariant || Object.keys(selectedVariant).length !== product.variantOptions.length) {
+         setAlertMessage({ type: 'error', text: 'กรุณาเลือกตัวเลือกสินค้าให้ครบถ้วน' });
+         setTimeout(() => setAlertMessage(null), 3000);
+         return;
+      }
+    }
+
     setIsAdding(true);
     try {
-      await cartService.addToCart(user.uid, product._raw || product, 1);
+      // Build a cart item object containing variant details
+      const itemToAdd = {
+        ...(product._raw || product),
+        id: currentProductInfo.id,
+        sku: currentProductInfo.id,
+        price: currentProductInfo.price,
+        salePrice: currentProductInfo.salePrice,
+        variantAttributes: currentProductInfo.variantAttributes || null
+      };
+
+      await cartService.addToCart(user.uid, itemToAdd, 1);
       setAddSuccess(true);
       setAlertMessage({ type: 'success', text: 'เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!' });
       
@@ -150,12 +196,13 @@ const ProductDetail = () => {
             <ProductPricingSection 
               product={product._raw || product}
               brand={product.brand}
-              model={product.model}
+              model={currentProductInfo.id || product.model}
               name={product.name}
               shortDescription={product.shortDescription}
-              price={product.price}
-              salePrice={product.salePrice}
-              isOutOfStock={product.isOutOfStock}
+              price={currentProductInfo.price}
+              salePrice={currentProductInfo.salePrice}
+              isOutOfStock={currentProductInfo.isOutOfStock}
+              isLowStock={currentProductInfo.isLowStock}
               creditConfig={creditConfig}
               isAdding={isAdding}
               addSuccess={addSuccess}
@@ -164,6 +211,10 @@ const ProductDetail = () => {
               shopeeUrl={product.shopeeUrl}
               lazadaUrl={product.lazadaUrl}
               lineAddFriendUrl={footerConfig?.company?.lineAddFriendUrl}
+              variantOptions={product.variantOptions}
+              variants={product.variants}
+              selectedVariant={selectedVariant}
+              setSelectedVariant={setSelectedVariant}
             >
               <ProductKnowledgeSection 
                 product={product} 

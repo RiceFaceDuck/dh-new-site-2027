@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Building2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Building2, HelpCircle } from 'lucide-react';
 import { auth } from '../../firebase/config';
 import { creditCoreService } from '../../firebase/creditCoreService';
 import { todoService } from '../../firebase/todoService';
+import GuideModal from '../../components/common/GuideModal';
 
 import { useWalletManagement } from './wallet/hooks/useWalletManagement';
 import WalletDashboardStats from './wallet/WalletDashboardStats';
@@ -36,6 +37,7 @@ export default function WalletManagement() {
     const [actionType, setActionType] = useState('APPROVE');
     const [actionNote, setActionNote] = useState('');
     const [isActionSubmitting, setIsActionSubmitting] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
 
     const [notification, setNotification] = useState(null);
     const showNotification = (msg, type = 'success') => {
@@ -149,6 +151,12 @@ export default function WalletManagement() {
                         </div>
                         <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">ศูนย์จัดการกระเป๋าเงินลูกค้า (Wallet Management)</h1>
                     </div>
+                    <button 
+                        onClick={() => setShowGuide(true)}
+                        className="ml-2 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all shadow-sm border border-slate-200"
+                    >
+                        <HelpCircle size={20} strokeWidth={2.5} />
+                    </button>
                 </div>
             </div>
 
@@ -206,6 +214,21 @@ export default function WalletManagement() {
                 selectedTask={selectedTask} actionType={actionType}
                 actionNote={actionNote} setActionNote={setActionNote}
                 isActionSubmitting={isActionSubmitting} handleProcessAction={handleProcessAction}
+            />
+
+            <GuideModal 
+                isOpen={showGuide}
+                onClose={() => setShowGuide(false)}
+                title="คู่มือจัดการกระเป๋าเงิน (Wallet Management)"
+                manualText="ระบบนี้มีไว้สำหรับตรวจสอบและอนุมัติยอดเงินเข้า-ออกกระเป๋าเงินของลูกค้า ทั้งยอดที่เกิดจากการเคลม, การเติมเงิน, หรือการถอนเงิน"
+                howTo={[
+                    "1. ดูรายการที่รออนุมัติ (Pending) ด้านบน",
+                    "2. กดปุ่ม อนุมัติ (Approve) หรือ ปฏิเสธ (Reject) พร้อมใส่เหตุผล",
+                    "3. หากต้องการดึงดูประวัติลูกค้าเฉพาะคน ให้พิมพ์ค้นหาชื่อ/เบอร์โทร ทางด้านซ้าย",
+                    "4. สามารถเพิ่มหรือลดยอดเงิน/แต้ม ได้โดยตรงที่ปุ่มการจัดการในหน้ารายละเอียดลูกค้า"
+                ]}
+                tips="ปุ่ม 'คัดลอกเบอร์โทรลูกค้าทั้งหมด' จะช่วยให้ทีมเซลล์นำเบอร์ไปบรอดแคสต์ (Broadcast) แจ้งสิทธิพิเศษผ่าน SMS/Line ได้ทันที"
+                expectedResult="ทุกครั้งที่มีการอนุมัติ/ปรับยอด ระบบจะบันทึกประวัติไว้ใน Statement ของลูกค้าอย่างโปร่งใส และตรวจสอบย้อนหลังได้เสมอ"
             />
         </div>
     );

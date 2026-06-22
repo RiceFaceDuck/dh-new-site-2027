@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Zap, ShoppingCart, Package, Globe, AlertCircle } from 'lucide-react';
-import { useOverviewData } from '../components/overview/hooks/useOverviewData';
-import { OverviewHeader } from '../components/overview/OverviewHeader';
-import { SalesTargetCard } from '../components/overview/SalesTargetCard';
-import { StatCard } from '../components/overview/StatCard';
-import { BestSellersPanel } from '../components/overview/BestSellersPanel';
-import { SocialFeedPanel } from '../components/overview/SocialFeedPanel';
+import GuideModal from '../../components/common/GuideModal';
+import { useOverviewData } from '../../components/overview/hooks/useOverviewData';
+import { OverviewHeader } from '../../components/overview/OverviewHeader';
+import { SalesTargetCard } from '../../components/overview/SalesTargetCard';
+import { StatCard } from '../../components/overview/StatCard';
+import { BestSellersPanel } from '../../components/overview/BestSellersPanel';
+import { SocialFeedPanel } from '../../components/overview/SocialFeedPanel';
 
 const Overview = () => {
   const { metrics, loading, progressPercent } = useOverviewData();
+  const [showGuide, setShowGuide] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -44,6 +46,7 @@ const Overview = () => {
         metrics={metrics} 
         getGreeting={getGreeting} 
         getMotivation={getMotivation} 
+        setShowGuide={setShowGuide}
       />
 
       {/* 🚀 Layer 1: Financial & Operation Pulse (Top Cards) */}
@@ -103,7 +106,7 @@ const Overview = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         
         {/* Left: Best Sellers Radar */}
-        <BestSellersPanel />
+        <BestSellersPanel bestSellers={metrics.bestSellers} />
 
         {/* Right: Live Social Feed */}
         <SocialFeedPanel />
@@ -119,6 +122,20 @@ const Overview = () => {
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
       `}</style>
+
+      <GuideModal 
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
+        title="คู่มือแดชบอร์ดหลัก (Command Center)"
+        manualText="หน้าจอนี้คือศูนย์บัญชาการหลักของคุณ ที่สรุปภาพรวมทั้งหมดของธุรกิจในแบบ Real-time"
+        howTo={[
+          "ดูยอดขายรวมและเปอร์เซ็นต์ที่ทำได้เทียบกับเป้าหมาย",
+          "เช็คสถิติบิลขาย, การเข้าชมเว็บ และงานที่ค้าง (To-dos) ด้านบน",
+          "ดูสินค้าขายดี และ Feed การเคลื่อนไหวของระบบแบบสดๆ ด้านล่าง"
+        ]}
+        tips="ปุ่ม 'Export Report' ด้านบนใช้สำหรับปรินท์รายงานหรือเซฟเป็น PDF เพื่อนำเสนอเข้าที่ประชุมได้ทันที"
+        expectedResult="คุณจะมองเห็นสุขภาพของธุรกิจได้ในพริบตาเดียว และรู้ว่าต้องเข้าไปโฟกัสแก้ปัญหาจุดไหนต่อไป"
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { collection, doc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 
@@ -10,39 +10,58 @@ export const claimRequestService = {
   // ==========================================
   requestClaim: async (bill, item, claimForm, userUid, userName) => {
     try {
+      // 🛡️ Security Check: ป้องกันการแจ้งเคลมซ้ำซ้อนสำหรับสินค้านี้ในบิลนี้
+      const q = query(
+        collection(db, TODOS_COLLECTION),
+        where("referenceId", "==", bill.orderId || '-'),
+        where("type", "==", "CLAIM_APPROVAL")
+      );
+      const snapshot = await getDocs(q);
+      const existingClaims = snapshot.docs.map(d => d.data());
+      
+      const hasDuplicate = existingClaims.some(c => 
+        c.payload?.sku === item.sku && 
+        ['pending_manager', 'approved', 'processing'].includes(c.status)
+      );
+
+      if (hasDuplicate) {
+        throw new Error(`สินค้านี้ (${item.sku}) มีรายการเคลมที่กำลังดำเนินการอยู่แล้วในระบบ`);
+      }
+
       const claimId = claimForm.transactionId; // ใช้ transactionId จาก Form
 
       const payload = {
-        claimId, 
-        orderId: bill.orderId,
-        orderDocId: bill.id, 
+        claimId: claimId || '', 
+        orderId: bill.orderId || '',
+        orderDocId: bill.id || '', 
         customerUid: bill.customer?.uid || 'Walk-in', 
         customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
-        sku: item.sku, 
-        productName: item.name, 
-        purchaseDate: claimForm.warrantyDate,
-        symptomCode: claimForm.reasonCode, 
-        symptomDetails: claimForm.details, 
+        sku: item.sku || '', 
+        productName: item.name || '', 
+        category: item.category || item.category1 || '',
+        purchaseDate: claimForm.warrantyDate || null,
+        symptomCode: claimForm.reasonCode || '', 
+        symptomDetails: claimForm.details || '', 
         trackingNo: claimForm.tracking || '',
         qty: claimForm.qty || 1, 
-        status: claimForm.currentStatus, // รับสถานะปัจจุบันจาก Form
-        actionType: claimForm.actionType, // การกระทำ (เคลมสินค้า)
-        inspectorName: claimForm.inspectorName,
-        images: claimForm.images || [], // รับภาพที่อัปโหลด
-        requestedBy: userUid, 
-        requestedByName: userName
+        status: claimForm.currentStatus || 'pending_manager', 
+        actionType: claimForm.actionType || 'เคลม/ซ่อม', 
+        inspectorName: claimForm.inspectorName || null,
+        images: claimForm.images || [], 
+        requestedBy: userUid || '', 
+        requestedByName: userName || ''
       };
 
       await addDoc(collection(db, TODOS_COLLECTION), {
         type: "CLAIM_APPROVAL",
-        title: `ขออนุมัติเคลม: ${item.name} (${claimId})`,
-        description: `บิลอ้างอิง: ${bill.orderId}\nอาการเสีย: ${claimForm.reasonCode}\nรายละเอียด: ${claimForm.details || '-'}\nการกระทำ: ${claimForm.actionType}\nจำนวน: ${payload.qty} ชิ้น`,
+        title: `ขออนุมัติเคลม: ${item.name || 'Unknown'} (${claimId || 'N/A'})`,
+        description: `บิลอ้างอิง: ${bill.orderId || '-'}\nอาการเสีย: ${claimForm.reasonCode || '-'}\nรายละเอียด: ${claimForm.details || '-'}\nการกระทำ: ${claimForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
         priority: "High", 
         status: "pending_manager",
         referenceType: "Order", 
-        referenceId: bill.orderId,
+        referenceId: bill.orderId || '-',
         payload: payload, 
-        createdByUid: userUid, 
+        createdByUid: userUid || '', 
         handledBy: null,
         createdAt: serverTimestamp(), 
         updatedAt: serverTimestamp()
@@ -68,40 +87,59 @@ export const claimRequestService = {
   // ==========================================
   requestReturn: async (bill, item, returnForm, userUid, userName) => {
     try {
+      // 🛡️ Security Check: ป้องกันการแจ้งคืนซ้ำซ้อนสำหรับสินค้านี้ในบิลนี้
+      const q = query(
+        collection(db, TODOS_COLLECTION),
+        where("referenceId", "==", bill.orderId || '-'),
+        where("type", "==", "RETURN_APPROVAL")
+      );
+      const snapshot = await getDocs(q);
+      const existingReturns = snapshot.docs.map(d => d.data());
+      
+      const hasDuplicate = existingReturns.some(r => 
+        r.payload?.sku === item.sku && 
+        ['pending_manager', 'approved', 'processing'].includes(r.status)
+      );
+
+      if (hasDuplicate) {
+        throw new Error(`สินค้านี้ (${item.sku}) มีรายการขอคืนเงินที่กำลังดำเนินการอยู่แล้วในระบบ`);
+      }
+
       const returnId = returnForm.transactionId;
 
       const payload = {
-        returnId, 
-        orderId: bill.orderId,
-        orderDocId: bill.id, 
+        returnId: returnId || '', 
+        orderId: bill.orderId || '',
+        orderDocId: bill.id || '', 
         customerUid: bill.customer?.uid || 'Walk-in', 
         customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
-        sku: item.sku, 
-        productName: item.name, 
-        purchasePrice: item.pricePerUnit || item.price, 
-        purchaseDate: returnForm.warrantyDate,
-        returnReason: returnForm.reasonCode, 
-        returnDetails: returnForm.details, 
+        sku: item.sku || '', 
+        productName: item.name || '', 
+        category: item.category || item.category1 || '',
+        purchasePrice: item.pricePerUnit || item.price || 0, 
+        purchaseDate: returnForm.warrantyDate || null,
+        returnReason: returnForm.reasonCode || '', 
+        returnDetails: returnForm.details || '', 
         trackingNo: returnForm.tracking || '',
         qty: returnForm.qty || 1, 
-        status: returnForm.currentStatus, 
-        actionType: returnForm.actionType, 
-        inspectorName: returnForm.inspectorName,
+        status: returnForm.currentStatus || 'pending_manager', 
+        actionType: returnForm.actionType || 'คืนเงิน/คืนสินค้า', 
+        inspectorName: returnForm.inspectorName || null,
         images: returnForm.images || [], 
-        requestedBy: userUid, 
-        requestedByName: userName
+        requestedBy: userUid || '', 
+        requestedByName: userName || ''
       };
 
       await addDoc(collection(db, TODOS_COLLECTION), {
         type: "RETURN_APPROVAL",
-        title: `ขออนุมัติคืนสินค้า: ${item.sku} (ยอด ฿${(payload.purchasePrice * payload.qty).toLocaleString()})`,
-        description: `บิลอ้างอิง: ${bill.orderId}\nเหตุผลการคืน: ${returnForm.reasonCode}\nรายละเอียด: ${returnForm.details || '-'}\nการกระทำ: ${returnForm.actionType}\nจำนวน: ${payload.qty} ชิ้น`,
+        title: `ขออนุมัติคืนสินค้า: ${item.sku || 'Unknown'} (ยอด ฿${((payload.purchasePrice || 0) * (payload.qty || 1)).toLocaleString()})`,
+        description: `บิลอ้างอิง: ${bill.orderId || '-'}\nเหตุผลการคืน: ${returnForm.reasonCode || '-'}\nรายละเอียด: ${returnForm.details || '-'}\nการกระทำ: ${returnForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
         priority: "Critical", 
         status: "pending_manager",
         referenceType: "Order", 
-        referenceId: bill.orderId,
+        referenceId: bill.orderId || '-',
         payload: payload, 
-        createdByUid: userUid, 
+        createdByUid: userUid || '', 
         handledBy: null,
         createdAt: serverTimestamp(), 
         updatedAt: serverTimestamp()

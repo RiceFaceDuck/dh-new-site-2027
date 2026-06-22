@@ -1,52 +1,67 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Clock } from 'lucide-react' 
+import { Clock, Loader2 } from 'lucide-react' 
 
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ManagerRoute from './components/routing/ManagerRoute'
-
 import AdminLayout from './layouts/AdminLayout'
-import Overview from './pages/Overview'
-import Inventory from './pages/Inventory'
-import Login from './pages/Login'
-import ProfileSetup from './pages/ProfileSetup'
-
-import Todo from './pages/Todo'
-import TodoArchive from './pages/todo/TodoArchive'
-import ManagersOverview from './pages/ManagersOverview/index'
-import Customers from './pages/Customers' 
-import HistoryPage from './pages/History/index.jsx' 
-import BillingMain from './pages/billing/BillingMain'
-import ClaimMain from './pages/claims/ClaimMain' 
-import Search from './pages/Search' 
-import GalleryMain from './pages/gallery/GalleryMain' 
-import EmailMain from './pages/emails/EmailMain'
-
-// นำเข้า Components สำหรับ Managers
-import StockAdjustment from './pages/managers/inventory/StockAdjustment'
-import PromotionManagement from './pages/managers/PromotionManagement'
-import PricingSettings from './pages/managers/PricingSettings'
-import StaffManagement from './pages/managers/StaffManagement'
-import FreebieManagement from './pages/managers/FreebieManagement'
-import CreditDashboard from './pages/managers/CreditDashboard/index.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.jsx' 
-import WalletManagement from './pages/managers/WalletManagement'
-import ShippingManagement from './pages/managers/ShippingManagement'
-import AdManagement from './pages/managers/AdManagement'
-import PartnerSettings from './pages/managers/PartnerSettings'
 
-import GlobalBufferSettings from './pages/managers/GlobalBufferSettings'
-import GlobalCategorySettings from './pages/managers/GlobalCategorySettings'
-import GlobalRegexSettings from './pages/managers/GlobalRegexSettings'
-import GlobalWarrantySettings from './pages/managers/GlobalWarrantySettings'
-import GlobalAdsConfig from './pages/managers/GlobalAdsConfig'
-import GlobalThemeSettings from './pages/managers/GlobalThemeSettings'
-import GlobalKnowledgeSettings from './pages/managers/GlobalKnowledgeSettings'
-import GlobalFooterSettings from './pages/managers/GlobalFooterSettings'
+// 🚀 Lazy Load Components for Performance
+const Overview = lazy(() => import('./pages/dashboard/Overview'))
+const Search = lazy(() => import('./pages/dashboard/Search'))
+const Login = lazy(() => import('./pages/auth/Login'))
+const ProfileSetup = lazy(() => import('./pages/settings/ProfileSetup'))
+const Inventory = lazy(() => import('./pages/inventory/InventoryMain'))
+const Todo = lazy(() => import('./pages/Todo'))
+const TodoArchive = lazy(() => import('./pages/todo/TodoArchive'))
+const ManagersOverview = lazy(() => import('./pages/ManagersOverview/index'))
+const Customers = lazy(() => import('./pages/Customers')) 
+const HistoryPage = lazy(() => import('./pages/History/index.jsx')) 
+const BillingMain = lazy(() => import('./pages/billing/BillingMain'))
+const ClaimMain = lazy(() => import('./pages/claims/ClaimMain')) 
+const GalleryMain = lazy(() => import('./pages/gallery/GalleryMain')) 
+const EmailMain = lazy(() => import('./pages/emails/EmailMain'))
+const CalendarPage = lazy(() => import('./pages/Calendar'))
+
+// 🔒 Managers Lazy Components
+const StockAdjustment = lazy(() => import('./pages/managers/inventory/StockAdjustment'))
+const PromotionManagement = lazy(() => import('./pages/managers/PromotionManagement'))
+const PricingSettings = lazy(() => import('./pages/managers/PricingSettings'))
+const StaffManagement = lazy(() => import('./pages/managers/StaffManagement'))
+const FreebieManagement = lazy(() => import('./pages/managers/FreebieManagement'))
+const CreditDashboard = lazy(() => import('./pages/managers/CreditDashboard/index.jsx'))
+const WalletManagement = lazy(() => import('./pages/managers/WalletManagement'))
+const ShippingManagement = lazy(() => import('./pages/managers/ShippingManagement'))
+const AdManagement = lazy(() => import('./pages/managers/AdManagement'))
+const PartnerSettings = lazy(() => import('./pages/managers/PartnerSettings'))
+
+// ⚙️ Global Settings Lazy Components
+const GlobalBufferSettings = lazy(() => import('./pages/managers/GlobalBufferSettings'))
+const GlobalCategorySettings = lazy(() => import('./pages/managers/GlobalCategorySettings'))
+const GlobalRegexSettings = lazy(() => import('./pages/managers/GlobalRegexSettings'))
+const GlobalWarrantySettings = lazy(() => import('./pages/managers/warranty/GlobalWarrantySettings'))
+const GlobalAdsConfig = lazy(() => import('./pages/managers/GlobalAdsConfig'))
+const GlobalThemeSettings = lazy(() => import('./pages/managers/GlobalThemeSettings'))
+const GlobalKnowledgeSettings = lazy(() => import('./pages/managers/GlobalKnowledgeSettings'))
+const GlobalFooterSettings = lazy(() => import('./pages/managers/GlobalFooterSettings'))
+const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
 
 const Placeholder = ({ title }) => (
-  <div className="flex items-center justify-center h-full">
-    <h2 className="text-2xl text-gray-500 font-semibold">{title} (กำลังพัฒนา)</h2>
+  <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
+    <div className="p-4 bg-gray-100 rounded-full animate-pulse">
+      <Loader2 size={32} className="animate-spin text-gray-400" />
+    </div>
+    <h2 className="text-2xl font-semibold">{title} (กำลังพัฒนา)</h2>
+  </div>
+)
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-full w-full bg-slate-50/50 backdrop-blur-sm">
+    <div className="flex flex-col items-center gap-3">
+      <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+      <span className="text-slate-500 font-medium">กำลังโหลด...</span>
+    </div>
   </div>
 )
 
@@ -74,11 +89,19 @@ function AppContent() {
   }
 
   if (!user) {
-    return <Login />
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <Login />
+      </Suspense>
+    )
   }
 
   if (isProfileSetupRequired) {
-    return <ProfileSetup user={user} onComplete={() => setIsProfileSetupRequired(false)} />
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <ProfileSetup user={user} onComplete={() => setIsProfileSetupRequired(false)} />
+      </Suspense>
+    )
   }
 
   if (isPendingApproval) {
@@ -107,52 +130,54 @@ function AppContent() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<AdminLayout />}>
-        <Route index element={<Navigate to="/overview" replace />} />
-        <Route path="overview" element={<Overview />} />
-        <Route path="search" element={<Search />} /> 
-        <Route path="todo" element={<Todo />} />
-        <Route path="todo/archive" element={<TodoArchive />} />
-        <Route path="claims" element={<ClaimMain />} />
-        <Route path="billing" element={<BillingMain />} />
-        
-        {/* 🔒 พื้นที่สำหรับ Manager เท่านั้น */}
-        <Route element={<ManagerRoute />}>
-          <Route path="managers" element={<ManagersOverview />} />
-          <Route path="managers/promotions" element={<PromotionManagement />} />
-          <Route path="managers/pricing" element={<PricingSettings />} />
-          <Route path="managers/staff" element={<StaffManagement />} />
-          <Route path="managers/freebie" element={<FreebieManagement />} />
-          <Route path="managers/credit-dashboard" element={<CreditDashboard />} />
-          <Route path="managers/inventory-adjustment" element={<StockAdjustment />} />
-          <Route path="managers/wallet" element={<WalletManagement />} />
-          <Route path="managers/shipping" element={<ShippingManagement />} />
-          <Route path="managers/ads" element={<AdManagement />} />
-          <Route path="managers/partners" element={<PartnerSettings />} />
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/overview" replace />} />
+          <Route path="overview" element={<Overview />} />
+          <Route path="search" element={<Search />} /> 
+          <Route path="todo" element={<Todo />} />
+          <Route path="todo/archive" element={<TodoArchive />} />
+          <Route path="claims" element={<ClaimMain />} />
+          <Route path="billing" element={<BillingMain />} />
+          
+          {/* 🔒 พื้นที่สำหรับ Manager เท่านั้น */}
+          <Route element={<ManagerRoute />}>
+            <Route path="managers" element={<ManagersOverview />} />
+            <Route path="managers/promotions" element={<PromotionManagement />} />
+            <Route path="managers/pricing" element={<PricingSettings />} />
+            <Route path="managers/staff" element={<StaffManagement />} />
+            <Route path="managers/freebie" element={<FreebieManagement />} />
+            <Route path="managers/credit-dashboard" element={<CreditDashboard />} />
+            <Route path="managers/inventory-adjustment" element={<StockAdjustment />} />
+            <Route path="managers/wallet" element={<WalletManagement />} />
+            <Route path="managers/shipping" element={<ShippingManagement />} />
+            <Route path="managers/ads" element={<AdManagement />} />
+            <Route path="managers/partners" element={<PartnerSettings />} />
 
-          {/* ⚙️ Global Settings Pages */}
-          <Route path="managers/buffer" element={<GlobalBufferSettings />} />
-          <Route path="managers/category" element={<GlobalCategorySettings />} />
-          <Route path="managers/regex" element={<GlobalRegexSettings />} />
-          <Route path="managers/warranty" element={<GlobalWarrantySettings />} />
-          <Route path="managers/ads-config" element={<GlobalAdsConfig />} />
-          <Route path="managers/theme" element={<GlobalThemeSettings />} />
-          <Route path="managers/knowledge" element={<GlobalKnowledgeSettings />} />
-          <Route path="managers/footer-settings" element={<GlobalFooterSettings />} />
+            {/* ⚙️ Global Settings Pages */}
+            <Route path="managers/buffer" element={<GlobalBufferSettings />} />
+            <Route path="managers/category" element={<GlobalCategorySettings />} />
+            <Route path="managers/regex" element={<GlobalRegexSettings />} />
+            <Route path="managers/warranty" element={<GlobalWarrantySettings />} />
+            <Route path="managers/ads-config" element={<GlobalAdsConfig />} />
+            <Route path="managers/theme" element={<GlobalThemeSettings />} />
+            <Route path="managers/knowledge" element={<GlobalKnowledgeSettings />} />
+            <Route path="managers/footer-settings" element={<GlobalFooterSettings />} />
+          </Route>
+          
+          <Route path="history" element={<HistoryPage />}/>
+          <Route path="gallery" element={<GalleryMain />}/>
+          <Route path="inventory" element={<Inventory/>}/>
+          <Route path="generate" element={<GenerateSync />}/>
+          <Route path="customers" element={<Customers />}/>
+          <Route path="emails" element={<EmailMain />}/>
+          <Route path="calendar" element={<CalendarPage />}/>
+          <Route path="config" element={<Placeholder title="Config"/>}/>
         </Route>
-        
-        <Route path="history" element={<HistoryPage />}/>
-        <Route path="gallery" element={<GalleryMain />}/>
-        <Route path="inventory" element={<Inventory/>}/>
-        <Route path="generate" element={<div className="flex items-center justify-center h-full"><h2 className="text-2xl text-gray-500 font-semibold">การ Generate เพื่อซิงค์ข้อมูลสต๊อก อยู่ในระหว่างการพัฒนา</h2></div>}/>
-        <Route path="customers" element={<Customers />}/>
-        <Route path="emails" element={<EmailMain />}/>
-        <Route path="calendar" element={<Placeholder title="Calendar"/>}/>
-        <Route path="config" element={<Placeholder title="Config"/>}/>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   )
 }
 

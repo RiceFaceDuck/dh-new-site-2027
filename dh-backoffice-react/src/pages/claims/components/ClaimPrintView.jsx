@@ -1,19 +1,19 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 // ==========================================
 // 🖨️ Component: Print Form 
 // ==========================================
-export default function ClaimPrintView({ req }) {
-  if (!req || !req.payload) return null;
+const ClaimPrintView = forwardRef(({ req }, ref) => {
+  if (!req || !req.payload) return <div ref={ref} className="hidden"></div>;
   const { payload } = req;
   const isClaim = req.originalType === 'CLAIM_APPROVAL' || req.type === 'CLAIM_APPROVAL';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(payload.claimId || payload.returnId)}`;
 
   return (
-    <div id="printable-claim" className="hidden w-[148mm] mx-auto text-black font-sans bg-white px-2 py-4">
+    <div ref={ref} id="printable-claim" className="w-[148mm] mx-auto text-black font-sans bg-white px-2 py-4">
       <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4">
         <div className="flex items-center gap-3">
-          <img src="/DH Notebook Logo ดีเอช โน๊ตบุ๊ค_โลโก้.png" alt="DH Logo" className="h-12 w-auto object-contain" />
+          <img src="/dh-logo.png" alt="DH Logo" className="h-12 w-auto object-contain" />
           <div>
             <h1 className="text-[16px] font-black text-gray-900 leading-tight">DH NOTE BOOK CO.,LTD</h1>
             <p className="text-[11px] text-gray-600 font-medium">เอกสารแจ้ง{isClaim ? 'เคลม/ซ่อมสินค้า' : 'คืนสินค้า/คืนเงิน'}</p>
@@ -30,7 +30,7 @@ export default function ClaimPrintView({ req }) {
           <p><span className="text-gray-500">ลูกค้า:</span> <strong className="text-gray-900">{payload.customerName}</strong></p>
           <p><span className="text-gray-500">บิลอ้างอิง:</span> <strong className="text-gray-900">{payload.orderId}</strong></p>
           <p><span className="text-gray-500">วันที่แจ้ง:</span> <strong className="text-gray-900">{req.createdAt?.toDate ? new Date(req.createdAt.toDate()).toLocaleDateString('th-TH') : '-'}</strong></p>
-          <p><span className="text-gray-500">วันที่ซื้อ(ประกัน):</span> <strong className="text-gray-900">{payload.purchaseDate ? new Date(payload.purchaseDate).toLocaleDateString('th-TH') : '-'}</strong></p>
+          <p><span className="text-gray-500">วันที่ซื้อ(ประกัน):</span> <strong className="text-gray-900">{payload.purchaseDate && !isNaN(new Date(payload.purchaseDate)) ? new Date(payload.purchaseDate).toLocaleDateString('th-TH') : '-'}</strong></p>
         </div>
         <div className="w-1/2 pl-4 border-l border-gray-300 space-y-1.5">
           <p><span className="text-gray-500">ผู้รับเรื่อง:</span> <strong className="text-gray-900">{payload.requestedByName}</strong></p>
@@ -68,7 +68,7 @@ export default function ClaimPrintView({ req }) {
       </div>
 
       <div className="mt-12 flex justify-between items-end">
-        <img src={qrCodeUrl} alt="QR" className="w-[60px] h-[60px]" crossOrigin="anonymous" />
+        <img src={qrCodeUrl} alt="QR" className="w-[60px] h-[60px]" />
         <div className="text-center w-40 text-[11px] text-gray-800">
           <p className="border-b border-black mb-1.5"></p>
           <p className="font-bold truncate mt-1">{req.status === 'approved' ? (req.handledBy || 'ผู้จัดการ') : 'ผู้จัดการสาขา'}</p>
@@ -77,4 +77,6 @@ export default function ClaimPrintView({ req }) {
       </div>
     </div>
   );
-}
+});
+
+export default ClaimPrintView;

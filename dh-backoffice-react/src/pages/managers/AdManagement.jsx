@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, doc, onSnapshot, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 // 🛠️ นำเข้า db ให้ตรงกับโครงสร้างโปรเจกต์
 import { db } from '../../firebase/config'; 
+import { useAdSubscriptions } from './hooks/useAdSubscriptions';
+import { adManagementService } from '../../firebase/adManagementService';
+import GuidePanel from '../../components/common/GuidePanel';
 import { 
   Loader2, CheckCircle, XCircle, Megaphone, ExternalLink, 
   Image as ImageIcon, CreditCard, ShoppingBag, MonitorPlay, 
@@ -14,68 +16,27 @@ const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id
 
 export default function AdManagement() {
   const navigate = useNavigate();
-  const [ads, setAds] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('PENDING'); // PENDING, APPROVED, REJECTED
-  const [processingId, setProcessingId] = useState(null);
+  const { ads, loading } = useAdSubscriptions();
 
-  // 🚀 1. ดึงข้อมูลโฆษณาจากระบบ Unified Ads ทั้ง 3 ระบบแบบ Real-time
-  useEffect(() => {
-    setLoading(true);
-    const collections = ['partner_ads', 'user_sku_ads', 'billboard_ads'];
-    const unsubscribes = [];
-    let allData = { partner_ads: [], user_sku_ads: [], billboard_ads: [] };
-
-    const updateUI = () => {
-      let combined = [ ...allData.partner_ads, ...allData.user_sku_ads, ...allData.billboard_ads ];
-      
-      // กรองเอกสารที่ซ้ำกันออก
-      const uniqueAds = Array.from(new Map(combined.map(item => [item.id, item])).values());
-      
-      // เรียงจากใหม่ไปเก่า
-      uniqueAds.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      
-      setAds(uniqueAds);
-      setLoading(false);
-    };
-
-    collections.forEach(colName => {
-      const colRef = collection(db, 'artifacts', appId, 'public', 'data', colName);
-      const unsub = onSnapshot(colRef, (snapshot) => {
-        allData[colName] = snapshot.docs.map(d => ({ id: d.id, _collection: colName, ...d.data() }));
-        updateUI();
-      }, (error) => {
-        console.error(`❌ Error fetching ${colName}:`, error);
-      });
-      unsubscribes.push(unsub);
-    });
-
-    return () => unsubscribes.forEach(unsub => unsub());
-  }, []);
-
-  // 🚀 2. ฟังก์ชัน อนุมัติ / ปฏิเสธ (ใช้ Merge True ป้องกัน Error)
+  // 🚀 2. ฟังก์ชัน อนุมัติ / ปฏิเสธ (ใช้ Service เพื่อรักษา SRP และลด Redundant Writes)
   const handleAction = async (ad, action) => {
     if (!window.confirm(`ยืนยันการ ${action === 'APPROVED' ? 'อนุมัติให้แสดงผล' : 'ปฏิเสธคำขอ'} โฆษณานี้?`)) return;
     
     setProcessingId(ad.id);
+    const taskId = `TODO-${ad.id}`;
+    
     try {
-      const batch = writeBatch(db);
-      const actionData = { status: action, updatedAt: serverTimestamp() };
-
-      // 2.1 อัปเดตสถานะในตารางโฆษณาโดยตรง
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', ad._collection, ad.id), actionData, { merge: true });
-      
-      // อัปเดต Fallback ระบบเก่ากันเหนียว
-      batch.set(doc(db, ad._collection, ad.id), actionData, { merge: true });
-
-      // 2.2 อัปเดตสถานะในกระดาน To-do เพื่อเคลียร์แถบแจ้งเตือนซ้ายมือ
-      const taskId = `TODO-${ad.id}`;
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), actionData, { merge: true });
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), actionData, { merge: true });
-      batch.set(doc(db, 'todos', taskId), actionData, { merge: true }); 
-
-      await batch.commit();
-      // ไม่ต้อง alert เพราะ UI จะย้ายแท็บอัตโนมัติแบบ Real-time
+      if (action === 'APPROVED') {
+        const res = await adManagementService.approveAd(ad.id, taskId);
+        if (!res.success) throw new Error(res.message);
+      } else if (action === 'REJECTED') {
+        const res = await adManagementService.rejectAd(ad.id, taskId);
+        if (!res.success) throw new Error(res.message);
+      } else if (action === 'PENDING') {
+        // กรณีดึงกลับมารอตรวจสอบ (Pause)
+        const res = await adManagementService.pauseAd(ad.id);
+        if (!res.success) throw new Error(res.message);
+      }
     } catch (error) {
       console.error("🔥 Action error:", error);
       alert("เกิดข้อผิดพลาด: " + error.message);
@@ -117,13 +78,29 @@ export default function AdManagement() {
         </button>
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center mb-6">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-indigo-100">
              <ShieldCheck size={24} />
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">การจัดการพื้นที่โฆษณา (Sponsored Ads)</h2>
           <p className="text-sm text-slate-500">ศูนย์ตรวจสอบ อนุมัติ และจัดการโฆษณาสินค้าที่ Partner ส่งเข้ามา (รองรับ 3 ระบบ)</p>
         </div>
+
+        {/* 📚 In-App Documentation (Rule compliance) */}
+        <GuidePanel 
+          title="การอนุมัติและจัดการพื้นที่โฆษณา"
+          description="ส่วนนี้ใช้สำหรับตรวจสอบคำขอลงโฆษณาจาก Partner (เช่น ร้านซ่อม) เพื่อให้แสดงผลบนหน้าร้านค้าออนไลน์ของเรา"
+          howTo={[
+            "ตรวจสอบโฆษณาในแท็บ 'รอตรวจสอบ' ว่ามีภาพและลิงก์ถูกต้องหรือไม่",
+            "คลิก 'อนุมัติ' เพื่ออนุญาตให้โฆษณาแสดงผล และดึงข้อมูล Partner ขึ้นแผนที่ทันที",
+            "คลิก 'ปฏิเสธ' หากคำขอโฆษณาละเมิดกฎ หรือไม่เหมาะสม"
+          ]}
+          tips={[
+            "หากเกิดข้อผิดพลาด สามารถดึงโฆษณาในแท็บ 'กำลังแสดงผล' หรือ 'ถูกปฏิเสธ' กลับมารอตรวจสอบใหม่ได้ทุกเมื่อ",
+            "คุณสามารถคลิกลิงก์ของโฆษณาเพื่อดูตัวอย่างก่อนอนุมัติได้"
+          ]}
+          expectedResult="เมื่ออนุมัติ โฆษณาจะทำงานร่วมกับ Todo Service เพื่อปิดงานของผู้จัดการในระบบหลักโดยอัตโนมัติ เพื่อไม่ให้เกิดงานค้างซ้ำซ้อน"
+        />
 
         {/* Tabs */}
         <div className="flex justify-center mb-8 sticky top-0 z-10 py-2 bg-slate-50/90 backdrop-blur-md">

@@ -110,16 +110,16 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-4 transition-all duration-300 hover:shadow-md">
+    <div className={`bg-white rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] border-2 border-gray-200 hover:border-teal-400 hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] overflow-hidden mb-4 transition-all ${isUploading ? 'opacity-75 pointer-events-none' : ''}`}>
       {/* 🔴 ส่วนหัว: ย่อ/ขยาย (Accordion Header) */}
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`px-5 py-4 cursor-pointer select-none flex items-center justify-between gap-4 transition-colors ${isExpanded ? 'bg-gradient-to-r from-teal-50/80 to-white border-b border-teal-100' : 'hover:bg-gray-50'}`}
+        className={`px-4 py-3 cursor-pointer select-none flex items-center justify-between gap-4 transition-colors ${isExpanded ? 'bg-gradient-to-r from-teal-50/80 to-white border-b border-teal-100' : 'hover:bg-gray-50'}`}
       >
-        <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-shrink-0">
-            <span className={`text-[10px] font-bold px-2.5 py-1.5 rounded uppercase tracking-wider shadow-sm transition-colors ${isExpanded ? 'bg-teal-600 text-white' : 'bg-gray-800 text-white'}`}>
-              คำขอใบกำกับภาษี
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm uppercase tracking-wider transition-colors ${isExpanded ? 'bg-teal-600 text-white' : 'bg-gray-800 text-white'}`}>
+              ขอใบกำกับภาษี
             </span>
           </div>
           <div className="flex-1 min-w-0">

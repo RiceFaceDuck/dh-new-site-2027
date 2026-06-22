@@ -12,6 +12,8 @@ import PromoModal from './pos/layout/PromoModal';
 import usePosState from './pos/hooks/usePosState';
 import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
 import { usePosShortcuts } from './pos/hooks/usePosShortcuts';
+import { useCartValidation } from './pos/hooks/useCartValidation';
+import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
 
 const convertToThaiBahtText = (number) => {
     if (isNaN(number) || number === 0) return "ศูนย์บาทถ้วน";
@@ -89,47 +91,8 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
         return `บิล ${index + 1}`;
     };
 
-    useEffect(() => {
-        if (!activeTab || !activeTab.items || activeTab.items.length === 0) return;
-        if (!products || products.length === 0) return; 
-
-        let isCartUpdated = false;
-        let alertMessages = [];
-        
-        const validatedItems = activeTab.items.map(cartItem => {
-            const masterProduct = products.find(p => p.sku === cartItem.sku);
-            if (!masterProduct) return cartItem;
-
-            let newItem = { ...cartItem };
-            let itemChanged = false;
-
-            if (newItem.stock !== masterProduct.stockQuantity) {
-                newItem.stock = masterProduct.stockQuantity; itemChanged = true;
-                if (masterProduct.stockQuantity < newItem.qty) alertMessages.push(`- ${newItem.name} (สต็อกเหลือ ${masterProduct.stockQuantity})`);
-            }
-
-            const expectedPrice = activeTab.priceMode === 'wholesale' ? (masterProduct.Price || masterProduct.retailPrice || 0) : (masterProduct.retailPrice || masterProduct.Price || 0);
-            const oldBase = activeTab.priceMode === 'wholesale' ? newItem.baseWholesale : newItem.baseRetail;
-            
-            if (oldBase !== expectedPrice) {
-                 if (sanitizeNum(newItem.price) === sanitizeNum(oldBase)) {
-                     newItem.price = expectedPrice; alertMessages.push(`- ${newItem.name} (ราคาใหม่: ฿${expectedPrice})`);
-                 }
-                 newItem.baseWholesale = masterProduct.Price || masterProduct.retailPrice || 0;
-                 newItem.baseRetail = masterProduct.retailPrice || masterProduct.Price || 0;
-                 itemChanged = true;
-            }
-
-            if (itemChanged) isCartUpdated = true;
-            return newItem;
-        });
-
-        if (isCartUpdated) {
-            updateActiveTab({ items: validatedItems });
-            if (alertMessages.length > 0) setTimeout(() => alert(`⚠️ อัปเดตข้อมูลบิลร่าง:\n\n${alertMessages.join('\n')}`), 500);
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTabId, products, activeTab?.priceMode]); 
+    useCartValidation(activeTabId, activeTab, products, updateActiveTab);
+    usePromotionLogic(itemSubTotal, activePromotions, activeTab, updateActiveTab, actions.applyPromotionLogic);
 
     const handleSearchKeyDown = (e) => {
         if (e.key === 'Enter' && searchQuery.trim() !== '') {
@@ -138,27 +101,6 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
         }
         if (e.key === 'Escape') { setShowDropdown(false); setSearchQuery(''); }
     };
-
-    useEffect(() => {
-        if (!activeTab || activePromotions.length === 0) return;
-        if (!activeTab.autoPromoEnabled) return; 
-
-        let bestPromo = null; let maxDiscount = 0;
-        activePromotions.forEach(promo => {
-            if (itemSubTotal >= promo.minSpend) {
-                let discount = actions.applyPromotionLogic(promo, itemSubTotal);
-                if (discount > maxDiscount) { maxDiscount = discount; bestPromo = promo; }
-            }
-        });
-
-        const currentPromoId = activeTab.appliedPromoId;
-        const currentDiscount = sanitizeNum(activeTab.promoDiscount);
-
-        if (bestPromo) {
-            if (bestPromo.id !== currentPromoId || currentDiscount !== maxDiscount) updateActiveTab({ promoDiscount: maxDiscount, appliedPromoId: bestPromo.id, appliedPromoDetails: { ...bestPromo } });
-        } else if (currentPromoId) updateActiveTab({ promoDiscount: 0, appliedPromoId: null, appliedPromoDetails: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [itemSubTotal, activePromotions, activeTab?.autoPromoEnabled, activeTab?.appliedPromoId, activeTab?.promoDiscount]); 
 
     const activePhone = activeTab?.customer ? activeTab.customer.phone : activeTab?.walkInPhone;
     const isPhoneMissing = (!activeTab?.hidePhone) && (!activePhone || activePhone.trim() === '');
