@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet, X } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet, X, HelpCircle, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
 import { transactionImportService } from '../../../firebase/transactionImportService';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -9,6 +9,8 @@ export default function UploadTransactions({ onUploadComplete }) {
   const [status, setStatus] = useState('idle'); // idle, parsing, preview, uploading, success, error
   const [message, setMessage] = useState('');
   const [actionType, setActionType] = useState('deduct'); // deduct or add
+  const [currentMapping, setCurrentMapping] = useState({ skuKey: '', qtyKey: '', priceKey: '' });
+  const [showMappingConfig, setShowMappingConfig] = useState(false);
   
   const fileInputRef = useRef(null);
   const { currentUser } = useAuth();
@@ -29,9 +31,25 @@ export default function UploadTransactions({ onUploadComplete }) {
 
     try {
       const result = await transactionImportService.parseFile(selectedFile);
-      setParsedData(result);
+      
+      let finalMatchedKeys = result.matchedKeys;
+      try {
+        const savedStr = localStorage.getItem('import_schema_mapping');
+        if (savedStr) {
+          const parsed = JSON.parse(savedStr);
+          if (result.headers.includes(parsed.skuKey) && result.headers.includes(parsed.qtyKey)) {
+             finalMatchedKeys = parsed;
+             result.items = transactionImportService.applyMapping(result.rawJson, finalMatchedKeys);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load saved mapping', e);
+      }
+
+      setParsedData({ ...result, matchedKeys: finalMatchedKeys });
+      setCurrentMapping(finalMatchedKeys);
       setStatus('preview');
-      setMessage(`พบข้อมูล ${result.items.length} รายการ (อ้างอิงจากคอลัมน์: ${result.matchedKeys.skuKey}, ${result.matchedKeys.qtyKey})`);
+      setMessage(`พบข้อมูล ${result.items.length} รายการ (อ้างอิงจากคอลัมน์: ${finalMatchedKeys.skuKey}, ${finalMatchedKeys.qtyKey})`);
     } catch (error) {
       console.error(error);
       setStatus('error');
@@ -41,6 +59,26 @@ export default function UploadTransactions({ onUploadComplete }) {
     
     // รีเซ็ต input เผื่อผู้ใช้เลือกไฟล์เดิมใหม่
     e.target.value = null;
+  };
+
+  const handleMappingChange = (key, value) => {
+    const newMapping = { ...currentMapping, [key]: value };
+    setCurrentMapping(newMapping);
+    
+    // Re-apply mapping
+    const newItems = transactionImportService.applyMapping(parsedData.rawJson, newMapping);
+    
+    // Update parsedData
+    setParsedData(prev => ({
+      ...prev,
+      items: newItems,
+      matchedKeys: newMapping
+    }));
+    
+    // Save to local storage
+    localStorage.setItem('import_schema_mapping', JSON.stringify(newMapping));
+    
+    setMessage(`พบข้อมูล ${newItems.length} รายการ (อ้างอิงจากคอลัมน์: ${newMapping.skuKey}, ${newMapping.qtyKey})`);
   };
 
   const handleUpload = async () => {
@@ -152,6 +190,73 @@ export default function UploadTransactions({ onUploadComplete }) {
               <button onClick={resetState} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
                 <X size={20} />
               </button>
+            </div>
+
+            {/* Schema Mapping & Documentation */}
+            <div className="mb-4">
+              <button 
+                onClick={() => setShowMappingConfig(!showMappingConfig)}
+                className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Settings2 size={18} className="text-indigo-500" />
+                  <span className="font-bold text-sm text-slate-700">ตั้งค่าโครงสร้างคอลัมน์ (Schema Mapping)</span>
+                </div>
+                {showMappingConfig ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+              </button>
+
+              {showMappingConfig && (
+                <div className="p-4 border border-t-0 border-slate-200 rounded-b-xl -mt-2 pt-4 bg-white animate-in slide-in-from-top-2 relative z-0">
+                  {/* Documentation */}
+                  <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 mb-4 flex gap-3 text-sm">
+                    <HelpCircle size={18} className="text-indigo-500 shrink-0 mt-0.5" />
+                    <div className="text-indigo-900/80 text-left">
+                      <strong className="block text-indigo-900 mb-1">คำแนะนำการใช้งาน</strong>
+                      <ul className="list-disc ml-4 space-y-1">
+                        <li><strong>SKU:</strong> เลือกรหัสสินค้าให้ตรงกับระบบ</li>
+                        <li><strong>จำนวน:</strong> จำนวนสต็อกที่ต้องการอัปเดต</li>
+                        <li><strong>ราคา:</strong> (ทางเลือก) หากต้องการเปลี่ยนราคาพร้อมกัน</li>
+                      </ul>
+                      <p className="mt-2 text-xs italic text-indigo-700/60">* ระบบจะจำการตั้งค่าล่าสุดนี้ไว้สำหรับการอัปโหลดครั้งต่อไป</p>
+                    </div>
+                  </div>
+
+                  {/* Mapping Controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-slate-600">รหัสสินค้า (SKU) <span className="text-rose-500">*</span></label>
+                      <select 
+                        value={currentMapping.skuKey}
+                        onChange={(e) => handleMappingChange('skuKey', e.target.value)}
+                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {parsedData?.headers.map(h => <option key={`sku-${h}`} value={h}>{h}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-slate-600">จำนวน (Qty) <span className="text-rose-500">*</span></label>
+                      <select 
+                        value={currentMapping.qtyKey}
+                        onChange={(e) => handleMappingChange('qtyKey', e.target.value)}
+                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {parsedData?.headers.map(h => <option key={`qty-${h}`} value={h}>{h}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-slate-600">ราคา (ไม่บังคับ)</label>
+                      <select 
+                        value={currentMapping.priceKey || ''}
+                        onChange={(e) => handleMappingChange('priceKey', e.target.value)}
+                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">-- ไม่ใช้ --</option>
+                        {parsedData?.headers.map(h => <option key={`price-${h}`} value={h}>{h}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* โหมดปรับสต็อก */}

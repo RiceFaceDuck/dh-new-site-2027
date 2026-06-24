@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home/Home';
 import CategoryPage from './pages/CategoryPage';
+import CategoriesMain from './pages/Categories/CategoriesMain';
 import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
 import StoreProfilePage from './pages/StoreProfile/StoreProfilePage';
@@ -16,6 +17,18 @@ import { OrderProvider } from './context/OrderContext';
 // 🚀 นำเข้าระบบ Squad Selection (ใหม่ล่าสุด)
 import SquadLayout from './layouts/SquadLayout';
 import Squad from './pages/Squad/Squad';
+
+// 🚀 นำเข้าระบบ Hardware Scanner
+import HardwareScanner from './pages/HardwareScanner/HardwareScanner';
+
+// 🚀 นำเข้าระบบรวมผู้ให้บริการ (Service Providers)
+import ProvidersPage from './pages/Providers/ProvidersPage';
+
+// 📜 นำเข้าระบบจัดการ PDPA และ Legal Pages
+import CookieConsentBanner from './components/common/CookieConsentBanner';
+import PrivacyPolicy from './pages/legal/PrivacyPolicy';
+import TermsOfService from './pages/legal/TermsOfService';
+import CookiePolicy from './pages/legal/CookiePolicy';
 
 // 🎯 นำเข้าระบบการตลาด เพื่อใช้งาน Smart Cache ประหยัด Reads
 import { marketingService } from './firebase/marketingService';
@@ -79,6 +92,7 @@ function App() {
           {/* Routes ที่ใช้โครงสร้างหลัก (มี Header, Footer) */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/categories" element={<CategoriesMain />} />
             <Route path="/category/:type" element={<CategoryPage />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/profile" element={<Profile />} />
@@ -87,11 +101,25 @@ function App() {
             {/* 🚀 ลงทะเบียน Route สำหรับ E-Commerce Core */}
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
+            
+            {/* 🚀 ลงทะเบียน Route สำหรับ Hardware Scanner */}
+            <Route path="/hardware-scanner" element={<HardwareScanner />} />
+            
+            {/* 🚀 ลงทะเบียน Route สำหรับ Service Providers */}
+            <Route path="/providers" element={<ProvidersPage />} />
+            
+            {/* 📜 ลงทะเบียน Route สำหรับหน้า PDPA / Legal */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
           </Route>
-
-          {/* 🚀 Route แบบพิเศษ: ระบบ Squad แยก Layout เด็ดขาดเพื่อบังคับขนาด 100vh */}
+          
+          {/* 🚀 ระบบหน้าแยกพิเศษสำหรับช่าง (ไม่มี Header/Footer ปกติ) */}
           <Route path="/squad" element={<SquadLayout><Squad /></SquadLayout>} />
         </Routes>
+        
+        {/* 🛡️ แบนเนอร์ยอมรับคุกกี้ (แสดงทุกหน้า) */}
+        <CookieConsentBanner />
       </Router>
       </OrderProvider>
     </CartProvider>

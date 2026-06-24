@@ -122,6 +122,7 @@ const QuickAccessTools = ({
       case 'theme': return () => navigate('/managers/theme');
       case 'knowledge': return () => navigate('/managers/knowledge');
       case 'footer': return () => navigate('/managers/footer-settings');
+      case 'privacy': return () => navigate('/managers/privacy-cookies');
       default: return undefined;
     }
   };

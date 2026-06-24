@@ -25,44 +25,32 @@ export default function OrderSummaryTotals({
                 <div className="space-y-2">
                     <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
                         <span>มูลค่าสินค้ารวม</span>
-                        <span>฿{subTotal.toLocaleString()}</span>
+                        <span>฿{(subTotal || 0).toLocaleString()}</span>
                     </div>
-                    {discount > 0 && (
-                        <div className="flex justify-between text-[11px] text-rose-500 font-bold items-center">
-                            <span className="flex items-center gap-1"><Tag size={12}/> ส่วนลดรวม</span>
-                            <span>-฿{discount.toLocaleString()}</span>
-                        </div>
-                    )}
-                    {shipping > 0 && (
-                        <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
-                            <span>ค่าจัดส่ง</span>
-                            <span>฿{shipping.toLocaleString()}</span>
-                        </div>
-                    )}
-                    {paymentFee > 0 && (
-                        <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
-                            <span>ค่าธรรมเนียมชำระเงิน</span>
-                            <span>฿{paymentFee.toLocaleString()}</span>
-                        </div>
-                    )}
-                    {otherFees > 0 && (
-                        <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
-                            <span>ค่าใช้จ่ายอื่นๆ</span>
-                            <span>฿{otherFees.toLocaleString()}</span>
-                        </div>
-                    )}
-                    {vat > 0 && (
-                        <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
-                            <span>ภาษีมูลค่าเพิ่ม (VAT)</span>
-                            <span>฿{vat.toLocaleString()}</span>
-                        </div>
-                    )}
-                    {walletUsed > 0 && (
-                        <div className="flex justify-between text-[11px] text-purple-500 font-bold items-center">
-                            <span className="flex items-center gap-1"><Wallet size={12}/> ใช้ Wallet ชำระ</span>
-                            <span>-฿{walletUsed.toLocaleString()}</span>
-                        </div>
-                    )}
+                    <div className="flex justify-between text-[11px] text-rose-500 font-bold items-center">
+                        <span className="flex items-center gap-1" title="รวมส่วนลดทั้งหมด (โปรโมชั่น, คูปอง)"><Tag size={12}/> ส่วนลดรวม <span className="cursor-help text-gray-300">?</span></span>
+                        <span>-฿{(discount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                        <span className="flex items-center gap-1" title="ค่าบริการจัดส่งสินค้า">ค่าจัดส่ง</span>
+                        <span>฿{(shipping || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                        <span className="flex items-center gap-1" title="ค่าธรรมเนียมจากการรูดบัตร หรือบริการชำระเงินอื่นๆ">ค่าธรรมเนียมชำระเงิน</span>
+                        <span>฿{(paymentFee || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                        <span className="flex items-center gap-1" title="ยอดเรียกเก็บเพิ่มเติม (ถ้ามี)">ค่าใช้จ่ายอื่นๆ</span>
+                        <span>฿{(otherFees || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                        <span className="flex items-center gap-1" title="ภาษีมูลค่าเพิ่ม 7% (คำนวณจากยอดสินค้าหักส่วนลด)">ภาษีมูลค่าเพิ่ม (VAT) <span className="cursor-help text-gray-300">?</span></span>
+                        <span>฿{(vat || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-purple-500 font-bold items-center">
+                        <span className="flex items-center gap-1" title="ยอดเงินคงเหลือจากกระเป๋าเงินลูกค้า"><Wallet size={12}/> ใช้ Wallet ชำระ</span>
+                        <span>-฿{(walletUsed || 0).toLocaleString()}</span>
+                    </div>
                 </div>
 
                 <div className="pt-3 border-t-2 border-[var(--dh-border)] border-dashed">

@@ -48,26 +48,18 @@ export const productKnowledgeAdminService = {
         }
 
         // 4. เตรียมข้อมูลเครดิต
-        const userData = userDoc.data();
-        const currentBalance = userData.creditPoints || 0;
         const rewardAmount = parseInt(creditReward, 10) || 2;
-        const newBalance = currentBalance + rewardAmount;
-
-        // อัปเดตผู้ใช้
-        transaction.update(userRef, { creditPoints: newBalance });
-
-        // สร้างประวัติธุรกรรม
-        transaction.set(transactionRef, {
-          transactionId,
-          uid: createdByUid,
-          type: 'deposit',
-          amount: rewardAmount,
-          balanceAfter: newBalance,
-          referenceId: taskId,
-          recordedBy: adminId || 'System',
-          timestamp: serverTimestamp(),
-          note: `รางวัลเพิ่มความรู้สินค้า: ${productId}`
-        });
+        
+        const { adjustUserCreditWithTransaction } = await import('./credit/creditActionService');
+        await adjustUserCreditWithTransaction(
+            transaction,
+            createdByUid,
+            rewardAmount,
+            'deposit',
+            `รางวัลเพิ่มความรู้สินค้า: ${productId}`,
+            adminId || 'System',
+            `PK_${taskId}`
+        );
 
         // 5. อัปเดตงานเป็นเสร็จสิ้น
         transaction.update(taskRef, {

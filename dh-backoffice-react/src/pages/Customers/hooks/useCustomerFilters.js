@@ -21,6 +21,7 @@ export const useCustomerFilters = (customers) => {
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
       result = result.filter(c => 
+        (c.accountId && c.accountId.toLowerCase().includes(lower)) ||
         (c.customerCode && c.customerCode.toLowerCase().includes(lower)) ||
         (c.accountName && c.accountName.toLowerCase().includes(lower)) ||
         (c.displayName && c.displayName.toLowerCase().includes(lower)) ||

@@ -127,7 +127,7 @@ const Cart = () => {
 
   const subTotal = parseSafeNumber(cartData.total);
   const netTotal = Math.max(0, subTotal);
-  const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig) : 0;
+  const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig, cartItems) : 0;
 
   if (loading) {
     return (

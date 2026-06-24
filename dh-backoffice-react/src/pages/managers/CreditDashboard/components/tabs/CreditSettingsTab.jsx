@@ -12,7 +12,14 @@ export default function CreditSettingsTab() {
     maxTransactionLimit: 50000,
     notifyLargeTransactions: true,
     largeTransactionThreshold: 20000,
+    pointsEarningRate: 100,
+    adImpressionCost: 5,
+    adClickCost: 2,
+    partnerRankingCost: 50,
+    skuBonusRules: '',
   });
+
+  const [showGuide, setShowGuide] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -91,12 +98,20 @@ export default function CreditSettingsTab() {
   return (
     <div className="flex flex-col bg-white border border-slate-300 rounded-sm min-h-[500px]">
       
-      <div className="p-3 border-b border-slate-300 bg-slate-50 flex items-center gap-2">
-        <Settings size={16} className="text-slate-600" />
-        <div>
-          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">System Configuration</h3>
-          <p className="text-[10px] text-slate-500">Core Engine rules & operational limits</p>
+      <div className="p-3 border-b border-slate-300 bg-slate-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Settings size={16} className="text-slate-600" />
+          <div>
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">System Configuration</h3>
+            <p className="text-[10px] text-slate-500">Core Engine rules & operational limits</p>
+          </div>
         </div>
+        <button 
+          onClick={() => setShowGuide(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-colors"
+        >
+          <Bell size={14} /> คู่มือการตั้งค่า (Guide)
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
@@ -130,16 +145,94 @@ export default function CreditSettingsTab() {
               </section>
 
               <section>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest border-b border-slate-300 pb-2 mb-3 flex items-center gap-2">
-                  <Bell size={14} className="text-slate-500" /> Audit & Notifications
-                </h4>
-                <div className="bg-white border border-slate-300 rounded-sm">
-                  <FlatToggle 
-                    label="Notify Large Transactions" 
-                    description="ส่งแจ้งเตือนพิเศษเมื่อมีการทำรายการจำนวนเงินสูงกว่าเกณฑ์ที่กำหนด"
-                    checked={settings.notifyLargeTransactions} 
-                    onChange={() => handleToggle('notifyLargeTransactions')} 
-                  />
+                <div className="bg-white border border-slate-300 rounded-sm p-4 space-y-5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                      Points Earning Rate (THB)
+                    </label>
+                    <p className="text-[10px] text-slate-500 mb-2">ยอดสั่งซื้อกี่บาท ต่อการได้รับ 1 Point</p>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-slate-400 font-mono text-xs font-bold">฿</span>
+                      </div>
+                      <input 
+                        type="text" 
+                        value={settings.pointsEarningRate?.toLocaleString('th-TH') || '100'}
+                        onChange={(e) => handleChange(e, 'pointsEarningRate')}
+                        className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-sm text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-none transition-none text-right font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-200" />
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                      Ad Impression Cost (Points)
+                    </label>
+                    <p className="text-[10px] text-slate-500 mb-2">แต้มที่หัก ต่อการแสดงโฆษณา 100 ครั้ง</p>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={settings.adImpressionCost?.toLocaleString('th-TH') || '5'}
+                        onChange={(e) => handleChange(e, 'adImpressionCost')}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-sm text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-none transition-none text-right font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-200" />
+
+                  <hr className="border-slate-200" />
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                      Ad Click Cost (Points)
+                    </label>
+                    <p className="text-[10px] text-slate-500 mb-2">แต้มที่หัก ต่อการคลิกเข้าชมโปรไฟล์ 1 ครั้ง</p>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={settings.adClickCost?.toLocaleString('th-TH') || '2'}
+                        onChange={(e) => handleChange(e, 'adClickCost')}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-sm text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-none transition-none text-right font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-200" />
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                      Partner Ranking Cost (Points)
+                    </label>
+                    <p className="text-[10px] text-slate-500 mb-2">แต้มที่หัก ต่อวัน สำหรับการเป็น Partner แนะนำ</p>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={settings.partnerRankingCost?.toLocaleString('th-TH') || '50'}
+                        onChange={(e) => handleChange(e, 'partnerRankingCost')}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-sm text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-none transition-none text-right font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-200" />
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                      SKU Bonus Rules (Format: SKU:Points)
+                    </label>
+                    <p className="text-[10px] text-slate-500 mb-2">กติกาแต้มพิเศษเมื่อซื้อสินค้ารหัสที่กำหนด (1 บรรทัดต่อ 1 กติกา เช่น NB-001:500)</p>
+                    <div className="relative">
+                      <textarea 
+                        value={settings.skuBonusRules || ''}
+                        onChange={(e) => setSettings(prev => ({ ...prev, skuBonusRules: e.target.value }))}
+                        placeholder="NB-001:500&#10;RAM-16GB:100"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-sm text-sm font-mono text-slate-800 focus:border-slate-800 focus:bg-white outline-none transition-none min-h-[80px]"
+                      />
+                    </div>
+                  </div>
                 </div>
               </section>
             </div>
@@ -219,6 +312,61 @@ export default function CreditSettingsTab() {
           {isSaving ? 'Saving...' : 'Save Configuration'}
         </button>
       </div>
+
+      {/* IN-APP DOCUMENTATION MODAL */}
+      {showGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-xl">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <ShieldAlert className="text-blue-600" /> คู่มือการตั้งค่ากฎการใช้งานเครดิต (Credit Rules)
+              </h2>
+              <button onClick={() => setShowGuide(false)} className="text-slate-400 hover:text-slate-600 font-bold p-1">✕</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-6">
+              <section className="space-y-2">
+                <h3 className="text-sm font-bold text-slate-800 bg-blue-50 p-2 rounded border border-blue-100">📖 ตำรา / คำอธิบาย (Overview)</h3>
+                <p className="text-sm text-slate-600 leading-relaxed pl-2">
+                  หน้านี้ใช้สำหรับตั้งค่า <b>กลไกหลักของระบบ Credit Point (Core Engine)</b> ซึ่งจะมีผลทันทีต่อระบบการเงินและเครดิตทั้งหมดในแพลตฟอร์ม ทั้งฝั่งผู้ใช้งาน (Front-end) และผู้ดูแล (Backoffice)
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-bold text-slate-800 bg-emerald-50 p-2 rounded border border-emerald-100">⚙️ วิธีการใช้งาน (How-to)</h3>
+                <ul className="text-sm text-slate-600 space-y-2 list-decimal pl-6">
+                  <li><b>Security Rules:</b> เปิด/ปิด การบังคับใช้รหัสผ่าน 2 ขั้นตอนเวลาแจกพอยต์ หรือการระงับพาร์ทเนอร์อัตโนมัติหากพอยต์ติดลบ</li>
+                  <li><b>Credit Valuation:</b> กำหนดอัตราส่วนการได้รับพอยต์จากการซื้อของ เช่น 100 บาท ได้รับ 1 พอยต์ (Points Earning Rate)</li>
+                  <li><b>Ad Costing:</b> กำหนดพอยต์ที่จะถูกหักออกเมื่อโฆษณาแสดงผล (Ad Impression Cost) หรือเวลาซื้อตำแหน่ง Partner</li>
+                  <li>เมื่อปรับเปลี่ยนตัวเลขแล้ว ให้กดปุ่ม <b>"Save Configuration"</b> ที่ด้านล่างขวา เพื่อบันทึกลงระบบ (มีผลทันที)</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-bold text-slate-800 bg-amber-50 p-2 rounded border border-amber-100">💡 เทคนิคการใช้งาน (Tips & Tricks)</h3>
+                <ul className="text-sm text-slate-600 space-y-2 list-disc pl-6">
+                  <li>คุณสามารถใช้หน้า <b>"Smart Calculator"</b> เพื่อจำลองอัตราการเบิร์น (Burn Rate) ก่อนที่จะมาปรับลด/เพิ่มค่าต่างๆ ในหน้านี้</li>
+                  <li>หากตั้งค่า <b>Max Transaction Limit</b> ให้ต่ำลง จะช่วยลดความเสี่ยงจากการที่ Admin เติมพอยต์ผิดพลาด (Fat-finger Error) ได้ดีมาก</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-bold text-slate-800 bg-purple-50 p-2 rounded border border-purple-100">🎯 ตัวอย่างผลลัพธ์ (Expected Results)</h3>
+                <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm text-slate-600 space-y-2">
+                  <p>⚠️ <b>ข้อควรระวัง:</b> หากปรับ "Points Earning Rate" จาก 100 บาท เป็น 50 บาท จะส่งผลให้ผู้ซื้อสินค้าได้รับพอยต์ <b>เพิ่มขึ้น 2 เท่า</b> ทันทีเมื่อออเดอร์ใหม่ได้รับการอนุมัติ (Paid)</p>
+                  <p>ระบบจะ <b>ไม่มีผลย้อนหลัง</b> กับบิลที่อนุมัติไปแล้ว การเปลี่ยนแปลงจะเริ่มนับจากบิล หรือโฆษณาในวินาทีถัดไป</p>
+                </div>
+              </section>
+            </div>
+            
+            <div className="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end">
+              <button onClick={() => setShowGuide(false)} className="px-6 py-2 bg-slate-800 text-white font-bold text-sm rounded hover:bg-slate-900 transition-colors">
+                รับทราบและเข้าใจ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

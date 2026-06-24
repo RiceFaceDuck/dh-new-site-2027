@@ -47,6 +47,15 @@ export const useNearbyPartners = () => {
       // 4. Limit based on config
       const limitedPartners = partnersWithDistance.slice(0, currentConfig.displayLimit);
       setPartners(limitedPartners);
+
+      // 5. Track Impressions (Fire and forget to not block UI)
+      if (limitedPartners.length > 0) {
+        import('../../../firebase/marketingAnalyticsService').then(({ logImpression }) => {
+          limitedPartners.forEach(p => {
+            logImpression('AD-CARD-' + (p.id || p.userId));
+          });
+        }).catch(err => console.error("Failed to load logImpression:", err));
+      }
     } catch (error) {
       console.error("Error fetching nearby partners:", error);
     } finally {

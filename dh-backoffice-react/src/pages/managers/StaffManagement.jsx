@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Search, AlertCircle, CheckCircle2, UserPlus, Eye, EyeOff, ArrowLeft, Briefcase } from 'lucide-react';
 import { ROLES } from '../../firebase/userService';

@@ -1,11 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { trackAdClick } from '../../../firebase/credit/creditActionService';
+import { squadConfigService } from '../../../firebase/squadConfigService';
 
 const PartnerCard = ({ partner }) => {
   // Use storeProfile data if available, fallback to partner root level data
   const avatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop';
   const name = partner.storeName || partner.name || 'ช่างซ่อมอิสระ';
   const role = partner.services || partner.role || 'ช่างซ่อมคอมพิวเตอร์';
+
+  const handleClick = async () => {
+    try {
+      const { logClick } = await import('../../../firebase/marketingAnalyticsService');
+      await logClick('AD-CARD-' + (partner.id || partner.userId));
+    } catch (e) {
+      console.error("Failed to track click", e);
+    }
+  };
 
   return (
     <div className="group relative bg-white/80 backdrop-blur-sm p-4 rounded-2xl flex items-center space-x-4 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] hover:-translate-y-1 hover:border-indigo-100">
@@ -43,7 +54,7 @@ const PartnerCard = ({ partner }) => {
           </div>
         )}
         
-        <Link to={`/store/${partner.id || partner.userId}`} className="px-4 py-2 md:px-5 md:py-2.5 bg-slate-800 text-white rounded-xl font-bold text-xs md:text-sm hover:bg-indigo-600 transition-all duration-300 w-max shadow-md hover:shadow-indigo-500/30 flex items-center gap-2">
+        <Link onClick={handleClick} to={`/store/${partner.id || partner.userId}`} className="px-4 py-2 md:px-5 md:py-2.5 bg-slate-800 text-white rounded-xl font-bold text-xs md:text-sm hover:bg-indigo-600 transition-all duration-300 w-max shadow-md hover:shadow-indigo-500/30 flex items-center gap-2">
           View Profile
           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

@@ -97,7 +97,7 @@ const CategoryPage = () => {
         {/* ส่วนหัวแสดงการย้อนกลับ และชื่อหมวดหมู่ */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
           <div className="flex items-center gap-4">
-            <Link to="/" className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+            <Link to="/categories" className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
               <ArrowLeft size={20} />
             </Link>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">

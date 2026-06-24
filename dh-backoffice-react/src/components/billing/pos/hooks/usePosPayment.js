@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-
+import { calculateVat } from 'dh-shared';
 const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
 
 export function usePosPayment({ activeTab, activePromotions, activeFreebies, currentCustomerType }) {
@@ -77,18 +77,18 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     
     let baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
     let taxableAmount = baseTotal + (activeTab?.vatOnShipping ? shippingFee : 0);
-    let vatAmount = 0; let netTotal = 0;
+    let vatTypeMapped = 'ไม่มี VAT';
+    if (activeTab?.vatType === 'included') vatTypeMapped = 'รวม VAT';
+    if (activeTab?.vatType === 'excluded') vatTypeMapped = 'แยก VAT';
 
-    if (activeTab?.vatType === 'included') { 
-        vatAmount = taxableAmount - (taxableAmount / 1.07); 
-        netTotal = baseTotal + shippingFee; 
-    } else if (activeTab?.vatType === 'excluded') { 
-        vatAmount = taxableAmount * 0.07; 
-        netTotal = baseTotal + shippingFee + vatAmount; 
-    } else { 
-        vatAmount = 0; 
-        netTotal = baseTotal + shippingFee; 
+    const vatResult = calculateVat(taxableAmount, vatTypeMapped);
+    let vatAmount = vatResult.vatAmount;
+    let netTotal = vatResult.finalTotal + (activeTab?.vatType !== 'excluded' ? shippingFee : 0);
+    if (activeTab?.vatType === 'excluded') {
+         // if excluded, calculateVat returns finalTotal = taxableAmount + vat. But taxableAmount included shipping already. So finalTotal already includes shipping.
+         netTotal = vatResult.finalTotal;
     }
+
 
     let walletUsed = sanitizeNum(activeTab?.walletUsed);
     if (activeTab?.useWallet && activeTab?.customer) {

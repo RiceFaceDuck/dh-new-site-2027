@@ -36,7 +36,7 @@ export default function PartnerCreditsTab() {
         if (d.role === 'partner' || balance > 0) {
           data.push({
             id: doc.id,
-            name: d.firstName ? `${d.firstName} ${d.lastName || ''}` : d.accountName || d.displayName || 'Unknown Account',
+            name: d.storeName || d.displayName || d.accountName || (d.firstName ? `${d.firstName} ${d.lastName || ''}`.trim() : null) || (d.email ? d.email.split('@')[0] : null) || d.phone || d.phoneNumber || 'Unknown Account',
             phone: d.phone || '-',
             email: d.email || '-',
             role: d.role || 'user',

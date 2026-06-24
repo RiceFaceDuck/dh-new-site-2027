@@ -20,12 +20,18 @@ import {
     restoreUser, 
     deleteUser, 
     updateUserLoginStatus, 
-    updateUserEcosystem, 
-    adminAdjustFinancials,
+    updateUserEcosystem
+} from './userManagementService';
+
+import {
     createManualCustomer,
     updateCustomerProfile,
     deleteCustomer
-} from './userManagementService';
+} from './customerAdminService';
+
+import {
+    adminAdjustFinancials
+} from './userFinancialAdminService';
 
 // 🛡️ Super Admins & Valid Roles 
 export const SUPER_ADMINS = [

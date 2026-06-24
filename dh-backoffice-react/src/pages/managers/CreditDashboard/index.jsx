@@ -13,6 +13,7 @@ import CreditAdjustTab from './components/tabs/CreditAdjustTab';
 import CreditHistoryTab from './components/tabs/CreditHistoryTab';
 import PartnerCreditsTab from './components/tabs/PartnerCreditsTab';
 import CreditSettingsTab from './components/tabs/CreditSettingsTab';
+import CreditCalculatorTab from './components/tabs/CreditCalculatorTab';
 
 // นำเข้า Hooks จัดการข้อมูลส่วนกลาง
 import useLedgerStats from './hooks/useLedgerStats';
@@ -150,6 +151,7 @@ export default function CreditDashboard() {
               {activeTab === 'history' && <CreditHistoryTab />}
               {activeTab === 'partners' && <PartnerCreditsTab />}
               {activeTab === 'settings' && <CreditSettingsTab />}
+              {activeTab === 'calculator' && <CreditCalculatorTab />}
             </div>
 
             {/* Loading Overlay during submit - Enterprise Style */}

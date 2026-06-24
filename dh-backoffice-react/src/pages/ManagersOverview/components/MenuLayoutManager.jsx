@@ -35,7 +35,7 @@ export const AVAILABLE_MENUS = {
   banner: { title: "แบนเนอร์โฆษณา", iconName: "Megaphone", colorTheme: "rose", isComingSoon: true },
   seo: { title: "SEO & ค้นหา", iconName: "Search", colorTheme: "blue", isComingSoon: true },
   apikey: { title: "API Keys", iconName: "Code", colorTheme: "cyan", isComingSoon: true },
-  privacy: { title: "Privacy & Cookies", iconName: "ShieldCheck", colorTheme: "emerald", isComingSoon: true },
+  privacy: { title: "Privacy & Cookies", iconName: "ShieldCheck", colorTheme: "emerald" },
   error404: { title: "หน้า 404 Error", iconName: "AlertTriangle", colorTheme: "amber", isComingSoon: true },
   redirect: { title: "Redirect URLs", iconName: "ArrowRightLeft", colorTheme: "indigo", isComingSoon: true },
   script: { title: "Custom Scripts", iconName: "Code2", colorTheme: "slate", isComingSoon: true },

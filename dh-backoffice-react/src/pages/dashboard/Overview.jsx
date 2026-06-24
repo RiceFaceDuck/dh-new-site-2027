@@ -114,7 +114,7 @@ const Overview = () => {
       </div>
 
       {/* Style พิเศษสำหรับการพิมพ์ (PDF Export) */}
-      <style jsx>{`
+      <style jsx="true">{`
         @media print {
           @page { size: A4 landscape; margin: 10mm; }
           body { background-color: white !important; }

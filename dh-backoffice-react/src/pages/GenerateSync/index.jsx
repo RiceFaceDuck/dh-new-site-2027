@@ -2,13 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import GenerateActions from './components/GenerateActions';
 import ChangeSummaryPanel from './components/ChangeSummaryPanel';
 import UploadTransactions from './components/UploadTransactions';
+import GlobalSchemaSettings from './components/GlobalSchemaSettings';
 import GuideModal from '../../components/common/GuideModal';
-import { HelpCircle, RefreshCw, Clock } from 'lucide-react';
-import { bigSellerExportService } from '../../firebase/bigSellerExportService';
+import TemplateSettingsModal from './components/TemplateSettingsModal';
+import { HelpCircle, RefreshCw, Clock, Settings } from 'lucide-react';
+import { bigSellerQueryService } from '../../firebase/bigseller';
 import { gasStockService } from '../../firebase/gasStockService';
 
 export default function GenerateSync() {
   const [showGuide, setShowGuide] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [changes, setChanges] = useState(null);
   const [isCalculating, setIsCalculating] = useState(true);
 
@@ -33,7 +36,7 @@ export default function GenerateSync() {
   const fetchChanges = useCallback(async () => {
     setIsCalculating(true);
     try {
-      const result = await bigSellerExportService.calculateChanges();
+      const result = await bigSellerQueryService.calculateChanges();
       setChanges(result);
       setLastSyncTime(new Date());
     } catch (error) {
@@ -55,7 +58,7 @@ export default function GenerateSync() {
   const handleManualReset = useCallback(async () => {
     setIsCalculating(true);
     try {
-      const result = await bigSellerExportService.manualResetBaseline();
+      const result = await bigSellerQueryService.manualResetBaseline();
       setChanges(result);
       setLastSyncTime(new Date());
     } catch (error) {
@@ -82,13 +85,23 @@ export default function GenerateSync() {
               ดาวน์โหลดเพื่ออัปเดตสต็อก หรือนำเข้าไฟล์เพื่อตัดสต็อก
             </p>
          </div>
-         <button 
-           onClick={() => setShowGuide(true)} 
-           className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm font-bold border border-white/20 shadow-sm"
-         >
-           <HelpCircle size={18} />
-           คู่มือใช้งาน
-         </button>
+         <div className="flex items-center gap-2">
+           <button 
+             onClick={() => setShowSettings(true)} 
+             className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm font-bold border border-white/20 shadow-sm"
+             title="ตั้งค่าไฟล์แม่แบบ (Templates)"
+           >
+             <Settings size={18} />
+             ตั้งค่าแม่แบบ
+           </button>
+           <button 
+             onClick={() => setShowGuide(true)} 
+             className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm font-bold border border-white/20 shadow-sm"
+           >
+             <HelpCircle size={18} />
+             คู่มือใช้งาน
+           </button>
+         </div>
       </div>
 
       {/* Auto Sync & Status Bar */}
@@ -161,10 +174,10 @@ export default function GenerateSync() {
             <div className="flex flex-col gap-4">
               <GenerateActions 
                   changes={changes} 
-                  setChanges={setChanges} 
                   isCalculating={isCalculating} 
               />
               <UploadTransactions onUploadComplete={fetchChanges} />
+              <GlobalSchemaSettings />
             </div>
 
             {/* Right Column: Changes Panel */}
@@ -189,16 +202,24 @@ export default function GenerateSync() {
       <GuideModal 
         isOpen={showGuide} 
         onClose={() => setShowGuide(false)}
-        title="คู่มือการดาวน์โหลดและอัปโหลดข้อมูล"
-        manualText="ระบบนี้ช่วยให้คุณสามารถนำข้อมูลจำนวนสต็อกไปใช้กับระบบภายนอก หรือรับข้อมูลการขายจากแหล่งภายนอกมาตัดสต็อกได้อย่างแม่นยำ"
+        title="คู่มือการซิงค์สต็อก Big Seller / Shopee"
+        manualText="ระบบนี้ช่วยให้คุณสามารถอัปเดตข้อมูลสต็อกรายวัน หรืออัปเดตข้อมูลสินค้าสำหรับ Shopee ได้อย่างรวดเร็วและปลอดภัย โดยไม่กระทบโครงสร้างไฟล์เดิม"
         howTo={[
-          "การดาวน์โหลด: กดปุ่ม 'ดาวน์โหลดไฟล์ CSV' รอจนกว่าระบบสร้างไฟล์เสร็จ นำไฟล์ที่ได้ไปใช้กับ Big Seller (เมนู Import Merchant SKU)",
-          "การอัปโหลด: เลือกไฟล์ Excel หรือ CSV ที่ได้จากระบบอื่น นำมาลากวางลงในแผง 'อัปโหลดข้อมูลธุรกรรม'",
-          "หน้าต่างพรีวิวจะแสดงรายการสินค้า เลือกโหมด 'หักสต็อก' (สำหรับการขาย) หรือ 'เพิ่มสต็อก' (สำหรับการรับของ)",
-          "กดยืนยัน ระบบจะทำรายการทั้งหมดให้เสร็จสิ้นและบันทึกประวัติให้คุณอัตโนมัติ"
+          "งานประจำวัน: ระบบจะคำนวณ 'ส่วนต่าง' ของสต็อกให้อัตโนมัติ",
+          "1. กดปุ่ม 'ดาวน์โหลด SKU Merchant' จะได้ไฟล์ .xlsx นำไปเข้า Big Seller เพื่อเริ่มนับสต็อก",
+          "2. กดปุ่ม 'นำเข้าผลลัพธ์การนับ' จะได้ไฟล์ .xlsx ที่มีจำนวนสต็อกอัปเดตแล้ว นำไปเข้า Big Seller เพื่อจบการนับ",
+          "งานแก้ไขอื่นๆ: สำหรับการเปลี่ยนราคาหรือสต็อกผ่านไฟล์ Shopee",
+          "1. ดาวน์โหลดไฟล์ shopee_edit_price_stock จาก Shopee",
+          "2. ลากไฟล์นั้นมาวางในกล่อง 'นำเข้าอัปเดตข้อมูลสินค้า'",
+          "3. ระบบจะจัดการเติมเลขสต็อกและราคาล่าสุดให้ และดาวน์โหลดกลับมาให้คุณอัตโนมัติ โดยคอลัมน์และช่องผสาน (Merged Cells) จะยังอยู่ครบเหมือนต้นฉบับ!"
         ]}
-        tips="ในหน้าอัปโหลด ระบบจะอ่านคอลัมน์อัตโนมัติ ให้มั่นใจว่าในไฟล์มีคอลัมน์ที่ตั้งชื่อมีคำว่า SKU, จำนวน, หรือ ราคา เพื่อให้ระบบทำงานได้"
-        expectedResult="เมื่ออัปโหลดและหักสต็อกเสร็จ แผงสรุปความเปลี่ยนแปลงด้านขวามือ จะแสดงให้คุณเห็นว่ามีรายการไหนถูกหักไปบ้างแบบเรียลไทม์"
+        tips="การดึงข้อมูลจะเกิดขึ้นบนระบบหลังบ้านโดยไม่เปลืองโควต้า Firebase (0 Reads) ส่วนการอัปเดตไฟล์ Excel จะประมวลผลบนเบราว์เซอร์ของคุณ ทำให้ปลอดภัยและประหยัดเวลามาก"
+        expectedResult="คุณจะได้ไฟล์ .xlsx ที่พร้อมสำหรับการอัปโหลดเข้าสู่ Big Seller หรือ Shopee ได้ทันทีโดยไม่ต้องแก้ไขอะไรเพิ่มเติม ระบบจะบันทึกประวัติการทำงานของคุณไว้ใน History Log ทุกครั้ง"
+      />
+      
+      <TemplateSettingsModal 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
       />
     </div>
   );

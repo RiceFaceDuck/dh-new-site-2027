@@ -17,6 +17,8 @@ const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id
 export default function AdManagement() {
   const navigate = useNavigate();
   const { ads, loading } = useAdSubscriptions();
+  const [activeTab, setActiveTab] = useState('PENDING');
+  const [processingId, setProcessingId] = useState(null);
 
   // 🚀 2. ฟังก์ชัน อนุมัติ / ปฏิเสธ (ใช้ Service เพื่อรักษา SRP และลด Redundant Writes)
   const handleAction = async (ad, action) => {

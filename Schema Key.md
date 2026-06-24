@@ -2,6 +2,10 @@
 
 This document outlines the NoSQL schema structures used in the Firebase Firestore database, specifically focusing on critical operational collections like `history_logs`.
 
+## 0. Shared Utilities (`dh-shared`)
+To enforce Server-Side Price Validation and Stock Concurrency without Cloud Functions, we have implemented a Local Package `dh-shared` containing `priceEngine` and `taxEngine`. 
+- **`dh-frontend`** uses `dh-shared/priceEngine` inside Firebase Transactions (`checkoutSubmitService.js`) to recalculate final totals directly against live database `retailPrice` and `stockQuantity`.
+- **`dh-backoffice-react`** uses `dh-shared/priceEngine` to double-check amounts before billing, and uses `dh-shared/taxEngine` for unified VAT calculations.
 ## 1. Storage: `history_logs` (Migrated to Google Drive via GAS)
 
 The `history_logs` system has been completely migrated out of Firestore to save read/write quota costs. It now uses a Google Apps Script (GAS) Web App to batch write logs into Google Drive as `.jsonl` files, separated by day.
@@ -129,7 +133,7 @@ The `credit_transactions` collection stores all movements of a user's wallet/cre
 ### Architectural Note
 The logic for managing credits and the `credit_transactions` collection is modularized:
 - **`creditService.js`**: Facade module exporting all credit functionalities.
-- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments. **NOTE**: The canonical source of truth for a user's balance is `userDoc.creditPoints`. The legacy `wallet` subcollection is deprecated and no longer updated during Ad transactions to prevent split-brain desyncs.
+- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments. **NOTE**: The canonical source of truth for a user's balance is `userDoc.creditPoints`. The legacy `wallet` subcollection, `point_transactions` collection, and `stats.rewardPoints` are ALL deprecated. Earning points from orders now directly increases `creditPoints`.
 - **`creditHistoryService.js`**: Handles fetching wallet balance and paginated credit history.
 - **`creditRealtimeService.js`**: Manages real-time listeners for user's wallet balance and pending credits.
 - **`creditFormatService.js`**: Gamification and data formatting utilities.
@@ -173,6 +177,7 @@ The `partners` collection stores information about affiliated repair shops and p
 - **`storeProfileSubmitService.js`**: Handles the submission of a partner's profile. When a profile is updated or edited, the partner is **removed** from `ActivePartners` (disappearing from the map) and their Ad status is set to `PENDING`. This enforces a strict security policy where any edits require re-approval.
 - **`adManagementService.js`**: When a Manager approves the `AD_APPROVAL` task, the service copies the data to `ActivePartners`, making them live on the map.
 - **Caching & Proximity (`partnerLocationService.js`)**: To save read operations, `ActivePartners` is cached in the client's `localStorage`. The function `findNearestPartner` uses a **Weighted Algorithm** (combining `points` and `distance`) to determine the best partner to display, preventing duplicate logic across services. `partnerService.js` is kept strictly for profile data mutations.
+- **Service Providers Page (`/providers`)**: Uses client-side sorting and filtering based on the `ActivePartners` cache. This ensures zero additional Firebase reads when users search, filter, or sort nearby technicians.
 
 ### Schema Fields
 
@@ -225,7 +230,9 @@ The `users` collection stores user profiles, access controls, and staff registra
 | Field Name       | Type    | Description                                                                 | Example Value                       |
 |------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
 | `uid`            | String  | Firebase Authentication UID.                                                | `"uid_xyz123"`                      |
-| `email`          | String  | User's email address.                                                       | `"staff@dhnotebook.com"`            |
+| `accountId`      | String  | Short 8-character ID used for reliable server-side searching. Now supports manual edit and Smart Generate. | `"8RP6WHIM"`                        |
+| `customerCode`   | String  | Legacy/fallback code, usually kept in sync with `accountId`.                | `"8RP6WHIM"`                        |
+| `email`          | String  | User's email address. **Used as the Primary Key for Data Sync Validation**. | `"staff@dhnotebook.com"`            |
 | `firstName`      | String  | User's first name.                                                          | `"สมชาย"`                           |
 | `lastName`       | String  | User's last name.                                                           | `"รักดี"`                           |
 | `nickname`       | String  | User's nickname.                                                            | `"บอย"`                             |
@@ -239,11 +246,26 @@ The `users` collection stores user profiles, access controls, and staff registra
 | `startDate`      | String  | Date the user started working.                                              | `"2026-06-11"`                      |
 | `metadata`       | Map     | Additional info like creation date and update dates.                        | `{ createdAt: Timestamp, registeredVia: "staff_onboarding_portal" }` |
 
+### Subcollection: `hardware_scans`
+Stores the results of hardware scans submitted by the DH Hardware Scanner.
+
+| Field Name       | Type      | Description                                                                 | Example Value                       |
+|------------------|-----------|-----------------------------------------------------------------------------|-------------------------------------|
+| `monitor`        | String    | PNPDeviceID or InstanceName of the monitor.                                 | `"DISPLAY\DEL41F1\..."`             |
+| `battery`        | String    | Name of the battery.                                                        | `"Primary"`                         |
+| `board`          | String    | Motherboard Product and SerialNumber.                                       | `"83C0 123456789"`                  |
+| `disk`           | String    | SSD/HDD Model.                                                              | `"Samsung SSD 970 EVO"`             |
+| `ram`            | String    | RAM Part Number.                                                            | `"M471A1K43CB1-CTD"`                |
+| `createdAt`      | Timestamp | When the scan was saved.                                                    | `December 15, 2026 at 10:30:00 AM`  |
+
 ---
 
 ## 11. Collection: `homepage_categories`
 
 The `homepage_categories` collection manages the display of categories on the Storefront. Managers can customize the layout, UI shape, and connection to backend product types.
+
+### Architectural Note: Frontend Caching
+- **`useCategories.js`**: To save Firebase Read quotas, the frontend caches active categories in the browser's `sessionStorage` (`dh_homepage_categories_cache`). When users navigate back and forth, it reads from the cache instantly without incurring extra read costs.
 
 ### Schema Fields
 
@@ -382,6 +404,9 @@ This document stores global configuration for the frontend theme settings.
 
 This document stores the configuration for the main Hero Billboard (Banner) on the Storefront Home page.
 
+### Architectural Note
+- **`heroConfigService.js`**: (SRP) Dedicated service for managing Hero Banner settings. Separated from `settingsService.js` to adhere to the Single Responsibility Principle and reduce file complexity.
+
 ### Schema Fields
 
 | Field Name        | Type    | Description                                                                 | Example Value                       |
@@ -428,5 +453,21 @@ To prevent massive Firestore Read spikes when exporting inventory data for Shope
   1. The service calls `gasStockService.forceSync()` to flush any pending local inventory changes to the Google Apps Script (GAS) queue.
   2. It then fetches the full inventory list directly from the GAS Google Sheet (`fetchBackupInventory()`). This consumes **0 Firebase Reads**.
   3. The data is transformed on the client side into standard Big Seller `.csv` columns (`Merchant SKU`, `Stock Quantity`) and a download is triggered.
+
+---
+
+## 22. Document: `settings/privacy_cookies_config`
+
+This document stores the configuration for the PDPA Cookie Consent Banner and Privacy links.
+
+### Schema Fields
+
+| Field Name        | Type    | Description                                                                 | Example Value                       |
+|-------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|
+| `logoUrl`         | String  | URL of the logo image (160x160) for the cookie settings modal.              | `"https://..."`                     |
+| `bannerText`      | String  | The main text displayed on the cookie consent banner.                       | `"เว็บไซต์นี้มีการใช้งานคุกกี้..."` |
+| `policyLinks`     | Object  | Contains URLs for privacy policy (`privacyPolicyUrl`) and cookie policy (`cookiePolicyUrl`). | `{ privacyPolicyUrl: "/privacy" }`  |
+| `cookieTypes`     | Array   | List of configurable cookie categories (e.g. Necessary, Analytics).         | `[{ id: "necessary", ... }]`        |
+| `updatedAt`       | Timestamp | When the configuration was last updated.                                  | `December 15, 2026`                 |
 
 *(Additional schemas will be documented here as the system evolves)*

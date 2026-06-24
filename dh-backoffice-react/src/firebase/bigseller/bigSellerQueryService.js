@@ -1,6 +1,6 @@
-import { gasStockService } from './gasStockService';
+import { gasStockService } from '../gasStockService';
 
-class BigSellerExportService {
+class BigSellerQueryService {
   /**
    * ดึงข้อมูลสต็อกและคำนวณความเปลี่ยนแปลงเทียบกับ baseline ของวันนี้
    */
@@ -117,69 +117,6 @@ class BigSellerExportService {
     this.saveCurrentState(currentInventory, this.getEffectiveResetString());
     return await this.calculateChanges();
   }
-
-  /**
-   * สร้างไฟล์ CSV จาก inventory ที่ส่งเข้าไป
-   */
-  exportStockToBigSeller(inventory) {
-    if (!inventory || inventory.length === 0) {
-      throw new Error("ไม่มีข้อมูลให้ส่งออก");
-    }
-
-    const headers = ['Merchant SKU', 'Stock Quantity'];
-    
-    let csvContent = "\uFEFF"; 
-    csvContent += headers.join(",") + "\n";
-
-    inventory.forEach(item => {
-      if (!item.sku) return;
-      const sku = this.escapeCsv(item.sku);
-      const stock = Number(item.stockQuantity) || 0;
-      csvContent += `${sku},${stock}\n`;
-    });
-
-    const fileName = `BigSeller_Stock_Sync_${this.getFormattedDate()}.csv`;
-    this.downloadCsvFile(csvContent, fileName);
-
-    return {
-      success: true,
-      itemCount: inventory.length,
-      fileName
-    };
-  }
-
-  /**
-   * Utility สำหรับจัดการเครื่องหมายวรรคตอนและ Comma ใน CSV
-   */
-  escapeCsv(text) {
-    if (text === null || text === undefined) return '""';
-    const stringText = String(text);
-    if (stringText.includes(',') || stringText.includes('"') || stringText.includes('\n')) {
-      return `"${stringText.replace(/"/g, '""')}"`;
-    }
-    return stringText;
-  }
-
-  getFormattedDate() {
-    const d = new Date();
-    const pad = (n) => n.toString().padStart(2, '0');
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
-  }
-
-  downloadCsvFile(content, fileName) {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", fileName);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      URL.revokeObjectURL(url);
-      document.body.removeChild(link);
-    }
-  }
 }
 
-export const bigSellerExportService = new BigSellerExportService();
+export const bigSellerQueryService = new BigSellerQueryService();

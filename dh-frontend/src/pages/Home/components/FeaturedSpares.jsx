@@ -17,7 +17,7 @@ const FeaturedSpares = ({ products, loading, error }) => {
         </div>
         
         <Link 
-          to="/category/all" 
+          to="/categories" 
           className="group flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-full shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-700 transition-all duration-300"
         >
           ดูทั้งหมด

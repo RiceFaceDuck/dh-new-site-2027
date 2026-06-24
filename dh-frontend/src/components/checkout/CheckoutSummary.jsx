@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 // 🚀 [NEW] นำเข้า formatCredit และไอคอน เพื่อยกระดับ UI
 import { formatCredit } from '../../firebase/creditService';
 import { Award } from 'lucide-react';
+import { useCookieConsent } from '../../hooks/useCookieConsent';
+import { parseConsentText } from '../../utils/textParser';
 
 const CheckoutSummary = ({ 
   cartItems, 
@@ -11,6 +13,9 @@ const CheckoutSummary = ({
   onRequestWholesale, 
   isSubmitting 
 }) => {
+  const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+  const { config } = useCookieConsent();
+
   // ดึงค่าเบื้องต้น
   const subtotal = totals?.subtotal || 0;
   const shippingCost = checkoutState?.shippingCost || 0;
@@ -98,7 +103,7 @@ const CheckoutSummary = ({
                   ))}
                 </div>
               ) : (
-                <span className="text-gray-400">ไม่มี</span>
+                <span className="text-gray-400">฿0</span>
               )}
             </div>
           </div>
@@ -107,7 +112,7 @@ const CheckoutSummary = ({
           <div className="flex justify-between items-center">
             <span>3. ค่าจัดส่ง</span>
             <span className="font-medium text-gray-900">
-              {shippingCost === 0 ? <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs">ฟรี</span> : `฿${shippingCost.toLocaleString()}`}
+              ฿{shippingCost.toLocaleString()}
             </span>
           </div>
 
@@ -117,26 +122,25 @@ const CheckoutSummary = ({
             <span className="text-gray-400 text-xs">รวมในยอดสุทธิแล้ว</span>
           </div>
 
-
-          {/* 6. ใช้ยอดเงินคงเหลือ */}
+          {/* 5. ใช้ยอดเงินคงเหลือ */}
           <div className="flex justify-between items-center mt-2">
-            <span>6. ใช้ยอดเงินคงเหลือ (Wallet)</span>
+            <span>5. ใช้ยอดเงินคงเหลือ (Wallet)</span>
             <span className={usedWallet > 0 ? "text-indigo-600 font-medium" : "text-gray-400"}>
-              {usedWallet > 0 ? `- ฿${formatCredit(usedWallet)}` : '0'}
+              {usedWallet > 0 ? `- ฿${formatCredit(usedWallet)}` : '฿0'}
             </span>
           </div>
 
-          {/* 7. ส่วนลดอื่นๆ */}
+          {/* 6. ส่วนลดอื่นๆ */}
           <div className="flex justify-between items-center">
-            <span>7. ส่วนลดอื่นๆ</span>
+            <span>6. ส่วนลดอื่นๆ</span>
             <span className={extraDiscountAmount > 0 ? "text-green-600 font-medium" : "text-gray-400"}>
-              {extraDiscountAmount > 0 ? `- ฿${extraDiscountAmount.toLocaleString()}` : '0'}
+              {extraDiscountAmount > 0 ? `- ฿${extraDiscountAmount.toLocaleString()}` : '฿0'}
             </span>
           </div>
 
-          {/* 8. ของแถมที่ได้รับ */}
+          {/* 7. ของแถมที่ได้รับ */}
           <div className="flex justify-between items-start pt-2">
-            <span className="text-gray-900 font-medium">8. ของแถมที่ได้รับ</span>
+            <span className="text-gray-900 font-medium">7. ของแถมที่ได้รับ</span>
             <div className="text-right">
               {qualifiedFreebies.length > 0 ? (
                 <ul className="text-orange-600 text-xs text-left inline-block space-y-1">
@@ -148,7 +152,7 @@ const CheckoutSummary = ({
                   ))}
                 </ul>
               ) : (
-                <span className="text-gray-400">ไม่มี</span>
+                <span className="text-gray-400">0</span>
               )}
             </div>
           </div>
@@ -167,12 +171,34 @@ const CheckoutSummary = ({
           </div>
         </div>
 
+        {/* 📜 เงื่อนไขการให้บริการ (PDPA / Legal) */}
+        <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <div className="flex items-center h-5">
+              <input 
+                id="terms-checkbox"
+                type="checkbox" 
+                checked={isTermsAccepted}
+                onChange={(e) => setIsTermsAccepted(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              />
+            </div>
+            <div className="text-sm">
+              {config?.consentTexts?.checkout 
+                ? parseConsentText(config.consentTexts.checkout, undefined, config?.policyLinks?.privacyPolicyUrl)
+                : parseConsentText("ข้าพเจ้าได้อ่านและยอมรับ [terms] และ [privacy] ของบริษัทแล้ว")}
+            </div>
+          </label>
+        </div>
+
         {/* ปุ่มดำเนินการ */}
         <div className="space-y-3">
           {/* ปุ่มสั่งซื้อปกติ */}
           <button
+            id="place-order-btn"
             onClick={onPlaceOrder}
-            disabled={isSubmitting}
+            disabled={!isTermsAccepted || isSubmitting}
+
             className={`w-full py-4 px-4 rounded-xl text-white font-bold text-base transition-all duration-200 flex items-center justify-center gap-2
               ${isSubmitting 
                 ? 'bg-indigo-400 cursor-not-allowed' 
@@ -195,10 +221,10 @@ const CheckoutSummary = ({
           {/* ปุ่มขอราคาส่ง */}
           <button
             onClick={onRequestWholesale}
-            disabled={isSubmitting}
+            disabled={!isTermsAccepted || isSubmitting}
             className={`w-full py-3.5 px-4 rounded-xl font-semibold text-sm transition-all duration-200 border-2
-              ${isSubmitting
-                ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+              ${(!isTermsAccepted || isSubmitting)
+                ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
                 : 'border-gray-200 text-gray-700 bg-white hover:border-indigo-600 hover:text-indigo-600 active:scale-[0.98]'
               }`}
           >

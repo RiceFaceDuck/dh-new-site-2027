@@ -24,21 +24,44 @@ export const transactionImportService = {
           }
 
           // พยายามหาคอลัมน์แบบ Fuzzy Match
-          const headers = Object.keys(rawJson[0]);
-          const skuKey = headers.find(h => /sku|รหัสสินค้า|merchant/i.test(h)) || headers[0];
-          const qtyKey = headers.find(h => /qty|quantity|จำนวน|stock|สต๊อก|สต็อก/i.test(h)) || headers[1];
-          const priceKey = headers.find(h => /price|ราคา/i.test(h));
+          const headers = Object.keys(rawJson[0] || {});
+          
+          // โหลดค่า Aliases จาก Global Schema Settings ถ้ามี
+          let aliases = {
+            sku: 'sku, รหัสสินค้า, merchant, barcode, item code',
+            qty: 'qty, quantity, จำนวน, stock, สต๊อก, สต็อก',
+            price: 'price, ราคา, amount'
+          };
+          try {
+            const saved = localStorage.getItem('global_schema_aliases');
+            if (saved) {
+              aliases = { ...aliases, ...JSON.parse(saved) };
+            }
+          } catch(e) {}
 
-          const parsedItems = rawJson.map(row => ({
-            sku: String(row[skuKey] || "").trim(),
-            quantity: Number(row[qtyKey]) || 0,
-            price: priceKey ? Number(row[priceKey]) || undefined : undefined,
-            raw: row
-          })).filter(item => item.sku !== "" && item.quantity !== 0);
+          // Use loose match as bounded regex like the original: /sku|รหัสสินค้า/i
+          const createLooseMatcher = (str) => {
+             const words = str.split(',').map(s => s.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(Boolean);
+             if (words.length === 0) return /$^/;
+             return new RegExp(words.join('|'), 'i');
+          };
+
+          const skuRegex = createLooseMatcher(aliases.sku);
+          const qtyRegex = createLooseMatcher(aliases.qty);
+          const priceRegex = createLooseMatcher(aliases.price);
+
+          const skuKey = headers.find(h => skuRegex.test(h)) || headers[0];
+          const qtyKey = headers.find(h => qtyRegex.test(h)) || headers[1];
+          const priceKey = headers.find(h => priceRegex.test(h));
+
+          const defaultMapping = { skuKey, qtyKey, priceKey };
+          const parsedItems = transactionImportService.applyMapping(rawJson, defaultMapping);
 
           resolve({
             items: parsedItems,
-            matchedKeys: { skuKey, qtyKey, priceKey }
+            matchedKeys: defaultMapping,
+            rawJson: rawJson,
+            headers: headers
           });
         } catch (error) {
           reject(error);
@@ -48,6 +71,20 @@ export const transactionImportService = {
       reader.readAsArrayBuffer(file);
     });
   },
+
+  /**
+   * นำการตั้งค่าคอลัมน์ไปใช้กับข้อมูลดิบ
+   */
+  applyMapping: (rawJson, mapping) => {
+    const { skuKey, qtyKey, priceKey } = mapping;
+    return rawJson.map(row => ({
+      sku: String(row[skuKey] || "").trim(),
+      quantity: Number(row[qtyKey]) || 0,
+      price: priceKey && row[priceKey] !== undefined && row[priceKey] !== "" ? Number(row[priceKey]) : undefined,
+      raw: row
+    })).filter(item => item.sku !== "" && item.quantity !== 0);
+  },
+
 
   /**
    * หักหรือเพิ่มสต็อกและบันทึกประวัติ (Zero-Read Firestore Strategy)

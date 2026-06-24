@@ -67,7 +67,7 @@ export default function ProductPricingSection({
         <div className="mb-6 p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-2">
           <span className="text-blue-500 text-lg">✨</span>
           <span className="text-sm font-medium text-blue-800">
-            ซื้อสินค้านี้รับ <span className="font-bold">{calculateEarnedPoints(salePrice || price, creditConfig).toLocaleString()}</span> แต้ม
+            ซื้อสินค้านี้รับ <span className="font-bold">{calculateEarnedPoints(salePrice || price, creditConfig, [{ sku: model }]).toLocaleString()}</span> แต้ม
           </span>
         </div>
       )}

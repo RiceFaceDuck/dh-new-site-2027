@@ -2,9 +2,15 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // ฟังก์ชันตรวจสอบสิทธิ์เบื้องต้น
     function isAuthenticated() {
       return request.auth != null;
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin']
+        || firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isStaff == true
+      );
     }
 
     // 1. ภาพสลิปโอนเงิน (Slips)
@@ -19,12 +25,12 @@ service firebase.storage {
     // 2. รูปภาพสินค้าและหน้าเว็บ (Public Assets)
     match /products/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated(); // ให้พนักงานอัปโหลดรูปภาพสินค้า
+      allow write: if isStaff(); // ให้พนักงานหรือผู้จัดการเท่านั้นที่อัปโหลดได้
     }
     
     match /assets/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isStaff();
     }
     
     // 3. รูปภาพโปรไฟล์พนักงานและคู่ค้า

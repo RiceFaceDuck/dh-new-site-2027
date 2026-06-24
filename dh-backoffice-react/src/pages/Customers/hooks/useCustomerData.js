@@ -8,8 +8,8 @@ export const useCustomerData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // เปลี่ยน Key เพื่อเคลียร์แคชเก่าที่ไม่มีข้อมูลการเงินทิ้งไป
-  const CACHE_KEY = 'dh_customers_data_cache_v5'; 
-  const LAST_SYNC_KEY = 'dh_customers_last_sync_v5';
+  const CACHE_KEY = 'dh_customers_data_cache_v6'; 
+  const LAST_SYNC_KEY = 'dh_customers_last_sync_v6';
   const staffRoles = ['พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ', 'Admin', 'Manager', 'Owner', 'manager', 'owner', 'admin', 'packer', 'staff'];
 
   const processCustomerData = (usersData) => {

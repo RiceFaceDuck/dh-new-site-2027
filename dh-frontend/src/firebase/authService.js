@@ -18,15 +18,7 @@ googleProvider.setCustomParameters({
 // 🛠️ Core Utility: ระบบจัดการ Profile แบบรัดกุม (Auto-Healing Schema)
 // ==========================================
 
-// ฟังก์ชันสุ่มรหัสลูกค้าแบบมืออาชีพ (เช่น DH-UID-A1B2C3)
-const generateAccountId = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = 'DH-UID-';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
+// Removed generateAccountId as we now use deterministic uid slicing for accountId
 
 // ฟังก์ชันตรวจสอบและซ่อมแซม Profile (ป้องกัน Data Corrupted 100%)
 const ensureUserProfile = async (user, additionalData = {}) => {
@@ -48,7 +40,7 @@ const ensureUserProfile = async (user, additionalData = {}) => {
       console.log('✨ [Auth] Creating new professional profile...');
       await setDoc(userRef, {
         uid: user.uid,
-        accountId: generateAccountId(), // รหัสลูกค้าสุดเท่
+        accountId: user.uid.substring(0, 8).toUpperCase(), // รหัสลูกค้าสุดเท่ (8 หลักแรกของ UID)
         name: user.displayName || additionalData.name || 'ผู้ใช้งานใหม่',
         photoURL: user.photoURL || '',
         role: 'customer',
@@ -68,7 +60,7 @@ const ensureUserProfile = async (user, additionalData = {}) => {
       const updateData = { ...loginData };
 
       // ถ้าไม่มี Account ID (User เก่า) ให้สร้างให้ใหม่
-      if (!existingData.accountId) updateData.accountId = generateAccountId();
+      if (!existingData.accountId) updateData.accountId = user.uid.substring(0, 8).toUpperCase();
       // การันตีว่ามีฟิลด์การเงิน ไม่พังตอนเรียกใช้
       if (existingData.walletBalance === undefined) updateData.walletBalance = 0;
       if (existingData.creditPoints === undefined) updateData.creditPoints = 0;

@@ -28,7 +28,10 @@ const HeroSection = () => {
   const activeConfig = config.isActive ? config : DEFAULT_HERO_CONFIG;
 
   return (
-    <div className={`relative w-full rounded-xl overflow-hidden bg-[#1f2937] flex flex-col items-center min-h-[280px] md:min-h-[360px] lg:min-h-[400px] transition-opacity duration-500 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+    <div 
+      className={`relative w-full rounded-xl overflow-hidden flex flex-col items-center min-h-[280px] md:min-h-[360px] lg:min-h-[400px] transition-opacity duration-500 ${isLoading ? 'opacity-50' : 'opacity-100'}`}
+      style={{ backgroundColor: activeConfig.overlay?.color || '#1f2937' }}
+    >
       {/* Background Image / Graphic on the right */}
       <div className="absolute inset-0 z-0 flex justify-end">
         <div className="w-full md:w-[70%] h-full relative">
@@ -37,8 +40,14 @@ const HeroSection = () => {
             alt="Electronic Repairs" 
             className="w-full h-full object-cover"
           />
-          {/* Gradient overlay to blend with the dark blue background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1f2937] via-[#1f2937]/90 to-transparent"></div>
+          {/* Dynamic Gradient overlay */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to right, ${activeConfig.overlay?.color || '#1f2937'} 0%, ${activeConfig.overlay?.color || '#1f2937'} 40%, transparent 100%)`,
+              opacity: (activeConfig.overlay?.opacity ?? 90) / 100
+            }}
+          ></div>
         </div>
       </div>
 

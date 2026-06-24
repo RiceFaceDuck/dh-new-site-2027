@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, CheckCircle2, Search, Loader2 } from 'lucide-react';
+import { MapPin, CheckCircle2, Search, Loader2, Info } from 'lucide-react';
 
 const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, locationLoading }) => {
   const [resolvingName, setResolvingName] = useState(false);
@@ -32,7 +32,7 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
   const handleParseCoordinates = async () => {
     const text = storeData.googleMapLink || '';
     if (!text.trim()) {
-      alert('กรุณาวางลิงก์หรือข้อความที่มีพิกัดก่อนครับ');
+      alert('กรุณาวางตัวเลขพิกัดก่อนครับ');
       return;
     }
 
@@ -44,35 +44,11 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
     let match = text.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
     if (match) return updateLocation(parseFloat(match[1]), parseFloat(match[2]));
 
-    // 2. หาพิกัดจากลิงก์ยาว (@13.956,100.567)
+    // 2. หาพิกัดจากลิงก์ยาว (@13.956,100.567) หรือข้อความยาวๆ ที่มีพิกัดซ่อนอยู่
     match = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
     if (match) return updateLocation(parseFloat(match[1]), parseFloat(match[2]));
 
-    // 3. ถ้าเป็นลิงก์สั้น (maps.app.goo.gl) ให้ใช้ Proxy แกะรอย URL
-    if (text.includes('maps.app.goo.gl') || text.includes('goo.gl/maps')) {
-      try {
-        setResolvingName(true);
-        const urlMatch = text.match(/https?:\/\/[^\s]+/);
-        if (urlMatch) {
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(urlMatch[0])}`);
-          const data = await res.json();
-          if (data && data.contents) {
-             const htmlMatch = data.contents.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || 
-                               data.contents.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/) || 
-                               data.contents.match(/\[(-?\d+\.\d+),\s*(-?\d+\.\d+)\]/);
-             if (htmlMatch) {
-               return updateLocation(parseFloat(htmlMatch[1]), parseFloat(htmlMatch[2]));
-             }
-          }
-        }
-      } catch (error) {
-        console.error("Error resolving short link:", error);
-      } finally {
-        setResolvingName(false);
-      }
-    }
-
-    alert('ดึงพิกัดจากลิงก์ไม่สำเร็จ แนะนำให้คัดลอกเฉพาะ "ตัวเลขพิกัด" (เช่น 13.956842, 100.567251) มาวางแทนครับ');
+    alert('ไม่พบตัวเลขพิกัดในข้อความ กรุณาคัดลอกเฉพาะ "ตัวเลขพิกัด" (เช่น 13.956842, 100.567251) จาก Google Maps มาวางครับ');
   };
 
   return (
@@ -88,9 +64,9 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
           <input type="text" value={storeData.landmarks || ''} onChange={(e) => setStoreData({...storeData, landmarks: e.target.value})} placeholder="เช่น ตรงข้ามเซเว่น, ใกล้ตลาด..." className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">พิกัดแผนที่ (Google Maps Link หรือ Coordinates)</label>
+          <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">วางพิกัด ด้วยตัวเอง</label>
           <div className="flex gap-2 mb-3">
-            <input type="text" value={storeData.googleMapLink || ''} onChange={(e) => setStoreData({...storeData, googleMapLink: e.target.value})} placeholder="วางลิงก์ Google Maps หรือ พิกัด (เช่น 13.956, 100.567)" className="flex-1 px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
+            <input type="text" value={storeData.googleMapLink || ''} onChange={(e) => setStoreData({...storeData, googleMapLink: e.target.value})} placeholder="ตัวเลขพิกัด (เช่น 13.956, 100.567)" className="flex-1 px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
             <button type="button" onClick={handleParseCoordinates} className="px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl font-bold flex items-center gap-2 border border-indigo-200 transition-colors whitespace-nowrap">
               <Search size={16}/> ตรวจสอบพิกัด
             </button>
@@ -116,9 +92,22 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
               {locationLoading ? (
                 <><Loader2 size={16} className="animate-spin" /> กำลังสแกนหาดาวเทียม...</>
               ) : (
-                <><MapPin size={16} className={storeData.latitude ? "" : "animate-bounce"} /> {storeData.latitude ? 'ดึงพิกัด GPS อัตโนมัติ' : 'ดึงพิกัดปัจจุบัน'}</>
+                <><MapPin size={16} className={storeData.latitude ? "" : "animate-bounce"} /> {storeData.latitude ? 'ดึงพิกัด จากตำแหน่งที่คุณอยู่' : 'ดึงพิกัด จากตำแหน่งที่คุณอยู่'}</>
               )}
             </button>
+          </div>
+          
+          <div className="mt-6 p-5 bg-indigo-50/50 border border-indigo-100 rounded-xl text-slate-600">
+            <h5 className="font-bold text-indigo-800 mb-3 flex items-center gap-2 text-sm"><Info size={16}/> คู่มือการตั้งค่าพิกัดร้าน (Guide)</h5>
+            <div className="space-y-3 text-xs leading-relaxed">
+              <p><strong>📖 ตำรา / คำอธิบาย:</strong> พิกัดตำแหน่งมีความสำคัญมาก เพื่อให้ระบบสามารถแนะนำร้านของคุณให้กับลูกค้าในพื้นที่ใกล้เคียงได้อย่างแม่นยำ</p>
+              <p><strong>⚙️ วิธีการใช้งาน (How-to):</strong><br/>
+                <span className="ml-4 block mt-1">1. หากคุณอยู่ที่ร้านค้าตอนนี้: ให้กดปุ่ม <b>"ดึงพิกัด จากตำแหน่งที่คุณอยู่"</b></span>
+                <span className="ml-4 block mt-1">2. หากคุณไม่ได้อยู่ที่ร้าน: ให้ไปที่แอป Google Maps ค้นหาร้านของคุณ แล้วคัดลอกตัวเลขพิกัด (เช่น 13.960080, 100.625249) มาใส่ในช่อง <b>"วางพิกัด ด้วยตัวเอง"</b> แล้วกดปุ่ม <b>"ตรวจสอบพิกัด"</b></span>
+              </p>
+              <p><strong>💡 เทคนิคการใช้งาน (Tips & Tricks):</strong> หากต้องการคัดลอกพิกัดจากแอป Google Maps บนมือถือ ให้กดค้างที่ตำแหน่งร้านในแผนที่จนขึ้นหมุดสีแดง จากนั้นให้แตะที่ตัวเลขพิกัดในหน้าต่างข้อมูลด้านล่าง ระบบจะคัดลอกพิกัดให้ทันที</p>
+              <p><strong>✅ ตัวอย่างผลลัพธ์ (Expected Results):</strong> เมื่อตั้งค่าพิกัดสำเร็จ จะปรากฏกล่องแสดงตัวเลขพิกัดสีเขียวพร้อมเครื่องหมายถูก (✔) ขึ้นมาตรงบริเวณระบบเรดาร์ GPS</p>
+            </div>
           </div>
         </div>
       </div>

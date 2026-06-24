@@ -26,24 +26,16 @@ export const billingDeleteService = {
              const userRef = doc(db, 'users', customerUid);
              const userSnap = await transaction.get(userRef);
              if (userSnap.exists()) {
-                 const currentWallet = userSnap.data().creditPoints || 0;
-                 const newWalletBalance = currentWallet + walletUsed;
-                 
-                 transaction.update(userRef, {
-                   'creditPoints': newWalletBalance
-                 });
-
-                 transaction.set(doc(collection(db, 'credit_transactions')), {
-                     transactionId: `TXR-${Date.now()}`,
-                     uid: customerUid,
-                     type: 'refund',
-                     amount: walletUsed,
-                     balanceAfter: newWalletBalance,
-                     referenceId: orderId,
-                     note: 'คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร)',
-                     recordedBy: actorUid || 'system',
-                     timestamp: serverTimestamp()
-                 });
+                 const { adjustUserCreditWithTransaction } = await import('./credit/creditActionService');
+                 await adjustUserCreditWithTransaction(
+                     transaction,
+                     customerUid,
+                     walletUsed,
+                     'deposit',
+                     'คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร)',
+                     actorUid || 'system',
+                     `REF_DEL_${orderId}`
+                 );
              }
              transaction.delete(docRef);
          });

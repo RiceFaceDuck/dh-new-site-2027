@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ImageIcon, MonitorPlay } from 'lucide-react';
 import ThemeConfigTab from './components/theme/ThemeConfigTab';
-import HeroConfigTab from './components/theme/HeroConfigTab';
+import HeroConfigTab from './components/theme/HeroConfigTab/index';
 
 export default function GlobalThemeSettings() {
     const [activeTab, setActiveTab] = useState('theme');

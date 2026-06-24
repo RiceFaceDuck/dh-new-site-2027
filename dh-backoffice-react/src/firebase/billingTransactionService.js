@@ -70,6 +70,34 @@ export const billingTransactionService = {
         let earnedPoints = 0;
         const POINTS_RATE = 100;
 
+        // [SECURITY] Calculate exact net total using dh-shared PriceEngine and TaxEngine
+        const { calculateNetTotal, calculateVat } = await import('dh-shared');
+        const verifiedItems = (orderData.items || []).map((item) => {
+            if (item.isFreebie) return item;
+            const dbProduct = productSnaps.find(snap => snap.id === (item.id || item.sku))?.data();
+            return { ...item, retailPrice: dbProduct ? (dbProduct.retailPrice || dbProduct.Price || item.price) : item.price };
+        });
+
+        const calculatedPrices = calculateNetTotal({
+            items: verifiedItems,
+            shippingCost: Number(orderData.summary?.shippingFee || 0),
+            otherFeeAmount: Number(orderData.summary?.otherFeeAmount || 0),
+            discountAmount: Number(orderData.summary?.manualDiscount || orderData.summary?.promoDiscount || 0),
+            promotions: orderData.appliedPromotions || []
+        });
+
+        let taxableAmount = calculatedPrices.netTotal;
+        let vatTypeMapped = 'ไม่มี VAT';
+        if (orderData.summary?.vatType === 'included') vatTypeMapped = 'รวม VAT';
+        if (orderData.summary?.vatType === 'excluded') vatTypeMapped = 'แยก VAT';
+        const vatResult = calculateVat(taxableAmount, vatTypeMapped);
+        let finalSecureNetTotal = vatResult.finalTotal;
+
+        const reportedNetTotal = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0);
+        if (statusLower === 'paid' && Math.abs(finalSecureNetTotal - reportedNetTotal) > 2) {
+             console.warn("POS Price mismatch detected. Using secure server-side price.", finalSecureNetTotal, reportedNetTotal);
+        }
+
         if (userSnap && userSnap.exists()) {
             currentWallet = userSnap.data().creditPoints || 0;
             
@@ -158,42 +186,30 @@ export const billingTransactionService = {
         }
 
         if (customerUid && customerUid !== 'WALK-IN' && userRef) {
-            let newWalletBalance = currentWallet - walletToUse;
-            let currentPoints = userSnap.data().stats?.rewardPoints || 0;
-            let newPointsBalance = currentPoints + earnedPoints;
-
-            transaction.update(userRef, { 
-              'creditPoints': newWalletBalance, 
-              'stats.rewardPoints': newPointsBalance, 
-              updatedAt: serverTimestamp() 
-            });
+            const { adjustUserCreditWithTransaction } = await import('./credit/creditActionService');
 
             if (walletToUse > 0) {
-                transaction.set(doc(collection(db, 'credit_transactions')), {
-                    transactionId: `TXW-${Date.now()}`, 
-                    uid: customerUid, 
-                    type: 'spend', 
-                    amount: walletToUse, 
-                    balanceAfter: newWalletBalance, 
-                    referenceId: finalOrderId, 
-                    note: 'ใช้ชำระค่าสินค้า', 
-                    recordedBy: actorUid, 
-                    timestamp: serverTimestamp()
-                });
+                await adjustUserCreditWithTransaction(
+                    transaction,
+                    customerUid,
+                    walletToUse,
+                    'spend',
+                    'ใช้ชำระค่าสินค้า',
+                    actorUid,
+                    `TXW_${finalOrderId}`
+                );
             }
 
             if (earnedPoints > 0) {
-                transaction.set(doc(collection(db, 'point_transactions')), {
-                    transactionId: `TXP-${Date.now()}`, 
-                    uid: customerUid, 
-                    type: 'earn', 
-                    points: earnedPoints, 
-                    balanceAfter: newPointsBalance, 
-                    referenceId: finalOrderId, 
-                    note: 'ได้รับจากการซื้อสินค้า', 
-                    recordedBy: actorUid, 
-                    timestamp: serverTimestamp()
-                });
+                await adjustUserCreditWithTransaction(
+                    transaction,
+                    customerUid,
+                    earnedPoints,
+                    'earn',
+                    'ได้รับจากการซื้อสินค้า',
+                    actorUid,
+                    `TXP_${finalOrderId}`
+                );
             }
         }
 

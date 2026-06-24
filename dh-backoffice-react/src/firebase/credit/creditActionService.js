@@ -13,7 +13,147 @@ const getUsersPath = () => {
 
 /**
  * ✨ Atomic Dual-Sync Credit Adjustment (SECURED & FINANCIAL GRADE)
- * อัปเกรดระบบเพื่อความแม่นยำสูงสุดระดับธุรกรรมการเงิน
+ * สำหรับการทำรายการภายใน Transaction เดียวกัน (เช่น เรียกจาก BillingService)
+ * รับ uid แบบตรงๆ เท่านั้น (ไม่ทำการ Query หา UID ย่อ)
+ */
+export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null) => {
+    if (!uid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
+
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตไม่ถูกต้อง ต้องมากกว่า 0");
+    }
+    if (numAmount > 10000000) {
+      throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตเกินเพดานสูงสุดที่กำหนดต่อครั้ง (Anti-Fraud Lock)");
+    }
+
+    const safeAmount = Math.round(numAmount * 100) / 100;
+    
+    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+    const usersColPathTx = getUsersPath();
+    const userRef = doc(db, usersColPathTx, uid);
+    // ⚠️ Legacy Wallet (Deprecated) - คงไว้เพื่อ Sync ข้อมูลเก่าเท่านั้น ห้ามใช้อ่านเป็น Source of truth
+    const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
+    
+    let txRef;
+    const refSuffix = referenceId ? referenceId : Date.now().toString();
+    if (referenceId) {
+      txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
+      const txSnap = await transaction.get(txRef);
+      if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
+    } else {
+      txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+    }
+
+    const [settingsSnap, userSnap, walletSnap] = await Promise.all([
+      transaction.get(settingsRef),
+      transaction.get(userRef),
+      transaction.get(walletRef)
+    ]);
+
+    if (!userSnap.exists()) {
+        throw new Error("ไม่พบบัญชีผู้ใช้งานที่ระบุ");
+    }
+
+    const settingsData = settingsSnap.exists() ? settingsSnap.data() : null;
+    const ledger = settingsData?.ledger || { systemPoolMax: 1000000, totalAllocated: 0, status: 'SECURE' };
+
+    // ✨ Canonical Source of Truth คือ creditPoints บน userDoc เท่านั้น!
+    let currentWallet = Number(userSnap.data().creditPoints || 0);
+    let totalAccumulated = 0;
+    if (walletSnap.exists()) {
+      totalAccumulated = Number(walletSnap.data().totalAccumulated) || 0;
+    }
+
+    const safeCurrentWallet = Math.round(currentWallet * 100) / 100;
+    const sysMax = Number(ledger.systemPoolMax) || 1000000;
+    let newTotalAllocated = Number(ledger.totalAllocated) || 0;
+    
+    let newWalletBalance = safeCurrentWallet;
+    let newTotalAccumulated = Number(totalAccumulated) || 0;
+
+    if (type === 'deposit' || type === 'add' || type === 'earn') {
+      if (sysMax > 0 && (newTotalAllocated + safeAmount) > sysMax) {
+        throw new Error(`ไม่อนุมัติการทำรายการ: ทุนสำรองกลางไม่เพียงพอ`);
+      }
+      newWalletBalance += safeAmount;
+      newTotalAccumulated += safeAmount;
+      newTotalAllocated += safeAmount; 
+    } else if (type === 'deduct' || type === 'cash_withdrawal' || type === 'spend') {
+      if (safeCurrentWallet < safeAmount) {
+        throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (ต้องการ ${safeAmount} Pts, มียอดเพียง ${safeCurrentWallet} Pts)`);
+      }
+      newWalletBalance -= safeAmount;
+      newTotalAllocated = Math.max(0, newTotalAllocated - safeAmount);
+    } else {
+      throw new Error("ประเภทการปรับปรุงเครดิตไม่ถูกต้องในระบบ");
+    }
+
+    newWalletBalance = Math.round(newWalletBalance * 100) / 100;
+
+    let newLedgerStatus = 'SECURE';
+    const utilization = sysMax > 0 ? (newTotalAllocated / sysMax) : 0;
+    if (utilization >= 0.9) newLedgerStatus = 'WARNING'; 
+    if (utilization >= 1) newLedgerStatus = 'BREACHED'; 
+
+    transaction.set(settingsRef, {
+      ledger: { ...ledger, totalAllocated: newTotalAllocated, status: newLedgerStatus, lastAuditTime: serverTimestamp() },
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    transaction.set(walletRef, {
+      balance: newWalletBalance,
+      totalAccumulated: newTotalAccumulated,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    const syncPayload = {
+      creditPoints: newWalletBalance,  
+      updatedAt: serverTimestamp()
+    };
+
+    transaction.set(userRef, syncPayload, { merge: true });
+
+    const userData = userSnap.data();
+    const userEmail = userData.email || 'Migrated User';
+    const resolvedName = userData.storeName || userData.displayName || userData.accountName || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
+
+    const transactionId = txRef.id;
+    const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'add' : 'deduct';
+    transaction.set(txRef, {
+      transactionId: `TXM-${refSuffix}`,
+      uid: uid,
+      partnerName: resolvedName,
+      userEmail: userEmail || 'unknown@system.local',
+      type: mappedType,
+      amount: safeAmount,
+      balanceAfter: newWalletBalance,
+      referenceId: referenceId || 'MANUAL_ADJUST',
+      note: note || (mappedType === 'add' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
+      remark: note || (mappedType === 'add' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
+      recordedBy: actorUid || 'System',
+      operatorUid: actorUid || 'System',
+      timestamp: serverTimestamp()
+    });
+
+    const personalHistoryRef = doc(collection(db, 'artifacts', appId, 'users', uid, 'credit_history'));
+    transaction.set(personalHistoryRef, {
+      type: mappedType === 'add' ? 'earn' : 'spend',
+      points: safeAmount,
+      amount: safeAmount,
+      note: note || 'ทำรายการกระเป๋าเงิน',
+      referenceId: `TXM-${refSuffix}`,
+      adjustedBy: actorUid || 'System',
+      createdAt: serverTimestamp(),
+      timestamp: serverTimestamp()
+    });
+
+    console.info(`✅ [Credit Engine] Sub-Transaction TXM-${referenceId || 'MANUAL'} Prepped for UID: ${uid} | Amount: ${amount}`);
+    return { success: true, transactionId, newBalance: newWalletBalance };
+};
+
+/**
+ * ✨ Atomic Dual-Sync Credit Adjustment (Standalone)
  */
 export const adjustUserCredit = async (inputUid, amount, type, note, actorUid, referenceId = null) => {
   try {
@@ -45,137 +185,15 @@ export const adjustUserCredit = async (inputUid, amount, type, note, actorUid, r
     }
     const uid = resolvedUid;
 
-    const numAmount = Number(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตไม่ถูกต้อง ต้องมากกว่า 0");
-    }
-    if (numAmount > 10000000) {
-      throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตเกินเพดานสูงสุดที่กำหนดต่อครั้ง (Anti-Fraud Lock)");
-    }
-
-    const safeAmount = Math.round(numAmount * 100) / 100;
-
     let transactionId = null;
     await runTransaction(db, async (transaction) => {
-      
-      const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
-      
-      const usersColPathTx = getUsersPath();
-      const userRef = doc(db, usersColPathTx, uid);
-      const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
-      
-      let txRef;
-      const refSuffix = referenceId ? referenceId : Date.now().toString();
-      if (referenceId) {
-        txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
-        const txSnap = await transaction.get(txRef);
-        if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
-      } else {
-        txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
-      }
-
-      const [settingsSnap, userSnap, walletSnap] = await Promise.all([
-        transaction.get(settingsRef),
-        transaction.get(userRef),
-        transaction.get(walletRef)
-      ]);
-
-      const settingsData = settingsSnap.exists() ? settingsSnap.data() : null;
-      const ledger = settingsData?.ledger || { systemPoolMax: 1000000, totalAllocated: 0, status: 'SECURE' };
-
-      let currentWallet = 0;
-      let totalAccumulated = 0;
-      if (walletSnap.exists()) {
-        currentWallet = Number(walletSnap.data().balance) || 0;
-        totalAccumulated = Number(walletSnap.data().totalAccumulated) || 0;
-      } else if (userSnap.exists()) {
-        currentWallet = Number(userSnap.data().creditPoints || 0);
-      }
-
-      const safeCurrentWallet = Math.round(currentWallet * 100) / 100;
-      const sysMax = Number(ledger.systemPoolMax) || 1000000;
-      let newTotalAllocated = Number(ledger.totalAllocated) || 0;
-      
-      let newWalletBalance = safeCurrentWallet;
-      let newTotalAccumulated = Number(totalAccumulated) || 0;
-
-      if (type === 'deposit' || type === 'add') {
-        if (sysMax > 0 && (newTotalAllocated + safeAmount) > sysMax) {
-          throw new Error(`ไม่อนุมัติการทำรายการ: ทุนสำรองกลางไม่เพียงพอ`);
-        }
-        newWalletBalance += safeAmount;
-        newTotalAccumulated += safeAmount;
-        newTotalAllocated += safeAmount; 
-      } else if (type === 'deduct' || type === 'cash_withdrawal' || type === 'spend') {
-        if (safeCurrentWallet < safeAmount) {
-          throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (ต้องการ ${safeAmount} Pts, มียอดเพียง ${safeCurrentWallet} Pts)`);
-        }
-        newWalletBalance -= safeAmount;
-        newTotalAllocated = Math.max(0, newTotalAllocated - safeAmount);
-      } else {
-        throw new Error("ประเภทการปรับปรุงเครดิตไม่ถูกต้องในระบบ");
-      }
-
-      newWalletBalance = Math.round(newWalletBalance * 100) / 100;
-
-      let newLedgerStatus = 'SECURE';
-      const utilization = sysMax > 0 ? (newTotalAllocated / sysMax) : 0;
-      if (utilization >= 0.9) newLedgerStatus = 'WARNING'; 
-      if (utilization >= 1) newLedgerStatus = 'BREACHED'; 
-
-      transaction.set(settingsRef, {
-        ledger: { ...ledger, totalAllocated: newTotalAllocated, status: newLedgerStatus, lastAuditTime: serverTimestamp() },
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      transaction.set(walletRef, {
-        balance: newWalletBalance,
-        totalAccumulated: newTotalAccumulated,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      const syncPayload = {
-        creditPoints: newWalletBalance,  
-        updatedAt: serverTimestamp()
-      };
-
-      transaction.set(userRef, syncPayload, { merge: true });
-
-      const userEmail = userSnap.exists() ? userSnap.data().email : 'Migrated User';
-
-      transactionId = txRef.id;
-      transaction.set(txRef, {
-        transactionId: `TXM-${refSuffix}`,
-        uid: uid,
-        userEmail: userEmail || 'unknown@system.local',
-        type: (type === 'deposit' || type === 'add') ? 'add' : 'deduct',
-        amount: safeAmount,
-        balanceAfter: newWalletBalance,
-        referenceId: referenceId || 'MANUAL_ADJUST',
-        note: note || ((type === 'deposit' || type === 'add') ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
-        remark: note || ((type === 'deposit' || type === 'add') ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
-        recordedBy: actorUid || 'System',
-        operatorUid: actorUid || 'System',
-        timestamp: serverTimestamp()
-      });
-
-      const personalHistoryRef = doc(collection(db, 'artifacts', appId, 'users', uid, 'credit_history'));
-      transaction.set(personalHistoryRef, {
-        type: (type === 'deposit' || type === 'add') ? 'earn' : 'spend',
-        points: safeAmount,
-        amount: safeAmount,
-        note: note || 'ทำรายการกระเป๋าเงิน',
-        referenceId: `TXM-${refSuffix}`,
-        adjustedBy: actorUid || 'System',
-        createdAt: serverTimestamp(),
-        timestamp: serverTimestamp()
-      });
+      const result = await adjustUserCreditWithTransaction(transaction, uid, amount, type, note, actorUid, referenceId);
+      transactionId = result.transactionId;
     });
 
-    console.info(`✅ [Credit Engine] Transaction TXM-${referenceId || 'MANUAL'} Completed for UID: ${uid} | Amount: ${amount}`);
-
+    const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'add' : 'deduct';
     if (historyService && historyService.addLog) {
-      await historyService.addLog('CyberAuditCore', (type === 'deposit' || type === 'add') ? 'CreditDeposit' : 'CreditDeduct', uid, `${(type === 'deposit' || type === 'add') ? 'เพิ่ม' : 'ลด'}เครดิต ฿${safeAmount.toLocaleString()}`, actorUid);
+      await historyService.addLog('CyberAuditCore', mappedType === 'add' ? 'CreditDeposit' : 'CreditDeduct', uid, `${mappedType === 'add' ? 'เพิ่ม' : 'ลด'}เครดิต ฿${amount.toLocaleString()}`, actorUid);
     }
     return { success: true, transactionId };
   } catch (error) {

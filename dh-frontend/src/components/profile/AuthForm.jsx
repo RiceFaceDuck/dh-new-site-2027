@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, AlertCircle, ShieldCheck, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { loginWithGoogle, loginWithEmail, registerWithEmail } from '../../firebase/authService';
+import { useCookieConsent } from '../../hooks/useCookieConsent';
+import { parseConsentText } from '../../utils/textParser';
 
 // Google Icon SVG (Official Colors)
 const GoogleIcon = () => (
@@ -23,6 +25,10 @@ export default function AuthForm() {
   
   // Gimmick: แสดง/ซ่อน รหัสผ่าน
   const [showPassword, setShowPassword] = useState(false);
+
+  // PDPA / ToS
+  const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+  const { config } = useCookieConsent();
 
   // ล้างฟอร์มและ Error เมื่อสลับโหมด Login / Register
   useEffect(() => {
@@ -113,7 +119,7 @@ export default function AuthForm() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          disabled={isLoadingEmail || isLoadingGoogle}
+          disabled={isLoadingEmail || isLoadingGoogle || (!isLogin && !isTermsAccepted)}
           className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed group shadow-sm"
         >
           {isLoadingGoogle ? (
@@ -212,10 +218,31 @@ export default function AuthForm() {
             </div>
           </div>
 
+          {/* 📜 เงื่อนไขการให้บริการ (แสดงเฉพาะตอนสมัครสมาชิก) */}
+          {!isLogin && (
+            <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <div className="flex items-center h-5 mt-0.5">
+                  <input 
+                    type="checkbox" 
+                    checked={isTermsAccepted}
+                    onChange={(e) => setIsTermsAccepted(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-[#0870B8] focus:ring-[#0870B8] cursor-pointer"
+                  />
+                </div>
+                <div className="text-xs text-slate-600 leading-relaxed">
+                  {config?.consentTexts?.registration 
+                    ? parseConsentText(config.consentTexts.registration, undefined, config?.policyLinks?.privacyPolicyUrl, "text-[#0870B8] hover:underline font-medium")
+                    : parseConsentText("ฉันยอมรับ [terms] และ [privacy]", undefined, undefined, "text-[#0870B8] hover:underline font-medium")}
+                </div>
+              </label>
+            </div>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoadingEmail || isLoadingGoogle || !formData.email || !formData.password}
+            disabled={isLoadingEmail || isLoadingGoogle || !formData.email || !formData.password || (!isLogin && !isTermsAccepted)}
             className="w-full mt-6 py-3.5 px-4 bg-gradient-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
           >
             {isLoadingEmail ? (

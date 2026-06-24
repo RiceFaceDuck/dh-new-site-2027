@@ -3,7 +3,7 @@ import React from 'react';
 import { 
   Store, CreditCard, Package, History, 
   LogOut, Settings, Megaphone, Heart, ShoppingCart, ChevronRight, Loader2,
-  Wallet, Coins, Award, Sparkles, Wrench
+  Wallet, Coins, Award, Sparkles, Wrench, Copy, Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,12 +50,21 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
   const { balance, tier, loading: creditLoading } = useUserCredit(user?.uid);
   const { walletBalance, pendingWithdrawal, loading: walletLoading } = useWalletBalance(user?.uid);
 
+  const [copied, setCopied] = React.useState(false);
+  const accountId = user?.accountId || user?.uid?.substring(0,8)?.toUpperCase() || 'SYS-ADMIN';
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(accountId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="space-y-4 md:space-y-6 sticky top-24">
+    <div className="space-y-4 md:space-y-6 sticky top-6">
       
       {/* 1. Partner ID Badge (Profile Card Summary) - ดีไซน์ Deep Luxury */}
-      <div className="relative mt-10">
-        <div className="bg-slate-900 rounded-2xl shadow-xl border border-slate-700/50 p-5 pt-12 text-center relative overflow-hidden group">
+      <div className="relative">
+        <div className="bg-slate-900 rounded-2xl shadow-xl border border-slate-700/50 p-5 text-center relative overflow-hidden group">
           
           {/* ✨ Background Premium Effects */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
@@ -64,12 +73,31 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
 
           <div className="relative z-10 flex flex-col items-center">
             
+            {/* Avatar Icon */}
+            <div className="w-20 h-20 rounded-2xl bg-slate-800/80 border border-slate-700/50 p-1 flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-105 backdrop-blur-sm">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl" />
+                ) : (
+                  <Store size={36} className="text-indigo-400" />
+                )}
+            </div>
+
             <h2 className="text-base md:text-lg font-bold text-white tracking-wide truncate w-full px-2 drop-shadow-md">
               {user?.storeName || user?.displayName || 'DH Partner'}
             </h2>
-            <p className="text-[10px] text-slate-400 font-mono mt-1 mb-5 uppercase tracking-widest bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700 shadow-sm">
-              ID: {user?.uid?.substring(0,8) || 'SYS-ADMIN'}
-            </p>
+            
+            <button 
+              onClick={handleCopyId}
+              title="คัดลอก Account ID"
+              className={`flex items-center gap-2 text-[10px] font-mono mt-1 mb-5 uppercase tracking-widest px-2.5 py-1 rounded-md border shadow-sm transition-all duration-300 ${
+                copied 
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                  : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-300'
+              }`}
+            >
+              ID: {accountId}
+              {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} className="opacity-70 group-hover:opacity-100" />}
+            </button>
 
           {/* Partner Stats Grid */}
           <div className="grid grid-cols-4 gap-1 w-full border-t border-slate-700/80 pt-4">
@@ -123,15 +151,6 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
 
           </div>
         </div>
-        </div>
-
-        {/* Avatar Icon - Popped Out */}
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-2xl bg-slate-800 border-4 border-slate-900 p-1 flex items-center justify-center shadow-2xl z-20 transition-transform hover:scale-105">
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl" />
-            ) : (
-              <Store size={36} className="text-indigo-400" />
-            )}
         </div>
       </div>
 

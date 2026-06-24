@@ -210,13 +210,11 @@ export default function TabOverview() {
       {/* ==========================================
           Section 3: Forms 
       ========================================== */}
-      <div className="space-y-6 pt-4 border-t border-slate-200 border-dashed">
-        <PersonalInfoForm user={user} initialData={profileData} onRefresh={handleRefresh} />
-        <SocialLinksForm user={user} initialData={profileData} onRefresh={handleRefresh} />
-        {profileData?.role === 'partner' && (
-          <SupportSettings user={user} initialData={profileData} onRefresh={handleRefresh} />
-        )}
-      </div>
+      <PersonalInfoForm user={user} initialData={profileData} onRefresh={handleRefresh} />
+      <SocialLinksForm user={user} initialData={profileData} onRefresh={handleRefresh} />
+      {profileData?.role === 'partner' && (
+        <SupportSettings user={user} initialData={profileData} onRefresh={handleRefresh} />
+      )}
 
     </div>
   );

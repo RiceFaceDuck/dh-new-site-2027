@@ -6,6 +6,12 @@ const HERO_DOC = 'hero_config';
 export const DEFAULT_HERO_CONFIG = {
   isActive: true,
   title: '<span class="text-yellow-400">TEQFIX:</span> YOUR CERTIFIED PARTNER <br class="hidden md:block" /> FOR ELECTRONIC REPAIRS & <br class="hidden md:block" /> GENUINE SPARES.',
+  titleSegments: [
+    { text: 'TEQFIX: ', isHighlight: true, breakDesktop: false, breakAll: false },
+    { text: 'YOUR CERTIFIED PARTNER ', isHighlight: false, breakDesktop: true, breakAll: false },
+    { text: 'FOR ELECTRONIC REPAIRS & ', isHighlight: false, breakDesktop: true, breakAll: false },
+    { text: 'GENUINE SPARES.', isHighlight: false, breakDesktop: false, breakAll: false }
+  ],
   imageUrl: 'https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80',
   primaryButton: {
     label: 'BOOK A SQUAD',
@@ -16,6 +22,10 @@ export const DEFAULT_HERO_CONFIG = {
     label: 'SHOP SPARES',
     link: '/category/all',
     isActive: true
+  },
+  overlay: {
+    color: '#1f2937',
+    opacity: 90
   }
 };
 

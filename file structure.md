@@ -11,6 +11,13 @@ dh-new-site-2027/
 ├── deploy-staff.bat
 ├── firebase.json
 │
+├── dh-shared/ # Local Package: Monorepo Shared Utilities
+│   ├── package.json
+│   ├── index.js # Exports modules
+│   └── src/
+│       ├── taxEngine.js # Shared VAT logic
+│       └── priceEngine.js # Shared Price & Discount logic
+│
 ├── functions/ # Firebase Cloud Functions Backend
 │   ├── index.js # Cloud Functions for Gmail API and others
 │   └── package.json
@@ -162,6 +169,14 @@ dh-new-site-2027/
 │       │   │   ├── TodoHeader.jsx
 │       │   │   ├── TodoItem.jsx
 │       │   │   ├── WholesaleCard.jsx
+│       │   │   ├── manager/ # Refactored formal manager UI
+│       │   │   │   └── cards/
+│       │   │   │       ├── FormalAdApprovalCard.jsx
+│       │   │   │       ├── FormalGenericTodoCard.jsx
+│       │   │   │       ├── FormalKnowledgeCard.jsx
+│       │   │   │       ├── FormalManagerBadge.jsx
+│       │   │   │       ├── FormalStaffApprovalCard.jsx
+│       │   │   │       └── FormalWholesaleCard.jsx
 │       │   │   ├── cards/
 │       │   │   │   ├── AdApprovalCard.jsx
 │       │   │   │   ├── GenericTodoCard.jsx
@@ -211,12 +226,18 @@ dh-new-site-2027/
 │       │   ├── inventorySourcingService.js
 │       │   ├── inventoryImportService.js
 │       │   ├── inventoryExportService.js
-│       │   ├── bigSellerExportService.js # 🚀 Handles formatting and exporting CSV for Big Seller
+│       │   ├── bigseller/ # 🚀 Refactored Big Seller Services (SRP & Excel)
+│       │   │   ├── bigSellerQueryService.js
+│       │   │   ├── bigSellerExportService.js
+│       │   │   ├── bigSellerImportService.js
+│       │   │   └── index.js
 │       │   ├── menuConfigService.js # Service for managing Manager Dashboard Layout
 │       │   ├── pricingService.js
 │       │   ├── promotionService.js
 │       │   ├── settingsService.js
+│       │   ├── heroConfigService.js # 🚀 SRP: Extracted hero settings service
 │       │   ├── footerSettingsService.js
+│       │   ├── privacyCookiesService.js
 │       │   ├── squad/ # 🚀 New Squad Settings
 │       │   │   └── squadConfigService.js
 │       │   ├── todoService.js # Facade pattern for todo services
@@ -229,6 +250,10 @@ dh-new-site-2027/
 │       │   │   └── todoWholesaleService.js
 │       │   ├── transactionService.js
 │       │   ├── userManagementService.js
+│       │   ├── customerAdminService.js
+│       │   ├── customer/
+│       │   │   └── accountIdService.js # 🚀 Handles ID generation and duplicate validation (SRP)
+│       │   ├── userFinancialAdminService.js
 │       │   ├── userProfileService.js
 │       │   ├── userService.js
 │       │   ├── userStaffService.js
@@ -262,6 +287,13 @@ dh-new-site-2027/
 │           │   ├── GlobalBufferSettings.jsx
 │           │   ├── GlobalCategorySettings.jsx
 │           │   ├── GlobalFooterSettings.jsx
+│           │   ├── PrivacyCookiesSettings/
+│           │   │   ├── index.jsx
+│           │   │   └── components/
+│           │   │       ├── BannerSection.jsx
+│           │   │       ├── CookieTypesSection.jsx
+│           │   │       ├── LogoSection.jsx
+│           │   │       └── PolicyLinkSection.jsx
 │           │   ├── GlobalRegexSettings.jsx
 │           │   ├── GlobalThemeSettings.jsx
 │           │   ├── warranty/           # ระบบตั้งค่ากติกาประกัน
@@ -278,7 +310,13 @@ dh-new-site-2027/
 │           │   ├── components/
 │           │   │   └── theme/ # Extracted Theme settings
 │           │   │       ├── ThemeConfigTab.jsx
-│           │   │       └── HeroConfigTab.jsx
+│           │   │       └── HeroConfigTab/ # 🚀 Refactored Hero Settings SRP
+│           │   │           ├── index.jsx
+│           │   │           ├── HeroStatusToggle.jsx
+│           │   │           ├── HeroImageUpload.jsx
+│           │   │           ├── HeroTitleEditor.jsx
+│           │   │           ├── HeroButtonConfig.jsx
+│           │   │           └── HeroGuideConfig.js
 │           │   └── ... (other manager pages)
 │           ├── emails/ # Gmail API Integration
 │           │   ├── EmailMain.jsx
@@ -354,7 +392,13 @@ dh-new-site-2027/
 │           ├── GenerateSync/ # 🚀 Big Seller export dashboard
 │           │   ├── index.jsx
 │           │   └── components/
-│           │       └── GenerateActions.jsx
+│           │       ├── daily-tasks/
+│           │       │   ├── SkuMerchantExport.jsx
+│           │       │   └── InventoryCountExport.jsx
+│           │       ├── non-daily-tasks/
+│           │       │   └── ShopeeTemplateUpload.jsx
+│           │       ├── GenerateActions.jsx
+│           │       └── (other components...)
 │           ├── managers/
 │           │   ├── AdManagement.jsx
 │           │   ├── FreebieManagement.jsx
@@ -405,6 +449,7 @@ dh-new-site-2027/
 │           │       │   ├── SystemHealthPanel.jsx
 │           │       │   └── tabs/
 │           │       │       ├── CreditAdjustTab.jsx
+│           │       │       ├── CreditCalculatorTab.jsx
 │           │       │       ├── CreditHistoryTab.jsx
 │           │       │       ├── CreditSettingsTab.jsx
 │           │       │       └── PartnerCreditsTab.jsx
@@ -454,6 +499,18 @@ dh-new-site-2027/
 │
 ├── dh-frontend/ # Client-facing Next.js/Vite application
 │   ├── src/
+│   │   ├── firebase/
+│   │   │   ├── hardwareService.js # 🚀 Firebase service for hardware scans
+│   │   ├── pages/
+│   │   │   ├── Providers/
+│   │   │   │   ├── ProvidersPage.jsx
+│   │   │   │   ├── hooks/
+│   │   │   │   │   └── useProvidersList.js
+│   │   │   │   └── components/
+│   │   │   │       ├── ProvidersFilterBar.jsx
+│   │   │   │       └── ProvidersList.jsx
+│   │   │   ├── HardwareScanner/
+│   │   │   │   └── HardwareScanner.jsx # 🚀 Landing & Report page for DH Scanner
 │   │   ├── components/
 │   │   │   ├── chat/ # 🚀 Extracted components for Chat UI SRP
 │   │   │   │   ├── FloatingMessenger.jsx
@@ -515,6 +572,8 @@ dh-new-site-2027/
 │   │   │   │   ├── checkoutOrderActionService.js
 │   │   │   │   ├── checkoutSubmitService.js
 │   │   │   │   └── checkoutWholesaleService.js
+│   │   │   ├── todo/
+│   │   │   │   └── todoActionService.js # SRP: Extracted todo creation logic
 │   │   │   ├── credit/
 │   │   │   │   ├── creditActionService.js
 │   │   │   │   ├── creditConfig.js

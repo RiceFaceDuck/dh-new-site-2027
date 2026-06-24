@@ -54,8 +54,6 @@ export function useManagerAds() {
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', ad._collection, ad.id), actionData, { merge: true });
 
       const taskId = `TODO-${ad.id}`;
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'manager_todos', taskId), actionData, { merge: true });
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'todos', taskId), actionData, { merge: true });
       batch.set(doc(db, 'todos', taskId), actionData, { merge: true });
 
       await batch.commit();

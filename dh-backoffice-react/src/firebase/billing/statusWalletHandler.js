@@ -1,6 +1,7 @@
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { adjustUserCreditWithTransaction } from '../credit/creditActionService';
 
-export const handleWalletRefundAndClawback = (
+export const handleWalletRefundAndClawback = async (
     transaction, 
     db, 
     orderId, 
@@ -28,61 +29,32 @@ export const handleWalletRefundAndClawback = (
         updates.pendingCredits = 0; 
     }
 
-    if (refundAmount > 0 || clawbackPoints > 0 || cancelledPending > 0) {
-        const currentWallet = userSnap.data().creditPoints || 0;
-        const currentPoints = userSnap.data().stats?.rewardPoints || 0;
-        
-        const newWalletBalance = currentWallet + refundAmount;
-        const newPointsBalance = Math.max(0, currentPoints - clawbackPoints);
+    if (refundAmount > 0) {
+        await adjustUserCreditWithTransaction(
+            transaction,
+            userSnap.id,
+            refundAmount,
+            'deposit',
+            'คืนเงินเข้ากระเป๋าอัตโนมัติ (ยกเลิกบิล)',
+            actualActorUid,
+            `REF_${orderId}`
+        );
+    }
 
-        transaction.update(userRef, { 
-            'creditPoints': newWalletBalance, 
-            'stats.rewardPoints': newPointsBalance, 
-            updatedAt: serverTimestamp() 
-        });
-
-        if (refundAmount > 0 && settingsSnap && settingsSnap.exists()) {
-            const ledger = settingsSnap.data().ledger || { systemPoolMax: 1000000, totalAllocated: 0, status: 'SECURE' };
-            const newTotalAllocated = ledger.totalAllocated + refundAmount;
-            let newLedgerStatus = 'SECURE';
-            if (ledger.systemPoolMax > 0 && (newTotalAllocated / ledger.systemPoolMax) >= 0.9) newLedgerStatus = 'WARNING';
-            if (ledger.systemPoolMax > 0 && (newTotalAllocated / ledger.systemPoolMax) >= 1) newLedgerStatus = 'BREACHED';
-
-            transaction.set(settingsRef, { 
-                ledger: { ...ledger, totalAllocated: newTotalAllocated, status: newLedgerStatus, lastAuditTime: serverTimestamp() }, 
-                updatedAt: serverTimestamp() 
-            }, { merge: true });
-
-            transaction.set(doc(db, 'credit_transactions', `REF_${orderId}`), {
-                transactionId: `TXR-${Date.now()}`, 
-                uid: userSnap.id, 
-                type: 'refund', 
-                amount: refundAmount, 
-                balanceAfter: newWalletBalance, 
-                referenceId: orderId, 
-                note: 'คืนเงินเข้ากระเป๋าอัตโนมัติ (ยกเลิกบิล)', 
-                recordedBy: actualActorUid, 
-                timestamp: serverTimestamp()
-            });
-        }
-
-        if (clawbackPoints > 0) {
-            transaction.set(doc(db, 'point_transactions', `CB_${orderId}`), {
-                transactionId: `CB-${Date.now()}`, 
-                uid: userSnap.id, 
-                type: 'deduct', 
-                points: clawbackPoints, 
-                balanceAfter: newPointsBalance, 
-                referenceId: orderId, 
-                note: 'ดึงแต้มสะสมคืนอัตโนมัติ (ยกเลิกบิล)', 
-                recordedBy: actualActorUid, 
-                timestamp: serverTimestamp()
-            });
-        }
+    if (clawbackPoints > 0) {
+        await adjustUserCreditWithTransaction(
+            transaction,
+            userSnap.id,
+            clawbackPoints,
+            'deduct',
+            'ดึงแต้มสะสมคืนอัตโนมัติ (ยกเลิกบิล)',
+            actualActorUid,
+            `CB_${orderId}`
+        );
     }
 };
 
-export const handlePointsEarned = (
+export const handlePointsEarned = async (
     transaction,
     db,
     orderId,
@@ -95,31 +67,20 @@ export const handlePointsEarned = (
 ) => {
     const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
     const amountForPoints = totalSaleAmount - walletUsed;
-    const POINTS_RATE = 100;
+    const POINTS_RATE = 100; // ควรดึงจาก settings ถ้าระบบรองรับ
     
     if (amountForPoints > 0) {
         const earnedPoints = Math.floor(amountForPoints / POINTS_RATE);
         if (earnedPoints > 0) {
-            const currentPoints = userSnap.data().stats?.rewardPoints || 0;
-            const newPointsBalance = currentPoints + earnedPoints;
-
-            transaction.update(userRef, { 
-                'stats.rewardPoints': newPointsBalance, 
-                updatedAt: serverTimestamp() 
-            });
-            
-            transaction.set(doc(collection(db, 'point_transactions')), {
-                transactionId: `TXP-${Date.now()}`, 
-                uid: userSnap.id, 
-                type: 'earn', 
-                points: earnedPoints, 
-                balanceAfter: newPointsBalance, 
-                referenceId: orderId, 
-                note: 'ได้รับจากการซื้อสินค้า (ยืนยันยอดโอน)', 
-                recordedBy: actualActorUid, 
-                timestamp: serverTimestamp()
-            });
-            
+            await adjustUserCreditWithTransaction(
+                transaction,
+                userSnap.id,
+                earnedPoints,
+                'earn',
+                'ได้รับจากการซื้อสินค้า (ยืนยันยอดโอน)',
+                actualActorUid,
+                `TXP_${orderId}`
+            );
             updates.earnedPoints = earnedPoints; 
         }
     }

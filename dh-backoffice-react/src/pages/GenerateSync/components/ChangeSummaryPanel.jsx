@@ -98,23 +98,23 @@ export default function ChangeSummaryPanel({ changes, onManualReset }) {
       </div>
 
       {/* 2. สต็อกลด */}
-      <div className="bg-rose-50 border border-rose-100 rounded-xl overflow-hidden">
-        <div className="bg-rose-100/50 px-4 py-2 flex items-center justify-between text-rose-800 font-bold text-sm border-b border-rose-100">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl overflow-hidden">
+        <div className="bg-blue-100/50 px-4 py-2 flex items-center justify-between text-blue-800 font-bold text-sm border-b border-blue-100">
           <div className="flex items-center gap-2">
             <TrendingDown size={16} /> สต็อกลดลง
           </div>
-          <span className="bg-rose-200/50 px-2 py-0.5 rounded-full text-xs">{decreased.length} รายการ</span>
+          <span className="bg-blue-200/50 px-2 py-0.5 rounded-full text-xs">{decreased.length} รายการ</span>
         </div>
         <div className="max-h-40 overflow-y-auto p-2">
           {decreased.length === 0 ? (
-            <div className="text-center text-xs text-rose-600/60 py-2 font-medium">ไม่มีรายการสต็อกลดลง (ขายออก)</div>
+            <div className="text-center text-xs text-blue-600/60 py-2 font-medium">ไม่มีรายการสต็อกลดลง (ขายออก)</div>
           ) : (
             decreased.map(item => (
-              <div key={item.sku} className="flex justify-between items-center text-xs p-2 hover:bg-rose-100/30 rounded-lg">
+              <div key={item.sku} className="flex justify-between items-center text-xs p-2 hover:bg-blue-100/30 rounded-lg">
                 <span className="font-medium text-slate-700 truncate mr-2" title={item.name}>{item.sku}</span>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-slate-400 line-through">{item.oldStock}</span>
-                  <span className="text-rose-600 font-black">→ {item.newStock}</span>
+                  <span className="text-blue-600 font-black">→ {item.newStock}</span>
                 </div>
               </div>
             ))

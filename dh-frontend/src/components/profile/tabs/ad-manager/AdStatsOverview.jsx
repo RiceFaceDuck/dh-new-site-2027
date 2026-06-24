@@ -70,9 +70,10 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
       
       {/* ℹ️ Transparency Note */}
       <div className="relative z-10 mt-6 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <p className="text-[11px] text-slate-400 font-medium">
-          * ระบบคิดค่าบริการ <strong className="text-slate-200">1 แต้ม ต่อการมองเห็น 1 ครั้ง (Impression)</strong> โดยจะหักเครดิตก็ต่อเมื่อโฆษณาของคุณปรากฏขึ้นบนหน้าจอผู้ใช้งานจริงเท่านั้น
-        </p>
+        <div className="text-[11px] text-slate-400 font-medium space-y-1">
+          <p>* <strong className="text-emerald-400">ค่ามองเห็น (Impression)</strong>: ระบบสะสมยอดวิวครบ 100 ครั้ง ถึงจะหักพอยต์โฆษณา 1 รอบ (ตามที่กำหนดในหลังบ้าน)</p>
+          <p>* <strong className="text-indigo-400">ค่าคลิก (Click)</strong>: หักพอยต์ทันทีที่มีคนกดดูโปรไฟล์หรือสินค้าของคุณ</p>
+        </div>
         <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 bg-slate-800/60 px-3 py-1.5 rounded-lg w-max border border-slate-700/50 uppercase tracking-widest">
           <TrendingUp size={14} className="text-indigo-400"/> Real-time Smart Tracking
         </div>

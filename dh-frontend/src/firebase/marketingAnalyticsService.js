@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { db } from './config';
-import { doc, getDoc, increment, writeBatch } from 'firebase/firestore';
-import { deductPartnerCredit } from './creditService';
+import { doc, getDoc, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { deductPartnerCredit, getCreditSettings } from './creditService';
 
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
@@ -53,12 +53,38 @@ export const flushAdStatsBatch = async () => {
                }
             }
 
+            // 💰 ดึง Credit Config เพื่อคำนวณหักเงิน
+            const config = await getCreditSettings();
+            const adImpressionCost = config?.adImpressionCost || 5; 
+            const adClickCost = config?.adClickCost || 2;
+
+            let costToDeduct = 0;
+            
+            // 💸 คิดค่าคลิก
+            if (stats.clicks > 0) {
+              costToDeduct += (stats.clicks * adClickCost);
+            }
+
+            // 💸 คิดค่ามองเห็น (100 Views = adImpressionCost)
+            if (stats.views > 0) {
+              const currentUnbilled = adData.unbilledImpressions || 0;
+              const newUnbilled = currentUnbilled + stats.views;
+              
+              if (newUnbilled >= 100) {
+                 const batchesToCharge = Math.floor(newUnbilled / 100);
+                 costToDeduct += (batchesToCharge * adImpressionCost);
+                 updateData['unbilledImpressions'] = newUnbilled - (batchesToCharge * 100);
+              } else {
+                 updateData['unbilledImpressions'] = newUnbilled;
+              }
+            }
+
             batch.update(adRef, updateData);
             hasUpdates = true;
 
-            // 💸 หักเครดิต Pay-per-view (1 View = 1 Point) จากกระเป๋าเจ้าของ
-            if (adData.ownerId && stats.views > 0) {
-               await deductPartnerCredit(adData.ownerId, stats.views, 'ad_impression');
+            // 💸 หักเครดิตจากกระเป๋าเจ้าของ
+            if (adData.ownerId && costToDeduct > 0) {
+               await deductPartnerCredit(adData.ownerId, costToDeduct, 'ad_campaign');
             }
           }
         }

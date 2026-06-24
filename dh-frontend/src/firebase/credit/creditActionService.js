@@ -14,12 +14,35 @@ export const getCreditSettings = async () => {
   }
 };
 
-export const calculateEarnedPoints = (amount, config) => {
+export const calculateEarnedPoints = (amount, config, items = []) => {
   if (!amount || amount <= 0 || !config) return 0;
-  const earningRate = config.earningRate || 100;
+  const earningRate = config.earningRate || config.pointsEarningRate || 100;
   let basePoints = Math.floor(amount / earningRate);
   let multiplier = config.tierMultiplier || 1;
-  return Math.floor(basePoints * multiplier);
+  let totalPoints = Math.floor(basePoints * multiplier);
+
+  // คำนวณ Bonus จาก SKU
+  if (config.skuBonusRules && items.length > 0) {
+    const rules = config.skuBonusRules.split('\n').filter(Boolean);
+    const skuMap = {};
+    rules.forEach(rule => {
+      const [sku, pts] = rule.split(':');
+      if (sku && pts) {
+        skuMap[sku.trim().toUpperCase()] = parseInt(pts.trim(), 10);
+      }
+    });
+
+    items.forEach(item => {
+      const itemSku = (item.sku || item.productSku || '').toUpperCase();
+      if (itemSku && skuMap[itemSku]) {
+        // ให้แต้มพิเศษตามจำนวนชิ้นที่ซื้อ
+        const qty = item.quantity || item.qty || 1;
+        totalPoints += skuMap[itemSku] * qty;
+      }
+    });
+  }
+
+  return totalPoints;
 };
 
 export const handlePaymentCompletion = async (orderId, userId) => {
@@ -174,6 +197,13 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     updatedAt: serverTimestamp()
   });
 
+  if (newBalance <= 0) {
+    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', userId);
+    const storeProfileRef = doc(db, usersPath, userId, 'storeProfile', 'main');
+    transaction.delete(activePartnerRef);
+    transaction.update(storeProfileRef, { isSupportActive: false });
+  }
+
   const txData = {
     transactionId: `TX-ADS-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
     uid: userId,
@@ -214,7 +244,53 @@ export const consumeAdCredit = async (userId, amount, referenceId = null, adTitl
   }
 };
 
-export const trackAdClick = async (partnerId) => {
+export const trackAdImpressions = async (partnerIds, config) => {
+  if (!partnerIds || partnerIds.length === 0 || !config) return;
+  const adImpCost = config.adImpressionCost || 5; // e.g. 5 points per 100 views
+
+  try {
+    const statDocId = `${new Date().getFullYear()}-${new Date().getMonth()+1}`;
+    const partnersToDeduct = [];
+
+    // Batch updates manually using transactions (since normal batch won't easily support read-update for logic)
+    const promises = partnerIds.map(async (partnerId) => {
+      const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId, 'stats', statDocId);
+      
+      await runTransaction(db, async (transaction) => {
+        const docSnap = await transaction.get(partnerStatsRef);
+        let unbilled = 1;
+        let totalImp = 1;
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          unbilled = (data.unbilledImpressions || 0) + 1;
+          totalImp = (data.impressions || 0) + 1;
+        }
+
+        if (unbilled >= 100) {
+          // Reached threshold, deduct points and reset unbilled
+          transaction.set(partnerStatsRef, { impressions: totalImp, unbilledImpressions: 0, updatedAt: serverTimestamp() }, { merge: true });
+          partnersToDeduct.push(partnerId);
+        } else {
+          // Just increment
+          transaction.set(partnerStatsRef, { impressions: totalImp, unbilledImpressions: unbilled, updatedAt: serverTimestamp() }, { merge: true });
+        }
+      });
+    });
+
+    await Promise.all(promises);
+
+    // Deduct cost for those who hit the 100 impression threshold
+    for (const pid of partnersToDeduct) {
+      await deductPartnerCredit(pid, adImpCost, 'ad_impression');
+    }
+
+  } catch (error) {
+    console.error("Error tracking ad impressions:", error);
+  }
+};
+
+export const trackAdClick = async (partnerId, config) => {
   if (!partnerId) return;
   try {
     const statDocId = `${new Date().getFullYear()}-${new Date().getMonth()+1}`;
@@ -228,6 +304,10 @@ export const trackAdClick = async (partnerId) => {
         transaction.set(partnerStatsRef, { impressions: 0, clicks: 1, spentCredits: 0, updatedAt: serverTimestamp() });
       }
     });
+
+    if (config && config.adClickCost) {
+      await deductPartnerCredit(partnerId, config.adClickCost, 'click_contact');
+    }
   } catch (error) {
     console.error("Error tracking ad click:", error);
   }

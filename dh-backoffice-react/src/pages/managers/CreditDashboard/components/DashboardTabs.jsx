@@ -1,12 +1,13 @@
 import React from 'react';
-import { ArrowRightLeft, History, Users, Settings } from 'lucide-react';
+import { ArrowRightLeft, History, Users, Settings, Calculator } from 'lucide-react';
 
 export default function DashboardTabs({ activeTab = 'adjust', onTabChange }) {
   const TABS = [
     { id: 'partners', label: 'Ledger', icon: Users },
     { id: 'history', label: 'Audit Trail', icon: History },
     { id: 'adjust', label: 'Operations', icon: ArrowRightLeft },
-    { id: 'settings', label: 'Config', icon: Settings }
+    { id: 'settings', label: 'Rules & Configs', icon: Settings },
+    { id: 'calculator', label: 'Smart Calculator', icon: Calculator } 
   ];
 
   return (

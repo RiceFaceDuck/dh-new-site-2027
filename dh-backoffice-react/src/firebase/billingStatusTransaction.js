@@ -94,7 +94,7 @@ export const billingStatusTransaction = {
              handleSalesStatsUpdate(transaction, db, totalSaleAmount, orderData, false);
 
              if (userSnap && userSnap.exists()) {
-                 handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates);
+                 await handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates);
              }
              
              updates.isStockDeducted = true;
@@ -108,7 +108,7 @@ export const billingStatusTransaction = {
              }
 
              if (userSnap && userSnap.exists()) {
-                 handleWalletRefundAndClawback(
+                 await handleWalletRefundAndClawback(
                      transaction, db, orderId, orderData, userSnap, userRef, 
                      settingsSnap, settingsRef, actualActorUid, normalizedCurrentStatus, updates
                  );

@@ -45,6 +45,7 @@ const GlobalAdsConfig = lazy(() => import('./pages/managers/GlobalAdsConfig'))
 const GlobalThemeSettings = lazy(() => import('./pages/managers/GlobalThemeSettings'))
 const GlobalKnowledgeSettings = lazy(() => import('./pages/managers/GlobalKnowledgeSettings'))
 const GlobalFooterSettings = lazy(() => import('./pages/managers/GlobalFooterSettings'))
+const PrivacyCookiesSettings = lazy(() => import('./pages/managers/PrivacyCookiesSettings/index.jsx'))
 const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
 
 const Placeholder = ({ title }) => (
@@ -164,6 +165,7 @@ function AppContent() {
             <Route path="managers/theme" element={<GlobalThemeSettings />} />
             <Route path="managers/knowledge" element={<GlobalKnowledgeSettings />} />
             <Route path="managers/footer-settings" element={<GlobalFooterSettings />} />
+            <Route path="managers/privacy-cookies" element={<PrivacyCookiesSettings />} />
           </Route>
           
           <Route path="history" element={<HistoryPage />}/>
