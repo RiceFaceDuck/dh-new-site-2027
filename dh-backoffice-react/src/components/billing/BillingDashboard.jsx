@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, AlertTriangle, ArrowLeft, HelpCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import GuideModal from '../common/GuideModal';
 import { billingService } from '../../firebase/billingService';
 import { auth } from '../../firebase/config';
@@ -59,8 +60,8 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
     const executeVoidOrder = async (orderToVoid) => {
         const currentStat = (orderToVoid.orderStatus || orderToVoid.status || '').toLowerCase();
         
-        if (currentStat === 'cancelled' || currentStat === 'void') return alert('บิลนี้ถูกยกเลิกไปแล้ว');
-        if (currentStat === 'approved' || currentStat === 'completed') return alert('บิลที่อนุมัติ/เสร็จสิ้นแล้ว ไม่สามารถยกเลิกได้');
+        if (currentStat === 'cancelled' || currentStat === 'void') return toast.error('บิลนี้ถูกยกเลิกไปแล้ว');
+        if (currentStat === 'approved' || currentStat === 'completed') return toast.error('บิลที่อนุมัติ/เสร็จสิ้นแล้ว ไม่สามารถยกเลิกได้');
         
         const isPaid = currentStat === 'paid' || (orderToVoid.paymentStatus || '').toLowerCase() === 'paid';
         const confirmMsg = isPaid 
@@ -70,12 +71,13 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
         if (!window.confirm(confirmMsg)) return;
 
         setIsVoiding(true);
+        const toastId = toast.loading('กำลังยกเลิกบิล...');
         try {
             await billingService.updateOrderStatus(orderToVoid.id, 'Cancelled', orderToVoid.orderStatus || orderToVoid.status, auth.currentUser?.uid || 'System');
-            alert(`✅ ยกเลิกบิล ${orderToVoid.orderId} สำเร็จ!`);
+            toast.success(`ยกเลิกบิล ${orderToVoid.orderId} สำเร็จ!`, { id: toastId });
             if (selectedOrder?.id === orderToVoid.id) handleCloseModal(); 
         } catch (error) {
-            alert(`❌ เกิดข้อผิดพลาดในการยกเลิกบิล: ${error.message}`);
+            toast.error(`เกิดข้อผิดพลาดในการยกเลิกบิล: ${error.message}`, { id: toastId });
         } finally {
             setIsVoiding(false);
         }
@@ -85,16 +87,17 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
         const confirmText = window.prompt(`🚨 คำเตือนขั้นสูงสุด: การลบบิลถาวรจะไม่สามารถกู้คืนได้ และประวัติจะหายไปทั้งหมด\n\nหากคุณต้องการลบจริงๆ โปรดพิมพ์คำว่า "DELETE" ด้านล่างนี้:`);
         
         if (confirmText !== "DELETE") {
-            alert("❌ ยกเลิกการลบถาวร (คุณพิมพ์ข้อความไม่ถูกต้อง)");
+            toast.error("ยกเลิกการลบถาวร (คุณพิมพ์ข้อความไม่ถูกต้อง)");
             return;
         }
 
+        const toastId = toast.loading('กำลังลบบิลถาวร...');
         try {
             await billingService.deleteOrderPermanently(orderToDel.id, auth.currentUser?.uid);
-            alert(`✅ ลบบิล ${orderToDel.orderId} ออกจากระบบถาวรเรียบร้อยแล้ว`);
+            toast.success(`ลบบิล ${orderToDel.orderId} ถาวรเรียบร้อยแล้ว`, { id: toastId });
             if (selectedOrder?.id === orderToDel.id) handleCloseModal();
         } catch (error) {
-            alert(`❌ เกิดข้อผิดพลาดในการลบ: ${error.message}`);
+            toast.error(`เกิดข้อผิดพลาดในการลบ: ${error.message}`, { id: toastId });
         }
     };
 

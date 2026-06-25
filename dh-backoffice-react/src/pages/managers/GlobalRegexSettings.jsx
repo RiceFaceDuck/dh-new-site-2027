@@ -5,6 +5,7 @@ import { settingsService } from '../../firebase/settingsService';
 import { historyService } from '../../firebase/historyService';
 import GlobalSettingsHeader from '../../components/managers/GlobalSettingsHeader';
 import SaveConfirmationModal from '../../components/managers/SaveConfirmationModal';
+import GuideModal from '../../components/common/GuideModal';
 
 export default function GlobalRegexSettings() {
     const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +16,7 @@ export default function GlobalRegexSettings() {
     const [regexConfig, setRegexConfig] = useState({
         shopee: '', lazada: '', tiktok: '', facebook: ''
     });
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -92,12 +94,22 @@ export default function GlobalRegexSettings() {
             />
 
             <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden relative flex flex-col min-h-[60vh]">
-                <GlobalSettingsHeader 
-                    title="กฎความถูกต้องลิงก์ (Regex)" 
-                    icon={LinkIcon}
-                    onSave={handlePreSave}
-                    isSaving={isSaving}
-                />
+                <div className="flex justify-between items-center pr-6">
+                    <div className="flex-1">
+                        <GlobalSettingsHeader 
+                            title="กฎความถูกต้องลิงก์ (Regex)" 
+                            icon={LinkIcon}
+                            onSave={handlePreSave}
+                            isSaving={isSaving}
+                        />
+                    </div>
+                    <button 
+                        onClick={() => setIsGuideOpen(true)} 
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-xl transition-colors border border-sky-200 shadow-sm dh-active-press shrink-0"
+                    >
+                        <LinkIcon size={16} /> คู่มือการใช้งาน
+                    </button>
+                </div>
 
                 <div className="flex-1 p-6 sm:p-10 relative bg-slate-50/50">
 
@@ -133,6 +145,25 @@ export default function GlobalRegexSettings() {
                     </div>
                 </div>
             </div>
+
+            <GuideModal 
+                isOpen={isGuideOpen}
+                onClose={() => setIsGuideOpen(false)}
+                title="คู่มือ: กฎความถูกต้องลิงก์ (Regex)"
+                icon={LinkIcon}
+                config={{
+                    description: "หน้าจอนี้กำหนดกฎเกณฑ์ (Regular Expression) ที่ใช้ตรวจสอบว่าลิงก์ที่นำมาเพิ่มในระบบนั้น เป็นลิงก์ที่ถูกต้องของแพลตฟอร์มนั้นจริงๆ หรือไม่ ป้องกันการใส่ลิงก์สแปมหรือลิงก์เสีย",
+                    howTo: [
+                        "<strong>แก้ไข Regex:</strong> พิมพ์โค้ด Regex ที่ต้องการในช่องของแต่ละแพลตฟอร์ม",
+                        "<strong>ทดสอบก่อนเซฟ:</strong> ระบบจะจำลองคอมไพล์โค้ดของคุณก่อนบันทึก หากไวยากรณ์ Regex ผิด จะไม่สามารถบันทึกได้"
+                    ],
+                    tips: [
+                        "ถ้าคุณไม่เชี่ยวชาญด้าน Regex ควรหลีกเลี่ยงการแก้ไขหน้านี้ หรือให้ทีม Developer เป็นคนแก้ไขให้",
+                        "ตัวอย่าง Regex สำหรับ Shopee: ^https?:\\/\\/(shopee\\.co\\.th|shp\\.ee)\\/.+"
+                    ],
+                    expectedResults: "มีผลทันทีกับฟอร์มเพิ่มลิงก์ต่างๆ ภายในระบบ (เช่น ลิงก์ร้านค้าในหน้าโปรไฟล์พันธมิตร)"
+                }}
+            />
         </div>
     );
 }

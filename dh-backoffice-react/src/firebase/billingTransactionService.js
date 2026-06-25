@@ -73,9 +73,19 @@ export const billingTransactionService = {
         // [SECURITY] Calculate exact net total using dh-shared PriceEngine and TaxEngine
         const { calculateNetTotal, calculateVat } = await import('dh-shared');
         const verifiedItems = (orderData.items || []).map((item) => {
-            if (item.isFreebie) return item;
             const dbProduct = productSnaps.find(snap => snap.id === (item.id || item.sku))?.data();
-            return { ...item, retailPrice: dbProduct ? (dbProduct.retailPrice || dbProduct.Price || item.price) : item.price };
+            const securePrice = dbProduct ? (dbProduct.retailPrice || dbProduct.Price || item.price || 0) : (item.price || 0);
+            const secureName = dbProduct ? dbProduct.name : (item.name || item.itemName || 'Unknown Item');
+            
+            if (item.isFreebie) {
+                 return { ...item, nameAtPurchase: item.itemName || secureName, priceAtPurchase: 0 };
+            }
+            return { 
+                ...item, 
+                retailPrice: securePrice,
+                priceAtPurchase: securePrice,
+                nameAtPurchase: secureName
+            };
         });
 
         const calculatedPrices = calculateNetTotal({
@@ -120,6 +130,22 @@ export const billingTransactionService = {
                 'stats.sold': increment(u.soldInc || 0) 
               });
             });
+
+            // Update Quota for Promos and Freebies
+            if (orderData.appliedPromotions && orderData.appliedPromotions.length > 0) {
+               orderData.appliedPromotions.forEach(promo => {
+                  if (promo.id) {
+                      transaction.update(doc(db, 'promotions', promo.id), { quotaUsed: increment(1) });
+                  }
+               });
+            }
+            if (orderData.appliedFreebies && orderData.appliedFreebies.length > 0) {
+               orderData.appliedFreebies.forEach(freebie => {
+                  if (freebie.id) {
+                      transaction.update(doc(db, 'freebies', freebie.id), { quotaUsed: increment(freebie.qty || 1) });
+                  }
+               });
+            }
         }
 
         let newOrderRef;
@@ -149,8 +175,18 @@ export const billingTransactionService = {
         }
 
         const { id, ...dataToSave } = orderData; 
+        
+        // Fix accountName to displayName for Consistency
+        if (dataToSave.customer) {
+            dataToSave.customer.displayName = dataToSave.customer.displayName || dataToSave.customer.accountName || '';
+        }
+        if (dataToSave.customerInfo) {
+            dataToSave.customerInfo.displayName = dataToSave.customerInfo.displayName || dataToSave.customerInfo.accountName || '';
+        }
+
         const finalOrderData = {
             ...dataToSave, 
+            items: verifiedItems, // Use verified items with Snapshot
             orderId: finalOrderId, 
             earnedPoints: earnedPoints,
             walletUsedAmount: walletToUse, 

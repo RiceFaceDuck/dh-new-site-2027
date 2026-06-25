@@ -78,6 +78,12 @@ export function usePromotions() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.value) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+
+    if (formData.startDate && formData.endDate) {
+      if (new Date(formData.startDate) > new Date(formData.endDate)) {
+        return alert("วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่มต้น");
+      }
+    }
     
     setIsProcessing(true);
     try {

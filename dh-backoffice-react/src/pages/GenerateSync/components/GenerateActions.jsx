@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
-import ExportSettingsModal from './ExportSettingsModal';
+import TemplateSettingsModal from './TemplateSettingsModal';
 import SkuMerchantExport from './daily-tasks/SkuMerchantExport';
 import InventoryCountExport from './daily-tasks/InventoryCountExport';
 import ShopeeTemplateUpload from './non-daily-tasks/ShopeeTemplateUpload';
@@ -15,12 +15,12 @@ export default function GenerateActions({ changes, isCalculating }) {
       <button 
         onClick={() => setShowSettings(true)}
         className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all z-20"
-        title="ตั้งค่าหัวคอลัมน์ส่งออก"
+        title="ตั้งค่าไฟล์แม่แบบ (Templates)"
       >
         <Settings size={20} />
       </button>
 
-      <ExportSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <TemplateSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Animated Background Elements */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>

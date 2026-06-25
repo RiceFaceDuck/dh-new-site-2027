@@ -2,6 +2,78 @@ import { collection, doc, getDoc, runTransaction, increment, serverTimestamp } f
 import { db } from '../config';
 import { appId, getUsersPath, invalidateCreditHistoryCache } from './creditConfig';
 
+/**
+ * ✨ Atomic Dual-Sync Credit Adjustment
+ * สำหรับการทำรายการภายใน Transaction เดียวกัน
+ */
+export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null) => {
+    if (!uid) throw new Error("UID Missing");
+    const safeAmount = Math.round(Number(amount) * 100) / 100;
+    if (safeAmount <= 0) throw new Error("จำนวนเครดิตไม่ถูกต้อง");
+
+    const usersColPathTx = getUsersPath();
+    const userRef = doc(db, usersColPathTx, uid);
+    
+    let txRef;
+    const refSuffix = referenceId ? referenceId : Date.now().toString();
+    if (referenceId) {
+      txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
+      const txSnap = await transaction.get(txRef);
+      if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว");
+    } else {
+      txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+    }
+
+    const userSnap = await transaction.get(userRef);
+    if (!userSnap.exists()) throw new Error("ไม่พบบัญชีผู้ใช้งาน");
+
+    let currentWallet = Number(userSnap.data().creditPoints || 0);
+    const safeCurrentWallet = Math.round(currentWallet * 100) / 100;
+    let newWalletBalance = safeCurrentWallet;
+
+    if (type === 'deposit' || type === 'add' || type === 'earn') {
+      newWalletBalance += safeAmount;
+    } else if (type === 'deduct' || type === 'spend') {
+      if (safeCurrentWallet < safeAmount) {
+        throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ`);
+      }
+      newWalletBalance -= safeAmount;
+    }
+
+    newWalletBalance = Math.round(newWalletBalance * 100) / 100;
+
+    transaction.update(userRef, {
+      creditPoints: newWalletBalance,  
+      updatedAt: serverTimestamp()
+    });
+
+    const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'deposit' : 'spend';
+    transaction.set(txRef, {
+      transactionId: `TXM-${refSuffix}`,
+      uid: uid,
+      type: mappedType,
+      amount: safeAmount,
+      balanceAfter: newWalletBalance,
+      referenceId: referenceId || 'FRONTEND_CHECKOUT',
+      note: note || (mappedType === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
+      recordedBy: actorUid || uid,
+      timestamp: serverTimestamp()
+    });
+
+    const personalHistoryRef = doc(collection(db, usersColPathTx, uid, 'credit_history'));
+    transaction.set(personalHistoryRef, {
+      type: mappedType,
+      points: safeAmount,
+      amount: safeAmount,
+      note: note || 'ทำรายการกระเป๋าเงิน',
+      referenceId: `TXM-${refSuffix}`,
+      createdAt: serverTimestamp(),
+      timestamp: serverTimestamp()
+    });
+
+    return { success: true, transactionId: txRef.id, newBalance: newWalletBalance };
+};
+
 export const getCreditSettings = async () => {
   try {
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');

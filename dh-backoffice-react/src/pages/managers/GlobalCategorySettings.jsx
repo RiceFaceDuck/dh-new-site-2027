@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import CategoryManager from '../../components/managers/category/CategoryManager';
 import FeaturedSettings from '../../components/managers/featured/FeaturedSettings';
 import SquadHighlightSettings from '../../components/managers/squad/SquadHighlightSettings';
+import GuideModal from '../../components/common/GuideModal';
 
 export default function GlobalCategorySettings() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('categories');
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     return (
         <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 h-[calc(100vh-4rem)] flex flex-col">
@@ -32,6 +34,12 @@ export default function GlobalCategorySettings() {
                             </p>
                         </div>
                     </div>
+                    <button 
+                        onClick={() => setIsGuideOpen(true)} 
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-100/50 hover:bg-emerald-200/50 rounded-xl transition-colors border border-emerald-200 shadow-sm dh-active-press shrink-0"
+                    >
+                        <LayoutTemplate size={16} /> คู่มือการใช้งาน
+                    </button>
                 </div>
 
                 {/* Tabs */}
@@ -74,6 +82,26 @@ export default function GlobalCategorySettings() {
                     )}
                 </div>
             </div>
+
+            <GuideModal 
+                isOpen={isGuideOpen}
+                onClose={() => setIsGuideOpen(false)}
+                title="คู่มือ: จัดการส่วนแสดงผลหน้าแรก"
+                icon={LayoutTemplate}
+                config={{
+                    description: "หน้าจอนี้ใช้สำหรับจัดการเนื้อหาหน้าแรกของเว็บไซต์ (Storefront) ให้ดึงดูดลูกค้าและนำเสนอสิ่งที่น่าสนใจที่สุด",
+                    howTo: [
+                        "<strong>หมวดหมู่ (Categories):</strong> เพิ่ม/แก้ไข/จัดเรียง หมวดหมู่สินค้าที่จะแสดงเป็นปุ่มวงกลมๆ หรือสี่เหลี่ยมบนหน้าแรก",
+                        "<strong>แผงสินค้าแนะนำ (Featured):</strong> เลือกเปิด/ปิด การแสดงแถบสินค้าแนะนำ และกำหนดจำนวนชิ้นที่จะแสดง",
+                        "<strong>แผงช่างแนะนำ (Squad Highlight):</strong> โปรโมทช่างซ่อมมืออาชีพ (Partner) บนหน้าแรก เพื่อสร้างความน่าเชื่อถือให้แพลตฟอร์ม"
+                    ],
+                    tips: [
+                        "พยายามจัดเรียงหมวดหมู่ที่ขายดีที่สุดไว้ลำดับแรกๆ เพื่อเพิ่มโอกาสในการขาย",
+                        "การเปิดแสดงผล Squad Highlight จะช่วยให้ลูกค้าหาร้านซ่อมใกล้บ้านได้ง่ายขึ้น เพิ่ม Engagement ได้ดีมาก"
+                    ],
+                    expectedResults: "การตั้งค่าทั้งหมดนี้จะถูกนำไปใช้อัปเดต UI บนหน้า Storefront อัตโนมัติ"
+                }}
+            />
         </div>
     );
 }

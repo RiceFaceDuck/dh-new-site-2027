@@ -1,13 +1,14 @@
 import { db } from '../config';
 import { doc, collection, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
-import { earnPendingCredit } from '../walletService';
-import { getCreditSettings, calculateEarnedPoints } from '../creditService';
+import { getCreditSettings, calculateEarnedPoints, adjustUserCreditWithTransaction } from '../credit/creditActionService';
 import { appendPaymentVerificationTodo, appendTaxInvoiceTodo } from '../todo/todoActionService';
 import { calculateNetTotal } from 'dh-shared';
 
 export const submitOrder = async (user, cartItems, checkoutState, totals, slipUrl = null, saveProfile = false) => {
   if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนดำเนินการสั่งซื้อ");
   if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อน");
+
+  const creditConfig = await getCreditSettings();
 
   const orderRef = doc(collection(db, "orders")); 
   const userRef = doc(db, "users", user.uid);
@@ -37,8 +38,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     // 2. Validations
     const useWallet = checkoutState?.useWallet || 0;
-    if (useWallet > 0 && (userData.walletBalance || 0) < useWallet) {
-      throw new Error("ยอดเงินใน Wallet ของคุณไม่เพียงพอ");
+    if (useWallet > 0 && (userData.creditPoints || 0) < useWallet) {
+      throw new Error("ยอดเงินเครดิตของคุณไม่เพียงพอ");
     }
 
     // [SECURITY] Calculate exact net total using dh-shared PriceEngine
@@ -70,10 +71,11 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     productSnaps.forEach((snap, index) => {
       if (snap.exists()) {
         const currentStock = snap.data().stockQuantity || 0;
+        const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : 0;
         const requiredQty = productRefs[index].item.qty;
         
-        if (currentStock < requiredQty) {
-          throw new Error(`สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (เหลือ ${currentStock} ชิ้น)`);
+        if ((currentStock - requiredQty) < itemBuffer) {
+          throw new Error(`สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
         }
         stockUpdates.push({ 
           ref: productRefs[index].ref, 
@@ -85,6 +87,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     // 3. Writes
     const appliedPromos = checkoutState?.appliedPromotions?.map(p => `✅ ${p.name || 'โปรโมชั่น'}`) || [];
+
+    const earnedPoints = calculateEarnedPoints(finalNetTotal - useWallet, creditConfig, verifiedItems);
 
     const orderData = {
       orderId: orderRef.id,
@@ -107,6 +111,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         discountAmount: calculatedPrices.discountAmount,
         usedWallet: useWallet,
       },
+      pendingCredits: earnedPoints > 0 ? earnedPoints : 0,
+      pointsAwarded: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -121,13 +127,20 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       });
     });
 
-    if (useWallet > 0 || saveProfile) {
-      const userUpdateData = {};
-      if (useWallet > 0) userUpdateData.walletBalance = (userData.walletBalance || 0) - useWallet;
-      if (saveProfile && checkoutState?.customerData) {
-        userUpdateData.shippingAddress = checkoutState.customerData;
-      }
-      transaction.update(userRef, userUpdateData);
+    if (useWallet > 0) {
+      await adjustUserCreditWithTransaction(
+        transaction,
+        user.uid,
+        useWallet,
+        'spend',
+        `ใช้เป็นส่วนลดสำหรับออเดอร์ ${orderRef.id}`,
+        user.uid,
+        orderRef.id
+      );
+    }
+    
+    if (saveProfile && checkoutState?.customerData) {
+      transaction.update(userRef, { shippingAddress: checkoutState.customerData });
     }
 
     // Delegate Todo creation to SRP Service
@@ -145,18 +158,5 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     });
 
     return { success: true, orderId: orderRef.id, message: "สร้างคำสั่งซื้อสำเร็จ", netTotal: finalNetTotal };
-  }).then(async (result) => {
-    if (result.success && result.netTotal > 0) {
-      try {
-        const config = await getCreditSettings();
-        const earnedPoints = calculateEarnedPoints(result.netTotal, config, cartItems);
-        if (earnedPoints > 0) {
-          await earnPendingCredit(user.uid, earnedPoints, result.orderId);
-        }
-      } catch (err) {
-        console.error("🔥 System Error [earnPendingCredit fallback]:", err);
-      }
-    }
-    return result;
   });
 };

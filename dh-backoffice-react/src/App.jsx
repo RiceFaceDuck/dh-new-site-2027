@@ -32,16 +32,16 @@ const StaffManagement = lazy(() => import('./pages/managers/StaffManagement'))
 const FreebieManagement = lazy(() => import('./pages/managers/FreebieManagement'))
 const CreditDashboard = lazy(() => import('./pages/managers/CreditDashboard/index.jsx'))
 const WalletManagement = lazy(() => import('./pages/managers/WalletManagement'))
-const ShippingManagement = lazy(() => import('./pages/managers/ShippingManagement'))
+const ShippingManagement = lazy(() => import('./pages/managers/settings/shipping/ShippingManagement'))
 const AdManagement = lazy(() => import('./pages/managers/AdManagement'))
 const PartnerSettings = lazy(() => import('./pages/managers/PartnerSettings'))
 
 // ⚙️ Global Settings Lazy Components
-const GlobalBufferSettings = lazy(() => import('./pages/managers/GlobalBufferSettings'))
+const GlobalBufferSettings = lazy(() => import('./pages/managers/settings/inventory/GlobalBufferSettings'))
 const GlobalCategorySettings = lazy(() => import('./pages/managers/GlobalCategorySettings'))
 const GlobalRegexSettings = lazy(() => import('./pages/managers/GlobalRegexSettings'))
 const GlobalWarrantySettings = lazy(() => import('./pages/managers/warranty/GlobalWarrantySettings'))
-const GlobalAdsConfig = lazy(() => import('./pages/managers/GlobalAdsConfig'))
+const GlobalAdsConfig = lazy(() => import('./pages/managers/settings/ads/GlobalAdsConfig'))
 const GlobalThemeSettings = lazy(() => import('./pages/managers/GlobalThemeSettings'))
 const GlobalKnowledgeSettings = lazy(() => import('./pages/managers/GlobalKnowledgeSettings'))
 const GlobalFooterSettings = lazy(() => import('./pages/managers/GlobalFooterSettings'))
@@ -183,10 +183,13 @@ function AppContent() {
   )
 }
 
+import { Toaster } from 'react-hot-toast';
+
 // 🟢 App Component หลักที่ทำหน้าที่ครอบ Router ให้ครอบคลุมการทำงานทั้งระบบ
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" toastOptions={{ duration: 3000, style: { fontWeight: 'bold' } }} />
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AppContent />
       </Router>

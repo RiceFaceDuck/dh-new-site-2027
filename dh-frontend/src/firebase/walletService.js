@@ -230,16 +230,5 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
 };
 
 // ==========================================
-// 🛡️ Legacy Support (ฮอทฟิกซ์: ป้องกัน Error ของ TabWallet.jsx ตัวเก่า)
-// จะถูกโละทิ้งอย่างสมบูรณ์เมื่อเราไปถึงขั้นตอนที่ 8
+// 🛡️ Legacy Support removed. Use creditActionService instead.
 // ==========================================
-export const claimPendingCredit = async (userId, pendingId) => {
-  console.log(`[WalletService] claimPendingCredit triggered for ${pendingId} (Legacy Bypass)`);
-  // คืนค่า true ชั่วคราวเพื่อให้ UI ไม่ค้าง
-  return true; 
-};
-
-export const earnPendingCredit = async (userId, amount) => {
-  console.log(`[WalletService] earnPendingCredit triggered for ${amount} (Legacy Bypass)`);
-  return true;
-};

@@ -60,6 +60,40 @@ export const inventoryQueryService = {
     }
   },
 
+  searchProductsForPos: async (searchStr) => {
+    try {
+      if (!searchStr) {
+        // Return some default products or empty
+        const q = query(collection(db, COLLECTION_NAME), limit(15));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
+      
+      const upperStr = searchStr.toUpperCase();
+      // Try exact sku match first
+      const qExact = query(collection(db, COLLECTION_NAME), where('sku', '==', upperStr), limit(1));
+      const snapExact = await getDocs(qExact);
+      
+      if (!snapExact.empty) {
+         return [ { id: snapExact.docs[0].id, ...snapExact.docs[0].data(), matchType: 'exact' } ];
+      }
+
+      // If no exact match, try prefix search on SKU
+      const qPrefix = query(
+        collection(db, COLLECTION_NAME),
+        where('sku', '>=', upperStr),
+        where('sku', '<=', upperStr + '\uf8ff'),
+        limit(15)
+      );
+      const snapPrefix = await getDocs(qPrefix);
+      return snapPrefix.docs.map(doc => ({ id: doc.id, ...doc.data(), matchType: 'similar' }));
+      
+    } catch (error) {
+      console.error("🔥 Error searching products POS:", error);
+      return [];
+    }
+  },
+
   getSalesStats30d: async (sku) => {
     try {
       return {

@@ -1,4 +1,4 @@
-import { doc, deleteDoc, getDoc, runTransaction, serverTimestamp, collection, increment } from 'firebase/firestore';
+import { doc, deleteDoc, getDoc, runTransaction, serverTimestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from './config';
 import { gasHistoryService } from './gasHistoryService';
 
@@ -41,6 +41,27 @@ export const billingDeleteService = {
          });
       } else {
          await deleteDoc(docRef);
+      }
+
+      // Cleanup Orphaned Todos
+      try {
+          const todosRef = collection(db, 'todos');
+          const q = query(todosRef, where('referenceId', '==', orderId));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+              const batch = writeBatch(db);
+              querySnapshot.forEach((todoDoc) => {
+                  batch.update(todoDoc.ref, {
+                      status: 'cancelled',
+                      handledBy: actorUid || 'system',
+                      updatedAt: serverTimestamp()
+                  });
+              });
+              await batch.commit();
+          }
+      } catch (todoError) {
+          console.error("🔥 Error cleaning up related todos:", todoError);
       }
 
       gasHistoryService.log({

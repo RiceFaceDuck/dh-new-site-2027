@@ -34,8 +34,8 @@ export default function HistoryTable({
   };
 
   const getActionFormat = (action, level) => {
-    const act = (action || '').toUpperCase();
-    const lvl = (level || '').toUpperCase();
+    const act = String(action || '').toUpperCase();
+    const lvl = String(level || '').toUpperCase();
     
     if (lvl === 'ERROR' || act.includes('DELETE')) return { label: 'ERRR', color: 'text-[#ff5555]' };
     if (lvl === 'WARN' || act.includes('UPDATE ROLE')) return { label: 'WARN', color: 'text-[#f1fa8c]' };
@@ -65,7 +65,7 @@ export default function HistoryTable({
               const dateStr = formatDate(ts);
               const timeStr = formatTime(ts);
               const actionFmt = getActionFormat(log.action, log.level);
-              const moduleStr = (log.module || 'SYS').toUpperCase().substring(0, 5);
+              const moduleStr = String(log.module || 'SYS').toUpperCase().substring(0, 5);
               
               // Handle Actor
               const actorName = log.actor?.name || log.actorName || log.performedBy || 'Unknown';
@@ -76,9 +76,9 @@ export default function HistoryTable({
               // Handle Details Summary
               let detailSummary = '';
               if (log.details?.legacy_details) {
-                detailSummary = log.details.legacy_details;
+                detailSummary = typeof log.details.legacy_details === 'object' ? JSON.stringify(log.details.legacy_details) : String(log.details.legacy_details);
               } else if (log.action) {
-                detailSummary = log.action;
+                detailSummary = typeof log.action === 'object' ? JSON.stringify(log.action) : String(log.action);
               } else {
                 detailSummary = 'System action';
               }

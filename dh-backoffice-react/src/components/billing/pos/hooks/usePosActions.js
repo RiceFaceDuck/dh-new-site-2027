@@ -54,7 +54,12 @@ export const usePosActions = ({
     const handleSelectCustomer = (uid) => {
         const cust = customers.find(c => c.uid === uid);
         if (cust) {
-            const mem = JSON.parse(localStorage.getItem(`dh_cust_pref_${uid}`)) || {};
+            let mem = {};
+            try {
+                mem = JSON.parse(localStorage.getItem(`dh_cust_pref_${uid}`)) || {};
+            } catch (e) {
+                console.error("Failed to parse customer preference", e);
+            }
             const isCompany = cust.accountName?.includes('บริษัท');
             const targetMode = mem.priceMode || (isCompany ? 'wholesale' : 'retail');
             const updatedItems = activeTab.items.map(item => ({ ...item, price: targetMode === 'wholesale' ? item.baseWholesale : item.baseRetail }));

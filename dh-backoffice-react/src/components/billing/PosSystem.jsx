@@ -96,7 +96,8 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
 
     const handleSearchKeyDown = (e) => {
         if (e.key === 'Enter' && searchQuery.trim() !== '') {
-            const exactMatch = products.find(p => p.sku.toLowerCase() === searchQuery.trim().toLowerCase());
+            // 🚀 [UPDATED] ใช้ searchResults จาก Dynamic Server Search แทน products array
+            const exactMatch = searchResults.find(p => p.sku?.toLowerCase() === searchQuery.trim().toLowerCase());
             if (exactMatch) actions.addItemToCart(exactMatch); else if (searchResults.length > 0) actions.addItemToCart(searchResults[0]);
         }
         if (e.key === 'Escape') { setShowDropdown(false); setSearchQuery(''); }

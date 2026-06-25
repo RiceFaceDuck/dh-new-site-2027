@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Save, ArrowLeft, CheckCircle2, RefreshCw } from 'lucide-react';
 import { db } from '../../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import GuideModal from '../../components/common/GuideModal';
 
 export default function GlobalKnowledgeSettings() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function GlobalKnowledgeSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -81,6 +83,12 @@ export default function GlobalKnowledgeSettings() {
           {saving ? <RefreshCw className="animate-spin" size={16} strokeWidth={2.5} /> : (isDirty ? <Save size={16} strokeWidth={2.5} /> : <CheckCircle2 size={16} strokeWidth={2.5} />)}
           {saving ? 'กำลังบันทึก...' : isDirty ? 'บันทึกการตั้งค่า' : 'เป็นปัจจุบัน'}
         </button>
+        <button 
+            onClick={() => setIsGuideOpen(true)} 
+            className="px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-200 shadow-sm dh-active-press shrink-0 flex items-center gap-1.5 ml-3"
+        >
+            <BookOpen size={16} /> คู่มือ
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 lg:gap-4">
@@ -114,6 +122,25 @@ export default function GlobalKnowledgeSettings() {
         </div>
 
       </div>
+
+      <GuideModal 
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        title="คู่มือ: ตั้งค่าระบบความรู้เพิ่มเติม"
+        icon={BookOpen}
+        config={{
+            description: "หน้าจอนี้ใช้ตั้งค่าเกี่ยวกับการสร้างฐานความรู้ (Knowledge Base) ให้กับสินค้า",
+            howTo: [
+                "<strong>ตั้งค่ารางวัล:</strong> พิมพ์ตัวเลขแต้มเครดิตที่คุณต้องการมอบให้กับลูกค้า หรือผู้ใช้งานที่ช่วยเพิ่มข้อมูล Compatible (รุ่นที่รองรับ) ให้กับสินค้า",
+                "เมื่อผู้จัดการตรวจสอบข้อมูลนั้นและกดยอมรับ ผู้ช่วยเพิ่มข้อมูลจะได้รับแต้มตามที่คุณตั้งค่าไว้นี้"
+            ],
+            tips: [
+                "การให้คะแนนเครดิตที่เหมาะสม จะช่วยกระตุ้นให้ Community ช่วยกันสร้างข้อมูลที่เป็นประโยชน์ ทำให้คุณเหนื่อยน้อยลง",
+                "ควรระวังการตั้งแต้มที่สูงเกินไป หากสินค้ามีคนช่วยอัปเดตข้อมูลเยอะ อาจทำให้ต้องแจกเครดิตมากเกินงบประมาณได้"
+            ],
+            expectedResults: "มีผลทันทีกับข้อมูลที่จะถูก Approve หลังจากบันทึก (ข้อมูลเดิมที่ถูก Approve ไปแล้วจะไม่ได้แต้มย้อนหลัง)"
+        }}
+      />
     </div>
   );
 }

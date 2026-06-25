@@ -2,20 +2,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 🛡️ ฟังก์ชันตรวจสอบ Role พื้นฐาน
+    // 🛡️ ฟังก์ชันตรวจสอบ Role (ใช้ Custom Claims เป็นหลักเพื่อลด Quota Read, หากไม่มีจะ Fallback ไปหา DB)
     function isAuthenticated() {
       return request.auth != null;
     }
     
     function isStaff() {
       return isAuthenticated() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin']
-        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true
+        (request.auth.token.role != null && request.auth.token.role in ['staff', 'manager', 'admin']) ||
+        (request.auth.token.isStaff != null && request.auth.token.isStaff == true) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin'] ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true
       );
     }
 
     function isManagerOrAdmin() {
       return isAuthenticated() && (
+        (request.auth.token.role != null && request.auth.token.role in ['manager', 'admin']) ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['manager', 'admin']
       );
     }

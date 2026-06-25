@@ -111,7 +111,10 @@ export default function ChangeSummaryPanel({ changes, onManualReset }) {
           ) : (
             decreased.map(item => (
               <div key={item.sku} className="flex justify-between items-center text-xs p-2 hover:bg-blue-100/30 rounded-lg">
-                <span className="font-medium text-slate-700 truncate mr-2" title={item.name}>{item.sku}</span>
+                <div className="flex flex-col min-w-0 mr-2">
+                  <span className="font-medium text-slate-700 truncate" title={item.name}>{item.sku}</span>
+                  {item.reason && <span className="text-[10px] text-blue-500 font-medium truncate mt-0.5">{item.reason}</span>}
+                </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-slate-400 line-through">{item.oldStock}</span>
                   <span className="text-blue-600 font-black">→ {item.newStock}</span>

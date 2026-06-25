@@ -28,6 +28,7 @@ const ProductDetail = () => {
 
   const [isAdding, setIsAdding] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
+  const [showVariantError, setShowVariantError] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
   const [creditConfig, setCreditConfig] = useState(null); 
   const [footerConfig, setFooterConfig] = useState(null);
@@ -107,8 +108,8 @@ const ProductDetail = () => {
     // Check if variant selection is complete
     if (product?.variantOptions?.length > 0) {
       if (!selectedVariant || Object.keys(selectedVariant).length !== product.variantOptions.length) {
-         setAlertMessage({ type: 'error', text: 'กรุณาเลือกตัวเลือกสินค้าให้ครบถ้วน' });
-         setTimeout(() => setAlertMessage(null), 3000);
+         setShowVariantError(true);
+         setTimeout(() => setShowVariantError(false), 3000);
          return;
       }
     }
@@ -144,9 +145,22 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400">
-        <Loader2 size={48} className="animate-spin mb-4 text-cyber-blue" />
-        <p className="font-tech tracking-wider uppercase">Loading Product Data...</p>
+      <div className="max-w-7xl mx-auto w-full animate-fade-in pb-10 px-4 mt-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row">
+          <div className="w-full md:w-1/2 p-6">
+            <div className="w-full aspect-square bg-slate-200 animate-pulse rounded-xl mb-4"></div>
+            <div className="w-full h-24 bg-slate-200 animate-pulse rounded-xl"></div>
+          </div>
+          <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col gap-4">
+            <div className="w-1/4 h-6 bg-slate-200 animate-pulse rounded-md mb-2"></div>
+            <div className="w-3/4 h-10 bg-slate-200 animate-pulse rounded-md mb-4"></div>
+            <div className="w-1/3 h-12 bg-slate-200 animate-pulse rounded-md mb-6"></div>
+            <div className="w-full h-8 bg-slate-200 animate-pulse rounded-md mb-2"></div>
+            <div className="w-full h-8 bg-slate-200 animate-pulse rounded-md mb-2"></div>
+            <div className="w-2/3 h-8 bg-slate-200 animate-pulse rounded-md mb-6"></div>
+            <div className="w-full h-14 bg-slate-200 animate-pulse rounded-md"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -215,6 +229,7 @@ const ProductDetail = () => {
               variants={product.variants}
               selectedVariant={selectedVariant}
               setSelectedVariant={setSelectedVariant}
+              showVariantError={showVariantError}
             >
               <ProductKnowledgeSection 
                 product={product} 

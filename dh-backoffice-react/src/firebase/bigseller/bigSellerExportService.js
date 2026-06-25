@@ -130,13 +130,17 @@ class BigSellerExportService {
 
       let currentRow = range.e.r + 1;
       
+      const globalBuffer = parseInt(localStorage.getItem('bigseller_export_buffer')) || 0;
+      
       changedItems.forEach(item => {
-        const stock = Number(item.newStock) || 0;
+        const rawStock = Number(item.newStock) || 0;
+        const stock = Math.max(0, rawStock - globalBuffer);
         
         // SKU
         ws[XLSX.utils.encode_cell({c: colMap.sku, r: currentRow})] = { t: 's', v: item.sku };
         // Warehouse (default "warehouse1" or "总仓库" based on user's setup, usually warehouse1 per image)
-        ws[XLSX.utils.encode_cell({c: colMap.warehouse, r: currentRow})] = { t: 's', v: "warehouse1" };
+        const warehouseName = localStorage.getItem('bigseller_warehouse_name') || '总仓库';
+        ws[XLSX.utils.encode_cell({c: colMap.warehouse, r: currentRow})] = { t: 's', v: warehouseName };
         // Current Stock
         ws[XLSX.utils.encode_cell({c: colMap.currentStock, r: currentRow})] = { t: 'n', v: stock };
         // Count Stock

@@ -1,34 +1,31 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { inventoryService } from '../../../../firebase/inventoryService';
 
 export function usePosCart(products) {
     const [searchQuery, setSearchQuery] = useState('');
     const [showDropdown, setShowDropdown] = useState(false);
     const [actionBoxItem, setActionBoxItem] = useState(null);
+    const [searchResults, setSearchResults] = useState([]);
 
-    const searchResults = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return [...products]
-                .sort((a, b) => (b.stats?.sold || 0) - (a.stats?.sold || 0))
-                .slice(0, 15)
-                .map(p => ({ ...p, matchType: 'best-seller' }));
-        }
+    useEffect(() => {
+        const fetchSearch = async () => {
+            if (!searchQuery.trim()) {
+                // Load default 15 items
+                const res = await inventoryService.searchProductsForPos('');
+                setSearchResults(res);
+                return;
+            }
 
-        const q = searchQuery.trim().toLowerCase();
-        const exactMatches = products.filter(p => p.sku?.toLowerCase() === q);
-        
-        const exactSkus = new Set(exactMatches.map(p => p.sku));
-        const similarMatches = products.filter(p => {
-            if (exactSkus.has(p.sku)) return false;
-            return p.sku?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q);
-        });
+            const res = await inventoryService.searchProductsForPos(searchQuery.trim());
+            setSearchResults(res);
+        };
 
-        similarMatches.sort((a, b) => (b.stats?.sold || 0) - (a.stats?.sold || 0));
+        const timeoutId = setTimeout(() => {
+            fetchSearch();
+        }, 300); // 300ms debounce
 
-        return [
-            ...exactMatches.map(p => ({ ...p, matchType: 'exact' })),
-            ...similarMatches.slice(0, Math.max(0, 15 - exactMatches.length)).map(p => ({ ...p, matchType: 'similar' }))
-        ];
-    }, [searchQuery, products]);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
 
     return {
         searchQuery, setSearchQuery,

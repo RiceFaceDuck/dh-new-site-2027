@@ -1,5 +1,6 @@
 import React from 'react';
-import { Cpu, Package, Truck, ShoppingCart, Heart, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { Cpu, Package, Truck, ShoppingCart, Heart, CheckCircle2 } from 'lucide-react';
+import VariantSelector from './VariantSelector';
 
 export default function ProductPricingSection({
   product,
@@ -23,6 +24,7 @@ export default function ProductPricingSection({
   variants,
   selectedVariant,
   setSelectedVariant,
+  showVariantError,
   children
 }) {
   const handleVariantSelect = (optName, val) => {
@@ -31,6 +33,11 @@ export default function ProductPricingSection({
       [optName]: val
     }));
   };
+  
+  // เช็คว่าต้องเลือกตัวเลือกไหม
+  const needsSelection = variantOptions && variantOptions.length > 0;
+  const isSelectionComplete = selectedVariant && Object.keys(selectedVariant).length === variantOptions?.length;
+
   return (
     <div className="p-6 md:p-10 flex flex-col">
       <div className="mb-2 flex items-center justify-start">
@@ -72,42 +79,14 @@ export default function ProductPricingSection({
         </div>
       )}
 
-      {/* Variant Selectors */}
-      {variantOptions && variantOptions.length > 0 && (
-        <div className="mb-6 space-y-4">
-          {variantOptions.map((opt, idx) => (
-            <div key={idx} className="flex flex-col gap-2">
-              <span className="text-sm font-bold text-slate-700">{opt.name}:</span>
-              <div className="flex flex-wrap gap-2">
-                {opt.values.map((val, vIdx) => {
-                  const isSelected = selectedVariant && selectedVariant[opt.name] === val;
-                  // ตรวจสอบว่ามี Variant นี้เปิดขายหรือไม่
-                  const isAvailable = variants && variants.some(v => 
-                    v.isActive && v.attributes[opt.name] === val
-                  );
-
-                  return (
-                    <button
-                      key={vIdx}
-                      onClick={() => handleVariantSelect(opt.name, val)}
-                      disabled={!isAvailable}
-                      className={`px-4 py-2 text-sm font-medium border rounded-md transition-all ${
-                        isSelected 
-                          ? 'border-cyber-blue bg-blue-50 text-cyber-blue shadow-sm' 
-                          : isAvailable 
-                            ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' 
-                            : 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed'
-                      }`}
-                    >
-                      {val}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Variant Selectors (SRP Component) */}
+      <VariantSelector 
+        variantOptions={variantOptions}
+        variants={variants}
+        selectedVariant={selectedVariant}
+        onVariantSelect={handleVariantSelect}
+        showError={showVariantError}
+      />
 
       {/* Status & Shipping */}
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -157,13 +136,15 @@ export default function ProductPricingSection({
       <div className="pt-4 flex items-center gap-3">
         <button 
           onClick={handleAddToCart}
-          disabled={isOutOfStock || isAdding || addSuccess}
+          disabled={isOutOfStock || isAdding || addSuccess || (needsSelection && !isSelectionComplete)}
           className={`flex-1 h-12 md:h-14 rounded-sm font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 transition-all duration-300 shadow-sm ${
             isOutOfStock 
               ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
               : addSuccess
                 ? 'bg-emerald-50 text-cyber-emerald border border-cyber-emerald'
-                : 'bg-slate-800 text-white hover:bg-slate-900 hover:shadow-md'
+                : (needsSelection && !isSelectionComplete)
+                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
+                  : 'bg-slate-800 text-white hover:bg-slate-900 hover:shadow-md'
           }`}
         >
           {isAdding ? (
@@ -172,6 +153,8 @@ export default function ProductPricingSection({
             <><CheckCircle2 size={18} strokeWidth={2.5} /> ADDED TO CART</>
           ) : isOutOfStock ? (
             <>OUT OF STOCK</>
+          ) : (needsSelection && !isSelectionComplete) ? (
+            <>โปรดเลือกตัวเลือกสินค้า</>
           ) : (
             <><ShoppingCart size={18} /> ADD TO CART</>
           )}

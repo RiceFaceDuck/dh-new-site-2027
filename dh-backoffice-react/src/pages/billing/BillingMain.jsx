@@ -13,23 +13,11 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   // Use customer hook for fetching customers
   const { customers, loading: isCustomersLoading } = useCustomerData();
 
+  // Products array is no longer pre-fetched to save Firebase reads
+  // PosSystem will fetch dynamically via server-side search
   useEffect(() => {
-    // Only fetch products when opening POS to save reads
-    if (viewMode === 'pos' && products.length === 0 && !isProductsLoading) {
-      const fetchProducts = async () => {
-        setIsProductsLoading(true);
-        try {
-          const activeProducts = await inventoryService.getAllActiveProductsForSearch();
-          setProducts(activeProducts);
-        } catch (error) {
-          console.error('Error fetching products for POS:', error);
-        } finally {
-          setIsProductsLoading(false);
-        }
-      };
-      fetchProducts();
-    }
-  }, [viewMode, products.length, isProductsLoading]);
+    // Kept empty to maintain component structure if needed
+  }, [viewMode]);
 
   if (viewMode === 'pos') {
     return (

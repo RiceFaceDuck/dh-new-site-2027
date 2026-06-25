@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../../firebase/config';
 import { Settings, Save, ShieldAlert, Lock, Loader2, Check, Bell } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -59,7 +60,6 @@ export default function CreditSettingsTab() {
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
-    setSaveSuccess(false);
     try {
       // 👇 FIX: แก้ Path ให้เป็น 6 ระดับ (เลขคู่)
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
@@ -69,10 +69,10 @@ export default function CreditSettingsTab() {
         updatedAt: serverTimestamp() 
       }, { merge: true });
       
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      toast.success('บันทึกการตั้งค่าระบบเรียบร้อยแล้ว');
     } catch (err) {
       console.error("🔥 DH-Core System Error [Save Settings]:", err);
+      toast.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setIsSaving(false);
     }

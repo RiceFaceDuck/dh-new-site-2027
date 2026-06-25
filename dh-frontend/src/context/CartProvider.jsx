@@ -59,8 +59,22 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     let unsubscribeSnapshot = null;
     
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // 🔄 Merge Guest Cart to Firebase on Login
+        const savedGuestCart = localStorage.getItem('dh_cart');
+        if (savedGuestCart) {
+          try {
+            const guestItems = JSON.parse(savedGuestCart);
+            if (guestItems.length > 0) {
+              for (const item of guestItems) {
+                await cartService.addToCart(user.uid, item, item.quantity || item.qty || 1);
+              }
+              localStorage.removeItem('dh_cart'); // Clear guest cart after merge
+            }
+          } catch (e) { console.error("Error merging cart", e); }
+        }
+
         // เมื่อ Login แล้วให้ดึงข้อมูลจาก Firebase เป็นหลัก
         const cartRef = doc(db, 'carts', user.uid);
         unsubscribeSnapshot = onSnapshot(cartRef, (docSnap) => {

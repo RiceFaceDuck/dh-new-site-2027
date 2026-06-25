@@ -36,6 +36,13 @@ const Checkout = () => {
     handleSubmitWholesale
   } = useCheckoutLogic();
 
+  // Scroll to top when there's an error so the user sees it immediately
+  React.useEffect(() => {
+    if (errorMessage) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [errorMessage]);
+
   // -------------------------------------------------------------
   // RENDER: หน้า Success (เมื่อสั่งซื้อหรือส่งคำขอสำเร็จ)
   // -------------------------------------------------------------
@@ -73,17 +80,6 @@ const Checkout = () => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
           
-          {/* Loading Overlay (บังส่วนฟอร์มเมื่อกำลังประมวลผล) */}
-          {isSubmitting && (
-            <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <div className="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                <p className="text-gray-800 font-medium">กำลังดำเนินการอย่างปลอดภัย...</p>
-                <p className="text-xs text-gray-500 mt-1">กรุณาอย่าปิดหน้าต่างนี้</p>
-              </div>
-            </div>
-          )}
-
           {/* Left Column: Forms */}
           <div className="lg:col-span-8 space-y-6">
             <AddressSelector 

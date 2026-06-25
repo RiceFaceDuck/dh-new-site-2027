@@ -3,12 +3,17 @@
  * Centralized business logic for calculating Net Total, Discounts, and Promotions.
  */
 
+const safeNum = (val, defaultVal = 0) => {
+    const parsed = Number(val);
+    return isNaN(parsed) ? defaultVal : parsed;
+};
+
 export const calculateItemTotal = (item) => {
-    if (!item) return 0;
+    if (!item || typeof item !== 'object') return 0;
     if (item.isFreebie) return 0;
-    const price = Number(item.retailPrice || item.Price || item.price || 0);
-    const qty = Number(item.qty || 1);
-    return price * qty;
+    const price = safeNum(item.retailPrice || item.Price || item.price || 0);
+    const qty = safeNum(item.qty, 1);
+    return price * Math.max(0, qty); // Prevent negative quantity from messing up totals unless strictly intended
 };
 
 export const calculateSubtotal = (items) => {
@@ -45,12 +50,12 @@ export const calculatePromotionDiscount = (subtotal, items, promotion) => {
 
     let discount = 0;
     if (promotion.type === 'PERCENTAGE') {
-        discount = applicableSubtotal * (Number(promotion.value) / 100);
+        discount = applicableSubtotal * (safeNum(promotion.value) / 100);
         if (promotion.maxDiscount && discount > promotion.maxDiscount) {
             discount = promotion.maxDiscount;
         }
     } else if (promotion.type === 'FIXED') {
-        discount = Number(promotion.value);
+        discount = safeNum(promotion.value);
     }
 
     return Math.round(discount * 100) / 100;
@@ -78,18 +83,18 @@ export const calculateNetTotal = ({
     });
 
     // Ensure total discount doesn't exceed subtotal
-    let finalDiscount = discountAmount + totalPromoDiscount;
+    let finalDiscount = safeNum(discountAmount) + safeNum(totalPromoDiscount);
     if (finalDiscount > subtotal) {
         finalDiscount = subtotal;
     }
 
-    const netTotal = subtotal - finalDiscount + shippingCost + otherFeeAmount;
+    const netTotal = subtotal - finalDiscount + safeNum(shippingCost) + safeNum(otherFeeAmount);
     
     return {
         subtotal: Math.round(subtotal * 100) / 100,
         discountAmount: Math.round(finalDiscount * 100) / 100,
-        shippingCost: Math.round(shippingCost * 100) / 100,
-        otherFeeAmount: Math.round(otherFeeAmount * 100) / 100,
+        shippingCost: Math.round(safeNum(shippingCost) * 100) / 100,
+        otherFeeAmount: Math.round(safeNum(otherFeeAmount) * 100) / 100,
         netTotal: Math.max(0, Math.round(netTotal * 100) / 100)
     };
 };

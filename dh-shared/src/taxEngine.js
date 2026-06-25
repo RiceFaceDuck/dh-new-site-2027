@@ -12,26 +12,29 @@ export const VAT_RATE = 0.07;
  * @param {string} vatType - "รวม VAT", "แยก VAT", "ไม่มี VAT"
  * @returns {Object} { vatAmount, amountBeforeVat, finalTotal }
  */
-export const calculateVat = (amount, vatType = 'ไม่มี VAT') => {
+export const calculateVat = (rawAmount, vatType = 'ไม่มี VAT') => {
+    const amount = Number(rawAmount);
+    const safeAmount = isNaN(amount) ? 0 : amount;
+
     let vatAmount = 0;
-    let amountBeforeVat = amount;
-    let finalTotal = amount;
+    let amountBeforeVat = safeAmount;
+    let finalTotal = safeAmount;
 
     if (vatType === 'รวม VAT') {
         // e.g. amount = 107, vat = 7, before = 100
-        amountBeforeVat = amount / (1 + VAT_RATE);
-        vatAmount = amount - amountBeforeVat;
-        finalTotal = amount;
+        amountBeforeVat = safeAmount / (1 + VAT_RATE);
+        vatAmount = safeAmount - amountBeforeVat;
+        finalTotal = safeAmount;
     } else if (vatType === 'แยก VAT') {
         // e.g. amount = 100, vat = 7, total = 107
-        vatAmount = amount * VAT_RATE;
-        amountBeforeVat = amount;
-        finalTotal = amount + vatAmount;
+        vatAmount = safeAmount * VAT_RATE;
+        amountBeforeVat = safeAmount;
+        finalTotal = safeAmount + vatAmount;
     } else {
         // ไม่มี VAT
         vatAmount = 0;
-        amountBeforeVat = amount;
-        finalTotal = amount;
+        amountBeforeVat = safeAmount;
+        finalTotal = safeAmount;
     }
 
     return {

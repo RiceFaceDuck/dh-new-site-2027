@@ -38,8 +38,13 @@ export const useCustomerData = () => {
         const cachedData = localStorage.getItem(CACHE_KEY);
         const syncData = localStorage.getItem(LAST_SYNC_KEY);
         if (cachedData) {
-          cachedUsers = JSON.parse(cachedData);
-          if (syncData) lastSync = parseInt(syncData, 10);
+          try {
+            cachedUsers = JSON.parse(cachedData);
+            if (syncData) lastSync = parseInt(syncData, 10);
+          } catch (e) {
+            console.error("Failed to parse customer cache", e);
+            cachedUsers = [];
+          }
           
           processCustomerData(cachedUsers);
           setLoading(false);
