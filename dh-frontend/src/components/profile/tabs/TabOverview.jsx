@@ -216,6 +216,35 @@ export default function TabOverview() {
         <SupportSettings user={user} initialData={profileData} onRefresh={handleRefresh} />
       )}
 
+      {/* ==========================================
+          Section 4: Danger Zone (PDPA - Right to be Forgotten)
+      ========================================== */}
+      <div className="bg-rose-50 rounded-2xl shadow-sm border border-rose-200 overflow-hidden mt-8">
+        <div className="p-6 border-b border-rose-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-rose-700 flex items-center gap-2">
+              ⚠️ การจัดการบัญชี (Danger Zone)
+            </h3>
+            <p className="text-sm text-rose-600 mt-1">ลบข้อมูลส่วนบุคคลและประวัติทั้งหมดออกจากระบบอย่างถาวร</p>
+          </div>
+          <button 
+            onClick={async () => {
+              if (window.confirm('คำเตือน: คุณต้องการลบบัญชีและข้อมูลทั้งหมดออกจากระบบอย่างถาวรใช่หรือไม่?\n\nการกระทำนี้ไม่สามารถยกเลิกหรือกู้คืนข้อมูลได้!')) {
+                try {
+                  await userService.deleteAccount(user, walletBalance);
+                  window.location.href = '/'; // Redirect to home
+                } catch (error) {
+                  alert(error.message);
+                }
+              }
+            }}
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg shadow-sm transition-all text-sm"
+          >
+            ลบบัญชีถาวร
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }

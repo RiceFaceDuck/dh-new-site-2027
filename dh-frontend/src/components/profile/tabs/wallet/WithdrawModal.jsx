@@ -5,7 +5,6 @@ import { requestWalletWithdrawal } from '../../../../firebase/walletService';
 
 const WithdrawModal = ({ user, walletBalance, isWithdrawModalOpen, setIsWithdrawModalOpen }) => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [bankInfo, setBankInfo] = useState({ bankName: '', accountName: '', accountNumber: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
 
@@ -19,23 +18,27 @@ const WithdrawModal = ({ user, walletBalance, isWithdrawModalOpen, setIsWithdraw
       setStatus({ type: 'error', message: 'จำนวนเงินไม่ถูกต้อง หรือเกินยอดคงเหลือ' });
       return;
     }
-    if (!bankInfo.bankName || !bankInfo.accountName || !bankInfo.accountNumber) {
-      setStatus({ type: 'error', message: 'กรุณากรอกข้อมูลธนาคารให้ครบถ้วน' });
-      return;
-    }
 
     setIsSubmitting(true);
     setStatus({ type: '', message: '' });
 
     try {
-      await requestWalletWithdrawal(user.uid, amount, bankInfo);
-      setStatus({ type: 'success', message: 'ส่งคำร้องถอนเงินสำเร็จ ระบบจะโอนเงินภายใน 24 ชม.' });
+      // Create request in backend
+      await requestWalletWithdrawal(user.uid, amount, {
+        bankName: 'LINE',
+        accountName: 'ติดต่อผ่าน LINE OA',
+        accountNumber: 'LINE_CONTACT'
+      });
+      
+      setStatus({ type: 'success', message: 'ส่งคำร้องสำเร็จ กำลังเปิด LINE เพื่อดำเนินการต่อ...' });
+      
       setTimeout(() => {
         setIsWithdrawModalOpen(false);
         setWithdrawAmount('');
-        setBankInfo({ bankName: '', accountName: '', accountNumber: '' });
         setStatus({ type: '', message: '' });
-      }, 3000);
+        // Redirect to LINE OA
+        window.open('https://lin.ee/your-line-id', '_blank');
+      }, 2000);
     } catch (error) {
       setStatus({ type: 'error', message: error.message || 'เกิดข้อผิดพลาดในการทำรายการ' });
     } finally {
@@ -57,8 +60,8 @@ const WithdrawModal = ({ user, walletBalance, isWithdrawModalOpen, setIsWithdraw
           <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-4 border border-indigo-500/30">
             <Building className="w-6 h-6 text-indigo-400" />
           </div>
-          <h2 className="text-xl font-bold">แจ้งถอนเงินเข้าบัญชี</h2>
-          <p className="text-sm text-slate-400 mt-1">จำนวนเงินจะถูกหักไว้เพื่อรอแอดมินตรวจสอบและโอนเงินเข้าบัญชีภายใน 24 ชั่วโมงทำการ</p>
+          <h2 className="text-xl font-bold">แจ้งขอคืนเงิน (ผ่าน LINE)</h2>
+          <p className="text-sm text-slate-400 mt-1">ระบุจำนวนเงินที่ต้องการขอคืน ระบบจะสร้างคำร้องและพาคุณไปยัง LINE ของร้านค้า</p>
         </div>
 
         <form onSubmit={handleWithdraw} className="p-6 space-y-6">
@@ -94,49 +97,14 @@ const WithdrawModal = ({ user, walletBalance, isWithdrawModalOpen, setIsWithdraw
           </div>
 
           <div className="space-y-4 pt-4 border-t border-slate-100">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ข้อมูลบัญชีธนาคาร</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Building className="h-4 w-4 text-slate-400" />
-                </div>
-                <input
-                  type="text"
-                  value={bankInfo.bankName}
-                  onChange={(e) => setBankInfo(prev => ({...prev, bankName: e.target.value}))}
-                  className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium"
-                  placeholder="ชื่อธนาคาร (เช่น กสิกรไทย)"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <CreditCard className="h-4 w-4 text-slate-400" />
-              </div>
-              <input
-                type="text"
-                value={bankInfo.accountNumber}
-                onChange={(e) => setBankInfo(prev => ({...prev, accountNumber: e.target.value}))}
-                className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-mono font-bold tracking-wider"
-                placeholder="เลขที่บัญชี"
-                required
-              />
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <User className="h-4 w-4 text-slate-400" />
-              </div>
-              <input
-                type="text"
-                value={bankInfo.accountName}
-                onChange={(e) => setBankInfo(prev => ({...prev, accountName: e.target.value}))}
-                className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium"
-                placeholder="ชื่อ-นามสกุล เจ้าของบัญชี"
-                required
-              />
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+               <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+               <div>
+                  <h4 className="text-sm font-bold text-amber-800">ขั้นตอนการขอคืนเงิน</h4>
+                  <p className="text-xs text-amber-700 mt-1">
+                     เมื่อกดยืนยัน ระบบจะล็อกยอดเงินของคุณไว้ชั่วคราวและเปิดหน้าต่าง LINE กรุณาแจ้ง <b>"ขอคืนเงิน"</b> และแจ้งชื่อ/เบอร์โทร หรืออีเมลของคุณให้แอดมินทราบทางแชท
+                  </p>
+               </div>
             </div>
           </div>
 
@@ -152,9 +120,9 @@ const WithdrawModal = ({ user, walletBalance, isWithdrawModalOpen, setIsWithdraw
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex justify-center items-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full flex justify-center items-center gap-2 py-3.5 bg-[#00B900] hover:bg-[#00A000] text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> กำลังประมวลผลคำขอ...</> : 'ยืนยันการถอนเงิน'}
+            {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> กำลังประมวลผลคำขอ...</> : 'ยืนยันเพื่อเปิด LINE ร้านค้า'}
           </button>
         </form>
       </div>

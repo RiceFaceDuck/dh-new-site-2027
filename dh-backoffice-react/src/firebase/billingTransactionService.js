@@ -109,10 +109,10 @@ export const billingTransactionService = {
         }
 
         if (userSnap && userSnap.exists()) {
-            currentWallet = userSnap.data().creditPoints || 0;
+            currentWallet = Number(userSnap.data().walletBalance || 0); // ✅ [SECURITY] Correctly check against Wallet Cash
             
             if (walletToUse > 0 && currentWallet < walletToUse) {
-              throw new Error("ยอดเงินใน Wallet ไม่เพียงพอ");
+              throw new Error("ยอดเงินค้างในระบบ (Wallet) ไม่เพียงพอ");
             }
 
             if (statusLower === 'paid') {
@@ -225,15 +225,22 @@ export const billingTransactionService = {
             const { adjustUserCreditWithTransaction } = await import('./credit/creditActionService');
 
             if (walletToUse > 0) {
-                await adjustUserCreditWithTransaction(
-                    transaction,
-                    customerUid,
-                    walletToUse,
-                    'spend',
-                    'ใช้ชำระค่าสินค้า',
-                    actorUid,
-                    `TXW_${finalOrderId}`
-                );
+                // ✅ [SECURITY] Strictly deduct from walletBalance, NEVER from creditPoints
+                transaction.update(userRef, {
+                    walletBalance: increment(-walletToUse),
+                    updatedAt: serverTimestamp()
+                });
+
+                const walletTxRef = doc(collection(db, `users/${customerUid}/wallet_transactions`));
+                transaction.set(walletTxRef, {
+                    transactionId: `TXW_POS_${finalOrderId}`,
+                    type: 'SPEND_POS',
+                    amount: walletToUse,
+                    status: 'SUCCESS',
+                    note: 'หักจาก DH ค้างยอดสำหรับชำระค่าสินค้า',
+                    operatorUid: actorUid || 'System',
+                    timestamp: serverTimestamp()
+                });
             }
 
             if (earnedPoints > 0) {

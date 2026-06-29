@@ -151,13 +151,15 @@ export const getWalletHistory = async (userId, lastDoc = null, pageSize = 10, fo
  * @param {object} bankInfo - ข้อมูลบัญชีธนาคาร { bankName, accountName, accountNumber }
  */
 export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
-  if (!userId || amount <= 0 || !bankInfo) {
+  const safeAmount = Math.round(Number(amount) * 100) / 100;
+  if (!userId || isNaN(safeAmount) || safeAmount <= 0 || !bankInfo) {
     throw new Error("ข้อมูลไม่ครบถ้วน หรือยอดเงินไม่ถูกต้อง");
   }
 
   try {
     await runTransaction(db, async (transaction) => {
-      const userRef = doc(db, 'artifacts', appId, 'users', userId);
+      const usersPath = getUsersPath();
+      const userRef = doc(db, usersPath, userId);
       const userSnap = await transaction.get(userRef);
 
       if (!userSnap.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้งาน");
@@ -166,31 +168,30 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
       const currentBalance = Number(userData.walletBalance || 0);
 
       // 1. ตรวจสอบยอดเงิน (ป้องกันการแก้ HTML เพื่อถอนเงินเกินจริง)
-      if (currentBalance < amount) {
+      if (currentBalance < safeAmount) {
         throw new Error("ยอดเงินค้างในระบบไม่เพียงพอต่อการถอน");
       }
       
-      const newBalance = currentBalance - amount;
+      const newBalance = currentBalance - safeAmount;
 
       const txId = `WD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
       // 2. ล็อกยอดเงินทันที! หักจาก walletBalance ไปไว้ที่ pendingWithdrawal
       transaction.update(userRef, {
         walletBalance: newBalance,
-        pendingWithdrawal: increment(amount),
+        pendingWithdrawal: increment(safeAmount),
         updatedAt: serverTimestamp()
       });
 
       // 3. บันทึกประวัติฝั่งลูกค้า
-      const usersPath = getUsersPath();
       const userTxRef = doc(collection(db, usersPath, userId, 'wallet_transactions'));
       transaction.set(userTxRef, {
         transactionId: txId,
         type: 'WITHDRAWAL_REQUEST',
-        amount: amount,
+        amount: safeAmount,
         status: 'PENDING',
         bankInfo: bankInfo,
-        note: 'รอแอดมินตรวจสอบและโอนเงินเข้าบัญชี',
+        note: 'รอตรวจสอบและโอนเงิน (ดำเนินการได้ใน 14 วัน)',
         timestamp: serverTimestamp()
       });
 
@@ -207,7 +208,7 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
           phone: userData.phoneNumber || ''
         },
         withdrawalDetails: {
-          amount: amount,
+          amount: safeAmount,
           bankName: bankInfo.bankName,
           accountName: bankInfo.accountName,
           accountNumber: bankInfo.accountNumber

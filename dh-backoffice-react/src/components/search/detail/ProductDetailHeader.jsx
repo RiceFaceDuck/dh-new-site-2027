@@ -38,8 +38,8 @@ export default function ProductDetailHeader({
               <MapPin size={12}/> {selectedProduct.warehouseLocation}
             </span>
           )}
-          <span className={`flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-md border shadow-sm transition-colors ${stockStat.stock <= 0 ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:border-red-800' : stockStat.stock <= (selectedProduct.bufferStock || 2) ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`}>
-            {stockStat.stock <= 0 ? <AlertCircle size={14}/> : <Box size={14}/>} 
+          <span className={`flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-md border shadow-sm transition-colors ${selectedProduct.stockQuantity <= 0 ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:border-red-800' : selectedProduct.stockQuantity <= (selectedProduct.bufferStock || 2) ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`}>
+            {selectedProduct.stockQuantity <= 0 ? <AlertCircle size={14}/> : <Box size={14}/>} 
             {stockStat.text} ({selectedProduct.stockQuantity})
           </span>
         </div>

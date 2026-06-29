@@ -4,6 +4,23 @@ import { historyService } from './historyService';
 
 const COLLECTION_NAME = 'freebies';
 
+// Helper for validating SKUs (max 30 per 'in' query)
+const validateSkus = async (skusArray) => {
+  if (!Array.isArray(skusArray) || skusArray.length === 0) return { validSkus: [], removedSkus: [] };
+  
+  const validSkus = new Set();
+  for (let i = 0; i < skusArray.length; i += 30) {
+    const chunk = skusArray.slice(i, i + 30);
+    const q = query(collection(db, 'products'), where('sku', 'in', chunk));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => validSkus.add(doc.data().sku));
+  }
+  
+  const validSkusArray = Array.from(validSkus);
+  const removedSkus = skusArray.filter(sku => !validSkus.has(sku));
+  return { validSkus: validSkusArray, removedSkus };
+};
+
 export const freebieService = {
   // 📥 ดึงกฎของแถมทั้งหมด
   getAllFreebies: async () => {
@@ -33,8 +50,23 @@ export const freebieService = {
   // ✨ สร้างกฎของแถมใหม่
   createFreebie: async (data, user) => {
     try {
+      let finalSkus = data.applicableSkus || [];
+      if (finalSkus.length > 0) {
+        const { validSkus, removedSkus } = await validateSkus(finalSkus);
+        finalSkus = validSkus;
+        
+        if (removedSkus.length > 0) {
+          await historyService.addLog(
+            'Freebie', 'Validate', 'SYSTEM', 
+            `พบและลบ SKU ที่ไม่มีในสต็อกออกจากของแถม (${data.title}): ${removedSkus.join(', ')}`, 
+            user.uid
+          );
+        }
+      }
+
       const payload = {
         ...data,
+        applicableSkus: finalSkus,
         isActive: true,
         createdBy: user.uid,
         createdAt: serverTimestamp(),
@@ -50,7 +82,21 @@ export const freebieService = {
 
   updateFreebie: async (id, updates, user, actionName = 'แก้ไข') => {
     try {
-      await updateDoc(doc(db, COLLECTION_NAME, id), { ...updates, updatedAt: serverTimestamp() });
+      let finalUpdates = { ...updates };
+      if (updates.applicableSkus) {
+        const { validSkus, removedSkus } = await validateSkus(updates.applicableSkus);
+        finalUpdates.applicableSkus = validSkus;
+        
+        if (removedSkus.length > 0) {
+          await historyService.addLog(
+            'Freebie', 'Validate', id, 
+            `พบและลบ SKU ที่ไม่มีในสต็อกออกจากของแถม: ${removedSkus.join(', ')}`, 
+            user.uid
+          );
+        }
+      }
+
+      await updateDoc(doc(db, COLLECTION_NAME, id), { ...finalUpdates, updatedAt: serverTimestamp() });
       await historyService.addLog('Freebie', 'Update', id, `${actionName}กฎของแถม`, user.uid);
       return true;
     } catch (error) {

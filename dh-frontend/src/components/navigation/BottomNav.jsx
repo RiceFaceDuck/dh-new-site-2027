@@ -2,10 +2,12 @@ import React from 'react';
 import { Home, Search, ShoppingCart, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
+import { useToast } from '../../context/ToastContext';
 
 const BottomNav = () => {
   const location = useLocation();
   const { cartTotalQty } = useCart();
+  const { showToast } = useToast();
 
   // ฟังก์ชันเช็คว่าหน้าปัจจุบันตรงกับเมนูไหน
   const isActive = (path) => {
@@ -33,7 +35,7 @@ const BottomNav = () => {
               <div
                 key={`disabled-${index}`}
                 className="relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 text-slate-300 opacity-70 cursor-not-allowed"
-                onClick={() => alert('รอการพัฒนาในอนาคต')}
+                onClick={() => showToast('รอการพัฒนาในอนาคต', 'info')}
               >
                 <div className="relative mt-1">
                   <Icon size={22} strokeWidth={1.5} />

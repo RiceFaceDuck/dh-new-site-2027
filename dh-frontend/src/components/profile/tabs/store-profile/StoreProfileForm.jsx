@@ -94,12 +94,33 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           locationLoading={isLocating} 
         />
 
+        {/* PDPA Consent Checkbox */}
+        <div className="pt-6 border-t border-slate-200">
+          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex gap-4 items-start">
+            <div className="mt-1">
+              <input
+                type="checkbox"
+                id="pdpa-consent"
+                checked={storeData.pdpaConsent || false}
+                onChange={(e) => setStoreData({ ...storeData, pdpaConsent: e.target.checked })}
+                className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+              />
+            </div>
+            <div>
+              <label htmlFor="pdpa-consent" className="text-sm text-slate-700 font-medium cursor-pointer block leading-relaxed">
+                <span className="text-indigo-700 font-bold block mb-1">การให้ความยินยอมเปิดเผยข้อมูล (PDPA)</span>
+                ข้าพเจ้ายินยอมให้นำข้อมูลที่กรอกทั้งหมด ได้แก่ <b className="text-slate-900">ชื่อร้าน, รูปภาพ, เบอร์โทรศัพท์, ช่องทางการติดต่อ, ที่อยู่ และพิกัดสถานที่ตั้ง (GPS)</b> ไปแสดงผลต่อสาธารณะบนแพลตฟอร์ม เพื่อวัตถุประสงค์ในการโฆษณาและการค้นหาร้านซ่อม
+              </label>
+            </div>
+          </div>
+        </div>
+
         {/* ปุ่ม Submit: กดได้ตลอดเวลาเพื่ออัปเดตข้อมูล แม้ว่าจะรออนุมัติโฆษณาอยู่ก็ตาม */}
-        <div className="pt-6 border-t border-slate-200 flex justify-end">
+        <div className="pt-2 flex justify-end">
           <button 
             type="submit" 
-            disabled={savingStore} 
-            className="w-full sm:w-auto px-10 py-4 font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-lg active:scale-95 bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/30 disabled:bg-indigo-400 disabled:shadow-none"
+            disabled={savingStore || !storeData.pdpaConsent} 
+            className="w-full sm:w-auto px-10 py-4 font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-lg active:scale-95 bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/30 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
           >
             {savingStore ? (
               <><Loader2 size={24} className="animate-spin"/> กำลังบันทึกข้อมูล...</>

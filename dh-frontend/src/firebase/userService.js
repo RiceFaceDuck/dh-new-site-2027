@@ -216,5 +216,44 @@ export const userService = {
       console.error('❌ [userService] Error securing Private Tax Info:', error);
       throw error;
     }
+  },
+
+  // ==========================================
+  // 7. 🗑️ [NEW] ลบบัญชีผู้ใช้ (Hard Delete - PDPA)
+  // ==========================================
+  deleteAccount: async (user, walletBalance) => {
+    if (!user) throw new Error('User object is required');
+    
+    // ตรวจสอบเงินค้างในกระเป๋า (Orphan Data Prevention)
+    if (walletBalance > 0) {
+      throw new Error("ไม่อนุญาตให้ลบบัญชีที่มีเงินค้างอยู่ในระบบ กรุณาถอนเงินก่อนดำเนินการ");
+    }
+
+    try {
+      const uid = user.uid;
+      
+      // 1. ลบเอกสารจาก Firestore (Hard Delete)
+      const userRef = doc(db, 'users', uid);
+      await setDoc(doc(db, 'users_deleted_log', uid), {
+         deletedAt: serverTimestamp(),
+         reason: "User requested deletion (PDPA)",
+      }); // เก็บ Log เล็กน้อย
+      
+      // ลบข้อมูลหลัก
+      await import('firebase/firestore').then(({ deleteDoc }) => deleteDoc(userRef));
+      
+      // 2. ลบออกจาก Firebase Auth
+      await import('firebase/auth').then(({ deleteUser }) => deleteUser(user));
+      
+      clearUserCache(uid);
+      console.log('✅ [userService] Account permanently deleted.');
+      return true;
+    } catch (error) {
+      console.error('❌ [userService] Error deleting account:', error);
+      if (error.code === 'auth/requires-recent-login') {
+        throw new Error('กรุณาล็อกเอาท์และเข้าสู่ระบบใหม่อีกครั้ง ก่อนทำการลบบัญชี (เพื่อความปลอดภัย)');
+      }
+      throw error;
+    }
   }
 };

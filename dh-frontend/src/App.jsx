@@ -4,6 +4,7 @@ import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home/Home';
 import CategoryPage from './pages/CategoryPage';
 import CategoriesMain from './pages/Categories/CategoriesMain';
+import SearchPage from './pages/SearchPage';
 import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
 import StoreProfilePage from './pages/StoreProfile/StoreProfilePage';
@@ -69,6 +70,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/categories" element={<CategoriesMain />} />
             <Route path="/category/:type" element={<CategoryPage />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/store/:id" element={<StoreProfilePage />} />

@@ -55,6 +55,27 @@ export const updateCustomerProfile = async (uid, data) => {
         const customerName = data.accountName || data.displayName || uid;
         await historyService.addLog('Customer', 'Update', uid, `แก้ไขข้อมูลลูกค้า: ${customerName}`, auth.currentUser?.uid);
 
+        // 🔒 Strict Data Relations: Cascade Disable Partner if suspended
+        if (data.isActive === false || data.status === 'suspended' || data.status === 'deleted') {
+            try {
+                const { query, where, getDocs, writeBatch } = await import('firebase/firestore');
+                const partnersRef = collection(db, 'partners');
+                const q = query(partnersRef, where('ownerId', '==', uid));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const batch = writeBatch(db);
+                    querySnapshot.forEach((docSnap) => {
+                        batch.update(docSnap.ref, { isActive: false });
+                    });
+                    await batch.commit();
+                    await historyService.addLog('Partner', 'Update', uid, `ปิดการใช้งานร้านช่างอัตโนมัติ เนื่องจากบัญชีถูกระงับ/ปิดใช้งาน`, auth.currentUser?.uid);
+                }
+            } catch (partnerErr) {
+                console.error("🔥 Cascade Disable Partner Error:", partnerErr);
+            }
+        }
+
         return { success: true };
     } catch (error) {
         console.error("❌ [CustomerAdminService] Update Customer Profile Error:", error);
@@ -87,6 +108,25 @@ export const deleteCustomer = async (targetUid, customerName) => {
         });
         
         await historyService.addLog('Customer', 'Delete', targetUid, `ลบรายชื่อลูกค้า: ${customerName} (Soft Delete)`, auth.currentUser?.uid);
+
+        // 🔒 Strict Data Relations: Cascade Disable Partner if deleted
+        try {
+            const { query, where, getDocs, writeBatch } = await import('firebase/firestore');
+            const partnersRef = collection(db, 'partners');
+            const q = query(partnersRef, where('ownerId', '==', targetUid));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const batch = writeBatch(db);
+                querySnapshot.forEach((docSnap) => {
+                    batch.update(docSnap.ref, { isActive: false });
+                });
+                await batch.commit();
+                await historyService.addLog('Partner', 'Update', targetUid, `ปิดการใช้งานร้านช่างอัตโนมัติ เนื่องจากบัญชีเจ้าของร้านถูกลบ`, auth.currentUser?.uid);
+            }
+        } catch (partnerErr) {
+            console.error("🔥 Cascade Disable Partner Error:", partnerErr);
+        }
 
         console.log(`✅ [CustomerAdminService] Deleted customer ${customerName} (${targetUid})`);
         return { success: true };

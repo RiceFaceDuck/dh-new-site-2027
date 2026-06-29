@@ -6,7 +6,8 @@ export default function GuideModal({
     onClose, 
     title = "คู่มือการใช้งาน", 
     icon: Icon = HelpCircle, 
-    config 
+    config,
+    extraFooter
 }) {
     // ป้องกันการ Scroll ด้านหลังเมื่อ Modal เปิดอยู่
     useEffect(() => {
@@ -129,10 +130,13 @@ export default function GuideModal({
                 </div>
 
                 {/* Footer Action */}
-                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-end">
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center gap-4">
+                    <div className="flex flex-wrap gap-2">
+                        {extraFooter}
+                    </div>
                     <button 
                         onClick={onClose}
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all dh-active-press"
+                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all dh-active-press shrink-0"
                     >
                         เข้าใจแล้ว (Got it!)
                     </button>

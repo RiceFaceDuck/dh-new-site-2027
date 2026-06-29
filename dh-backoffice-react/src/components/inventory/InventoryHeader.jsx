@@ -42,6 +42,20 @@ export default function InventoryHeader({
     }
   };
 
+  // 🚀 Hover-Intent Prefetching
+  const handlePrefetchSearch = () => {
+    const cached = sessionStorage.getItem('inventory_full_cache');
+    const expiry = sessionStorage.getItem('inventory_full_cache_expiry');
+    const isValid = cached && expiry && new Date().getTime() < Number(expiry);
+    
+    if (!isValid) {
+      gasStockService.fetchBackupInventory().then(data => {
+        sessionStorage.setItem('inventory_full_cache', JSON.stringify(data));
+        sessionStorage.setItem('inventory_full_cache_expiry', String(new Date().getTime() + (2 * 60 * 60 * 1000)));
+      }).catch(err => console.warn('Prefetch failed:', err));
+    }
+  };
+
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] relative transition-colors duration-300">
       {/* Title Area */}
@@ -100,6 +114,8 @@ export default function InventoryHeader({
             placeholder="ค้นหา SKU, ชื่อรุ่น, Tags..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onMouseEnter={handlePrefetchSearch}
+            onFocus={handlePrefetchSearch}
             className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full md:w-56 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-sm"
           />
         </div>

@@ -6,7 +6,7 @@ export default function WalletModals({
     isSubmitting, handleAdjustmentSubmit, selectedUser, currentWalletBalance,
     
     isActionModalOpen, setIsActionModalOpen, selectedTask, actionType, actionNote, setActionNote,
-    isActionSubmitting, handleProcessAction
+    isActionSubmitting, handleProcessAction, slipFile, setSlipFile
 }) {
     return (
         <>
@@ -106,9 +106,25 @@ export default function WalletModals({
                                         placeholder={actionType === 'APPROVE' ? "บันทึกการโอนเงิน (ไม่บังคับ)" : "เหตุผลที่ปฏิเสธ (บังคับ)"}
                                     ></textarea>
                                 </div>
+                                {actionType === 'APPROVE' && setSlipFile && (
+                                    <div>
+                                        <label className="text-xs font-black text-slate-700 mb-1.5 block">แนบสลิปโอนเงิน (Slip) <span className="text-emerald-600">(เลือกได้)</span></label>
+                                        <div className="relative">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*"
+                                                onChange={e => setSlipFile(e.target.files[0])}
+                                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-black file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 transition-all cursor-pointer border border-slate-200 rounded-xl p-1"
+                                            />
+                                        </div>
+                                        {slipFile && (
+                                            <p className="text-[10px] text-emerald-600 mt-1 font-bold">✓ เลือกไฟล์: {slipFile.name}</p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-                                <button type="button" onClick={() => setIsActionModalOpen(false)} className="px-5 py-2.5 bg-white text-slate-600 font-black rounded-xl hover:bg-slate-100 transition-colors text-sm border border-slate-200 shadow-sm">ยกเลิก</button>
+                                <button type="button" onClick={() => { setIsActionModalOpen(false); if(setSlipFile) setSlipFile(null); }} className="px-5 py-2.5 bg-white text-slate-600 font-black rounded-xl hover:bg-slate-100 transition-colors text-sm border border-slate-200 shadow-sm">ยกเลิก</button>
                                 <button 
                                     type="submit" 
                                     disabled={isActionSubmitting} 

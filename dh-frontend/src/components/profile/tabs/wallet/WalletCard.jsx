@@ -36,9 +36,9 @@ const WalletCard = ({ walletBalance, pendingWithdrawal, setIsWithdrawModalOpen }
           <button 
             onClick={() => setIsWithdrawModalOpen(true)}
             disabled={walletBalance <= 0}
-            className="w-full md:w-auto px-6 py-3 bg-white text-slate-900 hover:bg-slate-50 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 text-[10px] font-medium rounded-lg transition-all border border-white/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
           >
-            <ArrowRightLeft className="w-4 h-4" /> ถอนเงินเข้าบัญชีธนาคาร
+            แจ้งขอคืนเงิน (LINE)
           </button>
         </div>
       </div>

@@ -83,15 +83,10 @@ export const deleteUser = async (adminId, targetUid) => {
             }
         }
 
-        // 🗑️ Soft Delete
-        await updateDoc(userRef, {
-            status: 'deleted',
-            isActive: false,
-            'metadata.deletedAt': serverTimestamp(),
-            'metadata.deletedBy': adminId || auth.currentUser?.uid
-        });
+        // 🗑️ Hard Delete (PDPA Right to be Forgotten)
+        await deleteDoc(userRef);
         
-        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid} (Soft Delete)`, adminId || auth.currentUser?.uid);
+        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid} (Hard Delete ถาวร)`, adminId || auth.currentUser?.uid);
         return { success: true };
     } catch (error) {
         throw error;

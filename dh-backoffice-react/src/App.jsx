@@ -35,6 +35,7 @@ const WalletManagement = lazy(() => import('./pages/managers/WalletManagement'))
 const ShippingManagement = lazy(() => import('./pages/managers/settings/shipping/ShippingManagement'))
 const AdManagement = lazy(() => import('./pages/managers/AdManagement'))
 const PartnerSettings = lazy(() => import('./pages/managers/PartnerSettings'))
+const RefundManagement = lazy(() => import('./pages/managers/RefundManagement'))
 
 // ⚙️ Global Settings Lazy Components
 const GlobalBufferSettings = lazy(() => import('./pages/managers/settings/inventory/GlobalBufferSettings'))
@@ -46,6 +47,7 @@ const GlobalThemeSettings = lazy(() => import('./pages/managers/GlobalThemeSetti
 const GlobalKnowledgeSettings = lazy(() => import('./pages/managers/GlobalKnowledgeSettings'))
 const GlobalFooterSettings = lazy(() => import('./pages/managers/GlobalFooterSettings'))
 const PrivacyCookiesSettings = lazy(() => import('./pages/managers/PrivacyCookiesSettings/index.jsx'))
+const RedirectURLsSettings = lazy(() => import('./pages/managers/RedirectURLsSettings/index.jsx'))
 const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
 
 const Placeholder = ({ title }) => (
@@ -155,6 +157,7 @@ function AppContent() {
             <Route path="managers/shipping" element={<ShippingManagement />} />
             <Route path="managers/ads" element={<AdManagement />} />
             <Route path="managers/partners" element={<PartnerSettings />} />
+            <Route path="managers/refund" element={<RefundManagement />} />
 
             {/* ⚙️ Global Settings Pages */}
             <Route path="managers/buffer" element={<GlobalBufferSettings />} />
@@ -166,6 +169,7 @@ function AppContent() {
             <Route path="managers/knowledge" element={<GlobalKnowledgeSettings />} />
             <Route path="managers/footer-settings" element={<GlobalFooterSettings />} />
             <Route path="managers/privacy-cookies" element={<PrivacyCookiesSettings />} />
+            <Route path="managers/redirect" element={<RedirectURLsSettings />} />
           </Route>
           
           <Route path="history" element={<HistoryPage />}/>

@@ -32,7 +32,16 @@ const CartItemCard = ({ item, index, updatingId, onUpdateQty, onRemoveItem }) =>
   const rawImg = getVal(item, ['imageurl', 'image', 'images', 'img', 'รูปภาพ']);
   const imageUrl = Array.isArray(rawImg) ? rawImg[0] : (rawImg || '/logo.png');
   
-  const sku = getVal(item, ['sku', 'code', 'รหัสสินค้า']) || `SKU-ERR-${index}`;
+  const rawSku = getVal(item, ['sku', 'code', 'รหัสสินค้า']);
+  const sku = rawSku || null;
+
+  useEffect(() => {
+    // เก็บ History Log ถ้าหาสินค้าไม่เจอ SKU (ตาม Request)
+    if (!sku) {
+      console.warn(`[History Log] Missing SKU for product ID: ${realId} - Name: ${name}`);
+      // TODO: สามารถยิง API ไปยังระบบหลังบ้านเพื่อบันทึก log แบบถาวรในอนาคตได้
+    }
+  }, [sku, realId, name]);
 
   const isUpdating = updatingId === realId;
   const originalQty = item.qty || item.quantity || 1;
@@ -98,7 +107,11 @@ const CartItemCard = ({ item, index, updatingId, onUpdateQty, onRemoveItem }) =>
               {isUpdating && localQty === originalQty ? <Loader2 size={18} className="animate-spin text-red-400" /> : <Trash2 size={18} />}
             </button>
           </div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-1 font-medium font-tech uppercase tracking-wide">SKU: {sku}</p>
+          {sku && (
+            <p className="text-[10px] md:text-xs text-gray-500 mt-1 font-medium font-tech uppercase tracking-wide">
+              SKU: {sku}
+            </p>
+          )}
         </div>
 
         <div className="flex items-end justify-between mt-4">

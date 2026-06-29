@@ -133,7 +133,16 @@ export function useProductSearch() {
     const base = gasProductsCache || initialProducts;
     return base.map(cacheProduct => {
       const fullProduct = initialProducts.find(p => p.sku === cacheProduct.sku);
-      return fullProduct ? { ...cacheProduct, ...fullProduct } : cacheProduct;
+      const merged = fullProduct ? { ...cacheProduct, ...fullProduct } : { ...cacheProduct };
+      
+      // ป้องกันบั๊ก NaN จาก Google Sheet หรือฐานข้อมูล
+      const parsedStock = parseInt(merged.stockQuantity, 10);
+      merged.stockQuantity = isNaN(parsedStock) ? 0 : parsedStock;
+      
+      const parsedBuffer = parseInt(merged.bufferStock, 10);
+      merged.bufferStock = isNaN(parsedBuffer) ? 2 : parsedBuffer;
+
+      return merged;
     });
   }, [gasProductsCache, initialProducts]);
 
@@ -264,7 +273,7 @@ export function useProductSearch() {
   const handleCopyChat = (e) => {
     e.stopPropagation();
     if (!selectedProduct) return;
-    let shortName = selectedProduct.name;
+    let shortName = selectedProduct.name || 'ไม่มีชื่อสินค้า';
     if (shortName.length > 40) {
       shortName = shortName.substring(0, 40) + '...';
     }

@@ -23,15 +23,12 @@ export const useOverviewData = () => {
 
     const unsubTodos = todoService.subscribePendingTodos((data) => {
       setTodos(data);
+      setLoading(false); // 🔥 Set loading to false as soon as data arrives (Instant UX)
     });
-
-    // Simulate network delay for UI polish
-    const timer = setTimeout(() => setLoading(false), 800);
 
     return () => {
       if (unsubOrders) unsubOrders();
       if (unsubTodos) unsubTodos();
-      clearTimeout(timer);
     };
   }, []);
 

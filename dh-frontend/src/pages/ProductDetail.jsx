@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { getAuth } from 'firebase/auth'; 
 import { cartService } from '../firebase/cartService'; 
 import { getCreditSettings, calculateEarnedPoints } from '../firebase/creditService';
@@ -187,12 +187,29 @@ const ProductDetail = () => {
   return (
     <div className="max-w-7xl mx-auto w-full animate-fade-in pb-10">
       
-      <button 
-        onClick={() => navigate(-1)} 
-        className="mb-6 flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors group"
-      >
-        <ChevronLeft size={18} className="mr-1 group-hover:-translate-x-1 transition-transform" /> BACK TO PRODUCTS
-      </button>
+      <nav className="flex items-center flex-wrap text-sm font-medium text-slate-500 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100 w-fit">
+        <Link 
+          to="/" 
+          className="hover:text-brand transition-colors flex items-center gap-1"
+        >
+          <ChevronLeft size={16} /> หน้าแรก
+        </Link>
+        <span className="mx-2 text-slate-300">/</span>
+        {product?.category && (
+          <>
+            <Link 
+              to={`/category/${product.category.toLowerCase()}`} 
+              className="hover:text-brand transition-colors"
+            >
+              {product.category}
+            </Link>
+            <span className="mx-2 text-slate-300">/</span>
+          </>
+        )}
+        <span className="text-slate-700 font-bold line-clamp-1 max-w-[200px] sm:max-w-[400px]">
+          {product?.name || 'รายละเอียดสินค้า'}
+        </span>
+      </nav>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
@@ -241,17 +258,19 @@ const ProductDetail = () => {
               <ProductDescriptionSection description={product.fullDescription} />
             </ProductPricingSection>
 
-            {/* 🌟 INTEGRATION ZONE: Partner & Youtube */}
-            <div className="bg-slate-50 w-full border-t-2 border-slate-200 shadow-inner overflow-hidden">
-              <div className="px-6 md:px-10 pt-4 md:pt-6">
-                <PartnerSupportBox />
-              </div>
-              {product.videoId && (
-                <div className="px-6 md:px-10 pb-6 md:pb-8 pt-6 border-t border-slate-200 mt-6">
+            {/* 🌟 INTEGRATION ZONE: Partner */}
+            <div className="px-6 md:px-10 pb-4 md:pb-6">
+              <PartnerSupportBox />
+            </div>
+
+            {/* 🌟 INTEGRATION ZONE: Youtube */}
+            {product.videoId && (
+              <div className="bg-slate-50 w-full border-t-2 border-slate-200 shadow-inner overflow-hidden">
+                <div className="px-6 md:px-10 py-6 md:py-8">
                   <ProductVideoSection videoId={product.videoId} />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 

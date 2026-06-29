@@ -140,7 +140,7 @@ const Cart = () => {
           <ShoppingBag className="text-emerald-600" size={28} strokeWidth={2.5} /> 
           Purchase Order <span className="text-lg text-gray-400 font-medium">({totals.count || 0} Units)</span>
         </h1>
-        <button onClick={() => navigate(-1)} className="hidden md:flex items-center text-sm font-bold text-gray-500 hover:text-emerald-600 transition-colors">
+        <button onClick={() => navigate(-1)} className="flex items-center text-sm font-bold text-gray-500 hover:text-emerald-600 transition-colors">
           <ChevronLeft size={16} className="mr-1" /> เลือกซื้อสินค้าต่อ
         </button>
       </div>

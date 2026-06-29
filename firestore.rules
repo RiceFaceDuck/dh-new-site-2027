@@ -26,8 +26,8 @@ service cloud.firestore {
 
     // 1. ผู้ใช้ (Users)
     match /users/{userId} {
-      // ทุกคนอ่านข้อมูลพื้นฐานได้ (สำหรับหารายชื่อช่าง/ลูกค้า)
-      allow read: if true;
+      // สงวนสิทธิ์การอ่านข้อมูลส่วนบุคคลเฉพาะเจ้าของและพนักงานเท่านั้น (PDPA Compliance)
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       // เจ้าของบัญชี หรือ Manager แก้ไขได้
       allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
     }

@@ -38,8 +38,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     // 2. Validations
     const useWallet = checkoutState?.useWallet || 0;
-    if (useWallet > 0 && (userData.creditPoints || 0) < useWallet) {
-      throw new Error("ยอดเงินเครดิตของคุณไม่เพียงพอ");
+    if (useWallet > 0 && Number(userData.walletBalance || 0) < useWallet) {
+      throw new Error("ยอดเงินค้างในระบบ (Wallet) ของคุณไม่เพียงพอ");
     }
 
     // [SECURITY] Calculate exact net total using dh-shared PriceEngine
@@ -128,15 +128,21 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     });
 
     if (useWallet > 0) {
-      await adjustUserCreditWithTransaction(
-        transaction,
-        user.uid,
-        useWallet,
-        'spend',
-        `ใช้เป็นส่วนลดสำหรับออเดอร์ ${orderRef.id}`,
-        user.uid,
-        orderRef.id
-      );
+      // ✅ [SECURITY] Deduct strictly from walletBalance, NEVER from creditPoints
+      transaction.update(userRef, {
+        walletBalance: increment(-useWallet),
+        updatedAt: serverTimestamp()
+      });
+      
+      const walletTxRef = doc(collection(db, `users/${user.uid}/wallet_transactions`));
+      transaction.set(walletTxRef, {
+        transactionId: `TXW-${orderRef.id}`,
+        type: 'SPEND',
+        amount: useWallet,
+        status: 'SUCCESS',
+        note: `ใช้ยอดค้างในระบบสำหรับออเดอร์ ${orderRef.id}`,
+        timestamp: serverTimestamp()
+      });
     }
     
     if (saveProfile && checkoutState?.customerData) {

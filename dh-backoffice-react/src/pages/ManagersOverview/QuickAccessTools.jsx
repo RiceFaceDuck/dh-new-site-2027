@@ -3,7 +3,7 @@ import {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet
 } from 'lucide-react';
 import { menuConfigService } from '../../firebase/menuConfigService';
 
@@ -12,7 +12,7 @@ const iconMap = {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet
 };
 
 /**
@@ -112,6 +112,7 @@ const QuickAccessTools = ({
       case 'credit': return onNavigateCredit;
       case 'promotions': return () => navigate('/managers/promotions');
       case 'freebie': return () => navigate('/managers/freebie');
+      case 'refund': return () => navigate('/managers/refund');
       case 'inventory_adjustment': return () => navigate('/managers/inventory-adjustment');
       // เมนูย่อยจากนโยบายกลาง (จะเปิด Global Settings Panel โดยระบุ Tab)
       case 'buffer': return () => navigate('/managers/buffer');
@@ -123,6 +124,7 @@ const QuickAccessTools = ({
       case 'knowledge': return () => navigate('/managers/knowledge');
       case 'footer': return () => navigate('/managers/footer-settings');
       case 'privacy': return () => navigate('/managers/privacy-cookies');
+      case 'redirect': return () => navigate('/managers/redirect');
       default: return undefined;
     }
   };

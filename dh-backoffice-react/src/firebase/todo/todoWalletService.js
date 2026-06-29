@@ -1,12 +1,20 @@
 import { db } from '../config';
 import { doc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 
+const appId = typeof window !== 'undefined' && typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
+const isCanvas = typeof window !== 'undefined' && window.location.hostname.includes('canvas');
+
+const getTodosPath = () => isCanvas ? `artifacts/${appId}/public/data/todos` : 'todos';
+const getUsersColPath = () => isCanvas ? `artifacts/${appId}/users` : 'users';
+const getLogsPath = () => isCanvas ? `artifacts/${appId}/public/data/system_logs` : 'system_logs';
+
 export const todoWalletService = {
   // 🏦 6. ประมวลผลคำขอถอนเงิน Wallet [NEW & HIGHLY SECURE]
   processWalletWithdrawal: async (taskId, action, adminInfo, extraData = {}) => {
       try {
           return await runTransaction(db, async (transaction) => {
-              const taskRef = doc(db, 'todos', taskId);
+              const todosPath = getTodosPath();
+              const taskRef = doc(db, todosPath, taskId);
               const taskSnap = await transaction.get(taskRef);
 
               if (!taskSnap.exists()) {
@@ -31,7 +39,8 @@ export const todoWalletService = {
 
               if (!customerId || amount <= 0) throw new Error("ข้อมูลลูกค้าหรือจำนวนเงินไม่ถูกต้อง");
 
-              const userRef = doc(db, 'users', customerId);
+              const usersPath = getUsersColPath();
+              const userRef = doc(db, usersPath, customerId);
               const userSnap = await transaction.get(userRef);
               
               // ✨ UX UPGRADE: Auto-Clean กรณีลูกค้าถูกลบออกจากระบบ
@@ -46,8 +55,8 @@ export const todoWalletService = {
               }
 
               const txId = `WD-${action}-${Date.now()}`;
-              const userTxRef = doc(collection(db, `users/${customerId}/wallet_transactions`));
-              const logRef = doc(collection(db, 'system_logs'));
+              const userTxRef = doc(collection(db, `${usersPath}/${customerId}/wallet_transactions`));
+              const logRef = doc(collection(db, getLogsPath()));
 
               if (action === 'APPROVE') {
                   // ✅ กรณีอนุมัติโอนเงิน (หักเงินรอถอนออกอย่างถาวร)

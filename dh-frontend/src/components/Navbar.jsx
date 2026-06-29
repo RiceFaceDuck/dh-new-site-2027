@@ -12,6 +12,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 🌟 State ใหม่สำหรับจัดการ Auth & Dropdown
   const [currentUser, setCurrentUser] = useState(null);
@@ -66,6 +67,14 @@ const Navbar = () => {
     }
   };
 
+  // 5. ฟังก์ชันค้นหาสินค้า
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   // ดึงตัวอักษรตัวแรกของอีเมลมาทำเป็น Avatar ถ้าไม่มีรูป
   const getInitial = (email) => {
     return email ? email.charAt(0).toUpperCase() : 'U';
@@ -95,23 +104,28 @@ const Navbar = () => {
 
           {/* Search Bar (Middle - Desktop) */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-8">
-            <div className="relative w-full group">
+            <form onSubmit={handleSearchSubmit} className="relative w-full group">
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
                 className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-full hover:bg-brand-dark transition-colors shadow-sm">
+              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-full hover:bg-brand-dark transition-colors shadow-sm">
                 <Search size={16} strokeWidth={2.5} />
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Right Action Icons */}
           <div className="flex items-center space-x-3 md:space-x-5">
             
             {/* Search Icon (Mobile Only) */}
-            <button className="md:hidden text-slate-300 hover:text-white p-2">
+            <button 
+              onClick={() => navigate('/search')}
+              className="md:hidden text-slate-300 hover:text-white p-2"
+            >
               <Search size={22} strokeWidth={1.5} />
             </button>
 

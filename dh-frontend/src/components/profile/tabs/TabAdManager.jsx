@@ -33,7 +33,7 @@ const TabAdManager = () => {
     storeName: '', description: '', services: '', openHours: '',
     phone: '', messengerUrl: '', lineUrl: '', youtubeUrl: '', tiktokUrl: '', shopeeUrl: '', lazadaUrl: '', websiteUrl: '',
     address: '', landmarks: '', googleMapLink: '', latitude: null, longitude: null, 
-    isSupportActive: false 
+    isSupportActive: false, pdpaConsent: false
   });
 
   const [ads, setAds] = useState([]);
@@ -205,6 +205,18 @@ const TabAdManager = () => {
         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId));
         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads', adId)).catch(()=>{});
         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'billboard_ads', adId)).catch(()=>{});
+        
+        // 🚀 เก็บ History Log ว่ามีการลบ SKU โฆษณา
+        const { setDoc, serverTimestamp } = await import('firebase/firestore');
+        await setDoc(doc(db, 'system_logs', `delete_ad_${adId}_${Date.now()}`), {
+          module: 'Marketing',
+          action: 'DeleteAd',
+          targetId: adId,
+          details: `User ${user.uid} deleted ad/SKU: ${adId}`,
+          timestamp: serverTimestamp(),
+          performedBy: user.uid
+        }).catch(() => {}); // catch error silent
+        
         fetchMyAds();
       } catch (error) { alert("ลบไม่สำเร็จ กรุณาลองใหม่"); }
     }

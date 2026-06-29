@@ -1,5 +1,5 @@
 import React from 'react';
-import { History, TrendingUp, TrendingDown, Clock, Loader2 } from 'lucide-react';
+import { History, TrendingUp, TrendingDown, Clock, Loader2, FileText } from 'lucide-react';
 import { formatCredit } from '../../../../firebase/creditService';
 
 const WalletHistory = ({ historyLogs, loadingHistory }) => {
@@ -57,17 +57,36 @@ const WalletHistory = ({ historyLogs, loadingHistory }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-base font-black font-mono ${isWithdraw ? 'text-amber-600' : isEarn ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {isWithdraw ? '-' : (isEarn ? '+' : '-')}฿ {formatCredit(amount)}
-                    </p>
-                    {log.status && (
-                      <p className={`text-[10px] font-bold mt-0.5 uppercase tracking-wider ${
-                        log.status === 'SUCCESS' ? 'text-emerald-500' : log.status === 'PENDING' ? 'text-amber-500' : 'text-rose-500'
-                      }`}>
-                        {log.status === 'SUCCESS' ? 'สำเร็จ' : log.status === 'PENDING' ? 'รอดำเนินการ' : log.status}
-                      </p>
+                  <div className="flex items-center gap-4">
+                    {log.slipUrl && (
+                      <a 
+                        href={log.slipUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="hidden sm:flex px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg text-xs font-bold transition-colors items-center gap-1.5 border border-blue-100 shadow-sm shrink-0"
+                      >
+                        <FileText className="w-3.5 h-3.5" /> ดูสลิป
+                      </a>
                     )}
+                    <div className="text-right shrink-0">
+                      <p className={`text-base font-black font-mono ${isWithdraw ? 'text-amber-600' : isEarn ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {isWithdraw ? '-' : (isEarn ? '+' : '-')}฿ {formatCredit(amount)}
+                      </p>
+                      {log.status && (
+                        <p className={`text-[10px] font-bold mt-0.5 uppercase tracking-wider flex items-center justify-end gap-1 ${
+                          log.status === 'SUCCESS' ? 'text-emerald-500' : log.status === 'PENDING' ? 'text-amber-500' : 'text-rose-500'
+                        }`}>
+                          {log.status === 'SUCCESS' ? 'สำเร็จ' : log.status === 'PENDING' ? 'รอดำเนินการ' : log.status}
+                          
+                          {/* Show slip icon on mobile only if present */}
+                          {log.slipUrl && (
+                            <a href={log.slipUrl} target="_blank" rel="noopener noreferrer" className="sm:hidden text-blue-500 hover:text-blue-600 ml-1">
+                              <FileText className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
