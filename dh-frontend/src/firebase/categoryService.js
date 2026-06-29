@@ -3,6 +3,13 @@ import { db } from './config';
 
 const COLLECTION_NAME = 'homepage_categories'; 
 
+// Cache mechanism to save Firebase reads (5 minutes)
+let cache = {
+  data: null,
+  lastFetch: 0
+};
+const CACHE_DURATION = 5 * 60 * 1000; 
+
 export const categoryService = {
   /**
    * ดึงข้อมูลหมวดหมู่ยอดนิยมเฉพาะที่เปิดใช้งาน (สำหรับแสดงผลหน้าเว็บ Frontend)
@@ -11,6 +18,11 @@ export const categoryService = {
    */
   getActiveCategories: async () => {
     try {
+      const now = Date.now();
+      if (cache.data && (now - cache.lastFetch < CACHE_DURATION)) {
+        return cache.data;
+      }
+
       const categoriesRef = collection(db, COLLECTION_NAME);
       
       // ดึงข้อมูลทั้งหมดใน Collection
@@ -32,6 +44,9 @@ export const categoryService = {
         const orderB = b.order || 0;
         return orderA - orderB;
       });
+
+      cache.data = activeCategories;
+      cache.lastFetch = now;
 
       return activeCategories;
     } catch (error) {

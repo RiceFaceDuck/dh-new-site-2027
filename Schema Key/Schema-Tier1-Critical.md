@@ -181,6 +181,7 @@ export interface CounterDocument {
 | `requestedRole`  | String  | The role the user requested when registering.                               | `"manager"`, `"packer"`             | |
 | `isStaff`        | Boolean | Flag indicating if the user is a staff member.                              | `true`, `false`                     | |
 | `isActive`       | Boolean | Flag indicating if the user's account is active and approved.               | `true`, `false`                     | |
+| `status`         | String  | Account status (used for Soft Delete).                                      | `"active"`, `"suspended"`, `"deleted"` | |
 | `gender`         | String  | User's gender.                                                              | `"male"`, `"female"`, `"unspecified"`| |
 | `startDate`      | String  | Date the user started working.                                              | `"2026-06-11"`                      | |
 | `creditPoints`   | Number  | Canonical source of truth for a user's wallet balance.                      | `150`                               | |
@@ -210,6 +211,7 @@ export interface User {
   requestedRole?: string;
   isStaff: boolean;
   isActive: boolean;
+  status?: "active" | "suspended" | "deleted";
   gender: "male" | "female" | "unspecified";
   startDate: string;
   creditPoints?: number;

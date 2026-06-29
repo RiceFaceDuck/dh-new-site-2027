@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where, limit, startAfter } from 'firebase/firestore'; 
 import { db } from '../firebase/config';
 import { categoryService } from '../firebase/categoryService';
 import ProductList from '../components/ProductList';
+import { memoryCache } from '../utils/memoryCache';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 const CategoryPage = () => {
@@ -18,6 +19,19 @@ const CategoryPage = () => {
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const itemsPerPage = 40;
+
+  // Infinite Scroll setup
+  const observer = useRef();
+  const lastProductElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadProducts(false);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -54,42 +68,50 @@ const CategoryPage = () => {
       if (!isInitial) setLoadingMore(true);
 
       const productsRef = collection(db, "products");
-      const exact = type.trim();
-      const lowerCase = exact.toLowerCase();
-      const upperCase = exact.toUpperCase();
-      const capitalized = exact.charAt(0).toUpperCase() + exact.slice(1).toLowerCase();
-      const withSpace = exact + " "; 
+      const lowerCaseType = type.trim().toLowerCase();
       
       let q;
       if (isInitial || !lastVisible) {
         q = query(
           productsRef, 
-          where("category", "in", [exact, lowerCase, upperCase, capitalized, withSpace]), 
+          where("category_lower", "==", lowerCaseType), 
           limit(itemsPerPage)
         );
       } else {
         q = query(
           productsRef, 
-          where("category", "in", [exact, lowerCase, upperCase, capitalized, withSpace]), 
+          where("category_lower", "==", lowerCaseType), 
           startAfter(lastVisible),
           limit(itemsPerPage)
         );
       }
 
-      const querySnapshot = await getDocs(q);
-      const fetchedProducts = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      let fetchedProducts = [];
+
+      if (isInitial) {
+        const cacheKey = `category_${lowerCaseType}`;
+        const fetchFn = async () => {
+          const snapshot = await getDocs(q);
+          const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+          return { docs, lastDoc };
+        };
+
+        const cachedResult = await memoryCache.getOrFetch(cacheKey, fetchFn, 3 * 60 * 1000);
+        fetchedProducts = cachedResult.docs;
+        if (cachedResult.lastDoc) setLastVisible(cachedResult.lastDoc);
+      } else {
+        const querySnapshot = await getDocs(q);
+        fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (querySnapshot.docs.length > 0) {
+          setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+        }
+      }
       
       if (fetchedProducts.length < itemsPerPage) {
         setHasMore(false);
       } else {
         setHasMore(true);
-      }
-
-      if (querySnapshot.docs.length > 0) {
-        setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
       }
 
       if (isInitial) {
@@ -143,20 +165,17 @@ const CategoryPage = () => {
             <>
               <ProductList products={products} />
               
-              {/* Load More Button */}
+              {/* Infinite Scroll Trigger / Loader */}
               {hasMore && (
-                <div className="mt-8 flex justify-center items-center">
-                  <button 
-                    onClick={() => loadProducts(false)}
-                    disabled={loadingMore}
-                    className="px-8 py-3 bg-white border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-slate-50 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {loadingMore ? (
-                      <><Loader2 className="animate-spin w-5 h-5" /> กำลังโหลด...</>
-                    ) : (
-                      'โหลดสินค้าเพิ่มเติม'
-                    )}
-                  </button>
+                <div ref={lastProductElementRef} className="mt-8 flex justify-center items-center py-6">
+                  {loadingMore ? (
+                    <div className="flex flex-col items-center text-slate-400">
+                      <Loader2 className="animate-spin w-8 h-8 mb-2" /> 
+                      <span className="text-sm">กำลังโหลดสินค้าเพิ่มเติม...</span>
+                    </div>
+                  ) : (
+                    <div className="h-10"></div> // Spacer to ensure observer triggers smoothly
+                  )}
                 </div>
               )}
             </>

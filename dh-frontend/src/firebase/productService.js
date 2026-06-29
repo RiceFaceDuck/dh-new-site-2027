@@ -93,6 +93,10 @@ export const productService = {
     const shopeeUrl = getVal(raw, ['shopeeUrl', 'shopee', 'shopeelink']) || extLinks.shopee || null;
     const lazadaUrl = getVal(raw, ['lazadaUrl', 'lazada', 'lazadalink']) || extLinks.lazada || null;
 
+    // Review Stats
+    const reviewCount = getVal(raw, ['reviewCount']) || 0;
+    const averageRating = getVal(raw, ['averageRating']) || 0;
+
     const variantOptions = raw.variantOptions || [];
     const variants = raw.variants || [];
 
@@ -118,6 +122,8 @@ export const productService = {
       videoId,
       shopeeUrl,
       lazadaUrl,
+      reviewCount,
+      averageRating,
       variantOptions,
       variants,
       _raw: raw // Keep raw data just in case

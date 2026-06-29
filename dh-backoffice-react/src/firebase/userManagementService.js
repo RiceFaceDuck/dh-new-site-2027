@@ -72,9 +72,26 @@ export const restoreUser = async (adminId, targetUid) => {
 export const deleteUser = async (adminId, targetUid) => {
     try {
         const userRef = getUserDocRef(targetUid);
-        await deleteDoc(userRef);
         
-        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid}`, adminId || auth.currentUser?.uid);
+        // 🔒 Strict Data Relations: Check wallet balance before deleting
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            const credits = Number(data.creditPoints || data.stats?.rewardPoints || data.walletBalance || 0);
+            if (credits > 0) {
+                throw new Error("ไม่อนุญาตให้ลบรายชื่อที่มีเครดิต/เงินค้างอยู่ในระบบ (Orphan Data Prevention)");
+            }
+        }
+
+        // 🗑️ Soft Delete
+        await updateDoc(userRef, {
+            status: 'deleted',
+            isActive: false,
+            'metadata.deletedAt': serverTimestamp(),
+            'metadata.deletedBy': adminId || auth.currentUser?.uid
+        });
+        
+        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid} (Soft Delete)`, adminId || auth.currentUser?.uid);
         return { success: true };
     } catch (error) {
         throw error;

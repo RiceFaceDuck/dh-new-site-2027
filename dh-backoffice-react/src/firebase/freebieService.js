@@ -60,8 +60,8 @@ export const freebieService = {
 
   deleteFreebie: async (id, title, user) => {
     try {
-      await deleteDoc(doc(db, COLLECTION_NAME, id));
-      await historyService.addLog('Freebie', 'Delete', id, `ลบกฎของแถม: ${title}`, user.uid);
+      await updateDoc(doc(db, COLLECTION_NAME, id), { isActive: false, deletedAt: serverTimestamp() });
+      await historyService.addLog('Freebie', 'Delete', id, `ลบกฎของแถม (Soft Delete): ${title}`, user.uid);
       return true;
     } catch (error) {
       throw error;

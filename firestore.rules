@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 🛡️ ฟังก์ชันตรวจสอบ Role (ใช้ Custom Claims เป็นหลักเพื่อลด Quota Read, หากไม่มีจะ Fallback ไปหา DB)
+    // 🛡️ ฟังก์ชันตรวจสอบ Role (ใช้ Custom Claims เป็นหลักเพื่อลด Quota Read, ไม่ Fallback ไปหา DB แล้วเพื่อป้องกัน Read Cost มหาศาลจาก User ทั่วไป)
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -10,16 +10,13 @@ service cloud.firestore {
     function isStaff() {
       return isAuthenticated() && (
         (request.auth.token.role != null && request.auth.token.role in ['staff', 'manager', 'admin']) ||
-        (request.auth.token.isStaff != null && request.auth.token.isStaff == true) ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin'] ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true
+        (request.auth.token.isStaff != null && request.auth.token.isStaff == true)
       );
     }
 
     function isManagerOrAdmin() {
       return isAuthenticated() && (
-        (request.auth.token.role != null && request.auth.token.role in ['manager', 'admin']) ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['manager', 'admin']
+        (request.auth.token.role != null && request.auth.token.role in ['manager', 'admin'])
       );
     }
     
@@ -59,7 +56,8 @@ service cloud.firestore {
     // 4. งานอนุมัติของ Manager (Todos & System Logs)
     match /todos/{todoId} {
       allow read: if isStaff() || (isAuthenticated() && (resource.data.createdByUid == request.auth.uid || resource.data.customerUid == request.auth.uid || resource.data.uid == request.auth.uid));
-      allow create: if isStaff() || isAuthenticated();
+      // ลูกค้าทั่วไปสร้าง Todo ได้เฉพาะเคสที่กำหนด และต้องเป็น UID ของตัวเองเท่านั้นเพื่อกัน Spam
+      allow create: if isStaff() || (isAuthenticated() && request.resource.data.createdByUid == request.auth.uid);
       allow update: if isStaff() || (isAuthenticated() && (resource.data.createdByUid == request.auth.uid || resource.data.customerUid == request.auth.uid || resource.data.uid == request.auth.uid));
       allow delete: if isStaff();
     }

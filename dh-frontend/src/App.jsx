@@ -13,6 +13,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import { CartProvider } from './context/CartProvider';
 import { OrderProvider } from './context/OrderContext';
+import { ToastProvider } from './context/ToastContext';
 
 // 🚀 นำเข้าระบบ Squad Selection (ใหม่ล่าสุด)
 import SquadLayout from './layouts/SquadLayout';
@@ -54,34 +55,8 @@ const ScrollToTop = () => {
 
 function App() {
 
-  // ==========================================
-  // 🧠 Performance Optimization: Background Fetch
-  // ==========================================
-  useEffect(() => {
-    // 🚀 ระบบจะแอบดึงข้อมูลการตลาดแบบ Unified Ads ไปเก็บไว้ใน Memory ของลูกค้า
-    // หน่วงเวลา 2 วินาทีเพื่อให้คอนเทนต์หลักโหลดเสร็จ 100% ก่อนค่อยดึงข้อมูล (Zero UI Blocking)
-    const prefetchMarketingData = setTimeout(async () => {
-      try {
-        console.log("⚡ [Smart System] Pre-fetching Ads & Banners quietly...");
-        
-        // 🛠️ HOTFIX: ใช้ Promise.all ดึงข้อมูล Unified Ads ทั้ง 3 ประเภททีเดียวแบบขนาน
-        // แก้บั๊ก TypeError: marketingService.getActiveBanners is not a function
-        await Promise.all([
-          marketingService.getActivePartnerAds('BUSINESS_CARD'),
-          marketingService.getActivePartnerAds('PRODUCT_LINK'),
-          marketingService.getActivePartnerAds('BILLBOARD')
-        ]);
-        
-        console.log("✅ [Smart System] Marketing Cache Ready! Enjoy zero-delay ad loading.");
-      } catch (error) {
-        console.error("❌ [Smart System] Prefetch failed (Silent Error):", error);
-      }
-    }, 2000);
-
-    return () => clearTimeout(prefetchMarketingData);
-  }, []);
-
   return (
+    <ToastProvider>
     <CartProvider>
       <OrderProvider>
       <Router>
@@ -123,6 +98,7 @@ function App() {
       </Router>
       </OrderProvider>
     </CartProvider>
+    </ToastProvider>
   );
 }
 

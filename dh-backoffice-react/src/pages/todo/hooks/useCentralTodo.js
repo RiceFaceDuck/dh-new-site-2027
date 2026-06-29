@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebase/config';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit } from 'firebase/firestore';
 
 /**
  * 🎯 Hook สำหรับจัดการข้อมูล To-do ส่วนกลาง (Operations, CS, Sales)
  * ทำหน้าที่ดึงข้อมูล Real-time, เพิ่ม, ลบ, แก้ไขสถานะ และจัดหมวดหมู่ข้อมูลให้พร้อมใช้งาน
  */
-export const useCentralTodo = () => {
+export const useCentralTodo = (filterType = 'ALL') => {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,10 +18,12 @@ export const useCentralTodo = () => {
   useEffect(() => {
     setLoading(true);
     
-    // ดึงงานทั้งหมดในส่วนกลาง (ไม่ต้อง Query where status เพื่อลด Indexing แต่ใช้วิธี Filter ฝั่ง Client แทน ทำให้สลับ Tab ได้โดยไม่ต้องโหลดใหม่)
+    // ดึงเฉพาะงาน 100 ล่าสุดเพื่อป้องกัน Read Quota รั่วไหล 
+    // (หากต้องการ Query แบบเจาะจงสถานะ อาจจะต้องทำ Composite Index เพิ่มเติม)
     const q = query(
       collection(db, 'todos'),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(100)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -41,7 +43,7 @@ export const useCentralTodo = () => {
 
     // 🧹 คืนทรัพยากรเมื่อ Component ถูกทำลาย (Prevent Memory Leak)
     return () => unsubscribe();
-  }, []);
+  }, [filterType]); // เพิ่ม filterType เป็น dependency เผื่อนำไปใช้คิวรี่ในอนาคต
 
   // 📝 2. อัปเดตสถานะงาน (Optimistic UI Ready)
   const updateTodoStatus = useCallback(async (todoId, newStatus) => {

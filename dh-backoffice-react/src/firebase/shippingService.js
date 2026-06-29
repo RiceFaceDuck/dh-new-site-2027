@@ -65,7 +65,7 @@ export const shippingService = {
 
   async deleteShippingRule(ruleId, ruleDesc, uid) {
     try {
-      await deleteDoc(doc(db, 'shipping_rules', ruleId));
+      await updateDoc(doc(db, 'shipping_rules', ruleId), { isActive: false, deletedAt: serverTimestamp() });
       
       if (uid) {
         await historyService.addLog(

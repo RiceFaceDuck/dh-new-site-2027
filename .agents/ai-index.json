@@ -1,0 +1,29 @@
+{
+  "project": "DH Notebook Management System",
+  "version": "1.0.0",
+  "description": "Index map for AI to quickly locate business domains and schemas.",
+  "domains": {
+    "billing_and_pos": {
+      "path": "dh-backoffice-react/src/services/billing/",
+      "schema": "Schema Key/Schema-Tier1-Critical.md",
+      "description": "Core transaction and POS operations."
+    },
+    "inventory": {
+      "path": "dh-backoffice-react/src/services/inventory/",
+      "schema": "Schema Key/Schema-Tier2-Operational.md",
+      "description": "Product and stock management."
+    },
+    "manager_settings": {
+      "path": "dh-backoffice-react/src/pages/managers/settings/",
+      "schema": "Schema Key/Schema-Tier3-Config.md",
+      "description": "Global configuration and admin tools."
+    },
+    "shared_logic": {
+      "path": "dh-shared/",
+      "description": "Shared business logic (tax engine, price calculations) across mono-repo."
+    }
+  },
+  "custom_skills": {
+    "path": ".agents/skills/"
+  }
+}

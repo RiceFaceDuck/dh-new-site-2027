@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { calculateEarnedPoints, getCreditSettings } from '../firebase/creditService';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { ShoppingBag, ChevronLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartProvider';
+import { useToast } from '../context/ToastContext';
 
 import CartEmptyState from '../components/cart/CartEmptyState';
 import CartFreebieProgress from '../components/cart/CartFreebieProgress';
@@ -28,9 +29,9 @@ const Cart = () => {
   const [creditConfig, setCreditConfig] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [freebies, setFreebies] = useState([]);
+  const [isFetchingFreebies, setIsFetchingFreebies] = useState(true);
 
-  // 🔔 Toast Notification State
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchFreebies();
@@ -53,6 +54,7 @@ const Cart = () => {
 
   const fetchFreebies = async () => {
     try {
+      setIsFetchingFreebies(true);
       const q = query(collection(db, 'freebies'), where('isActive', '==', true));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -60,12 +62,9 @@ const Cart = () => {
       setFreebies(items);
     } catch (error) {
       console.error("🔥 Error fetching freebies:", error);
+    } finally {
+      setIsFetchingFreebies(false);
     }
-  };
-
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
   const handleUpdateQty = async (productId, currentQty, change) => {
@@ -118,16 +117,9 @@ const Cart = () => {
     );
   }
 
-  // 💡 ไม่บังคับ Login อีกต่อไป (Guest สามารถดูตะกร้าได้)
   if (cartItems.length === 0) {
     return (
       <div className="w-full relative">
-        {toast.show && (
-          <div className="fixed top-20 right-4 md:right-8 z-[100] px-6 py-3 rounded-md shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 border bg-emerald-50 border-emerald-200 text-emerald-700">
-            <CheckCircle2 size={20} />
-            <span className="font-medium text-sm">{toast.message}</span>
-          </div>
-        )}
         <CartEmptyState />
       </div>
     );
@@ -143,16 +135,6 @@ const Cart = () => {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6 md:py-8 min-h-[80vh] animate-in fade-in duration-500 relative">
       
-      {/* 🌟 Toast Notification แทนที่ window.confirm / alert */}
-      {toast.show && (
-        <div className={`fixed top-20 right-4 md:right-8 z-[100] px-6 py-3 rounded-md shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 border ${
-          toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'
-        }`}>
-          <CheckCircle2 size={20} />
-          <span className="font-medium text-sm">{toast.message}</span>
-        </div>
-      )}
-
       <div className="flex items-center justify-between mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-black text-gray-800 flex items-center gap-3 font-tech uppercase tracking-tight">
           <ShoppingBag className="text-emerald-600" size={28} strokeWidth={2.5} /> 
@@ -163,7 +145,7 @@ const Cart = () => {
         </button>
       </div>
 
-      <CartFreebieProgress freebies={freebies} subTotal={subTotal} />
+      <CartFreebieProgress freebies={freebies} subTotal={subTotal} isLoading={isFetchingFreebies} />
 
       {!user && (
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">

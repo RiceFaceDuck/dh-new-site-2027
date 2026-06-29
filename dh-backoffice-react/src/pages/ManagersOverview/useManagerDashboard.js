@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, getCountFromServer, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { userService } from '../../firebase/userService';
 
@@ -23,14 +23,15 @@ export const useManagerDashboard = () => {
   const [isLoadingStaffs, setIsLoadingStaffs] = useState(false);
 
   // ==========================================
-  // 2. Real-time Subscriptions (ดึงข้อมูลตัวเลขสรุป)
+  // 2. Real-time Subscriptions & Initial Fetches
   // ==========================================
   useEffect(() => {
-    // 🔔 Subscribe จำนวนงานที่รออนุมัติ (Todo)
+    // 🔔 Subscribe จำนวนงานที่รออนุมัติ (จำกัด 100 ป้องกันโควต้ารั่วไหล)
     const todosRef = collection(db, 'todos');
     const pendingTodosQuery = query(
       todosRef, 
-      where('status', 'in', ['pending', 'pending_manager'])
+      where('status', 'in', ['pending', 'pending_manager']),
+      limit(100)
     );
 
     const unsubscribeTodos = onSnapshot(pendingTodosQuery, (snapshot) => {
@@ -39,32 +40,37 @@ export const useManagerDashboard = () => {
       console.error("Error fetching pending tasks:", error);
     });
 
-    // 👥 Subscribe จำนวนพนักงานรออนุมัติ
+    // 👥 Subscribe จำนวนพนักงานรออนุมัติ (มักจะมีจำนวนไม่เยอะ)
     const usersRef = collection(db, 'users');
     const pendingStaffQuery = query(
       usersRef, 
-      where('role', 'in', ['pending', 'pending_approval'])
+      where('role', 'in', ['pending', 'pending_approval']),
+      limit(50)
     );
 
     const unsubscribeStaff = onSnapshot(pendingStaffQuery, (snapshot) => {
       setStats(prev => ({ ...prev, pendingStaffCount: snapshot.size }));
-      // เราดึงข้อมูลพนักงานรออนุมัติมาเก็บไว้เลย เพราะมักจะต้องใช้บ่อย
       const staffsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setPendingStaffs(staffsData);
     }, (error) => {
       console.error("Error fetching pending staffs:", error);
     });
 
-    // 👑 ดึงจำนวน VIP (ใช้ onSnapshot เพื่อให้ตัวเลขหน้า Dashboard ขยับตามจริง)
-    const vipQuery = query(usersRef, where('rank', '==', 'VIP'));
-    const unsubscribeVip = onSnapshot(vipQuery, (snapshot) => {
-        setStats(prev => ({ ...prev, vipCount: snapshot.size }));
-    });
+    // 👑 ดึงจำนวน VIP (ใช้ getCountFromServer เพื่อประหยัดการดึง Doc ทั้งหมดมาเพื่อนับ)
+    const fetchVipCount = async () => {
+      try {
+        const vipQuery = query(usersRef, where('rank', '==', 'VIP'));
+        const snapshot = await getCountFromServer(vipQuery);
+        setStats(prev => ({ ...prev, vipCount: snapshot.data().count }));
+      } catch (err) {
+        console.error("Error fetching VIP count:", err);
+      }
+    };
+    fetchVipCount();
 
     return () => {
       unsubscribeTodos();
       unsubscribeStaff();
-      unsubscribeVip();
     };
   }, []);
 
@@ -72,12 +78,12 @@ export const useManagerDashboard = () => {
   // 3. Lazy Fetching Functions (ดึงข้อมูลเมื่อต้องการ)
   // ==========================================
   
-  // 📥 ดึงข้อมูลรายชื่อ VIP ทั้งหมด (ดึงเฉพาะตอนเปิด Modal)
+  // 📥 ดึงข้อมูลรายชื่อ VIP (ดึงเฉพาะตอนเปิด Modal, จำกัด 100 รายการเพื่อประหยัดโควต้า)
   const fetchVipUsers = useCallback(async () => {
     setIsLoadingVips(true);
     try {
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('rank', '==', 'VIP'));
+      const q = query(usersRef, where('rank', '==', 'VIP'), limit(100));
       const snapshot = await getDocs(q);
       const vipsData = snapshot.docs.map(doc => ({
         id: doc.id,

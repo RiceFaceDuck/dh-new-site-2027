@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Ban, Trash2, Eye, History, FileEdit, Printer, X, Loader2 } from 'lucide-react';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
 import { auth } from '../../../firebase/config';
+import toast from 'react-hot-toast';
 
 export default function OrderActions({ 
     selectedOrder, 
@@ -30,9 +31,9 @@ export default function OrderActions({
             setIsProcessing(true);
             try {
                 await billingStatusTransaction.updateOrderStatus(selectedOrder.id, 'approved', orderStat, auth.currentUser?.uid || 'System');
-                alert('✅ ยืนยันบิลและหักสต็อกสำเร็จ!');
+                toast.success('ยืนยันบิลและหักสต็อกสำเร็จ!');
             } catch (error) {
-                alert(`❌ เกิดข้อผิดพลาดในการยืนยันบิล: ${error.message}`);
+                toast.error(`เกิดข้อผิดพลาดในการยืนยันบิล: ${error.message}`);
                 setIsProcessing(false);
                 return;
             }

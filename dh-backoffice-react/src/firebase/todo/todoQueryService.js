@@ -8,7 +8,8 @@ export const todoQueryService = {
     try {
       const q = query(
         collection(db, 'todos'),
-        where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item'])
+        where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
+        limit(100)
       );
       
       return onSnapshot(q, (snapshot) => {

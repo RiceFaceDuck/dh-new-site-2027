@@ -23,7 +23,11 @@ export const getAllStaff = async () => {
         const snap = await getDocs(usersRef);
         const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        return allUsers.filter(u => VALID_STAFF_ROLES.includes(u.role) || u.isStaff === true);
+        return allUsers.filter(u => 
+            (VALID_STAFF_ROLES.includes(u.role) || u.isStaff === true) &&
+            u.status !== 'deleted' &&
+            u.isActive !== false
+        );
     } catch (error) {
         console.error("❌ [UserStaffService] Get All Staff Error:", error);
         throw error;
@@ -36,7 +40,10 @@ export const getPendingStaff = async () => {
         const snap = await getDocs(usersRef);
         const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        return allUsers.filter(u => u.role === 'pending_approval' || u.role === 'pending');
+        return allUsers.filter(u => 
+            (u.role === 'pending_approval' || u.role === 'pending') &&
+            u.status !== 'deleted'
+        );
     } catch (error) {
         console.error("❌ [UserStaffService] Get Pending Staff Error:", error);
         throw error;

@@ -92,14 +92,14 @@ export const promotionService = {
     }
   },
 
-  // 🗑️ ลบโปรโมชัน
+  // 🗑️ ลบโปรโมชัน (Soft Delete)
   deletePromotion: async (promoId, promoTitle, user) => {
     try {
-      await deleteDoc(doc(db, COLLECTION_NAME, promoId));
+      await updateDoc(doc(db, COLLECTION_NAME, promoId), { isActive: false, deletedAt: serverTimestamp() });
       
       await historyService.addLog(
         'Promotion', 'Delete', promoId, 
-        `ลบโปรโมชัน: ${promoTitle}`, 
+        `ลบโปรโมชัน (Soft Delete): ${promoTitle}`, 
         user.uid
       );
       

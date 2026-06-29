@@ -5,7 +5,10 @@ import { cartService } from '../firebase/cartService';
 import { getCreditSettings, calculateEarnedPoints } from '../firebase/creditService';
 import { productService } from '../firebase/productService';
 import { footerClientService } from '../firebase/footerClientService';
-import { ChevronLeft, ShieldAlert, Loader2, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ShieldAlert, Loader2 } from 'lucide-react';
+import { useCart } from '../context/CartProvider';
+import { useToast } from '../context/ToastContext';
+import { memoryCache } from '../utils/memoryCache';
 
 import PartnerSupportBox from '../components/partner/PartnerSupportBox';
 import ProductImageSection from '../components/product/ProductImageSection';
@@ -29,43 +32,56 @@ const ProductDetail = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
   const [showVariantError, setShowVariantError] = useState(false);
-  const [alertMessage, setAlertMessage] = useState(null);
+  const variantTimeoutRef = React.useRef(null);
   const [creditConfig, setCreditConfig] = useState(null); 
   const [footerConfig, setFooterConfig] = useState(null);
 
-  useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const config = await getCreditSettings();
-        if (config) setCreditConfig(config);
+  const { addToCart } = useCart();
+  const { showToast } = useToast();
 
-        const fConfig = await footerClientService.getFooterConfig();
-        if (fConfig) setFooterConfig(fConfig);
-      } catch (err) {
-        console.error("Error loading config in ProductDetail", err);
-      }
+  useEffect(() => {
+    return () => {
+      if (variantTimeoutRef.current) clearTimeout(variantTimeoutRef.current);
     };
-    loadConfig();
   }, []);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchAllData = async () => {
       try {
+        setLoading(true);
         setError(null);
-        const prod = await productService.getProduct(id);
+        
+        // 🚀 SMART FETCH: Load product first to prevent UI blocking (With Cache)
+        const cacheKey = `product_${id}`;
+        const fetchFn = async () => productService.getProduct(id);
+        const prod = await memoryCache.getOrFetch(cacheKey, fetchFn, 10 * 60 * 1000);
+        
         if (prod) {
           setProduct(prod);
         } else {
           setError("ไม่พบข้อมูลสินค้านี้");
         }
       } catch (err) {
-        console.error("Error fetching product:", err);
+        console.error("Error fetching product data:", err);
         setError("เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
+    
+    // ⚡ Background Fetch for non-critical data
+    const fetchNonCriticalData = () => {
+      getCreditSettings()
+        .then(config => { if (config) setCreditConfig(config); })
+        .catch(err => console.error(err));
+        
+      footerClientService.getFooterConfig()
+        .then(fConfig => { if (fConfig) setFooterConfig(fConfig); })
+        .catch(err => console.error(err));
+    };
+    
+    fetchAllData();
+    fetchNonCriticalData();
   }, [id]);
 
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -96,20 +112,12 @@ const ProductDetail = () => {
   const currentProductInfo = getSelectedVariantData();
 
   const handleAddToCart = async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (!user) {
-      setAlertMessage({ type: 'error', text: 'กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า' });
-      setTimeout(() => setAlertMessage(null), 3000);
-      return;
-    }
-
     // Check if variant selection is complete
     if (product?.variantOptions?.length > 0) {
       if (!selectedVariant || Object.keys(selectedVariant).length !== product.variantOptions.length) {
          setShowVariantError(true);
-         setTimeout(() => setShowVariantError(false), 3000);
+         if (variantTimeoutRef.current) clearTimeout(variantTimeoutRef.current);
+         variantTimeoutRef.current = setTimeout(() => setShowVariantError(false), 3000);
          return;
       }
     }
@@ -126,18 +134,17 @@ const ProductDetail = () => {
         variantAttributes: currentProductInfo.variantAttributes || null
       };
 
-      await cartService.addToCart(user.uid, itemToAdd, 1);
+      await addToCart(itemToAdd, 1);
+      
       setAddSuccess(true);
-      setAlertMessage({ type: 'success', text: 'เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!' });
+      showToast('เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!', 'success');
       
       setTimeout(() => {
         setAddSuccess(false);
-        setAlertMessage(null);
       }, 3000);
     } catch (err) {
       console.error('Add to cart failed:', err);
-      setAlertMessage({ type: 'error', text: 'ไม่สามารถเพิ่มสินค้าได้ กรุณาลองใหม่' });
-      setTimeout(() => setAlertMessage(null), 3000);
+      showToast('ไม่สามารถเพิ่มสินค้าได้ กรุณาลองใหม่', 'error');
     } finally {
       setIsAdding(false);
     }
@@ -180,16 +187,6 @@ const ProductDetail = () => {
   return (
     <div className="max-w-7xl mx-auto w-full animate-fade-in pb-10">
       
-      {/* 🌟 Toast Notification */}
-      {alertMessage && (
-        <div className={`fixed top-20 right-4 md:right-8 z-[100] px-6 py-3 rounded-md shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 border ${
-          alertMessage.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'
-        }`}>
-          {alertMessage.type === 'success' ? <CheckCircle2 size={20} /> : <ShieldAlert size={20} />}
-          <span className="font-medium text-sm">{alertMessage.text}</span>
-        </div>
-      )}
-
       <button 
         onClick={() => navigate(-1)} 
         className="mb-6 flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors group"
@@ -202,7 +199,11 @@ const ProductDetail = () => {
           <div className="flex flex-col bg-white">
             <ProductImageSection product={product._raw || product} imageUrl={product.imageUrl} name={product.name} />
             <div className="hidden md:block flex-1">
-              <ProductCommunitySection />
+              <ProductCommunitySection 
+                productId={product.id} 
+                reviewCount={product.reviewCount || 0} 
+                averageRating={product.averageRating || 0} 
+              />
             </div>
           </div>
 
@@ -256,7 +257,11 @@ const ProductDetail = () => {
 
         {/* 📱 MOBILE ONLY: Community Section at the bottom */}
         <div className="block md:hidden border-t border-slate-200 bg-white">
-          <ProductCommunitySection />
+          <ProductCommunitySection 
+            productId={product.id} 
+            reviewCount={product.reviewCount || 0} 
+            averageRating={product.averageRating || 0} 
+          />
         </div>
 
         <ProductSpecsSection 

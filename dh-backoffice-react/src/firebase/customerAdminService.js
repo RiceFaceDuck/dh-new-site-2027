@@ -65,9 +65,28 @@ export const updateCustomerProfile = async (uid, data) => {
 export const deleteCustomer = async (targetUid, customerName) => {
     try {
         const userRef = getUserDocRef(targetUid);
-        await deleteDoc(userRef);
         
-        await historyService.addLog('Customer', 'Delete', targetUid, `ลบรายชื่อลูกค้า: ${customerName}`, auth.currentUser?.uid);
+        // 🔒 Strict Data Relations: Check wallet balance before deleting
+        const { getDoc } = await import('firebase/firestore');
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            const credits = Number(data.creditPoints || data.stats?.rewardPoints || data.walletBalance || 0);
+            if (credits > 0) {
+                throw new Error("ไม่อนุญาตให้ลบรายชื่อที่มีเครดิต/เงินค้างอยู่ในระบบ (Orphan Data Prevention)");
+            }
+        }
+
+        // 🗑️ Soft Delete
+        await updateDoc(userRef, {
+            status: 'deleted',
+            isActive: false,
+            updatedAt: serverTimestamp(),
+            deletedAt: serverTimestamp(),
+            deletedBy: auth.currentUser?.uid
+        });
+        
+        await historyService.addLog('Customer', 'Delete', targetUid, `ลบรายชื่อลูกค้า: ${customerName} (Soft Delete)`, auth.currentUser?.uid);
 
         console.log(`✅ [CustomerAdminService] Deleted customer ${customerName} (${targetUid})`);
         return { success: true };

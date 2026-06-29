@@ -5,6 +5,13 @@ const CONFIG_DOC_ID = 'featured_config';
 const CONFIG_COLLECTION = 'settings';
 const PRODUCTS_COLLECTION = 'products';
 
+// Cache mechanism to save Firebase reads (5 minutes)
+let cache = {
+  data: null,
+  lastFetch: 0
+};
+const CACHE_DURATION = 5 * 60 * 1000;
+
 export const featuredQueryService = {
   /**
    * Fetch configuration for Featured Spares
@@ -29,6 +36,12 @@ export const featuredQueryService = {
    */
   async getRandomFeaturedProducts(limitCount = 8) {
     try {
+      const now = Date.now();
+      if (cache.data && cache.data.length >= limitCount && (now - cache.lastFetch < CACHE_DURATION)) {
+        // Return a fresh shuffled slice of the cached data
+        return [...cache.data].sort(() => 0.5 - Math.random()).slice(0, limitCount);
+      }
+
       const productsRef = collection(db, PRODUCTS_COLLECTION);
       const randomSeed = Math.random();
       const fetchPoolSize = limitCount * 3; // Fetch extra to filter out inactive ones in memory
@@ -61,6 +74,10 @@ export const featuredQueryService = {
       // Filter active products in memory and slice to the requested limit
       const activeProducts = products.filter(p => p.isActive !== false);
       const finalProducts = activeProducts.slice(0, limitCount);
+
+      // Save to cache before shuffling
+      cache.data = activeProducts;
+      cache.lastFetch = now;
 
       // Shuffle the results slightly for better perceived randomness
       return finalProducts.sort(() => 0.5 - Math.random());

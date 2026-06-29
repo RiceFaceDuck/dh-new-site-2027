@@ -1,4 +1,4 @@
-import { collection, query, where, doc, writeBatch, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, doc, writeBatch, serverTimestamp, onSnapshot, limit } from 'firebase/firestore';
 import { db } from './config';
 
 export const packingService = {
@@ -12,7 +12,8 @@ export const packingService = {
     const q = query(
       collection(db, 'todos'),
       where('type', '==', 'PACKING_TASK'),
-      where('status', 'in', ['todo', 'in_progress', 'pending'])
+      where('status', 'in', ['todo', 'in_progress', 'pending']),
+      limit(100)
     );
 
     return onSnapshot(q, (snapshot) => {

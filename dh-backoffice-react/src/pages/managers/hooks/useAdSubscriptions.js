@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
 const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
@@ -29,7 +29,9 @@ export function useAdSubscriptions() {
 
     collections.forEach(colName => {
       const colRef = collection(db, 'artifacts', appId, 'public', 'data', colName);
-      const unsub = onSnapshot(colRef, (snapshot) => {
+      // Query limiting to recent 50 ads per type to prevent quota leaks
+      const q = query(colRef, orderBy('createdAt', 'desc'), limit(50));
+      const unsub = onSnapshot(q, (snapshot) => {
         allData[colName] = snapshot.docs.map(d => ({ id: d.id, _collection: colName, ...d.data() }));
         updateUI();
       }, (error) => {

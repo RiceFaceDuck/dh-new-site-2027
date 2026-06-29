@@ -35,6 +35,7 @@
 | `shopeeUrl`      | String  | Link to the product listing on Shopee marketplace.                          | `"https://shopee.co.th/..."`        | |
 | `lazadaUrl`      | String  | Link to the product listing on Lazada marketplace.                          | `"https://lazada.co.th/..."`        | |
 | `randomSeed`     | Number  | A random decimal between 0 and 1 used for true random querying.             | `0.123456789`                       | |
+| `isActive`       | Boolean | Flag indicating if the product is active or soft-deleted.                   | `true`, `false`                     | |
 
 ### TypeScript Interface
 ```typescript
@@ -64,6 +65,7 @@ export interface Product {
   shopeeUrl?: string;
   lazadaUrl?: string;
   randomSeed: number;
+  isActive?: boolean;
 }
 ```
 

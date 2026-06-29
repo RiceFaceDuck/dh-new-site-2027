@@ -3,11 +3,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MobileLayout from './layouts/MobileLayout';
 import PackingTasks from './pages/PackingTasks';
-
 import StockMain from './pages/StockMain';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
 return (
+<ErrorBoundary>
 <Router>
 <Routes>
 <Route path="/" element={<MobileLayout />}>
@@ -18,6 +19,7 @@ return (
 </Route>
 </Routes>
 </Router>
+</ErrorBoundary>
 );
 }
 

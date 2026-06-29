@@ -8,7 +8,9 @@ import {
   query, 
   orderBy, 
   writeBatch, 
-  serverTimestamp 
+  serverTimestamp,
+  where,
+  limit
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -158,11 +160,18 @@ export const categoryService = {
    */
   deleteCategory: async (id, iconUrl) => {
     try {
-      if (iconUrl) {
-        await categoryService.deleteIconByUrl(iconUrl);
+      // 1. Relation Check (Cost: 1 Read)
+      const productsRef = collection(db, 'products');
+      const q = query(productsRef, where('categoryId', '==', id), limit(1));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        throw new Error('ไม่สามารถลบได้ เนื่องจากยังมีสินค้าเชื่อมโยงอยู่ในหมวดหมู่นี้');
       }
+
       const docRef = doc(db, COLLECTION_NAME, id);
-      await deleteDoc(docRef);
+      await updateDoc(docRef, { isActive: false, deletedAt: serverTimestamp() });
+
       
       const uid = auth.currentUser?.uid;
       await historyService.addLog('Category', 'Delete', 'category', `ลบหมวดหมู่: ID=${id}`, uid);

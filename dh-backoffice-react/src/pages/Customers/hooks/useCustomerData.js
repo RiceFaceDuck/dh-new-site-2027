@@ -13,7 +13,12 @@ export const useCustomerData = () => {
   const staffRoles = ['พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ', 'Admin', 'Manager', 'Owner', 'manager', 'owner', 'admin', 'packer', 'staff'];
 
   const processCustomerData = (usersData) => {
-    const customersOnly = usersData.filter(user => !user.role || !staffRoles.includes(user.role));
+    // กรองเอาเฉพาะลูกค้า (ไม่เอา staff) และไม่เอาคนที่ถูก Soft Delete (status === 'deleted' หรือ isActive === false)
+    const customersOnly = usersData.filter(user => 
+      (!user.role || !staffRoles.includes(user.role)) && 
+      user.status !== 'deleted' && 
+      user.isActive !== false
+    );
     
     // 💎 เรียงลำดับอัจฉริยะ: ดันคนที่ "มีเงินค้างในระบบ (Wallet)" ขึ้นมาก่อนให้แอดมินเห็นง่ายๆ
     customersOnly.sort((a, b) => {

@@ -50,7 +50,7 @@ export const billingQueryService = {
       const colRef = collection(db, COLLECTION_NAME);
 
       if (isOrderNum) {
-        const q = query(colRef, where('orderId', '==', term.toUpperCase()));
+        const q = query(colRef, where('orderId', '==', term.toUpperCase()), limit(50));
         const snap = await getDocs(q);
         results = snap.docs.map(doc => {
           const data = doc.data();
@@ -58,9 +58,9 @@ export const billingQueryService = {
           return { ...data, id: doc.id };
         });
       } else if (isPhone) {
-        const q1 = query(colRef, where('customer.phone', '==', term));
-        const q2 = query(colRef, where('customerInfo.phone', '==', term));
-        const q3 = query(colRef, where('walkInPhone', '==', term));
+        const q1 = query(colRef, where('customer.phone', '==', term), limit(50));
+        const q2 = query(colRef, where('customerInfo.phone', '==', term), limit(50));
+        const q3 = query(colRef, where('walkInPhone', '==', term), limit(50));
 
         const [snap1, snap2, snap3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
         
@@ -70,10 +70,10 @@ export const billingQueryService = {
           ...snap3.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; })
         ];
       } else {
-        const q1 = query(colRef, where('customer.firstName', '==', term));
-        const q2 = query(colRef, where('customer.accountName', '==', term));
-        const q3 = query(colRef, where('customerInfo.fullName', '==', term));
-        const q4 = query(colRef, where('walkInName', '==', term));
+        const q1 = query(colRef, where('customer.firstName', '==', term), limit(50));
+        const q2 = query(colRef, where('customer.accountName', '==', term), limit(50));
+        const q3 = query(colRef, where('customerInfo.fullName', '==', term), limit(50));
+        const q4 = query(colRef, where('walkInName', '==', term), limit(50));
 
         const [snap1, snap2, snap3, snap4] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4)]);
 
@@ -98,7 +98,8 @@ export const billingQueryService = {
           const q = query(
               collection(db, 'history_logs'), 
               where('targetId', '==', orderId), 
-              orderBy('timestamp', 'desc')
+              orderBy('timestamp', 'desc'),
+              limit(100)
           );
           const snap = await getDocs(q);
           return snap.docs.map(d => {

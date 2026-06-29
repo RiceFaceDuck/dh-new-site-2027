@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
+import LazyImage from '../../../components/common/LazyImage';
 
 const CategoryCard = ({ category }) => {
   return (
@@ -14,11 +15,10 @@ const CategoryCard = ({ category }) => {
         style={{ borderRadius: '2px' }}
       >
         {category.imageUrl ? (
-          <img 
+          <LazyImage 
             src={category.imageUrl} 
             alt={category.name} 
-            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-8 h-8 bg-slate-200 rounded-sm"></div>

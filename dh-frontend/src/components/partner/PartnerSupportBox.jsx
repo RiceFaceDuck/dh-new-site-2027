@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Phone, CheckCircle2 } from 'lucide-react';
 import { findNearestPartner } from '../../firebase/partnerLocationService';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 
 // ==========================================
 // 🧩 Sub-Components (SRP)
@@ -53,8 +55,6 @@ const PartnerSupportBox = () => {
         if (nearest) {
           // 🚀 [THE FIX] ดึงรูปภาพจาก partner_ads (เหมือนหน้าสินค้า/โฮมเพจ) เพื่อให้รองรับร้านค้าเก่าที่เซฟข้อมูลไว้ก่อนอัปเดตระบบ
           try {
-            const { doc, getDoc } = await import('firebase/firestore');
-            const { db } = await import('../../firebase/config');
             const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
             const adId = `AD-CARD-${nearest.partnerId || nearest.id}`;
             const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);

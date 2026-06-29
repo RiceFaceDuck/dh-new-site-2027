@@ -81,8 +81,8 @@ export default function CreditSettingsTab() {
   const FlatToggle = ({ checked, onChange, label, description }) => (
     <div className="flex items-start justify-between py-3 border-b border-slate-200 last:border-0 px-3 hover:bg-slate-50 transition-none">
       <div className="pr-4">
-        <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">{label}</div>
-        <div className="text-[10px] text-slate-500 mt-0.5">{description}</div>
+        <div className="text-sm font-bold text-slate-800 uppercase tracking-wide">{label}</div>
+        <div className="text-xs text-slate-500 mt-0.5">{description}</div>
       </div>
       <button
         type="button"
@@ -102,8 +102,8 @@ export default function CreditSettingsTab() {
         <div className="flex items-center gap-2">
           <Settings size={16} className="text-slate-600" />
           <div>
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">System Configuration</h3>
-            <p className="text-[10px] text-slate-500">Core Engine rules & operational limits</p>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">System Configuration</h3>
+            <p className="text-xs text-slate-500">Core Engine rules & operational limits</p>
           </div>
         </div>
         <button 
@@ -125,7 +125,7 @@ export default function CreditSettingsTab() {
             
             <div className="space-y-6">
               <section>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest border-b border-slate-300 pb-2 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-700 uppercase tracking-widest border-b border-slate-300 pb-2 mb-3 flex items-center gap-2">
                   <Lock size={14} className="text-slate-500" /> Security Rules
                 </h4>
                 <div className="bg-white border border-slate-300 rounded-sm">
@@ -147,10 +147,10 @@ export default function CreditSettingsTab() {
               <section>
                 <div className="bg-white border border-slate-300 rounded-sm p-4 space-y-5">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                       Points Earning Rate (THB)
                     </label>
-                    <p className="text-[10px] text-slate-500 mb-2">ยอดสั่งซื้อกี่บาท ต่อการได้รับ 1 Point</p>
+                    <p className="text-xs text-slate-500 mb-2">ยอดสั่งซื้อกี่บาท ต่อการได้รับ 1 Point</p>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-slate-400 font-mono text-xs font-bold">฿</span>
@@ -167,10 +167,10 @@ export default function CreditSettingsTab() {
                   <hr className="border-slate-200" />
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                       Ad Impression Cost (Points)
                     </label>
-                    <p className="text-[10px] text-slate-500 mb-2">แต้มที่หัก ต่อการแสดงโฆษณา 100 ครั้ง</p>
+                    <p className="text-xs text-slate-500 mb-2">แต้มที่หัก ต่อการแสดงโฆษณา 100 ครั้ง</p>
                     <div className="relative">
                       <input 
                         type="text" 
@@ -186,10 +186,10 @@ export default function CreditSettingsTab() {
                   <hr className="border-slate-200" />
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                       Ad Click Cost (Points)
                     </label>
-                    <p className="text-[10px] text-slate-500 mb-2">แต้มที่หัก ต่อการคลิกเข้าชมโปรไฟล์ 1 ครั้ง</p>
+                    <p className="text-xs text-slate-500 mb-2">แต้มที่หัก ต่อการคลิกเข้าชมโปรไฟล์ 1 ครั้ง</p>
                     <div className="relative">
                       <input 
                         type="text" 
@@ -203,10 +203,10 @@ export default function CreditSettingsTab() {
                   <hr className="border-slate-200" />
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                       Partner Ranking Cost (Points)
                     </label>
-                    <p className="text-[10px] text-slate-500 mb-2">แต้มที่หัก ต่อวัน สำหรับการเป็น Partner แนะนำ</p>
+                    <p className="text-xs text-slate-500 mb-2">แต้มที่หัก ต่อวัน สำหรับการเป็น Partner แนะนำ</p>
                     <div className="relative">
                       <input 
                         type="text" 
@@ -220,10 +220,10 @@ export default function CreditSettingsTab() {
                   <hr className="border-slate-200" />
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                       SKU Bonus Rules (Format: SKU:Points)
                     </label>
-                    <p className="text-[10px] text-slate-500 mb-2">กติกาแต้มพิเศษเมื่อซื้อสินค้ารหัสที่กำหนด (1 บรรทัดต่อ 1 กติกา เช่น NB-001:500)</p>
+                    <p className="text-xs text-slate-500 mb-2">กติกาแต้มพิเศษเมื่อซื้อสินค้ารหัสที่กำหนด (1 บรรทัดต่อ 1 กติกา เช่น NB-001:500)</p>
                     <div className="relative">
                       <textarea 
                         value={settings.skuBonusRules || ''}
@@ -239,17 +239,17 @@ export default function CreditSettingsTab() {
 
             <div className="space-y-6">
               <section>
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest border-b border-slate-300 pb-2 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-700 uppercase tracking-widest border-b border-slate-300 pb-2 mb-3 flex items-center gap-2">
                   <ShieldAlert size={14} className="text-slate-500" /> Operational Limits
                 </h4>
                 
                 <div className="bg-white border border-slate-300 rounded-sm p-4 space-y-5">
                   
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                       Max Transaction Limit (THB)
                     </label>
-                    <p className="text-[10px] text-slate-500 mb-2">ขีดจำกัดยอดเงินสูงสุดที่อนุญาตให้เติม/ตัดได้ต่อ 1 ครั้ง</p>
+                    <p className="text-xs text-slate-500 mb-2">ขีดจำกัดยอดเงินสูงสุดที่อนุญาตให้เติม/ตัดได้ต่อ 1 ครั้ง</p>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-slate-400 font-mono text-xs font-bold">฿</span>
@@ -266,10 +266,10 @@ export default function CreditSettingsTab() {
                   <hr className="border-slate-200" />
 
                   <div className={!settings.notifyLargeTransactions ? 'opacity-50 pointer-events-none' : ''}>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                       Large Transaction Threshold (THB)
                     </label>
-                    <p className="text-[10px] text-slate-500 mb-2">เกณฑ์ยอดเงินขั้นต่ำที่จะถือว่าเป็นรายการขนาดใหญ่ (Large TXN)</p>
+                    <p className="text-xs text-slate-500 mb-2">เกณฑ์ยอดเงินขั้นต่ำที่จะถือว่าเป็นรายการขนาดใหญ่ (Large TXN)</p>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-slate-400 font-mono text-xs font-bold">฿</span>

@@ -18,17 +18,17 @@ import TodoPageList from './todo/components/TodoPageList';
 export default function Todo() {
   const navigate = useNavigate();
   
+  const [filterType, setFilterType] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [processingId, setProcessingId] = useState(null);
+  
   const { 
     activeTodos, 
     loading, 
     error: fetchError, 
     isSubmitting: isHookSubmitting,
     addManualTodo
-  } = useCentralTodo();
-
-  const [filterType, setFilterType] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [processingId, setProcessingId] = useState(null);
+  } = useCentralTodo(filterType);
   
   const [showHelp, setShowHelp] = useState(false);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);

@@ -8,6 +8,7 @@ import { cartService } from '../firebase/cartService';
 import ProductAdCard from './ads/ProductAdCard';
 // 🚀 HOTFIX: แก้ไขการ Import ให้ถูกต้อง (Default Import)
 import useAdInjection from '../hooks/useAdInjection';
+import LazyImage from './common/LazyImage';
 
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();
 
@@ -150,10 +151,10 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
         >
           <div className="relative aspect-square w-full bg-white rounded-lg flex items-center justify-center p-4 overflow-hidden mb-2">
             <div className="absolute inset-0 bg-gradient-to-br from-brand-light/20 to-transparent opacity-50 pointer-events-none"></div>
-            <img 
+            <LazyImage 
               src={imageUrl} 
               alt={name} 
-              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply relative z-10"
+              className="w-full h-full group-hover:scale-105 transition-transform duration-500 mix-blend-multiply relative z-10"
               onError={(e) => { e.target.src = '/logo.png' }}
             />
             

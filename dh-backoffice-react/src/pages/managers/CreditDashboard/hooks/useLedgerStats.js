@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, collection, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -16,22 +16,36 @@ export default function useLedgerStats() {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  // ดึงยอดผู้ใช้งานจริง 100% (รองรับชื่อฟิลด์เงินทุกเวอร์ชันเก่า-ใหม่)
+  // ดึงยอดผู้ใช้งานจริง (คิวรี่เฉพาะคนที่มีเครดิต หรือเป็นพาร์ทเนอร์ เพื่อประหยัด Quota)
   const fetchRealUserStats = async () => {
     try {
-      const snap = await getDocs(collection(db, 'users'));
+      const usersRef = collection(db, 'users');
+      // คิวรี่ 1: คนที่มีเครดิต > 0
+      const q1 = query(usersRef, where('creditPoints', '>', 0));
+      // คิวรี่ 2: พาร์ทเนอร์
+      const q2 = query(usersRef, where('role', '==', 'partner'));
+      
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      
       let totalCredit = 0;
       let activeCount = 0;
-
-      snap.forEach(doc => {
-        const d = doc.data();
-        let pool = Number(d.creditPoints || 0);
-        
-        if (pool > 0 || d.role === 'partner') {
-          totalCredit += pool;
-          activeCount += 1;
+      const seen = new Set();
+      
+      const processDoc = (doc) => {
+        if (!seen.has(doc.id)) {
+          seen.add(doc.id);
+          const d = doc.data();
+          let pool = Number(d.creditPoints || 0);
+          
+          if (pool > 0 || d.role === 'partner') {
+            totalCredit += pool;
+            activeCount += 1;
+          }
         }
-      });
+      };
+
+      snap1.forEach(processDoc);
+      snap2.forEach(processDoc);
       
       return { totalCredit, activeCount };
     } catch (err) {

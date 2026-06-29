@@ -1,4 +1,4 @@
-import { doc, setDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, serverTimestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../config';
 import { inventorySyncService } from './inventorySyncService';
 import { historyService } from '../historyService';
@@ -80,6 +80,28 @@ export const inventoryMutationService = {
     
     // 🚀 บันทึก History
     await historyService.addLog('Inventory', 'DeleteProduct', sku, `ลบสินค้า SKU: ${sku} - ${productName}`, auth.currentUser?.uid);
+
+    // 🧹 Cleanup Orphaned Todos (Strict Data Relations)
+    try {
+        const todosRef = collection(db, 'todos');
+        const q = query(todosRef, where('referenceId', '==', sku));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            const batch = writeBatch(db);
+            querySnapshot.forEach((todoDoc) => {
+                batch.update(todoDoc.ref, {
+                    status: 'cancelled',
+                    handledBy: auth.currentUser?.uid || 'system',
+                    updatedAt: serverTimestamp()
+                });
+            });
+            await batch.commit();
+            console.log(`✅ [InventoryMutationService] Cleaned up ${querySnapshot.size} orphaned todos for SKU: ${sku}`);
+        }
+    } catch (todoError) {
+        console.error("🔥 Error cleaning up related todos for product:", todoError);
+    }
 
     inventorySyncService.broadcastDelete(sku, productName);
   }

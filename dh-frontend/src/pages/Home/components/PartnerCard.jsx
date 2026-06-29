@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { trackAdClick } from '../../../firebase/credit/creditActionService';
 import { squadConfigService } from '../../../firebase/squadConfigService';
+import { logClick } from '../../../firebase/marketingAnalyticsService';
 
 const PartnerCard = ({ partner }) => {
   // Use storeProfile data if available, fallback to partner root level data
@@ -11,7 +12,6 @@ const PartnerCard = ({ partner }) => {
 
   const handleClick = async () => {
     try {
-      const { logClick } = await import('../../../firebase/marketingAnalyticsService');
       await logClick('AD-CARD-' + (partner.id || partner.userId));
     } catch (e) {
       console.error("Failed to track click", e);

@@ -22,8 +22,11 @@ export default function PartnerCreditsTab() {
       : 'users';
     const usersRef = collection(db, usersColPath);
     
-    // ดึงข้อมูลทั้งหมดเพื่อการันตีความถูกต้องของยอดเงินจากทุก Field ที่อาจบันทึกต่างชื่อกัน
-    const q = query(usersRef);
+    // ใช้ or query ของ Firestore v10+ เพื่อลด Quota การดึง Users ทั้งระบบ
+    const q = query(usersRef, or(
+      where('creditPoints', '>', 0),
+      where('role', '==', 'partner')
+    ));
     
     const unsubscribe = onSnapshot(q, (snap) => {
       const data = [];

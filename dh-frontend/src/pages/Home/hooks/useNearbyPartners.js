@@ -3,6 +3,7 @@ import { fetchAllActivePartners } from '../../../firebase/partnerLocationService
 
 import { calculateDistance } from '../../../utils/geoUtils';
 import { squadConfigService } from '../../../firebase/squadConfigService';
+import { logImpression } from '../../../firebase/marketingAnalyticsService';
 
 export const useNearbyPartners = () => {
   const [partners, setPartners] = useState([]);
@@ -50,11 +51,9 @@ export const useNearbyPartners = () => {
 
       // 5. Track Impressions (Fire and forget to not block UI)
       if (limitedPartners.length > 0) {
-        import('../../../firebase/marketingAnalyticsService').then(({ logImpression }) => {
-          limitedPartners.forEach(p => {
-            logImpression('AD-CARD-' + (p.id || p.userId));
-          });
-        }).catch(err => console.error("Failed to load logImpression:", err));
+        limitedPartners.forEach(p => {
+          logImpression('AD-CARD-' + (p.id || p.userId));
+        });
       }
     } catch (error) {
       console.error("Error fetching nearby partners:", error);

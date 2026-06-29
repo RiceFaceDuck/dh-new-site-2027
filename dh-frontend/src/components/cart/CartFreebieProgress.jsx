@@ -1,7 +1,22 @@
 import React from 'react';
 import { Gift } from 'lucide-react';
 
-const CartFreebieProgress = ({ freebies, subTotal }) => {
+const CartFreebieProgress = ({ freebies, subTotal, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-5 mb-8 shadow-sm flex items-center justify-between animate-pulse">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-slate-200 rounded w-32"></div>
+            <div className="h-3 bg-slate-200 rounded w-24"></div>
+          </div>
+        </div>
+        <div className="w-20 h-6 bg-slate-200 rounded-lg"></div>
+      </div>
+    );
+  }
+
   if (!freebies || freebies.length === 0) return null;
 
   const nextFreebie = freebies.find(f => f.minSpend > subTotal); 
