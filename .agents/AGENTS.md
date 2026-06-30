@@ -31,3 +31,4 @@
 5. **Concept Notes Updates:** อนุญาตให้อัปเดตเอกสาร `CONCEPT_NOTES.md` ได้เสมอ เมื่อได้รับแนวคิดหรือมีการออกแบบใหม่จากผู้ใช้
 6. **Schema Updates:** อนุญาตให้อัปเดต Schema ในโฟลเดอร์ `Schema Key` ได้เสมอ เพื่อความแม่นยำในการรับ-ส่งงาน
 7. **Task Board Updates:** อนุญาตให้อัปเดตไฟล์ `TODO.md` ได้เสมอ เมื่อได้รับแผนงานใหม่
+8. **Quota Estimation Updates:** อนุญาตให้อัปเดตข้อมูลการจำลองและคำนวณโควต้าในไฟล์ `FIRESTORE_QUOTA_ESTIMATION.md` ได้เสมอ
