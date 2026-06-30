@@ -26,19 +26,22 @@ export const useManagerDashboard = () => {
   // 2. Real-time Subscriptions & Initial Fetches
   // ==========================================
   useEffect(() => {
-    // 🔔 Subscribe จำนวนงานที่รออนุมัติ (จำกัด 100 ป้องกันโควต้ารั่วไหล)
+    // 🔔 Fetch จำนวนงานที่รออนุมัติ (ใช้ getCountFromServer เพื่อประหยัดโควต้า 1 Read/Query)
     const todosRef = collection(db, 'todos');
     const pendingTodosQuery = query(
       todosRef, 
-      where('status', 'in', ['pending', 'pending_manager']),
-      limit(100)
+      where('status', 'in', ['pending', 'pending_manager'])
     );
 
-    const unsubscribeTodos = onSnapshot(pendingTodosQuery, (snapshot) => {
-      setStats(prev => ({ ...prev, pendingTasksCount: snapshot.size }));
-    }, (error) => {
-      console.error("Error fetching pending tasks:", error);
-    });
+    const fetchPendingTodosCount = async () => {
+      try {
+        const snapshot = await getCountFromServer(pendingTodosQuery);
+        setStats(prev => ({ ...prev, pendingTasksCount: snapshot.data().count }));
+      } catch (error) {
+        console.error("Error fetching pending tasks count:", error);
+      }
+    };
+    fetchPendingTodosCount();
 
     // 👥 Subscribe จำนวนพนักงานรออนุมัติ (มักจะมีจำนวนไม่เยอะ)
     const usersRef = collection(db, 'users');
@@ -69,7 +72,6 @@ export const useManagerDashboard = () => {
     fetchVipCount();
 
     return () => {
-      unsubscribeTodos();
       unsubscribeStaff();
     };
   }, []);

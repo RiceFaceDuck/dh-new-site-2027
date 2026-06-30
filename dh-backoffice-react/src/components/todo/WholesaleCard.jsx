@@ -20,13 +20,17 @@ export default function WholesaleCard({ todo, isProcessing, urgencyClass, handle
       try {
         const skus = calculator.cartItems.map(item => item.sku);
         if (skus.length > 0) {
-          const q = query(collection(db, 'products'), where('sku', 'in', skus));
-          const snapshot = await getDocs(q);
           const newPrices = {};
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            newPrices[doc.id] = data.wholesalePrice || null;
-          });
+          // 🚀 [Optimization] Chunk array by 10 to prevent Firebase 'in' query limit error
+          for (let i = 0; i < skus.length; i += 10) {
+            const batchSkus = skus.slice(i, i + 10);
+            const q = query(collection(db, 'products'), where('sku', 'in', batchSkus));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+              const data = doc.data();
+              newPrices[doc.id] = data.wholesalePrice || null;
+            });
+          }
           setFetchedData(newPrices);
         }
       } catch (error) {

@@ -34,6 +34,13 @@
 | `youtubeUrl`     | String  | A link to a YouTube video review or tutorial.                               | `"https://youtu.be/..."`            | |
 | `shopeeUrl`      | String  | Link to the product listing on Shopee marketplace.                          | `"https://shopee.co.th/..."`        | |
 | `lazadaUrl`      | String  | Link to the product listing on Lazada marketplace.                          | `"https://lazada.co.th/..."`        | |
+| `packageSize`    | Map     | Dimensions of the package (width, length, height).                          | `{ w: "30", l: "40", h: "5" }`      | |
+| `bufferStock`    | Number  | Reserved stock quantity not available for general sale.                     | `2`                                 | |
+| `tags`           | Array   | Search tags or labels for the product.                                      | `["tag1", "tag2"]`                  | |
+| `externalLinks`  | Map     | External marketplace links.                                                 | `{ shopee: "...", lazada: "..." }`  | |
+| `substituteSkus` | Array   | SKUs of products that can be sold as substitutes if this item is out of stock. | `["SCR-002", "SCR-003"]`            | Ref: `products.sku` |
+| `internalComments`| Array  | Internal notes/comments left by the team. (NOT an audit log).               | `[{ text: "Note", uid: "1" }]`      | |
+| `comment`        | String  | Legacy comment field.                                                       | `"Old note"`                        | |
 | `randomSeed`     | Number  | A random decimal between 0 and 1 used for true random querying.             | `0.123456789`                       | |
 | `isActive`       | Boolean | Flag indicating if the product is active or soft-deleted.                   | `true`, `false`                     | |
 
@@ -64,6 +71,13 @@ export interface Product {
   youtubeUrl?: string;
   shopeeUrl?: string;
   lazadaUrl?: string;
+  packageSize?: { w: string; l: string; h: string };
+  bufferStock?: number;
+  tags?: string[];
+  externalLinks?: { shopee?: string; lazada?: string; tiktok?: string; facebook?: string };
+  substituteSkus?: string[];
+  internalComments?: { text: string; timestamp: string; uid: string }[];
+  comment?: string;
   randomSeed: number;
   isActive?: boolean;
 }
@@ -86,7 +100,7 @@ export interface Product {
 | `status`       | String    | Current status of the task.                                                 | `"pending_manager"`, `"approved"`, `"completed"`| |
 | `referenceType`| String    | Type of related entity.                                                     | `"Order"`                           | |
 | `referenceId`  | String    | ID of the related entity.                                                   | `"DH-261215-1234"`                  | Ref: `orders.orderId` |
-| `payload`      | Map       | Specific data required to process the request (e.g. claim details).         | `{ claimId: "CLM-123", qty: 1 }`    | |
+| `payload`      | Map       | Specific data and snapshot of related entities at creation time.    | `{ claimId: "CLM-123", orderSnapshot: {...} }`    | |
 | `createdByUid` | String    | UID of the user who created the task.                                       | `"uid_xyz123"`                      | Ref: `users.uid` |
 | `handledBy`    | String    | UID of the user (manager) who handled/approved the task.                    | `"uid_mgr123"`                      | Ref: `users.uid` |
 | `createdAt`    | Timestamp | When the task was created.                                                  | `December 15, 2026 at 10:30:00 AM UTC+7` | |

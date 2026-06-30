@@ -162,14 +162,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
           active={activeTab === 'overview'} 
           onClick={() => setActiveTab('overview')} 
         />
-        <MenuButton 
-          icon={<CreditCard size={18} strokeWidth={2.5} />} 
-          label="Wallet & Credit" 
-          active={activeTab === 'wallet'} 
-          onClick={() => setActiveTab('wallet')} 
-          badge={pendingWithdrawal > 0}
-        />
-        
+
         {/* 🗑️ [REMOVED]: เมนู My SKU (usersku) ถูกลบออกอย่างถาวรตามแผน Phase 2
           ย้ายการจัดการสินค้าไปรวมที่ Ads & Marketing (Unified Architecture) 
         */}

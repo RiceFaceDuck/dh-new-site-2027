@@ -24,9 +24,15 @@ export default function ClaimDetailModal({
   const [isClosing, setIsClosing] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
 
+  // Freebie penalty states
+  const [freebieReturned, setFreebieReturned] = useState(true);
+  const [freebiePenaltyAmount, setFreebiePenaltyAmount] = useState(0);
+
   useEffect(() => {
     if (selectedRequest) {
       setTrackingNo(selectedRequest.payload?.trackingNo || '');
+      setFreebieReturned(true);
+      setFreebiePenaltyAmount(0);
     }
   }, [selectedRequest]);
 
@@ -114,13 +120,20 @@ export default function ClaimDetailModal({
 
   const onAskComplete = () => {
     const isReturn = selectedRequest.type === 'RETURN_APPROVAL';
+    
+    // Check if freebies were returned
+    if (isReturn && selectedRequest.payload?.hasFreebies && !freebieReturned && freebiePenaltyAmount <= 0) {
+      alert('กรุณาระบุจำนวนเงินค่าปรับของแถม หรือกดยืนยันว่าได้รับของแถมคืนแล้ว');
+      return;
+    }
+
     confirmAction({
       title: 'เสร็จสิ้นกระบวนการ',
       message: isReturn 
         ? 'ระบบจะทำการ "คืนเงิน" และ "เพิ่มสต๊อก" ทันที ยืนยันใช่หรือไม่?'
         : 'ระบบจะทำการ "ตัดสต๊อกสินค้าใหม่" เพื่อมอบให้ลูกค้า ยืนยันใช่หรือไม่?',
       type: 'success',
-      actionFn: handleComplete
+      actionFn: () => handleComplete({ freebieReturned, freebiePenaltyAmount })
     });
   };
 
@@ -178,6 +191,10 @@ export default function ClaimDetailModal({
               setTrackingNo={setTrackingNo}
               copiedText={copiedText}
               handleQuickCopy={handleQuickCopy}
+              freebieReturned={freebieReturned}
+              setFreebieReturned={setFreebieReturned}
+              freebiePenaltyAmount={freebiePenaltyAmount}
+              setFreebiePenaltyAmount={setFreebiePenaltyAmount}
             />
           </div>
           

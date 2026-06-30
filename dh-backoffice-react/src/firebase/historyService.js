@@ -33,36 +33,38 @@ export const historyService = {
     });
   },
 
-  // ✨ ดึงประวัติมาแสดงผลแบบ Pagination (รองรับ Server-side Filtering)
-  getRecentLogs: async (maxLimit = 50, lastDocRef = null, moduleFilter = 'all', actionFilter = 'all') => {
+  // ✨ ดึงประวัติมาแสดงผลแบบ Pagination (ดึงจาก Google Drive แทน Firestore)
+  getRecentLogs: async (maxLimit = 50, lastDocRef = null, moduleFilter = 'all', actionFilter = 'all', keyword = '') => {
     try {
-      let constraints = [];
+      // Since we moved to Google Drive, pagination by reference (lastDocRef) works differently.
+      // For now, we will fetch the latest logs based on limits and filters.
+      // Note: GAS currently supports dateStr, module, level, keyword, limit.
       
-      if (moduleFilter !== 'all') {
-        constraints.push(where('module', '==', moduleFilter));
-      }
-      
-      if (actionFilter !== 'all') {
-        constraints.push(where('action', '==', actionFilter));
-      }
-      
-      constraints.push(orderBy('timestamp', 'desc'));
-      
-      if (lastDocRef) {
-        constraints.push(startAfter(lastDocRef));
-      }
-      
-      constraints.push(limit(maxLimit));
+      const moduleParam = moduleFilter === 'all' ? 'ALL' : moduleFilter;
+      const logs = await gasHistoryService.getLogs({
+        module: moduleParam,
+        keyword: keyword || '',
+        limit: maxLimit
+      });
 
-      const q = query(collection(db, COLLECTION_NAME), ...constraints);
+      // Format logs to match the old UI structure where possible
+      const formattedLogs = logs.map((log, index) => ({
+        id: log.client_timestamp + '_' + index,
+        module: log.module,
+        action: log.action,
+        timestamp: { toDate: () => new Date(log.client_timestamp) }, // Mock Firestore Timestamp
+        actorName: log.actor?.name || 'System',
+        targetId: log.target?.id || '-',
+        details: log.details?.legacy_details || JSON.stringify(log.details || {}),
+        ...log
+      }));
       
-      const snapshot = await getDocs(q);
-      const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      // If we got fewer than maxLimit, we've likely hit the end of the recent logs.
+      const lastDoc = formattedLogs.length >= maxLimit ? 'has_more' : null;
       
-      return { logs, lastDoc };
+      return { logs: formattedLogs, lastDoc };
     } catch (error) {
-      console.error("🔥 Error fetching history:", error);
+      console.error("🔥 Error fetching history from Drive:", error);
       return { logs: [], lastDoc: null };
     }
   }

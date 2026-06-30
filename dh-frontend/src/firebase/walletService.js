@@ -76,7 +76,16 @@ export const useWalletBalance = (uid) => {
       setWalletData(prev => ({ ...prev, loading: false, error }));
     });
 
-    return () => unsubscribe();
+    return () => {
+      try {
+        if (typeof unsubscribe === 'function') {
+          // Wrap in setTimeout to avoid Vite HMR race condition with Firestore internal async queue
+          setTimeout(() => unsubscribe(), 0);
+        }
+      } catch (err) {
+        console.warn("⚠️ [WalletService] Error during unmount cleanup:", err);
+      }
+    };
   }, [uid]);
 
   return walletData;

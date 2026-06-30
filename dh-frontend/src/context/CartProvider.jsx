@@ -67,9 +67,7 @@ export const CartProvider = ({ children }) => {
           try {
             const guestItems = JSON.parse(savedGuestCart);
             if (guestItems.length > 0) {
-              for (const item of guestItems) {
-                await cartService.addToCart(user.uid, item, item.quantity || item.qty || 1);
-              }
+              await cartService.mergeGuestCart(user.uid, guestItems);
               localStorage.removeItem('dh_cart'); // Clear guest cart after merge
             }
           } catch (e) { console.error("Error merging cart", e); }

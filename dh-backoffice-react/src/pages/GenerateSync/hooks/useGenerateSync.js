@@ -29,11 +29,6 @@ export default function useGenerateSync() {
     try {
       const result = await bigSellerQueryService.calculateChanges();
       
-      // --- MOCK DATA FOR TESTING ---
-      if (result.increased.length === 0 && result.decreased.length === 0) {
-        result.increased.push({ sku: 'TEST-SKU-999', name: 'ทดสอบข้อมูลจำลอง', oldStock: 0, newStock: 55 });
-      }
-      // -----------------------------
 
       setChanges(result);
       setLastSyncTime(new Date());

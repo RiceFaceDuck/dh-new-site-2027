@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, CheckCircle2 } from 'lucide-react';
+import { Award, CheckCircle2, Info } from 'lucide-react';
 import { formatCredit } from '../../firebase/creditService';
 
 export default function CreditToggleBox({
@@ -22,7 +22,16 @@ export default function CreditToggleBox({
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-gray-900">ใช้ยอดค้างในระบบ (Wallet)</h4>
+            <div className="flex items-center gap-1.5">
+              <h4 className="text-sm font-bold text-gray-900">ใช้ยอดค้างในระบบ (Wallet)</h4>
+              <div className="group relative flex items-center">
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-indigo-500 transition-colors" />
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center shadow-lg">
+                  ยอดเงินคืนจากการคืนสินค้า หรือเงินทอน สามารถใช้ลดราคาเต็มจำนวนได้
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+              </div>
+            </div>
             <p className="text-xs text-gray-500 font-medium mt-0.5">มียอดคงเหลือ: <span className="text-indigo-600 font-bold">฿{formatCredit(creditBalance)}</span></p>
           </div>
         </div>

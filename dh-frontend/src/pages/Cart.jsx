@@ -4,7 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { ShoppingBag, ChevronLeft, Loader2 } from 'lucide-react';
+import { productService } from '../firebase/productService';
+import { ShoppingBag, ChevronLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { useCart } from '../context/CartProvider';
 import { useToast } from '../context/ToastContext';
 
@@ -30,6 +31,9 @@ const Cart = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [freebies, setFreebies] = useState([]);
   const [isFetchingFreebies, setIsFetchingFreebies] = useState(true);
+  const [validationMessages, setValidationMessages] = useState([]);
+  const [isValidatingCart, setIsValidatingCart] = useState(false);
+  const validatedRef = useRef(false);
 
   const { showToast } = useToast();
 
@@ -52,6 +56,54 @@ const Cart = () => {
     return () => unsubscribe();
   }, []);
 
+  // 🚀 Real-time Cart Validation (เช็คสต๊อกและราคาล่าสุด)
+  useEffect(() => {
+    if (isInitialized && cartItems.length > 0 && !validatedRef.current) {
+      validateCartItems();
+    }
+  }, [isInitialized, cartItems]);
+
+  const validateCartItems = async () => {
+    setIsValidatingCart(true);
+    validatedRef.current = true;
+    let messages = [];
+    
+    try {
+      // ดึงข้อมูลสินค้าล่าสุดจาก Firestore รวดเดียว โดยใช้ item.id เป็นหลัก
+      const fetchPromises = cartItems.map(item => {
+        const productId = (item.id && item.id !== '-') ? item.id : item.sku;
+        return productService.getProduct(productId);
+      });
+      const freshProducts = await Promise.all(fetchPromises);
+      
+      freshProducts.forEach((fresh, idx) => {
+        const cartItem = cartItems[idx];
+        if (!fresh) {
+          messages.push(`สินค้า ${cartItem.name} ไม่มีในระบบแล้ว กรุณาลบออกจากตะกร้า`);
+          return;
+        }
+        
+        // เช็คราคาเปลี่ยน
+        if (fresh.price !== cartItem.price) {
+          messages.push(`ราคา ${cartItem.name} มีการเปลี่ยนแปลง (฿${fresh.price.toLocaleString()})`);
+        }
+        
+        // เช็คสต๊อก
+        if (fresh.stockQuantity < cartItem.qty) {
+          messages.push(`สินค้า ${cartItem.name} มีจำนวนจำกัด (เหลือ ${fresh.stockQuantity} ชิ้น)`);
+        }
+      });
+      
+      if (messages.length > 0) {
+        setValidationMessages(messages);
+      }
+    } catch (e) {
+      console.error("Cart validation error", e);
+    } finally {
+      setIsValidatingCart(false);
+    }
+  };
+
   const fetchFreebies = async () => {
     try {
       setIsFetchingFreebies(true);
@@ -71,7 +123,7 @@ const Cart = () => {
     const newQty = currentQty + change;
     if (newQty < 0) return; 
 
-    // ถ้าจำนวนจะเป็น 0 ให้ลบออกแทน แต่ไม่ต้องใช้ window.confirm
+    // ถ้าจำนวนจะเป็น 0 ให้ลบออกทันที และขึ้น Toast แดน (ไม่ต้อง Confirm ให้ขัดจังหวะ)
     if (newQty === 0) {
       handleRemoveItem(productId);
       return;
@@ -108,11 +160,11 @@ const Cart = () => {
   const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig, cartItems) : 0;
 
   // จำลอง Loading เพื่อ UX ที่สมูท
-  if (!isInitialized) {
+  if (!isInitialized || isValidatingCart) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
-        <p className="text-sm text-gray-500 font-medium font-tech animate-pulse">Synchronizing Cart Protocol...</p>
+        <p className="text-sm text-gray-500 font-medium font-tech animate-pulse">กำลังโหลดตะกร้าสินค้าของคุณ...</p>
       </div>
     );
   }
@@ -144,6 +196,21 @@ const Cart = () => {
           <ChevronLeft size={16} className="mr-1" /> เลือกซื้อสินค้าต่อ
         </button>
       </div>
+
+      {/* แจ้งเตือน Validation ถ้ามี */}
+      {validationMessages.length > 0 && (
+        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+          <AlertTriangle className="text-orange-500 shrink-0 mt-0.5" size={20} />
+          <div>
+            <h3 className="font-bold text-orange-800 text-sm mb-1">มีการเปลี่ยนแปลงในตะกร้าของคุณ</h3>
+            <ul className="list-disc list-inside text-sm text-orange-700">
+              {validationMessages.map((msg, idx) => (
+                <li key={idx}>{msg}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       <CartFreebieProgress freebies={freebies} subTotal={subTotal} isLoading={isFetchingFreebies} />
 

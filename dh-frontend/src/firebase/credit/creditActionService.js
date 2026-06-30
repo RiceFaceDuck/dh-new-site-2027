@@ -24,7 +24,12 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
     }
 
-    const userSnap = await transaction.get(userRef);
+    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
+    
+    const [userSnap, activePartnerSnap] = await Promise.all([
+      transaction.get(userRef),
+      transaction.get(activePartnerRef)
+    ]);
     if (!userSnap.exists()) throw new Error("ไม่พบบัญชีผู้ใช้งาน");
 
     let currentWallet = Number(userSnap.data().creditPoints || 0);
@@ -46,6 +51,11 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       creditPoints: newWalletBalance,  
       updatedAt: serverTimestamp()
     });
+
+    // ✨ NEW FIX: Sync points to ActivePartners
+    if (activePartnerSnap.exists()) {
+      transaction.set(activePartnerRef, { points: newWalletBalance, updatedAt: serverTimestamp() }, { merge: true });
+    }
 
     const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'deposit' : 'spend';
     transaction.set(txRef, {
@@ -249,7 +259,12 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
   const historyRef = doc(collection(db, usersPath, userId, 'credit_history'));
 
-  const userDoc = await transaction.get(userRef);
+  const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', userId);
+
+  const [userDoc, activePartnerSnap] = await Promise.all([
+    transaction.get(userRef),
+    transaction.get(activePartnerRef)
+  ]);
 
   if (!userDoc.exists()) {
     throw new Error("ระบบไม่พบข้อมูลกระเป๋าเงินของคุณ");
@@ -270,10 +285,11 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   });
 
   if (newBalance <= 0) {
-    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', userId);
     const storeProfileRef = doc(db, usersPath, userId, 'storeProfile', 'main');
     transaction.delete(activePartnerRef);
     transaction.update(storeProfileRef, { isSupportActive: false });
+  } else if (activePartnerSnap.exists()) {
+    transaction.set(activePartnerRef, { points: newBalance, updatedAt: serverTimestamp() }, { merge: true });
   }
 
   const txData = {

@@ -8,6 +8,7 @@ import { doc, getDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { driveService } from '../../../firebase/driveService';
 import { marketingService } from '../../../firebase/marketingService';
+import { useUserCredit } from '../../../firebase/creditService';
 
 import AdStatsOverview from './ad-manager/AdStatsOverview';
 import AdListTable from './ad-manager/AdListTable';
@@ -23,10 +24,12 @@ const sanitizeData = (obj) => {
   return cleaned;
 };
 
-const TabAdManager = () => {
+const TabAdManager = ({ user }) => {
   const [activeSubTab, setActiveSubTab] = useState('store');
   const [loading, setLoading] = useState(true);
-  const [userCredit, setUserCredit] = useState(0);
+
+  // Use the global realtime credit hook
+  const { balance: userCredit } = useUserCredit(user?.uid);
 
   const [storeData, setStoreData] = useState({
     storeImage: '',
@@ -55,13 +58,10 @@ const TabAdManager = () => {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const COST_PER_IMPRESSION = 1; 
 
-  const auth = getAuth();
-  const user = auth.currentUser;
   const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
   useEffect(() => {
     if (user) {
-      fetchUserCredit();
       fetchStoreData();
       fetchMyAds();
     }
@@ -83,24 +83,34 @@ const TabAdManager = () => {
     return () => unsubscribe();
   }, [user, appId]);
 
-  const fetchUserCredit = async () => {
-    try {
-      const userRef = doc(db, 'artifacts', appId, 'users', user.uid);
-      const walletRef = doc(db, 'artifacts', appId, 'users', user.uid, 'wallet', 'default');
-      const [userSnap, walletSnap] = await Promise.all([getDoc(userRef), getDoc(walletRef)]);
-      
-      let currentPoints = 0;
-      if (walletSnap.exists()) currentPoints = Number(walletSnap.data().balance) || 0;
-      else if (userSnap.exists()) currentPoints = Number(userSnap.data().creditPoints || 0);
-      setUserCredit(currentPoints);
-    } catch (error) { console.error("Error fetching credit:", error); }
-  };
+
 
   const fetchStoreData = async () => {
     try {
       const storeRef = doc(db, 'artifacts', appId, 'users', user.uid, 'storeProfile', 'main');
-      const storeSnap = await getDoc(storeRef);
-      if (storeSnap.exists()) setStoreData({ ...storeData, ...storeSnap.data() });
+      const rootStoreRef = doc(db, 'users', user.uid, 'storeProfile', 'main');
+      
+      const [storeSnap, rootSnap] = await Promise.all([
+        getDoc(storeRef),
+        getDoc(rootStoreRef)
+      ]);
+      
+      let mergedData = { ...storeData };
+      
+      // ดึงข้อมูลจากทั้งสองแหล่ง โดยให้ความสำคัญกับแหล่งที่มีชื่อร้านก่อน
+      if (rootSnap.exists()) {
+        mergedData = { ...mergedData, ...rootSnap.data() };
+      }
+      
+      if (storeSnap.exists()) {
+        const artifactsData = storeSnap.data();
+        // ทับด้วย Artifacts เฉพาะกรณีที่ข้อมูลไม่ได้โล่งเตียน (กันกรณีเผลอกดเซฟทับ)
+        if (artifactsData.storeName || !mergedData.storeName) {
+           mergedData = { ...mergedData, ...artifactsData };
+        }
+      }
+      
+      setStoreData(mergedData);
     } catch (error) { console.error("Error fetching store data:", error); } 
     finally { setLoading(false); }
   };

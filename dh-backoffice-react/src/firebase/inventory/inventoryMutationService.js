@@ -1,4 +1,4 @@
-import { doc, setDoc, updateDoc, getDoc, serverTimestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, serverTimestamp, collection, query, where, getDocs, writeBatch, arrayRemove } from 'firebase/firestore';
 import { db, auth } from '../config';
 import { inventorySyncService } from './inventorySyncService';
 import { historyService } from '../historyService';
@@ -8,6 +8,12 @@ const COLLECTION_NAME = 'products';
 export const inventoryMutationService = {
   addProduct: async (productData) => {
     const docRef = doc(db, COLLECTION_NAME, productData.sku);
+    
+    // Inject category_lower for frontend query support
+    if (productData.category) {
+      productData.category_lower = productData.category.trim().toLowerCase();
+    }
+
     await setDoc(docRef, {
       ...productData,
       createdAt: serverTimestamp(),
@@ -23,6 +29,11 @@ export const inventoryMutationService = {
 
   updateProduct: async (sku, newData) => {
     const docRef = doc(db, COLLECTION_NAME, sku);
+    
+    // Inject category_lower for frontend query support
+    if (newData.category) {
+      newData.category_lower = newData.category.trim().toLowerCase();
+    }
     
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -101,6 +112,43 @@ export const inventoryMutationService = {
         }
     } catch (todoError) {
         console.error("🔥 Error cleaning up related todos for product:", todoError);
+    }
+
+    // 🧹 Cleanup Dangling Pointers (Orphaned Array Refs)
+    try {
+        const batch = writeBatch(db);
+        let hasBatchOps = false;
+
+        // 1. Remove from other products' substituteSkus
+        const substituteQ = query(collection(db, COLLECTION_NAME), where('substituteSkus', 'array-contains', sku));
+        const substituteSnap = await getDocs(substituteQ);
+        substituteSnap.forEach(docSnap => {
+            batch.update(docSnap.ref, { substituteSkus: arrayRemove(sku) });
+            hasBatchOps = true;
+        });
+
+        // 2. Remove from promotions
+        const promoQ = query(collection(db, 'promotions'), where('applicableSkus', 'array-contains', sku));
+        const promoSnap = await getDocs(promoQ);
+        promoSnap.forEach(docSnap => {
+            batch.update(docSnap.ref, { applicableSkus: arrayRemove(sku) });
+            hasBatchOps = true;
+        });
+
+        // 3. Remove from freebies
+        const freebieQ = query(collection(db, 'freebies'), where('applicableSkus', 'array-contains', sku));
+        const freebieSnap = await getDocs(freebieQ);
+        freebieSnap.forEach(docSnap => {
+            batch.update(docSnap.ref, { applicableSkus: arrayRemove(sku) });
+            hasBatchOps = true;
+        });
+
+        if (hasBatchOps) {
+            await batch.commit();
+            console.log(`✅ [InventoryMutationService] Cleaned up dangling pointers for SKU: ${sku}`);
+        }
+    } catch (cleanupError) {
+        console.error("🔥 Error cleaning up dangling pointers:", cleanupError);
     }
 
     inventorySyncService.broadcastDelete(sku, productName);

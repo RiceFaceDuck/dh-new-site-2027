@@ -17,6 +17,7 @@ import MenuLayoutZone from './menu-layout/MenuLayoutZone';
 export const AVAILABLE_MENUS = {
   vip: { title: "ลูกค้า VIP", subtitle: "จัดการระดับและสิทธิพิเศษ", iconName: "Crown", colorTheme: "amber" },
   staff: { title: "จัดการพนักงาน", subtitle: "กำหนดสิทธิ์และอนุมัติบัญชี", iconName: "Users", colorTheme: "orange" },
+  rbac: { title: "จัดการสิทธิ์ (RBAC)", subtitle: "ตั้งค่าสิทธิ์แยกตามตำแหน่ง", iconName: "ShieldCheck", colorTheme: "red" },
   buffer: { title: "บัฟเฟอร์คลังสินค้า", subtitle: "ตั้งค่าสต๊อคสำรองกันของขาด", iconName: "Box", colorTheme: "rose" },
   category: { title: "จัดการหมวดหมู่หน้าแรก", subtitle: "จัดเรียงโซนสินค้าบนหน้าเว็บ", iconName: "LayoutTemplate", colorTheme: "emerald" },
   regex: { title: "กฎความถูกต้องลิงก์", subtitle: "กำหนดเงื่อนไขการรับข้อมูล", iconName: "LinkIcon", colorTheme: "sky" },

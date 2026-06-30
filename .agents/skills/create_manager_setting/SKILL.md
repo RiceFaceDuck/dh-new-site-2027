@@ -1,5 +1,5 @@
 ---
-name: create_manager_setting
+name: "create-manager-setting"
 description: "Creates a new Manager Settings component following DH Notebook's strict SRP and In-App Documentation rules."
 ---
 

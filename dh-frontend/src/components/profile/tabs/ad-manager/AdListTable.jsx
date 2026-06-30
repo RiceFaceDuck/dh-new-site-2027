@@ -15,9 +15,10 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd }) => {
 
   const getStatusBadge = (status) => {
     const s = String(status).toUpperCase();
-    if (s === 'APPROVED') return <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"><CheckCircle2 size={12}/> ใช้งานอยู่</span>;
-    if (s === 'PENDING') return <span className="flex items-center gap-1 bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"><Clock size={12}/> รอตรวจสอบ</span>;
-    if (s === 'REJECTED') return <span className="flex items-center gap-1 bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"><XCircle size={12}/> ไม่อนุมัติ</span>;
+    if (['APPROVED', 'ACTIVE'].includes(s)) return <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><CheckCircle2 size={12}/> Active</span>;
+    if (s === 'PENDING') return <span className="flex items-center gap-1 bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><Clock size={12}/> Pending</span>;
+    if (s === 'REJECTED') return <span className="flex items-center gap-1 bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><XCircle size={12}/> Rejected</span>;
+    if (s === 'PAUSED') return <span className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><Activity size={12}/> Paused</span>;
     return <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase">{s}</span>;
   };
 

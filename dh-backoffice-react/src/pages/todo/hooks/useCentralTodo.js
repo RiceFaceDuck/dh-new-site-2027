@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebase/config';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, where } from 'firebase/firestore';
 
 /**
  * 🎯 Hook สำหรับจัดการข้อมูล To-do ส่วนกลาง (Operations, CS, Sales)
@@ -18,19 +18,23 @@ export const useCentralTodo = (filterType = 'ALL') => {
   useEffect(() => {
     setLoading(true);
     
-    // ดึงเฉพาะงาน 100 ล่าสุดเพื่อป้องกัน Read Quota รั่วไหล 
-    // (หากต้องการ Query แบบเจาะจงสถานะ อาจจะต้องทำ Composite Index เพิ่มเติม)
+    // 🚀 [อัปเกรด] ดึงเฉพาะงานที่ยังไม่เสร็จจาก Server เพื่อป้องกัน Read Quota รั่วไหล 
+    // และแก้ปัญหา Data Loss ที่งานใหม่ถูกดันตกขอบถ้ามีงาน Completed เยอะ
     const q = query(
       collection(db, 'todos'),
-      orderBy('createdAt', 'desc'),
-      limit(100)
+      where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
+      limit(200) // เพิ่ม limit เป็น 200 เพื่อครอบคลุมทั้ง Manager และ Staff
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedTodos = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })).sort((a, b) => {
+          const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
+          const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
+          return timeB - timeA;
+      });
       
       setTodos(fetchedTodos);
       setError(null);

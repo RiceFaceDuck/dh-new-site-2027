@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { getAuth } from 'firebase/auth'; 
 import { cartService } from '../firebase/cartService'; 
 import { getCreditSettings, calculateEarnedPoints } from '../firebase/creditService';
@@ -23,6 +23,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // 🧠 SMART FETCH
   const [product, setProduct] = useState(null);
@@ -54,7 +55,8 @@ const ProductDetail = () => {
         // 🚀 SMART FETCH: Load product first to prevent UI blocking (With Cache)
         const cacheKey = `product_${id}`;
         const fetchFn = async () => productService.getProduct(id);
-        const prod = await memoryCache.getOrFetch(cacheKey, fetchFn, 10 * 60 * 1000);
+        // เพิ่ม Cache นานขึ้นเป็น 24 ชั่วโมง เพื่อความเร็วสูงสุด
+        const prod = await memoryCache.getOrFetch(cacheKey, fetchFn, 24 * 60 * 60 * 1000);
         
         if (prod) {
           setProduct(prod);
@@ -84,7 +86,20 @@ const ProductDetail = () => {
     fetchNonCriticalData();
   }, [id]);
 
-  const [selectedVariant, setSelectedVariant] = useState(null);
+  // อ่าน Variant จาก URL (ถ้ามี)
+  const initialVariant = searchParams.get('variant') ? JSON.parse(decodeURIComponent(searchParams.get('variant'))) : null;
+  const [selectedVariant, setSelectedVariantState] = useState(initialVariant);
+
+  // อัปเดต URL เมื่อเปลี่ยน Variant
+  const setSelectedVariant = (newVariant) => {
+    setSelectedVariantState(newVariant);
+    if (newVariant) {
+      setSearchParams({ variant: encodeURIComponent(JSON.stringify(newVariant)) }, { replace: true });
+    } else {
+      searchParams.delete('variant');
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
 
   // หา Variant ที่ถูกเลือกจาก Option ปัจจุบัน
   const getSelectedVariantData = () => {
@@ -174,12 +189,21 @@ const ProductDetail = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400">
-        <ShieldAlert size={48} className="mb-4 text-red-400" />
-        <p className="font-tech tracking-wider">{error || "PRODUCT NOT FOUND"}</p>
-        <button onClick={() => navigate(-1)} className="mt-4 px-6 py-2 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-colors">
-          GO BACK
-        </button>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-600 bg-slate-50 py-12 px-4 rounded-2xl mx-4 my-8 shadow-sm border border-slate-200">
+        <ShieldAlert size={64} className="mb-4 text-slate-300" />
+        <h2 className="text-2xl font-bold mb-2 text-slate-700">อ๊ะ! ไม่พบสินค้าที่คุณตามหา</h2>
+        <p className="text-slate-500 mb-8 text-center max-w-md">
+          สินค้านี้อาจถูกลบไปแล้ว หรือลิงก์ที่คุณเข้าชมอาจไม่ถูกต้อง 
+          <br/>ลองค้นหาสินค้าอื่นๆ ที่น่าสนใจแทนไหมครับ?
+        </p>
+        <div className="flex gap-4 flex-wrap justify-center">
+          <button onClick={() => navigate(-1)} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+            ย้อนกลับ
+          </button>
+          <Link to="/categories" className="px-6 py-2.5 bg-brand text-white font-bold rounded-lg hover:bg-brand-dark transition-colors shadow-sm">
+            เลือกดูสินค้าทั้งหมด
+          </Link>
+        </div>
       </div>
     );
   }
@@ -198,7 +222,7 @@ const ProductDetail = () => {
         {product?.category && (
           <>
             <Link 
-              to={`/category/${product.category.toLowerCase()}`} 
+              to={`/category/${encodeURIComponent(product.category.toLowerCase())}`} 
               className="hover:text-brand transition-colors"
             >
               {product.category}

@@ -48,11 +48,13 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
               {!storeData.isSupportActive ? (
                 <span className="text-slate-400">⚫ ปิดการแสดงผล</span>
               ) : isAdPending ? (
-                <span className="text-amber-400 animate-pulse font-bold">🟡 รอผู้จัดการอนุมัติ (Pending)</span>
-              ) : businessCardAd?.status?.toUpperCase() === 'APPROVED' ? (
-                <span className="text-emerald-400 font-bold">🟢 เปิดแสดงผล (Live)</span>
+                <span className="text-amber-400 animate-pulse font-bold">🟡 รอตรวจสอบ (Pending)</span>
+              ) : ['APPROVED', 'ACTIVE'].includes(businessCardAd?.status?.toUpperCase()) ? (
+                <span className="text-emerald-400 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
               ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (
                 <span className="text-rose-400 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
+              ) : businessCardAd?.status?.toUpperCase() === 'PAUSED' ? (
+                <span className="text-orange-400 font-bold">🟠 ถูกระงับการแสดงผล</span>
               ) : (
                 <span className="text-amber-400">🟡 รอการบันทึก</span>
               )}

@@ -85,6 +85,64 @@ export const cartService = {
   },
 
   /**
+   * 🚀 รวมตะกร้า (Guest -> User) รวดเดียวใน 1 Write / 1 Read
+   * (Performance Optimization)
+   */
+  mergeGuestCart: async (uid, guestItems) => {
+    if (!uid || !guestItems || guestItems.length === 0) return;
+    
+    try {
+      const cartRef = doc(db, COLLECTION_NAME, uid);
+      const snap = await getDoc(cartRef);
+      
+      let currentItems = [];
+      if (snap.exists()) {
+        currentItems = snap.data().items || [];
+      }
+
+      guestItems.forEach(guestItem => {
+        const productId = guestItem.id || guestItem.sku;
+        const existingItemIndex = currentItems.findIndex(item => (item.id || item.sku) === productId);
+
+        if (existingItemIndex > -1) {
+          currentItems[existingItemIndex].qty += (guestItem.qty || guestItem.quantity || 1);
+        } else {
+          currentItems.push({
+            id: productId,
+            sku: guestItem.sku || '-',
+            name: guestItem.name,
+            price: guestItem.retailPrice || guestItem.price || 0,
+            image: guestItem.image || guestItem.images?.[0] || guestItem.imageUrl || '',
+            qty: guestItem.qty || guestItem.quantity || 1
+          });
+        }
+      });
+
+      const totalSummary = currentItems.reduce(
+        (acc, item) => {
+          acc.total += item.price * item.qty;
+          acc.totalQty += item.qty;
+          return acc;
+        },
+        { total: 0, totalQty: 0 }
+      );
+
+      await setDoc(cartRef, {
+        uid: uid,
+        items: currentItems,
+        total: totalSummary.total,
+        totalQty: totalSummary.totalQty,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      return true;
+    } catch (error) {
+      console.error("🔥 Error merging guest cart:", error);
+      throw error;
+    }
+  },
+
+  /**
    * 🗑️ ลบสินค้าออกจากตะกร้า
    */
   removeItem: async (uid, productId) => {

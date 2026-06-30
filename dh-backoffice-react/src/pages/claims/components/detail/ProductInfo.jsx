@@ -1,8 +1,10 @@
 import React from 'react';
-import { Package, Truck, Check, Copy } from 'lucide-react';
+import { Package, Truck, Check, Copy, Gift, AlertCircle } from 'lucide-react';
 
-export default function ProductInfo({ selectedRequest, isManager, trackingNo, setTrackingNo, copiedText, handleQuickCopy }) {
+export default function ProductInfo({ selectedRequest, isManager, trackingNo, setTrackingNo, copiedText, handleQuickCopy, freebieReturned, setFreebieReturned, freebiePenaltyAmount, setFreebiePenaltyAmount }) {
   const isClaim = selectedRequest.originalType === 'CLAIM_APPROVAL' || selectedRequest.type === 'CLAIM_APPROVAL';
+  const isReturn = selectedRequest.originalType === 'RETURN_APPROVAL' || selectedRequest.type === 'RETURN_APPROVAL';
+  const hasFreebies = selectedRequest.payload?.hasFreebies;
 
   return (
     <div className="bg-dh-surface/60 backdrop-blur-sm p-5 rounded-xl border border-dh-border shadow-sm flex flex-col hover:shadow-md transition-shadow">
@@ -38,6 +40,49 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
             {selectedRequest.payload.symptomDetails || selectedRequest.payload.returnDetails || <span className="text-dh-muted/50 italic">ไม่มีรายละเอียดเพิ่มเติม</span>}
           </p>
         </div>
+        
+        {/* Freebie Check Section (For Returns Only) */}
+        {isReturn && hasFreebies && isManager && selectedRequest.status === 'processing' && (
+          <div className="bg-orange-50/80 p-3 rounded-lg border border-orange-200 shadow-sm mt-3 animate-in fade-in slide-in-from-top-2">
+             <p className="text-[11px] font-black text-orange-700 mb-2 flex items-center gap-1.5 uppercase tracking-wide">
+               <Gift className="w-4 h-4"/> ตรวจสอบการคืนของแถม
+             </p>
+             <p className="text-[10px] text-orange-600 mb-3 leading-snug">ออเดอร์นี้มีของแถม โปรดยืนยันว่าลูกค้าคืนของแถมครบถ้วน หรือระบุยอดเงินที่ต้องหักหากลูกค้าไม่ได้คืนของแถม</p>
+             
+             <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:border-orange-300 transition-colors">
+                  <input 
+                    type="checkbox" 
+                    checked={freebieReturned} 
+                    onChange={(e) => {
+                      setFreebieReturned(e.target.checked);
+                      if(e.target.checked) setFreebiePenaltyAmount(0);
+                    }}
+                    className="w-4 h-4 text-orange-600 rounded border-orange-300 focus:ring-orange-500"
+                  />
+                  <span className="text-[12px] font-bold text-slate-700">ลูกค้าคืนของแถมครบถ้วน</span>
+                </label>
+                
+                {!freebieReturned && (
+                  <div className="bg-white p-3 rounded border border-orange-200 flex flex-col gap-1.5 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-red-400"></div>
+                    <label className="text-[10px] font-bold text-red-600 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5"/> ระบุยอดเงินที่ต้องหัก (ค่าปรับ)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
+                      <input 
+                        type="number"
+                        min="1"
+                        value={freebiePenaltyAmount}
+                        onChange={(e) => setFreebiePenaltyAmount(Number(e.target.value))}
+                        className="w-full text-xs p-2 pl-7 rounded bg-slate-50 border border-slate-300 focus:border-red-400 focus:ring-1 focus:ring-red-400 outline-none"
+                        placeholder="ระบุมูลค่าของแถมเพื่อหักจากยอดคืนเงิน"
+                      />
+                    </div>
+                  </div>
+                )}
+             </div>
+          </div>
+        )}
         
         {/* Tracking Section */}
         {isManager && selectedRequest.status === 'pending_manager' ? (

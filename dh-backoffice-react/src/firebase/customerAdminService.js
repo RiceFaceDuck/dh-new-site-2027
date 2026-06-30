@@ -71,8 +71,33 @@ export const updateCustomerProfile = async (uid, data) => {
                     await batch.commit();
                     await historyService.addLog('Partner', 'Update', uid, `ปิดการใช้งานร้านช่างอัตโนมัติ เนื่องจากบัญชีถูกระงับ/ปิดใช้งาน`, auth.currentUser?.uid);
                 }
+
+                // 🧹 Cleanup Orphaned Todos
+                const todosRef = collection(db, 'todos');
+                const todosQuery = query(todosRef, where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']));
+                const todosSnap = await getDocs(todosQuery);
+                if (!todosSnap.empty) {
+                    const todoBatch = writeBatch(db);
+                    let cancelledCount = 0;
+                    todosSnap.forEach((docSnap) => {
+                        const tData = docSnap.data();
+                        if (tData.customerUid === uid || tData.payload?.customerUid === uid) {
+                            todoBatch.update(docSnap.ref, {
+                                status: 'cancelled',
+                                cancelReason: 'Customer account was suspended',
+                                updatedAt: serverTimestamp()
+                            });
+                            cancelledCount++;
+                        }
+                    });
+                    if (cancelledCount > 0) {
+                        await todoBatch.commit();
+                        await historyService.addLog('Task', 'Cancel', uid, `ยกเลิก ${cancelledCount} รายการงานอัตโนมัติ เนื่องจากบัญชีลูกค้าถูกระงับ/ปิดใช้งาน`, auth.currentUser?.uid);
+                    }
+                }
+
             } catch (partnerErr) {
-                console.error("🔥 Cascade Disable Partner Error:", partnerErr);
+                console.error("🔥 Cascade Disable Error:", partnerErr);
             }
         }
 
@@ -124,8 +149,33 @@ export const deleteCustomer = async (targetUid, customerName) => {
                 await batch.commit();
                 await historyService.addLog('Partner', 'Update', targetUid, `ปิดการใช้งานร้านช่างอัตโนมัติ เนื่องจากบัญชีเจ้าของร้านถูกลบ`, auth.currentUser?.uid);
             }
+
+            // 🧹 Cleanup Orphaned Todos
+            const todosRef = collection(db, 'todos');
+            const todosQuery = query(todosRef, where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']));
+            const todosSnap = await getDocs(todosQuery);
+            if (!todosSnap.empty) {
+                const todoBatch = writeBatch(db);
+                let cancelledCount = 0;
+                todosSnap.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    if (data.customerUid === targetUid || data.payload?.customerUid === targetUid) {
+                        todoBatch.update(docSnap.ref, {
+                            status: 'cancelled',
+                            cancelReason: 'Customer account was deleted',
+                            updatedAt: serverTimestamp()
+                        });
+                        cancelledCount++;
+                    }
+                });
+                if (cancelledCount > 0) {
+                    await todoBatch.commit();
+                    await historyService.addLog('Task', 'Cancel', targetUid, `ยกเลิก ${cancelledCount} รายการงานอัตโนมัติ เนื่องจากบัญชีลูกค้าถูกลบ`, auth.currentUser?.uid);
+                }
+            }
+
         } catch (partnerErr) {
-            console.error("🔥 Cascade Disable Partner Error:", partnerErr);
+            console.error("🔥 Cascade Disable Error:", partnerErr);
         }
 
         console.log(`✅ [CustomerAdminService] Deleted customer ${customerName} (${targetUid})`);

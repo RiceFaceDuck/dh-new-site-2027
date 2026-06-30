@@ -74,7 +74,7 @@ export default function ShopeeTemplateUpload({ currentInventory, isCalculating }
     <div className="w-full flex flex-col gap-2">
       <div className="flex items-center gap-2 mb-1 pl-1 text-slate-700 font-bold">
         <Database size={16} className="text-blue-500" />
-        <span className="text-sm">1. นำเข้าอัปเดตข้อมูลสินค้า (แก้ราคา/สต็อก)</span>
+        <span className="text-sm">นำเข้า templat (แก้ราคา/สต็อก)</span>
       </div>
       
       <div 

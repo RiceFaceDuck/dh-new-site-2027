@@ -68,7 +68,14 @@ export const returnActionService = {
     await updateDoc(doc(db, 'products', payload.sku), { stockQuantity: increment(qty) });
     
     // 2. คืนเงินให้ลูกค้า (ถ้าไม่ใช่ลูกค้าทั่วไป)
-    const refundAmount = (payload.purchasePrice || 0) * qty;
+    let refundAmount = (payload.purchasePrice || 0) * qty;
+    
+    // หักค่าปรับของแถมคืนไม่ครบ
+    const penalty = Number(payload.freebiePenaltyAmount) || 0;
+    if (penalty > 0) {
+      refundAmount = Math.max(0, refundAmount - penalty);
+    }
+    
     if (payload.customerUid && payload.customerUid !== 'Walk-in') {
       await transactionService.recordTransaction({
         uid: payload.customerUid,
@@ -99,8 +106,8 @@ export const returnActionService = {
       action: 'Completed',
       target: { id: payload.returnId, type: 'Task' },
       details: {
-        legacy_details: `คืนสินค้าสำเร็จ ${payload.sku} จำนวน ${qty} ชิ้น (คืนเงิน ฿${refundAmount})`,
-        financials: { refundAmount }
+        legacy_details: `คืนสินค้าสำเร็จ ${payload.sku} จำนวน ${qty} ชิ้น (คืนเงิน ฿${refundAmount})${penalty > 0 ? ` [หักค่าปรับของแถม: ฿${penalty}]` : ''}`,
+        financials: { refundAmount, freebiePenalty: penalty }
       },
       actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
     });

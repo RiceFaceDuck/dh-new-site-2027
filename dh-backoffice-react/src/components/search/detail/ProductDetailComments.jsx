@@ -19,7 +19,7 @@ export default function ProductDetailComments({
     <div className="relative pt-3 pb-4 border-b border-dh-border/60">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[11px] font-extrabold text-dh-muted uppercase tracking-widest flex items-center gap-1.5">
-          <MessageSquare size={16} className="opacity-80"/> บันทึก/คอมเมนต์
+          <MessageSquare size={16} className="opacity-80"/> 📝 บันทึก/คอมเมนต์ (Internal Notes)
         </span>
         <button onClick={() => setShowCommentInput(!showCommentInput)} className="text-dh-muted hover:text-dh-main transition-colors active:scale-95 bg-dh-base hover:bg-dh-border/50 px-2 py-1 rounded-md border border-dh-border flex items-center gap-1.5 text-[11px] font-extrabold shadow-sm">
           <PlusCircle size={14}/> เพิ่มโน้ต
@@ -33,7 +33,7 @@ export default function ProductDetailComments({
             value={newComment}
             onChange={e => setNewComment(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAddComment()}
-            placeholder="พิมพ์โน้ตส่วนตัว (กด Enter)..."
+            placeholder="พิมพ์โน้ตส่วนตัว หรือแจ้งปัญหา (กด Enter)..."
             className="w-full bg-dh-base border border-dh-border rounded-lg py-2 pl-3 pr-10 text-[13px] outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/10 shadow-sm font-bold text-dh-main transition-all"
             autoFocus
           />

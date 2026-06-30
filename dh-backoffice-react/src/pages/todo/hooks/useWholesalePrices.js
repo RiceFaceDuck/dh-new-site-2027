@@ -1,29 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '../../../firebase/config';
 import { collection, query, where, documentId, getDocs } from 'firebase/firestore';
 
 export const useWholesalePrices = (activeTodos) => {
   const [wholesaleInputs, setWholesaleInputs] = useState({});
   const [fetchedPrices, setFetchedPrices] = useState({});
+  const fetchedRef = useRef({}); // 🚀 [Optimization] ใช้ useRef เพื่อเก็บ State โดยไม่ทริกเกอร์ re-render loop
 
   useEffect(() => {
     const fetchPricesForWholesale = async () => {
       const wholesaleTasks = activeTodos.filter(t => ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(t.type) && t.items);
       if (wholesaleTasks.length === 0) return;
       
-      let newFetchedPrices = { ...fetchedPrices };
       let hasChanges = false;
       const productIdsToFetch = new Set();
       const taskProductMap = {};
 
       wholesaleTasks.forEach(task => {
-        if (!newFetchedPrices[task.id]) {
-          newFetchedPrices[task.id] = {};
-          hasChanges = true; 
+        if (!fetchedRef.current[task.id]) {
+          fetchedRef.current[task.id] = {};
         }
         const productIds = task.items.map(item => item.productId).filter(Boolean);
         productIds.forEach(pId => {
-           if (newFetchedPrices[task.id][pId] === undefined) {
+           if (fetchedRef.current[task.id][pId] === undefined) {
                productIdsToFetch.add(pId);
                if (!taskProductMap[pId]) taskProductMap[pId] = [];
                taskProductMap[pId].push(task.id);
@@ -46,7 +45,7 @@ export const useWholesalePrices = (activeTodos) => {
                      const taskIds = taskProductMap[pId] || [];
                      const price = foundPrices[pId] !== undefined ? foundPrices[pId] : null; 
                      taskIds.forEach(tId => {
-                         newFetchedPrices[tId][pId] = price;
+                         fetchedRef.current[tId][pId] = price;
                          hasChanges = true;
                      });
                   });
@@ -56,13 +55,15 @@ export const useWholesalePrices = (activeTodos) => {
           }
       }
 
-      if (hasChanges) setFetchedPrices(newFetchedPrices);
+      if (hasChanges) {
+          setFetchedPrices({ ...fetchedRef.current });
+      }
     };
 
     if (activeTodos && activeTodos.length > 0) {
         fetchPricesForWholesale();
     }
-  }, [activeTodos, fetchedPrices]);
+  }, [activeTodos]); // 🚀 เอา fetchedPrices ออกจาก Dependency ป้องกัน Infinite Loop
 
   return {
     fetchedPrices,

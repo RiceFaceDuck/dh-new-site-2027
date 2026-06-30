@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, useLayoutEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home/Home';
@@ -9,22 +9,18 @@ import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
 import StoreProfilePage from './pages/StoreProfile/StoreProfilePage';
 
-// 🚀 เพิ่มหน้าตะกร้าสินค้า และหน้าสั่งซื้อ (Checkout)
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
 import { CartProvider } from './context/CartProvider';
 import { OrderProvider } from './context/OrderContext';
 import { ToastProvider } from './context/ToastContext';
+import { FavoritesProvider } from './context/FavoritesProvider';
 
-// 🚀 นำเข้าระบบ Squad Selection (ใหม่ล่าสุด)
-import SquadLayout from './layouts/SquadLayout';
-import Squad from './pages/Squad/Squad';
-
-// 🚀 นำเข้าระบบ Hardware Scanner
-import HardwareScanner from './pages/HardwareScanner/HardwareScanner';
-
-// 🚀 นำเข้าระบบรวมผู้ให้บริการ (Service Providers)
-import ProvidersPage from './pages/Providers/ProvidersPage';
+// 🚀 Code Splitting: โหลดเฉพาะหน้าที่จำเป็นเมื่อผู้ใช้เรียกใช้ เพื่อลด Bundle Size และเพิ่มความเร็วหน้าแรก
+const Cart = React.lazy(() => import('./pages/Cart'));
+const Checkout = React.lazy(() => import('./pages/Checkout'));
+const SquadLayout = React.lazy(() => import('./layouts/SquadLayout'));
+const Squad = React.lazy(() => import('./pages/Squad/Squad'));
+const HardwareScanner = React.lazy(() => import('./pages/HardwareScanner/HardwareScanner'));
+const ProvidersPage = React.lazy(() => import('./pages/Providers/ProvidersPage'));
 
 // 📜 นำเข้าระบบจัดการ PDPA และ Legal Pages
 import CookieConsentBanner from './components/common/CookieConsentBanner';
@@ -43,63 +39,69 @@ import { marketingService } from './firebase/marketingService';
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   
-  useEffect(() => {
-    // หน่วงเวลาเล็กน้อยเพื่อให้ DOM เรนเดอร์เฟรมแรกเสร็จสมบูรณ์ก่อนเลื่อน
-    const timer = setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 50);
-    return () => clearTimeout(timer);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [pathname]);
 
   return null;
 };
 
+const GlobalLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
+
 function App() {
 
   return (
     <ToastProvider>
+    <FavoritesProvider>
     <CartProvider>
       <OrderProvider>
       <Router>
         {/* ฝังลูกเล่น ScrollToTop ทำงานเงียบๆ ทุกครั้งที่ Route เปลี่ยน */}
         <ScrollToTop />
         
-        <Routes>
-          {/* Routes ที่ใช้โครงสร้างหลัก (มี Header, Footer) */}
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/categories" element={<CategoriesMain />} />
-            <Route path="/category/:type" element={<CategoryPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/store/:id" element={<StoreProfilePage />} />
+        <Suspense fallback={<GlobalLoader />}>
+          <Routes>
+            {/* Routes ที่ใช้โครงสร้างหลัก (มี Header, Footer) */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/categories" element={<CategoriesMain />} />
+              <Route path="/category/:type" element={<CategoryPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/store/:id" element={<StoreProfilePage />} />
+              
+              {/* 🚀 ลงทะเบียน Route สำหรับ E-Commerce Core */}
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              
+              {/* 🚀 ลงทะเบียน Route สำหรับ Hardware Scanner */}
+              <Route path="/hardware-scanner" element={<HardwareScanner />} />
+              
+              {/* 🚀 ลงทะเบียน Route สำหรับ Service Providers */}
+              <Route path="/providers" element={<ProvidersPage />} />
+              
+              {/* 📜 ลงทะเบียน Route สำหรับหน้า PDPA / Legal */}
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
+            </Route>
             
-            {/* 🚀 ลงทะเบียน Route สำหรับ E-Commerce Core */}
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            
-            {/* 🚀 ลงทะเบียน Route สำหรับ Hardware Scanner */}
-            <Route path="/hardware-scanner" element={<HardwareScanner />} />
-            
-            {/* 🚀 ลงทะเบียน Route สำหรับ Service Providers */}
-            <Route path="/providers" element={<ProvidersPage />} />
-            
-            {/* 📜 ลงทะเบียน Route สำหรับหน้า PDPA / Legal */}
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-          </Route>
-          
-          {/* 🚀 ระบบหน้าแยกพิเศษสำหรับช่าง (ไม่มี Header/Footer ปกติ) */}
-          <Route path="/squad" element={<SquadLayout><Squad /></SquadLayout>} />
-        </Routes>
+            {/* 🚀 ระบบหน้าแยกพิเศษสำหรับช่าง (ไม่มี Header/Footer ปกติ) */}
+            <Route path="/squad" element={<SquadLayout><Squad /></SquadLayout>} />
+          </Routes>
+        </Suspense>
         
         {/* 🛡️ แบนเนอร์ยอมรับคุกกี้ (แสดงทุกหน้า) */}
         <CookieConsentBanner />
       </Router>
       </OrderProvider>
     </CartProvider>
+    </FavoritesProvider>
     </ToastProvider>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { 
   Loader2, ShieldCheck, UserCheck, RefreshCw, BadgeCheck, Mail, Calendar, 
@@ -18,6 +19,7 @@ import SupportSettings from '../forms/SupportSettings';
 export default function TabOverview() {
   const auth = getAuth();
   const user = auth.currentUser;
+  const navigate = useNavigate();
   
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,8 +81,12 @@ export default function TabOverview() {
       ========================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Wallet Card */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-slate-700/50">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div 
+          onClick={() => navigate('/profile?tab=wallet')}
+          className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-slate-700/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+          title="คลิกเพื่อดูประวัติและทำรายการ"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/30 transition-colors"></div>
           <div className="relative z-10 flex justify-between items-start">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-slate-400">
@@ -101,8 +107,12 @@ export default function TabOverview() {
         </div>
 
         {/* Credit Points Card */}
-        <div className="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-indigo-900/50">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div 
+          onClick={() => navigate('/profile?tab=credit')}
+          className="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-indigo-900/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+          title="คลิกเพื่อดูประวัติและทำรายการ"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-colors"></div>
           <div className="relative z-10 flex justify-between items-start">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-indigo-300">
@@ -216,33 +226,30 @@ export default function TabOverview() {
         <SupportSettings user={user} initialData={profileData} onRefresh={handleRefresh} />
       )}
 
-      {/* ==========================================
-          Section 4: Danger Zone (PDPA - Right to be Forgotten)
-      ========================================== */}
-      <div className="bg-rose-50 rounded-2xl shadow-sm border border-rose-200 overflow-hidden mt-8">
-        <div className="p-6 border-b border-rose-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-rose-700 flex items-center gap-2">
-              ⚠️ การจัดการบัญชี (Danger Zone)
-            </h3>
-            <p className="text-sm text-rose-600 mt-1">ลบข้อมูลส่วนบุคคลและประวัติทั้งหมดออกจากระบบอย่างถาวร</p>
-          </div>
-          <button 
-            onClick={async () => {
-              if (window.confirm('คำเตือน: คุณต้องการลบบัญชีและข้อมูลทั้งหมดออกจากระบบอย่างถาวรใช่หรือไม่?\n\nการกระทำนี้ไม่สามารถยกเลิกหรือกู้คืนข้อมูลได้!')) {
-                try {
-                  await userService.deleteAccount(user, walletBalance);
-                  window.location.href = '/'; // Redirect to home
-                } catch (error) {
-                  alert(error.message);
-                }
-              }
-            }}
-            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg shadow-sm transition-all text-sm"
-          >
-            ลบบัญชีถาวร
-          </button>
+      <div className="mt-12 border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white opacity-90 hover:opacity-100 transition-opacity">
+        <div>
+          <h3 className="text-sm font-bold text-slate-700">
+            การจัดการบัญชี (Danger Zone)
+          </h3>
+          <p className="text-xs text-slate-500 mt-1">
+            ลบข้อมูลส่วนบุคคลและประวัติทั้งหมดออกจากระบบอย่างถาวร (ไม่สามารถกู้คืนได้)
+          </p>
         </div>
+        <button 
+          onClick={async () => {
+            if (window.confirm('คำเตือน: คุณต้องการลบบัญชีและข้อมูลทั้งหมดออกจากระบบอย่างถาวรใช่หรือไม่?\n\nการกระทำนี้ไม่สามารถยกเลิกหรือกู้คืนข้อมูลได้!')) {
+              try {
+                await userService.deleteAccount(user, walletBalance);
+                window.location.href = '/'; // Redirect to home
+              } catch (error) {
+                alert(error.message);
+              }
+            }
+          }}
+          className="px-4 py-2 border border-rose-300 text-rose-600 hover:bg-rose-600 hover:text-white font-medium rounded-lg transition-colors text-xs whitespace-nowrap"
+        >
+          ลบบัญชีถาวร
+        </button>
       </div>
 
     </div>

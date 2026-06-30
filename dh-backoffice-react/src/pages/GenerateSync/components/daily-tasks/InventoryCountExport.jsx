@@ -51,7 +51,7 @@ export default function InventoryCountExport({ changes, isCalculating }) {
            <CheckSquare size={16} />}
         </div>
         <div className="flex-1 text-left flex flex-col">
-          <span>3. นำเข้าผลลัพธ์การนับ (总仓库)</span>
+          <span>โหลด ผลลัพธ์การนับ</span>
           {status !== 'idle' && (
             <span className={`text-xs mt-0.5 ${status === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
               {message}

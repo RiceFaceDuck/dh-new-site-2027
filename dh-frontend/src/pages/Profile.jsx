@@ -106,7 +106,9 @@ const Profile = () => {
       case 'overview':
         return <TabOverview user={user} />;
       case 'wallet':
-        return <TabWallet user={user} />;
+        return <TabWallet user={user} type="wallet" />;
+      case 'credit':
+        return <TabWallet user={user} type="credit" />;
       case 'ads':
         // 🚀 เรียกใช้ Unified Ad Manager แทนที่ระบบ My SKU เก่าทั้งหมด
         return <TabAdManager user={user} />;

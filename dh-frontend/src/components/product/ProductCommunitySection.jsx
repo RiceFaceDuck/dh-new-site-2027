@@ -55,7 +55,13 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
       setHasMore(result.hasMore);
     } catch (error) {
       console.error("Error loading reviews:", error);
-      showToast("ไม่สามารถโหลดรีวิวได้", "error");
+      if (error.message && error.message.toLowerCase().includes('index')) {
+        showToast("ไม่สามารถโหลดรีวิวได้: ขาด Index ใน Firestore (ดู Link ใน Console)", "error");
+      } else if (error.message && error.message.toLowerCase().includes('permission')) {
+        showToast("ไม่สามารถโหลดรีวิวได้: ไม่มีสิทธิ์การเข้าถึง (Permission Denied)", "error");
+      } else {
+        showToast("ไม่สามารถโหลดรีวิวได้: " + (error.message || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ"), "error");
+      }
     } finally {
       setLoading(false);
     }

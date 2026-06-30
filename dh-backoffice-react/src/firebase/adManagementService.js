@@ -151,10 +151,33 @@ export const adManagementService = {
         batch.update(partnerAdRef, updatePayload);
       }
 
-      // 🌟 THE FIX [Data Relationship]: Remove from ActivePartners if rejected
+      // 🌟 THE FIX [Data Relationship]: Restore from ActivePartners if rejected
       if (adData && adData.type === 'BUSINESS_CARD') {
-         const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', adData.ownerId);
-         batch.delete(activePartnerRef);
+         const partnerId = adData.ownerId;
+         const partnerRef = doc(db, 'partners', partnerId);
+         const partnerSnap = await getDoc(partnerRef);
+         
+         if (partnerSnap.exists() && partnerSnap.data().isActive !== false) {
+             const pData = partnerSnap.data();
+             const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+             batch.set(activePartnerRef, {
+                partnerId: partnerId,
+                storeName: pData.storeName || pData.accountName || pData.displayName || '',
+                services: pData.services || pData.description || '',
+                phone: pData.phone || '',
+                messengerUrl: pData.messengerUrl || '',
+                lineUrl: pData.lineUrl || '',
+                googleMapLink: pData.googleMapLink || '',
+                latitude: Number(pData.latitude || 0),
+                longitude: Number(pData.longitude || 0),
+                storeImage: pData.storeImage || pData.avatarUrl || '',
+                updatedAt: serverTimestamp()
+             }, { merge: true });
+         } else {
+             // If partner doesn't exist or is not active, delete from ActivePartners
+             const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+             batch.delete(activePartnerRef);
+         }
       }
 
       // 3.2 ปิดงานใน To-do ของผู้จัดการโดยตรง (Direct Update)

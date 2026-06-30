@@ -138,7 +138,7 @@ export default function UploadTransactions({ onUploadComplete }) {
             </div>
             
             <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1 text-center">
-              อัปโหลดข้อมูลธุรกรรม
+              นำเข้าข้อมูล การขาย จากภายนอก (วันนี้)
             </h3>
             <p className="text-slate-500 dark:text-slate-400 text-center mb-6 text-sm max-w-sm">
               รองรับไฟล์ Excel (.xlsx) นำเข้าเพื่อปรับปรุงยอดสต็อกอัตโนมัติ

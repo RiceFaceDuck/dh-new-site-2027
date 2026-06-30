@@ -45,10 +45,13 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
     }
 
-    const [settingsSnap, userSnap, walletSnap] = await Promise.all([
+    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
+
+    const [settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
       transaction.get(settingsRef),
       transaction.get(userRef),
-      transaction.get(walletRef)
+      transaction.get(walletRef),
+      transaction.get(activePartnerRef)
     ]);
 
     if (!userSnap.exists()) {
@@ -113,6 +116,11 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     };
 
     transaction.set(userRef, syncPayload, { merge: true });
+
+    // ✨ NEW FIX: Sync points to ActivePartners to prevent denormalization issues
+    if (activePartnerSnap.exists()) {
+      transaction.set(activePartnerRef, { points: newWalletBalance, updatedAt: serverTimestamp() }, { merge: true });
+    }
 
     const userData = userSnap.data();
     const userEmail = userData.email || 'Migrated User';

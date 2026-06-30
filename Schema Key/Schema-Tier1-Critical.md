@@ -42,8 +42,8 @@ export interface OrderItem {
   sku: string;
   qty: number;
   isFreebie: boolean;
-  nameAtPurchase?: string;
-  priceAtPurchase?: number;
+  nameAtPurchase: string;
+  priceAtPurchase: number;
 }
 
 export interface AppliedFreebie {

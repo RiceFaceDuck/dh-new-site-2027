@@ -51,7 +51,7 @@ export default function SkuMerchantExport({ changes, isCalculating }) {
            <List size={16} />}
         </div>
         <div className="flex-1 text-left flex flex-col">
-          <span>2. ดาวน์โหลด SKU Merchant</span>
+          <span>โหลด SKU ที่มีความเคลื่อนไหว</span>
           {status !== 'idle' && (
             <span className={`text-xs mt-0.5 ${status === 'error' ? 'text-red-500' : 'text-indigo-500'}`}>
               {message}

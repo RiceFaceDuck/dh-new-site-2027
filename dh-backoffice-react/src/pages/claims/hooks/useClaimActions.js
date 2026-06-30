@@ -55,10 +55,14 @@ export function useClaimActions(selectedRequest, setSelectedRequest, userProfile
     if (success) handleClose();
   };
 
-  const handleComplete = async () => {
+  const handleComplete = async (options = {}) => {
     const userName = userProfile?.firstName || 'Manager';
+    const taskToComplete = {
+      ...selectedRequest,
+      payload: { ...selectedRequest.payload, ...options }
+    };
     const success = await executeAction(
-      () => claimService.completeRequest(selectedRequest, auth.currentUser.uid, userName)
+      () => claimService.completeRequest(taskToComplete, auth.currentUser.uid, userName)
     );
     if (success) handleClose();
   };

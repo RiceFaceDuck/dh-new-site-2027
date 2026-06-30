@@ -24,7 +24,12 @@ export const useManagerTodo = () => {
     // 🚀 THE FIX [ลด Reads & แก้บั๊กข้อมูลไม่ตรง]: 
     // เรียกใช้ Service สำหรับ Manager โดยเฉพาะ
     const unsubscribe = managerTodoService.subscribeManagerApprovals(
-      (fetchedTodos) => {
+      (fetchedTodos, fetchError) => {
+          if (fetchError) {
+              setError(fetchError.message || String(fetchError));
+              setLoading(false);
+              return;
+          }
           let countAds = 0;
           let countPartners = 0;
           let countStaff = 0;

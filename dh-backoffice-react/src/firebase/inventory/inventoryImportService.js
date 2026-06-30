@@ -53,6 +53,12 @@ export const inventoryImportService = {
         const batch = writeBatch(db);
         chunk.forEach(p => {
           const docRef = doc(db, 'products', p.sku);
+          
+          // Inject category_lower for frontend query support
+          if (p.category) {
+            p.category_lower = p.category.trim().toLowerCase();
+          }
+
           batch.set(docRef, {
             ...p,
             updatedAt: serverTimestamp(),

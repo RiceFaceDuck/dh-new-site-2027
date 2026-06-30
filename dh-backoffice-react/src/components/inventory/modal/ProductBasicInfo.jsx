@@ -76,6 +76,7 @@ export default function ProductBasicInfo({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-dh-surface p-4 rounded-2xl border border-dh-border shadow-sm">
         <div>
           <label className="text-[10px] font-bold text-dh-muted uppercase tracking-wider mb-1 block">Compatible Models</label>
+          <span className="text-[9px] text-dh-muted/70 block mb-1">เช่น Acer Swift 3, Asus VivoBook 15 (ชื่อรุ่นของโน้ตบุ๊ก)</span>
           <div className="flex flex-wrap gap-1.5 p-2 border border-dh-border rounded-xl min-h-[44px] bg-dh-base focus-within:bg-dh-surface focus-within:border-dh-accent transition-colors shadow-inner">
             {form.compatibleModels.map(t => (
               <span key={t} className="bg-dh-surface border border-dh-border text-dh-main text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
@@ -90,6 +91,7 @@ export default function ProductBasicInfo({
 
         <div>
           <label className="text-[10px] font-bold text-dh-muted uppercase tracking-wider mb-1 block">Compatible Part Number</label>
+          <span className="text-[9px] text-dh-muted/70 block mb-1">เช่น NV156FHM-N48 (รหัสพาร์ทอะไหล่ของโรงงาน)</span>
           <div className="flex flex-wrap gap-1.5 p-2 border border-dh-border rounded-xl min-h-[44px] bg-dh-base focus-within:bg-dh-surface focus-within:border-dh-accent transition-colors shadow-inner">
             {form.compatiblePartNumbers.map(t => (
               <span key={t} className="bg-dh-surface border border-dh-border text-dh-main text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
@@ -104,6 +106,7 @@ export default function ProductBasicInfo({
         
         <div>
           <label className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1 flex items-center gap-1"><AlertTriangle size={12}/> สินค้าขายแทนกัน (SKU)</label>
+          <span className="text-[9px] text-orange-500/70 block mb-1">เช่น SCR-002 (รหัส SKU ของร้านเราที่สามารถเสนอขายแทนได้)</span>
           <div className="flex flex-wrap gap-1.5 p-2 border border-orange-500/30 bg-orange-500/5 rounded-xl min-h-[44px] focus-within:border-orange-500 transition-colors shadow-inner">
             {form.substituteSkus.map(t => (
               <span key={t} className="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">

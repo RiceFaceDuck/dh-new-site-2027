@@ -1,6 +1,7 @@
 import React from 'react';
 import { Cpu, Package, Truck, ShoppingCart, Heart, CheckCircle2 } from 'lucide-react';
 import VariantSelector from './VariantSelector';
+import { useFavorites } from '../../context/FavoritesProvider';
 
 export default function ProductPricingSection({
   product,
@@ -38,6 +39,9 @@ export default function ProductPricingSection({
   const needsSelection = variantOptions && variantOptions.length > 0;
   const isSelectionComplete = selectedVariant && Object.keys(selectedVariant).length === variantOptions?.length;
 
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const isFav = product ? isFavorite(product.id) : false;
+
   return (
     <div className="p-6 md:p-10 flex flex-col">
       <div className="mb-2 flex items-center justify-start">
@@ -46,7 +50,7 @@ export default function ProductPricingSection({
         </span>
       </div>
 
-      <h1 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight mb-3">
+      <h1 className="text-xl md:text-2xl font-semibold text-slate-700 leading-tight mb-3">
         {name}
       </h1>
 
@@ -69,12 +73,12 @@ export default function ProductPricingSection({
         )}
       </div>
       
-      {/* Earn Points Alert */}
+      {/* Earn Points Alert (Subtle) */}
       {!isOutOfStock && creditConfig && calculateEarnedPoints && (
-        <div className="mb-6 p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-2">
-          <span className="text-blue-500 text-lg">✨</span>
-          <span className="text-sm font-medium text-blue-800">
-            ซื้อสินค้านี้รับ <span className="font-bold">{calculateEarnedPoints(salePrice || price, creditConfig, [{ sku: model }]).toLocaleString()}</span> แต้ม
+        <div className="mb-6 flex items-center gap-1.5 text-[13px] text-slate-500">
+          <span className="text-amber-400">✨</span>
+          <span>
+            รับ <span className="font-bold text-slate-700">{calculateEarnedPoints(salePrice || price, creditConfig, [{ sku: model }]).toLocaleString()}</span> แต้มสะสมเมื่อซื้อสินค้านี้
           </span>
         </div>
       )}
@@ -159,8 +163,15 @@ export default function ProductPricingSection({
             <><ShoppingCart size={18} /> ADD TO CART</>
           )}
         </button>
-        <button className="w-12 h-12 md:w-14 md:h-14 bg-white border border-slate-200 hover:border-red-300 hover:text-red-500 hover:bg-red-50 text-slate-400 rounded-sm flex items-center justify-center transition-colors shadow-sm">
-          <Heart size={20} />
+        <button 
+          onClick={() => product && toggleFavorite(product)}
+          className={`w-12 h-12 md:w-14 md:h-14 border rounded-sm flex items-center justify-center transition-colors shadow-sm ${
+            isFav 
+              ? 'bg-red-50 border-red-300 text-red-500' 
+              : 'bg-white border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50'
+          }`}
+        >
+          <Heart size={20} className={isFav ? "fill-current text-red-500" : ""} />
         </button>
       </div>
 

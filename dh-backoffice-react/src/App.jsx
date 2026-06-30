@@ -48,6 +48,7 @@ const GlobalKnowledgeSettings = lazy(() => import('./pages/managers/GlobalKnowle
 const GlobalFooterSettings = lazy(() => import('./pages/managers/GlobalFooterSettings'))
 const PrivacyCookiesSettings = lazy(() => import('./pages/managers/PrivacyCookiesSettings/index.jsx'))
 const RedirectURLsSettings = lazy(() => import('./pages/managers/RedirectURLsSettings/index.jsx'))
+const RbacSettings = lazy(() => import('./pages/managers/settings/rbac/index.jsx'))
 const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
 
 const Placeholder = ({ title }) => (
@@ -170,6 +171,7 @@ function AppContent() {
             <Route path="managers/footer-settings" element={<GlobalFooterSettings />} />
             <Route path="managers/privacy-cookies" element={<PrivacyCookiesSettings />} />
             <Route path="managers/redirect" element={<RedirectURLsSettings />} />
+            <Route path="managers/rbac" element={<RbacSettings />} />
           </Route>
           
           <Route path="history" element={<HistoryPage />}/>

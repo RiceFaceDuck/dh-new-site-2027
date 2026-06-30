@@ -4,6 +4,7 @@ import { historyService } from './historyService';
 import { handleStockDeduction, handleStockReturn } from './billing/statusStockHandler';
 import { handleSalesStatsUpdate } from './billing/statusSalesHandler';
 import { handleWalletRefundAndClawback, handlePointsEarned } from './billing/statusWalletHandler';
+import { handlePromoFreebieReversal } from './billing/statusPromoHandler';
 
 const COLLECTION_NAME = 'orders';
 
@@ -113,6 +114,8 @@ export const billingStatusTransaction = {
                      settingsSnap, settingsRef, actualActorUid, normalizedCurrentStatus, updates
                  );
              }
+             
+             await handlePromoFreebieReversal(transaction, db, orderData);
           }
 
           transaction.update(docRef, updates);

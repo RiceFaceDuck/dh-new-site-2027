@@ -104,6 +104,7 @@ const QuickAccessTools = ({
     switch (menuId) {
       case 'vip': return onOpenVipModal;
       case 'staff': return onNavigateStaff;
+      case 'rbac': return () => navigate('/managers/rbac');
       case 'pricing': return onNavigatePricing;
       case 'history': return onNavigateHistory;
       case 'email': return onOpenEmailSetup;

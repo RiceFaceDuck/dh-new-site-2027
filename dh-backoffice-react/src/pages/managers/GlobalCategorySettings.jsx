@@ -34,12 +34,33 @@ export default function GlobalCategorySettings() {
                             </p>
                         </div>
                     </div>
-                    <button 
-                        onClick={() => setIsGuideOpen(true)} 
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-100/50 hover:bg-emerald-200/50 rounded-xl transition-colors border border-emerald-200 shadow-sm dh-active-press shrink-0"
-                    >
-                        <LayoutTemplate size={16} /> คู่มือการใช้งาน
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={async () => {
+                                if(window.confirm('คุณต้องการอัปเดตข้อมูลหมวดหมู่สินค้าทั้งหมดใช่หรือไม่? (อาจใช้เวลาสักครู่)')) {
+                                    try {
+                                        if (window.runCategoryMigration) {
+                                            await window.runCategoryMigration();
+                                            alert('อัปเดตข้อมูลหมวดหมู่สำเร็จแล้ว! ลูกค้าสามารถดูสินค้าได้ตามปกติครับ');
+                                        } else {
+                                            alert('ไม่พบฟังก์ชัน Migration โปรดรีเฟรชหน้าเว็บหนึ่งครั้ง');
+                                        }
+                                    } catch(e) {
+                                        alert('เกิดข้อผิดพลาด: ' + e.message);
+                                    }
+                                }
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-xl transition-colors border border-amber-200 shadow-sm shrink-0"
+                        >
+                            <Layers size={16} /> ซ่อมแซมหมวดหมู่สินค้า (Migration)
+                        </button>
+                        <button 
+                            onClick={() => setIsGuideOpen(true)} 
+                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-100/50 hover:bg-emerald-200/50 rounded-xl transition-colors border border-emerald-200 shadow-sm dh-active-press shrink-0"
+                        >
+                            <LayoutTemplate size={16} /> คู่มือการใช้งาน
+                        </button>
+                    </div>
                 </div>
 
                 {/* Tabs */}

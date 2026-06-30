@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { db } from './config';
 import { 
-  collection, query, where, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot 
+  collection, query, where, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, limit
 } from 'firebase/firestore';
 
 // ----------------------------------------------------------------------
@@ -36,7 +36,8 @@ export const managerTodoService = {
     const todosRef = collection(db, 'todos');
     const q = query(
       todosRef,
-      where('status', 'in', ['todo', 'pending'])
+      where('status', 'in', ['todo', 'pending']),
+      limit(2000) // 🚀 [Optimization] เพิ่ม Limit เป็น 2000 เพื่อป้องกันงานข้ามประเภทดันตกขอบ
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {

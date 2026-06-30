@@ -9,14 +9,21 @@ service cloud.firestore {
     
     function isStaff() {
       return isAuthenticated() && (
-        (request.auth.token.role != null && request.auth.token.role in ['staff', 'manager', 'admin']) ||
-        (request.auth.token.isStaff != null && request.auth.token.isStaff == true)
+        request.auth.token.role == 'staff' ||
+        request.auth.token.role == 'manager' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'owner' ||
+        request.auth.token.isStaff == true ||
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' // TODO: REMOVE LATER - Temporary bypass for development testing
       );
     }
 
     function isManagerOrAdmin() {
       return isAuthenticated() && (
-        (request.auth.token.role != null && request.auth.token.role in ['manager', 'admin'])
+        request.auth.token.role == 'manager' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'owner' ||
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' // Bypass for owner
       );
     }
     
@@ -30,14 +37,43 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       // เจ้าของบัญชี หรือ Manager แก้ไขได้
       allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+      
+      // ให้สิทธิ์การเข้าถึง Subcollections (เช่น storeProfile, wallet)
+      match /{document=**} {
+        allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
+        allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+      }
+    }
+    
+    // 1.1 ผู้ใช้ (Users) ในระบบ Artifacts
+    match /artifacts/{appId}/users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+      
+      match /{document=**} {
+        allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
+        allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+      }
     }
 
     // 2. สินค้าคงคลัง (Products)
     match /products/{productId} {
       // ลูกค้าทั่วไปอ่านได้
       allow read: if true;
-      // เฉพาะพนักงานเท่านั้นที่แก้ไขจำนวนสต๊อก หรือข้อมูลได้
+      // เฉพาะพนักงานเท่านั้นที่แก้ไขจำนวนสต๊อก หรือข้อมูลทั้งหมดได้
       allow write: if isStaff();
+      // อนุญาตให้ User ทั่วไป (ที่ล็อกอิน) อัปเดตได้เฉพาะคะแนนรีวิวเท่านั้น
+      allow update: if isAuthenticated() && 
+                    request.resource.data.diff(resource.data).affectedKeys()
+                    .hasOnly(['reviewCount', 'averageRating']);
+    }
+
+    // 2.1 รีวิวสินค้า (Product Reviews)
+    match /product_reviews/{reviewId} {
+      allow read: if true; // ทุกคนอ่านรีวิวได้
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid; // ต้องล็อกอินถึงจะเขียนรีวิวได้
+      allow update: if isAuthenticated(); // สำหรับการกด Like
+      allow delete: if isManagerOrAdmin(); // เฉพาะผู้ดูแลลบได้
     }
 
     // 3. ระบบบิลและการเงิน (Orders & Credit)
@@ -55,11 +91,35 @@ service cloud.firestore {
 
     // 4. งานอนุมัติของ Manager (Todos & System Logs)
     match /todos/{todoId} {
-      allow read: if isStaff() || (isAuthenticated() && (resource.data.createdByUid == request.auth.uid || resource.data.customerUid == request.auth.uid || resource.data.uid == request.auth.uid));
-      // ลูกค้าทั่วไปสร้าง Todo ได้เฉพาะเคสที่กำหนด และต้องเป็น UID ของตัวเองเท่านั้นเพื่อกัน Spam
-      allow create: if isStaff() || (isAuthenticated() && request.resource.data.createdByUid == request.auth.uid);
-      allow update: if isStaff() || (isAuthenticated() && (resource.data.createdByUid == request.auth.uid || resource.data.customerUid == request.auth.uid || resource.data.uid == request.auth.uid));
-      allow delete: if isStaff();
+      allow read: if isStaff() || (isAuthenticated() && (
+        resource == null ||
+        resource.data.createdByUid == request.auth.uid || 
+        resource.data.createdBy == request.auth.uid || 
+        resource.data.customerUid == request.auth.uid || 
+        resource.data.uid == request.auth.uid ||
+        resource.data.partnerId == request.auth.uid
+      ));
+      allow create: if isStaff() || (isAuthenticated() && (
+        request.resource.data.createdByUid == request.auth.uid || 
+        request.resource.data.createdBy == request.auth.uid ||
+        request.resource.data.partnerId == request.auth.uid
+      ));
+      allow update: if isStaff() || (isAuthenticated() && (
+        resource == null ||
+        resource.data.createdByUid == request.auth.uid || 
+        resource.data.createdBy == request.auth.uid || 
+        resource.data.customerUid == request.auth.uid || 
+        resource.data.uid == request.auth.uid ||
+        resource.data.partnerId == request.auth.uid ||
+        request.resource.data.createdBy == request.auth.uid ||
+        request.resource.data.partnerId == request.auth.uid
+      ));
+      allow delete: if isStaff() || (isAuthenticated() && (
+        resource == null ||
+        resource.data.createdByUid == request.auth.uid || 
+        resource.data.createdBy == request.auth.uid ||
+        resource.data.partnerId == request.auth.uid
+      ));
     }
     
     match /system_logs/{logId} {
@@ -68,6 +128,10 @@ service cloud.firestore {
     }
 
     // 5. ข้อมูลอื่นๆ ที่เป็น Public (หมวดหมู่, หน้าแรก, โฆษณา)
+    match /artifacts/{appId}/public/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // จำเป็นต้องอนุญาตสำหรับ Sandbox (การส่งคำขอโฆษณา, ขอถอนเงิน)
+    }
     match /homepage_categories/{catId} {
       allow read: if true;
       allow write: if isManagerOrAdmin();
@@ -89,7 +153,14 @@ service cloud.firestore {
       allow write: if isManagerOrAdmin();
     }
     
-    // 6. การตั้งค่าระบบ (Settings)
+    // 6. การตั้งค่าระบบ (Settings) และข้อมูลพื้นฐาน
+    match /carts/{cartId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == cartId;
+    }
+    match /shipping_rules/{docId} {
+      allow read: if true;
+      allow write: if isManagerOrAdmin();
+    }
     match /settings/{docId} {
       allow read: if true;
       allow write: if isManagerOrAdmin();
