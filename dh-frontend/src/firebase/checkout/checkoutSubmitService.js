@@ -36,11 +36,37 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       productSnaps.push(await transaction.get(pRef));
     }
 
+    // [SECURITY] Read Promotions to validate in real-time
+    const promoSnaps = [];
+    if (checkoutState?.appliedPromotions?.length > 0) {
+      for (const promo of checkoutState.appliedPromotions) {
+        if (promo.id) {
+          const promoRef = doc(db, 'promotions', promo.id);
+          promoSnaps.push({ snap: await transaction.get(promoRef), name: promo.name || 'โปรโมชัน' });
+        }
+      }
+    }
+
     // 2. Validations
     const useWallet = checkoutState?.useWallet || 0;
     if (useWallet > 0 && Number(userData.walletBalance || 0) < useWallet) {
       throw new Error("ยอดเงินค้างในระบบ (Wallet) ของคุณไม่เพียงพอ");
     }
+
+    // Validate Promotions
+    promoSnaps.forEach(({ snap, name }) => {
+      if (!snap.exists()) throw new Error(`โปรโมชัน ${name} ถูกลบออกจากระบบแล้ว`);
+      const promoData = snap.data();
+      if (promoData.deletedAt || !promoData.isActive) throw new Error(`โปรโมชัน ${name} ถูกปิดใช้งานแล้ว`);
+      if (promoData.quotaLimit && promoData.quotaLimit > 0) {
+        if ((promoData.quotaUsed || 0) >= promoData.quotaLimit) {
+          throw new Error(`โปรโมชัน ${name} สิทธิ์เต็มแล้ว`);
+        }
+      }
+      const now = new Date();
+      if (promoData.startDate && new Date(promoData.startDate) > now) throw new Error(`โปรโมชัน ${name} ยังไม่เริ่ม`);
+      if (promoData.endDate && new Date(promoData.endDate) < now) throw new Error(`โปรโมชัน ${name} หมดอายุแล้ว`);
+    });
 
     // [SECURITY] Calculate exact net total using dh-shared PriceEngine
     // Re-hydrate cart items with REAL DB prices
@@ -95,6 +121,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       userId: user.uid,
       items: verifiedItems,
       shippingAddress: checkoutState?.customerData || null,
+      shippingMethod: checkoutState?.shippingMethod || "standard",
       taxInvoice: checkoutState?.taxData || null,
       paymentMethod: checkoutState?.paymentMethod || "transfer",
       paymentSlipUrl: slipUrl,
@@ -111,6 +138,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         discountAmount: calculatedPrices.discountAmount,
         usedWallet: useWallet,
       },
+      appliedPromotions: checkoutState?.appliedPromotions || [],
+      appliedFreebies: checkoutState?.qualifiedFreebies || [],
       pendingCredits: earnedPoints > 0 ? earnedPoints : 0,
       pointsAwarded: false,
       createdAt: serverTimestamp(),

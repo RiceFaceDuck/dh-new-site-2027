@@ -64,7 +64,7 @@ export default function CartTable({
                                             item={{ 
                                                 ...freebie, 
                                                 sku: freebie.itemName,
-                                                name: `[แถมฟรี] ${freebie.itemName}`, 
+                                                name: `[แถมฟรี] ${freebie.productName || freebie.itemName}`, 
                                                 qty: freebie.qty || 1, 
                                                 price: 0, 
                                                 discount: 0,

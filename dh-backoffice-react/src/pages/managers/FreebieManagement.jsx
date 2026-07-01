@@ -10,6 +10,7 @@ export default function FreebieManagement() {
   const navigate = useNavigate();
   const {
     freebies,
+    categories,
     loading,
     isModalOpen,
     setIsModalOpen,
@@ -63,6 +64,7 @@ export default function FreebieManagement() {
         onClose={() => setIsModalOpen(false)}
         formData={formData}
         setFormData={setFormData}
+        categories={categories}
         handleSave={handleSave}
         isProcessing={isProcessing}
       />
@@ -76,6 +78,7 @@ export default function FreebieManagement() {
           description: "ระบบสำหรับสร้างกฎเพื่อแจกของแถมอัตโนมัติ โดยระบบจะคำนวณและเพิ่มของแถมลงในบิล (POS และหน้าร้าน) ให้ทันทีเมื่อลูกค้าซื้อสินค้าตรงตามเงื่อนไขที่คุณกำหนดไว้",
           howTo: [
             "<strong>การสร้างกฎ:</strong> คลิก <code>สร้างกฎของแถมใหม่</code> ระบุชื่อของแถม จำนวนชิ้น และเงื่อนไขต่างๆ",
+            "<strong>จำกัดเฉพาะสินค้า:</strong> สามารถระบุ SKU หรือหมวดหมู่ (TYPE) ที่ร่วมรายการ หากลูกค้าซื้อสินค้าตามที่ระบุจึงจะได้ของแถม (เว้นว่างไว้หากใช้ได้กับทั้งร้าน)",
             "<strong>เงื่อนไขละเอียด:</strong> คุณสามารถจำกัด <code>กลุ่มลูกค้า</code> (เช่น ให้เฉพาะ VIP), ตั้ง <code>วันที่เริ่มต้น-สิ้นสุด</code>, และกำหนด <code>โควต้าทั้งหมด</code> (เช่น แจกแค่ 100 ชิ้นแรก) ได้",
             "<strong>การเปิด/ปิด:</strong> ใช้สวิตช์ Toggle เพื่อสั่งระงับชั่วคราว หรือถ้าต้องการลบถาวรให้คลิกที่ไอคอนถังขยะ"
           ],

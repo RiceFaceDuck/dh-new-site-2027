@@ -49,7 +49,7 @@ export default function ReceiptTemplate({
     const _thaiBahtText = orderData ? (orderData.thaiBahtText || '') : (convertToThaiBahtText ? convertToThaiBahtText(_remainingToPay) : '');
     
     // Combine items and freebies if this is a draft bill (orderData is null)
-    let finalItems = items;
+    let finalItems = items ? [...items] : [];
     if (!orderData && eligibleFreebies?.length > 0) {
         const previewFreebies = eligibleFreebies.map(f => {
             let conditionText = [];
@@ -59,12 +59,24 @@ export default function ReceiptTemplate({
             const reasonStr = conditionText.length > 0 ? ` (${conditionText.join(', ')})` : '';
             return {
                 sku: f.itemName, 
-                name: `[แถมฟรี] ${f.itemName}`, 
+                name: `[แถมฟรี] ${f.productName || f.itemName}`, 
                 qty: Math.min(Number(f.qty) || 1, Number(f.maxPerBill) || Number(f.qty) || 1), 
                 price: 0, discount: 0, total: 0, isFreebie: true, note: `${f.title}${reasonStr}`, noteColor: 'rose'
             };
         });
-        finalItems = [...items, ...previewFreebies];
+        finalItems = [...finalItems, ...previewFreebies];
+    } else if (orderData && orderData.appliedFreebies?.length > 0) {
+        // Merge appliedFreebies from frontend orders that aren't directly in items array
+        orderData.appliedFreebies.forEach(f => {
+            if (!finalItems.some(i => (i.sku === f.itemName || i.id === f.itemName) && i.isFreebie)) {
+                finalItems.push({
+                    sku: f.itemName,
+                    name: `[แถมฟรี] ${f.productName || f.title || f.itemName}`,
+                    qty: f.qty || 1,
+                    price: 0, discount: 0, total: 0, isFreebie: true, note: f.title, noteColor: 'rose'
+                });
+            }
+        });
     }
 
     const staffName = orderData?.actorName || auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'พนักงาน';

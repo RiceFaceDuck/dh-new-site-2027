@@ -1,5 +1,6 @@
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
+import { gasStockService } from '../gasStockService';
 import { doc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
 
 export const todoPaymentService = {
@@ -102,12 +103,29 @@ export const todoPaymentService = {
                 action: 'PAYMENT_APPROVED',
                 target: { id: orderId },
                 details: { 
-                  legacy_details: `ตรวจสอบยอดชำระเงินสำเร็จ. กำลังเข้าสู่กระบวนการจัดเตรียมสินค้า (เอกสารอ้างอิง: ${generatedInvoiceId})`
+                  legacy_details: `ตรวจสอบยอดชำระเงินสำเร็จ. กำลังเข้าสู่กระบวนการจัดเตรียมสินค้า (เอกสารอ้างอิง: ${generatedOrderId})`
                 },
                 actorOverride: { uid: userId, name: 'System (For Customer)', email: 'N/A' }
             });
         }
-        return { success: true, invoiceId: generatedInvoiceId };
+
+        // 🔄 Sync Stock to Google Sheets (GAS)
+        // Since frontend deducted stock but didn't push to GAS, we do it here upon approval.
+        if (orderData.items && Array.isArray(orderData.items)) {
+          for (const item of orderData.items) {
+            if (!item.sku) continue;
+            const pRef = doc(db, 'products', item.sku);
+            const pSnap = await transaction.get(pRef);
+            if (pSnap.exists()) {
+              gasStockService.queueUpdate({ 
+                sku: item.sku, 
+                stockQuantity: pSnap.data().stockQuantity 
+              });
+            }
+          }
+        }
+
+        return { success: true, invoiceId: generatedOrderId };
       });
     } catch (error) {
       console.error("🔥 verifyPaymentSlip Error:", error);

@@ -112,5 +112,15 @@ export const freebieService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  hardDeleteFreebie: async (id, title, user) => {
+    try {
+      await deleteDoc(doc(db, COLLECTION_NAME, id));
+      await historyService.addLog('Freebie', 'HardDelete', id, `ลบกฎของแถมถาวร: ${title}`, user.uid);
+      return true;
+    } catch (error) {
+      throw error;
+    }
   }
 };

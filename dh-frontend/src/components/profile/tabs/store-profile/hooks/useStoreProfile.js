@@ -5,6 +5,7 @@ import { storeProfileSubmitService } from '../../../../../firebase/storeProfileS
 export const useStoreProfile = (storeData, setStoreData, user, appId, businessCardAd, fetchMyAds) => {
   const [savingStore, setSavingStore] = useState(false);
   const [uploadingStoreImage, setUploadingStoreImage] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   const handleStoreImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -20,6 +21,29 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
     } finally { 
       setUploadingStoreImage(false); 
     }
+  };
+
+  const handleGalleryImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return alert("ไฟล์ใหญ่เกินไป (Max 5MB)");
+    
+    setUploadingGallery(true);
+    try {
+      const url = await driveService.uploadAdImage(file, 'STORE_GALLERY');
+      const currentGallery = storeData.galleryImages || [];
+      if (currentGallery.length >= 5) return alert("อัปโหลดได้สูงสุด 5 รูป");
+      setStoreData({ ...storeData, galleryImages: [...currentGallery, url] });
+    } catch (error) {
+      alert("อัปโหลดไม่สำเร็จ: " + error.message);
+    } finally { 
+      setUploadingGallery(false); 
+    }
+  };
+
+  const handleRemoveGalleryImage = (indexToRemove) => {
+    const currentGallery = storeData.galleryImages || [];
+    setStoreData({ ...storeData, galleryImages: currentGallery.filter((_, idx) => idx !== indexToRemove) });
   };
 
   const handleToggleSupport = () => {
@@ -50,8 +74,11 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
   return {
     savingStore,
     uploadingStoreImage,
+    uploadingGallery,
     isAdPending,
     handleStoreImageUpload,
+    handleGalleryImageUpload,
+    handleRemoveGalleryImage,
     handleToggleSupport,
     handleSaveStore
   };

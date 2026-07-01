@@ -55,6 +55,7 @@ export default function GenerateSync() {
               <GenerateActions 
                   changes={changes} 
                   isCalculating={isCalculating} 
+                  onManualReset={handleManualReset}
               />
               <UploadTransactions onUploadComplete={fetchChanges} />
               <GlobalSchemaSettings />

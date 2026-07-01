@@ -29,6 +29,10 @@ const HistoryItemCard = ({
 
   const statusObj = getStatusDisplay(order.status);
   const itemsList = order.items?.map(i => i.name).join(', ') || 'ไม่มีรายการสินค้า';
+  
+  const displayOrderId = order.orderId && order.orderId.startsWith('DH-') 
+    ? order.orderId 
+    : `#${(order.orderId || order.id)?.slice(-8).toUpperCase()}`;
 
   return (
     <div className={`bg-white border transition-all duration-300 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md ${isExpanded ? 'border-indigo-300 ring-1 ring-indigo-100' : 'border-gray-200'}`}>
@@ -36,7 +40,7 @@ const HistoryItemCard = ({
       {/* Order Header Summary */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-3 pb-3 mb-3 border-b border-gray-100">
         <div>
-          <h3 className="text-base font-bold text-gray-900">ออเดอร์ #{order.id?.slice(-8).toUpperCase()}</h3>
+          <h3 className="text-base font-bold text-gray-900">ออเดอร์ {displayOrderId}</h3>
           <p className="text-xs text-gray-500 mt-0.5">สั่งซื้อเมื่อ: {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : 'N/A'}</p>
         </div>
         <div className="flex flex-col sm:items-end gap-1">
@@ -247,8 +251,21 @@ const HistoryItemCard = ({
             </div>
           )}
 
-          {/* ที่อยู่จัดส่ง */}
-          {order.shippingAddress && (
+          {/* ที่อยู่จัดส่ง / รับหน้าร้าน */}
+          {order.shippingMethod === 'pickup' ? (
+            <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-green-50 p-4 rounded-xl border border-green-100">
+              <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              </div>
+              <div>
+                <p className="font-bold text-green-800">รับสินค้าที่สาขา (Store Pickup)</p>
+                <p className="mt-1 text-green-700">สาขาเซียร์รังสิต ชั้น 3</p>
+                {order.shippingAddress?.fullName && (
+                  <p className="mt-1 font-medium text-green-700">ผู้มารับ: {order.shippingAddress.fullName} {order.shippingAddress.phone ? `(โทร: ${order.shippingAddress.phone})` : ''}</p>
+                )}
+              </div>
+            </div>
+          ) : order.shippingAddress ? (
             <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
               <div className="p-2 bg-white rounded-lg shadow-sm">
                   <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -259,7 +276,7 @@ const HistoryItemCard = ({
                 <p className="mt-1 font-medium text-gray-700">โทร: {order.shippingAddress.phone}</p>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

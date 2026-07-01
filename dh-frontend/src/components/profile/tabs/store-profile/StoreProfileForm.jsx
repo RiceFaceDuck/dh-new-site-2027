@@ -15,8 +15,11 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
   const {
     savingStore,
     uploadingStoreImage,
+    uploadingGallery,
     isAdPending,
     handleStoreImageUpload,
+    handleGalleryImageUpload,
+    handleRemoveGalleryImage,
     handleToggleSupport,
     handleSaveStore
   } = useStoreProfile(storeData, setStoreData, user, appId, businessCardAd, fetchMyAds);
@@ -82,6 +85,9 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           setStoreData={setStoreData} 
           uploadingStoreImage={uploadingStoreImage} 
           handleStoreImageUpload={handleStoreImageUpload} 
+          uploadingGallery={uploadingGallery}
+          handleGalleryImageUpload={handleGalleryImageUpload}
+          handleRemoveGalleryImage={handleRemoveGalleryImage}
         />
 
         <StoreProfileSocialLinks 

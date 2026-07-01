@@ -30,7 +30,7 @@ const SquadHighlight = () => {
             </p>
           )}
         </div>
-        <Link to="/squad" className="text-brand hover:text-brand-accent font-semibold text-sm md:text-base transition-colors whitespace-nowrap">
+        <Link to="/providers" className="text-brand hover:text-brand-accent font-semibold text-sm md:text-base transition-colors whitespace-nowrap">
           ดูช่างทั้งหมด
         </Link>
       </div>

@@ -10,12 +10,23 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     const shippingFee = activeTab ? sanitizeNum(activeTab.shippingFee) : 0;
     const otherFeeAmount = activeTab ? sanitizeNum(activeTab.otherFeeAmount) : 0;
 
-    const getEligibleTotals = (skus) => {
-        if (!skus || skus.length === 0) return { subtotal: itemSubTotal, qty: itemTotalQty };
+    const getEligibleTotals = (skus, types) => {
+        const hasSkus = skus && skus.length > 0;
+        const hasTypes = types && types.length > 0;
+
+        if (!hasSkus && !hasTypes) return { subtotal: itemSubTotal, qty: itemTotalQty };
+
         let eligibleSubtotal = 0;
         let eligibleQty = 0;
         activeTab?.items?.forEach(item => {
-            if (skus.includes(item.sku)) {
+            let isEligible = false;
+            const itemSku = String(item.sku || '').toUpperCase();
+            const itemType = String(item.type || item.category || '').toUpperCase();
+
+            if (hasSkus && skus.some(s => String(s).toUpperCase() === itemSku)) isEligible = true;
+            if (hasTypes && types.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
+
+            if (isEligible) {
                 eligibleSubtotal += ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty)));
                 eligibleQty += Math.max(1, sanitizeNum(item.qty));
             }
@@ -25,7 +36,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
 
     const eligibleFreebies = useMemo(() => {
         return activeFreebies.filter(f => {
-            const { subtotal, qty } = getEligibleTotals(f.applicableSkus);
+            const { subtotal, qty } = getEligibleTotals(f.applicableSkus, f.applicableTypes);
             if (subtotal <= 0) return false;
             if (f.minSpend && subtotal < f.minSpend) return false;
             if (f.minQty && qty < f.minQty) return false;
@@ -39,7 +50,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
 
     const validPromotions = useMemo(() => {
         return activePromotions.filter(p => {
-            const { subtotal, qty } = getEligibleTotals(p.applicableSkus);
+            const { subtotal, qty } = getEligibleTotals(p.applicableSkus, p.applicableTypes);
             if (p.minSpend > 0 && subtotal < p.minSpend) return false;
             if (p.minQty > 0 && qty < p.minQty) return false;
             if (p.startDate && new Date(p.startDate) > new Date()) return false;
@@ -57,7 +68,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
         let bestDiscount = 0;
         let bestPromo = null;
         validPromotions.forEach(promo => {
-            const { subtotal } = getEligibleTotals(promo.applicableSkus);
+            const { subtotal } = getEligibleTotals(promo.applicableSkus, promo.applicableTypes);
             let calculated = promo.type === 'PERCENTAGE' ? subtotal * (promo.value / 100) : promo.value;
             if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
                 calculated = Math.min(calculated, promo.maxDiscount);

@@ -56,7 +56,7 @@ export default function PromotionSettings({
                         {eligibleFreebies.map(f => (
                             <div key={f.id} className="flex flex-col bg-white/80 p-2 rounded-md border border-rose-100 shadow-sm">
                                 <div className="flex justify-between items-center text-[11px]">
-                                    <span className="font-bold text-rose-600 truncate flex-1 pr-2">{f.itemName}</span>
+                                    <span className="font-bold text-rose-600 truncate flex-1 pr-2">{f.productName || f.itemName}</span>
                                     <span className="font-black text-rose-700 bg-rose-200/50 px-2 py-0.5 rounded-full">x{f.qty}</span>
                                 </div>
                                 <div className="mt-1 flex flex-col gap-0.5">

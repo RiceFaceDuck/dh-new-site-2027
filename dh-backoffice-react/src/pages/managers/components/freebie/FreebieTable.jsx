@@ -53,6 +53,11 @@ export default function FreebieTable({
                                             {item.maxPerBill > 1 && (
                                                 <div className="text-[10px] text-gray-500 mt-1 pl-1">สูงสุด {item.maxPerBill} / บิล</div>
                                             )}
+                                            {(item.applicableSkus?.length > 0 || item.applicableTypes?.length > 0) && (
+                                                <div className="text-[10px] text-gray-500 mt-1 pl-1 font-medium">
+                                                    เฉพาะ: {item.applicableSkus?.join(', ')} {item.applicableSkus?.length > 0 && item.applicableTypes?.length > 0 ? '|' : ''} {item.applicableTypes?.join(', ')}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-center font-bold text-gray-600 whitespace-nowrap">
                                             {item.minSpend > 0 ? `ยอดซื้อ ${item.minSpend.toLocaleString()} ฿` : 'แจกทุกบิล'}
@@ -84,7 +89,11 @@ export default function FreebieTable({
                                             <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-400 hover:text-blue-600 transition-colors bg-white rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-100 mr-1">
                                                 <Edit2 size={16}/>
                                             </button>
-                                            <button onClick={() => handleDelete(item.id, item.title)} className="p-2 text-gray-400 hover:text-rose-600 transition-colors bg-white rounded-lg hover:bg-rose-50 border border-transparent hover:border-rose-100">
+                                            <button 
+                                                onClick={() => handleDelete(item)} 
+                                                className={`p-2 transition-colors bg-white rounded-lg border border-transparent ${item.deletedAt ? 'text-rose-500 hover:bg-rose-100 hover:border-rose-200' : 'text-gray-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100'}`}
+                                                title={item.deletedAt ? "ลบถาวร" : "ลบชั่วคราว"}
+                                            >
                                                 <Trash2 size={16}/>
                                             </button>
                                         </td>

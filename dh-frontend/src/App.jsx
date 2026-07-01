@@ -28,6 +28,9 @@ import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsOfService from './pages/legal/TermsOfService';
 import CookiePolicy from './pages/legal/CookiePolicy';
 
+// Ads pages
+import AdProductDetail from './pages/AdProductDetail/AdProductDetail';
+
 // 🎯 นำเข้าระบบการตลาด เพื่อใช้งาน Smart Cache ประหยัด Reads
 import { marketingService } from './firebase/marketingService';
 
@@ -74,6 +77,8 @@ function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/store/:id" element={<StoreProfilePage />} />
+              
+              <Route path="/ad/product/:id" element={<AdProductDetail />} />
               
               {/* 🚀 ลงทะเบียน Route สำหรับ E-Commerce Core */}
               <Route path="/cart" element={<Cart />} />

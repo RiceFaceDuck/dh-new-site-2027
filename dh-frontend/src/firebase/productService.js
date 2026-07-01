@@ -1,4 +1,4 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from './config';
 
 // 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล
@@ -25,16 +25,26 @@ export const productService = {
    * Fetch a single product by SKU and normalize its fields.
    */
   async getProduct(sku) {
+    if (!sku) return null;
     try {
       const docRef = doc(db, "products", sku);
       const docSnap = await getDoc(docRef);
       
-      if (!docSnap.exists()) {
-        return null;
+      if (docSnap.exists()) {
+        const rawData = docSnap.data();
+        return this.normalizeProductData({ id: docSnap.id, ...rawData });
       }
 
-      const rawData = docSnap.data();
-      return this.normalizeProductData({ id: docSnap.id, ...rawData });
+      // Fallback: search by sku field if document ID doesn't match
+      const q = query(collection(db, "products"), where("sku", "==", sku));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const firstDoc = querySnapshot.docs[0];
+        return this.normalizeProductData({ id: firstDoc.id, ...firstDoc.data() });
+      }
+
+      return null;
     } catch (error) {
       console.error("Error fetching product:", error);
       throw error;

@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreditCard, Upload, CheckCircle2, Copy, Image as ImageIcon, AlertCircle, X, Check } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 
-export default function PaymentMethod({ orderMode = 'retail', onSlipChange }) {
+export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slipUrl }) {
   const { totals } = useCart();
   
   const [copied, setCopied] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState('');
+
+  // ♻️ ซิงค์ URL หากมีการอัปโหลดสลิปค้างไว้ (กรณีพับ Accordion แล้วเปิดใหม่)
+  useEffect(() => {
+    if (slipUrl) {
+      if (typeof slipUrl === 'object' && slipUrl instanceof File) {
+        const url = URL.createObjectURL(slipUrl);
+        setPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+      } else if (typeof slipUrl === 'string') {
+        setPreviewUrl(slipUrl);
+      }
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [slipUrl]);
 
   // 🪄 UX: ฟังก์ชันคัดลอกเลขบัญชีแบบ One-Click
   const handleCopy = () => {
@@ -16,32 +31,73 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // 🚀 [NEW] ฟังก์ชันบีบอัดรูปภาพอัตโนมัติ
+  const compressImage = (file, maxWidth = 800, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          // ลดขนาดถ้าภาพใหญ่กว่า maxWidth
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // แปลงเป็น Blob แบบ JPEG เพื่อลดขนาดไฟล์ให้เล็กที่สุด
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                resolve(file); // หากผิดพลาดให้คืนไฟล์เดิม
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
   // 🖼 UX: จัดการการอัปโหลดและสร้าง Preview รูปภาพ
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     setError('');
-    const file = e.target.files[0];
+    let file = e.target.files[0];
     
     if (!file) return;
 
-    // ตรวจสอบประเภทไฟล์
+    // ตรวจสอบประเภทไฟล์เบื้องต้น
     if (!file.type.startsWith('image/')) {
       setError('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น (JPG, PNG)');
       return;
     }
 
-    // ตรวจสอบขนาดไฟล์ (จำกัดที่ 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('ขนาดไฟล์ใหญ่เกินไป (สูงสุด 5MB)');
-      return;
-    }
-
-    // สร้าง URL สำหรับ Preview รูป
-    const fileUrl = URL.createObjectURL(file);
-    setPreviewUrl(fileUrl);
+    // 🚀 ทำการลดขนาดภาพอัตโนมัติทันที
+    const compressedFile = await compressImage(file, 800, 0.7);
     
-    // ส่งไฟล์ขึ้นไปให้ Checkout.jsx เตรียมบันทึก
+    // ส่งไฟล์ขึ้นไปให้ Checkout.jsx เตรียมบันทึก (Preview จะจัดการโดย useEffect)
     if (onSlipChange) {
-      onSlipChange(file);
+      onSlipChange(compressedFile);
     }
   };
 
@@ -184,14 +240,15 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange }) {
                 <CheckCircle2 className="w-4 h-4" />
                 เตรียมไฟล์สำเร็จ
               </div>
-              {/* ปุ่มลบรูปลอยขึ้นมาเมื่อ Hover */}
+              {/* ปุ่มลบรูป (แสดงชัดเจน) */}
               <button
                 type="button"
                 onClick={handleRemoveSlip}
-                className="absolute top-4 right-4 bg-black/50 hover:bg-red-500 text-white p-2 rounded-full backdrop-blur-sm transition-colors shadow-md opacity-0 group-hover:opacity-100"
-                title="ลบรูปภาพ"
+                className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/50 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors shadow-md"
+                title="อัปโหลดสลิปใบใหม่"
               >
                 <X className="w-4 h-4" />
+                <span className="text-xs font-bold">ลบและอัปใหม่</span>
               </button>
             </div>
           )}

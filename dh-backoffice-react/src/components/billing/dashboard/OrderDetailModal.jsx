@@ -1,7 +1,10 @@
-import React from 'react';
-import { Receipt, Copy, Ban, Clock, MapPin, Phone, User, CalendarDays } from 'lucide-react';
+import React, { useState } from 'react';
+import { Receipt, Copy, Ban, Clock, MapPin, Phone, User, CalendarDays, Loader2, CheckCircle, Package } from 'lucide-react';
 import OrderSummary from './OrderSummary';
 import OrderActions from './OrderActions';
+import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
+import { auth } from '../../../firebase/config';
+import toast from 'react-hot-toast';
 
 export default function OrderDetailModal(props) {
     const { 
@@ -16,6 +19,38 @@ export default function OrderDetailModal(props) {
         setActiveTab
     } = props;
     if (!selectedOrder) return null;
+
+    const [trackingInput, setTrackingInput] = useState(selectedOrder.trackingNumber || '');
+    const [courierInput, setCourierInput] = useState(selectedOrder.shippingMethod || selectedOrder.courier || '');
+    const [isUpdatingShipping, setIsUpdatingShipping] = useState(false);
+
+    const handleMarkAsShipped = async () => {
+        if (!trackingInput.trim() || !courierInput.trim()) {
+            toast.error('กรุณากรอกบริษัทขนส่งและเลขพัสดุให้ครบถ้วน');
+            return;
+        }
+        setIsUpdatingShipping(true);
+        try {
+            await billingStatusTransaction.markOrderAsShipped(selectedOrder.id, trackingInput, courierInput, auth.currentUser?.uid);
+            toast.success('แจ้งจัดส่งสำเร็จ!');
+            handleCloseModal(); // ปิด Modal หลังจากอัปเดตสำเร็จ
+        } catch (error) {
+            toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
+        }
+        setIsUpdatingShipping(false);
+    };
+
+    const handleMarkAsCompleted = async () => {
+        setIsUpdatingShipping(true);
+        try {
+            await billingStatusTransaction.markOrderAsCompleted(selectedOrder.id, auth.currentUser?.uid);
+            toast.success('ส่งมอบสินค้าให้ลูกค้าเรียบร้อย!');
+            handleCloseModal();
+        } catch (error) {
+            toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
+        }
+        setIsUpdatingShipping(false);
+    };
 
     const handleCopyId = (e, text) => {
         e.stopPropagation();
@@ -95,58 +130,114 @@ export default function OrderDetailModal(props) {
                                     </div>
                                 </div>
 
-                                {/* 2. Customer Info */}
-                                <div className="bg-[var(--dh-bg-surface)] rounded-sm p-3 border border-[var(--dh-border)] shadow-sm flex flex-col gap-1.5 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                                    <h3 className="text-[10px] font-black text-[var(--dh-text-muted)] uppercase tracking-wider flex items-center gap-1">
-                                        <User size={12}/> ข้อมูลลูกค้า
-                                    </h3>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <div className="font-black text-sm text-[var(--dh-text-main)] truncate" title={customerName}>
-                                            {customerName}
+                                    {/* 2. Customer Info */}
+                                    <div className="bg-[var(--dh-bg-surface)] rounded-sm p-3 border border-[var(--dh-border)] shadow-sm flex flex-col gap-1.5 relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                                        <h3 className="text-[10px] font-black text-[var(--dh-text-muted)] uppercase tracking-wider flex items-center gap-1">
+                                            <User size={12}/> ข้อมูลลูกค้า
+                                        </h3>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <div className="font-black text-sm text-[var(--dh-text-main)] truncate" title={customerName}>
+                                                {customerName}
+                                            </div>
+                                            {selectedOrder.customer?.role && (
+                                                <span className="text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 border border-blue-500/20 px-1.5 py-0.5 rounded">
+                                                    {selectedOrder.customer.role}
+                                                </span>
+                                            )}
+                                            {selectedOrder.customer?.tier && (
+                                                <span className="text-[9px] font-black uppercase bg-purple-500/10 text-purple-600 border border-purple-500/20 px-1.5 py-0.5 rounded">
+                                                    {selectedOrder.customer.tier}
+                                                </span>
+                                            )}
+                                            {selectedOrder.customer?.dealerTier && (
+                                                <span className="text-[9px] font-black uppercase bg-orange-500/10 text-orange-600 border border-orange-500/20 px-1.5 py-0.5 rounded">
+                                                    {selectedOrder.customer.dealerTier}
+                                                </span>
+                                            )}
                                         </div>
-                                        {selectedOrder.customer?.role && (
-                                            <span className="text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 border border-blue-500/20 px-1.5 py-0.5 rounded">
-                                                {selectedOrder.customer.role}
-                                            </span>
-                                        )}
-                                        {selectedOrder.customer?.tier && (
-                                            <span className="text-[9px] font-black uppercase bg-purple-500/10 text-purple-600 border border-purple-500/20 px-1.5 py-0.5 rounded">
-                                                {selectedOrder.customer.tier}
-                                            </span>
-                                        )}
-                                        {selectedOrder.customer?.dealerTier && (
-                                            <span className="text-[9px] font-black uppercase bg-orange-500/10 text-orange-600 border border-orange-500/20 px-1.5 py-0.5 rounded">
-                                                {selectedOrder.customer.dealerTier}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-xs text-[var(--dh-text-muted)] font-bold">
-                                        <Phone size={12}/> {customerPhone}
-                                    </div>
-                                    {selectedOrder.shippingAddress && (
-                                        <div className="text-[11px] text-[var(--dh-text-muted)] leading-tight line-clamp-2 mt-1 border-t border-[var(--dh-border)] pt-1.5" title={`${selectedOrder.shippingAddress.address} ${selectedOrder.shippingAddress.subDistrict} ${selectedOrder.shippingAddress.district} ${selectedOrder.shippingAddress.province} ${selectedOrder.shippingAddress.zipCode}`}>
-                                            <span className="font-bold text-blue-500">ที่อยู่:</span> {selectedOrder.shippingAddress.address} {selectedOrder.shippingAddress.subDistrict} {selectedOrder.shippingAddress.district} {selectedOrder.shippingAddress.province} {selectedOrder.shippingAddress.zipCode}
+                                        <div className="flex items-center gap-1.5 text-xs text-[var(--dh-text-muted)] font-bold">
+                                            <Phone size={12}/> {customerPhone}
                                         </div>
-                                    )}
-                                </div>
+                                        {(() => {
+                                            const shippingCost = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.totals?.shipping || 0);
+                                            const isDelivery = selectedOrder.shippingMethod === 'standard' || selectedOrder.fulfillmentType === 'Delivery' || (!selectedOrder.shippingMethod && !selectedOrder.fulfillmentType && shippingCost > 0);
+                                            return isDelivery && selectedOrder.shippingAddress && (
+                                                <div className="text-[11px] text-[var(--dh-text-muted)] leading-tight line-clamp-2 mt-1 border-t border-[var(--dh-border)] pt-1.5" title={`${selectedOrder.shippingAddress.address} ${selectedOrder.shippingAddress.subDistrict || ''} ${selectedOrder.shippingAddress.district || ''} ${selectedOrder.shippingAddress.province || ''} ${selectedOrder.shippingAddress.zipCode || ''}`}>
+                                                    <span className="font-bold text-blue-500">ที่อยู่:</span> {selectedOrder.shippingAddress.address} {selectedOrder.shippingAddress.subDistrict} {selectedOrder.shippingAddress.district} {selectedOrder.shippingAddress.province} {selectedOrder.shippingAddress.zipCode}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
 
-                                {/* 3. Fulfillment Info */}
-                                <div className="bg-[var(--dh-bg-surface)] rounded-sm p-3 border border-[var(--dh-border)] shadow-sm flex flex-col gap-1.5">
-                                    <h3 className="text-[10px] font-black text-[var(--dh-text-muted)] uppercase tracking-wider flex items-center gap-1">
-                                        <MapPin size={12}/> การจัดส่ง
-                                    </h3>
-                                    <div className="font-bold text-xs text-[var(--dh-text-main)]">
-                                        {selectedOrder.fulfillmentType === 'Delivery' ? (
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="text-blue-500">ส่งพัสดุเอกชน ({selectedOrder.shippingMethod || selectedOrder.courier || 'N/A'})</span>
-                                                {selectedOrder.trackingNumber && (
-                                                    <span className="font-mono text-[10px] bg-[var(--dh-bg-base)] px-1.5 py-0.5 rounded border border-[var(--dh-border)] mt-1 w-max">
-                                                        Track: {selectedOrder.trackingNumber}
-                                                    </span>
+                                    {/* 3. Fulfillment Info */}
+                                    <div className="bg-[var(--dh-bg-surface)] rounded-sm p-3 border border-[var(--dh-border)] shadow-sm flex flex-col gap-1.5">
+                                        <h3 className="text-[10px] font-black text-[var(--dh-text-muted)] uppercase tracking-wider flex items-center gap-1">
+                                            <MapPin size={12}/> การจัดส่ง
+                                        </h3>
+                                        <div className="font-bold text-xs text-[var(--dh-text-main)]">
+                                            {(() => {
+                                                const shippingCost = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.totals?.shipping || 0);
+                                                const isDelivery = selectedOrder.shippingMethod === 'standard' || selectedOrder.fulfillmentType === 'Delivery' || (!selectedOrder.shippingMethod && !selectedOrder.fulfillmentType && shippingCost > 0);
+                                                
+                                                return isDelivery ? (
+                                                    <div className="flex flex-col gap-1 w-full">
+                                                        <span className="text-blue-500">ส่งพัสดุเอกชน ({selectedOrder.shippingMethod || selectedOrder.courier || 'N/A'})</span>
+                                                    {selectedOrder.trackingNumber ? (
+                                                        <span className="font-mono text-[10px] bg-[var(--dh-bg-base)] px-1.5 py-0.5 rounded border border-[var(--dh-border)] mt-1 w-max">
+                                                            Track: {selectedOrder.trackingNumber}
+                                                        </span>
+                                                    ) : (isPaid || orderStat === 'approved') && orderStat !== 'completed' && orderStat !== 'shipped' && !isCancelled ? (
+                                                        <div className="mt-2 pt-2 border-t border-[var(--dh-border)] w-full">
+                                                            <p className="text-[10px] font-bold text-[var(--dh-text-muted)] mb-1">แจ้งเลขพัสดุ:</p>
+                                                            <div className="flex flex-col gap-1.5">
+                                                                <input 
+                                                                    type="text" 
+                                                                    placeholder="บริษัทขนส่ง" 
+                                                                    value={courierInput}
+                                                                    onChange={(e) => setCourierInput(e.target.value)}
+                                                                    className="text-xs px-2 py-1 bg-[var(--dh-bg-base)] border border-[var(--dh-border)] rounded-sm focus:outline-none focus:border-blue-500 w-full"
+                                                                />
+                                                                <input 
+                                                                    type="text" 
+                                                                    placeholder="เลขพัสดุ (Tracking No.)" 
+                                                                    value={trackingInput}
+                                                                    onChange={(e) => setTrackingInput(e.target.value)}
+                                                                    className="text-xs px-2 py-1 bg-[var(--dh-bg-base)] border border-[var(--dh-border)] rounded-sm focus:outline-none focus:border-blue-500 w-full font-mono"
+                                                                />
+                                                                <button 
+                                                                    onClick={handleMarkAsShipped}
+                                                                    disabled={isUpdatingShipping}
+                                                                    className="mt-1 w-full flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1.5 rounded-sm font-bold text-xs transition-colors disabled:opacity-50"
+                                                                >
+                                                                    {isUpdatingShipping ? <Loader2 size={12} className="animate-spin" /> : <Package size={12} />}
+                                                                    ยืนยันการจัดส่ง
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col gap-1 w-full">
+                                                    <span>รับหน้าร้าน (Store Pickup)</span>
+                                                    {selectedOrder.shippingAddress && (
+                                                        <div className="text-[10px] text-[var(--dh-text-muted)] font-normal mt-1 leading-relaxed border-t border-[var(--dh-border)] pt-1.5">
+                                                            <span className="font-bold text-blue-500 block mb-0.5">ที่อยู่สาขา:</span>
+                                                            {selectedOrder.shippingAddress.address} {selectedOrder.shippingAddress.subDistrict || ''} {selectedOrder.shippingAddress.district || ''} {selectedOrder.shippingAddress.province || ''} {selectedOrder.shippingAddress.zipCode || ''}
+                                                        </div>
+                                                    )}
+                                                {(isPaid || orderStat === 'approved') && orderStat !== 'completed' && orderStat !== 'shipped' && !isCancelled && (
+                                                    <button 
+                                                        onClick={handleMarkAsCompleted}
+                                                        disabled={isUpdatingShipping}
+                                                        className="mt-2 w-full flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-sm font-bold text-xs transition-colors disabled:opacity-50"
+                                                    >
+                                                        {isUpdatingShipping ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                                                        มอบสินค้าให้ลูกค้าแล้ว
+                                                    </button>
                                                 )}
                                             </div>
-                                        ) : 'รับหน้าร้าน (Store Pickup)'}
+                                        ); })()}
                                     </div>
                                     {selectedOrder.billNote && (
                                         <div className="mt-auto pt-1.5 border-t border-[var(--dh-border)]">

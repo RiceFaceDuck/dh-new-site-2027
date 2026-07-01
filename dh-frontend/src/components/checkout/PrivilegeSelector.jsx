@@ -5,7 +5,7 @@ import { db, auth } from '../../firebase/config';
 import { collection, onSnapshot, doc } from 'firebase/firestore';
 
 export default function PrivilegeSelector({ orderMode = 'retail' }) {
-  const { checkoutState, updateCheckoutConfig, totals } = useCart();
+  const { checkoutState, updateCheckoutConfig, totals, cartItems } = useCart();
   const appId = typeof import.meta.env.VITE_FIREBASE_APP_ID !== 'undefined' ? import.meta.env.VITE_FIREBASE_APP_ID : 'dh-notebook-69f3b';
 
   // 📡 1. ดึงข้อมูลจริงจาก Firebase (Points, Wallet, Promotions, Freebies)
@@ -55,21 +55,30 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
 
   // 🛡 2. Auto-Apply Promotions and Freebies based on subtotal
   useEffect(() => {
-    const getEligibleTotals = (skus) => {
-      const items = checkoutState?.items || [];
-      if (!skus || skus.length === 0) {
+    const getEligibleTotals = (skus, types) => {
+      const items = cartItems || [];
+      const hasSkus = skus && skus.length > 0;
+      const hasTypes = types && types.length > 0;
+
+      if (!hasSkus && !hasTypes) {
         const fullSubtotal = totals?.subtotal || 0;
-        const fullQty = items.reduce((sum, item) => sum + Math.max(1, item.qty || 1), 0);
+        const fullQty = items.reduce((sum, item) => sum + Math.max(1, item.qty || item.quantity || 1), 0);
         return { subtotal: fullSubtotal, qty: fullQty };
       }
 
       let eligibleSubtotal = 0;
       let eligibleQty = 0;
       items.forEach(item => {
-        if (skus.includes(item.sku)) {
-          // Frontend prices
+        let isEligible = false;
+        const itemSku = String(item.sku || '').toUpperCase();
+        const itemType = String(item.type || item.category || '').toUpperCase();
+
+        if (hasSkus && skus.some(s => String(s).toUpperCase() === itemSku)) isEligible = true;
+        if (hasTypes && types.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
+        
+        if (isEligible) {
           const itemPrice = item.price || 0;
-          const itemQty = Math.max(1, item.qty || 1);
+          const itemQty = Math.max(1, item.qty || item.quantity || 1);
           eligibleSubtotal += (itemPrice * itemQty);
           eligibleQty += itemQty;
         }
@@ -79,7 +88,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     
     // Evaluate Freebies
     const validFreebies = freebies.filter(f => {
-      const { subtotal, qty } = getEligibleTotals(f.applicableSkus);
+      const { subtotal, qty } = getEligibleTotals(f.applicableSkus, f.applicableTypes);
 
       if (!f.isActive || subtotal <= 0) return false;
       if (f.minSpend && subtotal < f.minSpend) return false;
@@ -98,7 +107,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     let selectedPromo = null;
 
     const validPromos = promotions.filter(p => {
-      const { subtotal, qty } = getEligibleTotals(p.applicableSkus);
+      const { subtotal, qty } = getEligibleTotals(p.applicableSkus, p.applicableTypes);
 
       if (!p.isActive) return false;
       if (p.minSpend > 0 && subtotal < p.minSpend) return false;
@@ -111,7 +120,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     });
 
     validPromos.forEach(p => {
-      const { subtotal } = getEligibleTotals(p.applicableSkus);
+      const { subtotal } = getEligibleTotals(p.applicableSkus, p.applicableTypes);
       let calc = p.type === 'PERCENTAGE' ? subtotal * (p.value / 100) : p.value;
       if (p.type === 'PERCENTAGE' && p.maxDiscount > 0) {
         calc = Math.min(calc, p.maxDiscount);
@@ -138,7 +147,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
       });
     }
 
-  }, [totals?.subtotal, promotions, freebies, customerType, checkoutState?.discountAmount]);
+  }, [totals?.subtotal, promotions, freebies, customerType, checkoutState?.discountAmount, cartItems, updateCheckoutConfig]);
 
   // 🛡 3. Wallet Loop Prevention
   useEffect(() => {

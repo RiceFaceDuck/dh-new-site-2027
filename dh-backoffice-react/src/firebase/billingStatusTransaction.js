@@ -91,6 +91,21 @@ export const billingStatusTransaction = {
           if (isConfirmingPayment) {
              handleStockDeduction(transaction, db, productRefs, productSnaps, inventorySettingsSnap);
 
+             // 🎯 Deduct Promo/Freebie Quota on Approved/Paid
+             if (orderData.appliedPromotions && Array.isArray(orderData.appliedPromotions)) {
+                 orderData.appliedPromotions.forEach(promo => {
+                     if (promo.id) transaction.update(doc(db, 'promotions', promo.id), { quotaUsed: increment(1) });
+                 });
+             } else if (orderData.appliedPromotion && orderData.appliedPromotion.id) {
+                 transaction.update(doc(db, 'promotions', orderData.appliedPromotion.id), { quotaUsed: increment(1) });
+             }
+
+             if (orderData.appliedFreebies && Array.isArray(orderData.appliedFreebies)) {
+                 orderData.appliedFreebies.forEach(freebie => {
+                     if (freebie.id) transaction.update(doc(db, 'freebies', freebie.id), { quotaUsed: increment(freebie.qty || 1) });
+                 });
+             }
+
              const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
              handleSalesStatsUpdate(transaction, db, totalSaleAmount, orderData, false);
 
@@ -131,6 +146,56 @@ export const billingStatusTransaction = {
     } catch (error) { 
       console.error("🔥 Error updating order status:", error);
       throw error; 
+    }
+  },
+
+  markOrderAsShipped: async (orderId, trackingNumber, courier, actorUid) => {
+    try {
+      const actualActorUid = actorUid || 'system';
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, COLLECTION_NAME, orderId);
+        const docSnap = await transaction.get(docRef);
+        if (!docSnap.exists()) throw new Error("Document does not exist!");
+        
+        transaction.update(docRef, {
+          status: 'shipped',
+          orderStatus: 'shipped',
+          trackingNumber: trackingNumber || null,
+          shippingMethod: courier || docSnap.data().shippingMethod || null,
+          shippedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      });
+
+      await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "จัดส่งแล้ว" (ขนส่ง: ${courier}, เลขพัสดุ: ${trackingNumber})`, actualActorUid);
+      return orderId;
+    } catch (error) {
+      console.error("🔥 Error marking order as shipped:", error);
+      throw error;
+    }
+  },
+
+  markOrderAsCompleted: async (orderId, actorUid) => {
+    try {
+      const actualActorUid = actorUid || 'system';
+      await runTransaction(db, async (transaction) => {
+        const docRef = doc(db, COLLECTION_NAME, orderId);
+        const docSnap = await transaction.get(docRef);
+        if (!docSnap.exists()) throw new Error("Document does not exist!");
+        
+        transaction.update(docRef, {
+          status: 'completed',
+          orderStatus: 'completed',
+          completedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      });
+
+      await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "ส่งมอบสินค้าสำเร็จ" (รับหน้าร้าน)`, actualActorUid);
+      return orderId;
+    } catch (error) {
+      console.error("🔥 Error marking order as completed:", error);
+      throw error;
     }
   }
 };

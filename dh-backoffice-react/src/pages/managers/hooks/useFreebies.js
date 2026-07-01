@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { auth } from '../../../firebase/config';
 import { freebieService } from '../../../firebase/freebieService';
+import { categoryService } from '../../../firebase/categoryService';
 
 export const useFreebies = () => {
   const [freebies, setFreebies] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -18,6 +20,7 @@ export const useFreebies = () => {
     maxPerBill: 1,
     customerType: 'ALL', // ALL, RETAIL, WHOLESALE, VIP
     applicableSkus: '', // Comma separated string
+    applicableTypes: '', // Comma separated string
     startDate: '',
     endDate: '',
     quotaLimit: '',
@@ -26,7 +29,19 @@ export const useFreebies = () => {
 
   useEffect(() => {
     loadFreebies();
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const data = await categoryService.getAllCategories();
+      // Only keep active categories with a valid type
+      const activeTypes = data.filter(c => c.isActive !== false && c.type);
+      setCategories(activeTypes);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  };
 
   const loadFreebies = async () => {
     setLoading(true);
@@ -45,6 +60,7 @@ export const useFreebies = () => {
     maxPerBill: 1,
     customerType: 'ALL',
     applicableSkus: '',
+    applicableTypes: '',
     startDate: '',
     endDate: '',
     quotaLimit: '',
@@ -63,6 +79,7 @@ export const useFreebies = () => {
         maxPerBill: item.maxPerBill || 1,
         customerType: item.customerType || 'ALL',
         applicableSkus: item.applicableSkus ? item.applicableSkus.join(', ') : '',
+        applicableTypes: item.applicableTypes ? item.applicableTypes.join(', ') : '',
         startDate: item.startDate || '',
         endDate: item.endDate || '',
         quotaLimit: item.quotaLimit || '',
@@ -90,7 +107,8 @@ export const useFreebies = () => {
         minQty: Number(formData.minQty) || 0,
         maxPerBill: Number(formData.maxPerBill) || 1,
         customerType: formData.customerType,
-        applicableSkus: formData.applicableSkus ? formData.applicableSkus.split(',').map(s => s.trim()).filter(Boolean) : [],
+        applicableSkus: formData.applicableSkus ? formData.applicableSkus.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : [],
+        applicableTypes: formData.applicableTypes ? formData.applicableTypes.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : [],
         startDate: formData.startDate || null,
         endDate: formData.endDate || null,
         quotaLimit: formData.quotaLimit ? Number(formData.quotaLimit) : null,
@@ -119,14 +137,20 @@ export const useFreebies = () => {
     loadFreebies();
   };
 
-  const handleDelete = async (id, title) => {
-    if (!window.confirm(`ยืนยันการลบกฎของแถม "${title}" อย่างถาวร?`)) return;
-    await freebieService.deleteFreebie(id, title, auth.currentUser);
+  const handleDelete = async (item) => {
+    if (item.deletedAt) {
+      if (!window.confirm(`ลบถาวร: ยืนยันการลบกฎของแถม "${item.title}" ออกจากฐานข้อมูลถาวร?`)) return;
+      await freebieService.hardDeleteFreebie(item.id, item.title, auth.currentUser);
+    } else {
+      if (!window.confirm(`ยืนยันการลบกฎของแถม "${item.title}" ชั่วคราว?\n(สามารถกดลบซ้ำอีกครั้งเพื่อลบถาวรได้)`)) return;
+      await freebieService.deleteFreebie(item.id, item.title, auth.currentUser);
+    }
     loadFreebies();
   };
 
   return {
     freebies,
+    categories,
     loading,
     isModalOpen,
     setIsModalOpen,

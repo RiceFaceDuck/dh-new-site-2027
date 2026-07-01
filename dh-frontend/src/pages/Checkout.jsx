@@ -179,6 +179,7 @@ const Checkout = () => {
                 selectedMethod={checkoutState.paymentMethod}
                 onUpdate={(method) => handleUpdateCheckoutState('paymentMethod', method)}
                 onSlipChange={setSlipUrl}
+                slipUrl={slipUrl}
               />
             </AccordionSection>
           </div>
@@ -204,6 +205,7 @@ const Checkout = () => {
                 onPlaceOrder={handlePlaceOrder}
                 onRequestWholesale={() => setIsWholesaleModalOpen(true)}
                 isSubmitting={isSubmitting}
+                slipUrl={slipUrl}
               />
               
               {/* Trust Badges - ย้ำความเชื่อมั่นก่อนกดชำระเงิน */}

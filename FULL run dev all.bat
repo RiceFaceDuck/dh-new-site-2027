@@ -13,25 +13,25 @@ echo.
 :: 1. Backoffice
 echo [1/3] Starting DH Backoffice...
 if not exist "%BASE_DIR%dh-backoffice-react\node_modules" (
-    start "DH Backoffice" cmd /k "cd /d "%BASE_DIR%dh-backoffice-react" && echo Installing dependencies... && npm install && npm run dev"
+    start "DH Backoffice" /D "%BASE_DIR%dh-backoffice-react" cmd /k "echo Installing dependencies... && npm install && npm run dev -- --port 3168 --strictPort"
 ) else (
-    start "DH Backoffice" cmd /k "cd /d "%BASE_DIR%dh-backoffice-react" && npm run dev"
+    start "DH Backoffice" /D "%BASE_DIR%dh-backoffice-react" cmd /k "npm run dev -- --port 3168 --strictPort"
 )
 
 :: 2. Frontend Main Site
 echo [2/3] Starting DH Frontend...
 if not exist "%BASE_DIR%dh-frontend\node_modules" (
-    start "DH Frontend" cmd /k "cd /d "%BASE_DIR%dh-frontend" && echo Installing dependencies... && npm install && npm run dev"
+    start "DH Frontend" /D "%BASE_DIR%dh-frontend" cmd /k "echo Installing dependencies... && npm install && npm run dev -- --port 8988 --strictPort"
 ) else (
-    start "DH Frontend" cmd /k "cd /d "%BASE_DIR%dh-frontend" && npm run dev"
+    start "DH Frontend" /D "%BASE_DIR%dh-frontend" cmd /k "npm run dev -- --port 8988 --strictPort"
 )
 
 :: 3. Staff App
 echo [3/3] Starting DH Staff App...
 if not exist "%BASE_DIR%dh-staff-app\node_modules" (
-    start "DH Staff App" cmd /k "cd /d "%BASE_DIR%dh-staff-app" && echo Installing dependencies... && npm install && npm run dev"
+    start "DH Staff App" /D "%BASE_DIR%dh-staff-app" cmd /k "echo Installing dependencies... && npm install && npm run dev -- --port 3122 --strictPort"
 ) else (
-    start "DH Staff App" cmd /k "cd /d "%BASE_DIR%dh-staff-app" && npm run dev"
+    start "DH Staff App" /D "%BASE_DIR%dh-staff-app" cmd /k "npm run dev -- --port 3122 --strictPort"
 )
 
 echo.

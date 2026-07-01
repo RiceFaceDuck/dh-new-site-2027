@@ -57,7 +57,7 @@ export default function InventoryHeader({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] relative transition-colors duration-300">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-40 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] relative transition-colors duration-300">
       {/* Title Area */}
       <div className="flex items-center gap-4 relative z-10">
         <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-sm">
@@ -160,15 +160,58 @@ export default function InventoryHeader({
           
           <div className="w-[1px] h-[24px] bg-white/20 self-center mx-1"></div>
 
-          <button 
-            onClick={handleFullSync}
-            disabled={isSyncing}
-            className="flex items-center justify-center gap-2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 h-[36px] px-3 rounded-md hover:bg-indigo-500/30 transition-all font-bold text-xs shadow-sm backdrop-blur-sm"
-            title="โยนข้อมูลทั้งหมดลง Google Sheet ครั้งแรก"
-          >
-            <DatabaseBackup size={14} className={isSyncing ? "animate-pulse" : ""} />
-            <span className="hidden xl:inline">Full Sync</span>
-          </button>
+          <div className="relative group">
+            <button 
+              onClick={handleFullSync}
+              disabled={isSyncing}
+              className="flex items-center justify-center gap-2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 h-[36px] px-3 rounded-md hover:bg-indigo-500/30 transition-all font-bold text-xs shadow-sm backdrop-blur-sm"
+            >
+              <DatabaseBackup size={14} className={isSyncing ? "animate-pulse" : ""} />
+              <span className="hidden xl:inline">Full Sync</span>
+            </button>
+            
+            {/* Tooltip อธิบายรายละเอียดอย่างละเอียด (ตามกฎ In-App Documentation) */}
+            <div className="absolute top-full mt-2 right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto w-[360px] bg-slate-900 text-white p-4 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 text-xs border border-slate-700/50 pointer-events-none">
+              
+              <div className="font-bold text-sm text-indigo-400 mb-2 flex items-center gap-1.5 border-b border-slate-700 pb-2">
+                <DatabaseBackup size={16} /> ปุ่ม Full Sync (ซิงค์ฐานข้อมูล)
+              </div>
+              
+              <div className="space-y-3 font-medium">
+                {/* 1. คำอธิบาย */}
+                <div>
+                  <span className="text-emerald-400 font-bold block mb-0.5">📌 คืออะไร?</span>
+                  <p className="text-slate-300 leading-relaxed">
+                    ระบบจะนำข้อมูลสต๊อก "ทั้งหมด" จากฐานข้อมูลหลัก (Firestore) ไปเขียนทับในฐานข้อมูลสำรอง (Google Sheets) เพื่อใช้เป็นตัวตั้งต้น (Baseline)
+                  </p>
+                </div>
+
+                {/* 2. วิธีการใช้งาน & ตัวอย่างผลลัพธ์ */}
+                <div>
+                  <span className="text-cyan-400 font-bold block mb-0.5">🎯 ตัวอย่างผลลัพธ์ (Expected Results)</span>
+                  <p className="text-slate-300 leading-relaxed">
+                    หากสต๊อกปัจจุบันคือ 100 ชิ้น แต่ในหน้า Big Seller โชว์เพี้ยนเป็น 80 ชิ้น 
+                    เมื่อกดปุ่มนี้ ข้อมูลบน Google Sheets จะถูกรีเซ็ตเป็น 100 ชิ้นให้ตรงกันทันที!
+                  </p>
+                </div>
+
+                {/* 3. เทคนิคการใช้งาน */}
+                <div className="bg-white/5 p-2.5 rounded-lg border border-white/10">
+                  <span className="text-fuchsia-400 font-bold block mb-1">💡 เทคนิคการใช้งาน (Tips & Tricks)</span>
+                  <ul className="list-disc pl-4 text-slate-300 space-y-1">
+                    <li>ใช้เมื่อมีการเคลียร์สต๊อกปลายเดือน (เพื่อตั้งค่า Baseline ใหม่)</li>
+                    <li>ใช้เมื่อรู้สึกว่า <b>ยอดแจ้งเตือนสต๊อกไม่ตรง</b> กับความจริง</li>
+                    <li><span className="text-white">ทริก:</span> ไม่ต้องกดบ่อยๆ เพราะระบบใหม่จะทยอยซิงค์ให้อัตโนมัติทุกครั้งที่มีออเดอร์แล้ว!</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* 4. คำเตือน */}
+              <div className="mt-3 text-[10px] text-yellow-300 bg-yellow-500/10 p-2 rounded-lg leading-relaxed border border-yellow-500/20">
+                <strong>⚠️ ข้อควรระวังก่อนกด:</strong> ข้อมูลบน Google Sheets เดิมจะถูกลบและเขียนทับใหม่ทั้งหมด (ใช้เวลาโหลดประมาณ 10-20 วินาที ห้ามปิดหน้าจอจนกว่าจะเสร็จ)
+              </div>
+            </div>
+          </div>
 
           <button 
             onClick={onGuideOpen}

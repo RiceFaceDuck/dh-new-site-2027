@@ -53,7 +53,9 @@ export const cartService = {
           sku: product.sku || '-',
           name: product.name,
           price: product.retailPrice || product.price || 0, // ใช้ราคาขายปลีกเป็นหลัก (เตรียมต่อยอดราคาส่ง B2B ในอนาคต)
-          image: product.images?.[0] || product.image || '',
+          image: product.images?.[0] || product.image || product.imageUrl || '',
+          category: product.category || product.type || '',
+          type: product.type || product.category || '',
           qty: qty
         });
       }
@@ -113,6 +115,8 @@ export const cartService = {
             name: guestItem.name,
             price: guestItem.retailPrice || guestItem.price || 0,
             image: guestItem.image || guestItem.images?.[0] || guestItem.imageUrl || '',
+            category: guestItem.category || guestItem.type || '',
+            type: guestItem.type || guestItem.category || '',
             qty: guestItem.qty || guestItem.quantity || 1
           });
         }

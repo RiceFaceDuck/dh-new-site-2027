@@ -76,11 +76,23 @@ const AdFormModal = ({
             )}
 
             {formData.type === 'PRODUCT_LINK' && (
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ราคาโปรโมชั่น (บาท)</label>
-                <div className="relative">
-                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><Tag size={16}/></div>
-                   <input type="number" value={formData.price || ''} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 text-emerald-600 font-bold" />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ราคาโปรโมชั่น (บาท)</label>
+                  <div className="relative">
+                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><Tag size={16}/></div>
+                     <input type="number" value={formData.price || ''} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 text-emerald-600 font-bold" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">รายละเอียดสินค้าฉบับเต็ม</label>
+                  <textarea 
+                    value={formData.richDescription || ''} 
+                    onChange={(e) => setFormData({...formData, richDescription: e.target.value})} 
+                    rows={4} 
+                    placeholder="บรรยายสรรพคุณ จุดเด่น และรายละเอียดสินค้าเพิ่มเติม เพื่อแสดงในหน้า Detail..." 
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 resize-none" 
+                  />
                 </div>
               </div>
             )}

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Store, UploadCloud, Loader2, Clock, Image as ImageIcon } from 'lucide-react';
 
-const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploadingStoreImage, handleStoreImageUpload }) => {
+const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploadingStoreImage, handleStoreImageUpload, uploadingGallery, handleGalleryImageUpload, handleRemoveGalleryImage }) => {
   return (
-    <div>
+    <div className="store-profile-basic-info-container">
       <h4 className="font-black text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 mb-5 uppercase tracking-wide text-sm"><ImageIcon size={18} className="text-indigo-500"/> รูปภาพและข้อมูลหลัก</h4>
       <div className="flex flex-col md:flex-row gap-8">
         {/* Store Image Upload */}
@@ -40,6 +40,44 @@ const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploading
             <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1"><Clock size={12}/> เวลาเปิด-ปิดร้าน</label>
             <input type="text" value={storeData.openHours} onChange={(e) => setStoreData({...storeData, openHours: e.target.value})} placeholder="เช่น จันทร์-ศุกร์ 09:00 - 18:00 น." className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
           </div>
+        </div>
+      </div>
+      
+      {/* Rich Description */}
+      <div className="mt-6">
+        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">รายละเอียดร้านค้าแบบเต็ม (แสดงในหน้าร้าน)</label>
+        <textarea 
+          value={storeData.richDescription || ''} 
+          onChange={(e) => setStoreData({...storeData, richDescription: e.target.value})} 
+          placeholder="ประวัติร้าน, ความเชี่ยวชาญ, ทีมช่าง, เงื่อนไขการให้บริการ..." 
+          rows="5" 
+          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl resize-none focus:border-indigo-500"
+        ></textarea>
+      </div>
+
+      {/* Image Gallery */}
+      <div className="mt-6">
+        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">แกลลอรี่ร้านค้า (สูงสุด 5 รูป) {uploadingGallery && <Loader2 className="animate-spin text-indigo-500 w-4 h-4"/>}</label>
+        <div className="flex flex-wrap gap-4">
+          {(storeData.galleryImages || []).map((imgUrl, idx) => (
+            <div key={idx} className="relative w-24 h-24 rounded-xl border border-slate-200 overflow-hidden group">
+              <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+              <button 
+                type="button"
+                onClick={() => handleRemoveGalleryImage(idx)}
+                className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                X
+              </button>
+            </div>
+          ))}
+          {(storeData.galleryImages || []).length < 5 && (
+            <label className={`w-24 h-24 flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-indigo-400 transition-colors ${uploadingGallery ? 'pointer-events-none opacity-50' : ''}`}>
+              <UploadCloud className="text-slate-400 mb-1" size={20}/>
+              <span className="text-[10px] font-bold text-slate-400">เพิ่มรูป</span>
+              <input type="file" accept="image/*" onChange={handleGalleryImageUpload} className="hidden" disabled={uploadingGallery} />
+            </label>
+          )}
         </div>
       </div>
     </div>

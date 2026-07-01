@@ -2,9 +2,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ExternalLink, Store, ShoppingBag, Phone, X, MessageCircle, ShieldCheck, Navigation } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { marketingService } from '../../firebase/marketingService';
 
 const ProductAdCard = ({ ad }) => {
+  const navigate = useNavigate();
   const cardRef = useRef(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,6 +36,13 @@ const ProductAdCard = ({ ad }) => {
   // ==========================================
   // 🖱️ 2. ระบบจัดการการคลิกและเปิด Pop-up
   // ==========================================
+  const openLink = (url) => {
+    if (!url) return;
+    let finalUrl = url;
+    if (!finalUrl.startsWith('http') && !finalUrl.startsWith('tel:')) finalUrl = 'https://' + finalUrl;
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleAdClick = (e) => {
     e.stopPropagation();
 
@@ -42,20 +51,24 @@ const ProductAdCard = ({ ad }) => {
       marketingService.trackAdClick(collectionName, ad.id);
     }
 
-    // 🚀 เปิด Pop-up หรูหราแทนการกระโดดไปหน้าอื่นทันที
-    setIsModalOpen(true);
+    if (ad?.id === 'preview-mode') {
+       setIsModalOpen(true);
+       return;
+    }
+
+    if (ad?.type === 'BUSINESS_CARD') {
+       navigate(`/store/${ad.ownerId || ad.partnerId || 'unknown'}`);
+    } else if (ad?.type === 'PRODUCT_LINK') {
+       if (ad.targetUrl) openLink(ad.targetUrl);
+       navigate(`/ad/product/${ad.id}`);
+    } else {
+       setIsModalOpen(true);
+    }
   };
 
   const closeModal = (e) => {
     if (e) e.stopPropagation();
     setIsModalOpen(false);
-  };
-
-  const openLink = (url) => {
-    if (!url) return;
-    let finalUrl = url;
-    if (!finalUrl.startsWith('http') && !finalUrl.startsWith('tel:')) finalUrl = 'https://' + finalUrl;
-    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (!ad) return null;

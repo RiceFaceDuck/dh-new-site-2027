@@ -42,6 +42,8 @@
 @ID:1.7 | @TYPE:Security | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: สคริปต์ Audit ความปลอดภัยทางการเงิน (Atomic Ledger Sync: credit_transactions vs creditPoints)
 @ID:1.7.1 | @TYPE:DataRelation | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - Sync คะแนนจาก creditPoints ลง ActivePartners ใน Transaction เดียวกันเพื่อป้องกัน Denormalization Issue
 @ID:1.8 | @TYPE:DataRelation | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: [@DOMAIN:Inventory] ตรวจสอบและคลีน UUID ขยะใน compatiblePartNumbers พร้อมอัปเดต Schema และเพิ่ม Tooltip
+@ID:1.9 | @TYPE:DataRelation | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: อุดช่องโหว่โควต้าโปรโมชัน (Promotion Quota Leak) ด้วยการตัด Quota เมื่อบิล Approved/Paid และเช็ค Real-time ก่อนสร้างบิล
+@ID:1.10 | @TYPE:DataRelation | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: ปรับจูนนโยบายโปรโมชัน (Best Promo Only) ให้หน้าร้านและหลังบ้านทำงานเหมือนกัน (1 บิล 1 สิทธิ์ที่ดีที่สุด)
 
 # ----------------- 2. Front-End User Experience & Documentation -----------------
 @ID:2.1 | @TYPE:Docs | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: In-App Documentation (Guide/Tooltip in Backoffice)
@@ -101,10 +103,14 @@
 @ID:7.1 | @TYPE:UX | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: เปลี่ยนปุ่มถอนเงินเป็นปุ่ม "ขอคืนเงิน (LINE)" ในหน้า Wallet ของลูกค้า
 @ID:7.2 | @TYPE:ARCH | @SEV:🔴High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: สร้างศูนย์จัดการรับเรื่องคืนเงิน (Refund Management) ในระบบหลังบ้าน
 @ID:7.3 | @TYPE:FEATURE | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: เพิ่มระบบอัปโหลดและแนบ "สลิปโอนเงิน" เมื่อ Manager กดอนุมัติคืนเงิน พร้อมแสดงผลหน้าบ้าน
+@ID:7.4 | @TYPE:FEATURE | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: อัปเกรดระบบโฆษณา (Ad Features) และจัดหน้า Store Profile/Ad Product Detail
+@ID:7.5 | @TYPE:ARCH | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: ปรับปรุงการจัดการคำร้องโฆษณาเข้าสู่ Central To-Do พร้อมเก็บบันทึก History Log ลง system_logs
 @ID:7.4 | @TYPE:FEATURE | @SEV:🟠High | @STAT:🟡Pending | @SCORE:🔴0% | @TASK: [@DOMAIN:POS] ระบบขายหน้าร้าน - Offline Support (ขายตอนเน็ตหลุดและ Sync ภายหลัง)
 @ID:7.5 | @TYPE:FEATURE | @SEV:🟠High | @STAT:🟡Pending | @SCORE:🔴0% | @TASK: [@DOMAIN:Claims] ระบบจัดการเคลมสินค้า - สถานะการส่งซ่อม/เปลี่ยนของ
 @ID:7.6 | @TYPE:FEATURE | @SEV:🟠High | @STAT:🟡Pending | @SCORE:🔴0% | @TASK: [@DOMAIN:Manager] ระบบอนุมัติเอกสารและวันหยุดพนักงาน (Staff Leave & Approvals)
-
+@ID:7.7 | @TYPE:FEATURE | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: เพิ่มแถบแสดงโปรโมชัน (Active Promotions Banner) ในหน้า Cart เพื่อกระตุ้นยอดขาย
+@ID:7.8 | @TYPE:FEATURE | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: พัฒนา UX/UI ปุ่มสั่งสินค้า (เตือนแนบสลิปนับถอยหลัง) และระบบปฏิเสธสลิปพร้อมระบุเหตุผล (Backoffice)
+@ID:7.9 | @TYPE:FEATURE | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: เพิ่มระบบระบุสถานะจัดส่ง (แจ้งเลขพัสดุ / ส่งมอบหน้าร้าน) ในหน้ารายละเอียดบิล (Backoffice)
 # ----------------- 8. Deployment & CI/CD -----------------
 @ID:8.1 | @TYPE:CI_CD | @SEV:🟠High | @STAT:🟡Pending | @SCORE:🔴0% | @TASK: Environment Variables Setup (แยก .env สำหรับ Dev, Staging, Prod)
 @ID:8.2 | @TYPE:CI_CD | @SEV:🟠High | @STAT:🟡Pending | @SCORE:🔴0% | @TASK: Firebase Hosting Configuration (ตั้งค่า Multi-site สำหรับ Frontend, Backoffice, StaffApp)
@@ -118,5 +124,5 @@
 @ID:F.4 | @TYPE:Cost | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Refactor Ads prefetch in App.jsx to use Lazy Loading (IntersectionObserver)
 @ID:F.5 | @TYPE:Cost | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Optimize CategoryPage query (remove hacky array-in search, use category_lower field instead)
 
-OVERALL_SCORE: 🟢77%
-LAST_UPDATE: 2026-06-30
+OVERALL_SCORE: 🟢78%
+LAST_UPDATE: 2026-07-01

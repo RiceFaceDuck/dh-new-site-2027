@@ -9,7 +9,7 @@ import { driveService } from '../../../firebase/driveService';
 
 export function useCheckoutLogic() {
   const navigate = useNavigate();
-  const { cartItems, totals, clearCart } = useCart();
+  const { cartItems, totals, clearCart, checkoutState: contextCheckoutState } = useCart();
   const [user, setUser] = useState(null);
 
   const { walletBalance: creditBalance, loading: creditLoading } = useWalletBalance(user?.uid);
@@ -20,11 +20,36 @@ export function useCheckoutLogic() {
     taxData: null,
     paymentMethod: 'transfer',
     shippingCost: 0,
-    appliedPromotions: [],
-    discountAmount: 0,
+    appliedPromotions: contextCheckoutState?.appliedPromotions || [],
+    discountAmount: contextCheckoutState?.discountAmount || 0,
+    qualifiedFreebies: contextCheckoutState?.qualifiedFreebies || [],
     useWallet: 0,
     wholesaleReason: '',
   });
+
+  // Sync external changes (like async freebie evaluation) into the local checkout state
+  useEffect(() => {
+    setCheckoutState(prev => {
+      const newFreebies = contextCheckoutState?.qualifiedFreebies || [];
+      const newPromos = contextCheckoutState?.appliedPromotions || [];
+      const newDiscount = contextCheckoutState?.discountAmount || 0;
+      
+      if (
+        JSON.stringify(prev.qualifiedFreebies) === JSON.stringify(newFreebies) &&
+        JSON.stringify(prev.appliedPromotions) === JSON.stringify(newPromos) &&
+        prev.discountAmount === newDiscount
+      ) {
+        return prev;
+      }
+      
+      return {
+        ...prev,
+        qualifiedFreebies: newFreebies,
+        appliedPromotions: newPromos,
+        discountAmount: newDiscount
+      };
+    });
+  }, [contextCheckoutState?.qualifiedFreebies, contextCheckoutState?.appliedPromotions, contextCheckoutState?.discountAmount]);
 
   const [slipUrl, setSlipUrl] = useState(null);
   const [saveProfile, setSaveProfile] = useState(true);
@@ -58,10 +83,13 @@ export function useCheckoutLogic() {
 
   useEffect(() => {
     if (useCreditToggle && creditBalance > 0) {
+      const totalPromoDiscount = checkoutState.appliedPromotions?.reduce((sum, p) => sum + (p.discountValue || 0), 0) || 0;
+      
       const currentNetBeforeCredit = 
         (totals?.subtotal || 0) + 
         (checkoutState.shippingCost || 0) - 
-        (checkoutState.discountAmount || 0);
+        (checkoutState.discountAmount || 0) -
+        totalPromoDiscount;
 
       const maxApplicableWallet = Math.min(creditBalance, Math.max(0, currentNetBeforeCredit));
       

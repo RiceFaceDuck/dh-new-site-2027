@@ -28,7 +28,8 @@ export const promotionService = {
     try {
       const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const allPromos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return allPromos.filter(promo => !promo.deletedAt); // กรองโปรโมชันที่ถูกลบ (Soft Delete) ออก
     } catch (error) {
       console.error("🔥 Error fetching promotions:", error);
       return [];
@@ -88,7 +89,8 @@ export const promotionService = {
       );
 
       // 🔔 สร้าง Todo แจ้งเตือนพนักงานทุกคน (Broadcast)
-      await todoService.createManualTodo({
+      await todoService.createManualTask({
+        type: 'promotion_alert',
         title: `📣 แจ้งโปรโมชันใหม่: ${promoData.title}`,
         description: `มีโปรโมชันใหม่ถูกเพิ่มเข้าระบบ\nเงื่อนไข: ${promoData.description}\nสามารถเรียกใช้งานได้ที่หน้า เปิดบิล (POS)`,
         priority: 'Medium',

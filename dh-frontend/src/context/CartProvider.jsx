@@ -55,11 +55,15 @@ export const CartProvider = ({ children }) => {
 
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  const [currentUser, setCurrentUser] = useState(null);
+
   // Sync กับ Firebase
   useEffect(() => {
     let unsubscribeSnapshot = null;
     
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user); // บันทึก State ว่ามี User ไหม
+      
       if (user) {
         // 🔄 Merge Guest Cart to Firebase on Login
         const savedGuestCart = localStorage.getItem('dh_cart');
@@ -107,10 +111,12 @@ export const CartProvider = ({ children }) => {
     };
   }, []);
 
-
   useEffect(() => {
-    localStorage.setItem('dh_cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    // 🔥 ป้องกัน Bug จำนวนทวีคูณ (บันทึกเฉพาะ Guest)
+    if (!currentUser) {
+      localStorage.setItem('dh_cart', JSON.stringify(cartItems));
+    }
+  }, [cartItems, currentUser]);
 
   useEffect(() => {
     localStorage.setItem('dh_checkout_state', JSON.stringify(checkoutState));

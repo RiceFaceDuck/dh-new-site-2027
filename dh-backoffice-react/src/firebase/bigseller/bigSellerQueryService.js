@@ -1,21 +1,43 @@
 import { gasStockService } from '../gasStockService';
-
-class BigSellerQueryService {
+import { db } from '../config';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class BigSellerQueryService {
   /**
-   * ดึงข้อมูลสต็อกและคำนวณความเปลี่ยนแปลงเทียบกับ baseline ของวันนี้
+   * ดึงเวลา Reset ล่าสุดจาก Firestore
    */
-  getEffectiveResetString() {
-    const configTime = localStorage.getItem('bigseller_reset_time') || '00:00';
-    const [configHour, configMinute] = configTime.split(':').map(Number);
-    
-    const now = new Date();
-    const effectiveDate = new Date(now);
-    
-    if (now.getHours() < configHour || (now.getHours() === configHour && now.getMinutes() < configMinute)) {
-      effectiveDate.setDate(effectiveDate.getDate() - 1);
+  async getLastResetTime() {
+    try {
+      const docRef = doc(db, 'system_counters', 'bigseller_baseline');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().lastResetAt) {
+        return docSnap.data().lastResetAt.toDate();
+      }
+    } catch (e) {
+      console.error("Error fetching reset time:", e);
     }
-    
-    return `${effectiveDate.toDateString()} @ ${configTime}`;
+    return new Date(); // Default
+  }
+
+  /**
+   * รีเซ็ต Baseline โดยบันทึกข้อมูลปัจจุบันลง Firestore
+   */
+  async resetBaseline(currentInventory) {
+    try {
+      const docRef = doc(db, 'system_counters', 'bigseller_baseline');
+      const payload = {
+        lastResetAt: serverTimestamp(),
+        inventory: currentInventory
+      };
+      await setDoc(docRef, payload);
+      
+      // ลบ localStorage ทิ้งเพื่อกันสับสน
+      localStorage.removeItem('bigseller_last_export_state');
+      localStorage.removeItem('bigseller_reset_date');
+      
+      return true;
+    } catch (e) {
+      console.error("Error resetting baseline:", e);
+      throw e;
+    }
   }
 
   async calculateChanges() {
@@ -30,26 +52,23 @@ class BigSellerQueryService {
         throw new Error("ไม่พบข้อมูลสินค้าในคลัง");
       }
 
-      // 3. ตรวจสอบ Baseline ปัจจุบันตามรอบเวลา (Reset Time)
-      const savedState = localStorage.getItem('bigseller_last_export_state');
-      const lastResetDate = localStorage.getItem('bigseller_reset_date');
-      const effectiveStr = this.getEffectiveResetString();
+      // 3. ตรวจสอบ Baseline จาก Firestore
+      const docRef = doc(db, 'system_counters', 'bigseller_baseline');
+      const docSnap = await getDoc(docRef);
 
       let previousInventory = [];
-      let isResetting = false;
+      let lastResetDate = new Date();
 
-      if (savedState && lastResetDate === effectiveStr) {
-        try {
-          previousInventory = JSON.parse(savedState);
-        } catch (e) {
-          console.error("Failed to parse bigseller state", e);
-          previousInventory = currentInventory;
+      if (docSnap.exists() && docSnap.data().inventory) {
+        previousInventory = docSnap.data().inventory;
+        if (docSnap.data().lastResetAt) {
+          lastResetDate = docSnap.data().lastResetAt.toDate();
         }
       } else {
-        // ขึ้นรอบเวลาใหม่ หรือ ใช้งานครั้งแรก -> รีเซ็ต Baseline
+        // ครั้งแรก หรือ ไม่มีข้อมูล -> สร้าง Baseline ใหม่จากข้อมูลปัจจุบัน
         previousInventory = currentInventory;
-        this.saveCurrentState(currentInventory, effectiveStr);
-        isResetting = true;
+        await this.resetBaseline(currentInventory);
+        lastResetDate = new Date();
       }
       
       const prevMap = new Map();
@@ -89,20 +108,9 @@ class BigSellerQueryService {
       const firestoreModule = await import('firebase/firestore');
       
       try {
-        const configTime = localStorage.getItem('bigseller_reset_time') || '00:00';
-        const [configHour, configMinute] = configTime.split(':').map(Number);
-        
-        const now = new Date();
-        const effectiveDate = new Date(now);
-        
-        if (now.getHours() < configHour || (now.getHours() === configHour && now.getMinutes() < configMinute)) {
-          effectiveDate.setDate(effectiveDate.getDate() - 1);
-        }
-        effectiveDate.setHours(configHour, configMinute, 0, 0);
-
         const q = firestoreModule.query(
           firestoreModule.collection(dbModule.db, 'orders'),
-          firestoreModule.where('createdAt', '>=', firestoreModule.Timestamp.fromDate(effectiveDate)),
+          firestoreModule.where('createdAt', '>=', firestoreModule.Timestamp.fromDate(lastResetDate)),
           firestoreModule.where('status', 'in', ['paid', 'completed'])
         );
         const snapshot = await firestoreModule.getDocs(q);
@@ -138,7 +146,7 @@ class BigSellerQueryService {
         decreased,
         priceChanged,
         currentInventory,
-        lastResetDate: isResetting ? effectiveStr : lastResetDate
+        lastResetDate: lastResetDate
       };
 
     } catch (error) {
@@ -148,37 +156,26 @@ class BigSellerQueryService {
   }
 
   /**
-   * บันทึกสถานะปัจจุบันเป็น Baseline
-   */
-  saveCurrentState(inventory, dateStr = this.getEffectiveResetString()) {
-    const minimalState = inventory.map(item => ({
-      sku: item.sku,
-      stockQuantity: item.stockQuantity,
-      Price: item.Price,
-      name: item.name
-    }));
-    localStorage.setItem('bigseller_last_export_state', JSON.stringify(minimalState));
-    localStorage.setItem('bigseller_reset_date', dateStr);
-  }
-
-  /**
    * รีเซ็ต Baseline ด้วยตนเอง
    */
   async manualResetBaseline() {
     await gasStockService.forceSync();
     const currentInventory = await gasStockService.fetchBackupInventory();
-    this.saveCurrentState(currentInventory, this.getEffectiveResetString());
+    await this.resetBaseline(currentInventory);
     
     // Add History Log for manual reset
-    import('../historyService').then(({ historyService }) => {
+    try {
+      const { historyService } = await import('../historyService');
       historyService.addLog({
-        level: 'INFO',
+        level: 'WARNING',
         module: 'Big Seller Sync',
         action: 'Manual Reset Baseline',
-        target: { id: 'Sync Status', type: 'System' },
-        details: { message: `Manually reset the inventory comparison baseline.` }
+        target: { id: 'SYSTEM', type: 'System' },
+        details: { message: `ผู้ใช้งานได้ทำการรีเซ็ต Baseline การนับสต็อก Big Seller ใหม่` }
       });
-    }).catch(err => console.warn('Failed to load history service', err));
+    } catch (e) {
+      console.warn("Could not write history log for reset", e);
+    }
 
     return await this.calculateChanges();
   }

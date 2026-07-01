@@ -278,6 +278,36 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
                 </div>
               </div>
 
+              {/* System Settings */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs">4</span>
+                  ตั้งค่าระบบ (System Settings)
+                </h3>
+                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-4">
+                  
+                  {/* Auto-Reset Baseline */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700">Auto-Reset การนับรอบ (หลังดาวน์โหลด)</p>
+                      <p className="text-xs text-slate-500 mt-0.5">เมื่อดาวน์โหลดไฟล์ 'ผลลัพธ์การนับ' เสร็จ ระบบจะตั้งสต็อกปัจจุบันเป็น 0 ใหม่ให้อัตโนมัติ</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        defaultChecked={localStorage.getItem('bigseller_auto_reset_baseline') === 'true'}
+                        onChange={(e) => {
+                          localStorage.setItem('bigseller_auto_reset_baseline', e.target.checked);
+                        }}
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                    </label>
+                  </div>
+
+                </div>
+              </div>
+
             </div>
           )}
 

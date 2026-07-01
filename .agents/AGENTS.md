@@ -32,3 +32,5 @@
 6. **Schema Updates:** อนุญาตให้อัปเดต Schema ในโฟลเดอร์ `Schema Key` ได้เสมอ เพื่อความแม่นยำในการรับ-ส่งงาน
 7. **Task Board Updates:** อนุญาตให้อัปเดตไฟล์ `TODO.md` ได้เสมอ เมื่อได้รับแผนงานใหม่
 8. **Quota Estimation Updates:** อนุญาตให้อัปเดตข้อมูลการจำลองและคำนวณโควต้าในไฟล์ `FIRESTORE_QUOTA_ESTIMATION.md` ได้เสมอ
+9. **Plan & Task Separation:** เมื่อมีการวางแผน ให้แยก Artifact ระหว่าง Plan (แผนงานรวม) และ Task (ตารางงานย่อย) อย่างชัดเจน
+10. **Post-Task Evaluation:** เมื่อทำงานตามแผนเสร็จสิ้น จะต้องมีการประเมินผลลัพธ์การใช้โควต้า อ่าน-เขียน (Reads/Writes) ของ Firebase เสมอ โดยบันทึกลงใน `FIRESTORE_QUOTA_ESTIMATION.md`

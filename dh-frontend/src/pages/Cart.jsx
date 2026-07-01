@@ -13,6 +13,7 @@ import CartEmptyState from '../components/cart/CartEmptyState';
 import CartFreebieProgress from '../components/cart/CartFreebieProgress';
 import CartItemCard from '../components/cart/CartItemCard';
 import CartSummaryPanel from '../components/cart/CartSummaryPanel';
+import CartActivePromotions from '../components/cart/CartActivePromotions';
 
 const parseSafeNumber = (val) => {
   if (val === null || val === undefined) return 0;
@@ -25,13 +26,13 @@ const Cart = () => {
   const [user, setUser] = useState(null);
   
   // 🔥 ดึงข้อมูลจาก CartContext (รองรับทั้ง Guest และ User)
-  const { cartItems, totals, updateQuantity, removeFromCart, isInitialized } = useCart();
+  const { cartItems, totals, updateQuantity, removeFromCart, checkoutState, updateCheckoutConfig, isInitialized } = useCart();
   
   const [creditConfig, setCreditConfig] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [freebies, setFreebies] = useState([]);
   const [isFetchingFreebies, setIsFetchingFreebies] = useState(true);
-  const [validationMessages, setValidationMessages] = useState([]);
+  const [itemErrors, setItemErrors] = useState({});
   const [isValidatingCart, setIsValidatingCart] = useState(false);
   const validatedRef = useRef(false);
 
@@ -57,51 +58,73 @@ const Cart = () => {
   }, []);
 
   // 🚀 Real-time Cart Validation (เช็คสต๊อกและราคาล่าสุด)
+  const [productCache, setProductCache] = useState({});
+
   useEffect(() => {
-    if (isInitialized && cartItems.length > 0 && !validatedRef.current) {
-      validateCartItems();
+    if (!isInitialized || cartItems.length === 0) return;
+
+    // หาว่ามีสินค้าใหม่ที่ยังไม่เคย fetch ไหม (เพื่อประหยัด Read quota)
+    const uncachedItems = cartItems.filter(item => {
+      const id = (item.id && item.id !== '-') ? item.id : item.sku;
+      return !productCache[id];
+    });
+
+    if (uncachedItems.length > 0 && !isValidatingCart) {
+      fetchAndValidate(uncachedItems);
+    } else if (Object.keys(productCache).length > 0) {
+      runValidation(cartItems, productCache);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized, cartItems]);
 
-  const validateCartItems = async () => {
+  const fetchAndValidate = async (uncachedItems) => {
     setIsValidatingCart(true);
-    validatedRef.current = true;
-    let messages = [];
-    
     try {
-      // ดึงข้อมูลสินค้าล่าสุดจาก Firestore รวดเดียว โดยใช้ item.id เป็นหลัก
-      const fetchPromises = cartItems.map(item => {
+      const fetchPromises = uncachedItems.map(item => {
         const productId = (item.id && item.id !== '-') ? item.id : item.sku;
         return productService.getProduct(productId);
       });
       const freshProducts = await Promise.all(fetchPromises);
       
+      const newCache = { ...productCache };
       freshProducts.forEach((fresh, idx) => {
-        const cartItem = cartItems[idx];
-        if (!fresh) {
-          messages.push(`สินค้า ${cartItem.name} ไม่มีในระบบแล้ว กรุณาลบออกจากตะกร้า`);
-          return;
-        }
-        
-        // เช็คราคาเปลี่ยน
-        if (fresh.price !== cartItem.price) {
-          messages.push(`ราคา ${cartItem.name} มีการเปลี่ยนแปลง (฿${fresh.price.toLocaleString()})`);
-        }
-        
-        // เช็คสต๊อก
-        if (fresh.stockQuantity < cartItem.qty) {
-          messages.push(`สินค้า ${cartItem.name} มีจำนวนจำกัด (เหลือ ${fresh.stockQuantity} ชิ้น)`);
-        }
+        const id = (uncachedItems[idx].id && uncachedItems[idx].id !== '-') ? uncachedItems[idx].id : uncachedItems[idx].sku;
+        newCache[id] = fresh || { notFound: true };
       });
       
-      if (messages.length > 0) {
-        setValidationMessages(messages);
-      }
+      setProductCache(newCache);
+      runValidation(cartItems, newCache);
     } catch (e) {
       console.error("Cart validation error", e);
     } finally {
       setIsValidatingCart(false);
     }
+  };
+
+  const runValidation = (items, cache) => {
+    let errors = {};
+    items.forEach(cartItem => {
+      const id = (cartItem.id && cartItem.id !== '-') ? cartItem.id : cartItem.sku;
+      const fresh = cache[id];
+      const currentQty = cartItem.qty || cartItem.quantity || 1;
+      
+      if (!fresh || fresh.notFound) {
+        errors[id] = `สินค้านี้ไม่มีในระบบแล้ว`;
+        return;
+      }
+      
+      // เช็คสต๊อก
+      if (fresh.stockQuantity < currentQty) {
+        errors[id] = `สินค้าไม่เพียงพอ`;
+        return;
+      }
+
+      // เช็คราคาเปลี่ยน
+      if (fresh.price !== cartItem.price) {
+        errors[id] = `ราคามีการเปลี่ยนแปลงเป็น ฿${fresh.price.toLocaleString()}`;
+      }
+    });
+    setItemErrors(errors);
   };
 
   const fetchFreebies = async () => {
@@ -154,9 +177,16 @@ const Cart = () => {
       setUpdatingId(null);
     }
   };
+  const handlePromotionsEvaluated = (applicablePromotions) => {
+    const current = checkoutState.appliedPromotions || [];
+    if (JSON.stringify(current) !== JSON.stringify(applicablePromotions)) {
+      updateCheckoutConfig({ appliedPromotions: applicablePromotions });
+    }
+  };
 
   const subTotal = parseSafeNumber(totals.subtotal);
-  const netTotal = Math.max(0, subTotal);
+  const promoDiscount = (checkoutState.appliedPromotions || []).reduce((sum, p) => sum + (p.discountValue || 0), 0);
+  const netTotal = Math.max(0, subTotal - promoDiscount);
   const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig, cartItems) : 0;
 
   // จำลอง Loading เพื่อ UX ที่สมูท
@@ -184,6 +214,69 @@ const Cart = () => {
     totalQty: totals.count
   };
 
+  const isValidCart = Object.keys(itemErrors).length === 0;
+
+  const handleProceedToCheckout = async () => {
+    setIsValidatingCart(true);
+    try {
+      // ดึงสต๊อกและราคาสดใหม่จาก Database ทันทีก่อนกดสั่งซื้อ
+      const ids = cartItems.map(i => (i.id && i.id !== '-') ? i.id : i.sku).filter(Boolean);
+      const uniqueIds = [...new Set(ids)];
+      
+      const fetchPromises = uniqueIds.map(id => productService.getProduct(id));
+      const freshProducts = await Promise.all(fetchPromises);
+      
+      const newCache = { ...productCache };
+      freshProducts.forEach((fresh, idx) => {
+        newCache[uniqueIds[idx]] = fresh || { notFound: true };
+      });
+      
+      setProductCache(newCache);
+      
+      // ประเมินผลสดทันทีเพื่อตัดสินใจ Block หรือ Pass
+      let hasError = false;
+      let errors = {};
+      cartItems.forEach(cartItem => {
+        const id = (cartItem.id && cartItem.id !== '-') ? cartItem.id : cartItem.sku;
+        const fresh = newCache[id];
+        const currentQty = cartItem.qty || cartItem.quantity || 1;
+        
+        if (!fresh || fresh.notFound) {
+          errors[id] = `สินค้านี้ไม่มีในระบบแล้ว`;
+          hasError = true;
+          return;
+        }
+        
+        if (fresh.stockQuantity < currentQty) {
+          errors[id] = `สินค้าไม่เพียงพอ`;
+          hasError = true;
+          return;
+        }
+  
+        if (fresh.price !== cartItem.price) {
+          errors[id] = `ราคามีการเปลี่ยนแปลงเป็น ฿${fresh.price.toLocaleString()}`;
+          hasError = true;
+        }
+      });
+
+      setItemErrors(errors);
+      
+      if (hasError) {
+        showToast("สต๊อกหรือราคามีการเปลี่ยนแปลง กรุณาตรวจสอบตะกร้า", "error");
+        return; // บล็อคไม่ให้ไปหน้า Checkout
+      }
+
+      // ถ้าปลอดภัยทั้งหมด ให้ไปต่อ
+      navigate('/checkout');
+
+    } catch (e) {
+      console.error("Checkout validation error", e);
+      showToast("เกิดข้อผิดพลาดในการตรวจสอบ กรุณาลองใหม่", "error");
+    } finally {
+      setIsValidatingCart(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6 md:py-8 min-h-[80vh] animate-in fade-in duration-500 relative">
       
@@ -197,22 +290,6 @@ const Cart = () => {
         </button>
       </div>
 
-      {/* แจ้งเตือน Validation ถ้ามี */}
-      {validationMessages.length > 0 && (
-        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
-          <AlertTriangle className="text-orange-500 shrink-0 mt-0.5" size={20} />
-          <div>
-            <h3 className="font-bold text-orange-800 text-sm mb-1">มีการเปลี่ยนแปลงในตะกร้าของคุณ</h3>
-            <ul className="list-disc list-inside text-sm text-orange-700">
-              {validationMessages.map((msg, idx) => (
-                <li key={idx}>{msg}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      <CartFreebieProgress freebies={freebies} subTotal={subTotal} isLoading={isFetchingFreebies} />
 
       {!user && (
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -229,16 +306,35 @@ const Cart = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div className="lg:col-span-2 space-y-4">
-          {cartItems.map((item, index) => (
-            <CartItemCard 
-              key={item.id || index}
-              item={item}
-              index={index}
-              updatingId={updatingId}
-              onUpdateQty={handleUpdateQty}
-              onRemoveItem={handleRemoveItem}
+          {cartItems.map((item, index) => {
+            const id = (item.id && item.id !== '-') ? item.id : item.sku;
+            const fresh = productCache[id];
+            const maxQty = fresh ? fresh.stockQuantity : null;
+
+            return (
+              <CartItemCard 
+                key={item.id || index}
+                item={item}
+                index={index}
+                updatingId={updatingId}
+                itemError={itemErrors[id]}
+                maxQty={maxQty}
+                onUpdateQty={handleUpdateQty}
+                onRemoveItem={handleRemoveItem}
+              />
+            );
+          })}
+
+          <div className="mt-4 mb-4">
+            <CartFreebieProgress 
+              freebies={freebies} 
+              subTotal={subTotal} 
+              isLoading={isFetchingFreebies} 
+              cartItems={cartItems} 
+              checkoutState={checkoutState}
+              updateCheckoutConfig={updateCheckoutConfig}
             />
-          ))}
+          </div>
         </div>
 
         <div className="lg:col-span-1">
@@ -247,7 +343,11 @@ const Cart = () => {
             currentUser={user}
             subTotal={subTotal}
             netTotal={netTotal}
+            promoDiscount={promoDiscount}
             earnedPoints={earnedPoints}
+            isValidCart={isValidCart}
+            onCheckout={handleProceedToCheckout}
+            promotionsElement={<CartActivePromotions cartItems={cartItems} subTotal={subTotal} user={user} onPromotionsEvaluated={handlePromotionsEvaluated} />}
           />
         </div>
 

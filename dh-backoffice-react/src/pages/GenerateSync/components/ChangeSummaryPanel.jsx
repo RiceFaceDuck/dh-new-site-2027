@@ -22,51 +22,38 @@ export default function ChangeSummaryPanel({ changes, onManualReset }) {
         
         <div className="relative flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-1 rounded-full cursor-help" title="เวลารอบปัจจุบัน (Baseline)">
-            เริ่มนับ: {lastResetDate}
+            เริ่มนับ: {lastResetDate instanceof Date ? lastResetDate.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : String(lastResetDate)}
           </span>
           <button 
             onClick={() => setShowSettings(!showSettings)}
-            className="p-1.5 rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-            title="ตั้งค่ารอบเวลา"
+            className="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+            title="จัดการรอบการนับสต็อก"
           >
             <Settings size={16} />
           </button>
 
           {showSettings && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 z-50 animate-in fade-in zoom-in-95">
-              <h5 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <Clock size={16} className="text-indigo-500" />
-                ตั้งค่ารอบเวลา Reset
+            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 z-50 animate-in fade-in zoom-in-95">
+              <h5 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <RefreshCw size={16} className="text-rose-500" />
+                รีเซ็ตรอบการนับใหม่ (Manual Reset)
               </h5>
-              <div className="flex flex-col gap-2 mb-4">
-                <label className="text-xs font-medium text-slate-500">เวลาตัดรอบของแต่ละวัน (ชั่วโมง:นาที)</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="time" 
-                    value={timeInput}
-                    onChange={(e) => setTimeInput(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                  <button 
-                    onClick={handleSaveTime}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors"
-                  >
-                    บันทึก
-                  </button>
-                </div>
-              </div>
-              <div className="pt-3 border-t border-slate-100">
-                <button 
-                  onClick={() => {
-                    setShowSettings(false);
+              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                การกดรีเซ็ตจะเป็นการนำ <strong className="text-slate-700">สต็อกปัจจุบันทั้งหมด</strong> ไปตั้งเป็นค่าเริ่มต้น (Baseline) ใหม่ 
+                รายการความเปลี่ยนแปลงด้านล่างจะถูกลบและเริ่มนับใหม่ตั้งแต่ 0
+              </p>
+              
+              <button 
+                onClick={() => {
+                  setShowSettings(false);
+                  if (window.confirm("ยืนยันการตั้งค่าสต็อกปัจจุบันเป็นรอบการนับใหม่ทั้งหมด?")) {
                     if (onManualReset) onManualReset();
-                  }}
-                  className="w-full flex justify-center items-center gap-2 py-2 px-4 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-sm transition-colors"
-                >
-                  <RefreshCw size={14} />
-                  Reset การนับใหม่ทันที
-                </button>
-              </div>
+                  }
+                }}
+                className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-xl bg-rose-500 text-white hover:bg-rose-600 font-bold text-sm transition-colors shadow-sm"
+              >
+                ยืนยันการรีเซ็ตรอบใหม่
+              </button>
             </div>
           )}
         </div>

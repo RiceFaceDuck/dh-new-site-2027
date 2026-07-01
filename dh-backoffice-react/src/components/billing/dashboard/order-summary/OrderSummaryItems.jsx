@@ -1,6 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ClaimActionForm from './ClaimActionForm';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
+
+const FreebieName = ({ item }) => {
+    const [name, setName] = useState(item.name);
+    
+    useEffect(() => {
+        if (item.isFreebie && item.sku) {
+            inventoryQueryService.getProductBySku(item.sku)
+                .then(product => {
+                    if (product && product.name) {
+                        setName(`[แถมฟรี] ${product.name}`);
+                    }
+                })
+                .catch(err => console.error("Error fetching freebie name", err));
+        }
+    }, [item.sku, item.isFreebie]);
+
+    return (
+        <span className="font-bold text-[11px] text-[var(--dh-text-main)] group-hover:text-[var(--dh-accent)] truncate max-w-[150px] lg:max-w-xs" title={name}>
+            {name}
+        </span>
+    );
+};
 
 export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
     const [expandedRowIdx, setExpandedRowIdx] = useState(null);
@@ -64,9 +87,13 @@ export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
                                         </td>
                                         <td className="px-3 py-1.5 align-middle">
                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="font-bold text-[11px] text-[var(--dh-text-main)] group-hover:text-[var(--dh-accent)] truncate max-w-[150px] lg:max-w-xs" title={item.name}>
-                                                    {item.name}
-                                                </span>
+                                                {isFreebie ? (
+                                                    <FreebieName item={item} />
+                                                ) : (
+                                                    <span className="font-bold text-[11px] text-[var(--dh-text-main)] group-hover:text-[var(--dh-accent)] truncate max-w-[150px] lg:max-w-xs" title={item.name}>
+                                                        {item.name}
+                                                    </span>
+                                                )}
                                                 {isFreebie && (
                                                     <span className="bg-emerald-500/10 text-emerald-600 px-1 py-0.5 rounded text-[8px] font-black border border-emerald-500/20 shrink-0">ของแถม</span>
                                                 )}

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { promotionService } from '../../../../firebase/promotionService';
 import { freebieService } from '../../../../firebase/freebieService';
+import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
 
 import { usePosCart } from './usePosCart';
 import { usePosCustomer } from './usePosCustomer';
@@ -116,7 +117,22 @@ export default function usePosState(products, customers, initialDraft) {
         const fetchMarketingData = async () => {
             try {
                 const [promos, freebies] = await Promise.all([promotionService.getActivePromotions(), freebieService.getActiveFreebies()]);
-                setActivePromotions(promos || []); setActiveFreebies(freebies || []);
+                
+                const enrichedFreebies = [];
+                for (const f of (freebies || [])) {
+                    if (f.itemName) {
+                        try {
+                            const p = await inventoryQueryService.getProductBySku(f.itemName);
+                            enrichedFreebies.push({ ...f, productName: p ? p.name : null });
+                        } catch (e) {
+                            enrichedFreebies.push({ ...f, productName: null });
+                        }
+                    } else {
+                        enrichedFreebies.push(f);
+                    }
+                }
+                
+                setActivePromotions(promos || []); setActiveFreebies(enrichedFreebies);
             } catch(e) { console.error(e); }
         };
         fetchMarketingData();

@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           setAccessDenied(true);
           setDenyReason('error');
-        }, 10000);
+        }, 30000);
 
         const userEmail = (currentUser.email || '').toLowerCase();
         const isExecutive = SUPER_ADMINS.includes(userEmail);
@@ -129,12 +129,12 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // 🕒 15-Minute Inactivity Timeout (เตะออกเมื่อไม่มีการเคลื่อนไหวเกิน 15 นาที)
+  // 🕒 12-Hour Inactivity Timeout (เตะออกเมื่อไม่มีการเคลื่อนไหวเกิน 12 ชั่วโมง)
   useEffect(() => {
     if (!user) return; // Only track if user is logged in
 
     let intervalId;
-    const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 นาที
+    const INACTIVITY_LIMIT_MS = 12 * 60 * 60 * 1000; // 12 ชั่วโมง
     const ACTIVITY_KEY = 'dh_last_activity';
 
     const checkInactivity = () => {

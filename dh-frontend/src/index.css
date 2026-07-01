@@ -140,4 +140,8 @@
     75% { transform: translateX(-3px); }
     90% { transform: translateX(2px); }
   }
+
+  .animate-shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  }
 }

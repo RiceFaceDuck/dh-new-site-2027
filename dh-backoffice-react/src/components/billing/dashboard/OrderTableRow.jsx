@@ -5,7 +5,19 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
     const statLower = (order.orderStatus || order.status || '').toLowerCase();
     const payStatLower = (order.paymentStatus || '').toLowerCase();
     const isPaid = payStatLower === 'paid' || statLower === 'paid';
-    const fulfillment = order.fulfillmentType || 'StorePickup'; 
+    
+    // Determine fulfillment considering frontend's shippingMethod and old orders fallback
+    let fulfillment = order.fulfillmentType;
+    if (!fulfillment) {
+        if (order.shippingMethod) {
+            fulfillment = order.shippingMethod === 'standard' ? 'Delivery' : 'StorePickup';
+        } else {
+            // Fallback for old orders that didn't save shippingMethod: if they paid shipping, it's delivery
+            const shippingCost = Number(order.shippingFee || order.shippingCost || order.totals?.shipping || 0);
+            fulfillment = shippingCost > 0 ? 'Delivery' : 'StorePickup';
+        }
+    }
+
     const shippingName = order.shippingMethod || order.courier || 'จัดส่งเอกชน';
     const isCancelled = statLower === 'cancelled' || statLower === 'void';
 
@@ -86,7 +98,7 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
             <td className="py-2.5 px-6 text-right align-middle">
                 <span className={`font-black text-[15px] transition-colors ${isCancelled ? 'text-[var(--dh-text-muted)] line-through' : 'text-[var(--dh-text-main)] group-hover:text-[var(--dh-accent)] dh-text-glow'}`}>
                     {(() => {
-                        let netTotal = Number(order.netTotal || order.summary?.finalTotal || order.finalTotal || order.finalPayable || order.totalPrice || order.totalAmount || 0);
+                        let netTotal = Number(order.netTotal || order.totals?.netTotal || order.summary?.finalTotal || order.finalTotal || order.finalPayable || order.totalPrice || order.totalAmount || 0);
                         
                         // 🔥 ULTIMATE FALLBACK: If netTotal is 0, calculate it from the items array
                         if (netTotal === 0 && order.items && order.items.length > 0) {

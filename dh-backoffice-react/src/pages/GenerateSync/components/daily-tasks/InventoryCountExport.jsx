@@ -3,7 +3,7 @@ import { Download, CheckCircle, AlertCircle, RefreshCw, CheckSquare } from 'luci
 import { bigSellerExportService } from '../../../../firebase/bigseller';
 import { historyService } from '../../../../firebase/historyService';
 
-export default function InventoryCountExport({ changes, isCalculating }) {
+export default function InventoryCountExport({ changes, isCalculating, onManualReset }) {
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
@@ -24,6 +24,15 @@ export default function InventoryCountExport({ changes, isCalculating }) {
         target: { id: result.fileName, type: 'File' },
         details: { message: `Generated Inventory Count file from template with ${result.itemCount} items.` }
       });
+
+      // Auto-Reset Logic
+      if (localStorage.getItem('bigseller_auto_reset_baseline') === 'true') {
+        if (onManualReset) {
+          setTimeout(() => {
+            onManualReset();
+          }, 1500); // Wait a bit before resetting to show success state
+        }
+      }
 
       setTimeout(() => setStatus('idle'), 5000);
     } catch (error) {

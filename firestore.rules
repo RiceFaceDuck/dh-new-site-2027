@@ -62,10 +62,10 @@ service cloud.firestore {
       allow read: if true;
       // เฉพาะพนักงานเท่านั้นที่แก้ไขจำนวนสต๊อก หรือข้อมูลทั้งหมดได้
       allow write: if isStaff();
-      // อนุญาตให้ User ทั่วไป (ที่ล็อกอิน) อัปเดตได้เฉพาะคะแนนรีวิวเท่านั้น
+      // อนุญาตให้ User ทั่วไป (ที่ล็อกอิน) อัปเดตได้เฉพาะคะแนนรีวิวและสต๊อก (เวลาสั่งซื้อ)
       allow update: if isAuthenticated() && 
                     request.resource.data.diff(resource.data).affectedKeys()
-                    .hasOnly(['reviewCount', 'averageRating']);
+                    .hasOnly(['reviewCount', 'averageRating', 'stockQuantity', 'stats']);
     }
 
     // 2.1 รีวิวสินค้า (Product Reviews)
@@ -78,8 +78,10 @@ service cloud.firestore {
 
     // 3. ระบบบิลและการเงิน (Orders & Credit)
     match /orders/{orderId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.customer.uid == request.auth.uid);
-      allow write: if isStaff();
+      allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || resource.data.customer.uid == request.auth.uid));
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isStaff();
+      allow delete: if isStaff();
     }
 
     match /credit_transactions/{txId} {
@@ -97,11 +99,13 @@ service cloud.firestore {
         resource.data.createdBy == request.auth.uid || 
         resource.data.customerUid == request.auth.uid || 
         resource.data.uid == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
         resource.data.partnerId == request.auth.uid
       ));
       allow create: if isStaff() || (isAuthenticated() && (
         request.resource.data.createdByUid == request.auth.uid || 
         request.resource.data.createdBy == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
         request.resource.data.partnerId == request.auth.uid
       ));
       allow update: if isStaff() || (isAuthenticated() && (
@@ -110,8 +114,10 @@ service cloud.firestore {
         resource.data.createdBy == request.auth.uid || 
         resource.data.customerUid == request.auth.uid || 
         resource.data.uid == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
         resource.data.partnerId == request.auth.uid ||
         request.resource.data.createdBy == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
         request.resource.data.partnerId == request.auth.uid
       ));
       allow delete: if isStaff() || (isAuthenticated() && (
@@ -173,6 +179,16 @@ service cloud.firestore {
     
     match /counters/{counterId} {
       allow read, write: if isStaff();
+    }
+    
+    match /system_counters/{counterId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    
+    match /system_accounts/{accountId} {
+      allow read: if true;
+      allow write: if isStaff();
     }
   }
 }

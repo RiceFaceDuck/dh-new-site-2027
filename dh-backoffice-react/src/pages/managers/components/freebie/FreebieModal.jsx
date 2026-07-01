@@ -6,9 +6,28 @@ export default function FreebieModal({
     onClose, 
     formData, 
     setFormData, 
+    categories = [],
     handleSave, 
     isProcessing 
 }) {
+    const [isTypeDropdownOpen, setIsTypeDropdownOpen] = React.useState(false);
+    
+    // Extract unique types from categories
+    const uniqueTypes = React.useMemo(() => {
+        const types = categories.map(c => c.type).filter(Boolean);
+        return [...new Set(types)];
+    }, [categories]);
+
+    const handleTypeToggle = (type) => {
+        let currentTypes = formData.applicableTypes ? formData.applicableTypes.split(',').map(t => t.trim()).filter(Boolean) : [];
+        if (currentTypes.includes(type)) {
+            currentTypes = currentTypes.filter(t => t !== type);
+        } else {
+            currentTypes.push(type);
+        }
+        setFormData({ ...formData, applicableTypes: currentTypes.join(', ') });
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -47,9 +66,50 @@ export default function FreebieModal({
                             </div>
                         </div>
 
-                        <div>
-                            <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">จำกัดเฉพาะสินค้า (SKU)</label>
-                            <input type="text" placeholder="เช่น CASE-01, RAM-02 (ปล่อยว่าง = ใช้ได้กับสินค้าทั้งร้าน)" value={formData.applicableSkus} onChange={e => setFormData({...formData, applicableSkus: e.target.value})} className="w-full p-2.5 rounded-lg border border-gray-300 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-sm font-bold bg-white"/>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">จำกัดเฉพาะสินค้า (SKU)</label>
+                                <input type="text" placeholder="เช่น CASE-01, RAM-02 (ปล่อยว่าง = ไม่จำกัด)" value={formData.applicableSkus} onChange={e => setFormData({...formData, applicableSkus: e.target.value.toUpperCase()})} className="w-full p-2.5 rounded-lg border border-gray-300 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-sm font-bold bg-white uppercase"/>
+                            </div>
+                            <div className="relative">
+                                <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">จำกัดเฉพาะหมวดหมู่ (TYPE)</label>
+                                <div 
+                                    className="w-full p-2.5 rounded-lg border border-gray-300 bg-white cursor-pointer flex justify-between items-center min-h-[42px]"
+                                    onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
+                                >
+                                    <div className="text-sm font-bold text-gray-700 truncate pr-2">
+                                        {formData.applicableTypes || <span className="text-gray-400 font-normal">ทั้งหมด (ไม่จำกัด)</span>}
+                                    </div>
+                                    <div className={`transition-transform ${isTypeDropdownOpen ? 'rotate-180' : ''}`}>▼</div>
+                                </div>
+                                
+                                {isTypeDropdownOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-10" onClick={() => setIsTypeDropdownOpen(false)}></div>
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto py-1 custom-scrollbar">
+                                            {uniqueTypes.length === 0 ? (
+                                                <div className="p-3 text-sm text-gray-500 text-center">ไม่พบหมวดหมู่</div>
+                                            ) : (
+                                                uniqueTypes.map(type => {
+                                                    const isSelected = formData.applicableTypes?.split(',').map(t => t.trim()).includes(type);
+                                                    return (
+                                                        <div 
+                                                            key={type} 
+                                                            className="px-3 py-2 hover:bg-pink-50 cursor-pointer flex items-center gap-2"
+                                                            onClick={() => handleTypeToggle(type)}
+                                                        >
+                                                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-pink-600 border-pink-600' : 'border-gray-300'}`}>
+                                                                {isSelected && <span className="text-white text-xs">✓</span>}
+                                                            </div>
+                                                            <span className="text-sm font-bold text-gray-700">{type}</span>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 

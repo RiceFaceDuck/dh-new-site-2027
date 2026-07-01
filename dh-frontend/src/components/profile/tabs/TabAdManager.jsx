@@ -155,7 +155,8 @@ const TabAdManager = ({ user }) => {
       targetUrl: ad.targetUrl || '',
       platform: ad.platform || 'other',
       billboardRatio: ad.billboardRatio || '16:9',
-      price: ad.price || ''
+      price: ad.price || '',
+      richDescription: ad.richDescription || ''
     });
     setCreditLimit(ad.creditLimit === -1 ? 100 : ad.creditLimit);
     setIsUnlimited(ad.creditLimit === -1);
@@ -168,7 +169,7 @@ const TabAdManager = ({ user }) => {
     setIsFormOpen(false);
     setIsEditMode(false);
     setEditingAdId(null);
-    setFormData({ type: 'PRODUCT_LINK', title: '', description: '', imageUrl: '', targetUrl: '', platform: 'other', billboardRatio: '16:9', price: '' });
+    setFormData({ type: 'PRODUCT_LINK', title: '', description: '', richDescription: '', imageUrl: '', targetUrl: '', platform: 'other', billboardRatio: '16:9', price: '' });
   };
 
   const handleSubmitAd = async (e) => {
@@ -190,6 +191,7 @@ const TabAdManager = ({ user }) => {
         platform: formData.platform || 'other',
         billboardRatio: formData.type === 'BILLBOARD' ? formData.billboardRatio : null,
         price: formData.type === 'PRODUCT_LINK' ? formData.price : null,
+        richDescription: formData.type === 'PRODUCT_LINK' ? (formData.richDescription || '') : null,
         partnerName: storeData?.storeName || user?.displayName || 'พาร์ทเนอร์',
         costPerImpression: COST_PER_IMPRESSION
       });

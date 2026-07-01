@@ -182,14 +182,24 @@ export function useProductSearch() {
     { term: debouncedSearch3.trim(), colorClass: 'bg-pink-200/90 text-pink-900 font-bold border-b-2 border-pink-500 shadow-sm' }
   ], [debouncedSearch1, debouncedSearch2, debouncedSearch3]);
 
-  const handleSelectProduct = (product) => {
-    setSelectedProduct(product);
+  const handleSelectProduct = async (product) => {
+    setSelectedProduct(product); // Optimistic load
     setSubstitutes([]);
     setCopySuccess(false);
     setShowSuffixSettings(false);
     resetCommentState(product);
     
     setIsImageModalOpen(false);
+    
+    // ✨ Live Fetch: ดึงข้อมูลสดจาก Firestore เพื่อความแม่นยำ 100% ในหน้าต่างรายละเอียด
+    try {
+      const liveProduct = await inventoryQueryService.getProductBySku(product.sku);
+      if (liveProduct) {
+        setSelectedProduct(liveProduct);
+      }
+    } catch (e) {
+      console.warn('Live fetch failed', e);
+    }
     
     if (product.substituteSkus && product.substituteSkus.length > 0) {
       const subs = mergedProducts.filter(p => product.substituteSkus.includes(p.sku));

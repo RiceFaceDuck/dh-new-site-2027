@@ -5,7 +5,7 @@ import SkuMerchantExport from './daily-tasks/SkuMerchantExport';
 import InventoryCountExport from './daily-tasks/InventoryCountExport';
 import ShopeeTemplateUpload from './non-daily-tasks/ShopeeTemplateUpload';
 
-export default function GenerateActions({ changes, isCalculating }) {
+export default function GenerateActions({ changes, isCalculating, onManualReset }) {
   const [showSettings, setShowSettings] = useState(false);
 
   return (
@@ -46,7 +46,7 @@ export default function GenerateActions({ changes, isCalculating }) {
           
           <div className="flex flex-col gap-4">
             <SkuMerchantExport changes={changes} isCalculating={isCalculating} />
-            <InventoryCountExport changes={changes} isCalculating={isCalculating} />
+            <InventoryCountExport changes={changes} isCalculating={isCalculating} onManualReset={onManualReset} />
           </div>
         </div>
 

@@ -29,7 +29,7 @@ export const usePosActions = ({
         else {
             const baseWholesale = product.Price || product.retailPrice || 0; const baseRetail = product.retailPrice || product.Price || 0;
             const targetPrice = activeTab.priceMode === 'wholesale' ? baseWholesale : baseRetail;
-            updateActiveTab({ items: [{ sku: product.sku, name: product.name, baseWholesale, baseRetail, price: targetPrice, qty: 1, discount: 0, stock: product.stockQuantity, note: '', noteColor: 'slate' }, ...activeTab.items] });
+            updateActiveTab({ items: [{ sku: product.sku, name: product.name, type: product.type || '', category: product.category || '', baseWholesale, baseRetail, price: targetPrice, qty: 1, discount: 0, stock: product.stockQuantity, note: '', noteColor: 'slate' }, ...activeTab.items] });
         }
         setSearchQuery(''); setShowDropdown(false);
         setTimeout(() => searchRef.current?.querySelector('input')?.focus(), 10);
@@ -78,9 +78,20 @@ export const usePosActions = ({
         setShowCustDropdown(false);
     };
 
-    const applyPromotionLogic = (promo, subTotalAmount) => {
+    const applyPromotionLogic = (promo, subTotalAmount, items = []) => {
         if (!promo) return 0;
-        let calculatedDiscount = promo.type === 'PERCENTAGE' ? subTotalAmount * (promo.value / 100) : promo.value;
+        
+        let eligibleTotal = subTotalAmount;
+        if (promo.applicableSkus && promo.applicableSkus.length > 0 && items && items.length > 0) {
+            eligibleTotal = items.reduce((acc, item) => {
+                if (promo.applicableSkus.includes(item.sku)) {
+                    return acc + (item.price * sanitizeNum(item.qty));
+                }
+                return acc;
+            }, 0);
+        }
+
+        let calculatedDiscount = promo.type === 'PERCENTAGE' ? eligibleTotal * (promo.value / 100) : Math.min(promo.value, eligibleTotal);
         if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
             calculatedDiscount = Math.min(calculatedDiscount, promo.maxDiscount);
         }
@@ -89,7 +100,7 @@ export const usePosActions = ({
 
     const handleApplyPromotion = (promo, isAuto = false) => {
         if (promo.minSpend > 0 && itemSubTotal < promo.minSpend) return;
-        updateActiveTab({ promoDiscount: applyPromotionLogic(promo, itemSubTotal), appliedPromoId: promo.id, appliedPromoDetails: { ...promo }, autoPromoEnabled: isAuto ? true : false });
+        updateActiveTab({ promoDiscount: applyPromotionLogic(promo, itemSubTotal, activeTab.items), appliedPromoId: promo.id, appliedPromoDetails: { ...promo }, autoPromoEnabled: isAuto ? true : false });
         setIsPromoModalOpen(false);
     };
 
@@ -141,7 +152,7 @@ export const usePosActions = ({
                 const reasonStr = conditionText.length > 0 ? ` (${conditionText.join(', ')})` : '';
                 return { 
                     sku: f.itemName, 
-                    name: `[แถมฟรี] ${f.itemName}`, 
+                    name: `[แถมฟรี] ${f.productName || f.itemName}`, 
                     qty: Math.min(sanitizeNum(f.qty), sanitizeNum(f.maxPerBill) || sanitizeNum(f.qty)), 
                     price: 0, discount: 0, total: 0, isFreebie: true, note: `${f.title}${reasonStr}`, noteColor: 'rose' 
                 };
@@ -164,7 +175,7 @@ export const usePosActions = ({
                 shippingFee: shippingFee, otherFeeName: activeTab.otherFeeName || '', otherFeeAmount: otherFeeAmount, vatAmount: sanitizeNum(vatAmount), netTotal: sanitizeNum(netTotal), walletUsed: walletUsed,
                 earnedPoints: status === 'Paid' ? earnedPoints : 0, remainingToPay: sanitizeNum(remainingToPay), cashReceived: activeTab.paymentMethod === 'Cash' ? sanitizeNum(activeTab.cashReceived) : null,
                 changeAmount: sanitizeNum(changeAmount) > 0 ? sanitizeNum(changeAmount) : 0, slipImage: activeTab.slipImage || null, appliedPromotion: activeTab.appliedPromoDetails || null,
-                appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, itemName: f.itemName, qty: sanitizeNum(f.qty) })) : null,
+                appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
                 thaiBahtText: convertToThaiBahtText(remainingToPay) || '', billNote: finalNote, sellerUid: auth.currentUser?.uid || 'System',
                 customer: activeTab.customer ? { uid: activeTab.customer.uid || '', accountName: activeTab.customer.accountName || activeTab.customer.displayName || activeTab.customer.firstName || activeTab.customer.name || '', phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: activeTab.customer.address || '', hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
                 items: finalOrderItems

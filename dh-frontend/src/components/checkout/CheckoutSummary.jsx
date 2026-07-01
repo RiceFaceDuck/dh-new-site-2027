@@ -1,9 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // 🚀 [NEW] นำเข้า formatCredit และไอคอน เพื่อยกระดับ UI
 import { formatCredit } from '../../firebase/creditService';
 import { Award } from 'lucide-react';
 import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { parseConsentText } from '../../utils/textParser';
+import { productService } from '../../firebase/productService';
+
+const FreebieDisplayName = ({ freebie, className }) => {
+  const [productName, setProductName] = useState(freebie.productName || freebie.title || freebie.itemName);
+
+  useEffect(() => {
+    if (freebie.itemName) {
+      productService.getProduct(freebie.itemName)
+        .then(product => {
+          if (product && product.name) {
+            setProductName(product.name);
+          }
+        })
+        .catch(err => console.error("Error fetching freebie name", err));
+    }
+  }, [freebie.itemName]);
+
+  return <span className={className || "truncate"} title={productName}>{productName}</span>;
+};
 
 const CheckoutSummary = ({ 
   cartItems, 
@@ -11,10 +30,48 @@ const CheckoutSummary = ({
   checkoutState, 
   onPlaceOrder, 
   onRequestWholesale, 
-  isSubmitting 
+  isSubmitting,
+  slipUrl 
 }) => {
   const [isTermsAccepted, setIsTermsAccepted] = useState(false);
   const { config } = useCookieConsent();
+
+  // 💎 [NEW] UX for Place Order Button
+  const [btnState, setBtnState] = useState('idle'); // 'idle' | 'checking' | 'missing_slip'
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (btnState === 'missing_slip' && countdown > 0) {
+      timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
+    } else if (btnState === 'missing_slip' && countdown === 0) {
+      setBtnState('idle');
+    }
+    return () => clearTimeout(timer);
+  }, [btnState, countdown]);
+
+  const handlePlaceOrderClick = async () => {
+    if (btnState === 'missing_slip') {
+      // Allow user to cancel waiting and reset
+      setBtnState('idle');
+      setCountdown(0);
+      return;
+    }
+    
+    setBtnState('checking');
+    
+    // Simulate brief checking time for UX
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    if (checkoutState?.paymentMethod === 'transfer' && !slipUrl) {
+       setBtnState('missing_slip');
+       setCountdown(3);
+       return;
+    }
+    
+    setBtnState('idle');
+    onPlaceOrder();
+  };
 
   // ดึงค่าเบื้องต้น
   const subtotal = totals?.subtotal || 0;
@@ -139,20 +196,22 @@ const CheckoutSummary = ({
           </div>
 
           {/* 7. ของแถมที่ได้รับ */}
-          <div className="flex justify-between items-start pt-2">
-            <span className="text-gray-900 font-medium">7. ของแถมที่ได้รับ</span>
-            <div className="text-right">
+          <div className="flex justify-between items-start pt-2 border-t border-dashed border-gray-200 mt-2 gap-2">
+            <span className="whitespace-nowrap shrink-0">7. ของแถมที่ได้รับ</span>
+            <div className="text-right flex flex-col items-end gap-1 min-w-0">
               {qualifiedFreebies.length > 0 ? (
-                <ul className="text-orange-600 text-xs text-left inline-block space-y-1">
-                  {qualifiedFreebies.map((freebie, idx) => (
-                    <li key={idx} className="flex items-start gap-1 bg-orange-50 px-2 py-1 rounded">
-                      <span>🎁</span>
-                      <span>{freebie.itemName} <span className="font-medium opacity-80">(x{freebie.quantity})</span></span>
-                    </li>
-                  ))}
-                </ul>
+                qualifiedFreebies.map((freebie, idx) => {
+                  const qty = freebie.quantity || Math.min(freebie.qty, freebie.maxPerBill || freebie.qty) || 1;
+                  return (
+                    <span key={idx} className="text-emerald-600 font-medium flex items-center justify-end gap-1 max-w-[130px] sm:max-w-[180px]">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                      <FreebieDisplayName freebie={freebie} className="truncate" />
+                      <span className="shrink-0 ml-0.5">x{qty}</span>
+                    </span>
+                  );
+                })
               ) : (
-                <span className="text-gray-400">0</span>
+                <span className="text-gray-400">ไม่มีของแถม</span>
               )}
             </div>
           </div>
@@ -196,12 +255,14 @@ const CheckoutSummary = ({
           {/* ปุ่มสั่งซื้อปกติ */}
           <button
             id="place-order-btn"
-            onClick={onPlaceOrder}
+            onClick={handlePlaceOrderClick}
             disabled={!isTermsAccepted || isSubmitting}
 
             className={`w-full py-4 px-4 rounded-xl text-white font-bold text-base transition-all duration-200 flex items-center justify-center gap-2
-              ${isSubmitting 
+              ${isSubmitting || btnState === 'checking'
                 ? 'bg-indigo-400 cursor-not-allowed' 
+                : btnState === 'missing_slip'
+                ? 'bg-red-500 hover:bg-red-600'
                 : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 active:scale-[0.98]'
               }`}
           >
@@ -209,6 +270,15 @@ const CheckoutSummary = ({
               <>
                 <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 กำลังดำเนินการ...
+              </>
+            ) : btnState === 'checking' ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                กำลังตรวจ
+              </>
+            ) : btnState === 'missing_slip' ? (
+              <>
+                ยังไม่ได้รับ สลิปโอน {countdown > 0 ? `(${countdown})` : ''}
               </>
             ) : (
               <>
@@ -228,7 +298,7 @@ const CheckoutSummary = ({
                 : 'border-gray-200 text-gray-700 bg-white hover:border-indigo-600 hover:text-indigo-600 active:scale-[0.98]'
               }`}
           >
-            ขอพิจารณาราคาส่ง (B2B)
+            ฉันเป็นร้านช่าง ต้องการ ราคาส่ง
           </button>
         </div>
 
