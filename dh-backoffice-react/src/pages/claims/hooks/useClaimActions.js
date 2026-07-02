@@ -69,8 +69,9 @@ export function useClaimActions(selectedRequest, setSelectedRequest, userProfile
 
   const handleReject = async (reason) => {
     if (!reason) return;
+    const userName = userProfile?.firstName || 'Manager';
     const success = await executeAction(
-      () => claimService.rejectRequest(selectedRequest, reason, auth.currentUser.uid)
+      () => claimService.rejectRequest(selectedRequest, reason, auth.currentUser.uid, userName)
     );
     if (success) handleClose();
   };

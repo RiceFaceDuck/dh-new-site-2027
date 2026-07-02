@@ -1,7 +1,8 @@
-import { doc, updateDoc, serverTimestamp, increment, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { transactionService } from '../transactionService';
+import { gasStockService } from '../gasStockService';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -65,7 +66,20 @@ export const returnActionService = {
     });
 
     // 1. เพิ่มสต๊อกกลับเข้าคลัง
-    await updateDoc(doc(db, 'products', payload.sku), { stockQuantity: increment(qty) });
+    const pRef = doc(db, 'products', payload.sku);
+    const pSnap = await getDoc(pRef);
+    if (pSnap.exists()) {
+        await updateDoc(pRef, { stockQuantity: increment(qty) });
+        
+        // Sync to GAS Change Detector
+        const currentStock = Number(pSnap.data().stockQuantity || 0);
+        gasStockService.queueUpdate({
+            ...pSnap.data(),
+            sku: payload.sku,
+            stockQuantity: currentStock + qty
+        });
+        await gasStockService.forceSync();
+    }
     
     // 2. คืนเงินให้ลูกค้า (ถ้าไม่ใช่ลูกค้าทั่วไป)
     let refundAmount = (payload.purchasePrice || 0) * qty;
@@ -114,7 +128,7 @@ export const returnActionService = {
     return true;
   },
 
-  rejectRequest: async (task, reason, adminUid) => {
+  rejectRequest: async (task, reason, adminUid, adminName) => {
     await updateDoc(doc(db, TODOS_COLLECTION, task.id), {
       status: 'rejected',
       handledBy: adminUid,
@@ -132,7 +146,7 @@ export const returnActionService = {
         reason: reason,
         task_id: task.id
       },
-      actorOverride: { uid: adminUid, name: 'Manager', email: 'N/A' }
+      actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
     });
     return true;
   }

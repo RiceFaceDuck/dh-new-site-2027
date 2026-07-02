@@ -118,15 +118,30 @@ export default function usePosState(products, customers, initialDraft) {
             try {
                 const [promos, freebies] = await Promise.all([promotionService.getActivePromotions(), freebieService.getActiveFreebies()]);
                 
+                // 🚀 Optimize: Read from sessionStorage cache to avoid N+1 queries
+                let cacheMap = new Map();
+                try {
+                    const cachedStr = sessionStorage.getItem('search_hybrid_cache');
+                    if (cachedStr) {
+                        const cachedArr = JSON.parse(cachedStr);
+                        cachedArr.forEach(p => cacheMap.set(p.sku, p.name));
+                    }
+                } catch(e) {}
+
                 const enrichedFreebies = [];
                 for (const f of (freebies || [])) {
                     if (f.itemName) {
-                        try {
-                            const p = await inventoryQueryService.getProductBySku(f.itemName);
-                            enrichedFreebies.push({ ...f, productName: p ? p.name : null });
-                        } catch (e) {
-                            enrichedFreebies.push({ ...f, productName: null });
+                        let pName = cacheMap.get(f.itemName);
+                        // ถ้าไม่มีในแคชค่อยไปดึงจาก Server (Fallback)
+                        if (!pName) {
+                            try {
+                                const p = await inventoryQueryService.getProductBySku(f.itemName);
+                                pName = p ? p.name : null;
+                            } catch (e) {
+                                pName = null;
+                            }
                         }
+                        enrichedFreebies.push({ ...f, productName: pName });
                     } else {
                         enrichedFreebies.push(f);
                     }
@@ -201,6 +216,7 @@ export default function usePosState(products, customers, initialDraft) {
         showDropdown: cartState.showDropdown, setShowDropdown: cartState.setShowDropdown,
         actionBoxItem: cartState.actionBoxItem, setActionBoxItem: cartState.setActionBoxItem,
         searchResults: cartState.searchResults,
+        isCacheLoading: cartState.isCacheLoading,
 
         // From usePosCustomer
         customerSearchText: customerState.customerSearchText, setCustomerSearchText: customerState.setCustomerSearchText,

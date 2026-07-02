@@ -18,6 +18,7 @@ import ProductSpecsSection from '../components/product/ProductSpecsSection';
 import ProductCommunitySection from '../components/product/ProductCommunitySection';
 import ProductDescriptionSection from '../components/product/ProductDescriptionSection';
 import ProductVideoSection from '../components/product/ProductVideoSection';
+import RelatedProducts from '../components/product/RelatedProducts';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -47,29 +48,24 @@ const ProductDetail = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // 🚀 SMART FETCH: Load product first to prevent UI blocking (With Cache)
-        const cacheKey = `product_${id}`;
-        const fetchFn = async () => productService.getProduct(id);
-        // เพิ่ม Cache นานขึ้นเป็น 24 ชั่วโมง เพื่อความเร็วสูงสุด
-        const prod = await memoryCache.getOrFetch(cacheKey, fetchFn, 24 * 60 * 60 * 1000);
-        
+    const fetchAllData = () => {
+      setLoading(true);
+      setError(null);
+      
+      // 🚀 SMART REAL-TIME FETCH: Listen to changes instantly
+      const unsubscribe = productService.subscribeToProduct(id, (prod) => {
         if (prod) {
           setProduct(prod);
         } else {
           setError("ไม่พบข้อมูลสินค้านี้");
         }
-      } catch (err) {
-        console.error("Error fetching product data:", err);
-        setError("เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
-      } finally {
         setLoading(false);
-      }
+      });
+
+      return unsubscribe;
     };
+    
+    const unsubscribeProduct = fetchAllData();
     
     // ⚡ Background Fetch for non-critical data
     const fetchNonCriticalData = () => {
@@ -82,8 +78,13 @@ const ProductDetail = () => {
         .catch(err => console.error(err));
     };
     
-    fetchAllData();
     fetchNonCriticalData();
+
+    return () => {
+      if (unsubscribeProduct) {
+        unsubscribeProduct();
+      }
+    };
   }, [id]);
 
   // อ่าน Variant จาก URL (ถ้ามี)
@@ -133,6 +134,12 @@ const ProductDetail = () => {
          setShowVariantError(true);
          if (variantTimeoutRef.current) clearTimeout(variantTimeoutRef.current);
          variantTimeoutRef.current = setTimeout(() => setShowVariantError(false), 3000);
+         
+         // 🚀 AUTO-SCROLL to variant selector to improve UX
+         const el = document.getElementById('variant-selector');
+         if (el) {
+           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         }
          return;
       }
     }
@@ -311,6 +318,11 @@ const ProductDetail = () => {
           specs={product.specs} 
         />
 
+        {/* 🛍️ Related Products */}
+        <RelatedProducts 
+          currentProductId={product.id} 
+          category={product.category} 
+        />
       </div>
     </div>
   );

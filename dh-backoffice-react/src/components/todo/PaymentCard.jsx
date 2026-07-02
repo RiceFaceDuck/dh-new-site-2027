@@ -5,7 +5,7 @@ import { db } from '../../firebase/config';
 import { gasHistoryService } from '../../firebase/gasHistoryService';
 import { doc, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 
-const PaymentCard = ({ task, currentUser, onSuccess }) => {
+const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -91,10 +91,21 @@ const PaymentCard = ({ task, currentUser, onSuccess }) => {
 
   const displayAmount = task.amount > 0 ? task.amount : (orderData?.totals?.grandTotal ?? orderData?.totals?.netTotal ?? 0);
 
+  const getUrgencyStyles = (level) => {
+    switch (level) {
+      case 'high': 
+        return 'border-l-4 border-l-red-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-red-400 bg-red-50/30';
+      case 'medium': 
+        return 'border-l-4 border-l-orange-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-orange-400 bg-orange-50/30';
+      default: 
+        return 'border-2 border-gray-200 hover:border-slate-400 bg-white';
+    }
+  };
+
   return (
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
-      className={`bg-white rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] border-2 border-gray-200 hover:border-blue-400 hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] transition-all overflow-hidden relative mb-4 cursor-pointer ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
+      className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] transition-all overflow-hidden relative mb-4 cursor-pointer transform hover:-translate-y-0.5 ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
     >
       
       {isSubmitting && (

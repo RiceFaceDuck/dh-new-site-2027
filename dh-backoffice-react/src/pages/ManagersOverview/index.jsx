@@ -12,6 +12,7 @@ import ManagerTaskSection from './components/ManagerTaskSection';
 import EmailSetupModal from './components/EmailSetupModal';
 import ManagerDrivePanel from './components/ManagerDrivePanel';
 import MenuLayoutManager from './components/MenuLayoutManager';
+import ManagerQRGeneratorModal from './components/ManagerQRGeneratorModal';
 
 // 🌟 นำเข้า Hook ของ Dashboard
 import { useManagerDashboard } from './useManagerDashboard';
@@ -27,6 +28,7 @@ export default function ManagersOverview() {
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
   const [isEmailSetupOpen, setIsEmailSetupOpen] = useState(false);
   const [isDrivePanelOpen, setIsDrivePanelOpen] = useState(false);
+  const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
   
   // 🌟 States สำหรับ Drag & Drop Layout
   const [isLayoutManagerOpen, setIsLayoutManagerOpen] = useState(false);
@@ -94,6 +96,7 @@ export default function ManagersOverview() {
             onOpenDrivePanel={() => setIsDrivePanelOpen(true)}
             onOpenVipModal={() => setIsVipModalOpen(true)}
             onOpenLayoutManager={() => setIsLayoutManagerOpen(true)}
+            onOpenScannerModal={() => setIsScannerModalOpen(true)}
             refreshTrigger={menuRefreshTrigger}
             pendingStaffCount={dashboardLogic.pendingStaffs?.length || 0}
             vipCount={dashboardLogic.stats?.vipCount || 0}
@@ -141,6 +144,11 @@ export default function ManagersOverview() {
         isOpen={isLayoutManagerOpen}
         onClose={() => setIsLayoutManagerOpen(false)}
         onSaved={() => setMenuRefreshTrigger(prev => prev + 1)}
+      />
+
+      <ManagerQRGeneratorModal
+        isOpen={isScannerModalOpen}
+        onClose={() => setIsScannerModalOpen(false)}
       />
 
     </div>

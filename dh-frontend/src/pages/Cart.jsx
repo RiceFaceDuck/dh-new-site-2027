@@ -80,16 +80,21 @@ const Cart = () => {
   const fetchAndValidate = async (uncachedItems) => {
     setIsValidatingCart(true);
     try {
-      const fetchPromises = uncachedItems.map(item => {
-        const productId = (item.id && item.id !== '-') ? item.id : item.sku;
-        return productService.getProduct(productId);
-      });
-      const freshProducts = await Promise.all(fetchPromises);
+      const idsToFetch = uncachedItems.map(item => (item.id && item.id !== '-') ? item.id : item.sku).filter(Boolean);
+      const freshProductsList = await productService.getProductsByIds(idsToFetch);
       
       const newCache = { ...productCache };
-      freshProducts.forEach((fresh, idx) => {
-        const id = (uncachedItems[idx].id && uncachedItems[idx].id !== '-') ? uncachedItems[idx].id : uncachedItems[idx].sku;
-        newCache[id] = fresh || { notFound: true };
+      
+      // Index by id and sku for quick lookup
+      const freshMap = {};
+      freshProductsList.forEach(p => {
+        freshMap[p.id] = p;
+        if (p.sku) freshMap[p.sku] = p;
+      });
+
+      uncachedItems.forEach(item => {
+        const id = (item.id && item.id !== '-') ? item.id : item.sku;
+        newCache[id] = freshMap[id] || { notFound: true };
       });
       
       setProductCache(newCache);
@@ -223,12 +228,17 @@ const Cart = () => {
       const ids = cartItems.map(i => (i.id && i.id !== '-') ? i.id : i.sku).filter(Boolean);
       const uniqueIds = [...new Set(ids)];
       
-      const fetchPromises = uniqueIds.map(id => productService.getProduct(id));
-      const freshProducts = await Promise.all(fetchPromises);
+      const freshProductsList = await productService.getProductsByIds(uniqueIds);
       
       const newCache = { ...productCache };
-      freshProducts.forEach((fresh, idx) => {
-        newCache[uniqueIds[idx]] = fresh || { notFound: true };
+      const freshMap = {};
+      freshProductsList.forEach(p => {
+        freshMap[p.id] = p;
+        if (p.sku) freshMap[p.sku] = p;
+      });
+
+      uniqueIds.forEach(id => {
+        newCache[id] = freshMap[id] || { notFound: true };
       });
       
       setProductCache(newCache);

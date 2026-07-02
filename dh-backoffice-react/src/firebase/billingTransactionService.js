@@ -1,6 +1,7 @@
 import { collection, doc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
+import { gasStockService } from './gasStockService'; // ✨ นำเข้า gasStockService เพื่อทำ Auto-Sync
 
 const COLLECTION_NAME = 'orders';
 
@@ -9,8 +10,10 @@ export const billingTransactionService = {
     try {
       let finalOrderId = orderData.orderId;
       let newDocId = null;
+      let successfulUpdates = []; // ✨ เก็บรายการที่หักสต็อกสำเร็จ เพื่อส่งไป GAS
 
       await runTransaction(db, async (transaction) => {
+        successfulUpdates = []; // ล้างค่าเมื่อมีการ retry transaction
         const productRefs = [];
         const productSnaps = [];
         const statusLower = (orderData.orderStatus || orderData.status || '').toLowerCase();
@@ -45,6 +48,34 @@ export const billingTransactionService = {
         let counterSnap = null;
         if (statusLower === 'paid' || statusLower === 'approved') {
             counterSnap = await transaction.get(counterRef);
+        }
+
+        let currentSeq = 1;
+        if (statusLower === 'paid' || statusLower === 'approved') {
+            if (counterSnap && counterSnap.exists()) {
+                currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
+            }
+            finalOrderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
+        } else if (!finalOrderId || (finalOrderId.startsWith('TEMP-') === false && finalOrderId.startsWith('DH-') === false)) {
+            const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+            const runNum = Math.floor(1000 + Math.random() * 9000);
+            finalOrderId = `TEMP-${dateStr}-${runNum}`;
+        }
+
+        let creditPreloadSnaps = null;
+        if (customerUid && customerUid !== 'WALK-IN' && statusLower === 'paid') {
+           const { getCreditPreloadRefs } = await import('./credit/creditActionService');
+           const creditRefs = getCreditPreloadRefs(customerUid, 'earn', `TXP_${finalOrderId}`);
+           const [txSnap, settingsSnap2, userSnap2, walletSnap, activePartnerSnap] = await Promise.all([
+               creditRefs.txRef ? transaction.get(creditRefs.txRef) : Promise.resolve(null),
+               transaction.get(creditRefs.settingsRef),
+               transaction.get(creditRefs.userRef),
+               transaction.get(creditRefs.walletRef),
+               transaction.get(creditRefs.activePartnerRef)
+           ]);
+           creditPreloadSnaps = {
+               txSnap, settingsSnap: settingsSnap2, userSnap: userSnap2, walletSnap, activePartnerSnap
+           };
         }
 
         const updates = [];
@@ -92,7 +123,7 @@ export const billingTransactionService = {
             items: verifiedItems,
             shippingCost: Number(orderData.summary?.shippingFee || 0),
             otherFeeAmount: Number(orderData.summary?.otherFeeAmount || 0),
-            discountAmount: Number(orderData.summary?.manualDiscount || orderData.summary?.promoDiscount || 0),
+            discountAmount: Number(orderData.summary?.manualDiscount || orderData.summary?.promoDiscount || orderData.summary?.discount || 0),
             promotions: orderData.appliedPromotions || []
         });
 
@@ -129,6 +160,16 @@ export const billingTransactionService = {
                 stockQuantity: u.newQty, 
                 'stats.sold': increment(u.soldInc || 0) 
               });
+              
+              // ✨ เก็บข้อมูลสินค้าที่หักสต็อกแล้ว เพื่ออัปเดตไป Google Sheet ทันที (Auto-Sync)
+              const originalSnap = productSnaps.find(snap => snap.id === u.ref.id);
+              if (originalSnap && originalSnap.exists()) {
+                successfulUpdates.push({
+                   ...originalSnap.data(),
+                   sku: originalSnap.id,
+                   stockQuantity: u.newQty // ใช้ค่าสต็อกใหม่ที่เพิ่งหัก
+                });
+              }
             });
 
             // Update Quota for Promos and Freebies
@@ -158,20 +199,10 @@ export const billingTransactionService = {
         newDocId = newOrderRef.id;
 
         if (statusLower === 'paid' || statusLower === 'approved') {
-            let currentSeq = 1;
-            if (counterSnap && counterSnap.exists()) {
-                currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
-            }
             transaction.set(counterRef, {
                 [yearStr]: currentSeq,
                 updatedAt: serverTimestamp()
             }, { merge: true });
-            
-            finalOrderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
-        } else if (!finalOrderId || (finalOrderId.startsWith('TEMP-') === false && finalOrderId.startsWith('DH-') === false)) {
-            const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
-            const runNum = Math.floor(1000 + Math.random() * 9000);
-            finalOrderId = `TEMP-${dateStr}-${runNum}`;
         }
 
         const { id, ...dataToSave } = orderData; 
@@ -251,13 +282,22 @@ export const billingTransactionService = {
                     'earn',
                     'ได้รับจากการซื้อสินค้า',
                     actorUid,
-                    `TXP_${finalOrderId}`
+                    `TXP_${finalOrderId}`,
+                    creditPreloadSnaps
                 );
             }
         }
 
       });
       
+      // ✨ [Auto-Sync] ส่งรายการสินค้าที่มีการตัดสต็อกไป Google Sheet อัตโนมัติหลังทำรายการสำเร็จ
+      if (successfulUpdates.length > 0) {
+          successfulUpdates.forEach(product => {
+              gasStockService.queueUpdate(product);
+          });
+          await gasStockService.forceSync();
+      }
+
       const netForLog = orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0;
       await historyService.addLog('Billing', 'Create', finalOrderId, `สร้างบิลใหม่ ยอดสุทธิ ฿${netForLog.toLocaleString()}`, actorUid);
 

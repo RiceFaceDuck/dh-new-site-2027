@@ -14,6 +14,38 @@ export default function FormalStaffApprovalCard({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // --- Auto-Verify if approved elsewhere ---
+  React.useEffect(() => {
+    let isMounted = true;
+    const verifyStatus = async () => {
+      if (!todo || !todo.id) return;
+      try {
+        const uid = todo.payload?.targetUid;
+        if (!uid) return;
+        
+        const { doc, getDoc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('../../../../firebase/config');
+        
+        const uSnap = await getDoc(doc(db, 'users', uid));
+        
+        if (uSnap.exists() && isMounted) {
+          const data = uSnap.data();
+          if (data.isStaff === true || (data.roles && (data.roles.includes('Staff') || data.roles.includes('Manager')))) {
+            // Auto complete the task silently if already processed
+            await updateDoc(doc(db, 'todos', todo.id), { status: 'completed', resolution: 'auto_verified' });
+          }
+        } else if (!uSnap.exists() && isMounted) {
+          // Clear orphaned task if target user doesn't exist
+          await updateDoc(doc(db, 'todos', todo.id), { status: 'completed', resolution: 'target_deleted' });
+        }
+      } catch (err) {
+        // Silently ignore errors in auto-verify
+      }
+    };
+    verifyStatus();
+    return () => { isMounted = false; };
+  }, [todo]);
+
   return (
     <div className={`bg-white rounded-md shadow-sm border border-slate-200 flex flex-col relative transition-all hover:border-slate-400 mb-4 ${urgencyClass} ${isExpanded ? 'shadow-md ring-1 ring-slate-200' : ''}`}>
       

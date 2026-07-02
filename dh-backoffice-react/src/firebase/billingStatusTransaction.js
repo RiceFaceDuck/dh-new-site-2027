@@ -137,7 +137,32 @@ export const billingStatusTransaction = {
       });
 
       let logMessage = `เปลี่ยนสถานะบิลเป็น: ${normalizedNewStatus}`;
-      if (normalizedNewStatus === 'cancelled') logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม กลับสู่ระบบเรียบร้อยแล้ว)';
+      if (normalizedNewStatus === 'cancelled') {
+        logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม กลับสู่ระบบเรียบร้อยแล้ว)';
+        
+        // 🎯 Auto-Cancel related pending todos
+        try {
+          const { collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
+          const todosRef = collection(db, 'todos');
+          const q = query(todosRef, where('referenceId', '==', currentOrderId || orderId), where('status', '==', 'pending_manager'));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const batch = writeBatch(db);
+            querySnapshot.forEach((todoDoc) => {
+              batch.update(todoDoc.ref, { 
+                status: 'cancelled', 
+                updatedAt: serverTimestamp(),
+                internalNote: 'Auto-cancelled due to order cancellation.'
+              });
+            });
+            await batch.commit();
+            console.log(`Auto-cancelled ${querySnapshot.size} todos for order ${currentOrderId || orderId}`);
+          }
+        } catch (todoErr) {
+          console.error("🔥 Error auto-cancelling todos:", todoErr);
+        }
+      }
       if (normalizedNewStatus === 'paid') logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
 
       await historyService.addLog('Billing', 'Update', orderId, logMessage, actorUid);

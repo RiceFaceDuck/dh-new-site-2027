@@ -1,6 +1,7 @@
-import { doc, updateDoc, serverTimestamp, increment, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
+import { gasStockService } from '../gasStockService';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -64,13 +65,32 @@ export const claimActionService = {
     const { payload, id: todoId } = task;
     const qty = Number(payload.qty || 1);
 
-    await updateDoc(doc(db, TODOS_COLLECTION, todoId), {
+    const updateData = {
       status: 'completed',
       updatedAt: serverTimestamp()
-    });
+    };
+    if (payload.returnTrackingNo) {
+        updateData['payload.returnTrackingNo'] = payload.returnTrackingNo;
+    }
+    
+    await updateDoc(doc(db, TODOS_COLLECTION, todoId), updateData);
 
     // ตัดสต๊อกสินค้าดี เพื่อส่งมอบให้ลูกค้า
-    await updateDoc(doc(db, 'products', payload.sku), { stockQuantity: increment(-qty) });
+    const pRef = doc(db, 'products', payload.sku);
+    const pSnap = await getDoc(pRef);
+    if (pSnap.exists()) {
+        await updateDoc(pRef, { stockQuantity: increment(-qty) });
+        
+        // Sync to GAS Change Detector
+        // อ่านอีกครั้งเพื่อเอาค่าที่ชัวร์ หรือ คำนวณเอง
+        const currentStock = Number(pSnap.data().stockQuantity || 0);
+        gasStockService.queueUpdate({
+            ...pSnap.data(),
+            sku: payload.sku,
+            stockQuantity: currentStock - qty
+        });
+        await gasStockService.forceSync();
+    }
 
     if (payload.orderDocId) {
       await updateDoc(doc(db, 'orders', payload.orderDocId), {
@@ -98,7 +118,7 @@ export const claimActionService = {
     return true;
   },
 
-  rejectRequest: async (task, reason, adminUid) => {
+  rejectRequest: async (task, reason, adminUid, adminName) => {
     await updateDoc(doc(db, TODOS_COLLECTION, task.id), {
       status: 'rejected',
       handledBy: adminUid,
@@ -116,7 +136,7 @@ export const claimActionService = {
         reason: reason,
         task_id: task.id
       },
-      actorOverride: { uid: adminUid, name: 'Manager', email: 'N/A' }
+      actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
     });
     return true;
   }

@@ -7,7 +7,7 @@ import WholesaleTable from './cards/wholesale/WholesaleTable';
 import WholesaleSummary from './cards/wholesale/WholesaleSummary';
 import useWholesaleCalculator from './cards/wholesale/useWholesaleCalculator';
 
-export default function WholesaleCard({ todo, isProcessing, urgencyClass, handleAction, formatDate, getStatusBadge }) {
+export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge }) {
   const [fetchedData, setFetchedData] = useState({});
   const [isFetching, setIsFetching] = useState(false);
 
@@ -21,9 +21,9 @@ export default function WholesaleCard({ todo, isProcessing, urgencyClass, handle
         const skus = calculator.cartItems.map(item => item.sku);
         if (skus.length > 0) {
           const newPrices = {};
-          // 🚀 [Optimization] Chunk array by 10 to prevent Firebase 'in' query limit error
-          for (let i = 0; i < skus.length; i += 10) {
-            const batchSkus = skus.slice(i, i + 10);
+          // 🚀 [Optimization] Chunk array by 30 to maximize Firebase 'in' query limit and save reads
+          for (let i = 0; i < skus.length; i += 30) {
+            const batchSkus = skus.slice(i, i + 30);
             const q = query(collection(db, 'products'), where('sku', 'in', batchSkus));
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => {
@@ -99,8 +99,19 @@ export default function WholesaleCard({ todo, isProcessing, urgencyClass, handle
     });
   };
 
+  const getUrgencyStyles = (level) => {
+    switch (level) {
+      case 'high': 
+        return 'border-l-4 border-l-red-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-red-400 bg-red-50/30';
+      case 'medium': 
+        return 'border-l-4 border-l-orange-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-orange-400 bg-orange-50/30';
+      default: 
+        return 'border-2 border-gray-200 hover:border-blue-400 bg-white';
+    }
+  };
+
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] border-2 border-gray-200 hover:border-blue-400 hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] p-3 sm:p-4 flex flex-col relative overflow-hidden transition-all mb-4 ${urgencyClass}`}>
+    <div className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] p-3 sm:p-4 flex flex-col relative overflow-hidden transition-all transform hover:-translate-y-0.5 mb-4 ${getUrgencyStyles(urgencyLevel)}`}>
       
       {isManagerTab && <div className="absolute top-0 right-0 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">Manager</div>}
 

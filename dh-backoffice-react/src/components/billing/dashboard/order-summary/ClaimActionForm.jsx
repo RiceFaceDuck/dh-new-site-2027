@@ -24,7 +24,9 @@ const REASON_OPTIONS = [
 
 export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
     const navigate = useNavigate();
-    const maxQty = item.qty || item.quantity || 1;
+    const pastActions = selectedOrder.refundsAndClaims?.filter(rc => rc.sku === item.sku) || [];
+    const usedQty = pastActions.reduce((sum, action) => sum + (Number(action.qty) || 1), 0);
+    const maxQty = Math.max(1, (item.qty || item.quantity || 1) - usedQty);
     
     const [step, setStep] = useState('action'); // 'action' | 'qty' | 'reason'
     const [selectedAction, setSelectedAction] = useState(null);

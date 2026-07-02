@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, CheckCircle, XCircle, Ban, Flame, Zap, Timer } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Ban, Flame, Zap, Timer, Package, Settings } from 'lucide-react';
 
 // ✨ อัปเกรดลูกเล่นที่ 1: ระบบคำนวณหลอดประกัน (Warranty Progress)
 export const getWarrantyInfo = (purchaseDateStr, createdAt, warrantyPeriodDays = 365) => {
@@ -71,7 +71,10 @@ export const getStatusDisplay = (req) => {
   }
   switch(req.status) {
     case 'pending_manager': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-amber-100/80 text-amber-800 border border-amber-300 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 whitespace-nowrap"><Clock className="w-3.5 h-3.5" /> รอตรวจสอบ</span>;
-    case 'approved': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400 whitespace-nowrap"><CheckCircle className="w-3.5 h-3.5" /> อนุมัติแล้ว</span>;
+    case 'waiting_item': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-blue-100/80 text-blue-800 border border-blue-300 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400 whitespace-nowrap"><Package className="w-3.5 h-3.5" /> รอรับของเคลม</span>;
+    case 'processing': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-indigo-100/80 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-400 whitespace-nowrap"><Settings className="w-3.5 h-3.5" /> กำลังตรวจสอบ</span>;
+    case 'completed': 
+    case 'approved': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400 whitespace-nowrap"><CheckCircle className="w-3.5 h-3.5" /> เสร็จสิ้น</span>;
     case 'rejected': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-rose-100/80 text-rose-800 border border-rose-300 dark:bg-rose-500/10 dark:border-rose-500/30 dark:text-rose-400 whitespace-nowrap"><XCircle className="w-3.5 h-3.5" /> ไม่อนุมัติ</span>;
     case 'cancelled': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-dh-base text-dh-muted border border-dh-border whitespace-nowrap"><Ban className="w-3.5 h-3.5" /> ยกเลิกรายการ</span>;
     default: return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-dh-base text-dh-muted border border-dh-border whitespace-nowrap">{req.status}</span>;

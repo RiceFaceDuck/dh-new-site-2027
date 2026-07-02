@@ -38,15 +38,15 @@ export const claimManagerService = {
     throw new Error('Unknown task type for completion');
   },
 
-  rejectRequest: async (task, reason, adminUid) => {
+  rejectRequest: async (task, reason, adminUid, adminName) => {
     if (task.type.startsWith('CANCEL_')) {
-      return await cancelActionService.rejectCancel(task, reason, adminUid);
+      return await cancelActionService.rejectCancel(task, reason, adminUid, adminName);
     }
     if (task.type === 'RETURN_APPROVAL') {
-      return await returnActionService.rejectRequest(task, reason, adminUid);
+      return await returnActionService.rejectRequest(task, reason, adminUid, adminName);
     }
     if (task.type === 'CLAIM_APPROVAL') {
-      return await claimActionService.rejectRequest(task, reason, adminUid);
+      return await claimActionService.rejectRequest(task, reason, adminUid, adminName);
     }
     throw new Error('Unknown task type for rejection');
   }

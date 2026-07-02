@@ -1,5 +1,5 @@
 import { db } from './config';
-import { collection, doc, getDocs, getDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDocs, getDoc, updateDoc, setDoc, serverTimestamp, query, where } from 'firebase/firestore';
 
 const getCollectionPath = (colName) => {
     if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
@@ -20,11 +20,41 @@ export const VALID_STAFF_ROLES = [
 export const getAllStaff = async () => {
     try {
         const usersRef = getUsersCollectionRef();
-        const snap = await getDocs(usersRef);
-        const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
+        // 🚀 OPTIMIZATION: Query specifically by role and isStaff flag to prevent Quota Leak (O(1) instead of O(N))
+        // We do two simple queries and merge to avoid complex composite index requirements.
+        
+        // 1. Get by VALID_STAFF_ROLES
+        // Firestore limits 'in' queries to 10 items.
+        // VALID_STAFF_ROLES has 11 items. We need to chunk it.
+        const chunk1 = VALID_STAFF_ROLES.slice(0, 10);
+        const chunk2 = VALID_STAFF_ROLES.slice(10);
+        
+        const q1 = query(usersRef, where('role', 'in', chunk1));
+        const q2 = chunk2.length > 0 ? query(usersRef, where('role', 'in', chunk2)) : null;
+        
+        // 2. Get by isStaff == true
+        const q3 = query(usersRef, where('isStaff', '==', true));
+        
+        const promises = [getDocs(q1), getDocs(q3)];
+        if (q2) promises.push(getDocs(q2));
+        
+        const snaps = await Promise.all(promises);
+        
+        const allStaffMap = new Map();
+        
+        snaps.forEach(snap => {
+            snap.docs.forEach(doc => {
+                if (!allStaffMap.has(doc.id)) {
+                    allStaffMap.set(doc.id, { id: doc.id, ...doc.data() });
+                }
+            });
+        });
+        
+        const allUsers = Array.from(allStaffMap.values());
+        
+        // Final filtering in memory for simple conditions
         return allUsers.filter(u => 
-            (VALID_STAFF_ROLES.includes(u.role) || u.isStaff === true) &&
             u.status !== 'deleted' &&
             u.isActive !== false
         );
@@ -37,13 +67,13 @@ export const getAllStaff = async () => {
 export const getPendingStaff = async () => {
     try {
         const usersRef = getUsersCollectionRef();
-        const snap = await getDocs(usersRef);
-        const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        return allUsers.filter(u => 
-            (u.role === 'pending_approval' || u.role === 'pending') &&
-            u.status !== 'deleted'
-        );
+        // 🚀 OPTIMIZATION: Query specifically by role
+        const q = query(usersRef, where('role', 'in', ['pending_approval', 'pending']));
+        const snap = await getDocs(q);
+        const pendingUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        return pendingUsers.filter(u => u.status !== 'deleted');
     } catch (error) {
         console.error("❌ [UserStaffService] Get Pending Staff Error:", error);
         throw error;

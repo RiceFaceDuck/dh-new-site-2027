@@ -6,7 +6,7 @@ export default function CartPanel({
     searchRef, searchQuery, setSearchQuery, showDropdown, setShowDropdown, 
     handleSearchKeyDown, clearCart, activeTab, searchResults, addItemToCart, 
     actionBoxItem, setActionBoxItem, updateItemAction, removeItem, eligibleFreebies,
-    isProcessing 
+    isProcessing, isCacheLoading
 }) {
     return (
         <div className="flex flex-col h-full relative z-10 font-sans">
@@ -22,6 +22,7 @@ export default function CartPanel({
                 searchResults={searchResults} 
                 addItemToCart={addItemToCart} 
                 isProcessing={isProcessing} 
+                isCacheLoading={isCacheLoading}
             />
             
             <CartTable 

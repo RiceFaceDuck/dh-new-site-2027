@@ -1,6 +1,8 @@
 import { auth } from '../../../../firebase/config';
 import { billingService } from '../../../../firebase/billingService';
 import { driveService } from '../../../../firebase/driveService';
+import { offlinePosService } from '../../../../firebase/offlinePosService';
+import { toast } from 'react-hot-toast';
 
 export const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
 
@@ -51,8 +53,8 @@ export const usePosActions = ({
         }
     };
 
-    const handleSelectCustomer = (uid) => {
-        const cust = customers.find(c => c.uid === uid);
+    const handleSelectCustomer = (uidOrId) => {
+        const cust = customers.find(c => c.uid === uidOrId || c.id === uidOrId);
         if (cust) {
             let mem = {};
             try {
@@ -123,11 +125,11 @@ export const usePosActions = ({
         const isPhoneMissing = (!activeTab.hidePhone) && (!activePhone || activePhone.trim() === '');
         const hasOutOfStock = activeTab.items.some(item => sanitizeNum(item.stock) < sanitizeNum(item.qty));
 
-        if (activeTab.items.length === 0) { alert('⚠️ กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'); return; }
-        if (hasOutOfStock && status !== 'Draft') { alert('⚠️ สินค้าไม่เพียงพอ กรุณาบันทึกร่างแทน'); return; }
-        if (isPhoneMissing && status !== 'Draft') { alert('⚠️ กรุณาระบุเบอร์โทรศัพท์ลูกค้า'); return; }
-        if (status === 'Paid' && activeTab.paymentMethod === 'Cash' && sanitizeNum(activeTab.cashReceived) < remainingToPay) { alert('⚠️ รับเงินมาไม่ครบ'); return; }
-        if (netTotal < 0) { alert('⚠️ ยอดสุทธิติดลบ'); return; }
+        if (activeTab.items.length === 0) { toast.error('กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'); return; }
+        if (hasOutOfStock && status !== 'Draft') { toast.error('สินค้าไม่เพียงพอ กรุณาบันทึกร่างแทน'); return; }
+        if (isPhoneMissing && status !== 'Draft') { toast.error('กรุณาระบุเบอร์โทรศัพท์ลูกค้า'); return; }
+        if (status === 'Paid' && activeTab.paymentMethod === 'Cash' && sanitizeNum(activeTab.cashReceived) < remainingToPay) { toast.error('รับเงินมาไม่ครบ'); return; }
+        if (netTotal < 0) { toast.error('ยอดสุทธิติดลบ'); return; }
         
         submitLockRef.current = true;
         setIsProcessing(true);
@@ -181,12 +183,23 @@ export const usePosActions = ({
                 items: finalOrderItems
             };
 
+            // 🟢 [OFFLINE SUPPORT] Check if network is offline
+            if (!navigator.onLine) {
+                orderData.offlineStatus = 'pending';
+                await offlinePosService.saveOfflineOrder(orderData);
+                posState.closeTab(activeTab.id); 
+                onSwitchView();
+                toast.success(`[ออฟไลน์] บันทึกบิล ${finalOrderId} ไว้ในเครื่องเรียบร้อย ระบบจะส่งข้อมูลเมื่อกลับมาออนไลน์`);
+                return;
+            }
+
             await billingService.createOrder(orderData, auth.currentUser?.uid || 'System', 'POS');
             
             // ลบแท็บปัจจุบันแบบไม่ต้องเด้งถาม เพราะเซฟเสร็จแล้ว
             posState.closeTab(activeTab.id); 
             onSwitchView();
-        } catch (error) { alert(`❌ ข้อผิดพลาด: ${error.message}`); } finally { submitLockRef.current = false; setIsProcessing(false); }
+            toast.success(`บันทึกบิล ${finalOrderId} สำเร็จ!`);
+        } catch (error) { toast.error(`ข้อผิดพลาด: ${error.message}`); } finally { submitLockRef.current = false; setIsProcessing(false); }
     };
 
     return {

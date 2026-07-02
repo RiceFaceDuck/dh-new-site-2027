@@ -22,7 +22,9 @@ export default function GenerateSync() {
     pendingCount,
     isFlushing,
     fetchChanges,
-    handleManualReset
+    handleManualReset,
+    latestSnapshot,
+    fetchLatestSnapshot
   } = useGenerateSync();
 
   return (
@@ -56,6 +58,7 @@ export default function GenerateSync() {
                   changes={changes} 
                   isCalculating={isCalculating} 
                   onManualReset={handleManualReset}
+                  latestSnapshot={latestSnapshot}
               />
               <UploadTransactions onUploadComplete={fetchChanges} />
               <GlobalSchemaSettings />
@@ -66,7 +69,12 @@ export default function GenerateSync() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
               
               {!isCalculating && changes && (
-                  <ChangeSummaryPanel changes={changes} onManualReset={handleManualReset} />
+                  <ChangeSummaryPanel 
+                      changes={changes} 
+                      latestSnapshot={latestSnapshot}
+                      onManualReset={handleManualReset} 
+                      onSnapshotSaved={fetchLatestSnapshot} 
+                  />
               )}
               {isCalculating && (
                   <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">

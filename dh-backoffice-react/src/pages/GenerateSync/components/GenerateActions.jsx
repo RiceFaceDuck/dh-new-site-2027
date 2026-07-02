@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, CheckCircle } from 'lucide-react';
 import TemplateSettingsModal from './TemplateSettingsModal';
 import SkuMerchantExport from './daily-tasks/SkuMerchantExport';
 import InventoryCountExport from './daily-tasks/InventoryCountExport';
 import ShopeeTemplateUpload from './non-daily-tasks/ShopeeTemplateUpload';
 
-export default function GenerateActions({ changes, isCalculating, onManualReset }) {
+export default function GenerateActions({ changes, isCalculating, onManualReset, latestSnapshot }) {
   const [showSettings, setShowSettings] = useState(false);
+
+  // ถ้ารายการทั้งหมดเป็น 0 แปลว่าไม่มีข้อมูลค้าง และถูกบันทึก/ส่งออกหมดแล้ว
+  const isUpToDate = changes &&
+    changes.increased?.length === 0 &&
+    changes.decreased?.length === 0 &&
+    changes.priceChanged?.length === 0 &&
+    (!changes.otherChanged || changes.otherChanged?.length === 0);
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 w-full relative overflow-hidden group">
@@ -32,9 +39,15 @@ export default function GenerateActions({ changes, isCalculating, onManualReset 
             อัปเดตสต็อก Big Seller
         </h3>
         
-        <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6 max-w-sm">
-            เครื่องมือช่วยจัดการไฟล์สำหรับระบบ Big Seller เพื่อความรวดเร็วและแม่นยำ
-        </p>
+        {isUpToDate ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-full shadow-sm animate-in zoom-in duration-300">
+                <CheckCircle size={14} /> เตรียมข้อมูลส่งออก พร้อมแล้ว {latestSnapshot ? `(อ้างอิง: ${latestSnapshot.transactionId})` : ''}
+            </div>
+        ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6 max-w-sm">
+                เครื่องมือช่วยจัดการไฟล์สำหรับระบบ Big Seller เพื่อความรวดเร็วและแม่นยำ
+            </p>
+        )}
 
         {/* --- งานประจำวัน --- */}
         <div className="w-full mb-6">

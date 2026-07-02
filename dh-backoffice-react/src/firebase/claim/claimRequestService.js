@@ -1,4 +1,4 @@
-import { collection, doc, addDoc, updateDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, serverTimestamp, getDocs, query, where, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 
@@ -28,43 +28,65 @@ export const claimRequestService = {
         throw new Error(`สินค้านี้ (${item.sku}) มีรายการเคลมที่กำลังดำเนินการอยู่แล้วในระบบ`);
       }
 
-      const claimId = claimForm.transactionId; // ใช้ transactionId จาก Form
+      const claimId = await runTransaction(db, async (transaction) => {
+        const date = new Date();
+        const yearMonth = `${date.getFullYear().toString().slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const counterRef = doc(db, 'counters', 'claim_sequence');
+        const counterDoc = await transaction.get(counterRef);
 
-      const payload = {
-        claimId: claimId || '', 
-        orderId: bill.orderId || '',
-        orderDocId: bill.id || '', 
-        customerUid: bill.customer?.uid || 'Walk-in', 
-        customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
-        sku: item.sku || '', 
-        productName: item.name || '', 
-        category: item.category || item.category1 || '',
-        purchaseDate: claimForm.warrantyDate || null,
-        symptomCode: claimForm.reasonCode || '', 
-        symptomDetails: claimForm.details || '', 
-        trackingNo: claimForm.tracking || '',
-        qty: claimForm.qty || 1, 
-        status: claimForm.currentStatus || 'pending_manager', 
-        actionType: claimForm.actionType || 'เคลม/ซ่อม', 
-        inspectorName: claimForm.inspectorName || null,
-        images: claimForm.images || [], 
-        requestedBy: userUid || '', 
-        requestedByName: userName || ''
-      };
+        let currentSeq = 1;
+        if (counterDoc.exists()) {
+           const data = counterDoc.data();
+           currentSeq = (data[yearMonth] || 0) + 1;
+        }
 
-      await addDoc(collection(db, TODOS_COLLECTION), {
-        type: "CLAIM_APPROVAL",
-        title: `ขออนุมัติเคลม: ${item.name || 'Unknown'} (${claimId || 'N/A'})`,
-        description: `บิลอ้างอิง: ${bill.orderId || '-'}\nอาการเสีย: ${claimForm.reasonCode || '-'}\nรายละเอียด: ${claimForm.details || '-'}\nการกระทำ: ${claimForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
-        priority: "High", 
-        status: "pending_manager",
-        referenceType: "Order", 
-        referenceId: bill.orderId || '-',
-        payload: payload, 
-        createdByUid: userUid || '', 
-        handledBy: null,
-        createdAt: serverTimestamp(), 
-        updatedAt: serverTimestamp()
+        const generatedId = `CLM-${yearMonth}${String(currentSeq).padStart(4, '0')}`;
+
+        transaction.set(counterRef, {
+           [yearMonth]: currentSeq,
+           updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        const payload = {
+          claimId: generatedId, 
+          orderId: bill.orderId || '',
+          orderDocId: bill.id || '', 
+          customerUid: bill.customer?.uid || 'Walk-in', 
+          customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
+          sku: item.sku || '', 
+          productName: item.name || '', 
+          category: item.category || item.category1 || '',
+          purchaseDate: claimForm.warrantyDate || null,
+          symptomCode: claimForm.reasonCode || '', 
+          symptomDetails: claimForm.details || '', 
+          trackingNo: claimForm.tracking || '',
+          qty: claimForm.qty || 1, 
+          status: claimForm.currentStatus || 'pending_manager', 
+          actionType: claimForm.actionType || 'เคลม/ซ่อม', 
+          inspectorName: claimForm.inspectorName || null,
+          images: claimForm.images || [], 
+          requestedBy: userUid || '', 
+          requestedByName: userName || ''
+        };
+
+        const newTodoRef = doc(collection(db, TODOS_COLLECTION));
+        
+        transaction.set(newTodoRef, {
+          type: "CLAIM_APPROVAL",
+          title: `ขออนุมัติเคลม: ${item.name || 'Unknown'} (${generatedId})`,
+          description: `บิลอ้างอิง: ${bill.orderId || '-'}\nอาการเสีย: ${claimForm.reasonCode || '-'}\nรายละเอียด: ${claimForm.details || '-'}\nการกระทำ: ${claimForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
+          priority: "High", 
+          status: "pending_manager",
+          referenceType: "Order", 
+          referenceId: bill.orderId || '-',
+          payload: payload, 
+          createdByUid: userUid || '', 
+          handledBy: null,
+          createdAt: serverTimestamp(), 
+          updatedAt: serverTimestamp()
+        });
+
+        return generatedId;
       });
 
       gasHistoryService.log({
@@ -73,8 +95,7 @@ export const claimRequestService = {
         action: 'Request',
         target: { id: claimId, type: 'Task' },
         details: {
-          legacy_details: `พนักงาน ${userName} ทำรายการแจ้งเคลมสินค้า ${item.sku} รหัส ${claimId} (รออนุมัติ)`,
-          payload: payload
+          legacy_details: `พนักงาน ${userName} ทำรายการแจ้งเคลมสินค้า ${item.sku} รหัส ${claimId} (รออนุมัติ)`
         },
         actorOverride: { uid: userUid, name: userName, email: 'N/A' }
       });
@@ -105,44 +126,66 @@ export const claimRequestService = {
         throw new Error(`สินค้านี้ (${item.sku}) มีรายการขอคืนเงินที่กำลังดำเนินการอยู่แล้วในระบบ`);
       }
 
-      const returnId = returnForm.transactionId;
+      const returnId = await runTransaction(db, async (transaction) => {
+        const date = new Date();
+        const yearMonth = `${date.getFullYear().toString().slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const counterRef = doc(db, 'counters', 'return_sequence');
+        const counterDoc = await transaction.get(counterRef);
 
-      const payload = {
-        returnId: returnId || '', 
-        orderId: bill.orderId || '',
-        orderDocId: bill.id || '', 
-        customerUid: bill.customer?.uid || 'Walk-in', 
-        customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
-        sku: item.sku || '', 
-        productName: item.name || '', 
-        category: item.category || item.category1 || '',
-        purchasePrice: item.pricePerUnit || item.price || 0, 
-        purchaseDate: returnForm.warrantyDate || null,
-        returnReason: returnForm.reasonCode || '', 
-        returnDetails: returnForm.details || '', 
-        trackingNo: returnForm.tracking || '',
-        qty: returnForm.qty || 1, 
-        status: returnForm.currentStatus || 'pending_manager', 
-        actionType: returnForm.actionType || 'คืนเงิน/คืนสินค้า', 
-        inspectorName: returnForm.inspectorName || null,
-        images: returnForm.images || [], 
-        requestedBy: userUid || '', 
-        requestedByName: userName || ''
-      };
+        let currentSeq = 1;
+        if (counterDoc.exists()) {
+           const data = counterDoc.data();
+           currentSeq = (data[yearMonth] || 0) + 1;
+        }
 
-      await addDoc(collection(db, TODOS_COLLECTION), {
-        type: "RETURN_APPROVAL",
-        title: `ขออนุมัติคืนสินค้า: ${item.sku || 'Unknown'} (ยอด ฿${((payload.purchasePrice || 0) * (payload.qty || 1)).toLocaleString()})`,
-        description: `บิลอ้างอิง: ${bill.orderId || '-'}\nเหตุผลการคืน: ${returnForm.reasonCode || '-'}\nรายละเอียด: ${returnForm.details || '-'}\nการกระทำ: ${returnForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
-        priority: "Critical", 
-        status: "pending_manager",
-        referenceType: "Order", 
-        referenceId: bill.orderId || '-',
-        payload: payload, 
-        createdByUid: userUid || '', 
-        handledBy: null,
-        createdAt: serverTimestamp(), 
-        updatedAt: serverTimestamp()
+        const generatedId = `RTN-${yearMonth}${String(currentSeq).padStart(4, '0')}`;
+
+        transaction.set(counterRef, {
+           [yearMonth]: currentSeq,
+           updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        const payload = {
+          returnId: generatedId, 
+          orderId: bill.orderId || '',
+          orderDocId: bill.id || '', 
+          customerUid: bill.customer?.uid || 'Walk-in', 
+          customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
+          sku: item.sku || '', 
+          productName: item.name || '', 
+          category: item.category || item.category1 || '',
+          purchasePrice: item.pricePerUnit || item.price || 0, 
+          purchaseDate: returnForm.warrantyDate || null,
+          returnReason: returnForm.reasonCode || '', 
+          returnDetails: returnForm.details || '', 
+          trackingNo: returnForm.tracking || '',
+          qty: returnForm.qty || 1, 
+          status: returnForm.currentStatus || 'pending_manager', 
+          actionType: returnForm.actionType || 'คืนเงิน/คืนสินค้า', 
+          inspectorName: returnForm.inspectorName || null,
+          images: returnForm.images || [], 
+          requestedBy: userUid || '', 
+          requestedByName: userName || ''
+        };
+
+        const newTodoRef = doc(collection(db, TODOS_COLLECTION));
+        
+        transaction.set(newTodoRef, {
+          type: "RETURN_APPROVAL",
+          title: `ขออนุมัติคืนสินค้า: ${item.sku || 'Unknown'} (ยอด ฿${((payload.purchasePrice || 0) * (payload.qty || 1)).toLocaleString()})`,
+          description: `บิลอ้างอิง: ${bill.orderId || '-'}\nเหตุผลการคืน: ${returnForm.reasonCode || '-'}\nรายละเอียด: ${returnForm.details || '-'}\nการกระทำ: ${returnForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
+          priority: "Critical", 
+          status: "pending_manager",
+          referenceType: "Order", 
+          referenceId: bill.orderId || '-',
+          payload: payload, 
+          createdByUid: userUid || '', 
+          handledBy: null,
+          createdAt: serverTimestamp(), 
+          updatedAt: serverTimestamp()
+        });
+
+        return generatedId;
       });
 
       gasHistoryService.log({
@@ -151,8 +194,7 @@ export const claimRequestService = {
         action: 'Request',
         target: { id: returnId, type: 'Task' },
         details: {
-          legacy_details: `พนักงาน ${userName} ทำรายการแจ้งคืนสินค้า ${item.sku} (รออนุมัติ)`,
-          payload: payload
+          legacy_details: `พนักงาน ${userName} ทำรายการแจ้งคืนสินค้า ${item.sku} รหัส ${returnId} (รออนุมัติ)`
         },
         actorOverride: { uid: userUid, name: userName, email: 'N/A' }
       });

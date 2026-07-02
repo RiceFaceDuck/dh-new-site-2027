@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, UserPlus, Save, Loader2, Building2, 
-  MapPin, Phone, Mail, Truck, Hash, Wand2, CheckCircle2, AlertCircle
+  MapPin, Phone, Mail, Truck, Hash, Wand2, CheckCircle2, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { generateAccountId, checkAccountIdExists } from '../../../../firebase/customer/accountIdService';
+import { syncCustomerAccount } from '../../../../firebase/customerAdminService';
 
 export default function CustomerModal({
   isOpen,
@@ -17,6 +18,8 @@ export default function CustomerModal({
   const [isValidatingId, setIsValidatingId] = useState(false);
   const [idError, setIdError] = useState('');
   const [idSuccess, setIdSuccess] = useState(false);
+  const [duplicateIdToSync, setDuplicateIdToSync] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // ตรวจสอบเมื่อพิมพ์ ID ใหม่ (Debounce เล็กน้อย)
   useEffect(() => {
@@ -42,9 +45,11 @@ export default function CustomerModal({
       try {
         const isDuplicate = await checkAccountIdExists(code, formData.id);
         if (isDuplicate) {
-          setIdError('รหัสลูกค้านี้มีในระบบแล้ว กรุณาเปลี่ยนใหม่');
+          setIdError('รหัสลูกค้านี้มีในระบบแล้ว');
+          setDuplicateIdToSync(code);
         } else {
           setIdSuccess(true);
+          setDuplicateIdToSync(null);
         }
       } catch (error) {
         setIdError('เกิดข้อผิดพลาดในการตรวจสอบรหัส');
@@ -75,6 +80,22 @@ export default function CustomerModal({
     onSubmit(e);
   };
 
+  const handleSyncAccount = async (targetId) => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ว่าต้องการโอนย้ายข้อมูลทั้งหมดไปยังบัญชีปลายทาง? (ข้อมูลคำสั่งซื้อและเครดิตจะถูกย้ายถาวร)')) return;
+    setIsSyncing(true);
+    setIdError('');
+    try {
+      const res = await syncCustomerAccount(formData.id, targetId);
+      alert(res.message);
+      onClose(); // ปิด Modal หลังจากซิงค์สำเร็จ
+      // หน้าจอหลักจะ Refresh อัตโนมัติเมื่อ Modal ปิด
+    } catch (err) {
+      setIdError(err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center p-4 sm:p-6">
       {/* พื้นหลังเบลอ */}
@@ -95,13 +116,15 @@ export default function CustomerModal({
               <><UserPlus className="text-dh-accent" size={24}/> เพิ่มลูกค้าระบบ Manual</>
             )}
           </h2>
-          <button 
-            type="button"
-            onClick={onClose}
-            className="p-2 hover:bg-dh-border text-dh-muted hover:text-dh-main rounded-full transition-colors"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={onClose}
+              className="p-2 hover:bg-dh-border text-dh-muted hover:text-dh-main rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Body (Form) */}
@@ -115,12 +138,34 @@ export default function CustomerModal({
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-dh-muted flex items-center justify-between gap-1">
-                    <span className="flex items-center gap-1"><Hash size={12}/> รหัสลูกค้า (Account ID)</span>
-                    <button type="button" onClick={handleGenerateId} className="text-[10px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 rounded transition-colors">
-                      <Wand2 size={10} /> สุ่มรหัสใหม่
-                    </button>
-                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-xs font-semibold text-dh-muted flex items-center gap-1">
+                      <Hash size={12}/> รหัสลูกค้า (Account ID)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {isEditMode && formData.originalAccountId && (
+                        <>
+                          <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                            ID ปัจจุบัน: {formData.originalAccountId}
+                          </span>
+                          {formData.email ? (
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200" title={`ซิงค์กับอีเมล: ${formData.email}`}>
+                              <CheckCircle2 size={10} strokeWidth={3} />
+                              <span>SYNCED</span>
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200" title="ยังไม่เชื่อมต่อบัญชีหน้าเว็บ">
+                              <X size={10} strokeWidth={3} />
+                              <span>NO EMAIL SYNC</span>
+                            </span>
+                          )}
+                        </>
+                      )}
+                      <button type="button" onClick={handleGenerateId} className="text-[10px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 rounded transition-colors shrink-0">
+                        <Wand2 size={10} /> สุ่มรหัสใหม่
+                      </button>
+                    </div>
+                  </div>
                   <div className="relative">
                     <input 
                       type="text" 
@@ -136,12 +181,33 @@ export default function CustomerModal({
                       }}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      {isValidatingId && <Loader2 size={14} className="animate-spin text-slate-400" />}
-                      {!isValidatingId && idSuccess && <CheckCircle2 size={14} className="text-emerald-500" />}
-                      {!isValidatingId && idError && <AlertCircle size={14} className="text-rose-500" />}
+                      {(isValidatingId || isSyncing) && <Loader2 size={14} className="animate-spin text-slate-400" />}
+                      {(!isValidatingId && !isSyncing) && idSuccess && <CheckCircle2 size={14} className="text-emerald-500" />}
+                      {(!isValidatingId && !isSyncing) && idError && <AlertCircle size={14} className="text-rose-500" />}
                     </div>
                   </div>
-                  {idError && <p className="text-[10px] text-rose-500 font-medium">{idError}</p>}
+                  {idError && !duplicateIdToSync && <p className="text-[10px] text-rose-500 font-medium">{idError}</p>}
+                  
+                  {/* ปุ่มโอนย้ายบัญชี (กรณีตรวจพบว่ารหัสซ้ำ) */}
+                  {duplicateIdToSync && isEditMode && (
+                    <div className="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg animate-in fade-in slide-in-from-top-2">
+                       <p className="text-xs text-indigo-800 font-bold mb-2 flex items-center gap-1">
+                         <RefreshCw size={12} className="text-indigo-600" /> พบรหัสนี้ในระบบ (ต้องการโอนย้ายข้อมูลหรือไม่?)
+                       </p>
+                       <p className="text-[10px] text-indigo-600 mb-3 leading-relaxed">
+                         หากลูกค้านำรหัสนี้มาจากหน้าเว็บ คุณสามารถคลิกปุ่มด้านล่างเพื่อโอนย้ายข้อมูลคำสั่งซื้อและเครดิตเดิม ทั้งหมดไปรวมกับบัญชีรหัสใหม่ได้ทันที
+                       </p>
+                       <button 
+                         type="button" 
+                         onClick={() => handleSyncAccount(duplicateIdToSync)}
+                         disabled={isSyncing}
+                         className="w-full py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-md shadow-md hover:bg-indigo-700 flex items-center justify-center gap-1 transition-colors"
+                       >
+                         {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <><RefreshCw size={14} /> ยืนยันการโอนย้ายและควบรวมบัญชี</>}
+                       </button>
+                    </div>
+                  )}
+                  {duplicateIdToSync && !isEditMode && <p className="text-[10px] text-rose-500 font-medium">รหัสนี้ถูกใช้งานแล้ว กรุณาสุ่มใหม่</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-dh-muted flex items-center gap-1">

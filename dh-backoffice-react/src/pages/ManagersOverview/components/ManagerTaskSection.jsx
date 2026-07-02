@@ -10,6 +10,7 @@ import FormalStaffApprovalCard from '../../../components/todo/manager/cards/Form
 import FormalGenericTodoCard from '../../../components/todo/manager/cards/FormalGenericTodoCard';
 import FormalWholesaleCard from '../../../components/todo/manager/cards/FormalWholesaleCard';
 import FormalKnowledgeCard from '../../../components/todo/manager/cards/FormalKnowledgeCard';
+import FormalLeaveApprovalCard from '../../../components/todo/manager/cards/FormalLeaveApprovalCard';
 
 // Premium Skeleton Loader
 const PremiumSkeleton = () => (
@@ -126,6 +127,7 @@ export default function ManagerTaskSection() {
     const normalizedType = type?.toUpperCase();
     switch (normalizedType) {
       case 'STAFF_APPROVAL': return <UserPlus size={20} className="text-blue-600" />;
+      case 'LEAVE_APPROVAL': return <Calendar size={20} className="text-orange-600" />;
       case 'MANUAL_TASK': return <Calendar size={20} className="text-indigo-600" />;
       case 'PACKING_TASK': return <Package size={20} className="text-orange-600" />;
       case 'FOLLOW_UP': return <MessageSquare size={20} className="text-teal-600" />;
@@ -242,6 +244,7 @@ export default function ManagerTaskSection() {
           const isWholesale = type === 'WHOLESALE_REQUEST' || type === 'WHOLESALE_APPROVAL';
           const isAdTask = ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type);
           const isStaffApprovalTask = type === 'STAFF_APPROVAL';
+          const isLeaveApprovalTask = type === 'LEAVE_APPROVAL';
           
           const props = {
             todo: task,
@@ -264,6 +267,9 @@ export default function ManagerTaskSection() {
           }
           if (isStaffApprovalTask) {
             return <FormalStaffApprovalCard key={task.id} {...props} />;
+          }
+          if (isLeaveApprovalTask) {
+            return <FormalLeaveApprovalCard key={task.id} {...props} />;
           }
           if (isAdTask) {
             return <FormalAdApprovalCard key={task.id} {...props} />;

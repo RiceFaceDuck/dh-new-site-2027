@@ -17,12 +17,12 @@ const TodoPageList = ({
   setWholesaleInputs
 }) => {
 
-  const getUrgencyColor = (createdAt) => {
-    if (!createdAt) return 'bg-slate-100 text-slate-500';
+  const getUrgencyLevel = (createdAt) => {
+    if (!createdAt) return 'low';
     const hours = (new Date() - createdAt.toDate()) / (1000 * 60 * 60);
-    if (hours > 24) return 'bg-red-100 text-red-700 border border-red-200';
-    if (hours > 12) return 'bg-orange-100 text-orange-700 border border-orange-200';
-    return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+    if (hours > 24) return 'high';
+    if (hours > 12) return 'medium';
+    return 'low';
   };
 
   if (loading) {
@@ -57,7 +57,7 @@ const TodoPageList = ({
     <div className="flex flex-col gap-3 max-w-5xl mx-auto">
       {displayTodos.map(todo => {
         const isProcessing = processingId === todo.id;
-        const urgencyClass = getUrgencyColor(todo.createdAt || todo.requestedAt);
+        const urgencyLevel = getUrgencyLevel(todo.createdAt || todo.requestedAt);
 
         if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
           return (
@@ -68,6 +68,7 @@ const TodoPageList = ({
                 fetchedData={fetchedPrices[todo.id] || {}}
                 inputs={wholesaleInputs[todo.id] || {}}
                 setWholesaleInputs={setWholesaleInputs}
+                urgencyLevel={urgencyLevel}
                 onReject={() => {
                     if (window.confirm(`ยืนยันการปฏิเสธคำขอราคาส่ง #${todo.orderId || ''} ใช่หรือไม่?`)) {
                        handleAction(todo.id, 'reject', todo.type, { orderId: todo.orderId || todo.payload?.orderId });
@@ -81,7 +82,7 @@ const TodoPageList = ({
         if (todo.type === 'verify_slip') {
           return (
             <div key={todo.id} className="h-full">
-              <PaymentCard task={todo} currentUser={auth.currentUser} />
+              <PaymentCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />
             </div>
           );
         }
@@ -89,7 +90,7 @@ const TodoPageList = ({
         if (todo.type === 'issue_tax_invoice') {
            return (
               <div key={todo.id} className="h-full">
-                 <TaxInvoiceCard task={todo} currentUser={auth.currentUser} />
+                 <TaxInvoiceCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />
               </div>
            )
         }
@@ -100,7 +101,7 @@ const TodoPageList = ({
             todo={todo}
             isProcessing={isProcessing}
             isManagerTab={false} 
-            urgencyClass={urgencyClass}
+            urgencyLevel={urgencyLevel}
             handleAction={handleAction}
           />
         );

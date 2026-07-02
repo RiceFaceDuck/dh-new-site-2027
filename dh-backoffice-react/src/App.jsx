@@ -69,8 +69,12 @@ const PageLoader = () => (
   </div>
 )
 
+import { useAutoCleanup } from './hooks/useAutoCleanup'
+
 // 🟢 แยกเนื้อหาการทำงานออกมาเป็น AppContent
 function AppContent() {
+  useAutoCleanup();
+  
   const { 
     user, 
     loading, 

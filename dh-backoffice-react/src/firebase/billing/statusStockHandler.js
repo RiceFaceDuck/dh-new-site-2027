@@ -24,7 +24,7 @@ export const handleStockDeduction = (transaction, db, productRefs, productSnaps,
                 'stats.sold': increment(requiredQty) 
             });
             
-            gasStockService.queueUpdate({ sku: pSnap.data().sku, stockQuantity: newStock });
+            gasStockService.queueUpdate({ ...pSnap.data(), sku: pSnap.data().sku, stockQuantity: newStock });
         }
     });
 };
@@ -41,7 +41,7 @@ export const handleStockReturn = (transaction, db, productRefs, productSnaps) =>
                 'stats.sold': increment(-qtyToReturn) 
             });
             
-            gasStockService.queueUpdate({ sku: pSnap.data().sku, stockQuantity: newStock });
+            gasStockService.queueUpdate({ ...pSnap.data(), sku: pSnap.data().sku, stockQuantity: newStock });
         }
     });
 };

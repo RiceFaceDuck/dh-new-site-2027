@@ -19,9 +19,10 @@ export const inventorySyncService = {
   /**
    * Broadcasts product changes to Google Apps Script and History Log
    */
-  broadcastCreate: (productData) => {
-    // Sync to Stock Backup
+  broadcastCreate: async (productData) => {
+    // ✅ [Auto-Sync] ส่งเข้าคิวอัปเดต Google Sheet และบังคับซิงค์ทันที
     gasStockService.queueUpdate(productData);
+    await gasStockService.forceSync();
     
     // Log History
     gasHistoryService.log({
@@ -36,9 +37,10 @@ export const inventorySyncService = {
     });
   },
 
-  broadcastUpdate: (sku, newData, oldData) => {
-    // Sync to Stock Backup
+  broadcastUpdate: async (sku, newData, oldData) => {
+    // ✅ [Auto-Sync] ส่งเข้าคิวอัปเดต Google Sheet และบังคับซิงค์ทันที
     gasStockService.queueUpdate({ sku, ...newData });
+    await gasStockService.forceSync();
 
     // Calculate diff
     const changes = {};

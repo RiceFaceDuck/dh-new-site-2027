@@ -30,6 +30,7 @@ export default function Customers() {
         isRefreshing={state.isRefreshing}
         onAddCustomer={() => actions.setIsAddModalOpen(true)}
         onGuideOpen={() => setIsGuideOpen(true)}
+        onRunMigration={actions.handleRunMigration}
       />
 
       {/* 2. ส่วนเนื้อหาหลัก (Layout แบบ Split View) */}

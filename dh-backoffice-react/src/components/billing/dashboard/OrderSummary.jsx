@@ -23,7 +23,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
     // Check if bill is claimable
     const pStat = (paymentStat || '').toLowerCase();
     const oStat = (orderStat || '').toLowerCase();
-    const isPaidOrApproved = pStat === 'paid' || oStat === 'paid' || oStat === 'approved';
+    const isPaidOrApproved = pStat === 'paid' || oStat === 'paid' || oStat === 'approved' || oStat === 'shipped' || oStat === 'completed';
     const isClaimable = !isCancelled && isPaidOrApproved;
 
     // Merge appliedFreebies into items for display (for frontend orders where they are stored separately)

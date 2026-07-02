@@ -1,6 +1,6 @@
 import { gasStockService } from '../gasStockService';
 import { db } from '../config';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class BigSellerQueryService {
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';class BigSellerQueryService {
   /**
    * ดึงเวลา Reset ล่าสุดจาก Firestore
    */
@@ -77,6 +77,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class 
       const increased = [];
       const decreased = [];
       const priceChanged = [];
+      const otherChanged = [];
 
       currentInventory.forEach(curr => {
         if (!curr.sku) return;
@@ -102,49 +103,26 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class 
         if (currPrice !== prevPrice) {
           priceChanged.push({ sku: curr.sku, name: curr.name, oldPrice: prevPrice, newPrice: currPrice });
         }
-      });
 
-      const dbModule = await import('../config.js');
-      const firestoreModule = await import('firebase/firestore');
-      
-      try {
-        const q = firestoreModule.query(
-          firestoreModule.collection(dbModule.db, 'orders'),
-          firestoreModule.where('createdAt', '>=', firestoreModule.Timestamp.fromDate(lastResetDate)),
-          firestoreModule.where('status', 'in', ['paid', 'completed'])
-        );
-        const snapshot = await firestoreModule.getDocs(q);
+        // ✨ ตรวจจับความเปลี่ยนแปลงอื่นๆ (เช่น ชื่อ หรือ หมวดหมู่)
+        const details = [];
+        if (curr.name !== prev.name && curr.name && prev.name) {
+            details.push(`ชื่อเปลี่ยน`);
+        }
+        if (curr.category !== prev.category && curr.category && prev.category) {
+            details.push(`เปลี่ยนหมวดหมู่เป็น ${curr.category}`);
+        }
         
-        // Count sold items by SKU
-        const soldQtyMap = new Map();
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          if (data.items && Array.isArray(data.items)) {
-            data.items.forEach(item => {
-              if (item.sku) {
-                soldQtyMap.set(item.sku, (soldQtyMap.get(item.sku) || 0) + (Number(item.qty) || 1));
-              }
-            });
-          }
-        });
-
-        // Attach reason to decreased items
-        decreased.forEach(item => {
-          const soldCount = soldQtyMap.get(item.sku);
-          if (soldCount) {
-             item.reason = `(บิลขาย: -${soldCount} ชิ้น)`;
-          } else {
-             item.reason = `(อื่นๆ / ปรับสต็อก)`;
-          }
-        });
-      } catch (err) {
-        console.warn("ไม่สามารถดึงข้อมูลออเดอร์เพื่ออธิบายที่มาได้:", err);
-      }
+        if (details.length > 0) {
+            otherChanged.push({ sku: curr.sku, name: curr.name, details: details.join(', ') });
+        }
+      });
 
       return {
         increased,
         decreased,
         priceChanged,
+        otherChanged, // ✨ Return ข้อมูลเพิ่มเติม
         currentInventory,
         lastResetDate: lastResetDate
       };

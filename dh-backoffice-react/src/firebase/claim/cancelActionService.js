@@ -2,6 +2,7 @@ import { doc, updateDoc, serverTimestamp, increment, getDoc } from 'firebase/fir
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { transactionService } from '../transactionService';
+import { gasStockService } from '../gasStockService';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -11,12 +12,39 @@ export const cancelActionService = {
     const qty = Number(payload.qty || 1);
     const isCancelReturn = type === 'CANCEL_RETURN_APPROVAL';
     
-    // หากเป็นการยกเลิกรายการที่ 'approved' หรือ 'completed' ไปแล้ว ต้องดึงสต๊อกและเงินคืน
-    if (task.originalStatus === 'approved' || task.originalStatus === 'completed') {
+    const isCompleted = task.originalStatus === 'completed';
+    const isProcessing = task.originalStatus === 'processing';
+    const hasArrived = isProcessing || isCompleted;
+
+    // 1. จัดการสต๊อกของเสีย (Defect Stock)
+    // สำหรับการเคลม (Claim) ถ้ารับของเสียมาแล้ว ต้องหักสต๊อกของเสียออก เพราะยกเลิกรายการ
+    if (!isCancelReturn && hasArrived) {
+        const pRef = doc(db, 'products', payload.sku);
+        const pSnap = await getDoc(pRef);
+        if (pSnap.exists()) {
+            await updateDoc(pRef, { defectQuantity: increment(-qty) });
+        }
+    }
+
+    // 2. หากเป็นการยกเลิกรายการที่ 'completed' ไปแล้ว ต้องดึงสต๊อกและเงินคืน
+    if (isCompleted) {
       if (isCancelReturn) {
         // ยกเลิกการคืนสินค้า: ดึงสต๊อกกลับ (-qty) และดึงเงินคืนลูกค้ากลับ
-        await updateDoc(doc(db, 'products', payload.sku), { stockQuantity: increment(-qty) });
-        const refundAmount = (payload.purchasePrice || 0) * qty;
+        const pRef = doc(db, 'products', payload.sku);
+        let pSnap = await getDoc(pRef);
+        if (pSnap.exists()) {
+            await updateDoc(pRef, { stockQuantity: increment(-qty) });
+            const currentStock = Number(pSnap.data().stockQuantity || 0);
+            gasStockService.queueUpdate({ ...pSnap.data(), sku: payload.sku, stockQuantity: currentStock - qty });
+            await gasStockService.forceSync();
+        }
+
+        let refundAmount = (payload.purchasePrice || 0) * qty;
+        const penalty = Number(payload.freebiePenaltyAmount) || 0;
+        if (penalty > 0) {
+          refundAmount = Math.max(0, refundAmount - penalty);
+        }
+
         if (payload.customerUid && payload.customerUid !== 'Walk-in') {
           await transactionService.recordTransaction({
             uid: payload.customerUid,
@@ -24,12 +52,19 @@ export const cancelActionService = {
             amount: refundAmount,
             referenceId: payload.returnId,
             recordedBy: adminUid,
-            note: 'ดึงยอดเงินคืนเนื่องจากผู้จัดการยกเลิกการคืนสินค้า'
+            note: `ดึงยอดเงินคืนเนื่องจากผู้จัดการยกเลิกการคืนสินค้า${penalty > 0 ? ' (หักลบค่าปรับของแถม)' : ''}`
           });
         }
       } else {
         // ยกเลิกการเคลม: เอาสต๊อกที่เบิกให้ลูกค้าไปแล้ว (+qty) คืนกลับมา
-        await updateDoc(doc(db, 'products', payload.sku), { stockQuantity: increment(qty) });
+        const pRef = doc(db, 'products', payload.sku);
+        let pSnap = await getDoc(pRef);
+        if (pSnap.exists()) {
+            await updateDoc(pRef, { stockQuantity: increment(qty) });
+            const currentStock = Number(pSnap.data().stockQuantity || 0);
+            gasStockService.queueUpdate({ ...pSnap.data(), sku: payload.sku, stockQuantity: currentStock + qty });
+            await gasStockService.forceSync();
+        }
       }
 
       // เอาออกจากประวัติ order
@@ -67,7 +102,7 @@ export const cancelActionService = {
     return true;
   },
 
-  rejectCancel: async (task, reason, adminUid) => {
+  rejectCancel: async (task, reason, adminUid, adminName) => {
     await updateDoc(doc(db, TODOS_COLLECTION, task.id), {
       title: task.originalTitle || task.title, 
       type: task.originalType, 
@@ -87,7 +122,7 @@ export const cancelActionService = {
         reason: reason,
         task_id: task.id
       },
-      actorOverride: { uid: adminUid, name: 'Manager', email: 'N/A' }
+      actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
     });
     return true;
   }

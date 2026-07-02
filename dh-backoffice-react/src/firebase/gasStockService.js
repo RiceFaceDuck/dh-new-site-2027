@@ -1,4 +1,5 @@
 import { auth } from './config.js';
+import { gasHistoryService } from './gasHistoryService.js';
 
 // URL ใหม่จากการอัปเดต Deployment (แบบละเอียดยิบ)
 const GAS_STOCK_URL = 'https://script.google.com/macros/s/AKfycbzLaT5ytHzrhF20NOSJFsEJ0oOckm2O_BfRGbxDa5KGRUKo4mPKMd0ZZoa3tOUgzdv2/exec';
@@ -7,6 +8,7 @@ class GasStockService {
   constructor() {
     this.queue = [];
     this.isFlushing = false;
+    this.flushPromise = null;
     this.flushInterval = null;
     this.MAX_QUEUE_SIZE = 15;
     this.FLUSH_INTERVAL_MS = 5000;
@@ -32,8 +34,13 @@ class GasStockService {
   }
 
   async forceSync() {
-    if (this.queue.length > 0) {
-      await this._flush();
+    if (this.queue.length > 0 || this.isFlushing) {
+      if (this.isFlushing && this.flushPromise) {
+        await this.flushPromise;
+      }
+      if (this.queue.length > 0) {
+        await this._flush();
+      }
     }
   }
 
@@ -73,7 +80,8 @@ class GasStockService {
   // ✨ ฟังก์ชันสำหรับดึงข้อมูลสินค้าทั้งหมดจาก Google Sheet (ทำ Cache-First Architecture)
   async fetchBackupInventory() {
     try {
-      const response = await fetch(GAS_STOCK_URL, {
+      const urlWithCacheBuster = `${GAS_STOCK_URL}?t=${Date.now()}`;
+      const response = await fetch(urlWithCacheBuster, {
         method: 'GET'
       });
 
@@ -118,7 +126,11 @@ class GasStockService {
   }
 
   async _flush() {
-    if (this.queue.length === 0 || this.isFlushing) return;
+    if (this.queue.length === 0) return;
+    if (this.isFlushing) {
+      if (this.flushPromise) return this.flushPromise;
+      return;
+    }
 
     this.isFlushing = true;
     this._notifyListeners();
@@ -132,28 +144,44 @@ class GasStockService {
     this.queue = []; // ล้างคิวเพื่อรับใหม่ทันที
     this._notifyListeners();
 
-    try {
-      const response = await fetch(GAS_STOCK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(batch)
-      });
+    this.flushPromise = (async () => {
+      try {
+        const response = await fetch(GAS_STOCK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(batch)
+        });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
-      const result = await response.json();
-      if (result.status === "error") {
-        throw new Error(result.message || "Unknown error from GAS");
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const result = await response.json();
+        if (result.status === "error") {
+          throw new Error(result.message || "Unknown error from GAS");
+        }
+        
+        gasHistoryService.log({
+          level: 'DEBUG',
+          module: 'GAS Sync',
+          action: 'FlushStock',
+          target: { id: 'SYSTEM', type: 'System' },
+          details: {
+            legacy_details: `ซิงค์สต๊อก ${batch.length} รายการไปยัง Sheet สำเร็จ`
+          },
+          actorOverride: { uid: 'System', name: 'System', email: 'N/A' }
+        });
+        
+      } catch (error) {
+        console.error("🔥 Failed to flush stock to GAS:", error);
+        // ถ้าพัง เอากลับเข้าคิวใหม่
+        this.queue = [...batch, ...this.queue];
+      } finally {
+        this.isFlushing = false;
+        this.flushPromise = null;
+        this._notifyListeners();
       }
-      
-    } catch (error) {
-      console.error("🔥 Failed to flush stock to GAS:", error);
-      // ถ้าพัง เอากลับเข้าคิวใหม่
-      this.queue = [...batch, ...this.queue];
-    } finally {
-      this.isFlushing = false;
-      this._notifyListeners();
-    }
+    })();
+
+    return this.flushPromise;
   }
 }
 

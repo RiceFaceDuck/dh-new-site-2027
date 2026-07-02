@@ -4,7 +4,7 @@ import StaffApprovalCard from './cards/StaffApprovalCard';
 import AdApprovalCard from './cards/AdApprovalCard';
 import GenericTodoCard from './cards/GenericTodoCard';
 
-export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClass, handleAction }) {
+export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLevel, handleAction }) {
   
   // 🌟 แมปปิ้งไอคอนให้ตรงกับประเภทงาน (รองรับทั้งตัวพิมพ์เล็ก-ใหญ่)
   const getIconForType = (type) => {
@@ -76,7 +76,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyClas
   const isStaffApprovalTask = type === 'STAFF_APPROVAL';
 
   const props = {
-    todo, isProcessing, isManagerTab, urgencyClass, handleAction, getStatusBadge, formatDate, handleRejectClick, getIconForType
+    todo, isProcessing, isManagerTab, urgencyLevel, handleAction, getStatusBadge, formatDate, handleRejectClick, getIconForType
   };
 
   if (isStaffApprovalTask) {

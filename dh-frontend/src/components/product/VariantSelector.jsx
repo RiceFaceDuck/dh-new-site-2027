@@ -10,7 +10,7 @@ export default function VariantSelector({
   if (!variantOptions || variantOptions.length === 0) return null;
 
   return (
-    <div className={`mb-6 space-y-4 p-4 rounded-xl transition-all duration-300 ${
+    <div id="variant-selector" className={`mb-6 space-y-4 p-4 rounded-xl transition-all duration-300 ${
       showError ? 'bg-red-50 border border-red-300 animate-[shake_0.5s_ease-in-out]' : 'bg-transparent border border-transparent'
     }`}>
       {showError && (

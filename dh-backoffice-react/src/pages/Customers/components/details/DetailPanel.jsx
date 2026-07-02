@@ -8,6 +8,7 @@ import ShippingInfo from './ShippingInfo';
 import TaxInfo from './TaxInfo';
 import StatsInfo from './StatsInfo';
 import HistoryInfo from './HistoryInfo';
+import CustomerSyncModal from './CustomerSyncModal';
 
 export default function DetailPanel({
   customer,
@@ -24,6 +25,9 @@ export default function DetailPanel({
   
   // State สำหรับแอนิเมชันปุ่ม Copy
   const [copiedField, setCopiedField] = useState(null);
+
+  // State สำหรับ Modal โอนย้ายบัญชี
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   // 🕵️‍♂️ ดึงข้อมูลภาษีลับ เมื่อเปิดดูรายละเอียดลูกค้า
   useEffect(() => {
@@ -120,15 +124,23 @@ export default function DetailPanel({
             
             {/* 🛡️ Data Sync Validation (Email as Key) */}
             {customer.email ? (
-               <div title={`ผูกข้อมูลสำเร็จกับ: ${customer.email}`} className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200 shrink-0 cursor-help">
+               <button 
+                 onClick={() => setIsSyncModalOpen(true)}
+                 title={`ผูกข้อมูลสำเร็จกับ: ${customer.email} (คลิกเพื่อซิงค์ข้อมูลไปบัญชีอื่น)`} 
+                 className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200 shrink-0 hover:bg-teal-100 hover:text-teal-700 transition-colors"
+               >
                  <Check size={12} strokeWidth={3} />
                  <span>SYNCED (EMAIL)</span>
-               </div>
+               </button>
             ) : (
-               <div title="ไม่พบ Email หลักในการอ้างอิงข้อมูล" className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200 shrink-0 cursor-help">
+               <button 
+                 onClick={() => setIsSyncModalOpen(true)}
+                 title="คลิกเพื่อผูกและโอนย้ายข้อมูลไปยังบัญชีหน้าเว็บ" 
+                 className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200 shrink-0 hover:bg-rose-100 hover:text-rose-700 transition-colors shadow-sm"
+               >
                  <X size={12} strokeWidth={3} />
                  <span>NO EMAIL SYNC</span>
-               </div>
+               </button>
             )}
           </div>
         </div>
@@ -195,12 +207,22 @@ export default function DetailPanel({
           <Trash2 size={16} /> ลบลูกค้า
         </button>
         <button 
-          onClick={onEdit} 
+          onClick={() => onEdit(customer)} 
           className="px-4 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 font-bold rounded-xl text-xs flex items-center gap-2 transition-colors flex-1 justify-center shadow-md shadow-indigo-600/20 active:scale-95"
         >
           <Edit2 size={16} /> แก้ไขข้อมูล
         </button>
       </div>
+
+      <CustomerSyncModal 
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        customer={customer}
+        onSyncComplete={() => {
+          setIsSyncModalOpen(false);
+          onClose(); // Close DetailPanel to force a refresh of the list
+        }}
+      />
     </div>
   );
 }

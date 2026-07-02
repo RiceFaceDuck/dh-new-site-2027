@@ -1,0 +1,83 @@
+name: Firebase CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_and_preview:
+    if: '${{ github.event_name == ''pull_request'' }}'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Frontend
+      - name: Install Frontend Dependencies
+        working-directory: ./dh-frontend
+        run: npm ci
+      - name: Build Frontend
+        working-directory: ./dh-frontend
+        run: npm run build
+        
+      # Backoffice
+      - name: Install Backoffice Dependencies
+        working-directory: ./dh-backoffice-react
+        run: npm ci
+      - name: Build Backoffice
+        working-directory: ./dh-backoffice-react
+        run: npm run build
+        
+      # Staff App
+      - name: Install Staff App Dependencies
+        working-directory: ./dh-staff-app
+        run: npm ci
+      - name: Build Staff App
+        working-directory: ./dh-staff-app
+        run: npm run build
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          projectId: dh-notebook-69f3b
+
+  deploy_production:
+    if: '${{ github.event_name == ''push'' }}'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Frontend
+      - name: Install Frontend Dependencies
+        working-directory: ./dh-frontend
+        run: npm ci
+      - name: Build Frontend
+        working-directory: ./dh-frontend
+        run: npm run build
+        
+      # Backoffice
+      - name: Install Backoffice Dependencies
+        working-directory: ./dh-backoffice-react
+        run: npm ci
+      - name: Build Backoffice
+        working-directory: ./dh-backoffice-react
+        run: npm run build
+        
+      # Staff App
+      - name: Install Staff App Dependencies
+        working-directory: ./dh-staff-app
+        run: npm ci
+      - name: Build Staff App
+        working-directory: ./dh-staff-app
+        run: npm run build
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          projectId: dh-notebook-69f3b
+          channelId: live

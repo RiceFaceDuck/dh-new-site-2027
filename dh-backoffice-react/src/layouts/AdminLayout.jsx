@@ -22,6 +22,8 @@ export default function AdminLayout() {
 
   const [todoCount, setTodoCount] = useState(0); 
   const [pendingStaffCount, setPendingStaffCount] = useState(0);
+  const [pendingClaimCount, setPendingClaimCount] = useState(0);
+  const [managerApprovalCount, setManagerApprovalCount] = useState(0);
   const { unreadCount } = useGmail();
   
   const [isDark, setIsDark] = useState(() => {
@@ -45,12 +47,26 @@ export default function AdminLayout() {
   // --- โหลดข้อมูลแจ้งเตือน (Todo / Pending Staff) ---
   useEffect(() => {
     let unsubscribeGeneralTodo = null;
+    let unsubscribeManagerTodo = null;
 
     if (typeof todoService.subscribePendingTodos === 'function') {
       unsubscribeGeneralTodo = todoService.subscribePendingTodos((todos) => {
         setTodoCount(todos.length);
       });
     }
+
+    import('../firebase/managerTodoService').then(({ managerTodoService }) => {
+      if (typeof managerTodoService.subscribeManagerApprovals === 'function') {
+        unsubscribeManagerTodo = managerTodoService.subscribeManagerApprovals((managerTodos) => {
+          setManagerApprovalCount(managerTodos.length);
+          const claims = managerTodos.filter(todo => 
+            (todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type === 'CANCEL_CLAIM_APPROVAL' || todo.type === 'CANCEL_RETURN_APPROVAL') &&
+            ['pending_manager', 'waiting_item', 'processing'].includes(todo.status)
+          );
+          setPendingClaimCount(claims.length);
+        });
+      }
+    });
 
     const fetchPendingStaffCount = async () => {
         try {
@@ -64,6 +80,7 @@ export default function AdminLayout() {
 
     return () => {
       if (unsubscribeGeneralTodo) unsubscribeGeneralTodo();
+      if (unsubscribeManagerTodo) unsubscribeManagerTodo();
     };
   }, []);
 
@@ -93,6 +110,8 @@ export default function AdminLayout() {
         todoCount={todoCount}
         unreadCount={unreadCount}
         pendingStaffCount={pendingStaffCount}
+        pendingClaimCount={pendingClaimCount}
+        managerApprovalCount={managerApprovalCount}
         isDark={isDark}
         toggleDarkMode={toggleDarkMode}
       />

@@ -11,7 +11,8 @@ export default function CustomerHeader({
   onRefresh, 
   isRefreshing, 
   onAddCustomer,
-  onGuideOpen
+  onGuideOpen,
+  onRunMigration
 }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-dh-border sticky top-0 transition-colors duration-300">
@@ -96,6 +97,16 @@ export default function CustomerHeader({
         >
           <UserPlus size={14} strokeWidth={2.5} />
           <span className="hidden sm:inline">เพิ่มลูกค้าใหม่</span>
+        </button>
+
+        {/* ปุ่มกวาดล้างข้อมูล (Migration) - แสดงเฉพาะช่วงล้างระบบ */}
+        <button 
+          onClick={onRunMigration}
+          className="h-[36px] px-3 flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white rounded-md font-bold text-xs transition-all shadow-lg active:scale-95 ring-1 ring-rose-400/50 shrink-0"
+          title="ล้างข้อมูลอดีตที่ตกค้าง (Migration)"
+        >
+          <RefreshCw size={14} strokeWidth={2.5} className="text-white" />
+          <span className="hidden sm:inline text-[10px]">Clean DB</span>
         </button>
       </div>
 

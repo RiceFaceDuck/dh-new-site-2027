@@ -14,6 +14,41 @@ export default function FormalAdApprovalCard({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // --- Auto-Verify if approved elsewhere ---
+  React.useEffect(() => {
+    let isMounted = true;
+    const verifyStatus = async () => {
+      if (!todo || !todo.id) return;
+      try {
+        const adId = todo.targetSkuId || todo.payload?.adId || todo.adPayload?.id || todo.id;
+        const specificCol = String(adId).includes('PRODUCT_LINK') || String(adId).includes('SKU') ? 'user_sku_ads' : 
+                            String(adId).includes('BILLBOARD') || String(adId).includes('BB') ? 'billboard_ads' : 'partner_ads';
+        
+        const appId = window.__app_id || 'default-app-id';
+        const { doc, getDoc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('../../../../firebase/config');
+        
+        const adRef = doc(db, 'artifacts', appId, 'public', 'data', specificCol, adId);
+        const adSnap = await getDoc(adRef);
+        
+        if (adSnap.exists() && isMounted) {
+          const status = adSnap.data().status;
+          if (status === 'active' || status === 'rejected' || status === 'paused') {
+            // Auto complete the task silently if already processed
+            await updateDoc(doc(db, 'todos', todo.id), { status: 'completed', resolution: 'auto_verified' });
+          }
+        } else if (!adSnap.exists() && isMounted) {
+          // If the ad document doesn't exist anymore (e.g. deleted), clear the orphaned task
+          await updateDoc(doc(db, 'todos', todo.id), { status: 'completed', resolution: 'target_deleted' });
+        }
+      } catch (err) {
+        // Silently ignore errors in auto-verify
+      }
+    };
+    verifyStatus();
+    return () => { isMounted = false; };
+  }, [todo]);
+
   return (
     <div className={`bg-white rounded-md shadow-sm border border-slate-200 flex flex-col relative transition-all hover:border-slate-400 mb-4 ${urgencyClass} ${isExpanded ? 'shadow-md ring-1 ring-slate-200' : ''}`}>
       

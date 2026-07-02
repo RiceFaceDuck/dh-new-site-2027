@@ -36,7 +36,7 @@ export default function CustomerInfo({ selectedRequest, copiedText, handleQuickC
         <div className="absolute -right-4 -top-4 w-20 h-20 bg-dh-accent/5 rounded-full blur-2xl group-hover:bg-dh-accent/10 transition-colors"></div>
         <p className="text-[10px] font-black text-dh-muted uppercase tracking-widest mb-3 z-10">สถานะการตรวจสอบ</p>
         <div className="z-10 scale-110 mb-1">{getStatusDisplay(selectedRequest)}</div>
-        <span className="text-[10px] font-bold text-dh-main mt-3 bg-dh-surface px-4 py-1.5 rounded-full border border-dh-border shadow-sm z-10">{selectedRequest.payload.status || 'รอตรวจสอบ'}</span>
+
         
         {selectedRequest.status === 'rejected' && <p className="text-[11px] text-rose-600 mt-3 font-bold w-full text-center z-10 bg-rose-50 dark:bg-rose-900/20 py-1.5 rounded-lg border border-rose-100 dark:border-rose-900/50">เหตุผล: {selectedRequest.rejectReason}</p>}
         {selectedRequest.type.startsWith('CANCEL_') && selectedRequest.rejectCancelReason && <p className="text-[11px] text-red-600 mt-3 font-bold w-full text-center z-10 bg-red-50 dark:bg-red-900/20 py-1.5 rounded-lg border border-red-100 dark:border-red-900/50">ปฏิเสธยกเลิก: {selectedRequest.rejectCancelReason}</p>}

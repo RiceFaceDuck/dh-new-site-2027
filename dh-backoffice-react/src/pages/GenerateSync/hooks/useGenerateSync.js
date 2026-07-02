@@ -29,7 +29,6 @@ export default function useGenerateSync() {
     try {
       const result = await bigSellerQueryService.calculateChanges();
       
-
       setChanges(result);
       setLastSyncTime(new Date());
     } catch (error) {
@@ -39,19 +38,33 @@ export default function useGenerateSync() {
     }
   }, []);
 
+  const [latestSnapshot, setLatestSnapshot] = useState(null);
+  
+  const fetchLatestSnapshot = useCallback(async () => {
+    try {
+       const { syncSnapshotService } = await import('../../../firebase/bigseller/syncSnapshotService');
+       const snap = await syncSnapshotService.getLatestSnapshot();
+       setLatestSnapshot(snap);
+    } catch (err) {
+       console.error("Failed to fetch latest snapshot", err);
+    }
+  }, []);
+
   // Auto refresh interval
   useEffect(() => {
     if (!autoSyncEnabled) return;
     const intervalId = setInterval(() => {
       fetchChanges();
+      fetchLatestSnapshot();
     }, syncInterval * 60 * 1000);
     return () => clearInterval(intervalId);
-  }, [autoSyncEnabled, syncInterval, fetchChanges]);
+  }, [autoSyncEnabled, syncInterval, fetchChanges, fetchLatestSnapshot]);
 
   // Initial fetch
   useEffect(() => {
     fetchChanges();
-  }, [fetchChanges]);
+    fetchLatestSnapshot();
+  }, [fetchChanges, fetchLatestSnapshot]);
 
   const handleManualReset = useCallback(async () => {
     setIsCalculating(true);
@@ -87,6 +100,8 @@ export default function useGenerateSync() {
     pendingCount,
     isFlushing,
     fetchChanges,
-    handleManualReset
+    handleManualReset,
+    latestSnapshot,
+    fetchLatestSnapshot
   };
 }

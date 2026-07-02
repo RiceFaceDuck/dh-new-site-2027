@@ -1,6 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wrench, ArrowLeftRight, Check, Copy, Eye } from 'lucide-react';
 import { getWarrantyInfo, getSLAIndicator, getStatusDisplay } from '../../utils/claimFormatters';
+import { userService } from '../../../../firebase/userService';
+
+const customerCache = {};
+
+const CustomerDisplay = ({ uid, payloadName }) => {
+  const [customer, setCustomer] = useState(customerCache[uid] || null);
+  
+  useEffect(() => {
+    if (!uid || uid === 'Walk-in' || uid.includes('WALK-IN')) return;
+    if (customerCache[uid]) return;
+    
+    let isMounted = true;
+    const fetchUser = async () => {
+      try {
+        const profile = await userService.getUserProfile(uid);
+        if (profile && isMounted) {
+          customerCache[uid] = profile;
+          setCustomer(profile);
+        } else if (isMounted) {
+          customerCache[uid] = { notFound: true };
+          setCustomer({ notFound: true });
+        }
+      } catch (err) {
+        console.error("Error fetching customer:", err);
+      }
+    };
+    fetchUser();
+    
+    return () => { isMounted = false; };
+  }, [uid]);
+  
+  let displayName = payloadName && !payloadName.includes('ทั่วไป') ? payloadName : 'ไม่พบข้อมูลในระบบ';
+  if (customer && !customer.notFound) {
+    displayName = customer.accountName || customer.displayName || customer.firstName || customer.email || displayName;
+  }
+  
+  return (
+    <span className={`text-[13px] font-bold truncate max-w-[150px] block ${displayName === 'ไม่พบข้อมูลในระบบ' ? 'text-dh-muted italic text-[11px] font-normal' : 'text-dh-main'}`}>
+      {displayName}
+    </span>
+  );
+};
 
 export default function ClaimTableRow({ req, setSelectedRequest, copiedText, handleQuickCopy, warrantyConfig }) {
   const isClaim = req.originalType === 'CLAIM_APPROVAL' || req.type === 'CLAIM_APPROVAL';
@@ -23,8 +65,7 @@ export default function ClaimTableRow({ req, setSelectedRequest, copiedText, han
         if (categoryFromPayload === catLower) {
           foundCat = cat; break;
         }
-        // 2. Check substring match in SKU (e.g. ADAC009 includes AD? No, just check prefix)
-        // Some known prefixes: AD=Adapter, KB=Keyboard, PN=Panel, BT=Battery
+        // 2. Check substring match in SKU
         if (catLower === 'adapter' && skuUpper.startsWith('AD')) { foundCat = cat; break; }
         if (catLower === 'keyboard' && skuUpper.startsWith('KB')) { foundCat = cat; break; }
         if (catLower === 'panel' && skuUpper.startsWith('PN')) { foundCat = cat; break; }
@@ -83,7 +124,7 @@ export default function ClaimTableRow({ req, setSelectedRequest, copiedText, han
 
       <td className="px-4 py-3 align-middle border-b border-dh-border group-last:border-none">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[13px] font-bold text-dh-main truncate max-w-[150px]">{payload.customerName || 'ทั่วไป'}</span>
+          <CustomerDisplay uid={payload.customerUid} payloadName={payload.customerName} />
           <div className="group/copy flex items-center gap-1 text-[11px] text-dh-muted relative">
             <span className="font-mono group-hover/copy:text-dh-accent transition-colors">{payload.orderId}</span>
             <button onClick={(e) => handleQuickCopy(e, payload.orderId)} className="opacity-0 group-hover/copy:opacity-100 hover:text-dh-accent transition-all p-0.5 rounded bg-dh-base active:scale-95">

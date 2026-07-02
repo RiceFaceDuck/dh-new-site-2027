@@ -8,6 +8,12 @@ const COLLECTION_NAME = 'freebies';
 const validateSkus = async (skusArray) => {
   if (!Array.isArray(skusArray) || skusArray.length === 0) return { validSkus: [], removedSkus: [] };
   
+  // 🚀 [Optimization] Bypass strict validation if SKUs exceed 500 to prevent massive Firebase Reads
+  if (skusArray.length > 500) {
+    console.warn('Skipping SKU validation for massive list (>500) to save Firebase Quota');
+    return { validSkus: skusArray, removedSkus: [] };
+  }
+
   const validSkus = new Set();
   for (let i = 0; i < skusArray.length; i += 30) {
     const chunk = skusArray.slice(i, i + 30);

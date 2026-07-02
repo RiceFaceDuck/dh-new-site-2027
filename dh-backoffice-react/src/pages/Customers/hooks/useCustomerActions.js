@@ -83,10 +83,14 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   const startEditCustomer = (customer) => {
     if (!customer) return;
     setEditFormData({
-      customerCode: customer.customerCode || '',
+      id: customer.id || customer.uid || '',
+      originalAccountId: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
+      customerCode: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
+      accountId: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
       accountName: customer.accountName || customer.displayName || '',
       contactName: customer.contactName || customer.firstName || '',
       phone: customer.phone || customer.phoneNumber || '',
+      email: customer.email || '',
       address: customer.address || '',
       logisticProvider: customer.logisticProvider || '',
       logisticNote: customer.logisticNote || '',
@@ -198,6 +202,55 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
     }
   };
 
+  // ลบข้อมูลอดีต (Migration) - ล้างฟิลด์ customerCode
+  const handleRunMigration = async () => {
+    const isManager = managerRoles.includes(currentUserRole);
+    if (!isManager) {
+      alert("คุณไม่มีสิทธิ์รัน Migration");
+      return;
+    }
+
+    // 1. Dry Run (จำลองผลลัพธ์)
+    const usersToMigrate = customers.filter(c => c.customerCode !== undefined && c.customerCode !== null);
+    
+    if (usersToMigrate.length === 0) {
+      alert("🎉 ไม่พบข้อมูลอดีตที่ตกค้างเลยครับ (ฐานข้อมูลสะอาด 100%)");
+      return;
+    }
+
+    const confirmMsg = `🔍 จำลองผลลัพธ์ (Dry-Run):\nพบรายชื่อลูกค้าที่ยังมีฟิลด์รหัสอดีต (customerCode) จำนวน ${usersToMigrate.length} รายการ\n\nการกด 'ตกลง' จะทำการ:\n1. ลบฟิลด์ customerCode ทิ้งอย่างถาวร\n2. บังคับใช้ accountId มาตรฐาน 8 หลัก\n\nต้องการ "ถอนรากถอนโคน" เลยหรือไม่?`;
+    
+    if (window.confirm(confirmMsg)) {
+      setIsSubmitting(true);
+      try {
+        const { updateDoc, doc, deleteField } = await import('firebase/firestore');
+        const { db } = await import('../../../firebase/config');
+        
+        let success = 0;
+        for (const u of usersToMigrate) {
+          try {
+            const userRef = doc(db, 'users', u.id || u.uid);
+            await updateDoc(userRef, {
+               customerCode: deleteField(),
+               // Ensure accountId exists
+               accountId: u.accountId || u.customerCode?.substring(0,8)?.toUpperCase() || u.id?.substring(0,8)?.toUpperCase()
+            });
+            success++;
+          } catch(err) {
+            console.error(`Failed to migrate user ${u.id}:`, err);
+          }
+        }
+        alert(`✅ การกวาดล้างเสร็จสมบูรณ์!\nปรับปรุงข้อมูลสำเร็จ ${success}/${usersToMigrate.length} รายการ`);
+        fetchCustomers(true); // โหลดข้อมูลใหม่ทั้งหมด
+      } catch (error) {
+        console.error("Migration error:", error);
+        alert("เกิดข้อผิดพลาดในการกวาดล้างข้อมูล");
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
   return {
     state: {
       currentUserRole,
@@ -221,7 +274,8 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       startEditCustomer,
       saveCustomerEdit,
       handleQuickRankChange,
-      handleDeleteCustomer
+      handleDeleteCustomer,
+      handleRunMigration
     }
   };
 };

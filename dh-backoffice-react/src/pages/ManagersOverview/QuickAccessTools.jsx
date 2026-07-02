@@ -3,7 +3,7 @@ import {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan
 } from 'lucide-react';
 import { menuConfigService } from '../../firebase/menuConfigService';
 
@@ -12,7 +12,7 @@ const iconMap = {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan
 };
 
 /**
@@ -82,6 +82,7 @@ const QuickAccessTools = ({
   onNavigateAds,
   onNavigateCredit,
   onOpenLayoutManager,
+  onOpenScannerModal,
   pendingStaffCount,
   vipCount,
   refreshTrigger // ใช้สำหรับสั่งโหลดใหม่หลังจากเซฟ Layout
@@ -126,6 +127,7 @@ const QuickAccessTools = ({
       case 'footer': return () => navigate('/managers/footer-settings');
       case 'privacy': return () => navigate('/managers/privacy-cookies');
       case 'redirect': return () => navigate('/managers/redirect');
+      case 'scanner': return onOpenScannerModal;
       default: return undefined;
     }
   };

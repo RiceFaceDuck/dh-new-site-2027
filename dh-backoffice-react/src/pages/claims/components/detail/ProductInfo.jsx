@@ -87,7 +87,7 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
         {/* Tracking Section */}
         {isManager && selectedRequest.status === 'pending_manager' ? (
           <div className="mt-2 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-xl border border-blue-100 dark:border-blue-900/30">
-            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5"><Truck className="w-3.5 h-3.5"/> เลขพัสดุ (Tracking Number)</p>
+            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5"><Truck className="w-3.5 h-3.5"/> เลขพัสดุรับเข้า (Tracking Number)</p>
             <input 
               type="text" 
               placeholder="กรอกเลขพัสดุก่อนรับจบ (ถ้ามี)" 
@@ -96,15 +96,29 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
               className="w-full text-xs p-2.5 rounded-lg bg-white dark:bg-black/20 border border-blue-200 dark:border-blue-800/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none font-mono transition-all shadow-sm"
             />
           </div>
-        ) : selectedRequest.payload.trackingNo ? (
-          <div className="group/track w-fit mt-2">
-            <p className="text-[10px] font-bold text-dh-muted mb-1.5 ml-1 flex items-center gap-1"><Truck className="w-3 h-3"/> Tracking Number</p>
-            <span className="font-mono text-[13px] font-black text-dh-accent bg-dh-accent/10 px-3 py-1.5 rounded-lg border border-dh-accent/20 cursor-pointer flex items-center gap-2 hover:bg-dh-accent/20 transition-colors shadow-sm" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.trackingNo)}>
-              {selectedRequest.payload.trackingNo}
-              {copiedText === selectedRequest.payload.trackingNo ? <Check className="w-4 h-4 text-emerald-500"/> : <Copy className="w-4 h-4 opacity-0 group-hover/track:opacity-100 transition-opacity"/>}
-            </span>
+        ) : (
+          <div className="flex flex-col gap-2 mt-2">
+            {selectedRequest.payload.trackingNo && (
+              <div className="group/track w-fit">
+                <p className="text-[10px] font-bold text-dh-muted mb-1.5 ml-1 flex items-center gap-1"><Truck className="w-3 h-3"/> เลขพัสดุรับเข้า (จากลูกค้า)</p>
+                <span className="font-mono text-[13px] font-black text-dh-accent bg-dh-accent/10 px-3 py-1.5 rounded-lg border border-dh-accent/20 cursor-pointer flex items-center gap-2 hover:bg-dh-accent/20 transition-colors shadow-sm" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.trackingNo)}>
+                  {selectedRequest.payload.trackingNo}
+                  {copiedText === selectedRequest.payload.trackingNo ? <Check className="w-4 h-4 text-emerald-500"/> : <Copy className="w-4 h-4 opacity-0 group-hover/track:opacity-100 transition-opacity"/>}
+                </span>
+              </div>
+            )}
+            
+            {selectedRequest.payload.returnTrackingNo && (
+              <div className="group/rtrack w-fit mt-1">
+                <p className="text-[10px] font-bold text-emerald-600 mb-1.5 ml-1 flex items-center gap-1"><Truck className="w-3 h-3"/> เลขพัสดุส่งออก (ส่งกลับลูกค้า)</p>
+                <span className="font-mono text-[13px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 cursor-pointer flex items-center gap-2 hover:bg-emerald-100 transition-colors shadow-sm" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.returnTrackingNo)}>
+                  {selectedRequest.payload.returnTrackingNo}
+                  {copiedText === selectedRequest.payload.returnTrackingNo ? <Check className="w-4 h-4 text-emerald-500"/> : <Copy className="w-4 h-4 opacity-0 group-hover/rtrack:opacity-100 transition-opacity"/>}
+                </span>
+              </div>
+            )}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

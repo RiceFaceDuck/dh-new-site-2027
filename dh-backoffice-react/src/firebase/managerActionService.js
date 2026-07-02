@@ -50,6 +50,12 @@ export const managerActionService = {
       return { success: true, newStatus: null };
     }
 
+    // 4. LEAVE_APPROVAL
+    if (type === 'LEAVE_APPROVAL') {
+      await historyService.addLog('ManagerAction', 'ApproveLeave', originalTask.id, `อนุมัติลางานให้ ${originalTask.payload?.staffName || 'พนักงาน'} (${originalTask.payload?.leaveType})`, auth.currentUser?.uid);
+      return { success: true, newStatus: 'approved' };
+    }
+
     // Default fallback
     await historyService.addLog('ManagerAction', 'ApproveTask', taskId, `อนุมัติคำขอ: ${type}`, auth.currentUser?.uid);
     return { success: true, newStatus: 'completed' };
@@ -64,6 +70,12 @@ export const managerActionService = {
       
       await historyService.addLog('ManagerAction', 'RejectAd', adId, `ปฏิเสธคำขอโฆษณา: ${type} เหตุผล: ${reason}`, auth.currentUser?.uid);
       return { success: true, newStatus: null };
+    }
+
+    // 2. LEAVE_APPROVAL
+    if (type === 'LEAVE_APPROVAL') {
+      await historyService.addLog('ManagerAction', 'RejectLeave', originalTask.id, `ไม่อนุมัติลางานให้ ${originalTask.payload?.staffName || 'พนักงาน'} เหตุผล: ${reason}`, auth.currentUser?.uid);
+      return { success: true, newStatus: 'rejected' };
     }
 
     // Default fallback

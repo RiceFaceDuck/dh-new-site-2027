@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 
 // 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล
@@ -49,6 +49,96 @@ export const productService = {
       console.error("Error fetching product:", error);
       throw error;
     }
+  },
+
+  /**
+   * Fetch multiple products in batches using 'in' query to save reads and time.
+   */
+  async getProductsByIds(ids) {
+    if (!ids || ids.length === 0) return [];
+    
+    // Remove duplicates and filter falsy values
+    const uniqueIds = [...new Set(ids.filter(Boolean))];
+    const results = [];
+    
+    // Firestore 'in' query supports max 30 items
+    const chunkSize = 30;
+    for (let i = 0; i < uniqueIds.length; i += chunkSize) {
+      const chunk = uniqueIds.slice(i, i + chunkSize);
+      
+      try {
+        // Assume document IDs are the primary way to fetch
+        // We use documentId() which maps to __name__ in Firestore
+        const { documentId } = await import('firebase/firestore');
+        const q = query(collection(db, "products"), where(documentId(), "in", chunk));
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach((docSnap) => {
+          results.push(this.normalizeProductData({ id: docSnap.id, ...docSnap.data() }));
+        });
+        
+        // Find missing ones that might be using 'sku' field instead of documentId
+        const fetchedIds = querySnapshot.docs.map(d => d.id);
+        const missingIds = chunk.filter(id => !fetchedIds.includes(id));
+        
+        if (missingIds.length > 0) {
+          const fallbackQ = query(collection(db, "products"), where("sku", "in", missingIds));
+          const fallbackSnap = await getDocs(fallbackQ);
+          fallbackSnap.forEach((docSnap) => {
+            results.push(this.normalizeProductData({ id: docSnap.id, ...docSnap.data() }));
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching products batch:", error);
+      }
+    }
+    
+    return results;
+  },
+
+  /**
+   * Subscribe to a product for real-time updates (Real-time Caching replacement).
+   * Calls the callback with the normalized product data whenever it changes.
+   * Returns an unsubscribe function.
+   */
+  subscribeToProduct(sku, callback) {
+    if (!sku) return () => {};
+    
+    // First try subscribing to the document directly (assuming SKU is document ID)
+    const docRef = doc(db, "products", sku);
+    
+    // We will use onSnapshot on a query to handle both ID and SKU fields if possible,
+    // but onSnapshot on docRef is much cheaper. Let's try docRef first, if it fails, fallback to query.
+    // However, onSnapshot doesn't throw if doc doesn't exist, it just returns exists() = false.
+    // A safer way is to just query by SKU. But querying is more expensive.
+    
+    let isFallback = false;
+    let fallbackUnsub = null;
+
+    const mainUnsub = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        callback(this.normalizeProductData({ id: docSnap.id, ...docSnap.data() }));
+      } else if (!isFallback) {
+        isFallback = true;
+        // Fallback to query if doc ID doesn't match
+        const q = query(collection(db, "products"), where("sku", "==", sku));
+        fallbackUnsub = onSnapshot(q, (querySnapshot) => {
+          if (!querySnapshot.empty) {
+            const firstDoc = querySnapshot.docs[0];
+            callback(this.normalizeProductData({ id: firstDoc.id, ...firstDoc.data() }));
+          } else {
+            callback(null);
+          }
+        });
+      } else {
+         callback(null);
+      }
+    });
+
+    return () => {
+      mainUnsub();
+      if (fallbackUnsub) fallbackUnsub();
+    };
   },
 
   /**

@@ -127,14 +127,23 @@ export default function ClaimDetailModal({
       return;
     }
 
-    confirmAction({
-      title: 'เสร็จสิ้นกระบวนการ',
-      message: isReturn 
-        ? 'ระบบจะทำการ "คืนเงิน" และ "เพิ่มสต๊อก" ทันที ยืนยันใช่หรือไม่?'
-        : 'ระบบจะทำการ "ตัดสต๊อกสินค้าใหม่" เพื่อมอบให้ลูกค้า ยืนยันใช่หรือไม่?',
-      type: 'success',
-      actionFn: () => handleComplete({ freebieReturned, freebiePenaltyAmount })
-    });
+    if (isReturn) {
+      confirmAction({
+        title: 'เสร็จสิ้นกระบวนการ (คืนเงิน)',
+        message: 'ระบบจะทำการ "คืนเงิน" และ "เพิ่มสต๊อก" ทันที ยืนยันใช่หรือไม่?',
+        type: 'success',
+        actionFn: () => handleComplete({ freebieReturned, freebiePenaltyAmount })
+      });
+    } else {
+      confirmAction({
+        title: 'เสร็จสิ้นกระบวนการ (ส่งเปลี่ยนสินค้า)',
+        message: 'ระบบจะทำการ "ตัดสต๊อกสินค้าใหม่" เพื่อมอบให้ลูกค้า กรุณาระบุเลขพัสดุสำหรับส่งของเปลี่ยน (ถ้ามี)',
+        type: 'success',
+        requireInput: true,
+        inputPlaceholder: 'เลขพัสดุ...',
+        actionFn: (returnTrackingNo) => handleComplete({ returnTrackingNo: returnTrackingNo || 'รับที่ร้าน' })
+      });
+    }
   };
 
   const onAskReject = () => {

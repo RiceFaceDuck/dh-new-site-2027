@@ -73,8 +73,12 @@ export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
                             const qty = item.qty || item.quantity || 1;
                             const price = item.price || 0;
                             const isFreebie = price === 0 || item.isFreebie;
+                            const pastActions = selectedOrder.refundsAndClaims?.filter(rc => rc.sku === item.sku) || [];
+                            const usedQty = pastActions.reduce((sum, action) => sum + (Number(action.qty) || 1), 0);
+                            const availableQty = qty - usedQty;
+                            
                             const isExpanded = expandedRowIdx === idx;
-                            const rowClickable = isClaimable && !isFreebie;
+                            const rowClickable = isClaimable && !isFreebie && availableQty > 0;
 
                             return (
                                 <React.Fragment key={idx}>

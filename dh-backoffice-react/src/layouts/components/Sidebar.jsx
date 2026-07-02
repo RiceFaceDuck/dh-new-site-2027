@@ -12,6 +12,8 @@ export default function Sidebar({
   todoCount, 
   unreadCount, 
   pendingStaffCount, 
+  pendingClaimCount,
+  managerApprovalCount,
   isDark, 
   toggleDarkMode 
 }) {
@@ -24,7 +26,7 @@ export default function Sidebar({
     { path: '/overview', label: 'Overview', labelThai: 'ภาพรวม', icon: LayoutDashboard },
     { path: '/todo', label: 'To-do', labelThai: 'งานที่ต้องทำ', icon: CheckSquare, badge: todoCount },
     { path: '/billing', label: 'Billing', labelThai: 'ระบบบิล', icon: Receipt },
-    { path: '/claims', label: 'Claims/Returns', labelThai: 'รับเคลม/คืน', icon: Undo2 },
+    { path: '/claims', label: 'Claims/Returns', labelThai: 'รับเคลม/คืน', icon: Undo2, badge: pendingClaimCount > 0 ? pendingClaimCount : null },
     
     { category: 'Database', categoryThai: 'คลังข้อมูล' },
     { path: '/search', label: 'Search', labelThai: 'ค้นหาสินค้า', icon: Search },
@@ -42,7 +44,7 @@ export default function Sidebar({
       label: 'Manager', 
       labelThai: 'ผู้จัดการ', 
       icon: Lock, 
-      badge: hasManagerAccess && pendingStaffCount > 0 ? pendingStaffCount : null,
+      badge: hasManagerAccess && managerApprovalCount > 0 ? managerApprovalCount : null,
       requiresManager: true
     }
   ];

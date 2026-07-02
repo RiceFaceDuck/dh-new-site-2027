@@ -4,7 +4,7 @@ import { doc, collection, serverTimestamp, writeBatch } from 'firebase/firestore
 import { driveService } from '../../firebase/driveService';
 import { gasHistoryService } from '../../firebase/gasHistoryService';
 
-const TaxInvoiceCard = ({ task, currentUser, onSuccess }) => {
+const TaxInvoiceCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [file, setFile] = useState(null);
@@ -109,8 +109,19 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess }) => {
     }
   };
 
+  const getUrgencyStyles = (level) => {
+    switch (level) {
+      case 'high': 
+        return 'border-l-4 border-l-red-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-red-400 bg-red-50/30';
+      case 'medium': 
+        return 'border-l-4 border-l-orange-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-orange-400 bg-orange-50/30';
+      default: 
+        return 'border-2 border-gray-200 hover:border-teal-400 bg-white';
+    }
+  };
+
   return (
-    <div className={`bg-white rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] border-2 border-gray-200 hover:border-teal-400 hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] overflow-hidden mb-4 transition-all ${isUploading ? 'opacity-75 pointer-events-none' : ''}`}>
+    <div className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] overflow-hidden mb-4 transition-all transform hover:-translate-y-0.5 ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}>
       {/* 🔴 ส่วนหัว: ย่อ/ขยาย (Accordion Header) */}
       <div 
         onClick={() => setIsExpanded(!isExpanded)}

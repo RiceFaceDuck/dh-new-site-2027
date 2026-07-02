@@ -16,7 +16,21 @@ const getUsersPath = () => {
  * สำหรับการทำรายการภายใน Transaction เดียวกัน (เช่น เรียกจาก BillingService)
  * รับ uid แบบตรงๆ เท่านั้น (ไม่ทำการ Query หา UID ย่อ)
  */
-export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null) => {
+export const getCreditPreloadRefs = (uid, type, referenceId = null) => {
+    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+    const usersColPathTx = getUsersPath();
+    const userRef = doc(db, usersColPathTx, uid);
+    const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
+    let txRef = null;
+    if (referenceId) {
+      txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
+    }
+    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
+    
+    return { settingsRef, userRef, walletRef, txRef, activePartnerRef };
+};
+
+export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null, preloadedSnaps = null) => {
     if (!uid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
 
     const numAmount = Number(amount);
@@ -34,27 +48,42 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     const userRef = doc(db, usersColPathTx, uid);
     // ⚠️ Legacy Wallet (Deprecated) - คงไว้เพื่อ Sync ข้อมูลเก่าเท่านั้น ห้ามใช้อ่านเป็น Source of truth
     const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
+    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
     
     let txRef;
     const refSuffix = referenceId ? referenceId : Date.now().toString();
     if (referenceId) {
       txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
-      const txSnap = await transaction.get(txRef);
-      if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
     } else {
       txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
     }
 
-    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
+    let txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap;
+    
+    if (preloadedSnaps) {
+       txSnap = preloadedSnaps.txSnap;
+       settingsSnap = preloadedSnaps.settingsSnap;
+       userSnap = preloadedSnaps.userSnap;
+       walletSnap = preloadedSnaps.walletSnap;
+       activePartnerSnap = preloadedSnaps.activePartnerSnap;
+       
+       if (referenceId && txSnap && txSnap.exists()) {
+           throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
+       }
+    } else {
+       if (referenceId) {
+         txSnap = await transaction.get(txRef);
+         if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
+       }
+       [settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
+         transaction.get(settingsRef),
+         transaction.get(userRef),
+         transaction.get(walletRef),
+         transaction.get(activePartnerRef)
+       ]);
+    }
 
-    const [settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
-      transaction.get(settingsRef),
-      transaction.get(userRef),
-      transaction.get(walletRef),
-      transaction.get(activePartnerRef)
-    ]);
-
-    if (!userSnap.exists()) {
+    if (!userSnap || !userSnap.exists()) {
         throw new Error("ไม่พบบัญชีผู้ใช้งานที่ระบุ");
     }
 

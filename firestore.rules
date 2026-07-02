@@ -35,24 +35,24 @@ service cloud.firestore {
     match /users/{userId} {
       // สงวนสิทธิ์การอ่านข้อมูลส่วนบุคคลเฉพาะเจ้าของและพนักงานเท่านั้น (PDPA Compliance)
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-      // เจ้าของบัญชี หรือ Manager แก้ไขได้
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+      // เจ้าของบัญชี หรือ พนักงาน(Staff) แก้ไขได้
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       
       // ให้สิทธิ์การเข้าถึง Subcollections (เช่น storeProfile, wallet)
       match /{document=**} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-        allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+        allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       }
     }
     
     // 1.1 ผู้ใช้ (Users) ในระบบ Artifacts
     match /artifacts/{appId}/users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       
       match /{document=**} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-        allow write: if isAuthenticated() && (request.auth.uid == userId || isManagerOrAdmin());
+        allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       }
     }
 
@@ -79,7 +79,7 @@ service cloud.firestore {
     // 3. ระบบบิลและการเงิน (Orders & Credit)
     match /orders/{orderId} {
       allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || resource.data.customer.uid == request.auth.uid));
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isStaff() || (isAuthenticated() && request.resource.data.userId == request.auth.uid);
       allow update: if isStaff();
       allow delete: if isStaff();
     }
@@ -152,11 +152,11 @@ service cloud.firestore {
     }
     match /promotions/{promoId} {
       allow read: if true;
-      allow write: if isManagerOrAdmin();
+      allow write: if isStaff();
     }
     match /freebies/{freebieId} {
       allow read: if true;
-      allow write: if isManagerOrAdmin();
+      allow write: if isStaff();
     }
     
     // 6. การตั้งค่าระบบ (Settings) และข้อมูลพื้นฐาน
@@ -184,6 +184,10 @@ service cloud.firestore {
     match /system_counters/{counterId} {
       allow read: if true;
       allow write: if isStaff();
+    }
+    
+    match /sales_stats/{statId} {
+      allow read, write: if isStaff();
     }
     
     match /system_accounts/{accountId} {

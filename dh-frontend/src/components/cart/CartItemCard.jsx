@@ -159,8 +159,8 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
               <div className={`flex items-center border rounded-xl overflow-hidden shadow-sm transition-colors duration-300 ${displayError ? 'bg-red-50 border-red-300 hover:border-red-400' : 'bg-white border-gray-200 hover:border-emerald-300'}`}>
                 <button 
                   onClick={() => handleQtyChange(-1)}
-                  disabled={isUpdating && localQty === originalQty}
-                  className={`p-2 transition-colors disabled:opacity-50 ${displayError ? 'text-red-500 hover:bg-red-100 active:bg-red-200' : 'text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 active:bg-emerald-100'}`}
+                  disabled={(isUpdating && localQty === originalQty) || localQty <= 1}
+                  className={`p-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${displayError ? 'text-red-500 hover:bg-red-100 active:bg-red-200' : 'text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 active:bg-emerald-100'}`}
                 >
                   <Minus size={14} strokeWidth={2.5} />
                 </button>

@@ -118,11 +118,13 @@ export const todoPaymentService = {
             const pSnap = await transaction.get(pRef);
             if (pSnap.exists()) {
               gasStockService.queueUpdate({ 
+                ...pSnap.data(),
                 sku: item.sku, 
                 stockQuantity: pSnap.data().stockQuantity 
               });
             }
           }
+          await gasStockService.forceSync();
         }
 
         return { success: true, invoiceId: generatedOrderId };
