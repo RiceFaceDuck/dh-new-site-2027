@@ -2,6 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useCheckoutLogic } from '../components/checkout/hooks/useCheckoutLogic';
 import { useToast } from '../context/ToastContext';
 import { ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { useCart } from '../hooks/useCart';
+import CartActivePromotions from '../components/cart/CartActivePromotions';
+import CartFreebieProgress from '../components/cart/CartFreebieProgress';
 
 import AddressSelector from '../components/checkout/AddressSelector';
 import ShippingMethod from '../components/checkout/ShippingMethod';
@@ -80,6 +85,34 @@ const Checkout = () => {
     handlePlaceOrder,
     handleSubmitWholesale
   } = useCheckoutLogic();
+
+  const { updateCheckoutConfig } = useCart();
+  const [freebies, setFreebies] = useState([]);
+  const [isFetchingFreebies, setIsFetchingFreebies] = useState(true);
+
+  useEffect(() => {
+    const fetchFreebies = async () => {
+      try {
+        setIsFetchingFreebies(true);
+        const q = query(collection(db, 'freebies'), where('isActive', '==', true));
+        const snapshot = await getDocs(q);
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setFreebies(items);
+      } catch (error) {
+        console.error("🔥 Error fetching freebies in Checkout:", error);
+      } finally {
+        setIsFetchingFreebies(false);
+      }
+    };
+    fetchFreebies();
+  }, []);
+
+  const handlePromotionsEvaluated = (applicablePromotions) => {
+    const current = checkoutState.appliedPromotions || [];
+    if (JSON.stringify(current) !== JSON.stringify(applicablePromotions)) {
+      updateCheckoutConfig({ appliedPromotions: applicablePromotions });
+    }
+  };
 
   const { showToast } = useToast();
   const [activeStep, setActiveStep] = useState(1);
@@ -238,6 +271,24 @@ const Checkout = () => {
 
         </div>
       </div>
+
+      {/* Background Silent Evaluators for B2B Bails & Retail Discounts */}
+      <CartActivePromotions 
+        cartItems={cartItems} 
+        subTotal={subtotal} 
+        user={user} 
+        onPromotionsEvaluated={handlePromotionsEvaluated} 
+        hidden={true} 
+      />
+      <CartFreebieProgress 
+        freebies={freebies} 
+        subTotal={subtotal} 
+        isLoading={isFetchingFreebies} 
+        cartItems={cartItems} 
+        checkoutState={checkoutState}
+        updateCheckoutConfig={updateCheckoutConfig}
+        hidden={true}
+      />
 
       {/* Modal ขอราคาส่ง */}
       {isWholesaleModalOpen && (

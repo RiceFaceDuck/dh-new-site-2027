@@ -61,21 +61,30 @@ const TodoPageList = ({
 
         if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
           return (
-            <div key={todo.id} className="h-full">
               <WholesaleCard 
-                task={todo} 
-                currentUser={auth.currentUser}
-                fetchedData={fetchedPrices[todo.id] || {}}
-                inputs={wholesaleInputs[todo.id] || {}}
-                setWholesaleInputs={setWholesaleInputs}
+                key={todo.id}
+                todo={todo} 
+                isProcessing={isProcessing}
                 urgencyLevel={urgencyLevel}
-                onReject={() => {
-                    if (window.confirm(`ยืนยันการปฏิเสธคำขอราคาส่ง #${todo.orderId || ''} ใช่หรือไม่?`)) {
-                       handleAction(todo.id, 'reject', todo.type, { orderId: todo.orderId || todo.payload?.orderId });
-                    }
+                handleAction={handleAction}
+                formatDate={(timestamp) => {
+                  if (!timestamp) return '-';
+                  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                  return date.toLocaleString('th-TH', {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                  });
+                }}
+                getStatusBadge={(status) => {
+                  switch (status) {
+                    case 'todo': return <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-xs font-bold border border-slate-200">รอเริ่มงาน</span>;
+                    case 'in_progress': return <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse border border-blue-200">⏳ กำลังดำเนินการ</span>;
+                    case 'pending_manager': 
+                    case 'pending': return <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-xs font-bold border border-orange-200">👑 รอผู้จัดการอนุมัติ</span>;
+                    default: return <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold">{status}</span>;
+                  }
                 }}
               />
-            </div>
           );
         }
 

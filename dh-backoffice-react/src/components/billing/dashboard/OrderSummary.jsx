@@ -12,8 +12,32 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
         netTotal = selectedOrder.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0);
     }
 
-    const subTotal = Number(selectedOrder.subTotal || selectedOrder.summary?.itemSubTotal || selectedOrder.itemTotal || selectedOrder.totals?.subtotal || netTotal);
-    const discount = Number(selectedOrder.overallDiscount || selectedOrder.promoDiscount || selectedOrder.discountAmount || selectedOrder.summary?.discountTotal || selectedOrder.calculationLog?.discountAmount || selectedOrder.totals?.discount || 0);
+    // 🟢 [FALLBACK CALCULATION] Calculate true subtotal before discount from non-freebie items
+    let calculatedSubTotal = 0;
+    if (selectedOrder.items && selectedOrder.items.length > 0) {
+        calculatedSubTotal = selectedOrder.items.reduce((sum, item) => {
+            if (item.isFreebie) return sum;
+            const price = Number(item.price || item.priceAtPurchase || 0);
+            const qty = Number(item.qty || item.quantity || 1);
+            return sum + (price * qty);
+        }, 0);
+    }
+
+    const subTotal = Number(selectedOrder.subTotal || selectedOrder.summary?.itemSubTotal || selectedOrder.itemTotal || selectedOrder.totals?.subtotal || calculatedSubTotal || netTotal);
+    
+    let discount = Number(selectedOrder.overallDiscount || selectedOrder.promoDiscount || selectedOrder.discountAmount || selectedOrder.summary?.discountTotal || selectedOrder.calculationLog?.discountAmount || selectedOrder.totals?.discount || 0);
+    
+    // 🟢 [FALLBACK CALCULATION] If discount is 0 but subTotal > netTotal, calculate actual discount
+    if (discount === 0 && subTotal > netTotal) {
+        const shipping = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.summary?.shippingFee || selectedOrder.totals?.shipping || 0);
+        const vat = Number(selectedOrder.vat || selectedOrder.vatAmount || selectedOrder.taxAmount || selectedOrder.summary?.vat || 0);
+        const otherFees = Number(selectedOrder.otherFees || selectedOrder.extraFee || selectedOrder.summary?.otherFees || 0);
+        const calculatedDiff = subTotal + shipping + otherFees + vat - netTotal;
+        if (calculatedDiff > 0) {
+            discount = calculatedDiff;
+        }
+    }
+
     const shipping = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.summary?.shippingFee || selectedOrder.totals?.shipping || 0);
     const walletUsed = Number(selectedOrder.walletUsed || selectedOrder.walletUsedAmount || selectedOrder.summary?.walletUsed || selectedOrder.calculationLog?.usedWallet || 0);
     const vat = Number(selectedOrder.vat || selectedOrder.vatAmount || selectedOrder.taxAmount || selectedOrder.summary?.vat || 0);

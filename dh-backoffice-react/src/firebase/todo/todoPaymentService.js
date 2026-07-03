@@ -1,13 +1,13 @@
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
-import { doc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 
 export const todoPaymentService = {
   // 📥 3. ยืนยันสลิปโอนเงิน (ออก Invoice & แจกงานแพ็ค)
   verifyPaymentSlip: async (taskId, orderId, currentUser) => {
     try {
-      return await runTransaction(db, async (transaction) => {
+      const result = await runTransaction(db, async (transaction) => {
         const taskRef = doc(db, 'todos', taskId);
         const orderRef = doc(db, 'orders', orderId);
         const logRef = doc(collection(db, 'system_logs')); 
@@ -47,7 +47,9 @@ export const todoPaymentService = {
            currentSeq = (data[yearStr] || 0) + 1;
         }
         
-        const generatedOrderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
+        const seqStr = String(currentSeq);
+        const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
+        const generatedOrderId = `DH-${yearStr}-${paddedSeq}`;
 
         // --- 3. EXECUTE ALL WRITES ---
         // อัปเดต counter ในระบบ
@@ -63,6 +65,7 @@ export const todoPaymentService = {
           invoiceId: generatedOrderId, 
           paymentVerifiedAt: serverTimestamp(),
           paymentVerifiedBy: currentUser?.uid || 'Admin',
+          isStockDeducted: true,
           updatedAt: serverTimestamp()
         });
 
@@ -109,26 +112,87 @@ export const todoPaymentService = {
             });
         }
 
-        // 🔄 Sync Stock to Google Sheets (GAS)
-        // Since frontend deducted stock but didn't push to GAS, we do it here upon approval.
-        if (orderData.items && Array.isArray(orderData.items)) {
+        const isStockAlreadyDeducted = !!orderData.isStockDeducted;
+        const localStockUpdates = [];
+
+        if (!isStockAlreadyDeducted && orderData.items && Array.isArray(orderData.items)) {
+          for (const item of orderData.items) {
+            const itemIdentifier = item.id || item.sku;
+            if (item.isFreebie || !itemIdentifier) continue;
+            const pRef = doc(db, 'products', itemIdentifier);
+            const pSnap = await transaction.get(pRef);
+            if (pSnap.exists()) {
+              const currentStock = pSnap.data().stockQuantity || 0;
+              const requiredQty = item.qty || item.quantity || 1;
+              const newQty = Math.max(0, currentStock - requiredQty);
+
+              transaction.update(pRef, {
+                stockQuantity: newQty,
+                'stats.sold': increment(requiredQty)
+              });
+
+              localStockUpdates.push({
+                sku: item.sku,
+                name: pSnap.data().name,
+                oldStock: currentStock,
+                newStock: newQty,
+                productData: pSnap.data()
+              });
+            }
+          }
+        } else if (orderData.items && Array.isArray(orderData.items)) {
           for (const item of orderData.items) {
             if (!item.sku) continue;
             const pRef = doc(db, 'products', item.sku);
             const pSnap = await transaction.get(pRef);
             if (pSnap.exists()) {
-              gasStockService.queueUpdate({ 
-                ...pSnap.data(),
-                sku: item.sku, 
-                stockQuantity: pSnap.data().stockQuantity 
+              localStockUpdates.push({
+                sku: item.sku,
+                name: pSnap.data().name,
+                oldStock: pSnap.data().stockQuantity,
+                newStock: pSnap.data().stockQuantity,
+                productData: pSnap.data()
               });
             }
           }
-          await gasStockService.forceSync();
         }
 
-        return { success: true, invoiceId: generatedOrderId };
+        return { success: true, invoiceId: generatedOrderId, stockUpdates: localStockUpdates };
       });
+
+      // --- Post-Transaction execution: Sync to Google Sheets & Log history ---
+      if (result && result.stockUpdates && result.stockUpdates.length > 0) {
+        for (const update of result.stockUpdates) {
+          // Push update to GAS queue
+          gasStockService.queueUpdate({
+            ...update.productData,
+            sku: update.sku,
+            stockQuantity: update.newStock
+          });
+
+          // Log product stock change to History Logs so that it shows on the History page
+          if (update.oldStock !== update.newStock) {
+            gasHistoryService.log({
+              level: 'WARN',
+              module: 'Inventory',
+              action: 'Update',
+              target: { id: update.sku, name: update.name, type: 'Product' },
+              details: {
+                legacy_details: `แก้ไขข้อมูลสินค้า: ${update.name}`,
+                changes: {
+                  stockQuantity: { 
+                    from: update.oldStock,
+                    to: update.newStock 
+                  }
+                }
+              }
+            });
+          }
+        }
+        await gasStockService.forceSync();
+      }
+
+      return result;
     } catch (error) {
       console.error("🔥 verifyPaymentSlip Error:", error);
       throw error;

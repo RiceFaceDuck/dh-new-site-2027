@@ -37,9 +37,13 @@ export default function WholesaleSummary({
             </li>
             
             {appliedPromotions.length > 0 && (
-              <li className="flex justify-between text-rose-600 dark:text-rose-400">
-                <span>คูปอง ({appliedPromotions.map(p => p.code).join(', ')})</span>
-                <span>-฿{appliedPromotions.reduce((sum, p) => sum + (p.discountValue || 0), 0).toLocaleString()}</span>
+              <li className="flex flex-col text-rose-600 dark:text-rose-400 mt-1 bg-rose-50/50 dark:bg-rose-950/20 p-2 rounded border border-rose-100 dark:border-rose-900/50">
+                <span className="font-bold text-[10px] uppercase tracking-wider">โปรโมชั่นที่เข้าร่วม</span>
+                {appliedPromotions.map((p, idx) => (
+                  <div key={idx} className="flex justify-between text-xs mt-0.5 font-medium">
+                    <span>• {p.title || p.name || 'ส่วนลดระบบ'} ({p.type === 'PERCENTAGE' ? `${p.value}%` : `฿${p.value}`})</span>
+                  </div>
+                ))}
               </li>
             )}
 
@@ -47,6 +51,18 @@ export default function WholesaleSummary({
               <li className="flex justify-between text-rose-600 dark:text-rose-400">
                 <span>ส่วนลดแคมเปญ</span>
                 <span>-฿{totals.discountAmount.toLocaleString()}</span>
+              </li>
+            )}
+
+            {qualifiedFreebies.length > 0 && (
+              <li className="flex flex-col text-emerald-600 dark:text-emerald-400 mt-2 bg-emerald-50/50 dark:bg-emerald-950/20 p-2 rounded border border-emerald-100 dark:border-emerald-900/50">
+                <span className="font-bold text-[10px] uppercase tracking-wider">ของแถมที่ลูกค้าได้รับ</span>
+                {qualifiedFreebies.map((f, idx) => (
+                  <div key={idx} className="flex justify-between text-xs mt-0.5 font-medium">
+                    <span>🎁 {f.title || f.name} ({f.itemName})</span>
+                    <span>x{f.qty || f.quantity || 1}</span>
+                  </div>
+                ))}
               </li>
             )}
             

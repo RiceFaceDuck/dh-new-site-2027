@@ -29,7 +29,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     const productSnaps = [];
     for (const item of cartItems) {
       const itemIdentifier = item.id || item.sku;
-      if (item.isFreebie || !itemIdentifier) continue;
+      if (!itemIdentifier) continue;
       
       const pRef = doc(db, 'products', itemIdentifier);
       productRefs.push({ ref: pRef, item: item });
@@ -119,6 +119,13 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     const orderData = {
       orderId: orderRef.id,
       userId: user.uid,
+      customer: {
+        uid: user.uid,
+        accountName: userData.storeName || userData.displayName || userData.accountName || user.displayName || userData.email || user.email || 'ไม่พบ field ในระบบ',
+        firstName: userData.nickname || userData.firstName || '',
+        phone: userData.phone || user.phoneNumber || '',
+        address: userData.shippingAddress?.address || ''
+      },
       items: verifiedItems,
       shippingAddress: checkoutState?.customerData || null,
       shippingMethod: checkoutState?.shippingMethod || "standard",
@@ -142,6 +149,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       appliedFreebies: checkoutState?.qualifiedFreebies || [],
       pendingCredits: earnedPoints > 0 ? earnedPoints : 0,
       pointsAwarded: false,
+      isStockDeducted: true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };

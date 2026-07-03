@@ -44,7 +44,7 @@ export const marketingService = {
       if (adType === 'BILLBOARD') collectionName = 'billboard_ads';
 
       const adsRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
-      const q = query(adsRef, where('status', '==', 'APPROVED'), where('type', '==', adType));
+      const q = query(adsRef, where('status', '==', 'active'), where('type', '==', adType));
       const snapshot = await getDocs(q);
       
       const adsList = snapshot.docs.map(doc => ({ 

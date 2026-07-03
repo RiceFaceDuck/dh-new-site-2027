@@ -46,7 +46,7 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
     fetchPrices();
   }, [isExpanded, hasFetched, calculator.cartItems]);
 
-  const customerObj = todo.payload?.customer || {};
+  const customerObj = todo.customer || todo.payload?.customer || {};
   const wholesaleDocUrl = customerObj.wholesaleDocumentUrl;
 
   const handleApprove = () => {
@@ -56,7 +56,7 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
       let finalPrice = item.price;
       if (calculator.editedPrices[idx] !== undefined && calculator.editedPrices[idx] !== '') {
         finalPrice = Number(calculator.editedPrices[idx]);
-      } else if (fetchedData[item.productId] !== undefined) {
+      } else if (fetchedData[item.productId] !== undefined && fetchedData[item.productId] !== null) {
         finalPrice = fetchedData[item.productId];
       } else if (item.wholesalePrice && item.wholesalePrice < item.price) {
         finalPrice = item.wholesalePrice;
@@ -167,7 +167,7 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Name / Business</span>
                   <span className="text-sm font-bold text-slate-800 flex items-center gap-1">
-                    {customerObj.name || 'ไม่ระบุ'} {customerObj.isVerified && <BadgeCheck size={14} className="text-blue-500" />}
+                    {customerObj.accountName || customerObj.name || 'ไม่ระบุ'} {customerObj.isVerified && <BadgeCheck size={14} className="text-blue-500" />}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">

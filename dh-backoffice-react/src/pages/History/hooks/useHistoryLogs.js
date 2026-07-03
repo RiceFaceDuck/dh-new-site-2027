@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { gasHistoryService } from '../../../firebase/gasHistoryService';
+import { userService } from '../../../firebase/userService';
 
 // Utility to get today's date in YYYY-MM-DD
 const getTodayString = () => {
@@ -19,8 +20,21 @@ export const useHistoryLogs = () => {
   const [moduleFilter, setModuleFilter] = useState('ALL');
   const [actionFilter, setActionFilter] = useState('ALL'); 
   
+  // Staff Filter
+  const [staffFilter, setStaffFilter] = useState('ALL');
+  const [staffList, setStaffList] = useState([]);
+  
   // Pagination (GAS currently returns a bulk list up to 1000 items, so we disable loadMore)
   const [hasMore, setHasMore] = useState(false);
+
+  // Load staff list once on mount
+  useEffect(() => {
+    userService.getAllStaff()
+      .then(list => {
+        setStaffList(list || []);
+      })
+      .catch(err => console.error("❌ [HistoryLogsHook] Fetch staff list error:", err));
+  }, []);
 
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
@@ -32,7 +46,7 @@ export const useHistoryLogs = () => {
         limit: 1000
       });
       setLogs(data || []);
-      setFilteredLogs(data || []); // Will be filtered locally by search term next
+      setFilteredLogs(data || []); // Will be filtered locally next
       setHasMore(false); // Disable infinite scroll since we get the whole day
     } catch (error) {
       console.error("Error loading history from GAS:", error);
@@ -50,33 +64,37 @@ export const useHistoryLogs = () => {
     // No-op for now as GAS returns the full daily limit.
   };
 
-  // Only apply local text search since module/action are handled by GAS now
+  // Apply local text search and staff filter
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredLogs(logs);
-      return;
+    let result = logs;
+    
+    // Apply Staff Filter
+    if (staffFilter !== 'ALL') {
+      result = result.filter(log => log?.actor?.uid === staffFilter || log?.actor?.email === staffFilter);
     }
     
-    const lowerSearch = searchTerm.toLowerCase();
-    const result = logs.filter(log => {
-      // Safely search through the new deep JSON structure
-      const actorName = log?.actor?.name?.toLowerCase() || '';
-      const actorMail = log?.actor?.email?.toLowerCase() || '';
-      const action = log?.action?.toLowerCase() || '';
-      const detailsStr = JSON.stringify(log?.details || {}).toLowerCase();
-      const targetId = log?.target?.id?.toLowerCase() || '';
-      
-      return (
-        action.includes(lowerSearch) ||
-        actorName.includes(lowerSearch) ||
-        actorMail.includes(lowerSearch) ||
-        detailsStr.includes(lowerSearch) ||
-        targetId.includes(lowerSearch)
-      );
-    });
+    // Apply Search Term Filter (grep)
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.toLowerCase();
+      result = result.filter(log => {
+        const actorName = log?.actor?.name?.toLowerCase() || '';
+        const actorMail = log?.actor?.email?.toLowerCase() || '';
+        const action = log?.action?.toLowerCase() || '';
+        const detailsStr = JSON.stringify(log?.details || {}).toLowerCase();
+        const targetId = log?.target?.id?.toLowerCase() || '';
+        
+        return (
+          action.includes(lowerSearch) ||
+          actorName.includes(lowerSearch) ||
+          actorMail.includes(lowerSearch) ||
+          detailsStr.includes(lowerSearch) ||
+          targetId.includes(lowerSearch)
+        );
+      });
+    }
     
     setFilteredLogs(result);
-  }, [searchTerm, logs]);
+  }, [searchTerm, staffFilter, logs]);
 
   return {
     logs,
@@ -91,6 +109,9 @@ export const useHistoryLogs = () => {
     setActionFilter,
     dateFilter,
     setDateFilter,
+    staffFilter,
+    setStaffFilter,
+    staffList,
     hasMore,
     loadMore
   };

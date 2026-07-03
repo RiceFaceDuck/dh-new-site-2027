@@ -44,6 +44,12 @@ export default function Todo() {
         if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
           if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
           await claimService.approveRequest(fullTask, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
+        } else if (actionType === 'wholesale_request' || actionType === 'WHOLESALE_APPROVAL') {
+          const { managerActionService } = await import('../firebase/managerActionService');
+          const result = await managerActionService.handleApproval(taskId, actionType, payload, fullTask, auth.currentUser.uid);
+          if (result.success && result.newStatus) {
+            await updateTodoStatus(taskId, result.newStatus);
+          }
         }
       } else if (action === 'reject') {
         if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {

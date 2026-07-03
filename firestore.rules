@@ -132,6 +132,11 @@ service cloud.firestore {
       allow read: if isManagerOrAdmin();
       allow write: if isManagerOrAdmin();
     }
+    
+    match /artifacts/{appId}/system_logs/{logId} {
+      allow read: if isManagerOrAdmin();
+      allow write: if isManagerOrAdmin();
+    }
 
     // 5. ข้อมูลอื่นๆ ที่เป็น Public (หมวดหมู่, หน้าแรก, โฆษณา)
     match /artifacts/{appId}/public/{document=**} {

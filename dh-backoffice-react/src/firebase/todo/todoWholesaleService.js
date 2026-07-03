@@ -4,7 +4,7 @@ import { doc, collection, serverTimestamp, runTransaction } from 'firebase/fires
 
 export const todoWholesaleService = {
   // 📥 4. อนุมัติราคาส่ง 
-  approveWholesaleRequest: async (taskId, orderId, newTotals, currentUser) => {
+  approveWholesaleRequest: async (taskId, orderId, newTotals, newItems, currentUser) => {
     try {
       return await runTransaction(db, async (transaction) => {
         const taskRef = doc(db, 'todos', taskId);
@@ -28,6 +28,7 @@ export const todoWholesaleService = {
         const userId = orderData.userId;
 
         transaction.update(orderRef, {
+          items: newItems,
           totals: newTotals,
           status: 'pending_payment',
           updatedAt: serverTimestamp(),

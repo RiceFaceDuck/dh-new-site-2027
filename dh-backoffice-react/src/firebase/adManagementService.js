@@ -21,7 +21,7 @@ const getTodosCollection = () => collection(db, 'todos');
 
 // ฟังก์ชันหา Collection หลักของ Ad ตาม ID
 const getSpecificAdsCollectionPath = (adId) => {
-  if (String(adId).includes('PRODUCT_LINK') || String(adId).includes('SKU')) {
+  if (String(adId).includes('PRODUCT_LINK') || String(adId).includes('PRODUCT') || String(adId).includes('SKU')) {
       return 'user_sku_ads';
   }
   if (String(adId).includes('BILLBOARD') || String(adId).includes('BB')) {

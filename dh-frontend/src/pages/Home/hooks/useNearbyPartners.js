@@ -10,7 +10,6 @@ export const useNearbyPartners = () => {
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
-  const [permissionRequested, setPermissionRequested] = useState(false);
   const [config, setConfig] = useState({ isActive: true, displayLimit: 3 });
 
   const fetchPartnersAndCalculate = useCallback(async (lat, lng) => {
@@ -74,7 +73,6 @@ export const useNearbyPartners = () => {
 
     if (showExplanation && !hasRequested) {
       sessionStorage.setItem(HAS_REQUESTED_LOCATION_KEY, 'true');
-      setPermissionRequested(true);
     }
 
     navigator.geolocation.getCurrentPosition(
@@ -91,7 +89,7 @@ export const useNearbyPartners = () => {
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
-  }, [fetchPartnersAndCalculate, permissionRequested]);
+  }, [fetchPartnersAndCalculate]);
 
   useEffect(() => {
     // Initial fetch, try asking on load

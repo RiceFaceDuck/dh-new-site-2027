@@ -7,7 +7,7 @@ export default function WholesaleTable({ cartItems, fetchedData, editedPrices, h
     if (editedPrices[idx] !== undefined && editedPrices[idx] !== '') {
       return Number(editedPrices[idx]);
     }
-    if (fetchedData && fetchedData[item.productId] !== undefined) {
+    if (fetchedData && fetchedData[item.productId] !== undefined && fetchedData[item.productId] !== null) {
       return fetchedData[item.productId];
     }
     if (item.wholesalePrice && item.wholesalePrice < item.price) {

@@ -23,8 +23,8 @@ export default function ProfileMain() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const MOCK_UID = 'staff_test_123';
-  const MOCK_NAME = 'พนักงาน ทดสอบ (สมมติ)';
+  const MOCK_UID = 'staff_antigravity';
+  const MOCK_NAME = 'พนักงาน AI ผู้ช่วยทดสอบจริง';
 
   useEffect(() => {
     const currentUser = auth.currentUser;

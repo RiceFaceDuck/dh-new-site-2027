@@ -86,7 +86,9 @@ export const billingStatusTransaction = {
              if (counterSnap.exists()) currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
              
              transaction.set(counterRef, { [yearStr]: currentSeq, updatedAt: serverTimestamp() }, { merge: true });
-             updates.orderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
+             const seqStr = String(currentSeq);
+             const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
+             updates.orderId = `DH-${yearStr}-${paddedSeq}`;
           }
 
           if (isConfirmingPayment) {

@@ -56,6 +56,41 @@ export const managerActionService = {
       return { success: true, newStatus: 'approved' };
     }
 
+    // 5. WHOLESALE_APPROVAL / wholesale_request
+    if (type === 'wholesale_request' || type === 'WHOLESALE_APPROVAL') {
+      const { todoService } = await import('./todoService');
+      const orderId = payload.orderId;
+      if (!orderId) throw new Error("ไม่พบรหัสออเดอร์ในคำขอ");
+
+      const newTotals = {
+        ...originalTask.payload?.originalTotals,
+        netTotal: payload.newNetTotal,
+        subtotal: payload.calculatorMetadata?.wholesaleSubtotal || originalTask.payload?.originalTotals?.subtotal || 0,
+        discount: (originalTask.payload?.originalTotals?.discount || 0) + (payload.extraManualDiscount || 0) + (payload.calculatorMetadata?.itemLevelDiscount || 0),
+        grandTotal: payload.newNetTotal,
+        displayTotal: payload.calculatorMetadata?.wholesaleSubtotal || originalTask.payload?.originalTotals?.subtotal || 0
+      };
+
+      const newItems = (originalTask.payload?.items || []).map((item, idx) => {
+        const matched = payload.itemsWithNewPrices?.[idx];
+        if (matched) {
+          const approvedPrice = matched.wholesalePriceApproved;
+          return {
+            ...item,
+            price: approvedPrice,
+            priceAtPurchase: approvedPrice,
+            wholesalePriceApproved: approvedPrice
+          };
+        }
+        return item;
+      });
+
+      const result = await todoService.approveWholesaleRequest(taskId, orderId, newTotals, newItems, { uid: adminId });
+      if (!result.success) throw new Error(result.message || "เกิดข้อผิดพลาดในการอนุมัติราคาส่ง");
+
+      return { success: true, newStatus: 'completed' };
+    }
+
     // Default fallback
     await historyService.addLog('ManagerAction', 'ApproveTask', taskId, `อนุมัติคำขอ: ${type}`, auth.currentUser?.uid);
     return { success: true, newStatus: 'completed' };
@@ -75,6 +110,17 @@ export const managerActionService = {
     // 2. LEAVE_APPROVAL
     if (type === 'LEAVE_APPROVAL') {
       await historyService.addLog('ManagerAction', 'RejectLeave', originalTask.id, `ไม่อนุมัติลางานให้ ${originalTask.payload?.staffName || 'พนักงาน'} เหตุผล: ${reason}`, auth.currentUser?.uid);
+      return { success: true, newStatus: 'rejected' };
+    }
+
+    // 3. WHOLESALE_APPROVAL / wholesale_request
+    if (type === 'wholesale_request' || type === 'WHOLESALE_APPROVAL') {
+      const { todoService } = await import('./todoService');
+      const orderId = payload.orderId;
+      if (!orderId) throw new Error("ไม่พบรหัสออเดอร์ในคำขอ");
+      
+      const result = await todoService.rejectWholesale(taskId, orderId, reason, { uid: adminId });
+      if (!result.success) throw new Error(result.message || "เกิดข้อผิดพลาดในการปฏิเสธคำขอราคาส่ง");
       return { success: true, newStatus: 'rejected' };
     }
 

@@ -47,7 +47,7 @@ export default function AdManagement() {
     }
   };
 
-  const filteredAds = ads.filter(ad => String(ad.status).toUpperCase() === activeTab);
+  const filteredAds = ads.filter(ad => String(ad.status).toUpperCase() === activeTab || (activeTab === 'APPROVED' && String(ad.status).toUpperCase() === 'ACTIVE'));
 
   const getTypeBadge = (type) => {
     const t = String(type).toUpperCase();

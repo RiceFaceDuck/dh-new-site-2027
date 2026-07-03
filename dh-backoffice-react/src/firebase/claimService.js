@@ -1,5 +1,7 @@
 import { collection, doc, addDoc, getDocs, updateDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
+import { claimRequestService } from './claim/claimRequestService';
+import { claimManagerService } from './claim/claimManagerService';
 
 const COLLECTION_NAME = 'claims';
 
@@ -65,5 +67,17 @@ export const claimService = {
       console.error("Error updating claim status:", error);
       throw error;
     }
-  }
+  },
+
+  // ============================================================================
+  // 🛡️ Facade Integration for claim/ sub-services
+  // ============================================================================
+  requestClaim: (...args) => claimRequestService.requestClaim(...args),
+  requestReturn: (...args) => claimRequestService.requestReturn(...args),
+  requestCancelTodo: (...args) => claimRequestService.requestCancelTodo(...args),
+
+  approveRequest: (...args) => claimManagerService.approveRequest(...args),
+  markArrived: (...args) => claimManagerService.markArrived(...args),
+  completeRequest: (...args) => claimManagerService.completeRequest(...args),
+  rejectRequest: (...args) => claimManagerService.rejectRequest(...args)
 };

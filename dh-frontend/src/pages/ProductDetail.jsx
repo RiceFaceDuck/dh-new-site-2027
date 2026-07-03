@@ -91,6 +91,12 @@ const ProductDetail = () => {
   const initialVariant = searchParams.get('variant') ? JSON.parse(decodeURIComponent(searchParams.get('variant'))) : null;
   const [selectedVariant, setSelectedVariantState] = useState(initialVariant);
 
+  // 🔄 รีเซ็ตค่าเลือกประเภทสินค้าเมื่อเปลี่ยนหน้าหรือ URL searchParams เปลี่ยนแปลง
+  useEffect(() => {
+    const currentVariant = searchParams.get('variant') ? JSON.parse(decodeURIComponent(searchParams.get('variant'))) : null;
+    setSelectedVariantState(currentVariant);
+  }, [id, searchParams]);
+
   // อัปเดต URL เมื่อเปลี่ยน Variant
   const setSelectedVariant = (newVariant) => {
     setSelectedVariantState(newVariant);

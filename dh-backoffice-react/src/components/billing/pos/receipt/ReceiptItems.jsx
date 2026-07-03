@@ -11,7 +11,7 @@ const noteColorStyles = {
     rose: { text: '#e11d48', bg: '#fff1f2', border: '#fecdd3' }
 };
 
-export default function ReceiptItems({ items }) {
+export default function ReceiptItems({ items, startIndex = 0 }) {
     return (
         <table className="w-full mb-2 border-collapse">
             <thead>
@@ -24,12 +24,27 @@ export default function ReceiptItems({ items }) {
             </thead>
             <tbody>
                 {items.length > 0 ? items.map((item, idx) => {
+                    const itemIndex = startIndex + idx + 1;
+                    if (item.isEmptyRow) {
+                        return (
+                            <tr key={idx} className="border-b border-gray-100 border-dashed" style={{ height: '35px' }}>
+                                <td className="py-1 text-center text-gray-300 font-bold">{itemIndex}</td>
+                                <td className="py-1 pl-1 text-gray-300 font-medium">-</td>
+                                <td className="py-1 text-center text-gray-300">-</td>
+                                <td className="py-1 text-right pr-1 text-gray-300">-</td>
+                            </tr>
+                        );
+                    }
                     const isFreebie = item.isFreebie;
                     return (
                     <tr key={idx} className={`border-b border-gray-200 border-dashed ${isFreebie ? 'text-gray-600' : ''}`}>
-                        <td className="py-1.5 text-center text-gray-400 font-bold">{isFreebie ? <span className="text-[10px]">🎁</span> : idx + 1}</td>
+                        <td className="py-1.5 text-center text-gray-400 font-bold">{isFreebie ? <span className="text-[10px]">🎁</span> : itemIndex}</td>
                         <td className="py-1.5 pl-1">
-                            <p className={`font-black text-[11px] leading-none ${isFreebie ? 'italic' : ''}`}>{item.name || item.itemName}</p>
+                            <p className={`font-black text-[11px] leading-tight ${isFreebie ? 'italic' : ''}`}>
+                                {((item.name || item.itemName || '').length > 80)
+                                    ? (item.name || item.itemName || '').substring(0, 80) + '...'
+                                    : (item.name || item.itemName || '')}
+                            </p>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[8px] font-mono text-gray-400 uppercase">{item.sku}</span>
                                 {item.note && (

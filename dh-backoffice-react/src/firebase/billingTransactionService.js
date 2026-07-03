@@ -20,7 +20,7 @@ export const billingTransactionService = {
 
         for (const item of (orderData.items || [])) {
           const itemIdentifier = item.id || item.sku; 
-          if (item.isFreebie || !itemIdentifier) continue;
+          if (!itemIdentifier) continue;
           
           const pRef = doc(db, 'products', itemIdentifier);
           productRefs.push({ ref: pRef, item: item });
@@ -55,7 +55,9 @@ export const billingTransactionService = {
             if (counterSnap && counterSnap.exists()) {
                 currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
             }
-            finalOrderId = `DH-${yearStr}${String(currentSeq).padStart(4, '0')}`;
+            const seqStr = String(currentSeq);
+            const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
+            finalOrderId = `DH-${yearStr}-${paddedSeq}`;
         } else if (!finalOrderId || (finalOrderId.startsWith('TEMP-') === false && finalOrderId.startsWith('DH-') === false)) {
             const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
             const runNum = Math.floor(1000 + Math.random() * 9000);
@@ -83,10 +85,17 @@ export const billingTransactionService = {
           if (snap.exists()) {
             const currentStock = snap.data().stockQuantity || 0;
             const requiredQty = productRefs[index].item.qty;
+            
+            // 🟢 [BUFFER BYPASS FOR POS] Allow POS checkouts to bypass the buffer limit (check against 0 instead of itemBuffer)
+            const isPosOrder = (actorName === 'POS' || actorName === 'POS_OFFLINE_SYNC' || !!orderData.sellerUid);
             const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : defaultBuffer;
+            const checkLimit = isPosOrder ? 0 : itemBuffer;
 
-            if ((currentStock - requiredQty) < itemBuffer && statusLower === 'paid') {
-              throw new Error(`สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
+            if ((currentStock - requiredQty) < checkLimit && statusLower === 'paid') {
+              const errorMsg = isPosOrder 
+                ? `สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น)`
+                : `สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`;
+              throw new Error(errorMsg);
             }
             updates.push({ 
               ref: productRefs[index].ref, 
@@ -221,6 +230,7 @@ export const billingTransactionService = {
             orderId: finalOrderId, 
             earnedPoints: earnedPoints,
             walletUsedAmount: walletToUse, 
+            isStockDeducted: (statusLower === 'paid' || statusLower === 'approved'),
             updatedAt: serverTimestamp(), 
             createdBy: actorUid, 
             creatorName: actorName

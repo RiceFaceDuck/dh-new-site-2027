@@ -24,13 +24,25 @@ export default function ReceiptTemplate({
     orderData = null,
     eligibleFreebies = []
 }) {
-    // 🛑 [ส่วนที่ห้ามแตะต้อง] - ตรรกะการดึงข้อมูลและการคำนวณเดิม
+    // 🛑 [ส่วนที่ห้ามแตะต้อง] - ตรรกะการดึงข้อมูลและการคำนวณเดิม (ได้รับการอัปเกรดเพื่อป้องกันข้อมูลว่าง/ผิดพลาด)
     const data = orderData || activeTab || {};
-    const { customer, items = [], fulfillmentType, paymentMethod, billNote, orderId, appliedPromoDetails } = data;
+    const { customer, items = [], fulfillmentType, paymentMethod, billNote, orderId } = data;
+    const appliedPromoDetails = data.appliedPromoDetails || data.appliedPromotion || null;
     
-    const _itemSubTotal = orderData ? (orderData.subTotal || 0) : itemSubTotal;
+    // 🟢 [FALLBACK CALCULATION] Calculate true subtotal from non-freebie items if zero
+    let calculatedSubTotal = 0;
+    if (data.items && data.items.length > 0) {
+        calculatedSubTotal = data.items.reduce((sum, item) => {
+            if (item.isFreebie) return sum;
+            const price = Number(item.price || item.priceAtPurchase || 0);
+            const qty = Number(item.qty || item.quantity || 1);
+            return sum + (price * qty);
+        }, 0);
+    }
+
+    const _itemSubTotal = orderData ? (orderData.subTotal || calculatedSubTotal || 0) : itemSubTotal;
     const _manualDiscount = orderData ? (orderData.overallDiscount || 0) : manualDiscount;
-    const _promoDiscount = orderData ? (orderData.promoDiscount || 0) : promoDiscount;
+    let _promoDiscount = orderData ? (orderData.promoDiscount || 0) : promoDiscount;
     const _otherFeeAmount = orderData ? (orderData.otherFeeAmount || 0) : otherFeeAmount;
     const _shippingFee = orderData ? (orderData.shippingFee || 0) : shippingFee;
     const _vatAmount = orderData ? (orderData.vatAmount || 0) : vatAmount;
@@ -44,6 +56,14 @@ export default function ReceiptTemplate({
     // 🔥 ULTIMATE FALLBACK: If _netTotal is 0, calculate it from the items array
     if (_netTotal === 0 && data.items && data.items.length > 0) {
         _netTotal = data.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0);
+    }
+
+    // 🟢 [FALLBACK CALCULATION] If discount is 0 but subTotal > netTotal, calculate actual discount
+    if (orderData && _promoDiscount === 0 && _manualDiscount === 0 && _itemSubTotal > _netTotal) {
+        const calculatedDiff = _itemSubTotal + _shippingFee + _otherFeeAmount + _vatAmount - _netTotal;
+        if (calculatedDiff > 0) {
+            _promoDiscount = calculatedDiff;
+        }
     }
     const _paymentStatus = orderData ? orderData.paymentStatus : data.paymentStatus;
     const _thaiBahtText = orderData ? (orderData.thaiBahtText || '') : (convertToThaiBahtText ? convertToThaiBahtText(_remainingToPay) : '');
@@ -79,7 +99,21 @@ export default function ReceiptTemplate({
         });
     }
 
-    const staffName = orderData?.actorName || auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'พนักงาน';
+    const staffName = orderData?.creatorName || orderData?.actorName || auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'พนักงาน';
+
+    // 🟢 [PAGE CHUNKING] Split finalItems into chunks of maximum 8 items per page
+    const getPageChunks = (itemsList) => {
+        if (itemsList.length <= 8) {
+            return [itemsList];
+        }
+        const chunks = [];
+        for (let i = 0; i < itemsList.length; i += 8) {
+            chunks.push(itemsList.slice(i, i + 8));
+        }
+        return chunks;
+    };
+
+    const pageChunks = getPageChunks(finalItems);
 
     const [format, setFormat] = useState(data.receiptFormat || 'short');
     const [isSavingPref, setIsSavingPref] = useState(false);
@@ -134,17 +168,39 @@ export default function ReceiptTemplate({
                     body { background: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                     .print-page { page-break-after: always; position: relative; padding: 5px; }
                     .copy-page { filter: grayscale(100%); }
-                    .watermark-text {
-                        position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
-                        font-size: 80px; color: rgba(0, 0, 0, 0.05); font-weight: 900; z-index: 0; pointer-events: none; white-space: nowrap;
+                    #printable-receipt { 
+                        width: 100% !important; 
+                        padding: 0 !important; 
+                        margin: 0 !important; 
+                        box-shadow: none !important; 
+                        border: none !important; 
+                        display: block !important;
                     }
-                    #printable-receipt { width: 100% !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
+                    .receipt-page-container { 
+                        page-break-after: always !important; 
+                        display: block !important; 
+                        position: relative !important; 
+                        margin-bottom: 0 !important; 
+                    }
+                    .copy-page .receipt-page-container::before {
+                        content: 'สำเนา';
+                        position: absolute; 
+                        top: 40%; 
+                        left: 50%; 
+                        transform: translate(-50%, -50%) rotate(-45deg);
+                        font-size: 80px; 
+                        color: rgba(0, 0, 0, 0.04); 
+                        font-weight: 900; 
+                        z-index: 9999; 
+                        pointer-events: none; 
+                        white-space: nowrap;
+                    }
                     tr { page-break-inside: avoid; }
                 </style>
             </head>
             <body>
                 <div class="print-page">${printContent.outerHTML}</div>
-                <div class="print-page copy-page"><div class="watermark-text">สำเนา</div>${printContent.outerHTML}</div>
+                <div class="print-page copy-page">${printContent.outerHTML}</div>
                 <script>
                     window.onload = function() {
                         setTimeout(function() { window.focus(); window.print(); }, 800);
@@ -170,13 +226,16 @@ export default function ReceiptTemplate({
                     <button onClick={onClose} className="p-1.5 hover:bg-gray-100 text-gray-500 rounded-lg"><X size={20}/></button>
                     <span className="font-bold text-gray-700">บิลขนาด A5 (กระชับ)</span>
                 </div>
-                <div className="flex gap-2">
-                    {customer && (
-                        <button onClick={toggleFormat} className="text-xs font-bold flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
-                            {isSavingPref ? <Loader2 size={14} className="animate-spin"/> : (format === 'short' ? <ToggleLeft size={16}/> : <ToggleRight size={16} className="text-orange-500"/>)}
-                            {format === 'short' ? 'แบบย่อ' : 'แบบเต็ม'}
+                
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 border px-2.5 py-1 rounded-lg bg-gray-50 text-[11px] font-black text-gray-600">
+                        <span>ฉบับย่อ</span>
+                        <button onClick={toggleFormat} disabled={isSavingPref} className="focus:outline-none disabled:opacity-50">
+                            {format === 'short' ? <ToggleLeft className="text-gray-400" size={24}/> : <ToggleRight className="text-orange-500" size={24}/>}
                         </button>
-                    )}
+                        <span>ฉบับเต็ม</span>
+                    </div>
+
                     <button onClick={handlePrint} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm flex items-center gap-2">
                         <Printer size={16}/> พิมพ์บิล
                     </button>
@@ -186,35 +245,67 @@ export default function ReceiptTemplate({
             {/* A5 Viewer */}
             <div className="w-full max-w-[155mm] flex-1 overflow-y-auto bg-gray-200/50 p-4 flex justify-center">
                 
-                {/* 📝 A5 Paper (148mm x 210mm) */}
-                <div id="printable-receipt" className="bg-white p-6 shadow-lg text-black relative leading-tight" style={{ width: '148mm', minHeight: '210mm', fontSize: '11px' }}>
-                    
-                    <ReceiptHeader 
-                        orderId={orderId}
-                        displayName={displayName}
-                        displayPhone={displayPhone}
-                        customer={customer}
-                        format={format}
-                        orderData={orderData}
-                        fulfillmentType={fulfillmentType}
-                        data={data}
-                    />
+                {/* 📝 A5 Paper Container Wrapper */}
+                <div id="printable-receipt" className="flex flex-col gap-6 items-center w-full">
+                    {pageChunks.map((chunk, pageIdx) => {
+                        // Pad chunk to at least 5 rows if it's less than 5
+                        const paddedChunk = [...chunk];
+                        while (paddedChunk.length < 5) {
+                            paddedChunk.push({ isEmptyRow: true });
+                        }
 
-                    <ReceiptItems items={finalItems} />
+                        // Calculate totals proportionally
+                        const chunkSubTotal = chunk.reduce((sum, item) => {
+                            if (item.isFreebie) return sum;
+                            return sum + (Number(item.price || 0) * Number(item.qty || 1));
+                        }, 0);
 
-                    <ReceiptFooter 
-                        _thaiBahtText={_thaiBahtText}
-                        billNote={billNote}
-                        _itemSubTotal={_itemSubTotal}
-                        _promoDiscount={_promoDiscount}
-                        _manualDiscount={_manualDiscount}
-                        _shippingFee={_shippingFee}
-                        _netTotal={_netTotal}
-                        staffName={staffName}
-                        appliedPromoDetails={appliedPromoDetails || orderData?.appliedPromotion}
-                    />
+                        const factor = _itemSubTotal > 0 ? (chunkSubTotal / _itemSubTotal) : (1 / pageChunks.length);
+                        
+                        const pageSubTotal = chunkSubTotal;
+                        const pagePromoDiscount = _promoDiscount * factor;
+                        const pageManualDiscount = _manualDiscount * factor;
+                        const pageShippingFee = _shippingFee * factor;
+                        const pageNetTotal = _netTotal * factor;
 
+                        // Append #pageIdx to Order ID if multi-page
+                        const displayOrderId = pageChunks.length === 1 ? orderId : `${orderId || 'Draft'}#${pageIdx + 1}`;
+
+                        return (
+                            <div 
+                                key={pageIdx} 
+                                className="bg-white p-6 shadow-lg text-black relative leading-tight receipt-page-container shrink-0" 
+                                style={{ width: '148mm', minHeight: '210mm', fontSize: '11px', boxSizing: 'border-box' }}
+                            >
+                                <ReceiptHeader 
+                                    orderId={displayOrderId}
+                                    displayName={displayName}
+                                    displayPhone={displayPhone}
+                                    customer={customer}
+                                    format={format}
+                                    orderData={orderData}
+                                    fulfillmentType={fulfillmentType}
+                                    data={data}
+                                />
+
+                                <ReceiptItems items={paddedChunk} startIndex={pageIdx * 8} />
+
+                                <ReceiptFooter 
+                                    _thaiBahtText={convertToThaiBahtText ? convertToThaiBahtText(pageNetTotal) : ''}
+                                    billNote={pageIdx === pageChunks.length - 1 ? billNote : 'อ่านต่อแผ่นถัดไป'}
+                                    _itemSubTotal={pageSubTotal}
+                                    _promoDiscount={pagePromoDiscount}
+                                    _manualDiscount={pageManualDiscount}
+                                    _shippingFee={pageShippingFee}
+                                    _netTotal={pageNetTotal}
+                                    staffName={staffName}
+                                    appliedPromoDetails={appliedPromoDetails}
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
+
             </div>
         </div>
     );

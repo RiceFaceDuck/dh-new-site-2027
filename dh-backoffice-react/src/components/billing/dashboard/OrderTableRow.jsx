@@ -1,5 +1,5 @@
 import React from 'react';
-import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store } from 'lucide-react';
+import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store, User } from 'lucide-react';
 
 export default function OrderTableRow({ order, setSelectedOrder }) {
     const statLower = (order.orderStatus || order.status || '').toLowerCase();
@@ -20,6 +20,23 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
 
     const shippingName = order.shippingMethod || order.courier || 'จัดส่งเอกชน';
     const isCancelled = statLower === 'cancelled' || statLower === 'void';
+
+    // Calculate after-sales service quantities
+    const claimQty = order.refundsAndClaims
+        ? order.refundsAndClaims.filter(rc => rc.type === 'Claim').reduce((sum, rc) => sum + (rc.qty || 0), 0)
+        : 0;
+
+    const exchangeQty = order.refundsAndClaims
+        ? order.refundsAndClaims.filter(rc => rc.type === 'Exchange').reduce((sum, rc) => sum + (rc.qty || 0), 0)
+        : 0;
+
+    const returnQty = order.refundsAndClaims
+        ? order.refundsAndClaims.filter(rc => rc.type === 'Return').reduce((sum, rc) => sum + (rc.qty || 0), 0)
+        : 0;
+
+    // Check tax invoice status (prepared for future)
+    const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus);
+    const taxStatus = order.taxInvoiceStatus || (hasTaxInvoice ? 'pending' : null);
 
     return (
         <tr 
@@ -76,6 +93,16 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
                 )}
             </td>
             <td className="py-2.5 px-4 align-middle">
+                <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-[var(--dh-text-main)]">
+                    <div className="p-1 bg-slate-500/10 rounded overflow-hidden shadow-inner flex items-center justify-center shrink-0">
+                        <User size={12} className="text-slate-500"/>
+                    </div>
+                    <span className="truncate max-w-[110px]" title={order.creatorName || order.actorName || 'พนักงาน'}>
+                        {order.creatorName || order.actorName || 'พนักงาน'}
+                    </span>
+                </div>
+            </td>
+            <td className="py-2.5 px-4 align-middle">
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--dh-text-main)]">
                     {fulfillment === 'Delivery' ? (
                         <>
@@ -92,6 +119,38 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
                             </div> 
                             รับหน้าร้าน
                         </>
+                    )}
+                </div>
+            </td>
+            <td className="py-2.5 px-4 align-middle">
+                <div className="flex flex-wrap gap-1 justify-start items-center">
+                    {claimQty > 0 && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 text-[10px] font-black border border-orange-500/20 shadow-sm transition-transform hover:scale-105" title={`เคลมสินค้าจำนวน ${claimQty} ชิ้น`}>
+                            เคลม {claimQty}
+                        </span>
+                    )}
+                    {exchangeQty > 0 && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 text-[10px] font-black border border-blue-500/20 shadow-sm transition-transform hover:scale-105" title={`เปลี่ยนสินค้าจำนวน ${exchangeQty} ชิ้น`}>
+                            เปลี่ยน {exchangeQty}
+                        </span>
+                    )}
+                    {returnQty > 0 && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 text-[10px] font-black border border-purple-500/20 shadow-sm transition-transform hover:scale-105" title={`คืนสินค้าจำนวน ${returnQty} ชิ้น`}>
+                            คืน {returnQty}
+                        </span>
+                    )}
+                    {taxStatus === 'issued' && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 shadow-sm transition-transform hover:scale-105" title="ออกใบกำกับภาษีเรียบร้อยแล้ว">
+                            ภาษี (ออกแล้ว)
+                        </span>
+                    )}
+                    {taxStatus === 'pending' && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-600 text-[10px] font-black border border-teal-500/20 shadow-sm transition-transform hover:scale-105 animate-pulse" title="รอออกใบกำกับภาษี">
+                            ภาษี (รอ)
+                        </span>
+                    )}
+                    {claimQty === 0 && exchangeQty === 0 && returnQty === 0 && !taxStatus && (
+                        <span className="text-[11px] text-[var(--dh-text-muted)]">-</span>
                     )}
                 </div>
             </td>

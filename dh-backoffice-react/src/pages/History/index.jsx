@@ -20,6 +20,9 @@ export default function History() {
     setActionFilter,
     dateFilter,
     setDateFilter,
+    staffFilter,
+    setStaffFilter,
+    staffList,
     hasMore,
     loadMore
   } = useHistoryLogs();
@@ -40,6 +43,8 @@ export default function History() {
         dateFilter={dateFilter} setDateFilter={setDateFilter}
         moduleFilter={moduleFilter} setModuleFilter={setModuleFilter}
         actionFilter={actionFilter} setActionFilter={setActionFilter}
+        staffFilter={staffFilter} setStaffFilter={setStaffFilter}
+        staffList={staffList}
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
         onExport={() => exportToCSV(filteredLogs)}
         onGuideOpen={() => setIsGuideOpen(true)}

@@ -118,9 +118,10 @@ const Cart = () => {
         return;
       }
       
-      // เช็คสต๊อก
-      if (fresh.stockQuantity < currentQty) {
-        errors[id] = `สินค้าไม่เพียงพอ`;
+      // เช็คสต๊อกและ Buffer
+      const buffer = fresh.bufferStock || 0;
+      if ((fresh.stockQuantity - currentQty) < buffer) {
+        errors[id] = buffer > 0 ? `สินค้าหมดชั่วคราว (ติด Buffer)` : `สินค้าไม่เพียงพอ`;
         return;
       }
 
@@ -257,8 +258,9 @@ const Cart = () => {
           return;
         }
         
-        if (fresh.stockQuantity < currentQty) {
-          errors[id] = `สินค้าไม่เพียงพอ`;
+        const buffer = fresh.bufferStock || 0;
+        if ((fresh.stockQuantity - currentQty) < buffer) {
+          errors[id] = buffer > 0 ? `สินค้าหมดชั่วคราว (ติด Buffer)` : `สินค้าไม่เพียงพอ`;
           hasError = true;
           return;
         }

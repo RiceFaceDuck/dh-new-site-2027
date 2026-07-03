@@ -15,8 +15,7 @@ export default function useWholesaleCalculator(task, fetchedData = {}) {
   const usedPoints = checkoutState.usePoints || 0;
   const usedWallet = checkoutState.useWallet || 0;
 
-  const totalPromoDiscount = appliedPromotions.reduce((sum, promo) => sum + (promo.discountValue || 0), 0);
-  const totalWebDiscount = totalPromoDiscount + webExtraDiscount;
+  const totalWebDiscount = webExtraDiscount;
   const totalCreditDiscount = usedPoints + usedWallet;
 
   const calculations = useMemo(() => {
@@ -32,7 +31,7 @@ export default function useWholesaleCalculator(task, fetchedData = {}) {
 
       if (editedPrices[idx] !== undefined && editedPrices[idx] !== '') {
         finalWholesalePrice = Number(editedPrices[idx]);
-      } else if (fetchedData && fetchedData[item.productId] !== undefined) {
+      } else if (fetchedData && fetchedData[item.productId] !== undefined && fetchedData[item.productId] !== null) {
         finalWholesalePrice = fetchedData[item.productId];
       } else if (item.wholesalePrice && item.wholesalePrice < rPrice) {
         finalWholesalePrice = item.wholesalePrice;

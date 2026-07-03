@@ -3,7 +3,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { Sparkles, Tag, CheckCircle, AlertCircle } from 'lucide-react';
 
-const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated }) => {
+const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated, hidden = false }) => {
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bestPromoId, setBestPromoId] = useState(null);
@@ -144,6 +144,7 @@ const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated
   }, [loading, promotions, subTotal, cartItems]);
 
   if (loading || promotions.length === 0) return null;
+  if (hidden) return null;
 
   return (
     <div className="w-full">

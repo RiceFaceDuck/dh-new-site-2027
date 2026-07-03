@@ -1,22 +1,34 @@
 import { db } from '../config';
-import { doc, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, writeBatch, serverTimestamp, getDoc } from 'firebase/firestore';
 
 export const createWholesaleRequest = async (user, cartItems, checkoutState, totals) => {
   if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนดำเนินการ");
   if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า");
+
+  const userDoc = await getDoc(doc(db, 'users', user.uid));
+  const userData = userDoc.exists() ? userDoc.data() : {};
+
+  const customerMap = {
+    uid: user.uid,
+    accountName: userData.storeName || userData.displayName || userData.accountName || user.displayName || userData.email || user.email || 'ไม่พบ field ในระบบ',
+    firstName: userData.nickname || userData.firstName || '',
+    phone: userData.phone || user.phoneNumber || '',
+    address: userData.shippingAddress?.address || ''
+  };
 
   const batch = writeBatch(db);
   const orderRef = doc(collection(db, "orders"));
   const todoRef = doc(collection(db, "todos"));
   const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`));
 
-  const customerName = checkoutState?.customerData?.fullName || "ลูกค้าทั่วไป";
+  const customerName = customerMap.accountName;
   const wholesaleNote = `บริษัท/ร้าน: ${checkoutState?.customerData?.company || 'ไม่ได้ระบุ'} | เหตุผล: ${checkoutState?.wholesaleReason || 'สั่งซื้อจำนวนมาก'}`;
   const appliedPromos = checkoutState?.appliedPromotions?.map(p => `✅ ${p.name || 'โปรโมชั่น'}`) || [];
 
   const orderData = {
     orderId: orderRef.id,
     userId: user.uid,
+    customer: customerMap,
     items: cartItems,
     status: "awaiting_wholesale_price", 
     shippingAddress: checkoutState?.customerData || null,
@@ -43,6 +55,7 @@ export const createWholesaleRequest = async (user, cartItems, checkoutState, tot
     orderId: orderRef.id,
     userId: user.uid,
     customerName: customerName,
+    customer: customerMap,
     totalAmount: totals?.subtotal || cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0),
     requestedAt: serverTimestamp(),
     payload: {

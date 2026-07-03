@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Gift } from 'lucide-react';
 import { productService } from '../../firebase/productService';
 
-const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkoutState, updateCheckoutConfig }) => {
+const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkoutState, updateCheckoutConfig, hidden = false }) => {
   const [freebieProduct, setFreebieProduct] = useState(null);
 
   const getEligibleTotals = (freebie) => {
@@ -95,6 +95,7 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
     }
   }, [currentFreebie]);
 
+  if (hidden) return null;
   if (isLoading) {
     return (
       <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-5 mb-8 shadow-sm flex items-center justify-between animate-pulse">

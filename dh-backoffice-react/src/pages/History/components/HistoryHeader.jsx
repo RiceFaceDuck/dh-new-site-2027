@@ -5,6 +5,8 @@ export default function HistoryHeader({
   dateFilter, setDateFilter,
   moduleFilter, setModuleFilter,
   actionFilter, setActionFilter,
+  staffFilter, setStaffFilter,
+  staffList = [],
   searchTerm, setSearchTerm,
   onExport,
   onGuideOpen
@@ -57,6 +59,22 @@ export default function HistoryHeader({
               <option value="Create">INFO (Create)</option>
               <option value="Update">DBUG (Update)</option>
               <option value="Delete">ERRR (Delete)</option>
+            </select>
+          </div>
+
+          <div className="flex items-center">
+            <span className="text-[#b58900] mr-2">--staff=</span>
+            <select 
+              className="bg-[#002b36] border border-[#003642] text-[#839496] outline-none p-1 rounded focus:border-[#2aa198] max-w-[120px]"
+              value={staffFilter}
+              onChange={(e) => setStaffFilter(e.target.value)}
+            >
+              <option value="ALL">*</option>
+              {staffList.map(s => (
+                <option key={s.uid || s.id} value={s.uid || s.id}>
+                  {s.displayName || s.firstName || s.nickname || s.email?.split('@')[0]}
+                </option>
+              ))}
             </select>
           </div>
 

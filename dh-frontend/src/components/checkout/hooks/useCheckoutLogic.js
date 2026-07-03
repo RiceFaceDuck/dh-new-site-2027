@@ -97,7 +97,7 @@ export function useCheckoutLogic() {
     } else {
       setCheckoutState(prev => ({ ...prev, useWallet: 0 }));
     }
-  }, [useCreditToggle, creditBalance, totals, checkoutState.shippingCost, checkoutState.discountAmount]);
+  }, [useCreditToggle, creditBalance, totals, checkoutState.shippingCost, checkoutState.discountAmount, checkoutState.appliedPromotions]);
 
   const validateOrder = () => {
     const data = checkoutState.customerData;
