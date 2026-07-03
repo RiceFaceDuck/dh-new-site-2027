@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit, orderBy } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { warrantyService } from '../../../firebase/warrantyService';
 
@@ -23,6 +23,7 @@ export function useClaimData() {
     const q = query(
       collection(db, 'todos'),
       where('type', 'in', ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL']),
+      orderBy('createdAt', 'desc'),
       limit(300)
     );
 

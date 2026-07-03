@@ -32,7 +32,7 @@ const Profile = () => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
-          const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+          const userRef = doc(db, 'users', currentUser.uid);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             setUser({ ...currentUser, ...userSnap.data() });

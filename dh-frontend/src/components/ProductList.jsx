@@ -4,6 +4,7 @@ import { ChevronRight, ShoppingCart, CheckCircle2, Loader2, Cpu, ShieldAlert } f
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
+import { useCart } from '../context/CartProvider';
 
 import ProductAdCard from './ads/ProductAdCard';
 // 🚀 HOTFIX: แก้ไขการ Import ให้ถูกต้อง (Default Import)
@@ -30,6 +31,7 @@ const getVal = (obj, possibleKeys) => {
 
 const ProductList = ({ products, loading, error, title = "", showTitle = false }) => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [addingState, setAddingState] = useState({}); 
   
   // 🧠 1. เรียกใช้งานสมองกลแทรกโฆษณา (จะดึงสินค้าโปรโมทและนามบัตรมาให้)
@@ -55,7 +57,8 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     setAddingState(prev => ({ ...prev, [product.id]: 'loading' }));
     
     try {
-      await cartService.addToCart(user.uid, product, 1);
+      // 🚀 ปรับปรุงการหยิบใส่ตะกร้าให้เชื่อมต่อผ่าน Context เพื่อใช้งาน Optimistic UI
+      await addToCart(product, 1);
       
       setAddingState(prev => ({ ...prev, [product.id]: 'success' }));
       setTimeout(() => {

@@ -37,6 +37,7 @@ const defaultCheckoutState = {
 
 export const CartProvider = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const syncTimeoutRef = React.useRef(null);
   
   // ⚡️ บังคับโหลดตะกร้าทันทีที่ Component Mount เพื่อป้องกันบั๊ก "หน้าว่าง"
   const [cartItems, setCartItems] = useState(() => {
@@ -54,8 +55,59 @@ export const CartProvider = ({ children }) => {
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
-
   const [currentUser, setCurrentUser] = useState(null);
+
+  // 🔄 เคลียร์ timeout เมื่อ unmount
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // 🚀 Debounced Background Sync: รวบยอดและหน่วงเวลาการเซฟลง Firestore 500ms
+  const syncCartToFirebaseDebounced = useCallback((uid, items) => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(async () => {
+      try {
+        const totalSummary = items.reduce(
+          (acc, item) => {
+            acc.total += (item.price || 0) * (item.qty || item.quantity || 0);
+            acc.totalQty += (item.qty || item.quantity || 0);
+            return acc;
+          },
+          { total: 0, totalQty: 0 }
+        );
+
+        const cartRef = doc(db, 'carts', uid);
+        const dbItems = items.map(item => ({
+          id: item.id,
+          sku: item.sku || '-',
+          name: item.name || '',
+          price: item.price || 0,
+          image: item.image || item.images?.[0] || item.imageUrl || '',
+          category: item.category || item.type || '',
+          type: item.type || item.category || '',
+          qty: item.qty || item.quantity || 1
+        }));
+
+        await setDoc(cartRef, {
+          uid: uid,
+          items: dbItems,
+          total: totalSummary.total,
+          totalQty: totalSummary.totalQty,
+          updatedAt: new Date()
+        }, { merge: true });
+
+      } catch (err) {
+        console.error("🔥 Debounced Firestore Sync failed:", err);
+      }
+    }, 500);
+  }, []);
 
   // Sync กับ Firebase
   useEffect(() => {
@@ -79,13 +131,17 @@ export const CartProvider = ({ children }) => {
 
         // เมื่อ Login แล้วให้ดึงข้อมูลจาก Firebase เป็นหลัก
         const cartRef = doc(db, 'carts', user.uid);
-        unsubscribeSnapshot = onSnapshot(cartRef, (docSnap) => {
+        unsubscribeSnapshot = onSnapshot(cartRef, { includeMetadataChanges: true }, (docSnap) => {
+          // 🛡️ หลีกเลี่ยง UI Flicker: ข้ามการอัปเดตหากพบว่ามี writes ค้างในเครื่องของฝั่งเราเอง
+          if (docSnap.metadata.hasPendingWrites) return;
+
           if (docSnap.exists()) {
             const data = docSnap.data();
             // แปลงโครงสร้างให้ตรงกับที่ UI ใช้
             const mappedItems = (data.items || []).map(item => ({
               ...item,
-              quantity: item.qty || 1
+              quantity: item.qty || 1,
+              qty: item.qty || 1
             }));
             setCartItems(mappedItems);
           } else {
@@ -125,45 +181,82 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = async (product, quantity = 1) => {
     const user = auth.currentUser;
-    if (user) {
-      await cartService.addToCart(user.uid, product, quantity);
-    } else {
-      setCartItems(prev => {
-        const existing = prev.find(item => item.id === product.id);
-        if (existing) {
-          return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
-        }
-        return [...prev, { ...product, quantity }];
-      });
-    }
+    
+    // ⚡ Optimistic UI Update: เพิ่มรายการในหน่วยความจำทันทีเพื่อให้สเตตตอบสนอง 60 FPS
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      let newItems;
+      
+      if (existing) {
+        newItems = prev.map(item => 
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + quantity, qty: item.quantity + quantity } 
+            : item
+        );
+      } else {
+        const itemToAdd = {
+          id: product.id,
+          sku: product.sku || '-',
+          name: product.name,
+          price: product.retailPrice || product.price || 0,
+          image: product.image || product.images?.[0] || product.imageUrl || '',
+          category: product.category || product.type || '',
+          type: product.type || product.category || '',
+          qty: quantity,
+          quantity: quantity
+        };
+        newItems = [...prev, itemToAdd];
+      }
+
+      if (user) {
+        syncCartToFirebaseDebounced(user.uid, newItems);
+      }
+      return newItems;
+    });
+
     setIsCartOpen(true);
   };
 
   const removeFromCart = async (productId) => {
     const user = auth.currentUser;
-    if (user) {
-      await cartService.removeItem(user.uid, productId);
-    } else {
-      setCartItems(prev => prev.filter(item => item.id !== productId));
-    }
+    
+    // ⚡ Optimistic UI Update: ลบออกทันที
+    setCartItems(prev => {
+      const newItems = prev.filter(item => item.id !== productId);
+      if (user) {
+        syncCartToFirebaseDebounced(user.uid, newItems);
+      }
+      return newItems;
+    });
   };
+
   const updateQuantity = async (productId, amount) => {
     const user = auth.currentUser;
-    if (user) {
-      const item = cartItems.find(i => i.id === productId);
-      if (item) {
-        await cartService.updateCartItemQty(user.uid, productId, Math.max(1, (item.qty || item.quantity || 1) + amount));
+    
+    // ⚡ Optimistic UI Update: ปรับจำนวนสินค้าทันที
+    setCartItems(prev => {
+      const newItems = prev.map(item => {
+        if (item.id === productId) {
+          const newQty = Math.max(1, (item.qty || item.quantity || 1) + amount);
+          return { ...item, quantity: newQty, qty: newQty };
+        }
+        return item;
+      });
+
+      if (user) {
+        syncCartToFirebaseDebounced(user.uid, newItems);
       }
-    } else {
-      setCartItems(prev => prev.map(item => item.id === productId ? { ...item, quantity: Math.max(1, (item.qty || item.quantity || 1) + amount) } : item));
-    }
+      return newItems;
+    });
   };
 
   const updateCheckoutConfig = useCallback((updates) => setCheckoutState(prev => ({ ...prev, ...updates })), []);
+  
   const clearCart = async () => {
     const user = auth.currentUser;
     if (user) {
-      await cartService.clearCart(user.uid);
+      // เรียกใช้ทันทีโดยไม่รอ await เพื่อความราบรื่น
+      cartService.clearCart(user.uid).catch(err => console.error(err));
     }
     setCartItems([]);
     setCheckoutState(defaultCheckoutState);

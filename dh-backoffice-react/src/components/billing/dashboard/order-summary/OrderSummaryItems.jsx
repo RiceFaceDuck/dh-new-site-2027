@@ -8,13 +8,30 @@ const FreebieName = ({ item }) => {
     
     useEffect(() => {
         if (item.isFreebie && item.sku) {
-            inventoryQueryService.getProductBySku(item.sku)
-                .then(product => {
-                    if (product && product.name) {
-                        setName(`[แถมฟรี] ${product.name}`);
+            // 🚀 Optimize: Read from sessionStorage cache to avoid N+1 queries
+            let cachedName = null;
+            try {
+                const cachedStr = sessionStorage.getItem('search_hybrid_cache');
+                if (cachedStr) {
+                    const cachedArr = JSON.parse(cachedStr);
+                    const matched = cachedArr.find(p => p.sku === item.sku);
+                    if (matched && matched.name) {
+                        cachedName = matched.name;
                     }
-                })
-                .catch(err => console.error("Error fetching freebie name", err));
+                }
+            } catch(e) {}
+
+            if (cachedName) {
+                setName(`[แถมฟรี] ${cachedName}`);
+            } else {
+                inventoryQueryService.getProductBySku(item.sku)
+                    .then(product => {
+                        if (product && product.name) {
+                            setName(`[แถมฟรี] ${product.name}`);
+                        }
+                    })
+                    .catch(err => console.error("Error fetching freebie name", err));
+            }
         }
     }, [item.sku, item.isFreebie]);
 

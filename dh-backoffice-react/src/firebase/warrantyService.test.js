@@ -75,7 +75,7 @@ describe('warrantyService.getWarrantySettings', () => {
       exists: () => false
     });
 
-    const result = await warrantyService.getWarrantySettings();
+    const result = await warrantyService.getWarrantySettings(true);
 
     assert.strictEqual(result.categories['Panel'].claimDays, 180); // Default
     assert.deepStrictEqual(result.skus, {});
@@ -94,7 +94,7 @@ describe('warrantyService.getWarrantySettings', () => {
     // Suppress console.error for clean test output
     const consoleSpy = mock.method(console, 'error', () => {});
 
-    const result = await warrantyService.getWarrantySettings();
+    const result = await warrantyService.getWarrantySettings(true);
 
     assert.strictEqual(result.categories['Panel'].claimDays, 180); // Default
     assert.strictEqual(consoleSpy.mock.callCount(), 1);

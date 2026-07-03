@@ -3,9 +3,12 @@ import { useCategories } from './hooks/useCategories';
 import CategoryGrid from './components/CategoryGrid';
 import { Info, HelpCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useHomeProducts } from '../Home/hooks/useHomeProducts';
+import FeaturedSpares from '../Home/components/FeaturedSpares';
 
 const CategoriesMain = () => {
   const { categories, loading, error } = useCategories();
+  const { products: featuredProducts, loading: featuredLoading, error: featuredError, isActive: featuredIsActive } = useHomeProducts(12);
 
   return (
     <div className="w-full bg-slate-50 min-h-screen pb-16 animate-fade-in">
@@ -54,6 +57,19 @@ const CategoriesMain = () => {
         </div>
 
         <CategoryGrid categories={categories} loading={loading} error={error} />
+        
+        {/* ========================================================
+            Section: Featured Products (สินค้าแนะนำเพื่อดึงดูดผู้ใช้)
+            ======================================================== */}
+        {featuredIsActive && (
+          <div className="mt-12 md:mt-16 pt-8 border-t border-slate-200/60">
+            <FeaturedSpares 
+              products={featuredProducts} 
+              loading={featuredLoading} 
+              error={featuredError} 
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -29,3 +29,5 @@ dh-staff-app/dist/
 # OS Metadata
 .DS_Store
 Thumbs.db
+# Local configuration and settings
+PROJECT_SETTINGS.md

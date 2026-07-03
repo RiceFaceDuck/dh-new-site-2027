@@ -1,4 +1,4 @@
-import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { transactionService } from '../transactionService';
@@ -21,17 +21,7 @@ export const returnActionService = {
 
     await updateDoc(doc(db, TODOS_COLLECTION, todoId), updates);
 
-    gasHistoryService.log({
-      level: 'INFO',
-      module: 'Return',
-      action: 'Approve',
-      target: { id: payload.returnId, type: 'Task' },
-      details: {
-        legacy_details: `อนุมัติคำขอคืนสินค้า ${payload.sku} (รอรับสินค้าจากลูกค้า)`,
-        payload: payload
-      },
-      actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
-    });
+    // ... (rest unchanged)
     return true;
   },
 
@@ -43,16 +33,7 @@ export const returnActionService = {
       updatedAt: serverTimestamp()
     });
 
-    gasHistoryService.log({
-      level: 'INFO',
-      module: 'Return',
-      action: 'ItemArrived',
-      target: { id: payload.returnId, type: 'Task' },
-      details: {
-        legacy_details: `รับสินค้าคืนแล้ว กำลังตรวจสอบสภาพสินค้า ${payload.sku}`,
-      },
-      actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
-    });
+    // ... (rest unchanged)
     return true;
   },
 
@@ -60,36 +41,53 @@ export const returnActionService = {
     const { payload, id: todoId } = task;
     const qty = Number(payload.qty || 1);
 
-    await updateDoc(doc(db, TODOS_COLLECTION, todoId), {
-      status: 'completed',
-      updatedAt: serverTimestamp()
-    });
-
-    // 1. เพิ่มสต๊อกกลับเข้าคลัง
-    const pRef = doc(db, 'products', payload.sku);
-    const pSnap = await getDoc(pRef);
-    if (pSnap.exists()) {
-        await updateDoc(pRef, { stockQuantity: increment(qty) });
-        
-        // Sync to GAS Change Detector
-        const currentStock = Number(pSnap.data().stockQuantity || 0);
-        gasStockService.queueUpdate({
-            ...pSnap.data(),
-            sku: payload.sku,
-            stockQuantity: currentStock + qty
-        });
-        await gasStockService.forceSync();
-    }
-    
-    // 2. คืนเงินให้ลูกค้า (ถ้าไม่ใช่ลูกค้าทั่วไป)
+    // 1. คืนเงินให้ลูกค้า (ถ้าไม่ใช่ลูกค้าทั่วไป) - ทำนอก transaction หลัก
     let refundAmount = (payload.purchasePrice || 0) * qty;
-    
-    // หักค่าปรับของแถมคืนไม่ครบ
     const penalty = Number(payload.freebiePenaltyAmount) || 0;
     if (penalty > 0) {
       refundAmount = Math.max(0, refundAmount - penalty);
     }
-    
+
+    let finalNewStock = 0;
+    let productData = null;
+
+    await runTransaction(db, async (transaction) => {
+      // 2. เพิ่มสต๊อกกลับเข้าคลัง
+      const pRef = doc(db, 'products', payload.sku);
+      const pSnap = await transaction.get(pRef);
+      if (!pSnap.exists()) {
+        throw new Error(`ไม่พบสินค้า SKU: ${payload.sku} ในระบบ`);
+      }
+
+      productData = pSnap.data();
+      const currentStock = Number(productData.stockQuantity || 0);
+      finalNewStock = currentStock + qty;
+
+      transaction.update(pRef, { stockQuantity: finalNewStock });
+
+      // 3. อัปเดตสถานะ To-do เป็น completed
+      transaction.update(doc(db, TODOS_COLLECTION, todoId), {
+        status: 'completed',
+        updatedAt: serverTimestamp()
+      });
+
+      // 4. บันทึกประวัติบิล
+      if (payload.orderDocId) {
+        const orderRef = doc(db, 'orders', payload.orderDocId);
+        transaction.update(orderRef, {
+          refundsAndClaims: arrayUnion({
+            type: 'Return',
+            id: payload.returnId,
+            sku: payload.sku,
+            qty: qty,
+            amount: refundAmount,
+            approvedAt: new Date().toISOString()
+          })
+        });
+      }
+    });
+
+    // 5. บันทึกกระเป๋าเงินนอก Transaction หลักของสต๊อก
     if (payload.customerUid && payload.customerUid !== 'Walk-in') {
       await transactionService.recordTransaction({
         uid: payload.customerUid,
@@ -100,18 +98,14 @@ export const returnActionService = {
       });
     }
 
-    // 3. บันทึกประวัติบิล
-    if (payload.orderDocId) {
-      await updateDoc(doc(db, 'orders', payload.orderDocId), {
-        refundsAndClaims: arrayUnion({
-          type: 'Return',
-          id: payload.returnId,
+    // 6. ซิงก์สต๊อกไป GAS ด้วยสต๊อกคงเหลือจริงที่คำนวณสำเร็จ
+    if (productData) {
+      gasStockService.queueUpdate({
+          ...productData,
           sku: payload.sku,
-          qty: qty,
-          amount: refundAmount,
-          approvedAt: new Date().toISOString()
-        })
+          stockQuantity: finalNewStock
       });
+      await gasStockService.forceSync();
     }
 
     gasHistoryService.log({

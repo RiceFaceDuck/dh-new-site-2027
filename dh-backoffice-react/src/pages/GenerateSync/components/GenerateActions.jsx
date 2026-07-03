@@ -58,8 +58,15 @@ export default function GenerateActions({ changes, isCalculating, onManualReset,
           </div>
           
           <div className="flex flex-col gap-4">
-            <SkuMerchantExport changes={changes} isCalculating={isCalculating} />
-            <InventoryCountExport changes={changes} isCalculating={isCalculating} onManualReset={onManualReset} />
+            <SkuMerchantExport 
+              changes={isUpToDate && latestSnapshot ? latestSnapshot.changes : changes} 
+              isCalculating={isCalculating} 
+            />
+            <InventoryCountExport 
+              changes={isUpToDate && latestSnapshot ? latestSnapshot.changes : changes} 
+              isCalculating={isCalculating} 
+              onManualReset={onManualReset} 
+            />
           </div>
         </div>
 

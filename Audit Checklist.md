@@ -80,7 +80,14 @@
 @ID:3.1.1 | @TYPE:Cost | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - ตรวจสอบการใช้งาน Zero-Read Search & Hybrid Cache ใน Product Search
 @ID:3.1.2 | @TYPE:Performance | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - อัปเกรดหน้า ProductDetail ให้ใช้ Real-time `onSnapshot` เพื่อความสดใหม่ของราคา/สต๊อก (ป้องกัน Bait & Switch)
 @ID:3.1.3 | @TYPE:Cost | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - อัปเกรด Cart Validation ให้ดึงข้อมูลแบบ Batch (where in chunk) ลด Connection และเพิ่มความเร็วในการยืนยันสั่งซื้อ
-@ID:3.2 | @TYPE:Cost | @SEV:🟠High | @STAT:⚪Backlog | @SCORE:🔴0% | @TASK: Server-Side Pagination (limit, startAfter)
+@ID:3.1.4 | @TYPE:Cost | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - อัปเกรดการดึงชื่อของแถมในหน้าสรุปออเดอร์โดยใช้ Hybrid Cache จาก sessionStorage แทนการดึง Firestore ทีละชิ้น (N+1 Query)
+@ID:3.1.5 | @TYPE:Cost | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - อัปเกรดคิวรี To-do และ Claims ให้รัน orderBy('createdAt', 'desc') ป้องกันข้อมูลตกหล่นเมื่อเกิน limit
+@ID:3.1.6 | @TYPE:Cost | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - ปรับแต่งการดึงราคาส่งในการ์ดงานปกติ (WholesaleCard) ให้ใช้ Hybrid Cache + Lazy Loading (onMouseEnter) ประหยัดโควต้าการอ่าน
+@ID:3.1.7 | @TYPE:UX | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - ปลดล็อกข้อจำกัดค้นสินค้าหน้าบ้าน (SearchPage) จาก 100 ชิ้นแรกเป็นทั้งหมด ~160 ชิ้น พร้อมใช้ IndexedDB
+@ID:3.1.8 | @TYPE:Cost | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - ถอด OrderProvider (OrderContext) ดึงข้อมูล unused listeners (shipping_rules, promotions, freebies) ลด reads เปล่า ~50k/วัน
+@ID:3.1.9 | @TYPE:Cost | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - ปรับแต่งระบบคัดเลือกสิทธิ์ (PrivilegeSelector) และการค้นหาหน้าบ้าน/หน้าพนักงาน ให้ดึงเฉพาะ isActive: true และ cache 5 นาที
+@ID:3.1.10 | @TYPE:Cost | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Sub - เพิ่ม limit(100) และ limit(300) ในคิวรี Sourcing Requests (NonExistingProducts) และแกลเลอรีหลังบ้าน (GalleryMain)
+@ID:3.2 | @TYPE:Cost | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Server-Side Pagination (limit, startAfter) - รองรับใน CategoryPage, InventoryQuery และ ClaimService แล้ว
 @ID:3.3 | @TYPE:Performance | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Caching & Memoization (Prevent Re-renders) - memoryCache implemented
 @ID:3.4 | @TYPE:Performance | @SEV:⚪Low | @STAT:⚪Backlog | @SCORE:🔴0% | @TASK: Bundle Size & Code Splitting (React.lazy / Suspense)
 @ID:3.5 | @TYPE:UX | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Dashboard Zero-delay UI (Removed setTimeout delay for instant data load)
@@ -142,6 +149,15 @@
 @ID:F.3 | @TYPE:UX | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Add missing Loading State for Cart freebies to prevent UI shift
 @ID:F.4 | @TYPE:Cost | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Refactor Ads prefetch in App.jsx to use Lazy Loading (IntersectionObserver)
 @ID:F.5 | @TYPE:Cost | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Optimize CategoryPage query (remove hacky array-in search, use category_lower field instead)
+@ID:F.6 | @TYPE:Data Integrity | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Fix Backoffice deleteCategory relation query (use type/category_lower instead of categoryId)
+@ID:F.7 | @TYPE:Cost | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Optimize useCategories.js cache (prevent background fetch & re-render if cached within 5 mins)
+@ID:F.8 | @TYPE:UX | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Add Fallback Icon (Package) for Categories without images in CategoryCard
+@ID:F.9 | @TYPE:UX | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: Add In-App Documentation for Category Management in Backoffice
+@ID:F.10 | @TYPE:UX | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: [@APP:Frontend] เพิ่มช่องค้นหาบน Mobile SearchPage กู้คืนความสามารถในการค้นหาสินค้าบนมือถือ
+@ID:F.11 | @TYPE:DataRelation | @SEV:🔴Critical | @STAT:🟢Done | @SCORE:🟢100% | @TASK: [@APP:Frontend] แก้ไขยอดชำระสุทธิในการ์ดโอนเงินให้ตรงกันกับสรุปออเดอร์โดยส่งค่า calculatedNetTotal
+@ID:F.12 | @TYPE:DataRelation | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: [@APP:Frontend] แก้ไขพาธโหลด Profile.jsx จาก root collection users/{uid} เพื่อแสดงร้านค้าพาร์ทเนอร์สำเร็จ
+@ID:F.13 | @TYPE:UX | @SEV:🟠High | @STAT:🟢Done | @SCORE:🟢100% | @TASK: [@APP:Frontend] ปลดล็อก disabled ปุ่ม ADD TO CART เพื่อให้ Logic การสั่นสะเทือนสเปก/รุ่นย่อยทำงานปกติ
+@ID:F.14 | @TYPE:UX | @SEV:🟡Medium | @STAT:🟢Done | @SCORE:🟢100% | @TASK: [@APP:Frontend] เปลี่ยนตัวโหลดเต็มจอขณะกดชำระเงินของ Cart.jsx เป็น Inline Loading ป้องกัน UI ดับกระพริบ
 
-OVERALL_SCORE: 🟢79%
-LAST_UPDATE: 2026-07-02
+OVERALL_SCORE: 🟢85%
+LAST_UPDATE: 2026-07-03

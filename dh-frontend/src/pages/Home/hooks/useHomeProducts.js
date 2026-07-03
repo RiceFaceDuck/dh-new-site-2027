@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
 import { featuredQueryService } from '../../../firebase/featuredQueryService';
+import { useNetworkStatus } from '../../../hooks/useNetworkStatus';
 
 export const useHomeProducts = (defaultLimit = 12) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isActive, setIsActive] = useState(true);
+  const { isSlowConnection } = useNetworkStatus();
+
+  // 🌐 ปรับลดจำนวนข้อมูลที่ต้องโหลดหากผู้ใช้ใช้อินเทอร์เน็ตช้า (เช่น 3G / Data Saver)
+  const adaptiveLimit = isSlowConnection ? Math.min(defaultLimit, 4) : defaultLimit;
 
   useEffect(() => {
     let isMounted = true;
@@ -23,8 +28,8 @@ export const useHomeProducts = (defaultLimit = 12) => {
 
         // 2. Fetch Products only if active
         if (config.isActive !== false) {
-          const limit = config.displayLimit || defaultLimit;
-          const fetchedProducts = await featuredQueryService.getRandomFeaturedProducts(limit);
+          const finalLimit = isSlowConnection ? Math.min(config.displayLimit || adaptiveLimit, 4) : (config.displayLimit || adaptiveLimit);
+          const fetchedProducts = await featuredQueryService.getRandomFeaturedProducts(finalLimit);
           if (isMounted) {
             setProducts(fetchedProducts);
           }
@@ -47,7 +52,7 @@ export const useHomeProducts = (defaultLimit = 12) => {
     return () => {
       isMounted = false;
     };
-  }, [defaultLimit]);
+  }, [adaptiveLimit, isSlowConnection]);
 
-  return { products, loading, error, isActive };
+  return { products, loading, error, isActive, isSlowConnection };
 };

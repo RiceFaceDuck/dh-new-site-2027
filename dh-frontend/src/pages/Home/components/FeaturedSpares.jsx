@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
 import ProductList from '../../../components/ProductList';
 
-const FeaturedSpares = ({ products, loading, error }) => {
+const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
+  const skeletonCount = isSlowConnection ? 4 : 8;
+
   return (
     <div className="w-full relative group/featured">
       {/* Decorative Blur Background Element */}
@@ -13,7 +15,17 @@ const FeaturedSpares = ({ products, loading, error }) => {
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
             FEATURED SPARES
+            {isSlowConnection && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] md:text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 animate-pulse">
+                LITE MODE
+              </span>
+            )}
           </h2>
+          {isSlowConnection && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1">
+              เปิดใช้งานโหมดประหยัดข้อมูลเนื่องจากความเร็วอินเทอร์เน็ตต่ำ
+            </p>
+          )}
         </div>
         
         <Link 
@@ -27,7 +39,7 @@ const FeaturedSpares = ({ products, loading, error }) => {
       
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(skeletonCount)].map((_, i) => (
             <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 h-[350px] flex flex-col shadow-sm animate-pulse">
               <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700 rounded-xl mb-4"></div>
               <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-3/4 mb-3"></div>

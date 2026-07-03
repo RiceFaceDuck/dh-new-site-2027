@@ -45,14 +45,12 @@ export const inventoryService = {
    */
   getAllActiveProducts: async () => {
     try {
-      const q = query(collection(db, COLLECTION_NAME));
+      const q = query(collection(db, COLLECTION_NAME), where('isActive', '==', true));
       const snapshot = await getDocs(q);
       let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // กรองเฉพาะที่ Active และเรียงตาม SKU
-      return products
-        .filter(p => p.isActive !== false)
-        .sort((a, b) => (a.sku || '').localeCompare(b.sku || ''));
+      // เรียงตาม SKU
+      return products.sort((a, b) => (a.sku || '').localeCompare(b.sku || ''));
     } catch (error) {
       console.error("Error fetching all products:", error);
       return [];

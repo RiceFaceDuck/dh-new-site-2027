@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Upload, CheckCircle2, Copy, Image as ImageIcon, AlertCircle, X, Check } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
+import { formatCredit } from '../../firebase/creditService';
 
-export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slipUrl }) {
+export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slipUrl, calculatedNetTotal }) {
   const { totals } = useCart();
   
   const [copied, setCopied] = useState(false);
@@ -192,7 +193,7 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
             <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
               <span className="text-sm text-gray-300">ยอดที่ต้องชำระสุทธิ</span>
               <span className="text-2xl font-black text-emerald-400">
-                ฿{(totals?.grandTotal || 0).toLocaleString()}
+                ฿{formatCredit(calculatedNetTotal !== undefined ? calculatedNetTotal : (totals?.grandTotal || 0))}
               </span>
             </div>
           </div>

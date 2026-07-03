@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Package } from 'lucide-react';
 import LazyImage from '../../../components/common/LazyImage';
 
 const CategoryCard = ({ category }) => {
@@ -21,7 +21,9 @@ const CategoryCard = ({ category }) => {
             className="w-full h-full group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-8 h-8 bg-slate-200 rounded-sm"></div>
+          <div className="w-full h-full bg-blue-50/50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+            <Package className="w-6 h-6 md:w-8 md:h-8 text-blue-300 group-hover:text-blue-500 group-hover:scale-105 transition-all duration-300" strokeWidth={1.5} />
+          </div>
         )}
       </div>
       

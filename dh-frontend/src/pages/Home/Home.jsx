@@ -9,8 +9,8 @@ import { useHomeProducts } from './hooks/useHomeProducts';
 import BannerAdWidget from '../../components/ads/BannerAdWidget';
 
 const Home = () => {
-  // 🚀 ดึงข้อมูลผ่าน Hook ที่แยกออกมา (SRP)
-  const { products, loading, error, isActive } = useHomeProducts(12);
+  // 🚀 ดึงข้อมูลผ่าน Hook ที่แยกออกมา (SRP) พร้อมสถานะความเร็วเน็ต
+  const { products, loading, error, isActive, isSlowConnection } = useHomeProducts(12);
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">
@@ -18,24 +18,29 @@ const Home = () => {
         
         {/* ========================================================
             Section 1: Hero Banner Ad (จำลอง)
-            ======================================================== */}
+            ======================================================= */}
         <HeroSection />
 
         {/* ========================================================
             Section 2: Quick Actions (UI/UX ลูกเล่นใหม่ เน้น Mobile)
-            ======================================================== */}
+            ======================================================= */}
         <QuickActions />
 
         {/* ========================================================
             Section 3: Squad Highlight (ร้านช่าง ใกล้คุณ)
-            ======================================================== */}
+            ======================================================= */}
         <SquadHighlight />
 
         {/* ========================================================
             Section 4: Featured Spares (อะไหล่แนะนำ)
-            ======================================================== */}
+            ======================================================= */}
         {isActive && (
-          <FeaturedSpares products={products} loading={loading} error={error} />
+          <FeaturedSpares 
+            products={products} 
+            loading={loading} 
+            error={error} 
+            isSlowConnection={isSlowConnection} 
+          />
         )}
 
       </div>

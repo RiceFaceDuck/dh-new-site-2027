@@ -85,6 +85,17 @@ const Checkout = () => {
   const [activeStep, setActiveStep] = useState(1);
   const errorRef = useRef(null);
 
+  // 🧮 คำนวณยอดชำระเงินโอนสุทธิ (ตรงกับตารางสรุปขวา)
+  const subtotal = totals?.subtotal || 0;
+  const shippingCost = checkoutState?.shippingCost || 0;
+  const appliedPromotions = checkoutState?.appliedPromotions || [];
+  const extraDiscountAmount = checkoutState?.discountAmount || 0;
+  const usedWallet = checkoutState?.useWallet || 0;
+  const totalPromoDiscount = appliedPromotions.reduce((sum, promo) => sum + (promo.discountValue || 0), 0);
+  const totalDiscount = totalPromoDiscount + extraDiscountAmount;
+  const totalCreditDiscount = usedWallet;
+  const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost - totalCreditDiscount);
+
   // Show error as a toast instead of forcing a scroll jump, but also scroll to error box
   useEffect(() => {
     if (errorMessage) {
@@ -191,6 +202,7 @@ const Checkout = () => {
                 onUpdate={(method) => handleUpdateCheckoutState('paymentMethod', method)}
                 onSlipChange={setSlipUrl}
                 slipUrl={slipUrl}
+                calculatedNetTotal={calculatedNetTotal}
               />
             </AccordionSection>
           </div>

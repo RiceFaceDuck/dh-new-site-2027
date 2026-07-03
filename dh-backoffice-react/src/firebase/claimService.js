@@ -20,10 +20,20 @@ export const claimService = {
     }
   },
 
-  // ดึงข้อมูลรายการเคลมทั้งหมด
-  getClaims: async () => {
+  // ดึงข้อมูลรายการเคลมทั้งหมด (รองรับ limit และ pagination แบบถอยหลังเข้ากันได้)
+  getClaims: async (maxLimit = null, lastDocRef = null) => {
     try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
+      const { limit, startAfter } = await import('firebase/firestore');
+      let qArgs = [collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc')];
+      
+      if (lastDocRef) {
+        qArgs.push(startAfter(lastDocRef));
+      }
+      if (maxLimit) {
+        qArgs.push(limit(maxLimit));
+      }
+      
+      const q = query(...qArgs);
       const querySnapshot = await getDocs(q);
       const claims = [];
       querySnapshot.forEach((doc) => {

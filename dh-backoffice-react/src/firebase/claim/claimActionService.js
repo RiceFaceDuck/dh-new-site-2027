@@ -1,4 +1,4 @@
-import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
@@ -73,36 +73,54 @@ export const claimActionService = {
         updateData['payload.returnTrackingNo'] = payload.returnTrackingNo;
     }
     
-    await updateDoc(doc(db, TODOS_COLLECTION, todoId), updateData);
+    let finalNewStock = 0;
+    let productData = null;
 
-    // ตัดสต๊อกสินค้าดี เพื่อส่งมอบให้ลูกค้า
-    const pRef = doc(db, 'products', payload.sku);
-    const pSnap = await getDoc(pRef);
-    if (pSnap.exists()) {
-        await updateDoc(pRef, { stockQuantity: increment(-qty) });
-        
-        // Sync to GAS Change Detector
-        // อ่านอีกครั้งเพื่อเอาค่าที่ชัวร์ หรือ คำนวณเอง
-        const currentStock = Number(pSnap.data().stockQuantity || 0);
-        gasStockService.queueUpdate({
-            ...pSnap.data(),
-            sku: payload.sku,
-            stockQuantity: currentStock - qty
-        });
-        await gasStockService.forceSync();
-    }
+    await runTransaction(db, async (transaction) => {
+      const pRef = doc(db, 'products', payload.sku);
+      const pSnap = await transaction.get(pRef);
+      if (!pSnap.exists()) {
+        throw new Error(`ไม่พบสินค้า SKU: ${payload.sku} ในระบบ`);
+      }
 
-    if (payload.orderDocId) {
-      await updateDoc(doc(db, 'orders', payload.orderDocId), {
-        refundsAndClaims: arrayUnion({
-          type: 'Claim',
-          id: payload.claimId,
-          sku: payload.sku,
-          qty: qty,
-          amount: 0,
-          approvedAt: new Date().toISOString()
-        })
+      productData = pSnap.data();
+      const currentStock = Number(productData.stockQuantity || 0);
+
+      if (currentStock < qty) {
+        throw new Error(`สินค้า ${productData.sku} สต็อกคงเหลือไม่เพียงพอสำหรับทำรายการเคลม (คงเหลือ ${currentStock} ชิ้น, ต้องการ ${qty} ชิ้น)`);
+      }
+
+      finalNewStock = currentStock - qty;
+
+      transaction.update(pRef, { 
+        stockQuantity: finalNewStock,
+        'stats.sold': increment(qty)
       });
+
+      transaction.update(doc(db, TODOS_COLLECTION, todoId), updateData);
+
+      if (payload.orderDocId) {
+        const orderRef = doc(db, 'orders', payload.orderDocId);
+        transaction.update(orderRef, {
+          refundsAndClaims: arrayUnion({
+            type: 'Claim',
+            id: payload.claimId,
+            sku: payload.sku,
+            qty: qty,
+            amount: 0,
+            approvedAt: new Date().toISOString()
+          })
+        });
+      }
+    });
+
+    if (productData) {
+      gasStockService.queueUpdate({
+          ...productData,
+          sku: payload.sku,
+          stockQuantity: finalNewStock
+      });
+      await gasStockService.forceSync();
     }
 
     gasHistoryService.log({

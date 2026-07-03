@@ -1,4 +1,4 @@
-import { doc, updateDoc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, increment, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { transactionService } from '../transactionService';
@@ -16,29 +16,66 @@ export const cancelActionService = {
     const isProcessing = task.originalStatus === 'processing';
     const hasArrived = isProcessing || isCompleted;
 
-    // 1. จัดการสต๊อกของเสีย (Defect Stock)
-    // สำหรับการเคลม (Claim) ถ้ารับของเสียมาแล้ว ต้องหักสต๊อกของเสียออก เพราะยกเลิกรายการ
-    if (!isCancelReturn && hasArrived) {
-        const pRef = doc(db, 'products', payload.sku);
-        const pSnap = await getDoc(pRef);
-        if (pSnap.exists()) {
-            await updateDoc(pRef, { defectQuantity: increment(-qty) });
-        }
-    }
+    let finalNewStock = null;
+    let productData = null;
 
-    // 2. หากเป็นการยกเลิกรายการที่ 'completed' ไปแล้ว ต้องดึงสต๊อกและเงินคืน
-    if (isCompleted) {
-      if (isCancelReturn) {
-        // ยกเลิกการคืนสินค้า: ดึงสต๊อกกลับ (-qty) และดึงเงินคืนลูกค้ากลับ
-        const pRef = doc(db, 'products', payload.sku);
-        let pSnap = await getDoc(pRef);
-        if (pSnap.exists()) {
-            await updateDoc(pRef, { stockQuantity: increment(-qty) });
-            const currentStock = Number(pSnap.data().stockQuantity || 0);
-            gasStockService.queueUpdate({ ...pSnap.data(), sku: payload.sku, stockQuantity: currentStock - qty });
-            await gasStockService.forceSync();
-        }
+    await runTransaction(db, async (transaction) => {
+      const pRef = doc(db, 'products', payload.sku);
+      
+      // 1. จัดการสต๊อกของเสีย (Defect Stock)
+      if (!isCancelReturn && hasArrived) {
+         const pSnap = await transaction.get(pRef);
+         if (pSnap.exists()) {
+             const currentDefect = pSnap.data().defectQuantity || 0;
+             transaction.update(pRef, { defectQuantity: Math.max(0, currentDefect - qty) });
+         }
+      }
 
+      // 2. หากเป็นการยกเลิกรายการที่ 'completed' ไปแล้ว ต้องดึงสต๊อกและเงินคืน
+      if (isCompleted) {
+         const pSnap = await transaction.get(pRef);
+         if (pSnap.exists()) {
+             productData = pSnap.data();
+             const currentStock = Number(productData.stockQuantity || 0);
+
+             if (isCancelReturn) {
+                 // ยกเลิกการคืนสินค้า: ดึงสต๊อกกลับ (-qty)
+                 if (currentStock < qty) {
+                     throw new Error(`สินค้า ${productData.sku} สต็อกคงเหลือไม่เพียงพอสำหรับยกเลิกการคืนสินค้า (คงเหลือ ${currentStock} ชิ้น, ต้องการหักคืน ${qty} ชิ้น)`);
+                 }
+                 finalNewStock = currentStock - qty;
+             } else {
+                 // ยกเลิกการเคลม: เอาสต๊อกที่เบิกให้ลูกค้าไปแล้ว (+qty) คืนกลับมา
+                 finalNewStock = currentStock + qty;
+             }
+
+             transaction.update(pRef, { stockQuantity: finalNewStock });
+         }
+
+         // เอาออกจากประวัติ order
+         if (payload.orderDocId) {
+             const orderRef = doc(db, 'orders', payload.orderDocId);
+             const orderSnap = await transaction.get(orderRef);
+             if (orderSnap.exists()) {
+                 const orderData = orderSnap.data();
+                 if (orderData.refundsAndClaims) {
+                     const filteredRC = orderData.refundsAndClaims.filter(rc => rc.id !== payload.returnId && rc.id !== payload.claimId);
+                     transaction.update(orderRef, { refundsAndClaims: filteredRC });
+                 }
+             }
+         }
+      }
+
+      // 3. อัปเดต Todo status
+      transaction.update(doc(db, TODOS_COLLECTION, todoId), {
+         status: 'cancelled', 
+         handledBy: adminUid,
+         updatedAt: serverTimestamp()
+      });
+    });
+
+    // 4. ดึงเงินคืนลูกค้ากลับ (นอก transaction เนื่องจากเรียก recordTransaction ซึ่งมี transaction ในตัว)
+    if (isCompleted && isCancelReturn) {
         let refundAmount = (payload.purchasePrice || 0) * qty;
         const penalty = Number(payload.freebiePenaltyAmount) || 0;
         if (penalty > 0) {
@@ -55,37 +92,17 @@ export const cancelActionService = {
             note: `ดึงยอดเงินคืนเนื่องจากผู้จัดการยกเลิกการคืนสินค้า${penalty > 0 ? ' (หักลบค่าปรับของแถม)' : ''}`
           });
         }
-      } else {
-        // ยกเลิกการเคลม: เอาสต๊อกที่เบิกให้ลูกค้าไปแล้ว (+qty) คืนกลับมา
-        const pRef = doc(db, 'products', payload.sku);
-        let pSnap = await getDoc(pRef);
-        if (pSnap.exists()) {
-            await updateDoc(pRef, { stockQuantity: increment(qty) });
-            const currentStock = Number(pSnap.data().stockQuantity || 0);
-            gasStockService.queueUpdate({ ...pSnap.data(), sku: payload.sku, stockQuantity: currentStock + qty });
-            await gasStockService.forceSync();
-        }
-      }
-
-      // เอาออกจากประวัติ order
-      if (payload.orderDocId) {
-        const orderRef = doc(db, 'orders', payload.orderDocId);
-        const orderSnap = await getDoc(orderRef);
-        if (orderSnap.exists()) {
-          const orderData = orderSnap.data();
-          if (orderData.refundsAndClaims) {
-            const filteredRC = orderData.refundsAndClaims.filter(rc => rc.id !== payload.returnId && rc.id !== payload.claimId);
-            await updateDoc(orderRef, { refundsAndClaims: filteredRC });
-          }
-        }
-      }
     }
 
-    await updateDoc(doc(db, TODOS_COLLECTION, todoId), {
-      status: 'cancelled', 
-      handledBy: adminUid,
-      updatedAt: serverTimestamp()
-    });
+    // 5. ซิงก์สต๊อกไป GAS ด้วยค่าใหม่ที่คำนวณอย่างถูกต้อง
+    if (productData && finalNewStock !== null) {
+        gasStockService.queueUpdate({
+            ...productData,
+            sku: payload.sku,
+            stockQuantity: finalNewStock
+        });
+        await gasStockService.forceSync();
+    }
 
     const refId = payload.returnId || payload.claimId;
     gasHistoryService.log({

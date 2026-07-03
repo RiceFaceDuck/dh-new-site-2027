@@ -23,6 +23,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
     const q = query(
       collection(db, 'todos'),
       where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
+      orderBy('createdAt', 'desc'),
       limit(200) // เพิ่ม limit เป็น 200 เพื่อครอบคลุมทั้ง Manager และ Staff
     );
 

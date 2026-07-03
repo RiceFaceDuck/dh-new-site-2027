@@ -209,24 +209,53 @@ export const deleteCustomer = async (targetUid, customerName) => {
         
         await historyService.addLog('Customer', 'Delete', targetUid, `ลบรายชื่อลูกค้า: ${customerName} (Soft Delete)`, auth.currentUser?.uid);
 
-        // 🔒 Strict Data Relations: Cascade Disable Partner if deleted
+        // 🔒 Strict Data Relations: Cascade Disable Partner, Map Pin (ActivePartners), and Ads if deleted
         try {
             const { query, where, getDocs, writeBatch } = await import('firebase/firestore');
-            const partnersRef = collection(db, 'partners');
+            const batch = writeBatch(db);
+            let hasUpdates = false;
+
+            // 1. Disable in partners collection
+            const partnersRef = collection(db, getCollectionPath('partners'));
             const q = query(partnersRef, where('ownerId', '==', targetUid));
             const querySnapshot = await getDocs(q);
             
             if (!querySnapshot.empty) {
-                const batch = writeBatch(db);
                 querySnapshot.forEach((docSnap) => {
-                    batch.update(docSnap.ref, { isActive: false });
+                    batch.update(docSnap.ref, { isActive: false, updatedAt: serverTimestamp() });
                 });
+                hasUpdates = true;
+            }
+
+            // 2. Delete from ActivePartners (Frontend Map Pins)
+            const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), targetUid);
+            batch.delete(activePartnerRef);
+            hasUpdates = true;
+
+            // 3. Pause active ads
+            const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
+            for (const col of adCols) {
+                const adsRef = collection(db, getCollectionPath(col));
+                const adsQ = query(adsRef, where('ownerId', '==', targetUid));
+                const adsSnap = await getDocs(adsQ);
+                adsSnap.forEach(adDoc => {
+                    batch.update(adDoc.ref, {
+                        status: 'paused',
+                        isActive: false,
+                        pauseReason: 'Owner account was deleted/suspended',
+                        updatedAt: serverTimestamp()
+                    });
+                    hasUpdates = true;
+                });
+            }
+
+            if (hasUpdates) {
                 await batch.commit();
-                await historyService.addLog('Partner', 'Update', targetUid, `ปิดการใช้งานร้านช่างอัตโนมัติ เนื่องจากบัญชีเจ้าของร้านถูกลบ`, auth.currentUser?.uid);
+                await historyService.addLog('Partner', 'Update', targetUid, `ปิดการใช้งานร้านช่าง ลบหมุดบนแผนที่ และระงับโฆษณาอัตโนมัติ เนื่องจากบัญชีเจ้าของร้านถูกลบ`, auth.currentUser?.uid);
             }
 
             // 🧹 Cleanup Orphaned Todos (Optimized to prevent massive reads)
-            const todosRef = collection(db, 'todos');
+            const todosRef = collection(db, getCollectionPath('todos'));
             
             // Query 1: customerUid at root
             const q1 = query(todosRef, where('customerUid', '==', targetUid), where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']));

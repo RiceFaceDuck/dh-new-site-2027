@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { handleStockDeduction, handleStockReturn } from './billing/statusStockHandler';
@@ -58,7 +58,8 @@ export const billingStatusTransaction = {
           if (isCancelling) {
               const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
               if (customerUid && customerUid !== 'WALK-IN') {
-                  settingsRef = doc(db, 'settings', 'credit_config');
+                  const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
+                  settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
                   settingsSnap = await transaction.get(settingsRef);
               }
           }

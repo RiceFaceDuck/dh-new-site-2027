@@ -118,14 +118,14 @@ const CategoryManager = () => {
   };
 
   // ลบหมวดหมู่
-  const handleDelete = async (id, iconUrl) => {
+  const handleDelete = async (category) => {
     if (window.confirm('คุณต้องการลบหมวดหมู่นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
       try {
-        await categoryService.deleteCategory(id, iconUrl);
+        await categoryService.deleteCategory(category);
         fetchCategories(); // ดึงข้อมูลอัปเดตหลังลบ
       } catch (error) {
         console.error('Failed to delete category:', error);
-        alert('เกิดข้อผิดพลาดในการลบข้อมูล กรุณาลองใหม่อีกครั้ง');
+        alert(error.message || 'เกิดข้อผิดพลาดในการลบข้อมูล กรุณาลองใหม่อีกครั้ง');
       }
     }
   };
@@ -146,14 +146,37 @@ const CategoryManager = () => {
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20 active:scale-95"
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2 font-medium"
         >
-          <Plus size={18} strokeWidth={2.5} />
-          เพิ่มหมวดหมู่ใหม่
+          <Plus size={18} />
+          <span className="hidden sm:inline">สร้างหมวดหมู่ใหม่</span>
         </button>
       </div>
+      
+      {/* 📚 In-App Documentation (Help Panel) */}
+      <div className="bg-blue-50/50 border-b border-blue-100 p-4 sm:p-5 flex gap-3 sm:gap-4 items-start">
+        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-600 mt-0.5">
+          <FolderOpen size={18} />
+        </div>
+        <div className="flex-1 space-y-2">
+          <div>
+            <h4 className="text-sm font-bold text-blue-900">คู่มือการจัดการหมวดหมู่ (Category Management)</h4>
+            <p className="text-xs text-blue-800/80 leading-relaxed mt-0.5">ระบบควบคุมโครงสร้างหมวดหมู่สินค้าในหน้าร้าน (Frontend) จัดการลำดับและเปิด/ปิดการแสดงผลได้แบบ Real-time</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-blue-900/70">
+            <div className="bg-white/60 p-2.5 rounded-lg border border-blue-100/50">
+              <span className="font-semibold block mb-1">🛠️ วิธีการจัดเรียง (How-to)</span>
+              คุณสามารถลากแล้ววาง (Drag & Drop) หมวดหมู่เพื่อจัดเรียงลำดับการแสดงผลบนหน้าเว็บไซต์ได้ทันที ระบบจะบันทึกอัตโนมัติ
+            </div>
+            <div className="bg-white/60 p-2.5 rounded-lg border border-blue-100/50">
+              <span className="font-semibold block mb-1">💡 เทคนิค & ข้อควรระวัง</span>
+              ระบบจะไม่อนุญาตให้ลบหมวดหมู่ที่มี "สินค้า" เชื่อมโยงอยู่ (ป้องกันข้อมูลกำพร้า) โปรดย้ายสินค้าก่อนทำการลบ
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* 🚀 Body Section (List & Drag and Drop) */}
+      {/* 🚀 Content Section */}
       <div className="p-6 flex-1 bg-slate-50/30">
         {isLoading ? (
           // Loading State
@@ -187,12 +210,12 @@ const CategoryManager = () => {
             >
               <div className="flex flex-col gap-3">
                 {categories.map((category) => (
-                  <CategoryCard
+                  <CategoryCard 
                     key={category.id}
                     category={category}
-                    onEdit={openEditModal}
-                    onDelete={handleDelete}
-                    onToggleStatus={handleToggleStatus}
+                    onEdit={() => openEditModal(category)}
+                    onDelete={() => handleDelete(category)}
+                    onToggleStatus={(status) => handleToggleStatus(category.id, status)}
                   />
                 ))}
               </div>

@@ -29,20 +29,58 @@ export const DEFAULT_HERO_CONFIG = {
   }
 };
 
+const CACHE_KEY = 'dh_hero_config_cache';
+const CACHE_TTL = 15 * 60 * 1000; // 15 mins
+
 export const storefrontSettingsService = {
   /**
-   * ดึงข้อมูลการตั้งค่าป้ายโฆษณาหลัก (Hero Billboard)
+   * ดึงข้อมูลการตั้งค่าป้ายโฆษณาหลัก (Hero Billboard) พร้อมระบบ Cache ใน LocalStorage
    */
   getHeroConfig: async () => {
     try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) {
+              return data;
+            }
+          } catch (e) {
+            console.warn("Malformed hero config cache. Refreshing.");
+          }
+        }
+      }
+
       const docRef = doc(db, 'settings', HERO_DOC);
       const snap = await getDoc(docRef);
+      let result = DEFAULT_HERO_CONFIG;
       if (snap.exists()) {
-        return { ...DEFAULT_HERO_CONFIG, ...snap.data() };
+        result = { ...DEFAULT_HERO_CONFIG, ...snap.data() };
       }
-      return DEFAULT_HERO_CONFIG;
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: result,
+          timestamp: Date.now()
+        }));
+      }
+
+      return result;
     } catch (error) {
       console.error("🔥 Error fetching hero config:", error);
+      // Fallback: ดึงแคชเก่ามาใช้ต่อถ้ามี แม้จะหมดอายุแล้ว ดีกว่าพังหรือแสดงหน้าเว็บว่างเปล่า
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const { data } = JSON.parse(cached);
+            return data;
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
       return DEFAULT_HERO_CONFIG;
     }
   }

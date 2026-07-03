@@ -195,7 +195,7 @@ const Cart = () => {
   const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig, cartItems) : 0;
 
   // จำลอง Loading เพื่อ UX ที่สมูท
-  if (!isInitialized || isValidatingCart) {
+  if (!isInitialized) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
@@ -356,6 +356,7 @@ const Cart = () => {
             promoDiscount={promoDiscount}
             earnedPoints={earnedPoints}
             isValidCart={isValidCart}
+            isValidating={isValidatingCart}
             onCheckout={handleProceedToCheckout}
             promotionsElement={<CartActivePromotions cartItems={cartItems} subTotal={subTotal} user={user} onPromotionsEvaluated={handlePromotionsEvaluated} />}
           />

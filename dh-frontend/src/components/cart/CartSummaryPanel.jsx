@@ -11,7 +11,8 @@ import { useNavigate } from 'react-router-dom';
     isValidCart = true,
     onCheckout,
     promotionsElement,
-    promoDiscount = 0
+    promoDiscount = 0,
+    isValidating = false
   }) => {
     const navigate = useNavigate();
   
@@ -108,22 +109,31 @@ import { useNavigate } from 'react-router-dom';
         ) : (
           <button 
             onClick={() => {
-              if (isValidCart) {
+              if (isValidCart && !isValidating) {
                 if (onCheckout) onCheckout();
                 else navigate('/checkout');
               }
             }}
-            disabled={cartData.totalQty === 0}
+            disabled={cartData.totalQty === 0 || isValidating}
             className={`w-full font-bold py-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden relative ${
-              cartData.totalQty === 0
+              (cartData.totalQty === 0 || isValidating)
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg active:scale-[0.98]'
             }`}
           >
             <span className="relative z-10 flex items-center gap-2">
-              ดำเนินการสั่งซื้อ <ArrowRight size={18} className={`${cartData.totalQty > 0 ? 'group-hover:translate-x-1.5' : ''} transition-transform`} />
+              {isValidating ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  กำลังตรวจสอบ...
+                </>
+              ) : (
+                <>
+                  ดำเนินการสั่งซื้อ <ArrowRight size={18} className={`${cartData.totalQty > 0 ? 'group-hover:translate-x-1.5' : ''} transition-transform`} />
+                </>
+              )}
             </span>
-            {cartData.totalQty > 0 && (
+            {cartData.totalQty > 0 && !isValidating && (
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
             )}
           </button>

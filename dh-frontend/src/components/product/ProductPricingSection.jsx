@@ -140,15 +140,13 @@ export default function ProductPricingSection({
       <div className="pt-4 flex items-center gap-3">
         <button 
           onClick={handleAddToCart}
-          disabled={isOutOfStock || isAdding || addSuccess || (needsSelection && !isSelectionComplete)}
+          disabled={isOutOfStock || isAdding || addSuccess}
           className={`flex-1 h-12 md:h-14 rounded-sm font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 transition-all duration-300 shadow-sm ${
             isOutOfStock 
               ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
               : addSuccess
                 ? 'bg-emerald-50 text-cyber-emerald border border-cyber-emerald'
-                : (needsSelection && !isSelectionComplete)
-                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
-                  : 'bg-slate-800 text-white hover:bg-slate-900 hover:shadow-md'
+                : 'bg-slate-800 text-white hover:bg-slate-900 hover:shadow-md'
           }`}
         >
           {isAdding ? (

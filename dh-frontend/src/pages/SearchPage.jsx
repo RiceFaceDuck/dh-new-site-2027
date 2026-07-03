@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore'; 
+import { collection, getDocs, query, where } from 'firebase/firestore'; 
 import { db } from '../firebase/config';
 import ProductList from '../components/ProductList';
 import { memoryCache } from '../utils/memoryCache';
 import { Search, Loader2, Sparkles, ChevronLeft } from 'lucide-react';
 
 const SearchPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
   
   const [products, setProducts] = useState([]);
@@ -15,8 +15,24 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // คำที่ถูกค้นหาล่าสุดเพื่อประหยัดการ Render
-  const [lastQuery, setLastQuery] = useState('');
+  // สเตตสำหรับเก็บค่าคำที่กำลังพิมพ์ค้นหา
+  const [typedQuery, setTypedQuery] = useState(queryParam);
+
+  // ซิงค์สเตตที่พิมพ์เมื่อพารามิเตอร์ของ URL เปลี่ยนแปลง
+  useEffect(() => {
+    setTypedQuery(queryParam);
+  }, [queryParam]);
+
+  // ฟังก์ชันยิงพารามิเตอร์ค้นหาใหม่ลง URL
+  const handleLocalSearchSubmit = (e) => {
+    e.preventDefault();
+    if (typedQuery.trim()) {
+      setSearchParams({ q: typedQuery.trim() });
+    } else {
+      setSearchParams({});
+    }
+  };
+  
 
   useEffect(() => {
     const fetchAllProducts = async () => {
@@ -25,10 +41,10 @@ const SearchPage = () => {
         // ใช้ Memory Cache ดึงสินค้า (เพื่อทำ Client-side Filtering แบบรวดเร็วและประหยัด Reads)
         const cacheKey = `all_products_search_v2`;
         const fetchFn = async () => {
-          // ⚠️ QUOTA PROTECTION: จำกัดการดึงข้อมูลสูงสุด 100 รายการต่อคน (100 Reads) 
-          // เพื่อไม่ให้เกินโควต้าฟรี (50,000/วัน) หากมีผู้ใช้ 1,000 คน
-          const productsRef = query(collection(db, "products"), limit(100));
-          const snapshot = await getDocs(productsRef);
+          // 🚀 [Optimization] ดึงข้อมูลสินค้าที่ Active เท่านั้นเพื่อทำ Client-side Filtering
+          const productsRef = collection(db, "products");
+          const q = query(productsRef, where("isActive", "==", true));
+          const snapshot = await getDocs(q);
           return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         };
 
@@ -49,12 +65,9 @@ const SearchPage = () => {
     if (!loading && products.length > 0) {
       if (!queryParam.trim()) {
         setFilteredProducts([]);
-        setLastQuery('');
         return;
       }
-      
       const qLower = queryParam.trim().toLowerCase();
-      setLastQuery(qLower);
       
       // Client-side Filtering
       const results = products.filter(p => {
@@ -88,6 +101,22 @@ const SearchPage = () => {
               ผลการค้นหา
             </h1>
           </div>
+        </div>
+
+        {/* 🔍 กล่องค้นหาภายในหน้า (สำหรับ Mobile & Desktop) */}
+        <div className="w-full max-w-2xl bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm">
+          <form onSubmit={handleLocalSearchSubmit} className="relative w-full group">
+            <input 
+              type="text" 
+              value={typedQuery}
+              onChange={(e) => setTypedQuery(e.target.value)}
+              placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
+            />
+            <button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-brand text-white p-2 rounded-lg hover:bg-brand-dark transition-colors shadow-sm active:scale-95">
+              <Search size={16} strokeWidth={2.5} />
+            </button>
+          </form>
         </div>
 
         {/* Search Query Display */}

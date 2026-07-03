@@ -1,7 +1,7 @@
 // นำเข้า functions ที่จำเป็นจาก Firebase SDK
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
@@ -37,6 +37,21 @@ if (typeof window !== "undefined") {
 // Initialize Services (Export ไปใช้งานใน Service อื่นๆ)
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// 🚀 เปิดใช้งาน Firestore Offline Persistence (IndexedDB Cache)
+if (typeof window !== "undefined") {
+  enableMultiTabIndexedDbPersistence(db)
+    .catch((err) => {
+      if (err.code === 'failed-precondition') {
+        console.warn("Firestore persistence failed-precondition: Enabled in another tab.");
+      } else if (err.code === 'unimplemented') {
+        console.warn("Firestore persistence unimplemented: Browser does not support IndexedDB.");
+      } else {
+        console.error("Firestore persistence error:", err);
+      }
+    });
+}
+
 export const storage = getStorage(app);
 
 // Analytics (จะทำงานได้ดีเมื่ออยู่บน Production)

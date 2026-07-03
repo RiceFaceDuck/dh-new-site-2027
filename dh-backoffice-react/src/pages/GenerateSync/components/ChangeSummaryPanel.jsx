@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, DollarSign, Settings, Clock, RefreshCw, Info,
 import { syncSnapshotService } from '../../../firebase/bigseller/syncSnapshotService';
 import { useAuth } from '../../../contexts/AuthContext';
 
-export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualReset, onSnapshotSaved }) {
+export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualReset, onSnapshotSaved, isCalculating }) {
   const [viewMode, setViewMode] = useState('live'); // 'live' or 'saved'
   const { currentUser } = useAuth();
   
@@ -12,6 +12,16 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
 
   // Determine which data to display
   const displayChanges = viewMode === 'saved' && latestSnapshot?.changes ? latestSnapshot.changes : changes;
+  
+  if (isCalculating) {
+    return (
+        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full w-full bg-white dark:bg-slate-800 rounded-2xl relative z-10 min-h-[400px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-4"></div>
+            <p className="text-sm font-medium">กำลังเปรียบเทียบข้อมูลล่าสุด...</p>
+        </div>
+    );
+  }
+
   if (!displayChanges) return null;
 
   const { increased = [], decreased = [], priceChanged = [], otherChanged = [], lastResetDate } = displayChanges;

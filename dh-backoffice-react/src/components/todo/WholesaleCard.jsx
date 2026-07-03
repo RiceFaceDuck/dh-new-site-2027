@@ -10,20 +10,47 @@ import useWholesaleCalculator from './cards/wholesale/useWholesaleCalculator';
 export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge }) {
   const [fetchedData, setFetchedData] = useState({});
   const [isFetching, setIsFetching] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const calculator = useWholesaleCalculator(todo, fetchedData);
 
-  useEffect(() => {
-    const fetchPrices = async () => {
-      if (!calculator.cartItems || calculator.cartItems.length === 0) return;
-      setIsFetching(true);
-      try {
-        const skus = calculator.cartItems.map(item => item.sku);
-        if (skus.length > 0) {
-          const newPrices = {};
-          // 🚀 [Optimization] Chunk array by 30 to maximize Firebase 'in' query limit and save reads
-          for (let i = 0; i < skus.length; i += 30) {
-            const batchSkus = skus.slice(i, i + 30);
+  const fetchPrices = async () => {
+    if (hasFetched || !calculator.cartItems || calculator.cartItems.length === 0) return;
+    setIsFetching(true);
+    try {
+      const skus = calculator.cartItems.map(item => item.sku);
+      if (skus.length > 0) {
+        const newPrices = {};
+        
+        // 🚀 [Optimization] Try reading from sessionStorage hybrid cache first to avoid Firestore Reads
+        let cacheMap = new Map();
+        try {
+          const cachedStr = sessionStorage.getItem('search_hybrid_cache');
+          if (cachedStr) {
+            const cachedArr = JSON.parse(cachedStr);
+            cachedArr.forEach(p => {
+              if (p.sku) cacheMap.set(p.sku, p.wholesalePrice || p.cost || p.price);
+            });
+          }
+        } catch (e) {}
+
+        const missingSkus = [];
+        skus.forEach(sku => {
+          const cachedVal = cacheMap.get(sku);
+          if (cachedVal !== undefined && cachedVal !== null) {
+            const matchedItem = calculator.cartItems.find(item => item.sku === sku);
+            if (matchedItem) {
+              newPrices[matchedItem.productId] = cachedVal;
+            }
+          } else {
+            missingSkus.push(sku);
+          }
+        });
+
+        // 🚀 [Optimization] Chunk array by 30 to query remaining missing SKUs from Firestore
+        if (missingSkus.length > 0) {
+          for (let i = 0; i < missingSkus.length; i += 30) {
+            const batchSkus = missingSkus.slice(i, i + 30);
             const q = query(collection(db, 'products'), where('sku', 'in', batchSkus));
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => {
@@ -31,16 +58,22 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
               newPrices[doc.id] = data.wholesalePrice || null;
             });
           }
-          setFetchedData(newPrices);
         }
-      } catch (error) {
-        console.error("Error fetching wholesale prices:", error);
-      } finally {
-        setIsFetching(false);
+        
+        setFetchedData(prev => ({ ...prev, ...newPrices }));
+        setHasFetched(true);
       }
-    };
-    fetchPrices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    } catch (error) {
+      console.error("Error fetching wholesale prices:", error);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  useEffect(() => {
+    // Reset fetch status when todo changes to reload if different
+    setFetchedData({});
+    setHasFetched(false);
   }, [todo]);
 
   const customerObj = todo.payload?.customer || {};
@@ -111,7 +144,10 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
   };
 
   return (
-    <div className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] p-3 sm:p-4 flex flex-col relative overflow-hidden transition-all transform hover:-translate-y-0.5 mb-4 ${getUrgencyStyles(urgencyLevel)}`}>
+    <div 
+      onMouseEnter={fetchPrices}
+      className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] p-3 sm:p-4 flex flex-col relative overflow-hidden transition-all transform hover:-translate-y-0.5 mb-4 ${getUrgencyStyles(urgencyLevel)}`}
+    >
       
       {isManagerTab && <div className="absolute top-0 right-0 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">Manager</div>}
 

@@ -10,7 +10,8 @@ import {
   writeBatch, 
   serverTimestamp,
   where,
-  limit
+  limit,
+  getDoc
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -158,23 +159,47 @@ export const categoryService = {
   /**
    * E. ลบหมวดหมู่และรูปภาพที่เกี่ยวข้อง
    */
-  deleteCategory: async (id, iconUrl) => {
+  deleteCategory: async (categoryData) => {
     try {
-      // 1. Relation Check (Cost: 1 Read)
-      const productsRef = collection(db, 'products');
-      const q = query(productsRef, where('categoryId', '==', id), limit(1));
-      const snap = await getDocs(q);
+      const id = categoryData.id;
+      const type = categoryData.type;
       
-      if (!snap.empty) {
-        throw new Error('ไม่สามารถลบได้ เนื่องจากยังมีสินค้าเชื่อมโยงอยู่ในหมวดหมู่นี้');
+      // 1. Relation Check (Cost: 1 Read)
+      // เปลี่ยนจาก 'categoryId' เป็น 'category_lower' เพื่อให้สอดคล้องกับ products
+      if (type) {
+        const productsRef = collection(db, 'products');
+        const q = query(productsRef, where('category_lower', '==', type.trim().toLowerCase()), limit(1));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
+          throw new Error('ไม่สามารถลบได้ เนื่องจากยังมีสินค้าเชื่อมโยงอยู่ในหมวดหมู่นี้');
+        }
       }
 
       const docRef = doc(db, COLLECTION_NAME, id);
       await updateDoc(docRef, { isActive: false, deletedAt: serverTimestamp() });
 
+      // 2. Clean up from settings/product_categories list
+      try {
+        const settingsRef = doc(db, 'settings', 'product_categories');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const data = settingsSnap.data();
+          if (data.categories && Array.isArray(data.categories)) {
+            const filteredCategories = data.categories.filter(c => 
+              c !== categoryData.name && 
+              c !== categoryData.type && 
+              c !== type
+            );
+            await updateDoc(settingsRef, { categories: filteredCategories });
+          }
+        }
+      } catch (settingsError) {
+        console.error('🔥 Error updating product_categories settings on category delete:', settingsError);
+      }
       
       const uid = auth.currentUser?.uid;
-      await historyService.addLog('Category', 'Delete', 'category', `ลบหมวดหมู่: ID=${id}`, uid);
+      await historyService.addLog('Category', 'Delete', 'category', `ลบหมวดหมู่: ID=${id} และเคลียร์ชื่อหมวดหมู่ออกจากระบบตั้งค่าหลัก`, uid);
       
       return true;
     } catch (error) {

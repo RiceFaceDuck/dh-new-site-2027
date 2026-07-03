@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Upload, Layers, AlertCircle, Image as ImageIcon, RefreshCw, Eye } from 'lucide-react';
-import { collection, getDocs, query, where, updateDoc, doc, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, query, where, updateDoc, doc, arrayUnion, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
 import ImageCard from '../../components/gallery/ImageCard';
@@ -21,7 +21,8 @@ export default function GalleryMain() {
     setIsLoading(true);
     try {
       const productsRef = collection(db, 'products');
-      const snapshot = await getDocs(productsRef);
+      const q = query(productsRef, where('isActive', '==', true), limit(300));
+      const snapshot = await getDocs(q);
       
       let allImages = [];
       

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Ticket, Coins, Wallet, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { db, auth } from '../../firebase/config';
-import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, query, where, getDocs } from 'firebase/firestore';
 
 export default function PrivilegeSelector({ orderMode = 'retail' }) {
   const { checkoutState, updateCheckoutConfig, totals, cartItems } = useCart();
@@ -32,17 +32,56 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
         }
       });
 
-      const promoRef = collection(db, 'promotions');
-      const unsubPromo = onSnapshot(promoRef, (snap) => {
-        setPromotions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+      // ⚡️ Cache promotions and freebies for 5 minutes to avoid Firestore read spikes
+      const fetchPromosAndFreebies = async () => {
+        try {
+          const now = new Date().getTime();
+          
+          // 1. Promotions Caching
+          const promoCacheKey = 'active_promotions_cache';
+          const cachedPromoData = sessionStorage.getItem(promoCacheKey);
+          const cachedPromoTime = sessionStorage.getItem(promoCacheKey + '_time');
+          
+          if (cachedPromoData && cachedPromoTime && now - parseInt(cachedPromoTime) < 1000 * 60 * 5) {
+            setPromotions(JSON.parse(cachedPromoData));
+          } else {
+            const promoQ = query(collection(db, 'promotions'), where('isActive', '==', true));
+            const promoSnap = await getDocs(promoQ);
+            const promoItems = promoSnap.docs
+              .map(d => ({ id: d.id, ...d.data() }))
+              .filter(p => !p.deletedAt);
+            
+            sessionStorage.setItem(promoCacheKey, JSON.stringify(promoItems));
+            sessionStorage.setItem(promoCacheKey + '_time', now.toString());
+            setPromotions(promoItems);
+          }
 
-      const freebieRef = collection(db, 'freebies');
-      const unsubFreebie = onSnapshot(freebieRef, (snap) => {
-        setFreebies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+          // 2. Freebies Caching
+          const freebieCacheKey = 'active_freebies_cache';
+          const cachedFreebieData = sessionStorage.getItem(freebieCacheKey);
+          const cachedFreebieTime = sessionStorage.getItem(freebieCacheKey + '_time');
 
-      return () => { unsubUser(); unsubPromo(); unsubFreebie(); };
+          if (cachedFreebieData && cachedFreebieTime && now - parseInt(cachedFreebieTime) < 1000 * 60 * 5) {
+            setFreebies(JSON.parse(cachedFreebieData));
+          } else {
+            const freebieQ = query(collection(db, 'freebies'), where('isActive', '==', true));
+            const freebieSnap = await getDocs(freebieQ);
+            const freebieItems = freebieSnap.docs
+              .map(d => ({ id: d.id, ...d.data() }))
+              .filter(f => !f.deletedAt);
+            
+            sessionStorage.setItem(freebieCacheKey, JSON.stringify(freebieItems));
+            sessionStorage.setItem(freebieCacheKey + '_time', now.toString());
+            setFreebies(freebieItems);
+          }
+        } catch (err) {
+          console.error("🔥 Error fetching promotions/freebies in PrivilegeSelector:", err);
+        }
+      };
+
+      fetchPromosAndFreebies();
+
+      return () => { unsubUser(); };
     }
   }, [appId]);
 
