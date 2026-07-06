@@ -31,7 +31,9 @@ export const claimRequestService = {
       const claimId = await runTransaction(db, async (transaction) => {
         const date = new Date();
         const yearMonth = `${date.getFullYear().toString().slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const counterRef = doc(db, 'counters', 'claim_sequence');
+        const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
+        const shardId = getRandomShard(5);
+        const counterRef = doc(db, 'counters', `claim_sequence_${shardId}`);
         const counterDoc = await transaction.get(counterRef);
 
         let currentSeq = 1;
@@ -40,7 +42,7 @@ export const claimRequestService = {
            currentSeq = (data[yearMonth] || 0) + 1;
         }
 
-        const generatedId = `CLM-${yearMonth}${String(currentSeq).padStart(4, '0')}`;
+        const generatedId = `CLM-${yearMonth}-${shardId}-${String(currentSeq).padStart(4, '0')}`;
 
         transaction.set(counterRef, {
            [yearMonth]: currentSeq,
@@ -129,7 +131,9 @@ export const claimRequestService = {
       const returnId = await runTransaction(db, async (transaction) => {
         const date = new Date();
         const yearMonth = `${date.getFullYear().toString().slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const counterRef = doc(db, 'counters', 'return_sequence');
+        const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
+        const shardId = getRandomShard(5);
+        const counterRef = doc(db, 'counters', `return_sequence_${shardId}`);
         const counterDoc = await transaction.get(counterRef);
 
         let currentSeq = 1;
@@ -138,7 +142,7 @@ export const claimRequestService = {
            currentSeq = (data[yearMonth] || 0) + 1;
         }
 
-        const generatedId = `RTN-${yearMonth}${String(currentSeq).padStart(4, '0')}`;
+        const generatedId = `RTN-${yearMonth}-${shardId}-${String(currentSeq).padStart(4, '0')}`;
 
         transaction.set(counterRef, {
            [yearMonth]: currentSeq,

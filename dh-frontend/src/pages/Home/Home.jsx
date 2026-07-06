@@ -7,6 +7,7 @@ import { useHomeProducts } from './hooks/useHomeProducts';
 
 // นำเข้า Component ป้ายแบนเนอร์โฆษณา (BILLBOARD) แบบเดิม
 import BannerAdWidget from '../../components/ads/BannerAdWidget';
+import ScrollReveal from '../../components/common/ScrollReveal';
 
 const Home = () => {
   // 🚀 ดึงข้อมูลผ่าน Hook ที่แยกออกมา (SRP) พร้อมสถานะความเร็วเน็ต
@@ -24,23 +25,29 @@ const Home = () => {
         {/* ========================================================
             Section 2: Quick Actions (UI/UX ลูกเล่นใหม่ เน้น Mobile)
             ======================================================= */}
-        <QuickActions />
+        <ScrollReveal direction="up" delay={100}>
+          <QuickActions />
+        </ScrollReveal>
 
         {/* ========================================================
             Section 3: Squad Highlight (ร้านช่าง ใกล้คุณ)
             ======================================================= */}
-        <SquadHighlight />
+        <ScrollReveal direction="up" delay={200}>
+          <SquadHighlight />
+        </ScrollReveal>
 
         {/* ========================================================
             Section 4: Featured Spares (อะไหล่แนะนำ)
             ======================================================= */}
         {isActive && (
-          <FeaturedSpares 
-            products={products} 
-            loading={loading} 
-            error={error} 
-            isSlowConnection={isSlowConnection} 
-          />
+          <ScrollReveal direction="up" delay={300}>
+            <FeaturedSpares 
+              products={products} 
+              loading={loading} 
+              error={error} 
+              isSlowConnection={isSlowConnection} 
+            />
+          </ScrollReveal>
         )}
 
       </div>

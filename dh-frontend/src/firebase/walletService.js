@@ -1,10 +1,10 @@
-/* eslint-disable */
 import { useState, useEffect } from 'react';
 import { 
   collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, limit, 
   runTransaction, serverTimestamp, startAfter, increment 
 } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // 🛡️ กำหนด App ID สำหรับการเข้าถึงแบบ Enterprise Sandbox
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
@@ -205,7 +205,7 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
       });
 
       // 4. 🌟 [COOL FEATURE] ยิงตรงเข้า To-do ส่วนกลางของระบบหลังบ้าน (Backoffice)
-      const todoRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'todos'));
+      const todoRef = doc(collection(db, getCollectionPath('todos')));
       transaction.set(todoRef, {
         taskId: txId,
         taskType: 'WALLET_WITHDRAWAL',

@@ -38,7 +38,9 @@ export const todoPaymentService = {
         const yearStr = date.getFullYear().toString();
         
         // --- ระบบออกเลขบิลแบบรันตามลำดับ (Sequential Running Number) ---
-        const counterRef = doc(db, 'counters', 'receipt_sequence');
+        const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
+        const shardId = getRandomShard(5);
+        const counterRef = doc(db, 'counters', `receipt_sequence_${shardId}`);
         const counterDoc = await transaction.get(counterRef);
 
         let currentSeq = 1;
@@ -49,7 +51,7 @@ export const todoPaymentService = {
         
         const seqStr = String(currentSeq);
         const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-        const generatedOrderId = `DH-${yearStr}-${paddedSeq}`;
+        const generatedOrderId = `DH-${yearStr}-${shardId}-${paddedSeq}`;
 
         // --- 3. EXECUTE ALL WRITES ---
         // อัปเดต counter ในระบบ

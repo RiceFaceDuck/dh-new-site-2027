@@ -49,6 +49,7 @@ export default function InventoryCountExport({ changes, isCalculating, onManualR
       <button
         onClick={handleExport}
         disabled={isDisabled}
+        title="ขั้นตอนที่ 2: หลังจากนับสต็อกใน Big Seller เสร็จ ให้โหลดไฟล์นี้เพื่อนำไปกดยืนยันการนับ (จบงานประจำวัน)"
         className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center gap-3 transition-all duration-300 transform active:scale-95 shadow-sm border
           ${isDisabled ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 
             'bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-700'}`}

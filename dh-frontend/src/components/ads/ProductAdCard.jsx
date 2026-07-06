@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { ExternalLink, Store, ShoppingBag, Phone, X, MessageCircle, ShieldCheck, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { marketingService } from '../../firebase/marketingService';
+import LazyImage from '../common/LazyImage';
 
 const ProductAdCard = ({ ad }) => {
   const navigate = useNavigate();
@@ -101,12 +102,12 @@ const ProductAdCard = ({ ad }) => {
 
           {/* 🏙️ Cover Image & Partner Info */}
           <div className="w-full h-44 sm:h-52 bg-slate-200 relative shrink-0">
-            <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+            <LazyImage src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
             
             <div className="absolute bottom-4 left-4 right-4 flex items-end gap-4">
                <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg shrink-0 border border-white/20">
-                 <img src={ad.imageUrl} className="w-full h-full object-cover rounded-xl" />
+                 <LazyImage src={ad.imageUrl} alt="Partner" className="w-full h-full object-cover rounded-xl" />
                </div>
                <div className="pb-1 text-white flex-1">
                  <div className="flex items-center gap-1.5 mb-1.5">
@@ -201,11 +202,10 @@ const ProductAdCard = ({ ad }) => {
           className="relative aspect-square w-full overflow-hidden bg-slate-50 cursor-pointer"
           onClick={handleAdClick}
         >
-          <img 
+          <LazyImage 
             src={ad.imageUrl} 
             alt={ad.title || 'Advertisement'} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>

@@ -80,7 +80,9 @@ export const billingStatusTransaction = {
 
           if (needsNewOrderId && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed')) {
              const yearStr = new Date().getFullYear().toString();
-             const counterRef = doc(db, 'counters', 'receipt_sequence');
+             const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
+             const shardId = getRandomShard(5);
+             const counterRef = doc(db, 'counters', `receipt_sequence_${shardId}`);
              const counterSnap = await transaction.get(counterRef);
              let currentSeq = 1;
              if (counterSnap.exists()) currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
@@ -88,7 +90,7 @@ export const billingStatusTransaction = {
              transaction.set(counterRef, { [yearStr]: currentSeq, updatedAt: serverTimestamp() }, { merge: true });
              const seqStr = String(currentSeq);
              const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-             updates.orderId = `DH-${yearStr}-${paddedSeq}`;
+             updates.orderId = `DH-${yearStr}-${shardId}-${paddedSeq}`;
           }
 
           if (isConfirmingPayment) {

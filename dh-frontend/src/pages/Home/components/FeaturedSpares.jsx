@@ -29,7 +29,8 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
         </div>
         
         <Link 
-          to="/categories" 
+          to="/categories"
+          onMouseEnter={() => import('../../Categories/CategoriesMain')}
           className="group flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-full shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-700 transition-all duration-300"
         >
           ดูทั้งหมด
@@ -40,7 +41,7 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
           {[...Array(skeletonCount)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 h-[350px] flex flex-col shadow-sm animate-pulse">
+            <div key={i} className="bg-slate-100 dark:bg-slate-800 rounded-xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 flex flex-col shadow-sm animate-pulse h-full">
               <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700 rounded-xl mb-4"></div>
               <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-3/4 mb-3"></div>
               <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-1/2 mb-auto"></div>

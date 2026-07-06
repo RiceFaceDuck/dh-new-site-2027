@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Edit2, Trash2, Building2, User, Copy, Check } from 'lucide-react';
+import { X, Edit2, Trash2, Building2, User, Copy, Check, TrendingUp, ShoppingBag, Sparkles } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 
@@ -8,7 +8,10 @@ import ShippingInfo from './ShippingInfo';
 import TaxInfo from './TaxInfo';
 import StatsInfo from './StatsInfo';
 import HistoryInfo from './HistoryInfo';
+import MarketingInfo from './MarketingInfo';
 import CustomerSyncModal from './CustomerSyncModal';
+import WalletDisplay from '../displays/WalletDisplay';
+import PointDisplay from '../displays/PointDisplay';
 
 export default function DetailPanel({
   customer,
@@ -28,6 +31,14 @@ export default function DetailPanel({
 
   // State สำหรับ Modal โอนย้ายบัญชี
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+
+  // State สำหรับจัดการ Tabs
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // รีเซ็ตแท็บเมื่อเปลี่ยนลูกค้า
+  useEffect(() => {
+    setActiveTab('overview');
+  }, [customer?.id]);
 
   // 🕵️‍♂️ ดึงข้อมูลภาษีลับ เมื่อเปิดดูรายละเอียดลูกค้า
   useEffect(() => {
@@ -143,6 +154,30 @@ export default function DetailPanel({
                </button>
             )}
           </div>
+          
+          {/* 🌟 New Compact Stats Row in Header */}
+          <div className="flex items-center flex-wrap gap-3 mt-3 pt-3 border-t border-slate-200/60">
+            {/* ยอดค้างชำระ */}
+            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md border border-emerald-100">
+              <TrendingUp size={12} className="text-emerald-500" />
+              <span className="text-[10px] font-bold uppercase">DH ค้างยอด:</span>
+              <span className="text-xs font-black font-mono"><WalletDisplay customerId={customer.id} /></span>
+            </div>
+            
+            {/* พอยต์ */}
+            <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md border border-amber-100">
+              <Sparkles size={12} className="text-amber-500" />
+              <span className="text-[10px] font-bold uppercase">Point:</span>
+              <span className="text-xs font-black font-mono"><PointDisplay customerId={customer.id} /></span>
+            </div>
+
+            {/* ยอดสั่งซื้อรวม */}
+            <div className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md border border-slate-200">
+              <ShoppingBag size={12} className="text-slate-500" />
+              <span className="text-[10px] font-bold uppercase">ยอดสั่งซื้อ:</span>
+              <span className="text-xs font-black font-mono">{formatCurrency(customer.stats?.totalOrders || 0)}</span>
+            </div>
+          </div>
         </div>
         
         <div className="flex items-center gap-2 shrink-0">
@@ -167,34 +202,70 @@ export default function DetailPanel({
         </div>
       </div>
 
+      {/* 1.5 Tabs Menu */}
+      <div className="flex items-center px-5 pt-3 border-b border-slate-200 bg-slate-50/80 gap-6">
+        <button 
+          onClick={() => setActiveTab('overview')}
+          className={`pb-2.5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'overview' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'}`}
+        >
+          📌 ทั่วไป
+        </button>
+        <button 
+          onClick={() => setActiveTab('marketing')}
+          className={`pb-2.5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'marketing' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'}`}
+        >
+          📢 โฆษณา & ร้านค้า
+        </button>
+        <button 
+          onClick={() => setActiveTab('history')}
+          className={`pb-2.5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'history' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'}`}
+        >
+          📦 ประวัติสั่งซื้อ
+        </button>
+      </div>
+
       {/* 2. เนื้อหาหลัก (Scrollable Content) */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-slate-50/50">
         <div className="p-5 space-y-6">
-          <ContactInfo customer={customer} />
           
-          <ShippingInfo 
-            getFormattedAddress={getFormattedAddress} 
-            handleCopy={handleCopy} 
-            copiedField={copiedField} 
-          />
+          {activeTab === 'overview' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <ContactInfo 
+                customer={customer} 
+                handleCopy={handleCopy}
+                copiedField={copiedField}
+              />
+              
+              <ShippingInfo 
+                customer={customer}
+                getFormattedAddress={getFormattedAddress} 
+                handleCopy={handleCopy} 
+                copiedField={copiedField} 
+              />
 
-          <TaxInfo 
-            isLoadingTax={isLoadingTax}
-            secureTaxInfo={secureTaxInfo}
-            handleCopy={handleCopy}
-            copiedField={copiedField}
-          />
+              <TaxInfo 
+                isLoadingTax={isLoadingTax}
+                secureTaxInfo={secureTaxInfo}
+                handleCopy={handleCopy}
+                copiedField={copiedField}
+              />
+            </div>
+          )}
 
-          <StatsInfo 
-            customer={customer} 
-            formatCurrency={formatCurrency} 
-          />
+          {activeTab === 'marketing' && (
+            <MarketingInfo customer={customer} />
+          )}
 
-          <HistoryInfo 
-            history={history}
-            formatDate={formatDate}
-            formatCurrency={formatCurrency}
-          />
+          {activeTab === 'history' && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <HistoryInfo 
+                history={history}
+                formatDate={formatDate}
+                formatCurrency={formatCurrency}
+              />
+            </div>
+          )}
+
         </div>
       </div>
 

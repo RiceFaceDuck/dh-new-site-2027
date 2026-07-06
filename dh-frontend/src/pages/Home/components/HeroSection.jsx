@@ -2,9 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { storefrontSettingsService, DEFAULT_HERO_CONFIG } from '../../../firebase/storefrontSettingsService';
 
+const CACHE_KEY = 'dh_hero_config_cache';
+
 const HeroSection = () => {
-  const [config, setConfig] = useState(DEFAULT_HERO_CONFIG);
-  const [isLoading, setIsLoading] = useState(true);
+  // 1. Initialize from localStorage if available, otherwise DEFAULT
+  const [config, setConfig] = useState(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      return cached ? JSON.parse(cached) : DEFAULT_HERO_CONFIG;
+    } catch (e) {
+      return DEFAULT_HERO_CONFIG;
+    }
+  });
+  
+  // If we have a cached version, we don't strictly need to show a loading state that fades it out
+  const [isLoading, setIsLoading] = useState(!localStorage.getItem(CACHE_KEY));
 
   useEffect(() => {
     let isMounted = true;
@@ -13,6 +25,7 @@ const HeroSection = () => {
         const data = await storefrontSettingsService.getHeroConfig();
         if (isMounted && data) {
           setConfig(data);
+          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
         }
       } catch (error) {
         console.error("Failed to load hero config:", error);
@@ -38,6 +51,8 @@ const HeroSection = () => {
           <img 
             src={activeConfig.imageUrl || DEFAULT_HERO_CONFIG.imageUrl} 
             alt="Electronic Repairs" 
+            loading="eager"
+            fetchpriority="high"
             className="w-full h-full object-cover"
           />
           {/* Dynamic Gradient overlay */}

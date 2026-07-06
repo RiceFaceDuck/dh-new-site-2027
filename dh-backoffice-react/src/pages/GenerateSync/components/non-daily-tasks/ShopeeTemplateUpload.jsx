@@ -82,6 +82,7 @@ export default function ShopeeTemplateUpload({ currentInventory, isCalculating }
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => !isDisabled && fileInputRef.current?.click()}
+        title="วิธีใช้: ไปดาวน์โหลดไฟล์แก้ไขราคาสินค้า/สต็อก จาก Shopee Seller Centre แล้วลากมาวางที่กล่องนี้ ระบบจะช่วยอัปเดตตัวเลขให้ตรงกับร้านอัตโนมัติ"
         className={`w-full relative rounded-xl border-2 border-dashed p-6 transition-all duration-300 flex flex-col items-center justify-center gap-3 text-center cursor-pointer group overflow-hidden
           ${isDisabled ? 'border-slate-200 bg-slate-50 cursor-not-allowed opacity-70' : 
             isDragging ? 'border-blue-500 bg-blue-50 scale-[1.02]' : 

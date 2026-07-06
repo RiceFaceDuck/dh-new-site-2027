@@ -2,6 +2,9 @@ import React, { useRef } from 'react';
 import { X, UploadCloud, Database, CheckCircle, Loader2 } from 'lucide-react';
 import { useExcelImport } from './hooks/useExcelImport';
 
+// Common Components
+import GuidePanel from '../common/GuidePanel';
+
 // Subcomponents
 import ImportResultSummary from './import/ImportResultSummary';
 import ImportUploader from './import/ImportUploader';
@@ -39,11 +42,31 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
             <>
               {/* Step 1: Upload or Download Template */}
               {!file && (
-                <ImportUploader 
-                  handleDownloadTemplate={handleDownloadTemplate}
-                  handleFileUpload={handleFileUpload}
-                  fileInputRef={fileInputRef}
-                />
+                <div className="space-y-6">
+                  <GuidePanel 
+                    title="การนำเข้าข้อมูลสินค้าด้วย Excel"
+                    description="เครื่องมือสำหรับเพิ่มหรืออัปเดตข้อมูลสินค้าทีละหลายรายการผ่านไฟล์ Excel เพื่อประหยัดเวลาในการจัดการคลังสินค้า"
+                    howTo={[
+                      "คลิก 'ดาวน์โหลด .xlsx' เพื่อรับไฟล์ Template ที่ถูกต้อง",
+                      "กรอกข้อมูลสินค้าลงในไฟล์ Excel (ต้องมี SKU และ Name เป็นอย่างน้อย)",
+                      "ลากไฟล์ที่แก้ไขแล้วมาวางในช่อง 'อัพโหลดไฟล์ Excel' หรือคลิกเพื่อเลือกไฟล์",
+                      "ตรวจสอบความถูกต้องของข้อมูลในตารางพรีวิว",
+                      "เลือกวิธรจัดการเมื่อพบ SKU ซ้ำ (เขียนทับ, ข้าม, หรือเพิ่มเข้า Todo)",
+                      "กดยืนยันนำเข้าข้อมูล"
+                    ]}
+                    tips={[
+                      "SKU ควรเป็นตัวพิมพ์ใหญ่ และไม่ควรมีเว้นวรรค เช่น 'SCR-15-PRO'",
+                      "หากต้องการอัปเดตสต็อกเพียงอย่างเดียว สามารถกรอกแค่ SKU และ StockQuantity ได้ (หากเลือกเขียนทับ)",
+                      "ไม่ควรนำเข้าเกิน 500 รายการต่อ 1 ไฟล์ เพื่อป้องกันการหน่วงของระบบ"
+                    ]}
+                    expectedResult="เมื่อนำเข้าสำเร็จ ข้อมูลจะถูกบันทึกลงฐานข้อมูลทันที หากมีข้อมูลซ้ำตามตัวเลือก ระบบจะจัดการเขียนทับหรือข้ามตามที่คุณตั้งค่าไว้"
+                  />
+                  <ImportUploader 
+                    handleDownloadTemplate={handleDownloadTemplate}
+                    handleFileUpload={handleFileUpload}
+                    fileInputRef={fileInputRef}
+                  />
+                </div>
               )}
 
               {/* Step 2: Preview & Settings */}

@@ -11,14 +11,25 @@ export const DEFAULT_THEME_CONFIG = {
   opacityBottom: 35
 };
 
+const CACHE_KEY = 'dh_storefront_theme_cache';
+
 export function useStorefrontTheme() {
-  const [themeConfig, setThemeConfig] = useState(DEFAULT_THEME_CONFIG);
+  const [themeConfig, setThemeConfig] = useState(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      return cached ? JSON.parse(cached) : DEFAULT_THEME_CONFIG;
+    } catch (e) {
+      return DEFAULT_THEME_CONFIG;
+    }
+  });
 
   useEffect(() => {
     const docRef = doc(db, 'settings', 'storefrontTheme');
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...docSnap.data() });
+        const newTheme = { ...DEFAULT_THEME_CONFIG, ...docSnap.data() };
+        setThemeConfig(newTheme);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(newTheme));
       }
     }, (error) => {
       console.error("🔥 Error listening to storefront theme:", error);

@@ -4,6 +4,7 @@ import TemplateSettingsModal from './TemplateSettingsModal';
 import SkuMerchantExport from './daily-tasks/SkuMerchantExport';
 import InventoryCountExport from './daily-tasks/InventoryCountExport';
 import ShopeeTemplateUpload from './non-daily-tasks/ShopeeTemplateUpload';
+import GuidePanel from '../../../components/common/GuidePanel';
 
 export default function GenerateActions({ changes, isCalculating, onManualReset, latestSnapshot }) {
   const [showSettings, setShowSettings] = useState(false);
@@ -81,6 +82,25 @@ export default function GenerateActions({ changes, isCalculating, onManualReset,
           <ShopeeTemplateUpload 
             currentInventory={changes?.currentInventory} 
             isCalculating={isCalculating} 
+          />
+        </div>
+
+        {/* Guide Panel */}
+        <div className="w-full mt-6 relative z-10 text-left">
+          <GuidePanel 
+            title="การอัปเดตสต็อก Big Seller (งานประจำวัน)"
+            description="ส่วนนี้คือหน้าสำหรับโหลดไฟล์ไปเข้า Big Seller เพื่อปรับตัวเลขสต็อกในระบบออนไลน์ให้ตรงกับความจริงมากที่สุด (หรือที่เรียกว่าการทำ Inventory Count)"
+            howTo={[
+              "กดปุ่ม 'โหลด SKU ที่มีความเคลื่อนไหว' ระบบจะเลือกเฉพาะของที่ขายออกไป (ลดการใช้เวลาและโควต้า Firebase)",
+              "นำไฟล์ที่ได้ไปเข้า Big Seller เมนู Inventory > นับสต็อก (Import Merchant SKU)",
+              "รอจนนับเสร็จ แล้วกลับมากดปุ่ม 'โหลด ผลลัพธ์การนับ'",
+              "นำไฟล์ที่ 2 ไปเข้า Big Seller เพื่อจบการนับสต็อก (Confirm Count)"
+            ]}
+            tips={[
+              "ระบบนี้ดึงข้อมูลจาก GAS (Google Apps Script) เป็นหลัก จึงกินโควต้า Firebase เป็น 0 Reads ปลอดภัยแม้มีจำนวนสินค้าเยอะ",
+              "หากคุณต้องการเปลี่ยนราคาด้วย สามารถใช้กล่อง 'งานอื่นๆ' แล้วโยนไฟล์ Shopee ลงไปได้เลย"
+            ]}
+            expectedResult="สต็อกใน Big Seller จะอัปเดตตรงกับระบบหลังบ้าน โดยไม่ต้องไปนั่งไล่พิมพ์แก้ทีละตัว"
           />
         </div>
 

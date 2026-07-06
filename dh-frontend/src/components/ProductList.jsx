@@ -54,11 +54,9 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       return;
     }
 
-    setAddingState(prev => ({ ...prev, [product.id]: 'loading' }));
-    
     try {
-      // 🚀 ปรับปรุงการหยิบใส่ตะกร้าให้เชื่อมต่อผ่าน Context เพื่อใช้งาน Optimistic UI
-      await addToCart(product, 1);
+      // ⚡ Optimistic UI: หยิบใส่ตะกร้าและแสดงผลสำเร็จทันที 0 วินาที (ไม่ติด State Loading ให้กระพริบ)
+      addToCart(product, 1); // ไม่ต้อง await เพราะ Context ทำงานใน Memory ทันที
       
       setAddingState(prev => ({ ...prev, [product.id]: 'success' }));
       setTimeout(() => {
@@ -72,14 +70,14 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
   };
 
   const SkeletonCard = () => (
-    <div className="rounded-md border border-slate-200 bg-white p-3 flex flex-col h-[280px]">
-      <div className="w-full h-36 bg-slate-100 rounded-sm animate-pulse mb-3"></div>
-      <div className="w-1/3 h-3 bg-slate-100 rounded-sm animate-pulse mb-2"></div>
-      <div className="w-full h-4 bg-slate-100 rounded-sm animate-pulse mb-1"></div>
-      <div className="w-2/3 h-4 bg-slate-100 rounded-sm animate-pulse mb-auto"></div>
+    <div className="rounded-md border border-slate-200 bg-slate-100 p-2 md:p-3 flex flex-col h-full shadow-sm animate-pulse">
+      <div className="w-full aspect-square bg-white rounded-lg mb-3"></div>
+      <div className="w-1/3 h-3 bg-white rounded-sm animate-pulse mb-2"></div>
+      <div className="w-full h-4 bg-white rounded-sm animate-pulse mb-1"></div>
+      <div className="w-2/3 h-4 bg-white rounded-sm animate-pulse mb-auto"></div>
       <div className="flex justify-between items-end mt-4">
-        <div className="w-1/2 h-6 bg-slate-100 rounded-sm animate-pulse"></div>
-        <div className="w-9 h-9 bg-slate-100 rounded-sm animate-pulse"></div>
+        <div className="w-1/2 h-6 bg-white rounded-sm animate-pulse"></div>
+        <div className="w-full h-8 bg-white rounded-md mt-3 animate-pulse"></div>
       </div>
     </div>
   );
@@ -182,19 +180,17 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
               </span>
               <button 
                 onClick={(e) => handleAddToCart(e, mappedProduct)}
-                disabled={!hasStock || addingState[product.id] === 'loading' || addingState[product.id] === 'success'}
+                disabled={!hasStock || addingState[product.id] === 'success'}
                 className={`w-full py-1.5 md:py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-sm z-20 text-xs font-bold uppercase tracking-widest ${
                   addingState[product.id] === 'success'
-                    ? 'bg-green-500 text-white'
+                    ? 'bg-green-500 text-white scale-95'
                     : !hasStock 
                       ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                      : 'bg-yellow-400 text-slate-900 hover:bg-yellow-500 hover:shadow-md'
+                      : 'bg-yellow-400 text-slate-900 hover:bg-yellow-500 hover:shadow-md active:scale-95'
                 }`}
                 aria-label="Add to cart"
               >
-                {addingState[product.id] === 'loading' ? (
-                    <Loader2 size={16} className="animate-spin" />
-                ) : addingState[product.id] === 'success' ? (
+                {addingState[product.id] === 'success' ? (
                     <span className="flex items-center gap-1"><CheckCircle2 size={16} strokeWidth={2.5} /> ADDED</span>
                 ) : (
                     "ADD TO CART"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings2, HelpCircle, Save, Check } from 'lucide-react';
 
-export default function GlobalSchemaSettings() {
+export default function GlobalSchemaSettings({ embedded = false }) {
   const [aliases, setAliases] = useState({
     sku: 'sku, รหัสสินค้า, merchant, barcode, item code',
     qty: 'qty, quantity, จำนวน, stock, สต๊อก, สต็อก',
@@ -29,24 +29,30 @@ export default function GlobalSchemaSettings() {
     setTimeout(() => setIsSaved(false), 2000);
   };
 
+  const containerClass = embedded 
+    ? "w-full text-left" 
+    : "bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 p-5 mt-4 w-full relative overflow-hidden group";
+
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 p-5 mt-4 w-full relative overflow-hidden group">
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-all duration-700"></div>
+    <div className={containerClass}>
+      {!embedded && <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-all duration-700"></div>}
 
       <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-          <Settings2 className="text-indigo-500" size={20} />
-          <h3 className="text-lg font-black text-slate-800 tracking-tight">ตั้งค่าคำค้นหาหัวคอลัมน์ (Schema Aliases)</h3>
+        <div className={`flex items-center gap-2 mb-4 pb-3 ${!embedded ? 'border-b border-slate-100' : ''}`}>
+          <Settings2 className="text-indigo-500" size={embedded ? 18 : 20} />
+          <h3 className={`${embedded ? 'text-base text-slate-700' : 'text-lg text-slate-800'} font-black tracking-tight`}>
+            {embedded ? 'ตั้งค่าคำค้นหาหัวคอลัมน์เริ่มต้น (Default Aliases)' : 'ตั้งค่าคำค้นหาหัวคอลัมน์ (Schema Aliases)'}
+          </h3>
         </div>
 
         {/* Documentation / Guide */}
-        <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 mb-5 flex gap-3 text-sm">
-          <HelpCircle size={20} className="text-indigo-500 shrink-0 mt-0.5" />
+        <div className={`bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 mb-5 flex gap-3 text-sm ${embedded ? 'text-xs p-3' : ''}`}>
+          <HelpCircle size={embedded ? 18 : 20} className="text-indigo-500 shrink-0 mt-0.5" />
           <div className="text-indigo-900/80 text-left">
-            <strong className="block text-indigo-900 mb-1 font-bold text-base">คำแนะนำการใช้งาน</strong>
+            <strong className={`block text-indigo-900 mb-1 font-bold ${embedded ? 'text-sm' : 'text-base'}`}>คำแนะนำการใช้งาน</strong>
             <p className="leading-relaxed">
               พิมพ์คำที่เป็นไปได้สำหรับ <strong>หัวคอลัมน์</strong> ในไฟล์ Excel/CSV ของคุณ โดยใช้ <strong>ลูกน้ำ (,)</strong> คั่นระหว่างคำ<br/>
-              ระบบจะนำคำเหล่านี้ไปค้นหาอัตโนมัติ ทำให้คุณสามารถใช้ไฟล์จากหลายแพลตฟอร์ม (เช่น Shopee, Lazada, ระบบ POS) ได้โดยไม่ต้องแก้ไขไฟล์ต้นฉบับ
+              ระบบจะนำคำเหล่านี้ไปค้นหาอัตโนมัติ ทำให้คุณสามารถใช้ไฟล์จากหลายแพลตฟอร์มได้โดยไม่ต้องแก้ไขไฟล์ต้นฉบับ
             </p>
           </div>
         </div>

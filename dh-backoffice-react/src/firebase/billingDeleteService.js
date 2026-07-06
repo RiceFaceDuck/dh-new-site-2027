@@ -1,4 +1,4 @@
-import { doc, deleteDoc, getDoc, runTransaction, serverTimestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, deleteDoc, getDoc, runTransaction, serverTimestamp, collection, query, where, getDocs, writeBatch, increment } from 'firebase/firestore';
 import { db } from './config';
 import { gasHistoryService } from './gasHistoryService';
 
@@ -26,16 +26,21 @@ export const billingDeleteService = {
              const userRef = doc(db, 'users', customerUid);
              const userSnap = await transaction.get(userRef);
              if (userSnap.exists()) {
-                 const { adjustUserCreditWithTransaction } = await import('./credit/creditActionService');
-                 await adjustUserCreditWithTransaction(
-                     transaction,
-                     customerUid,
-                     walletUsed,
-                     'deposit',
-                     'คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร)',
-                     actorUid || 'system',
-                     `REF_DEL_${orderId}`
-                 );
+                 transaction.update(userRef, {
+                     walletBalance: increment(walletUsed),
+                     updatedAt: serverTimestamp()
+                 });
+
+                 const walletTxRef = doc(collection(db, `users/${customerUid}/wallet_transactions`));
+                 transaction.set(walletTxRef, {
+                     transactionId: `TXW_REF_DEL_${orderId}`,
+                     type: 'REFUND',
+                     amount: walletUsed,
+                     status: 'SUCCESS',
+                     note: 'คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร)',
+                     operatorUid: actorUid || 'system',
+                     timestamp: serverTimestamp()
+                 });
              }
              transaction.delete(docRef);
          });

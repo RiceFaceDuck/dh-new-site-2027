@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config';
 import { appId, getUsersPath, invalidateCreditHistoryCache } from './creditConfig';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * ✨ Atomic Dual-Sync Credit Adjustment
@@ -17,14 +18,14 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     let txRef;
     const refSuffix = referenceId ? referenceId : Date.now().toString();
     if (referenceId) {
-      txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
+      txRef = doc(db, getCollectionPath('credit_transactions'), `ADJ_${type}_${referenceId}`);
       const txSnap = await transaction.get(txRef);
       if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว");
     } else {
-      txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+      txRef = doc(collection(db, getCollectionPath('credit_transactions')));
     }
 
-    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
+    const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
     
     const [userSnap, activePartnerSnap] = await Promise.all([
       transaction.get(userRef),
@@ -86,7 +87,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
 export const getCreditSettings = async () => {
   try {
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+    const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) return docSnap.data();
     return null;
@@ -130,7 +131,7 @@ export const calculateEarnedPoints = (amount, config, items = []) => {
 export const handlePaymentCompletion = async (orderId, userId) => {
   try {
     await runTransaction(db, async (transaction) => {
-      const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
+      const orderRef = doc(db, getCollectionPath('orders'), orderId);
       const usersPath = getUsersPath();
       const userRef = doc(db, usersPath, userId);
       
@@ -158,7 +159,7 @@ export const handlePaymentCompletion = async (orderId, userId) => {
         creditPoints: newBalance,
         updatedAt: serverTimestamp()
       });
-      const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+      const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
       transaction.set(txRef, {
         transactionId: `EARN-${Date.now()}`,
         uid: userId,
@@ -184,8 +185,8 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
 
   const usersPath = getUsersPath();
   const userRef = doc(db, usersPath, partnerId);
-  const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
-  const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+  const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
+  const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
   const storeProfileRef = doc(db, usersPath, partnerId, 'storeProfile', 'main');
 
   try {
@@ -256,10 +257,10 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   const usersPath = getUsersPath();
   const userRef = doc(db, usersPath, userId);
   
-  const txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+  const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
   const historyRef = doc(collection(db, usersPath, userId, 'credit_history'));
 
-  const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', userId);
+  const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), userId);
 
   const [userDoc, activePartnerSnap] = await Promise.all([
     transaction.get(userRef),
@@ -342,7 +343,7 @@ export const trackAdImpressions = async (partnerIds, config) => {
 
     // Batch updates manually using transactions (since normal batch won't easily support read-update for logic)
     const promises = partnerIds.map(async (partnerId) => {
-      const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId, 'stats', statDocId);
+      const partnerStatsRef = doc(db, getCollectionPath('partners'), partnerId, 'stats', statDocId);
       
       await runTransaction(db, async (transaction) => {
         const docSnap = await transaction.get(partnerStatsRef);
@@ -382,7 +383,7 @@ export const trackAdClick = async (partnerId, config) => {
   if (!partnerId) return;
   try {
     const statDocId = `${new Date().getFullYear()}-${new Date().getMonth()+1}`;
-    const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId, 'stats', statDocId);
+    const partnerStatsRef = doc(db, getCollectionPath('partners'), partnerId, 'stats', statDocId);
     
     await runTransaction(db, async (transaction) => {
       const docSnap = await transaction.get(partnerStatsRef);

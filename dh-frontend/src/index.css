@@ -31,6 +31,7 @@
 
   body {
     @apply text-gray-800 font-sans;
+    transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
   }
 
   /* Custom Scrollbar - เรียบหรู ทันสมัย ประหยัดพื้นที่ */

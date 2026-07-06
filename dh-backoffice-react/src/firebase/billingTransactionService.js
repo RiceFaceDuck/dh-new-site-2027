@@ -44,7 +44,9 @@ export const billingTransactionService = {
         }
 
         const yearStr = new Date().getFullYear().toString();
-        const counterRef = doc(db, 'counters', 'receipt_sequence');
+        const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
+        const shardId = getRandomShard(5);
+        const counterRef = doc(db, 'counters', `receipt_sequence_${shardId}`);
         let counterSnap = null;
         if (statusLower === 'paid' || statusLower === 'approved') {
             counterSnap = await transaction.get(counterRef);
@@ -57,7 +59,7 @@ export const billingTransactionService = {
             }
             const seqStr = String(currentSeq);
             const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-            finalOrderId = `DH-${yearStr}-${paddedSeq}`;
+            finalOrderId = `DH-${yearStr}-${shardId}-${paddedSeq}`;
         } else if (!finalOrderId || (finalOrderId.startsWith('TEMP-') === false && finalOrderId.startsWith('DH-') === false)) {
             const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
             const runNum = Math.floor(1000 + Math.random() * 9000);
@@ -107,6 +109,9 @@ export const billingTransactionService = {
 
         let currentWallet = 0;
         let walletToUse = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+        if (Number.isNaN(walletToUse) || walletToUse < 0) {
+            walletToUse = 0;
+        }
         let earnedPoints = 0;
         const POINTS_RATE = 100;
 
@@ -156,7 +161,7 @@ export const billingTransactionService = {
             }
 
             if (statusLower === 'paid') {
-                const amountForPoints = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0) - walletToUse;
+                const amountForPoints = finalSecureNetTotal - walletToUse;
                 if (amountForPoints > 0) {
                   earnedPoints = Math.floor(amountForPoints / POINTS_RATE);
                 }
@@ -224,6 +229,14 @@ export const billingTransactionService = {
             dataToSave.customerInfo.displayName = dataToSave.customerInfo.displayName || dataToSave.customerInfo.accountName || '';
         }
 
+        // [SECURITY] Enforce Server-Side Calculated Total 
+        if (dataToSave.summary) {
+            dataToSave.summary.finalTotal = finalSecureNetTotal;
+            dataToSave.summary.netTotal = finalSecureNetTotal;
+        }
+        dataToSave.finalTotal = finalSecureNetTotal;
+        dataToSave.netTotal = finalSecureNetTotal;
+
         const finalOrderData = {
             ...dataToSave, 
             items: verifiedItems, // Use verified items with Snapshot
@@ -246,7 +259,7 @@ export const billingTransactionService = {
             const now = new Date();
             const yyyyMM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const yyyyMMdd = `${yyyyMM}-${String(now.getDate()).padStart(2, '0')}`;
-            const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0);
+            const totalSaleAmount = finalSecureNetTotal;
 
             transaction.set(doc(db, 'sales_stats', yyyyMM), { 
               totalSales: increment(totalSaleAmount), 
@@ -308,7 +321,7 @@ export const billingTransactionService = {
           await gasStockService.forceSync();
       }
 
-      const netForLog = orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0;
+      const netForLog = finalSecureNetTotal || 0;
       await historyService.addLog('Billing', 'Create', finalOrderId, `สร้างบิลใหม่ ยอดสุทธิ ฿${netForLog.toLocaleString()}`, actorUid);
 
       return { id: newDocId, orderId: finalOrderId };

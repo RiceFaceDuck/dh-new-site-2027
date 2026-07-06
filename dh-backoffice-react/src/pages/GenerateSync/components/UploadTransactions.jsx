@@ -2,8 +2,12 @@ import React, { useState, useRef } from 'react';
 import { UploadCloud, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet, X, HelpCircle, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
 import { transactionImportService } from '../../../firebase/transactionImportService';
 import { useAuth } from '../../../contexts/AuthContext';
+import GlobalSchemaSettings from './GlobalSchemaSettings';
+import GuidePanel from '../../../components/common/GuidePanel';
+import RecentImportsModal from './RecentImportsModal';
+import { History } from 'lucide-react';
 
-export default function UploadTransactions({ onUploadComplete }) {
+export default function UploadTransactions({ onUploadComplete, latestSnapshot }) {
   const [file, setFile] = useState(null);
   const [parsedData, setParsedData] = useState(null);
   const [status, setStatus] = useState('idle'); // idle, parsing, preview, uploading, success, error
@@ -11,6 +15,8 @@ export default function UploadTransactions({ onUploadComplete }) {
   const [actionType, setActionType] = useState('deduct'); // deduct or add
   const [currentMapping, setCurrentMapping] = useState({ skuKey: '', qtyKey: '', priceKey: '' });
   const [showMappingConfig, setShowMappingConfig] = useState(false);
+  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   
   const fileInputRef = useRef(null);
   const { currentUser } = useAuth();
@@ -124,9 +130,40 @@ export default function UploadTransactions({ onUploadComplete }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 w-full relative overflow-hidden group">
+    <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 w-full relative overflow-hidden group min-h-[300px]">
       <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-700"></div>
       
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+        {/* History / Undo Button */}
+        {(status === 'idle' || status === 'error') && (
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            title="ดูประวัติการนำเข้าไฟล์ล่าสุด และสามารถกดย้อนกลับ (Undo) เพื่อคืนค่าสต็อกได้"
+            className={`p-2 rounded-xl transition-all border shadow-sm flex items-center justify-center gap-2 px-3 text-sm font-bold
+              ${showHistoryModal 
+                ? 'bg-rose-50 text-rose-600 border-rose-200' 
+                : 'bg-white text-slate-500 border-slate-200 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200'}`}
+          >
+            <History size={18} />
+            <span className="hidden sm:inline">ประวัติ (Undo)</span>
+          </button>
+        )}
+
+        {/* Global Settings Toggle */}
+        {(status === 'idle' || status === 'error') && (
+          <button 
+            onClick={() => setShowGlobalSettings(!showGlobalSettings)}
+            title="ตั้งค่าคำค้นหาหัวคอลัมน์เริ่มต้น"
+            className={`p-2 rounded-xl transition-all border shadow-sm flex items-center justify-center 
+              ${showGlobalSettings 
+                ? 'bg-indigo-50 text-indigo-600 border-indigo-200' 
+                : 'bg-white text-slate-400 border-slate-200 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200'}`}
+          >
+            <Settings2 size={20} />
+          </button>
+        )}
+      </div>
+
       <div className="relative z-10 w-full flex flex-col items-center">
         
         {status === 'idle' || status === 'error' ? (
@@ -137,11 +174,34 @@ export default function UploadTransactions({ onUploadComplete }) {
               {status === 'error' ? <AlertCircle size={28} /> : <FileSpreadsheet size={28} />}
             </div>
             
-            <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1 text-center">
-              นำเข้าข้อมูล การขาย จากภายนอก (วันนี้)
+            <h3 className="text-lg font-black text-slate-800 dark:text-white mb-4 text-center">
+              นำเข้าข้อมูลอัปเดตสต็อก (Excel/CSV)
             </h3>
+            
+            {/* Main Toggle */}
+            <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-xl mb-6 w-full max-w-sm">
+              <button
+                onClick={() => setActionType('deduct')}
+                title="คลิกเพื่อนำเข้าไฟล์ที่ต้องการตัด/ลดจำนวนสต็อก (เช่น ยอดขาย, ของชำรุด)"
+                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
+                  actionType === 'deduct' ? 'bg-white dark:bg-slate-600 text-rose-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                }`}
+              >
+                หักสต็อก (-)
+              </button>
+              <button
+                onClick={() => setActionType('add')}
+                title="คลิกเพื่อนำเข้าไฟล์ที่ต้องการเพิ่มจำนวนสต็อก (เช่น รับของเข้า, ลูกค้าคืนของ)"
+                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
+                  actionType === 'add' ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                }`}
+              >
+                เพิ่มสต็อก (+)
+              </button>
+            </div>
+
             <p className="text-slate-500 dark:text-slate-400 text-center mb-6 text-sm max-w-sm">
-              รองรับไฟล์ Excel (.xlsx) นำเข้าเพื่อปรับปรุงยอดสต็อกอัตโนมัติ
+              รองรับไฟล์จากภายนอก นำเข้าเพื่อ{actionType === 'deduct' ? 'หักยอดขายหรือของชำรุด' : 'รับของเข้าหรือคืนสินค้า'}
             </p>
 
             <input 
@@ -182,8 +242,11 @@ export default function UploadTransactions({ onUploadComplete }) {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <FileSpreadsheet className="text-emerald-500" size={20} />
+                  <FileSpreadsheet className={actionType === 'deduct' ? 'text-rose-500' : 'text-emerald-500'} size={20} />
                   พรีวิวข้อมูล ({parsedData?.items.length} รายการ)
+                  <span className={`text-xs px-2 py-1 rounded-full font-bold ml-2 ${actionType === 'deduct' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    โหมด: {actionType === 'deduct' ? 'หักสต็อก (-)' : 'เพิ่มสต็อก (+)'}
+                  </span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">{message}</p>
               </div>
@@ -259,25 +322,7 @@ export default function UploadTransactions({ onUploadComplete }) {
               )}
             </div>
 
-            {/* โหมดปรับสต็อก */}
-            <div className="flex p-1 bg-slate-100 rounded-xl mb-4">
-              <button
-                onClick={() => setActionType('deduct')}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-                  actionType === 'deduct' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                หักสต็อก (ขายออก)
-              </button>
-              <button
-                onClick={() => setActionType('add')}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-                  actionType === 'add' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                เพิ่มสต็อก (รับเข้า)
-              </button>
-            </div>
+            {/* Removed internal toggle, now controlled externally */}
 
             {/* พรีวิวตาราง */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl max-h-48 overflow-y-auto mb-6">
@@ -328,6 +373,39 @@ export default function UploadTransactions({ onUploadComplete }) {
           </div>
         ) : null}
       </div>
+
+      {/* Global Settings Expandable Area */}
+      {showGlobalSettings && (status === 'idle' || status === 'error') && (
+        <div className="w-full mt-6 pt-6 border-t border-slate-100 animate-in slide-in-from-top-4 relative z-10">
+          <GlobalSchemaSettings embedded={true} />
+        </div>
+      )}
+
+      {/* Guide Panel */}
+      <div className="w-full mt-6 relative z-10 text-left">
+        <GuidePanel 
+          title="การนำเข้าข้อมูล Excel / CSV"
+          description="ใช้สำหรับอัปเดตสต็อกจำนวนมากๆ ผ่านไฟล์ Excel โดยไม่ต้องทำทีละรายการ"
+          howTo={[
+            "เลือกโหมด 'หักสต็อก (-)' สำหรับรายการขาย หรือโหมด 'เพิ่มสต็อก (+)' สำหรับรับของเข้า",
+            "คลิกปุ่ม 'เลือกไฟล์ข้อมูล' และอัปโหลดไฟล์ .xlsx หรือ .csv",
+            "ระบบจะพยายามจับคู่ชื่อคอลัมน์ให้อัตโนมัติ (หากจับคู่ผิด สามารถกดไอคอน ⚙️ ในหน้าพรีวิวเพื่อตั้งค่าเองได้)",
+            "ตรวจสอบข้อมูลพรีวิว และกด 'ยืนยันการอัปเดต' ระบบจะบันทึกประวัติให้โดยอัตโนมัติ"
+          ]}
+          tips={[
+            "คุณสามารถเพิ่มคำค้นหาหัวคอลัมน์อัตโนมัติ (Schema Aliases) แบบถาวรได้ที่ปุ่ม ⚙️ มุมขวาบนของการ์ดนี้",
+            "หากคุณอัปโหลดผิด สามารถกดปุ่ม 'ประวัติ (Undo)' ด้านบนขวา เพื่อคืนค่าสต็อกได้ (ต้องทำก่อนที่จะบันทึกสร้าง TX ในกล่องด้านขวาเท่านั้น)"
+          ]}
+          expectedResult="ยอดสต็อกจะถูกอัปเดตทันที และประวัติการเปลี่ยนแปลงทั้งหมดจะถูกบันทึกไว้ในส่วน History ครับ"
+        />
+      </div>
+
+      <RecentImportsModal 
+        isOpen={showHistoryModal} 
+        onClose={() => setShowHistoryModal(false)}
+        latestSnapshot={latestSnapshot}
+        onUploadComplete={onUploadComplete}
+      />
     </div>
   );
 }

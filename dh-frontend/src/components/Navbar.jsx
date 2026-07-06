@@ -124,6 +124,7 @@ const Navbar = () => {
             {/* Search Icon (Mobile Only) */}
             <button 
               onClick={() => navigate('/search')}
+              onMouseEnter={() => import('../pages/SearchPage')}
               className="md:hidden text-slate-300 hover:text-white p-2"
             >
               <Search size={22} strokeWidth={1.5} />
@@ -133,6 +134,7 @@ const Navbar = () => {
             <div 
               className="relative cursor-pointer text-slate-300 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-xl"
               onClick={() => navigate('/cart')}
+              onMouseEnter={() => import('../pages/Cart')}
             >
               <ShoppingCart size={22} strokeWidth={1.5} />
               {cartTotalQty > 0 && (
@@ -150,6 +152,7 @@ const Navbar = () => {
                 // 🔴 ยังไม่ล็อกอิน: แสดงปุ่มเข้าสู่ระบบ
                 <button 
                   onClick={() => navigate('/profile')}
+                  onMouseEnter={() => import('../pages/Profile')}
                   className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow active:scale-95"
                 >
                   <User size={18} />

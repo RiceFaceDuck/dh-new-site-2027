@@ -10,7 +10,6 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('firebase')) return 'vendor-firebase';
             if (id.includes('@tanstack')) return 'vendor-tanstack';
-            if (id.includes('framer-motion')) return 'vendor-framer-motion';
             if (id.includes('react-big-calendar')) return 'vendor-calendar';
             if (id.includes('xlsx')) return 'vendor-xlsx';
             if (id.includes('@dnd-kit')) return 'vendor-dnd';

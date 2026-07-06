@@ -12,6 +12,7 @@ import TabAdManager from '../components/profile/tabs/TabAdManager'; // 🚀 ศ�
 import TabHistory from '../components/profile/tabs/TabHistory';
 import TabFavorites from '../components/profile/tabs/TabFavorites';
 import TabClaims from '../components/profile/tabs/TabClaims';
+import TabPrivacy from '../components/profile/tabs/TabPrivacy';
 import AuthForm from '../components/profile/AuthForm';
 import { Loader2 } from 'lucide-react';
 
@@ -118,6 +119,8 @@ const Profile = () => {
         return <TabClaims user={user} />;
       case 'favorites':
         return <TabFavorites user={user} />;
+      case 'privacy':
+        return <TabPrivacy user={user} />;
       default:
         return <TabOverview user={user} />;
     }

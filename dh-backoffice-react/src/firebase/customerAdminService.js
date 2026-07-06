@@ -3,7 +3,8 @@ import { collection, doc, updateDoc, deleteDoc, serverTimestamp, addDoc, setDoc,
 import { historyService } from './historyService';
 import { generateAccountId } from './customer/accountIdService';
 import { gasHistoryService } from './gasHistoryService';
-
+import { computeCustomerChanges } from '../utils/customerDiffUtils';
+import { cascadeDisableCustomer, cleanupOrphanedTodos, cascadeDeleteCustomer } from './customer/customerCascadeService';
 const getCollectionPath = (colName) => {
     if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
         return `artifacts/${__app_id}/public/data/${colName}`;
@@ -59,38 +60,7 @@ export const updateCustomerProfile = async (uid, data) => {
         }
 
         // 2. เปรียบเทียบความเปลี่ยนแปลง (Diffing Engine)
-        const fieldLabels = {
-            accountName: 'ชื่อร้าน/บริษัท',
-            contactName: 'ชื่อผู้ติดต่อ',
-            phone: 'เบอร์โทรศัพท์',
-            email: 'อีเมล',
-            address: 'ที่อยู่',
-            logisticProvider: 'ขนส่งที่ใช้งาน',
-            logisticNote: 'หมายเหตุขนส่ง',
-            rank: 'ระดับบัญชี',
-            accountRank: 'ป้ายกำกับ',
-            role: 'สิทธิ์การใช้งาน',
-            isActive: 'สถานะเปิดใช้งาน',
-            status: 'สถานะบัญชี'
-        };
-
-        const changes = {};
-        let changeSummary = [];
-        
-        Object.keys(data).forEach(key => {
-            if (['updatedAt', 'createdAt', 'metadata'].includes(key)) return;
-            
-            // เปรียบเทียบเฉพาะค่าที่ถูกแก้ไขและส่งมาใหม่จริงๆ
-            if (data[key] !== undefined && oldData[key] !== data[key]) {
-                const label = fieldLabels[key] || key;
-                changes[key] = {
-                    old: oldData[key] || '-',
-                    new: data[key] || '-',
-                    label: label
-                };
-                changeSummary.push(label);
-            }
-        });
+        const { changes, changeSummary } = computeCustomerChanges(oldData, data);
 
         // 3. อัปเดตข้อมูลลง Firestore
         await updateDoc(userRef, {
@@ -120,60 +90,8 @@ export const updateCustomerProfile = async (uid, data) => {
 
         // 🔒 Strict Data Relations: Cascade Disable Partner if suspended
         if (data.isActive === false || data.status === 'suspended' || data.status === 'deleted') {
-            try {
-                const { query, where, getDocs, writeBatch } = await import('firebase/firestore');
-                const partnersRef = collection(db, 'partners');
-                const q = query(partnersRef, where('ownerId', '==', uid));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    const batch = writeBatch(db);
-                    querySnapshot.forEach((docSnap) => {
-                        batch.update(docSnap.ref, { isActive: false });
-                    });
-                    await batch.commit();
-                    await historyService.addLog('Partner', 'Update', uid, `ปิดการใช้งานร้านช่างอัตโนมัติ เนื่องจากบัญชีถูกระงับ/ปิดใช้งาน`, auth.currentUser?.uid);
-                }
-
-                // 🧹 Cleanup Orphaned Todos (Optimized to prevent massive reads)
-                const todosRef = collection(db, 'todos');
-                
-                // Query 1: customerUid at root
-                const q1 = query(todosRef, where('customerUid', '==', uid), where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']));
-                // Query 2: customerUid inside payload
-                const q2 = query(todosRef, where('payload.customerUid', '==', uid), where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']));
-                
-                const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-                
-                let cancelledCount = 0;
-                const todoBatch = writeBatch(db);
-                const processedTodoIds = new Set();
-
-                const processSnap = (snap) => {
-                    snap.forEach((docSnap) => {
-                        if (!processedTodoIds.has(docSnap.id)) {
-                            processedTodoIds.add(docSnap.id);
-                            todoBatch.update(docSnap.ref, {
-                                status: 'cancelled',
-                                cancelReason: 'Customer account was suspended',
-                                updatedAt: serverTimestamp()
-                            });
-                            cancelledCount++;
-                        }
-                    });
-                };
-
-                processSnap(snap1);
-                processSnap(snap2);
-
-                if (cancelledCount > 0) {
-                    await todoBatch.commit();
-                    await historyService.addLog('Task', 'Cancel', uid, `ยกเลิก ${cancelledCount} รายการงานอัตโนมัติ เนื่องจากบัญชีลูกค้าถูกระงับ/ปิดใช้งาน`, auth.currentUser?.uid);
-                }
-
-            } catch (partnerErr) {
-                console.error("🔥 Cascade Disable Error:", partnerErr);
-            }
+            await cascadeDisableCustomer(uid, auth.currentUser?.uid);
+            await cleanupOrphanedTodos(uid, auth.currentUser?.uid);
         }
 
         return { success: true };
@@ -210,89 +128,7 @@ export const deleteCustomer = async (targetUid, customerName) => {
         await historyService.addLog('Customer', 'Delete', targetUid, `ลบรายชื่อลูกค้า: ${customerName} (Soft Delete)`, auth.currentUser?.uid);
 
         // 🔒 Strict Data Relations: Cascade Disable Partner, Map Pin (ActivePartners), and Ads if deleted
-        try {
-            const { query, where, getDocs, writeBatch } = await import('firebase/firestore');
-            const batch = writeBatch(db);
-            let hasUpdates = false;
-
-            // 1. Disable in partners collection
-            const partnersRef = collection(db, getCollectionPath('partners'));
-            const q = query(partnersRef, where('ownerId', '==', targetUid));
-            const querySnapshot = await getDocs(q);
-            
-            if (!querySnapshot.empty) {
-                querySnapshot.forEach((docSnap) => {
-                    batch.update(docSnap.ref, { isActive: false, updatedAt: serverTimestamp() });
-                });
-                hasUpdates = true;
-            }
-
-            // 2. Delete from ActivePartners (Frontend Map Pins)
-            const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), targetUid);
-            batch.delete(activePartnerRef);
-            hasUpdates = true;
-
-            // 3. Pause active ads
-            const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
-            for (const col of adCols) {
-                const adsRef = collection(db, getCollectionPath(col));
-                const adsQ = query(adsRef, where('ownerId', '==', targetUid));
-                const adsSnap = await getDocs(adsQ);
-                adsSnap.forEach(adDoc => {
-                    batch.update(adDoc.ref, {
-                        status: 'paused',
-                        isActive: false,
-                        pauseReason: 'Owner account was deleted/suspended',
-                        updatedAt: serverTimestamp()
-                    });
-                    hasUpdates = true;
-                });
-            }
-
-            if (hasUpdates) {
-                await batch.commit();
-                await historyService.addLog('Partner', 'Update', targetUid, `ปิดการใช้งานร้านช่าง ลบหมุดบนแผนที่ และระงับโฆษณาอัตโนมัติ เนื่องจากบัญชีเจ้าของร้านถูกลบ`, auth.currentUser?.uid);
-            }
-
-            // 🧹 Cleanup Orphaned Todos (Optimized to prevent massive reads)
-            const todosRef = collection(db, getCollectionPath('todos'));
-            
-            // Query 1: customerUid at root
-            const q1 = query(todosRef, where('customerUid', '==', targetUid), where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']));
-            // Query 2: customerUid inside payload
-            const q2 = query(todosRef, where('payload.customerUid', '==', targetUid), where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']));
-            
-            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-            
-            let cancelledCount = 0;
-            const todoBatch = writeBatch(db);
-            const processedTodoIds = new Set();
-
-            const processSnap = (snap) => {
-                snap.forEach((docSnap) => {
-                    if (!processedTodoIds.has(docSnap.id)) {
-                        processedTodoIds.add(docSnap.id);
-                        todoBatch.update(docSnap.ref, {
-                            status: 'cancelled',
-                            cancelReason: 'Customer account was deleted',
-                            updatedAt: serverTimestamp()
-                        });
-                        cancelledCount++;
-                    }
-                });
-            };
-
-            processSnap(snap1);
-            processSnap(snap2);
-
-            if (cancelledCount > 0) {
-                await todoBatch.commit();
-                await historyService.addLog('Task', 'Cancel', targetUid, `ยกเลิก ${cancelledCount} รายการงานอัตโนมัติ เนื่องจากบัญชีลูกค้าถูกลบ`, auth.currentUser?.uid);
-            }
-
-        } catch (partnerErr) {
-            console.error("🔥 Cascade Disable Error:", partnerErr);
-        }
+        await cascadeDeleteCustomer(targetUid, auth.currentUser?.uid);
 
         console.log(`✅ [CustomerAdminService] Deleted customer ${customerName} (${targetUid})`);
         return { success: true };

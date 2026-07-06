@@ -21,6 +21,7 @@ import {
 } from 'firebase/storage';
 import { db, storage, auth } from './config';
 import { historyService } from './historyService';
+import { sharedCategoryService } from 'dh-shared/src/firebase/categoryService';
 
 const COLLECTION_NAME = 'homepage_categories';
 
@@ -30,18 +31,7 @@ export const categoryService = {
    * เรียงลำดับตาม order แบบ asc
    */
   getAllCategories: async () => {
-    try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy('order', 'asc'));
-      const snapshot = await getDocs(q);
-      
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error('Error in getAllCategories:', error);
-      throw error;
-    }
+    return await sharedCategoryService.getAllCategories(db);
   },
 
   /**

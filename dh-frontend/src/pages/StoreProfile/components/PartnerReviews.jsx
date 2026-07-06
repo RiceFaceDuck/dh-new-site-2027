@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, doc, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
 // 🔐 App ID logic matching the rest of the app
@@ -21,7 +21,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
     if (!partnerId) return;
 
     const reviewsRef = collection(db, 'artifacts', appId, 'public', 'data', 'partner_reviews', partnerId, 'comments');
-    const q = query(reviewsRef, orderBy('createdAt', 'desc'));
+    const q = query(reviewsRef, orderBy('createdAt', 'desc'), limit(15));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedReviews = [];

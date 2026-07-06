@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import { writeBatch, doc, serverTimestamp, collection, addDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from './config';
 import { gasStockService } from './gasStockService';
 import { gasHistoryService } from './gasHistoryService';
@@ -163,6 +163,26 @@ export const transactionImportService = {
         await batch.commit();
       }
 
+      // 3.5. บันทึกข้อมูลลงใน import_batches เพื่อรองรับระบบ Undo
+      const batchDocRef = await addDoc(collection(db, 'import_batches'), {
+        createdAt: serverTimestamp(),
+        actionType,
+        actor: {
+          uid: managerUser?.uid || auth.currentUser?.uid || 'Unknown',
+          name: managerUser?.displayName || managerUser?.email || auth.currentUser?.email || 'System'
+        },
+        status: 'completed',
+        totalUpdated: validUpdates.length,
+        rollbackItems: validUpdates.map(u => ({
+          sku: u.sku,
+          name: u.name,
+          oldStock: u.oldStock,
+          newStock: u.newStock,
+          quantityChanged: u.quantityChanged
+        }))
+      });
+      const batchIdForLog = batchDocRef.id;
+
       // 4. บันทึกประวัติ (History Logs) แบบรวบยอด
       gasHistoryService.log({
         level: 'INFO',
@@ -206,12 +226,85 @@ export const transactionImportService = {
         success: true,
         updatedCount: validUpdates.length,
         notFoundCount: notFound.length,
+        batchId: batchIdForLog,
         message: `อัปเดตสำเร็จ ${validUpdates.length} รายการ`
       };
 
     } catch (error) {
       console.error("Error processing transactions:", error);
       throw error;
+    }
+  },
+
+  /**
+   * ย้อนกลับการนำเข้า (Undo Transaction)
+   */
+  revertTransactionBatch: async (batchId, currentUser) => {
+    try {
+      const batchRef = doc(db, 'import_batches', batchId);
+      const batchSnap = await getDoc(batchRef);
+      if (!batchSnap.exists()) throw new Error("ไม่พบข้อมูลประวัติการนำเข้านี้");
+      
+      const batchData = batchSnap.data();
+      if (batchData.status === 'reverted') throw new Error("รายการนี้ถูกย้อนกลับไปแล้ว");
+
+      const items = batchData.rollbackItems || [];
+      if (items.length === 0) throw new Error("ไม่มีรายการที่สามารถย้อนกลับได้");
+
+      const chunks = [];
+      for (let i = 0; i < items.length; i += 500) {
+        chunks.push(items.slice(i, i + 500));
+      }
+
+      for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(item => {
+          const docRef = doc(db, 'products', item.sku);
+          batch.update(docRef, {
+            stockQuantity: item.oldStock,
+            updatedAt: serverTimestamp()
+          });
+          
+          gasStockService.queueUpdate({
+            sku: item.sku,
+            name: item.name,
+            stockQuantity: item.oldStock
+          });
+        });
+        await batch.commit();
+      }
+
+      // Update status
+      await updateDoc(batchRef, { 
+        status: 'reverted', 
+        revertedAt: serverTimestamp(), 
+        revertedBy: currentUser?.displayName || currentUser?.email || 'Unknown' 
+      });
+
+      // บังคับ flush เพื่อให้ระบบ GAS ทำงานทันที
+      await gasStockService.forceSync();
+
+      // บันทึก History (Log)
+      gasHistoryService.log({
+        level: 'WARN',
+        module: 'Transaction Import',
+        action: 'Undo Import',
+        actor: {
+          uid: currentUser?.uid || 'Unknown',
+          name: currentUser?.displayName || currentUser?.email || 'System'
+        },
+        target: { id: batchId, type: 'System' },
+        details: {
+          legacy_details: `ทำการย้อนกลับการนำเข้า (Undo) รหัส ${batchId} จำนวน ${items.length} รายการ`,
+          totalReverted: items.length,
+          tags: ['undo', 'excel_import']
+        }
+      });
+
+      return { success: true, message: `ย้อนกลับข้อมูลสำเร็จ ${items.length} รายการ` };
+    } catch (error) {
+       console.error("Error reverting transaction:", error);
+       throw error;
     }
   }
 };

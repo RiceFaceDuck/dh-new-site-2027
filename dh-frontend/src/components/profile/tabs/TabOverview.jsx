@@ -226,32 +226,6 @@ export default function TabOverview() {
         <SupportSettings user={user} initialData={profileData} onRefresh={handleRefresh} />
       )}
 
-      <div className="mt-12 border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white opacity-90 hover:opacity-100 transition-opacity">
-        <div>
-          <h3 className="text-sm font-bold text-slate-700">
-            การจัดการบัญชี (Danger Zone)
-          </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            ลบข้อมูลส่วนบุคคลและประวัติทั้งหมดออกจากระบบอย่างถาวร (ไม่สามารถกู้คืนได้)
-          </p>
-        </div>
-        <button 
-          onClick={async () => {
-            if (window.confirm('คำเตือน: คุณต้องการลบบัญชีและข้อมูลทั้งหมดออกจากระบบอย่างถาวรใช่หรือไม่?\n\nการกระทำนี้ไม่สามารถยกเลิกหรือกู้คืนข้อมูลได้!')) {
-              try {
-                await userService.deleteAccount(user, walletBalance);
-                window.location.href = '/'; // Redirect to home
-              } catch (error) {
-                alert(error.message);
-              }
-            }
-          }}
-          className="px-4 py-2 border border-rose-300 text-rose-600 hover:bg-rose-600 hover:text-white font-medium rounded-lg transition-colors text-xs whitespace-nowrap"
-        >
-          ลบบัญชีถาวร
-        </button>
-      </div>
-
     </div>
   );
 }

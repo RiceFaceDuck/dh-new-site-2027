@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { Search, Download, Loader2 } from 'lucide-react';
-
-// 🛡️ กำหนด App ID เพื่อเข้าถึง Enterprise Sandbox Data
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 export default function CreditHistoryTab() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +15,7 @@ export default function CreditHistoryTab() {
   // ==========================================================
   useEffect(() => {
     // อ้างอิง Path เดียวกับที่ creditService.js ใช้บันทึกข้อมูล
-    const txRef = collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions');
+    const txRef = collection(db, getCollectionPath('credit_transactions'));
     
     // ดึง 100 รายการล่าสุด ป้องกันการดึงข้อมูลมหาศาลจนเว็บค้าง
     const q = query(txRef, orderBy('timestamp', 'desc'), limit(100));

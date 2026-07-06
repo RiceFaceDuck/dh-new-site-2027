@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, where, or } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import { collection, query, getDocs, where, or } from 'firebase/firestore';
 import { db } from '../../../../../firebase/config';
-import { Search, Loader2, Copy, Check, Users, ShieldAlert, BadgeInfo } from 'lucide-react';
+import { Search, Loader2, Copy, Check, Users, ShieldAlert, BadgeInfo, RefreshCw } from 'lucide-react';
 
 // 🛡️ App ID สำหรับกำหนด Scope การเข้าถึง Database
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -15,20 +15,21 @@ export default function PartnerCreditsTab() {
   // ==========================================================
   // 🚀 ดึงข้อมูลบัญชีที่มียอดเครดิต (Optimized Query)
   // ==========================================================
-  useEffect(() => {
+  const fetchPartners = useCallback(async () => {
     setIsLoading(true);
-    const usersColPath = typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof __app_id !== 'undefined'
-      ? `artifacts/${__app_id}/public/data/users`
-      : 'users';
-    const usersRef = collection(db, usersColPath);
-    
-    // ใช้ or query ของ Firestore v10+ เพื่อลด Quota การดึง Users ทั้งระบบ
-    const q = query(usersRef, or(
-      where('creditPoints', '>', 0),
-      where('role', '==', 'partner')
-    ));
-    
-    const unsubscribe = onSnapshot(q, (snap) => {
+    try {
+      const usersColPath = typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof __app_id !== 'undefined'
+        ? `artifacts/${__app_id}/public/data/users`
+        : 'users';
+      const usersRef = collection(db, usersColPath);
+      
+      // ใช้ or query ของ Firestore v10+ เพื่อลด Quota การดึง Users ทั้งระบบ
+      const q = query(usersRef, or(
+        where('creditPoints', '>', 0),
+        where('role', '==', 'partner')
+      ));
+      
+      const snap = await getDocs(q);
       const data = [];
       snap.forEach(doc => {
         const d = doc.data();
@@ -53,14 +54,16 @@ export default function PartnerCreditsTab() {
       data.sort((a, b) => b.balance - a.balance);
       
       setPartners(data);
-      setIsLoading(false);
-    }, (error) => {
+    } catch (error) {
       console.error("🔥 DH-Core System Error [Fetch Partners]:", error);
+    } finally {
       setIsLoading(false);
-    });
-
-    return () => unsubscribe();
+    }
   }, []);
+
+  useEffect(() => {
+    fetchPartners();
+  }, [fetchPartners]);
 
   // กรองข้อมูลด้วยคำค้นหา
   const filteredPartners = partners.filter(p => 
@@ -112,17 +115,27 @@ export default function PartnerCreditsTab() {
           </div>
         </div>
 
-        <div className="relative w-full md:w-80 group">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500">
-            <Search size={16} className="text-slate-400" />
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-80 group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500">
+              <Search size={16} className="text-slate-400" />
+            </div>
+            <input 
+              type="text" 
+              placeholder="ค้นหาชื่อ, รหัส, อีเมล หรือ เบอร์โทร..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm placeholder:text-slate-400"
+            />
           </div>
-          <input 
-            type="text" 
-            placeholder="ค้นหาชื่อ, รหัส, อีเมล หรือ เบอร์โทร..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm placeholder:text-slate-400"
-          />
+          <button 
+            onClick={fetchPartners}
+            disabled={isLoading}
+            className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            title="รีเฟรชข้อมูล (Refresh)"
+          >
+            <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
+          </button>
         </div>
       </div>
 

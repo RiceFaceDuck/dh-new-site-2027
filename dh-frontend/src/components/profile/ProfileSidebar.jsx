@@ -3,7 +3,7 @@ import React from 'react';
 import { 
   Store, CreditCard, Package, History, 
   LogOut, Settings, Megaphone, Heart, ShoppingCart, ChevronRight, Loader2,
-  Wallet, Coins, Award, Sparkles, Wrench, Copy, Check
+  Wallet, Coins, Award, Sparkles, Wrench, Copy, Check, ShieldCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -163,9 +163,33 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
           onClick={() => setActiveTab('overview')} 
         />
 
-        {/* 🗑️ [REMOVED]: เมนู My SKU (usersku) ถูกลบออกอย่างถาวรตามแผน Phase 2
-          ย้ายการจัดการสินค้าไปรวมที่ Ads & Marketing (Unified Architecture) 
-        */}
+        <MenuButton 
+          icon={<History size={18} strokeWidth={2.5} />} 
+          label="Order History" 
+          active={activeTab === 'history'} 
+          onClick={() => setActiveTab('history')} 
+        />
+
+        <MenuButton 
+          icon={<ShoppingCart size={18} strokeWidth={2.5} />} 
+          label="Active Cart" 
+          active={false} 
+          onClick={() => navigate('/cart')} 
+        />
+
+        <MenuButton 
+          icon={<Heart size={18} strokeWidth={2.5} />} 
+          label="Favorites" 
+          active={activeTab === 'favorites'} 
+          onClick={() => setActiveTab('favorites')} 
+        />
+
+        <MenuButton 
+          icon={<Wrench size={18} strokeWidth={2.5} />} 
+          label="Claims & Returns" 
+          active={activeTab === 'claims'} 
+          onClick={() => setActiveTab('claims')} 
+        />
 
         {/* 🚀 [UPGRADED]: เปลี่ยนชื่อเป็น Ads & Marketing เพื่อให้ครอบคลุม 3 ระบบ */}
         <MenuButton 
@@ -173,54 +197,22 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
           label="Ads & Marketing" 
           active={activeTab === 'ads'} 
           onClick={() => setActiveTab('ads')} 
-          highlight={true} // เพิ่มประกายวิ้งๆ ให้ดึงดูดสายตา Partner
-        />
-
-        <MenuButton 
-          icon={<History size={18} strokeWidth={2.5} />} 
-          label="Order History" 
-          active={activeTab === 'history'} 
-          onClick={() => setActiveTab('history')} 
-        />
-        <MenuButton 
-          icon={<Wrench size={18} strokeWidth={2.5} />} 
-          label="Claims & Returns" 
-          active={activeTab === 'claims'} 
-          onClick={() => setActiveTab('claims')} 
-        />
-        <MenuButton 
-          icon={<Heart size={18} strokeWidth={2.5} />} 
-          label="Favorites" 
-          active={activeTab === 'favorites'} 
-          onClick={() => setActiveTab('favorites')} 
+          highlight={true} 
         />
         
-        {/* ✨ ตะกร้าสินค้า */}
-        <button 
-          onClick={() => navigate('/cart')}
-          className="w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all border-l-[3px] bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-transparent hover:border-slate-300"
-        >
-          <div className="flex items-center gap-3 text-slate-400">
-            <ShoppingCart size={18} strokeWidth={2.5} /> 
-            <span className="text-slate-500 mt-0.5">Active Cart</span>
-          </div>
-        </button>
+        <MenuButton 
+          icon={<ShieldCheck size={18} strokeWidth={2.5} />} 
+          label="Privacy & Security" 
+          active={activeTab === 'privacy'} 
+          onClick={() => setActiveTab('privacy')} 
+        />
 
         {/* Divider & Action Buttons */}
         <div className="border-t border-slate-100 my-1 mx-4"></div>
-        
-        <button 
-          className="w-full flex items-center p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all bg-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-        >
-          <div className="flex items-center gap-3">
-            <Settings size={18} strokeWidth={2.5} /> 
-            <span className="mt-0.5">System Settings</span>
-          </div>
-        </button>
 
         <button 
           onClick={handleLogout} 
-          className="w-full flex items-center p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all bg-transparent text-slate-400 hover:bg-rose-50 hover:text-rose-600 group border-t border-slate-100"
+          className="w-full flex items-center p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all bg-transparent text-slate-400 hover:bg-rose-50 hover:text-rose-600 group"
         >
           <div className="flex items-center gap-3">
             <LogOut size={18} strokeWidth={2.5} className="group-hover:-translate-x-1 transition-transform" /> 

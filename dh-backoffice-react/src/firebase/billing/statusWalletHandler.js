@@ -1,4 +1,4 @@
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, increment } from 'firebase/firestore';
 import { adjustUserCreditWithTransaction } from '../credit/creditActionService';
 
 export const handleWalletRefundAndClawback = async (
@@ -30,15 +30,22 @@ export const handleWalletRefundAndClawback = async (
     }
 
     if (refundAmount > 0) {
-        await adjustUserCreditWithTransaction(
-            transaction,
-            userSnap.id,
-            refundAmount,
-            'deposit',
-            'คืนเงินเข้ากระเป๋าอัตโนมัติ (ยกเลิกบิล)',
-            actualActorUid,
-            `REF_${orderId}`
-        );
+        // ✅ [SECURITY FIX] Refund to walletBalance (Cash) instead of creditPoints (Points)
+        transaction.update(userRef, {
+            walletBalance: increment(refundAmount),
+            updatedAt: serverTimestamp()
+        });
+
+        const walletTxRef = doc(collection(db, `users/${userSnap.id}/wallet_transactions`));
+        transaction.set(walletTxRef, {
+            transactionId: `TXW_REF_${orderId}`,
+            type: 'REFUND',
+            amount: refundAmount,
+            status: 'SUCCESS',
+            note: 'คืนเงินเข้ากระเป๋าอัตโนมัติ (ยกเลิกบิล)',
+            operatorUid: actualActorUid || 'System',
+            timestamp: serverTimestamp()
+        });
     }
 
     if (clawbackPoints > 0) {
@@ -46,7 +53,7 @@ export const handleWalletRefundAndClawback = async (
             transaction,
             userSnap.id,
             clawbackPoints,
-            'deduct',
+            'clawback',
             'ดึงแต้มสะสมคืนอัตโนมัติ (ยกเลิกบิล)',
             actualActorUid,
             `CB_${orderId}`

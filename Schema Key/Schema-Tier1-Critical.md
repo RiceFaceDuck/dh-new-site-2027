@@ -26,7 +26,7 @@
 | `overallDiscount` | Number    | Manual discount applied to the entire bill.                                 | `500`                               | |
 | `promoDiscount`   | Number    | Discount amount generated from a promotion.                                 | `500`                               | |
 | `shippingFee`     | Number    | Shipping or logistics cost.                                                 | `60`                                | |
-| `walletUsed`      | Number    | Amount deducted from the customer's DH Wallet. Mapped to creditPoints.      | `0`                                 | |
+| `walletUsed`      | Number    | Amount deducted from the customer's Cash Wallet. Mapped to walletBalance.   | `0`                                 | |
 | `billNote`        | String    | Text note attached to the bill.                                             | `"จัดส่งด่วน"`                         | |
 | `createdAt`       | Timestamp | When the order was created.                                                 | `December 15, 2026 at 10:30:00 AM UTC+7` | |
 | `customer`        | Map       | Denormalized customer information to prevent N+1 queries.                   | `{ uid: "123", accountName: "John"}`| Ref: `users.uid` |

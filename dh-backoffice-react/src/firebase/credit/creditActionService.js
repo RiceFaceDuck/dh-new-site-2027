@@ -2,6 +2,7 @@ import { doc, getDocs, runTransaction, collection, serverTimestamp, query, where
 import { db } from '../config';
 import { historyService } from '../historyService';
 import { formatCredit } from './creditFormatService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const getUsersPath = () => {
@@ -17,15 +18,15 @@ const getUsersPath = () => {
  * รับ uid แบบตรงๆ เท่านั้น (ไม่ทำการ Query หา UID ย่อ)
  */
 export const getCreditPreloadRefs = (uid, type, referenceId = null) => {
-    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+    const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
     const usersColPathTx = getUsersPath();
     const userRef = doc(db, usersColPathTx, uid);
     const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
     let txRef = null;
     if (referenceId) {
-      txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
+      txRef = doc(db, getCollectionPath('credit_transactions'), `ADJ_${type}_${referenceId}`);
     }
-    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
+    const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
     
     return { settingsRef, userRef, walletRef, txRef, activePartnerRef };
 };
@@ -41,21 +42,21 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเครดิตเกินเพดานสูงสุดที่กำหนดต่อครั้ง (Anti-Fraud Lock)");
     }
 
-    const safeAmount = Math.round(numAmount * 100) / 100;
+    let safeAmount = Math.round(numAmount * 100) / 100;
     
-    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+    const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
     const usersColPathTx = getUsersPath();
     const userRef = doc(db, usersColPathTx, uid);
     // ⚠️ Legacy Wallet (Deprecated) - คงไว้เพื่อ Sync ข้อมูลเก่าเท่านั้น ห้ามใช้อ่านเป็น Source of truth
     const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
-    const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', uid);
+    const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
     
     let txRef;
     const refSuffix = referenceId ? referenceId : Date.now().toString();
     if (referenceId) {
-      txRef = doc(db, 'artifacts', appId, 'public', 'data', 'credit_transactions', `ADJ_${type}_${referenceId}`);
+      txRef = doc(db, getCollectionPath('credit_transactions'), `ADJ_${type}_${referenceId}`);
     } else {
-      txRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'));
+      txRef = doc(collection(db, getCollectionPath('credit_transactions')));
     }
 
     let txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap;
@@ -111,9 +112,13 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       newWalletBalance += safeAmount;
       newTotalAccumulated += safeAmount;
       newTotalAllocated += safeAmount; 
-    } else if (type === 'deduct' || type === 'cash_withdrawal' || type === 'spend') {
+    } else if (type === 'deduct' || type === 'cash_withdrawal' || type === 'spend' || type === 'clawback') {
       if (safeCurrentWallet < safeAmount) {
-        throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (ต้องการ ${safeAmount} Pts, มียอดเพียง ${safeCurrentWallet} Pts)`);
+        if (type === 'clawback') {
+            safeAmount = Math.max(0, safeCurrentWallet); // ✨ ยึดเท่าที่เหลือ ไม่ Throw Error
+        } else {
+            throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (ต้องการ ${safeAmount} Pts, มียอดเพียง ${safeCurrentWallet} Pts)`);
+        }
       }
       newWalletBalance -= safeAmount;
       newTotalAllocated = Math.max(0, newTotalAllocated - safeAmount);
@@ -246,7 +251,7 @@ export const handlePaymentCompletion = async (orderId, userId) => {
     let pendingPointsToAward = 0;
 
     await runTransaction(db, async (transaction) => {
-      const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
+      const orderRef = doc(db, getCollectionPath('orders'), orderId);
       const orderDoc = await transaction.get(orderRef);
       if (!orderDoc.exists()) throw new Error("ไม่พบข้อมูลคำสั่งซื้อในระบบ");
       

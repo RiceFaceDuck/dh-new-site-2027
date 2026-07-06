@@ -61,6 +61,56 @@ export const adManagementService = {
   },
 
   /**
+   * ดึงข้อมูลแคมเปญโฆษณาทั้งหมดของลูกค้า (อิงจาก ownerId)
+   */
+  getAdsByUserId: async (uid) => {
+    try {
+      const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('ownerId', '==', uid));
+      const querySnapshot = await getDocs(q);
+      const adsList = [];
+      querySnapshot.forEach((doc) => {
+        adsList.push({ id: doc.id, ...doc.data() });
+      });
+      return adsList.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
+        return timeB - timeA; 
+      });
+    } catch (error) {
+      console.error(`❌ Error fetching ads for user [${uid}]:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * ดึงข้อมูล Store Profile ของลูกค้า
+   */
+  getStoreProfile: async (uid) => {
+    try {
+      const storeRef = doc(db, 'artifacts', appId, 'users', uid, 'storeProfile', 'main');
+      const rootStoreRef = doc(db, 'users', uid, 'storeProfile', 'main');
+      
+      const [storeSnap, rootSnap] = await Promise.all([
+        getDoc(storeRef),
+        getDoc(rootStoreRef)
+      ]);
+      
+      let mergedData = {};
+      if (rootSnap.exists()) mergedData = { ...mergedData, ...rootSnap.data() };
+      if (storeSnap.exists()) {
+        const artifactsData = storeSnap.data();
+        if (artifactsData.storeName || !mergedData.storeName) {
+           mergedData = { ...mergedData, ...artifactsData };
+        }
+      }
+      return Object.keys(mergedData).length > 0 ? mergedData : null;
+    } catch (error) {
+      console.error(`❌ Error fetching store profile for [${uid}]:`, error);
+      return null;
+    }
+  },
+
+  /**
    * 2. อนุมัติโฆษณา (Approve) & ปิดงาน To-do อัตโนมัติด้วย Batch Write
    */
   approveAd: async (adId, taskId) => {

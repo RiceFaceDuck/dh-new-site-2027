@@ -15,6 +15,9 @@ export default defineConfig({
             if (id.includes('firebase')) {
               return 'vendor-firebase';
             }
+            if (id.includes('@tanstack')) {
+              return 'vendor-tanstack';
+            }
             if (id.includes('lucide-react')) {
               return 'vendor-lucide';
             }

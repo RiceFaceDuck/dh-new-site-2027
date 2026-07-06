@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, ExternalLink, X, Info, Image as ImageIcon, ChevronLeft, ChevronRight, MousePointerClick } from 'lucide-react';
 import { marketingService } from '../../firebase/marketingService';
+import LazyImage from '../common/LazyImage';
 
 /**
  * 🛠️ ฟังก์ชันอัจฉริยะ: สกัด YouTube ID จากลิงก์รูปแบบต่างๆ
@@ -155,11 +156,10 @@ const BannerAdWidget = () => {
           onClick={handleBannerClick}
         >
           {/* บังคับ absolute inset-0 และ object-cover เพื่อให้รูปภาพไม่เพี้ยนเวลา Grid ยืด */}
-          <img 
+          <LazyImage 
             src={currentBanner.imageUrl} 
             alt={currentBanner.title || "Advertisement"} 
             className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]"
-            loading="lazy"
           />
           
           {/* 🌌 Overlay อัจฉริยะ */}

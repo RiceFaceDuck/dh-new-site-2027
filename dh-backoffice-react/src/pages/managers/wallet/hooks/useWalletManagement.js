@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, getDoc, limit, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../../../firebase/config';
 import { userService } from '../../../../firebase/userService';
-
-const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
+import { getCollectionPath, getUsersPath, getUserSubcollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export function useWalletManagement(navigate) {
     // Dashboard Stats
@@ -41,10 +40,10 @@ export function useWalletManagement(navigate) {
                     navigate('/'); return;
                 }
 
-                const settingsSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config'));
+                const settingsSnap = await getDoc(doc(db, getCollectionPath('settings'), 'credit_config'));
                 if (settingsSnap.exists()) setGlobalLedger(settingsSnap.data().ledger);
 
-                const usersRef = collection(db, 'artifacts', appId, 'users');
+                const usersRef = collection(db, getUsersPath());
                 const qHasBalance = query(usersRef, where('walletBalance', '>', 0));
                 let totalBal = 0; let count = 0;
                 try {
@@ -62,7 +61,7 @@ export function useWalletManagement(navigate) {
                     setDefaultUsers(aUsers);
                 } catch(e) { console.log("Missing index for active users"); }
 
-                const qHist = query(collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions'), orderBy('timestamp', 'desc'), limit(30));
+                const qHist = query(collection(db, getCollectionPath('credit_transactions')), orderBy('timestamp', 'desc'), limit(30));
                 try {
                     const histSnap = await getDocs(qHist);
                     setGlobalHistory(histSnap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -80,7 +79,7 @@ export function useWalletManagement(navigate) {
     // Sub to Pending Withdrawals
     useEffect(() => {
         const q = query(
-            collection(db, 'artifacts', appId, 'public', 'data', 'todos'),
+            collection(db, getCollectionPath('todos')),
             where('taskType', '==', 'WALLET_WITHDRAWAL'),
             where('status', 'in', ['PENDING', 'pending', 'todo'])
         );
@@ -104,11 +103,11 @@ export function useWalletManagement(navigate) {
     const loadTransactions = async (uid) => {
         setIsLoadingTx(true);
         try {
-            const qWallet = query(collection(db, 'artifacts', appId, 'users', uid, 'wallet_transactions'), orderBy('timestamp', 'desc'), limit(50));
+            const qWallet = query(collection(db, ...getUserSubcollectionPath(uid, 'wallet_transactions').split('/')), orderBy('timestamp', 'desc'), limit(50));
             const snapWallet = await getDocs(qWallet);
             setTransactions(snapWallet.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-            const qPoints = query(collection(db, 'artifacts', appId, 'users', uid, 'credit_history'), orderBy('createdAt', 'desc'), limit(50));
+            const qPoints = query(collection(db, ...getUserSubcollectionPath(uid, 'credit_history').split('/')), orderBy('createdAt', 'desc'), limit(50));
             const snapPoints = await getDocs(qPoints);
             setPointTransactions(snapPoints.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         } catch (error) {
@@ -130,7 +129,7 @@ export function useWalletManagement(navigate) {
         try {
             const term = searchTerm.trim().toLowerCase();
             const results = [];
-            const usersRef = collection(db, 'artifacts', appId, 'users');
+            const usersRef = collection(db, getUsersPath());
 
             const snap = await getDocs(query(usersRef, limit(100))); 
             snap.forEach(d => {

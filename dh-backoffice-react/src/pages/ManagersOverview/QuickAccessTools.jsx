@@ -116,6 +116,7 @@ const QuickAccessTools = ({
       case 'freebie': return () => navigate('/managers/freebie');
       case 'refund': return () => navigate('/managers/refund');
       case 'inventory_adjustment': return () => navigate('/managers/inventory-adjustment');
+      case 'core_settings': return () => navigate('/managers/core-settings');
       // เมนูย่อยจากนโยบายกลาง (จะเปิด Global Settings Panel โดยระบุ Tab)
       case 'buffer': return () => navigate('/managers/buffer');
       case 'category': return () => navigate('/managers/category');
