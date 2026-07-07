@@ -17,7 +17,7 @@ export default function ImportConfig({ conflictStrategy, setConflictStrategy }) 
         <select 
           value={conflictStrategy}
           onChange={(e) => setConflictStrategy(e.target.value)}
-          className="w-full sm:w-auto px-4 py-2 bg-dh-surface border border-orange-500/30 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-sm font-bold"
+          className="w-full sm:w-auto px-4 py-2 bg-dh-surface border border-orange-500/30 rounded-xl outline-hidden focus:ring-2 focus:ring-orange-500 text-sm font-bold"
         >
           <option value="todo">ส่งงานไปพักรอที่ To-do (เพื่อรอตรวจสอบทีละรายการ)</option>
           <option value="overwrite">อัพเดทข้อมูลทับข้อมูลเก่าทันที</option>

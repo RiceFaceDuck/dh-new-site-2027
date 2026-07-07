@@ -53,6 +53,30 @@ export const todoPaymentService = {
         const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
         const generatedOrderId = `DH-${yearStr}-${shardId}-${paddedSeq}`;
 
+        // --- 2.5 PRELOAD PRODUCTS FOR STOCK DEDUCTION ---
+        const isStockAlreadyDeducted = !!orderData.isStockDeducted;
+        const productSnapsToUpdate = [];
+        if (!isStockAlreadyDeducted && orderData.items && Array.isArray(orderData.items)) {
+          for (const item of orderData.items) {
+            const itemIdentifier = item.id || item.sku;
+            if (item.isFreebie || !itemIdentifier) continue;
+            const pRef = doc(db, 'products', itemIdentifier);
+            const pSnap = await transaction.get(pRef);
+            if (pSnap.exists()) {
+              productSnapsToUpdate.push({ ref: pRef, snap: pSnap, item: item, noDeduct: false });
+            }
+          }
+        } else if (orderData.items && Array.isArray(orderData.items)) {
+           for (const item of orderData.items) {
+             if (!item.sku) continue;
+             const pRef = doc(db, 'products', item.sku);
+             const pSnap = await transaction.get(pRef);
+             if (pSnap.exists()) {
+               productSnapsToUpdate.push({ ref: pRef, snap: pSnap, item: item, noDeduct: true });
+             }
+           }
+        }
+
         // --- 3. EXECUTE ALL WRITES ---
         // อัปเดต counter ในระบบ
         transaction.set(counterRef, { 
@@ -114,53 +138,37 @@ export const todoPaymentService = {
             });
         }
 
-        const isStockAlreadyDeducted = !!orderData.isStockDeducted;
         const localStockUpdates = [];
-
-        if (!isStockAlreadyDeducted && orderData.items && Array.isArray(orderData.items)) {
-          for (const item of orderData.items) {
-            const itemIdentifier = item.id || item.sku;
-            if (item.isFreebie || !itemIdentifier) continue;
-            const pRef = doc(db, 'products', itemIdentifier);
-            const pSnap = await transaction.get(pRef);
-            if (pSnap.exists()) {
-              const currentStock = pSnap.data().stockQuantity || 0;
-              const requiredQty = item.qty || item.quantity || 1;
-              const newQty = Math.max(0, currentStock - requiredQty);
-
-              transaction.update(pRef, {
-                stockQuantity: newQty,
-                'stats.sold': increment(requiredQty)
-              });
-
-              localStockUpdates.push({
-                sku: item.sku,
-                name: pSnap.data().name,
-                oldStock: currentStock,
-                newStock: newQty,
-                productData: pSnap.data()
-              });
+        for (const data of productSnapsToUpdate) {
+            const pSnap = data.snap;
+            if (data.noDeduct) {
+               localStockUpdates.push({
+                  sku: data.item.sku,
+                  name: pSnap.data().name,
+                  oldStock: pSnap.data().stockQuantity,
+                  newStock: pSnap.data().stockQuantity,
+                  productData: pSnap.data()
+               });
+            } else {
+               const currentStock = pSnap.data().stockQuantity || 0;
+               const requiredQty = data.item.qty || data.item.quantity || 1;
+               const newQty = Math.max(0, currentStock - requiredQty);
+               transaction.update(data.ref, {
+                  stockQuantity: newQty,
+                  'stats.sold': increment(requiredQty)
+               });
+               localStockUpdates.push({
+                  sku: data.item.sku,
+                  name: pSnap.data().name,
+                  oldStock: currentStock,
+                  newStock: newQty,
+                  productData: pSnap.data()
+               });
             }
-          }
-        } else if (orderData.items && Array.isArray(orderData.items)) {
-          for (const item of orderData.items) {
-            if (!item.sku) continue;
-            const pRef = doc(db, 'products', item.sku);
-            const pSnap = await transaction.get(pRef);
-            if (pSnap.exists()) {
-              localStockUpdates.push({
-                sku: item.sku,
-                name: pSnap.data().name,
-                oldStock: pSnap.data().stockQuantity,
-                newStock: pSnap.data().stockQuantity,
-                productData: pSnap.data()
-              });
-            }
-          }
         }
 
         return { success: true, invoiceId: generatedOrderId, stockUpdates: localStockUpdates };
-      });
+      }, { maxAttempts: 15 });
 
       // --- Post-Transaction execution: Sync to Google Sheets & Log history ---
       if (result && result.stockUpdates && result.stockUpdates.length > 0) {

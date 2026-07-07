@@ -132,7 +132,7 @@ export default function ProfileMain() {
   return (
     <div className="p-5 space-y-6">
       {/* Header Profile */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+      <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex items-center gap-4">
         <div className="w-16 h-16 bg-blue-100 rounded-full flex justify-center items-center text-blue-600">
           <UserCircle size={40} />
         </div>
@@ -143,7 +143,7 @@ export default function ProfileMain() {
       </div>
 
       {/* Action Scanner Area */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
+      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-col items-center">
         {!showScanner ? (
           <>
             <div className="w-20 h-20 bg-emerald-100 rounded-full flex justify-center items-center text-emerald-600 mb-4 animate-pulse">
@@ -173,7 +173,7 @@ export default function ProfileMain() {
             
             {/* Overlay Processing */}
             {isProcessing && (
-              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 top-[40px] rounded-xl">
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 top-[40px] rounded-xl">
                 <Loader2 size={40} className="animate-spin text-blue-500 mb-2" />
                 <p className="font-bold text-blue-600">กำลังตรวจสอบข้อมูล...</p>
               </div>
@@ -198,7 +198,7 @@ export default function ProfileMain() {
       </div>
 
       {/* Status Toggle */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+      <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
         <h3 className="font-bold text-gray-800 mb-3">สถานะการทำงานปัจจุบัน</h3>
         <div className="grid grid-cols-3 gap-2">
           <button 
@@ -251,7 +251,7 @@ export default function ProfileMain() {
                 <select 
                   value={leaveForm.type}
                   onChange={(e) => setLeaveForm({...leaveForm, type: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-hidden"
                 >
                   <option value="sick">ลาป่วย</option>
                   <option value="personal">ลากิจ</option>
@@ -266,7 +266,7 @@ export default function ProfileMain() {
                     type="date" 
                     value={leaveForm.startDate}
                     onChange={(e) => setLeaveForm({...leaveForm, startDate: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-hidden" 
                     required 
                   />
                 </div>
@@ -276,7 +276,7 @@ export default function ProfileMain() {
                     type="date" 
                     value={leaveForm.endDate}
                     onChange={(e) => setLeaveForm({...leaveForm, endDate: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-hidden" 
                     required 
                   />
                 </div>
@@ -287,7 +287,7 @@ export default function ProfileMain() {
                 <textarea 
                   value={leaveForm.reason}
                   onChange={(e) => setLeaveForm({...leaveForm, reason: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                  className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-hidden" 
                   rows="3"
                   placeholder="ระบุเหตุผล..."
                   required

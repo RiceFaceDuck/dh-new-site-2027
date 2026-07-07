@@ -49,7 +49,7 @@ export default function StockAdjustment() {
         
         <button 
           onClick={() => navigate('/managers')}
-          className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-orange-600 transition-all shadow-sm active:scale-95 w-fit"
+          className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-orange-600 transition-all shadow-xs active:scale-95 w-fit"
         >
           <ArrowLeft size={18} /> ย้อนกลับ (Overview)
         </button>
@@ -61,7 +61,7 @@ export default function StockAdjustment() {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Search Box */}
-          <div className="bg-dh-surface rounded-2xl shadow-sm border border-dh-border p-6">
+          <div className="bg-dh-surface rounded-2xl shadow-xs border border-dh-border p-6">
             <h2 className="text-lg font-bold text-dh-main mb-4 flex items-center gap-2">
               <Search size={20} className="text-dh-accent" />
               ค้นหาสินค้าที่ต้องการปรับปรุง
@@ -72,7 +72,7 @@ export default function StockAdjustment() {
                 value={skuInput}
                 onChange={(e) => setSkuInput(e.target.value)}
                 placeholder="กรอก SKU สินค้า (เช่น RAM-001)"
-                className="flex-1 bg-dh-base border border-dh-border rounded-xl px-4 py-3 text-dh-main focus:outline-none focus:ring-2 focus:ring-dh-accent font-mono text-lg"
+                className="flex-1 bg-dh-base border border-dh-border rounded-xl px-4 py-3 text-dh-main focus:outline-hidden focus:ring-2 focus:ring-dh-accent font-mono text-lg"
               />
               <button 
                 type="submit"
@@ -115,7 +115,7 @@ export default function StockAdjustment() {
                       min="0"
                       value={newStock}
                       onChange={(e) => setNewStock(e.target.value)}
-                      className="w-full sm:w-32 bg-dh-surface border-2 border-orange-500 rounded-xl px-4 py-2 text-2xl font-black text-dh-main focus:outline-none focus:ring-4 focus:ring-orange-500/20"
+                      className="w-full sm:w-32 bg-dh-surface border-2 border-orange-500 rounded-xl px-4 py-2 text-2xl font-black text-dh-main focus:outline-hidden focus:ring-4 focus:ring-orange-500/20"
                     />
                   </div>
                 </div>
@@ -133,7 +133,7 @@ export default function StockAdjustment() {
                   <select 
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-full bg-dh-base border border-dh-border rounded-xl px-4 py-3 text-dh-main focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
+                    className="w-full bg-dh-base border border-dh-border rounded-xl px-4 py-3 text-dh-main focus:outline-hidden focus:ring-2 focus:ring-orange-500 font-medium"
                   >
                     {REASON_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -148,7 +148,7 @@ export default function StockAdjustment() {
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="อธิบายรายละเอียดเพิ่มเติม เพื่อให้ตรวจสอบย้อนหลังได้ง่าย..."
-                    className="w-full bg-dh-base border border-dh-border rounded-xl px-4 py-3 text-dh-main focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none h-24 custom-scrollbar"
+                    className="w-full bg-dh-base border border-dh-border rounded-xl px-4 py-3 text-dh-main focus:outline-hidden focus:ring-2 focus:ring-orange-500 resize-none h-24 custom-scrollbar"
                   ></textarea>
                 </div>
 
@@ -159,7 +159,7 @@ export default function StockAdjustment() {
                   <button 
                     type="submit"
                     disabled={isSubmitting || newStock === ''}
-                    className="px-8 py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+                    className="px-8 py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-xs"
                   >
                     {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <ShieldAlert size={20} />}
                     {isSubmitting ? 'กำลังบันทึก...' : 'ยืนยันการปรับปรุงสต๊อค'}

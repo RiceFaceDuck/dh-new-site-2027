@@ -8,7 +8,7 @@ import { Outlet } from 'react-router-dom';
  */
 const SquadLayout = ({ children }) => {
   return (
-    <div className="h-[100dvh] w-full bg-[#0a192f] text-white flex flex-col overflow-hidden font-sans select-none">
+    <div className="h-dvh w-full bg-[#0a192f] text-white flex flex-col overflow-hidden font-sans select-none">
       {/* 
         This wrapper ensures the content takes up exactly the screen height.
         We use flex-col so header, pitch, and footer can share the vertical space.

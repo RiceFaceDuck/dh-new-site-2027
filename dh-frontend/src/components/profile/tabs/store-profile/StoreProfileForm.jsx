@@ -36,7 +36,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-sm overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-xs overflow-hidden animate-in fade-in duration-300">
       
       <div className="bg-slate-900 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800">
         <div>
@@ -73,7 +73,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
               onChange={handleToggleSupport} 
               disabled={isAdPending} 
             />
-            <div className="w-14 h-7 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+            <div className="w-14 h-7 bg-slate-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
           </label>
         </div>
       </div>
@@ -111,7 +111,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
                 id="pdpa-consent"
                 checked={storeData.pdpaConsent || false}
                 onChange={(e) => setStoreData({ ...storeData, pdpaConsent: e.target.checked })}
-                className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                className="w-5 h-5 rounded-sm border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
               />
             </div>
             <div>

@@ -87,7 +87,7 @@ export default function WarrantyStatusBadge({ purchaseDateStr, sku, category }) 
           <ShieldCheck size={12} />
           <span>{label}</span>
         </div>
-        <span className="text-[9px] font-medium text-gray-400 border border-gray-200 px-1 rounded-sm bg-white">
+        <span className="text-[9px] font-medium text-gray-400 border border-gray-200 px-1 rounded-xs bg-white">
           ประกัน {warrantyPeriodDays} วัน
         </span>
       </div>

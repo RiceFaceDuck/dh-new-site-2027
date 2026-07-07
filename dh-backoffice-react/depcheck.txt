@@ -1,0 +1,5 @@
+Unused devDependencies
+* @testing-library/user-event
+* autoprefixer
+* postcss
+* tailwindcss

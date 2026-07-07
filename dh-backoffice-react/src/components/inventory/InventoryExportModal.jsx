@@ -132,7 +132,7 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="bg-dh-surface rounded-2xl shadow-dh-elevated border border-dh-border w-full max-w-3xl overflow-hidden flex flex-col h-[90vh]">
         
         {/* Header */}
@@ -141,7 +141,7 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
             <FileSpreadsheet size={24} className="text-green-500" />
             ส่งออกข้อมูลสินค้า (Advanced Export)
           </h2>
-          <button onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-none"><X size={20}/></button>
+          <button onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-hidden"><X size={20}/></button>
         </div>
 
         {/* Body */}
@@ -162,19 +162,19 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
               <div className="w-full md:w-48 bg-dh-base/50 border-r border-dh-border p-4 flex flex-col gap-2 shrink-0 overflow-x-auto md:overflow-y-auto flex-row md:flex-col">
                 <button 
                   onClick={() => setActiveTab('filters')}
-                  className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'filters' ? 'bg-dh-accent text-white shadow-sm' : 'text-dh-muted hover:bg-dh-surface hover:text-dh-main'}`}
+                  className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'filters' ? 'bg-dh-accent text-white shadow-xs' : 'text-dh-muted hover:bg-dh-surface hover:text-dh-main'}`}
                 >
                   <ListFilter size={16}/> กรองข้อมูล
                 </button>
                 <button 
                   onClick={() => setActiveTab('skus')}
-                  className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'skus' ? 'bg-dh-accent text-white shadow-sm' : 'text-dh-muted hover:bg-dh-surface hover:text-dh-main'}`}
+                  className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'skus' ? 'bg-dh-accent text-white shadow-xs' : 'text-dh-muted hover:bg-dh-surface hover:text-dh-main'}`}
                 >
                   <Search size={16}/> ระบุ SKU เอง
                 </button>
                 <button 
                   onClick={() => setActiveTab('columns')}
-                  className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'columns' ? 'bg-dh-accent text-white shadow-sm' : 'text-dh-muted hover:bg-dh-surface hover:text-dh-main'}`}
+                  className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap md:whitespace-normal text-left ${activeTab === 'columns' ? 'bg-dh-accent text-white shadow-xs' : 'text-dh-muted hover:bg-dh-surface hover:text-dh-main'}`}
                 >
                   <Settings2 size={16}/> การจัดเรียง & คอลัมน์
                 </button>
@@ -227,11 +227,11 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
         {/* Footer */}
         {!exportComplete && (
           <div className="px-6 py-4 border-t border-dh-border bg-dh-surface flex justify-end items-center shrink-0 gap-3">
-            <button type="button" onClick={onClose} disabled={isExporting} className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-sm disabled:opacity-50">ยกเลิก</button>
+            <button type="button" onClick={onClose} disabled={isExporting} className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-xs disabled:opacity-50">ยกเลิก</button>
             <button 
               onClick={handleExport} 
               disabled={isExporting || selectedColumns.length === 0}
-              className="px-8 py-2.5 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 flex items-center gap-2 shadow-sm transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-2.5 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 flex items-center gap-2 shadow-xs transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16}/>}
               {isExporting ? 'กำลังดึงข้อมูลและสร้างไฟล์...' : 'ดาวน์โหลด Excel'}

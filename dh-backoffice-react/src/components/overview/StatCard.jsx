@@ -17,7 +17,7 @@ export const StatCard = ({ title, value, unit, icon: Icon, colorClass, shadowCol
           </h3>
         </div>
         {subtitleText && (
-          <div className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1.5 rounded-sm border mt-4 ${colorClass.replace('bg-', 'text-').replace('-500', '-600 dark:text-[color]-400')} ${colorClass.replace('bg-', 'bg-').replace('-500', '-500/10')} ${colorClass.replace('bg-', 'border-').replace('-500', '-500/20')}`}>
+          <div className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1.5 rounded-xs border mt-4 ${colorClass.replace('bg-', 'text-').replace('-500', '-600 dark:text-[color]-400')} ${colorClass.replace('bg-', 'bg-').replace('-500', '-500/10')} ${colorClass.replace('bg-', 'border-').replace('-500', '-500/20')}`}>
             {SubtitleIcon && <SubtitleIcon size={14} />}
             <span>{subtitleText}</span>
           </div>

@@ -61,7 +61,7 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="bg-dh-surface rounded-2xl shadow-dh-elevated border border-dh-border w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-200">
         
         {/* Header */}
@@ -78,11 +78,11 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
               <div className="relative">
                 <input type="checkbox" className="sr-only" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})} />
                 <div className={`block w-10 h-6 rounded-full transition-colors border border-dh-border shadow-inner ${form.isActive ? 'bg-green-500' : 'bg-dh-base'}`}></div>
-                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${form.isActive ? 'transform translate-x-4' : ''}`}></div>
+                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform shadow-xs ${form.isActive ? 'transform translate-x-4' : ''}`}></div>
               </div>
             </label>
             <div className="w-px h-6 bg-dh-border"></div>
-            <button type="button" onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-none"><X size={20}/></button>
+            <button type="button" onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-hidden"><X size={20}/></button>
           </div>
         </div>
 
@@ -148,7 +148,7 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
               <button 
                 type="button" 
                 onClick={handleRequestDelete}
-                className="px-4 py-2.5 text-red-500 bg-red-500/10 font-bold rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 text-sm shadow-sm"
+                className="px-4 py-2.5 text-red-500 bg-red-500/10 font-bold rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 text-sm shadow-xs"
               >
                 <Trash2 size={16} /> ขออนุมัติลบสินค้า
               </button>
@@ -156,9 +156,9 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
           </div>
           
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} disabled={isUploading} className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-sm disabled:opacity-50">ยกเลิก</button>
+            <button type="button" onClick={onClose} disabled={isUploading} className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-xs disabled:opacity-50">ยกเลิก</button>
             <button type="submit" form="productForm" disabled={isUploading}
-              className="px-8 py-2.5 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover flex items-center gap-2 shadow-sm transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+              className="px-8 py-2.5 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover flex items-center gap-2 shadow-xs transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
               {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16}/>}
               {isUploading ? 'กำลังอัปโหลด...' : 'บันทึกข้อมูล'}
             </button>

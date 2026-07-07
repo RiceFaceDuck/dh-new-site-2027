@@ -3,7 +3,7 @@ import { ImageIcon, UploadCloud, Loader2 } from 'lucide-react';
 
 export default function HeroImageUpload({ imageUrl, onUpload, isUploading }) {
     return (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow">
             <label className="text-sm font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <ImageIcon size={18} className="text-blue-500" /> รูปภาพป้ายโฆษณา (Google Drive)
             </label>
@@ -11,7 +11,7 @@ export default function HeroImageUpload({ imageUrl, onUpload, isUploading }) {
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-1/2 aspect-video bg-slate-100 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 relative flex items-center justify-center dh-inner-shadow">
                     {imageUrl ? (
-                        <img src={imageUrl} alt="Hero Preview" className="w-full h-full object-cover transition-transform hover:scale-105 duration-500" />
+                        <img src={imageUrl} alt="Hero Preview" className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"  loading="lazy" />
                     ) : (
                         <span className="text-slate-400 font-bold">ไม่มีรูปภาพ</span>
                     )}

@@ -8,7 +8,7 @@ import SquadBottomNav from './components/SquadBottomNav';
 /**
  * Squad - Main Page Component for Fantasy Squad Selection.
  * Orchestrates the state from useSquadSelection and passes it to presentation components.
- * Designed to fit strictly within h-[100dvh] via SquadLayout.
+ * Designed to fit strictly within h-dvh via SquadLayout.
  */
 const Squad = () => {
   const { squad, formation, bank, totalPoints, actions } = useSquadSelection();

@@ -76,12 +76,12 @@ const HeroSection = () => {
         
         <div className="flex flex-row space-x-3 md:space-x-4">
           {activeConfig.primaryButton?.isActive && (
-            <Link to={activeConfig.primaryButton.link} className="px-6 py-2.5 md:px-8 md:py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg hover:bg-yellow-500 transition-colors text-xs md:text-sm uppercase tracking-wider shadow-sm">
+            <Link to={activeConfig.primaryButton.link} className="px-6 py-2.5 md:px-8 md:py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg hover:bg-yellow-500 transition-colors text-xs md:text-sm uppercase tracking-wider shadow-xs">
               {activeConfig.primaryButton.label}
             </Link>
           )}
           {activeConfig.secondaryButton?.isActive && (
-            <Link to={activeConfig.secondaryButton.link} className="px-6 py-2.5 md:px-8 md:py-3 bg-white text-slate-800 font-bold rounded-lg hover:bg-gray-100 transition-colors text-xs md:text-sm uppercase tracking-wider shadow-sm">
+            <Link to={activeConfig.secondaryButton.link} className="px-6 py-2.5 md:px-8 md:py-3 bg-white text-slate-800 font-bold rounded-lg hover:bg-gray-100 transition-colors text-xs md:text-sm uppercase tracking-wider shadow-xs">
               {activeConfig.secondaryButton.label}
             </Link>
           )}

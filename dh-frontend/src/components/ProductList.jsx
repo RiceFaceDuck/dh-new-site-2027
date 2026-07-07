@@ -1,10 +1,11 @@
 /* eslint-disable react/prop-types */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronRight, ShoppingCart, CheckCircle2, Loader2, Cpu, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { cartService } from '../firebase/cartService';
-import { useCart } from '../context/CartProvider';
+import { useCartDispatch } from '../context/CartProvider';
+import { useToast } from '../context/ToastContext';
 
 import ProductAdCard from './ads/ProductAdCard';
 // 🚀 HOTFIX: แก้ไขการ Import ให้ถูกต้อง (Default Import)
@@ -31,7 +32,8 @@ const getVal = (obj, possibleKeys) => {
 
 const ProductList = ({ products, loading, error, title = "", showTitle = false }) => {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart } = useCartDispatch();
+  const { showToast } = useToast();
   const [addingState, setAddingState] = useState({}); 
   
   // 🧠 1. เรียกใช้งานสมองกลแทรกโฆษณา (จะดึงสินค้าโปรโมทและนามบัตรมาให้)
@@ -50,7 +52,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     const user = auth.currentUser;
 
     if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนหยิบสินค้าใส่ตะกร้า");
+      showToast("กรุณาเข้าสู่ระบบก่อนหยิบสินค้าใส่ตะกร้า", "error");
       return;
     }
 
@@ -64,19 +66,19 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       }, 2000);
     } catch (err) {
       console.error("🔥 Error add to cart:", err);
-      alert("เกิดข้อผิดพลาด: " + err.message);
+      showToast("เกิดข้อผิดพลาด: " + err.message, "error");
       setAddingState(prev => ({ ...prev, [product.id]: null }));
     }
   };
 
   const SkeletonCard = () => (
-    <div className="rounded-md border border-slate-200 bg-slate-100 p-2 md:p-3 flex flex-col h-full shadow-sm animate-pulse">
+    <div className="rounded-md border border-slate-200 bg-slate-100 p-2 md:p-3 flex flex-col h-full shadow-xs animate-pulse">
       <div className="w-full aspect-square bg-white rounded-lg mb-3"></div>
-      <div className="w-1/3 h-3 bg-white rounded-sm animate-pulse mb-2"></div>
-      <div className="w-full h-4 bg-white rounded-sm animate-pulse mb-1"></div>
-      <div className="w-2/3 h-4 bg-white rounded-sm animate-pulse mb-auto"></div>
+      <div className="w-1/3 h-3 bg-white rounded-xs animate-pulse mb-2"></div>
+      <div className="w-full h-4 bg-white rounded-xs animate-pulse mb-1"></div>
+      <div className="w-2/3 h-4 bg-white rounded-xs animate-pulse mb-auto"></div>
       <div className="flex justify-between items-end mt-4">
-        <div className="w-1/2 h-6 bg-white rounded-sm animate-pulse"></div>
+        <div className="w-1/2 h-6 bg-white rounded-xs animate-pulse"></div>
         <div className="w-full h-8 bg-white rounded-md mt-3 animate-pulse"></div>
       </div>
     </div>
@@ -88,12 +90,12 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
         {showTitle && title && (
           <div className="flex justify-between items-end mb-4">
             <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight flex items-center">
-              <span className="w-1.5 h-5 bg-brand rounded-sm mr-3 inline-block shadow-glow-brand"></span>
+              <span className="w-1.5 h-5 bg-brand rounded-xs mr-3 inline-block shadow-glow-brand"></span>
               {title}
             </h2>
           </div>
         )}
-        <div className="w-full bg-slate-50 border border-red-200 rounded-xl p-6 md:p-10 flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
+        <div className="w-full bg-slate-50 border border-red-200 rounded-xl p-6 md:p-10 flex flex-col items-center justify-center shadow-xs relative overflow-hidden">
            <div className="relative z-10 flex flex-col items-center text-center w-full">
               <div className="w-16 h-16 bg-red-100 border border-red-200 rounded-full flex items-center justify-center mb-4">
                  <ShieldAlert size={32} className="text-red-500" />
@@ -109,19 +111,11 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     );
   }
 
-  // 🧠 Core Display Engine: ลูปจาก Array ที่ถูกผสมโฆษณามาแล้ว
-  const renderMixedGrid = () => {
+  // ⚡ ประหยัด Performance: แปลงข้อมูลทั้งหมดล่วงหน้าผ่าน useMemo แทนการเรียก getVal นับร้อยครั้งใน Render
+  const mappedDisplayProducts = useMemo(() => {
     return displayProducts.map((item, index) => {
-      // 🟢 ตรวจจับโฆษณา: หากเป็นโฆษณา ให้โยนเข้า Component ProductAdCard
-      if (item.isSponsoredAd) {
-        return (
-          <div key={`ad-inject-${item.id || index}-${index}`} className="col-span-1 h-full animate-in fade-in zoom-in duration-500">
-            <ProductAdCard ad={item} />
-          </div>
-        );
-      }
-
-      // 🔵 หากไม่ใช่โฆษณา ให้แสดงเป็นสินค้าปกติ (คงโครงสร้างเดิมของท่านไว้ 100%)
+      if (item.isSponsoredAd) return item; // ถ้าเป็นโฆษณา ไม่ต้องทำอะไร
+      
       const product = item;
       const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
       const imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
@@ -136,22 +130,41 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       } else {
         stock = (rawStock !== null && rawStock !== undefined) ? Number(String(rawStock).replace(/[^0-9.-]+/g,"")) : 0;
       }
-      const hasStock = stock > 0;
-
+      
       const name = getVal(product, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
       const brand = getVal(product, ['brand', 'manufacturer', 'ยี่ห้อ', 'category']) || 'OEM';
       const sku = getVal(product, ['sku', 'code', 'productcode', 'รหัสสินค้า', 'barcode']) || product.id?.substring(0, 8);
       
-      const mappedProduct = { ...product, id: product.id, name, price, stock, imageUrl, brand, sku };
+      return { ...product, id: product.id, name, price, stock, imageUrl, brand, sku };
+    });
+  }, [displayProducts]);
+
+  // 🧠 Core Display Engine: ลูปจาก Array ที่ถูกเตรียมมาแล้ว
+  const renderMixedGrid = () => {
+    return mappedDisplayProducts.map((item, index) => {
+      // 🟢 ตรวจจับโฆษณา: หากเป็นโฆษณา ให้โยนเข้า Component ProductAdCard
+      if (item.isSponsoredAd) {
+        return (
+          <div key={`ad-inject-${item.id || index}-${index}`} className="col-span-1 h-full animate-in fade-in zoom-in duration-500">
+            <ProductAdCard ad={item} />
+          </div>
+        );
+      }
+
+      // 🔵 หากไม่ใช่โฆษณา ให้แสดงเป็นสินค้าปกติ
+      const mappedProduct = item;
+      const { id, name, price, stock, imageUrl, brand, sku } = mappedProduct;
+      const hasStock = stock > 0;
+
 
       return (
         <div 
-          key={`product-${product.id}-${index}`} 
-          onClick={() => navigate(`/product/${product.id}`, { state: { product: mappedProduct } })} 
+          key={`product-${id}-${index}`} 
+          onClick={() => navigate(`/product/${id}`, { state: { product: mappedProduct } })} 
           className="group cursor-pointer bg-slate-100 p-2 md:p-3 rounded-xl border border-slate-200 overflow-hidden flex flex-col hover:border-brand-light hover:shadow-premium-hover transition-all duration-300 relative animate-in fade-in"
         >
           <div className="relative aspect-square w-full bg-white rounded-lg flex items-center justify-center p-4 overflow-hidden mb-2">
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-light/20 to-transparent opacity-50 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-linear-to-br from-brand-light/20 to-transparent opacity-50 pointer-events-none"></div>
             <LazyImage 
               src={imageUrl} 
               alt={name} 
@@ -159,7 +172,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
               onError={(e) => { e.target.src = '/logo.png' }}
             />
             
-            <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md border border-slate-200/50 shadow-sm z-20">
+            <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-white/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-200/50 shadow-xs z-20">
               <span className={`w-1.5 h-1.5 rounded-full ${hasStock ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
               <span className="text-[9px] md:text-[10px] font-bold text-slate-600 uppercase">
                 {hasStock ? 'READY' : 'OUT OF STOCK'}
@@ -167,7 +180,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
             </div>
           </div>
           
-          <div className="flex flex-col flex-grow px-1">
+          <div className="flex flex-col grow px-1">
             <h3 className="text-sm md:text-base font-bold text-slate-800 line-clamp-1 group-hover:text-brand transition-colors leading-relaxed">
               {name}
             </h3>
@@ -180,9 +193,9 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
               </span>
               <button 
                 onClick={(e) => handleAddToCart(e, mappedProduct)}
-                disabled={!hasStock || addingState[product.id] === 'success'}
-                className={`w-full py-1.5 md:py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-sm z-20 text-xs font-bold uppercase tracking-widest ${
-                  addingState[product.id] === 'success'
+                disabled={!hasStock || addingState[id] === 'success'}
+                className={`w-full py-1.5 md:py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-xs z-20 text-xs font-bold uppercase tracking-widest ${
+                  addingState[id] === 'success'
                     ? 'bg-green-500 text-white scale-95'
                     : !hasStock 
                       ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
@@ -190,7 +203,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
                 }`}
                 aria-label="Add to cart"
               >
-                {addingState[product.id] === 'success' ? (
+                {addingState[id] === 'success' ? (
                     <span className="flex items-center gap-1"><CheckCircle2 size={16} strokeWidth={2.5} /> ADDED</span>
                 ) : (
                     "ADD TO CART"
@@ -208,7 +221,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       {(showTitle || title) && (
         <div className="flex justify-between items-end mb-5 px-1">
           <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <span className="w-1.5 h-5 bg-brand rounded-sm mr-2 inline-block shadow-glow-brand"></span>
+            <span className="w-1.5 h-5 bg-brand rounded-xs mr-2 inline-block shadow-glow-brand"></span>
             {title || 'สินค้าแนะนำ / มาใหม่'}
           </h2>
           <button className="text-sm font-semibold text-brand hover:text-brand-dark flex items-center group transition-colors">
@@ -222,7 +235,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 px-1">
           {[...Array(10)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : displayProducts.length === 0 ? ( 
+      ) : mappedDisplayProducts.length === 0 ? ( 
         <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-10 flex flex-col items-center justify-center shadow-inner">
            <Cpu size={32} className="text-slate-300 mb-3" />
            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No Products Found</p>

@@ -112,22 +112,22 @@ export default function ProductImageUpload({
         ) : activeImageUrl ? (
           <div className="w-full h-full relative bg-dh-surface">
             <img src={getRenderableImageUrl(activeImageUrl)} alt="Active" className="w-full h-full object-contain" 
-                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Image+Error'; }} />
+                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Image+Error'; }}  loading="lazy" />
             
             {activeImageUrl === form.images[0] && (
-              <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded shadow-sm flex items-center gap-1 border border-yellow-500">
+              <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-sm shadow-xs flex items-center gap-1 border border-yellow-500">
                 <Star size={12}/> ภาพปก
               </div>
             )}
             <div className="absolute inset-0 bg-dh-main/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <span className="text-white font-bold text-sm flex items-center gap-2 bg-black/50 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20">
+              <span className="text-white font-bold text-sm flex items-center gap-2 bg-black/50 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/20">
                 <UploadCloud size={18}/> ลากภาพวางเพิ่ม
               </span>
             </div>
           </div>
         ) : (
           <div className="text-center p-4">
-            <div className="w-14 h-14 bg-dh-surface shadow-sm border border-dh-border rounded-full flex items-center justify-center mx-auto mb-3 text-dh-accent">
+            <div className="w-14 h-14 bg-dh-surface shadow-xs border border-dh-border rounded-full flex items-center justify-center mx-auto mb-3 text-dh-accent">
               <UploadCloud size={24} />
             </div>
             <p className="font-bold text-sm">ลากไฟล์ภาพวางที่นี่</p>
@@ -144,22 +144,22 @@ export default function ProductImageUpload({
               <div key={idx} 
                    onClick={() => setActiveImageUrl(imgUrl)}
                    className={`aspect-square rounded-lg border-2 overflow-hidden relative group cursor-pointer transition-all bg-dh-base
-                   ${activeImageUrl === imgUrl ? 'border-dh-accent shadow-sm scale-[1.02]' : 'border-dh-border hover:border-dh-accent/50'}`}>
+                   ${activeImageUrl === imgUrl ? 'border-dh-accent shadow-xs scale-[1.02]' : 'border-dh-border hover:border-dh-accent/50'}`}>
                 
                 <img src={getRenderableImageUrl(imgUrl)} alt={`Thumb ${idx}`} className={`w-full h-full object-cover ${isHidden ? 'opacity-40 grayscale' : ''}`} 
-                     onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Err'; }} />
+                     onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Err'; }}  loading="lazy" />
                 
                 {idx === 0 && <div className="absolute top-0 left-0 bg-yellow-400 text-white p-0.5 rounded-br-lg z-10"><Star size={10}/></div>}
                 {isHidden && <div className="absolute top-0 right-0 bg-slate-500 text-white p-0.5 rounded-bl-lg z-10"><EyeOff size={10}/></div>}
                 
                 <div className="absolute inset-0 bg-dh-main/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-wrap items-center justify-center gap-1.5 backdrop-blur-[1px] p-1">
                   {idx !== 0 && (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setCoverImage(idx); }} className="p-1.5 bg-dh-surface text-yellow-500 rounded-full hover:bg-yellow-50 hover:text-yellow-600 shadow-sm transition-colors" title="ตั้งเป็นภาพปก"><Star size={12}/></button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setCoverImage(idx); }} className="p-1.5 bg-dh-surface text-yellow-500 rounded-full hover:bg-yellow-50 hover:text-yellow-600 shadow-xs transition-colors" title="ตั้งเป็นภาพปก"><Star size={12}/></button>
                   )}
-                  <button type="button" onClick={(e) => { e.stopPropagation(); toggleVisibility(imgUrl); }} className="p-1.5 bg-dh-surface text-blue-500 rounded-full hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-colors" title={isHidden ? "เปิดแสดงผล" : "ซ่อนภาพนี้"}>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); toggleVisibility(imgUrl); }} className="p-1.5 bg-dh-surface text-blue-500 rounded-full hover:bg-blue-50 hover:text-blue-600 shadow-xs transition-colors" title={isHidden ? "เปิดแสดงผล" : "ซ่อนภาพนี้"}>
                     {isHidden ? <Eye size={12}/> : <EyeOff size={12}/>}
                   </button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(idx, imgUrl); }} className="p-1.5 bg-dh-surface text-red-500 rounded-full hover:bg-red-50 hover:text-red-600 shadow-sm transition-colors" title="ลบภาพ"><Trash2 size={12}/></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); removeImage(idx, imgUrl); }} className="p-1.5 bg-dh-surface text-red-500 rounded-full hover:bg-red-50 hover:text-red-600 shadow-xs transition-colors" title="ลบภาพ"><Trash2 size={12}/></button>
                 </div>
               </div>
             );

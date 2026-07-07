@@ -43,7 +43,7 @@ export default function ServiceTaskCard({ task, onApprove, onReject }) {
                 รายละเอียด {isClaim ? 'เคลมสินค้า' : 'คืนสินค้า'}
             </h4>
             
-            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-dh-border shadow-sm flex items-start gap-3">
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-dh-border shadow-xs flex items-start gap-3">
                 <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-md">
                     <Package className="w-5 h-5 text-dh-muted" />
                 </div>
@@ -54,11 +54,11 @@ export default function ServiceTaskCard({ task, onApprove, onReject }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-[11px]">
-                <div className="bg-white dark:bg-slate-800 p-2 rounded border border-dh-border shadow-sm">
+                <div className="bg-white dark:bg-slate-800 p-2 rounded-sm border border-dh-border shadow-xs">
                     <span className="text-dh-muted block mb-0.5">เหตุผล:</span>
                     <span className="font-bold text-dh-main">{isClaim ? payload?.symptomCode : payload?.returnReason}</span>
                 </div>
-                <div className="bg-white dark:bg-slate-800 p-2 rounded border border-dh-border shadow-sm">
+                <div className="bg-white dark:bg-slate-800 p-2 rounded-sm border border-dh-border shadow-xs">
                     <span className="text-dh-muted block mb-0.5">รายละเอียด:</span>
                     <span className="font-bold text-dh-main">{isClaim ? payload?.symptomDetails : payload?.returnDetails || '-'}</span>
                 </div>
@@ -79,8 +79,8 @@ export default function ServiceTaskCard({ task, onApprove, onReject }) {
                     <span className="text-[10px] font-black uppercase text-dh-muted mb-1.5 flex items-center gap-1"><ImageIcon size={12}/> รูปภาพประกอบ</span>
                     <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                         {payload.images.map((img, idx) => (
-                           <a key={idx} href={img.replace('&sz=w1000', '')} target="_blank" rel="noreferrer" className="w-16 h-16 shrink-0 border border-dh-border rounded overflow-hidden hover:scale-105 transition-transform">
-                              <img src={img} alt="Evidence" className="w-full h-full object-cover" />
+                           <a key={idx} href={img.replace('&sz=w1000', '')} target="_blank" rel="noreferrer" className="w-16 h-16 shrink-0 border border-dh-border rounded-sm overflow-hidden hover:scale-105 transition-transform">
+                              <img src={img} alt="Evidence" className="w-full h-full object-cover"  loading="lazy" />
                            </a>
                         ))}
                     </div>
@@ -92,7 +92,7 @@ export default function ServiceTaskCard({ task, onApprove, onReject }) {
         <div className="w-full md:w-64 shrink-0 border-t md:border-t-0 md:border-l border-dh-border pt-4 md:pt-0 md:pl-4 flex flex-col gap-3">
             
             {!isCancel && (
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-dh-border shadow-sm">
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-dh-border shadow-xs">
                     <label className="text-[10px] font-black text-dh-muted uppercase tracking-wider block mb-1 flex items-center gap-1.5">
                         <Truck size={12}/> เลขพัสดุจัดส่งกลับ
                     </label>
@@ -102,13 +102,13 @@ export default function ServiceTaskCard({ task, onApprove, onReject }) {
                             placeholder="กรอกเลขพัสดุก่อนรับจบ" 
                             value={trackingNo}
                             onChange={(e) => setTrackingNo(e.target.value)}
-                            className="w-full text-xs p-2 rounded bg-slate-50 dark:bg-slate-900 border border-dh-border focus:border-dh-accent outline-none font-mono"
+                            className="w-full text-xs p-2 rounded-sm bg-slate-50 dark:bg-slate-900 border border-dh-border focus:border-dh-accent outline-hidden font-mono"
                         />
                         {payload?.trackingNo !== trackingNo && trackingNo.length > 0 && (
                             <button 
                                 onClick={handleSaveTracking}
                                 disabled={isSavingTracking}
-                                className="w-full text-[10px] py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 font-bold rounded transition-colors"
+                                className="w-full text-[10px] py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 font-bold rounded-sm transition-colors"
                             >
                                 บันทึกเลขพัสดุชั่วคราว
                             </button>
@@ -136,7 +136,7 @@ export default function ServiceTaskCard({ task, onApprove, onReject }) {
             
             <button 
                 onClick={() => onReject(task)}
-                className="w-full text-center text-[11px] font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 py-1.5 rounded transition-colors"
+                className="w-full text-center text-[11px] font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 py-1.5 rounded-sm transition-colors"
             >
                 ปฏิเสธคำขอ
             </button>

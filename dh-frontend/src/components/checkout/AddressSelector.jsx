@@ -122,7 +122,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
   }, [formData, updateCheckoutConfig, onUpdate]);
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 relative overflow-hidden transition-all duration-300">
+    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
       {/* Decorative background accent (Deep Luxury Style) */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-full -z-10 blur-2xl"></div>
       
@@ -251,7 +251,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
           </label>
 
           {/* Trust Element */}
-          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shadow-sm">
+          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shadow-xs">
             <ShieldCheck className="w-4 h-4 text-indigo-500" />
             เข้ารหัสข้อมูลปลอดภัย 100%
           </div>

@@ -74,14 +74,14 @@ export default function AdManagement() {
         {/* Back Button */}
         <button 
           onClick={() => navigate('/managers')}
-          className="mb-4 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm active:scale-95 w-fit"
+          className="mb-4 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-xs active:scale-95 w-fit"
         >
           <ArrowLeft size={18} /> ย้อนกลับ (Settings)
         </button>
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center mb-6">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-indigo-100">
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-8 text-center mb-6">
+          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xs border border-indigo-100">
              <ShieldCheck size={24} />
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">การจัดการพื้นที่โฆษณา (Sponsored Ads)</h2>
@@ -106,7 +106,7 @@ export default function AdManagement() {
 
         {/* Tabs */}
         <div className="flex justify-center mb-8 sticky top-0 z-10 py-2 bg-slate-50/90 backdrop-blur-md">
-          <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+          <div className="inline-flex bg-white p-1 rounded-xl shadow-xs border border-slate-100">
             <button 
               onClick={() => setActiveTab('PENDING')}
               className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg transition-colors ${activeTab === 'PENDING' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
@@ -130,7 +130,7 @@ export default function AdManagement() {
 
         {/* Content Area */}
         {filteredAds.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-100 p-16 flex flex-col items-center justify-center text-center shadow-sm">
+          <div className="bg-white rounded-3xl border border-slate-100 p-16 flex flex-col items-center justify-center text-center shadow-xs">
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                <Search size={28} className="text-slate-300" />
             </div>
@@ -140,12 +140,12 @@ export default function AdManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAds.map((ad) => (
-              <div key={ad.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
+              <div key={ad.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
                 
                 {/* รูปภาพพรีวิว */}
                 <div className="aspect-video w-full bg-slate-50 relative overflow-hidden group">
                   {ad.imageUrl ? (
-                    <img src={ad.imageUrl} alt="Ad Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={ad.imageUrl} alt="Ad Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"  loading="lazy" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
                       <ImageIcon size={32} className="mb-2 opacity-50"/>

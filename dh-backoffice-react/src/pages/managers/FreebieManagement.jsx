@@ -38,7 +38,7 @@ export default function FreebieManagement() {
           </div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">ตั้งค่ากฎของแถม</h1>
-            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-pink-600 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors border border-pink-200 shadow-sm dh-active-press">
+            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-pink-600 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors border border-pink-200 shadow-xs dh-active-press">
               <Gift size={16} /> คู่มือการใช้งาน
             </button>
           </div>

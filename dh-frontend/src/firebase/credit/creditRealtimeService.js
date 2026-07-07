@@ -11,7 +11,6 @@ export const listenToUserCredit = (userId, callback) => {
   }
 
   const usersPath = getUsersPath();
-  const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
   const profileRef = doc(db, usersPath, userId);
 
   let state = {
@@ -23,35 +22,24 @@ export const listenToUserCredit = (userId, callback) => {
   const notifyUI = () => {
     callback({
       balance: state.balance,
-      tier: getUserTier(state.balance),
+      tier: getUserTier(state.totalAccumulated),
       totalAccumulated: state.totalAccumulated,
       pendingCredits: state.pendingCredits
     });
   };
 
-  const unsubWallet = onSnapshot(walletRef, (snap) => {
-    if (snap.exists()) {
-      const data = snap.data();
-      state.balance = Number(data.balance) || 0;
-      state.totalAccumulated = Number(data.totalAccumulated) || state.balance;
-      notifyUI(); 
-    }
-  });
-
   const unsubProfile = onSnapshot(profileRef, (snap) => {
     if (snap.exists()) {
       const data = snap.data();
+      state.balance = Number(data.creditPoints || 0);
+      state.totalAccumulated = Number(data.totalAccumulatedPoints || data.creditPoints || 0);
       state.pendingCredits = Number(data.pendingCredits) || 0;
       
-      if (state.balance === 0) {
-        state.balance = Number(data.creditPoints || 0);
-      }
       notifyUI();
     }
   });
 
   return () => {
-    unsubWallet();
     unsubProfile();
   };
 };

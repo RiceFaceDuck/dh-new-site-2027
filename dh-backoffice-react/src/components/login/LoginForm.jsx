@@ -12,7 +12,7 @@ export default function LoginForm({
             <button 
                 onClick={onLogin}
                 disabled={loading}
-                className={`w-full flex items-center justify-center gap-3 py-3.5 bg-white dark:bg-slate-800 border rounded-xl font-bold transition-all shadow-sm ${
+                className={`w-full flex items-center justify-center gap-3 py-3.5 bg-white dark:bg-slate-800 border rounded-xl font-bold transition-all shadow-xs ${
                 loading 
                     ? 'border-blue-400 text-slate-700 dark:text-slate-200 opacity-80' 
                     : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-blue-500/50 hover:shadow-md active:scale-[0.98]'
@@ -25,7 +25,7 @@ export default function LoginForm({
                     </div>
                 ) : (
                     <>
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 group-hover:scale-110 transition-transform"  loading="lazy" />
                         <span className="text-sm tracking-wide">เข้าสู่ระบบด้วยบัญชีองค์กร</span>
                     </>
                 )}

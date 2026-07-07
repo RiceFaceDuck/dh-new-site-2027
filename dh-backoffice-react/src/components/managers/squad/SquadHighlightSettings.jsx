@@ -49,7 +49,7 @@ export default function SquadHighlightSettings() {
     return (
         <div className="p-6 max-w-4xl mx-auto w-full animate-fade-in">
             
-            <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl flex gap-4 text-indigo-800 shadow-sm mb-8">
+            <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl flex gap-4 text-indigo-800 shadow-xs mb-8">
                 <Sparkles size={24} className="shrink-0 text-indigo-500 mt-0.5"/>
                 <div>
                     <p className="text-sm font-bold leading-relaxed mb-1">
@@ -64,7 +64,7 @@ export default function SquadHighlightSettings() {
             <div className="space-y-6">
                 
                 {/* Toggle Active */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex items-center justify-between">
                     <div>
                         <h3 className="text-sm font-black text-slate-700 tracking-wider">เปิดใช้งานแผงช่างแนะนำ</h3>
                         <p className="text-xs text-slate-500 mt-1">แสดงหรือซ่อนแผงนี้ในหน้าเว็บของลูกค้า (ประหยัดค่า Firebase Reads ได้หากปิดไว้)</p>
@@ -76,12 +76,12 @@ export default function SquadHighlightSettings() {
                             checked={config.isActive}
                             onChange={(e) => setConfig({ ...config, isActive: e.target.checked })}
                         />
-                        <div className="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-500 shadow-inner"></div>
+                        <div className="w-14 h-7 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-500 shadow-inner"></div>
                     </label>
                 </div>
 
                 {/* Display Limit */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
                     <h3 className="text-sm font-black text-slate-700 tracking-wider mb-4">จำนวนช่างที่ต้องการแสดงผลสูงสุด</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {[3, 6, 9].map(num => (

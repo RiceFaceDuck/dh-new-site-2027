@@ -20,7 +20,7 @@ const MenuButton = ({ icon, label, active, onClick, badge, highlight }) => (
     onClick={onClick}
     className={`w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all border-l-[3px] rounded-r-xl mb-1 ${
       active 
-        ? 'bg-gradient-to-r from-indigo-50 to-transparent text-indigo-700 border-indigo-600 shadow-[inset_4px_0_0_rgba(79,70,229,0.1)]' 
+        ? 'bg-linear-to-r from-indigo-50 to-transparent text-indigo-700 border-indigo-600 shadow-[inset_4px_0_0_rgba(79,70,229,0.1)]' 
         : 'bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-transparent hover:border-slate-300'
     }`}
   >
@@ -68,15 +68,15 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
           
           {/* ✨ Background Premium Effects */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
-          <div className="absolute -left-10 -top-10 w-32 h-32 bg-slate-400/10 blur-[40px] rounded-full pointer-events-none"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+          <div className="absolute -left-10 -top-10 w-32 h-32 bg-slate-400/10 blur-2xl rounded-full pointer-events-none"></div>
+          <div className="absolute inset-0 bg-linear-to-b from-white/5 to-transparent pointer-events-none"></div>
 
           <div className="relative z-10 flex flex-col items-center">
             
             {/* Avatar Icon */}
-            <div className="w-20 h-20 rounded-2xl bg-slate-800/80 border border-slate-700/50 p-1 flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-105 backdrop-blur-sm">
+            <div className="w-20 h-20 rounded-2xl bg-slate-800/80 border border-slate-700/50 p-1 flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-105 backdrop-blur-xs">
                 {user?.photoURL ? (
-                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl" />
+                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl"  loading="lazy" />
                 ) : (
                   <Store size={36} className="text-indigo-400" />
                 )}
@@ -89,7 +89,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
             <button 
               onClick={handleCopyId}
               title="คัดลอก Account ID"
-              className={`flex items-center gap-2 text-[10px] font-mono mt-1 mb-5 uppercase tracking-widest px-2.5 py-1 rounded-md border shadow-sm transition-all duration-300 ${
+              className={`flex items-center gap-2 text-[10px] font-mono mt-1 mb-5 uppercase tracking-widest px-2.5 py-1 rounded-md border shadow-xs transition-all duration-300 ${
                 copied 
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
                   : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-300'
@@ -108,7 +108,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
               {creditLoading ? (
                  <Loader2 size={12} className="animate-spin text-slate-400 mx-auto mt-1" />
               ) : (
-                 <p className={`text-[10px] font-bold ${tier?.color ? tier.color.replace('text-', 'text-') : 'text-indigo-400'} uppercase truncate w-full drop-shadow-sm`}>
+                 <p className={`text-[10px] font-bold ${tier?.color ? tier.color.replace('text-', 'text-') : 'text-indigo-400'} uppercase truncate w-full drop-shadow-xs`}>
                    {tier?.name || user?.stats?.level || 'MEMBER'}
                  </p>
               )}
@@ -123,7 +123,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
               {creditLoading ? (
                  <Loader2 size={14} className="animate-spin text-indigo-400 mx-auto mt-1" />
               ) : (
-                 <p className={`text-xs font-black tracking-wider ${balance > 0 ? 'text-indigo-300' : 'text-slate-400'} drop-shadow-sm`}>
+                 <p className={`text-xs font-black tracking-wider ${balance > 0 ? 'text-indigo-300' : 'text-slate-400'} drop-shadow-xs`}>
                    {formatCredit(balance)}
                  </p>
               )}
@@ -135,7 +135,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
               {walletLoading ? (
                  <Loader2 size={14} className="animate-spin text-emerald-400 mx-auto mt-1" />
               ) : (
-                 <p className={`text-xs font-black tracking-wider ${walletBalance > 0 ? 'text-emerald-400' : 'text-slate-400'} drop-shadow-sm`}>
+                 <p className={`text-xs font-black tracking-wider ${walletBalance > 0 ? 'text-emerald-400' : 'text-slate-400'} drop-shadow-xs`}>
                    {formatCredit(walletBalance)}
                  </p>
               )}
@@ -144,7 +144,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
             {/* 📦 ออเดอร์ */}
             <div className="border-l border-slate-700/80 px-1 flex flex-col items-center justify-center transition-transform hover:scale-105">
               <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Orders</p>
-              <p className="text-xs font-bold text-white drop-shadow-sm">
+              <p className="text-xs font-bold text-white drop-shadow-xs">
                 {user?.stats?.totalOrders?.toLocaleString() || 0}
               </p>
             </div>
@@ -155,7 +155,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
       </div>
 
       {/* 2. Control Menu Navigation */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
         <MenuButton 
           icon={<Store size={18} strokeWidth={2.5} />} 
           label="Overview" 

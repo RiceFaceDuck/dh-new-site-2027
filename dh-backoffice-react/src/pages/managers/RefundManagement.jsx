@@ -199,7 +199,7 @@ export default function RefundManagement() {
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-white rounded-2xl shadow-sm border border-slate-200 shrink-0 z-20">
+            <div className="flex items-center justify-between px-5 py-4 bg-white rounded-2xl shadow-xs border border-slate-200 shrink-0 z-20">
                 <div className="flex items-center gap-4">
                     <button onClick={() => navigate('/managers')} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all">
                         <ArrowLeft size={20} strokeWidth={2.5} />
@@ -213,7 +213,7 @@ export default function RefundManagement() {
                     
                     {/* Total Liability Stat */}
                     <div className="hidden md:flex ml-8 items-center gap-3 bg-rose-50/50 px-4 py-2 rounded-xl border border-rose-100">
-                        <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-xs">
                             <Wallet size={20} />
                         </div>
                         <div>
@@ -227,7 +227,7 @@ export default function RefundManagement() {
                     <div className="flex gap-2 ml-auto">
                         <button 
                             onClick={() => setShowGuide(true)}
-                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all shadow-sm border border-slate-200"
+                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all shadow-xs border border-slate-200"
                         >
                             <HelpCircle size={20} strokeWidth={2.5} />
                         </button>
@@ -306,13 +306,13 @@ export default function RefundManagement() {
                     <>
                         <button 
                             onClick={handleClearMock}
-                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 text-sm font-bold rounded-xl transition-all shadow-sm border border-rose-200"
+                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 text-sm font-bold rounded-xl transition-all shadow-xs border border-rose-200"
                         >
                             🗑️ ล้างคำร้องจำลอง
                         </button>
                         <button 
                             onClick={handleMockData}
-                            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 text-sm font-bold rounded-xl transition-all shadow-sm border border-indigo-200"
+                            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 text-sm font-bold rounded-xl transition-all shadow-xs border border-indigo-200"
                         >
                             🛠️ จำลองข้อมูล
                         </button>

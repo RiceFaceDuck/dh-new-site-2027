@@ -50,7 +50,7 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
               type="text" 
               value={partnerId}
               onChange={(e) => setPartnerId(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-sm text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xs text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-hidden"
               required
             />
           </div>
@@ -61,14 +61,14 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
               <button
                 type="button"
                 onClick={() => setActionType('add')}
-                className={`flex-1 py-2 text-sm font-semibold border rounded-sm ${actionType === 'add' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-300 text-slate-600'}`}
+                className={`flex-1 py-2 text-sm font-semibold border rounded-xs ${actionType === 'add' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-300 text-slate-600'}`}
               >
                 Add Credit
               </button>
               <button
                 type="button"
                 onClick={() => setActionType('deduct')}
-                className={`flex-1 py-2 text-sm font-semibold border rounded-sm ${actionType === 'deduct' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-slate-300 text-slate-600'}`}
+                className={`flex-1 py-2 text-sm font-semibold border rounded-xs ${actionType === 'deduct' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-slate-300 text-slate-600'}`}
               >
                 Deduct Credit
               </button>
@@ -81,12 +81,12 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
               type="text" 
               value={amount ? parseInt(amount, 10).toLocaleString('th-TH') : ''}
               onChange={handleAmountChange}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-sm text-lg font-bold text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xs text-lg font-bold text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-hidden"
               required
             />
             <div className="flex gap-2 mt-2">
               {[1000, 5000, 10000].map(val => (
-                <button key={val} type="button" onClick={() => addQuickAmount(val)} className="px-2 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs rounded-sm hover:bg-slate-200">
+                <button key={val} type="button" onClick={() => addQuickAmount(val)} className="px-2 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs rounded-xs hover:bg-slate-200">
                   +{val.toLocaleString('th-TH')}
                 </button>
               ))}
@@ -99,7 +99,7 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
             <textarea 
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-sm text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none h-16 resize-none"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xs text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-hidden h-16 resize-none"
               required
             />
           </div>
@@ -108,7 +108,7 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
 
       {/* สรุปรายการ ฝั่งขวา: เป็นกล่องข้อมูลธรรมดา ใช้พื้นที่คุ้มค่า */}
       <div className="md:col-span-5">
-        <div className="bg-slate-50 border border-slate-300 rounded-sm p-4 h-full flex flex-col">
+        <div className="bg-slate-50 border border-slate-300 rounded-xs p-4 h-full flex flex-col">
           <h3 className="text-sm font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">Preview</h3>
           
           <div className="space-y-3 text-sm flex-1">
@@ -131,7 +131,7 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
           <button
             onClick={handleSubmit}
             disabled={!isFormValid || isSubmitting}
-            className={`w-full py-2.5 mt-4 rounded-sm font-bold text-sm transition-none
+            className={`w-full py-2.5 mt-4 rounded-xs font-bold text-sm transition-none
               ${!isFormValid || isSubmitting
                 ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
                 : 'bg-blue-600 text-white hover:bg-blue-700'

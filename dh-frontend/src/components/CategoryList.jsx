@@ -46,8 +46,8 @@ const CategoryList = ({ selectedType, onSelectType }) => {
       >
         {loading ? (
           Array.from({ length: 5 }).map((_, index) => (
-            <div key={`skeleton-${index}`} className="flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] flex-shrink-0 animate-pulse">
-              <div className="w-14 h-14 bg-slate-200 rounded-full shadow-sm mb-2"></div>
+            <div key={`skeleton-${index}`} className="flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] shrink-0 animate-pulse">
+              <div className="w-14 h-14 bg-slate-200 rounded-full shadow-xs mb-2"></div>
               <div className="w-12 h-3 bg-slate-200 rounded-md"></div>
             </div>
           ))
@@ -63,18 +63,18 @@ const CategoryList = ({ selectedType, onSelectType }) => {
             // 🚀 แปลง shape เป็น CSS Class
             let shapeClass = "rounded-full"; // default circle
             if (cat.buttonShape === "square") shapeClass = "rounded-none";
-            else if (cat.buttonShape === "rounded") shapeClass = "rounded-2xl";
+            else if (cat.buttonShape === "rounded-sm") shapeClass = "rounded-2xl";
 
             return (
               <Link 
                 key={cat.id} 
                 to={`/category/${cat.type}`}
-                className={`flex flex-col items-center justify-start min-w-[72px] sm:min-w-[80px] flex-shrink-0 cursor-pointer group active:scale-95 transition-all duration-200 ${
+                className={`flex flex-col items-center justify-start min-w-[72px] sm:min-w-[80px] shrink-0 cursor-pointer group active:scale-95 transition-all duration-200 ${
                   selectedType && !isSelected ? 'opacity-50 hover:opacity-100' : 'opacity-100'
                 }`}
               >
                 {/* 🚀 เปลี่ยนสีขอบและพื้นหลังให้ชัดเจนว่าถูกคลิกอยู่ พร้อมประยุกต์ใช้ buttonShape */}
-                <div className={`w-14 h-14 ${shapeClass} flex items-center justify-center mb-2 shadow-sm border transition-all duration-200 overflow-hidden ${
+                <div className={`w-14 h-14 ${shapeClass} flex items-center justify-center mb-2 shadow-xs border transition-all duration-200 overflow-hidden ${
                   isSelected 
                     ? 'border-blue-500 shadow-md bg-blue-50 ring-2 ring-blue-500/20' 
                     : 'bg-white border-slate-100 group-hover:shadow-md group-hover:border-blue-400'
@@ -88,7 +88,7 @@ const CategoryList = ({ selectedType, onSelectType }) => {
                         e.target.style.display = 'none';
                         e.target.nextSibling.style.display = 'block';
                       }}
-                    />
+                     loading="lazy" />
                   ) : null}
                   <Package 
                     size={24} 

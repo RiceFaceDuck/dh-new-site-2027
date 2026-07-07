@@ -77,7 +77,7 @@ export default function RecentImportsModal({ isOpen, onClose, latestSnapshot, on
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-900/60 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-100 bg-slate-900/60 flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[85vh]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
@@ -118,7 +118,7 @@ export default function RecentImportsModal({ isOpen, onClose, latestSnapshot, on
                 const isProcessing = undoingId === batch.id;
                 
                 return (
-                  <div key={batch.id} className={`p-4 rounded-xl border ${isReverted ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200 shadow-sm'} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:shadow-md`}>
+                  <div key={batch.id} className={`p-4 rounded-xl border ${isReverted ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200 shadow-xs'} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:shadow-md`}>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -151,7 +151,7 @@ export default function RecentImportsModal({ isOpen, onClose, latestSnapshot, on
                         <button
                           onClick={() => handleUndo(batch.id)}
                           disabled={isProcessing}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-sm font-bold transition-all border border-rose-200 hover:border-rose-600 shadow-sm active:scale-95 disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-sm font-bold transition-all border border-rose-200 hover:border-rose-600 shadow-xs active:scale-95 disabled:opacity-50"
                         >
                           {isProcessing ? <RefreshCw size={16} className="animate-spin" /> : <RotateCcw size={16} />}
                           Undo

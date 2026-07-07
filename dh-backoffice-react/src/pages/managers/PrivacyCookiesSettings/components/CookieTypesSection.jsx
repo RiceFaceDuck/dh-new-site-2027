@@ -3,7 +3,7 @@ import { Settings2 } from 'lucide-react';
 
 export default function CookieTypesSection({ cookieTypes, updateCookieType }) {
     return (
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 <Settings2 size={18} className="text-orange-500" />
                 ตั้งค่าประเภทคุกกี้ (Cookie Types)
@@ -17,7 +17,7 @@ export default function CookieTypesSection({ cookieTypes, updateCookieType }) {
                                 type="text"
                                 value={cookie.name}
                                 onChange={(e) => updateCookieType(index, 'name', e.target.value)}
-                                className="font-bold text-slate-800 p-1.5 border border-slate-300 rounded bg-white w-full sm:w-1/2 text-sm"
+                                className="font-bold text-slate-800 p-1.5 border border-slate-300 rounded-sm bg-white w-full sm:w-1/2 text-sm"
                                 placeholder="ชื่อประเภทคุกกี้"
                             />
                             
@@ -31,7 +31,7 @@ export default function CookieTypesSection({ cookieTypes, updateCookieType }) {
                                         onChange={(e) => updateCookieType(index, 'isEnabled', e.target.checked)}
                                         disabled={cookie.isMandatory}
                                     />
-                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                                 <span className="text-xs font-medium ml-2 w-10 text-center">
                                     {cookie.isEnabled ? 'เปิด' : 'ปิด'}
@@ -43,7 +43,7 @@ export default function CookieTypesSection({ cookieTypes, updateCookieType }) {
                             value={cookie.description}
                             onChange={(e) => updateCookieType(index, 'description', e.target.value)}
                             rows={2}
-                            className="w-full p-2 border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 outline-none text-xs sm:text-sm text-slate-600 resize-y"
+                            className="w-full p-2 border border-slate-300 rounded-sm focus:ring-1 focus:ring-orange-500 outline-hidden text-xs sm:text-sm text-slate-600 resize-y"
                             placeholder="คำอธิบายคุกกี้ประเภทนี้..."
                         />
                         

@@ -77,7 +77,7 @@ export default function TaxInvoiceForm() {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 relative overflow-hidden transition-all duration-300">
+    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
       
       <div className={`flex items-center justify-between transition-all duration-300 ${requestTax ? 'mb-6 pb-4 border-b border-slate-100' : ''}`}>
         <div>
@@ -95,7 +95,7 @@ export default function TaxInvoiceForm() {
         <button
           type="button"
           onClick={() => setRequestTax(!requestTax)}
-          className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+          className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
             requestTax ? 'bg-indigo-600' : 'bg-slate-300'
           }`}
         >
@@ -124,7 +124,7 @@ export default function TaxInvoiceForm() {
               <TaxFormFields taxInfo={taxInfo} handleChange={handleChange} />
 
               <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shadow-sm">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shadow-xs">
                   <ShieldCheck className="w-4 h-4 text-indigo-500" />
                   ข้อมูลส่วนนี้จะถูกส่งเข้าระบบบัญชีโดยตรง
                 </div>

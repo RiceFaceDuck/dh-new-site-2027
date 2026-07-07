@@ -104,7 +104,7 @@ export default function AuthForm() {
       <div className="relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-sm">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-xs">
             <Lock className="w-8 h-8 text-[#0870B8]" />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
@@ -120,7 +120,7 @@ export default function AuthForm() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={isLoadingEmail || isLoadingGoogle || (!isLogin && !isTermsAccepted)}
-          className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed group shadow-sm"
+          className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed group shadow-xs"
         >
           {isLoadingGoogle ? (
             <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
@@ -211,7 +211,7 @@ export default function AuthForm() {
                 type="button" 
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex="-1"
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-hidden"
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -227,7 +227,7 @@ export default function AuthForm() {
                     type="checkbox" 
                     checked={isTermsAccepted}
                     onChange={(e) => setIsTermsAccepted(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-[#0870B8] focus:ring-[#0870B8] cursor-pointer"
+                    className="w-4 h-4 rounded-sm border-gray-300 text-[#0870B8] focus:ring-[#0870B8] cursor-pointer"
                   />
                 </div>
                 <div className="text-xs text-slate-600 leading-relaxed">
@@ -243,7 +243,7 @@ export default function AuthForm() {
           <button
             type="submit"
             disabled={isLoadingEmail || isLoadingGoogle || !formData.email || !formData.password || (!isLogin && !isTermsAccepted)}
-            className="w-full mt-6 py-3.5 px-4 bg-gradient-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+            className="w-full mt-6 py-3.5 px-4 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
           >
             {isLoadingEmail ? (
               <Loader2 className="w-5 h-5 animate-spin" />

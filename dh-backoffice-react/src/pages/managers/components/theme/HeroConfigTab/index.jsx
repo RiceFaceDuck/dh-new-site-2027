@@ -140,10 +140,10 @@ export default function HeroConfigTab() {
 
             {/* Success Modal */}
             {saveStatus === 'success' && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-110 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
                     <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl flex flex-col items-center p-8 text-center border border-emerald-100">
                         <div className="w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-5 shadow-inner">
-                            <Check size={40} className="stroke-[3]" />
+                            <Check size={40} className="stroke-3" />
                         </div>
                         <h2 className="text-2xl font-black text-slate-800 mb-2">บันทึกสำเร็จ!</h2>
                         <p className="text-slate-500 mb-8">การตั้งค่าป้ายโฆษณาหน้าแรกถูกอัปเดตเรียบร้อยแล้ว ข้อมูลหน้าเว็บจะเปลี่ยนทันที</p>
@@ -159,10 +159,10 @@ export default function HeroConfigTab() {
 
             {/* Error Modal */}
             {saveStatus === 'error' && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-110 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
                     <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl flex flex-col items-center p-8 text-center border border-red-100">
                         <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-5 shadow-inner">
-                            <X size={40} className="stroke-[3]" />
+                            <X size={40} className="stroke-3" />
                         </div>
                         <h2 className="text-2xl font-black text-slate-800 mb-2">เกิดข้อผิดพลาด</h2>
                         <p className="text-red-500 mb-8">{errorMessage}</p>
@@ -195,7 +195,7 @@ export default function HeroConfigTab() {
                     {/* ปุ่มคู่มือการใช้งาน (Guide Button) */}
                     <button 
                         onClick={() => setIsGuideOpen(true)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 mr-32 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border border-blue-200 hover:border-blue-300 dh-active-press shadow-sm"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 mr-32 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border border-blue-200 hover:border-blue-300 dh-active-press shadow-xs"
                     >
                         <BookOpen size={16} />
                         คู่มือการใช้งาน

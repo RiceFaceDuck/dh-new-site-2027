@@ -22,7 +22,7 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="bg-dh-surface rounded-2xl shadow-dh-elevated border border-dh-border w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
@@ -31,7 +31,7 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
             <Database size={24} className="text-dh-accent" />
             นำเข้าสินค้าด้วย Excel
           </h2>
-          <button onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-none"><X size={20}/></button>
+          <button onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-hidden"><X size={20}/></button>
         </div>
 
         {/* Body */}
@@ -72,7 +72,7 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
               {/* Step 2: Preview & Settings */}
               {file && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                  <div className="flex justify-between items-center bg-dh-surface p-4 rounded-xl border border-dh-border shadow-sm">
+                  <div className="flex justify-between items-center bg-dh-surface p-4 rounded-xl border border-dh-border shadow-xs">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center text-green-500">
                         <CheckCircle size={20} />
@@ -117,14 +117,14 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
               type="button" 
               onClick={onClose} 
               disabled={isProcessing} 
-              className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-sm disabled:opacity-50"
+              className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-xs disabled:opacity-50"
             >
               ยกเลิก
             </button>
             <button 
               onClick={handleConfirmImport} 
               disabled={!file || isProcessing || !headers.includes('SKU')}
-              className="px-8 py-2.5 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover flex items-center gap-2 shadow-sm transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-2.5 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover flex items-center gap-2 shadow-xs transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16}/>}
               {isProcessing ? 'กำลังประมวลผล...' : 'ยืนยันนำเข้าข้อมูล'}

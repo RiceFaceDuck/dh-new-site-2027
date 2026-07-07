@@ -15,7 +15,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="ชื่อผู้ติดต่อหลัก" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.contactName || ''} 
                             onChange={e => handleChange('contactName', e.target.value)}
                         />
@@ -25,7 +25,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="tel" 
                             placeholder="เช่น 0812345678" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.phone || ''} 
                             onChange={e => handleChange('phone', e.target.value)}
                         />
@@ -37,7 +37,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="email" 
                             placeholder="email@example.com" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.email || ''} 
                             onChange={e => handleChange('email', e.target.value)}
                         />
@@ -58,7 +58,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="@dhnotebook" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.lineId || ''} 
                             onChange={e => handleChange('lineId', e.target.value)}
                         />
@@ -70,7 +70,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="ลิงก์ Facebook Page" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.facebookUrl || ''} 
                             onChange={e => handleChange('facebookUrl', e.target.value)}
                         />
@@ -82,7 +82,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="ลิงก์ m.me/..." 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.messengerUrl || ''} 
                             onChange={e => handleChange('messengerUrl', e.target.value)}
                         />
@@ -94,7 +94,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="ลิงก์ YouTube Channel" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.youtubeUrl || ''} 
                             onChange={e => handleChange('youtubeUrl', e.target.value)}
                         />
@@ -106,7 +106,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="https://..." 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.storeWebsite || ''} 
                             onChange={e => handleChange('storeWebsite', e.target.value)}
                         />
@@ -118,7 +118,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="ช่องทางติดต่ออื่นๆ" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.otherSocial || ''} 
                             onChange={e => handleChange('otherSocial', e.target.value)}
                         />

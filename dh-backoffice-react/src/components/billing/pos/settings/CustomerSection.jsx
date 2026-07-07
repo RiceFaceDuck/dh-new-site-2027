@@ -108,7 +108,7 @@ export default function CustomerSection({
     const isSearchHighlight = !activeTab.customer && !activeTab.walkInName;
 
     return (
-        <div className="p-4 border-b border-[var(--dh-border)] last:border-0 transition-colors duration-300">
+        <div className="p-4 border-b border-(--dh-border) last:border-0 transition-colors duration-300">
             <div className="flex items-center justify-between mb-3">
                 <label className={`${labelClass} text-blue-600`}>
                     <User size={14}/> ข้อมูลลูกค้า 
@@ -119,7 +119,7 @@ export default function CustomerSection({
                         updateActiveTab({ walkInName: randomName, hidePhone: false, walkInPhone: '' });
                         setLocalSearchText(randomName);
                         setShowWalkInPhoneInput(false);
-                    }} className="text-[10px] flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors font-bold uppercase bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded shadow-sm group" title="เสกชื่อลูกค้า Walk-in อัตโนมัติ">
+                    }} className="text-[10px] flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors font-bold uppercase bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded-sm shadow-xs group" title="เสกชื่อลูกค้า Walk-in อัตโนมัติ">
                         <Wand2 size={10} className="group-hover:rotate-12 transition-transform"/> Auto-Fill
                     </button>
                 )}

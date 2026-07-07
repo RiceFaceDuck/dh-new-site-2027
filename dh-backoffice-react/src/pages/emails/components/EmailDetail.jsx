@@ -74,7 +74,7 @@ export default function EmailDetail({ id, onBack }) {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
-        <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden">
           {/* Email Header */}
           <div className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-6 leading-snug">{subject}</h2>
@@ -110,7 +110,7 @@ export default function EmailDetail({ id, onBack }) {
             <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700">
               <button 
                 onClick={() => setIsReplying(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-md font-bold transition-all shadow-sm active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-md font-bold transition-all shadow-xs active:scale-95"
               >
                 <Reply size={18} />
                 <span>ตอบกลับ (Reply)</span>

@@ -50,7 +50,7 @@ export default function SupportSettings({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export default function SupportSettings({ user, initialData, onRefresh }) {
           <button
             onClick={handleToggle}
             disabled={isProcessing}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100 focus:ring-offset-2 ${
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-blue-100 focus:ring-offset-2 ${
               isSupported ? 'bg-[#0870B8]' : 'bg-gray-200'
             } ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
           >

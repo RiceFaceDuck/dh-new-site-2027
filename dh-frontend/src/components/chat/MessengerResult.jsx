@@ -11,7 +11,7 @@ const MessengerResult = ({ partner, setMode, openLink }) => {
         <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full uppercase tracking-widest"><ShieldCheck size={12}/> Verified</div>
       </div>
 
-      <div className="text-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden flex-1 flex flex-col justify-center">
+      <div className="text-center bg-white p-5 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden flex-1 flex flex-col justify-center">
         <Store className="absolute -bottom-4 -right-4 w-24 h-24 text-slate-50 rotate-12 z-0" />
         <div className="relative z-10">
           <h4 className="font-black text-xl text-slate-800 leading-tight mb-2">
@@ -44,7 +44,7 @@ const MessengerResult = ({ partner, setMode, openLink }) => {
         )}
         
         {partner.phone && (
-          <button onClick={() => window.location.href = `tel:${partner.phone}`} className="w-full py-3.5 bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
+          <button onClick={() => window.location.href = `tel:${partner.phone}`} className="w-full py-3.5 bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
             <Phone size={18}/> โทร: {partner.phone}
           </button>
         )}

@@ -4,9 +4,17 @@ import { auth } from '../firebase/config';
 import { userService, SUPER_ADMINS } from '../firebase/userService';
 import { gasHistoryService } from '../firebase/gasHistoryService';
 
-const AuthContext = createContext();
+export const AuthStateContext = createContext();
+export const AuthDispatchContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const state = useContext(AuthStateContext) || {};
+  const dispatch = useContext(AuthDispatchContext) || {};
+  return { ...state, ...dispatch };
+};
+
+export const useAuthState = () => useContext(AuthStateContext);
+export const useAuthDispatch = () => useContext(AuthDispatchContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -200,21 +208,28 @@ export const AuthProvider = ({ children }) => {
     return r === 'manager' || r.includes('owner') || r.includes('vp 1') || r === 'ผู้จัดการ' || r === 'เจ้าของ' || SUPER_ADMINS.includes(email);
   };
 
+  const stateValue = {
+    user,
+    profile,
+    loading,
+    isCheckingAuth,
+    isPendingApproval,
+    isProfileSetupRequired,
+    accessDenied,
+    denyReason,
+    isManagerOrOwner
+  };
+
+  const dispatchValue = {
+    logout,
+    setIsProfileSetupRequired
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      profile,
-      loading,
-      isCheckingAuth,
-      isPendingApproval,
-      isProfileSetupRequired,
-      accessDenied,
-      denyReason,
-      logout,
-      isManagerOrOwner,
-      setIsProfileSetupRequired
-    }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthStateContext.Provider value={stateValue}>
+      <AuthDispatchContext.Provider value={dispatchValue}>
+        {children}
+      </AuthDispatchContext.Provider>
+    </AuthStateContext.Provider>
   );
 };

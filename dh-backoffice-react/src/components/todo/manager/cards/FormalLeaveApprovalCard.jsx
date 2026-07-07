@@ -22,7 +22,7 @@ export default function FormalLeaveApprovalCard({
   };
 
   return (
-    <div className={`mb-3 bg-white rounded-md border-l-4 border-l-orange-500 border border-slate-200 shadow-sm overflow-hidden transition-all ${isExpanded ? 'ring-2 ring-blue-500/20' : 'hover:border-slate-300'}`}>
+    <div className={`mb-3 bg-white rounded-md border-l-4 border-l-orange-500 border border-slate-200 shadow-xs overflow-hidden transition-all ${isExpanded ? 'ring-2 ring-blue-500/20' : 'hover:border-slate-300'}`}>
       
       {/* Header (Click to expand) */}
       <div 

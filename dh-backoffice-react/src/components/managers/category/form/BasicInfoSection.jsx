@@ -22,7 +22,7 @@ export default function BasicInfoSection({
           onChange={(e) => setName(e.target.value)}
           placeholder="เช่น อุปกรณ์ภายใน, สินค้าแนะนำ"
           disabled={isSubmitting}
-          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
+          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
         />
       </div>
 
@@ -36,7 +36,7 @@ export default function BasicInfoSection({
           value={type}
           onChange={(e) => setType(e.target.value)}
           disabled={isSubmitting}
-          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
+          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
         >
           <option value="">-- กรุณาเลือกประเภทสินค้า --</option>
           {availableTypes.map(t => (

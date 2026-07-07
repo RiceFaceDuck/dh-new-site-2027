@@ -61,7 +61,7 @@ export default function PrivacyCookiesSettings() {
                     <div className="space-y-8 max-w-4xl mx-auto">
                         
                         {/* Information Banner */}
-                        <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-indigo-800 shadow-sm">
+                        <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-indigo-800 shadow-xs">
                             <div className="flex gap-4">
                                 <ShieldCheck size={24} className="shrink-0 text-indigo-500 mt-0.5"/>
                                 <div>
@@ -75,7 +75,7 @@ export default function PrivacyCookiesSettings() {
                             </div>
                             <button 
                                 onClick={() => setIsGuideOpen(true)} 
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-white hover:bg-blue-50 rounded-lg transition-colors border border-indigo-200 shadow-sm dh-active-press shrink-0"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-white hover:bg-blue-50 rounded-lg transition-colors border border-indigo-200 shadow-xs dh-active-press shrink-0"
                             >
                                 <HelpCircle size={14} /> คู่มือการใช้งาน
                             </button>

@@ -24,7 +24,7 @@ export default function ProductTable({ products, onEdit, salesPeriod, globalBuff
       <div className="overflow-x-auto custom-scrollbar flex-1 min-h-[300px]">
         <table className="w-full text-sm text-left border-collapse">
           {/* ✨ อัปเกรด Header ตาราง */}
-          <thead className="bg-dh-surface text-dh-accent text-[12px] font-black uppercase tracking-wider border-b-2 border-dh-border sticky top-0 z-20 backdrop-blur-md bg-opacity-95 shadow-sm">
+          <thead className="bg-dh-surface text-dh-accent text-[12px] font-black uppercase tracking-wider border-b-2 border-dh-border sticky top-0 z-20 backdrop-blur-md bg-opacity-95 shadow-xs">
             <tr>
               <th className="px-3 py-3 whitespace-nowrap w-16 text-center">รูป</th>
               <th className="px-3 py-3 whitespace-nowrap min-w-[220px]">SKU / ชื่อสินค้า</th>
@@ -53,7 +53,7 @@ export default function ProductTable({ products, onEdit, salesPeriod, globalBuff
               <tr>
                 <td colSpan="9" className="px-6 py-24 text-center text-dh-muted bg-dh-base/30">
                   <div className="flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="p-4 bg-white rounded-full shadow-sm mb-4 border border-dh-border/50">
+                    <div className="p-4 bg-white rounded-full shadow-xs mb-4 border border-dh-border/50">
                       <AlertCircle size={36} className="text-dh-accent opacity-60" />
                     </div>
                     <p className="font-black text-xl text-dh-main tracking-tight">ไม่มีรายการสินค้าในคลัง</p>

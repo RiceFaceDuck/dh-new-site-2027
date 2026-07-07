@@ -1,5 +1,6 @@
-import { collection, query, orderBy, limit, getDocs, doc, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, runTransaction, serverTimestamp, increment, where } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -8,8 +9,9 @@ export const creditHistoryService = {
     if (!userId) return [];
     try {
       const q = query(
-        collection(db, 'artifacts', appId, 'users', userId, 'credit_history'),
-        orderBy('createdAt', 'desc'),
+        collection(db, getCollectionPath('credit_transactions')),
+        where('uid', '==', userId),
+        orderBy('timestamp', 'desc'),
         limit(limitCount)
       );
       const snapshot = await getDocs(q);

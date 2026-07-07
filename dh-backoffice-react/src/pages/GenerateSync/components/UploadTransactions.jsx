@@ -1,145 +1,34 @@
-import React, { useState, useRef } from 'react';
-import { UploadCloud, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet, X, HelpCircle, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
-import { transactionImportService } from '../../../firebase/transactionImportService';
+import React, { useState } from 'react';
+import { UploadCloud, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet, X, HelpCircle, Settings2, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import GlobalSchemaSettings from './GlobalSchemaSettings';
 import GuidePanel from '../../../components/common/GuidePanel';
 import RecentImportsModal from './RecentImportsModal';
-import { History } from 'lucide-react';
+import { useUploadTransactionsLogic } from '../hooks/useUploadTransactionsLogic';
 
 export default function UploadTransactions({ onUploadComplete, latestSnapshot }) {
-  const [file, setFile] = useState(null);
-  const [parsedData, setParsedData] = useState(null);
-  const [status, setStatus] = useState('idle'); // idle, parsing, preview, uploading, success, error
-  const [message, setMessage] = useState('');
-  const [actionType, setActionType] = useState('deduct'); // deduct or add
-  const [currentMapping, setCurrentMapping] = useState({ skuKey: '', qtyKey: '', priceKey: '' });
+  const { currentUser } = useAuth();
+  
+  const {
+    parsedData, status, message, actionType, currentMapping,
+    setActionType, handleFileChange, handleMappingChange, handleUpload, resetState,
+    fileInputRef
+  } = useUploadTransactionsLogic(currentUser, onUploadComplete);
+
   const [showMappingConfig, setShowMappingConfig] = useState(false);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  
-  const fileInputRef = useRef(null);
-  const { currentUser } = useAuth();
-
-  const handleFileChange = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-
-    if (!selectedFile.name.match(/\.(xlsx|xls|csv)$/)) {
-      setStatus('error');
-      setMessage('กรุณาอัปโหลดไฟล์ Excel (.xlsx, .xls) หรือ .csv');
-      return;
-    }
-
-    setFile(selectedFile);
-    setStatus('parsing');
-    setMessage('กำลังอ่านไฟล์...');
-
-    try {
-      const result = await transactionImportService.parseFile(selectedFile);
-      
-      let finalMatchedKeys = result.matchedKeys;
-      try {
-        const savedStr = localStorage.getItem('import_schema_mapping');
-        if (savedStr) {
-          const parsed = JSON.parse(savedStr);
-          if (result.headers.includes(parsed.skuKey) && result.headers.includes(parsed.qtyKey)) {
-             finalMatchedKeys = parsed;
-             result.items = transactionImportService.applyMapping(result.rawJson, finalMatchedKeys);
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to load saved mapping', e);
-      }
-
-      setParsedData({ ...result, matchedKeys: finalMatchedKeys });
-      setCurrentMapping(finalMatchedKeys);
-      setStatus('preview');
-      setMessage(`พบข้อมูล ${result.items.length} รายการ (อ้างอิงจากคอลัมน์: ${finalMatchedKeys.skuKey}, ${finalMatchedKeys.qtyKey})`);
-    } catch (error) {
-      console.error(error);
-      setStatus('error');
-      setMessage('เกิดข้อผิดพลาดในการอ่านไฟล์ โปรดตรวจสอบโครงสร้างคอลัมน์');
-      setFile(null);
-    }
-    
-    // รีเซ็ต input เผื่อผู้ใช้เลือกไฟล์เดิมใหม่
-    e.target.value = null;
-  };
-
-  const handleMappingChange = (key, value) => {
-    const newMapping = { ...currentMapping, [key]: value };
-    setCurrentMapping(newMapping);
-    
-    // Re-apply mapping
-    const newItems = transactionImportService.applyMapping(parsedData.rawJson, newMapping);
-    
-    // Update parsedData
-    setParsedData(prev => ({
-      ...prev,
-      items: newItems,
-      matchedKeys: newMapping
-    }));
-    
-    // Save to local storage
-    localStorage.setItem('import_schema_mapping', JSON.stringify(newMapping));
-    
-    setMessage(`พบข้อมูล ${newItems.length} รายการ (อ้างอิงจากคอลัมน์: ${newMapping.skuKey}, ${newMapping.qtyKey})`);
-  };
-
-  const handleUpload = async () => {
-    if (!parsedData || !parsedData.items) return;
-
-    setStatus('uploading');
-    setMessage('กำลังประมวลผลการปรับสต็อก...');
-
-    try {
-      const result = await transactionImportService.processTransactions(
-        parsedData.items, 
-        actionType,
-        currentUser
-      );
-      
-      setStatus('success');
-      setMessage(result.message);
-      
-      // แจ้งให้ Component หลักรับทราบ เพื่อสั่งให้ ChangeSummaryPanel รีเฟรช
-      if (onUploadComplete) {
-        setTimeout(() => {
-          onUploadComplete();
-        }, 1000);
-      }
-
-      // รีเซ็ตหลัง 5 วินาที
-      setTimeout(() => {
-        resetState();
-      }, 5000);
-
-    } catch (error) {
-      console.error(error);
-      setStatus('error');
-      setMessage(error.message || 'เกิดข้อผิดพลาดในการประมวลผลสต็อก');
-    }
-  };
-
-  const resetState = () => {
-    setFile(null);
-    setParsedData(null);
-    setStatus('idle');
-    setMessage('');
-  };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 w-full relative overflow-hidden group min-h-[300px]">
+    <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-200 w-full relative overflow-hidden group min-h-[300px]">
       <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-700"></div>
       
       <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
-        {/* History / Undo Button */}
         {(status === 'idle' || status === 'error') && (
           <button
             onClick={() => setShowHistoryModal(true)}
             title="ดูประวัติการนำเข้าไฟล์ล่าสุด และสามารถกดย้อนกลับ (Undo) เพื่อคืนค่าสต็อกได้"
-            className={`p-2 rounded-xl transition-all border shadow-sm flex items-center justify-center gap-2 px-3 text-sm font-bold
+            className={`p-2 rounded-xl transition-all border shadow-xs flex items-center justify-center gap-2 px-3 text-sm font-bold
               ${showHistoryModal 
                 ? 'bg-rose-50 text-rose-600 border-rose-200' 
                 : 'bg-white text-slate-500 border-slate-200 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200'}`}
@@ -149,12 +38,11 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
           </button>
         )}
 
-        {/* Global Settings Toggle */}
         {(status === 'idle' || status === 'error') && (
           <button 
             onClick={() => setShowGlobalSettings(!showGlobalSettings)}
             title="ตั้งค่าคำค้นหาหัวคอลัมน์เริ่มต้น"
-            className={`p-2 rounded-xl transition-all border shadow-sm flex items-center justify-center 
+            className={`p-2 rounded-xl transition-all border shadow-xs flex items-center justify-center 
               ${showGlobalSettings 
                 ? 'bg-indigo-50 text-indigo-600 border-indigo-200' 
                 : 'bg-white text-slate-400 border-slate-200 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200'}`}
@@ -168,7 +56,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
         
         {status === 'idle' || status === 'error' ? (
           <>
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-sm transition-all duration-500 ${
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-xs transition-all duration-500 ${
                 status === 'error' ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-700 group-hover:scale-105'
             }`}>
               {status === 'error' ? <AlertCircle size={28} /> : <FileSpreadsheet size={28} />}
@@ -178,13 +66,12 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
               นำเข้าข้อมูลอัปเดตสต็อก (Excel/CSV)
             </h3>
             
-            {/* Main Toggle */}
             <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-xl mb-6 w-full max-w-sm">
               <button
                 onClick={() => setActionType('deduct')}
                 title="คลิกเพื่อนำเข้าไฟล์ที่ต้องการตัด/ลดจำนวนสต็อก (เช่น ยอดขาย, ของชำรุด)"
                 className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
-                  actionType === 'deduct' ? 'bg-white dark:bg-slate-600 text-rose-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                  actionType === 'deduct' ? 'bg-white dark:bg-slate-600 text-rose-600 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
                 หักสต็อก (-)
@@ -193,7 +80,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
                 onClick={() => setActionType('add')}
                 title="คลิกเพื่อนำเข้าไฟล์ที่ต้องการเพิ่มจำนวนสต็อก (เช่น รับของเข้า, ลูกค้าคืนของ)"
                 className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
-                  actionType === 'add' ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                  actionType === 'add' ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
                 เพิ่มสต็อก (+)
@@ -214,7 +101,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full py-3 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 transform active:scale-95 shadow-sm bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white hover:shadow-emerald-500/25"
+              className="w-full py-3 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 transform active:scale-95 shadow-xs bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white hover:shadow-emerald-500/25"
             >
               <UploadCloud strokeWidth={3} size={20} />
               เลือกไฟล์ข้อมูล
@@ -255,7 +142,6 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
               </button>
             </div>
 
-            {/* Schema Mapping & Documentation */}
             <div className="mb-4">
               <button 
                 onClick={() => setShowMappingConfig(!showMappingConfig)}
@@ -270,7 +156,6 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
 
               {showMappingConfig && (
                 <div className="p-4 border border-t-0 border-slate-200 rounded-b-xl -mt-2 pt-4 bg-white animate-in slide-in-from-top-2 relative z-0">
-                  {/* Documentation */}
                   <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 mb-4 flex gap-3 text-sm">
                     <HelpCircle size={18} className="text-indigo-500 shrink-0 mt-0.5" />
                     <div className="text-indigo-900/80 text-left">
@@ -284,14 +169,13 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
                     </div>
                   </div>
 
-                  {/* Mapping Controls */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
                     <div className="flex flex-col gap-1">
                       <label className="text-xs font-bold text-slate-600">รหัสสินค้า (SKU) <span className="text-rose-500">*</span></label>
                       <select 
                         value={currentMapping.skuKey}
                         onChange={(e) => handleMappingChange('skuKey', e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-hidden focus:ring-2 focus:ring-indigo-500"
                       >
                         {parsedData?.headers.map(h => <option key={`sku-${h}`} value={h}>{h}</option>)}
                       </select>
@@ -301,7 +185,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
                       <select 
                         value={currentMapping.qtyKey}
                         onChange={(e) => handleMappingChange('qtyKey', e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-hidden focus:ring-2 focus:ring-indigo-500"
                       >
                         {parsedData?.headers.map(h => <option key={`qty-${h}`} value={h}>{h}</option>)}
                       </select>
@@ -311,7 +195,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
                       <select 
                         value={currentMapping.priceKey || ''}
                         onChange={(e) => handleMappingChange('priceKey', e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-hidden focus:ring-2 focus:ring-indigo-500"
                       >
                         <option value="">-- ไม่ใช้ --</option>
                         {parsedData?.headers.map(h => <option key={`price-${h}`} value={h}>{h}</option>)}
@@ -322,9 +206,6 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
               )}
             </div>
 
-            {/* Removed internal toggle, now controlled externally */}
-
-            {/* พรีวิวตาราง */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl max-h-48 overflow-y-auto mb-6">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-100 sticky top-0">
@@ -374,14 +255,12 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
         ) : null}
       </div>
 
-      {/* Global Settings Expandable Area */}
       {showGlobalSettings && (status === 'idle' || status === 'error') && (
         <div className="w-full mt-6 pt-6 border-t border-slate-100 animate-in slide-in-from-top-4 relative z-10">
           <GlobalSchemaSettings embedded={true} />
         </div>
       )}
 
-      {/* Guide Panel */}
       <div className="w-full mt-6 relative z-10 text-left">
         <GuidePanel 
           title="การนำเข้าข้อมูล Excel / CSV"

@@ -28,23 +28,23 @@ export default function MainInfoSection({
                         <div className="flex items-center gap-2">
                             {isEditMode && formData.originalAccountId && (
                                 <>
-                                    <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                                    <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-sm border border-indigo-100">
                                         ID ปัจจุบัน: {formData.originalAccountId}
                                     </span>
                                     {formData.email ? (
-                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200" title={`ซิงค์กับอีเมล: ${formData.email}`}>
+                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[9px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200" title={`ซิงค์กับอีเมล: ${formData.email}`}>
                                             <CheckCircle2 size={10} strokeWidth={3} />
                                             <span>SYNCED</span>
                                         </span>
                                     ) : (
-                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200" title="ยังไม่เชื่อมต่อบัญชีหน้าเว็บ">
+                                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[9px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200" title="ยังไม่เชื่อมต่อบัญชีหน้าเว็บ">
                                             <X size={10} strokeWidth={3} />
                                             <span>NO EMAIL SYNC</span>
                                         </span>
                                     )}
                                 </>
                             )}
-                            <button type="button" onClick={handleGenerateId} className="text-[10px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 rounded transition-colors shrink-0">
+                            <button type="button" onClick={handleGenerateId} className="text-[10px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 rounded-sm transition-colors shrink-0">
                                 <Wand2 size={10} /> สุ่มรหัสใหม่
                             </button>
                         </div>
@@ -53,7 +53,7 @@ export default function MainInfoSection({
                         <input 
                             type="text" 
                             placeholder="เช่น CUST-001" 
-                            className={`w-full px-3 py-2.5 pr-8 border rounded-lg focus:ring-1 outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main uppercase font-mono ${
+                            className={`w-full px-3 py-2.5 pr-8 border rounded-lg focus:ring-1 outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main uppercase font-mono ${
                                 idError ? 'border-rose-400 focus:ring-rose-400' : 
                                 idSuccess ? 'border-emerald-400 focus:ring-emerald-400' : 'border-dh-border focus:ring-dh-accent'
                             }`}
@@ -100,7 +100,7 @@ export default function MainInfoSection({
                         type="text" 
                         placeholder="ระบุชื่อร้านค้า" 
                         required
-                        className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main font-medium"
+                        className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main font-medium"
                         value={formData.accountName || ''} 
                         onChange={e => handleChange('accountName', e.target.value)}
                     />

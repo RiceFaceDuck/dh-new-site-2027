@@ -16,7 +16,7 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
           <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
             FEATURED SPARES
             {isSlowConnection && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] md:text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 animate-pulse">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] md:text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 animate-pulse">
                 LITE MODE
               </span>
             )}
@@ -31,7 +31,7 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
         <Link 
           to="/categories"
           onMouseEnter={() => import('../../Categories/CategoriesMain')}
-          className="group flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-full shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-700 transition-all duration-300"
+          className="group flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-full shadow-xs hover:shadow-md border border-slate-200 dark:border-slate-700 transition-all duration-300"
         >
           ดูทั้งหมด
           <ArrowRight size={16} className="text-fuchsia-500 group-hover:translate-x-1 transition-transform" />
@@ -41,16 +41,16 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
           {[...Array(skeletonCount)].map((_, i) => (
-            <div key={i} className="bg-slate-100 dark:bg-slate-800 rounded-xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 flex flex-col shadow-sm animate-pulse h-full">
+            <div key={i} className="bg-slate-100 dark:bg-slate-800 rounded-xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 flex flex-col shadow-xs animate-pulse h-full">
               <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700 rounded-xl mb-4"></div>
-              <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-3/4 mb-3"></div>
-              <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-1/2 mb-auto"></div>
+              <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-sm w-3/4 mb-3"></div>
+              <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-sm w-1/2 mb-auto"></div>
               <div className="h-10 bg-slate-100 dark:bg-slate-700 rounded-xl w-full mt-4"></div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="bg-red-50 text-red-500 p-8 rounded-2xl text-center border border-red-100 shadow-sm relative z-10 flex flex-col items-center justify-center">
+        <div className="bg-red-50 text-red-500 p-8 rounded-2xl text-center border border-red-100 shadow-xs relative z-10 flex flex-col items-center justify-center">
           <RefreshCw size={32} className="mb-3 text-red-400" />
           <p className="font-black text-lg mb-1">พบข้อผิดพลาดในการโหลดข้อมูล</p>
           <p className="text-sm font-medium opacity-80">{error}</p>

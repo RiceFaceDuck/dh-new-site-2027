@@ -1,5 +1,5 @@
-const { initializeApp, cert } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin (Modify path to service account key as needed)
 // const serviceAccount = require('./serviceAccountKey.json');
@@ -9,7 +9,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 /**
  * Script to audit and verify that user credit points match the sum of their transactions.
  */
-async function auditCreditSync(db) {
+async function auditCreditSync(db, autoHeal = false) {
     console.log("🔍 Starting Credit Synchronization Audit...");
     const usersRef = db.collection('users'); // Adjust path based on environment
     const usersSnap = await usersRef.get();
@@ -23,14 +23,14 @@ async function auditCreditSync(db) {
         
         // Sum up all successful transactions for this user
         const txRef = db.collection('credit_transactions');
-        const txSnap = await txRef.where('uid', '==', uid).where('status', '==', 'completed').get();
+        const txSnap = await txRef.where('uid', '==', uid).get();
         
         let calculatedSum = 0;
         txSnap.forEach(txDoc => {
             const txData = txDoc.data();
-            if (['earn', 'refund', 'topup', 'cashback'].includes(txData.type)) {
+            if (['earn', 'refund', 'topup', 'cashback', 'add', 'deposit'].includes(txData.type)) {
                 calculatedSum += (txData.amount || 0);
-            } else if (['deduct', 'pay', 'clawback', 'withdraw'].includes(txData.type)) {
+            } else if (['deduct', 'pay', 'clawback', 'withdraw', 'spend'].includes(txData.type)) {
                 calculatedSum -= (txData.amount || 0);
             }
         });
@@ -45,6 +45,11 @@ async function auditCreditSync(db) {
             console.log(`   - Calculated Sum: ${calculatedSum}`);
             console.log(`   - Difference: ${Math.abs(storedCredit - calculatedSum)}`);
             discrepancies++;
+
+            if (autoHeal) {
+                console.log(`   - 🔧 Auto-Healing... Updating creditPoints to ${calculatedSum}`);
+                await usersRef.doc(uid).update({ creditPoints: calculatedSum });
+            }
         }
     }
     
@@ -56,4 +61,4 @@ async function auditCreditSync(db) {
 }
 
 // auditCreditSync(db).catch(console.error);
-module.exports = { auditCreditSync };
+export { auditCreditSync };

@@ -54,7 +54,7 @@ export default function RedirectURLsSettings() {
     <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
       
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/managers')}
@@ -84,7 +84,7 @@ export default function RedirectURLsSettings() {
       <RedirectURLsGuide />
 
       {/* Main Content Area */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[500px]">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden flex flex-col min-h-[500px]">
         
         {/* Search Bar */}
         <div className="p-4 border-b border-slate-100 bg-slate-50/50">
@@ -95,7 +95,7 @@ export default function RedirectURLsSettings() {
               placeholder="ค้นหา URL เก่า, ใหม่ หรือ หมายเหตุ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
             />
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function RedirectURLsSettings() {
                           checked={item.isActive}
                           onChange={() => handleToggleStatus(item.id, item.isActive, item.oldUrl)}
                         />
-                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                       </label>
                     </td>
                     <td className="px-6 py-4 text-right">

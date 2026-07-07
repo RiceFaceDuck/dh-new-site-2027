@@ -9,7 +9,7 @@ const PackingTaskCard = ({
   const isInProgress = task.status === 'in_progress';
 
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-colors ${isInProgress ? 'border-orange-300 ring-1 ring-orange-100' : 'border-gray-200'}`}>
+    <div className={`bg-white rounded-2xl shadow-xs border overflow-hidden transition-colors ${isInProgress ? 'border-orange-300 ring-1 ring-orange-100' : 'border-gray-200'}`}>
       
       {/* Header ของแต่ละการ์ดงาน */}
       <div className={`px-4 py-3 flex justify-between items-center ${isInProgress ? 'bg-orange-50/50' : 'bg-gray-50'}`}>
@@ -19,7 +19,7 @@ const PackingTaskCard = ({
         </div>
         <div>
            {isInProgress ? (
-             <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-1 rounded-md uppercase flex items-center gap-1 shadow-sm">
+             <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-1 rounded-md uppercase flex items-center gap-1 shadow-xs">
                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span> กำลังแพ็ค
              </span>
            ) : (
@@ -55,12 +55,12 @@ const PackingTaskCard = ({
         
         <div className="space-y-3">
           {task.items?.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+            <div key={idx} className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-gray-100 shadow-xs">
               {/* กล่องติ๊กถูก (ทำหลอกๆ ให้พนักงานกดเล่นเวลาหยิบของ) */}
-              <div className="w-6 h-6 rounded border-2 border-gray-300 flex-shrink-0 active:bg-indigo-100 active:border-indigo-400 transition-colors cursor-pointer hover:bg-gray-50"></div>
+              <div className="w-6 h-6 rounded-sm border-2 border-gray-300 shrink-0 active:bg-indigo-100 active:border-indigo-400 transition-colors cursor-pointer hover:bg-gray-50"></div>
               
               <div className="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden shrink-0 border border-gray-100">
-                {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : null}
+                {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover"  loading="lazy" /> : null}
               </div>
               
               <div className="flex-1 min-w-0">

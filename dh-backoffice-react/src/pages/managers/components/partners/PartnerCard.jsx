@@ -8,7 +8,7 @@ export default function PartnerCard({
   actionLoading 
 }) {
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-md ${
+    <div className={`bg-white rounded-2xl shadow-xs border overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-md ${
       partner.isActive ? 'border-[#0870B8]/30' : 'border-rose-200 opacity-80'
     }`}>
       
@@ -26,8 +26,8 @@ export default function PartnerCard({
       {/* Body */}
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex gap-4 items-start mb-4">
-            <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 p-1">
-              <img src={partner.storeLogo || '/logo.png'} alt="logo" className="w-full h-full object-contain" onError={(e)=>{e.target.src='https://placehold.co/100x100?text=Logo'}} />
+            <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 p-1">
+              <img src={partner.storeLogo || '/logo.png'} alt="logo" className="w-full h-full object-contain" onError={(e)=>{e.target.src='https://placehold.co/100x100?text=Logo'}}  loading="lazy" />
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-slate-800 text-lg leading-tight truncate">{partner.storeName || 'ไม่ระบุชื่อร้าน'}</h3>

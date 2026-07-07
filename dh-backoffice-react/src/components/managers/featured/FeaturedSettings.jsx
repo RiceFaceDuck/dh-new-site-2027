@@ -64,7 +64,7 @@ export default function FeaturedSettings() {
     return (
         <div className="p-6 max-w-4xl mx-auto w-full animate-fade-in">
             
-            <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl flex gap-4 text-emerald-800 shadow-sm mb-8">
+            <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl flex gap-4 text-emerald-800 shadow-xs mb-8">
                 <Sparkles size={24} className="shrink-0 text-emerald-500 mt-0.5"/>
                 <div>
                     <p className="text-sm font-bold leading-relaxed mb-1">
@@ -79,7 +79,7 @@ export default function FeaturedSettings() {
             <div className="space-y-6">
                 
                 {/* Toggle Active */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex items-center justify-between">
                     <div>
                         <h3 className="text-sm font-black text-slate-700 tracking-wider">เปิดใช้งานแผงสินค้าแนะนำ</h3>
                         <p className="text-xs text-slate-500 mt-1">แสดงหรือซ่อนแผงนี้ในหน้า Storefront</p>
@@ -91,12 +91,12 @@ export default function FeaturedSettings() {
                             checked={config.isActive}
                             onChange={(e) => setConfig({ ...config, isActive: e.target.checked })}
                         />
-                        <div className="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+                        <div className="w-14 h-7 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
                     </label>
                 </div>
 
                 {/* Display Limit */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
                     <h3 className="text-sm font-black text-slate-700 tracking-wider mb-4">จำนวนสินค้าที่ต้องการแสดงผล</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[4, 8, 12, 16].map(num => (
@@ -116,7 +116,7 @@ export default function FeaturedSettings() {
                 </div>
 
                 {/* Reseed Option */}
-                <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
                         <h3 className="text-sm font-black text-orange-800 flex items-center gap-2">
                             <AlertTriangle size={18} />
@@ -129,7 +129,7 @@ export default function FeaturedSettings() {
                     <button 
                         onClick={handleReseed}
                         disabled={isReseeding}
-                        className="px-5 py-2.5 bg-white border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 shrink-0 whitespace-nowrap"
+                        className="px-5 py-2.5 bg-white border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 shrink-0 whitespace-nowrap"
                     >
                         {isReseeding ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
                         รีเซ็ตการสุ่มตอนนี้

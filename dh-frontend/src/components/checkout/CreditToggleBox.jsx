@@ -13,12 +13,12 @@ export default function CreditToggleBox({
   if (!user || creditLoading || creditBalance <= 0) return null;
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-5 border border-indigo-100 shadow-sm animate-fade-in relative overflow-hidden transition-all duration-300 mb-6">
+    <div className="bg-linear-to-br from-indigo-50 to-white rounded-xl p-5 border border-indigo-100 shadow-xs animate-fade-in relative overflow-hidden transition-all duration-300 mb-6">
       <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-100/50 rounded-full blur-2xl pointer-events-none"></div>
       
       <div className="flex justify-between items-center relative z-10">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm transition-colors ${useCreditToggle ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-xs transition-colors ${useCreditToggle ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}>
             <Award className="w-5 h-5" />
           </div>
           <div>
@@ -44,7 +44,7 @@ export default function CreditToggleBox({
             checked={useCreditToggle} 
             onChange={(e) => setUseCreditToggle(e.target.checked)} 
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
         </label>
       </div>
 

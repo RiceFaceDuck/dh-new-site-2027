@@ -9,9 +9,9 @@ export default function ImportPreviewTable({ headers, parsedData }) {
           <span className="text-red-500 text-xs">⚠️ ไม่พบคอลัมน์ SKU (จำเป็น)</span>
         )}
       </h4>
-      <div className="overflow-x-auto border border-dh-border rounded-xl shadow-sm custom-scrollbar bg-dh-surface max-h-[300px]">
+      <div className="overflow-x-auto border border-dh-border rounded-xl shadow-xs custom-scrollbar bg-dh-surface max-h-[300px]">
         <table className="w-full text-left text-sm whitespace-nowrap">
-          <thead className="bg-dh-base sticky top-0 shadow-sm z-10">
+          <thead className="bg-dh-base sticky top-0 shadow-xs z-10">
             <tr>
               {headers.slice(0, 10).map((h) => (
                 <th key={h} className="px-4 py-3 font-bold text-dh-muted">{h}</th>

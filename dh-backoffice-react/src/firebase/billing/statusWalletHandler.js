@@ -12,7 +12,8 @@ export const handleWalletRefundAndClawback = async (
     settingsRef, 
     actualActorUid, 
     normalizedCurrentStatus, 
-    updates
+    updates,
+    creditPreloadSnaps = null
 ) => {
     let refundAmount = 0;
     if (normalizedCurrentStatus === 'paid') {
@@ -56,7 +57,8 @@ export const handleWalletRefundAndClawback = async (
             'clawback',
             'ดึงแต้มสะสมคืนอัตโนมัติ (ยกเลิกบิล)',
             actualActorUid,
-            `CB_${orderId}`
+            `CB_${orderId}`,
+            creditPreloadSnaps
         );
     }
 };
@@ -70,7 +72,8 @@ export const handlePointsEarned = async (
     userSnap,
     userRef,
     actualActorUid,
-    updates
+    updates,
+    creditPreloadSnaps = null
 ) => {
     const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
     const amountForPoints = totalSaleAmount - walletUsed;
@@ -86,7 +89,8 @@ export const handlePointsEarned = async (
                 'earn',
                 'ได้รับจากการซื้อสินค้า (ยืนยันยอดโอน)',
                 actualActorUid,
-                `TXP_${orderId}`
+                `TXP_${orderId}`,
+                creditPreloadSnaps
             );
             updates.earnedPoints = earnedPoints; 
         }

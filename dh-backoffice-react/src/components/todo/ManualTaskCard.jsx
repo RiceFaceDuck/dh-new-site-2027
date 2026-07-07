@@ -9,7 +9,7 @@ export default function ManualTaskCard({ payload }) {
   if (!payload) return null;
 
   return (
-    <div className="mt-4 ml-0 xl:ml-12 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl p-4 shadow-sm animate-in fade-in">
+    <div className="mt-4 ml-0 xl:ml-12 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl p-4 shadow-xs animate-in fade-in">
       <div className="flex items-center gap-3">
          <div className="p-2 bg-orange-100 dark:bg-orange-900/50 rounded-lg shrink-0">
            <CalendarCheck size={20} className="text-dh-accent" />
@@ -39,7 +39,7 @@ export default function ManualTaskCard({ payload }) {
       {/* แสดงข้อมูลการมอบหมาย (ถ้ามีและไม่ใช่ all) */}
       {payload.assignedTo && payload.assignedTo !== 'all' && (
          <div className="mt-3 pt-2 border-t border-orange-100 dark:border-orange-900/30">
-           <span className="text-[11px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100/50 dark:bg-orange-900/50 px-2 py-1 rounded">
+           <span className="text-[11px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100/50 dark:bg-orange-900/50 px-2 py-1 rounded-sm">
              มอบหมายให้: {payload.assignedTo}
            </span>
          </div>

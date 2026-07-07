@@ -137,7 +137,7 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <User className="w-5 h-5 text-[#0870B8]" />

@@ -31,7 +31,7 @@ export default function WalletDetailPanel({
             />
 
             {/* Statement Table */}
-            <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+            <div className="flex-1 bg-white rounded-2xl shadow-xs border border-slate-200 flex flex-col overflow-hidden">
                 <div className="px-5 pt-4 border-b border-slate-200 bg-slate-50/50">
                     <div className="flex items-center gap-6">
                         <button onClick={() => setActiveTab('wallet')} className={`pb-3 text-sm font-black transition-all border-b-2 flex items-center gap-2 ${activeTab === 'wallet' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>

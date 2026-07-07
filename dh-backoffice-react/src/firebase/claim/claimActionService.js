@@ -133,6 +133,24 @@ export const claimActionService = {
       },
       actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
     });
+
+    // ✨ บันทึกประวัติย่อยระดับ SKU สำหรับการดึงสต๊อกใหม่ไปเคลม
+    setTimeout(() => {
+      gasHistoryService.log({
+        level: 'INFO',
+        module: 'Claim',
+        action: 'SKU_CLAIM',
+        target: { id: payload.sku, type: 'Product' },
+        details: {
+          type: 'เคลม',
+          qtyChange: -qty,
+          reference: payload.claimId,
+          legacy_details: `ตัดสต๊อกเพื่อเคลมเปลี่ยนสินค้า (${payload.claimId})`
+        },
+        actorOverride: { uid: adminUid, name: adminName || 'Manager' }
+      });
+    }, 0);
+
     return true;
   },
 

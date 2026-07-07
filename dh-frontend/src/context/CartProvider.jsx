@@ -4,21 +4,32 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { cartService } from '../firebase/cartService';
 
-export const CartContext = createContext();
+export const CartStateContext = createContext();
+export const CartDispatchContext = createContext();
 
-// Safe Custom Hook
+// Legacy Hook (ผสม 2 Contexts เข้าด้วยกันเพื่อความเข้ากันได้ย้อนหลัง)
 export const useCart = () => {
-  const context = useContext(CartContext);
-  if (context === undefined) {
-    return {
-      cartItems: [],
-      totals: { count: 0, subtotal: 0, shipping: 0, discount: 0, grandTotal: 0, displayTotal: 0 },
-      checkoutState: {},
-      isInitialized: false
-    };
-  }
-  return context;
+  const state = useContext(CartStateContext) || {
+    cartItems: [],
+    totals: { count: 0, subtotal: 0, shipping: 0, discount: 0, grandTotal: 0, displayTotal: 0 },
+    checkoutState: {},
+    isInitialized: false,
+    isCartOpen: false,
+  };
+  const dispatch = useContext(CartDispatchContext) || {
+    addToCart: () => {},
+    removeFromCart: () => {},
+    updateQuantity: () => {},
+    clearCart: () => {},
+    setIsCartOpen: () => {},
+    updateCheckoutConfig: () => {}
+  };
+  return { ...state, ...dispatch };
 };
+
+// ⚡️ Optimized Hooks (ป้องกันการ Re-render)
+export const useCartState = () => useContext(CartStateContext);
+export const useCartDispatch = () => useContext(CartDispatchContext);
 
 const defaultCheckoutState = {
   shippingMethod: null,
@@ -270,15 +281,32 @@ export const CartProvider = ({ children }) => {
   const totalDiscount = (checkoutState.discountAmount || 0) + (checkoutState.useWallet || 0);
   const grandTotal = checkoutState.isWholesaleRequest ? 0 : Math.max(0, subtotal + (checkoutState.shippingCost || 0) - totalDiscount);
 
+  // การแยก Context ช่วยหยุดปัญหา God Context (N+1 Re-renders)
+  const stateValue = {
+    cartItems,
+    cartTotalQty,
+    cartTotalAmount: subtotal,
+    checkoutState,
+    isInitialized,
+    isCartOpen,
+    totals: { count: cartTotalQty, subtotal, shipping: checkoutState.shippingCost || 0, discount: totalDiscount, grandTotal, displayTotal: subtotal }
+  };
+
+  const dispatchValue = {
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    setIsCartOpen,
+    updateCheckoutConfig
+  };
+
   return (
-    <CartContext.Provider value={{
-      cartItems, addToCart, removeFromCart, updateQuantity, clearCart, isCartOpen, setIsCartOpen,
-      cartTotalQty, cartTotalAmount: subtotal,
-      checkoutState, updateCheckoutConfig, isInitialized,
-      totals: { count: cartTotalQty, subtotal, shipping: checkoutState.shippingCost || 0, discount: totalDiscount, grandTotal, displayTotal: subtotal }
-    }}>
-      {children}
-    </CartContext.Provider>
+    <CartStateContext.Provider value={stateValue}>
+      <CartDispatchContext.Provider value={dispatchValue}>
+        {children}
+      </CartDispatchContext.Provider>
+    </CartStateContext.Provider>
   );
 };
 

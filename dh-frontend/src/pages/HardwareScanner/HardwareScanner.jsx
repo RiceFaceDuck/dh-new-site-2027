@@ -120,8 +120,8 @@ const HardwareScanner = () => {
       <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-8 text-white text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+          <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-6 py-8 text-white text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-xs">
               <CheckCircle className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold mb-2">ตรวจสอบสเปคสำเร็จ</h1>
@@ -176,7 +176,7 @@ const HardwareScanner = () => {
       {/* Hero Section */}
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
-          เช็คสเปคอะไหล่ <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-green-500">ง่ายนิดเดียว</span>
+          เช็คสเปคอะไหล่ <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-500 to-green-500">ง่ายนิดเดียว</span>
         </h1>
         <p className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto">
           ไม่ต้องแกะเครื่อง ไม่ต้องกลัวผิดรุ่น เพียงโหลดโปรแกรมขนาดจิ๋วของเรา เพื่อตรวจสอบรหัสฮาร์ดแวร์ที่แท้จริง
@@ -185,7 +185,7 @@ const HardwareScanner = () => {
 
       {/* Main Download Card */}
       <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-12 relative group">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-teal-500" />
+        <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-emerald-400 to-teal-500" />
         <div className="p-8 md:p-12 text-center flex flex-col items-center">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
             <Monitor className="w-10 h-10 text-emerald-600" />
@@ -247,7 +247,7 @@ const HardwareScanner = () => {
 
 const DataCard = ({ icon, label, value }) => (
   <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all">
-    <div className="bg-white p-2.5 rounded-lg shadow-sm border border-slate-100 text-slate-600 shrink-0">
+    <div className="bg-white p-2.5 rounded-lg shadow-xs border border-slate-100 text-slate-600 shrink-0">
       {icon}
     </div>
     <div className="flex flex-col overflow-hidden">
@@ -258,7 +258,7 @@ const DataCard = ({ icon, label, value }) => (
 );
 
 const StepCard = ({ step, title, desc }) => (
-  <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
+  <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-xs relative overflow-hidden">
     <div className="absolute -right-4 -top-4 w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center font-black text-3xl text-slate-200">
       {step}
     </div>

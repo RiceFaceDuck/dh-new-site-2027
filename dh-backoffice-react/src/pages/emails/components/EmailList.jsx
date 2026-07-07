@@ -68,7 +68,7 @@ export default function EmailList({ emails, isLoading, onSelect, activeTab, isLo
               <div className="flex flex-col gap-2 pt-1 shrink-0 px-1 opacity-60 group-hover:opacity-100 transition-opacity">
                 <button 
                   onClick={(e) => { e.stopPropagation(); onToggleStar(email.id, email.isStarred); }}
-                  className="hover:scale-110 transition-transform focus:outline-none"
+                  className="hover:scale-110 transition-transform focus:outline-hidden"
                 >
                   <Star 
                     size={18} 
@@ -77,7 +77,7 @@ export default function EmailList({ emails, isLoading, onSelect, activeTab, isLo
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); onToggleImportant(email.id, email.isImportant); }}
-                  className="hover:scale-110 transition-transform focus:outline-none"
+                  className="hover:scale-110 transition-transform focus:outline-hidden"
                 >
                   <Bookmark 
                     size={18} 
@@ -109,7 +109,7 @@ export default function EmailList({ emails, isLoading, onSelect, activeTab, isLo
               </div>
               
               {isUnread && (
-                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-2 shrink-0 shadow-sm shadow-blue-500/40"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-2 shrink-0 shadow-xs shadow-blue-500/40"></div>
               )}
             </div>
           );
@@ -121,7 +121,7 @@ export default function EmailList({ emails, isLoading, onSelect, activeTab, isLo
             <button 
               onClick={(e) => { e.stopPropagation(); onLoadMore(); }}
               disabled={isLoadingMore}
-              className="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md text-sm font-bold text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md text-sm font-bold text-slate-700 dark:text-slate-300 shadow-xs hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {isLoadingMore ? <Loader2 size={16} className="animate-spin" /> : null}
               {isLoadingMore ? 'กำลังโหลดเพิ่ม...' : 'โหลดเพิ่มเติม'}

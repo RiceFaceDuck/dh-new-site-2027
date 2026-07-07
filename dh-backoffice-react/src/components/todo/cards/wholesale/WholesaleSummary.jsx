@@ -37,7 +37,7 @@ export default function WholesaleSummary({
             </li>
             
             {appliedPromotions.length > 0 && (
-              <li className="flex flex-col text-rose-600 dark:text-rose-400 mt-1 bg-rose-50/50 dark:bg-rose-950/20 p-2 rounded border border-rose-100 dark:border-rose-900/50">
+              <li className="flex flex-col text-rose-600 dark:text-rose-400 mt-1 bg-rose-50/50 dark:bg-rose-950/20 p-2 rounded-sm border border-rose-100 dark:border-rose-900/50">
                 <span className="font-bold text-[10px] uppercase tracking-wider">โปรโมชั่นที่เข้าร่วม</span>
                 {appliedPromotions.map((p, idx) => (
                   <div key={idx} className="flex justify-between text-xs mt-0.5 font-medium">
@@ -55,7 +55,7 @@ export default function WholesaleSummary({
             )}
 
             {qualifiedFreebies.length > 0 && (
-              <li className="flex flex-col text-emerald-600 dark:text-emerald-400 mt-2 bg-emerald-50/50 dark:bg-emerald-950/20 p-2 rounded border border-emerald-100 dark:border-emerald-900/50">
+              <li className="flex flex-col text-emerald-600 dark:text-emerald-400 mt-2 bg-emerald-50/50 dark:bg-emerald-950/20 p-2 rounded-sm border border-emerald-100 dark:border-emerald-900/50">
                 <span className="font-bold text-[10px] uppercase tracking-wider">ของแถมที่ลูกค้าได้รับ</span>
                 {qualifiedFreebies.map((f, idx) => (
                   <div key={idx} className="flex justify-between text-xs mt-0.5 font-medium">
@@ -93,7 +93,7 @@ export default function WholesaleSummary({
       </div>
 
       {/* ฝั่งขวา: สรุปราคาส่งใหม่ */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm flex flex-col justify-between relative overflow-hidden">
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800 shadow-xs flex flex-col justify-between relative overflow-hidden">
         {/* Decorative background blur */}
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -128,7 +128,7 @@ export default function WholesaleSummary({
                   onChange={(e) => setExtraManualDiscount(e.target.value)}
                   disabled={isProcessing}
                   placeholder="0"
-                  className="w-20 text-right p-1 pl-5 border border-blue-200 dark:border-blue-700 rounded bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 font-bold text-xs focus:outline-none focus:border-blue-500 transition-all disabled:opacity-50"
+                  className="w-20 text-right p-1 pl-5 border border-blue-200 dark:border-blue-700 rounded-sm bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 font-bold text-xs focus:outline-hidden focus:border-blue-500 transition-all disabled:opacity-50"
                 />
               </div>
             </li>
@@ -151,12 +151,12 @@ export default function WholesaleSummary({
           <div className="flex flex-col">
             <span className="font-bold text-blue-900 dark:text-blue-300">ยอดชำระใหม่สุทธิ</span>
             {newNetTotal < originalNetTotal && (
-              <span className="text-[10px] text-emerald-600 font-bold bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded mt-0.5 w-fit">
+              <span className="text-[10px] text-emerald-600 font-bold bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-sm mt-0.5 w-fit">
                 ลดลง ฿{(originalNetTotal - newNetTotal).toLocaleString()}
               </span>
             )}
             {newNetTotal > originalNetTotal && (
-              <span className="text-[10px] text-rose-600 font-bold bg-rose-100 dark:bg-rose-900/30 px-1.5 py-0.5 rounded mt-0.5 w-fit">
+              <span className="text-[10px] text-rose-600 font-bold bg-rose-100 dark:bg-rose-900/30 px-1.5 py-0.5 rounded-sm mt-0.5 w-fit">
                 แพงขึ้น ฿{(newNetTotal - originalNetTotal).toLocaleString()} ⚠️
               </span>
             )}

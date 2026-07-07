@@ -70,7 +70,7 @@ export default function TabPrivacy({ user }) {
     <div className="space-y-6 animate-in fade-in duration-500">
       
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 border-b-4 border-b-indigo-500">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 border-b-4 border-b-indigo-500">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
             <ShieldCheck size={24} />
@@ -83,7 +83,7 @@ export default function TabPrivacy({ user }) {
       </div>
 
       {/* Section 1: Data Export */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
         <div className="p-6 border-b border-slate-100 bg-slate-50/50">
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <FileJson className="w-5 h-5 text-indigo-600" />
@@ -104,7 +104,7 @@ export default function TabPrivacy({ user }) {
           <button
             onClick={handleExportData}
             disabled={isExporting}
-            className="shrink-0 px-5 py-3 bg-white border-2 border-indigo-100 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-200 font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 min-w-[200px]"
+            className="shrink-0 px-5 py-3 bg-white border-2 border-indigo-100 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-200 font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 min-w-[200px]"
           >
             {isExporting ? (
               <Loader2 size={18} className="animate-spin" />
@@ -117,8 +117,8 @@ export default function TabPrivacy({ user }) {
       </div>
 
       {/* Section 2: Danger Zone */}
-      <div className="bg-white rounded-2xl shadow-sm border border-rose-200/80 overflow-hidden relative group">
-        <div className="absolute inset-0 bg-gradient-to-br from-white to-rose-50/30 pointer-events-none"></div>
+      <div className="bg-white rounded-2xl shadow-xs border border-rose-200/80 overflow-hidden relative group">
+        <div className="absolute inset-0 bg-linear-to-br from-white to-rose-50/30 pointer-events-none"></div>
         <div className="p-6 border-b border-rose-100 bg-rose-50/50 relative z-10">
           <h3 className="text-lg font-bold text-rose-700 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />
@@ -134,7 +134,7 @@ export default function TabPrivacy({ user }) {
           </div>
           <button 
             onClick={handleDeleteAccount}
-            className="shrink-0 px-5 py-3 border border-rose-300 bg-white text-rose-600 hover:bg-rose-600 hover:text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center gap-2 min-w-[200px]"
+            className="shrink-0 px-5 py-3 border border-rose-300 bg-white text-rose-600 hover:bg-rose-600 hover:text-white font-bold rounded-xl transition-all shadow-xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center gap-2 min-w-[200px]"
           >
             <Trash2 size={18} />
             ลบบัญชีถาวร

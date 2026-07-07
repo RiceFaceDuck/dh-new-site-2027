@@ -4,7 +4,7 @@ import { ScrollText } from 'lucide-react';
 export default function TermsOfService() {
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-8 md:p-12">
         <div className="flex items-center gap-4 mb-8 pb-8 border-b border-slate-100">
           <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
             <ScrollText size={32} />

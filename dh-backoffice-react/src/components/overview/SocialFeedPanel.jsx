@@ -35,7 +35,7 @@ export const SocialFeedPanel = () => {
             <div key={event.id} className="flex gap-4 items-start group relative">
               {/* จุดวงกลมบน Timeline */}
               <div className="mt-1.5 relative z-10">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 bg-dh-surface shadow-sm transition-all duration-300 ${index === 0 ? `${event.color} border-current shadow-md group-hover:scale-110` : 'border-dh-border text-dh-muted group-hover:border-dh-accent group-hover:text-dh-accent'}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 bg-dh-surface shadow-xs transition-all duration-300 ${index === 0 ? `${event.color} border-current shadow-md group-hover:scale-110` : 'border-dh-border text-dh-muted group-hover:border-dh-accent group-hover:text-dh-accent'}`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${index === 0 ? `bg-current animate-ping` : 'bg-transparent'}`}></div>
                 </div>
               </div>
@@ -44,11 +44,11 @@ export const SocialFeedPanel = () => {
                 <div className="flex justify-between items-start mb-1">
                   <p className="text-sm font-black text-dh-main flex items-center gap-2">
                     {event.user}
-                    <span className={`flex items-center justify-center w-5 h-5 rounded-md ${event.bg} ${event.color} ${event.border} border shadow-sm`}>
+                    <span className={`flex items-center justify-center w-5 h-5 rounded-md ${event.bg} ${event.color} ${event.border} border shadow-xs`}>
                       <event.icon size={10} />
                     </span>
                   </p>
-                  <p className="text-[10px] font-bold text-dh-muted flex items-center gap-1 shrink-0 bg-dh-surface px-2 py-1 rounded-sm border border-dh-border shadow-sm">
+                  <p className="text-[10px] font-bold text-dh-muted flex items-center gap-1 shrink-0 bg-dh-surface px-2 py-1 rounded-xs border border-dh-border shadow-xs">
                     {event.time}
                   </p>
                 </div>

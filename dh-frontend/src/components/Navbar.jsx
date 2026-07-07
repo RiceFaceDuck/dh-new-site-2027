@@ -96,9 +96,9 @@ const Navbar = () => {
               <img 
                 src="/logo.jpg" 
                 alt="DH Notebook Logo" 
-                className="h-10 md:h-12 w-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300"
+                className="h-10 md:h-12 w-auto object-contain rounded-lg shadow-xs group-hover:scale-105 transition-transform duration-300"
                 onError={(e) => { e.target.src = '/logo.png' }}
-              />
+               loading="lazy" />
             </Link>
           </div>
 
@@ -110,9 +110,9 @@ const Navbar = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 rounded-full focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
               />
-              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-full hover:bg-brand-dark transition-colors shadow-sm">
+              <button type="submit" aria-label="ค้นหาสินค้า" className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-full hover:bg-brand-dark transition-colors shadow-xs">
                 <Search size={16} strokeWidth={2.5} />
               </button>
             </form>
@@ -125,6 +125,7 @@ const Navbar = () => {
             <button 
               onClick={() => navigate('/search')}
               onMouseEnter={() => import('../pages/SearchPage')}
+              aria-label="เปิดหน้าค้นหาบนมือถือ"
               className="md:hidden text-slate-300 hover:text-white p-2"
             >
               <Search size={22} strokeWidth={1.5} />
@@ -132,13 +133,17 @@ const Navbar = () => {
 
             {/* Shopping Cart Button */}
             <div 
-              className="relative cursor-pointer text-slate-300 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-xl"
+              role="button"
+              tabIndex={0}
+              aria-label="ดูตะกร้าสินค้า"
+              className="relative cursor-pointer text-slate-300 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand"
               onClick={() => navigate('/cart')}
+              onKeyDown={(e) => { if (e.key === 'Enter') navigate('/cart'); }}
               onMouseEnter={() => import('../pages/Cart')}
             >
               <ShoppingCart size={22} strokeWidth={1.5} />
               {cartTotalQty > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand-accent text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-sm animate-fade-in">
+                <span className="absolute -top-1 -right-1 bg-brand-accent text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-xs animate-fade-in">
                   {cartTotalQty > 99 ? '99+' : cartTotalQty}
                 </span>
               )}
@@ -153,7 +158,7 @@ const Navbar = () => {
                 <button 
                   onClick={() => navigate('/profile')}
                   onMouseEnter={() => import('../pages/Profile')}
-                  className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow active:scale-95"
+                  className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-xl transition-all shadow-xs hover:shadow-sm active:scale-95"
                 >
                   <User size={18} />
                   <span className="hidden sm:inline">เข้าสู่ระบบ</span>
@@ -164,14 +169,14 @@ const Navbar = () => {
                   <button 
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className={`flex items-center gap-2.5 p-1.5 pr-3 rounded-full border transition-all duration-300 ${
-                      isDropdownOpen ? 'bg-white/10 border-brand-accent shadow-inner' : 'bg-transparent border-white/20 hover:border-brand-accent hover:bg-white/10 shadow-sm'
+                      isDropdownOpen ? 'bg-white/10 border-brand-accent shadow-inner' : 'bg-transparent border-white/20 hover:border-brand-accent hover:bg-white/10 shadow-xs'
                     }`}
                   >
                     <div className="relative">
                       {currentUser.photoURL ? (
-                        <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                        <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-slate-200"  loading="lazy" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-light to-white text-brand flex items-center justify-center font-bold text-sm border border-brand-light">
+                        <div className="w-8 h-8 rounded-full bg-linear-to-br from-brand-light to-white text-brand flex items-center justify-center font-bold text-sm border border-brand-light">
                           {getInitial(currentUser.email)}
                         </div>
                       )}
@@ -219,8 +224,6 @@ const Navbar = () => {
                         >
                           <Wallet size={18} className={location.search.includes('tab=wallet') ? 'text-brand' : 'text-slate-400'} /> 
                           เครดิต & กระเป๋าเงิน
-                          {/* 🔴 Badge ย้ำเตือนในเมนู */}
-                          <span className="ml-auto bg-rose-100 text-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">มีรายการรอรับ</span>
                         </Link>
                       </div>
 

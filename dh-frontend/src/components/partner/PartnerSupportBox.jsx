@@ -16,7 +16,7 @@ const PartnerServiceBadges = ({ servicesText }) => {
   return (
     <div className="flex flex-wrap gap-1 mt-1">
       {servicesList.map((service, idx) => (
-        <span key={idx} className="flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-100 line-clamp-1">
+        <span key={idx} className="flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded-sm border border-emerald-100 line-clamp-1">
           <CheckCircle2 size={10} className="text-emerald-500 shrink-0" />
           {service}
         </span>
@@ -30,8 +30,8 @@ const SkeletonLoader = () => (
     <div className="w-[120px] sm:w-[140px] md:w-[150px] aspect-square bg-slate-100 rounded-xl shrink-0"></div>
     <div className="flex-1 py-1 pr-1 flex flex-col justify-between">
       <div className="space-y-2">
-        <div className="h-3 w-1/3 bg-slate-100 rounded"></div>
-        <div className="h-5 w-3/4 bg-slate-100 rounded"></div>
+        <div className="h-3 w-1/3 bg-slate-100 rounded-sm"></div>
+        <div className="h-5 w-3/4 bg-slate-100 rounded-sm"></div>
       </div>
       <div className="h-9 w-full bg-slate-100 rounded-lg mt-6"></div>
     </div>
@@ -100,14 +100,14 @@ const PartnerSupportBox = () => {
     <div className="bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] rounded-2xl relative flex flex-row items-center group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 my-4 sm:my-6 p-2 sm:p-2.5 gap-3 sm:gap-4">
       
       {/* 🖼️ ฝั่งซ้าย: ภาพร้านค้า (สัดส่วน 1:1) */}
-      <div className="w-[120px] sm:w-[140px] md:w-[150px] aspect-square relative shrink-0 overflow-hidden bg-slate-100 rounded-xl shadow-sm border border-slate-100 flex items-center justify-center">
+      <div className="w-[120px] sm:w-[140px] md:w-[150px] aspect-square relative shrink-0 overflow-hidden bg-slate-100 rounded-xl shadow-xs border border-slate-100 flex items-center justify-center">
         <img 
           src={partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage || "/logo.png"} 
           alt="Shop Profile" 
           className={`absolute inset-0 w-full h-full ${partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage ? 'object-cover' : 'object-contain p-4 opacity-30'} transition-transform duration-700 group-hover:scale-105`}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
-        <div className="absolute bottom-1.5 left-1.5 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded text-slate-900 flex items-center gap-1 shadow-md border border-white/50">
+         loading="lazy" />
+        <div className="absolute inset-0 bg-linear-to-t from-slate-900/60 via-transparent to-transparent"></div>
+        <div className="absolute bottom-1.5 left-1.5 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-sm text-slate-900 flex items-center gap-1 shadow-md border border-white/50">
            <Award size={10} className="text-amber-500 shrink-0" />
            <span className="font-bold text-[7px] uppercase tracking-wider text-slate-800">Verified</span>
         </div>
@@ -142,7 +142,7 @@ const PartnerSupportBox = () => {
          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100/80">
             <button 
               onClick={handleContactClick}
-              className="flex-1 min-w-[120px] px-3 bg-gradient-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065A96] hover:to-[#0870B8] text-white font-bold py-2 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 border border-[#0870B8]/20"
+              className="flex-1 min-w-[120px] px-3 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065A96] hover:to-[#0870B8] text-white font-bold py-2 rounded-lg shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 border border-[#0870B8]/20"
             >
               <Phone size={14} className="animate-pulse shrink-0" /> 
               <span className="tracking-wide text-xs whitespace-nowrap">โทรติดต่อทันที</span>
@@ -151,7 +151,7 @@ const PartnerSupportBox = () => {
             <div className="flex items-center gap-2 shrink-0">
               <button 
                 onClick={() => partner.lineUrl ? window.open(partner.lineUrl, '_blank') : alert('คุณยังไม่ได้เพิ่มลิงก์ LINE ในหน้าตั้งค่าร้านค้าครับ')} 
-                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-sm hover:shadow-md active:scale-95 transition-all ${partner.lineUrl ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.lineUrl ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.lineUrl ? "ติดต่อผ่าน LINE" : "ยังไม่มีข้อมูล LINE"}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
@@ -161,7 +161,7 @@ const PartnerSupportBox = () => {
 
               <button 
                 onClick={() => partner.messengerUrl ? window.open(partner.messengerUrl, '_blank') : alert('คุณยังไม่ได้เพิ่มลิงก์ Messenger ในหน้าตั้งค่าร้านค้าครับ')} 
-                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-sm hover:shadow-md active:scale-95 transition-all ${partner.messengerUrl ? 'bg-[#0084FF] hover:bg-[#0073e6]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.messengerUrl ? 'bg-[#0084FF] hover:bg-[#0073e6]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.messengerUrl ? "ติดต่อผ่าน Messenger" : "ยังไม่มีข้อมูล Messenger"}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">

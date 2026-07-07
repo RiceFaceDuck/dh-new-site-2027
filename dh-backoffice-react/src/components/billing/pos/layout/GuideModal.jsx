@@ -3,7 +3,7 @@ import { HelpCircle, X } from 'lucide-react';
 
 export default function GuideModal({ setIsGuideModalOpen }) {
     return (
-        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={() => setIsGuideModalOpen(false)}>
+        <div className="fixed inset-0 z-100 bg-black/60 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in" onClick={() => setIsGuideModalOpen(false)}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[85vh]" onClick={e => e.stopPropagation()}>
                 <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-[#EFF2F9]">
                     <h2 className="text-base font-black text-[#2A305A] flex items-center gap-2"><HelpCircle size={18} className="text-[#D51C39]"/> คู่มือการใช้งาน: เปิดบิลการขาย</h2>

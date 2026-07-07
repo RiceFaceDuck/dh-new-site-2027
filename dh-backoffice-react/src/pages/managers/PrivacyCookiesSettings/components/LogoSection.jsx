@@ -31,7 +31,7 @@ export default function LogoSection({ logoUrl, updateConfig }) {
     };
 
     return (
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 <Image size={18} className="text-blue-500" />
                 โลโก้สำหรับหน้าต่าง Cookies (160x160 px)
@@ -40,7 +40,7 @@ export default function LogoSection({ logoUrl, updateConfig }) {
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                 <div className="w-40 h-40 bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0 relative group">
                     {logoUrl ? (
-                        <img src={logoUrl} alt="Cookie Logo" className="w-full h-full object-contain p-2 transition-opacity group-hover:opacity-50" />
+                        <img src={logoUrl} alt="Cookie Logo" className="w-full h-full object-contain p-2 transition-opacity group-hover:opacity-50"  loading="lazy" />
                     ) : (
                         <span className="text-sm text-slate-400">No Image</span>
                     )}
@@ -67,7 +67,7 @@ export default function LogoSection({ logoUrl, updateConfig }) {
                             type="text" 
                             value={logoUrl}
                             onChange={(e) => updateConfig('logoUrl', e.target.value)}
-                            className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow outline-none text-sm"
+                            className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow outline-hidden text-sm"
                             placeholder="https://..."
                         />
                         <button

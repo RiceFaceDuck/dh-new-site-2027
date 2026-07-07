@@ -29,7 +29,7 @@ export default function History() {
 
   if (loading && filteredLogs.length === 0) {
     return (
-      <div className="flex flex-col justify-center items-center h-[60vh] font-mono bg-[#002b36] m-2 rounded border border-[#003642]">
+      <div className="flex flex-col justify-center items-center h-[60vh] font-mono bg-[#002b36] m-2 rounded-sm border border-[#003642]">
         <Loader2 className="w-8 h-8 animate-spin text-[#2aa198] mb-4" />
         <p className="text-[#839496] tracking-widest text-sm">System.init()...</p>
       </div>

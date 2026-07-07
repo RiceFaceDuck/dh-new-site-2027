@@ -48,7 +48,7 @@ export default function ReceiptItems({ items, startIndex = 0 }) {
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[8px] font-mono text-gray-400 uppercase">{item.sku}</span>
                                 {item.note && (
-                                    <span className="text-[8px] font-bold px-1 rounded border leading-none" 
+                                    <span className="text-[8px] font-bold px-1 rounded-sm border leading-none" 
                                             style={{ color: (noteColorStyles[item.noteColor] || noteColorStyles.slate).text, backgroundColor: (noteColorStyles[item.noteColor] || noteColorStyles.slate).bg }}>
                                         {item.note}
                                     </span>

@@ -3,7 +3,7 @@ import { Clock, CheckCircle, XCircle, Ban, ArrowLeftRight, Wrench, Package } fro
 
 export default function ClaimStatsRow({ stats, activeTab, setActiveTab }) {
   const tabs = [
-    { id: 'all', label: 'ทั้งหมด', count: stats.all, color: 'text-dh-main', bg: 'bg-dh-surface border-dh-border shadow-sm' },
+    { id: 'all', label: 'ทั้งหมด', count: stats.all, color: 'text-dh-main', bg: 'bg-dh-surface border-dh-border shadow-xs' },
     { id: 'pending', label: 'รอรับเรื่อง', count: stats.pending, icon: Clock, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50/50 border-rose-200/50 dark:bg-rose-900/10 dark:border-rose-700/30' },
     { id: 'waiting', label: 'รอรับของ', count: stats.waiting || 0, icon: Package, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50/50 border-amber-200/50 dark:bg-amber-900/10 dark:border-amber-700/30' },
     { id: 'processing', label: 'กำลังตรวจ', count: stats.processing || 0, icon: Wrench, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50/50 border-blue-200/50 dark:bg-blue-900/10 dark:border-blue-700/30' },

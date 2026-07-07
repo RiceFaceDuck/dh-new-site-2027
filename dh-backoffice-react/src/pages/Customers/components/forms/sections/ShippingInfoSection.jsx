@@ -30,7 +30,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                         <textarea 
                             rows={3}
                             placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main resize-none"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main resize-none"
                             value={formData.address || ''} 
                             onChange={e => handleChange('address', e.target.value)}
                         />
@@ -45,7 +45,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             <input 
                                 type="text" 
                                 placeholder="เลขที่ห้อง, ชั้น, ชื่อตึก, ซอย, ถนน" 
-                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                                 value={address.addressLine || ''} 
                                 onChange={e => handleChange('address.addressLine', e.target.value)}
                             />
@@ -55,7 +55,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             <input 
                                 type="text" 
                                 placeholder="ระบุแขวง หรือ ตำบล" 
-                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                                 value={address.subDistrict || ''} 
                                 onChange={e => handleChange('address.subDistrict', e.target.value)}
                             />
@@ -65,7 +65,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             <input 
                                 type="text" 
                                 placeholder="ระบุเขต หรือ อำเภอ" 
-                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                                 value={address.district || ''} 
                                 onChange={e => handleChange('address.district', e.target.value)}
                             />
@@ -75,7 +75,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             <input 
                                 type="text" 
                                 placeholder="ระบุจังหวัด" 
-                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                                 value={address.province || ''} 
                                 onChange={e => handleChange('address.province', e.target.value)}
                             />
@@ -85,7 +85,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             <input 
                                 type="text" 
                                 placeholder="ระบุรหัสไปรษณีย์" 
-                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                                 value={address.zipCode || ''} 
                                 onChange={e => handleChange('address.zipCode', e.target.value)}
                             />
@@ -95,7 +95,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             <input 
                                 type="text" 
                                 placeholder="https://maps.app.goo.gl/..." 
-                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                                className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                                 value={address.googleMapsUrl || ''} 
                                 onChange={e => handleChange('address.googleMapsUrl', e.target.value)}
                             />
@@ -115,7 +115,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                         <input 
                             type="text" 
                             placeholder="เช่น Flash, Kerry, J&T, ไปรษณีย์ไทย" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
                             value={formData.logisticProvider || ''} 
                             onChange={e => handleChange('logisticProvider', e.target.value)}
                         />
@@ -125,7 +125,7 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                         <textarea 
                             rows={2}
                             placeholder="เช่น ฝากไว้ที่ป้อมยาม, ห้ามโยนของ" 
-                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-none text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main resize-none"
+                            className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main resize-none"
                             value={formData.logisticNote || ''} 
                             onChange={e => handleChange('logisticNote', e.target.value)}
                         />

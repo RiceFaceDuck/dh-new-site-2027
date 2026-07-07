@@ -23,9 +23,9 @@ export default function DashboardTabs({ activeTab = 'adjust', onTabChange }) {
               key={tab.id}
               onClick={() => onTabChange && onTabChange(tab.id)}
               className={`
-                flex items-center gap-2 px-6 py-3 text-sm font-medium outline-none transition-none rounded-none
+                flex items-center gap-2 px-6 py-3 text-sm font-medium outline-hidden transition-none rounded-none
                 ${isActive 
-                  ? 'bg-white border-t-[3px] border-t-blue-600 border-r border-l border-slate-300 text-blue-700 -mb-[1px]' 
+                  ? 'bg-white border-t-[3px] border-t-blue-600 border-r border-l border-slate-300 text-blue-700 -mb-px' 
                   : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 border-t-[3px] border-t-transparent border-r border-l border-transparent'
                 }
               `}

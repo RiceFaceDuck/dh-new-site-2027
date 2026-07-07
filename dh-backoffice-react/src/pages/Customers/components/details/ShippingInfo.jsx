@@ -73,7 +73,7 @@ export default function ShippingInfo({ getFormattedAddress, handleCopy, copiedFi
               href={googleMapsUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:text-white bg-white hover:bg-emerald-500 px-3 py-1.5 rounded border border-emerald-200 transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:text-white bg-white hover:bg-emerald-500 px-3 py-1.5 rounded-sm border border-emerald-200 transition-all shadow-xs"
             >
               <Navigation size={12} />
               เปิดแผนที่นำทาง
@@ -86,7 +86,7 @@ export default function ShippingInfo({ getFormattedAddress, handleCopy, copiedFi
         {handleCopy && getFormattedAddress() !== 'ไม่ได้ระบุข้อมูลที่อยู่' && (
           <button 
             onClick={() => handleCopy(getFormattedAddress(), 'address')}
-            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-emerald-600 bg-white shadow-sm border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-emerald-600 bg-white shadow-xs border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
             title="คัดลอกที่อยู่แบบเต็ม"
           >
             {copiedField === 'address' ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}

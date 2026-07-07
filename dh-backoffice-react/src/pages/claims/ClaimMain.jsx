@@ -101,7 +101,7 @@ export default function ClaimMain() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-dh-base overflow-hidden">
+    <div className="flex flex-col h-dvh bg-dh-base overflow-hidden">
       <ClaimHeader 
         startDate={startDate} setStartDate={setStartDate}
         endDate={endDate} setEndDate={setEndDate}
@@ -116,7 +116,7 @@ export default function ClaimMain() {
             <ClaimStatsRow stats={stats} activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
           
-          <div className="flex-1 overflow-hidden bg-dh-surface rounded-xl border border-dh-border shadow-sm flex flex-col">
+          <div className="flex-1 overflow-hidden bg-dh-surface rounded-xl border border-dh-border shadow-xs flex flex-col">
             <ClaimTable 
               filteredRequests={filteredRequests}
               loading={loading}

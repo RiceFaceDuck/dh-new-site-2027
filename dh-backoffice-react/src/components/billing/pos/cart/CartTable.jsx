@@ -15,7 +15,7 @@ export default function CartTable({
         <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
                 <table className="w-full border-collapse">
-                    <thead className="bg-[#2A305A] border-b border-[#2A305A] text-white text-[11px] font-black uppercase tracking-wider sticky top-0 z-10 shadow-sm">
+                    <thead className="bg-[#2A305A] border-b border-[#2A305A] text-white text-[11px] font-black uppercase tracking-wider sticky top-0 z-10 shadow-xs">
                         <tr>
                             <th className="py-2.5 px-3 text-center w-12 opacity-80">#</th>
                             <th className="py-2.5 px-3 text-left">รายการสินค้า</th>

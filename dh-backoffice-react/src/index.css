@@ -1,6 +1,184 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-dh-base: var(--dh-bg-base);
+  --color-dh-surface: var(--dh-bg-surface);
+  --color-dh-border: var(--dh-border);
+  --color-dh-main: var(--dh-text-main);
+  --color-dh-muted: var(--dh-text-muted);
+  --color-dh-accent: var(--dh-accent);
+  --color-dh-accent-hover: var(--dh-accent-hover);
+  --color-dh-accent-light: var(--dh-accent-light);
+
+  --shadow-dh-card:
+    0 4px 20px -2px var(--dh-shadow-color), 0 0 3px var(--dh-shadow-color);
+  --shadow-dh-elevated:
+    0 10px 30px -5px var(--dh-shadow-color), 0 0 5px var(--dh-shadow-color);
+}
+
+@theme {
+  --color-dh-base: var(--dh-bg-base);
+  --color-dh-surface: var(--dh-bg-surface);
+  --color-dh-border: var(--dh-border);
+  --color-dh-main: var(--dh-text-main);
+  --color-dh-muted: var(--dh-text-muted);
+  --color-dh-accent: var(--dh-accent);
+  --color-dh-accent-hover: var(--dh-accent-hover);
+  --color-dh-accent-light: var(--dh-accent-light);
+
+  --shadow-dh-card:
+    0 4px 20px -2px var(--dh-shadow-color), 0 0 3px var(--dh-shadow-color);
+  --shadow-dh-elevated:
+    0 10px 30px -5px var(--dh-shadow-color), 0 0 5px var(--dh-shadow-color);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility dh-glass {
+  /* 1. Glassmorphism - สำหรับ Navbar, Sidebar หรือ Modal ให้ดูลอยและหรูหรา */
+  background-color: var(--dh-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--dh-glass-border);
+}
+@utility dh-hover-lift {
+  /* 2. Micro-Interactions - การยกตัวของการ์ดแบบมีสปริง (Bento Grid Style) */
+  transition:
+    transform 0.4s var(--dh-spring-easing),
+    box-shadow 0.4s var(--dh-smooth-easing);
+  &:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow:
+      0 12px 24px -8px var(--dh-shadow-color),
+      0 0 15px var(--dh-glow-color);
+  }
+}
+@utility dh-active-press {
+  /* 3. Tactile Button - ปุ่มกดแล้วยุบตัว (จำลองการกดสวิตช์จริง) */
+  transition: transform 0.15s ease;
+  &:active {
+    transform: scale(0.96);
+  }
+}
+@utility dh-inner-shadow {
+  /* 4. Soft Neumorphism - เงาหลุมด้านใน สำหรับช่อง Input/Search ให้อารมณ์เหมือนช่องถูกเจาะลงไป */
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  .dark & {
+    box-shadow: inset 0 2px 5px 0 rgba(0, 0, 0, 0.25);
+  }
+}
+@utility dark {
+  & .dh-inner-shadow {
+    box-shadow: inset 0 2px 5px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  /* 6. Night Mode Text Clarity - เพิ่มความคมชัดอ่านง่ายให้ข้อความสำคัญในโหมดมืด */
+  & .dh-text-glow {
+    text-shadow: 0 0 8px rgba(255, 230, 199, 0.3); /* อิงจากสี text-main โหมดมืด */
+  }
+  & .dh-menu-gradient-hover:hover {
+    background-image: linear-gradient(
+      120deg,
+      rgba(255, 161, 144, 0.15) 0%,
+      rgba(178, 214, 221, 0.15) 100%
+    );
+  }
+  & .dh-header-gradient {
+    background: linear-gradient(-45deg, #0f172a, #1a2980, #2678c6, #1e3a8a);
+    background-size: 400% 400%;
+    animation: subtleGradientMove 15s ease infinite;
+    color: #ffffff;
+  }
+
+  /* 🔴 Shake Animation สำหรับ Error States */
+}
+@utility dh-glow {
+  /* 5. Status Glow - เรืองแสงรอบนอก (เช่น สินค้าหมด หรือแจ้งเตือนสำคัญ) */
+  box-shadow: 0 0 15px var(--dh-glow-color);
+}
+@utility dh-text-glow {
+  /* 6. Night Mode Text Clarity - เพิ่มความคมชัดอ่านง่ายให้ข้อความสำคัญในโหมดมืด */
+  .dark & {
+    text-shadow: 0 0 8px rgba(255, 230, 199, 0.3); /* อิงจากสี text-main โหมดมืด */
+  }
+}
+@utility dh-menu-gradient-hover {
+  /* 7. Menu Item Hover Gradient with Animation */
+  background-size: 200% 200%;
+  transition: all 0.3s ease;
+  &:hover {
+    background-image: linear-gradient(
+      120deg,
+      rgba(255, 161, 144, 0.25) 0%,
+      rgba(178, 214, 221, 0.25) 100%
+    );
+    animation: gradientMove 3s ease infinite;
+    transform: scale(1.03);
+    /* Make active state still readable */
+    color: var(--dh-text-main);
+  }
+  .dark &:hover {
+    background-image: linear-gradient(
+      120deg,
+      rgba(255, 161, 144, 0.15) 0%,
+      rgba(178, 214, 221, 0.15) 100%
+    );
+  }
+}
+@utility dh-header-gradient {
+  /* 8. Subtle Header Animated Gradient */
+  /* เฉดสีน้ำเงินไล่ไปฟ้าสว่าง (Royal Blue to Cyan) ตามภาพอ้างอิง */
+  background: linear-gradient(-45deg, #223485, #296eb4, #32a1d8, #3bc7ec);
+  background-size: 400% 400%;
+  animation: subtleGradientMove 15s ease infinite; /* ปรับความเร็วเป็น 15s ให้เห็นการไหลของสีชัดขึ้นนิดนึง */
+  color: #ffffff;
+  .dark & {
+    background: linear-gradient(-45deg, #0f172a, #1a2980, #2678c6, #1e3a8a);
+    background-size: 400% 400%;
+    animation: subtleGradientMove 15s ease infinite;
+    color: #ffffff;
+  }
+
+  /* 🔴 Shake Animation สำหรับ Error States */
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 @layer base {
   :root {
@@ -86,85 +264,10 @@
 
 /* ✨ [UPGRADE 2026] Utilities ใหม่ เลือกหยิบไปใช้ร่วมกับ Tailwind ได้เลย (Optional) */
 @layer utilities {
-  
-  /* 1. Glassmorphism - สำหรับ Navbar, Sidebar หรือ Modal ให้ดูลอยและหรูหรา */
-  .dh-glass {
-    background-color: var(--dh-glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--dh-glass-border);
-  }
-
-  /* 2. Micro-Interactions - การยกตัวของการ์ดแบบมีสปริง (Bento Grid Style) */
-  .dh-hover-lift {
-    transition: transform 0.4s var(--dh-spring-easing), box-shadow 0.4s var(--dh-smooth-easing);
-  }
-  .dh-hover-lift:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 12px 24px -8px var(--dh-shadow-color), 0 0 15px var(--dh-glow-color);
-  }
-
-  /* 3. Tactile Button - ปุ่มกดแล้วยุบตัว (จำลองการกดสวิตช์จริง) */
-  .dh-active-press {
-    transition: transform 0.15s ease;
-  }
-  .dh-active-press:active {
-    transform: scale(0.96);
-  }
-
-  /* 4. Soft Neumorphism - เงาหลุมด้านใน สำหรับช่อง Input/Search ให้อารมณ์เหมือนช่องถูกเจาะลงไป */
-  .dh-inner-shadow {
-    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
-  }
-  .dark .dh-inner-shadow {
-    box-shadow: inset 0 2px 5px 0 rgba(0, 0, 0, 0.25);
-  }
-
-  /* 5. Status Glow - เรืองแสงรอบนอก (เช่น สินค้าหมด หรือแจ้งเตือนสำคัญ) */
-  .dh-glow {
-    box-shadow: 0 0 15px var(--dh-glow-color);
-  }
-
-  /* 6. Night Mode Text Clarity - เพิ่มความคมชัดอ่านง่ายให้ข้อความสำคัญในโหมดมืด */
-  .dark .dh-text-glow {
-    text-shadow: 0 0 8px rgba(255, 230, 199, 0.3); /* อิงจากสี text-main โหมดมืด */
-  }
-
-  /* 7. Menu Item Hover Gradient with Animation */
-  .dh-menu-gradient-hover {
-    background-size: 200% 200%;
-    transition: all 0.3s ease;
-  }
-  .dh-menu-gradient-hover:hover {
-    background-image: linear-gradient(120deg, rgba(255, 161, 144, 0.25) 0%, rgba(178, 214, 221, 0.25) 100%);
-    animation: gradientMove 3s ease infinite;
-    transform: scale(1.03);
-    /* Make active state still readable */
-    color: var(--dh-text-main);
-  }
-  .dark .dh-menu-gradient-hover:hover {
-    background-image: linear-gradient(120deg, rgba(255, 161, 144, 0.15) 0%, rgba(178, 214, 221, 0.15) 100%);
-  }
-  
   @keyframes gradientMove {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
-  }
-
-  /* 8. Subtle Header Animated Gradient */
-  .dh-header-gradient {
-    /* เฉดสีน้ำเงินไล่ไปฟ้าสว่าง (Royal Blue to Cyan) ตามภาพอ้างอิง */
-    background: linear-gradient(-45deg, #223485, #296eb4, #32a1d8, #3bc7ec);
-    background-size: 400% 400%;
-    animation: subtleGradientMove 15s ease infinite; /* ปรับความเร็วเป็น 15s ให้เห็นการไหลของสีชัดขึ้นนิดนึง */
-    color: #ffffff;
-  }
-  .dark .dh-header-gradient {
-    background: linear-gradient(-45deg, #0f172a, #1a2980, #2678c6, #1e3a8a);
-    background-size: 400% 400%;
-    animation: subtleGradientMove 15s ease infinite;
-    color: #ffffff;
   }
 
   @keyframes subtleGradientMove {
@@ -172,8 +275,6 @@
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
-
-  /* 🔴 Shake Animation สำหรับ Error States */
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     15% { transform: translateX(-8px); }

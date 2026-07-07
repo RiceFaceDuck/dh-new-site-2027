@@ -9,7 +9,7 @@ const ProvidersFilterBar = ({
   locationError 
 }) => {
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6 sticky top-20 z-10">
+    <div className="w-full bg-white rounded-2xl shadow-xs border border-slate-200 p-4 mb-6 sticky top-20 z-10">
       
       {/* Search Input */}
       <div className="relative mb-4">
@@ -18,7 +18,7 @@ const ProvidersFilterBar = ({
         </div>
         <input
           type="text"
-          className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand transition-colors duration-200"
+          className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand transition-colors duration-200"
           placeholder="ค้นหาชื่อร้าน หรือ บริการ (เช่น ซ่อมบอร์ด, เปลี่ยนจอ)..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

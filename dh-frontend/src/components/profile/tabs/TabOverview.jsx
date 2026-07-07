@@ -66,7 +66,7 @@ export default function TabOverview() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-slate-200 shadow-xs">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
         <p className="text-sm font-medium text-slate-500">กำลังซิงค์ข้อมูลโปรไฟล์...</p>
       </div>
@@ -83,7 +83,7 @@ export default function TabOverview() {
         {/* Wallet Card */}
         <div 
           onClick={() => navigate('/profile?tab=wallet')}
-          className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-slate-700/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+          className="bg-linear-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-slate-700/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
           title="คลิกเพื่อดูประวัติและทำรายการ"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/30 transition-colors"></div>
@@ -98,7 +98,7 @@ export default function TabOverview() {
               </div>
             </div>
             {pendingWithdrawal > 0 && (
-              <div className="bg-white/10 backdrop-blur-sm border border-white/10 px-3 py-1.5 rounded-lg text-right">
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 px-3 py-1.5 rounded-lg text-right">
                 <p className="text-[9px] text-amber-300 uppercase font-bold tracking-wider mb-0.5">กำลังรอถอน</p>
                 <p className="text-xs font-mono font-bold text-amber-400">฿ {formatCredit(pendingWithdrawal)}</p>
               </div>
@@ -109,7 +109,7 @@ export default function TabOverview() {
         {/* Credit Points Card */}
         <div 
           onClick={() => navigate('/profile?tab=credit')}
-          className="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-indigo-900/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+          className="bg-linear-to-br from-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-indigo-900/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
           title="คลิกเพื่อดูประวัติและทำรายการ"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-colors"></div>
@@ -123,7 +123,7 @@ export default function TabOverview() {
                 <span className="text-2xl font-black font-mono text-indigo-50">{formatCredit(creditBalance)} <span className="text-sm font-medium text-indigo-400">Pts</span></span>
               </div>
             </div>
-            <div className={`px-3 py-1.5 rounded-lg border flex items-center gap-1.5 shadow-sm ${tier?.bg} ${tier?.border} ${tier?.color}`}>
+            <div className={`px-3 py-1.5 rounded-lg border flex items-center gap-1.5 shadow-xs ${tier?.bg} ${tier?.border} ${tier?.color}`}>
               <span className="text-sm">{tier?.icon}</span>
               <span className="text-[10px] font-black uppercase tracking-wider">{tier?.name}</span>
             </div>
@@ -134,7 +134,7 @@ export default function TabOverview() {
       {/* ==========================================
           Section 2: User Summary Info
       ========================================== */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden relative">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden relative">
         <button 
           onClick={handleRefresh}
           disabled={isRefreshing}

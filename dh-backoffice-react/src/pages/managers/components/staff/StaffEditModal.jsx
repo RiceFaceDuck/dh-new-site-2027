@@ -46,9 +46,9 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
   if (!editingStaff) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-200/50 dark:border-slate-700/50 overflow-hidden animate-in zoom-in-95">
-        <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-4xl shadow-2xl max-w-md w-full border border-slate-200/50 dark:border-slate-700/50 overflow-hidden animate-in zoom-in-95">
+        <div className="h-1.5 w-full bg-linear-to-r from-blue-500 to-indigo-500"></div>
         <div className="p-6 sm:p-8">
             <div className="flex justify-between items-start mb-6">
             <div>
@@ -70,7 +70,7 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
                         type="text" 
                         value={editingStaff.firstName || ''}
                         onChange={e => setEditingStaff({...editingStaff, firstName: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all shadow-inner"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-hidden dark:text-white transition-all shadow-inner"
                     />
                 </div>
                 <div>
@@ -79,7 +79,7 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
                         type="text" 
                         value={editingStaff.lastName || ''}
                         onChange={e => setEditingStaff({...editingStaff, lastName: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all shadow-inner"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-hidden dark:text-white transition-all shadow-inner"
                     />
                 </div>
             </div>
@@ -92,7 +92,7 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
                     <select 
                         value={editingStaff.gender || 'unspecified'}
                         onChange={e => setEditingStaff({...editingStaff, gender: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all cursor-pointer"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-hidden dark:text-white transition-all cursor-pointer"
                     >
                         <option value="unspecified">ไม่ระบุ</option>
                         <option value="male">ชาย</option>
@@ -107,7 +107,7 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
                         type="date" 
                         value={editingStaff.startDate || ''}
                         onChange={e => setEditingStaff({...editingStaff, startDate: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all text-slate-600 dark:text-slate-300"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-hidden dark:text-white transition-all text-slate-600 dark:text-slate-300"
                     />
                 </div>
             </div>
@@ -120,7 +120,7 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
                 type="tel" 
                 value={editingStaff.phone || ''}
                 onChange={e => setEditingStaff({...editingStaff, phone: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all shadow-inner"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-hidden dark:text-white transition-all shadow-inner"
                 />
             </div>
             
@@ -134,7 +134,7 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
                 </button>
                 <button 
                 type="submit"
-                className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-500/20 transition-all active:scale-95"
+                className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs shadow-indigo-500/20 transition-all active:scale-95"
                 >
                 บันทึกการเปลี่ยนแปลง
                 </button>

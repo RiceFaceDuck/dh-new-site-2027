@@ -69,7 +69,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
     const orderWithMergedItems = { ...selectedOrder, items: displayItems };
 
     return (
-        <div className="flex flex-col md:flex-row h-full bg-[var(--dh-bg-surface)] border border-[var(--dh-border)] rounded-sm shadow-sm overflow-hidden">
+        <div className="flex flex-col md:flex-row h-full bg-(--dh-bg-surface) border border-(--dh-border) rounded-xs shadow-xs overflow-hidden">
             <OrderSummaryItems 
                 selectedOrder={orderWithMergedItems} 
                 isClaimable={isClaimable} 

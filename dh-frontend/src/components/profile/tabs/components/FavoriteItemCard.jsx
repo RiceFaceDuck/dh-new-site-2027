@@ -74,7 +74,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
 
   return (
     <div 
-      className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all group relative cursor-pointer ${viewMode === 'grid' ? 'p-3 flex flex-col h-full' : 'p-3 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/10' : ''}`} 
+      className={`bg-white rounded-xl border border-gray-200 shadow-xs hover:shadow-md transition-all group relative cursor-pointer ${viewMode === 'grid' ? 'p-3 flex flex-col h-full' : 'p-3 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/10' : ''}`} 
       onClick={() => {
         if (viewMode === 'list') setIsExpanded(!isExpanded);
         else navigate(`/product/${product.id}`);
@@ -85,20 +85,20 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
           type="checkbox" 
           checked={isSelected}
           onChange={() => onSelect(product.id)}
-          className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer shadow-sm"
+          className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 rounded-sm border-gray-300 focus:ring-emerald-500 cursor-pointer shadow-xs"
         />
       </div>
 
       <button 
         onClick={(e) => { e.stopPropagation(); toggleFavorite(product); }}
-        className="absolute top-2 right-2 z-10 text-red-500 bg-white p-1.5 rounded-full shadow-sm border border-gray-100 hover:scale-110 transition-transform"
+        className="absolute top-2 right-2 z-10 text-red-500 bg-white p-1.5 rounded-full shadow-xs border border-gray-100 hover:scale-110 transition-transform"
       >
         <Heart size={16} className="fill-red-500" />
       </button>
       
       <div className={viewMode === 'grid' ? '' : 'flex flex-row gap-3'}>
         <div className={`${viewMode === 'grid' ? 'aspect-square mb-3' : 'w-20 h-20 sm:w-24 sm:h-24 shrink-0'} bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center mix-blend-multiply p-2 relative`}>
-          <img src={displayData.imageUrl || displayData.images?.[0] || "https://via.placeholder.com/200x200?text=No+Image"} alt={displayData.name} className="w-full h-full object-contain group-hover:scale-105 transition duration-500" />
+          <img src={displayData.imageUrl || displayData.images?.[0] || "https://via.placeholder.com/200x200?text=No+Image"} alt={displayData.name} className="w-full h-full object-contain group-hover:scale-105 transition duration-500"  loading="lazy" />
           {isOutOfStock && (
             <div className="absolute inset-0 bg-white/70 flex items-center justify-center backdrop-blur-[1px]">
               <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">หมด</span>
@@ -111,9 +111,9 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
             <div className="flex items-center flex-wrap gap-2 mb-1">
               <p className="text-[10px] text-gray-400 font-medium">SKU: {displayData.model || displayData.sku}</p>
               {isOutOfStock ? (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-red-100 text-red-600">หมดสต๊อก</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-xs bg-red-100 text-red-600">หมดสต๊อก</span>
               ) : (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-emerald-100 text-emerald-600">มีสินค้า</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-xs bg-emerald-100 text-emerald-600">มีสินค้า</span>
               )}
             </div>
             <h3 className={`font-semibold text-gray-700 line-clamp-2 group-hover:text-emerald-600 text-xs ${viewMode === 'grid' ? 'mb-2' : ''}`}>{displayData.name}</h3>
@@ -122,7 +122,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
             {viewMode === 'list' && !isExpanded && (tags.length > 0 || note) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 {tags.slice(0, 3).map((tag, idx) => (
-                  <span key={idx} className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded text-[9px] font-medium flex items-center gap-1">
+                  <span key={idx} className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-sm text-[9px] font-medium flex items-center gap-1">
                     <Tag size={8} /> {tag}
                   </span>
                 ))}
@@ -208,7 +208,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
                 <FileText size={12} /> หมายเหตุ (Notes)
               </label>
               <textarea 
-                className="w-full text-xs p-2 rounded-md border border-gray-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-none transition-all"
+                className="w-full text-xs p-2 rounded-md border border-gray-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-hidden resize-none transition-all"
                 rows="2"
                 placeholder="ระบุหมายเหตุ เช่น สำหรับลูกค้าคุณเอ..."
                 value={note}
@@ -222,7 +222,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
               </label>
               <div className="flex flex-wrap gap-1.5 mb-1.5">
                 {tags.map((tag, idx) => (
-                  <span key={idx} className="bg-white text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1 shadow-sm">
+                  <span key={idx} className="bg-white text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1 shadow-xs">
                     {tag}
                     <button onClick={(e) => { e.stopPropagation(); removeTag(tag); }} className="text-emerald-400 hover:text-emerald-700 transition-colors">
                       <X size={10} />
@@ -232,7 +232,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
               </div>
               <input 
                 type="text"
-                className="w-full text-xs p-2 rounded-md border border-gray-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                className="w-full text-xs p-2 rounded-md border border-gray-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-hidden transition-all"
                 placeholder="พิมพ์แท็กแล้วกด Enter..."
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
@@ -247,4 +247,4 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
   );
 };
 
-export default FavoriteItemCard;
+export default React.memo(FavoriteItemCard);

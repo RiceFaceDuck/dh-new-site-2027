@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
     const navigate = useNavigate();
   
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24 transition-all duration-300 hover:shadow-md">
+      <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 sticky top-24 transition-all duration-300 hover:shadow-md">
         <h2 className="text-lg font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100">สรุปคำสั่งซื้อ</h2>
         
         <div className="space-y-4 mb-6 relative">
@@ -69,7 +69,7 @@ import { useNavigate } from 'react-router-dom';
 
           {earnedPoints > 0 && (
             <div className="w-full text-right mt-3">
-              <p className="text-xs text-indigo-700 font-bold bg-indigo-50/80 inline-block px-3 py-1.5 rounded-full shadow-sm border border-indigo-100">
+              <p className="text-xs text-indigo-700 font-bold bg-indigo-50/80 inline-block px-3 py-1.5 rounded-full shadow-xs border border-indigo-100">
                 รับแต้มสะสม {earnedPoints.toLocaleString()} แต้ม
               </p>
             </div>
@@ -78,7 +78,7 @@ import { useNavigate } from 'react-router-dom';
           <p className="text-[10px] text-gray-400 text-right mt-3">ราคานี้ยังไม่รวมค่าจัดส่งและส่วนลด (ถ้ามี)</p>
         </div>
   
-        <div className="bg-emerald-50/80 border border-emerald-100 rounded-xl p-3.5 mb-6 flex items-start gap-2.5 shadow-sm">
+        <div className="bg-emerald-50/80 border border-emerald-100 rounded-xl p-3.5 mb-6 flex items-start gap-2.5 shadow-xs">
           <ShieldCheck size={18} className="text-emerald-600 shrink-0 mt-0.5" />
           <p className="text-[10px] text-emerald-800 leading-relaxed">
             <strong className="text-xs">รับประกันความปลอดภัย</strong><br/>
@@ -94,13 +94,13 @@ import { useNavigate } from 'react-router-dom';
             <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => window.open('https://line.me/R/ti/p/@your_line_id', '_blank')}
-                className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#00B900] hover:bg-[#009900] text-white shadow-sm hover:shadow-md active:scale-95"
+                className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#00B900] hover:bg-[#009900] text-white shadow-xs hover:shadow-md active:scale-95"
               >
                 <MessageCircle size={18} /> LINE
               </button>
               <button 
                 onClick={() => window.open('https://m.me/your_page_name', '_blank')}
-                className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#0084FF] hover:bg-[#0070D6] text-white shadow-sm hover:shadow-md active:scale-95"
+                className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#0084FF] hover:bg-[#0070D6] text-white shadow-xs hover:shadow-md active:scale-95"
               >
                 <MessageSquare size={18} /> Messenger
               </button>
@@ -134,7 +134,7 @@ import { useNavigate } from 'react-router-dom';
               )}
             </span>
             {cartData.totalQty > 0 && !isValidating && (
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
             )}
           </button>
         )}

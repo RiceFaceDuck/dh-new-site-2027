@@ -63,13 +63,20 @@ export default function Inventory() {
     if (node) observer.current.observe(node);
   }, [loadingMore, hasMore, hasMoreCache, isGlobalActionActive, loadMore, loadMoreCache]);
 
-  const handleSort = (key) => {
-    let direction = 'desc';
-    if (sortConfig.key === key && sortConfig.direction === 'desc') {
-      direction = 'asc';
-    }
-    setSortConfig({ key, direction });
-  };
+  const handleSort = useCallback((key) => {
+    setSortConfig(prev => {
+      let direction = 'desc';
+      if (prev.key === key && prev.direction === 'desc') {
+        direction = 'asc';
+      }
+      return { key, direction };
+    });
+  }, []);
+
+  const handleEditProduct = useCallback((p) => {
+    setEditingProduct(p);
+    setIsModalOpen(true);
+  }, []);
 
   const handleSaveProduct = async (productData) => {
     try {
@@ -108,15 +115,15 @@ export default function Inventory() {
       />
 
       {loading ? (
-        <div className="flex flex-col justify-center items-center flex-1 bg-white border border-dh-border rounded-xl shadow-sm animate-in fade-in duration-500">
-          <Loader2 className="w-12 h-12 animate-spin text-dh-accent mb-4 drop-shadow-sm" />
+        <div className="flex flex-col justify-center items-center flex-1 bg-white border border-dh-border rounded-xl shadow-xs animate-in fade-in duration-500">
+          <Loader2 className="w-12 h-12 animate-spin text-dh-accent mb-4 drop-shadow-xs" />
           <p className="text-dh-accent font-black tracking-wide text-lg">กำลังโหลดคลังสินค้า...</p>
           <p className="text-dh-muted text-sm mt-1">Please wait a moment</p>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
           
-          <div className="flex-1 bg-white dark:bg-slate-900 border border-dh-border rounded-xl shadow-sm overflow-y-auto custom-scrollbar flex flex-col relative transition-all duration-300">
+          <div className="flex-1 bg-white dark:bg-slate-900 border border-dh-border rounded-xl shadow-xs overflow-y-auto custom-scrollbar flex flex-col relative transition-all duration-300">
             {isSearching && (
                <div className="absolute top-0 left-0 w-full h-1 bg-dh-accent/20 overflow-hidden z-30">
                  <div className="w-1/3 h-full bg-dh-accent animate-[slideRight_1s_ease-in-out_infinite]"></div>
@@ -129,7 +136,7 @@ export default function Inventory() {
               globalBufferStock={globalBufferStock}
               sortConfig={sortConfig}
               onSort={handleSort}
-              onEdit={(p) => { setEditingProduct(p); setIsModalOpen(true); }} 
+              onEdit={handleEditProduct} 
             />
             
             {( (!isGlobalActionActive && hasMore) || (isGlobalActionActive && hasMoreCache) ) && (

@@ -16,7 +16,7 @@ export default function GenerateSyncStatusBar({
     <div className="w-full px-4 sm:px-6 pt-6 pb-2 flex flex-wrap items-center justify-between gap-4">
       
       {/* Status indicator */}
-      <div className="flex items-center gap-4 bg-white px-4 py-3 rounded-xl shadow-sm border border-slate-200">
+      <div className="flex items-center gap-4 bg-white px-4 py-3 rounded-xl shadow-xs border border-slate-200">
          <div className="flex items-center gap-2" title="รายการที่รออัปเดตไปยังระบบภายนอก (Google Sheet)">
            <div className={`w-2.5 h-2.5 rounded-full ${isFlushing ? 'bg-amber-400 animate-ping' : pendingCount > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`}></div>
            <span className="text-sm font-bold text-slate-700">
@@ -40,7 +40,7 @@ export default function GenerateSyncStatusBar({
       </div>
 
       {/* Auto Sync Settings */}
-      <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl shadow-sm border border-slate-200">
+      <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl shadow-xs border border-slate-200">
          <label className="flex items-center gap-2 cursor-pointer">
            <div className="relative">
              <input type="checkbox" className="sr-only" checked={autoSyncEnabled} onChange={(e) => {
@@ -59,7 +59,7 @@ export default function GenerateSyncStatusBar({
                onChange={(e) => {
                  updateSyncInterval(Number(e.target.value));
                }}
-               className="text-sm border border-slate-200 bg-slate-50 rounded-lg px-2 py-1 text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer font-bold"
+               className="text-sm border border-slate-200 bg-slate-50 rounded-lg px-2 py-1 text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-hidden cursor-pointer font-bold"
              >
                <option value={1}>ทุก 1 นาที</option>
                <option value={5}>ทุก 5 นาที</option>

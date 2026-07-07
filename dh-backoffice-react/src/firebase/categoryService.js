@@ -19,6 +19,7 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
+import imageCompression from 'browser-image-compression';
 import { db, storage, auth } from './config';
 import { historyService } from './historyService';
 import { sharedCategoryService } from 'dh-shared/src/firebase/categoryService';
@@ -35,13 +36,18 @@ export const categoryService = {
   },
 
   /**
-   * B. อัปโหลดไฟล์รูปภาพไปยัง Storage (Fallback)
+   * B. อัปโหลดไฟล์รูปภาพไปยัง Storage (พร้อมบีบอัดขนาด)
    */
   uploadIcon: async (file) => {
     if (!file) return null;
     try {
-      const fileRef = ref(storage, `categories/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.2, // บีบอัดไอคอนหมวดหมู่ให้เล็กที่สุด ไม่เกิน 200KB
+        maxWidthOrHeight: 512,
+        useWebWorker: true
+      });
+      const fileRef = ref(storage, `categories/${Date.now()}_${compressedFile.name.replace(/\s+/g, '_')}`);
+      await uploadBytes(fileRef, compressedFile);
       const downloadURL = await getDownloadURL(fileRef);
       return downloadURL;
     } catch (error) {

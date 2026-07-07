@@ -5,6 +5,7 @@ import { handleStockDeduction, handleStockReturn } from './billing/statusStockHa
 import { handleSalesStatsUpdate } from './billing/statusSalesHandler';
 import { handleWalletRefundAndClawback, handlePointsEarned } from './billing/statusWalletHandler';
 import { handlePromoFreebieReversal } from './billing/statusPromoHandler';
+import { getCreditPreloadRefs } from './credit/creditActionService';
 
 const COLLECTION_NAME = 'orders';
 
@@ -64,6 +65,61 @@ export const billingStatusTransaction = {
               }
           }
 
+          let promoFreebieSnaps = [];
+          if (isCancelling || isConfirmingPayment) {
+              if (orderData.appliedPromotions && Array.isArray(orderData.appliedPromotions)) {
+                  for (const promo of orderData.appliedPromotions) {
+                      if (promo.id) promoFreebieSnaps.push({ type: 'promo', ref: doc(db, 'promotions', promo.id), snap: await transaction.get(doc(db, 'promotions', promo.id)) });
+                  }
+              } else if (orderData.appliedPromotion && orderData.appliedPromotion.id) {
+                  promoFreebieSnaps.push({ type: 'promo', ref: doc(db, 'promotions', orderData.appliedPromotion.id), snap: await transaction.get(doc(db, 'promotions', orderData.appliedPromotion.id)) });
+              }
+
+              if (orderData.appliedFreebies && Array.isArray(orderData.appliedFreebies)) {
+                  for (const freebie of orderData.appliedFreebies) {
+                      if (freebie.id) promoFreebieSnaps.push({ type: 'freebie', ref: doc(db, 'freebies', freebie.id), snap: await transaction.get(doc(db, 'freebies', freebie.id)) });
+                  }
+              }
+          }
+
+          const currentOrderId = orderData.orderId || orderId || '';
+          
+          let creditPreloadSnaps = null;
+          const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
+          const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+          const amountForPoints = totalSaleAmount - walletUsed;
+          let earnedPoints = 0;
+          if (amountForPoints > 0) earnedPoints = Math.floor(amountForPoints / 100);
+
+          let clawbackPoints = Number(orderData.earnedPoints || 0); 
+          if (orderData.pendingCredits && orderData.pendingCredits > 0 && normalizedCurrentStatus !== 'received') clawbackPoints = 0; 
+          
+          const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
+          if (customerUid && customerUid !== 'WALK-IN') {
+              let typeForPreload = null;
+              let refForPreload = null;
+
+              if (isConfirmingPayment && earnedPoints > 0) {
+                  typeForPreload = 'earn';
+                  refForPreload = `TXP_${currentOrderId || orderId}`;
+              } else if (isCancelling && clawbackPoints > 0) {
+                  typeForPreload = 'clawback';
+                  refForPreload = `CB_${currentOrderId || orderId}`;
+              }
+
+              if (typeForPreload) {
+                  const creditRefs = getCreditPreloadRefs(customerUid, typeForPreload, refForPreload);
+                  const [txSnap, settingsSnap2, userSnap2, walletSnap, activePartnerSnap] = await Promise.all([
+                      creditRefs.txRef ? transaction.get(creditRefs.txRef) : Promise.resolve(null),
+                      transaction.get(creditRefs.settingsRef),
+                      transaction.get(creditRefs.userRef),
+                      transaction.get(creditRefs.walletRef),
+                      transaction.get(creditRefs.activePartnerRef)
+                  ]);
+                  creditPreloadSnaps = { txSnap, settingsSnap: settingsSnap2, userSnap: userSnap2, walletSnap, activePartnerSnap };
+              }
+          }
+
           if (isConfirmingPayment) {
               inventorySettingsRef = doc(db, 'settings', 'inventory');
               inventorySettingsSnap = await transaction.get(inventorySettingsRef);
@@ -75,7 +131,6 @@ export const billingStatusTransaction = {
             updatedAt: serverTimestamp() 
           };
 
-          const currentOrderId = orderData.orderId || orderId || '';
           const needsNewOrderId = !currentOrderId.startsWith('DH-');
 
           if (needsNewOrderId && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed')) {
@@ -96,26 +151,26 @@ export const billingStatusTransaction = {
           if (isConfirmingPayment) {
              handleStockDeduction(transaction, db, productRefs, productSnaps, inventorySettingsSnap);
 
-             // 🎯 Deduct Promo/Freebie Quota on Approved/Paid
-             if (orderData.appliedPromotions && Array.isArray(orderData.appliedPromotions)) {
-                 orderData.appliedPromotions.forEach(promo => {
-                     if (promo.id) transaction.update(doc(db, 'promotions', promo.id), { quotaUsed: increment(1) });
-                 });
-             } else if (orderData.appliedPromotion && orderData.appliedPromotion.id) {
-                 transaction.update(doc(db, 'promotions', orderData.appliedPromotion.id), { quotaUsed: increment(1) });
-             }
-
-             if (orderData.appliedFreebies && Array.isArray(orderData.appliedFreebies)) {
-                 orderData.appliedFreebies.forEach(freebie => {
-                     if (freebie.id) transaction.update(doc(db, 'freebies', freebie.id), { quotaUsed: increment(freebie.qty || 1) });
-                 });
+             // 🎯 Deduct Promo/Freebie Quota on Approved/Paid (with Edge Case Lock)
+             for (const item of promoFreebieSnaps) {
+                 if (item.snap && item.snap.exists()) {
+                     const data = item.snap.data();
+                     if (data.quotaLimit && data.quotaLimit > 0) {
+                         const currentUsed = data.quotaUsed || 0;
+                         const qtyToDeduct = item.type === 'freebie' ? ((orderData.appliedFreebies || []).find(f => f.id === item.snap.id)?.qty || 1) : 1;
+                         if (currentUsed + qtyToDeduct > data.quotaLimit) {
+                             throw new Error(`ไม่อนุมัติบิล: สิทธิ์${item.type === 'promo' ? 'โปรโมชัน' : 'ของแถม'} "${data.title || data.name || item.snap.id}" เต็มแล้ว (มีบิลอื่นแย่งสิทธิ์ไปแล้ว) กรุณายกเลิกบิลนี้`);
+                         }
+                     }
+                     transaction.update(item.ref, { quotaUsed: increment(item.type === 'freebie' ? ((orderData.appliedFreebies || []).find(f => f.id === item.snap.id)?.qty || 1) : 1) });
+                 }
              }
 
              const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
              handleSalesStatsUpdate(transaction, db, totalSaleAmount, orderData, false);
 
              if (userSnap && userSnap.exists()) {
-                 await handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates);
+                 await handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates, creditPreloadSnaps);
              }
              
              updates.isStockDeducted = true;
@@ -131,15 +186,15 @@ export const billingStatusTransaction = {
              if (userSnap && userSnap.exists()) {
                  await handleWalletRefundAndClawback(
                      transaction, db, orderId, orderData, userSnap, userRef, 
-                     settingsSnap, settingsRef, actualActorUid, normalizedCurrentStatus, updates
+                     settingsSnap, settingsRef, actualActorUid, normalizedCurrentStatus, updates, creditPreloadSnaps
                  );
              }
              
-             await handlePromoFreebieReversal(transaction, db, orderData);
+             await handlePromoFreebieReversal(transaction, db, orderData, promoFreebieSnaps);
           }
 
           transaction.update(docRef, updates);
-      });
+      }, { maxAttempts: 15 });
 
       let logMessage = `เปลี่ยนสถานะบิลเป็น: ${normalizedNewStatus}`;
       if (normalizedNewStatus === 'cancelled') {
@@ -195,7 +250,7 @@ export const billingStatusTransaction = {
           shippedAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-      });
+      }, { maxAttempts: 15 });
 
       await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "จัดส่งแล้ว" (ขนส่ง: ${courier}, เลขพัสดุ: ${trackingNumber})`, actualActorUid);
       return orderId;
@@ -219,7 +274,7 @@ export const billingStatusTransaction = {
           completedAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-      });
+      }, { maxAttempts: 15 });
 
       await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "ส่งมอบสินค้าสำเร็จ" (รับหน้าร้าน)`, actualActorUid);
       return orderId;

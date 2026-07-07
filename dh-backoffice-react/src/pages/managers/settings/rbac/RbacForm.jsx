@@ -75,7 +75,7 @@ export default function RbacForm({ initialSettings, onSave }) {
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          className="w-4 h-4 text-dh-primary border-slate-300 rounded focus:ring-dh-primary focus:ring-2 bg-slate-50 dark:bg-slate-700 dark:border-slate-600"
+                          className="w-4 h-4 text-dh-primary border-slate-300 rounded-sm focus:ring-dh-primary focus:ring-2 bg-slate-50 dark:bg-slate-700 dark:border-slate-600"
                           checked={currentAllowed.includes(role.id)}
                           onChange={() => handleRoleToggle(perm.key, role.id)}
                         />
@@ -93,7 +93,7 @@ export default function RbacForm({ initialSettings, onSave }) {
         <button
           type="submit"
           disabled={isSaving}
-          className="px-6 py-2.5 bg-dh-primary text-white rounded-md font-bold hover:bg-dh-primary-hover focus:outline-none focus:ring-2 focus:ring-dh-primary focus:ring-offset-2 transition-all disabled:opacity-50 flex items-center"
+          className="px-6 py-2.5 bg-dh-primary text-white rounded-md font-bold hover:bg-dh-primary-hover focus:outline-hidden focus:ring-2 focus:ring-dh-primary focus:ring-offset-2 transition-all disabled:opacity-50 flex items-center"
         >
           {isSaving ? (
             <>

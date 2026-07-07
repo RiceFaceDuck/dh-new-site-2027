@@ -6,19 +6,21 @@ import { getCreditSettings, calculateEarnedPoints } from '../firebase/creditServ
 import { productService } from '../firebase/productService';
 import { footerClientService } from '../firebase/footerClientService';
 import { ChevronLeft, ShieldAlert, Loader2 } from 'lucide-react';
-import { useCart } from '../context/CartProvider';
+import { useCartDispatch } from '../context/CartProvider';
 import { useToast } from '../context/ToastContext';
 import { memoryCache } from '../utils/memoryCache';
 
 import PartnerSupportBox from '../components/partner/PartnerSupportBox';
-import ProductImageSection from '../components/product/ProductImageSection';
-import ProductPricingSection from '../components/product/ProductPricingSection';
-import ProductKnowledgeSection from '../components/product/ProductKnowledgeSection';
-import ProductSpecsSection from '../components/product/ProductSpecsSection';
-import ProductCommunitySection from '../components/product/ProductCommunitySection';
-import ProductDescriptionSection from '../components/product/ProductDescriptionSection';
-import ProductVideoSection from '../components/product/ProductVideoSection';
-import RelatedProducts from '../components/product/RelatedProducts';
+import {
+  ProductImageSection,
+  ProductPricingSection,
+  ProductKnowledgeSection,
+  ProductSpecsSection,
+  ProductCommunitySection,
+  ProductDescriptionSection,
+  ProductVideoSection,
+  RelatedProducts
+} from '../components/product';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -38,7 +40,7 @@ const ProductDetail = () => {
   const [creditConfig, setCreditConfig] = useState(null); 
   const [footerConfig, setFooterConfig] = useState(null);
 
-  const { addToCart } = useCart();
+  const { addToCart } = useCartDispatch();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -181,7 +183,7 @@ const ProductDetail = () => {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto w-full animate-fade-in pb-10 px-4 mt-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row">
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden flex flex-col md:flex-row">
           <div className="w-full md:w-1/2 p-6">
             <div className="w-full aspect-square bg-slate-200 animate-pulse rounded-xl mb-4"></div>
             <div className="w-full h-24 bg-slate-200 animate-pulse rounded-xl"></div>
@@ -202,7 +204,7 @@ const ProductDetail = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-600 bg-slate-50 py-12 px-4 rounded-2xl mx-4 my-8 shadow-sm border border-slate-200">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-600 bg-slate-50 py-12 px-4 rounded-2xl mx-4 my-8 shadow-xs border border-slate-200">
         <ShieldAlert size={64} className="mb-4 text-slate-300" />
         <h2 className="text-2xl font-bold mb-2 text-slate-700">อ๊ะ! ไม่พบสินค้าที่คุณตามหา</h2>
         <p className="text-slate-500 mb-8 text-center max-w-md">
@@ -210,10 +212,10 @@ const ProductDetail = () => {
           <br/>ลองค้นหาสินค้าอื่นๆ ที่น่าสนใจแทนไหมครับ?
         </p>
         <div className="flex gap-4 flex-wrap justify-center">
-          <button onClick={() => navigate(-1)} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+          <button onClick={() => navigate(-1)} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-xs">
             ย้อนกลับ
           </button>
-          <Link to="/categories" className="px-6 py-2.5 bg-brand text-white font-bold rounded-lg hover:bg-brand-dark transition-colors shadow-sm">
+          <Link to="/categories" className="px-6 py-2.5 bg-brand text-white font-bold rounded-lg hover:bg-brand-dark transition-colors shadow-xs">
             เลือกดูสินค้าทั้งหมด
           </Link>
         </div>
@@ -248,7 +250,7 @@ const ProductDetail = () => {
         </span>
       </nav>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           <div className="flex flex-col bg-white">
             <ProductImageSection product={product._raw || product} imageUrl={product.imageUrl} name={product.name} />

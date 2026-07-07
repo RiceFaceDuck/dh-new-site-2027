@@ -127,7 +127,7 @@ export default function ProfileTaxForm({ user }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-12 flex flex-col items-center justify-center min-h-[400px]">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-12 flex flex-col items-center justify-center min-h-[400px]">
         <div className="relative">
           <ShieldCheck className="w-10 h-10 text-indigo-200 absolute" />
           <Loader2 className="w-10 h-10 text-indigo-600 animate-spin relative" />
@@ -138,9 +138,9 @@ export default function ProfileTaxForm({ user }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
       {/* 🛡️ Header: Secure Zone */}
-      <div className="p-6 border-b border-indigo-100 bg-gradient-to-r from-indigo-50/50 to-white flex justify-between items-start">
+      <div className="p-6 border-b border-indigo-100 bg-linear-to-r from-indigo-50/50 to-white flex justify-between items-start">
         <div>
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-indigo-600" />
@@ -228,7 +228,7 @@ export default function ProfileTaxForm({ user }) {
             <label className="block text-sm font-semibold text-slate-700 mb-2 flex justify-between items-end">
               <span>เลขประจำตัวผู้เสียภาษี (13 หลัก)</span>
               {formData.taxId && formData.taxId.length === 13 && (
-                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">รูปแบบถูกต้อง</span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-sm font-bold">รูปแบบถูกต้อง</span>
               )}
             </label>
             <div className="relative group">
@@ -281,7 +281,7 @@ export default function ProfileTaxForm({ user }) {
                       name="isHeadOffice"
                       checked={formData.isHeadOffice}
                       onChange={handleChange}
-                      className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 transition-all cursor-pointer peer"
+                      className="w-5 h-5 text-indigo-600 rounded-sm border-slate-300 focus:ring-indigo-500 transition-all cursor-pointer peer"
                     />
                   </div>
                   <span className="text-sm text-slate-700 font-medium group-hover:text-indigo-700 transition-colors">สำนักงานใหญ่</span>

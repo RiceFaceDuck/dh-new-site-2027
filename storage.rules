@@ -8,17 +8,20 @@ service firebase.storage {
 
     function isStaff() {
       return isAuthenticated() && (
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin']
-        || firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isStaff == true
+        request.auth.token.role == 'staff' ||
+        request.auth.token.role == 'manager' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'owner' ||
+        request.auth.token.isStaff == true
       );
     }
 
     // 1. ภาพสลิปโอนเงิน (Slips)
     match /slips/{fileName} {
-      // พนักงานดูสลิปได้ทุกคน
-      allow read: if isAuthenticated();
-      // ลูกค้าหรือพนักงานอัปโหลดได้ แต่ห้ามอัปเดตทับไฟล์เดิม (ป้องกันการปลอมแปลง)
-      allow write: if isAuthenticated() && request.resource.size < 5 * 1024 * 1024
+      allow read: if isStaff();
+      // ลูกค้าหรือพนักงานอัปโหลดได้ แต่ห้ามอัปเดตทับไฟล์เดิมเด็ดขาด
+      allow write: if isAuthenticated() && resource == null
+                   && request.resource.size < 5 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
     }
 

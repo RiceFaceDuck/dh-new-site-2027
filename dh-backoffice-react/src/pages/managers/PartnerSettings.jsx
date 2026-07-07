@@ -33,12 +33,12 @@ export default function PartnerSettings() {
           </h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-slate-500">ดูรายชื่อและบริหารจัดการร้านค้าพาร์ทเนอร์ที่เปิดรับการสนับสนุน</p>
-            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-sm dh-active-press">
+            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-xs dh-active-press">
               <Store size={14} /> คู่มือการใช้งาน
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-xs">
            <div className="text-center px-3 border-r border-slate-100">
              <div className="text-lg font-black text-[#0870B8]">{partners.length}</div>
              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ทั้งหมด</div>
@@ -59,12 +59,12 @@ export default function PartnerSettings() {
 
       {/* รายการพาร์ทเนอร์ */}
       {loading ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 flex flex-col items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-16 flex flex-col items-center justify-center">
           <Loader2 className="animate-spin text-[#0870B8] w-8 h-8 mb-4" />
           <span className="text-slate-500 font-bold tracking-widest uppercase font-tech">Loading Directory...</span>
         </div>
       ) : filteredPartners.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 flex flex-col items-center justify-center text-center">
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-16 flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
             <Filter className="text-slate-300 w-8 h-8" />
           </div>

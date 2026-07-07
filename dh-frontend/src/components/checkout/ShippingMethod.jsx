@@ -61,7 +61,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
       {/* Decorative Background */}
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50/50 rounded-full blur-3xl -z-10"></div>
 
@@ -76,7 +76,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
         // 📦 UI สำหรับโหมดราคาส่ง
         <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 animate-in fade-in slide-in-from-bottom-2">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm text-orange-500 flex-shrink-0">
+            <div className="p-3 bg-white rounded-xl shadow-xs text-orange-500 shrink-0">
               <PackageSearch className="w-6 h-6" />
             </div>
             <div>
@@ -101,7 +101,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
                 className={`
                   relative flex flex-col p-4 rounded-2xl cursor-pointer transition-all duration-200 border-2
                   ${isSelected 
-                    ? 'border-indigo-600 bg-indigo-50/30 shadow-sm transform -translate-y-0.5' 
+                    ? 'border-indigo-600 bg-indigo-50/30 shadow-xs transform -translate-y-0.5' 
                     : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-gray-50'
                   }
                 `}
@@ -137,7 +137,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
       {/* Trust Note */}
       {orderMode === 'retail' && (
         <div className="mt-4 flex items-start gap-2 text-xs text-gray-500">
-          <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-400" />
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
           <p>ระยะเวลาการจัดส่งอาจเปลี่ยนแปลงได้ขึ้นอยู่กับพื้นที่ปลายทาง (ไม่รวมวันอาทิตย์และวันหยุดนักขัตฤกษ์)</p>
         </div>
       )}

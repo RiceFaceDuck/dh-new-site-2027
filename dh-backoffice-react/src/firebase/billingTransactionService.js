@@ -2,6 +2,8 @@ import { collection, doc, serverTimestamp, runTransaction, increment } from 'fir
 import { db } from './config';
 import { historyService } from './historyService';
 import { gasStockService } from './gasStockService'; // ✨ นำเข้า gasStockService เพื่อทำ Auto-Sync
+import { gasHistoryService } from './gasHistoryService';
+import { getCreditPreloadRefs, adjustUserCreditWithTransaction } from './credit/creditActionService';
 
 const COLLECTION_NAME = 'orders';
 
@@ -68,7 +70,7 @@ export const billingTransactionService = {
 
         let creditPreloadSnaps = null;
         if (customerUid && customerUid !== 'WALK-IN' && statusLower === 'paid') {
-           const { getCreditPreloadRefs } = await import('./credit/creditActionService');
+
            const creditRefs = getCreditPreloadRefs(customerUid, 'earn', `TXP_${finalOrderId}`);
            const [txSnap, settingsSnap2, userSnap2, walletSnap, activePartnerSnap] = await Promise.all([
                creditRefs.txRef ? transaction.get(creditRefs.txRef) : Promise.resolve(null),
@@ -177,13 +179,32 @@ export const billingTransactionService = {
               
               // ✨ เก็บข้อมูลสินค้าที่หักสต็อกแล้ว เพื่ออัปเดตไป Google Sheet ทันที (Auto-Sync)
               const originalSnap = productSnaps.find(snap => snap.id === u.ref.id);
+              let productName = 'Unknown Product';
               if (originalSnap && originalSnap.exists()) {
+                productName = originalSnap.data().name || 'Unknown Product';
                 successfulUpdates.push({
                    ...originalSnap.data(),
                    sku: originalSnap.id,
                    stockQuantity: u.newQty // ใช้ค่าสต็อกใหม่ที่เพิ่งหัก
                 });
               }
+
+              // ✨ บันทึกประวัติย่อย (SKU-Level) สำหรับสินค้าแต่ละรายการที่ถูกขาย
+              setTimeout(() => {
+                gasHistoryService.log({
+                  level: 'INFO',
+                  module: 'Billing',
+                  action: 'SALE',
+                  actor: { uid: actorUid, name: 'System/Staff' },
+                  target: { id: u.ref.id, name: productName, type: 'Product' },
+                  details: {
+                    type: 'ขายออก',
+                    qtyChange: -u.qty,
+                    reference: finalOrderId,
+                    legacy_details: `ขายออกบิล ${finalOrderId}`
+                  }
+                });
+              }, 0);
             });
 
             // Update Quota for Promos and Freebies
@@ -276,7 +297,7 @@ export const billingTransactionService = {
         }
 
         if (customerUid && customerUid !== 'WALK-IN' && userRef) {
-            const { adjustUserCreditWithTransaction } = await import('./credit/creditActionService');
+
 
             if (walletToUse > 0) {
                 // ✅ [SECURITY] Strictly deduct from walletBalance, NEVER from creditPoints

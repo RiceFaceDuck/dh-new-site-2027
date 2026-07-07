@@ -26,7 +26,7 @@ export const BestSellersPanel = ({ bestSellers = [] }) => {
         {displayData.map((item, index) => (
           <div key={item.id} className="flex items-center justify-between p-3.5 rounded-md bg-dh-base border border-dh-border hover:border-yellow-500/50 hover:shadow-md transition-all group cursor-default">
             <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-md flex items-center justify-center font-black text-sm shadow-sm ${index === 0 ? 'bg-gradient-to-br from-[#FF9B51] to-yellow-500 text-white border-none' : index === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-none' : index === 2 ? 'bg-amber-700 text-amber-100 border-none' : 'bg-dh-surface/50 text-dh-muted border border-dh-border'}`}>
+              <div className={`w-10 h-10 rounded-md flex items-center justify-center font-black text-sm shadow-xs ${index === 0 ? 'bg-linear-to-br from-[#FF9B51] to-yellow-500 text-white border-none' : index === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-none' : index === 2 ? 'bg-amber-700 text-amber-100 border-none' : 'bg-dh-surface/50 text-dh-muted border border-dh-border'}`}>
                 #{index + 1}
               </div>
               <div>
@@ -37,9 +37,9 @@ export const BestSellersPanel = ({ bestSellers = [] }) => {
             <div className="text-right flex items-center gap-4">
               <div className="flex flex-col items-end">
                 <span className="text-sm font-black text-dh-main">{item.sales}</span>
-                <span className="text-[9px] font-bold text-dh-muted uppercase tracking-wider bg-dh-surface px-1.5 py-0.5 rounded border border-dh-border mt-0.5">ชิ้น</span>
+                <span className="text-[9px] font-bold text-dh-muted uppercase tracking-wider bg-dh-surface px-1.5 py-0.5 rounded-sm border border-dh-border mt-0.5">ชิ้น</span>
               </div>
-              <div className={`px-2 py-1 rounded-sm ${item.trend.startsWith('+') ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'} border border-transparent transition-colors`}>
+              <div className={`px-2 py-1 rounded-xs ${item.trend.startsWith('+') ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'} border border-transparent transition-colors`}>
                 <span className="text-[10px] font-bold">{item.trend}</span>
               </div>
             </div>

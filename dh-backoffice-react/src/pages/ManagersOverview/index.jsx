@@ -61,7 +61,7 @@ export default function ManagersOverview() {
     <div className="w-full max-w-[1800px] mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       
       {/* --- Header --- */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 rounded-2xl shadow-[0_8px_30px_-5px_rgba(79,70,229,0.6)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden transition-all duration-300 border-2 border-indigo-400/30">
+      <div className="bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 rounded-2xl shadow-[0_8px_30px_-5px_rgba(79,70,229,0.6)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden transition-all duration-300 border-2 border-indigo-400/30">
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-[80px] opacity-20 animate-pulse pointer-events-none"></div>
         <div className="relative z-10">
           <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
@@ -72,7 +72,7 @@ export default function ManagersOverview() {
             จัดการและอนุมัติรายการสำคัญ, ตรวจสอบสถิติองค์กร
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20 relative z-10 shadow-sm">
+        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-full border border-white/20 relative z-10 shadow-xs">
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>

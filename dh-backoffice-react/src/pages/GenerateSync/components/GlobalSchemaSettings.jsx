@@ -31,7 +31,7 @@ export default function GlobalSchemaSettings({ embedded = false }) {
 
   const containerClass = embedded 
     ? "w-full text-left" 
-    : "bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 p-5 mt-4 w-full relative overflow-hidden group";
+    : "bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-200 p-5 mt-4 w-full relative overflow-hidden group";
 
   return (
     <div className={containerClass}>
@@ -70,7 +70,7 @@ export default function GlobalSchemaSettings({ embedded = false }) {
               onChange={(e) => handleChange('sku', e.target.value)}
               onBlur={handleSave}
               placeholder="เช่น sku, รหัสสินค้า, barcode"
-              className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-hidden focus:ring-2 focus:ring-indigo-500 transition-all"
             />
           </div>
           
@@ -85,7 +85,7 @@ export default function GlobalSchemaSettings({ embedded = false }) {
               onChange={(e) => handleChange('qty', e.target.value)}
               onBlur={handleSave}
               placeholder="เช่น qty, จำนวน, stock"
-              className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-hidden focus:ring-2 focus:ring-indigo-500 transition-all"
             />
           </div>
           
@@ -100,7 +100,7 @@ export default function GlobalSchemaSettings({ embedded = false }) {
               onChange={(e) => handleChange('price', e.target.value)}
               onBlur={handleSave}
               placeholder="เช่น price, ราคา"
-              className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 outline-hidden focus:ring-2 focus:ring-indigo-500 transition-all"
             />
           </div>
           
@@ -109,7 +109,7 @@ export default function GlobalSchemaSettings({ embedded = false }) {
               onClick={handleSave}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all transform active:scale-95 ${
                 isSaved 
-                  ? 'bg-emerald-100 text-emerald-700 shadow-sm border border-emerald-200' 
+                  ? 'bg-emerald-100 text-emerald-700 shadow-xs border border-emerald-200' 
                   : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100'
               }`}
             >

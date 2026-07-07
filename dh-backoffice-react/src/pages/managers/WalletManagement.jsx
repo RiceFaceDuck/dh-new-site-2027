@@ -140,7 +140,7 @@ export default function WalletManagement() {
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-white rounded-2xl shadow-sm border border-slate-200 shrink-0 z-20">
+            <div className="flex items-center justify-between px-5 py-4 bg-white rounded-2xl shadow-xs border border-slate-200 shrink-0 z-20">
                 <div className="flex items-center gap-4">
                     <button onClick={() => navigate('/managers')} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all">
                         <ArrowLeft size={20} strokeWidth={2.5} />
@@ -153,7 +153,7 @@ export default function WalletManagement() {
                     </div>
                     <button 
                         onClick={() => setShowGuide(true)}
-                        className="ml-2 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all shadow-sm border border-slate-200"
+                        className="ml-2 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all shadow-xs border border-slate-200"
                     >
                         <HelpCircle size={20} strokeWidth={2.5} />
                     </button>

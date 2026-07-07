@@ -48,6 +48,7 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
 
   const customerObj = todo.customer || todo.payload?.customer || {};
   const wholesaleDocUrl = customerObj.wholesaleDocumentUrl;
+  const targetOrderId = todo.orderId || todo.targetId || todo.payload?.orderId;
 
   const handleApprove = () => {
     if (!window.confirm(`ยืนยันการอนุมัติราคาส่งใหม่ ยอดชำระ: ฿${calculator.calculations.newNetTotal.toLocaleString()} ใช่หรือไม่?`)) return;
@@ -67,7 +68,7 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
     });
 
     const approvalData = {
-      orderId: todo.payload?.orderId,
+      orderId: targetOrderId,
       itemsWithNewPrices,
       newNetTotal: calculator.calculations.newNetTotal,
       extraManualDiscount: calculator.calculations.extra,
@@ -97,19 +98,19 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
     }
     
     handleAction(todo.id, 'reject', todo.type, { 
-      orderId: todo.payload?.orderId,
+      orderId: targetOrderId,
       reason: reason.trim()
     });
   };
 
   return (
-    <div className={`bg-white rounded-md shadow-sm border border-slate-200 flex flex-col relative transition-all hover:border-slate-400 mb-4 ${urgencyClass} ${isExpanded ? 'shadow-md ring-1 ring-slate-200' : ''}`}>
+    <div className={`bg-white rounded-md shadow-xs border border-slate-200 flex flex-col relative transition-all hover:border-slate-400 mb-4 ${urgencyClass} ${isExpanded ? 'shadow-md ring-1 ring-slate-200' : ''}`}>
       
       {isManagerTab && <FormalManagerBadge text="B2B WHOLESALE" />}
 
       {/* Loading Overlay */}
       {(isProcessing || (isFetching && isExpanded)) && (
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center transition-all duration-300">
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-xs z-20 flex flex-col items-center justify-center transition-all duration-300">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
           <span className="text-xs font-bold text-blue-600 animate-pulse">
             {isFetching ? 'FETCHING PRICES...' : 'PROCESSING...'}
@@ -123,14 +124,14 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 shrink-0">
+          <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-sm border border-indigo-100 shrink-0">
             <PackageOpen size={18} />
           </div>
           
           <div className="flex flex-col flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider border border-slate-200 shadow-sm">
-                Order: #{todo.payload?.orderId?.slice(-6).toUpperCase() || 'N/A'}
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-sm uppercase tracking-wider border border-slate-200 shadow-xs">
+                Order: #{(targetOrderId ? String(targetOrderId).slice(-6).toUpperCase() : 'N/A')}
               </span>
               {getStatusBadge(todo.status)}
             </div>
@@ -157,7 +158,7 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
           
           <div className="flex flex-col gap-4 mb-5">
             {/* Customer Reason & Profile */}
-            <div className="bg-slate-50 p-4 rounded-md border border-slate-200 flex flex-col gap-3 shadow-sm">
+            <div className="bg-slate-50 p-4 rounded-md border border-slate-200 flex flex-col gap-3 shadow-xs">
               <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
                 <ShieldAlert size={16} className="text-slate-500" />
                 <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Customer Profile</h4>
@@ -229,14 +230,14 @@ export default function FormalWholesaleCard({ todo, isProcessing, urgencyClass, 
             <button 
               onClick={handleApprove}
               disabled={isProcessing || isFetching}
-              className="flex-1 min-w-[200px] flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-md text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+              className="flex-1 min-w-[200px] flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-md text-sm font-bold transition-colors shadow-xs disabled:opacity-50"
             >
               <Check size={18} strokeWidth={3} /> อนุมัติราคาส่ง (฿{calculator.calculations.newNetTotal.toLocaleString()})
             </button>
             <button 
               onClick={handleReject}
               disabled={isProcessing || isFetching}
-              className="flex justify-center items-center gap-2 bg-white border border-slate-300 text-rose-600 hover:bg-rose-50 hover:border-rose-400 px-6 py-3 rounded-md text-sm font-bold transition-colors shadow-sm disabled:opacity-50"
+              className="flex justify-center items-center gap-2 bg-white border border-slate-300 text-rose-600 hover:bg-rose-50 hover:border-rose-400 px-6 py-3 rounded-md text-sm font-bold transition-colors shadow-xs disabled:opacity-50"
               title="ไม่อนุมัติราคาส่ง"
             >
               <X size={18} strokeWidth={2.5} /> ปฏิเสธ (REJECT)

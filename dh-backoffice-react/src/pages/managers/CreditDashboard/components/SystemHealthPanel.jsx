@@ -8,7 +8,7 @@ export default function SystemHealthPanel({
 }) {
   return (
     // ทรงเหลี่ยมชิด ขอบบาง ลดช่องว่างภายใน
-    <div className="bg-white border border-slate-300 rounded-sm flex flex-col h-[300px]">
+    <div className="bg-white border border-slate-300 rounded-xs flex flex-col h-[300px]">
       <div className="px-4 py-3 border-b border-slate-300 flex justify-between items-center bg-slate-50">
         <h3 className="text-sm font-bold text-slate-800">Event Logs</h3>
         <button

@@ -11,11 +11,11 @@ export const formatCredit = (points = 0) => {
   return new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 }).format(points);
 };
 
-export const calculateEarnedPoints = (amount, config, userCurrentPoints = 0) => {
+export const calculateEarnedPoints = (amount, config, userTotalAccumulatedPoints = 0) => {
   if (!amount || amount <= 0 || !config) return 0;
   const earningRate = config.earningRate || 100;
   let basePoints = Math.floor(amount / earningRate);
-  const userTier = getUserTier(userCurrentPoints);
+  const userTier = getUserTier(userTotalAccumulatedPoints);
   let multiplier = config.tierMultiplier || userTier.multiplier; 
   return Math.floor(basePoints * multiplier);
 };

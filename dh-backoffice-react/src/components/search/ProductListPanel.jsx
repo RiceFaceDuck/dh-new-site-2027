@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { PackageX, Search as SearchIcon, Inbox } from 'lucide-react';
 
 export default function ProductListPanel({
   filteredProducts, search1, search2, search3, 
-  selectedProduct, handleSelectProduct, getStockStatus, highlightData, HighlightText
+  selectedProduct, selectedIndex, handleSelectProduct, getStockStatus, highlightData, HighlightText
 }) {
+  const listRef = useRef(null);
+
+  // Auto-scroll to selected index for keyboard navigation
+  useEffect(() => {
+    if (listRef.current) {
+      const selectedEl = listRef.current.children[selectedIndex];
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedIndex]);
   return (
     <div className="w-[32%] min-w-[320px] max-w-[420px] bg-white dark:bg-slate-900 flex flex-col z-10 overflow-hidden shrink-0 transition-colors duration-300">
       
@@ -19,11 +30,12 @@ export default function ProductListPanel({
       </div>
       
       {/* Product List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar" ref={listRef}>
         {filteredProducts.length > 0 ? (
-          filteredProducts.map(product => {
+          filteredProducts.map((product, index) => {
             const stockStat = getStockStatus(product.stockQuantity, product.bufferStock);
-            const isSelected = selectedProduct?.id === product.id;
+            // Highlight if clicked (selectedProduct) OR if navigated via keyboard (selectedIndex)
+            const isSelected = (selectedProduct?.id === product.id) || (selectedIndex === index);
             
             const isOutOfStock = product.stockQuantity <= 0;
             const isLowStock = !isOutOfStock && product.stockQuantity <= (product.bufferStock || 2);
@@ -46,7 +58,7 @@ export default function ProductListPanel({
                       src={product.images[0]} 
                       alt={product.sku} 
                       className={`w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal transition-opacity duration-300 ${isOutOfStock ? 'opacity-40 grayscale' : ''}`} 
-                    />
+                     loading="lazy" />
                   ) : (
                     <PackageX size={20} className={isOutOfStock ? 'text-red-300/50' : 'text-dh-muted/30'} />
                   )}
@@ -92,7 +104,7 @@ export default function ProductListPanel({
                 
                 {/* Active Indicator Bar */}
                 {isSelected && (
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-500"></div>
+                  <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${selectedIndex === index ? 'bg-cyan-500' : 'bg-emerald-500'}`}></div>
                 )}
               </div>
             );

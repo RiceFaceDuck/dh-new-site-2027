@@ -36,7 +36,7 @@ export default function TabWallet({ type = 'wallet' }) {
 
   if (walletLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="relative">
           <Wallet className="w-10 h-10 text-indigo-100 absolute" />
           <Loader2 className="w-10 h-10 text-indigo-500 animate-spin relative" />
@@ -50,7 +50,7 @@ export default function TabWallet({ type = 'wallet' }) {
     <div className="space-y-6">
       <button 
         onClick={() => navigate('/profile?tab=overview')}
-        className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors w-fit px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-indigo-200 hover:bg-indigo-50"
+        className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors w-fit px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs hover:border-indigo-200 hover:bg-indigo-50"
       >
         <ArrowLeft size={16} /> ย้อนกลับ (Back)
       </button>
@@ -62,7 +62,7 @@ export default function TabWallet({ type = 'wallet' }) {
           setIsWithdrawModalOpen={setIsWithdrawModalOpen} 
         />
       ) : (
-        <div className="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-linear-to-br from-indigo-950 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-2">
@@ -75,7 +75,7 @@ export default function TabWallet({ type = 'wallet' }) {
               </div>
             </div>
             {tier && (
-              <div className={`px-4 py-2 rounded-xl flex items-center gap-2 border ${tier.bg} ${tier.border} ${tier.color} shadow-sm`}>
+              <div className={`px-4 py-2 rounded-xl flex items-center gap-2 border ${tier.bg} ${tier.border} ${tier.color} shadow-xs`}>
                 <span className="text-xl">{tier.icon}</span>
                 <span className="text-sm font-black uppercase tracking-wider">{tier.name}</span>
               </div>

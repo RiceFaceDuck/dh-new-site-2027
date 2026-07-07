@@ -8,16 +8,17 @@ import { useCart } from '../hooks/useCart';
 import CartActivePromotions from '../components/cart/CartActivePromotions';
 import CartFreebieProgress from '../components/cart/CartFreebieProgress';
 
-import AddressSelector from '../components/checkout/AddressSelector';
-import ShippingMethod from '../components/checkout/ShippingMethod';
-import PaymentMethod from '../components/checkout/PaymentMethod';
-import TaxInvoiceForm from '../components/checkout/TaxInvoiceForm';
-import CheckoutSummary from '../components/checkout/CheckoutSummary';
-import CheckoutSuccess from '../components/checkout/CheckoutSuccess';
-import WholesaleRequestModal from '../components/checkout/WholesaleRequestModal';
-
-import CreditToggleBox from '../components/checkout/CreditToggleBox';
-import TrustBadges from '../components/checkout/TrustBadges';
+import {
+  AddressSelector,
+  ShippingMethod,
+  PaymentMethod,
+  TaxInvoiceForm,
+  CheckoutSummary,
+  CheckoutSuccess,
+  WholesaleRequestModal,
+  CreditToggleBox,
+  TrustBadges
+} from '../components/checkout';
 
 // 🚀 Accordion Wrapper Component
 const AccordionSection = ({ title, summary, step, activeStep, setActiveStep, isCompleted, children }) => {
@@ -161,8 +162,8 @@ const Checkout = () => {
 
         {/* Error Alert */}
         {errorMessage && (
-          <div ref={errorRef} className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm flex items-start animate-fade-in">
-            <div className="flex-shrink-0">
+          <div ref={errorRef} className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-xs flex items-start animate-fade-in">
+            <div className="shrink-0">
               <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>

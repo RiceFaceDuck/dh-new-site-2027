@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { calculateEarnedPoints, getCreditSettings } from '../firebase/creditService';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -148,13 +148,15 @@ const Cart = () => {
     }
   };
 
-  const handleUpdateQty = async (productId, currentQty, change) => {
+  const handleUpdateQty = useCallback(async (productId, currentQty, change) => {
     const newQty = currentQty + change;
     if (newQty < 0) return; 
 
-    // ถ้าจำนวนจะเป็น 0 ให้ลบออกทันที และขึ้น Toast แดน (ไม่ต้อง Confirm ให้ขัดจังหวะ)
+    // ถ้าจำนวนจะเป็น 0 ให้ถามยืนยันก่อนลบ (ป้องกันการกดผิดแล้วสินค้าหาย)
     if (newQty === 0) {
-      handleRemoveItem(productId);
+      if (window.confirm("คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?")) {
+        handleRemoveItem(productId);
+      }
       return;
     }
 
@@ -168,9 +170,9 @@ const Cart = () => {
     } finally {
       setUpdatingId(null);
     }
-  };
+  }, [updateQuantity, showToast]);
 
-  const handleRemoveItem = async (productId) => {
+  const handleRemoveItem = useCallback(async (productId) => {
     if (!productId) return;
     setUpdatingId(productId);
     try {
@@ -182,7 +184,7 @@ const Cart = () => {
     } finally {
       setUpdatingId(null);
     }
-  };
+  }, [removeFromCart, showToast]);
   const handlePromotionsEvaluated = (applicablePromotions) => {
     const current = checkoutState.appliedPromotions || [];
     if (JSON.stringify(current) !== JSON.stringify(applicablePromotions)) {
@@ -275,6 +277,15 @@ const Cart = () => {
       
       if (hasError) {
         showToast("สต๊อกหรือราคามีการเปลี่ยนแปลง กรุณาตรวจสอบตะกร้า", "error");
+        
+        // 🚀 Auto-Scroll ชี้เป้าไปยังสินค้าที่มีปัญหา (Premium UX)
+        setTimeout(() => {
+          const firstErrorEl = document.querySelector('.border-red-400');
+          if (firstErrorEl) {
+            firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+
         return; // บล็อคไม่ให้ไปหน้า Checkout
       }
 

@@ -41,7 +41,7 @@ export default function SkuMerchantExport({ changes, isCalculating }) {
         onClick={handleExport}
         disabled={isDisabled}
         title="ขั้นตอนที่ 1: กดดาวน์โหลดไฟล์นี้เพื่อนำไปอัปโหลดขึ้น Big Seller ในการเริ่มกระบวนการนับสต็อก (ใช้เฉพาะรายการที่มีการขายออก)"
-        className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center gap-3 transition-all duration-300 transform active:scale-95 shadow-sm border
+        className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center gap-3 transition-all duration-300 transform active:scale-95 shadow-xs border
           ${isDisabled ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 
             'bg-white border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-slate-700'}`}
       >

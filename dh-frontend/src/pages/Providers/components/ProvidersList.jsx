@@ -43,7 +43,7 @@ const ProvidersList = ({
         <div className="mt-8 flex justify-center pb-8">
           <button
             onClick={loadMore}
-            className="px-6 py-3 bg-white text-brand border border-brand/30 rounded-xl font-bold shadow-sm hover:bg-brand/5 hover:border-brand/50 hover:shadow-md transition-all active:scale-95"
+            className="px-6 py-3 bg-white text-brand border border-brand/30 rounded-xl font-bold shadow-xs hover:bg-brand/5 hover:border-brand/50 hover:shadow-md transition-all active:scale-95"
           >
             โหลดข้อมูลเพิ่ม...
           </button>

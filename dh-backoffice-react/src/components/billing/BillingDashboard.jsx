@@ -102,8 +102,8 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
     };
 
     return (
-        <div className="flex flex-col h-full w-full bg-[var(--dh-bg-surface)] relative overflow-hidden font-sans transition-colors duration-300">
-            <div className="flex flex-col h-full w-full bg-[var(--dh-bg-surface)] overflow-hidden transition-all duration-300">
+        <div className="flex flex-col h-full w-full bg-(--dh-bg-surface) relative overflow-hidden font-sans transition-colors duration-300">
+            <div className="flex flex-col h-full w-full bg-(--dh-bg-surface) overflow-hidden transition-all duration-300">
                 
                 {/* 🏷️ Header Area (Edge to Edge Design Support) */}
                 <div className="dh-header-gradient p-4 sm:p-6 pb-0 relative z-10 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] transition-colors duration-300">
@@ -124,7 +124,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                                         <AlertTriangle size={24} strokeWidth={2.5} className="relative z-10 animate-[bounce_2s_infinite]" />
                                     </div>
                                 ) : (
-                                    <div className="w-11 h-11 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-sm hidden md:flex">
+                                    <div className="w-11 h-11 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs hidden md:flex">
                                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
                                     </div>
                                 )}
@@ -157,7 +157,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                                     {onSwitchView && (
                                         <button 
                                             onClick={onSwitchView} 
-                                            className="px-5 py-2.5 bg-[var(--dh-accent)] hover:bg-[var(--dh-accent-hover)] text-white font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:shadow-[0_4px_15px_var(--dh-glow-color)] hover:-translate-y-0.5 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
+                                            className="px-5 py-2.5 bg-(--dh-accent) hover:bg-(--dh-accent-hover) text-white font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:shadow-[0_4px_15px_var(--dh-glow-color)] hover:-translate-y-0.5 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
                                         >
                                             <Plus size={18} strokeWidth={3} /> สร้างบิลใหม่
                                         </button>

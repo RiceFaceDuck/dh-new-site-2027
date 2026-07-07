@@ -47,7 +47,7 @@ export default function ModalFooter({
               <button 
                 disabled={isProcessing || !isManager} 
                 onClick={handleReject} 
-                className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2 shadow-sm active:scale-95 disabled:opacity-50 border ${isManager ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'}`}
+                className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2 shadow-xs active:scale-95 disabled:opacity-50 border ${isManager ? 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'}`}
                 title={!isManager ? 'สงวนสิทธิ์เฉพาะระดับผู้จัดการขึ้นไป' : 'ไม่อนุมัติ'}
               >
                 <X className="w-4 h-4" /> ไม่อนุมัติ

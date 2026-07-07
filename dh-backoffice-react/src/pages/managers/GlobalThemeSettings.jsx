@@ -27,7 +27,7 @@ export default function GlobalThemeSettings() {
                 </div>
                 <button 
                     onClick={() => setIsGuideOpen(true)} 
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 shadow-sm dh-active-press shrink-0"
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 shadow-xs dh-active-press shrink-0"
                 >
                     <Settings2 size={16} /> คู่มือการใช้งาน
                 </button>

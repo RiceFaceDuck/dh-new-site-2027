@@ -3,13 +3,13 @@ import { ShieldCheck, Cpu, ChevronRight } from 'lucide-react';
 
 const HeroBanner = () => {
   return (
-    // ปรับลด margin ทิ้ง (ลบ mb-8 md:mb-12) และใส่ h-full พร้อมคุมสัดส่วนด้วย aspect-[16/9]
-    <div className="relative w-full h-full min-h-[220px] aspect-[16/9] lg:aspect-auto rounded-md overflow-hidden flex items-center group shadow-glow-emerald border border-slate-800">
+    // ปรับลด margin ทิ้ง (ลบ mb-8 md:mb-12) และใส่ h-full พร้อมคุมสัดส่วนด้วย aspect-video
+    <div className="relative w-full h-full min-h-[220px] aspect-video lg:aspect-auto rounded-md overflow-hidden flex items-center group shadow-glow-emerald border border-slate-800">
       
       {/* 1. Background Layers (Tech Grid & Gradient) */}
       <div className="absolute inset-0 bg-dh-dark z-10"></div>
       <div className="absolute inset-0 bg-tech-grid-dark opacity-40 z-10"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-transparent z-10"></div>
+      <div className="absolute inset-0 bg-linear-to-r from-slate-900 via-slate-900/90 to-transparent z-10"></div>
 
       {/* 2. Glow Effects (แสงเรืองแสงตกแต่ง) */}
       <div className="absolute -left-20 -top-20 w-72 h-72 bg-cyber-emerald/20 blur-[80px] rounded-full z-10 pointer-events-none"></div>
@@ -31,12 +31,12 @@ const HeroBanner = () => {
 
         {/* Buttons Container: ใช้ flex-col หรือ row พร้อมกำหนด gap-3 ให้กระชับ */}
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-cyber-emerald hover:bg-emerald-400 text-white px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-sm font-semibold transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] text-sm md:text-base">
+          <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-cyber-emerald hover:bg-emerald-400 text-white px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-xs font-semibold transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] text-sm md:text-base">
             <ShieldCheck size={18} />
             <span>สมัคร Partner</span>
           </button>
           
-          <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-sm font-semibold transition-all backdrop-blur-sm text-sm md:text-base group">
+          <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-xs font-semibold transition-all backdrop-blur-xs text-sm md:text-base group">
             <Cpu size={18} className="text-cyber-blue" />
             <span>ค้นหาอะไหล่</span>
             <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition-transform" />

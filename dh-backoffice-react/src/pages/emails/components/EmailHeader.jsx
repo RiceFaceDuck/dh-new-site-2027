@@ -15,7 +15,7 @@ export default function EmailHeader({
   isLoadingEmails
 }) {
   return (
-    <header className="h-16 border-b border-slate-300 dark:border-slate-700 shadow-sm flex items-center justify-between px-4 lg:px-6 bg-white dark:bg-slate-900 z-10 shrink-0 gap-4 relative">
+    <header className="h-16 border-b border-slate-300 dark:border-slate-700 shadow-xs flex items-center justify-between px-4 lg:px-6 bg-white dark:bg-slate-900 z-10 shrink-0 gap-4 relative">
       
       <div className="flex-1 max-w-xl">
         {!isComposing && !selectedEmailId && (
@@ -25,7 +25,7 @@ export default function EmailHeader({
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="ค้นหาในอีเมล..." 
-              className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-slate-300 focus:bg-white dark:focus:border-slate-600 dark:focus:bg-slate-900 rounded-md outline-none text-sm font-medium transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-slate-300 focus:bg-white dark:focus:border-slate-600 dark:focus:bg-slate-900 rounded-md outline-hidden text-sm font-medium transition-all"
             />
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             {searchInput && (

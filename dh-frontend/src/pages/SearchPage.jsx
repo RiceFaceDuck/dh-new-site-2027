@@ -104,16 +104,16 @@ const SearchPage = () => {
         </div>
 
         {/* 🔍 กล่องค้นหาภายในหน้า (สำหรับ Mobile & Desktop) */}
-        <div className="w-full max-w-2xl bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="w-full max-w-2xl bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs">
           <form onSubmit={handleLocalSearchSubmit} className="relative w-full group">
             <input 
               type="text" 
               value={typedQuery}
               onChange={(e) => setTypedQuery(e.target.value)}
               placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
+              className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-3 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
             />
-            <button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-brand text-white p-2 rounded-lg hover:bg-brand-dark transition-colors shadow-sm active:scale-95">
+            <button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-brand text-white p-2 rounded-lg hover:bg-brand-dark transition-colors shadow-xs active:scale-95">
               <Search size={16} strokeWidth={2.5} />
             </button>
           </form>
@@ -123,7 +123,7 @@ const SearchPage = () => {
         {queryParam && (
           <div className="bg-brand-light/20 border border-brand-light/50 p-4 rounded-xl flex items-center gap-3">
             <span className="text-slate-600 font-medium">คำค้นหา:</span>
-            <span className="text-brand font-bold text-lg px-3 py-1 bg-white rounded-lg shadow-sm border border-brand-light/30">
+            <span className="text-brand font-bold text-lg px-3 py-1 bg-white rounded-lg shadow-xs border border-brand-light/30">
               "{queryParam}"
             </span>
             <span className="text-sm text-slate-500 ml-auto">
@@ -143,7 +143,7 @@ const SearchPage = () => {
                 <Link 
                   key={tag}
                   to={`/search?q=${encodeURIComponent(tag)}`}
-                  className="px-4 py-2 bg-white border border-slate-200 hover:border-brand-light hover:bg-brand-light/10 text-slate-700 font-medium rounded-full text-sm transition-all shadow-sm hover:shadow active:scale-95"
+                  className="px-4 py-2 bg-white border border-slate-200 hover:border-brand-light hover:bg-brand-light/10 text-slate-700 font-medium rounded-full text-sm transition-all shadow-xs hover:shadow-sm active:scale-95"
                 >
                   #{tag}
                 </Link>
@@ -160,7 +160,7 @@ const SearchPage = () => {
               <span className="text-sm font-medium animate-pulse">กำลังประมวลผลฐานข้อมูล...</span>
             </div>
           ) : error ? (
-            <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-sm">
+            <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-xs">
               <p className="font-semibold text-lg mb-1">เกิดข้อผิดพลาด</p>
               <p className="text-sm opacity-80">{error}</p>
             </div>

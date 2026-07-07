@@ -51,7 +51,7 @@ export default function EmailSidebar({
         <span>{label}</span>
       </div>
       {count > 0 && (
-        <span className="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm dark:bg-slate-600">
+        <span className="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-xs dark:bg-slate-600">
           {count > 99 ? '99+' : count}
         </span>
       )}
@@ -63,7 +63,7 @@ export default function EmailSidebar({
       <div className="p-4">
         <button 
           onClick={() => { setIsComposing(true); setSelectedEmailId(null); }}
-          className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white py-2.5 px-4 rounded-md font-bold shadow-sm transition-all active:scale-95"
+          className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white py-2.5 px-4 rounded-md font-bold shadow-xs transition-all active:scale-95"
         >
           <Edit3 size={18} />
           <span>เขียนอีเมล</span>
@@ -81,7 +81,7 @@ export default function EmailSidebar({
       {/* Active Email Display */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 mt-auto">
         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">บัญชีอีเมลที่ทำงานอยู่</p>
-        <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md p-2 shadow-sm">
+        <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md p-2 shadow-xs">
           <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title={companyEmail}>
             {companyEmail}
           </span>

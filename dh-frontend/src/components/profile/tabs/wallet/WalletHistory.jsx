@@ -4,7 +4,7 @@ import { formatCredit } from '../../../../firebase/creditService';
 
 const WalletHistory = ({ historyLogs, loadingHistory }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
         <History className="w-5 h-5 text-indigo-600" />
         <h3 className="font-bold text-slate-800">ประวัติการทำรายการล่าสุด (Recent Transactions)</h3>
@@ -63,7 +63,7 @@ const WalletHistory = ({ historyLogs, loadingHistory }) => {
                         href={log.slipUrl} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="hidden sm:flex px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg text-xs font-bold transition-colors items-center gap-1.5 border border-blue-100 shadow-sm shrink-0"
+                        className="hidden sm:flex px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg text-xs font-bold transition-colors items-center gap-1.5 border border-blue-100 shadow-xs shrink-0"
                       >
                         <FileText className="w-3.5 h-3.5" /> ดูสลิป
                       </a>

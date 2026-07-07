@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image as ImageIcon, AlertCircle, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
 
-export default function ProductTableRow({ product, onEdit, salesPeriod, globalBufferStock }) {
+const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) => {
   const effectiveBuffer = (product.bufferStock !== undefined && product.bufferStock !== null && product.bufferStock !== '') 
                             ? Number(product.bufferStock) 
                             : Number(globalBufferStock);
@@ -12,9 +12,9 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
       className="group cursor-pointer transition-all duration-200 border-b border-dh-border last:border-none even:bg-black/5 dark:even:bg-white/5 hover:bg-dh-accent-light/30 hover:shadow-[inset_4px_0_0_var(--dh-accent)]"
     >
       <td className="px-3 py-3 align-middle">
-        <div className="w-10 h-10 bg-dh-base rounded-xl flex items-center justify-center text-dh-muted border border-dh-border overflow-hidden group-hover:border-dh-accent/50 group-hover:scale-105 transition-all shadow-sm mx-auto">
+        <div className="w-10 h-10 bg-dh-base rounded-xl flex items-center justify-center text-dh-muted border border-dh-border overflow-hidden group-hover:border-dh-accent/50 group-hover:scale-105 transition-all shadow-xs mx-auto">
           {product.images?.[0] ? (
-            <img src={product.images[0]} alt={product.sku} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = ''; }} />
+            <img src={product.images[0]} alt={product.sku} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = ''; }}  loading="lazy" />
           ) : (
             <ImageIcon size={18} className="opacity-50" />
           )}
@@ -23,7 +23,7 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
       <td className="px-3 py-3 align-middle">
         <div className="font-bold text-[14px] text-dh-main flex items-center gap-2 group-hover:text-dh-accent transition-colors leading-tight">
           {product.sku}
-          {!product.isActive && <span className="text-[10px] bg-red-500/10 border border-red-500/20 text-red-500 px-1.5 py-0.5 rounded shadow-sm">ปิดการขาย</span>}
+          {!product.isActive && <span className="text-[10px] bg-red-500/10 border border-red-500/20 text-red-500 px-1.5 py-0.5 rounded-sm shadow-xs">ปิดการขาย</span>}
         </div>
         <div className="text-dh-muted line-clamp-1 text-[12px] mt-0.5 font-medium">{product.name}</div>
         <div className="flex gap-1.5 mt-1.5 flex-wrap">
@@ -32,7 +32,7 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
         </div>
       </td>
       <td className="px-3 py-3 align-middle whitespace-nowrap">
-        <span className="text-[12px] font-bold text-dh-muted bg-dh-base px-2.5 py-1 rounded-lg border border-dh-border shadow-sm group-hover:bg-dh-surface transition-colors">
+        <span className="text-[12px] font-bold text-dh-muted bg-dh-base px-2.5 py-1 rounded-lg border border-dh-border shadow-xs group-hover:bg-dh-surface transition-colors">
           {product.category}
         </span>
       </td>
@@ -53,7 +53,7 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
 
       <td className="px-2 py-3 text-center align-middle whitespace-nowrap border-l border-dh-border/50">
         <div className="group/tooltip relative inline-flex justify-center">
-          <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-sm transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
+          <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-xs transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
             (product.stockInHistory?.[salesPeriod] || 0) > 0 
             ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
             : 'bg-dh-base text-dh-muted border-dh-border group-hover:bg-dh-surface'
@@ -71,7 +71,7 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
 
       <td className="px-2 py-3 text-center align-middle whitespace-nowrap">
         <div className="group/tooltip relative inline-flex justify-center">
-          <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-sm transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
+          <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-xs transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
             (product.salesHistory?.[salesPeriod] || 0) > 0 
             ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'
             : 'bg-dh-base text-dh-muted border-dh-border group-hover:bg-dh-surface'
@@ -89,7 +89,7 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
 
       <td className="px-2 py-3 text-center align-middle whitespace-nowrap">
         <div className="group/tooltip relative inline-flex justify-center">
-          <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-sm transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
+          <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-xs transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
             (product.claimHistory?.[salesPeriod] || 0) > 0 
             ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
             : 'bg-dh-base text-dh-muted border-dh-border group-hover:bg-dh-surface'
@@ -116,3 +116,5 @@ export default function ProductTableRow({ product, onEdit, salesPeriod, globalBu
     </tr>
   );
 }
+
+export default React.memo(ProductTableRow);

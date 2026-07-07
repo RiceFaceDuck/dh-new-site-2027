@@ -36,7 +36,7 @@ export default function ShippingManagement() {
         
         <button 
             onClick={() => setIsGuideOpen(true)} 
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-200 shadow-sm dh-active-press shrink-0"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-200 shadow-xs dh-active-press shrink-0"
         >
             <AlertCircle size={16} /> คู่มือการใช้งาน
         </button>

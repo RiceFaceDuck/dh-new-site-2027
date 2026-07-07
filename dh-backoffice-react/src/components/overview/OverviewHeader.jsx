@@ -7,7 +7,7 @@ export const OverviewHeader = ({ metrics, getGreeting, getMotivation, setShowGui
   };
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-rose-600 via-red-500 to-orange-500 px-4 py-3 rounded-md shrink-0 z-20 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.5)] relative transition-colors duration-300 print:shadow-none print:border-none print:bg-transparent print:p-0 overflow-hidden">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-linear-to-r from-rose-600 via-red-500 to-orange-500 px-4 py-3 rounded-md shrink-0 z-20 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.5)] relative transition-colors duration-300 print:shadow-none print:border-none print:bg-transparent print:p-0 overflow-hidden">
       {/* Glow Effect */}
       <div className="absolute -top-24 -left-24 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-[80px] opacity-20 animate-pulse pointer-events-none print:hidden"></div>
 
@@ -28,7 +28,7 @@ export const OverviewHeader = ({ metrics, getGreeting, getMotivation, setShowGui
       
       <div className="flex flex-wrap items-center gap-2 relative z-10 print:hidden mt-2 lg:mt-0">
         {metrics.pendingStaff > 0 && (
-          <div className="flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-md border border-white/30 shadow-sm animate-bounce backdrop-blur-sm">
+          <div className="flex items-center gap-2 bg-white/20 text-white px-3 py-1.5 rounded-md border border-white/30 shadow-xs animate-bounce backdrop-blur-xs">
             <Users size={14} />
             <span className="text-xs font-bold">{metrics.pendingStaff} พนักงานรออนุมัติ</span>
           </div>
@@ -36,14 +36,14 @@ export const OverviewHeader = ({ metrics, getGreeting, getMotivation, setShowGui
         
         <button 
           onClick={handleExportPDF}
-          className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 px-4 py-1.5 rounded-md font-bold transition-all shadow-sm active:scale-95 text-xs backdrop-blur-sm"
+          className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 px-4 py-1.5 rounded-md font-bold transition-all shadow-xs active:scale-95 text-xs backdrop-blur-xs"
         >
           <Download size={14} className="group-hover:-translate-y-0.5 transition-transform" />
           <span>Export Report</span>
         </button>
         <button 
           onClick={() => setShowGuide(true)}
-          className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 px-4 py-1.5 rounded-md font-bold transition-all shadow-sm active:scale-95 text-xs backdrop-blur-sm"
+          className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 px-4 py-1.5 rounded-md font-bold transition-all shadow-xs active:scale-95 text-xs backdrop-blur-xs"
         >
           <HelpCircle size={14} />
           <span>คู่มือใช้งาน</span>

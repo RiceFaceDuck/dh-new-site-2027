@@ -12,7 +12,7 @@ export default function WalletModals({
         <>
             {/* ✨ Modal: Manual Adjust */}
             {isModalOpen && selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-200">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
                         <div className={`p-6 text-white relative ${adjType === 'deposit' ? 'bg-emerald-600' : adjType === 'cash_withdrawal' ? 'bg-amber-500' : 'bg-slate-800'}`}>
                             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-full transition-colors">
@@ -37,7 +37,7 @@ export default function WalletModals({
                                             value={adjAmount}
                                             onChange={e => setAdjAmount(e.target.value)}
                                             required
-                                            className={`w-full pl-10 pr-4 py-3 bg-slate-50 border-2 rounded-xl font-black text-lg outline-none transition-all ${adjType === 'deposit' ? 'border-emerald-200 focus:border-emerald-500 focus:bg-white text-emerald-700' : adjType === 'cash_withdrawal' ? 'border-amber-200 focus:border-amber-500 focus:bg-white text-amber-700' : 'border-slate-200 focus:border-slate-500 focus:bg-white text-slate-800'}`}
+                                            className={`w-full pl-10 pr-4 py-3 bg-slate-50 border-2 rounded-xl font-black text-lg outline-hidden transition-all ${adjType === 'deposit' ? 'border-emerald-200 focus:border-emerald-500 focus:bg-white text-emerald-700' : adjType === 'cash_withdrawal' ? 'border-amber-200 focus:border-amber-500 focus:bg-white text-amber-700' : 'border-slate-200 focus:border-slate-500 focus:bg-white text-slate-800'}`}
                                             placeholder="0.00"
                                             autoFocus
                                         />
@@ -58,7 +58,7 @@ export default function WalletModals({
                                             required
                                             value={adjNote}
                                             onChange={e => setAdjNote(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm text-slate-800 outline-none focus:border-indigo-500 focus:bg-white transition-all min-h-[80px]"
+                                            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm text-slate-800 outline-hidden focus:border-indigo-500 focus:bg-white transition-all min-h-[80px]"
                                             placeholder={adjType === 'deposit' ? "เช่น คืนเงินจากออเดอร์ยกเลิก..." : adjType === 'cash_withdrawal' ? "เช่น ลูกค้ารับเงินสดที่เคาน์เตอร์โดย นาย..." : "เช่น ดึงเงินคืนระบบ..."}
                                         ></textarea>
                                     </div>
@@ -66,7 +66,7 @@ export default function WalletModals({
                             </div>
                             
                             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-white text-slate-600 font-black rounded-xl hover:bg-slate-100 transition-colors text-sm border border-slate-200 shadow-sm">ยกเลิก</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-white text-slate-600 font-black rounded-xl hover:bg-slate-100 transition-colors text-sm border border-slate-200 shadow-xs">ยกเลิก</button>
                                 <button 
                                     type="submit" 
                                     disabled={isSubmitting || ((adjType === 'deduct' || adjType === 'cash_withdrawal') && Number(adjAmount) > currentWalletBalance)} 
@@ -83,7 +83,7 @@ export default function WalletModals({
 
             {/* Modal: Process Withdrawal */}
             {isActionModalOpen && selectedTask && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-200">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
                         <div className={`p-6 text-white relative ${actionType === 'APPROVE' ? 'bg-emerald-600' : 'bg-rose-600'}`}>
                             <button onClick={() => setIsActionModalOpen(false)} className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-full transition-colors">
@@ -102,7 +102,7 @@ export default function WalletModals({
                                         required={actionType === 'REJECT'}
                                         value={actionNote}
                                         onChange={e => setActionNote(e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm text-slate-800 outline-none focus:border-indigo-500 transition-all min-h-[80px]"
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm text-slate-800 outline-hidden focus:border-indigo-500 transition-all min-h-[80px]"
                                         placeholder={actionType === 'APPROVE' ? "บันทึกการโอนเงิน (ไม่บังคับ)" : "เหตุผลที่ปฏิเสธ (บังคับ)"}
                                     ></textarea>
                                 </div>
@@ -124,7 +124,7 @@ export default function WalletModals({
                                 )}
                             </div>
                             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-                                <button type="button" onClick={() => { setIsActionModalOpen(false); if(setSlipFile) setSlipFile(null); }} className="px-5 py-2.5 bg-white text-slate-600 font-black rounded-xl hover:bg-slate-100 transition-colors text-sm border border-slate-200 shadow-sm">ยกเลิก</button>
+                                <button type="button" onClick={() => { setIsActionModalOpen(false); if(setSlipFile) setSlipFile(null); }} className="px-5 py-2.5 bg-white text-slate-600 font-black rounded-xl hover:bg-slate-100 transition-colors text-sm border border-slate-200 shadow-xs">ยกเลิก</button>
                                 <button 
                                     type="submit" 
                                     disabled={isActionSubmitting} 

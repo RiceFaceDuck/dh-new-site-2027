@@ -16,7 +16,7 @@ const SquadBottomNav = () => {
   ];
 
   return (
-    <div className="flex-shrink-0 w-full h-16 bg-[#040f1d] border-t-2 border-[#1e3a8a] flex items-center justify-around z-30 pb-safe">
+    <div className="shrink-0 w-full h-16 bg-[#040f1d] border-t-2 border-[#1e3a8a] flex items-center justify-around z-30 pb-safe">
       {navItems.map((item) => (
         <button
           key={item.id}

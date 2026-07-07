@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { db } from './config';
 import { 
-  collection, query, where, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, limit
+  collection, query, where, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, limit, orderBy
 } from 'firebase/firestore';
 
 // ----------------------------------------------------------------------
@@ -37,6 +37,7 @@ export const managerTodoService = {
     const q = query(
       todosRef,
       where('status', 'in', ['todo', 'pending', 'pending_manager', 'waiting_item', 'processing']),
+      orderBy('createdAt', 'desc'),
       limit(2000) // 🚀 [Optimization] เพิ่ม Limit เป็น 2000 เพื่อป้องกันงานข้ามประเภทดันตกขอบ
     );
 

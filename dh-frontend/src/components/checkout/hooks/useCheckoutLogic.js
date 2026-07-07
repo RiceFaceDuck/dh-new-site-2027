@@ -6,6 +6,7 @@ import { auth } from '../../../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useWalletBalance } from '../../../firebase/walletService';
 import { driveService } from '../../../firebase/driveService';
+import { compressImage } from '../../../utils/imageCompression';
 
 export function useCheckoutLogic() {
   const navigate = useNavigate();
@@ -126,7 +127,8 @@ export function useCheckoutLogic() {
     try {
       let uploadedSlipUrl = null;
       if (slipUrl && typeof slipUrl === 'object' && slipUrl instanceof File) {
-        uploadedSlipUrl = await driveService.uploadSlipImage(slipUrl);
+        const compressedFile = await compressImage(slipUrl);
+        uploadedSlipUrl = await driveService.uploadSlipImage(compressedFile);
       } else if (slipUrl) {
         uploadedSlipUrl = slipUrl; // Fallback in case it's already a string URL
       }

@@ -140,7 +140,7 @@ export default function GalleryMain() {
       
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-dh-border relative transition-colors duration-300">
         <div className="flex items-center gap-4 relative z-10">
-          <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-sm">
+          <div className="w-10 h-10 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs">
             <Layers size={20} strokeWidth={2.5} />
           </div>
           <div>
@@ -157,15 +157,15 @@ export default function GalleryMain() {
             <input 
               type="text" 
               placeholder="ค้นหาจักรวาลภาพ... (SKU, ชื่อ, Tags, คำอธิบาย)" 
-              className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-sm"
+              className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full outline-hidden focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-xs"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="flex bg-white/10 border border-white/20 p-0.5 rounded-md backdrop-blur-sm h-[36px]">
-            <button onClick={() => setFilterType('ALL')} className={`px-3 py-1 text-xs font-semibold rounded transition-all ${filterType === 'ALL' ? 'bg-white shadow text-slate-900' : 'text-slate-300 hover:text-white'}`}>ทั้งหมด</button>
-            <button onClick={() => setFilterType('ORPHAN')} className={`px-3 py-1 text-xs font-semibold rounded transition-all flex items-center gap-1 ${filterType === 'ORPHAN' ? 'bg-red-500 shadow text-white' : 'text-slate-300 hover:text-white'}`}>
+          <div className="flex bg-white/10 border border-white/20 p-0.5 rounded-md backdrop-blur-xs h-[36px]">
+            <button onClick={() => setFilterType('ALL')} className={`px-3 py-1 text-xs font-semibold rounded-sm transition-all ${filterType === 'ALL' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-300 hover:text-white'}`}>ทั้งหมด</button>
+            <button onClick={() => setFilterType('ORPHAN')} className={`px-3 py-1 text-xs font-semibold rounded-sm transition-all flex items-center gap-1 ${filterType === 'ORPHAN' ? 'bg-red-500 shadow-sm text-white' : 'text-slate-300 hover:text-white'}`}>
               <AlertCircle size={12}/> ภาพกำพร้า
             </button>
           </div>
@@ -177,7 +177,7 @@ export default function GalleryMain() {
           {compareList.length > 0 && (
             <button 
               onClick={() => setShowInspection(true)}
-              className="relative px-3 py-2 bg-white/10 border border-cyan-400/50 text-cyan-300 rounded-md font-bold text-xs flex items-center gap-2 hover:bg-white/20 transition-colors animate-pulse backdrop-blur-sm h-[36px]"
+              className="relative px-3 py-2 bg-white/10 border border-cyan-400/50 text-cyan-300 rounded-md font-bold text-xs flex items-center gap-2 hover:bg-white/20 transition-colors animate-pulse backdrop-blur-xs h-[36px]"
             >
               <Eye size={14} />
               <span className="hidden sm:inline">แท่นเปรียบเทียบ</span>
@@ -187,7 +187,7 @@ export default function GalleryMain() {
             </button>
           )}
 
-          <button onClick={fetchImagesFromFirebase} className="w-[36px] h-[36px] flex items-center justify-center bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-md transition-colors backdrop-blur-sm shadow-sm" title="รีเฟรชข้อมูล">
+          <button onClick={fetchImagesFromFirebase} className="w-[36px] h-[36px] flex items-center justify-center bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-md transition-colors backdrop-blur-xs shadow-xs" title="รีเฟรชข้อมูล">
             <RefreshCw size={14} className={isLoading ? "animate-spin text-cyan-300" : ""} />
           </button>
           
@@ -206,12 +206,12 @@ export default function GalleryMain() {
         {/* Grid Images */}
         <div className="flex-1 overflow-y-auto p-6 transition-all duration-300 custom-scrollbar">
           {isLoading ? (
-            <div className="h-full flex flex-col items-center justify-center text-[var(--dh-text-muted)]">
-              <RefreshCw size={40} className="mb-4 animate-spin text-[var(--dh-accent)]" />
+            <div className="h-full flex flex-col items-center justify-center text-(--dh-text-muted)">
+              <RefreshCw size={40} className="mb-4 animate-spin text-(--dh-accent)" />
               <p className="text-sm font-medium">กำลังโหลดและจัดเรียงสินทรัพย์ดิจิทัล...</p>
             </div>
           ) : filteredImages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-[var(--dh-text-muted)]">
+            <div className="h-full flex flex-col items-center justify-center text-(--dh-text-muted)">
               <ImageIcon size={64} className="mb-4 opacity-20" />
               <p className="text-lg font-medium">ไม่พบสินทรัพย์ดิจิทัลในระบบ</p>
             </div>
@@ -231,7 +231,7 @@ export default function GalleryMain() {
 
         {/* ✨ Full-Screen Inspection Bay Overlay */}
         {showInspection && (
-          <div className="absolute inset-0 z-40 bg-[var(--dh-bg-base)] flex flex-col shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-300">
+          <div className="absolute inset-0 z-40 bg-(--dh-bg-base) flex flex-col shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-300">
             <InspectionBay 
               images={compareList} 
               onRemove={removeFromCompare} 

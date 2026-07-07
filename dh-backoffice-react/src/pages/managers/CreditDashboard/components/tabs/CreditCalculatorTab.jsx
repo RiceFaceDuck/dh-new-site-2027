@@ -54,11 +54,11 @@ export default function CreditCalculatorTab() {
   const isDeflationary = netPoints < 0;
 
   return (
-    <div className="flex flex-col bg-white border border-slate-300 rounded-sm min-h-[500px]">
+    <div className="flex flex-col bg-white border border-slate-300 rounded-xs min-h-[500px]">
       
       <div className="p-3 border-b border-slate-300 bg-slate-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-blue-100 rounded text-blue-600">
+          <div className="p-1.5 bg-blue-100 rounded-sm text-blue-600">
             <Calculator size={16} />
           </div>
           <div>
@@ -68,7 +68,7 @@ export default function CreditCalculatorTab() {
         </div>
         <button 
           onClick={() => setShowGuide(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 text-xs font-bold hover:bg-indigo-100 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-sm border border-indigo-200 text-xs font-bold hover:bg-indigo-100 transition-colors"
         >
           <Bell size={14} /> คู่มือการคำนวณ (Guide)
         </button>
@@ -79,7 +79,7 @@ export default function CreditCalculatorTab() {
           
           {/* Inputs */}
           <div className="space-y-6">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
               <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
                 <Target className="text-blue-500" size={18} /> Market Assumptions
               </h4>
@@ -91,7 +91,7 @@ export default function CreditCalculatorTab() {
                   type="text" 
                   value={simulation.monthlySalesVolume.toLocaleString('th-TH')}
                   onChange={(e) => handleSimChange(e, 'monthlySalesVolume')}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded font-mono text-right focus:border-blue-500 outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-sm font-mono text-right focus:border-blue-500 outline-hidden"
                 />
               </div>
 
@@ -102,7 +102,7 @@ export default function CreditCalculatorTab() {
                   type="text" 
                   value={simulation.activeAdPartners.toLocaleString('th-TH')}
                   onChange={(e) => handleSimChange(e, 'activeAdPartners')}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded font-mono text-right focus:border-blue-500 outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-sm font-mono text-right focus:border-blue-500 outline-hidden"
                 />
               </div>
 
@@ -113,7 +113,7 @@ export default function CreditCalculatorTab() {
                   type="text" 
                   value={simulation.dailyAdImpressions.toLocaleString('th-TH')}
                   onChange={(e) => handleSimChange(e, 'dailyAdImpressions')}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded font-mono text-right focus:border-blue-500 outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-sm font-mono text-right focus:border-blue-500 outline-hidden"
                 />
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function CreditCalculatorTab() {
 
           {/* Outputs */}
           <div className="space-y-6">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5 h-full">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-5 h-full">
               <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
                 <Zap className="text-amber-500" size={18} /> Monthly Simulation Result
               </h4>
@@ -195,7 +195,7 @@ export default function CreditCalculatorTab() {
 
       {/* IN-APP DOCUMENTATION MODAL */}
       {showGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-xl">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -206,14 +206,14 @@ export default function CreditCalculatorTab() {
             
             <div className="p-6 overflow-y-auto space-y-6">
               <section className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-800 bg-indigo-50 p-2 rounded border border-indigo-100">📖 ตำรา / คำอธิบาย (Overview)</h3>
+                <h3 className="text-sm font-bold text-slate-800 bg-indigo-50 p-2 rounded-sm border border-indigo-100">📖 ตำรา / คำอธิบาย (Overview)</h3>
                 <p className="text-sm text-slate-600 leading-relaxed pl-2">
                   Smart Calculator เป็นเครื่องมือจำลอง <b>"สภาพคล่องของพอยต์ในระบบ (Tokenomics)"</b> เพื่อให้แอดมินใช้ประเมินว่า กติกาที่ตั้งไว้ในหน้า <i>Rules & Configs</i> ทำให้เกิดภาวะเงินฝืด (Deflation) หรือเงินเฟ้อ (Inflation) ในระบบเครดิตของเรา
                 </p>
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-800 bg-emerald-50 p-2 rounded border border-emerald-100">⚙️ วิธีการใช้งาน (How-to)</h3>
+                <h3 className="text-sm font-bold text-slate-800 bg-emerald-50 p-2 rounded-sm border border-emerald-100">⚙️ วิธีการใช้งาน (How-to)</h3>
                 <ul className="text-sm text-slate-600 space-y-2 list-decimal pl-6">
                   <li>กรอก <b>ยอดขายคาดการณ์ (Monthly Sales)</b> เพื่อดูว่าระบบจะสร้าง (Mint) พอยต์ใหม่เท่าไหร่</li>
                   <li>กรอก <b>จำนวนพาร์ทเนอร์ และ ยอดวิวโฆษณา</b> เพื่อประเมินว่าพอยต์จะถูกนำมาใช้จ่าย (Burn) มากแค่ไหน</li>
@@ -222,7 +222,7 @@ export default function CreditCalculatorTab() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-800 bg-amber-50 p-2 rounded border border-amber-100">💡 เทคนิคการใช้งาน (Tips & Tricks)</h3>
+                <h3 className="text-sm font-bold text-slate-800 bg-amber-50 p-2 rounded-sm border border-amber-100">💡 เทคนิคการใช้งาน (Tips & Tricks)</h3>
                 <ul className="text-sm text-slate-600 space-y-2 list-disc pl-6">
                   <li>ระบบนิเวศที่ดีควรจะ <b>Deflationary (เงินฝืดเล็กน้อย)</b> หรือ Balance เพื่อกระตุ้นให้ Partner อยากเติมเงินซื้อพอยต์เพิ่ม มากกว่าแค่รอรับฟรีจากยอดขาย</li>
                   <li>หากพบว่าพอยต์เฟ้อหนัก ให้กลับไปหน้า Rules & Configs แล้ว <b>เพิ่ม Ad Impression Cost</b> หรือ <b>ลด Points Earning Rate</b></li>
@@ -230,8 +230,8 @@ export default function CreditCalculatorTab() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-800 bg-purple-50 p-2 rounded border border-purple-100">🎯 ตัวอย่างผลลัพธ์ (Expected Results)</h3>
-                <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm text-slate-600 space-y-2">
+                <h3 className="text-sm font-bold text-slate-800 bg-purple-50 p-2 rounded-sm border border-purple-100">🎯 ตัวอย่างผลลัพธ์ (Expected Results)</h3>
+                <div className="bg-slate-50 p-3 rounded-sm border border-slate-200 text-sm text-slate-600 space-y-2">
                   <p>ระบบจะโชว์ป้ายกำกับชัดเจน:</p>
                   <p>🟣 <b>DEFLATIONARY SYSTEM:</b> พอยต์ในตลาดจะหายากขึ้นเรื่อยๆ มูลค่าพอยต์สูง</p>
                   <p>🟠 <b>INFLATIONARY SYSTEM:</b> พอยต์ในตลาดจะล้น มูลค่าตก พาร์ทเนอร์จะไม่อยากจ่ายเงินสดเติมพอยต์</p>
@@ -240,7 +240,7 @@ export default function CreditCalculatorTab() {
             </div>
             
             <div className="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end">
-              <button onClick={() => setShowGuide(false)} className="px-6 py-2 bg-slate-800 text-white font-bold text-sm rounded hover:bg-slate-900 transition-colors">
+              <button onClick={() => setShowGuide(false)} className="px-6 py-2 bg-slate-800 text-white font-bold text-sm rounded-sm hover:bg-slate-900 transition-colors">
                 เข้าใจและพร้อมจำลอง
               </button>
             </div>

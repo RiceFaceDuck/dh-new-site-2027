@@ -11,22 +11,22 @@ export default function PaymentMethods({
     isScanning, ocrStatus, setOcrStatus, handleFileWithOCR,
     setPreviewSlip, isUploadingSlip
 }) {
-    const inputClass = "w-full bg-white border border-gray-300 rounded-sm px-2.5 text-sm font-medium text-[var(--dh-text-main)] outline-none focus:border-[var(--dh-accent)] transition-all";
+    const inputClass = "w-full bg-white border border-gray-300 rounded-xs px-2.5 text-sm font-medium text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) transition-all";
 
     return (
         <div className="mb-4 flex-1">
             {/* แท็บเลือกวิธีจ่าย */}
-            <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-sm border border-gray-200">
-                <button onClick={() => updateActiveTab({ paymentMethod: 'Transfer' })} className={`flex-1 py-1.5 text-xs font-semibold rounded-sm transition-all flex items-center justify-center gap-1.5 ${activeTab.paymentMethod === 'Transfer' ? 'bg-[var(--dh-success)] text-white shadow-sm border border-[var(--dh-success)]' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}><Landmark size={14}/> โอนเงิน</button>
-                <button onClick={() => updateActiveTab({ paymentMethod: 'Cash' })} className={`flex-1 py-1.5 text-xs font-semibold rounded-sm transition-all flex items-center justify-center gap-1.5 ${activeTab.paymentMethod === 'Cash' ? 'bg-[var(--dh-success)] text-white shadow-sm border border-[var(--dh-success)]' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}><Banknote size={14}/> เงินสด</button>
-                <button disabled className="flex-1 py-1.5 text-xs font-semibold rounded-sm text-gray-400 flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed"><CreditCard size={14}/> เครดิต</button>
+            <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xs border border-gray-200">
+                <button onClick={() => updateActiveTab({ paymentMethod: 'Transfer' })} className={`flex-1 py-1.5 text-xs font-semibold rounded-xs transition-all flex items-center justify-center gap-1.5 ${activeTab.paymentMethod === 'Transfer' ? 'bg-(--dh-success) text-white shadow-xs border border-(--dh-success)' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}><Landmark size={14}/> โอนเงิน</button>
+                <button onClick={() => updateActiveTab({ paymentMethod: 'Cash' })} className={`flex-1 py-1.5 text-xs font-semibold rounded-xs transition-all flex items-center justify-center gap-1.5 ${activeTab.paymentMethod === 'Cash' ? 'bg-(--dh-success) text-white shadow-xs border border-(--dh-success)' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}><Banknote size={14}/> เงินสด</button>
+                <button disabled className="flex-1 py-1.5 text-xs font-semibold rounded-xs text-gray-400 flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed"><CreditCard size={14}/> เครดิต</button>
             </div>
             
             <div className="flex flex-col min-h-[140px] justify-center">
                 {/* โหมดเงินสด */}
                 {activeTab.paymentMethod === 'Cash' && (
                     <div className="flex flex-col gap-3 animate-in fade-in duration-200">
-                        <div className={`w-full flex items-center gap-3 p-3 rounded-sm border bg-gray-50 transition-colors ${isCashShort ? 'border-red-300' : 'border-gray-200'}`}>
+                        <div className={`w-full flex items-center gap-3 p-3 rounded-xs border bg-gray-50 transition-colors ${isCashShort ? 'border-red-300' : 'border-gray-200'}`}>
                             <span className={`text-sm font-semibold whitespace-nowrap ${isCashShort ? 'text-red-600' : 'text-gray-600'}`}>รับเงินสด:</span>
                             <div className="relative flex-1">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400">฿</span>
@@ -36,20 +36,20 @@ export default function PaymentMethods({
                                     onChange={(e) => setLocalCash(e.target.value)} 
                                     onBlur={() => updateActiveTab({ cashReceived: localCash })}
                                     onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ cashReceived: localCash }); }}
-                                    className={`w-full h-10 bg-white border rounded-sm pl-8 pr-3 text-right font-bold text-base outline-none transition-all ${isCashShort ? 'border-red-400 focus:border-red-500 text-red-600' : 'border-gray-300 focus:border-blue-500 text-gray-800'}`}
+                                    className={`w-full h-10 bg-white border rounded-xs pl-8 pr-3 text-right font-bold text-base outline-hidden transition-all ${isCashShort ? 'border-red-400 focus:border-red-500 text-red-600' : 'border-gray-300 focus:border-blue-500 text-gray-800'}`}
                                 />
                             </div>
                             {isCashShort ? (
-                                <span className="text-xs text-red-600 font-bold bg-red-50 px-2.5 h-10 flex items-center gap-1 rounded-sm border border-red-200 shrink-0"><AlertCircle size={14}/> ขาด ฿{(remainingToPay - currentCashFloat).toLocaleString()}</span>
+                                <span className="text-xs text-red-600 font-bold bg-red-50 px-2.5 h-10 flex items-center gap-1 rounded-xs border border-red-200 shrink-0"><AlertCircle size={14}/> ขาด ฿{(remainingToPay - currentCashFloat).toLocaleString()}</span>
                             ) : displayChange >= 0 && currentCashFloat > 0 ? (
-                                <span className="text-xs text-blue-700 font-bold bg-blue-50 px-2.5 h-10 flex items-center rounded-sm border border-blue-200 shrink-0">ทอน ฿{displayChange.toLocaleString()}</span>
+                                <span className="text-xs text-blue-700 font-bold bg-blue-50 px-2.5 h-10 flex items-center rounded-xs border border-blue-200 shrink-0">ทอน ฿{displayChange.toLocaleString()}</span>
                             ) : null}
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={() => handleQuickCash('exact')} className="flex-1 py-2 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-sm border border-gray-300 transition-colors">พอดี</button>
-                            <button onClick={() => handleQuickCash(100)} className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-sm border border-gray-200 transition-colors">+ 100</button>
-                            <button onClick={() => handleQuickCash(500)} className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-sm border border-gray-200 transition-colors">+ 500</button>
-                            <button onClick={() => handleQuickCash(1000)} className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-sm border border-gray-200 transition-colors">+ 1K</button>
+                            <button onClick={() => handleQuickCash('exact')} className="flex-1 py-2 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xs border border-gray-300 transition-colors">พอดี</button>
+                            <button onClick={() => handleQuickCash(100)} className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xs border border-gray-200 transition-colors">+ 100</button>
+                            <button onClick={() => handleQuickCash(500)} className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xs border border-gray-200 transition-colors">+ 500</button>
+                            <button onClick={() => handleQuickCash(1000)} className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xs border border-gray-200 transition-colors">+ 1K</button>
                         </div>
                     </div>
                 )}
@@ -73,17 +73,17 @@ export default function PaymentMethods({
 
                         {/* สลิปอัปโหลด */}
                         <div 
-                            className={`w-28 shrink-0 border border-dashed rounded-sm flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group transition-all duration-300 ${activeTab.slipImage ? 'border-gray-300 bg-gray-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50/50 hover:bg-gray-50'}`} 
+                            className={`w-28 shrink-0 border border-dashed rounded-xs flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group transition-all duration-300 ${activeTab.slipImage ? 'border-gray-300 bg-gray-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50/50 hover:bg-gray-50'}`} 
                             onClick={(e) => { if (activeTab.slipImage) { e.preventDefault(); setPreviewSlip(activeTab.slipImage); } }}
                         >
-                            {isUploadingSlip && <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm"><div className="w-5 h-5 border-[2px] border-gray-400 border-t-transparent rounded-full animate-spin mb-1"></div><span className="text-[9px] font-medium text-gray-500">UPLOADING...</span></div>}
+                            {isUploadingSlip && <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/90 backdrop-blur-xs"><div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mb-1"></div><span className="text-[9px] font-medium text-gray-500">UPLOADING...</span></div>}
                             {!activeTab.slipImage && !isUploadingSlip && <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" onChange={handleFileWithOCR} />}
                             
                             {activeTab.slipImage && (
                                 <>
-                                    <img src={activeTab.slipImage} alt="Slip" className="absolute inset-0 w-full h-full object-contain z-10 p-1" />
+                                    <img src={activeTab.slipImage} alt="Slip" className="absolute inset-0 w-full h-full object-contain z-10 p-1"  loading="lazy" />
                                     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                                        <button onClick={(e) => { e.stopPropagation(); updateActiveTab({slipImage:null, transactionRef: '', transferDateTime: '', transferNote: ''}); setOcrStatus('idle'); }} className="p-1.5 bg-red-500 hover:bg-red-600 rounded-sm text-white shadow-sm transition-all scale-90 hover:scale-100"><Trash2 size={14}/></button>
+                                        <button onClick={(e) => { e.stopPropagation(); updateActiveTab({slipImage:null, transactionRef: '', transferDateTime: '', transferNote: ''}); setOcrStatus('idle'); }} className="p-1.5 bg-red-500 hover:bg-red-600 rounded-xs text-white shadow-xs transition-all scale-90 hover:scale-100"><Trash2 size={14}/></button>
                                     </div>
                                 </>
                             )}

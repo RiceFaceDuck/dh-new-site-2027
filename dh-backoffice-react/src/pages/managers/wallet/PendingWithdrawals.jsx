@@ -5,7 +5,7 @@ export default function PendingWithdrawals({ pendingRequests, onActionClick }) {
     if (!pendingRequests || pendingRequests.length === 0) return null;
 
     return (
-        <div className="mt-3 lg:mt-4 bg-white rounded-2xl shadow-sm border border-amber-200 overflow-hidden shrink-0 animate-in fade-in slide-in-from-top-4">
+        <div className="mt-3 lg:mt-4 bg-white rounded-2xl shadow-xs border border-amber-200 overflow-hidden shrink-0 animate-in fade-in slide-in-from-top-4">
             <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 flex justify-between items-center">
                 <h3 className="font-black text-sm text-amber-800 flex items-center gap-2">
                     <Activity size={16} className="text-amber-500 animate-pulse"/> คำขอถอนเงินรออนุมัติ ({pendingRequests.length})
@@ -14,7 +14,7 @@ export default function PendingWithdrawals({ pendingRequests, onActionClick }) {
             <div className="p-3 overflow-x-auto">
                 <div className="flex gap-3 pb-2">
                     {pendingRequests.map(task => (
-                        <div key={task.id} className="min-w-[300px] w-[350px] bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between hover:border-amber-300 transition-all">
+                        <div key={task.id} className="min-w-[300px] w-[350px] bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-col justify-between hover:border-amber-300 transition-all">
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
                                     <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600"><User size={16}/></div>

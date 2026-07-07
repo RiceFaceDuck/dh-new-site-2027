@@ -53,7 +53,7 @@ export default function HeroTitleEditor({ titleSegments = [], onChange }) {
     }).join(' ');
 
     return (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center mb-4">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
                     <Type size={18} className="text-yellow-500" /> สร้างข้อความหลัก (Text Builder)
@@ -86,7 +86,7 @@ export default function HeroTitleEditor({ titleSegments = [], onChange }) {
                             value={segment.text} 
                             onChange={(e) => updateSegment(index, 'text', e.target.value)}
                             placeholder="พิมพ์ข้อความที่นี่..."
-                            className="flex-1 w-full p-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
+                            className="flex-1 w-full p-2.5 text-sm border border-slate-300 rounded-lg outline-hidden focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
                         />
 
                         {/* Formatting Controls */}
@@ -94,7 +94,7 @@ export default function HeroTitleEditor({ titleSegments = [], onChange }) {
                             {/* Color Picker */}
                             <div className="relative flex items-center group/color">
                                 <label 
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer hover:bg-slate-100 ${segment.color || segment.isHighlight ? 'bg-white border-slate-300 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer hover:bg-slate-100 ${segment.color || segment.isHighlight ? 'bg-white border-slate-300 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
                                 >
                                     <div 
                                         className="w-4 h-4 rounded-full border border-slate-300 shadow-inner"
@@ -133,28 +133,28 @@ export default function HeroTitleEditor({ titleSegments = [], onChange }) {
                                 <button
                                     onClick={() => updateSegment(index, 'isBold', !segment.isBold)}
                                     title="ตัวหนา"
-                                    className={`p-1.5 rounded-md transition-all ${segment.isBold ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`p-1.5 rounded-md transition-all ${segment.isBold ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
                                     <Bold size={14} />
                                 </button>
                                 <button
                                     onClick={() => updateSegment(index, 'isItalic', !segment.isItalic)}
                                     title="ตัวเอียง"
-                                    className={`p-1.5 rounded-md transition-all ${segment.isItalic ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`p-1.5 rounded-md transition-all ${segment.isItalic ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
                                     <Italic size={14} />
                                 </button>
                                 <button
                                     onClick={() => updateSegment(index, 'isUnderline', !segment.isUnderline)}
                                     title="ขีดเส้นใต้"
-                                    className={`p-1.5 rounded-md transition-all ${segment.isUnderline ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`p-1.5 rounded-md transition-all ${segment.isUnderline ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
                                     <Underline size={14} />
                                 </button>
                                 <button
                                     onClick={() => updateSegment(index, 'isStrikethrough', !segment.isStrikethrough)}
                                     title="ขีดทับ"
-                                    className={`p-1.5 rounded-md transition-all ${segment.isStrikethrough ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`p-1.5 rounded-md transition-all ${segment.isStrikethrough ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
                                     <Strikethrough size={14} />
                                 </button>
@@ -165,14 +165,14 @@ export default function HeroTitleEditor({ titleSegments = [], onChange }) {
                                 <button
                                     onClick={() => updateSegment(index, 'breakDesktop', !segment.breakDesktop)}
                                     title="ขึ้นบรรทัดใหม่เฉพาะจอคอม (Desktop)"
-                                    className={`p-1.5 rounded-md transition-all ${segment.breakDesktop ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    className={`p-1.5 rounded-md transition-all ${segment.breakDesktop ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     <Monitor size={14} />
                                 </button>
                                 <button
                                     onClick={() => updateSegment(index, 'breakAll', !segment.breakAll)}
                                     title="ขึ้นบรรทัดใหม่ทุกจอ (Mobile & Desktop)"
-                                    className={`p-1.5 rounded-md transition-all ${segment.breakAll ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    className={`p-1.5 rounded-md transition-all ${segment.breakAll ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     <Smartphone size={14} />
                                 </button>

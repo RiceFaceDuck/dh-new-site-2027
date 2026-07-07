@@ -138,7 +138,7 @@ export default function DetailPanel({
                <button 
                  onClick={() => setIsSyncModalOpen(true)}
                  title={`ผูกข้อมูลสำเร็จกับ: ${customer.email} (คลิกเพื่อซิงค์ข้อมูลไปบัญชีอื่น)`} 
-                 className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200 shrink-0 hover:bg-teal-100 hover:text-teal-700 transition-colors"
+                 className="flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200 shrink-0 hover:bg-teal-100 hover:text-teal-700 transition-colors"
                >
                  <Check size={12} strokeWidth={3} />
                  <span>SYNCED (EMAIL)</span>
@@ -147,7 +147,7 @@ export default function DetailPanel({
                <button 
                  onClick={() => setIsSyncModalOpen(true)}
                  title="คลิกเพื่อผูกและโอนย้ายข้อมูลไปยังบัญชีหน้าเว็บ" 
-                 className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200 shrink-0 hover:bg-rose-100 hover:text-rose-700 transition-colors shadow-sm"
+                 className="flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200 shrink-0 hover:bg-rose-100 hover:text-rose-700 transition-colors shadow-xs"
                >
                  <X size={12} strokeWidth={3} />
                  <span>NO EMAIL SYNC</span>
@@ -273,7 +273,7 @@ export default function DetailPanel({
       <div className="p-4 border-t border-slate-200 bg-slate-50/80 flex gap-3 shrink-0">
         <button 
           onClick={onDelete} 
-          className="px-4 py-2.5 bg-white text-rose-600 hover:bg-rose-50 border border-rose-100 font-bold rounded-xl text-xs flex items-center gap-2 transition-colors flex-1 justify-center shadow-sm"
+          className="px-4 py-2.5 bg-white text-rose-600 hover:bg-rose-50 border border-rose-100 font-bold rounded-xl text-xs flex items-center gap-2 transition-colors flex-1 justify-center shadow-xs"
         >
           <Trash2 size={16} /> ลบลูกค้า
         </button>

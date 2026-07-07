@@ -29,12 +29,12 @@ export const SortableMenuItem = ({ id, menuId }) => {
       className={`flex items-center justify-between p-3 bg-white border ${isDragging ? 'border-blue-500 shadow-md z-50 relative' : 'border-slate-200'} rounded-lg mb-2`}
     >
       <div className="flex items-center gap-3">
-        <button {...attributes} {...listeners} className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing outline-none">
+        <button {...attributes} {...listeners} className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing outline-hidden">
           <GripVertical size={16} />
         </button>
         <div className={`w-2 h-2 rounded-full bg-${menuDef.colorTheme || 'slate'}-500`}></div>
         <span className="text-sm font-bold text-slate-700">{menuDef.title}</span>
-        {menuDef.isComingSoon && <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">รอพัฒนา</span>}
+        {menuDef.isComingSoon && <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-sm font-bold">รอพัฒนา</span>}
       </div>
     </div>
   );

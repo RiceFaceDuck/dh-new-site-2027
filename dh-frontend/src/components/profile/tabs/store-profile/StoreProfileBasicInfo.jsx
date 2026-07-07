@@ -11,11 +11,11 @@ const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploading
           <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">ภาพโปรไฟล์ร้าน / โลโก้</label>
           <div className="aspect-square w-full rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 relative overflow-hidden group hover:border-indigo-400 transition-colors">
             {storeData.storeImage ? (
-              <img src={storeData.storeImage} alt="Store" className="w-full h-full object-cover" />
+              <img src={storeData.storeImage} alt="Store" className="w-full h-full object-cover"  loading="lazy" />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-slate-400"><Store size={32} className="mb-2 opacity-50"/><span className="text-[10px] uppercase font-bold">อัปโหลดรูปภาพ</span></div>
             )}
-            <label className={`absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm ${uploadingStoreImage ? 'pointer-events-none' : ''}`}>
+            <label className={`absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs ${uploadingStoreImage ? 'pointer-events-none' : ''}`}>
               <input type="file" accept="image/*" onChange={handleStoreImageUpload} className="hidden" />
               {uploadingStoreImage ? <Loader2 className="animate-spin text-white"/> : <UploadCloud className="text-white" size={28}/>}
             </label>
@@ -61,7 +61,7 @@ const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploading
         <div className="flex flex-wrap gap-4">
           {(storeData.galleryImages || []).map((imgUrl, idx) => (
             <div key={idx} className="relative w-24 h-24 rounded-xl border border-slate-200 overflow-hidden group">
-              <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+              <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-cover"  loading="lazy" />
               <button 
                 type="button"
                 onClick={() => handleRemoveGalleryImage(idx)}

@@ -30,9 +30,9 @@ export default function TodoFilters({
       {/* 🔹 แท็บมุมมองหลัก (Main Tabs) */}
       <div className="flex p-1 bg-gray-100 dark:bg-slate-800 rounded-xl w-full md:w-auto border border-dh-border shrink-0">
         <button 
-          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 outline-none ${
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 outline-hidden ${
             activeTab === 'approvals' 
-              ? 'bg-white text-dh-accent shadow-sm' 
+              ? 'bg-white text-dh-accent shadow-xs' 
               : 'text-dh-muted hover:text-dh-main'
           }`}
           onClick={() => handleTabChange('approvals')}
@@ -47,9 +47,9 @@ export default function TodoFilters({
         </button>
 
         <button 
-          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 outline-none ${
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 outline-hidden ${
             activeTab === 'tasks' 
-              ? 'bg-white text-dh-main shadow-sm' 
+              ? 'bg-white text-dh-main shadow-xs' 
               : 'text-dh-muted hover:text-dh-main'
           }`}
           onClick={() => handleTabChange('tasks')}
@@ -72,7 +72,7 @@ export default function TodoFilters({
         
         <button
           onClick={() => setFilterType('ALL')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-none shrink-0 ${
+          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-hidden shrink-0 ${
             filterType === 'ALL' 
               ? 'bg-dh-main text-white border-dh-main' 
               : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
@@ -86,7 +86,7 @@ export default function TodoFilters({
           <>
             <button
               onClick={() => setFilterType('PAYMENT')}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-none shrink-0 ${
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-hidden shrink-0 ${
                 filterType === 'PAYMENT' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
               }`}
             >
@@ -94,7 +94,7 @@ export default function TodoFilters({
             </button>
             <button
               onClick={() => setFilterType('TAX_INVOICE')}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-none shrink-0 ${
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-hidden shrink-0 ${
                 filterType === 'TAX_INVOICE' ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-teal-600 border-teal-200 hover:bg-teal-50'
               }`}
             >
@@ -106,7 +106,7 @@ export default function TodoFilters({
           <>
             <button
               onClick={() => setFilterType('RETAIL')}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-none shrink-0 ${
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-hidden shrink-0 ${
                 filterType === 'RETAIL' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
               }`}
             >
@@ -114,7 +114,7 @@ export default function TodoFilters({
             </button>
             <button
               onClick={() => setFilterType('DEALER')}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-none shrink-0 ${
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-hidden shrink-0 ${
                 filterType === 'DEALER' ? 'bg-dh-main text-white border-dh-main' : 'bg-white text-dh-muted border-dh-border hover:bg-slate-50'
               }`}
             >
@@ -122,7 +122,7 @@ export default function TodoFilters({
             </button>
             <button
               onClick={() => setFilterType('ADS')}
-              className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-none shrink-0 ${
+              className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-hidden shrink-0 ${
                 filterType === 'ADS' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
               }`}
             >
@@ -130,7 +130,7 @@ export default function TodoFilters({
             </button>
             <button
               onClick={() => setFilterType('PARTNER')}
-              className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-none shrink-0 ${
+              className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap border outline-hidden shrink-0 ${
                 filterType === 'PARTNER' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'
               }`}
             >

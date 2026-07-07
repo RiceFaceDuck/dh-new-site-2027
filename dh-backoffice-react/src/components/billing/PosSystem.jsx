@@ -108,7 +108,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
     const hasOutOfStock = activeTab?.items.some(item => sanitizeNum(item.stock) < sanitizeNum(item.qty));
 
     return (
-        <div className="flex flex-col h-full bg-[var(--dh-bg-base)] font-sans relative text-[var(--dh-text-main)] transition-colors duration-300">
+        <div className="flex flex-col h-full bg-(--dh-bg-base) font-sans relative text-(--dh-text-main) transition-colors duration-300">
             <PosHeader 
                 onSwitchView={onSwitchView} 
                 isProcessing={isProcessing} 
@@ -122,14 +122,14 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                 closeTab={closeTab}
             />
 
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-[var(--dh-bg-base)] p-2 gap-2">
-                <div className="w-full flex-1 flex flex-col h-full bg-[var(--dh-bg-surface)] rounded-lg border border-gray-200 z-10 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-(--dh-bg-base) p-2 gap-2">
+                <div className="w-full flex-1 flex flex-col h-full bg-(--dh-bg-surface) rounded-lg border border-gray-200 z-10 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
                     <div className="flex-1 flex flex-col overflow-hidden" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
                         <CartPanel searchRef={searchRef} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDropdown={showDropdown} setShowDropdown={setShowDropdown} handleSearchKeyDown={handleSearchKeyDown} clearCart={actions.clearCart} activeTab={activeTab} searchResults={searchResults} addItemToCart={actions.addItemToCart} actionBoxItem={actionBoxItem} setActionBoxItem={setActionBoxItem} updateItemAction={actions.updateItemAction} removeItem={actions.removeItem} eligibleFreebies={eligibleFreebies} noteColorMap={noteColorMap} isProcessing={isProcessing} isCacheLoading={posState.isCacheLoading} />
                     </div>
                     <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} />
                 </div>
-                <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-[var(--dh-bg-surface)] rounded-lg border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
+                <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
                     <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={actions.handleRemovePromotion} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} />
                 </div>
             </div>
@@ -145,8 +145,8 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
             )}
 
             {previewSlip && (
-                <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-sm" onClick={() => setPreviewSlip(null)}>
-                    <div className="relative max-w-2xl"><button onClick={() => setPreviewSlip(null)} className="absolute -top-12 right-0 text-white opacity-70 hover:opacity-100 dh-active-press bg-black/50 p-2 rounded-full"><X size={24}/></button><img src={previewSlip} alt="Slip" className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl" /></div>
+                <div className="fixed inset-0 z-100 bg-black/80 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-xs" onClick={() => setPreviewSlip(null)}>
+                    <div className="relative max-w-2xl"><button onClick={() => setPreviewSlip(null)} className="absolute -top-12 right-0 text-white opacity-70 hover:opacity-100 dh-active-press bg-black/50 p-2 rounded-full"><X size={24}/></button><img src={previewSlip} alt="Slip" className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"  loading="lazy" /></div>
                 </div>
             )}
 

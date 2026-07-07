@@ -47,10 +47,10 @@ const ClaimItemCard = ({ claim }) => {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4 border-b border-gray-100 pb-4">
         <div className="flex items-start gap-3">
-          <div className={`p-2.5 rounded-xl flex-shrink-0 ${isClaim ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>
+          <div className={`p-2.5 rounded-xl shrink-0 ${isClaim ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>
             {isClaim ? <Wrench size={24} /> : <ArrowLeftRight size={24} />}
           </div>
           <div>
@@ -100,12 +100,12 @@ const ClaimItemCard = ({ claim }) => {
               placeholder="กรอกเลขพัสดุ (Tracking Number)" 
               value={trackingNo}
               onChange={(e) => setTrackingNo(e.target.value)}
-              className={`flex-1 p-2.5 rounded-lg border focus:outline-none text-sm font-bold ${payload?.trackingNo ? 'border-green-200 focus:border-green-500' : 'border-indigo-200 focus:border-indigo-500'}`}
+              className={`flex-1 p-2.5 rounded-lg border focus:outline-hidden text-sm font-bold ${payload?.trackingNo ? 'border-green-200 focus:border-green-500' : 'border-indigo-200 focus:border-indigo-500'}`}
             />
             <button 
               onClick={handleUpdateTracking}
               disabled={isUpdatingTracking || trackingNo === payload?.trackingNo}
-              className={`px-4 py-2.5 disabled:opacity-50 text-white rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 transition-colors ${payload?.trackingNo ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              className={`px-4 py-2.5 disabled:opacity-50 text-white rounded-lg font-bold text-sm shadow-xs flex items-center gap-2 transition-colors ${payload?.trackingNo ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
               {isUpdatingTracking ? 'กำลังบันทึก...' : <><Send size={16} /> {payload?.trackingNo ? 'อัปเดตข้อมูล' : 'แจ้งจัดส่ง'}</>}
             </button>
@@ -121,7 +121,7 @@ const ClaimItemCard = ({ claim }) => {
       {payload?.trackingNo && status !== 'waiting_item' && (
         <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
           <span className="font-bold">Tracking No:</span> 
-          <span className="font-mono bg-gray-100 px-2 py-0.5 rounded border border-gray-200">{payload.trackingNo}</span>
+          <span className="font-mono bg-gray-100 px-2 py-0.5 rounded-sm border border-gray-200">{payload.trackingNo}</span>
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ const TrackingModal = ({
   if (!selectedTask) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs">
       <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 pb-10 sm:pb-6 animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
         
         <div className="flex justify-between items-center mb-6">
@@ -39,7 +39,7 @@ const TrackingModal = ({
             value={trackingNumber}
             onChange={(e) => { setTrackingNumber(e.target.value); setErrorMsg(''); }}
             placeholder="เช่น TH0123456789"
-            className="w-full text-lg font-bold text-center px-4 py-4 bg-white border-2 border-gray-300 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all uppercase"
+            className="w-full text-lg font-bold text-center px-4 py-4 bg-white border-2 border-gray-300 rounded-xl outline-hidden focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all uppercase"
             autoFocus
           />
           {errorMsg && <p className="text-red-500 text-xs font-bold mt-2 text-center">{errorMsg}</p>}

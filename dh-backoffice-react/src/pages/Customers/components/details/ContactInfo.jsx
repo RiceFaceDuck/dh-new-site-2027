@@ -32,7 +32,7 @@ export default function ContactInfo({ customer, handleCopy, copiedField }) {
               e.preventDefault();
               handleCopy(value, type);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-indigo-600 bg-white shadow-sm border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-indigo-600 bg-white shadow-xs border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
             title={`คัดลอก ${label}`}
           >
             {copiedField === type ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -61,7 +61,7 @@ export default function ContactInfo({ customer, handleCopy, copiedField }) {
             {(customer.phoneNumber || customer.phone) && handleCopy && (
               <button 
                 onClick={() => handleCopy(customer.phoneNumber || customer.phone, 'phone')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 bg-white shadow-sm border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 bg-white shadow-xs border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                 title="คัดลอกเบอร์โทร"
               >
                 {copiedField === 'phone' ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -79,7 +79,7 @@ export default function ContactInfo({ customer, handleCopy, copiedField }) {
             {customer.email && handleCopy && (
               <button 
                 onClick={() => handleCopy(customer.email, 'email')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 bg-white shadow-sm border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 bg-white shadow-xs border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                 title="คัดลอกอีเมล"
               >
                 {copiedField === 'email' ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Copy size={14} />}

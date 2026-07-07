@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { bigSellerQueryService } from '../../../firebase/bigseller';
 import { gasStockService } from '../../../firebase/gasStockService';
+import { syncSnapshotService } from '../../../firebase/bigseller/syncSnapshotService';
 
 export default function useGenerateSync() {
   const [changes, setChanges] = useState(null);
@@ -42,7 +43,6 @@ export default function useGenerateSync() {
   
   const fetchLatestSnapshot = useCallback(async () => {
     try {
-       const { syncSnapshotService } = await import('../../../firebase/bigseller/syncSnapshotService');
        const snap = await syncSnapshotService.getLatestSnapshot();
        setLatestSnapshot(snap);
     } catch (err) {

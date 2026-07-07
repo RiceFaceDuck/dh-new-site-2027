@@ -31,7 +31,7 @@ export default function TaxInfo({ isLoadingTax, secureTaxInfo, handleCopy, copie
             {secureTaxInfo.type === 'company' && (
               <div className="text-right">
                 <p className="text-[10px] text-slate-500 font-semibold mb-0.5">สาขา</p>
-                <p className="text-xs font-bold text-slate-700 bg-white border border-indigo-100 px-2 py-0.5 rounded">
+                <p className="text-xs font-bold text-slate-700 bg-white border border-indigo-100 px-2 py-0.5 rounded-sm">
                   {secureTaxInfo.isHeadOffice ? 'สำนักงานใหญ่' : `สาขา ${secureTaxInfo.branchCode}`}
                 </p>
               </div>
@@ -45,7 +45,7 @@ export default function TaxInfo({ isLoadingTax, secureTaxInfo, handleCopy, copie
 
           <button 
             onClick={() => handleCopy(`${secureTaxInfo.name} | เลขผู้เสียภาษี: ${secureTaxInfo.taxId} | ${secureTaxInfo.isHeadOffice ? 'สำนักงานใหญ่' : `สาขา ${secureTaxInfo.branchCode}`} | ที่อยู่: ${secureTaxInfo.address}`, 'tax')}
-            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-indigo-600 bg-white shadow-sm border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-indigo-600 bg-white shadow-xs border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
             title="คัดลอกข้อมูลภาษีทั้งหมด"
           >
             {copiedField === 'tax' ? <CheckCircle2 size={16} className="text-indigo-500" /> : <Copy size={16} />}

@@ -142,7 +142,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyber-blue to-indigo-500 flex items-center justify-center text-white shadow-md">
+          <div className="w-10 h-10 rounded-full bg-linear-to-tr from-cyber-blue to-indigo-500 flex items-center justify-center text-white shadow-md">
             <MessageCircle size={20} />
           </div>
           <div>
@@ -190,14 +190,14 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
           </div>
         </div>
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyber-blue/20 to-indigo-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="relative bg-white rounded-xl border border-slate-200 p-1 flex items-center shadow-sm focus-within:border-cyber-blue focus-within:ring-1 focus-within:ring-cyber-blue transition-all">
+          <div className="absolute inset-0 bg-linear-to-r from-cyber-blue/20 to-indigo-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="relative bg-white rounded-xl border border-slate-200 p-1 flex items-center shadow-xs focus-within:border-cyber-blue focus-within:ring-1 focus-within:ring-cyber-blue transition-all">
             <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden ml-2 shrink-0 border border-slate-100">
               <img 
                 src={currentUser?.photoURL || `https://ui-avatars.com/api/?name=${currentUser?.displayName || 'U'}&background=0D8ABC&color=fff`} 
                 alt="Me" 
                 className="w-full h-full object-cover" 
-              />
+               loading="lazy" />
             </div>
             <input 
               type="text" 
@@ -206,7 +206,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
               placeholder={currentUser ? "เขียนความคิดเห็น หรือสอบถามข้อมูล..." : "กรุณาเข้าสู่ระบบเพื่อเขียนรีวิว..."} 
               disabled={submitting || !currentUser}
-              className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-4 py-3 outline-none text-slate-700 placeholder-slate-400 disabled:opacity-50"
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-4 py-3 outline-hidden text-slate-700 placeholder-slate-400 disabled:opacity-50"
             />
             <button 
               onClick={handleSubmit}
@@ -243,9 +243,9 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
           <div key={comment.id} className="group/comment flex gap-4 animate-fade-in">
             {/* Avatar */}
             <div className="relative shrink-0">
-              <img src={comment.userAvatar} alt={comment.userName} className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm" />
+              <img src={comment.userAvatar} alt={comment.userName} className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs"  loading="lazy" />
               {comment.verified && (
-                <div className="absolute -bottom-1 -right-1 bg-cyber-emerald text-white rounded-full p-0.5 border-2 border-white shadow-sm" title="DH Verified Buyer">
+                <div className="absolute -bottom-1 -right-1 bg-cyber-emerald text-white rounded-full p-0.5 border-2 border-white shadow-xs" title="DH Verified Buyer">
                   <Sparkles size={10} />
                 </div>
               )}
@@ -256,7 +256,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
               <div className="flex items-baseline justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm text-slate-800">{comment.userName}</span>
-                  {comment.verified && <span className="text-[10px] font-bold text-cyber-emerald bg-emerald-50 px-1.5 py-0.5 rounded-sm">VERIFIED</span>}
+                  {comment.verified && <span className="text-[10px] font-bold text-cyber-emerald bg-emerald-50 px-1.5 py-0.5 rounded-xs">VERIFIED</span>}
                 </div>
                 <span className="text-xs text-slate-400 shrink-0">{comment.timeAgo || "เมื่อสักครู่"}</span>
               </div>
@@ -265,7 +265,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
                 <StarDisplay val={comment.rating} />
               </div>
               
-              <p className="text-sm text-slate-600 leading-relaxed mb-2 break-words">
+              <p className="text-sm text-slate-600 leading-relaxed mb-2 wrap-break-word">
                 {comment.text}
               </p>
               

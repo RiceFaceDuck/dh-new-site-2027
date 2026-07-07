@@ -101,53 +101,53 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 </div>
             ) : step === 'action' ? (
                 <div className="flex items-center gap-2 w-full justify-end">
-                    <span className="text-[10px] font-bold text-[var(--dh-text-muted)] mr-2">ทำรายการ:</span>
-                    <button onClick={() => handleActionClick('เคลม')} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded transition-colors shadow-sm">
+                    <span className="text-[10px] font-bold text-(--dh-text-muted) mr-2">ทำรายการ:</span>
+                    <button onClick={() => handleActionClick('เคลม')} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-sm transition-colors shadow-xs">
                         <Wrench size={12}/> เคลม
                     </button>
-                    <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-purple-600 bg-purple-500/10 opacity-50 cursor-not-allowed border border-purple-500/20 rounded transition-colors shadow-sm">
+                    <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-purple-600 bg-purple-500/10 opacity-50 cursor-not-allowed border border-purple-500/20 rounded-sm transition-colors shadow-xs">
                         <ArrowLeftRight size={12}/> คืน
                     </button>
-                    <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-blue-600 bg-blue-500/10 opacity-50 cursor-not-allowed border border-blue-500/20 rounded transition-colors shadow-sm">
+                    <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-blue-600 bg-blue-500/10 opacity-50 cursor-not-allowed border border-blue-500/20 rounded-sm transition-colors shadow-xs">
                         <RefreshCw size={12}/> เปลี่ยน
                     </button>
-                    <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-rose-600 bg-rose-500/10 opacity-50 cursor-not-allowed border border-rose-500/20 rounded transition-colors shadow-sm">
+                    <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-rose-600 bg-rose-500/10 opacity-50 cursor-not-allowed border border-rose-500/20 rounded-sm transition-colors shadow-xs">
                         <Ban size={12}/> ยกเลิก
                     </button>
-                    <button onClick={onCancel} className="ml-2 text-[var(--dh-text-muted)] hover:text-red-500 p-1"><X size={14}/></button>
+                    <button onClick={onCancel} className="ml-2 text-(--dh-text-muted) hover:text-red-500 p-1"><X size={14}/></button>
                 </div>
             ) : step === 'qty' ? (
                 <div className="flex items-center gap-2 w-full justify-end">
                     <span className="text-[10px] font-bold text-orange-600 flex items-center gap-1"><Wrench size={10}/> เคลม:</span>
-                    <span className="text-[10px] font-bold text-[var(--dh-text-muted)]">ระบุจำนวน (สูงสุด {maxQty})</span>
+                    <span className="text-[10px] font-bold text-(--dh-text-muted)">ระบุจำนวน (สูงสุด {maxQty})</span>
                     <input 
                         type="number" min="1" max={maxQty} value={qty} 
                         onChange={(e) => setQty(Number(e.target.value))}
-                        className="w-16 h-6 px-1.5 text-[11px] font-bold bg-white border border-[var(--dh-border)] rounded focus:border-orange-500 outline-none"
+                        className="w-16 h-6 px-1.5 text-[11px] font-bold bg-white border border-(--dh-border) rounded-sm focus:border-orange-500 outline-hidden"
                     />
-                    <button onClick={() => { setQty(maxQty); handleQtyConfirm(); }} className="px-2 h-6 text-[10px] font-bold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 rounded border border-orange-500/20 transition-colors">
+                    <button onClick={() => { setQty(maxQty); handleQtyConfirm(); }} className="px-2 h-6 text-[10px] font-bold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 rounded-sm border border-orange-500/20 transition-colors">
                         ทั้งหมด
                     </button>
-                    <button onClick={handleQtyConfirm} className="px-2 h-6 text-[10px] font-bold text-white bg-orange-500 hover:bg-orange-600 rounded shadow-sm flex items-center gap-1 transition-colors">
+                    <button onClick={handleQtyConfirm} className="px-2 h-6 text-[10px] font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-sm shadow-xs flex items-center gap-1 transition-colors">
                         ต่อไป <Check size={10}/>
                     </button>
-                    <button onClick={onCancel} className="ml-2 text-[var(--dh-text-muted)] hover:text-red-500 p-1"><X size={14}/></button>
+                    <button onClick={onCancel} className="ml-2 text-(--dh-text-muted) hover:text-red-500 p-1"><X size={14}/></button>
                 </div>
             ) : step === 'reason' ? (
                 <div className="flex items-center gap-2 w-full justify-end">
                     <span className="text-[10px] font-bold text-orange-600 flex items-center gap-1"><Wrench size={10}/> {qty} ชิ้น:</span>
-                    <span className="text-[10px] font-bold text-[var(--dh-text-muted)]">สาเหตุ/อาการ</span>
+                    <span className="text-[10px] font-bold text-(--dh-text-muted)">สาเหตุ/อาการ</span>
                     <select 
                         value={reasonCode}
                         onChange={handleReasonChange}
-                        className="w-48 sm:w-64 h-6 px-1.5 text-[10px] font-bold bg-white border border-[var(--dh-border)] rounded focus:border-orange-500 outline-none text-[var(--dh-text-main)]"
+                        className="w-48 sm:w-64 h-6 px-1.5 text-[10px] font-bold bg-white border border-(--dh-border) rounded-sm focus:border-orange-500 outline-hidden text-(--dh-text-main)"
                     >
                         <option value="" disabled>-- เลือกสาเหตุ --</option>
                         {REASON_OPTIONS.map((opt, i) => (
                             <option key={i} value={opt}>{opt}</option>
                         ))}
                     </select>
-                    <button onClick={onCancel} className="ml-2 text-[var(--dh-text-muted)] hover:text-red-500 p-1"><X size={14}/></button>
+                    <button onClick={onCancel} className="ml-2 text-(--dh-text-muted) hover:text-red-500 p-1"><X size={14}/></button>
                 </div>
             ) : null}
         </div>

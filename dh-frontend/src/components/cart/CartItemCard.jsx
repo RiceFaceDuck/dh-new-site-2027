@@ -39,9 +39,28 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
     // เก็บ History Log ถ้าหาสินค้าไม่เจอ SKU (ตาม Request)
     if (!sku) {
       console.warn(`[History Log] Missing SKU for product ID: ${realId} - Name: ${name}`);
-      // TODO: สามารถยิง API ไปยังระบบหลังบ้านเพื่อบันทึก log แบบถาวรในอนาคตได้
+      
+      // ยิง API ไปยังระบบหลังบ้านเพื่อบันทึก log แบบถาวร
+      import('../../firebase/config').then(({ db }) => {
+        import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => {
+          import('dh-shared/src/firebase/pathUtils').then(({ getCollectionPath }) => {
+            const logsRef = collection(db, getCollectionPath('system_logs'));
+            addDoc(logsRef, {
+              level: 'WARN',
+              type: 'MISSING_SKU_IN_CART',
+              message: `Missing SKU for product ID: ${realId} - Name: ${name}`,
+              details: {
+                productId: realId,
+                productName: name,
+                item: item
+              },
+              timestamp: serverTimestamp()
+            }).catch(err => console.error('Failed to log missing SKU', err));
+          });
+        });
+      });
     }
-  }, [sku, realId, name]);
+  }, [sku, realId, name, item]);
 
   const isUpdating = updatingId === realId;
   const originalQty = item.qty || item.quantity || 1;
@@ -104,15 +123,15 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
   const displayError = localError;
 
   return (
-    <div className={`rounded-2xl shadow-sm border p-4 flex flex-col sm:flex-row gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md ${displayError ? 'border-red-400 bg-red-50/70 shadow-red-100/50' : 'bg-white border-gray-100'} ${isUpdating && localQty === originalQty ? 'opacity-70 pointer-events-none scale-[0.99]' : ''} ${shake ? 'animate-shake' : ''}`}>
+    <div className={`rounded-2xl shadow-xs border p-4 flex flex-col sm:flex-row gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md ${displayError ? 'border-red-400 bg-red-50/70 shadow-red-100/50' : 'bg-white border-gray-100'} ${isUpdating && localQty === originalQty ? 'opacity-70 pointer-events-none scale-[0.99]' : ''} ${shake ? 'animate-shake' : ''}`}>
       
-      <div className={`w-full sm:w-28 h-28 bg-white rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center p-2 border relative group shadow-sm transition-colors ${displayError ? 'border-red-200' : 'border-gray-100'}`}>
+      <div className={`w-full sm:w-28 h-28 bg-white rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-2 border relative group shadow-xs transition-colors ${displayError ? 'border-red-200' : 'border-gray-100'}`}>
         <img 
           src={imageUrl} 
           alt={name} 
           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
           onError={(e) => e.target.src='/logo.png'}
-        />
+         loading="lazy" />
         {/* Glow effect ข้างหลังรูปเวลา Error */}
         {displayError && <div className="absolute inset-0 bg-red-500/5 animate-pulse mix-blend-multiply rounded-xl"></div>}
       </div>
@@ -156,7 +175,7 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
                 </div>
               )}
 
-              <div className={`flex items-center border rounded-xl overflow-hidden shadow-sm transition-colors duration-300 ${displayError ? 'bg-red-50 border-red-300 hover:border-red-400' : 'bg-white border-gray-200 hover:border-emerald-300'}`}>
+              <div className={`flex items-center border rounded-xl overflow-hidden shadow-xs transition-colors duration-300 ${displayError ? 'bg-red-50 border-red-300 hover:border-red-400' : 'bg-white border-gray-200 hover:border-emerald-300'}`}>
                 <button 
                   onClick={() => handleQtyChange(-1)}
                   disabled={(isUpdating && localQty === originalQty) || localQty <= 1}
@@ -187,4 +206,4 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
   );
 };
 
-export default CartItemCard;
+export default React.memo(CartItemCard);

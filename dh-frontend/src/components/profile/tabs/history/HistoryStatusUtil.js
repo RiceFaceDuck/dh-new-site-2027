@@ -3,7 +3,7 @@ export const getStatusDisplay = (status) => {
       case 'awaiting_wholesale_price':
         return { text: '⏳ รอพิจารณาราคาส่ง', color: 'bg-purple-100 text-purple-700 border-purple-200' };
       case 'pending_payment':
-        return { text: '💳 รอการชำระเงิน', color: 'bg-orange-100 text-orange-700 border-orange-200 animate-pulse shadow-sm' };
+        return { text: '💳 รอการชำระเงิน', color: 'bg-orange-100 text-orange-700 border-orange-200 animate-pulse shadow-xs' };
       case 'pending_payment_verification':
         return { text: '⌛ รอตรวจสอบสลิป', color: 'bg-blue-100 text-blue-700 border-blue-200' };
       case 'processing':

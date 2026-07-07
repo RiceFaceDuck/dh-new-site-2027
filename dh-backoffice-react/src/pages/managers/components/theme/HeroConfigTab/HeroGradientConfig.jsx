@@ -12,7 +12,7 @@ export default function HeroGradientConfig({ overlay = { color: '#1f2937', opaci
     ];
 
     return (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-5">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow space-y-5">
             <label className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
                 <Palette size={18} className="text-pink-500" /> การตั้งค่าไล่เฉดสี (Gradient Overlay)
             </label>
@@ -43,7 +43,7 @@ export default function HeroGradientConfig({ overlay = { color: '#1f2937', opaci
                 {/* Color Selector */}
                 <div className="space-y-3">
                     <label className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-sm" style={{ backgroundColor: overlay.color }}></div> 
+                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-xs" style={{ backgroundColor: overlay.color }}></div> 
                         สีพื้นหลังเฉดสี (Overlay Color)
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -51,7 +51,7 @@ export default function HeroGradientConfig({ overlay = { color: '#1f2937', opaci
                             <button
                                 key={preset.value}
                                 onClick={() => onChange({ ...overlay, color: preset.value })}
-                                className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 shadow-sm ${overlay.color === preset.value ? 'border-pink-500 scale-110 ring-2 ring-pink-500/20' : 'border-white'}`}
+                                className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 shadow-xs ${overlay.color === preset.value ? 'border-pink-500 scale-110 ring-2 ring-pink-500/20' : 'border-white'}`}
                                 style={{ backgroundColor: preset.value }}
                                 title={preset.label}
                             />
@@ -63,7 +63,7 @@ export default function HeroGradientConfig({ overlay = { color: '#1f2937', opaci
                                 type="text" 
                                 value={overlay.color}
                                 onChange={(e) => onChange({ ...overlay, color: e.target.value })}
-                                className="w-20 p-1.5 text-xs font-mono uppercase bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-pink-500 text-center"
+                                className="w-20 p-1.5 text-xs font-mono uppercase bg-slate-50 border border-slate-200 rounded-lg outline-hidden focus:border-pink-500 text-center"
                                 maxLength={7}
                             />
                         </div>

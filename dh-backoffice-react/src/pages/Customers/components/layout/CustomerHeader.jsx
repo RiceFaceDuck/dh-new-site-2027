@@ -24,7 +24,7 @@ export default function CustomerHeader({
         <input 
           type="text" 
           placeholder="ค้นหาชื่อ, เบอร์โทร, รหัสลูกค้า..." 
-          className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-sm"
+          className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full outline-hidden focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-xs"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -43,7 +43,7 @@ export default function CustomerHeader({
              <Filter size={14} className="text-slate-400" />}
           </div>
           <select 
-            className="w-full pl-8 pr-6 py-2 h-[36px] bg-white border border-slate-200 rounded-md text-xs text-slate-900 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 appearance-none shadow-sm font-bold cursor-pointer transition-all"
+            className="w-full pl-8 pr-6 py-2 h-[36px] bg-white border border-slate-200 rounded-md text-xs text-slate-900 outline-hidden focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 appearance-none shadow-xs font-bold cursor-pointer transition-all"
             value={quickFilter || 'all'}
             onChange={(e) => onQuickFilterChange && onQuickFilterChange(e.target.value)}
           >
@@ -59,7 +59,7 @@ export default function CustomerHeader({
         <div className="relative flex-1 md:flex-none min-w-[130px] hidden sm:block">
           <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" size={14} />
           <select 
-            className="w-full pl-8 pr-6 py-2 h-[36px] bg-white border border-slate-200 rounded-md text-xs text-slate-900 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 appearance-none shadow-sm font-medium cursor-pointer transition-all"
+            className="w-full pl-8 pr-6 py-2 h-[36px] bg-white border border-slate-200 rounded-md text-xs text-slate-900 outline-hidden focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 appearance-none shadow-xs font-medium cursor-pointer transition-all"
             value={dateFilter}
             onChange={(e) => onDateFilterChange(e.target.value)}
           >
@@ -73,7 +73,7 @@ export default function CustomerHeader({
         <button 
           onClick={() => onRefresh(false)} 
           disabled={isRefreshing}
-          className="w-[36px] h-[36px] flex items-center justify-center bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-md transition-colors backdrop-blur-sm shadow-sm shrink-0 disabled:opacity-50"
+          className="w-[36px] h-[36px] flex items-center justify-center bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-md transition-colors backdrop-blur-xs shadow-xs shrink-0 disabled:opacity-50"
           title="ดึงข้อมูลใหม่"
         >
           <RefreshCw size={14} className={isRefreshing ? "animate-spin text-cyan-300" : ""} />
@@ -82,7 +82,7 @@ export default function CustomerHeader({
         {/* ปุ่มคู่มือ */}
         <button 
           onClick={onGuideOpen}
-          className="h-[36px] px-3 flex items-center justify-center gap-2 bg-slate-700/50 hover:bg-slate-700 text-white rounded-md font-bold text-xs transition-colors shadow-sm shrink-0"
+          className="h-[36px] px-3 flex items-center justify-center gap-2 bg-slate-700/50 hover:bg-slate-700 text-white rounded-md font-bold text-xs transition-colors shadow-xs shrink-0"
           title="คู่มือการใช้งาน"
         >
           <HelpCircle size={14} />

@@ -45,14 +45,13 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
 
       {/* Actual Image */}
       {isIntersecting && (
-        <img
-          src={src}
+        <img           src={src}
           alt={alt}
           className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setIsLoaded(true)}
           onError={() => setIsLoaded(true)} // Prevent endless skeleton on error
           {...props}
-        />
+         loading="lazy" />
       )}
     </div>
   );

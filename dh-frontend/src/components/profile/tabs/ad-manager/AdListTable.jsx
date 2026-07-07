@@ -23,14 +23,14 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd }) => {
   };
 
   const getTypeBadge = (type) => {
-    if (type === 'BUSINESS_CARD') return <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[10px] font-bold">นามบัตร</span>;
-    if (type === 'PRODUCT_LINK') return <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold">สินค้า</span>;
-    if (type === 'BILLBOARD') return <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded text-[10px] font-bold">แผ่นป้าย</span>;
+    if (type === 'BUSINESS_CARD') return <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-sm text-[10px] font-bold">นามบัตร</span>;
+    if (type === 'PRODUCT_LINK') return <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-sm text-[10px] font-bold">สินค้า</span>;
+    if (type === 'BILLBOARD') return <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-sm text-[10px] font-bold">แผ่นป้าย</span>;
     return <span>ทั่วไป</span>;
   };
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="p-5 border-b border-slate-100 bg-slate-50/50">
         <h3 className="font-bold text-slate-700 flex items-center gap-2">
           <Activity className="text-indigo-500" size={18}/> ประวัติโฆษณาของคุณ (My Campaigns)
@@ -53,8 +53,8 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd }) => {
             {ads.map((ad) => (
               <tr key={ad.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="p-4">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                    {ad.imageUrl ? <img src={ad.imageUrl} alt="Ad" className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-slate-300" />}
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 shadow-xs">
+                    {ad.imageUrl ? <img src={ad.imageUrl} alt="Ad" className="w-full h-full object-cover"  loading="lazy" /> : <ImageIcon size={20} className="text-slate-300" />}
                   </div>
                 </td>
                 <td className="p-4">
@@ -86,10 +86,10 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd }) => {
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-1.5">
                     {/* 🚀 อัปเกรด: ปุ่มแก้ไขโฆษณา */}
-                    <button onClick={() => onEditAd(ad)} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all shadow-sm border border-transparent hover:border-indigo-100" title="ดูรายละเอียด / แก้ไขโฆษณา">
+                    <button onClick={() => onEditAd(ad)} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all shadow-xs border border-transparent hover:border-indigo-100" title="ดูรายละเอียด / แก้ไขโฆษณา">
                       <Edit size={16} />
                     </button>
-                    <button onClick={() => onDeleteAd(ad.id)} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all shadow-sm border border-transparent hover:border-rose-100" title="ลบโฆษณา">
+                    <button onClick={() => onDeleteAd(ad.id)} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all shadow-xs border border-transparent hover:border-rose-100" title="ลบโฆษณา">
                       <Trash2 size={16} />
                     </button>
                   </div>

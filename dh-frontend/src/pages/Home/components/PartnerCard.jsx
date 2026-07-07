@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { trackAdClick } from '../../../firebase/credit/creditActionService';
+import { trackAdClick } from '../../../firebase/credit/adCreditService';
 import { squadConfigService } from '../../../firebase/squadConfigService';
 import { logClick } from '../../../firebase/marketingAnalyticsService';
 
@@ -19,12 +19,12 @@ const PartnerCard = ({ partner }) => {
   };
 
   return (
-    <div className="group relative bg-white/80 backdrop-blur-sm p-4 rounded-2xl flex items-center space-x-4 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] hover:-translate-y-1 hover:border-indigo-100">
+    <div className="group relative bg-white/80 backdrop-blur-xs p-4 rounded-2xl flex items-center space-x-4 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] hover:-translate-y-1 hover:border-indigo-100">
       
       {/* Avatar Container */}
       <div className="relative shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 rounded-xl blur-md group-hover:blur-lg transition-all"></div>
-        <img src={avatar} alt={name} className="relative w-24 h-24 md:w-28 md:h-28 rounded-xl object-cover shadow-sm bg-slate-50 border border-slate-100/50" />
+        <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-xl blur-md group-hover:blur-lg transition-all"></div>
+        <img src={avatar} alt={name} className="relative w-24 h-24 md:w-28 md:h-28 rounded-xl object-cover shadow-xs bg-slate-50 border border-slate-100/50"  loading="lazy" />
         
         {/* Pulsing Status Dot */}
         <div className="absolute -bottom-1 -right-1 flex h-4 w-4">
@@ -39,14 +39,14 @@ const PartnerCard = ({ partner }) => {
         
         {/* Distance Display */}
         {partner.formattedDistance ? (
-          <div className="flex items-center text-[11px] md:text-xs mb-3 font-bold bg-gradient-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-full w-max border border-indigo-100/50 shadow-sm">
+          <div className="flex items-center text-[11px] md:text-xs mb-3 font-bold bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-full w-max border border-indigo-100/50 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
             ห่างออกไป {partner.formattedDistance}
           </div>
         ) : (
-          <div className="flex items-center text-[11px] md:text-xs mb-3 font-bold bg-slate-50 text-slate-500 px-2.5 py-1 rounded-full w-max border border-slate-200 shadow-sm">
+          <div className="flex items-center text-[11px] md:text-xs mb-3 font-bold bg-slate-50 text-slate-500 px-2.5 py-1 rounded-full w-max border border-slate-200 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
@@ -65,4 +65,4 @@ const PartnerCard = ({ partner }) => {
   );
 };
 
-export default PartnerCard;
+export default React.memo(PartnerCard);

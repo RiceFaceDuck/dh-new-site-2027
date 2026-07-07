@@ -80,7 +80,7 @@ const AdProductDetail = () => {
               src={product.imageUrl} 
               alt={product.title} 
               className="w-full max-w-md h-auto object-contain drop-shadow-xl rounded-2xl transition-transform hover:scale-105 duration-500"
-            />
+             loading="lazy" />
           </div>
 
           {/* Details Section */}

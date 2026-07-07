@@ -48,18 +48,18 @@ export default function StaffManagement() {
           onClick={() => navigate('/managers')} 
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors w-fit group"
         >
-          <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm group-hover:border-indigo-300 dark:group-hover:border-indigo-700 transition-colors">
+          <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs group-hover:border-indigo-300 dark:group-hover:border-indigo-700 transition-colors">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           </div>
           ย้อนกลับไปหน้าผู้จัดการ (Overview)
         </button>
-        <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-sm dh-active-press">
+        <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 shadow-xs dh-active-press">
           <AlertCircle size={16} /> คู่มือการใช้งาน
         </button>
       </div>
 
       {toast && (
-        <div className={`fixed top-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl animate-fade-in-down border backdrop-blur-md ${
+        <div className={`fixed top-6 right-6 z-100 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl animate-fade-in-down border backdrop-blur-md ${
           toast.type === 'success' 
             ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800 dark:bg-emerald-900/80 dark:border-emerald-700/50 dark:text-emerald-300' 
             : 'bg-red-50/90 border-red-200 text-red-800 dark:bg-red-900/80 dark:border-red-700/50 dark:text-red-300'
@@ -70,7 +70,7 @@ export default function StaffManagement() {
       )}
 
       {modalConfig && modalConfig.isOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 border border-slate-100 dark:border-slate-700">
             <div className="flex items-start gap-4 mb-8">
               <div className={`p-4 rounded-2xl shrink-0 shadow-inner ${
@@ -92,7 +92,7 @@ export default function StaffManagement() {
               </button>
               <button 
                 onClick={() => { modalConfig.action(); closeModal(); }}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm transition-all active:scale-95 ${
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-xs transition-all active:scale-95 ${
                   modalConfig.type === 'danger' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'
                 }`}
               >
@@ -136,13 +136,13 @@ export default function StaffManagement() {
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all active:scale-95 shrink-0"
+          className="flex items-center gap-2 px-5 py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all active:scale-95 shrink-0"
         >
           <UserPlus size={18} strokeWidth={2.5} /> แต่งตั้งพนักงานใหม่
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center">
+      <div className="bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-center">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
@@ -150,7 +150,7 @@ export default function StaffManagement() {
             placeholder="ค้นหาด้วยชื่อ หรือ อีเมลพนักงาน..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
           />
         </div>
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full md:w-auto">
@@ -159,7 +159,7 @@ export default function StaffManagement() {
             <select 
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="w-full py-1.5 bg-transparent text-sm font-bold focus:outline-none dark:text-white cursor-pointer"
+              className="w-full py-1.5 bg-transparent text-sm font-bold focus:outline-hidden dark:text-white cursor-pointer"
             >
               <option value="all">ทุกตำแหน่ง (All Roles)</option>
               <option value="owner">Owner (เจ้าของ)</option>
@@ -171,7 +171,7 @@ export default function StaffManagement() {
             onClick={() => setShowSuspended(!showSuspended)}
             className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all shrink-0 w-full sm:w-auto ${
               showSuspended 
-                ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 shadow-sm' 
+                ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 shadow-xs' 
                 : 'bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
             }`}
           >

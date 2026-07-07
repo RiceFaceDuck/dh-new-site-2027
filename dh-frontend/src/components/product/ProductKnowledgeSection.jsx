@@ -104,7 +104,7 @@ export default function ProductKnowledgeSection({
             </h4>
             <button 
               onClick={() => setShowForm(showForm === 'models' ? null : 'models')}
-              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 h-8 rounded-full flex items-center transition-all duration-500 overflow-hidden shadow-sm border border-blue-100"
+              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 h-8 rounded-full flex items-center transition-all duration-500 overflow-hidden shadow-xs border border-blue-100"
             >
               <div className="w-8 h-8 flex items-center justify-center shrink-0">
                 <Plus size={16} strokeWidth={3} />
@@ -118,7 +118,7 @@ export default function ProductKnowledgeSection({
           {modelsList.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {modelsList.map((model, idx) => (
-                <span key={idx} className="bg-white border border-slate-300 shadow-sm text-slate-700 font-medium px-3 py-1 rounded-md text-sm">
+                <span key={idx} className="bg-white border border-slate-300 shadow-xs text-slate-700 font-medium px-3 py-1 rounded-md text-sm">
                   {model}
                 </span>
               ))}
@@ -140,7 +140,7 @@ export default function ProductKnowledgeSection({
                     if (!inputValue.trim()) setShowForm(null);
                   }
                 }}
-                className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 disabled={isSubmitting}
                 required
               />
@@ -163,7 +163,7 @@ export default function ProductKnowledgeSection({
             </h4>
             <button 
               onClick={() => setShowForm(showForm === 'parts' ? null : 'parts')}
-              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 h-8 rounded-full flex items-center transition-all duration-500 overflow-hidden shadow-sm border border-blue-100"
+              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 h-8 rounded-full flex items-center transition-all duration-500 overflow-hidden shadow-xs border border-blue-100"
             >
               <div className="w-8 h-8 flex items-center justify-center shrink-0">
                 <Plus size={16} strokeWidth={3} />
@@ -177,7 +177,7 @@ export default function ProductKnowledgeSection({
           {partsList.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {partsList.map((part, idx) => (
-                <span key={idx} className="bg-white border border-slate-300 shadow-sm text-slate-700 font-medium px-3 py-1 rounded-md text-sm">
+                <span key={idx} className="bg-white border border-slate-300 shadow-xs text-slate-700 font-medium px-3 py-1 rounded-md text-sm">
                   {part}
                 </span>
               ))}
@@ -199,7 +199,7 @@ export default function ProductKnowledgeSection({
                     if (!inputValue.trim()) setShowForm(null);
                   }
                 }}
-                className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 disabled={isSubmitting}
                 required
               />

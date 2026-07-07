@@ -67,7 +67,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
               value={to}
               onChange={(e) => setTo(e.target.value)}
               placeholder="example@email.com"
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-none transition-all font-medium text-sm text-slate-900 dark:text-white"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-hidden transition-all font-medium text-sm text-slate-900 dark:text-white"
             />
           </div>
 
@@ -78,7 +78,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="หัวข้ออีเมล..."
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-none transition-all font-medium text-sm text-slate-900 dark:text-white"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-hidden transition-all font-medium text-sm text-slate-900 dark:text-white"
             />
           </div>
 
@@ -89,7 +89,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
               onChange={(e) => setBody(e.target.value)}
               placeholder="พิมพ์ข้อความตอบกลับที่นี่..."
               rows={8}
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-none transition-all font-medium text-sm resize-y custom-scrollbar text-slate-900 dark:text-white"
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-slate-500 focus:border-slate-500 outline-hidden transition-all font-medium text-sm resize-y custom-scrollbar text-slate-900 dark:text-white"
             />
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function EmailReplyForm({ originalEmail = null, onCancel, onSucce
           <button 
             type="submit"
             disabled={isSending}
-            className="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-md font-bold transition-all shadow-sm active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-md font-bold transition-all shadow-xs active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSending ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

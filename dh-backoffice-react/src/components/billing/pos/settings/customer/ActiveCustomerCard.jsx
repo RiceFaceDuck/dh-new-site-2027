@@ -19,15 +19,15 @@ export default function ActiveCustomerCard({
     const displayPhone = activeTab.customer.phone || activeTab.customer.phoneNumber || '';
 
     return (
-        <div className="bg-white border border-blue-200 rounded-lg p-3 relative overflow-hidden shadow-sm animate-in fade-in transition-all">
+        <div className="bg-white border border-blue-200 rounded-lg p-3 relative overflow-hidden shadow-xs animate-in fade-in transition-all">
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
             
             {/* Header + Badges */}
             <div className="flex items-start justify-between mb-2">
                 <div className="flex-1 pr-2">
                     <div className="flex gap-1 flex-wrap mb-1">
-                        {activeTab.customer.rank && <span className="bg-amber-50 text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase">{activeTab.customer.rank}</span>}
-                        {activeTab.customer.isPartner && <span className="bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded text-[8px] font-bold flex items-center gap-0.5"><ShieldCheck size={8}/> Partner</span>}
+                        {activeTab.customer.rank && <span className="bg-amber-50 text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-sm text-[8px] font-bold uppercase">{activeTab.customer.rank}</span>}
+                        {activeTab.customer.isPartner && <span className="bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-sm text-[8px] font-bold flex items-center gap-0.5"><ShieldCheck size={8}/> Partner</span>}
                     </div>
                     <p className="font-bold text-[13px] text-gray-900 leading-tight truncate" title={displayName}>{displayName}</p>
                 </div>
@@ -35,7 +35,7 @@ export default function ActiveCustomerCard({
                 {/* Phone inline */}
                 <div className="shrink-0 text-right">
                     {(!displayPhone || displayPhone.trim() === '' || displayPhone === '-') && !activeTab.hidePhone ? (
-                        <button onClick={() => setIsEditingCustomerPhone(true)} className="text-[9px] text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200">+ เบอร์โทร</button>
+                        <button onClick={() => setIsEditingCustomerPhone(true)} className="text-[9px] text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded-sm border border-blue-200">+ เบอร์โทร</button>
                     ) : activeTab.hidePhone ? (
                         <p className="text-[9px] text-gray-500 font-bold flex items-center gap-1 justify-end"><ShieldCheck size={10}/> สงวนเบอร์</p>
                     ) : (
@@ -46,13 +46,13 @@ export default function ActiveCustomerCard({
             
             {/* Phone Editing Inline */}
             {isEditingCustomerPhone && (
-                <div className="flex gap-1 mb-2 bg-blue-50 p-1.5 rounded animate-in zoom-in-95">
+                <div className="flex gap-1 mb-2 bg-blue-50 p-1.5 rounded-sm animate-in zoom-in-95">
                     <input
                         type="text" placeholder="(+66)XX-XXX-XXXX" value={tempCustomerPhone} onChange={(e) => setTempCustomerPhone(formatPhoneNumber(e.target.value))} autoFocus
-                        className="flex-1 px-2 py-1 text-[10px] border border-blue-300 rounded font-mono font-bold outline-none focus:border-blue-500"
+                        className="flex-1 px-2 py-1 text-[10px] border border-blue-300 rounded-sm font-mono font-bold outline-hidden focus:border-blue-500"
                     />
-                    <button onClick={() => { if(tempCustomerPhone.length > 8) { updateActiveTab({ customer: { ...activeTab.customer, phone: tempCustomerPhone } }); setIsEditingCustomerPhone(false); } }} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold rounded">บันทึก</button>
-                    <button onClick={() => setIsEditingCustomerPhone(false)} className="px-1 text-gray-400 hover:text-gray-600 bg-white rounded border"><X size={12}/></button>
+                    <button onClick={() => { if(tempCustomerPhone.length > 8) { updateActiveTab({ customer: { ...activeTab.customer, phone: tempCustomerPhone } }); setIsEditingCustomerPhone(false); } }} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold rounded-sm">บันทึก</button>
+                    <button onClick={() => setIsEditingCustomerPhone(false)} className="px-1 text-gray-400 hover:text-gray-600 bg-white rounded-sm border"><X size={12}/></button>
                 </div>
             )}
 
@@ -61,7 +61,7 @@ export default function ActiveCustomerCard({
                 <div className="flex justify-between items-center text-[10px]">
                     <div className="flex items-center gap-2">
                         <span className="text-gray-500 font-bold flex items-center gap-1"><Wallet size={10}/> DH ค้างยอด:</span>
-                        <label className={`flex items-center gap-1 px-1.5 py-0.5 rounded border transition-colors ${Number(activeTab.customer.walletBalance || 0) > 0 ? 'bg-blue-50 border-blue-200 hover:bg-blue-100 cursor-pointer' : 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'}`}>
+                        <label className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm border transition-colors ${Number(activeTab.customer.walletBalance || 0) > 0 ? 'bg-blue-50 border-blue-200 hover:bg-blue-100 cursor-pointer' : 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'}`}>
                             <input 
                                 type="checkbox" 
                                 disabled={isProcessing || Number(activeTab.customer.walletBalance || 0) <= 0}
@@ -70,7 +70,7 @@ export default function ActiveCustomerCard({
                                     if (Number(activeTab.customer.walletBalance || 0) <= 0) return;
                                     updateActiveTab({ useWallet: e.target.checked, walletUsed: e.target.checked ? Math.min(Number(activeTab.customer.walletBalance || 0), netTotal) : 0 });
                                 }}
-                                className="w-2.5 h-2.5 text-blue-600 rounded border-gray-300"
+                                className="w-2.5 h-2.5 text-blue-600 rounded-sm border-gray-300"
                             />
                             <span className={`text-[9px] font-bold ${Number(activeTab.customer.walletBalance || 0) > 0 ? 'text-blue-700' : 'text-gray-400'}`}>ใช้งาน</span>
                         </label>

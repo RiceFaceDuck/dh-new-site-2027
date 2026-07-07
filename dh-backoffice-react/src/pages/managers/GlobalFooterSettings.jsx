@@ -57,14 +57,14 @@ export default function GlobalFooterSettings() {
 
                 <div className="flex-1 p-6 sm:p-10 relative bg-slate-50/50">
                     <div className="space-y-8 max-w-full mx-auto">
-                        <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-indigo-800 shadow-sm">
+                        <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-indigo-800 shadow-xs">
                             <div className="flex gap-4">
                                 <LayoutPanelTop size={24} className="shrink-0 text-indigo-500 mt-0.5"/>
                                 <p className="text-sm font-bold leading-relaxed">
                                     ปรับแต่งพื้นที่ส่วนล่าง (Footer) ของหน้าบ้าน รวมถึงสี, ข้อมูลติดต่อ, และเมนูลิงก์ต่างๆ ข้อมูลนี้จะถูกดึงไปแสดงผลบนหน้าบ้าน
                                 </p>
                             </div>
-                            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-white hover:bg-blue-50 rounded-lg transition-colors border border-indigo-200 shadow-sm dh-active-press shrink-0">
+                            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-white hover:bg-blue-50 rounded-lg transition-colors border border-indigo-200 shadow-xs dh-active-press shrink-0">
                                 <HelpCircle size={14} /> คู่มือการตั้งค่า
                             </button>
                         </div>

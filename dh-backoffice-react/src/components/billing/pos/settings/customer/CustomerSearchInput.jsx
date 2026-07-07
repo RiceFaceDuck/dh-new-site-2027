@@ -34,10 +34,10 @@ export default function CustomerSearchInput({
                 onFocus={() => { setShowCustDropdown(true); setIsSearchFocused(true); }}
                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 250)}
                 disabled={isProcessing}
-                className={`w-full transition-all duration-300 outline-none relative z-10 font-bold
+                className={`w-full transition-all duration-300 outline-hidden relative z-10 font-bold
                     ${isSearchHighlight && !isSearchFocused 
-                        ? 'pl-8 pr-14 py-1.5 text-[11px] bg-white border-2 border-blue-500 shadow-sm text-gray-900 placeholder-blue-300 rounded-md' 
-                        : 'pl-9 pr-16 py-1.5 text-[11px] border border-gray-300 bg-gray-50 hover:bg-white rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 placeholder-gray-400 text-gray-800 shadow-sm'
+                        ? 'pl-8 pr-14 py-1.5 text-[11px] bg-white border-2 border-blue-500 shadow-xs text-gray-900 placeholder-blue-300 rounded-md' 
+                        : 'pl-9 pr-16 py-1.5 text-[11px] border border-gray-300 bg-gray-50 hover:bg-white rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 placeholder-gray-400 text-gray-800 shadow-xs'
                     }`}
             />
             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-20">
@@ -75,7 +75,7 @@ export default function CustomerSearchInput({
                             }} 
                             className="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-200 text-blue-600 font-bold flex items-center gap-2 transition-colors group"
                         >
-                            <div className="p-1.5 bg-blue-100 rounded-lg shadow-sm group-hover:scale-110 transition-transform"><UserPlus size={14}/></div> 
+                            <div className="p-1.5 bg-blue-100 rounded-lg shadow-xs group-hover:scale-110 transition-transform"><UserPlus size={14}/></div> 
                             <div className="flex flex-col">
                                 <span className="text-gray-800 text-[10px]">ตกลงใช้ชื่อ Walk-in</span>
                                 <span className="text-blue-600 text-xs truncate">"{localSearchText}"</span>
@@ -92,10 +92,10 @@ export default function CustomerSearchInput({
                                 return (
                                 <div key={c.uid || c.id} onClick={() => { handleSelectCustomer(c.uid || c.id); setShowCustDropdown(false); }} className="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors flex justify-between items-center">
                                     <div>
-                                        <p className="font-bold text-xs text-[var(--dh-text-main)] truncate max-w-[180px]">{displayName}</p>
+                                        <p className="font-bold text-xs text-(--dh-text-main) truncate max-w-[180px]">{displayName}</p>
                                         {c.email && <p className="text-[9px] text-gray-400 truncate max-w-[180px]">{c.email}</p>}
                                     </div>
-                                    {displayPhone && <p className="text-[10px] font-mono text-[var(--dh-text-muted)] shrink-0">{displayPhone}</p>}
+                                    {displayPhone && <p className="text-[10px] font-mono text-(--dh-text-muted) shrink-0">{displayPhone}</p>}
                                 </div>
                                 )
                             })}

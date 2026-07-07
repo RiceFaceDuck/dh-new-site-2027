@@ -48,7 +48,10 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     }
 
     // 2. Validations
-    const useWallet = checkoutState?.useWallet || 0;
+    const useWallet = Number(checkoutState?.useWallet || 0);
+    if (useWallet < 0) {
+      throw new Error("จำนวนเงิน Wallet ไม่ถูกต้อง (Negative Bypass Attempt Detected)");
+    }
     if (useWallet > 0 && Number(userData.walletBalance || 0) < useWallet) {
       throw new Error("ยอดเงินค้างในระบบ (Wallet) ของคุณไม่เพียงพอ");
     }
@@ -114,7 +117,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     // 3. Writes
     const appliedPromos = checkoutState?.appliedPromotions?.map(p => `✅ ${p.name || 'โปรโมชั่น'}`) || [];
 
-    const earnedPoints = calculateEarnedPoints(finalNetTotal - useWallet, creditConfig, verifiedItems);
+    const earnedPoints = calculateEarnedPoints(finalNetTotal - useWallet, creditConfig, verifiedItems, Number(userData.totalAccumulatedPoints || userData.creditPoints || 0));
 
     const orderData = {
       orderId: orderRef.id,
@@ -187,7 +190,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     }
 
     // Delegate Todo creation to SRP Service
-    appendPaymentVerificationTodo(transaction, orderRef.id, user, checkoutState, { netTotal: finalNetTotal }, slipUrl);
+    const payableAmount = Math.max(0, finalNetTotal - useWallet);
+    appendPaymentVerificationTodo(transaction, orderRef.id, user, checkoutState, { netTotal: payableAmount }, slipUrl);
     appendTaxInvoiceTodo(transaction, orderRef.id, user, checkoutState);
 
     const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`));

@@ -67,7 +67,7 @@ export default function GenerateSync() {
             </div>
 
             {/* Right Column: Changes Panel */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 p-5 relative overflow-hidden flex flex-col min-h-[500px]">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-200 p-5 relative overflow-hidden flex flex-col min-h-[500px]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
               
               {changes ? (

@@ -3,7 +3,7 @@ import { db } from './config';
 import { 
   collection, doc, getDocs, getDoc, query, where, 
   serverTimestamp, runTransaction, increment,
-  writeBatch 
+  writeBatch, limit 
 } from 'firebase/firestore';
 
 import { trackAdView, trackAdClick, logImpression, logClick } from './marketingAnalyticsService';
@@ -44,7 +44,7 @@ export const marketingService = {
       if (adType === 'BILLBOARD') collectionName = 'billboard_ads';
 
       const adsRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
-      const q = query(adsRef, where('status', '==', 'active'), where('type', '==', adType));
+      const q = query(adsRef, where('status', '==', 'active'), where('type', '==', adType), limit(100));
       const snapshot = await getDocs(q);
       
       const adsList = snapshot.docs.map(doc => ({ 
@@ -226,9 +226,9 @@ export const marketingService = {
 
   getUserPartnerAds: async (userId) => {
     try {
-      const p1 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('ownerId', '==', userId)));
-      const p2 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads'), where('ownerId', '==', userId)));
-      const p3 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'billboard_ads'), where('ownerId', '==', userId)));
+      const p1 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('ownerId', '==', userId), limit(50)));
+      const p2 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads'), where('ownerId', '==', userId), limit(50)));
+      const p3 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'billboard_ads'), where('ownerId', '==', userId), limit(50)));
 
       const [s1, s2, s3] = await Promise.all([p1, p2, p3]);
       

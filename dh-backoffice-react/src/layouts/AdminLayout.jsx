@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { todoService } from '../firebase/todoService';
+import { managerTodoService } from '../firebase/managerTodoService';
 import { userService } from '../firebase/userService';
 import { useGmail } from '../pages/emails/hooks/useGmail';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
@@ -55,18 +56,16 @@ export default function AdminLayout() {
       });
     }
 
-    import('../firebase/managerTodoService').then(({ managerTodoService }) => {
-      if (typeof managerTodoService.subscribeManagerApprovals === 'function') {
-        unsubscribeManagerTodo = managerTodoService.subscribeManagerApprovals((managerTodos) => {
-          setManagerApprovalCount(managerTodos.length);
-          const claims = managerTodos.filter(todo => 
-            (todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type === 'CANCEL_CLAIM_APPROVAL' || todo.type === 'CANCEL_RETURN_APPROVAL') &&
-            ['pending_manager', 'waiting_item', 'processing'].includes(todo.status)
-          );
-          setPendingClaimCount(claims.length);
-        });
-      }
-    });
+    if (typeof managerTodoService.subscribeManagerApprovals === 'function') {
+      unsubscribeManagerTodo = managerTodoService.subscribeManagerApprovals((managerTodos) => {
+        setManagerApprovalCount(managerTodos.length);
+        const claims = managerTodos.filter(todo => 
+          (todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type === 'CANCEL_CLAIM_APPROVAL' || todo.type === 'CANCEL_RETURN_APPROVAL') &&
+          ['pending_manager', 'waiting_item', 'processing'].includes(todo.status)
+        );
+        setPendingClaimCount(claims.length);
+      });
+    }
 
     const fetchPendingStaffCount = async () => {
         try {
@@ -94,17 +93,7 @@ export default function AdminLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden transition-colors duration-200 relative">
-      {/* 🌌 พื้นหลังอวกาศ (Starry Sky) แบบเบลอจัดๆ ตามคำขอ */}
-      <div 
-        className="absolute inset-0 z-[-1] bg-cover bg-center bg-no-repeat"
-        style={{ 
-          backgroundImage: "url('/bg-starry.png')",
-          filter: "blur(30px)",
-          transform: "scale(1.1)" // ขยายเพื่อกันขอบเบลอ
-        }}
-      ></div>
-      {/* Overlay สำหรับปรับสมดุลแสง ให้ตัวหนังสืออ่านง่าย */}
-      <div className="absolute inset-0 z-[-1] bg-slate-50/60 dark:bg-slate-900/75 pointer-events-none mix-blend-overlay"></div>
+
       
       <Sidebar 
         todoCount={todoCount}
@@ -119,7 +108,7 @@ export default function AdminLayout() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden bg-transparent transition-colors duration-200 relative scroll-smooth custom-scrollbar dh-glass">
         {/* Background Gradients for Depth */}
-        <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-50/30 to-transparent dark:from-blue-900/20 dark:to-transparent pointer-events-none -z-10"></div>
+        <div className="absolute top-0 left-0 w-full h-[300px] bg-linear-to-b from-blue-50/30 to-transparent dark:from-blue-900/20 dark:to-transparent pointer-events-none -z-10"></div>
         <Outlet />
       </main>
     </div>

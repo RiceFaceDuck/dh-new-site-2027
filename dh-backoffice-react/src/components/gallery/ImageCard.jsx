@@ -12,7 +12,7 @@ const ImageCard = ({ image, onCompare, isComparing }) => {
   };
 
   return (
-    <div className={`group relative break-inside-avoid mb-4 rounded-md overflow-hidden bg-[var(--dh-bg-base)] shadow-sm hover:shadow-lg transition-all duration-300 border ${isComparing ? 'border-[var(--dh-accent)] shadow-[0_0_15px_var(--dh-accent-light)]' : 'border-[var(--dh-border)]'}`}>
+    <div className={`group relative break-inside-avoid mb-4 rounded-md overflow-hidden bg-(--dh-bg-base) shadow-xs hover:shadow-lg transition-all duration-300 border ${isComparing ? 'border-(--dh-accent) shadow-[0_0_15px_var(--dh-accent-light)]' : 'border-(--dh-border)'}`}>
       <img src={image.url} alt={image.title} className="w-full object-cover" loading="lazy" />
       
       {/* Hover Overlay */}
@@ -37,7 +37,7 @@ const ImageCard = ({ image, onCompare, isComparing }) => {
           )}
           <div className="flex flex-wrap gap-1 mt-2">
             {image.tags.map(tag => (
-              <span key={tag} className="text-[10px] px-2 py-0.5 bg-white/20 text-white rounded-full backdrop-blur-sm">#{tag}</span>
+              <span key={tag} className="text-[10px] px-2 py-0.5 bg-white/20 text-white rounded-full backdrop-blur-xs">#{tag}</span>
             ))}
           </div>
           
@@ -45,8 +45,8 @@ const ImageCard = ({ image, onCompare, isComparing }) => {
             onClick={() => onCompare(image)}
             className={`mt-3 w-full py-2 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition-all ${
               isComparing 
-                ? 'bg-[var(--dh-accent)]/80 text-white border border-white/20 shadow-[0_0_10px_var(--dh-accent)]' 
-                : 'bg-white/10 hover:bg-[var(--dh-accent)] text-white backdrop-blur-md border border-white/10 hover:border-transparent'
+                ? 'bg-(--dh-accent)/80 text-white border border-white/20 shadow-[0_0_10px_var(--dh-accent)]' 
+                : 'bg-white/10 hover:bg-(--dh-accent) text-white backdrop-blur-md border border-white/10 hover:border-transparent'
             }`}
           >
             <Layers size={16} />

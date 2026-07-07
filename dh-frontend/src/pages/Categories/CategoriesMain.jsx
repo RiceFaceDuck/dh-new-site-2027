@@ -13,7 +13,7 @@ const CategoriesMain = () => {
   return (
     <div className="w-full bg-slate-50 min-h-screen pb-16 animate-fade-in">
       {/* Formal Header Banner - Mobile First Padding */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
+      <div className="bg-white border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
             <div>
@@ -31,7 +31,7 @@ const CategoriesMain = () => {
               className="bg-blue-50/80 border border-blue-100 p-3 flex items-start max-w-full md:max-w-sm mt-2 md:mt-0"
               style={{ borderRadius: '4px' }}
             >
-              <HelpCircle className="text-blue-600 w-4 h-4 md:w-5 md:h-5 flex-shrink-0 mt-0.5 mr-2" />
+              <HelpCircle className="text-blue-600 w-4 h-4 md:w-5 md:h-5 shrink-0 mt-0.5 mr-2" />
               <div>
                 <h4 className="text-xs md:text-sm font-semibold text-blue-900">คำแนะนำการใช้งาน</h4>
                 <p className="text-[11px] md:text-xs text-blue-800 mt-1 leading-snug">
@@ -47,10 +47,10 @@ const CategoriesMain = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Formal Notification / Tip */}
         <div 
-          className="mb-4 md:mb-6 flex items-start md:items-center bg-white border border-slate-200 p-3 shadow-sm"
+          className="mb-4 md:mb-6 flex items-start md:items-center bg-white border border-slate-200 p-3 shadow-xs"
           style={{ borderRadius: '4px' }}
         >
-          <Info className="text-slate-400 w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 md:mt-0 flex-shrink-0" />
+          <Info className="text-slate-400 w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 md:mt-0 shrink-0" />
           <p className="text-xs md:text-sm text-slate-600 leading-snug">
             คุณสามารถใช้ <span className="font-semibold text-slate-700">Part Number (PN)</span> ของอะไหล่ที่อยู่บนสติ๊กเกอร์ นำไปค้นหาในช่องด้านบนสุดเพื่อความแม่นยำ 100%
           </p>

@@ -5,7 +5,7 @@ export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, chan
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
                 
                 {/* Header */}
@@ -31,11 +31,11 @@ export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, chan
                                 <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm">
                                     <div className="font-bold text-slate-700 mb-1">{change.label}</div>
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs">
-                                        <div className="bg-rose-50 text-rose-600 px-2 py-1 rounded line-through break-all w-full sm:w-auto">
+                                        <div className="bg-rose-50 text-rose-600 px-2 py-1 rounded-sm line-through break-all w-full sm:w-auto">
                                             {change.oldVal !== undefined && change.oldVal !== null && change.oldVal !== '' ? String(change.oldVal) : '(ไม่มีค่า)'}
                                         </div>
                                         <span className="text-slate-400 hidden sm:inline">➜</span>
-                                        <div className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded font-medium break-all w-full sm:w-auto">
+                                        <div className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-sm font-medium break-all w-full sm:w-auto">
                                             {change.newVal !== undefined && change.newVal !== null && change.newVal !== '' ? String(change.newVal) : '(ไม่มีค่า)'}
                                         </div>
                                     </div>
@@ -61,7 +61,7 @@ export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, chan
                     <button 
                         onClick={onConfirm}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black transition-all shadow-sm disabled:opacity-50 active:scale-95"
+                        className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black transition-all shadow-xs disabled:opacity-50 active:scale-95"
                     >
                         {isSaving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                         ยืนยันการบันทึก

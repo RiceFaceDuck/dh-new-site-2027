@@ -4,7 +4,7 @@ import { Download, UploadCloud } from 'lucide-react';
 export default function ImportUploader({ handleDownloadTemplate, handleFileUpload, fileInputRef }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-dh-surface p-6 rounded-2xl border border-dh-border flex flex-col items-center justify-center text-center gap-4 hover:border-dh-accent/50 transition-colors shadow-sm">
+      <div className="bg-dh-surface p-6 rounded-2xl border border-dh-border flex flex-col items-center justify-center text-center gap-4 hover:border-dh-accent/50 transition-colors shadow-xs">
         <div className="w-16 h-16 bg-dh-accent/10 rounded-full flex items-center justify-center text-dh-accent">
           <Download size={32} />
         </div>

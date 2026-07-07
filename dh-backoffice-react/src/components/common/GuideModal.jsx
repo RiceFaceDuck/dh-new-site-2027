@@ -25,7 +25,7 @@ export default function GuideModal({
 
     return (
         <div 
-            className="fixed inset-0 z-[100] bg-slate-900/60 flex items-center justify-center p-4 dh-glass animate-in fade-in duration-200" 
+            className="fixed inset-0 z-100 bg-slate-900/60 flex items-center justify-center p-4 dh-glass animate-in fade-in duration-200" 
             onClick={onClose}
         >
             <div 
@@ -35,7 +35,7 @@ export default function GuideModal({
                 {/* Header (Premium Gradient) */}
                 <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center dh-header-gradient">
                     <h2 className="text-lg font-black text-white flex items-center gap-3">
-                        <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg shadow-sm border border-white/30">
+                        <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg shadow-xs border border-white/30">
                             <Icon size={18} className="text-white" />
                         </div>
                         {title}
@@ -53,7 +53,7 @@ export default function GuideModal({
                     
                     {/* 1. Description Section */}
                     {config.description && (
-                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dh-inner-shadow">
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs dh-inner-shadow">
                             <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2 flex items-center gap-2">
                                 <BookOpen size={16} className="text-blue-500" />
                                 ตำรา / คำอธิบาย (Description)
@@ -64,7 +64,7 @@ export default function GuideModal({
 
                     {/* 2. How-to Section */}
                     {config.howTo && config.howTo.length > 0 && (
-                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dh-inner-shadow">
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs dh-inner-shadow">
                             <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                                 <Key size={16} className="text-emerald-500" />
                                 วิธีการใช้งาน (How-to)
@@ -84,7 +84,7 @@ export default function GuideModal({
 
                     {/* 3. Tips & Tricks Section */}
                     {config.tips && config.tips.length > 0 && (
-                        <div className="bg-amber-50 dark:bg-amber-900/10 p-5 rounded-xl border border-amber-200 dark:border-amber-800/30 shadow-sm dh-glow">
+                        <div className="bg-amber-50 dark:bg-amber-900/10 p-5 rounded-xl border border-amber-200 dark:border-amber-800/30 shadow-xs dh-glow">
                             <h3 className="font-bold text-amber-800 dark:text-amber-500 mb-3 flex items-center gap-2">
                                 <Lightbulb size={16} className="text-amber-500 animate-pulse" />
                                 เทคนิคการใช้งาน (Tips & Tricks)
@@ -102,7 +102,7 @@ export default function GuideModal({
 
                     {/* 4. Expected Results Section */}
                     {config.expectedResults && (
-                        <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800/30 shadow-sm">
+                        <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800/30 shadow-xs">
                             <h3 className="font-bold text-indigo-800 dark:text-indigo-400 mb-3 flex items-center gap-2">
                                 <AlertCircle size={16} className="text-indigo-500" />
                                 ตัวอย่างผลลัพธ์ (Expected Results)
@@ -115,7 +115,7 @@ export default function GuideModal({
                     {config.sections && config.sections.length > 0 && (
                         <div className="space-y-6">
                             {config.sections.map((sec, idx) => (
-                                <section key={idx} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                <section key={idx} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
                                     <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">{sec.title}</h3>
                                     <ul className="list-disc pl-5 space-y-2">
                                         {sec.items.map((item, i) => (

@@ -3,7 +3,7 @@ import { Save, Layers, Server } from 'lucide-react';
 
 export default function CoreForm({ settings, updateSettings, saveSettings, isSaving }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 p-6 space-y-6">
       
       <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
         <Server className="text-blue-500" size={24} />
@@ -29,7 +29,7 @@ export default function CoreForm({ settings, updateSettings, saveSettings, isSav
               checked={settings.enableSharding || false}
               onChange={(e) => updateSettings('enableSharding', e.target.checked)}
             />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-500"></div>
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-500"></div>
           </label>
         </div>
 
@@ -50,7 +50,7 @@ export default function CoreForm({ settings, updateSettings, saveSettings, isSav
               disabled={!settings.enableSharding}
               className={`w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 ${!settings.enableSharding && 'opacity-50'}`}
             />
-            <span className="text-lg font-bold text-blue-600 dark:text-blue-400 min-w-[2rem] text-center">
+            <span className="text-lg font-bold text-blue-600 dark:text-blue-400 min-w-8 text-center">
               {settings.maxShards || 5}
             </span>
           </div>

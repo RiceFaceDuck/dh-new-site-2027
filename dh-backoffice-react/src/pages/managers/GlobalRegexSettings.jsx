@@ -105,7 +105,7 @@ export default function GlobalRegexSettings() {
                     </div>
                     <button 
                         onClick={() => setIsGuideOpen(true)} 
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-xl transition-colors border border-sky-200 shadow-sm dh-active-press shrink-0"
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-xl transition-colors border border-sky-200 shadow-xs dh-active-press shrink-0"
                     >
                         <LinkIcon size={16} /> คู่มือการใช้งาน
                     </button>
@@ -114,7 +114,7 @@ export default function GlobalRegexSettings() {
                 <div className="flex-1 p-6 sm:p-10 relative bg-slate-50/50">
 
                     <div className="space-y-8 max-w-full mx-auto">
-                        <div className="bg-sky-50 border border-sky-100 p-5 rounded-2xl flex gap-4 text-sky-800 shadow-sm">
+                        <div className="bg-sky-50 border border-sky-100 p-5 rounded-2xl flex gap-4 text-sky-800 shadow-xs">
                             <LinkIcon size={24} className="shrink-0 text-sky-500 mt-0.5"/>
                             <p className="text-sm font-bold leading-relaxed">
                                 ใช้ Regular Expression (Regex) ในการตรวจสอบความถูกต้องของลิงก์ที่พนักงานนำมาวาง หากไวยากรณ์ผิด ระบบจะไม่เซฟ
@@ -123,7 +123,7 @@ export default function GlobalRegexSettings() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {['shopee', 'lazada', 'tiktok', 'facebook'].map(platform => (
-                                <div key={platform} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <div key={platform} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                                     <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 block capitalize flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full ${
                                             platform === 'shopee' ? 'bg-orange-500' : 
@@ -136,7 +136,7 @@ export default function GlobalRegexSettings() {
                                         type="text" disabled={false}
                                         value={regexConfig[platform] || ''}
                                         onChange={(e) => setRegexConfig({...regexConfig, [platform]: e.target.value})}
-                                        className="w-full p-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl font-mono text-sm font-bold text-sky-700 outline-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10 disabled:bg-slate-100 disabled:text-slate-400 transition-all"
+                                        className="w-full p-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl font-mono text-sm font-bold text-sky-700 outline-hidden focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10 disabled:bg-slate-100 disabled:text-slate-400 transition-all"
                                         placeholder={`ตัวอย่าง: (${platform}\\.co\\.th)`}
                                     />
                                 </div>

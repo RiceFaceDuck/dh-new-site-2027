@@ -40,7 +40,7 @@ const ProvidersPage = () => {
           
           <button 
             onClick={() => setShowGuide(true)}
-            className="flex items-center text-sm font-medium text-brand hover:text-brand-accent transition-colors bg-white px-3 py-1.5 rounded-full shadow-sm border border-brand/20"
+            className="flex items-center text-sm font-medium text-brand hover:text-brand-accent transition-colors bg-white px-3 py-1.5 rounded-full shadow-xs border border-brand/20"
           >
             <HelpCircle className="w-4 h-4 mr-1.5" />
             วิธีใช้งานหน้านี้
@@ -67,7 +67,7 @@ const ProvidersPage = () => {
 
         {/* In-App Guide Modal */}
         {showGuide && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
             <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden relative animate-in fade-in zoom-in duration-200">
               <button 
                 onClick={() => setShowGuide(false)}
@@ -88,7 +88,7 @@ const ProvidersPage = () => {
               
               <div className="bg-slate-50 p-6 space-y-4">
                 <div className="flex items-start">
-                  <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-200 mr-3 shrink-0">
+                  <div className="bg-white p-2 rounded-lg shadow-xs border border-slate-200 mr-3 shrink-0">
                     <span className="text-lg">📍</span>
                   </div>
                   <div>
@@ -98,7 +98,7 @@ const ProvidersPage = () => {
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-200 mr-3 shrink-0">
+                  <div className="bg-white p-2 rounded-lg shadow-xs border border-slate-200 mr-3 shrink-0">
                     <span className="text-lg">🔍</span>
                   </div>
                   <div>

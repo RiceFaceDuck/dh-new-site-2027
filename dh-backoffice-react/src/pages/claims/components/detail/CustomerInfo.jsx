@@ -5,7 +5,7 @@ import { getStatusDisplay } from '../../utils/claimFormatters';
 export default function CustomerInfo({ selectedRequest, copiedText, handleQuickCopy }) {
   return (
     <div className="space-y-4">
-      <div className="bg-dh-surface/60 backdrop-blur-sm p-5 rounded-xl border border-dh-border shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-dh-surface/60 backdrop-blur-xs p-5 rounded-xl border border-dh-border shadow-xs hover:shadow-md transition-shadow">
         <h3 className="text-[10px] font-black text-dh-muted uppercase tracking-widest mb-3 border-b border-dh-border pb-2 flex items-center gap-1.5">
           <User className="w-3.5 h-3.5"/> ข้อมูลลูกค้าและบิล
         </h3>
@@ -16,7 +16,7 @@ export default function CustomerInfo({ selectedRequest, copiedText, handleQuickC
           </div>
           <div className="flex justify-between items-center group/copy">
             <span className="text-dh-muted font-medium">บิลอ้างอิง:</span> 
-            <span className="font-mono font-bold text-dh-accent flex items-center gap-1 cursor-pointer hover:bg-dh-accent/10 px-1.5 py-0.5 rounded transition-colors" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.orderId)}>
+            <span className="font-mono font-bold text-dh-accent flex items-center gap-1 cursor-pointer hover:bg-dh-accent/10 px-1.5 py-0.5 rounded-sm transition-colors" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.orderId)}>
               {selectedRequest.payload.orderId}
               {copiedText === selectedRequest.payload.orderId ? <Check className="w-3.5 h-3.5 text-emerald-500"/> : <Copy className="w-3.5 h-3.5 opacity-0 group-hover/copy:opacity-100 transition-opacity"/>}
             </span>
@@ -32,7 +32,7 @@ export default function CustomerInfo({ selectedRequest, copiedText, handleQuickC
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-dh-surface to-dh-base p-5 rounded-xl border border-dh-border shadow-sm flex flex-col items-center justify-center min-h-[140px] text-center relative overflow-hidden group hover:border-dh-accent/30 transition-colors">
+      <div className="bg-linear-to-br from-dh-surface to-dh-base p-5 rounded-xl border border-dh-border shadow-xs flex flex-col items-center justify-center min-h-[140px] text-center relative overflow-hidden group hover:border-dh-accent/30 transition-colors">
         <div className="absolute -right-4 -top-4 w-20 h-20 bg-dh-accent/5 rounded-full blur-2xl group-hover:bg-dh-accent/10 transition-colors"></div>
         <p className="text-[10px] font-black text-dh-muted uppercase tracking-widest mb-3 z-10">สถานะการตรวจสอบ</p>
         <div className="z-10 scale-110 mb-1">{getStatusDisplay(selectedRequest)}</div>

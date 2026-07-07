@@ -19,8 +19,8 @@ const UploadSlipModal = ({ selectedOrder, closeModal }) => {
   if (!selectedOrder) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={isUploading ? null : handleClose}></div>
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs" onClick={isUploading ? null : handleClose}></div>
       <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95">
         
         {!uploadSuccess ? (
@@ -48,13 +48,13 @@ const UploadSlipModal = ({ selectedOrder, closeModal }) => {
                 <div className="space-y-2 text-center w-full">
                   {previewUrl ? (
                     <div className="relative mx-auto h-40 w-28 rounded-xl overflow-hidden shadow-md border border-gray-200">
-                      <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                      <img src={previewUrl} alt="Preview" className="h-full w-full object-cover"  loading="lazy" />
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                        <span className="text-white text-sm font-bold bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-sm">เปลี่ยนรูป</span>
+                        <span className="text-white text-sm font-bold bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-xs">เปลี่ยนรูป</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-white w-16 h-16 mx-auto rounded-full shadow-sm flex items-center justify-center border border-gray-100">
+                    <div className="bg-white w-16 h-16 mx-auto rounded-full shadow-xs flex items-center justify-center border border-gray-100">
                       <svg className="h-8 w-8 text-indigo-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -103,7 +103,7 @@ const UploadSlipModal = ({ selectedOrder, closeModal }) => {
             </div>
             <h3 className="text-2xl font-black text-gray-900 mb-3">ส่งสลิปสำเร็จ!</h3>
             <p className="text-sm text-gray-600 mb-6 font-medium leading-relaxed">ระบบได้รับหลักฐานของคุณแล้ว<br/>และได้ส่งเรื่องไปให้แอดมินตรวจสอบยอดเงินสักครู่ครับ</p>
-            <div className="bg-blue-50 text-blue-700 text-sm py-2.5 px-4 rounded-xl border border-blue-100 inline-flex items-center gap-2 font-bold shadow-sm">
+            <div className="bg-blue-50 text-blue-700 text-sm py-2.5 px-4 rounded-xl border border-blue-100 inline-flex items-center gap-2 font-bold shadow-xs">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>

@@ -33,8 +33,8 @@ export const useWholesalePrices = (activeTodos) => {
       const uniqueIds = Array.from(productIdsToFetch);
       
       if (uniqueIds.length > 0) {
-          for(let i=0; i < uniqueIds.length; i+=10) {
-              const batchIds = uniqueIds.slice(i, i+10);
+          for(let i=0; i < uniqueIds.length; i+=30) {
+              const batchIds = uniqueIds.slice(i, i+30);
               try {
                   const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));
                   const snapshot = await getDocs(q);

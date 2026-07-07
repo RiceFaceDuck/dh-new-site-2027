@@ -19,7 +19,7 @@ export default function ProductLinks({
             value={form.externalLinks?.[platform] || ''} 
             onChange={e => handleLinkChange(platform, e.target.value)}
             placeholder={placeholder}
-            className={`w-full p-2.5 pr-8 border rounded-xl outline-none text-sm transition-all font-medium placeholder:text-dh-muted/50 ${
+            className={`w-full p-2.5 pr-8 border rounded-xl outline-hidden text-sm transition-all font-medium placeholder:text-dh-muted/50 ${
               isValid === true ? 'border-green-500/50 focus:border-green-500 bg-green-500/5 text-green-700 dark:text-green-400' : 
               isValid === false ? 'border-red-500/50 focus:border-red-500 bg-red-500/5 text-red-600 dark:text-red-400' : 
               'border-dh-border focus:border-dh-accent bg-dh-base focus:bg-dh-surface text-dh-main'
@@ -33,7 +33,7 @@ export default function ProductLinks({
   };
 
   return (
-    <div className="bg-dh-surface p-5 rounded-2xl border border-dh-border shadow-sm">
+    <div className="bg-dh-surface p-5 rounded-2xl border border-dh-border shadow-xs">
       <h3 className="text-sm font-black text-dh-main mb-4 flex items-center gap-2">
         🌐 ลิงก์สินค้าภายนอก (Marketplace)
       </h3>

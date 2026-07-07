@@ -40,7 +40,7 @@ export default function VariantSelector({
                   disabled={!isAvailable}
                   className={`px-4 py-2 text-sm font-medium border rounded-md transition-all ${
                     isSelected 
-                      ? 'border-cyber-blue bg-blue-50 text-cyber-blue shadow-sm ring-2 ring-cyber-blue/20' 
+                      ? 'border-cyber-blue bg-blue-50 text-cyber-blue shadow-xs ring-2 ring-cyber-blue/20' 
                       : isAvailable 
                         ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' 
                         : 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed'

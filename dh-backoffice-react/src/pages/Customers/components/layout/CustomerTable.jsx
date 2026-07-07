@@ -24,7 +24,7 @@ export default function CustomerTable({
         <div className="min-w-[1080px] flex flex-col min-h-full">
           
           {/* 👑 Table Header (แถวบนสุด - ปักหมุดไว้ด้านบนเสมอ) */}
-          <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+          <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
             <div className={`px-4 py-3.5 text-[13px] font-bold text-slate-700 uppercase tracking-wider ${gridLayout}`}>
               <div className="flex items-center">Customer ID</div>
               <div className="flex items-center">Profile</div>
@@ -70,7 +70,7 @@ export default function CustomerTable({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-slate-400 p-6">
-                <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mb-3 shadow-sm">
+                <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mb-3 shadow-xs">
                   <Search className="w-6 h-6 text-slate-300" />
                 </div>
                 <p className="text-slate-700 font-bold">ไม่พบข้อมูลลูกค้า</p>

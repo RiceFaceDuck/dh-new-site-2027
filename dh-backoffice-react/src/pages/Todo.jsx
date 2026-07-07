@@ -128,7 +128,7 @@ export default function Todo() {
   });
 
   return (
-    <div className="flex flex-col h-full w-full bg-[var(--dh-bg-surface)] relative overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex flex-col h-full w-full bg-(--dh-bg-surface) relative overflow-hidden font-sans transition-colors duration-300">
       
       <TodoPageHeader 
         navigate={navigate} 
@@ -138,8 +138,8 @@ export default function Todo() {
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-slate-50/50 dark:bg-slate-900/20">
         {fetchError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start gap-3 shadow-xs animate-in slide-in-from-top-2">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <p className="text-sm font-semibold">{fetchError}</p>
           </div>
         )}

@@ -3,7 +3,7 @@ import { ArrowRightLeft, Lightbulb, AlertTriangle, CheckCircle2 } from 'lucide-r
 
 export default function RedirectURLsGuide() {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden mb-6">
       <div className="bg-indigo-50 px-6 py-4 border-b border-indigo-100 flex items-center gap-3">
         <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
           <ArrowRightLeft size={20} />
@@ -42,11 +42,11 @@ export default function RedirectURLsGuide() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" />
-                <span>ช่อง <strong>URL เดิม</strong>: ใส่ลิงก์เก่าที่ต้องการเปลี่ยน (เช่น <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">/old-product</code>)</span>
+                <span>ช่อง <strong>URL เดิม</strong>: ใส่ลิงก์เก่าที่ต้องการเปลี่ยน (เช่น <code className="bg-slate-100 px-1 py-0.5 rounded-sm text-slate-700">/old-product</code>)</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" />
-                <span>ช่อง <strong>URL ใหม่</strong>: ใส่ลิงก์ปลายทาง (เช่น <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">/new-product</code> หรือ <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">https://...</code>)</span>
+                <span>ช่อง <strong>URL ใหม่</strong>: ใส่ลิงก์ปลายทาง (เช่น <code className="bg-slate-100 px-1 py-0.5 rounded-sm text-slate-700">/new-product</code> หรือ <code className="bg-slate-100 px-1 py-0.5 rounded-sm text-slate-700">https://...</code>)</span>
               </li>
             </ul>
           </div>
@@ -62,7 +62,7 @@ export default function RedirectURLsGuide() {
               เทคนิคการใช้งาน (Tips & Tricks)
             </h4>
             <ul className="text-sm text-amber-700/90 space-y-2 font-medium">
-              <li>• สามารถใช้ทำ <strong>ลิงก์สั้น (Short Link)</strong> สำหรับโปรโมทแคมเปญได้ เช่น ตั้งค่า <code className="bg-amber-100/50 px-1 py-0.5 rounded">/promo24</code> ให้ชี้ไปยังหน้าสินค้ายาวๆ</li>
+              <li>• สามารถใช้ทำ <strong>ลิงก์สั้น (Short Link)</strong> สำหรับโปรโมทแคมเปญได้ เช่น ตั้งค่า <code className="bg-amber-100/50 px-1 py-0.5 rounded-sm">/promo24</code> ให้ชี้ไปยังหน้าสินค้ายาวๆ</li>
               <li>• หากต้องการยกเลิกการ Redirect ชั่วคราว ให้กดปิดสถานะ <strong className="text-slate-700">"เปิดใช้งาน"</strong> โดยไม่ต้องลบข้อมูลทิ้ง</li>
             </ul>
           </div>

@@ -21,13 +21,13 @@ const ProductCard = ({ product, onClick }) => {
 
   return (
     <div 
-      onClick={onClick}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 flex gap-4 active:scale-[0.98] transition-transform cursor-pointer hover:bg-gray-50"
+      onClick={() => onClick && onClick(product)}
+      className="bg-white rounded-2xl shadow-xs border border-gray-100 p-3 flex gap-4 active:scale-[0.98] transition-transform cursor-pointer hover:bg-gray-50"
     >
       {/* รูปภาพ */}
-      <div className="w-20 h-20 bg-gray-50 rounded-xl flex-shrink-0 flex items-center justify-center border border-gray-100 overflow-hidden relative">
+      <div className="w-20 h-20 bg-gray-50 rounded-xl shrink-0 flex items-center justify-center border border-gray-100 overflow-hidden relative">
         {imageUrl ? (
-          <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
+          <img src={imageUrl} alt={product.name} className="w-full h-full object-cover"  loading="lazy" />
         ) : (
           <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
         )}
@@ -54,4 +54,4 @@ const ProductCard = ({ product, onClick }) => {
   );
 };
 
-export default ProductCard;
+export default React.memo(ProductCard);

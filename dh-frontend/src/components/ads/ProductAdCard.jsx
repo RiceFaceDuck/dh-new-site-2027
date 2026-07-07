@@ -83,7 +83,7 @@ const ProductAdCard = ({ ad }) => {
     if (!isModalOpen) return null;
 
     return createPortal(
-      <div className="fixed inset-0 z-[9999] flex flex-col justify-end sm:justify-center items-center bg-slate-900/60 backdrop-blur-sm sm:p-4 transition-all animate-in fade-in duration-300" onClick={closeModal}>
+      <div className="fixed inset-0 z-9999 flex flex-col justify-end sm:justify-center items-center bg-slate-900/60 backdrop-blur-xs sm:p-4 transition-all animate-in fade-in duration-300" onClick={closeModal}>
         
         {/* Modal Container */}
         <div 
@@ -103,7 +103,7 @@ const ProductAdCard = ({ ad }) => {
           {/* 🏙️ Cover Image & Partner Info */}
           <div className="w-full h-44 sm:h-52 bg-slate-200 relative shrink-0">
             <LazyImage src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
             
             <div className="absolute bottom-4 left-4 right-4 flex items-end gap-4">
                <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg shrink-0 border border-white/20">
@@ -111,7 +111,7 @@ const ProductAdCard = ({ ad }) => {
                </div>
                <div className="pb-1 text-white flex-1">
                  <div className="flex items-center gap-1.5 mb-1.5">
-                   <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-500/90 backdrop-blur-sm border border-emerald-400/50 px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
+                   <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-500/90 backdrop-blur-xs border border-emerald-400/50 px-2 py-0.5 rounded-sm shadow-xs flex items-center gap-1">
                      <ShieldCheck size={12}/> Verified Partner
                    </span>
                  </div>
@@ -168,7 +168,7 @@ const ProductAdCard = ({ ad }) => {
 
                {/* 🔗 ปุ่มเปิดลิงก์สินค้า */}
                {ad.targetUrl && (
-                 <button onClick={() => openLink(ad.targetUrl)} className="w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2.5 active:scale-95 text-sm group">
+                 <button onClick={() => openLink(ad.targetUrl)} className="w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2.5 active:scale-95 text-sm group">
                    {isProduct ? <ShoppingBag size={18}/> : <ExternalLink size={18}/>} 
                    {isProduct ? 'เข้าชมสินค้า / สั่งซื้อ' : 'ดูรายละเอียดเพิ่มเติม'}
                  </button>
@@ -188,11 +188,11 @@ const ProductAdCard = ({ ad }) => {
     <>
       <div 
         ref={cardRef}
-        className="group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ring-1 ring-slate-100 hover:ring-indigo-100 transform hover:-translate-y-1"
+        className="group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 ring-1 ring-slate-100 hover:ring-indigo-100 transform hover:-translate-y-1"
       >
         {/* 🏷️ ป้าย Sponsored */}
         {ad.isSponsoredAd && (
-          <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 bg-slate-900/60 backdrop-blur-md border border-white/20 rounded text-md shadow-sm">
+          <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 bg-slate-900/60 backdrop-blur-md border border-white/20 rounded-sm text-md shadow-xs">
             <span className="text-[8px] font-black text-white uppercase tracking-widest mt-0.5">Sponsored</span>
           </div>
         )}
@@ -207,11 +207,11 @@ const ProductAdCard = ({ ad }) => {
             alt={ad.title || 'Advertisement'} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-linear-to-t from-slate-900/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
 
         {/* 📝 พื้นที่เนื้อหา */}
-        <div className="p-3.5 flex flex-col flex-grow justify-between bg-gradient-to-b from-white to-slate-50/30 cursor-pointer" onClick={handleAdClick}>
+        <div className="p-3.5 flex flex-col grow justify-between bg-linear-to-b from-white to-slate-50/30 cursor-pointer" onClick={handleAdClick}>
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
               {isProduct ? <ShoppingBag size={10}/> : <Store size={10}/>}

@@ -52,7 +52,7 @@ const TabHistory = () => {
   });
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 min-h-[500px]">
+    <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-4 sm:p-6 min-h-[500px]">
       {/* ส่วนหัว และตัวกรอง */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-100 pb-4">
         <div>

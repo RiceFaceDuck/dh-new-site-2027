@@ -80,11 +80,11 @@ const FloatingMessenger = () => {
   };
 
   return (
-    <div className="fixed bottom-[85px] md:bottom-6 right-6 z-[100] flex flex-col items-end pointer-events-none">
+    <div className="fixed bottom-[85px] md:bottom-6 right-6 z-100 flex flex-col items-end pointer-events-none">
       
       <div className={`pointer-events-auto mb-4 w-[320px] sm:w-[360px] bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 translate-y-20'}`}>
         
-        <div className={`p-5 text-white flex justify-between items-center relative overflow-hidden transition-colors duration-500 ${mode === 'partner_context' || mode === 'result' ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : 'bg-gradient-to-r from-indigo-600 to-[#0870B8]'}`}>
+        <div className={`p-5 text-white flex justify-between items-center relative overflow-hidden transition-colors duration-500 ${mode === 'partner_context' || mode === 'result' ? 'bg-linear-to-r from-emerald-600 to-teal-500' : 'bg-linear-to-r from-indigo-600 to-[#0870B8]'}`}>
           <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl -translate-y-10 translate-x-10 pointer-events-none"></div>
           <div className="flex items-center gap-3 relative z-10">
             <div className="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
@@ -121,9 +121,9 @@ const FloatingMessenger = () => {
 
         <div className="relative group cursor-pointer" onClick={toggleMessenger}>
           <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-500 pointer-events-none ${isOpen ? 'bg-rose-500/30 scale-110' : 'bg-indigo-600/40 group-hover:bg-indigo-600/60 animate-pulse scale-125'}`}></div>
-          <button className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 transform ${isOpen ? 'bg-slate-800 rotate-90 scale-90 hover:bg-rose-500' : 'bg-gradient-to-br from-indigo-500 via-[#0870B8] to-blue-600 hover:scale-110 hover:-translate-y-1'}`}>
+          <button className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 transform ${isOpen ? 'bg-slate-800 rotate-90 scale-90 hover:bg-rose-500' : 'bg-linear-to-br from-indigo-500 via-[#0870B8] to-blue-600 hover:scale-110 hover:-translate-y-1'}`}>
             {isOpen ? <X size={26} strokeWidth={2.5}/> : <MessageCircle size={28} strokeWidth={2.5} />}
-            {!isOpen && <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 border-2 border-white rounded-full animate-bounce shadow-sm"></span>}
+            {!isOpen && <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 border-2 border-white rounded-full animate-bounce shadow-xs"></span>}
           </button>
         </div>
       </div>

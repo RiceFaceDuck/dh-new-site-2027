@@ -33,7 +33,7 @@ export default function ExportSkusTab({
           value={specificSkusInput}
           onChange={e => setSpecificSkusInput(e.target.value)}
           placeholder="EXM-001&#10;KB-1234&#10;BAT-999&#10;(พิมพ์บรรทัดละรายการ หรือคั่นด้วยลูกน้ำ)"
-          className="w-full h-32 p-4 bg-dh-base border border-dh-border rounded-xl outline-none focus:border-dh-accent resize-none custom-scrollbar text-sm font-medium uppercase"
+          className="w-full h-32 p-4 bg-dh-base border border-dh-border rounded-xl outline-hidden focus:border-dh-accent resize-none custom-scrollbar text-sm font-medium uppercase"
         />
       </div>
     </div>

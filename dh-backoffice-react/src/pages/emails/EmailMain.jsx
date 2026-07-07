@@ -51,7 +51,7 @@ export default function EmailMain() {
   if (!isConfigured) {
     return (
       <div className="flex-1 p-6 flex items-center justify-center bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-80px)]">
-        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-lg shadow-sm p-8 text-center border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-500">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-lg shadow-xs p-8 text-center border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-500">
           <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-md flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-200 dark:border-slate-600">
             <Lock className="h-8 w-8 text-slate-500 dark:text-slate-400" />
           </div>
@@ -99,7 +99,7 @@ export default function EmailMain() {
         {/* Content Body */}
         <div className="flex-1 overflow-hidden relative bg-slate-100 dark:bg-slate-900/50">
           {error && !selectedEmailId && !isComposing && (
-             <div className="m-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-md text-sm font-medium flex items-center gap-2 shadow-sm">
+             <div className="m-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-md text-sm font-medium flex items-center gap-2 shadow-xs">
                <AlertCircle size={16} />
                <span>{error}</span>
              </div>

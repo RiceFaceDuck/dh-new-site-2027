@@ -17,7 +17,7 @@ export const ShippingForm = ({ info, setInfo, saveAddress, setSaveAddress }) => 
         <select 
           value={info.logisticProvider} 
           onChange={e => setInfo({...info, logisticProvider: e.target.value})} 
-          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-[#0870B8]/10 outline-none font-bold"
+          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-[#0870B8]/10 outline-hidden font-bold"
         >
           <option value="Kerry Express">Kerry Express</option>
           <option value="Flash Express">Flash Express</option>
@@ -27,22 +27,22 @@ export const ShippingForm = ({ info, setInfo, saveAddress, setSaveAddress }) => 
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase mb-1 block">Recipient Name</label>
-        <input required type="text" value={info.fullName} onChange={e => setInfo({...info, fullName: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-none transition-all font-medium" />
+        <input required type="text" value={info.fullName} onChange={e => setInfo({...info, fullName: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all font-medium" />
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase mb-1 block">Phone Number</label>
-        <input required type="tel" value={info.phone} onChange={e => setInfo({...info, phone: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-none transition-all font-medium" />
+        <input required type="tel" value={info.phone} onChange={e => setInfo({...info, phone: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all font-medium" />
       </div>
       <div className="md:col-span-2 space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase mb-1 block">Full Address</label>
-        <textarea required rows="2" value={info.address} onChange={e => setInfo({...info, address: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-none transition-all resize-none font-medium"></textarea>
+        <textarea required rows="2" value={info.address} onChange={e => setInfo({...info, address: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all resize-none font-medium"></textarea>
       </div>
     </div>
     <label className="mt-5 flex items-center gap-3 cursor-pointer group">
       <div className="relative">
         <input type="checkbox" checked={saveAddress} onChange={e => setSaveAddress(e.target.checked)} className="sr-only peer" />
         <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#0870B8] transition-all"></div>
-        <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5 shadow-sm"></div>
+        <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5 shadow-xs"></div>
       </div>
       <span className="text-xs font-bold text-gray-500 group-hover:text-[#0870B8] transition-colors">บันทึกที่อยู่นี้เป็นที่อยู่หลัก</span>
     </label>
@@ -58,7 +58,7 @@ export const B2BTaxForm = ({ b2b, setB2b, tax, setTax }) => (
         <label htmlFor="b2b-check" className="w-10 h-5 bg-gray-200 rounded-full relative cursor-pointer peer-checked:bg-indigo-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></label>
       </div>
       {b2b.isRequesting && (
-        <textarea value={b2b.note} onChange={e => setB2b({...b2b, note: e.target.value})} placeholder="ระบุหมายเหตุ (เช่น ขอใบเสนอราคาพาร์ทเนอร์)" className="w-full p-3 bg-white border border-indigo-100 rounded-md text-xs outline-none focus:border-indigo-400 resize-none h-20 font-medium"></textarea>
+        <textarea value={b2b.note} onChange={e => setB2b({...b2b, note: e.target.value})} placeholder="ระบุหมายเหตุ (เช่น ขอใบเสนอราคาพาร์ทเนอร์)" className="w-full p-3 bg-white border border-indigo-100 rounded-md text-xs outline-hidden focus:border-indigo-400 resize-none h-20 font-medium"></textarea>
       )}
     </div>
 
@@ -70,8 +70,8 @@ export const B2BTaxForm = ({ b2b, setB2b, tax, setTax }) => (
       </div>
       {tax.isRequesting && (
         <div className="space-y-2">
-          <input placeholder="ชื่อบริษัท/ผู้เสียภาษี" value={tax.name} onChange={e => setTax({...tax, name: e.target.value})} className="w-full p-2 bg-white border border-emerald-100 rounded-md text-xs outline-none" />
-          <input placeholder="เลขผู้เสียภาษี 13 หลัก" value={tax.taxId} onChange={e => setTax({...tax, taxId: e.target.value})} className="w-full p-2 bg-white border border-emerald-100 rounded-md text-xs outline-none" />
+          <input placeholder="ชื่อบริษัท/ผู้เสียภาษี" value={tax.name} onChange={e => setTax({...tax, name: e.target.value})} className="w-full p-2 bg-white border border-emerald-100 rounded-md text-xs outline-hidden" />
+          <input placeholder="เลขผู้เสียภาษี 13 หลัก" value={tax.taxId} onChange={e => setTax({...tax, taxId: e.target.value})} className="w-full p-2 bg-white border border-emerald-100 rounded-md text-xs outline-hidden" />
         </div>
       )}
     </div>
@@ -85,7 +85,7 @@ export const PaymentForm = ({ finalPayable, slipPreview, handleFileChange }) => 
     <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10">
       <div className="md:col-span-5 bg-gray-900 rounded-md p-6 text-white shadow-xl">
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 flex justify-between items-center">
-          DH Bank Transfer <div className="w-8 h-5 bg-white/10 rounded"></div>
+          DH Bank Transfer <div className="w-8 h-5 bg-white/10 rounded-sm"></div>
         </p>
         <p className="text-xs text-gray-300 mb-1">ธนาคารกสิกรไทย (KBank)</p>
         <p className="text-xl font-black tracking-widest mb-6">123-4-56789-0</p>
@@ -98,7 +98,7 @@ export const PaymentForm = ({ finalPayable, slipPreview, handleFileChange }) => 
         </label>
         {slipPreview ? (
           <div className="relative rounded-md overflow-hidden border border-gray-200 group aspect-video bg-black">
-            <img src={slipPreview} alt="Slip" className="w-full h-full object-contain" />
+            <img src={slipPreview} alt="Slip" className="w-full h-full object-contain"  loading="lazy" />
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
               <label className="cursor-pointer bg-white text-gray-800 px-5 py-2 rounded-md text-xs font-black shadow-xl hover:scale-105 transition-transform uppercase tracking-widest">
                 Change Slip <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />

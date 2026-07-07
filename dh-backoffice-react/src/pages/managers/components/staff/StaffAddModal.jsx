@@ -76,10 +76,10 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
   if (!showAddModal) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-2xl w-full border border-slate-200/50 dark:border-slate-700/50 max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-4xl shadow-2xl max-w-2xl w-full border border-slate-200/50 dark:border-slate-700/50 max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
         <div className="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex justify-between items-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
           <div className="flex items-center gap-3 relative z-10">
               <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200 dark:border-blue-800/50">
                 <UserPlus size={24} />
@@ -104,13 +104,13 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
                 value={addSearchKeyword}
                 onChange={(e) => setAddSearchKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearchNewStaff()}
-                className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all shadow-inner"
+                className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all shadow-inner"
                 />
             </div>
             <button 
                 onClick={handleSearchNewStaff}
                 disabled={isSearching}
-                className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-sm shadow-indigo-500/20 whitespace-nowrap"
+                className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-xs shadow-indigo-500/20 whitespace-nowrap"
             >
                 {isSearching ? 'กำลังค้นหา...' : 'ค้นหาบัญชี'}
             </button>
@@ -125,10 +125,10 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
             ) : (
                 <div className="space-y-3">
                 {searchResults.map(user => (
-                    <div key={user.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors shadow-sm">
+                    <div key={user.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors shadow-xs">
                     <div className="flex items-center gap-4">
                         {user.photoURL ? (
-                        <img src={user.photoURL} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-600" />
+                        <img src={user.photoURL} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-600"  loading="lazy" />
                         ) : (
                         <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-600">
                             <Users size={20} className="text-slate-500" />
@@ -142,7 +142,7 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
                     <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                         <select 
                         id={`role-select-${user.id}`}
-                        className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white flex-1 sm:w-36 cursor-pointer"
+                        className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold uppercase tracking-wide focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:text-white flex-1 sm:w-36 cursor-pointer"
                         >
                         {ROLES.map(r => <option key={r} value={r.toLowerCase()}>{r}</option>)}
                         </select>
@@ -151,7 +151,7 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
                             const selectedRole = document.getElementById(`role-select-${user.id}`).value;
                             handlePromoteToStaff(user.id, selectedRole);
                         }}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shrink-0 shadow-sm shadow-emerald-500/20 active:scale-95"
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shrink-0 shadow-xs shadow-emerald-500/20 active:scale-95"
                         >
                         แต่งตั้ง
                         </button>

@@ -1,5 +1,6 @@
 import { db } from './config';
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { adjustUserCreditWithTransaction } from './credit/creditActionService';
 
 export const productKnowledgeAdminService = {
   /**
@@ -50,7 +51,7 @@ export const productKnowledgeAdminService = {
         // 4. เตรียมข้อมูลเครดิต
         const rewardAmount = parseInt(creditReward, 10) || 2;
         
-        const { adjustUserCreditWithTransaction } = await import('./credit/creditActionService');
+        
         await adjustUserCreditWithTransaction(
             transaction,
             createdByUid,

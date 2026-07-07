@@ -31,7 +31,7 @@ export default function TaxFormFields({ taxInfo, handleChange }) {
         <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex justify-between items-end">
           <span className="flex items-center gap-1.5"><FileText className="w-4 h-4 text-slate-400" /> เลขประจำตัวผู้เสียภาษี (13 หลัก) <span className="text-red-500">*</span></span>
           {taxInfo.taxId && taxInfo.taxId.length === 13 && (
-            <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">รูปแบบถูกต้อง</span>
+            <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-sm font-bold">รูปแบบถูกต้อง</span>
           )}
         </label>
         
@@ -78,7 +78,7 @@ export default function TaxFormFields({ taxInfo, handleChange }) {
                   name="isHeadOffice"
                   checked={taxInfo.isHeadOffice}
                   onChange={handleChange}
-                  className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 transition-all cursor-pointer peer"
+                  className="w-5 h-5 text-indigo-600 rounded-sm border-slate-300 focus:ring-indigo-500 transition-all cursor-pointer peer"
                 />
               </div>
               <span className="text-sm text-slate-700 font-medium group-hover:text-indigo-700 transition-colors">สำนักงานใหญ่</span>

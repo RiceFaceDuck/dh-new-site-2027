@@ -50,6 +50,8 @@ const PrivacyCookiesSettings = lazy(() => import('./pages/managers/PrivacyCookie
 const RedirectURLsSettings = lazy(() => import('./pages/managers/RedirectURLsSettings/index.jsx'))
 const RbacSettings = lazy(() => import('./pages/managers/settings/rbac/index.jsx'))
 const SystemCoreSettings = lazy(() => import('./pages/managers/settings/core/SystemCoreSettings'))
+const DataRepairPage = lazy(() => import('./pages/managers/settings/data_repair/DataRepairPage'))
+const AuditLedger = lazy(() => import('./pages/managers/AuditLedger'))
 const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
 
 const Placeholder = ({ title }) => (
@@ -62,7 +64,7 @@ const Placeholder = ({ title }) => (
 )
 
 const PageLoader = () => (
-  <div className="flex items-center justify-center h-full w-full bg-slate-50/50 backdrop-blur-sm">
+  <div className="flex items-center justify-center h-full w-full bg-slate-50/50 backdrop-blur-xs">
     <div className="flex flex-col items-center gap-3">
       <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
       <span className="text-slate-500 font-medium">กำลังโหลด...</span>
@@ -178,6 +180,8 @@ function AppContent() {
             <Route path="managers/redirect" element={<RedirectURLsSettings />} />
             <Route path="managers/rbac" element={<RbacSettings />} />
             <Route path="managers/core-settings" element={<SystemCoreSettings />} />
+            <Route path="managers/data-repair" element={<DataRepairPage />} />
+            <Route path="managers/audit-ledger" element={<AuditLedger />} />
           </Route>
           
           <Route path="history" element={<HistoryPage />}/>

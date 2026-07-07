@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { db, auth } from '../../../../firebase/config';
 import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { driveService } from '../../../../firebase/driveService';
+import { compressImage } from '../../../../utils/imageCompression';
 
 export const useUploadSlip = (selectedOrder, closeModal) => {
   const [file, setFile] = useState(null);
@@ -23,31 +24,6 @@ export const useUploadSlip = (selectedOrder, closeModal) => {
     }
   };
 
-  const compressImage = (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          let width = img.width;
-          let height = img.height;
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7)); 
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  };
 
   const handleUploadSlip = async () => {
     if (!file) {
@@ -59,20 +35,8 @@ export const useUploadSlip = (selectedOrder, closeModal) => {
     setErrorMsg('');
 
     try {
-      let finalSlipUrl = '';
-
-      try {
-        const uploadFn = driveService.uploadImage || driveService.uploadSlip;
-        if (typeof uploadFn === 'function') {
-          finalSlipUrl = await uploadFn(file);
-        }
-      } catch (driveErr) {
-        console.warn("Drive Upload Failed, using fallback...", driveErr);
-      }
-
-      if (!finalSlipUrl || typeof finalSlipUrl !== 'string' || finalSlipUrl.length < 5) {
-        finalSlipUrl = await compressImage(file);
-      }
+      const compressedFile = await compressImage(file);
+      const finalSlipUrl = await driveService.uploadSlipImage(compressedFile);
 
       const batch = writeBatch(db);
       const user = auth.currentUser;

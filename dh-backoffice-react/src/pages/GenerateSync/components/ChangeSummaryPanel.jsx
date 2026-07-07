@@ -94,7 +94,7 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
           {latestSnapshot && latestSnapshot.changes && (
             <button 
               onClick={() => setViewMode(prev => prev === 'live' ? 'saved' : 'live')}
-              className={`text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm border ${
+              className={`text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-xs border ${
                 isSavedView 
                   ? 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:shadow-md'
                   : 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100 hover:shadow-md'
@@ -214,7 +214,7 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
           <button
             onClick={handleSaveSnapshot}
             disabled={isSaving || (increased.length === 0 && decreased.length === 0 && priceChanged.length === 0 && otherChanged.length === 0)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-xs ${
               savedTxId 
                 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                 : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed'
@@ -233,7 +233,7 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
         <button
           onClick={handleDownloadCSV}
           disabled={!isSavedView && !savedTxId && increased.length === 0 && decreased.length === 0 && priceChanged.length === 0 && otherChanged.length === 0}
-          className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FileText size={16} className="text-blue-500" /> 
           {isSavedView ? `ดาวน์โหลด CSV (${latestSnapshot?.transactionId})` : 'ดาวน์โหลด (.csv)'}

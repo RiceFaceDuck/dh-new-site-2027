@@ -94,7 +94,7 @@ const BannerAdWidget = () => {
   // ลบ mb-8 และบังคับให้กินพื้นที่ h-full เพื่อเตรียมเข้า Grid
   if (loading) {
     return (
-      <div className="w-full h-full min-h-[200px] aspect-video lg:aspect-auto bg-slate-100/50 rounded-2xl md:rounded-3xl animate-pulse flex items-center justify-center border border-slate-200/60 shadow-sm backdrop-blur-md">
+      <div className="w-full h-full min-h-[200px] aspect-video lg:aspect-auto bg-slate-100/50 rounded-2xl md:rounded-3xl animate-pulse flex items-center justify-center border border-slate-200/60 shadow-xs backdrop-blur-md">
         <ImageIcon className="text-slate-300 w-12 h-12 opacity-40" />
       </div>
     );
@@ -109,7 +109,7 @@ const BannerAdWidget = () => {
   // เพิ่ม lg:aspect-auto เพื่อให้ Desktop ยืดหยุ่นตาม Grid ทันที โดยไม่โดนล็อกด้วย aspect ratio
   let aspectClass = 'aspect-video lg:aspect-auto'; 
   if (currentBanner.billboardRatio === '1:1') aspectClass = 'aspect-square lg:aspect-auto';
-  if (currentBanner.billboardRatio === '9:16') aspectClass = 'aspect-[9/16] lg:aspect-auto';
+  if (currentBanner.billboardRatio === '9:16') aspectClass = 'aspect-9/16 lg:aspect-auto';
 
   // 🖱️ 4. ฟังก์ชันจัดการเมื่อคลิกแบนเนอร์
   const handleBannerClick = () => {
@@ -145,7 +145,7 @@ const BannerAdWidget = () => {
         
         {/* 🏷️ Premium Sponsored Badge */}
         <div className="absolute top-4 right-4 z-20 pointer-events-none">
-          <span className="bg-slate-900/60 backdrop-blur-md text-white text-[10px] px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1.5 shadow-sm font-black tracking-widest uppercase">
+          <span className="bg-slate-900/60 backdrop-blur-md text-white text-[10px] px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1.5 shadow-xs font-black tracking-widest uppercase">
             <Info size={12} className="text-amber-400" /> Sponsored
           </span>
         </div>
@@ -163,7 +163,7 @@ const BannerAdWidget = () => {
           />
           
           {/* 🌌 Overlay อัจฉริยะ */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-500"></div>
+          <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-500"></div>
 
           {/* 🎬 ไอคอนสำหรับวิดีโอ (เรืองแสงและกระเพื่อม) */}
           {isVideo && (
@@ -235,7 +235,7 @@ const BannerAdWidget = () => {
           🎬 YouTube In-App Modal (Popup เล่นวิดีโอแบบพรีเมียม)
           ========================================== */}
       {activeVideoId && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
           <div 
             className="absolute inset-0 bg-slate-900/95 backdrop-blur-xl"
             onClick={() => setActiveVideoId(null)}

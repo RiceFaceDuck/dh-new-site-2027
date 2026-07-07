@@ -25,7 +25,7 @@ export default function ClaimTable({ filteredRequests, loading, getStatusDisplay
     <div className="flex-1 overflow-auto h-full w-full custom-scrollbar rounded-b-xl">
       <table className="w-full text-left border-collapse whitespace-nowrap">
         
-        <thead className="bg-dh-surface/90 sticky top-0 z-20 backdrop-blur-md border-b border-dh-border shadow-sm">
+        <thead className="bg-dh-surface/90 sticky top-0 z-20 backdrop-blur-md border-b border-dh-border shadow-xs">
           <tr>
             <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider font-mono w-[100px]">วันที่/เวลา ยื่นธุรกรรม</th>
             <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider w-[120px]">Ref / Type</th>

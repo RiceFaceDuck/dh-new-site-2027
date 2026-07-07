@@ -65,7 +65,7 @@ export default function CalendarPage() {
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900">
       {/* Header */}
-      <div className="px-8 py-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shadow-sm">
+      <div className="px-8 py-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shadow-xs">
         <div>
           <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
             <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
@@ -106,7 +106,7 @@ export default function CalendarPage() {
 
       {/* Calendar Area */}
       <div className="flex-1 p-8 overflow-hidden bg-white dark:bg-slate-900 rounded-tl-3xl shadow-inner">
-        <div className="h-full border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white shadow-sm">
+        <div className="h-full border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white shadow-xs">
           <Calendar
             localizer={localizer}
             events={events}

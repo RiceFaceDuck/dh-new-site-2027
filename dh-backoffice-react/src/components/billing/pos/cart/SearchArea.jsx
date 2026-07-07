@@ -6,10 +6,10 @@ export default function SearchArea({
     handleSearchKeyDown, clearCart, activeTab, searchResults, addItemToCart, isProcessing, isCacheLoading 
 }) {
     return (
-        <div className="search-bar-area p-3 bg-[#2a305a] shrink-0 flex items-center gap-3 relative z-20 shadow-sm border-b border-[#1f2445]" ref={searchRef}>
+        <div className="search-bar-area p-3 bg-[#2a305a] shrink-0 flex items-center gap-3 relative z-20 shadow-xs border-b border-[#1f2445]" ref={searchRef}>
             {isProcessing && (
                 <div className="absolute inset-0 z-20 bg-[#2a305a]/60 flex items-center justify-center backdrop-blur-[1px]">
-                    <span className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white px-3 py-1.5 rounded-sm shadow-sm">
+                    <span className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white px-3 py-1.5 rounded-xs shadow-xs">
                         <Lock size={14} className="text-gray-400" /> ล็อคหน้าจอ...
                     </span>
                 </div>
@@ -35,13 +35,13 @@ export default function SearchArea({
                     onBlur={() => setTimeout(() => setShowDropdown(false), 200)} 
                     onKeyDown={handleSearchKeyDown} 
                     disabled={isProcessing || isCacheLoading}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-md border-2 border-transparent text-sm text-[#2A305A] focus:outline-none transition-all font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] placeholder-gray-400
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-md border-2 border-transparent text-sm text-[#2A305A] focus:outline-hidden transition-all font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] placeholder-gray-400
                         ${isCacheLoading ? 'bg-gray-100 animate-pulse' : 'bg-white focus:border-[#D51C39]/30 focus:ring-4 focus:ring-[#D51C39]/10'}
                     `}
                 />
                 
                 {showDropdown && searchResults.length > 0 && !isProcessing && !isCacheLoading && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 shadow-2xl rounded-lg z-[100] max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200 origin-top">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 shadow-2xl rounded-lg z-100 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200 origin-top">
                         <div className="bg-slate-50 text-slate-500 text-[10px] font-bold px-4 py-2 flex justify-between border-b border-gray-200 sticky top-0 z-10 uppercase tracking-wider">
                             <span>ผลการค้นหา ({searchResults.length})</span>
                             <span>ESC ปิด</span>
@@ -58,8 +58,8 @@ export default function SearchArea({
                                     <div className={p.stockQuantity <= 0 ? 'opacity-60' : ''}>
                                         <div className="flex items-center gap-2 mb-0.5">
                                             <p className={`font-bold text-sm ${isExact ? 'text-blue-700' : 'text-gray-800'}`}>{p.name}</p>
-                                            {isExact && <span className="flex items-center gap-1 text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-sm"><CheckCircle size={10}/> ตรงเป๊ะ</span>}
-                                            {isSimilar && <span className="flex items-center gap-1 text-[9px] font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm"><Search size={10}/> ใกล้เคียง</span>}
+                                            {isExact && <span className="flex items-center gap-1 text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-xs"><CheckCircle size={10}/> ตรงเป๊ะ</span>}
+                                            {isSimilar && <span className="flex items-center gap-1 text-[9px] font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-xs"><Search size={10}/> ใกล้เคียง</span>}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <p className="text-xs text-gray-500 font-medium font-mono">{p.sku}</p>
@@ -74,7 +74,7 @@ export default function SearchArea({
                                             </span>
                                             {p.isActive === false && (
                                                 <div className="group/tooltip relative flex items-center">
-                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1 cursor-help">
+                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1 cursor-help">
                                                         เลิกจำหน่าย
                                                     </span>
                                                     <div className="absolute right-0 top-full mt-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg shadow-xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-50 pointer-events-none text-center">
@@ -92,7 +92,7 @@ export default function SearchArea({
             </div>
             
             <button onClick={clearCart} disabled={activeTab.items.length === 0 || isProcessing} 
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all shadow-sm
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all shadow-xs
                     ${activeTab.items.length > 0 
                         ? 'text-white bg-[#D51C39] hover:bg-[#A3152B] active:scale-95' 
                         : 'text-[#D51C39]/60 bg-[#D51C39]/10 border border-[#D51C39]/20 opacity-70 cursor-not-allowed'}`}>

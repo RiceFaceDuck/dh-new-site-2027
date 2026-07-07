@@ -16,11 +16,11 @@ export default function StatusView({ statusData, onBack }) {
                         <img 
                             src={user.photo} 
                             alt="Profile" 
-                            className={`w-12 h-12 rounded-full border-2 shadow-sm ${
+                            className={`w-12 h-12 rounded-full border-2 shadow-xs ${
                                 isPending ? 'border-amber-200' : 
                                 isError ? 'border-red-200' : 'border-emerald-200'
                             }`} 
-                        />
+                         loading="lazy" />
                     ) : (
                         <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
                             {isPending && <Clock size={24} className="text-amber-500" />}

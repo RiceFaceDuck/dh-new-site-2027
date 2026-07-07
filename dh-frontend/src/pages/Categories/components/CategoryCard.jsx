@@ -7,11 +7,11 @@ const CategoryCard = ({ category }) => {
   return (
     <Link
       to={`/category/${category.type}`}
-      className="group flex flex-row items-center p-3 md:p-4 bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 w-full"
+      className="group flex flex-row items-center p-3 md:p-4 bg-white border border-slate-200 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200 w-full"
       style={{ borderRadius: '4px' }} // Formal, slight rounding
     >
       <div 
-        className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 bg-slate-50 flex items-center justify-center overflow-hidden border border-slate-100 p-2" 
+        className="shrink-0 w-14 h-14 md:w-16 md:h-16 bg-slate-50 flex items-center justify-center overflow-hidden border border-slate-100 p-2" 
         style={{ borderRadius: '2px' }}
       >
         {category.imageUrl ? (
@@ -27,14 +27,14 @@ const CategoryCard = ({ category }) => {
         )}
       </div>
       
-      <div className="ml-3 md:ml-4 flex-grow flex justify-between items-center">
+      <div className="ml-3 md:ml-4 grow flex justify-between items-center">
         <div>
           <h3 className="text-slate-800 font-semibold text-sm md:text-base leading-tight group-hover:text-blue-700 transition-colors">
             {category.name}
           </h3>
           <p className="text-slate-500 text-[11px] md:text-xs mt-1">คลิกเพื่อดูอะไหล่</p>
         </div>
-        <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors w-5 h-5 flex-shrink-0" />
+        <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors w-5 h-5 shrink-0" />
       </div>
     </Link>
   );

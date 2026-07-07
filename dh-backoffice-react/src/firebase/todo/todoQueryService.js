@@ -9,6 +9,7 @@ export const todoQueryService = {
       const q = query(
         collection(db, 'todos'),
         where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
+        orderBy('createdAt', 'desc'),
         limit(300) // 🚀 [Optimization] เพิ่ม Limit เป็น 300 เพื่อป้องกันงานข้ามประเภทดันตกขอบ
       );
       

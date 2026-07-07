@@ -130,7 +130,7 @@ export default function ProductVariants({ form, setForm }) {
           onChange={(e) => setTempVal(e.target.value)}
           onKeyDown={(e) => handleAddOptionValue(e, index, tempVal, setTempVal)}
           placeholder={`พิมพ์ค่า "${opt.name}" (เช่น แดง) แล้วกด Enter`}
-          className="w-full px-4 py-2 bg-dh-base border border-dh-border rounded-xl text-sm text-dh-main focus:outline-none focus:border-dh-accent transition-colors"
+          className="w-full px-4 py-2 bg-dh-base border border-dh-border rounded-xl text-sm text-dh-main focus:outline-hidden focus:border-dh-accent transition-colors"
         />
         <div className="flex flex-wrap gap-2 mt-2">
           {opt.values.map((v, vIndex) => (
@@ -152,7 +152,7 @@ export default function ProductVariants({ form, setForm }) {
   );
 
   return (
-    <div className="bg-dh-surface border border-dh-border rounded-2xl overflow-hidden shadow-sm relative group">
+    <div className="bg-dh-surface border border-dh-border rounded-2xl overflow-hidden shadow-xs relative group">
       {/* 📘 In-App Documentation Tooltip */}
       <div className="absolute top-4 right-4 z-10 group/tooltip">
         <div className="p-1.5 rounded-full bg-dh-accent/10 text-dh-accent cursor-help">
@@ -182,7 +182,7 @@ export default function ProductVariants({ form, setForm }) {
               value={newOptionName}
               onChange={(e) => setNewOptionName(e.target.value)}
               placeholder="เพิ่มตัวเลือก เช่น สี, ขนาด, รุ่น"
-              className="flex-1 px-4 py-2 bg-dh-base border border-dh-border rounded-xl text-sm text-dh-main focus:outline-none focus:border-dh-accent transition-colors"
+              className="flex-1 px-4 py-2 bg-dh-base border border-dh-border rounded-xl text-sm text-dh-main focus:outline-hidden focus:border-dh-accent transition-colors"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddOption(); } }}
             />
             <button
@@ -213,7 +213,7 @@ export default function ProductVariants({ form, setForm }) {
                 <button 
                   type="button" 
                   onClick={generateVariants}
-                  className="px-4 py-2 bg-dh-main text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-dh-main/90 transition-colors shadow-sm"
+                  className="px-4 py-2 bg-dh-main text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-dh-main/90 transition-colors shadow-xs"
                 >
                   <RefreshCw size={16} /> สร้างตารางรุ่นย่อย (Generate)
                 </button>
@@ -247,7 +247,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="text" 
                         value={v.sku || ''} 
                         onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                        className="w-full px-2 py-1.5 bg-dh-base border border-dh-border rounded focus:border-dh-accent outline-none"
+                        className="w-full px-2 py-1.5 bg-dh-base border border-dh-border rounded-sm focus:border-dh-accent outline-hidden"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -255,7 +255,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="number" 
                         value={v.retailPrice} 
                         onChange={(e) => handleVariantChange(index, 'retailPrice', e.target.value)}
-                        className="w-full text-right px-2 py-1.5 bg-dh-base border border-dh-border rounded focus:border-dh-accent outline-none"
+                        className="w-full text-right px-2 py-1.5 bg-dh-base border border-dh-border rounded-sm focus:border-dh-accent outline-hidden"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -263,7 +263,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="number" 
                         value={v.stockQuantity} 
                         onChange={(e) => handleVariantChange(index, 'stockQuantity', e.target.value)}
-                        className="w-full text-right px-2 py-1.5 bg-dh-base border border-dh-border rounded focus:border-dh-accent outline-none"
+                        className="w-full text-right px-2 py-1.5 bg-dh-base border border-dh-border rounded-sm focus:border-dh-accent outline-hidden"
                       />
                     </td>
                     <td className="px-4 py-2 text-center">
@@ -271,7 +271,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="checkbox" 
                         checked={v.isActive} 
                         onChange={(e) => handleVariantChange(index, 'isActive', e.target.checked)}
-                        className="cursor-pointer w-4 h-4 rounded border-dh-border text-dh-accent focus:ring-dh-accent"
+                        className="cursor-pointer w-4 h-4 rounded-sm border-dh-border text-dh-accent focus:ring-dh-accent"
                       />
                     </td>
                     <td className="px-4 py-2 text-center">

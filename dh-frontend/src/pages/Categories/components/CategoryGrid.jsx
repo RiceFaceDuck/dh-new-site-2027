@@ -6,11 +6,11 @@ const CategoryGrid = ({ categories, loading, error }) => {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="animate-pulse flex flex-row items-center p-3 md:p-4 bg-white border border-slate-100 shadow-sm" style={{ borderRadius: '4px' }}>
-            <div className="w-14 h-14 md:w-16 md:h-16 bg-slate-200 flex-shrink-0" style={{ borderRadius: '2px' }}></div>
-            <div className="ml-3 md:ml-4 flex-grow space-y-2">
-              <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-              <div className="h-3 bg-slate-200 rounded w-1/2"></div>
+          <div key={i} className="animate-pulse flex flex-row items-center p-3 md:p-4 bg-white border border-slate-100 shadow-xs" style={{ borderRadius: '4px' }}>
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-slate-200 shrink-0" style={{ borderRadius: '2px' }}></div>
+            <div className="ml-3 md:ml-4 grow space-y-2">
+              <div className="h-4 bg-slate-200 rounded-sm w-3/4"></div>
+              <div className="h-3 bg-slate-200 rounded-sm w-1/2"></div>
             </div>
           </div>
         ))}

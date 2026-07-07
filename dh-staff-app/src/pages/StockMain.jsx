@@ -79,6 +79,10 @@ const StockMain = () => {
     setSearchQuery(code); // เอาค่าที่แสกนได้มาใส่ในช่องค้นหา
   };
 
+  const handleProductClick = useCallback((product) => {
+    setSelectedProduct(product);
+  }, []);
+
   const currentProducts = filteredProducts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredProducts.length;
 
@@ -91,7 +95,7 @@ const StockMain = () => {
           <h1 className="text-2xl font-black tracking-tight">คลังสินค้า</h1>
           <button 
             onClick={() => setIsScannerOpen(true)}
-            className="bg-white/20 p-2.5 rounded-full backdrop-blur-md shadow-sm hover:bg-white/30 transition-all active:scale-95"
+            className="bg-white/20 p-2.5 rounded-full backdrop-blur-md shadow-xs hover:bg-white/30 transition-all active:scale-95"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
           </button>
@@ -108,7 +112,7 @@ const StockMain = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="ค้นหา SKU หรือชื่อสินค้า..."
-              className="w-full pl-11 pr-4 py-3.5 bg-white rounded-2xl text-gray-900 font-medium placeholder-gray-400 outline-none shadow-inner focus:ring-4 focus:ring-indigo-300/50 transition-all"
+              className="w-full pl-11 pr-4 py-3.5 bg-white rounded-2xl text-gray-900 font-medium placeholder-gray-400 outline-hidden shadow-inner focus:ring-4 focus:ring-indigo-300/50 transition-all"
             />
             {searchQuery && (
               <button 
@@ -139,7 +143,7 @@ const StockMain = () => {
              <p className="text-gray-500 font-medium">กำลังโหลดข้อมูลสินค้า...</p>
            </div>
         ) : filteredProducts.length === 0 ? (
-           <div className="bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100 mt-6">
+           <div className="bg-white rounded-3xl p-8 text-center shadow-xs border border-gray-100 mt-6">
              <div className="w-20 h-20 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
              </div>
@@ -156,7 +160,7 @@ const StockMain = () => {
               <ProductCard 
                 key={product.id} 
                 product={product} 
-                onClick={() => setSelectedProduct(product)}
+                onClick={handleProductClick}
               />
             ))}
             

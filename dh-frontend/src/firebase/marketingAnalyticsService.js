@@ -22,7 +22,13 @@ const checkAntiFraud = (actionType, adId) => {
 
 // 🚀 อัปเกรดขั้นสุด: ยิงยอดวิว + หักเครดิต + เช็คงบประมาณ ใน Batch เดียว!
 export const flushAdStatsBatch = async () => {
-  if (Object.keys(adStatsBuffer).length === 0) return;
+  if (Object.keys(adStatsBuffer).length === 0) {
+    if (flushInterval) {
+      clearInterval(flushInterval);
+      flushInterval = null;
+    }
+    return;
+  }
   const statsToProcess = { ...adStatsBuffer };
   adStatsBuffer = {}; 
 

@@ -14,11 +14,11 @@ import FormalLeaveApprovalCard from '../../../components/todo/manager/cards/Form
 
 // Premium Skeleton Loader
 const PremiumSkeleton = () => (
-  <div className="bg-white dark:bg-slate-800 rounded-md p-5 shadow-sm border border-slate-200 dark:border-slate-700 h-[120px] flex items-center animate-pulse">
+  <div className="bg-white dark:bg-slate-800 rounded-md p-5 shadow-xs border border-slate-200 dark:border-slate-700 h-[120px] flex items-center animate-pulse">
     <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-md shrink-0 mr-4"></div>
     <div className="flex-1 space-y-3">
-      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
-      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-sm w-1/3"></div>
+      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-sm w-1/4"></div>
     </div>
   </div>
 );
@@ -28,7 +28,7 @@ const InAppDocPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="mb-4 bg-white rounded-md border border-slate-200 shadow-sm overflow-hidden transition-all">
+    <div className="mb-4 bg-white rounded-md border border-slate-200 shadow-xs overflow-hidden transition-all">
       <div 
         className="px-4 py-3 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100"
         onClick={() => setIsOpen(!isOpen)}
@@ -64,7 +64,7 @@ const InAppDocPanel = () => {
             </strong>
             <ul className="list-disc pl-7 text-slate-600 space-y-1">
               <li>กดที่แถบรายการซ้ำเพื่อ <strong>พับเก็บ</strong> ช่วยให้หน้าจอไม่รก</li>
-              <li>ป้ายกำกับ <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px]">URGENT</span> หมายถึงงานด่วน ควรจัดการก่อน</li>
+              <li>ป้ายกำกับ <span className="bg-red-600 text-white px-1.5 py-0.5 rounded-sm text-[10px]">URGENT</span> หมายถึงงานด่วน ควรจัดการก่อน</li>
             </ul>
           </div>
           <div className="bg-rose-50 p-3 rounded-md border border-rose-100">
@@ -156,11 +156,11 @@ export default function ManagerTaskSection() {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'todo': return <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200 tracking-wider">WAITING</span>;
-      case 'in_progress': return <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold animate-pulse border border-blue-200 tracking-wider">IN PROGRESS</span>;
+      case 'todo': return <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm text-[10px] font-bold border border-slate-200 tracking-wider">WAITING</span>;
+      case 'in_progress': return <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-sm text-[10px] font-bold animate-pulse border border-blue-200 tracking-wider">IN PROGRESS</span>;
       case 'pending_manager': 
-      case 'pending': return <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-bold border border-amber-200 tracking-wider">PENDING MGR</span>;
-      default: return <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{status}</span>;
+      case 'pending': return <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-sm text-[10px] font-bold border border-amber-200 tracking-wider">PENDING MGR</span>;
+      default: return <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider">{status}</span>;
     }
   };
 
@@ -211,7 +211,7 @@ export default function ManagerTaskSection() {
       <div className="flex flex-col items-center justify-center p-8 h-full min-h-[400px] animate-in fade-in slide-in-from-bottom-4 relative z-10 w-full">
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-emerald-400 blur-2xl opacity-20 rounded-full animate-pulse"></div>
-          <div className="w-28 h-28 bg-gradient-to-br from-emerald-50 to-white rounded-full flex items-center justify-center shadow-sm border border-emerald-100 relative z-10">
+          <div className="w-28 h-28 bg-linear-to-br from-emerald-50 to-white rounded-full flex items-center justify-center shadow-xs border border-emerald-100 relative z-10">
             <CheckCircle2 className="w-12 h-12 text-emerald-500" strokeWidth={2.5} />
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function ManagerTaskSection() {
           <ClipboardList className="w-5 h-5 text-slate-700" />
           MANAGER APPROVALS
         </h2>
-        <span className="px-3 py-1.5 text-xs font-bold bg-slate-800 text-white rounded-md shadow-sm">
+        <span className="px-3 py-1.5 text-xs font-bold bg-slate-800 text-white rounded-md shadow-xs">
           {managerTodos.length} ITEMS
         </span>
       </div>

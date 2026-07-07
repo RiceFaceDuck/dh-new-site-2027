@@ -7,19 +7,19 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
   const hasFreebies = selectedRequest.payload?.hasFreebies;
 
   return (
-    <div className="bg-dh-surface/60 backdrop-blur-sm p-5 rounded-xl border border-dh-border shadow-sm flex flex-col hover:shadow-md transition-shadow">
+    <div className="bg-dh-surface/60 backdrop-blur-xs p-5 rounded-xl border border-dh-border shadow-xs flex flex-col hover:shadow-md transition-shadow">
       <h3 className="text-[10px] font-black text-dh-muted uppercase tracking-widest mb-3 border-b border-dh-border pb-2 flex items-center gap-1.5">
         <Package className="w-3.5 h-3.5"/> ข้อมูลสินค้าและสาเหตุ
       </h3>
       
-      <div className="bg-gradient-to-r from-dh-base to-transparent p-4 rounded-xl border border-dh-border/50 mb-4 hover:border-dh-border transition-colors">
+      <div className="bg-linear-to-r from-dh-base to-transparent p-4 rounded-xl border border-dh-border/50 mb-4 hover:border-dh-border transition-colors">
         <div className="flex justify-between items-start gap-2">
           <div>
-            <span className="text-[9px] font-black text-dh-surface bg-dh-muted px-2 py-0.5 rounded-md uppercase tracking-wider shadow-sm">{selectedRequest.payload.actionType}</span>
+            <span className="text-[9px] font-black text-dh-surface bg-dh-muted px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs">{selectedRequest.payload.actionType}</span>
             <p className="font-black text-dh-main text-[14px] mt-2 leading-snug">{selectedRequest.payload.productName}</p>
-            <p className="font-mono text-[11px] text-dh-accent font-bold mt-1 bg-dh-accent/10 w-fit px-1.5 py-0.5 rounded">{selectedRequest.payload.sku}</p>
+            <p className="font-mono text-[11px] text-dh-accent font-bold mt-1 bg-dh-accent/10 w-fit px-1.5 py-0.5 rounded-sm">{selectedRequest.payload.sku}</p>
           </div>
-          <div className="text-right shrink-0 bg-dh-surface px-3 py-1.5 rounded-lg border border-dh-border shadow-sm">
+          <div className="text-right shrink-0 bg-dh-surface px-3 py-1.5 rounded-lg border border-dh-border shadow-xs">
             <span className="text-[10px] font-bold text-dh-muted block mb-0.5">จำนวน</span>
             <span className="text-2xl font-black text-dh-main">{selectedRequest.payload.qty || 1}</span>
           </div>
@@ -43,14 +43,14 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
         
         {/* Freebie Check Section (For Returns Only) */}
         {isReturn && hasFreebies && isManager && selectedRequest.status === 'processing' && (
-          <div className="bg-orange-50/80 p-3 rounded-lg border border-orange-200 shadow-sm mt-3 animate-in fade-in slide-in-from-top-2">
+          <div className="bg-orange-50/80 p-3 rounded-lg border border-orange-200 shadow-xs mt-3 animate-in fade-in slide-in-from-top-2">
              <p className="text-[11px] font-black text-orange-700 mb-2 flex items-center gap-1.5 uppercase tracking-wide">
                <Gift className="w-4 h-4"/> ตรวจสอบการคืนของแถม
              </p>
              <p className="text-[10px] text-orange-600 mb-3 leading-snug">ออเดอร์นี้มีของแถม โปรดยืนยันว่าลูกค้าคืนของแถมครบถ้วน หรือระบุยอดเงินที่ต้องหักหากลูกค้าไม่ได้คืนของแถม</p>
              
              <div className="flex flex-col gap-3">
-                <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:border-orange-300 transition-colors">
+                <label className="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-sm border border-orange-100 hover:border-orange-300 transition-colors">
                   <input 
                     type="checkbox" 
                     checked={freebieReturned} 
@@ -58,13 +58,13 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
                       setFreebieReturned(e.target.checked);
                       if(e.target.checked) setFreebiePenaltyAmount(0);
                     }}
-                    className="w-4 h-4 text-orange-600 rounded border-orange-300 focus:ring-orange-500"
+                    className="w-4 h-4 text-orange-600 rounded-sm border-orange-300 focus:ring-orange-500"
                   />
                   <span className="text-[12px] font-bold text-slate-700">ลูกค้าคืนของแถมครบถ้วน</span>
                 </label>
                 
                 {!freebieReturned && (
-                  <div className="bg-white p-3 rounded border border-orange-200 flex flex-col gap-1.5 relative overflow-hidden">
+                  <div className="bg-white p-3 rounded-sm border border-orange-200 flex flex-col gap-1.5 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1 h-full bg-red-400"></div>
                     <label className="text-[10px] font-bold text-red-600 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5"/> ระบุยอดเงินที่ต้องหัก (ค่าปรับ)</label>
                     <div className="relative">
@@ -74,7 +74,7 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
                         min="1"
                         value={freebiePenaltyAmount}
                         onChange={(e) => setFreebiePenaltyAmount(Number(e.target.value))}
-                        className="w-full text-xs p-2 pl-7 rounded bg-slate-50 border border-slate-300 focus:border-red-400 focus:ring-1 focus:ring-red-400 outline-none"
+                        className="w-full text-xs p-2 pl-7 rounded-sm bg-slate-50 border border-slate-300 focus:border-red-400 focus:ring-1 focus:ring-red-400 outline-hidden"
                         placeholder="ระบุมูลค่าของแถมเพื่อหักจากยอดคืนเงิน"
                       />
                     </div>
@@ -93,7 +93,7 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
               placeholder="กรอกเลขพัสดุก่อนรับจบ (ถ้ามี)" 
               value={trackingNo}
               onChange={(e) => setTrackingNo(e.target.value)}
-              className="w-full text-xs p-2.5 rounded-lg bg-white dark:bg-black/20 border border-blue-200 dark:border-blue-800/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none font-mono transition-all shadow-sm"
+              className="w-full text-xs p-2.5 rounded-lg bg-white dark:bg-black/20 border border-blue-200 dark:border-blue-800/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-hidden font-mono transition-all shadow-xs"
             />
           </div>
         ) : (
@@ -101,7 +101,7 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
             {selectedRequest.payload.trackingNo && (
               <div className="group/track w-fit">
                 <p className="text-[10px] font-bold text-dh-muted mb-1.5 ml-1 flex items-center gap-1"><Truck className="w-3 h-3"/> เลขพัสดุรับเข้า (จากลูกค้า)</p>
-                <span className="font-mono text-[13px] font-black text-dh-accent bg-dh-accent/10 px-3 py-1.5 rounded-lg border border-dh-accent/20 cursor-pointer flex items-center gap-2 hover:bg-dh-accent/20 transition-colors shadow-sm" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.trackingNo)}>
+                <span className="font-mono text-[13px] font-black text-dh-accent bg-dh-accent/10 px-3 py-1.5 rounded-lg border border-dh-accent/20 cursor-pointer flex items-center gap-2 hover:bg-dh-accent/20 transition-colors shadow-xs" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.trackingNo)}>
                   {selectedRequest.payload.trackingNo}
                   {copiedText === selectedRequest.payload.trackingNo ? <Check className="w-4 h-4 text-emerald-500"/> : <Copy className="w-4 h-4 opacity-0 group-hover/track:opacity-100 transition-opacity"/>}
                 </span>
@@ -111,7 +111,7 @@ export default function ProductInfo({ selectedRequest, isManager, trackingNo, se
             {selectedRequest.payload.returnTrackingNo && (
               <div className="group/rtrack w-fit mt-1">
                 <p className="text-[10px] font-bold text-emerald-600 mb-1.5 ml-1 flex items-center gap-1"><Truck className="w-3 h-3"/> เลขพัสดุส่งออก (ส่งกลับลูกค้า)</p>
-                <span className="font-mono text-[13px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 cursor-pointer flex items-center gap-2 hover:bg-emerald-100 transition-colors shadow-sm" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.returnTrackingNo)}>
+                <span className="font-mono text-[13px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 cursor-pointer flex items-center gap-2 hover:bg-emerald-100 transition-colors shadow-xs" onClick={(e) => handleQuickCopy(e, selectedRequest.payload.returnTrackingNo)}>
                   {selectedRequest.payload.returnTrackingNo}
                   {copiedText === selectedRequest.payload.returnTrackingNo ? <Check className="w-4 h-4 text-emerald-500"/> : <Copy className="w-4 h-4 opacity-0 group-hover/rtrack:opacity-100 transition-opacity"/>}
                 </span>

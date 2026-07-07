@@ -57,7 +57,7 @@ export default function ProfileSetup({ user, onComplete }) {
           <div className="relative z-10">
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg p-1">
               {user.photoURL ? (
-                <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover"  loading="lazy" />
               ) : (
                 <UserCircle size={40} className="text-blue-200" />
               )}
@@ -82,13 +82,13 @@ export default function ProfileSetup({ user, onComplete }) {
               <label className="block text-sm font-bold text-gray-700 mb-1">ชื่อจริง *</label>
               <input type="text" name="firstName" required value={form.firstName} onChange={handleChange}
                 placeholder="สมชาย"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-hidden" />
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">นามสกุล *</label>
               <input type="text" name="lastName" required value={form.lastName} onChange={handleChange}
                 placeholder="รักดี"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none" />
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-hidden" />
             </div>
           </div>
 
@@ -96,7 +96,7 @@ export default function ProfileSetup({ user, onComplete }) {
             <label className="block text-sm font-bold text-gray-700 mb-1">ชื่อเล่น *</label>
             <input type="text" name="nickname" required value={form.nickname} onChange={handleChange}
               placeholder="เช่น บอย, นัท"
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none" />
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-hidden" />
           </div>
 
           <div>
@@ -107,7 +107,7 @@ export default function ProfileSetup({ user, onComplete }) {
               </div>
             ) : (
               <select name="role" required value={form.role} onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none font-medium text-gray-700">
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-hidden font-medium text-gray-700">
                 <option value="Admin ฝ่ายขาย">Admin ฝ่ายขาย</option>
                 <option value="จัดแพ็ค">จัดแพ็ค</option>
                 <option value="การบัญชี">การบัญชี</option>

@@ -15,7 +15,7 @@ export default function GenerateSyncHeader({ onOpenSettings, onOpenGuide }) {
       <div className="flex items-center gap-2">
         <button 
           onClick={onOpenGuide} 
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm font-bold border border-white/20 shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm font-bold border border-white/20 shadow-xs"
         >
           <HelpCircle size={18} />
           คู่มือใช้งาน

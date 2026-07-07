@@ -30,7 +30,7 @@ export default function WholesaleTable({ cartItems, fetchedData, editedPrices, h
                   ราคาส่ง/ชิ้น
                   <span className="group relative cursor-help">
                     <HelpCircle size={14} className="text-blue-400 hover:text-blue-600" />
-                    <span className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg z-10 font-medium normal-case">
+                    <span className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-48 p-2 bg-slate-800 text-white text-[10px] rounded-sm shadow-lg z-10 font-medium normal-case">
                       ราคาที่ดึงจากฐานข้อมูล หากไม่มีจะลดให้ 5% เบื้องต้น (สามารถแก้ไขได้)
                     </span>
                   </span>
@@ -46,7 +46,7 @@ export default function WholesaleTable({ cartItems, fetchedData, editedPrices, h
                   <td className="px-4 py-3 max-w-[200px] truncate">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                        {item.image ? <img src={item.image} alt="SKU" className="w-full h-full object-cover rounded-lg" /> : <Package size={14} />}
+                        {item.image ? <img src={item.image} alt="SKU" className="w-full h-full object-cover rounded-lg"  loading="lazy" /> : <Package size={14} />}
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">{item.sku}</p>
@@ -69,7 +69,7 @@ export default function WholesaleTable({ cartItems, fetchedData, editedPrices, h
                         value={editedPrices[idx] !== undefined ? editedPrices[idx] : currentPrice}
                         onChange={(e) => handlePriceChange(idx, e.target.value)}
                         disabled={isProcessing}
-                        className="w-24 text-right p-1.5 pl-6 border border-blue-200 dark:border-blue-800 rounded bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-inner disabled:opacity-50"
+                        className="w-24 text-right p-1.5 pl-6 border border-blue-200 dark:border-blue-800 rounded-sm bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 font-bold text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-inner disabled:opacity-50"
                       />
                     </div>
                   </td>

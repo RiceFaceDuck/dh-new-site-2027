@@ -46,6 +46,13 @@ export default function Sidebar({
       icon: Lock, 
       badge: hasManagerAccess && managerApprovalCount > 0 ? managerApprovalCount : null,
       requiresManager: true
+    },
+    { 
+      path: '/managers/audit-ledger', 
+      label: 'Audit Ledger', 
+      labelThai: 'บัญชีแยกประเภท', 
+      icon: History, 
+      requiresManager: true
     }
   ];
 
@@ -60,7 +67,7 @@ export default function Sidebar({
     <aside className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 transition-colors duration-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       {/* Logo */}
       <div className="h-[72px] flex items-center justify-start px-5 border-b border-slate-100 dark:border-slate-700/50 shrink-0 gap-3 bg-white dark:bg-slate-800">
-        <img src="/dh-logo.png" alt="DH Logo" className="h-9 object-contain drop-shadow-sm" />
+        <img src="/dh-logo.png" alt="DH Logo" className="h-9 object-contain drop-shadow-xs"  loading="lazy" />
         <div className="flex flex-col">
           <span className="text-[15px] font-black leading-tight text-slate-800 dark:text-white tracking-tight">DH Notebook</span>
           <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">System Command v1.0</span>
@@ -123,7 +130,7 @@ export default function Sidebar({
                 </span>
               </div>
               {item.badge > 0 && !isLocked && (
-                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${
+                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-xs ${
                   isActive 
                     ? 'bg-white/20 text-white' 
                     : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'
@@ -140,16 +147,16 @@ export default function Sidebar({
       <div className="p-3 border-t border-slate-100 dark:border-slate-700/50 shrink-0 bg-slate-50/50 dark:bg-slate-800/50">
         
         {/* User Info Block */}
-        <div className="relative group flex items-start gap-2.5 p-2 -mx-1 mb-3 rounded-2xl hover:bg-white dark:hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-sm">
+        <div className="relative group flex items-start gap-2.5 p-2 -mx-1 mb-3 rounded-2xl hover:bg-white dark:hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-xs">
           
           {user?.photoURL ? (
             <img 
               src={user.photoURL} 
               alt="Profile" 
-              className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-slate-600 shadow-sm"
-            />
+              className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-slate-600 shadow-xs"
+             loading="lazy" />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-sm border border-indigo-400 dark:border-indigo-500">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-xs border border-indigo-400 dark:border-indigo-500">
               {profile?.firstName?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
           )}
@@ -164,7 +171,7 @@ export default function Sidebar({
           </div>
 
           <div 
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-indigo-50 dark:bg-slate-800 shadow-sm border border-indigo-100 dark:border-slate-600 text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-indigo-50 dark:bg-slate-800 shadow-xs border border-indigo-100 dark:border-slate-600 text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
             title="ตั้งค่าข้อมูลบัญชี (Coming Soon)"
             onClick={() => alert('ส่วนตั้งค่าบัญชีส่วนตัว จะเปิดใช้งานในระบบ KPI เร็วๆ นี้ครับ')}
           >
@@ -176,14 +183,14 @@ export default function Sidebar({
         <div className="flex gap-2">
           <button 
             onClick={logout}
-            className="flex-1 group flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-colors outline-none border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
+            className="flex-1 group flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-colors outline-hidden border border-slate-200 dark:border-slate-700 shadow-xs bg-white dark:bg-slate-800"
           >
             <LogOut size={16} className="transition-transform group-hover:-translate-x-1" strokeWidth={2.5} />
             <span>เลิกงาน</span>
           </button>
           <button 
             onClick={toggleDarkMode}
-            className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors outline-none border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm bg-white dark:bg-slate-800"
+            className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors outline-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-xs bg-white dark:bg-slate-800"
             title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
           >
             {isDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}

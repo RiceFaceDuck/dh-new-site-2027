@@ -50,12 +50,12 @@ export default function CartTableRow({
                         <p className={`text-sm font-bold truncate max-w-[250px] lg:max-w-[350px] ${isActive ? 'text-amber-700' : (isFreebie ? 'text-emerald-700' : 'text-slate-800')}`} title={item.name}>
                             {item.name}
                         </p>
-                        {isFreebie && <span className="px-1.5 py-0.5 rounded-sm bg-emerald-100 text-emerald-700 text-[9px] font-black tracking-wide border border-emerald-200">แถมฟรี</span>}
+                        {isFreebie && <span className="px-1.5 py-0.5 rounded-xs bg-emerald-100 text-emerald-700 text-[9px] font-black tracking-wide border border-emerald-200">แถมฟรี</span>}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[11px] font-mono text-slate-500">{item.sku}</p>
                         {item.note && !isActive && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium tracking-wide border ${noteColorMap[item.noteColor || 'slate']?.badge || noteColorMap['slate'].badge}`}>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-xs font-medium tracking-wide border ${noteColorMap[item.noteColor || 'slate']?.badge || noteColorMap['slate'].badge}`}>
                                 {item.note}
                             </span>
                         )}
@@ -64,7 +64,7 @@ export default function CartTableRow({
                 
                 <td className="py-2 px-3 text-center">
                     <span className={`font-bold text-sm ${isFreebie ? 'text-emerald-700' : 'text-slate-800'}`}>{item.qty}</span>
-                    {isOutOfStock && <span className="block text-[9px] text-red-500 font-black mt-0.5 bg-red-100 rounded-sm py-0.5 px-1 mx-auto max-w-[50px]">SOLD OUT</span>}
+                    {isOutOfStock && <span className="block text-[9px] text-red-500 font-black mt-0.5 bg-red-100 rounded-xs py-0.5 px-1 mx-auto max-w-[50px]">SOLD OUT</span>}
                 </td>
                 
                 <td className="py-2 px-3 text-right text-sm font-medium">
@@ -99,32 +99,32 @@ export default function CartTableRow({
             </tr>
             
             {!isFreebie && isActive && (
-                <tr className="bg-[#ffbb00]/[0.15] border-b border-[#ffbb00]/30 shadow-inner">
+                <tr className="bg-[#ffbb00]/15 border-b border-[#ffbb00]/30 shadow-inner">
                     <td colSpan="7" className="p-3 pl-12 relative" ref={actionBoxRef}>
                         <button onClick={() => setActionBoxItem(null)} className="absolute top-2 right-2 p-1 text-amber-700 hover:text-amber-900 bg-white/50 hover:bg-white rounded-md transition-colors"><X size={14}/></button>
                         <div className="flex flex-wrap gap-4 items-start animate-in slide-in-from-top-1 fade-in duration-200">
                             <div className="w-16">
                                 <label className="text-[10px] text-amber-900 font-bold mb-1 block uppercase tracking-wider">จำนวน</label>
-                                <input type="number" min="1" value={item.qty} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'qty', parseInt(e.target.value) || 1)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-center font-bold text-sm outline-none focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-sm" />
+                                <input type="number" min="1" value={item.qty} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'qty', parseInt(e.target.value) || 1)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-center font-bold text-sm outline-hidden focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-xs" />
                             </div>
                             <div className="w-24">
                                 <label className="text-[10px] text-amber-900 font-bold mb-1 block uppercase tracking-wider">ราคา/หน่วย</label>
-                                <input type="number" min="0" value={item.price} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'price', parseFloat(e.target.value) || 0)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-right font-bold text-sm outline-none focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-sm" />
+                                <input type="number" min="0" value={item.price} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'price', parseFloat(e.target.value) || 0)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-right font-bold text-sm outline-hidden focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-xs" />
                             </div>
                             <div className="w-24">
                                 <label className="text-[10px] text-red-600 font-bold mb-1 block uppercase tracking-wider">ลด/หน่วย</label>
-                                <input type="number" min="0" value={item.discount} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'discount', parseFloat(e.target.value) || 0)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-red-200 text-red-600 bg-red-50/90 text-right font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-all shadow-sm" />
+                                <input type="number" min="0" value={item.discount} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'discount', parseFloat(e.target.value) || 0)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-red-200 text-red-600 bg-red-50/90 text-right font-bold text-sm outline-hidden focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-all shadow-xs" />
                             </div>
                             <div className="flex-1 min-w-[200px]">
                                 <div className="flex items-center justify-between mb-1">
                                     <label className="text-[10px] text-amber-900 font-bold uppercase tracking-wider">หมายเหตุ (Note)</label>
                                     <div className="flex items-center gap-1.5 mr-6">
                                         {['slate', 'red', 'black', 'amber', 'blue'].map(c => (
-                                            <button key={c} onClick={() => updateItemAction(item.sku, 'noteColor', c)} className={`w-3.5 h-3.5 rounded-full ${noteColorMap[c].dot} border border-black/10 ${item.noteColor === c ? 'ring-2 ring-offset-1 ring-[#ffbb00] scale-110 shadow-sm' : 'opacity-50 hover:opacity-100 hover:scale-110'} transition-all`} title={c}/>
+                                            <button key={c} onClick={() => updateItemAction(item.sku, 'noteColor', c)} className={`w-3.5 h-3.5 rounded-full ${noteColorMap[c].dot} border border-black/10 ${item.noteColor === c ? 'ring-2 ring-offset-1 ring-[#ffbb00] scale-110 shadow-xs' : 'opacity-50 hover:opacity-100 hover:scale-110'} transition-all`} title={c}/>
                                         ))}
                                     </div>
                                 </div>
-                                <input type="text" maxLength={30} placeholder="รายละเอียดเพิ่มเติม..." value={item.note || ''} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'note', e.target.value)} disabled={isProcessing} className="w-full h-8 px-3 rounded-md border-amber-200/60 bg-white/90 text-sm font-medium outline-none focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-sm" />
+                                <input type="text" maxLength={30} placeholder="รายละเอียดเพิ่มเติม..." value={item.note || ''} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'note', e.target.value)} disabled={isProcessing} className="w-full h-8 px-3 rounded-md border-amber-200/60 bg-white/90 text-sm font-medium outline-hidden focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-xs" />
                             </div>
                         </div>
                     </td>

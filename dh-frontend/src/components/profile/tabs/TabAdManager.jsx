@@ -4,7 +4,7 @@ import {
   Megaphone, Loader2, Store, Activity, Sparkles
 } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
-import { doc, getDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { driveService } from '../../../firebase/driveService';
 import { marketingService } from '../../../firebase/marketingService';
@@ -214,20 +214,24 @@ const TabAdManager = ({ user }) => {
   const handleDeleteAd = async (adId) => {
     if(window.confirm("คุณต้องการลบโฆษณานี้ใช่หรือไม่? (หากลบแล้วจะใช้งานไม่ได้อีก)")) {
       try {
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId));
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads', adId)).catch(()=>{});
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'billboard_ads', adId)).catch(()=>{});
+        const batch = writeBatch(db);
+        
+        batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId));
+        batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads', adId));
+        batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'billboard_ads', adId));
         
         // 🚀 เก็บ History Log ว่ามีการลบ SKU โฆษณา
-        const { setDoc, serverTimestamp } = await import('firebase/firestore');
-        await setDoc(doc(db, 'system_logs', `delete_ad_${adId}_${Date.now()}`), {
+        const { serverTimestamp } = await import('firebase/firestore');
+        batch.set(doc(db, 'system_logs', `delete_ad_${adId}_${Date.now()}`), {
           module: 'Marketing',
           action: 'DeleteAd',
           targetId: adId,
           details: `User ${user.uid} deleted ad/SKU: ${adId}`,
           timestamp: serverTimestamp(),
           performedBy: user.uid
-        }).catch(() => {}); // catch error silent
+        });
+        
+        await batch.commit();
         
         fetchMyAds();
       } catch (error) { alert("ลบไม่สำเร็จ กรุณาลองใหม่"); }
@@ -248,15 +252,15 @@ const TabAdManager = ({ user }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200/60 pb-4">
         <div>
           <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2 tracking-tight">
-            <Megaphone className="text-indigo-600 drop-shadow-sm" size={28} /> ศูนย์จัดการโฆษณาและร้านค้า
+            <Megaphone className="text-indigo-600 drop-shadow-xs" size={28} /> ศูนย์จัดการโฆษณาและร้านค้า
           </h2>
           <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
              <Sparkles size={14} className="text-amber-400"/>ศูนย์รวมการโปรโมทร้านค้าและสินค้าแบบครบวงจร
           </p>
         </div>
         <div className="flex bg-slate-100/80 p-1 rounded-xl shadow-inner border border-slate-200/50">
-          <button onClick={() => setActiveSubTab('store')} className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeSubTab === 'store' ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}><Store size={16} /> ข้อมูลร้านซ่อม</button>
-          <button onClick={() => setActiveSubTab('ads')} className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeSubTab === 'ads' ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}><Activity size={16} /> โฆษณาสินค้า/แบนเนอร์</button>
+          <button onClick={() => setActiveSubTab('store')} className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeSubTab === 'store' ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}><Store size={16} /> ข้อมูลร้านซ่อม</button>
+          <button onClick={() => setActiveSubTab('ads')} className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeSubTab === 'ads' ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}><Activity size={16} /> โฆษณาสินค้า/แบนเนอร์</button>
         </div>
       </div>
 

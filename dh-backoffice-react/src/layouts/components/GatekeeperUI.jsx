@@ -41,14 +41,14 @@ export function GatekeeperDenied({ denyReason, handleLogout }) {
           ) : (
             <p>
               คุณได้ลงทะเบียนเข้าสู่ระบบเรียบร้อยแล้ว แต่อยู่ในสถานะ <br/>
-              <span className="inline-block mt-3 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-lg border border-amber-200 dark:border-amber-500/20 font-bold shadow-sm">"รอการอนุมัติสิทธิ์ (Pending)"</span> <br/><br/>
+              <span className="inline-block mt-3 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-lg border border-amber-200 dark:border-amber-500/20 font-bold shadow-xs">"รอการอนุมัติสิทธิ์ (Pending)"</span> <br/><br/>
               กรุณาแจ้งผู้จัดการเพื่อเปิดสิทธิ์การเข้าใช้งานระบบ
             </p>
           )}
         </div>
 
         <div className="flex flex-col gap-3">
-          <button onClick={() => window.location.reload()} className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-sm shadow-blue-500/20 active:scale-95">
+          <button onClick={() => window.location.reload()} className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-xs shadow-blue-500/20 active:scale-95">
             โหลดข้อมูลใหม่
           </button>
           <button onClick={handleLogout} className="w-full px-4 py-3 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors active:scale-95">

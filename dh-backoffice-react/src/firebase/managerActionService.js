@@ -57,7 +57,7 @@ export const managerActionService = {
     }
 
     // 5. WHOLESALE_APPROVAL / wholesale_request
-    if (type === 'wholesale_request' || type === 'WHOLESALE_APPROVAL') {
+    if (type === 'wholesale_request' || type === 'WHOLESALE_REQUEST' || type === 'WHOLESALE_APPROVAL') {
       const { todoService } = await import('./todoService');
       const orderId = payload.orderId;
       if (!orderId) throw new Error("ไม่พบรหัสออเดอร์ในคำขอ");
@@ -114,7 +114,7 @@ export const managerActionService = {
     }
 
     // 3. WHOLESALE_APPROVAL / wholesale_request
-    if (type === 'wholesale_request' || type === 'WHOLESALE_APPROVAL') {
+    if (type === 'wholesale_request' || type === 'WHOLESALE_REQUEST' || type === 'WHOLESALE_APPROVAL') {
       const { todoService } = await import('./todoService');
       const orderId = payload.orderId;
       if (!orderId) throw new Error("ไม่พบรหัสออเดอร์ในคำขอ");

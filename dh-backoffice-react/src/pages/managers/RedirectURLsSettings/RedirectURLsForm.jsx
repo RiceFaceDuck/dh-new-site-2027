@@ -53,7 +53,7 @@ export default function RedirectURLsForm({ isOpen, onClose, onSubmit, initialDat
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-200">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
@@ -85,7 +85,7 @@ export default function RedirectURLsForm({ isOpen, onClose, onSubmit, initialDat
                   placeholder="/old-page-path"
                   value={formData.oldUrl}
                   onChange={(e) => setFormData({...formData, oldUrl: e.target.value.trim()})}
-                  className={`w-full pl-4 pr-4 py-2.5 bg-slate-50 border ${errors.oldUrl ? 'border-red-300 focus:ring-red-500' : 'border-slate-200 focus:ring-indigo-500'} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all`}
+                  className={`w-full pl-4 pr-4 py-2.5 bg-slate-50 border ${errors.oldUrl ? 'border-red-300 focus:ring-red-500' : 'border-slate-200 focus:ring-indigo-500'} rounded-xl focus:outline-hidden focus:ring-2 focus:border-transparent transition-all`}
                 />
               </div>
               {errors.oldUrl && <p className="text-xs font-semibold text-red-500 mt-1.5 flex items-center gap-1"><AlertCircle size={12}/> {errors.oldUrl}</p>}
@@ -108,7 +108,7 @@ export default function RedirectURLsForm({ isOpen, onClose, onSubmit, initialDat
                 placeholder="/new-page-path หรือ https://..."
                 value={formData.newUrl}
                 onChange={(e) => setFormData({...formData, newUrl: e.target.value.trim()})}
-                className={`w-full pl-4 pr-4 py-2.5 bg-slate-50 border ${errors.newUrl ? 'border-red-300 focus:ring-red-500' : 'border-slate-200 focus:ring-indigo-500'} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all`}
+                className={`w-full pl-4 pr-4 py-2.5 bg-slate-50 border ${errors.newUrl ? 'border-red-300 focus:ring-red-500' : 'border-slate-200 focus:ring-indigo-500'} rounded-xl focus:outline-hidden focus:ring-2 focus:border-transparent transition-all`}
               />
               {errors.newUrl && <p className="text-xs font-semibold text-red-500 mt-1.5 flex items-center gap-1"><AlertCircle size={12}/> {errors.newUrl}</p>}
             </div>
@@ -123,7 +123,7 @@ export default function RedirectURLsForm({ isOpen, onClose, onSubmit, initialDat
                 placeholder="เช่น เปลี่ยนลิงก์เพราะสินค้ารุ่นเก่าเลิกผลิต..."
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
               />
             </div>
 
@@ -140,7 +140,7 @@ export default function RedirectURLsForm({ isOpen, onClose, onSubmit, initialDat
                   checked={formData.isActive}
                   onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
                 />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </label>
             </div>
 
@@ -160,7 +160,7 @@ export default function RedirectURLsForm({ isOpen, onClose, onSubmit, initialDat
             type="submit"
             form="redirect-form"
             disabled={isSubmitting}
-            className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors flex items-center gap-2 shadow-sm disabled:opacity-70"
+            className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors flex items-center gap-2 shadow-xs disabled:opacity-70"
           >
             {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             {initialData ? 'บันทึกการแก้ไข' : 'เพิ่ม Redirect URL'}

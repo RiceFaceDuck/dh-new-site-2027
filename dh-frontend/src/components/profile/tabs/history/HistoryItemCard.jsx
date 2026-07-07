@@ -35,7 +35,7 @@ const HistoryItemCard = ({
     : `#${(order.orderId || order.id)?.slice(-8).toUpperCase()}`;
 
   return (
-    <div className={`bg-white border transition-all duration-300 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md ${isExpanded ? 'border-indigo-300 ring-1 ring-indigo-100' : 'border-gray-200'}`}>
+    <div className={`bg-white border transition-all duration-300 rounded-xl p-4 sm:p-5 shadow-xs hover:shadow-md ${isExpanded ? 'border-indigo-300 ring-1 ring-indigo-100' : 'border-gray-200'}`}>
       
       {/* Order Header Summary */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-3 pb-3 mb-3 border-b border-gray-100">
@@ -49,7 +49,7 @@ const HistoryItemCard = ({
             </span>
             {/* แจ้งเตือนบิลในหน้าย่อ ถ้ามีใบกำกับภาษีออกแล้ว */}
             {order.taxInvoiceUrl && !isExpanded && (
-              <span className="text-[10px] text-teal-600 font-bold bg-teal-50 px-2 py-0.5 rounded border border-teal-100 w-max">
+              <span className="text-[10px] text-teal-600 font-bold bg-teal-50 px-2 py-0.5 rounded-sm border border-teal-100 w-max">
                 📄 มีใบกำกับภาษี
               </span>
             )}
@@ -89,7 +89,7 @@ const HistoryItemCard = ({
           {order.status === 'pending_payment' && (
             <button 
               onClick={() => setSelectedOrder(order)}
-              className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition-transform active:scale-95 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-xs transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
               แจ้งชำระเงิน
@@ -104,7 +104,7 @@ const HistoryItemCard = ({
           
           {/* 🚚 ระบบแสดงเลขพัสดุ (อัปเดตใหม่) */}
           {order.trackingNumber && (
-            <div className="mb-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="mb-5 bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-100 rounded-lg text-green-600 shadow-inner">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
@@ -116,7 +116,7 @@ const HistoryItemCard = ({
               </div>
               <button 
                 onClick={(e) => handleCopyTracking(e, order.trackingNumber)}
-                className={`w-full sm:w-auto px-4 py-2 border text-sm font-bold rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 ${copyStatus ? 'bg-green-600 text-white border-green-600' : 'bg-white border-green-300 text-green-700 hover:bg-green-100'}`}
+                className={`w-full sm:w-auto px-4 py-2 border text-sm font-bold rounded-lg shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 ${copyStatus ? 'bg-green-600 text-white border-green-600' : 'bg-white border-green-300 text-green-700 hover:bg-green-100'}`}
               >
                 {copyStatus ? (
                   <>
@@ -147,13 +147,13 @@ const HistoryItemCard = ({
 
               return (
                 <div key={idx} className="flex gap-3 text-sm bg-gray-50/70 p-3 rounded-xl border border-gray-100">
-                  <div className="w-14 h-14 bg-white rounded-lg border border-gray-200 overflow-hidden flex-shrink-0 shadow-sm">
-                      {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : null}
+                  <div className="w-14 h-14 bg-white rounded-lg border border-gray-200 overflow-hidden shrink-0 shadow-xs">
+                      {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover"  loading="lazy" /> : null}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-800 line-clamp-1">{item.name}</p>
                     <div className="flex justify-between mt-1.5 items-end">
-                      <span className="text-gray-500 bg-gray-200/60 px-2 py-0.5 rounded font-medium text-xs">x{item.quantity}</span>
+                      <span className="text-gray-500 bg-gray-200/60 px-2 py-0.5 rounded-sm font-medium text-xs">x{item.quantity}</span>
                       
                       {isWholesaleApplied ? (
                         <div className="flex flex-col items-end">
@@ -167,10 +167,10 @@ const HistoryItemCard = ({
                     {/* Action Buttons for Claim/Return */}
                     {['shipped', 'completed'].includes(order.status) && (
                       <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
-                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('claim', item, order); }} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded text-[11px] font-bold flex items-center gap-1.5 transition-all border border-orange-200">
+                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('claim', item, order); }} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded-sm text-[11px] font-bold flex items-center gap-1.5 transition-all border border-orange-200">
                           <Wrench size={12}/> แจ้งเคลม
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('return', item, order); }} className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded text-[11px] font-bold flex items-center gap-1.5 transition-all border border-purple-200">
+                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('return', item, order); }} className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded-sm text-[11px] font-bold flex items-center gap-1.5 transition-all border border-purple-200">
                           <ArrowLeftRight size={12}/> แจ้งคืนสินค้า
                         </button>
                       </div>
@@ -227,7 +227,7 @@ const HistoryItemCard = ({
 
               <div className="flex justify-between mt-1">
                 <span>ค่าจัดส่ง</span>
-                <span>{order.totals?.shipping === 0 ? <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded">ส่งฟรี</span> : `฿${order.totals?.shipping?.toLocaleString() || 0}`}</span>
+                <span>{order.totals?.shipping === 0 ? <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-sm">ส่งฟรี</span> : `฿${order.totals?.shipping?.toLocaleString() || 0}`}</span>
               </div>
               
               <div className="flex justify-between items-end font-black text-indigo-950 text-base pt-3 border-t-2 border-indigo-100 border-dashed mt-3">
@@ -243,7 +243,7 @@ const HistoryItemCard = ({
                 href={order.taxInvoiceUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-bold rounded-xl border border-teal-200 transition-colors shadow-sm active:scale-95"
+                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-bold rounded-xl border border-teal-200 transition-colors shadow-xs active:scale-95"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 ดาวน์โหลดใบกำกับภาษี (PDF)
@@ -254,7 +254,7 @@ const HistoryItemCard = ({
           {/* ที่อยู่จัดส่ง / รับหน้าร้าน */}
           {order.shippingMethod === 'pickup' ? (
             <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-green-50 p-4 rounded-xl border border-green-100">
-              <div className="p-2 bg-white rounded-lg shadow-sm">
+              <div className="p-2 bg-white rounded-lg shadow-xs">
                   <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
               </div>
               <div>
@@ -267,7 +267,7 @@ const HistoryItemCard = ({
             </div>
           ) : order.shippingAddress ? (
             <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <div className="p-2 bg-white rounded-lg shadow-sm">
+              <div className="p-2 bg-white rounded-lg shadow-xs">
                   <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
               </div>
               <div>
@@ -283,4 +283,4 @@ const HistoryItemCard = ({
   );
 };
 
-export default HistoryItemCard;
+export default React.memo(HistoryItemCard);

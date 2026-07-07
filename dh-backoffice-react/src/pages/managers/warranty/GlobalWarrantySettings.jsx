@@ -46,7 +46,7 @@ export default function GlobalWarrantySettings() {
 
                 <div className="flex-1 p-6 sm:p-10 relative bg-slate-50/50">
                     <div className="space-y-8 max-w-full mx-auto">
-                        <div className="bg-amber-50 border border-amber-100 p-5 rounded-2xl flex gap-4 text-amber-800 shadow-sm">
+                        <div className="bg-amber-50 border border-amber-100 p-5 rounded-2xl flex gap-4 text-amber-800 shadow-xs">
                             <ShieldCheck size={24} className="shrink-0 text-amber-500 mt-0.5"/>
                             <p className="text-sm font-bold leading-relaxed">
                                 ตั้งค่าการรับประกันพื้นฐานแบ่งตามหมวดหมู่สินค้า (หากสินค้านั้นไม่มีการตั้งค่าประกันพิเศษระดับ SKU ระบบจะใช้ค่าจากหน้านี้เป็นหลักในการคำนวณวันหมดประกัน)

@@ -149,10 +149,10 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
       className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] p-3 sm:p-4 flex flex-col relative overflow-hidden transition-all transform hover:-translate-y-0.5 mb-4 ${getUrgencyStyles(urgencyLevel)}`}
     >
       
-      {isManagerTab && <div className="absolute top-0 right-0 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">Manager</div>}
+      {isManagerTab && <div className="absolute top-0 right-0 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10 shadow-xs">Manager</div>}
 
       {isProcessing && (
-        <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center transition-all duration-300">
+        <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/70 backdrop-blur-xs z-20 flex flex-col items-center justify-center transition-all duration-300">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
         </div>
       )}
@@ -163,16 +163,16 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
         className="flex flex-row justify-between items-center gap-3 relative z-10 cursor-pointer select-none"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800 shadow-sm flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800 shadow-xs flex items-center justify-center shrink-0">
             <PackageOpen size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-1.5 leading-none mb-1">
               คำขออนุมัติราคาส่ง
-              <span className="bg-blue-100 text-blue-700 text-[9px] uppercase px-1.5 py-0.5 rounded shadow-sm">B2B</span>
+              <span className="bg-blue-100 text-blue-700 text-[9px] uppercase px-1.5 py-0.5 rounded-sm shadow-xs">B2B</span>
             </h3>
             <div className="flex items-center flex-wrap gap-2">
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200">
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-sm border border-slate-200">
                 Order: #{todo.payload?.orderId?.slice(-6).toUpperCase() || 'N/A'}
               </span>
               {getStatusBadge(todo.status)}
@@ -188,7 +188,7 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
         <div className="mt-4 flex flex-col gap-3 relative z-10">
           
           {/* Customer Reason & Profile */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded border border-slate-100 flex flex-col gap-2">
+          <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-sm border border-slate-100 flex flex-col gap-2">
             
             <div className="flex items-center gap-2 mb-1">
               <ShieldAlert size={16} className="text-orange-500" />
@@ -224,7 +224,7 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
             )}
 
             {todo.payload?.customerReason && (
-              <div className="mt-2 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm relative">
+              <div className="mt-2 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-xs relative">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
                 <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1 block pl-2">หมายเหตุจากลูกค้า</span>
                 <p className="text-sm text-slate-700 dark:text-slate-300 pl-2 font-medium italic">"{todo.payload.customerReason}"</p>
@@ -273,14 +273,14 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
             <button 
               onClick={handleApprove}
               disabled={isProcessing || isFetching}
-              className="flex-1 flex justify-center items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl text-sm font-black transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
+              className="flex-1 flex justify-center items-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl text-sm font-black transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
             >
               <Check size={18} strokeWidth={3} /> อนุมัติราคาส่งใหม่ (฿{calculator.calculations.newNetTotal.toLocaleString()})
             </button>
             <button 
               onClick={handleReject}
               disabled={isProcessing || isFetching}
-              className="flex justify-center items-center gap-2 bg-white dark:bg-slate-800 border-2 border-rose-100 dark:border-rose-900/50 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-600 px-6 py-3 rounded-xl font-bold transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex justify-center items-center gap-2 bg-white dark:bg-slate-800 border-2 border-rose-100 dark:border-rose-900/50 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-600 px-6 py-3 rounded-xl font-bold transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               title="ไม่อนุมัติราคาส่ง"
             >
               <X size={18} strokeWidth={2.5} /> ปฏิเสธ

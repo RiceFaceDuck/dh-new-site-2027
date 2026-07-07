@@ -1,0 +1,15 @@
+Package                      Current   Wanted   Latest  Location                                  Depended by
+@eslint/js                    9.39.4   9.39.4   10.0.1  node_modules/@eslint/js                   dh-frontend
+@tailwindcss/postcss           4.2.1    4.3.2    4.3.2  node_modules/@tailwindcss/postcss         dh-frontend
+@types/react                 19.2.14  19.2.17  19.2.17  node_modules/@types/react                 dh-frontend
+@vitejs/plugin-react           6.0.1    6.0.3    6.0.3  node_modules/@vitejs/plugin-react         dh-frontend
+autoprefixer                 10.4.27   10.5.2   10.5.2  node_modules/autoprefixer                 dh-frontend
+eslint                        9.39.4   9.39.4   10.6.0  node_modules/eslint                       dh-frontend
+eslint-plugin-react-hooks      7.0.1    7.1.1    7.1.1  node_modules/eslint-plugin-react-hooks    dh-frontend
+eslint-plugin-react-refresh    0.5.2    0.5.3    0.5.3  node_modules/eslint-plugin-react-refresh  dh-frontend
+firebase                     12.10.0  12.15.0  12.15.0  node_modules/firebase                     dh-frontend
+globals                       17.4.0   17.7.0   17.7.0  node_modules/globals                      dh-frontend
+lucide-react                 0.577.0  0.577.0   1.23.0  node_modules/lucide-react                 dh-frontend
+react                         19.2.4   19.2.7   19.2.7  node_modules/react                        dh-frontend
+react-dom                     19.2.4   19.2.7   19.2.7  node_modules/react-dom                    dh-frontend
+tailwindcss                   3.4.19   3.4.19    4.3.2  node_modules/tailwindcss                  dh-frontend

@@ -5,7 +5,7 @@ export default function HistoryModal({ isHistoryModalOpen, setIsHistoryModalOpen
   if (!isHistoryModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-200">
+    <div className="fixed inset-0 z-110 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200">
       <div className="bg-dh-surface rounded-xl shadow-dh-elevated w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-dh-border">
         <div className="bg-dh-surface px-5 py-3 border-b border-dh-border flex justify-between items-center z-10">
           <h3 className="font-bold text-dh-main flex items-center gap-2 text-sm">
@@ -24,7 +24,7 @@ export default function HistoryModal({ isHistoryModalOpen, setIsHistoryModalOpen
                 {historyLogs.map((log) => (
                   <div key={log.id} className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group mb-4 last:mb-0">
                     {/* Timeline Icon */}
-                    <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 border-dh-surface shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${
+                    <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 border-dh-surface shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-xs z-10 ${
                       log.action === 'Create' ? 'bg-emerald-500' : 
                       log.action === 'Update' ? 'bg-blue-500' : 
                       log.action === 'Approve' ? 'bg-teal-500' : 'bg-slate-400'
@@ -32,9 +32,9 @@ export default function HistoryModal({ isHistoryModalOpen, setIsHistoryModalOpen
                         <span className="text-white font-bold text-[10px]">{log.action.substring(0, 1)}</span>
                     </div>
                     {/* Timeline Content */}
-                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] p-3 rounded-lg bg-dh-surface border border-dh-border shadow-sm hover:border-dh-accent/50 transition-colors">
+                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] p-3 rounded-lg bg-dh-surface border border-dh-border shadow-xs hover:border-dh-accent/50 transition-colors">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[9px] font-bold text-dh-muted bg-dh-base px-1.5 py-0.5 rounded border border-dh-border uppercase tracking-wide">{log.module} / {log.action}</span>
+                        <span className="text-[9px] font-bold text-dh-muted bg-dh-base px-1.5 py-0.5 rounded-sm border border-dh-border uppercase tracking-wide">{log.module} / {log.action}</span>
                         <span className="text-[9px] font-medium text-dh-muted flex items-center gap-1">
                           <Clock size={10}/> {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
                         </span>

@@ -60,7 +60,7 @@ export default function CreditHistoryTab() {
   });
 
   return (
-    <div className="flex flex-col h-full bg-white border border-slate-300 rounded-sm">
+    <div className="flex flex-col h-full bg-white border border-slate-300 rounded-xs">
       
       {/* 🚀 Header & Toolbar: ทรงเหลี่ยม กระชับพื้นที่ */}
       <div className="p-3 border-b border-slate-300 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -80,19 +80,19 @@ export default function CreditHistoryTab() {
               placeholder="Search ID, Name, Ref..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-sm text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none w-full sm:w-56"
+              className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xs text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-hidden w-full sm:w-56"
             />
           </div>
 
           {/* Filter Types */}
-          <div className="flex bg-white border border-slate-300 rounded-sm p-0.5">
-            <button onClick={() => setFilterType('all')} className={`px-3 py-1 text-xs font-bold rounded-sm transition-none ${filterType === 'all' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>All</button>
-            <button onClick={() => setFilterType('add')} className={`px-3 py-1 text-xs font-bold rounded-sm transition-none ${filterType === 'add' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Added</button>
-            <button onClick={() => setFilterType('deduct')} className={`px-3 py-1 text-xs font-bold rounded-sm transition-none ${filterType === 'deduct' ? 'bg-red-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Deducted</button>
+          <div className="flex bg-white border border-slate-300 rounded-xs p-0.5">
+            <button onClick={() => setFilterType('all')} className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${filterType === 'all' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>All</button>
+            <button onClick={() => setFilterType('add')} className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${filterType === 'add' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Added</button>
+            <button onClick={() => setFilterType('deduct')} className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${filterType === 'deduct' ? 'bg-red-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Deducted</button>
           </div>
 
           {/* Mock Export Button */}
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-sm transition-none ml-auto md:ml-0">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xs transition-none ml-auto md:ml-0">
             <Download size={14} />
             CSV
           </button>
@@ -149,7 +149,7 @@ export default function CreditHistoryTab() {
                   
                   {/* Type */}
                   <td className="px-4 py-2.5">
-                    <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded-sm border
+                    <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded-xs border
                       ${tx.type === 'add' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-red-50 text-red-700 border-red-200'}`}
                     >
                       {tx.type === 'add' ? 'ADD' : 'DEDUCT'}

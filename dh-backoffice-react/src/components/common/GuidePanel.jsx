@@ -16,7 +16,7 @@ export default function GuidePanel({ title, description, howTo = [], tips = [], 
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={`mb-6 rounded-2xl border transition-all duration-300 shadow-sm ${isOpen ? 'border-indigo-200 bg-white' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer'}`}>
+    <div className={`mb-6 rounded-2xl border transition-all duration-300 shadow-xs ${isOpen ? 'border-indigo-200 bg-white' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer'}`}>
       
       {/* Header (Clickable) */}
       <div 
@@ -24,7 +24,7 @@ export default function GuidePanel({ title, description, howTo = [], tips = [], 
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-xl ${isOpen ? 'bg-indigo-100 text-indigo-600' : 'bg-white text-slate-500 shadow-sm'}`}>
+          <div className={`p-2 rounded-xl ${isOpen ? 'bg-indigo-100 text-indigo-600' : 'bg-white text-slate-500 shadow-xs'}`}>
             <BookOpen size={20} />
           </div>
           <div>

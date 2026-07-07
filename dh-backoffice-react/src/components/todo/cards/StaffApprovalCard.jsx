@@ -4,13 +4,13 @@ import ManagerBadge from './ManagerBadge';
 
 export default function StaffApprovalCard({ todo, isProcessing, isManagerTab, urgencyClass, handleAction, getStatusBadge, formatDate, handleRejectClick }) {
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border ${urgencyClass} flex flex-col h-full relative overflow-hidden transition-all hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-xs border ${urgencyClass} flex flex-col h-full relative overflow-hidden transition-all hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600`}>
       
       {isManagerTab && <ManagerBadge text="อนุมัติพนักงานใหม่" />}
 
       {/* Loading Overlay */}
       {isProcessing && (
-        <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center transition-all duration-300">
+        <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs z-10 flex flex-col items-center justify-center transition-all duration-300">
           <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-500 mb-2"></div>
           <span className="text-sm font-bold text-blue-500 animate-pulse">กำลังประมวลผล...</span>
         </div>
@@ -19,7 +19,7 @@ export default function StaffApprovalCard({ todo, isProcessing, isManagerTab, ur
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm">
+          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 shadow-xs">
             <UserPlus size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
@@ -39,7 +39,7 @@ export default function StaffApprovalCard({ todo, isProcessing, isManagerTab, ur
       {/* Content */}
       <div className="flex-1 space-y-3 mb-5 mt-2">
         {todo.metadata && (
-          <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-slate-800 dark:to-slate-700/50 border border-blue-100/80 dark:border-slate-600/80 p-4 rounded-2xl flex flex-col gap-3 transition-all">
+          <div className="bg-linear-to-br from-blue-50/80 to-indigo-50/50 dark:from-slate-800 dark:to-slate-700/50 border border-blue-100/80 dark:border-slate-600/80 p-4 rounded-2xl flex flex-col gap-3 transition-all">
             <div className="flex items-center gap-3 border-b border-blue-100/50 dark:border-slate-600/50 pb-3">
               <div className="w-11 h-11 rounded-full bg-blue-100 dark:bg-slate-700 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg shadow-inner">
                 {todo.metadata.name ? todo.metadata.name.charAt(0).toUpperCase() : <UserPlus size={20} />}
@@ -84,14 +84,14 @@ export default function StaffApprovalCard({ todo, isProcessing, isManagerTab, ur
             <button 
               onClick={() => handleAction(todo.id, 'approve', todo.type, todo.payload || todo)}
               disabled={isProcessing}
-              className="flex-1 flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check size={16} strokeWidth={3} /> อนุมัติรับพนักงาน
             </button>
             <button 
               onClick={handleRejectClick}
               disabled={isProcessing}
-              className="flex justify-center items-center gap-2 bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 px-4 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex justify-center items-center gap-2 bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 px-4 py-2.5 rounded-xl transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               title="ปฏิเสธคำขอ"
             >
               <X size={18} strokeWidth={2.5} />
@@ -101,7 +101,7 @@ export default function StaffApprovalCard({ todo, isProcessing, isManagerTab, ur
           <button 
             onClick={handleRejectClick}
             disabled={isProcessing}
-            className="flex-1 flex justify-center items-center gap-2 bg-white border-2 border-slate-100 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 px-4 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex justify-center items-center gap-2 bg-white border-2 border-slate-100 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 px-4 py-2.5 rounded-xl transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             title="ยกเลิกคำขอ"
           >
             <X size={18} strokeWidth={2.5} /> ยกเลิกคำขอ

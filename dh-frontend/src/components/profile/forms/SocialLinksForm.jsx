@@ -84,7 +84,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
       {/* Header */}
       <div className="border-b border-gray-100 px-6 py-4 bg-gray-50/50 flex items-center justify-between">
         <div className="flex items-center gap-3">

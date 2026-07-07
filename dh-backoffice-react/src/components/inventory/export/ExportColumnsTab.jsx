@@ -16,7 +16,7 @@ export default function ExportColumnsTab({
         <select 
           value={sortOption}
           onChange={(e) => setSortOption(e.target.value)}
-          className="w-full p-3 bg-dh-surface border border-dh-border rounded-xl text-sm font-bold outline-none focus:border-dh-accent cursor-pointer"
+          className="w-full p-3 bg-dh-surface border border-dh-border rounded-xl text-sm font-bold outline-hidden focus:border-dh-accent cursor-pointer"
         >
           <option value="sku_asc">SKU (A-Z)</option>
           <option value="sku_desc">SKU (Z-A)</option>
@@ -41,7 +41,7 @@ export default function ExportColumnsTab({
             return (
               <div 
                 key={col.key} onClick={() => handleToggleColumn(col.key)}
-                className={`p-2.5 rounded-xl border cursor-pointer text-xs font-bold transition-all flex items-center gap-2 select-none ${isSelected ? 'bg-dh-accent/10 border-dh-accent text-dh-accent shadow-sm' : 'bg-dh-base border-dh-border text-dh-muted hover:border-dh-accent/50'}`}
+                className={`p-2.5 rounded-xl border cursor-pointer text-xs font-bold transition-all flex items-center gap-2 select-none ${isSelected ? 'bg-dh-accent/10 border-dh-accent text-dh-accent shadow-xs' : 'bg-dh-base border-dh-border text-dh-muted hover:border-dh-accent/50'}`}
               >
                 <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${isSelected ? 'bg-dh-accent border-dh-accent text-white' : 'border-dh-muted/50 bg-white'}`}>
                   {isSelected && <CheckCircle2 size={12} />}

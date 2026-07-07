@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, getAggregateFromServer, sum, count } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -16,36 +16,32 @@ export default function useLedgerStats() {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  // ดึงยอดผู้ใช้งานจริง (คิวรี่เฉพาะคนที่มีเครดิต หรือเป็นพาร์ทเนอร์ เพื่อประหยัด Quota)
+  // ดึงยอดผู้ใช้งานจริง (ใช้ Aggregation เพื่อลดยอด Read จากหลักพันเหลือแค่ 3 Reads)
   const fetchRealUserStats = async () => {
     try {
       const usersRef = collection(db, 'users');
-      // คิวรี่ 1: คนที่มีเครดิต > 0
+      
+      // คิวรี่ 1: คนที่มีเครดิต > 0 (หาผลรวมเครดิต และจำนวนคน)
       const q1 = query(usersRef, where('creditPoints', '>', 0));
-      // คิวรี่ 2: พาร์ทเนอร์
+      
+      // คิวรี่ 2: พาร์ทเนอร์ (หาจำนวนพาร์ทเนอร์ทั้งหมด)
       const q2 = query(usersRef, where('role', '==', 'partner'));
       
-      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      // คิวรี่ 3: พาร์ทเนอร์ที่มีเครดิต > 0 (เพื่อหักลบส่วนที่ซ้ำกัน)
+      const q3 = query(usersRef, where('role', '==', 'partner'), where('creditPoints', '>', 0));
       
-      let totalCredit = 0;
-      let activeCount = 0;
-      const seen = new Set();
+      const [agg1, agg2, agg3] = await Promise.all([
+        getAggregateFromServer(q1, { totalCredit: sum('creditPoints'), activeUsers: count() }),
+        getAggregateFromServer(q2, { partnerCount: count() }),
+        getAggregateFromServer(q3, { overlapCount: count() })
+      ]);
       
-      const processDoc = (doc) => {
-        if (!seen.has(doc.id)) {
-          seen.add(doc.id);
-          const d = doc.data();
-          let pool = Number(d.creditPoints || 0);
-          
-          if (pool > 0 || d.role === 'partner') {
-            totalCredit += pool;
-            activeCount += 1;
-          }
-        }
-      };
-
-      snap1.forEach(processDoc);
-      snap2.forEach(processDoc);
+      const totalCredit = agg1.data().totalCredit || 0;
+      const countUsersWithCredit = agg1.data().activeUsers || 0;
+      const countPartners = agg2.data().partnerCount || 0;
+      const overlapCount = agg3.data().overlapCount || 0;
+      
+      const activeCount = countUsersWithCredit + countPartners - overlapCount;
       
       return { totalCredit, activeCount };
     } catch (err) {

@@ -131,7 +131,7 @@ const CategoryManager = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-[500px]">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col h-full min-h-[500px]">
       
       {/* 🚀 Header Section */}
       <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
@@ -146,7 +146,7 @@ const CategoryManager = () => {
         </div>
         <button
           onClick={openCreateModal}
-          className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2 font-medium"
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-2 font-medium"
         >
           <Plus size={18} />
           <span className="hidden sm:inline">สร้างหมวดหมู่ใหม่</span>
@@ -155,7 +155,7 @@ const CategoryManager = () => {
       
       {/* 📚 In-App Documentation (Help Panel) */}
       <div className="bg-blue-50/50 border-b border-blue-100 p-4 sm:p-5 flex gap-3 sm:gap-4 items-start">
-        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-600 mt-0.5">
+        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0 text-blue-600 mt-0.5">
           <FolderOpen size={18} />
         </div>
         <div className="flex-1 space-y-2">

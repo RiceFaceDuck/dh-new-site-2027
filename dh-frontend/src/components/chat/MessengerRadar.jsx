@@ -6,8 +6,8 @@ const MessengerRadar = () => {
     <div className="flex-1 flex flex-col items-center justify-center text-center space-y-5 animate-in zoom-in duration-300 py-6">
       <div className="relative flex items-center justify-center w-32 h-32">
         <div className="absolute inset-0 border-2 border-emerald-400 rounded-full animate-ping opacity-30"></div>
-        <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center z-10 shadow-lg border border-white">
-          <Navigation size={26} className="text-emerald-600 animate-pulse drop-shadow-sm" />
+        <div className="w-14 h-14 bg-linear-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center z-10 shadow-lg border border-white">
+          <Navigation size={26} className="text-emerald-600 animate-pulse drop-shadow-xs" />
         </div>
       </div>
       <div>

@@ -148,16 +148,16 @@ const CategoryPage = () => {
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 animate-pulse h-[350px] flex flex-col">
+                <div key={i} className="bg-white p-4 rounded-2xl shadow-xs border border-slate-100 animate-pulse h-[350px] flex flex-col">
                   <div className="w-full aspect-square bg-slate-200 rounded-xl mb-4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2 mb-auto"></div>
-                  <div className="h-8 bg-slate-200 rounded w-full mt-4"></div>
+                  <div className="h-4 bg-slate-200 rounded-sm w-3/4 mb-2"></div>
+                  <div className="h-4 bg-slate-200 rounded-sm w-1/2 mb-auto"></div>
+                  <div className="h-8 bg-slate-200 rounded-sm w-full mt-4"></div>
                 </div>
               ))}
             </div>
           ) : error ? (
-            <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-sm">
+            <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-xs">
               <p className="font-semibold text-lg mb-1">พบข้อผิดพลาดในการโหลดข้อมูล</p>
               <p className="text-sm opacity-80">{error}</p>
             </div>
@@ -180,7 +180,7 @@ const CategoryPage = () => {
               )}
             </>
           ) : (
-            <div className="bg-slate-50 text-slate-500 p-8 rounded-2xl text-center border border-slate-100 shadow-sm">
+            <div className="bg-slate-50 text-slate-500 p-8 rounded-2xl text-center border border-slate-100 shadow-xs">
               <p className="text-lg font-medium">ไม่พบสินค้าในหมวดหมู่นี้</p>
             </div>
           )}

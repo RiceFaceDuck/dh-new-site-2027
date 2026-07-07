@@ -92,41 +92,41 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     const ledger = settingsData?.ledger || { systemPoolMax: 1000000, totalAllocated: 0, status: 'SECURE' };
 
     // ✨ Canonical Source of Truth คือ creditPoints บน userDoc เท่านั้น!
-    let currentWallet = Number(userSnap.data().creditPoints || 0);
+    let currentPoints = Number(userSnap.data().creditPoints || 0);
     let totalAccumulated = 0;
     if (walletSnap.exists()) {
       totalAccumulated = Number(walletSnap.data().totalAccumulated) || 0;
     }
 
-    const safeCurrentWallet = Math.round(currentWallet * 100) / 100;
+    const safeCurrentPoints = Math.round(currentPoints * 100) / 100;
     const sysMax = Number(ledger.systemPoolMax) || 1000000;
     let newTotalAllocated = Number(ledger.totalAllocated) || 0;
     
-    let newWalletBalance = safeCurrentWallet;
+    let newPointsBalance = safeCurrentPoints;
     let newTotalAccumulated = Number(totalAccumulated) || 0;
 
     if (type === 'deposit' || type === 'add' || type === 'earn') {
       if (sysMax > 0 && (newTotalAllocated + safeAmount) > sysMax) {
         throw new Error(`ไม่อนุมัติการทำรายการ: ทุนสำรองกลางไม่เพียงพอ`);
       }
-      newWalletBalance += safeAmount;
+      newPointsBalance += safeAmount;
       newTotalAccumulated += safeAmount;
       newTotalAllocated += safeAmount; 
     } else if (type === 'deduct' || type === 'cash_withdrawal' || type === 'spend' || type === 'clawback') {
-      if (safeCurrentWallet < safeAmount) {
+      if (safeCurrentPoints < safeAmount) {
         if (type === 'clawback') {
-            safeAmount = Math.max(0, safeCurrentWallet); // ✨ ยึดเท่าที่เหลือ ไม่ Throw Error
+            safeAmount = Math.max(0, safeCurrentPoints); // ✨ ยึดเท่าที่เหลือ ไม่ Throw Error
         } else {
-            throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (ต้องการ ${safeAmount} Pts, มียอดเพียง ${safeCurrentWallet} Pts)`);
+            throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ (ต้องการ ${safeAmount} Pts, มียอดเพียง ${safeCurrentPoints} Pts)`);
         }
       }
-      newWalletBalance -= safeAmount;
+      newPointsBalance -= safeAmount;
       newTotalAllocated = Math.max(0, newTotalAllocated - safeAmount);
     } else {
       throw new Error("ประเภทการปรับปรุงเครดิตไม่ถูกต้องในระบบ");
     }
 
-    newWalletBalance = Math.round(newWalletBalance * 100) / 100;
+    newPointsBalance = Math.round(newPointsBalance * 100) / 100;
 
     let newLedgerStatus = 'SECURE';
     const utilization = sysMax > 0 ? (newTotalAllocated / sysMax) : 0;
@@ -139,13 +139,14 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     }, { merge: true });
 
     transaction.set(walletRef, {
-      balance: newWalletBalance,
+      balance: newPointsBalance,
       totalAccumulated: newTotalAccumulated,
       updatedAt: serverTimestamp()
     }, { merge: true });
 
     const syncPayload = {
-      creditPoints: newWalletBalance,  
+      creditPoints: newPointsBalance,  
+      totalAccumulatedPoints: newTotalAccumulated,
       updatedAt: serverTimestamp()
     };
 
@@ -153,7 +154,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     // ✨ NEW FIX: Sync points to ActivePartners to prevent denormalization issues
     if (activePartnerSnap.exists()) {
-      transaction.set(activePartnerRef, { points: newWalletBalance, updatedAt: serverTimestamp() }, { merge: true });
+      transaction.set(activePartnerRef, { points: newPointsBalance, updatedAt: serverTimestamp() }, { merge: true });
     }
 
     const userData = userSnap.data();
@@ -169,7 +170,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       userEmail: userEmail || 'unknown@system.local',
       type: mappedType,
       amount: safeAmount,
-      balanceAfter: newWalletBalance,
+      balanceAfter: newPointsBalance,
       referenceId: referenceId || 'MANUAL_ADJUST',
       note: note || (mappedType === 'add' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
       remark: note || (mappedType === 'add' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
@@ -178,20 +179,8 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       timestamp: serverTimestamp()
     });
 
-    const personalHistoryRef = doc(collection(db, 'artifacts', appId, 'users', uid, 'credit_history'));
-    transaction.set(personalHistoryRef, {
-      type: mappedType === 'add' ? 'earn' : 'spend',
-      points: safeAmount,
-      amount: safeAmount,
-      note: note || 'ทำรายการกระเป๋าเงิน',
-      referenceId: `TXM-${refSuffix}`,
-      adjustedBy: actorUid || 'System',
-      createdAt: serverTimestamp(),
-      timestamp: serverTimestamp()
-    });
-
     console.info(`✅ [Credit Engine] Sub-Transaction TXM-${referenceId || 'MANUAL'} Prepped for UID: ${uid} | Amount: ${amount}`);
-    return { success: true, transactionId, newBalance: newWalletBalance };
+    return { success: true, transactionId, newBalance: newPointsBalance };
 };
 
 /**

@@ -77,18 +77,18 @@ export default function SettingsPanel({
 
 
     // 🎨 UI Classes 
-    const inputClass = "w-full bg-white border border-gray-300 rounded-md px-2.5 py-1.5 text-xs font-semibold text-gray-800 outline-none focus:border-[#2A305A] focus:ring-1 focus:ring-[#2A305A] transition-all placeholder-gray-400 shadow-sm";
+    const inputClass = "w-full bg-white border border-gray-300 rounded-md px-2.5 py-1.5 text-xs font-semibold text-gray-800 outline-hidden focus:border-[#2A305A] focus:ring-1 focus:ring-[#2A305A] transition-all placeholder-gray-400 shadow-xs";
     const labelClass = "text-[10px] font-bold text-gray-500 mb-1 flex items-center gap-1.5 uppercase tracking-wider";
     const sectionClass = "p-3.5 border-b border-gray-200 last:border-0 transition-colors duration-300";
 
     return (
-        <div className="w-full h-full flex flex-col bg-[var(--dh-bg-surface)] overflow-hidden z-10 font-sans relative">
+        <div className="w-full h-full flex flex-col bg-(--dh-bg-surface) overflow-hidden z-10 font-sans relative">
             {isProcessing && <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-[1px] cursor-not-allowed transition-all duration-300"></div>}
 
             {/* HEADER */}
-            <div className="px-4 py-3 shrink-0 flex items-center justify-between relative z-20 bg-[var(--dh-primary)] text-white">
+            <div className="px-4 py-3 shrink-0 flex items-center justify-between relative z-20 bg-(--dh-primary) text-white">
                 <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-white/10 border border-white/20 rounded-md shadow-sm text-white"><Settings size={14} /></div>
+                    <div className="p-1.5 bg-white/10 border border-white/20 rounded-md shadow-xs text-white"><Settings size={14} /></div>
                     <div>
                         <h2 className="text-sm font-bold text-white leading-none">ตั้งค่าบิล (SETTINGS)</h2>
                         <p className="text-[10px] font-bold text-gray-300 mt-1 uppercase tracking-widest">Control Panel</p>
@@ -96,7 +96,7 @@ export default function SettingsPanel({
                 </div>
                 <button onClick={() => !isProcessing && setIsTerminalConfigOpen(!isTerminalConfigOpen)} disabled={isProcessing}
                     className={`p-2 rounded-md transition-all border group 
-                        ${isTerminalConfigOpen ? 'bg-white/20 text-white border-white/30 shadow-sm' : 'bg-transparent text-gray-300 border-white/10 hover:text-white hover:bg-white/10'}`}>
+                        ${isTerminalConfigOpen ? 'bg-white/20 text-white border-white/30 shadow-xs' : 'bg-transparent text-gray-300 border-white/10 hover:text-white hover:bg-white/10'}`}>
                     <SlidersHorizontal size={14} className="group-hover:rotate-12 transition-transform"/>
                 </button>
 

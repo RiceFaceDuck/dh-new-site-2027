@@ -30,7 +30,7 @@ const ClaimPrintView = forwardRef(({ req }, ref) => {
     <div ref={ref} id="printable-claim" className="w-[148mm] mx-auto text-black font-sans bg-white px-2 py-4">
       <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4">
         <div className="flex items-center gap-3">
-          <img src="/dh-logo.png" alt="DH Logo" className="h-12 w-auto object-contain" />
+          <img src="/dh-logo.png" alt="DH Logo" className="h-12 w-auto object-contain"  loading="lazy" />
           <div>
             <h1 className="text-[16px] font-black text-gray-900 leading-tight">DH NOTE BOOK CO.,LTD</h1>
             <p className="text-[11px] text-gray-600 font-medium">เอกสารแจ้ง{isClaim ? 'เคลม/ซ่อมสินค้า' : 'คืนสินค้า/คืนเงิน'}</p>
@@ -77,7 +77,7 @@ const ClaimPrintView = forwardRef(({ req }, ref) => {
         </tbody>
       </table>
 
-      <div className="p-3 bg-gray-50 border border-gray-300 rounded text-[11px] min-h-[100px]">
+      <div className="p-3 bg-gray-50 border border-gray-300 rounded-sm text-[11px] min-h-[100px]">
         <p className="font-bold text-gray-900 mb-1 border-b border-gray-200 pb-1">รายละเอียดอาการเสีย / การกระทำ:</p>
         <p className="text-gray-800 font-bold mb-1">การกระทำ: {payload.actionType}</p>
         <p className="text-gray-800 font-bold mb-1">อาการ: {isClaim ? payload.symptomCode : payload.returnReason}</p>
@@ -85,7 +85,7 @@ const ClaimPrintView = forwardRef(({ req }, ref) => {
       </div>
 
       <div className="mt-12 flex justify-between items-end">
-        <img src={qrCodeUrl} alt="QR" className="w-[60px] h-[60px]" />
+        <img src={qrCodeUrl} alt="QR" className="w-[60px] h-[60px]"  loading="lazy" />
         <div className="text-center w-40 text-[11px] text-gray-800">
           <p className="border-b border-black mb-1.5"></p>
           <p className="font-bold truncate mt-1">{req.status === 'approved' ? (req.handledBy || 'ผู้จัดการ') : 'ผู้จัดการสาขา'}</p>

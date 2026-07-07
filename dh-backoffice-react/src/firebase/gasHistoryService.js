@@ -13,6 +13,7 @@ class GasHistoryService {
     this.globalProfile = null; // Store user profile from AuthContext
     
     this._startQueueTimer();
+    this._registerUnloadEvents();
   }
 
   setProfile(profile) {
@@ -24,6 +25,35 @@ class GasHistoryService {
     this.flushInterval = setInterval(() => {
       this._flush();
     }, this.FLUSH_INTERVAL_MS);
+  }
+
+  _registerUnloadEvents() {
+    // visibilitychange works best on mobile & modern browsers for unloads
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        this._flushSync();
+      }
+    });
+
+    // Fallback for older browsers
+    window.addEventListener('beforeunload', () => {
+      this._flushSync();
+    });
+  }
+
+  _flushSync() {
+    if (this.queue.length === 0) return;
+    
+    const batch = [...this.queue];
+    this.queue = []; // clear queue
+    
+    try {
+      // navigator.sendBeacon is highly reliable for sending data when the page unloads.
+      const blob = new Blob([JSON.stringify(batch)], { type: 'text/plain;charset=utf-8' });
+      navigator.sendBeacon(GAS_WEB_APP_URL, blob);
+    } catch (err) {
+      console.error("Failed to send beacon", err);
+    }
   }
 
   /**

@@ -9,7 +9,7 @@ export default function FreebieTable({
     handleDelete 
 }) {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 whitespace-nowrap">
@@ -35,7 +35,7 @@ export default function FreebieTable({
                                 const isInactive = !item.isActive || isExpired || isQuotaFull;
 
                                 return (
-                                    <tr key={item.id} className={`hover:bg-pink-50/30 group transition-colors ${isInactive ? 'opacity-70 grayscale-[20%]' : ''}`}>
+                                    <tr key={item.id} className={`hover:bg-pink-50/30 group transition-colors ${isInactive ? 'opacity-70 grayscale-20' : ''}`}>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-gray-900">{item.title}</div>
                                             {(item.startDate || item.endDate) && (
@@ -82,7 +82,7 @@ export default function FreebieTable({
                                                 <button onClick={() => handleToggleActive(item)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.isActive ? 'bg-pink-600' : 'bg-gray-200'}`}>
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.isActive ? 'translate-x-6' : 'translate-x-1'}`}/>
                                                 </button>
-                                                {isExpired && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 rounded">หมดอายุ</span>}
+                                                {isExpired && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 rounded-sm">หมดอายุ</span>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right whitespace-nowrap">

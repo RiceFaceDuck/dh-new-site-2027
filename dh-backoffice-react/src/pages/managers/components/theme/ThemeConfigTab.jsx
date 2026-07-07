@@ -121,7 +121,7 @@ export default function ThemeConfigTab() {
                 <div className="flex-1 p-6 sm:p-10 relative bg-slate-50/50">
 
                     <div className="space-y-8 max-w-full mx-auto">
-                        <div className="bg-fuchsia-50 border border-fuchsia-100 p-5 rounded-2xl flex gap-4 text-fuchsia-800 shadow-sm">
+                        <div className="bg-fuchsia-50 border border-fuchsia-100 p-5 rounded-2xl flex gap-4 text-fuchsia-800 shadow-xs">
                             <ImageIcon size={24} className="shrink-0 text-fuchsia-500 mt-0.5"/>
                             <p className="text-sm font-bold leading-relaxed">
                                 ปรับเปลี่ยนภาพพื้นหลัง และการไล่สี (Gradient) ขาวแบบกระจกฝ้าหน้าบ้าน การตั้งค่านี้จะส่งผลต่อหน้าลูกค้า (Storefront) โดยอัตโนมัติทันที
@@ -130,7 +130,7 @@ export default function ThemeConfigTab() {
 
                         <div className="space-y-6">
                             {/* Theme Selection */}
-                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-widest mb-3 block">
                                     ระบบธีมสี (Theme Selection)
                                 </label>
@@ -167,7 +167,7 @@ export default function ThemeConfigTab() {
                             </div>
 
                             {/* Background URL */}
-                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-widest mb-3 block">
                                     ลิงก์รูปภาพพื้นหลัง (Background URL)
                                 </label>
@@ -176,7 +176,7 @@ export default function ThemeConfigTab() {
                                     value={themeConfig.backgroundUrl}
                                     onChange={(e) => setThemeConfig({...themeConfig, backgroundUrl: e.target.value})}
                                     placeholder="ตัวอย่าง: /user-bg.jpg หรือ https://.../image.jpg"
-                                    className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-base text-slate-700 outline-none focus:border-fuchsia-500 focus:bg-white focus:ring-4 focus:ring-fuchsia-500/10 disabled:bg-slate-100 disabled:text-slate-400 transition-all"
+                                    className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-base text-slate-700 outline-hidden focus:border-fuchsia-500 focus:bg-white focus:ring-4 focus:ring-fuchsia-500/10 disabled:bg-slate-100 disabled:text-slate-400 transition-all"
                                 />
                                 <p className="text-xs text-slate-500 mt-3 font-medium leading-relaxed">
                                     ใช้พาธในระบบเช่น `/user-bg.jpg` หรือนำภาพไปฝากไว้ที่อื่นแล้วนำ URL มาวางได้เลย
@@ -184,7 +184,7 @@ export default function ThemeConfigTab() {
                             </div>
 
                             {/* Blur & Opacity */}
-                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8 hover:shadow-md transition-shadow">
+                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-8 hover:shadow-md transition-shadow">
                                 {/* Blur */}
                                 <div>
                                     <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center justify-between">

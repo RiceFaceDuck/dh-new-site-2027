@@ -14,7 +14,7 @@ export default function ManagerQRGeneratorModal({ isOpen, onClose }) {
   });
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-200">
       <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
         
         {/* Header */}
@@ -23,7 +23,7 @@ export default function ManagerQRGeneratorModal({ isOpen, onClose }) {
             <CalendarCheck size={20} className="text-emerald-600" />
             เปิดจุดลงเวลาพนักงาน
           </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-200 rounded-full transition-colors border border-slate-200 shadow-sm">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-200 rounded-full transition-colors border border-slate-200 shadow-xs">
             <X size={20} />
           </button>
         </div>

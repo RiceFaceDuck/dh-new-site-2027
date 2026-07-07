@@ -62,7 +62,7 @@ const BusinessCardAdWidget = ({ ad }) => {
     if (!isModalOpen) return null;
 
     return createPortal(
-      <div className="fixed inset-0 z-[9999] flex flex-col justify-end sm:justify-center items-center bg-slate-900/60 backdrop-blur-sm sm:p-4 transition-all animate-in fade-in duration-300" onClick={closeModal}>
+      <div className="fixed inset-0 z-9999 flex flex-col justify-end sm:justify-center items-center bg-slate-900/60 backdrop-blur-xs sm:p-4 transition-all animate-in fade-in duration-300" onClick={closeModal}>
         
         <div 
           className="w-full max-w-md bg-slate-50 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 relative flex flex-col max-h-[90vh]" 
@@ -80,7 +80,7 @@ const BusinessCardAdWidget = ({ ad }) => {
           {/* 🏙️ Cover Image & Partner Info */}
           <div className="w-full h-44 sm:h-52 bg-slate-200 relative shrink-0">
             <LazyImage src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
             
             <div className="absolute bottom-4 left-4 right-4 flex items-end gap-4">
                <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg shrink-0 border border-white/20">
@@ -88,7 +88,7 @@ const BusinessCardAdWidget = ({ ad }) => {
                </div>
                <div className="pb-1 text-white flex-1">
                  <div className="flex items-center gap-1.5 mb-1.5">
-                   <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-500/90 backdrop-blur-sm border border-emerald-400/50 px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
+                   <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-500/90 backdrop-blur-xs border border-emerald-400/50 px-2 py-0.5 rounded-sm shadow-xs flex items-center gap-1">
                      <ShieldCheck size={12}/> Verified Partner
                    </span>
                  </div>
@@ -134,7 +134,7 @@ const BusinessCardAdWidget = ({ ad }) => {
                )}
 
                {ad.targetUrl && (
-                 <button onClick={() => openLink(ad.targetUrl)} className="w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2.5 active:scale-95 text-sm group">
+                 <button onClick={() => openLink(ad.targetUrl)} className="w-full py-4 bg-white border-2 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2.5 active:scale-95 text-sm group">
                    <Store size={18}/> ดูรายละเอียดเพิ่มเติม
                  </button>
                )}
@@ -151,11 +151,11 @@ const BusinessCardAdWidget = ({ ad }) => {
       <div 
         ref={cardRef}
         onClick={handleAdClick}
-        className="group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 ring-1 ring-slate-100 hover:ring-indigo-100/80 transform hover:-translate-y-1"
+        className="group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 ring-1 ring-slate-100 hover:ring-indigo-100/80 transform hover:-translate-y-1"
       >
         
         {/* 🏷️ Premium Sponsored Badge */}
-        <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 bg-slate-900/60 backdrop-blur-md border border-white/20 rounded text-white shadow-sm">
+        <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 bg-slate-900/60 backdrop-blur-md border border-white/20 rounded-sm text-white shadow-xs">
           <Sparkles size={8} className="text-amber-400" />
           <span className="text-[8px] font-black uppercase tracking-widest mt-0.5">Sponsored</span>
         </div>
@@ -167,11 +167,11 @@ const BusinessCardAdWidget = ({ ad }) => {
             alt={ad.title || 'Advertisement'} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-linear-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
 
         {/* 📝 Content Section */}
-        <div className="p-3.5 flex flex-col flex-grow justify-between bg-gradient-to-b from-white to-slate-50/30">
+        <div className="p-3.5 flex flex-col grow justify-between bg-linear-to-b from-white to-slate-50/30">
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
               <Store size={10}/>

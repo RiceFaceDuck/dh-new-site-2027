@@ -37,12 +37,12 @@ export default function ExportFiltersTab({
         <div className="flex items-center gap-4">
           <div>
             <label className="text-[10px] font-bold text-dh-muted uppercase mb-1 block">ตั้งแต่ (Min)</label>
-            <input type="number" placeholder="0" value={stockMin} onChange={e => setStockMin(e.target.value)} className="w-24 p-2.5 bg-dh-base border border-dh-border rounded-xl outline-none focus:border-dh-accent text-sm font-bold text-center" />
+            <input type="number" placeholder="0" value={stockMin} onChange={e => setStockMin(e.target.value)} className="w-24 p-2.5 bg-dh-base border border-dh-border rounded-xl outline-hidden focus:border-dh-accent text-sm font-bold text-center" />
           </div>
           <span className="text-dh-muted font-bold mt-4">-</span>
           <div>
             <label className="text-[10px] font-bold text-dh-muted uppercase mb-1 block">ถึง (Max)</label>
-            <input type="number" placeholder="10" value={stockMax} onChange={e => setStockMax(e.target.value)} className="w-24 p-2.5 bg-dh-base border border-dh-border rounded-xl outline-none focus:border-dh-accent text-sm font-bold text-center" />
+            <input type="number" placeholder="10" value={stockMax} onChange={e => setStockMax(e.target.value)} className="w-24 p-2.5 bg-dh-base border border-dh-border rounded-xl outline-hidden focus:border-dh-accent text-sm font-bold text-center" />
           </div>
         </div>
       </div>

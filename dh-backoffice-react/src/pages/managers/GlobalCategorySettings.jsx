@@ -19,7 +19,7 @@ export default function GlobalCategorySettings() {
                     <div className="flex items-center gap-4">
                         <button 
                             onClick={() => navigate(-1)} 
-                            className="p-2 bg-white hover:bg-slate-100 text-slate-600 rounded-xl transition-colors shrink-0 shadow-sm border border-emerald-100"
+                            className="p-2 bg-white hover:bg-slate-100 text-slate-600 rounded-xl transition-colors shrink-0 shadow-xs border border-emerald-100"
                             title="ย้อนกลับ"
                         >
                             <ArrowLeft size={18} strokeWidth={2.5} />
@@ -50,13 +50,13 @@ export default function GlobalCategorySettings() {
                                     }
                                 }
                             }}
-                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-xl transition-colors border border-amber-200 shadow-sm shrink-0"
+                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-xl transition-colors border border-amber-200 shadow-xs shrink-0"
                         >
                             <Layers size={16} /> ซ่อมแซมหมวดหมู่สินค้า (Migration)
                         </button>
                         <button 
                             onClick={() => setIsGuideOpen(true)} 
-                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-100/50 hover:bg-emerald-200/50 rounded-xl transition-colors border border-emerald-200 shadow-sm dh-active-press shrink-0"
+                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-100/50 hover:bg-emerald-200/50 rounded-xl transition-colors border border-emerald-200 shadow-xs dh-active-press shrink-0"
                         >
                             <LayoutTemplate size={16} /> คู่มือการใช้งาน
                         </button>

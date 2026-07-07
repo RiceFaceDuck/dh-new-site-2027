@@ -9,21 +9,21 @@ export default function StaffDetailModal({ viewingStaff, setViewingStaff }) {
   if (!viewingStaff) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50 flex flex-col max-h-[90vh] animate-in zoom-in-95 relative">
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-4xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50 flex flex-col max-h-[90vh] animate-in zoom-in-95 relative">
         
-        <div className="h-32 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
+        <div className="h-32 bg-linear-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
-            <button onClick={() => setViewingStaff(null)} className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full p-2 backdrop-blur-sm transition-colors z-10">
+            <button onClick={() => setViewingStaff(null)} className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full p-2 backdrop-blur-xs transition-colors z-10">
             <X size={20} strokeWidth={2.5} />
           </button>
         </div>
 
         <div className="px-6 sm:px-8 pb-8 pt-0 relative flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex flex-col items-center -mt-16 mb-6">
-            <div className="w-32 h-32 rounded-[2rem] border-4 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 shadow-xl shadow-indigo-500/10 flex items-center justify-center overflow-hidden mb-4 rotate-3 hover:rotate-0 transition-transform duration-300">
+            <div className="w-32 h-32 rounded-4xl border-4 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 shadow-xl shadow-indigo-500/10 flex items-center justify-center overflow-hidden mb-4 rotate-3 hover:rotate-0 transition-transform duration-300">
               {viewingStaff.photoURL ? (
-                <img src={viewingStaff.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                <img src={viewingStaff.photoURL} alt="Profile" className="w-full h-full object-cover"  loading="lazy" />
               ) : (
                 <Users size={48} className="text-indigo-300" strokeWidth={1.5} />
               )}
@@ -35,11 +35,11 @@ export default function StaffDetailModal({ viewingStaff, setViewingStaff }) {
               <Mail size={14}/> {viewingStaff.email}
             </p>
             <div className="mt-4 flex items-center gap-2">
-                <span className="inline-flex items-center px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm">
+                <span className="inline-flex items-center px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50 rounded-lg text-xs font-black uppercase tracking-widest shadow-xs">
                 {viewingStaff.role || viewingStaff.computedRole || 'Staff'}
                 </span>
                 {SUPER_ADMINS.includes(viewingStaff.email) && (
-                    <span className="inline-flex items-center px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm gap-1">
+                    <span className="inline-flex items-center px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50 rounded-lg text-xs font-black uppercase tracking-widest shadow-xs gap-1">
                         <ShieldAlert size={14} /> Owner
                     </span>
                 )}
@@ -76,7 +76,7 @@ export default function StaffDetailModal({ viewingStaff, setViewingStaff }) {
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
                   <Activity className="text-indigo-500" size={18}/> ประสิทธิภาพการทำงาน (KPI)
                 </h3>
-                <span className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 font-bold px-2 py-0.5 rounded uppercase tracking-wider">Coming Soon</span>
+                <span className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Coming Soon</span>
               </div>
               
               <div className="grid grid-cols-2 gap-3 sm:gap-4 relative">
@@ -107,7 +107,7 @@ export default function StaffDetailModal({ viewingStaff, setViewingStaff }) {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-[11px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 px-3 py-1.5 rounded-lg font-bold shadow-sm">ระดับดีเยี่ยม</span>
+                    <span className="text-[11px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 px-3 py-1.5 rounded-lg font-bold shadow-xs">ระดับดีเยี่ยม</span>
                   </div>
                 </div>
               </div>

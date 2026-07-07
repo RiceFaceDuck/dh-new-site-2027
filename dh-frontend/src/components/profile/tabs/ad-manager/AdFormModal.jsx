@@ -48,7 +48,7 @@ const AdFormModal = ({
                   key={type.id} type="button" onClick={() => setFormData({...formData, type: type.id})}
                   disabled={isEditMode} 
                   className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${
-                    formData.type === type.id ? `bg-${type.color}-50 border-${type.color}-500 text-${type.color}-700 scale-[1.02] shadow-sm` : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50'
+                    formData.type === type.id ? `bg-${type.color}-50 border-${type.color}-500 text-${type.color}-700 scale-[1.02] shadow-xs` : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50'
                   } ${isEditMode && formData.type !== type.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {type.icon}
@@ -130,8 +130,8 @@ const AdFormModal = ({
               
               {formData.imageUrl && !uploadingImage ? (
                 <div className="relative w-full h-44 bg-slate-100 rounded-2xl overflow-hidden group ring-2 ring-emerald-500 shadow-md">
-                  <img src={formData.imageUrl} alt="Uploaded preview" className="w-full h-full object-contain" />
-                  <label className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm">
+                  <img src={formData.imageUrl} alt="Uploaded preview" className="w-full h-full object-contain"  loading="lazy" />
+                  <label className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs">
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     <div className="text-white flex flex-col items-center"><UploadCloud size={28} className="mb-2"/> <span className="font-bold text-sm tracking-wide">เปลี่ยนรูปภาพใหม่</span></div>
                   </label>
@@ -153,7 +153,7 @@ const AdFormModal = ({
             <div className="flex items-center justify-between mb-4">
               <label className="text-[11px] font-bold text-slate-400 uppercase">กำหนดงบประมาณ (Credit Limit)</label>
               <label className="flex items-center gap-2 cursor-pointer bg-slate-700/50 px-3 py-1.5 rounded-full hover:bg-slate-600 transition-colors">
-                 <input type="checkbox" checked={isUnlimited} onChange={(e) => setIsUnlimited(e.target.checked)} className="rounded text-emerald-500 focus:ring-emerald-500 w-3.5 h-3.5" />
+                 <input type="checkbox" checked={isUnlimited} onChange={(e) => setIsUnlimited(e.target.checked)} className="rounded-sm text-emerald-500 focus:ring-emerald-500 w-3.5 h-3.5" />
                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1"><Infinity size={12}/> ไม่จำกัดงบ</span>
               </label>
             </div>
@@ -162,7 +162,7 @@ const AdFormModal = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
                 <div className="flex-1">
                   <div className="relative flex items-center">
-                    <input type="number" min="10" step="10" value={creditLimit === 0 ? '' : creditLimit} onChange={(e) => setCreditLimit(Number(e.target.value) || 0)} disabled={isUnlimited} className="w-full pl-4 pr-16 py-3 bg-slate-900 border border-slate-600 rounded-xl text-lg font-black text-white focus:border-indigo-400 outline-none" />
+                    <input type="number" min="10" step="10" value={creditLimit === 0 ? '' : creditLimit} onChange={(e) => setCreditLimit(Number(e.target.value) || 0)} disabled={isUnlimited} className="w-full pl-4 pr-16 py-3 bg-slate-900 border border-slate-600 rounded-xl text-lg font-black text-white focus:border-indigo-400 outline-hidden" />
                   </div>
                   <div className="flex gap-2 mt-3">
                     {[100, 500, 1000].map(amt => (

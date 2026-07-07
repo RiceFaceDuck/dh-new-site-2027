@@ -6,7 +6,7 @@ const productTypes = ['All', 'Notebook', 'Spare Parts', 'Accessories'];
 
 export default function ShippingRuleForm({ form, setForm, handleSaveRule, isProcessing }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-max hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden h-max hover:shadow-md transition-shadow">
       <div className="bg-emerald-50 p-4 border-b border-emerald-100">
          <h3 className="font-black text-emerald-700 text-sm flex items-center gap-2">
            <Plus size={16}/> เพิ่มเงื่อนไขใหม่
@@ -18,7 +18,7 @@ export default function ShippingRuleForm({ form, setForm, handleSaveRule, isProc
           <select 
             value={form.company} 
             onChange={e => setForm({...form, company: e.target.value})} 
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition-all"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-hidden focus:border-emerald-500 focus:bg-white transition-all"
           >
             {companies.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -28,7 +28,7 @@ export default function ShippingRuleForm({ form, setForm, handleSaveRule, isProc
           <select 
             value={form.productType} 
             onChange={e => setForm({...form, productType: e.target.value})} 
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition-all"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-hidden focus:border-emerald-500 focus:bg-white transition-all"
           >
             {productTypes.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -40,7 +40,7 @@ export default function ShippingRuleForm({ form, setForm, handleSaveRule, isProc
                 type="number" min="1" 
                 value={form.minQty} 
                 onChange={e => setForm({...form, minQty: e.target.value})} 
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition-all" 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-hidden focus:border-emerald-500 focus:bg-white transition-all" 
               />
            </div>
            <div>
@@ -49,7 +49,7 @@ export default function ShippingRuleForm({ form, setForm, handleSaveRule, isProc
                 type="number" min="1" 
                 value={form.maxQty} 
                 onChange={e => setForm({...form, maxQty: e.target.value})} 
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500 focus:bg-white transition-all" 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-hidden focus:border-emerald-500 focus:bg-white transition-all" 
               />
            </div>
         </div>
@@ -59,7 +59,7 @@ export default function ShippingRuleForm({ form, setForm, handleSaveRule, isProc
             type="number" min="0" 
             value={form.shippingFee} 
             onChange={e => setForm({...form, shippingFee: e.target.value})} 
-            className="w-full bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-3 text-lg font-black text-emerald-600 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all" 
+            className="w-full bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-3 text-lg font-black text-emerald-600 outline-hidden focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all" 
           />
         </div>
         

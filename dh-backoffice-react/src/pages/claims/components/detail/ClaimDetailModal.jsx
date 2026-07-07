@@ -160,13 +160,13 @@ export default function ClaimDetailModal({
   if (!selectedRequest) return null;
 
   return (
-    <div className={`fixed inset-0 z-[100] bg-black/40 backdrop-blur-[4px] flex items-center justify-center p-4 transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-100 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
       <div className={`bg-dh-base w-full max-w-4xl rounded-2xl shadow-dh-elevated overflow-hidden flex flex-col max-h-[90vh] transition-transform duration-200 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
         
         {/* Modal Header */}
-        <div className="px-6 py-4 bg-dh-surface border-b border-dh-border flex justify-between items-center shrink-0 shadow-sm z-10 relative">
+        <div className="px-6 py-4 bg-dh-surface border-b border-dh-border flex justify-between items-center shrink-0 shadow-xs z-10 relative">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm ${(selectedRequest.originalType === 'CLAIM_APPROVAL' || selectedRequest.type === 'CLAIM_APPROVAL') ? 'bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 border border-orange-200 dark:from-orange-900/40 dark:to-orange-900/10 dark:border-orange-800' : 'bg-gradient-to-br from-purple-100 to-purple-50 text-purple-600 border border-purple-200 dark:from-purple-900/40 dark:to-purple-900/10 dark:border-purple-800'}`}>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs ${(selectedRequest.originalType === 'CLAIM_APPROVAL' || selectedRequest.type === 'CLAIM_APPROVAL') ? 'bg-linear-to-br from-orange-100 to-orange-50 text-orange-600 border border-orange-200 dark:from-orange-900/40 dark:to-orange-900/10 dark:border-orange-800' : 'bg-linear-to-br from-purple-100 to-purple-50 text-purple-600 border border-purple-200 dark:from-purple-900/40 dark:to-purple-900/10 dark:border-purple-800'}`}>
               {(selectedRequest.originalType === 'CLAIM_APPROVAL' || selectedRequest.type === 'CLAIM_APPROVAL') ? <Wrench className="w-4.5 h-4.5"/> : <ArrowLeftRight className="w-4.5 h-4.5"/>}
             </div>
             <div>
@@ -174,18 +174,18 @@ export default function ClaimDetailModal({
                 รายละเอียด{(selectedRequest.originalType === 'CLAIM_APPROVAL' || selectedRequest.type === 'CLAIM_APPROVAL') ? 'การแจ้งเคลม/ซ่อม' : 'การคืนสินค้า'}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-mono font-bold text-dh-muted bg-dh-base px-2 py-0.5 rounded border border-dh-border shadow-inner">Ref: {selectedRequest.payload?.claimId || selectedRequest.payload?.returnId}</span>
+                <span className="text-[10px] font-mono font-bold text-dh-muted bg-dh-base px-2 py-0.5 rounded-sm border border-dh-border shadow-inner">Ref: {selectedRequest.payload?.claimId || selectedRequest.payload?.returnId}</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handlePrint} className="p-2.5 bg-dh-surface hover:bg-dh-base border border-dh-border text-dh-main rounded-xl shadow-sm hover:shadow transition-all active:scale-95 group"><Printer className="w-4 h-4 group-hover:text-dh-accent transition-colors" /></button>
+            <button onClick={handlePrint} className="p-2.5 bg-dh-surface hover:bg-dh-base border border-dh-border text-dh-main rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 group"><Printer className="w-4 h-4 group-hover:text-dh-accent transition-colors" /></button>
             <button onClick={handleClose} className="p-2.5 text-dh-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all active:scale-95 group border border-transparent hover:border-red-100 dark:hover:border-red-900/30"><X className="w-5 h-5 group-hover:rotate-90 transition-transform" /></button>
           </div>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative bg-gradient-to-b from-transparent to-dh-surface/30">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative bg-linear-to-b from-transparent to-dh-surface/30">
           <ClaimStepper status={selectedRequest.status} isCancel={selectedRequest.type.startsWith('CANCEL_')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10 mt-4">
             <CustomerInfo 

@@ -47,7 +47,7 @@ export default function InventoryHeader({
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-40 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] relative transition-colors duration-300">
       {/* Title Area */}
       <div className="flex items-center gap-4 relative z-10">
-        <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-sm">
+        <div className="w-10 h-10 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs">
           <Boxes size={20} strokeWidth={2.5} />
         </div>
         <div>
@@ -60,12 +60,12 @@ export default function InventoryHeader({
       <div className="flex flex-wrap items-center gap-3 relative z-10">
         
         {/* Filter Category พร้อม Emoji นำสายตา */}
-        <div className="flex items-center bg-white/10 border border-white/20 rounded-md px-3 py-1.5 h-[36px] focus-within:border-cyan-400 transition-colors backdrop-blur-sm">
+        <div className="flex items-center bg-white/10 border border-white/20 rounded-md px-3 py-1.5 h-[36px] focus-within:border-cyan-400 transition-colors backdrop-blur-xs">
           <Filter size={14} className="text-slate-300 mr-2 shrink-0" />
           <select 
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="text-xs bg-transparent outline-none text-white font-bold cursor-pointer w-full appearance-none pr-2 [&>option]:text-slate-900"
+            className="text-xs bg-transparent outline-hidden text-white font-bold cursor-pointer w-full appearance-none pr-2 [&>option]:text-slate-900"
           >
             <option value="All">ทุกหมวดหมู่</option>
             <option value="Screen">💻 Screen (จอ)</option>
@@ -77,12 +77,12 @@ export default function InventoryHeader({
         </div>
 
         {/* Sales Period Filter */}
-        <div className="flex items-center bg-white/10 border border-white/20 rounded-md px-3 py-1.5 h-[36px] focus-within:border-cyan-400 transition-colors hidden sm:flex backdrop-blur-sm">
+        <div className="flex items-center bg-white/10 border border-white/20 rounded-md px-3 py-1.5 h-[36px] focus-within:border-cyan-400 transition-colors hidden sm:flex backdrop-blur-xs">
           <CalendarClock size={14} className="text-slate-300 mr-2 shrink-0" />
           <select 
             value={salesPeriod}
             onChange={(e) => setSalesPeriod(e.target.value)}
-            className="text-xs bg-transparent outline-none text-white font-bold cursor-pointer w-full appearance-none pr-2 [&>option]:text-slate-900"
+            className="text-xs bg-transparent outline-hidden text-white font-bold cursor-pointer w-full appearance-none pr-2 [&>option]:text-slate-900"
           >
             <option value="7">สถิติ: 7 วัน</option>
             <option value="30">สถิติ: 30 วัน</option>
@@ -103,7 +103,7 @@ export default function InventoryHeader({
             onChange={(e) => setSearchTerm(e.target.value)}
             onMouseEnter={handlePrefetchSearch}
             onFocus={handlePrefetchSearch}
-            className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full md:w-56 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-sm"
+            className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full md:w-56 outline-hidden focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-xs"
           />
         </div>
 
@@ -111,7 +111,7 @@ export default function InventoryHeader({
         <div className="flex gap-2 shrink-0">
           <button 
             onClick={onImportProduct}
-            className="flex items-center justify-center gap-2 bg-white/10 text-white border border-white/20 h-[36px] px-3 rounded-md hover:bg-white/20 transition-all font-bold text-xs shadow-sm backdrop-blur-sm"
+            className="flex items-center justify-center gap-2 bg-white/10 text-white border border-white/20 h-[36px] px-3 rounded-md hover:bg-white/20 transition-all font-bold text-xs shadow-xs backdrop-blur-xs"
           >
             <FileUp size={14} className="text-cyan-300" />
             <span className="hidden xl:inline">Import</span>
@@ -121,7 +121,7 @@ export default function InventoryHeader({
           <button 
             onClick={handleForceSync}
             disabled={isSyncing || pendingCount === 0}
-            className={`flex items-center justify-center gap-1.5 h-[36px] px-3 rounded-md transition-all font-bold text-xs shadow-sm backdrop-blur-sm border ${
+            className={`flex items-center justify-center gap-1.5 h-[36px] px-3 rounded-md transition-all font-bold text-xs shadow-xs backdrop-blur-xs border ${
               pendingCount > 0 
                 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50 hover:bg-yellow-500/30' 
                 : 'bg-white/5 text-slate-400 border-white/10'
@@ -139,19 +139,19 @@ export default function InventoryHeader({
 
           <button 
             onClick={onExportProduct}
-            className="flex items-center justify-center gap-2 bg-white/10 text-white border border-white/20 h-[36px] px-3 rounded-md hover:bg-white/20 transition-all font-bold text-xs shadow-sm backdrop-blur-sm"
+            className="flex items-center justify-center gap-2 bg-white/10 text-white border border-white/20 h-[36px] px-3 rounded-md hover:bg-white/20 transition-all font-bold text-xs shadow-xs backdrop-blur-xs"
           >
             <FileSpreadsheet size={14} />
             <span className="hidden xl:inline">Export</span>
           </button>
           
-          <div className="w-[1px] h-[24px] bg-white/20 self-center mx-1"></div>
+          <div className="w-px h-[24px] bg-white/20 self-center mx-1"></div>
 
 
 
           <button 
             onClick={onGuideOpen}
-            className="flex items-center justify-center gap-2 bg-slate-700/50 text-white border border-white/20 h-[36px] px-3 rounded-md hover:bg-slate-700 transition-all font-bold text-xs shadow-sm backdrop-blur-sm"
+            className="flex items-center justify-center gap-2 bg-slate-700/50 text-white border border-white/20 h-[36px] px-3 rounded-md hover:bg-slate-700 transition-all font-bold text-xs shadow-xs backdrop-blur-xs"
             title="คู่มือการใช้งาน"
           >
             <HelpCircle size={14} />

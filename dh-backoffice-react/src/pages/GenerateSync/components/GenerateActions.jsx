@@ -17,7 +17,7 @@ export default function GenerateActions({ changes, isCalculating, onManualReset,
     (!changes.otherChanged || changes.otherChanged?.length === 0);
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 w-full relative overflow-hidden group">
+    <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-200 w-full relative overflow-hidden group">
       
       {/* Settings Button */}
       <button 
@@ -41,7 +41,7 @@ export default function GenerateActions({ changes, isCalculating, onManualReset,
         </h3>
         
         {isUpToDate ? (
-            <div className="flex items-center gap-1.5 px-3 py-1 mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-full shadow-sm animate-in zoom-in duration-300">
+            <div className="flex items-center gap-1.5 px-3 py-1 mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-full shadow-xs animate-in zoom-in duration-300">
                 <CheckCircle size={14} /> เตรียมข้อมูลส่งออก พร้อมแล้ว {latestSnapshot ? `(อ้างอิง: ${latestSnapshot.transactionId})` : ''}
             </div>
         ) : (

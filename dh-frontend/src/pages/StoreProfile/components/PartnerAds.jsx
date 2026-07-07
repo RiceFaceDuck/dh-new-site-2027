@@ -55,7 +55,7 @@ const PartnerAds = ({ partnerId }) => {
   }
 
   return (
-    <div className="mt-12 bg-gradient-to-b from-white to-slate-50/50 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100">
+    <div className="mt-12 bg-linear-to-b from-white to-slate-50/50 rounded-3xl p-6 md:p-10 shadow-xs border border-slate-100">
       <div className="text-center mb-8">
         <h3 className="text-2xl font-black text-slate-800 flex items-center justify-center gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, X, Upload, CheckCircle, FileText, Trash2, Eye, Database, Check } from 'lucide-react';
+import { Settings, X, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
+
+import TemplatePreviewCard from './TemplatePreviewCard';
+import TemplateUploadCard from './TemplateUploadCard';
 
 export default function TemplateSettingsModal({ isOpen, onClose }) {
   const [skuTemplate, setSkuTemplate] = useState(false);
   const [invTemplate, setInvTemplate] = useState(false);
-  const [previewData, setPreviewData] = useState(null); // { title: string, headers: string[], mapping: object[] }
+  const [previewData, setPreviewData] = useState(null);
 
   const skuRef = useRef(null);
   const invRef = useRef(null);
@@ -21,7 +24,7 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const handleUpload = (e, key, setter) => {
+  const handleUpload = (e, key) => {
     const file = e.target.files?.[0];
     if (!file || !file.name.endsWith('.xlsx')) {
       alert("กรุณาอัปโหลดไฟล์ .xlsx เท่านั้น");
@@ -37,7 +40,8 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
         if (!base64) throw new Error("Invalid file content");
         
         localStorage.setItem(key, base64);
-        setter(true);
+        if (key === 'bigseller_template_sku') setSkuTemplate(true);
+        if (key === 'bigseller_template_inventory') setInvTemplate(true);
 
         import('../../../firebase/historyService').then(({ historyService }) => {
           historyService.addLog({
@@ -55,12 +59,13 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
     };
     reader.onerror = () => alert("เกิดข้อผิดพลาดในการอัปโหลดไฟล์");
     reader.readAsDataURL(file);
-    if (e.target) e.target.value = ''; // reset
+    if (e.target) e.target.value = '';
   };
 
-  const handleRemove = (key, setter) => {
+  const handleRemove = (key) => {
     localStorage.removeItem(key);
-    setter(false);
+    if (key === 'bigseller_template_sku') setSkuTemplate(false);
+    if (key === 'bigseller_template_inventory') setInvTemplate(false);
     
     import('../../../firebase/historyService').then(({ historyService }) => {
       historyService.addLog({
@@ -120,15 +125,14 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div 
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" 
         onClick={onClose}
       />
       
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative z-10 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
         
-        {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white relative z-20">
           <div className="flex items-center gap-3">
             <button 
@@ -154,100 +158,36 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto relative bg-slate-50/50">
-          
-          {/* View 1: Main Settings */}
           {!previewData && (
             <div className="p-6 space-y-6">
               
-              {/* SKU Merchant Template */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-slate-700 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">1</span>
-                  แม่แบบ SKU Merchant
-                </h3>
-                
-                <div className={`p-4 rounded-xl border transition-colors ${skuTemplate ? 'border-green-200 bg-green-50' : 'border-dashed border-slate-300 bg-white hover:border-indigo-300'}`}>
-                  {skuTemplate ? (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="text-green-500" size={24} />
-                        <div>
-                          <p className="text-sm font-semibold text-green-700">ติดตั้งแม่แบบแล้ว</p>
-                          <p className="text-xs text-green-600/80">ระบบพร้อมใช้งานไฟล์โครงสร้างนี้</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => handlePreview('bigseller_template_sku', 'แม่แบบ SKU Merchant')} 
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                        >
-                          <Eye size={14} /> ดูตัวอย่างโครงสร้าง
-                        </button>
-                        <button onClick={() => handleRemove('bigseller_template_sku', setSkuTemplate)} className="text-red-400 hover:text-red-600 p-2 bg-white border border-red-100 rounded-lg shadow-sm hover:bg-red-50 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-5">
-                      <FileText className="mx-auto text-slate-300 mb-3" size={36} />
-                      <p className="text-sm text-slate-600 font-bold mb-1">ยังไม่มีไฟล์แม่แบบ</p>
-                      <p className="text-xs text-slate-500 mb-4">โปรดอัปโหลดไฟล์ <span className="font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">import_merchant_sku_th.xlsx</span></p>
-                      <button onClick={() => skuRef.current?.click()} className="px-5 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 font-bold text-sm rounded-lg shadow-md hover:shadow-lg transition-all">
-                        เลือกไฟล์อัปโหลด
-                      </button>
-                      <input type="file" ref={skuRef} onChange={(e) => handleUpload(e, 'bigseller_template_sku', setSkuTemplate)} accept=".xlsx" className="hidden" />
-                    </div>
-                  )}
-                </div>
-              </div>
+              <TemplateUploadCard 
+                title="แม่แบบ SKU Merchant"
+                number="1"
+                color="indigo"
+                hasTemplate={skuTemplate}
+                fileName="import_merchant_sku_th.xlsx"
+                onUpload={handleUpload}
+                onPreview={handlePreview}
+                onRemove={handleRemove}
+                fileRef={skuRef}
+                storageKey="bigseller_template_sku"
+              />
 
-              {/* Inventory Count Template */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-slate-700 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">2</span>
-                  แม่แบบ Inventory Count (总仓库)
-                </h3>
-                
-                <div className={`p-4 rounded-xl border transition-colors ${invTemplate ? 'border-green-200 bg-green-50' : 'border-dashed border-slate-300 bg-white hover:border-emerald-300'}`}>
-                  {invTemplate ? (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="text-green-500" size={24} />
-                        <div>
-                          <p className="text-sm font-semibold text-green-700">ติดตั้งแม่แบบแล้ว</p>
-                          <p className="text-xs text-green-600/80">ระบบพร้อมใช้งานไฟล์โครงสร้างนี้</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => handlePreview('bigseller_template_inventory', 'แม่แบบ Inventory Count')} 
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                        >
-                          <Eye size={14} /> ดูตัวอย่างโครงสร้าง
-                        </button>
-                        <button onClick={() => handleRemove('bigseller_template_inventory', setInvTemplate)} className="text-red-400 hover:text-red-600 p-2 bg-white border border-red-100 rounded-lg shadow-sm hover:bg-red-50 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-5">
-                      <FileText className="mx-auto text-slate-300 mb-3" size={36} />
-                      <p className="text-sm text-slate-600 font-bold mb-1">ยังไม่มีไฟล์แม่แบบ</p>
-                      <p className="text-xs text-slate-500 mb-4">โปรดอัปโหลดไฟล์ <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">import_count_results_th.xlsx</span></p>
-                      <button onClick={() => invRef.current?.click()} className="px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-sm rounded-lg shadow-md hover:shadow-lg transition-all">
-                        เลือกไฟล์อัปโหลด
-                      </button>
-                      <input type="file" ref={invRef} onChange={(e) => handleUpload(e, 'bigseller_template_inventory', setInvTemplate)} accept=".xlsx" className="hidden" />
-                    </div>
-                  )}
-                </div>
-              </div>
+              <TemplateUploadCard 
+                title="แม่แบบ Inventory Count (总仓库)"
+                number="2"
+                color="emerald"
+                hasTemplate={invTemplate}
+                fileName="import_count_results_th.xlsx"
+                onUpload={handleUpload}
+                onPreview={handlePreview}
+                onRemove={handleRemove}
+                fileRef={invRef}
+                storageKey="bigseller_template_inventory"
+              />
 
-              {/* Buffer Stock Setting */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-slate-700 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs">3</span>
@@ -269,7 +209,7 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
                           localStorage.setItem('bigseller_export_buffer', val);
                           e.target.value = val;
                         }}
-                        className="w-20 px-3 py-1.5 text-center font-bold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-20 px-3 py-1.5 text-center font-bold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                         title="จำนวนชิ้นที่ต้องการเผื่อไว้"
                       />
                       <span className="text-sm text-slate-500">ชิ้น</span>
@@ -278,15 +218,12 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* System Settings */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-slate-700 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs">4</span>
                   ตั้งค่าระบบ (System Settings)
                 </h3>
                 <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-4">
-                  
-                  {/* Auto-Reset Baseline */}
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold text-slate-700">Auto-Reset การนับรอบ (หลังดาวน์โหลด)</p>
@@ -301,89 +238,16 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
                           localStorage.setItem('bigseller_auto_reset_baseline', e.target.checked);
                         }}
                       />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                     </label>
                   </div>
-
                 </div>
               </div>
 
             </div>
           )}
 
-          {/* View 2: Preview Mode */}
-          {previewData && (
-            <div className="p-6 space-y-6 animate-in slide-in-from-right-4 duration-300">
-              
-              {/* Columns Found */}
-              <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                  <FileText size={16} className="text-indigo-500" /> 
-                  คอลัมน์ที่พบในไฟล์แม่แบบ ({previewData.headers.length} คอลัมน์)
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {previewData.headers.map((h, i) => (
-                    <span key={i} className="px-2.5 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-medium rounded-md shadow-sm">
-                      {h}
-                    </span>
-                  ))}
-                  {previewData.headers.length === 0 && (
-                    <span className="text-xs text-slate-400 italic">ไม่พบคอลัมน์ หรือไฟล์มีรูปแบบที่ซับซ้อนเกินไป (แต่ระบบอาจยังทำงานได้ปกติ)</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Schema Mapping */}
-              <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                  <Database size={16} className="text-emerald-500" />
-                  สรุปการจับคู่กับ Schema ของระบบ
-                </h3>
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-2.5 font-semibold text-slate-600">คอลัมน์ใน Excel (ประมาณ)</th>
-                        <th className="px-4 py-2.5 font-semibold text-slate-600">ดึงข้อมูลจาก (Schema)</th>
-                        <th className="px-4 py-2.5 font-semibold text-slate-600">รายละเอียด</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {previewData.mapping.map((m, i) => (
-                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-3 font-medium text-slate-700">{m.col}</td>
-                          <td className="px-4 py-3">
-                            {m.isEditable ? (
-                              <input 
-                                type="text"
-                                defaultValue={m.schema}
-                                onBlur={(e) => {
-                                  const val = e.target.value.trim() || '总仓库';
-                                  localStorage.setItem('bigseller_warehouse_name', val);
-                                  e.target.value = val;
-                                }}
-                                className="font-mono text-xs text-emerald-700 bg-white px-2 py-1 rounded border border-emerald-300 w-32 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
-                                title="คลิกเพื่อแก้ไขชื่อคลังสินค้า"
-                              />
-                            ) : (
-                              <span className="font-mono text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
-                                {m.schema}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-slate-500 text-xs">{m.desc}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-2">
-                  * ระบบจะค้นหาคอลัมน์โดยอัตโนมัติจากคำค้นหา (Keyword) ไม่ว่าจะอยู่คอลัมน์ไหนก็ตาม
-                </p>
-              </div>
-
-            </div>
-          )}
+          <TemplatePreviewCard previewData={previewData} />
 
         </div>
 

@@ -131,7 +131,7 @@ export interface CreditTransaction {
 ### Architectural Note
 The logic for managing credits and the `credit_transactions` collection is modularized:
 - **`creditService.js`**: Facade module exporting all credit functionalities.
-- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments. **NOTE**: The canonical source of truth for a user's balance is `userDoc.creditPoints`. The legacy `wallet` subcollection, `point_transactions` collection, and `stats.rewardPoints` are ALL deprecated. Earning points from orders now directly increases `creditPoints`.
+- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments. **NOTE**: The canonical source of truth for a user's balance is `userDoc.creditPoints`. The legacy `wallet` subcollection, `point_transactions` collection, `stats.rewardPoints`, and personal `credit_history` subcollection are ALL deprecated. Earning points from orders now directly increases `creditPoints`. History is globally stored in `credit_transactions`.
 - **`creditHistoryService.js`**: Handles fetching wallet balance and paginated credit history.
 - **`creditRealtimeService.js`**: Manages real-time listeners for user's wallet balance and pending credits.
 - **`creditFormatService.js`**: Gamification and data formatting utilities.

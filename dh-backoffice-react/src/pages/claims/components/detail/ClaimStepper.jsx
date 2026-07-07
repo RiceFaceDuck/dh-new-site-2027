@@ -46,7 +46,7 @@ export default function ClaimStepper({ status, isCancel }) {
           
           return (
             <div key={step.id} className="relative z-10 flex flex-col items-center gap-1.5 w-16">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-xs
                 ${isCompleted ? 'bg-dh-accent text-white border border-dh-accent shadow-dh-accent/20' : 
                   isActive ? 'bg-dh-surface text-dh-accent border-2 border-dh-accent shadow-md animate-pulse' : 
                   'bg-dh-base text-dh-muted border border-dh-border'}`}

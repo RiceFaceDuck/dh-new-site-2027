@@ -43,7 +43,7 @@ export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }
 
   return (
     // 🌌 4. Backdrop (พื้นหลังเบลอ ป้องกันการคลิกด้านหลัง)
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       
       // 📦 5. Modal Container
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
@@ -81,7 +81,7 @@ export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }
               value={formData.title} 
               onChange={handleChange} 
               placeholder="ระบุสิ่งที่ต้องทำ..."
-              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all font-medium disabled:bg-slate-50 disabled:text-slate-400" 
+              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-hidden focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all font-medium disabled:bg-slate-50 disabled:text-slate-400" 
             />
           </div>
 
@@ -97,7 +97,7 @@ export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }
               onChange={handleChange} 
               rows="3"
               placeholder="ข้อมูลเพิ่มเติมที่จำเป็นต้องทราบ..."
-              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all resize-none disabled:bg-slate-50 disabled:text-slate-400" 
+              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-hidden focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all resize-none disabled:bg-slate-50 disabled:text-slate-400" 
             />
           </div>
 
@@ -113,7 +113,7 @@ export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }
                 disabled={isSubmitting}
                 value={formData.priority} 
                 onChange={handleChange} 
-                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all appearance-none font-medium cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-hidden focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all appearance-none font-medium cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="HIGH">🔴 ด่วนมาก (High)</option>
                 <option value="MEDIUM">🟡 ปานกลาง (Medium)</option>
@@ -131,7 +131,7 @@ export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }
                 disabled={isSubmitting}
                 value={formData.type} 
                 onChange={handleChange} 
-                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all appearance-none font-medium cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-hidden focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all appearance-none font-medium cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="MANUAL">งานทั่วไป</option>
                 <option value="CONTACT">ติดต่อลูกค้า</option>
@@ -152,7 +152,7 @@ export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }
               disabled={isSubmitting}
               value={formData.dueDate} 
               onChange={handleChange} 
-              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all font-medium cursor-pointer disabled:bg-slate-50 disabled:text-slate-400" 
+              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-hidden focus:border-dh-main focus:ring-2 focus:ring-dh-main/20 transition-all font-medium cursor-pointer disabled:bg-slate-50 disabled:text-slate-400" 
             />
           </div>
 

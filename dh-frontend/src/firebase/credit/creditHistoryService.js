@@ -1,14 +1,21 @@
-import { collection, doc, getDoc, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
 import { db } from '../config';
 import { getUsersPath, historyCache, CACHE_LIFETIME } from './creditConfig';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const getWalletBalance = async (userId) => {
   if (!userId) return { balance: 0, totalAccumulated: 0 };
   try {
     const usersPath = getUsersPath();
-    const walletRef = doc(db, usersPath, userId, 'wallet', 'default');
-    const snapshot = await getDoc(walletRef);
-    if (snapshot.exists()) return snapshot.data();
+    const profileRef = doc(db, usersPath, userId);
+    const snapshot = await getDoc(profileRef);
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      return { 
+        balance: Number(data.creditPoints || 0), 
+        totalAccumulated: Number(data.totalAccumulatedPoints || data.creditPoints || 0) 
+      };
+    }
     return { balance: 0, totalAccumulated: 0 };
   } catch (error) {
     console.error("❌ Error fetching wallet balance:", error);
@@ -29,14 +36,13 @@ export const getCreditHistory = async (userId, lastDoc = null, pageSize = 10, fo
 
   try {
     console.log(`☁️ [CreditService] Fetching history from Firestore... (Page: ${lastDoc ? 'Next' : 'First'})`);
-    const usersPath = getUsersPath();
-    const historyRef = collection(db, usersPath, userId, 'credit_history');
+    const historyRef = collection(db, getCollectionPath('credit_transactions'));
     let q;
 
     if (lastDoc) {
-      q = query(historyRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+      q = query(historyRef, where('uid', '==', userId), orderBy('timestamp', 'desc'), startAfter(lastDoc), limit(pageSize));
     } else {
-      q = query(historyRef, orderBy('createdAt', 'desc'), limit(pageSize));
+      q = query(historyRef, where('uid', '==', userId), orderBy('timestamp', 'desc'), limit(pageSize));
     }
 
     const snapshot = await getDocs(q);

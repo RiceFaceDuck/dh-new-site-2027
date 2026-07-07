@@ -218,10 +218,10 @@ export default function ReceiptTemplate({
     const displayName = customer ? (customer.accountName || customer.firstName || customer.displayName || 'ลูกค้าทั่วไป') : (data.walkInName || 'ลูกค้าทั่วไป');
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-9999 bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-xs">
             
             {/* Toolbar */}
-            <div className="w-full max-w-[155mm] flex justify-between items-center bg-white p-3 rounded-t-xl border-b shadow-sm">
+            <div className="w-full max-w-[155mm] flex justify-between items-center bg-white p-3 rounded-t-xl border-b shadow-xs">
                 <div className="flex items-center gap-3">
                     <button onClick={onClose} className="p-1.5 hover:bg-gray-100 text-gray-500 rounded-lg"><X size={20}/></button>
                     <span className="font-bold text-gray-700">บิลขนาด A5 (กระชับ)</span>
@@ -230,7 +230,7 @@ export default function ReceiptTemplate({
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5 border px-2.5 py-1 rounded-lg bg-gray-50 text-[11px] font-black text-gray-600">
                         <span>ฉบับย่อ</span>
-                        <button onClick={toggleFormat} disabled={isSavingPref} className="focus:outline-none disabled:opacity-50">
+                        <button onClick={toggleFormat} disabled={isSavingPref} className="focus:outline-hidden disabled:opacity-50">
                             {format === 'short' ? <ToggleLeft className="text-gray-400" size={24}/> : <ToggleRight className="text-orange-500" size={24}/>}
                         </button>
                         <span>ฉบับเต็ม</span>

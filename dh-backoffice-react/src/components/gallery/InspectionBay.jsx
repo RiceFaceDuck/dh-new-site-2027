@@ -15,12 +15,12 @@ const InspectionBay = ({ images, onRemove, onClear, onClose }) => {
   }, []);
 
   return (
-    <div className={`h-full w-full flex flex-col transition-colors duration-500 ${darkRoom ? 'bg-[#0f1115]' : 'bg-[var(--dh-bg-surface)]'}`}>
+    <div className={`h-full w-full flex flex-col transition-colors duration-500 ${darkRoom ? 'bg-[#0f1115]' : 'bg-(--dh-bg-surface)'}`}>
       
       {/* Fantasy Toolbar */}
-      <div className={`flex justify-between items-center p-4 border-b ${darkRoom ? 'border-gray-800 text-gray-300 bg-black/40' : 'border-[var(--dh-border)] text-[var(--dh-text-main)] bg-white/40'} backdrop-blur-md`}>
+      <div className={`flex justify-between items-center p-4 border-b ${darkRoom ? 'border-gray-800 text-gray-300 bg-black/40' : 'border-(--dh-border) text-(--dh-text-main) bg-white/40'} backdrop-blur-md`}>
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[var(--dh-accent)]/20 rounded-lg text-[var(--dh-accent)]">
+          <div className="p-2 bg-(--dh-accent)/20 rounded-lg text-(--dh-accent)">
             <Maximize2 size={20} />
           </div>
           <div>
@@ -59,7 +59,7 @@ const InspectionBay = ({ images, onRemove, onClear, onClose }) => {
           <div 
             key={img.id} 
             className={`relative flex-1 rounded-2xl overflow-hidden border border-gray-800 shadow-2xl group
-              ${darkRoom ? 'bg-[#000000]' : 'bg-[var(--dh-bg-base)] border-[var(--dh-border)]'}`}
+              ${darkRoom ? 'bg-[#000000]' : 'bg-(--dh-bg-base) border-(--dh-border)'}`}
             onMouseMove={handleMouseMove}
             onMouseEnter={() => setIsZooming(true)}
             onMouseLeave={() => setIsZooming(false)}
@@ -85,9 +85,9 @@ const InspectionBay = ({ images, onRemove, onClear, onClose }) => {
             />
             
             {/* Metadata Overlay Bottom */}
-            <div className={`absolute bottom-0 left-0 right-0 p-4 backdrop-blur-xl ${darkRoom ? 'bg-black/80 text-gray-300 border-t border-gray-800' : 'bg-white/90 text-gray-800 border-t border-[var(--dh-border)]'} flex flex-col gap-1 translate-y-full group-hover:translate-y-0 transition-transform duration-300`}>
+            <div className={`absolute bottom-0 left-0 right-0 p-4 backdrop-blur-xl ${darkRoom ? 'bg-black/80 text-gray-300 border-t border-gray-800' : 'bg-white/90 text-gray-800 border-t border-(--dh-border)'} flex flex-col gap-1 translate-y-full group-hover:translate-y-0 transition-transform duration-300`}>
               <div className="flex justify-between items-center">
-                <span className={`px-2 py-0.5 rounded text-xs font-black ${img.sku ? 'bg-[var(--dh-accent)] text-white' : 'bg-red-500 text-white'}`}>{img.sku || 'NO SKU'}</span>
+                <span className={`px-2 py-0.5 rounded-sm text-xs font-black ${img.sku ? 'bg-(--dh-accent) text-white' : 'bg-red-500 text-white'}`}>{img.sku || 'NO SKU'}</span>
                 <span className="font-bold text-sm truncate ml-2">{img.title}</span>
               </div>
               {img.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mt-1">{img.description}</p>}
@@ -97,7 +97,7 @@ const InspectionBay = ({ images, onRemove, onClear, onClose }) => {
         
         {/* Placeholder สำหรับช่องที่ว่างอยู่ (รับได้ 3 รูป) */}
         {images.length < 3 && Array.from({ length: 3 - images.length }).map((_, i) => (
-          <div key={`empty-${i}`} className={`flex-1 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${darkRoom ? 'border-gray-800/50 text-gray-600 hover:border-gray-700 hover:bg-gray-900/20' : 'border-[var(--dh-border)] text-gray-400 hover:bg-gray-50'}`}>
+          <div key={`empty-${i}`} className={`flex-1 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${darkRoom ? 'border-gray-800/50 text-gray-600 hover:border-gray-700 hover:bg-gray-900/20' : 'border-(--dh-border) text-gray-400 hover:bg-gray-50'}`}>
             <ImageIcon size={48} className="mb-4 opacity-30" />
             <span className="text-base font-bold">รอการนำเข้าภาพ</span>
             <span className="text-xs mt-1 opacity-50">พื้นที่สำหรับเปรียบเทียบ</span>

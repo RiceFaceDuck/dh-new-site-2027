@@ -38,7 +38,7 @@ const PlayerNode = ({ player }) => {
       </div>
 
       {/* Player Info Card */}
-      <div className="bg-white rounded shadow-sm w-full overflow-hidden flex flex-col transition-all group-hover:shadow-md group-hover:-translate-y-0.5 border border-gray-200">
+      <div className="bg-white rounded-sm shadow-xs w-full overflow-hidden flex flex-col transition-all group-hover:shadow-md group-hover:-translate-y-0.5 border border-gray-200">
         <div className="bg-white text-[#0f284e] text-[10px] sm:text-xs font-bold text-center px-1 truncate py-0.5">
           {player.name}
         </div>
@@ -56,7 +56,7 @@ const EmptyNode = () => (
     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-t-lg rounded-b-md border-2 border-dashed border-gray-400 bg-black/20 mb-1 flex items-center justify-center">
       <span className="text-gray-300 text-xl font-light">+</span>
     </div>
-    <div className="bg-gray-200 rounded w-full h-4"></div>
+    <div className="bg-gray-200 rounded-sm w-full h-4"></div>
     <div className="bg-gray-300 rounded-b w-full h-3"></div>
   </div>
 );

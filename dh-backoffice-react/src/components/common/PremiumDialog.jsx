@@ -58,7 +58,7 @@ export default function PremiumDialog({
   };
 
   return (
-    <div className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-200 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
       <div className={`bg-dh-surface w-full max-w-md rounded-2xl shadow-dh-elevated overflow-hidden border border-dh-border transition-all duration-200 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
         
         <div className="flex justify-between items-start p-5 pb-0">
@@ -77,7 +77,7 @@ export default function PremiumDialog({
           {requireInput && (
             <textarea
               autoFocus
-              className="w-full bg-dh-base border border-dh-border rounded-xl p-3 text-sm text-dh-main focus:outline-none focus:border-dh-accent focus:ring-1 focus:ring-dh-accent resize-none transition-all placeholder:text-dh-muted/50"
+              className="w-full bg-dh-base border border-dh-border rounded-xl p-3 text-sm text-dh-main focus:outline-hidden focus:border-dh-accent focus:ring-1 focus:ring-dh-accent resize-none transition-all placeholder:text-dh-muted/50"
               rows={3}
               placeholder={inputPlaceholder}
               value={inputValue}
@@ -101,7 +101,7 @@ export default function PremiumDialog({
           </button>
           <button
             onClick={handleConfirm}
-            className={`px-5 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95 shadow-sm hover:shadow-md
+            className={`px-5 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-95 shadow-xs hover:shadow-md
               ${type === 'warning' ? 'bg-amber-500 hover:bg-amber-600' : 
                 type === 'success' ? 'bg-emerald-500 hover:bg-emerald-600' : 
                 'bg-dh-accent hover:bg-dh-accent/90'}`}

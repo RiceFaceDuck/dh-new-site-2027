@@ -9,7 +9,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
   let billboardAspectClass = 'aspect-video'; // Default 16:9
   if (formData.type === 'BILLBOARD') {
     if (formData.billboardRatio === '1:1') billboardAspectClass = 'aspect-square';
-    if (formData.billboardRatio === '9:16') billboardAspectClass = 'aspect-[9/16]';
+    if (formData.billboardRatio === '9:16') billboardAspectClass = 'aspect-9/16';
   }
 
   // 🏷️ ไอคอนและสีตามประเภทโฆษณา
@@ -29,14 +29,14 @@ const AdPreviewCard = ({ formData, storeData }) => {
       
       {/* 🔴 Live Indicator Badge */}
       <div className="flex items-center justify-between w-full max-w-sm mb-6">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-xs border border-slate-100">
            <span className="relative flex h-2.5 w-2.5">
              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
            </span>
            <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest mt-0.5">Live Preview</span>
         </div>
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white shadow-sm ${typeConfig.bg} ${typeConfig.color}`}>
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white shadow-xs ${typeConfig.bg} ${typeConfig.color}`}>
            {typeConfig.icon}
            <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">{typeConfig.text}</span>
         </div>
@@ -75,9 +75,9 @@ const AdPreviewCard = ({ formData, storeData }) => {
             
             {formData.imageUrl ? (
               <>
-                <img src={formData.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Billboard Preview" />
+                <img src={formData.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Billboard Preview"  loading="lazy" />
                 {/* Gradient Overlay for Text Visibility */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent p-5 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-900/90 via-slate-900/40 to-transparent p-5 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                     <h3 className="text-white font-bold text-lg sm:text-xl line-clamp-1 drop-shadow-md">
                       {formData.title || 'ข้อความป้ายแบนเนอร์โฆษณา'}
                     </h3>
@@ -89,7 +89,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
             ) : (
               // Empty State for Billboard
               <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center">
-                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-3">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xs mb-3">
                   <ImageIcon size={32} className="text-slate-300"/>
                 </div>
                 <div className="text-xs font-bold uppercase tracking-widest text-slate-500">พื้นที่โฆษณา {formData.billboardRatio || '16:9'}</div>
@@ -98,7 +98,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
             )}
             
             {/* Sponsored Tag (Top Right) */}
-            <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md border border-white/20 text-white text-[9px] font-bold px-2 py-1 rounded tracking-widest uppercase">
+            <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md border border-white/20 text-white text-[9px] font-bold px-2 py-1 rounded-sm tracking-widest uppercase">
                Sponsored
             </div>
           </div>
@@ -115,4 +115,4 @@ const AdPreviewCard = ({ formData, storeData }) => {
   );
 };
 
-export default AdPreviewCard;
+export default React.memo(AdPreviewCard);

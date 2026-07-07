@@ -114,7 +114,7 @@ export default function CustomerModal({
     <div className="fixed inset-0 z-50 flex justify-center items-center p-4 sm:p-6">
       {/* พื้นหลังเบลอ */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity" 
         onClick={onClose}
       ></div>
       
@@ -181,7 +181,7 @@ export default function CustomerModal({
           <button 
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-dh-accent text-white rounded-lg hover:bg-dh-accent-hover font-bold text-sm transition-all flex justify-center items-center gap-2 shadow-sm active:scale-95 disabled:opacity-70"
+            className="px-6 py-2.5 bg-dh-accent text-white rounded-lg hover:bg-dh-accent-hover font-bold text-sm transition-all flex justify-center items-center gap-2 shadow-xs active:scale-95 disabled:opacity-70"
           >
             {isSubmitting ? (
               <><Loader2 size={16} className="animate-spin"/> กำลังบันทึก...</>

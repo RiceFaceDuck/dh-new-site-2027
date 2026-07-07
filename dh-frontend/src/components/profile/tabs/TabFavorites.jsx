@@ -34,14 +34,14 @@ const TabFavorites = () => {
           <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
             <button 
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-xs text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
               title="Grid View"
             >
               <LayoutGrid size={16} />
             </button>
             <button 
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-xs text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
               title="List View (With Notes & Tags)"
             >
               <List size={16} />
@@ -60,26 +60,26 @@ const TabFavorites = () => {
         </div>
 
         {/* Toolbar & Simulator Compact */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer select-none px-2 py-1 rounded hover:bg-gray-50 transition-colors w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-2 rounded-lg border border-gray-200 shadow-xs">
+          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer select-none px-2 py-1 rounded-sm hover:bg-gray-50 transition-colors w-full sm:w-auto">
             <input 
               type="checkbox" 
               checked={selectedIds.length > 0 && selectedIds.length === favorites.length}
               onChange={handleSelectAll}
-              className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+              className="w-4 h-4 text-emerald-600 rounded-sm border-gray-300 focus:ring-emerald-500 cursor-pointer"
             />
             เลือกทั้งหมด ({favorites.length})
           </label>
 
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-              <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded border border-gray-200 shrink-0">
+              <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-sm border border-gray-200 shrink-0">
                 <span className="text-[10px] font-semibold text-gray-500 uppercase">ยอดประเมิน:</span>
                 <span className="text-sm font-black text-indigo-700">฿{selectedTotal.toLocaleString()}</span>
               </div>
               <button 
                 onClick={handleAddSelectedToCart}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white rounded shadow-sm transition-colors shrink-0 ${notInCartCount > 0 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white rounded-sm shadow-xs transition-colors shrink-0 ${notInCartCount > 0 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
               >
                 <ShoppingCart size={12} /> 
                 {notInCartCount > 0 ? `เพิ่มลงตะกร้า (${notInCartCount})` : 'ชำระเงิน / ไปที่ตะกร้า'}
@@ -95,7 +95,7 @@ const TabFavorites = () => {
         <Heart size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-gray-500 font-semibold mb-2">ยังไม่มีสินค้าที่ถูกใจ</h3>
         <p className="text-gray-400 text-sm mb-4">ลองค้นหาสินค้าและกดหัวใจเพื่อบันทึกเก็บไว้ดูภายหลัง</p>
-        <button onClick={() => navigate('/categories')} className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold shadow-sm hover:bg-emerald-700 transition-colors">
+        <button onClick={() => navigate('/categories')} className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold shadow-xs hover:bg-emerald-700 transition-colors">
           เลือกชมสินค้า
         </button>
       </div>

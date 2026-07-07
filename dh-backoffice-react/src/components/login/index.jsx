@@ -34,15 +34,15 @@ export default function LoginContainer() {
                     viewMode === 'status' && statusData.type === 'pending' ? 'bg-amber-500' :
                     viewMode === 'status' && statusData.type === 'success' ? 'bg-emerald-500' :
                     viewMode === 'status' && statusData.type === 'unauthorized' ? 'bg-red-500' :
-                    viewMode === 'register' ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500' : 
-                    'bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-400'
+                    viewMode === 'register' ? 'bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500' : 
+                    'bg-linear-to-r from-blue-600 via-indigo-500 to-blue-400'
                 }`}></div>
 
                 <div className="p-8 sm:p-10 relative overflow-hidden">
                     
                     {/* Header Section */}
                     <div className="text-center mb-8">
-                        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl border shadow-sm mb-6 transition-all duration-500 ${
+                        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl border shadow-xs mb-6 transition-all duration-500 ${
                             viewMode === 'status' 
                                 ? (statusData.type === 'pending' ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-800 scale-110' :
                                    statusData.type === 'unauthorized' ? 'bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800 scale-110' :

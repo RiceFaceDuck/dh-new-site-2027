@@ -242,10 +242,19 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         
         // --- F. ย้ายรายการ Credit Transactions ---
         const creditsRef = collection(db, 'credit_transactions');
-        const creditsQ = query(creditsRef, where('targetUid', '==', manualUid));
+        const creditsQ = query(creditsRef, where('uid', '==', manualUid));
         const creditsSnap = await getDocs(creditsQ);
         creditsSnap.forEach((docSnap) => {
-            batch.update(docSnap.ref, { targetUid: targetUid });
+            batch.update(docSnap.ref, { uid: targetUid });
+        });
+
+        // --- F.2 ย้ายรายการ Wallet Transactions ---
+        const oldWalletTxRef = collection(db, getCollectionPath('users'), manualUid, 'wallet_transactions');
+        const walletTxSnap = await getDocs(oldWalletTxRef);
+        walletTxSnap.forEach((docSnap) => {
+            const newTxRef = doc(collection(db, getCollectionPath('users'), targetUid, 'wallet_transactions'), docSnap.id);
+            batch.set(newTxRef, docSnap.data());
+            batch.delete(docSnap.ref);
         });
 
         // --- G. ลบหรือปิดใช้งานบัญชีเดิม (Soft Delete) ---

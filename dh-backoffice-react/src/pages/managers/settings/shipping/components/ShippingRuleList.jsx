@@ -3,7 +3,7 @@ import { ShieldCheck, AlertCircle, Trash2 } from 'lucide-react';
 
 export default function ShippingRuleList({ rules, loading, toggleActive, deleteRule }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all hover:shadow-md">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden transition-all hover:shadow-md">
        <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
           <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
             <ShieldCheck size={18} className="text-emerald-500" /> เงื่อนไขที่ทำงานอยู่ (Active Rules)

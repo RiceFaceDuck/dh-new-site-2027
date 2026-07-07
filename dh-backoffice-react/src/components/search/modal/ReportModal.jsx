@@ -5,7 +5,7 @@ export default function ReportModal({ isReportModalOpen, setIsReportModalOpen, r
   if (!isReportModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-200">
+    <div className="fixed inset-0 z-110 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200">
       <div className="bg-dh-surface rounded-xl shadow-dh-elevated w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-dh-border">
         <div className="bg-dh-surface px-5 py-3 border-b border-dh-border flex justify-between items-center">
           <h3 className="font-bold text-dh-main flex items-center gap-2 text-sm">
@@ -27,7 +27,7 @@ export default function ReportModal({ isReportModalOpen, setIsReportModalOpen, r
               type="text" required 
               value={reportForm.keyword} 
               onChange={e => setReportForm({...reportForm, keyword: e.target.value})} 
-              className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all" 
+              className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-hidden focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all" 
               placeholder="เช่น Adapter Swift 7520" 
             />
           </div>
@@ -39,7 +39,7 @@ export default function ReportModal({ isReportModalOpen, setIsReportModalOpen, r
                 type="text" 
                 value={reportForm.category} 
                 onChange={e => setReportForm({...reportForm, category: e.target.value})} 
-                className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all"
+                className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-hidden focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all"
                 placeholder="เช่น Adapter" 
               />
             </div>
@@ -49,7 +49,7 @@ export default function ReportModal({ isReportModalOpen, setIsReportModalOpen, r
                 type="text" 
                 value={reportForm.customerName} 
                 onChange={e => setReportForm({...reportForm, customerName: e.target.value})} 
-                className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all"
+                className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-hidden focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all"
                 placeholder="เช่น คุณสมชาย" 
               />
             </div>
@@ -63,7 +63,7 @@ export default function ReportModal({ isReportModalOpen, setIsReportModalOpen, r
               type="url" 
               value={reportForm.referenceLink} 
               onChange={e => setReportForm({...reportForm, referenceLink: e.target.value})} 
-              className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-none focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all"
+              className="w-full p-2 bg-dh-surface border border-dh-border rounded-md outline-hidden focus:border-dh-accent focus:ring-2 focus:ring-dh-accent/20 text-dh-main text-xs transition-all"
               placeholder="https://..." 
             />
           </div>
@@ -79,7 +79,7 @@ export default function ReportModal({ isReportModalOpen, setIsReportModalOpen, r
             <button 
               type="submit" 
               disabled={isReporting} 
-              className="w-full py-2 bg-dh-accent hover:bg-dh-accent-hover text-white font-bold rounded-md shadow-sm transition-all flex justify-center items-center gap-2 text-xs disabled:opacity-70"
+              className="w-full py-2 bg-dh-accent hover:bg-dh-accent-hover text-white font-bold rounded-md shadow-xs transition-all flex justify-center items-center gap-2 text-xs disabled:opacity-70"
             >
               {isReporting ? <RefreshCw size={14} className="animate-spin"/> : <Send size={14}/>} 
               {isReporting ? 'กำลังส่งข้อมูล...' : 'ยืนยันส่งเรื่อง'}

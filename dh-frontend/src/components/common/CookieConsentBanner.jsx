@@ -48,7 +48,7 @@ export default function CookieConsentBanner() {
           <div className="flex gap-4 sm:gap-6 items-start flex-1">
             {config.logoUrl && (
               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
-                <img src={config.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+                <img src={config.logoUrl} alt="Logo" className="w-full h-full object-contain p-1"  loading="lazy" />
               </div>
             )}
             <div>
@@ -85,9 +85,9 @@ export default function CookieConsentBanner() {
 
       {/* Settings Modal */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 sm:p-6">
           <div 
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" 
             onClick={() => setIsSettingsOpen(false)}
           ></div>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 animate-in fade-in zoom-in-95 duration-200">
@@ -123,7 +123,7 @@ export default function CookieConsentBanner() {
                         onClick={() => handleToggle(type.id, type.isMandatory)}
                         disabled={type.isMandatory}
                         className={`
-                          relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
+                          relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
                           ${tempPreferences[type.id] ? 'bg-blue-600' : 'bg-slate-200'}
                           ${type.isMandatory ? 'opacity-50 cursor-not-allowed' : ''}
                         `}
@@ -139,7 +139,7 @@ export default function CookieConsentBanner() {
                     </div>
                     <p className="text-sm text-slate-600">{type.description}</p>
                     {type.isMandatory && (
-                      <span className="inline-block mt-2 text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded">
+                      <span className="inline-block mt-2 text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-sm">
                         จำเป็นเสมอ (Always Active)
                       </span>
                     )}

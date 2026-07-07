@@ -66,15 +66,15 @@ export default function MarketingInfo({ customer }) {
       
       {/* 1. Store Profile Card */}
       {storeProfile && (
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 shadow-xl relative overflow-hidden border border-slate-700/50">
+        <div className="bg-linear-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 shadow-xl relative overflow-hidden border border-slate-700/50">
           <div className="absolute -top-10 -right-10 p-4 opacity-5 rotate-12">
             <Store size={200} />
           </div>
           
           <div className="relative z-10 flex flex-col md:flex-row gap-5 items-start">
-            <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 p-1 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
+            <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 p-1 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
               {storeProfile.storeImage ? (
-                <img src={storeProfile.storeImage} alt="Store" className="w-full h-full object-cover rounded-xl" />
+                <img src={storeProfile.storeImage} alt="Store" className="w-full h-full object-cover rounded-xl"  loading="lazy" />
               ) : (
                 <Store size={32} className="text-indigo-300/50" />
               )}
@@ -82,7 +82,7 @@ export default function MarketingInfo({ customer }) {
             
             <div className="flex-1 text-white w-full">
               <div className="flex items-center gap-2 mb-1.5">
-                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
+                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-slate-300">
                   {storeProfile.storeName || 'ไม่มีชื่อร้าน'}
                 </h3>
                 <Sparkles size={16} className="text-amber-400 drop-shadow-md" />
@@ -92,11 +92,11 @@ export default function MarketingInfo({ customer }) {
               </p>
               
               <div className="grid grid-cols-2 gap-3 text-xs w-full max-w-md">
-                <div className="bg-white/5 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
+                <div className="bg-white/5 rounded-lg p-2.5 border border-white/10 backdrop-blur-xs">
                   <span className="text-indigo-200 block mb-1 text-[10px] uppercase font-bold tracking-wider">Services</span>
                   <span className="font-medium truncate block text-slate-100">{storeProfile.services || '-'}</span>
                 </div>
-                <div className="bg-white/5 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
+                <div className="bg-white/5 rounded-lg p-2.5 border border-white/10 backdrop-blur-xs">
                   <span className="text-indigo-200 block mb-1 text-[10px] uppercase font-bold tracking-wider">Open Hours</span>
                   <span className="font-medium truncate block text-slate-100">{storeProfile.openHours || '-'}</span>
                 </div>
@@ -123,9 +123,9 @@ export default function MarketingInfo({ customer }) {
               <div key={ad.id || idx} className="p-5 flex flex-col xl:flex-row gap-4 items-start xl:items-center hover:bg-slate-50/80 transition-colors group">
                 
                 {/* Image */}
-                <div className="w-16 h-16 rounded-xl border border-slate-200 overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
+                <div className="w-16 h-16 rounded-xl border border-slate-200 overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center shadow-xs group-hover:shadow-md transition-all">
                   {ad.imageUrl ? (
-                    <img src={ad.imageUrl} alt="Ad" className="w-full h-full object-cover" />
+                    <img src={ad.imageUrl} alt="Ad" className="w-full h-full object-cover"  loading="lazy" />
                   ) : (
                     <span className="text-[10px] text-slate-400 font-bold uppercase">No IMG</span>
                   )}
@@ -138,13 +138,13 @@ export default function MarketingInfo({ customer }) {
                     {renderStatus(ad.status)}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <span className="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-mono font-medium border border-indigo-100/50">{ad.type || 'UNKNOWN'}</span>
+                    <span className="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-sm font-mono font-medium border border-indigo-100/50">{ad.type || 'UNKNOWN'}</span>
                     <span className="truncate">{ad.description || ad.services || 'No description'}</span>
                   </div>
                 </div>
                 
                 {/* Stats */}
-                <div className="flex gap-4 md:gap-6 items-center mt-3 xl:mt-0 bg-white border border-slate-100 xl:border-transparent xl:bg-transparent p-3 xl:p-0 rounded-xl w-full xl:w-auto justify-around xl:justify-end shadow-sm xl:shadow-none">
+                <div className="flex gap-4 md:gap-6 items-center mt-3 xl:mt-0 bg-white border border-slate-100 xl:border-transparent xl:bg-transparent p-3 xl:p-0 rounded-xl w-full xl:w-auto justify-around xl:justify-end shadow-xs xl:shadow-none">
                   <div className="text-center xl:text-right min-w-[60px]">
                     <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-1 justify-center xl:justify-end font-medium uppercase tracking-wider">
                       <Eye size={12} /> Views

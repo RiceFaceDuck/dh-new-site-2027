@@ -131,7 +131,7 @@ export default function AccountMigrationV2() {
           </p>
           
           {status === 'error' && (
-            <div className="bg-red-50 text-red-600 p-2 rounded text-xs mb-3 flex items-center gap-1 border border-red-100">
+            <div className="bg-red-50 text-red-600 p-2 rounded-sm text-xs mb-3 flex items-center gap-1 border border-red-100">
               <AlertTriangle size={14} /> {message}
             </div>
           )}
@@ -153,7 +153,7 @@ export default function AccountMigrationV2() {
             <button
               onClick={handleMigration}
               disabled={loading}
-              className="px-4 py-2 bg-fuchsia-600 text-white rounded shadow-sm text-xs font-bold flex items-center gap-2 hover:bg-fuchsia-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-fuchsia-600 text-white rounded-sm shadow-xs text-xs font-bold flex items-center gap-2 hover:bg-fuchsia-700 transition-colors disabled:opacity-50"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : null}
               เริ่มอัปเกรดรหัสมาตรฐาน (Run Standardization)

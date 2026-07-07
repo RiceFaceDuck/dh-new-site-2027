@@ -3,7 +3,7 @@ import { Link2 } from 'lucide-react';
 
 export default function PolicyLinkSection({ policyLinks, updatePolicyLink }) {
     return (
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 <Link2 size={18} className="text-purple-500" />
                 การจัดการลิงก์นโยบาย (Policy Links)
@@ -16,7 +16,7 @@ export default function PolicyLinkSection({ policyLinks, updatePolicyLink }) {
                         type="text" 
                         value={policyLinks.privacyPolicyUrl}
                         onChange={(e) => updatePolicyLink('privacyPolicyUrl', e.target.value)}
-                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-shadow outline-none text-sm"
+                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-shadow outline-hidden text-sm"
                         placeholder="เช่น /privacy-policy หรือ https://..."
                     />
                 </div>
@@ -27,7 +27,7 @@ export default function PolicyLinkSection({ policyLinks, updatePolicyLink }) {
                         type="text" 
                         value={policyLinks.cookiePolicyUrl}
                         onChange={(e) => updatePolicyLink('cookiePolicyUrl', e.target.value)}
-                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-shadow outline-none text-sm"
+                        className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-shadow outline-hidden text-sm"
                         placeholder="เช่น /cookie-policy หรือ https://..."
                     />
                 </div>

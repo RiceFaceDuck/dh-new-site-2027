@@ -98,12 +98,12 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
   if (hidden) return null;
   if (isLoading) {
     return (
-      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-5 mb-8 shadow-sm flex items-center justify-between animate-pulse">
+      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-5 mb-8 shadow-xs flex items-center justify-between animate-pulse">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
           <div className="space-y-2">
-            <div className="h-4 bg-slate-200 rounded w-32"></div>
-            <div className="h-3 bg-slate-200 rounded w-24"></div>
+            <div className="h-4 bg-slate-200 rounded-sm w-32"></div>
+            <div className="h-3 bg-slate-200 rounded-sm w-24"></div>
           </div>
         </div>
         <div className="w-20 h-6 bg-slate-200 rounded-lg"></div>
@@ -116,7 +116,7 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
   return (
     <div className="w-full">
       {nextFreebie && (
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 md:p-5 mb-8 shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-md">
+        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 md:p-5 mb-8 shadow-xs relative overflow-hidden transition-all duration-300 hover:shadow-md">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-200 opacity-20 rounded-full -translate-y-1/2 translate-x-1/4"></div>
           <div className="relative z-10 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
@@ -126,7 +126,7 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
                 ซื้อเพิ่มอีก <span className="text-emerald-600">{nextFreebie.minQty > 0 && nextFreebie.minSpend === 0 ? `${nextFreebie.minQty - getEligibleTotals(nextFreebie).qty} ชิ้น` : `฿${(nextFreebie.minSpend - getEligibleTotals(nextFreebie).subtotal).toLocaleString()}`}</span>
                 </span>
               </div>
-              <span className="text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1.5 rounded-lg shadow-sm border border-emerald-200 transition-colors hover:bg-emerald-200">
+              <span className="text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1.5 rounded-lg shadow-xs border border-emerald-200 transition-colors hover:bg-emerald-200">
                 รับฟรี: {nextFreebie.title}
               </span>
             </div>
@@ -152,8 +152,8 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
           return (
             <div className={`rounded-2xl shadow-lg border p-3 flex items-center gap-3 relative overflow-hidden mb-8 transition-transform duration-300 group cursor-default ${
               isUnavailable 
-                ? 'shadow-gray-500/10 border-gray-300 bg-gradient-to-r from-gray-400 via-slate-400 to-gray-500 opacity-90' 
-                : 'shadow-emerald-500/20 border-emerald-400 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:scale-[1.01]'
+                ? 'shadow-gray-500/10 border-gray-300 bg-linear-to-r from-gray-400 via-slate-400 to-gray-500 opacity-90' 
+                : 'shadow-emerald-500/20 border-emerald-400 bg-linear-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:scale-[1.01]'
             }`}>
               
               {/* Background Effects */}
@@ -169,26 +169,26 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
               )}
 
               {/* Product Image Thumbnail */}
-              <div className={`w-14 h-14 md:w-16 md:h-16 bg-white rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center p-1.5 relative z-10 shadow-md ${isUnavailable ? 'opacity-70 grayscale' : ''}`}>
+              <div className={`w-14 h-14 md:w-16 md:h-16 bg-white rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1.5 relative z-10 shadow-md ${isUnavailable ? 'opacity-70 grayscale' : ''}`}>
                 <img 
                   src={freebieProduct?.imageUrl || '/logo.png'} 
                   alt={freebieProduct?.name || currentFreebie.itemName} 
                   className={`w-full h-full object-contain transition-transform duration-500 ${isUnavailable ? '' : 'group-hover:scale-110'}`}
                   onError={(e) => e.target.src='/logo.png'}
-                />
+                 loading="lazy" />
               </div>
 
               {/* Details */}
               <div className="flex-1 relative z-10 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5 md:mb-1">
                    <Gift className={`${isUnavailable ? 'text-gray-200' : 'text-emerald-100 animate-bounce'}`} size={14} />
-                   <span className={`text-[10px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-wider ${
+                   <span className={`text-[10px] font-black px-2 py-0.5 rounded shadow-xs uppercase tracking-wider ${
                      isUnavailable ? 'text-gray-600 bg-gray-200' : 'text-emerald-700 bg-emerald-100'
                    }`}>
                      {statusText}
                    </span>
                 </div>
-                <h3 className={`text-sm md:text-base font-bold text-white line-clamp-1 leading-snug drop-shadow-sm pr-2 ${isUnavailable ? 'opacity-80' : ''}`}>
+                <h3 className={`text-sm md:text-base font-bold text-white line-clamp-1 leading-snug drop-shadow-xs pr-2 ${isUnavailable ? 'opacity-80' : ''}`}>
                   {freebieProduct?.name || currentFreebie.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-0.5 md:mt-1">

@@ -48,7 +48,7 @@ export default function HistoryTable({
   };
 
   return (
-    <div className="bg-[#001e26] border border-[#003642] rounded shadow-lg overflow-hidden transition-all duration-300 h-full flex flex-col">
+    <div className="bg-[#001e26] border border-[#003642] rounded-sm shadow-lg overflow-hidden transition-all duration-300 h-full flex flex-col">
       <div className="overflow-y-auto flex-1 custom-scrollbar font-mono text-[13px] leading-relaxed tracking-wider p-4">
         {filteredLogs.length === 0 ? (
           <div className="text-[#586e75] p-4">
@@ -86,7 +86,7 @@ export default function HistoryTable({
               return (
                 <div key={keyId} className="flex flex-col group">
                   <div 
-                    className="hover:bg-[#002b36] transition-colors flex items-start p-1 rounded cursor-pointer"
+                    className="hover:bg-[#002b36] transition-colors flex items-start p-1 rounded-sm cursor-pointer"
                     onClick={() => toggleRow(keyId)}
                   >
                     <span className="text-[#586e75] mr-1 shrink-0 mt-0.5">
@@ -97,7 +97,7 @@ export default function HistoryTable({
                     <span className={`${actionFmt.color} mr-2 shrink-0 font-bold w-[45px]`}>{actionFmt.label}</span>
                     <span className="text-[#2aa198] mr-2 shrink-0 w-[60px]">[{moduleStr}]</span>
                     
-                    <span className="text-[#93a1a1] break-words flex-1">
+                    <span className="text-[#93a1a1] wrap-break-word flex-1">
                       <span 
                         className="text-[#b58900] hover:underline" 
                         onClick={(e) => { e.stopPropagation(); copyToClipboard(actorName); }} 
@@ -137,7 +137,7 @@ export default function HistoryTable({
             <button 
               onClick={loadMore}
               disabled={loadingMore}
-              className="text-[#2aa198] hover:text-[#268bd2] hover:bg-[#002b36] px-2 py-1 rounded transition-colors flex items-center gap-2"
+              className="text-[#2aa198] hover:text-[#268bd2] hover:bg-[#002b36] px-2 py-1 rounded-sm transition-colors flex items-center gap-2"
             >
               {loadingMore ? <Loader2 className="animate-spin w-3 h-3" /> : '>'}
               {loadingMore ? 'tail -f logs...' : './load_more.sh'}

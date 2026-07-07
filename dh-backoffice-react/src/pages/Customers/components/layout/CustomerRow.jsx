@@ -80,7 +80,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
       className={`
         relative group flex items-center px-4 py-2.5 border-b border-slate-200/60 cursor-pointer transition-colors duration-200
         even:bg-slate-100/40 odd:bg-white hover:bg-indigo-50/60
-        ${isSelected ? '!bg-indigo-50/90' : ''}
+        ${isSelected ? 'bg-indigo-50/90!' : ''}
       `}
     >
       {/* 🟦 Active Indicator (แถบสีซ้ายมือแบบ Enterprise) */}
@@ -109,7 +109,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
             {displayName}
           </span>
           {hasTax && (
-            <span className="shrink-0 flex items-center px-1.5 py-[1.5px] bg-indigo-50 text-indigo-600 rounded text-[9px] font-bold uppercase border border-indigo-100/50 shadow-sm" title="พร้อมออกใบกำกับภาษี">
+            <span className="shrink-0 flex items-center px-1.5 py-[1.5px] bg-indigo-50 text-indigo-600 rounded-sm text-[9px] font-bold uppercase border border-indigo-100/50 shadow-xs" title="พร้อมออกใบกำกับภาษี">
               <FileText size={9} className="mr-0.5" /> TAX
             </span>
           )}
@@ -127,7 +127,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
 
         {/* 5. ระดับบัญชี */}
         <div className="flex justify-center min-w-0">
-          <div className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${badge.color} truncate max-w-full shadow-sm`}>
+          <div className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-widest border ${badge.color} truncate max-w-full shadow-xs`}>
             {badge.icon}
             <span className="truncate">{customer.rank || customer.role || 'MEMBER'}</span>
           </div>

@@ -153,7 +153,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         
         {/* Header */}
@@ -222,7 +222,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
                   onChange={(e) => setIsActive(e.target.checked)}
                   disabled={isSubmitting}
                 />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50"></div>
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50"></div>
               </label>
             </div>
           </form>
@@ -242,7 +242,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
             type="submit"
             form="categoryForm"
             disabled={isSubmitting || !name.trim() || !type.trim()}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20 disabled:opacity-50 disabled:hover:bg-blue-600 flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-xs shadow-blue-600/20 disabled:opacity-50 disabled:hover:bg-blue-600 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

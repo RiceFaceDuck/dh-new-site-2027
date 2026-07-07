@@ -35,8 +35,13 @@ service cloud.firestore {
     match /users/{userId} {
       // สงวนสิทธิ์การอ่านข้อมูลส่วนบุคคลเฉพาะเจ้าของและพนักงานเท่านั้น (PDPA Compliance)
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-      // เจ้าของบัญชี หรือ พนักงาน(Staff) แก้ไขได้
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
+      
+      // 🚀 THE FIX: ป้องกันการแฮกยกระดับสิทธิ์ (Escalation of Privilege)
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isStaff() || (
+        isAuthenticated() && request.auth.uid == userId &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isStaff', 'uid']))
+      );
       
       // ให้สิทธิ์การเข้าถึง Subcollections (เช่น storeProfile, wallet)
       match /{document=**} {
@@ -48,7 +53,11 @@ service cloud.firestore {
     // 1.1 ผู้ใช้ (Users) ในระบบ Artifacts
     match /artifacts/{appId}/users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isStaff() || (
+        isAuthenticated() && request.auth.uid == userId &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isStaff', 'uid']))
+      );
       
       match /{document=**} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
@@ -79,7 +88,12 @@ service cloud.firestore {
     // 3. ระบบบิลและการเงิน (Orders & Credit)
     match /orders/{orderId} {
       allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || resource.data.customer.uid == request.auth.uid));
-      allow create: if isStaff() || (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      // 🚀 THE FIX: บังคับให้สร้างออเดอร์ในสถานะเริ่มต้นเท่านั้น ป้องกันการโกงสลิป
+      allow create: if isStaff() || (
+        isAuthenticated() && request.resource.data.userId == request.auth.uid &&
+        (!request.resource.data.keys().hasAll(['paymentStatus']) || request.resource.data.paymentStatus == 'pending') &&
+        (!request.resource.data.keys().hasAll(['isPaid']) || request.resource.data.isPaid == false)
+      );
       allow update: if isStaff();
       allow delete: if isStaff();
     }
@@ -107,6 +121,9 @@ service cloud.firestore {
         request.resource.data.createdBy == request.auth.uid ||
         request.resource.data.userId == request.auth.uid ||
         request.resource.data.partnerId == request.auth.uid
+      ) && (
+        // 🚀 THE FIX: บังคับสถานะ Todo ให้เป็น pending หรือ todo เท่านั้น ป้องกันแฮกสร้างงานที่ผ่านการอนุมัติแล้ว
+        request.resource.data.status in ['todo', 'pending', 'waiting_item']
       ));
       allow update: if isStaff() || (isAuthenticated() && (
         resource == null ||
@@ -119,6 +136,9 @@ service cloud.firestore {
         request.resource.data.createdBy == request.auth.uid ||
         request.resource.data.userId == request.auth.uid ||
         request.resource.data.partnerId == request.auth.uid
+      ) && (
+        // 🚀 THE FIX: ห้ามแก้สถานะหรือจำนวนเงินหลังสร้างเสร็จ
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'type', 'amount', 'completedAt'])
       ));
       allow delete: if isStaff() || (isAuthenticated() && (
         resource == null ||
@@ -141,7 +161,8 @@ service cloud.firestore {
     // 5. ข้อมูลอื่นๆ ที่เป็น Public (หมวดหมู่, หน้าแรก, โฆษณา)
     match /artifacts/{appId}/public/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated(); // จำเป็นต้องอนุญาตสำหรับ Sandbox (การส่งคำขอโฆษณา, ขอถอนเงิน)
+      allow create: if isAuthenticated(); // 🚀 THE FIX: ให้สิทธิ์แค่สร้าง ไม่ให้เขียนทับของคนอื่น (ป้องกัน DoS)
+      allow update, delete: if isStaff();
     }
     match /homepage_categories/{catId} {
       allow read: if true;
@@ -198,6 +219,11 @@ service cloud.firestore {
     match /system_accounts/{accountId} {
       allow read: if true;
       allow write: if isStaff();
+    }
+    
+    // 🚀 THE FIX: อนุญาตให้ดึงข้อมูลประวัติกระเป๋าเงินผ่าน collectionGroup ได้ สำหรับ Manager/Staff (Audit Ledger)
+    match /{path=**}/wallet_transactions/{txId} {
+      allow read: if isStaff();
     }
   }
 }

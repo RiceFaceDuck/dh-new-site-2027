@@ -40,7 +40,7 @@ export default function CustomerSyncModal({ isOpen, onClose, customer, onSyncCom
   const displayName = customer.storeName || customer.displayName || customer.accountName || 'ไม่ระบุชื่อ';
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-indigo-50/50">
           <div className="flex items-center gap-3 text-indigo-700">
@@ -78,7 +78,7 @@ export default function CustomerSyncModal({ isOpen, onClose, customer, onSyncCom
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value)}
                 placeholder="เช่น 8RP6WHIM"
-                className="w-full px-4 py-3 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-xl outline-none text-sm font-mono tracking-wider transition-all placeholder-slate-300"
+                className="w-full px-4 py-3 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-xl outline-hidden text-sm font-mono tracking-wider transition-all placeholder-slate-300"
                 required
                 disabled={loading}
               />

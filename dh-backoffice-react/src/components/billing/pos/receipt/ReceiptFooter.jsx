@@ -17,7 +17,7 @@ export default function ReceiptFooter({
             {/* Summary: Compact & Clear */}
             <div className="flex justify-between items-start gap-4 mb-3">
                 <div className="flex-1">
-                    <div className="bg-gray-50 border rounded p-1.5 text-center mb-1">
+                    <div className="bg-gray-50 border rounded-sm p-1.5 text-center mb-1">
                         <span className="font-black text-[10px] italic">({_thaiBahtText || 'ศูนย์บาทถ้วน'})</span>
                     </div>
                     {billNote && <p className="text-[9px] font-bold text-gray-600 leading-none">หมายเหตุ: {billNote}</p>}

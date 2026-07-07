@@ -37,7 +37,7 @@ export default function PromotionManagement() {
           </div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">จัดการโปรโมชั่น & ส่วนลด</h1>
-            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-fuchsia-600 bg-fuchsia-50 hover:bg-fuchsia-100 rounded-lg transition-colors border border-fuchsia-200 shadow-sm dh-active-press">
+            <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-fuchsia-600 bg-fuchsia-50 hover:bg-fuchsia-100 rounded-lg transition-colors border border-fuchsia-200 shadow-xs dh-active-press">
               <Megaphone size={16} /> คู่มือการใช้งาน
             </button>
           </div>

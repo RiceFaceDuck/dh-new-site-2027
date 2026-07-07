@@ -6,7 +6,7 @@ export default function ImportResultSummary({ importResult, onClose }) {
     <div className="text-center py-10 space-y-4">
       <CheckCircle size={64} className="text-green-500 mx-auto" />
       <h3 className="text-2xl font-bold">นำเข้าข้อมูลเสร็จสิ้น!</h3>
-      <div className="bg-dh-surface p-6 rounded-xl border border-dh-border max-w-sm mx-auto space-y-3 shadow-sm">
+      <div className="bg-dh-surface p-6 rounded-xl border border-dh-border max-w-sm mx-auto space-y-3 shadow-xs">
         <div className="flex justify-between font-medium">
           <span className="text-dh-muted">นำเข้าสำเร็จ (เพิ่ม/อัพเดท):</span>
           <span className="text-green-500 font-bold">{importResult.successCount}</span>
@@ -22,7 +22,7 @@ export default function ImportResultSummary({ importResult, onClose }) {
       </div>
       <button 
         onClick={onClose} 
-        className="mt-6 px-8 py-3 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover shadow-sm transition-transform active:scale-95"
+        className="mt-6 px-8 py-3 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover shadow-xs transition-transform active:scale-95"
       >
         ปิดหน้าต่าง
       </button>

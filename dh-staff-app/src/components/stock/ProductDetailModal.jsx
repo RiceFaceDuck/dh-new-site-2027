@@ -21,7 +21,7 @@ const ProductDetailModal = ({ product, onClose }) => {
   const imageUrl = (product.images && product.images.length > 0) ? product.images[0] : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs">
       <div className="bg-white w-full h-auto max-h-[90vh] sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
         
         {/* Header (Close Button) */}
@@ -37,13 +37,13 @@ const ProductDetailModal = ({ product, onClose }) => {
         {/* Image Section */}
         <div className="w-full h-64 bg-gray-50 rounded-t-3xl sm:rounded-t-3xl flex items-center justify-center relative border-b border-gray-100 overflow-hidden shrink-0">
           {imageUrl ? (
-            <img src={imageUrl} alt={product.name} className="w-full h-full object-contain p-4" />
+            <img src={imageUrl} alt={product.name} className="w-full h-full object-contain p-4"  loading="lazy" />
           ) : (
              <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
           )}
           
           <div className="absolute bottom-4 left-4">
-             <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-sm ${stockColor}`}>
+             <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-xs ${stockColor}`}>
                {stockText}
              </span>
           </div>

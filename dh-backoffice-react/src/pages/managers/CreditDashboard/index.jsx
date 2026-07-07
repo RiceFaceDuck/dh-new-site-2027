@@ -68,7 +68,7 @@ export default function CreditDashboard() {
       {/* Back Button */}
       <button 
         onClick={() => navigate('/managers')}
-        className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm active:scale-95 w-fit"
+        className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-xs active:scale-95 w-fit"
       >
         <ArrowLeft size={18} /> ย้อนกลับ (Settings)
       </button>
@@ -76,14 +76,14 @@ export default function CreditDashboard() {
       {/* ==========================================
           1. Header Section (Enterprise Premium Theme)
       ========================================== */}
-      <div className="shrink-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-slate-700/50">
+      <div className="shrink-0 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-slate-700/50">
         {/* Abstract Background Effects */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none transition-all duration-700"></div>
         <div className="absolute bottom-0 left-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl translate-y-1/3 pointer-events-none transition-all duration-700"></div>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
         
         <div className="relative z-10">
-          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 flex items-center gap-3 tracking-wide drop-shadow-sm">
+          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-white to-slate-300 flex items-center gap-3 tracking-wide drop-shadow-xs">
             <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30 shadow-inner">
               <ShieldCheck className="w-6 h-6 text-indigo-400" />
             </div>
@@ -156,10 +156,10 @@ export default function CreditDashboard() {
 
             {/* Loading Overlay during submit - Enterprise Style */}
             {isSubmitting && (
-              <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/40 backdrop-blur-sm rounded-b-2xl">
+              <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/40 backdrop-blur-xs rounded-b-2xl">
                 <div className="flex flex-col items-center gap-4 bg-white/90 p-8 rounded-3xl shadow-2xl border border-slate-100/50 backdrop-blur-md">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-indigo-500 rounded-full blur animate-ping opacity-20"></div>
+                    <div className="absolute inset-0 bg-indigo-500 rounded-full blur-sm animate-ping opacity-20"></div>
                     <Loader2 className="w-10 h-10 text-indigo-600 animate-spin relative z-10" />
                   </div>
                   <span className="text-sm font-bold text-slate-700 tracking-wider">กำลังประมวลผลธุรกรรมทางการเงิน...</span>

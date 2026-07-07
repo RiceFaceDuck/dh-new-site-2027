@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { db, auth } from '../../firebase/config';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { historyService } from '../../firebase/historyService';
+import { serverTimestamp } from 'firebase/firestore';
+import { inventoryMutationService } from '../../firebase/inventory/inventoryMutationService';
 
 export function useProductComments(selectedProduct, setSelectedProduct, setAllProducts) {
   const [newComment, setNewComment] = useState('');
@@ -8,36 +10,109 @@ export function useProductComments(selectedProduct, setSelectedProduct, setAllPr
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showCommentInput, setShowCommentInput] = useState(false);
 
-  const handleAddComment = async () => {
+  // function นี้จะส่งคืน object ที่เซฟลงประวัติเพื่อเอาไปรวมกับ UI state ได้ทันที
+  const handleAddComment = async (onSuccessCallback) => {
     if (!newComment.trim() || !selectedProduct) return;
     setIsSubmittingComment(true);
     try {
+      const actorName = auth.currentUser?.displayName || auth.currentUser?.email || 'Staff';
+      const actorUid = auth.currentUser?.uid || 'Unknown';
+      
       const commentObj = {
-        text: newComment.trim(),
-        timestamp: new Date().toISOString(),
-        uid: auth.currentUser?.uid || 'system',
+        action: 'NOTE',
+        details: newComment.trim(),
+        targetId: selectedProduct.sku,
+        performedBy: actorName,
+        timestamp: { seconds: Math.floor(Date.now() / 1000) },
       };
       
-      const docRef = doc(db, 'products', selectedProduct.sku);
-      await updateDoc(docRef, {
-        internalComments: arrayUnion(commentObj)
-      });
+      // ใช้ historyService.addLog แทนการเขียนลง Firestore ตรงๆ เพื่อป้องกันปัญหา Permission/Rules
+      await historyService.addLog('Inventory', 'NOTE', selectedProduct.sku, newComment.trim(), actorUid);
+      
+      // สร้าง Object สำรองเพื่อ update UI ได้ทันที
+      const localLog = {
+        id: 'temp-' + Date.now(),
+        ...commentObj
+      };
 
-      const updatedComments = [...(selectedProduct.internalComments || []), commentObj];
-      setSelectedProduct({ ...selectedProduct, internalComments: updatedComments });
-      
-      setAllProducts(prev => prev.map(p => p.sku === selectedProduct.sku ? { ...p, internalComments: updatedComments } : p));
-      
       setNewComment('');
-      const legacyCount = selectedProduct.comment ? 1 : 0;
-      setCommentIndex(legacyCount + updatedComments.length - 1); 
       setShowCommentInput(false); 
+
+      if (onSuccessCallback) onSuccessCallback(localLog);
 
     } catch (error) {
       console.error("Error adding comment:", error);
       alert("เกิดข้อผิดพลาดในการบันทึก Comment");
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const handleTogglePinComment = async (log) => {
+    if (!selectedProduct) return;
+    try {
+      const currentPinned = selectedProduct.pinnedComments || [];
+      const isAlreadyPinned = currentPinned.some(c => c.id === log.id);
+      
+      let newPinned = [];
+      if (isAlreadyPinned) {
+        newPinned = currentPinned.filter(c => c.id !== log.id);
+      } else {
+        // ปักหมุดได้สูงสุด 1 อัน ถ้ามีอยู่แล้วให้แจ้งเตือน
+        if (currentPinned.length >= 1) {
+          alert("คุณสามารถปักหมุดได้เพียง 1 รายการเท่านั้น กรุณาถอนหมุดเดิมออกก่อน");
+          return;
+        } else {
+          newPinned = [...currentPinned, log];
+        }
+      }
+      
+      await inventoryMutationService.updateProduct(selectedProduct.sku, {
+        pinnedComments: newPinned
+      });
+      
+      // อัปเดต UI ทันที
+      setSelectedProduct(prev => ({
+        ...prev,
+        pinnedComments: newPinned
+      }));
+      
+    } catch (error) {
+      console.error("Error toggling pin:", error);
+      alert("เกิดข้อผิดพลาดในการปักหมุด");
+    }
+  };
+
+  const handleDeleteNote = async (log) => {
+    if (!selectedProduct) return;
+    if (log.action?.toLowerCase() !== 'note') {
+      alert("ไม่สามารถลบประวัติระบบได้ ลบได้เฉพาะโน๊ตเท่านั้น");
+      return;
+    }
+    if (!window.confirm("คุณต้องการลบโน๊ตนี้ใช่หรือไม่?")) return;
+    
+    try {
+      const currentDeleted = selectedProduct.deletedNotes || [];
+      const currentPinned = selectedProduct.pinnedComments || [];
+      
+      const newDeleted = [...currentDeleted, log.id];
+      const newPinned = currentPinned.filter(c => c.id !== log.id);
+      
+      await inventoryMutationService.updateProduct(selectedProduct.sku, {
+        deletedNotes: newDeleted,
+        pinnedComments: newPinned
+      });
+      
+      // อัปเดต UI ทันที
+      setSelectedProduct(prev => ({
+        ...prev,
+        deletedNotes: newDeleted,
+        pinnedComments: newPinned
+      }));
+      
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      alert("เกิดข้อผิดพลาดในการลบโน๊ต");
     }
   };
 
@@ -67,6 +142,8 @@ export function useProductComments(selectedProduct, setSelectedProduct, setAllPr
     isSubmittingComment,
     showCommentInput, setShowCommentInput,
     handleAddComment,
+    handleTogglePinComment,
+    handleDeleteNote,
     combinedComments,
     resetCommentState
   };

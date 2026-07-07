@@ -14,7 +14,7 @@ const BarcodeScanner = ({ isActive, onClose, onScanSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-xs animate-in fade-in duration-200">
       {/* Header */}
       <div className="flex justify-between items-center p-5 text-white">
         <h2 className="text-xl font-bold">สแกนบาร์โค้ดสินค้า</h2>
@@ -52,7 +52,7 @@ const BarcodeScanner = ({ isActive, onClose, onScanSuccess }) => {
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             placeholder="SKU หรือ Barcode"
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-lg font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 uppercase"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-lg font-bold outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 uppercase"
           />
           <button 
             type="submit"

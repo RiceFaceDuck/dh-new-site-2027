@@ -5,7 +5,7 @@ import { ClockIcon } from './AdIcons';
 export default function AdsList({ ads, activeTab, processingId, handleAction }) {
   if (ads.length === 0) {
     return (
-      <div className="bg-white rounded-3xl border border-slate-100 p-16 flex flex-col items-center justify-center text-center shadow-sm">
+      <div className="bg-white rounded-3xl border border-slate-100 p-16 flex flex-col items-center justify-center text-center shadow-xs">
         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
            <Search size={28} className="text-slate-300" />
         </div>
@@ -26,11 +26,11 @@ export default function AdsList({ ads, activeTab, processingId, handleAction }) 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {ads.map((ad) => (
-        <div key={ad.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
+        <div key={ad.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
           
           <div className="aspect-video w-full bg-slate-50 relative overflow-hidden">
             {ad.imageUrl ? (
-              <img src={ad.imageUrl} alt="Ad Preview" className="w-full h-full object-cover" />
+              <img src={ad.imageUrl} alt="Ad Preview" className="w-full h-full object-cover"  loading="lazy" />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
                 <ImageIcon size={32} className="mb-2 opacity-50"/>

@@ -40,7 +40,7 @@ export const inventoryQueryService = {
 
   getAllActiveProductsForSearch: async () => {
     try {
-      const q = query(collection(db, COLLECTION_NAME), where('isActive', '==', true));
+      const q = query(collection(db, COLLECTION_NAME), where('isActive', '==', true), limit(300));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
@@ -51,7 +51,7 @@ export const inventoryQueryService = {
 
   getAllProducts: async () => {
     try {
-      const q = query(collection(db, COLLECTION_NAME));
+      const q = query(collection(db, COLLECTION_NAME), limit(500));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
@@ -118,6 +118,34 @@ export const inventoryQueryService = {
     } catch (error) {
       console.error("🔥 Error fetching product by SKU:", error);
       throw error;
+    }
+  },
+
+  getProductImagesBatch: async (skus) => {
+    try {
+      if (!skus || skus.length === 0) return {};
+      // Firestore 'in' query supports max 30 items, but to be safe and fast we batch 10 at a time.
+      const results = {};
+      
+      const batches = [];
+      for (let i = 0; i < skus.length; i += 10) {
+        batches.push(skus.slice(i, i + 10));
+      }
+
+      for (const batch of batches) {
+        const q = query(collection(db, COLLECTION_NAME), where('sku', 'in', batch));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.sku && data.images && data.images.length > 0) {
+            results[data.sku] = data.images;
+          }
+        });
+      }
+      return results;
+    } catch (error) {
+      console.error("🔥 Error fetching product images batch:", error);
+      return {};
     }
   },
 

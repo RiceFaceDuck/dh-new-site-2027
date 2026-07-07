@@ -22,8 +22,8 @@ const ServiceActionModal = ({ serviceModal, setServiceModal }) => {
   if (!serviceModal || !serviceForm) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setServiceModal(null)}></div>
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs" onClick={() => setServiceModal(null)}></div>
       <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 custom-scrollbar">
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
           <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -39,16 +39,16 @@ const ServiceActionModal = ({ serviceModal, setServiceModal }) => {
           <div className="flex gap-5">
             <div className="flex-1">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">ชื่อสินค้า / SKU</label>
-              <input type="text" value={serviceForm.productInfo} readOnly className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none font-bold shadow-inner" />
+              <input type="text" value={serviceForm.productInfo} readOnly className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-hidden font-bold shadow-inner" />
             </div>
             <div className="w-32 shrink-0">
               <label className="text-xs font-bold uppercase tracking-widest mb-1 block">จำนวน <span className="text-red-500">*</span></label>
-              <input type="number" min="1" max={serviceModal.item.quantity} value={serviceForm.qty} onChange={e => setServiceForm({...serviceForm, qty: Number(e.target.value)})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm text-center font-black transition-all" />
+              <input type="number" min="1" max={serviceModal.item.quantity} value={serviceForm.qty} onChange={e => setServiceForm({...serviceForm, qty: Number(e.target.value)})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-hidden text-sm text-center font-black transition-all" />
             </div>
           </div>
           <div>
             <label className="text-xs font-bold uppercase tracking-widest mb-1 block">สาเหตุ / อาการ <span className="text-red-500">*</span></label>
-            <select value={serviceForm.reasonCode} onChange={e => setServiceForm({...serviceForm, reasonCode: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm font-bold transition-all" required>
+            <select value={serviceForm.reasonCode} onChange={e => setServiceForm({...serviceForm, reasonCode: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-hidden text-sm font-bold transition-all" required>
               <option value="" disabled>เลือกสาเหตุ...</option>
               <option value="(E) สินค้า ไม่ตรงปก / ผิดสเป็ค / การผลิตผิดพลาด">(E) สินค้า ไม่ตรงปก / ผิดสเป็ค / การผลิตผิดพลาด</option>
               <option value="(S1) Screen : จอกระพริบ /ภาพสั่น">(S1) Screen : จอกระพริบ /ภาพสั่น</option>
@@ -58,11 +58,11 @@ const ServiceActionModal = ({ serviceModal, setServiceModal }) => {
           </div>
           <div>
             <label className="text-xs font-bold uppercase tracking-widest mb-1 block">รายละเอียดเพิ่มเติม</label>
-            <textarea rows="3" value={serviceForm.details} onChange={e => setServiceForm({...serviceForm, details: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm font-bold transition-all" placeholder="ระบุเพิ่มเติม..."></textarea>
+            <textarea rows="3" value={serviceForm.details} onChange={e => setServiceForm({...serviceForm, details: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-hidden text-sm font-bold transition-all" placeholder="ระบุเพิ่มเติม..."></textarea>
           </div>
           <div>
             <label className="text-xs font-bold uppercase tracking-widest mb-1 block">Tracking พัสดุ (ถ้ามี)</label>
-            <input type="text" placeholder="ระบุเลขพัสดุ หากส่งของแล้ว" value={serviceForm.tracking} onChange={e => setServiceForm({...serviceForm, tracking: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-none text-sm font-bold transition-all" />
+            <input type="text" placeholder="ระบุเลขพัสดุ หากส่งของแล้ว" value={serviceForm.tracking} onChange={e => setServiceForm({...serviceForm, tracking: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 focus:border-indigo-500 outline-hidden text-sm font-bold transition-all" />
           </div>
           
           <div className="pt-4 border-t border-gray-100">
@@ -79,7 +79,7 @@ const ServiceActionModal = ({ serviceModal, setServiceModal }) => {
               <div className="flex gap-3 mt-4 overflow-x-auto pb-2 custom-scrollbar">
                 {serviceForm.images.map((img, i) => (
                   <div key={i} className="relative w-20 h-20 shrink-0 group">
-                    <img src={img} className="w-full h-full object-cover rounded-xl border border-gray-200 shadow-sm" />
+                    <img src={img} className="w-full h-full object-cover rounded-xl border border-gray-200 shadow-xs"  loading="lazy" />
                     <button type="button" onClick={() => setServiceForm(prev => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }))} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 shadow-md transition-all">
                       <X size={12} strokeWidth={3}/>
                     </button>

@@ -31,7 +31,7 @@ export default function SecurityFrameworkInfo() {
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow duration-300">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 hover:shadow-md transition-shadow duration-300">
       {/* Header Section พร้อม Live Status */}
       <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
         <h3 className="font-bold text-slate-800 flex items-center gap-2.5">

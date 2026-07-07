@@ -60,9 +60,9 @@ export const getSLAIndicator = (createdAt, status) => {
   const cDate = createdAt?.toDate ? new Date(createdAt.toDate()) : new Date();
   const hoursDiff = (new Date() - cDate) / (1000 * 60 * 60);
 
-  if (hoursDiff > 48) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-rose-500 animate-pulse bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800/50"><Flame className="w-3 h-3"/> ล่าช้า!</div>;
-  if (hoursDiff > 24) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-200 dark:border-orange-800/50"><Zap className="w-3 h-3"/> เร่งด่วน</div>;
-  return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-dh-muted bg-dh-base px-1.5 py-0.5 rounded"><Timer className="w-3 h-3"/> ปกติ</div>;
+  if (hoursDiff > 48) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-rose-500 animate-pulse bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded-sm border border-rose-200 dark:border-rose-800/50"><Flame className="w-3 h-3"/> ล่าช้า!</div>;
+  if (hoursDiff > 24) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded-sm border border-orange-200 dark:border-orange-800/50"><Zap className="w-3 h-3"/> เร่งด่วน</div>;
+  return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-dh-muted bg-dh-base px-1.5 py-0.5 rounded-sm"><Timer className="w-3 h-3"/> ปกติ</div>;
 };
 
 export const getStatusDisplay = (req) => {

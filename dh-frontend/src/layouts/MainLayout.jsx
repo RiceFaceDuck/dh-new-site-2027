@@ -8,6 +8,9 @@ import FloatingMessenger from '../components/chat/FloatingMessenger';
 // 🚀 นำเข้า Component ป้ายแบนเนอร์ผู้สนับสนุน
 import TopPartnerBanner from '../components/partner/TopPartnerBanner';
 
+// 🚀 นำเข้า Loading Bar สำหรับเปลี่ยนหน้า
+import TopLoadingBar from '../components/common/TopLoadingBar';
+
 // 🎨 นำเข้า Theme Hook
 import { useStorefrontTheme } from '../hooks/useStorefrontTheme';
 
@@ -51,9 +54,11 @@ const MainLayout = ({ children }) => {
           - เพิ่ม pb-28 ในมือถือเพื่อเว้นที่ให้ BottomNav และ Floating Messenger ไม่บังปุ่มสำคัญด้านล่าง
           - บนหน้าจอ md ขึ้นไป คืนค่า pb-12 ปกติ
       */}
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 overflow-hidden pb-32 md:pb-12">
+      <main className="grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 overflow-hidden pb-32 md:pb-12">
         {/* รองรับทั้งการส่งผ่าน children (จาก App.jsx) และการใช้ React Router (Outlet) */}
-        {children || <Outlet />}
+        <React.Suspense fallback={<TopLoadingBar />}>
+          {children || <Outlet />}
+        </React.Suspense>
       </main>
       
       {/* 3. Footer: ซ่อนในมือถือ (กันรก) และแสดงเฉพาะบน Desktop */}

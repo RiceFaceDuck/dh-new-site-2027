@@ -11,7 +11,7 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
             <ShoppingBag size={14} /> ประวัติสั่งซื้อล่าสุด
           </h4>
           {history.orders.slice(0, 3).map(order => (
-            <div key={order.id} className="p-3 bg-white border border-slate-100 rounded-xl flex justify-between items-center mb-2 shadow-sm">
+            <div key={order.id} className="p-3 bg-white border border-slate-100 rounded-xl flex justify-between items-center mb-2 shadow-xs">
               <div>
                 <span className="text-xs font-bold text-slate-700 block">#{order.id.substring(0,8).toUpperCase()}</span>
                 <span className="text-[10px] text-slate-400">{formatDate(order.createdAt)}</span>
@@ -43,7 +43,7 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
           {history.claims.slice(0, 2).map(claim => (
             <div key={claim.id} className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl flex justify-between items-center text-xs mb-2">
               <span className="font-bold text-rose-700">เคลม #{claim.claimId || claim.id.substring(0,8)}</span>
-              <span className="font-bold bg-white text-rose-600 px-2 py-0.5 rounded shadow-sm border border-rose-100/50">
+              <span className="font-bold bg-white text-rose-600 px-2 py-0.5 rounded-sm shadow-xs border border-rose-100/50">
                 {claim.status || 'รอดำเนินการ'}
               </span>
             </div>

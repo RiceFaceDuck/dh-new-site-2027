@@ -27,8 +27,8 @@ const TodoPageList = ({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white/80 backdrop-blur-sm rounded-lg shadow-md ring-1 ring-slate-900/5 border border-slate-200/80 dark:border-slate-700/80 relative z-0">
-        <Loader2 className="w-10 h-10 text-[var(--dh-accent)] animate-spin mb-4" />
+      <div className="flex flex-col items-center justify-center py-20 bg-white/80 backdrop-blur-xs rounded-lg shadow-md ring-1 ring-slate-900/5 border border-slate-200/80 dark:border-slate-700/80 relative z-0">
+        <Loader2 className="w-10 h-10 text-(--dh-accent) animate-spin mb-4" />
         <p className="text-slate-500 font-medium animate-pulse">กำลังโหลดข้อมูลศูนย์ปฏิบัติการ...</p>
       </div>
     );

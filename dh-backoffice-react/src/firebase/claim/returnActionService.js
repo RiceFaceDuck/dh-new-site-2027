@@ -119,6 +119,24 @@ export const returnActionService = {
       },
       actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
     });
+
+    // ✨ บันทึกประวัติย่อยระดับ SKU สำหรับการรับของดีกลับเข้าสต๊อก
+    setTimeout(() => {
+      gasHistoryService.log({
+        level: 'INFO',
+        module: 'Return',
+        action: 'SKU_RETURN',
+        target: { id: payload.sku, type: 'Product' },
+        details: {
+          type: 'รับคืน',
+          qtyChange: qty,
+          reference: payload.returnId,
+          legacy_details: `รับคืนสินค้ากลับเข้าสต๊อก (${payload.returnId})`
+        },
+        actorOverride: { uid: adminUid, name: adminName || 'Manager' }
+      });
+    }, 0);
+
     return true;
   },
 

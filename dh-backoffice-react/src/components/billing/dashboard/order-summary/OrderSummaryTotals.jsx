@@ -16,14 +16,14 @@ export default function OrderSummaryTotals({
 }) {
     console.log("OrderSummaryTotals rendered with:", { paymentStat, orderStat });
     return (
-        <div className="w-full md:w-[280px] lg:w-[320px] bg-[var(--dh-bg-base)] shrink-0 flex flex-col h-full">
-            <div className="bg-[var(--dh-bg-surface)] px-3 py-2 border-b border-[var(--dh-border)] shrink-0">
-                <h3 className="font-black text-[13px] text-[var(--dh-text-main)]">สรุปยอดชำระ</h3>
+        <div className="w-full md:w-[280px] lg:w-[320px] bg-(--dh-bg-base) shrink-0 flex flex-col h-full">
+            <div className="bg-(--dh-bg-surface) px-3 py-2 border-b border-(--dh-border) shrink-0">
+                <h3 className="font-black text-[13px] text-(--dh-text-main)">สรุปยอดชำระ</h3>
             </div>
             
             <div className="p-4 flex-1 flex flex-col justify-end space-y-4">
                 <div className="space-y-2">
-                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                    <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
                         <span>มูลค่าสินค้ารวม</span>
                         <span>฿{(subTotal || 0).toLocaleString()}</span>
                     </div>
@@ -31,19 +31,19 @@ export default function OrderSummaryTotals({
                         <span className="flex items-center gap-1" title="รวมส่วนลดทั้งหมด (โปรโมชั่น, คูปอง)"><Tag size={12}/> ส่วนลดรวม <span className="cursor-help text-gray-300">?</span></span>
                         <span>-฿{(discount || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                    <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
                         <span className="flex items-center gap-1" title="ค่าบริการจัดส่งสินค้า">ค่าจัดส่ง</span>
                         <span>฿{(shipping || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                    <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
                         <span className="flex items-center gap-1" title="ค่าธรรมเนียมจากการรูดบัตร หรือบริการชำระเงินอื่นๆ">ค่าธรรมเนียมชำระเงิน</span>
                         <span>฿{(paymentFee || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                    <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
                         <span className="flex items-center gap-1" title="ยอดเรียกเก็บเพิ่มเติม (ถ้ามี)">ค่าใช้จ่ายอื่นๆ</span>
                         <span>฿{(otherFees || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-[var(--dh-text-muted)] font-bold">
+                    <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
                         <span className="flex items-center gap-1" title="ภาษีมูลค่าเพิ่ม 7% (คำนวณจากยอดสินค้าหักส่วนลด)">ภาษีมูลค่าเพิ่ม (VAT) <span className="cursor-help text-gray-300">?</span></span>
                         <span>฿{(vat || 0).toLocaleString()}</span>
                     </div>
@@ -53,34 +53,34 @@ export default function OrderSummaryTotals({
                     </div>
                 </div>
 
-                <div className="pt-3 border-t-2 border-[var(--dh-border)] border-dashed">
+                <div className="pt-3 border-t-2 border-(--dh-border) border-dashed">
                     <div className="flex items-center justify-between mb-2">
-                        <div className="text-[12px] font-black text-[var(--dh-text-muted)] uppercase tracking-wider">ยอดชำระสุทธิ</div>
+                        <div className="text-[12px] font-black text-(--dh-text-muted) uppercase tracking-wider">ยอดชำระสุทธิ</div>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-[var(--dh-text-muted)] font-bold text-[10px]">THB</span>
-                            <span className="font-black text-2xl tracking-tight text-[var(--dh-text-main)]">
+                            <span className="text-(--dh-text-muted) font-bold text-[10px]">THB</span>
+                            <span className="font-black text-2xl tracking-tight text-(--dh-text-main)">
                                 ฿{(netTotal - walletUsed).toLocaleString()}
                             </span>
                         </div>
                     </div>
                     {isCancelled ? (
-                        <div className="text-center text-rose-600 font-black text-[11px] border border-rose-500/30 bg-rose-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1 dh-glow">
+                        <div className="text-center text-rose-600 font-black text-[11px] border border-rose-500/30 bg-rose-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
                             <Ban size={12}/> บิลยกเลิก (VOIDED)
                         </div>
                     ) : orderStat === 'completed' ? (
-                        <div className="text-center text-blue-600 font-black text-[11px] border border-blue-500/30 bg-blue-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1 dh-glow">
+                        <div className="text-center text-blue-600 font-black text-[11px] border border-blue-500/30 bg-blue-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
                             เสร็จสิ้น
                         </div>
                     ) : orderStat === 'approved' ? (
-                        <div className="text-center text-emerald-600 font-black text-[11px] border border-emerald-500/30 bg-emerald-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1 dh-glow">
+                        <div className="text-center text-emerald-600 font-black text-[11px] border border-emerald-500/30 bg-emerald-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
                             อนุมัติ / หักสต็อกแล้ว
                         </div>
                     ) : paymentStat === 'paid' || orderStat === 'paid' ? (
-                        <div className="text-center text-teal-600 font-black text-[11px] border border-teal-500/30 bg-teal-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1">
+                        <div className="text-center text-teal-600 font-black text-[11px] border border-teal-500/30 bg-teal-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
                             ชำระเงินเรียบร้อย
                         </div>
                     ) : (
-                        <div className="text-center text-orange-600 font-black text-[11px] border border-orange-500/30 bg-orange-500/10 py-1.5 rounded-sm flex items-center justify-center gap-1">
+                        <div className="text-center text-orange-600 font-black text-[11px] border border-orange-500/30 bg-orange-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
                             รอการชำระเงิน
                         </div>
                     )}

@@ -13,7 +13,7 @@ export default function GlobalSettingsHeader({
     const navigate = useNavigate();
 
     return (
-        <div className="px-5 py-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-t-2xl shadow-sm z-20 relative">
+        <div className="px-5 py-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-t-2xl shadow-xs z-20 relative">
             <div className="flex items-center gap-4">
                 <button 
                     onClick={() => navigate(-1)} 
@@ -38,7 +38,7 @@ export default function GlobalSettingsHeader({
                     <button 
                         onClick={onSave}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm transition-all shadow-sm disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-500 active:scale-95"
+                        className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm transition-all shadow-xs disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-500 active:scale-95"
                     >
                         {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} strokeWidth={2.5}/>}
                         บันทึกข้อมูล

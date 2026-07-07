@@ -107,7 +107,7 @@ export function useWalletManagement(navigate) {
             const snapWallet = await getDocs(qWallet);
             setTransactions(snapWallet.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-            const qPoints = query(collection(db, ...getUserSubcollectionPath(uid, 'credit_history').split('/')), orderBy('createdAt', 'desc'), limit(50));
+            const qPoints = query(collection(db, getCollectionPath('credit_transactions')), where('uid', '==', uid), orderBy('timestamp', 'desc'), limit(50));
             const snapPoints = await getDocs(qPoints);
             setPointTransactions(snapPoints.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         } catch (error) {

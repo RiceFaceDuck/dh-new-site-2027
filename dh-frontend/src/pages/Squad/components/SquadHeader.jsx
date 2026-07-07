@@ -12,7 +12,7 @@ const SquadHeader = ({ totalPoints, formation, onFormationChange }) => {
   };
 
   return (
-    <div className="flex-shrink-0 w-full px-4 pt-4 pb-2 bg-gradient-to-b from-[#061121] to-[#0a192f] shadow-md z-10">
+    <div className="shrink-0 w-full px-4 pt-4 pb-2 bg-linear-to-b from-[#061121] to-[#0a192f] shadow-md z-10">
       
       {/* Top Banner Text */}
       <div className="text-center text-xs font-semibold text-[#8b9bb4] tracking-widest mb-3">

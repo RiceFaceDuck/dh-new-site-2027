@@ -25,7 +25,7 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
       className={`flex items-center justify-between bg-white rounded-lg border p-4 ${
         isDragging
           ? 'opacity-50 shadow-xl border-blue-400 relative z-50'
-          : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+          : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
       } transition-colors`}
     >
       {/* 🚀 Left Section: Handle + Image + Name + Type */}
@@ -35,7 +35,7 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
         <div
           {...attributes}
           {...listeners}
-          className={`p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+          className={`p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
           }`}
           title="ลากเพื่อสลับตำแหน่ง"
@@ -50,7 +50,7 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
               src={category.imageUrl} 
               alt={category.name} 
               className="w-full h-full object-contain"
-            />
+             loading="lazy" />
           ) : (
             <ImageIcon size={24} className="text-slate-400" strokeWidth={1.5} />
           )}
@@ -62,7 +62,7 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
             {category.name}
           </span>
           {/* 🚀 แสดงป้าย Badge เพื่อให้แอดมินเห็นว่าผูกกับ Type อะไรไว้ */}
-          <span className="flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 w-fit">
+          <span className="flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-sm border border-slate-200 w-fit">
             <Tag size={10} />
             {category.type || 'ไม่มีการกำหนด Type'}
           </span>
@@ -91,7 +91,7 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
         {/* Edit Button */}
         <button
           onClick={() => onEdit(category)}
-          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
           title="แก้ไขหมวดหมู่"
         >
           <Pencil size={18} strokeWidth={2} />
@@ -100,7 +100,7 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
         {/* Delete Button */}
         <button
           onClick={() => onDelete(category.id, category.imageUrl)}
-          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/20"
+          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-red-500/20"
           title="ลบหมวดหมู่"
         >
           <Trash2 size={18} strokeWidth={2} />
@@ -111,4 +111,4 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
   );
 };
 
-export default CategoryCard;
+export default React.memo(CategoryCard);

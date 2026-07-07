@@ -27,7 +27,7 @@ export default function ManagerTodoSummary() {
     // ✨ [การจัดแสงเงา]: ใช้ shadow-indigo-500/10 เพื่อให้เป็น Soft Shadow ควบคู่กับ backdrop-blur-xl สไตล์ Glassmorphism (Enterprise Look)
     <div className={`relative overflow-hidden rounded-3xl p-6 lg:p-8 border transition-all duration-500 group backdrop-blur-xl ${
       hasPending 
-        ? 'bg-gradient-to-br from-white/90 via-white/70 to-indigo-50/50 border-white/80 shadow-xl shadow-indigo-500/10 hover:shadow-2xl hover:shadow-indigo-500/20 hover:-translate-y-1' 
+        ? 'bg-linear-to-br from-white/90 via-white/70 to-indigo-50/50 border-white/80 shadow-xl shadow-indigo-500/10 hover:shadow-2xl hover:shadow-indigo-500/20 hover:-translate-y-1' 
         : 'bg-white/80 border-white/60 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5'
     }`}>
       
@@ -47,7 +47,7 @@ export default function ManagerTodoSummary() {
         {/* Header Section */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-2xl shadow-sm transition-colors duration-500 ${hasPending ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+            <div className={`p-3 rounded-2xl shadow-xs transition-colors duration-500 ${hasPending ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
               {hasPending ? <Megaphone size={22} className={hasPending ? 'animate-pulse' : ''} /> : <CheckCircle2 size={22} />}
             </div>
             <div>
@@ -60,7 +60,7 @@ export default function ManagerTodoSummary() {
           
           {/* Status Indicator Badge */}
           {hasPending && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full border border-rose-100 shadow-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full border border-rose-100 shadow-xs">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
@@ -73,7 +73,7 @@ export default function ManagerTodoSummary() {
         {/* Content & Numbers */}
         <div className="mt-2">
           <div className="flex items-baseline gap-2">
-            <span className={`text-5xl font-black tracking-tighter transition-colors duration-500 ${hasPending ? 'text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-rose-500 drop-shadow-sm' : 'text-slate-300'}`}>
+            <span className={`text-5xl font-black tracking-tighter transition-colors duration-500 ${hasPending ? 'text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-rose-500 drop-shadow-xs' : 'text-slate-300'}`}>
               {pendingCount}
             </span>
             <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">รายการ</span>
@@ -89,11 +89,11 @@ export default function ManagerTodoSummary() {
           className={`mt-4 flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 group w-full sm:w-auto overflow-hidden relative ${
             hasPending 
               ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30' 
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-sm'
+              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-xs'
           }`}
         >
           {/* Button inner shine effect for enterprise touch */}
-          {hasPending && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>}
+          {hasPending && <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>}
           <span className="relative z-10">{hasPending ? 'เปิดด่านตรวจสอบ' : 'ดูประวัติการอนุมัติ'}</span>
           <ArrowRight size={18} className={`relative z-10 transition-transform duration-300 ${hasPending ? 'group-hover:translate-x-1' : ''}`} />
         </Link>

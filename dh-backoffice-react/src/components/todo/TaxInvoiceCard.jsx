@@ -125,11 +125,11 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
       {/* 🔴 ส่วนหัว: ย่อ/ขยาย (Accordion Header) */}
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`px-4 py-3 cursor-pointer select-none flex items-center justify-between gap-4 transition-colors ${isExpanded ? 'bg-gradient-to-r from-teal-50/80 to-white border-b border-teal-100' : 'hover:bg-gray-50'}`}
+        className={`px-4 py-3 cursor-pointer select-none flex items-center justify-between gap-4 transition-colors ${isExpanded ? 'bg-linear-to-r from-teal-50/80 to-white border-b border-teal-100' : 'hover:bg-gray-50'}`}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="flex-shrink-0">
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm uppercase tracking-wider transition-colors ${isExpanded ? 'bg-teal-600 text-white' : 'bg-gray-800 text-white'}`}>
+          <div className="shrink-0">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-xs uppercase tracking-wider transition-colors ${isExpanded ? 'bg-teal-600 text-white' : 'bg-gray-800 text-white'}`}>
               ขอใบกำกับภาษี
             </span>
           </div>
@@ -146,7 +146,7 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
            <div className="text-right hidden sm:block">
             <p className="text-[11px] text-gray-400 uppercase tracking-wide">สร้างเมื่อ</p>
             <p className="text-xs font-semibold text-gray-600">{task.createdAt?.toDate().toLocaleString() || 'N/A'}</p>
@@ -230,7 +230,7 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
                   onClick={handleUploadTaxInvoice}
                   disabled={isSubmitting || !file}
                   className={`w-full py-3 px-4 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2
-                    ${isSubmitting || !file ? 'bg-teal-300 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700 shadow-sm hover:shadow-md active:scale-[0.98]'}`}
+                    ${isSubmitting || !file ? 'bg-teal-300 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700 shadow-xs hover:shadow-md active:scale-[0.98]'}`}
                 >
                   {isSubmitting ? (
                     <>

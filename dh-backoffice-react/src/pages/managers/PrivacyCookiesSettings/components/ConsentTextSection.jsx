@@ -3,7 +3,7 @@ import { Type, Info } from 'lucide-react';
 
 export default function ConsentTextSection({ consentTexts = {}, updateConsentText }) {
     return (
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-start justify-between">
                 <div>
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -21,8 +21,8 @@ export default function ConsentTextSection({ consentTexts = {}, updateConsentTex
                 <div>
                     <strong>คำแนะนำในการแทรกลิงก์นโยบาย:</strong>
                     <p className="text-xs mt-1 leading-relaxed">
-                        คุณสามารถพิมพ์ <code className="bg-white px-1.5 py-0.5 rounded text-blue-600 font-bold">[terms]</code> เพื่อให้ระบบสร้างลิงก์ไปหน้า "เงื่อนไขการให้บริการ"<br/>
-                        และพิมพ์ <code className="bg-white px-1.5 py-0.5 rounded text-blue-600 font-bold">[privacy]</code> เพื่อให้ระบบสร้างลิงก์ไปหน้า "นโยบายความเป็นส่วนตัว" อัตโนมัติ
+                        คุณสามารถพิมพ์ <code className="bg-white px-1.5 py-0.5 rounded-sm text-blue-600 font-bold">[terms]</code> เพื่อให้ระบบสร้างลิงก์ไปหน้า "เงื่อนไขการให้บริการ"<br/>
+                        และพิมพ์ <code className="bg-white px-1.5 py-0.5 rounded-sm text-blue-600 font-bold">[privacy]</code> เพื่อให้ระบบสร้างลิงก์ไปหน้า "นโยบายความเป็นส่วนตัว" อัตโนมัติ
                     </p>
                 </div>
             </div>
@@ -36,7 +36,7 @@ export default function ConsentTextSection({ consentTexts = {}, updateConsentTex
                     <textarea 
                         value={consentTexts?.registration || ''}
                         onChange={(e) => updateConsentText('registration', e.target.value)}
-                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-none text-sm min-h-[80px]"
+                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-hidden text-sm min-h-[80px]"
                         placeholder="ฉันยอมรับ [terms] และ [privacy]"
                     />
                 </div>
@@ -49,7 +49,7 @@ export default function ConsentTextSection({ consentTexts = {}, updateConsentTex
                     <textarea 
                         value={consentTexts?.checkout || ''}
                         onChange={(e) => updateConsentText('checkout', e.target.value)}
-                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-none text-sm min-h-[80px]"
+                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-hidden text-sm min-h-[80px]"
                         placeholder="ข้าพเจ้าได้อ่านและยอมรับ [terms] และ [privacy] ของบริษัทแล้ว"
                     />
                 </div>
@@ -62,7 +62,7 @@ export default function ConsentTextSection({ consentTexts = {}, updateConsentTex
                     <textarea 
                         value={consentTexts?.scanner || ''}
                         onChange={(e) => updateConsentText('scanner', e.target.value)}
-                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-none text-sm min-h-[140px]"
+                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-hidden text-sm min-h-[140px]"
                         placeholder="อธิบายการทำงานและชี้แจงการเก็บข้อมูล..."
                     />
                 </div>

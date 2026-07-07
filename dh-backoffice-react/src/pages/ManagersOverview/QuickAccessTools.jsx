@@ -40,15 +40,15 @@ const ToolCard = ({ title, subtitle, iconName, colorTheme, onClick, badge, isCom
     <button
       onClick={isComingSoon ? undefined : onClick}
       disabled={isComingSoon}
-      className={`relative flex flex-col items-center justify-start p-5 bg-[var(--dh-bg-surface)] rounded-2xl border-2 border-[var(--dh-border)] transition-all duration-300 text-center overflow-hidden h-full shadow-sm
-        ${isComingSoon ? 'opacity-60 cursor-not-allowed grayscale-[30%]' : 'hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xl hover:-translate-y-1 group'}
+      className={`relative flex flex-col items-center justify-start p-5 bg-(--dh-bg-surface) rounded-2xl border-2 border-(--dh-border) transition-all duration-300 text-center overflow-hidden h-full shadow-xs
+        ${isComingSoon ? 'opacity-60 cursor-not-allowed grayscale-30' : 'hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xl hover:-translate-y-1 group'}
       `}
     >
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 border-2 ${themes[colorTheme] || themes.slate} ${!isComingSoon && 'group-hover:scale-110 group-hover:-rotate-3 shadow-md'}`}>
         <Icon size={24} />
       </div>
-      <h3 className={`text-[14px] font-black text-[var(--dh-text-main)] mb-1.5 transition-colors leading-tight ${!isComingSoon && 'group-hover:text-[var(--dh-accent)]'}`}>{title}</h3>
-      <p className="text-[11px] font-semibold text-[var(--dh-text-muted)] line-clamp-2 leading-tight px-1">{subtitle}</p>
+      <h3 className={`text-[14px] font-black text-(--dh-text-main) mb-1.5 transition-colors leading-tight ${!isComingSoon && 'group-hover:text-(--dh-accent)'}`}>{title}</h3>
+      <p className="text-[11px] font-semibold text-(--dh-text-muted) line-clamp-2 leading-tight px-1">{subtitle}</p>
 
       {badge > 0 && !isComingSoon && (
         <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full animate-bounce shadow-md">
@@ -57,7 +57,7 @@ const ToolCard = ({ title, subtitle, iconName, colorTheme, onClick, badge, isCom
       )}
 
       {isComingSoon && (
-        <div className="absolute top-0 right-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black px-2.5 py-1 rounded-bl-xl rounded-tr-2xl shadow-sm">
+        <div className="absolute top-0 right-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black px-2.5 py-1 rounded-bl-xl rounded-tr-2xl shadow-xs">
           รอพัฒนา
         </div>
       )}
@@ -129,6 +129,7 @@ const QuickAccessTools = ({
       case 'privacy': return () => navigate('/managers/privacy-cookies');
       case 'redirect': return () => navigate('/managers/redirect');
       case 'scanner': return onOpenScannerModal;
+      case 'data_repair': return () => navigate('/managers/data-repair');
       default: return undefined;
     }
   };
@@ -145,10 +146,10 @@ const QuickAccessTools = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-end mb-[-1rem] z-10 relative">
+      <div className="flex justify-end -mb-4 z-10 relative">
         <button 
           onClick={onOpenLayoutManager}
-          className="text-[11px] font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-blue-600 px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors"
+          className="text-[11px] font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-blue-600 px-3 py-1.5 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors"
         >
           <LayoutGrid size={14} /> ตั้งค่าแผงเมนู
         </button>

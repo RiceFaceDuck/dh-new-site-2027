@@ -3,7 +3,7 @@ import { GripVertical } from 'lucide-react';
 
 export default function MenuLayoutGuide() {
   return (
-    <div className="mb-6 bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-sm text-slate-700 shadow-sm">
+    <div className="mb-6 bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-sm text-slate-700 shadow-xs">
       <h3 className="font-black text-blue-700 flex items-center gap-2 mb-2">
         <span className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">?</span>
         คู่มือการจัดเรียงเมนู (Manual)

@@ -3,7 +3,7 @@ import { Percent, Banknote, Edit2, Trash2, Megaphone } from 'lucide-react';
 
 export default function PromotionTable({ promotions, loading, handleToggleActive, handleOpenModal, handleDelete }) {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 whitespace-nowrap">
@@ -35,7 +35,7 @@ export default function PromotionTable({ promotions, loading, handleToggleActive
                                 const isInactive = !promo.isActive || isExpired || isQuotaFull;
 
                                 return (
-                                    <tr key={promo.id} className={`hover:bg-fuchsia-50/30 transition-colors group ${isInactive ? 'opacity-70 grayscale-[20%]' : ''}`}>
+                                    <tr key={promo.id} className={`hover:bg-fuchsia-50/30 transition-colors group ${isInactive ? 'opacity-70 grayscale-20' : ''}`}>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-gray-900 text-base flex items-center gap-2">
                                                 {promo.title}
@@ -79,11 +79,11 @@ export default function PromotionTable({ promotions, loading, handleToggleActive
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-col items-center gap-1">
-                                                <button onClick={() => handleToggleActive(promo)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:ring-offset-2 ${promo.isActive ? 'bg-fuchsia-600' : 'bg-gray-200'}`}>
+                                                <button onClick={() => handleToggleActive(promo)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-fuchsia-500 focus:ring-offset-2 ${promo.isActive ? 'bg-fuchsia-600' : 'bg-gray-200'}`}>
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${promo.isActive ? 'translate-x-6' : 'translate-x-1'}`}/>
                                                 </button>
-                                                {isExpired && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 rounded">หมดอายุ</span>}
-                                                {!isExpired && promo.isActive && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 rounded">ทำงาน</span>}
+                                                {isExpired && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 rounded-sm">หมดอายุ</span>}
+                                                {!isExpired && promo.isActive && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 rounded-sm">ทำงาน</span>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">

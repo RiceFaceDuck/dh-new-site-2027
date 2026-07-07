@@ -47,6 +47,7 @@ export const AVAILABLE_MENUS = {
   freebie: { title: "ของแถม", subtitle: "จัดการรายการสินค้าสมนาคุณ", iconName: "Gift", colorTheme: "pink" },
   refund: { title: "จัดการรับเรื่องคืนเงิน", subtitle: "พิจารณาคำขอคืนเงินลูกค้า", iconName: "Wallet", colorTheme: "emerald" },
   core_settings: { title: "System Core Settings", subtitle: "ตั้งค่าระบบหลักและคอขวด", iconName: "Settings", colorTheme: "slate" },
+  data_repair: { title: "Data Repair System", subtitle: "ซ่อมแซมบิลที่มีปัญหา", iconName: "ShieldCheck", colorTheme: "red" },
 };
 
 // --- Component หลักของ Layout Manager ---
@@ -74,7 +75,7 @@ export default function MenuLayoutManager({ isOpen, onClose, onSaved }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
       <div className="bg-slate-50 w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col h-[85vh] overflow-hidden border border-slate-200">
         
         {/* Header */}
@@ -165,7 +166,7 @@ export default function MenuLayoutManager({ isOpen, onClose, onSaved }) {
           <button 
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black transition-all shadow-sm disabled:opacity-50 active:scale-95"
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black transition-all shadow-xs disabled:opacity-50 active:scale-95"
           >
             {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} />}
             บันทึกเลย์เอาต์

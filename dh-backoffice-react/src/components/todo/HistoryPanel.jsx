@@ -22,10 +22,10 @@ export default function HistoryPanel({ showCompletedPanel, setShowCompletedPanel
             <div className="text-center text-dh-muted text-sm py-10">ไม่พบประวัติงานที่เสร็จแล้ว</div>
           ) : (
             completedTodos.map(todo => (
-              <div key={todo.id} className="bg-white dark:bg-slate-900 border border-dh-border rounded-lg p-3 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+              <div key={todo.id} className="bg-white dark:bg-slate-900 border border-dh-border rounded-lg p-3 shadow-xs opacity-80 hover:opacity-100 transition-opacity">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="font-bold text-sm text-dh-main line-clamp-1">{todo.title}</h4>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${todo.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-sm font-bold ${todo.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                     {todo.status === 'completed' ? 'อนุมัติแล้ว' : 'ปฏิเสธ'}
                   </span>
                 </div>

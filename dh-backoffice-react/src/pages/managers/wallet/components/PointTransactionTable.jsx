@@ -13,7 +13,7 @@ export default function PointTransactionTable({ pointTransactions }) {
 
   return (
     <table className="w-full text-left">
-      <thead className="bg-white sticky top-0 z-10 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 shadow-sm">
+      <thead className="bg-white sticky top-0 z-10 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 shadow-xs">
           <tr>
               <th className="px-5 py-3">รายละเอียดการใช้งาน</th>
               <th className="px-5 py-3 text-right">จำนวนแต้ม</th>

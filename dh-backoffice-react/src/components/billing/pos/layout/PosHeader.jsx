@@ -59,7 +59,7 @@ export default function PosHeader({
     };
 
     return (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-[#D3DCEB] bg-[#EFF2F9] text-[#2A305A] shrink-0 z-20 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#D3DCEB] bg-[#EFF2F9] text-[#2A305A] shrink-0 z-20 shadow-xs">
             <div className="flex items-center gap-3">
                 <button onClick={onSwitchView} disabled={isProcessing} className="p-1 text-gray-500 hover:text-[#2A305A] transition-colors dh-active-press"><ArrowLeft size={20}/></button>
                 <h1 className="font-black text-sm tracking-wide text-[#2A305A]">เปิดบิลการขาย</h1>
@@ -71,7 +71,7 @@ export default function PosHeader({
                     <button 
                         onClick={handleSync} 
                         disabled={isSyncing || !navigator.onLine}
-                        className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded-full text-xs font-bold hover:bg-amber-200 transition-colors shadow-sm disabled:opacity-50"
+                        className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 border border-amber-300 rounded-full text-xs font-bold hover:bg-amber-200 transition-colors shadow-xs disabled:opacity-50"
                         title={navigator.onLine ? "กดเพื่อส่งข้อมูลเข้าระบบ" : "รออินเทอร์เน็ตเพื่อ Sync"}
                     >
                         {isSyncing ? <RefreshCw size={14} className="animate-spin" /> : <CloudOff size={14} />}
@@ -84,11 +84,11 @@ export default function PosHeader({
                 {safeCartTabs.map((tab, idx) => (
                     <button key={tab.id} onClick={() => !isProcessing && setActiveTabId(tab.id)}
                         className={`px-3 py-2 text-xs font-black transition-all border-t-2 rounded-t-lg mt-1 mr-1 flex items-center gap-1.5 group
-                            ${activeTabId === tab.id ? 'border-t-[#D51C39] text-[#2A305A] bg-[var(--dh-bg-base)] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-10 relative' : 'border-t-transparent text-gray-500 bg-[#D9E2EC] hover:text-gray-800 hover:bg-[#CBD5E1]'}`}>
-                        <span>{getTabTitle(tab, idx)} {tab.orderId && <span className="text-[9px] opacity-60 font-mono bg-black/5 px-1 rounded">(Draft)</span>}</span>
+                            ${activeTabId === tab.id ? 'border-t-[#D51C39] text-[#2A305A] bg-(--dh-bg-base) shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-10 relative' : 'border-t-transparent text-gray-500 bg-[#D9E2EC] hover:text-gray-800 hover:bg-[#CBD5E1]'}`}>
+                        <span>{getTabTitle(tab, idx)} {tab.orderId && <span className="text-[9px] opacity-60 font-mono bg-black/5 px-1 rounded-sm">(Draft)</span>}</span>
                         <div 
                             onClick={(e) => { e.stopPropagation(); if (!isProcessing) closeTab(tab.id); }}
-                            className={`p-0.5 rounded-full transition-all flex items-center justify-center ${activeTabId === tab.id ? 'hover:bg-red-500/20 text-red-500 opacity-60 hover:opacity-100' : 'hover:bg-black/10 opacity-0 group-hover:opacity-50 hover:!opacity-100'}`}
+                            className={`p-0.5 rounded-full transition-all flex items-center justify-center ${activeTabId === tab.id ? 'hover:bg-red-500/20 text-red-500 opacity-60 hover:opacity-100' : 'hover:bg-black/10 opacity-0 group-hover:opacity-50 hover:opacity-100!'}`}
                             title="ปิดแท็บ"
                         >
                             <X size={12} strokeWidth={3}/>

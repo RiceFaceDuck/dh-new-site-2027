@@ -44,32 +44,32 @@ export default function OrderActions({
     };
 
     return (
-        <div className="flex justify-between items-center bg-[var(--dh-bg-base)]/90 backdrop-blur-md px-3 py-2 border-b border-[var(--dh-border)] sticky top-0 z-20 shadow-sm flex-wrap gap-2">
+        <div className="flex justify-between items-center bg-(--dh-bg-base)/90 backdrop-blur-md px-3 py-2 border-b border-(--dh-border) sticky top-0 z-20 shadow-xs flex-wrap gap-2">
             {/* Left Actions */}
             <div className="flex items-center gap-1.5">
-                <div className="flex bg-[var(--dh-bg-surface)] p-0.5 rounded-sm border border-[var(--dh-border)] shadow-inner">
+                <div className="flex bg-(--dh-bg-surface) p-0.5 rounded-xs border border-(--dh-border) shadow-inner">
                     <button 
                         onClick={() => setActiveTab('detail')}
-                        className={`flex items-center gap-1 font-bold px-3 py-1.5 rounded-sm transition-all text-xs sm:text-sm ${activeTab === 'detail' ? 'bg-[var(--dh-accent)] text-white shadow-sm dh-glow' : 'text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)] hover:bg-[var(--dh-bg-base)]'}`}
+                        className={`flex items-center gap-1 font-bold px-3 py-1.5 rounded-xs transition-all text-xs sm:text-sm ${activeTab === 'detail' ? 'bg-(--dh-accent) text-white shadow-xs dh-glow' : 'text-(--dh-text-muted) hover:text-(--dh-text-main) hover:bg-(--dh-bg-base)'}`}
                     >
                         <Eye size={15} strokeWidth={2.5}/> <span className="hidden sm:inline">รายละเอียดบิล</span>
                     </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`flex items-center gap-1 font-bold px-3 py-1.5 rounded-sm transition-all text-xs sm:text-sm ${activeTab === 'history' ? 'bg-[var(--dh-accent)] text-white shadow-sm dh-glow' : 'text-[var(--dh-text-muted)] hover:text-[var(--dh-text-main)] hover:bg-[var(--dh-bg-base)]'}`}
+                        className={`flex items-center gap-1 font-bold px-3 py-1.5 rounded-xs transition-all text-xs sm:text-sm ${activeTab === 'history' ? 'bg-(--dh-accent) text-white shadow-xs dh-glow' : 'text-(--dh-text-muted) hover:text-(--dh-text-main) hover:bg-(--dh-bg-base)'}`}
                     >
                         <History size={15} strokeWidth={2.5}/> <span className="hidden sm:inline">ประวัติ</span>
                     </button>
                 </div>
 
-                <div className="h-8 w-px bg-[var(--dh-border)] mx-1 hidden md:block"></div>
+                <div className="h-8 w-px bg-(--dh-border) mx-1 hidden md:block"></div>
 
                 <button 
                     onClick={handlePrintClick} 
                     disabled={isProcessing}
-                    className="flex items-center gap-1.5 text-[var(--dh-text-main)] hover:text-blue-600 font-bold px-3 py-1.5 bg-[var(--dh-bg-surface)] hover:bg-blue-50 border border-[var(--dh-border)] hover:border-blue-400 rounded-sm transition-all text-xs sm:text-sm shadow-sm active:scale-95 dh-active-press group disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-(--dh-text-main) hover:text-blue-600 font-bold px-3 py-1.5 bg-(--dh-bg-surface) hover:bg-blue-50 border border-(--dh-border) hover:border-blue-400 rounded-xs transition-all text-xs sm:text-sm shadow-xs active:scale-95 dh-active-press group disabled:opacity-50"
                 >
-                    {isProcessing ? <Loader2 size={15} className="animate-spin text-blue-500" /> : <Printer size={15} className="text-[var(--dh-text-muted)] group-hover:text-blue-500 transition-colors"/>}
+                    {isProcessing ? <Loader2 size={15} className="animate-spin text-blue-500" /> : <Printer size={15} className="text-(--dh-text-muted) group-hover:text-blue-500 transition-colors"/>}
                     <span className="hidden sm:inline">{isProcessing ? 'กำลังยืนยัน...' : 'พิมพ์บิล'}</span>
                 </button>
             </div>
@@ -79,18 +79,18 @@ export default function OrderActions({
                 {!isCancelled && !isApprovedOrCompleted && !isPaid && (
                     <button 
                         onClick={() => { handleCloseModal(); if (onResumeDraft) onResumeDraft(selectedOrder); }} 
-                        className="flex items-center gap-1.5 text-white font-bold px-3 py-1.5 bg-[var(--dh-accent)] hover:bg-[var(--dh-accent-hover)] rounded-sm shadow-sm transition-all active:scale-95 text-xs sm:text-sm dh-active-press"
+                        className="flex items-center gap-1.5 text-white font-bold px-3 py-1.5 bg-(--dh-accent) hover:bg-(--dh-accent-hover) rounded-xs shadow-xs transition-all active:scale-95 text-xs sm:text-sm dh-active-press"
                     >
                         <FileEdit size={15} strokeWidth={2.5}/> <span className="hidden sm:inline">แก้ไขบิล</span>
                     </button>
                 )}
 
-                <div className="flex bg-[var(--dh-bg-surface)] rounded-sm p-0.5 border border-[var(--dh-border)] shadow-sm">
+                <div className="flex bg-(--dh-bg-surface) rounded-xs p-0.5 border border-(--dh-border) shadow-xs">
                     {!isCancelled && !isApprovedOrCompleted && (
                         <button 
                             onClick={() => executeVoidOrder(selectedOrder)} 
                             disabled={isVoiding} 
-                            className="flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-sm transition-all text-xs sm:text-sm text-orange-500 hover:text-white hover:bg-orange-500 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                            className="flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-xs transition-all text-xs sm:text-sm text-orange-500 hover:text-white hover:bg-orange-500 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                         >
                             {isVoiding ? <Loader2 size={15} className="animate-spin"/> : <Ban size={15} strokeWidth={2.5}/>} 
                             <span className="hidden lg:inline">ยกเลิกบิล</span>
@@ -100,7 +100,7 @@ export default function OrderActions({
                     {(isCancelled || orderStat === 'draft' || orderStat === 'pending') && (
                         <button 
                             onClick={() => handleDeleteOrder(selectedOrder)}
-                            className="flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-sm transition-all text-xs sm:text-sm text-rose-600 hover:text-white hover:bg-rose-600 active:scale-95"
+                            className="flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-xs transition-all text-xs sm:text-sm text-rose-600 hover:text-white hover:bg-rose-600 active:scale-95"
                             title="ลบบิลออกจากฐานข้อมูลอย่างถาวร"
                         >
                             <Trash2 size={15} strokeWidth={2.5}/> 
@@ -111,7 +111,7 @@ export default function OrderActions({
 
                 <button 
                     onClick={handleCloseModal} 
-                    className="flex items-center justify-center text-[var(--dh-text-muted)] hover:text-rose-500 w-8 h-8 hover:bg-rose-500/10 rounded-sm transition-all border border-transparent hover:border-rose-500/20 active:scale-95 ml-1"
+                    className="flex items-center justify-center text-(--dh-text-muted) hover:text-rose-500 w-8 h-8 hover:bg-rose-500/10 rounded-xs transition-all border border-transparent hover:border-rose-500/20 active:scale-95 ml-1"
                 >
                     <X size={18} strokeWidth={2.5}/>
                 </button>

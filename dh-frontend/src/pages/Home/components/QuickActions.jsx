@@ -40,7 +40,7 @@ const QuickActions = () => {
               <div
                 key={action.id}
                 onClick={() => alert('บริการนี้กำลังอยู่ระหว่างการพัฒนา')}
-                className="relative flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4]/50 rounded-xl border border-[#B3E1C1]/50 shadow-sm cursor-not-allowed group opacity-80"
+                className="relative flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4]/50 rounded-xl border border-[#B3E1C1]/50 shadow-xs cursor-not-allowed group opacity-80"
               >
                 <div className="mr-4 md:mr-5 shrink-0 opacity-60">
                   {action.icon}
@@ -55,7 +55,7 @@ const QuickActions = () => {
                 </div>
                 {/* Badge รอการพัฒนา */}
                 <div className="absolute top-2 right-2 md:top-3 md:right-3">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] md:text-xs font-bold bg-white text-amber-600 shadow-sm border border-amber-200 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] md:text-xs font-bold bg-white text-amber-600 shadow-xs border border-amber-200 whitespace-nowrap">
                     รอการพัฒนา
                   </span>
                 </div>
@@ -67,7 +67,7 @@ const QuickActions = () => {
             <Link
               key={action.id}
               to={action.link}
-              className="flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4] rounded-xl border border-[#B3E1C1] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+              className="flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4] rounded-xl border border-[#B3E1C1] shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
             >
               <div className="mr-4 md:mr-5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
                 {action.icon}

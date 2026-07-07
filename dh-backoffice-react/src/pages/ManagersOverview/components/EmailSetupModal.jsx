@@ -36,7 +36,7 @@ export default function EmailSetupModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
       <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col animate-in zoom-in-95">
         
         {/* Header */}
@@ -62,7 +62,7 @@ export default function EmailSetupModal({ isOpen, onClose }) {
         <div className="p-6 space-y-5">
           
           <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-4 flex gap-3 text-sm text-emerald-800 dark:text-emerald-400">
-            <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               การทำงานผ่าน Google Apps Script ทำให้ระบบปลอดภัย 100% ประหยัดค่าใช้จ่าย และพนักงานสามารถอ่าน/ตอบอีเมลได้ <b>โดยไม่ต้องล็อกอิน Google ด้วยตนเอง</b>
             </p>
@@ -79,14 +79,14 @@ export default function EmailSetupModal({ isOpen, onClose }) {
                 onChange={(e) => setWebAppUrl(e.target.value)}
                 placeholder="https://script.google.com/macros/s/XXXXX/exec"
                 rows={3}
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white text-sm transition-all resize-none break-all"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden text-slate-800 dark:text-white text-sm transition-all resize-none break-all"
               />
             </div>
           </div>
 
           {error && (
             <div className="p-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium flex items-center gap-2 animate-in slide-in-from-top-2">
-              <AlertCircle size={16} className="flex-shrink-0" />
+              <AlertCircle size={16} className="shrink-0" />
               <span>{error}</span>
             </div>
           )}

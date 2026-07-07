@@ -85,7 +85,7 @@ export default function PaymentPanel({
                         <span className="font-black text-xl text-[#4ade80]">฿{(remainingToPay || 0).toLocaleString()}</span>
                     </div>
                     
-                    <button className="flex items-center gap-2 bg-[#F55050] hover:bg-[#D51C39] px-4 py-1.5 rounded-sm font-bold text-sm transition-colors shadow-sm" onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}>
+                    <button className="flex items-center gap-2 bg-[#F55050] hover:bg-[#D51C39] px-4 py-1.5 rounded-xs font-bold text-sm transition-colors shadow-xs" onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}>
                         <Receipt size={16}/> ชำระเงิน
                     </button>
                     

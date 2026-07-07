@@ -187,16 +187,16 @@ const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className={`font-bold text-sm ${isBest ? 'text-emerald-900 drop-shadow-sm' : 'text-gray-600'}`}>
+                  <h3 className={`font-bold text-sm ${isBest ? 'text-emerald-900 drop-shadow-xs' : 'text-gray-600'}`}>
                     {promo.title}
                   </h3>
                   {isBest && (
-                    <span className="text-[10px] font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-400 px-2 py-0.5 rounded shadow-sm uppercase tracking-wider animate-pulse">
+                    <span className="text-[10px] font-bold text-white bg-linear-to-r from-emerald-500 to-teal-400 px-2 py-0.5 rounded-sm shadow-xs uppercase tracking-wider animate-pulse">
                       APPLIED
                     </span>
                   )}
                   {isEligibleButNotBest && (
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-sm uppercase tracking-wider">
                       ELIGIBLE
                     </span>
                   )}

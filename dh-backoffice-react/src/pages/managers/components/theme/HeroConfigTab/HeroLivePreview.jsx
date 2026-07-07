@@ -4,7 +4,7 @@ export default function HeroLivePreview({ config }) {
     const activeConfig = config;
 
     return (
-        <div className="mt-8 border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white p-6">
+        <div className="mt-8 border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-white p-6">
             <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-6 flex items-center justify-between">
                 <span>หน้าจอจำลอง (Live Storefront Preview)</span>
                 <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-xs font-bold">100% Exact Match</span>
@@ -22,7 +22,7 @@ export default function HeroLivePreview({ config }) {
                                 src={activeConfig.imageUrl} 
                                 alt="Preview" 
                                 className="w-full h-full object-cover"
-                            />
+                             loading="lazy" />
                         ) : (
                             <div className="w-full h-full bg-slate-800 flex items-center justify-center text-slate-600">
                                 ยังไม่มีรูปภาพ
@@ -48,12 +48,12 @@ export default function HeroLivePreview({ config }) {
                     
                     <div className="flex flex-row space-x-3 md:space-x-4">
                         {activeConfig.primaryButton?.isActive && (
-                            <button className="px-6 py-2.5 md:px-8 md:py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg cursor-default text-xs md:text-sm uppercase tracking-wider shadow-sm">
+                            <button className="px-6 py-2.5 md:px-8 md:py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg cursor-default text-xs md:text-sm uppercase tracking-wider shadow-xs">
                                 {activeConfig.primaryButton.label || 'PRIMARY BUTTON'}
                             </button>
                         )}
                         {activeConfig.secondaryButton?.isActive && (
-                            <button className="px-6 py-2.5 md:px-8 md:py-3 bg-white text-slate-800 font-bold rounded-lg cursor-default text-xs md:text-sm uppercase tracking-wider shadow-sm">
+                            <button className="px-6 py-2.5 md:px-8 md:py-3 bg-white text-slate-800 font-bold rounded-lg cursor-default text-xs md:text-sm uppercase tracking-wider shadow-xs">
                                 {activeConfig.secondaryButton.label || 'SECONDARY BUTTON'}
                             </button>
                         )}

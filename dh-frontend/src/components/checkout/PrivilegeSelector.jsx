@@ -212,7 +212,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
   }
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-md">
       <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
         <Ticket className="w-5 h-5 text-blue-600" />
         สิทธิพิเศษและส่วนลด
@@ -280,7 +280,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
               value=""
               disabled
               placeholder="ยังไม่รองรับการใช้งาน" 
-              className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed outline-none"
+              className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed outline-hidden"
             />
           </div>
           <p className="text-[10px] text-gray-400 mt-1.5 ml-1">อัตราแลกเปลี่ยน 1 Point = 1 บาท</p>
@@ -289,7 +289,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
         {/* Wallet Balance - ปรับ UI เล็กลงและดูเนียนตา */}
         <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-white rounded-lg shadow-sm text-blue-600">
+            <div className="p-1.5 bg-white rounded-lg shadow-xs text-blue-600">
               <Wallet className="w-4 h-4" />
             </div>
             <div>
@@ -305,7 +305,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
               checked={useWallet}
               onChange={handleWalletToggle}
             />
-            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 shadow-sm"></div>
+            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 shadow-xs"></div>
           </label>
         </div>
       </div>

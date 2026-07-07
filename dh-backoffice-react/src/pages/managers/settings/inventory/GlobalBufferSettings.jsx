@@ -51,7 +51,7 @@ export default function GlobalBufferSettings() {
                     </div>
                     <button 
                         onClick={() => setIsGuideOpen(true)} 
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors border border-rose-200 shadow-sm dh-active-press"
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors border border-rose-200 shadow-xs dh-active-press"
                     >
                         <Box size={16} /> คู่มือการใช้งาน
                     </button>
@@ -59,7 +59,7 @@ export default function GlobalBufferSettings() {
 
                 <div className="flex-1 p-6 sm:p-10 relative">
                     <div className="space-y-8 max-w-4xl mx-auto">
-                        <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex gap-4 text-rose-800 shadow-sm transition-all hover:shadow-md">
+                        <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex gap-4 text-rose-800 shadow-xs transition-all hover:shadow-md">
                             <AlertTriangle size={24} className="shrink-0 text-rose-500"/>
                             <p className="text-sm font-bold leading-relaxed">
                                 ค่าบัฟเฟอร์ (Buffer) คือจำนวนสต็อกที่ระบบจะ "กั๊ก" ไว้ไม่ให้ขายหน้าร้านจนหมด เพื่อสำรองไว้สำหรับงานเคลมหรือพันธมิตร
@@ -77,7 +77,7 @@ export default function GlobalBufferSettings() {
                                     type="number" min="0" 
                                     value={inventoryConfig.defaultBufferStock}
                                     onChange={(e) => setInventoryConfig({...inventoryConfig, defaultBufferStock: e.target.value})}
-                                    className="w-full pl-5 pr-24 py-4 bg-slate-50 hover:bg-white border-2 border-slate-200 rounded-2xl font-black text-3xl text-rose-600 outline-none focus:border-rose-500 focus:bg-white focus:ring-4 focus:ring-rose-500/10 disabled:bg-slate-50 disabled:text-slate-400 transition-all shadow-sm group-hover:border-rose-200"
+                                    className="w-full pl-5 pr-24 py-4 bg-slate-50 hover:bg-white border-2 border-slate-200 rounded-2xl font-black text-3xl text-rose-600 outline-hidden focus:border-rose-500 focus:bg-white focus:ring-4 focus:ring-rose-500/10 disabled:bg-slate-50 disabled:text-slate-400 transition-all shadow-xs group-hover:border-rose-200"
                                 />
                             </div>
                         </div>
