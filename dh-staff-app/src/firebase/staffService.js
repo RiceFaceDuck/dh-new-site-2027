@@ -1,11 +1,12 @@
 import { doc, getDoc, updateDoc, setDoc, collection, serverTimestamp, addDoc } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils.js';
 
 export const staffService = {
   // Fetch current profile and status
   getStaffProfile: async (uid) => {
     try {
-      const userRef = doc(db, 'users', uid);
+      const userRef = doc(db, getCollectionPath('users'), uid);
       const snap = await getDoc(userRef);
       if (snap.exists()) {
         return snap.data();
@@ -39,7 +40,7 @@ export const staffService = {
   // Update work status (active, break, offline)
   updateWorkStatus: async (uid, status) => {
     try {
-      const userRef = doc(db, 'users', uid);
+      const userRef = doc(db, getCollectionPath('users'), uid);
       // Ensure the doc exists first, if not create a stub
       const snap = await getDoc(userRef);
       if (!snap.exists()) {
@@ -64,7 +65,7 @@ export const staffService = {
   // Submit leave request to Central Todo
   requestLeave: async (payload) => {
     try {
-      const todosRef = collection(db, 'todos');
+      const todosRef = collection(db, getCollectionPath('todos'));
       const docRef = await addDoc(todosRef, {
         type: 'LEAVE_APPROVAL',
         status: 'pending_manager',

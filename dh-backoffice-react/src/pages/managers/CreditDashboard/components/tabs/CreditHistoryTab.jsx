@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '../../../../../firebase/config';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { Search, Download, Loader2 } from 'lucide-react';
+import { creditHistoryService } from '../../../../../firebase/creditHistoryService';
 
 export default function CreditHistoryTab() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,28 +12,14 @@ export default function CreditHistoryTab() {
   // ดึงข้อมูลประวัติการทำรายการ (Audit Trail) แบบ Real-time
   // ==========================================================
   useEffect(() => {
-    // อ้างอิง Path เดียวกับที่ creditService.js ใช้บันทึกข้อมูล
-    const txRef = collection(db, getCollectionPath('credit_transactions'));
-    
-    // ดึง 100 รายการล่าสุด ป้องกันการดึงข้อมูลมหาศาลจนเว็บค้าง
-    const q = query(txRef, orderBy('timestamp', 'desc'), limit(100));
-    
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(doc => {
-        const d = doc.data();
-        return {
-          id: doc.id,
-          ...d,
-          // ใช้เวลาระบบหาก timestamp ยังไม่มา (กรณีเพิ่งกดบันทึกและรอ server delay)
-          timestamp: d.timestamp?.toDate()?.toISOString() || new Date().toISOString()
-        };
-      });
+    const unsubscribe = creditHistoryService.subscribeToCreditTransactions((data, err) => {
+      if (err) {
+        setIsLoading(false);
+        return;
+      }
       setTransactions(data);
       setIsLoading(false);
-    }, (error) => {
-      console.error("🔥 DH-Core System Error [Fetch History]:", error);
-      setIsLoading(false);
-    });
+    }, 100);
 
     return () => unsubscribe();
   }, []);

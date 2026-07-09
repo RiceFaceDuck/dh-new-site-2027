@@ -1,5 +1,6 @@
 import { doc, collection, serverTimestamp, increment } from 'firebase/firestore';
 import { adjustUserCreditWithTransaction } from '../credit/creditActionService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const handleWalletRefundAndClawback = async (
     transaction, 
@@ -22,6 +23,9 @@ export const handleWalletRefundAndClawback = async (
         refundAmount = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
     }
     
+    // ✅ [SECURITY FIX] Ensure refundAmount is valid and non-negative
+    refundAmount = isNaN(refundAmount) ? 0 : Math.max(0, refundAmount);
+    
     let clawbackPoints = Number(orderData.earnedPoints || 0); 
     let cancelledPending = 0;
     if (orderData.pendingCredits && orderData.pendingCredits > 0 && orderData.status !== 'received') {
@@ -37,7 +41,7 @@ export const handleWalletRefundAndClawback = async (
             updatedAt: serverTimestamp()
         });
 
-        const walletTxRef = doc(collection(db, `users/${userSnap.id}/wallet_transactions`));
+        const walletTxRef = doc(collection(db, getCollectionPath('users'), userSnap.id, 'wallet_transactions'));
         transaction.set(walletTxRef, {
             transactionId: `TXW_REF_${orderId}`,
             type: 'REFUND',

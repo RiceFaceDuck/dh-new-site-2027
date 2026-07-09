@@ -3,6 +3,7 @@ import { db, auth } from '../../../../firebase/config';
 import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { driveService } from '../../../../firebase/driveService';
 import { compressImage } from '../../../../utils/imageCompression';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const useUploadSlip = (selectedOrder, closeModal) => {
   const [file, setFile] = useState(null);
@@ -41,14 +42,14 @@ export const useUploadSlip = (selectedOrder, closeModal) => {
       const batch = writeBatch(db);
       const user = auth.currentUser;
 
-      const orderRef = doc(db, 'orders', selectedOrder.id);
+      const orderRef = doc(db, getCollectionPath('orders'), selectedOrder.id);
       batch.update(orderRef, {
         paymentSlipUrl: finalSlipUrl,
         status: 'pending_payment_verification',
         updatedAt: serverTimestamp()
       });
 
-      const todoRef = doc(collection(db, 'todos'));
+      const todoRef = doc(collection(db, getCollectionPath('todos')));
       batch.set(todoRef, {
         type: "verify_slip",
         status: "pending",
@@ -62,7 +63,7 @@ export const useUploadSlip = (selectedOrder, closeModal) => {
         createdAt: serverTimestamp()
       });
 
-      const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`));
+      const historyRef = doc(collection(db, getCollectionPath('users'), user.uid, 'historyLogs'));
       batch.set(historyRef, {
         orderId: selectedOrder.id,
         action: "UPLOAD_SLIP",

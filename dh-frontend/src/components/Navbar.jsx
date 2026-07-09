@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingCart, User, LogOut, Wallet, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, User, LogOut, Wallet, LayoutDashboard, ChevronDown, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -17,6 +17,7 @@ const Navbar = () => {
   // 🌟 State ใหม่สำหรับจัดการ Auth & Dropdown
   const [currentUser, setCurrentUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
 
   // 1. ตรวจสอบสถานะการ Login แบบ Real-time
@@ -58,12 +59,15 @@ const Navbar = () => {
 
   // 4. ฟังก์ชันออกจากระบบ
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await logoutUser();
       setIsDropdownOpen(false);
       navigate('/');
     } catch (error) {
       console.error("Logout failed", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -231,10 +235,11 @@ const Navbar = () => {
                       <div className="p-2 border-t border-slate-100 bg-slate-50/50">
                         <button 
                           onClick={handleLogout}
-                          className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                          disabled={isLoggingOut}
+                          className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          ออกจากระบบ
-                          <LogOut size={16} />
+                          {isLoggingOut ? 'กำลังออกจากระบบ...' : 'ออกจากระบบ'}
+                          {isLoggingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
                         </button>
                       </div>
                     </div>

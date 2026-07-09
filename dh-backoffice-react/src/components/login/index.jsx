@@ -4,6 +4,16 @@ import { useAuthFlow } from './hooks/useAuthFlow';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import StatusView from './StatusView';
+import { Copy } from 'lucide-react';
+
+const isInAppBrowser = () => {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    return (ua.indexOf("FBAV") > -1) || 
+           (ua.indexOf("FBAN") > -1) || 
+           (ua.indexOf("Line") > -1) || 
+           (ua.indexOf("Instagram") > -1) ||
+           (ua.indexOf("MicroMessenger") > -1);
+};
 
 export default function LoginContainer() {
     const {
@@ -16,9 +26,53 @@ export default function LoginContainer() {
         attemptedEmail,
         statusData,
         handleGoogleLogin,
+        handleEmailLogin,
         handleStaffRegistration,
         resetFlow
     } = useAuthFlow();
+
+    const [inAppBrowser, setInAppBrowser] = React.useState(false);
+    const [copied, setCopied] = React.useState(false);
+
+    React.useEffect(() => {
+        if (isInAppBrowser()) {
+            setInAppBrowser(true);
+        }
+    }, []);
+
+    const handleCopyUrl = () => {
+        navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+    };
+
+    if (inAppBrowser) {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center border border-slate-200 dark:border-slate-800">
+                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                    </div>
+                    <h1 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">ไม่สามารถล็อกอินในแอพนี้ได้</h1>
+                    <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+                        Google ไม่อนุญาตให้ล็อกอินผ่านหน้าต่างซ้อนของแอพ (เช่น LINE, Facebook) ด้วยเหตุผลด้านความปลอดภัย
+                    </p>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-6 text-sm text-blue-700 dark:text-blue-400">
+                        <strong>วิธีแก้ไข:</strong><br />
+                        กดปุ่ม <span className="inline-block px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 mx-1 shadow-xs">⋮</span> หรือ <span className="inline-block px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 mx-1 shadow-xs">⠇</span> ที่มุมขวาบน แล้วเลือก <strong>"เปิดในเบราว์เซอร์"</strong> (Open in Browser)
+                    </div>
+                    
+                    <button 
+                        onClick={handleCopyUrl}
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors"
+                    >
+                        {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+                        {copied ? 'คัดลอกลิงก์แล้ว! ไปวางใน Safari/Chrome' : 'คัดลอกลิงก์ไปเปิดในเบราว์เซอร์ปกติ'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden text-slate-900 dark:text-white transition-colors duration-300">
@@ -128,6 +182,7 @@ export default function LoginContainer() {
                         {viewMode === 'login' && (
                             <LoginForm 
                                 onLogin={handleGoogleLogin} 
+                                onEmailLogin={handleEmailLogin}
                                 onGoRegister={() => { setViewMode('register'); setError(''); }} 
                                 loading={loading} 
                                 statusText={statusText} 

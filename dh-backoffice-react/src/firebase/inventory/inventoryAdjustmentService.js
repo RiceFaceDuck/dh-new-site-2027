@@ -1,6 +1,7 @@
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
+import { withToastError } from '../../utils/safeAsync';
 
 const COLLECTION_NAME = 'products';
 
@@ -17,17 +18,17 @@ export const inventoryAdjustmentService = {
    * @param {object} managerUser - ข้อมูลผู้จัดการที่ทำรายการ
    */
   adjustStock: async (sku, newStock, reason, note, managerUser) => {
-    if (newStock < 0) {
-      throw new Error("สต๊อคไม่สามารถติดลบได้ กรุณาตรวจสอบจำนวนอีกครั้ง");
-    }
+    return withToastError((async () => {
+      if (newStock < 0) {
+        throw new Error("สต๊อคไม่สามารถติดลบได้ กรุณาตรวจสอบจำนวนอีกครั้ง");
+      }
 
-    if (!reason) {
-      throw new Error("กรุณาระบุเหตุผลในการปรับปรุงสต๊อค");
-    }
+      if (!reason) {
+        throw new Error("กรุณาระบุเหตุผลในการปรับปรุงสต๊อค");
+      }
 
-    const productRef = doc(db, COLLECTION_NAME, sku);
+      const productRef = doc(db, COLLECTION_NAME, sku);
 
-    try {
       await runTransaction(db, async (transaction) => {
         const productSnap = await transaction.get(productRef);
         
@@ -72,9 +73,6 @@ export const inventoryAdjustmentService = {
       });
 
       return { success: true, message: 'ปรับปรุงสต๊อคสำเร็จ' };
-    } catch (error) {
-      console.error("Stock Adjustment Transaction failed: ", error);
-      throw error;
-    }
+    })(), "เกิดข้อผิดพลาดในการปรับปรุงสต๊อก");
   }
 };

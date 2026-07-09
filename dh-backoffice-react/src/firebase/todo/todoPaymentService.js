@@ -1,15 +1,16 @@
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
-import { doc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, runTransaction, increment, writeBatch } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const todoPaymentService = {
   // 📥 3. ยืนยันสลิปโอนเงิน (ออก Invoice & แจกงานแพ็ค)
   verifyPaymentSlip: async (taskId, orderId, currentUser) => {
     try {
       const result = await runTransaction(db, async (transaction) => {
-        const taskRef = doc(db, 'todos', taskId);
-        const orderRef = doc(db, 'orders', orderId);
+        const taskRef = doc(db, getCollectionPath('todos'), taskId);
+        const orderRef = doc(db, getCollectionPath('orders'), orderId);
         const logRef = doc(collection(db, 'system_logs')); 
 
         const orderDoc = await transaction.get(orderRef);
@@ -51,7 +52,7 @@ export const todoPaymentService = {
         
         const seqStr = String(currentSeq);
         const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-        const generatedOrderId = `DH-${yearStr}-${shardId}-${paddedSeq}`;
+        const generatedOrderId = `DH-${shardId}-${yearStr.slice(2)}-${paddedSeq}`;
 
         // --- 2.5 PRELOAD PRODUCTS FOR STOCK DEDUCTION ---
         const isStockAlreadyDeducted = !!orderData.isStockDeducted;
@@ -60,7 +61,7 @@ export const todoPaymentService = {
           for (const item of orderData.items) {
             const itemIdentifier = item.id || item.sku;
             if (item.isFreebie || !itemIdentifier) continue;
-            const pRef = doc(db, 'products', itemIdentifier);
+            const pRef = doc(db, getCollectionPath('products'), itemIdentifier);
             const pSnap = await transaction.get(pRef);
             if (pSnap.exists()) {
               productSnapsToUpdate.push({ ref: pRef, snap: pSnap, item: item, noDeduct: false });
@@ -69,7 +70,7 @@ export const todoPaymentService = {
         } else if (orderData.items && Array.isArray(orderData.items)) {
            for (const item of orderData.items) {
              if (!item.sku) continue;
-             const pRef = doc(db, 'products', item.sku);
+             const pRef = doc(db, getCollectionPath('products'), item.sku);
              const pSnap = await transaction.get(pRef);
              if (pSnap.exists()) {
                productSnapsToUpdate.push({ ref: pRef, snap: pSnap, item: item, noDeduct: true });
@@ -103,7 +104,7 @@ export const todoPaymentService = {
 
         // ❌ Stock Deduction is REMOVED from here. It will happen when "Print Bill" is clicked!
 
-        const packTaskRef = doc(collection(db, 'todos')); 
+        const packTaskRef = doc(collection(db, getCollectionPath('todos'))); 
         transaction.set(packTaskRef, {
           orderId: orderId, // The firestore doc id
           displayOrderId: generatedOrderId, 
@@ -206,6 +207,41 @@ export const todoPaymentService = {
     } catch (error) {
       console.error("🔥 verifyPaymentSlip Error:", error);
       throw error;
+    }
+  },
+
+  // ❌ ปฏิเสธสลิปโอนเงิน (ตีกลับไปให้ลูกค้าอัปโหลดใหม่)
+  rejectPaymentSlip: async (task, rejectReason, currentUser) => {
+    try {
+      const batch = writeBatch(db);
+      const orderRef = doc(db, getCollectionPath('orders'), task.orderId);
+      batch.update(orderRef, {
+        status: 'pending_payment',
+        paymentSlipUrl: null,
+        rejectReason: rejectReason,
+        updatedAt: serverTimestamp()
+      });
+      const taskRef = doc(db, getCollectionPath('todos'), task.id);
+      batch.update(taskRef, {
+        status: 'rejected',
+        rejectReason: rejectReason,
+        completedAt: serverTimestamp(),
+        actionBy: currentUser?.displayName || 'Admin'
+      });
+      
+      gasHistoryService.log({
+        module: 'Customer History',
+        action: 'SLIP_REJECTED',
+        target: { id: task.orderId },
+        details: { legacy_details: `หลักฐานการชำระเงินไม่ถูกต้อง/ไม่ชัดเจน\nเหตุผล: ${rejectReason}\nกรุณาอัปโหลดหลักฐานใหม่ครับ` },
+        actorOverride: { uid: task.userId, name: 'System (For Customer)', email: 'N/A' }
+      });
+      
+      await batch.commit();
+      return { success: true };
+    } catch(err) {
+      console.error("🔥 rejectPaymentSlip Error:", err);
+      throw err;
     }
   }
 };

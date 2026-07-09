@@ -1,9 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import viteCompression from 'vite-plugin-compression'
 
-export default defineConfig({
-  plugins: [tailwindcss(), react()],
+import { visualizer } from 'rollup-plugin-visualizer';
+
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    tailwindcss(), 
+    react(), 
+    viteCompression(),
+    mode === 'analyze' && visualizer({ open: true, filename: 'stats.html', gzipSize: true, brotliSize: true })
+  ],
+  resolve: {
+    dedupe: ['firebase']
+  },
+  optimizeDeps: {
+    force: true,
+    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/analytics', 'firebase/app-check', 'zod']
+  },
   build: {
     rollupOptions: {
       output: {
@@ -30,4 +45,4 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     exclude: ['**/node_modules/**', '**/dist/**', '**/.{idea,git,cache,output,temp}/**', 'src/firebase/warrantyService.test.js']
   }
-})
+}));

@@ -12,7 +12,7 @@ export const SocialFeedPanel = () => {
   ];
 
   return (
-    <div className="bg-dh-surface rounded-md shadow-dh-card border border-dh-border p-6 relative overflow-hidden">
+    <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col h-[400px] overflow-hidden">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-dh-border">
         <div>
           <h3 className="text-xl font-black text-dh-main flex items-center gap-2">
@@ -40,7 +40,7 @@ export const SocialFeedPanel = () => {
                 </div>
               </div>
               
-              <div className="flex-1 min-w-0 bg-dh-base border border-dh-border p-3.5 rounded-md hover:border-pink-500/30 hover:shadow-md transition-all group-hover:bg-dh-surface">
+              <div className="flex-1 min-w-0 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl hover:border-pink-500/30 hover:shadow-sm transition-all group-hover:bg-white dark:group-hover:bg-slate-800">
                 <div className="flex justify-between items-start mb-1">
                   <p className="text-sm font-black text-dh-main flex items-center gap-2">
                     {event.user}

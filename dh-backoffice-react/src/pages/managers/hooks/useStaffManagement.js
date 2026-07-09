@@ -4,13 +4,9 @@ import { db } from '../../../firebase/config';
 import { userService, SUPER_ADMINS } from '../../../firebase/userService';
 import { historyService } from '../../../firebase/historyService';
 import { auth } from '../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+
 
 export function useStaffManagement() {
   const [staffList, setStaffList] = useState([]);
@@ -34,7 +30,7 @@ export function useStaffManagement() {
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const data = await userService.getAllStaff();
+      const data = await userService.getAllStaff(true);
       const sortedData = data.sort((a, b) => {
         if (SUPER_ADMINS.includes(a.email)) return -1;
         if (SUPER_ADMINS.includes(b.email)) return 1;
@@ -70,20 +66,31 @@ export function useStaffManagement() {
       `คุณต้องการเปลี่ยนตำแหน่งของ ${email} เป็น ${newRole} ใช่หรือไม่?`,
       async () => {
         try {
-          await userService.updateUserRole(uid, uid, newRole);
+          await userService.updateUserRole(auth.currentUser?.uid || uid, uid, newRole);
+          
+          let isStaffNew = true;
+          if (newRole === 'pending' || newRole === 'pending_approval') {
+              isStaffNew = false;
+          }
+
           try {
             const userRef = doc(db, getCollectionPath('users'), uid);
-            await updateDoc(userRef, { isStaff: true, isActive: true });
+            await updateDoc(userRef, { 
+              isStaff: isStaffNew, 
+              isActive: isStaffNew,
+              isApproved: isStaffNew
+            });
           } catch(e) { console.error("Force update isStaff failed", e); }
           
           // Log role change
           await historyService.addLog('StaffManagement', 'UpdateRole', uid, `เปลี่ยนตำแหน่งพนักงาน ${email} เป็น ${newRole}`, auth.currentUser?.uid);
 
           setStaffList(prev => prev.map(staff => 
-            staff.id === uid ? { ...staff, role: newRole, computedRole: newRole.toLowerCase(), roles: [newRole], isStaff: true } : staff
+            staff.id === uid ? { ...staff, role: newRole, computedRole: newRole.toLowerCase(), roles: [newRole], isStaff: isStaffNew, isActive: isStaffNew, isApproved: isStaffNew } : staff
           ));
           showToast('success', 'อัปเดตตำแหน่งสำเร็จ');
         } catch (error) {
+          console.error("Update Role Failed:", error);
           showToast('error', 'เกิดข้อผิดพลาดในการอัปเดตตำแหน่ง');
         }
       }

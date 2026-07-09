@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'; 
-import { db } from '../../../../firebase/config';
+import { userStaffService, searchUsersForStaffPromotion, promoteUserToStaff } from '../../../../firebase/userStaffService';
 import { userService } from '../../../../firebase/userService';
 import { Users, Search, X, UserPlus, Mail } from 'lucide-react';
+import { auth } from '../../../../firebase/config';
 
 const ROLES = ['Admin', 'Manager', 'Staff', 'Packer', 'Developer'];
-
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
 
 export default function StaffAddModal({ showAddModal, setShowAddModal, showToast, fetchStaff }) {
   const [addSearchKeyword, setAddSearchKeyword] = useState('');
@@ -22,24 +15,7 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
     if (!addSearchKeyword.trim()) return;
     setIsSearching(true);
     try {
-      const usersRef = collection(db, getCollectionPath('users'));
-      let snapshot = await getDocs(usersRef);
-
-      const results = [];
-      const keyword = addSearchKeyword.toLowerCase().trim();
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if ((data.email && data.email.toLowerCase().includes(keyword)) ||
-            (data.phone && data.phone.includes(keyword)) ||
-            (data.displayName && data.displayName.toLowerCase().includes(keyword))) {
-          
-          const currentRole = String(data.role || (data.roles && data.roles[0]) || '').toLowerCase();
-          if (!['admin', 'manager', 'staff', 'packer', 'developer'].includes(currentRole)) {
-            results.push({ id: doc.id, ...data });
-          }
-        }
-      });
+      const results = await searchUsersForStaffPromotion(addSearchKeyword);
       setSearchResults(results);
     } catch (error) {
       console.error(error);
@@ -51,17 +27,12 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
 
   const handlePromoteToStaff = async (uid, role) => {
     try {
-      await userService.updateUserRole(uid, uid, role); // Assuming current user is admin, here we just pass uid for simplicity or adapt if adminId is needed
+      const adminId = auth.currentUser?.uid || 'System';
+      // Fallback role tracking
+      await userService.updateUserRole(uid, uid, role); 
       
-      try {
-        const userRef = doc(db, getCollectionPath('users'), uid);
-        await updateDoc(userRef, { 
-          isStaff: true, 
-          isActive: true, 
-          role: role,
-          roles: [role.charAt(0).toUpperCase() + role.slice(1)]
-        });
-      } catch(e) { console.error("Force update isStaff failed", e); }
+      // Update the user document to make them staff
+      await promoteUserToStaff(adminId, uid, role);
 
       showToast('success', 'แต่งตั้งสำเร็จ (เปิดสิทธิ์การเข้าสู่ระบบเรียบร้อย)');
       setShowAddModal(false);

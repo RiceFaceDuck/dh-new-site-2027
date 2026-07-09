@@ -1,11 +1,12 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const bufferService = {
   async getBufferConfig() {
     try {
-      const invSnap = await getDoc(doc(db, 'settings', 'inventory'));
+      const invSnap = await getDoc(doc(db, getCollectionPath('settings'), 'inventory'));
       if (invSnap.exists()) {
         return invSnap.data();
       }
@@ -18,7 +19,7 @@ export const bufferService = {
 
   async updateBufferConfig(bufferStock, diffMsg, uid) {
     try {
-      await setDoc(doc(db, 'settings', 'inventory'), { defaultBufferStock: bufferStock }, { merge: true });
+      await setDoc(doc(db, getCollectionPath('settings'), 'inventory'), { defaultBufferStock: bufferStock }, { merge: true });
       if (diffMsg && uid) {
         await historyService.addLog(
           'SystemConfig', 

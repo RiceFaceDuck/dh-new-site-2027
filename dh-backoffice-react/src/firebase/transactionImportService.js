@@ -4,6 +4,8 @@ import { db, auth } from './config';
 import { gasStockService } from './gasStockService';
 import { gasHistoryService } from './gasHistoryService';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 export const transactionImportService = {
   /**
    * ถอดรหัสไฟล์ .xlsx และพยายามจัดเรียงข้อมูล
@@ -35,7 +37,7 @@ export const transactionImportService = {
           try {
             const saved = localStorage.getItem('global_schema_aliases');
             if (saved) {
-              aliases = { ...aliases, ...JSON.parse(saved) };
+              aliases = { ...aliases, ...safeJsonParse(saved) };
             }
           } catch(e) {}
 
@@ -142,7 +144,7 @@ export const transactionImportService = {
       for (const chunk of chunks) {
         const batch = writeBatch(db);
         chunk.forEach(update => {
-          const docRef = doc(db, 'products', update.sku);
+          const docRef = doc(db, getCollectionPath('products'), update.sku);
           const updateData = {
             stockQuantity: update.newStock,
             updatedAt: serverTimestamp()
@@ -259,7 +261,7 @@ export const transactionImportService = {
       for (const chunk of chunks) {
         const batch = writeBatch(db);
         chunk.forEach(item => {
-          const docRef = doc(db, 'products', item.sku);
+          const docRef = doc(db, getCollectionPath('products'), item.sku);
           batch.update(docRef, {
             stockQuantity: item.oldStock,
             updatedAt: serverTimestamp()

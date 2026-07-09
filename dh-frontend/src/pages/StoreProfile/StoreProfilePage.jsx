@@ -6,6 +6,7 @@ import { db } from '../../firebase/config';
 import { extractCoordsFromUrl } from '../../firebase/partnerService';
 import PartnerReviews from './components/PartnerReviews';
 import PartnerAds from './components/PartnerAds';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 // Ensure appId is defined
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
@@ -70,7 +71,7 @@ const StoreProfilePage = () => {
   }
 
   const avatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop';
-  const name = partner.storeName || partner.name || 'ช่างซ่อมอิสระ';
+  const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
   const role = partner.services || partner.role || 'บริการซ่อมคอมพิวเตอร์และอุปกรณ์ไอที';
   const phone = partner.phone || partner.storeProfile?.phone || '';
   const mapsUrl = partner.mapsUrl || partner.storeProfile?.mapsUrl || '';

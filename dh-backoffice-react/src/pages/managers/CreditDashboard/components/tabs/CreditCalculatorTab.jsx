@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, ArrowRight, Info, ShieldAlert, TrendingUp, TrendingDown, Target, Zap, Bell } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../../../../firebase/config';
-
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+import { creditSettingsService } from '../../../../../firebase/creditSettingsService';
 
 export default function CreditCalculatorTab() {
   const [showGuide, setShowGuide] = useState(false);
@@ -22,10 +19,9 @@ export default function CreditCalculatorTab() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
-        const snap = await getDoc(docRef);
-        if (snap.exists() && snap.data().config) {
-          const fetchedConfig = snap.data().config;
+        const settings = await creditSettingsService.getCreditSettings();
+        if (settings && settings.config) {
+          const fetchedConfig = settings.config;
           setConfig({
             pointsEarningRate: fetchedConfig.pointsEarningRate || 100,
             adImpressionCost: fetchedConfig.adImpressionCost || 5,

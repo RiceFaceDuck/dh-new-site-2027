@@ -1,129 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { 
   Building2, User, FileText, MapPin, Save, 
   Loader2, CheckCircle2, AlertCircle, ShieldCheck, 
   Eye, EyeOff, Hash
 } from 'lucide-react';
-import { userService } from '../../../firebase/userService';
+import { useProfileTaxLogic } from './useProfileTaxLogic';
 
 export default function ProfileTaxForm({ user }) {
-  // 1. State สำหรับเก็บข้อมูล
-  const [formData, setFormData] = useState({
-    type: 'personal', // 'personal' | 'company'
-    name: '',
-    taxId: '',
-    address: '',
-    isHeadOffice: true,
-    branchCode: ''
-  });
-  
-  // State สำหรับเปรียบเทียบข้อมูลเดิม
-  const [initialData, setInitialData] = useState(null);
-  
-  // UI States
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [status, setStatus] = useState({ type: '', message: '' });
-  const [showTaxId, setShowTaxId] = useState(false);
-
-  // 2. โหลดข้อมูลความลับจาก Sub-collection
-  useEffect(() => {
-    let isMounted = true;
-    const fetchTaxInfo = async () => {
-      if (!user?.uid) return;
-      setIsLoading(true);
-      try {
-        const taxData = await userService.getPrivateTaxInfo(user.uid);
-        if (isMounted) {
-          const loadedData = {
-            type: taxData?.type || 'personal',
-            name: taxData?.name || '',
-            taxId: taxData?.taxId || '',
-            address: taxData?.address || '',
-            isHeadOffice: taxData?.isHeadOffice ?? true,
-            branchCode: taxData?.branchCode || ''
-          };
-          setFormData(loadedData);
-          setInitialData(loadedData); // จำค่าดั้งเดิมไว้
-        }
-      } catch (error) {
-        console.error("Error fetching tax info:", error);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchTaxInfo();
-    return () => { isMounted = false; };
-  }, [user]);
-
-  // 3. จัดการ Input & Validation
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    // ดักให้กรอกเฉพาะตัวเลขสำหรับ Tax ID และ Branch Code
-    if (name === 'taxId' && value && !/^\d{0,13}$/.test(value)) return;
-    if (name === 'branchCode' && value && !/^\d{0,5}$/.test(value)) return;
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    
-    if (status.message) setStatus({ type: '', message: '' });
-  };
-
-  // 🧠 เช็คว่ามีการแก้ไขข้อมูลหรือไม่ (เพื่อปิดปุ่ม Save)
-  const hasChanges = () => {
-    if (!initialData) return true;
-    return JSON.stringify(formData) !== JSON.stringify(initialData);
-  };
-
-  // 4. บันทึกข้อมูลแบบ Secure
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user || !hasChanges()) return;
-
-    // Basic Validation
-    if (formData.taxId && formData.taxId.length !== 13) {
-      setStatus({ type: 'error', message: 'เลขประจำตัวผู้เสียภาษีต้องมี 13 หลักถ้วน' });
-      return;
-    }
-    if (formData.type === 'company' && !formData.isHeadOffice && formData.branchCode.length < 4) {
-      setStatus({ type: 'error', message: 'กรุณาระบุรหัสสาขาให้ถูกต้อง (4-5 หลัก)' });
-      return;
-    }
-
-    setIsSaving(true);
-    setStatus({ type: '', message: '' });
-
-    try {
-      // 🔒 ส่งข้อมูลเข้าฟังก์ชัน updatePrivateTaxInfo เพื่อเก็บในโซนปลอดภัย
-      await userService.updatePrivateTaxInfo(user.uid, formData);
-      
-      // อัปเดต Initial Data ให้ตรงกับที่เพิ่งเซฟไป
-      setInitialData({ ...formData });
-      
-      setStatus({ type: 'success', message: 'บันทึกข้อมูลผู้เสียภาษีเรียบร้อยแล้ว แหล่งเก็บข้อมูลปลอดภัย 100%' });
-      
-      // Auto-hide Tax ID หลังบันทึกเสร็จเพื่อความปลอดภัย
-      setShowTaxId(false);
-    } catch (error) {
-      setStatus({ type: 'error', message: 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง' });
-    } finally {
-      setIsSaving(false);
-      setTimeout(() => {
-        if (status.type === 'success') setStatus({ type: '', message: '' });
-      }, 4000);
-    }
-  };
-
-  // 👁️ ฟังก์ชันช่วย Mask เลขบัตรประชาชน
-  const getMaskedTaxId = (taxId) => {
-    if (!taxId) return '';
-    if (taxId.length <= 4) return taxId;
-    return '•••••••••' + taxId.slice(-4);
-  };
+  const {
+    formData,
+    isLoading,
+    isSaving,
+    status,
+    showTaxId,
+    setShowTaxId,
+    handleChange,
+    hasChanges,
+    handleSubmit,
+    getMaskedTaxId
+  } = useProfileTaxLogic(user);
 
   if (isLoading) {
     return (

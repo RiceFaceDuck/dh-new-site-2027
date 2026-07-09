@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebase/config';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, where } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * 🎯 Hook สำหรับจัดการข้อมูล To-do ส่วนกลาง (Operations, CS, Sales)
@@ -21,7 +22,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
     // 🚀 [อัปเกรด] ดึงเฉพาะงานที่ยังไม่เสร็จจาก Server เพื่อป้องกัน Read Quota รั่วไหล 
     // และแก้ปัญหา Data Loss ที่งานใหม่ถูกดันตกขอบถ้ามีงาน Completed เยอะ
     const q = query(
-      collection(db, 'todos'),
+      collection(db, getCollectionPath('todos')),
       where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
       orderBy('createdAt', 'desc'),
       limit(200) // เพิ่ม limit เป็น 200 เพื่อครอบคลุมทั้ง Manager และ Staff
@@ -56,7 +57,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
     setIsSubmitting(true);
     
     try {
-      const todoRef = doc(db, 'todos', todoId);
+      const todoRef = doc(db, getCollectionPath('todos'), todoId);
       await updateDoc(todoRef, {
         status: newStatus,
         updatedAt: serverTimestamp()
@@ -77,7 +78,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
     setIsSubmitting(true);
     
     try {
-      const todoRef = doc(db, 'todos', todoId);
+      const todoRef = doc(db, getCollectionPath('todos'), todoId);
       await deleteDoc(todoRef);
       return true;
     } catch (err) {
@@ -95,7 +96,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
     setIsSubmitting(true);
     
     try {
-      await addDoc(collection(db, 'todos'), {
+      await addDoc(collection(db, getCollectionPath('todos')), {
         ...taskData,
         type: 'MANUAL', // บังคับว่าเป็นงานที่สร้างเอง
         status: 'PENDING',

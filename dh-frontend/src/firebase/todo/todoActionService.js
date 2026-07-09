@@ -1,5 +1,6 @@
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * Single Responsibility: Handling the creation of Todo tasks.
@@ -9,7 +10,7 @@ import { db } from '../config';
 export const appendPaymentVerificationTodo = (transaction, orderId, user, checkoutState, totals, slipUrl) => {
     if (!slipUrl) return;
     
-    const todoRef = doc(collection(db, "todos"));
+    const todoRef = doc(collection(db, getCollectionPath('todos')));
     transaction.set(todoRef, {
         type: "verify_slip",
         status: "pending",
@@ -27,7 +28,7 @@ export const appendPaymentVerificationTodo = (transaction, orderId, user, checko
 export const appendTaxInvoiceTodo = (transaction, orderId, user, checkoutState) => {
     if (!checkoutState?.taxData) return;
 
-    const taxTodoRef = doc(collection(db, "todos"));
+    const taxTodoRef = doc(collection(db, getCollectionPath('todos')));
     transaction.set(taxTodoRef, {
         type: "issue_tax_invoice",
         status: "pending",

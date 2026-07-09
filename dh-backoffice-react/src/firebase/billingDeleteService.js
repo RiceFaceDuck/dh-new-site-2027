@@ -1,12 +1,14 @@
 import { doc, deleteDoc, getDoc, runTransaction, serverTimestamp, collection, query, where, getDocs, writeBatch, increment } from 'firebase/firestore';
 import { db } from './config';
 import { gasHistoryService } from './gasHistoryService';
+import { withToastError } from '../utils/safeAsync';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'orders';
 
 export const billingDeleteService = {
   deleteOrderPermanently: async (orderId, actorUid) => {
-    try {
+    return withToastError((async () => {
       const docRef = doc(db, COLLECTION_NAME, orderId);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) throw new Error("ไม่พบบิลนี้ในระบบ");
@@ -23,7 +25,7 @@ export const billingDeleteService = {
 
       if (walletUsed > 0 && customerUid && customerUid !== 'WALK-IN') {
          await runTransaction(db, async (transaction) => {
-             const userRef = doc(db, 'users', customerUid);
+             const userRef = doc(db, getCollectionPath('users'), customerUid);
              const userSnap = await transaction.get(userRef);
              if (userSnap.exists()) {
                  transaction.update(userRef, {
@@ -31,7 +33,7 @@ export const billingDeleteService = {
                      updatedAt: serverTimestamp()
                  });
 
-                 const walletTxRef = doc(collection(db, `users/${customerUid}/wallet_transactions`));
+                 const walletTxRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
                  transaction.set(walletTxRef, {
                      transactionId: `TXW_REF_DEL_${orderId}`,
                      type: 'REFUND',
@@ -50,7 +52,7 @@ export const billingDeleteService = {
 
       // Cleanup Orphaned Todos
       try {
-          const todosRef = collection(db, 'todos');
+          const todosRef = collection(db, getCollectionPath('todos'));
           const q = query(todosRef, where('referenceId', '==', orderId));
           const querySnapshot = await getDocs(q);
           
@@ -78,9 +80,6 @@ export const billingDeleteService = {
       });
 
       return true;
-    } catch (error) {
-      console.error("🔥 Error deleting order:", error);
-      throw error;
-    }
+    })(), "เกิดข้อผิดพลาดในการลบบิล");
   }
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search as SearchIcon, X, RefreshCw, UserPlus, ChevronRight } from 'lucide-react';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function CustomerSearchInput({
     localSearchText,
@@ -87,7 +88,7 @@ export default function CustomerSearchInput({
                             <div className="px-3 py-1 bg-gray-50 text-[9px] font-black text-gray-500 tracking-widest border-b border-gray-200 uppercase">รายชื่อลูกค้าในระบบ</div>
                             {filteredCustomers.map(c => {
                                 // แก้ไขบั๊กการดึงข้อมูลชื่อและเบอร์โทร ให้ตรวจสอบฟิลด์อื่นเผื่อไว้
-                                const displayName = c.accountName || c.displayName || c.firstName || '-';
+                                const displayName = getCustomerDisplayName(c, '-');
                                 const displayPhone = c.phone || c.phoneNumber || '';
                                 return (
                                 <div key={c.uid || c.id} onClick={() => { handleSelectCustomer(c.uid || c.id); setShowCustDropdown(false); }} className="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors flex justify-between items-center">

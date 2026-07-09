@@ -13,6 +13,7 @@ import {
   increment
 } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const productReviewService = {
   /**
@@ -71,7 +72,7 @@ export const productReviewService = {
     if (!user) throw new Error('You must be logged in to review.');
     if (!productId) throw new Error('Product ID is missing.');
 
-    const productRef = doc(db, 'products', productId);
+    const productRef = doc(db, getCollectionPath('products'), productId);
     const newReviewRef = doc(collection(db, 'product_reviews'));
 
     try {

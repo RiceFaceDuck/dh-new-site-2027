@@ -4,6 +4,7 @@ import { userService } from '../../../../firebase/userService';
 import CustomerSearchInput from './customer/CustomerSearchInput';
 import WalkInCustomerCard from './customer/WalkInCustomerCard';
 import ActiveCustomerCard from './customer/ActiveCustomerCard';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function CustomerSection({
     activeTab,
@@ -28,7 +29,7 @@ export default function CustomerSection({
 
     useEffect(() => {
         if (activeTab.customer) {
-            setLocalSearchText(activeTab.customer.accountName || activeTab.customer.displayName || activeTab.customer.firstName || '');
+            setLocalSearchText(getCustomerDisplayName(activeTab.customer, ''));
         } else if (activeTab.walkInName) {
             setLocalSearchText(activeTab.walkInName);
         } else {

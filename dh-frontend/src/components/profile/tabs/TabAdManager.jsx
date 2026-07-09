@@ -14,6 +14,8 @@ import AdStatsOverview from './ad-manager/AdStatsOverview';
 import AdListTable from './ad-manager/AdListTable';
 import AdFormModal from './ad-manager/AdFormModal';
 import StoreProfileForm from './store-profile/StoreProfileForm';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const sanitizeData = (obj) => {
   const cleaned = {};
@@ -88,7 +90,7 @@ const TabAdManager = ({ user }) => {
   const fetchStoreData = async () => {
     try {
       const storeRef = doc(db, 'artifacts', appId, 'users', user.uid, 'storeProfile', 'main');
-      const rootStoreRef = doc(db, 'users', user.uid, 'storeProfile', 'main');
+      const rootStoreRef = doc(db, getCollectionPath('users'), user.uid, 'storeProfile', 'main');
       
       const [storeSnap, rootSnap] = await Promise.all([
         getDoc(storeRef),
@@ -192,7 +194,7 @@ const TabAdManager = ({ user }) => {
         billboardRatio: formData.type === 'BILLBOARD' ? formData.billboardRatio : null,
         price: formData.type === 'PRODUCT_LINK' ? formData.price : null,
         richDescription: formData.type === 'PRODUCT_LINK' ? (formData.richDescription || '') : null,
-        partnerName: storeData?.storeName || user?.displayName || 'พาร์ทเนอร์',
+        partnerName: getCustomerDisplayName(storeData, 'พาร์ทเนอร์'),
         costPerImpression: COST_PER_IMPRESSION
       });
       

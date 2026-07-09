@@ -1,6 +1,7 @@
 import { db } from './config';
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { adjustUserCreditWithTransaction } from './credit/creditActionService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const productKnowledgeAdminService = {
   /**
@@ -14,11 +15,11 @@ export const productKnowledgeAdminService = {
     const { id: taskId, payload, createdByUid } = task;
     const { productId, fieldType, suggestedValue, creditReward } = payload;
 
-    const productRef = doc(db, 'products', productId);
-    const userRef = doc(db, 'users', createdByUid);
+    const productRef = doc(db, getCollectionPath('products'), productId);
+    const userRef = doc(db, getCollectionPath('users'), createdByUid);
     const transactionId = `TX-${Date.now()}`;
-    const transactionRef = doc(db, 'credit_transactions', transactionId);
-    const taskRef = doc(db, 'todos', taskId);
+    const transactionRef = doc(db, getCollectionPath('credit_transactions'), transactionId);
+    const taskRef = doc(db, getCollectionPath('todos'), taskId);
 
     try {
       await runTransaction(db, async (transaction) => {

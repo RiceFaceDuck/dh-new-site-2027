@@ -3,6 +3,7 @@ import { MapPin, User, Phone, Building2, CheckCircle2, ShieldCheck, Navigation, 
 import { useCart } from '../../hooks/useCart';
 import { auth, db } from '../../firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
   const { checkoutState, updateCheckoutConfig } = useCart();
@@ -35,14 +36,14 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
     const fetchUserProfile = async () => {
       if (auth.currentUser && !checkoutState?.addressInfo?.fullName) {
         try {
-          const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+          const userDoc = await getDoc(doc(db, getCollectionPath('users'), auth.currentUser.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
             
             // ดึงข้อมูลภาษีลับ (Private Tax Info) เพื่อใช้ชื่อบริษัท
             let taxInfoName = '';
             try {
-              const taxDoc = await getDoc(doc(db, "users", auth.currentUser.uid, 'private', 'taxInfo'));
+              const taxDoc = await getDoc(doc(db, getCollectionPath('users'), auth.currentUser.uid, 'private', 'taxInfo'));
               if (taxDoc.exists()) taxInfoName = taxDoc.data().name;
             } catch (e) {
               console.warn('Could not fetch private tax info', e);

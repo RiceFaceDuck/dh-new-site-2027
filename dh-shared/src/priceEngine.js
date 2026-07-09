@@ -12,7 +12,7 @@ export const calculateItemTotal = (item) => {
     if (!item || typeof item !== 'object') return 0;
     if (item.isFreebie) return 0;
     const price = safeNum(item.retailPrice || item.Price || item.price || 0);
-    const qty = safeNum(item.qty, 1);
+    const qty = safeNum(item.qty || item.quantity, 1);
     return price * Math.max(0, qty); // Prevent negative quantity from messing up totals unless strictly intended
 };
 
@@ -69,6 +69,7 @@ export const calculateNetTotal = ({
     shippingCost = 0,
     otherFeeAmount = 0, // Manual extra fees like packaging
     discountAmount = 0, // Manual overall discount
+    walletUsed = 0,     // Wallet deduction
     promotions = [],    // Array of promo objects or single promo
 }) => {
     const subtotal = calculateSubtotal(items);
@@ -88,13 +89,18 @@ export const calculateNetTotal = ({
         finalDiscount = subtotal;
     }
 
-    const netTotal = subtotal - finalDiscount + safeNum(shippingCost) + safeNum(otherFeeAmount);
+    let netTotal = subtotal - finalDiscount + safeNum(shippingCost) + safeNum(otherFeeAmount);
+    
+    // Subtract wallet used from net total (not less than 0)
+    const walletDeduction = Math.min(safeNum(walletUsed), netTotal);
+    netTotal = netTotal - walletDeduction;
     
     return {
         subtotal: Math.round(subtotal * 100) / 100,
         discountAmount: Math.round(finalDiscount * 100) / 100,
         shippingCost: Math.round(safeNum(shippingCost) * 100) / 100,
         otherFeeAmount: Math.round(safeNum(otherFeeAmount) * 100) / 100,
+        walletUsed: Math.round(walletDeduction * 100) / 100,
         netTotal: Math.max(0, Math.round(netTotal * 100) / 100)
     };
 };

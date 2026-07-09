@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from './config';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const HERO_DOC = 'hero_config'; // 🖼️ อ้างอิงเอกสารสำหรับป้ายโฆษณาหน้าแรก
 
@@ -82,7 +83,7 @@ export const heroConfigService = {
   
   getHeroConfig: async () => {
     try {
-      const docRef = doc(db, 'settings', HERO_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();
@@ -107,7 +108,7 @@ export const heroConfigService = {
 
   updateHeroConfig: async (heroConfig, changesDiff = []) => {
     try {
-      const docRef = doc(db, 'settings', HERO_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
       await setDoc(docRef, {
         ...heroConfig,
         updatedAt: serverTimestamp()

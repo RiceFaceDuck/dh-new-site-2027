@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from './config';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const SETTINGS_DOC = 'platform_links';
 const MARKETING_DOC = 'marketing'; // 🎯 อ้างอิงเอกสารสำหรับการตั้งค่าการตลาดโฆษณา
@@ -39,7 +40,7 @@ export const settingsService = {
   // ==========================================
   getPlatformRegex: async () => {
     try {
-      const docRef = doc(db, 'settings', SETTINGS_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         return { ...DEFAULT_REGEX, ...snap.data() };
@@ -53,7 +54,7 @@ export const settingsService = {
 
   updatePlatformRegex: async (regexData) => {
     try {
-      const docRef = doc(db, 'settings', SETTINGS_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC);
       await setDoc(docRef, {
         ...regexData,
         updatedAt: serverTimestamp()
@@ -75,7 +76,7 @@ export const settingsService = {
    */
   getAdRates: async () => {
     try {
-      const docRef = doc(db, 'settings', MARKETING_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), MARKETING_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         // นำข้อมูลใน DB มาเขียนทับ Default ถ้าอันไหนใน DB ไม่มีจะใช้ค่า Default ทันที
@@ -93,7 +94,7 @@ export const settingsService = {
    */
   updateAdRates: async (ratesData) => {
     try {
-      const docRef = doc(db, 'settings', MARKETING_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), MARKETING_DOC);
       
       // แปลงข้อมูลที่รับมาให้มั่นใจว่าเป็นตัวเลขเสมอ (ป้องกันความผิดพลาดตอนนำไปคำนวณ)
       const cleanData = {
@@ -121,7 +122,7 @@ export const settingsService = {
   
   getStorefrontTheme: async () => {
     try {
-      const docRef = doc(db, 'settings', THEME_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), THEME_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         return { ...DEFAULT_THEME_CONFIG, ...snap.data() };
@@ -135,7 +136,7 @@ export const settingsService = {
 
   updateStorefrontTheme: async (themeConfig) => {
     try {
-      const docRef = doc(db, 'settings', THEME_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), THEME_DOC);
       await setDoc(docRef, {
         ...themeConfig,
         updatedAt: serverTimestamp()

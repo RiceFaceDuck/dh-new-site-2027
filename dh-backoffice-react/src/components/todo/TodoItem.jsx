@@ -3,6 +3,8 @@ import { Info, AlertCircle, Calendar, Package, Truck, MessageSquare, Megaphone, 
 import StaffApprovalCard from './cards/StaffApprovalCard';
 import AdApprovalCard from './cards/AdApprovalCard';
 import GenericTodoCard from './cards/GenericTodoCard';
+import LeaveApprovalCard from './cards/LeaveApprovalCard';
+import KnowledgeCard from './cards/KnowledgeCard';
 
 export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLevel, handleAction }) {
   
@@ -74,6 +76,8 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
   const type = todo.type?.toUpperCase() || todo.taskType?.toUpperCase();
   const isAdTask = ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type);
   const isStaffApprovalTask = type === 'STAFF_APPROVAL';
+  const isLeaveApprovalTask = type === 'LEAVE_APPROVAL';
+  const isKnowledgeTask = type === 'PRODUCT_KNOWLEDGE_APPROVAL';
 
   const props = {
     todo, isProcessing, isManagerTab, urgencyLevel, handleAction, getStatusBadge, formatDate, handleRejectClick, getIconForType
@@ -85,6 +89,14 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
 
   if (isAdTask) {
     return <AdApprovalCard {...props} />;
+  }
+
+  if (isLeaveApprovalTask) {
+    return <LeaveApprovalCard {...props} />;
+  }
+
+  if (isKnowledgeTask) {
+    return <KnowledgeCard {...props} />;
   }
 
   return <GenericTodoCard {...props} />;

@@ -3,6 +3,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { userService, SUPER_ADMINS } from '../firebase/userService';
 import { gasHistoryService } from '../firebase/gasHistoryService';
+import { VALID_STAFF_ROLES } from '../firebase/userStaffService';
 
 export const AuthStateContext = createContext();
 export const AuthDispatchContext = createContext();
@@ -65,8 +66,7 @@ export const AuthProvider = ({ children }) => {
           const currentRoleStr = String(roleStr || roleData?.userType || '').toLowerCase();
           
           // Check Staff role
-          const isStaffMember = roleData?.isStaff || 
-            ['admin', 'manager', 'staff', 'packer', 'developer', 'owner', 'ผู้จัดการ', 'เจ้าของ'].includes(currentRoleStr);
+          const isStaffMember = roleData?.isStaff || VALID_STAFF_ROLES.includes(currentRoleStr);
           
           const isPending = currentRoleStr === 'pending_approval' || currentRoleStr === 'pending' || roleData?.status === 'pending';
           const isSuspended = roleData?.isActive === false || roleData?.status === 'suspended';
@@ -74,12 +74,14 @@ export const AuthProvider = ({ children }) => {
 
           // Determine Profile Setup
           if (needsSetup && !isPending && !isStaffMember && !isExecutive) {
+             setIsCheckingAuth(false);
              setIsProfileSetupRequired(true);
              setIsPendingApproval(false);
              setAccessDenied(false);
           } 
           // Determine Pending status for new registrations
           else if (isPending) {
+             setIsCheckingAuth(false);
              setIsPendingApproval(true);
              setIsProfileSetupRequired(false);
              setAccessDenied(true);
@@ -194,6 +196,15 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      if (user) {
+        gasHistoryService.log({
+          level: 'INFO',
+          module: 'AUTH',
+          action: 'LOGOUT',
+          target: { id: user.uid, name: user.email },
+          details: { method: 'User Action' }
+        });
+      }
       localStorage.removeItem('dh_last_activity');
       await signOut(auth);
     } catch (error) {

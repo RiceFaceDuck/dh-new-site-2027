@@ -1,5 +1,6 @@
-import React from 'react';
-import { ShieldAlert, Calendar, Search, X, Download, HelpCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShieldAlert, Calendar, Search, X, Download, HelpCircle, ShieldCheck } from 'lucide-react';
+import WarrantyCheckModal from '../../../components/common/WarrantyCheckModal';
 
 export default function ClaimHeader({ 
   startDate, setStartDate, 
@@ -8,6 +9,8 @@ export default function ClaimHeader({
   onExport,
   onOpenGuide
 }) {
+  const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
+
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-dh-border sticky top-0 transition-colors duration-300">
       <div className="flex items-center gap-4 relative z-10">
@@ -37,6 +40,15 @@ export default function ClaimHeader({
       </div>
       
       <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-2 w-full md:w-auto relative z-10">
+        
+        {/* Warranty Check Button */}
+        <button 
+          onClick={() => setIsWarrantyModalOpen(true)}
+          className="h-[36px] px-3 bg-cyan-600 hover:bg-cyan-500 border border-cyan-400 rounded-md flex items-center gap-2 text-xs font-bold text-white transition-colors shadow-xs active:scale-95 shrink-0"
+        >
+          <ShieldCheck className="w-4 h-4 text-white" />
+          <span className="hidden sm:inline">ตรวจสอบประกัน</span>
+        </button>
         {/* Calendar */}
         <div className="bg-white border border-slate-200 h-[36px] px-3 rounded-md flex items-center gap-2 focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500 transition-colors shrink-0 shadow-xs">
           <Calendar className="w-4 h-4 text-slate-400" />
@@ -73,6 +85,11 @@ export default function ClaimHeader({
           </button>
         )}
       </div>
+
+      <WarrantyCheckModal 
+        isOpen={isWarrantyModalOpen} 
+        onClose={() => setIsWarrantyModalOpen(false)} 
+      />
     </div>
   );
 }

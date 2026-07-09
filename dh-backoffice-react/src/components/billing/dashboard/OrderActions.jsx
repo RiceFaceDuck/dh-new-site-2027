@@ -13,7 +13,8 @@ export default function OrderActions({
     isVoiding, 
     handleDeleteOrder, 
     setShowPrintPreview, 
-    onResumeDraft 
+    onResumeDraft,
+    fraudResult
 }) {
     const orderStat = (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase();
     const paymentStat = (selectedOrder.paymentStatus || '').toLowerCase();
@@ -66,8 +67,12 @@ export default function OrderActions({
 
                 <button 
                     onClick={handlePrintClick} 
-                    disabled={isProcessing}
-                    className="flex items-center gap-1.5 text-(--dh-text-main) hover:text-blue-600 font-bold px-3 py-1.5 bg-(--dh-bg-surface) hover:bg-blue-50 border border-(--dh-border) hover:border-blue-400 rounded-xs transition-all text-xs sm:text-sm shadow-xs active:scale-95 dh-active-press group disabled:opacity-50"
+                    disabled={isProcessing || (fraudResult && fraudResult.isFraud)}
+                    className={`flex items-center gap-1.5 text-(--dh-text-main) font-bold px-3 py-1.5 bg-(--dh-bg-surface) border border-(--dh-border) rounded-xs transition-all text-xs sm:text-sm shadow-xs ${
+                        (fraudResult && fraudResult.isFraud) 
+                        ? 'opacity-50 cursor-not-allowed bg-red-50 text-red-400 border-red-200' 
+                        : 'hover:text-blue-600 hover:bg-blue-50 hover:border-blue-400 active:scale-95 dh-active-press group'
+                    }`}
                 >
                     {isProcessing ? <Loader2 size={15} className="animate-spin text-blue-500" /> : <Printer size={15} className="text-(--dh-text-muted) group-hover:text-blue-500 transition-colors"/>}
                     <span className="hidden sm:inline">{isProcessing ? 'กำลังยืนยัน...' : 'พิมพ์บิล'}</span>

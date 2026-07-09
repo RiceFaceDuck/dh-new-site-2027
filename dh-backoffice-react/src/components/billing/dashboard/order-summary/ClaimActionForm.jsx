@@ -35,7 +35,7 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleActionClick = (actionStr) => {
-        if (actionStr !== 'เคลม') return; // For now only Claim is implemented
+        if (actionStr !== 'เคลม' && actionStr !== 'คืน') return;
         setSelectedAction(actionStr);
         if (maxQty > 1) {
             setStep('qty');
@@ -70,7 +70,9 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 console.warn("Could not fetch user profile", err);
             }
 
-            const transactionId = `CLM-${Date.now().toString().slice(-6)}`;
+            const isReturn = selectedAction === 'คืน';
+            const prefix = isReturn ? 'RTN' : 'CLM';
+            const transactionId = `${prefix}-${Date.now().toString().slice(-6)}`;
             
             const claimForm = {
                 transactionId,
@@ -79,15 +81,19 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 details: "", // Omitted to keep UI minimal
                 qty: qty,
                 currentStatus: 'pending_manager',
-                actionType: 'เคลม/ซ่อม',
+                actionType: isReturn ? 'คืนเงิน/คืนสินค้า' : 'เคลม/ซ่อม',
                 inspectorName: null,
                 images: []
             };
 
-            await claimService.requestClaim(selectedOrder, item, claimForm, userUid, userName);
+            if (isReturn) {
+                await claimService.requestReturn(selectedOrder, item, claimForm, userUid, userName);
+            } else {
+                await claimService.requestClaim(selectedOrder, item, claimForm, userUid, userName);
+            }
             navigate('/claims');
         } catch (error) {
-            console.error("Error creating claim:", error);
+            console.error("Error processing request:", error);
             alert("เกิดข้อผิดพลาดในการสร้างคำร้อง: " + error.message);
             setIsSubmitting(false);
         }
@@ -105,8 +111,8 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                     <button onClick={() => handleActionClick('เคลม')} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-orange-600 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-sm transition-colors shadow-xs">
                         <Wrench size={12}/> เคลม
                     </button>
-                    <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-purple-600 bg-purple-500/10 opacity-50 cursor-not-allowed border border-purple-500/20 rounded-sm transition-colors shadow-xs">
-                        <ArrowLeftRight size={12}/> คืน
+                    <button onClick={() => handleActionClick('คืน')} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-purple-600 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-sm transition-colors shadow-xs">
+                        <ArrowLeftRight size={12}/> คืนเงิน
                     </button>
                     <button disabled className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-blue-600 bg-blue-500/10 opacity-50 cursor-not-allowed border border-blue-500/20 rounded-sm transition-colors shadow-xs">
                         <RefreshCw size={12}/> เปลี่ยน
@@ -118,7 +124,9 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 </div>
             ) : step === 'qty' ? (
                 <div className="flex items-center gap-2 w-full justify-end">
-                    <span className="text-[10px] font-bold text-orange-600 flex items-center gap-1"><Wrench size={10}/> เคลม:</span>
+                    <span className={`text-[10px] font-bold flex items-center gap-1 ${selectedAction === 'คืน' ? 'text-purple-600' : 'text-orange-600'}`}>
+                        {selectedAction === 'คืน' ? <ArrowLeftRight size={10}/> : <Wrench size={10}/>} {selectedAction}:
+                    </span>
                     <span className="text-[10px] font-bold text-(--dh-text-muted)">ระบุจำนวน (สูงสุด {maxQty})</span>
                     <input 
                         type="number" min="1" max={maxQty} value={qty} 
@@ -135,7 +143,9 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 </div>
             ) : step === 'reason' ? (
                 <div className="flex items-center gap-2 w-full justify-end">
-                    <span className="text-[10px] font-bold text-orange-600 flex items-center gap-1"><Wrench size={10}/> {qty} ชิ้น:</span>
+                    <span className={`text-[10px] font-bold flex items-center gap-1 ${selectedAction === 'คืน' ? 'text-purple-600' : 'text-orange-600'}`}>
+                        {selectedAction === 'คืน' ? <ArrowLeftRight size={10}/> : <Wrench size={10}/>} {qty} ชิ้น:
+                    </span>
                     <span className="text-[10px] font-bold text-(--dh-text-muted)">สาเหตุ/อาการ</span>
                     <select 
                         value={reasonCode}

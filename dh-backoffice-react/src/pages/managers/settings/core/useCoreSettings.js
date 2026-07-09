@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export function useCoreSettings() {
   const [settings, setSettings] = useState({
@@ -16,7 +17,7 @@ export function useCoreSettings() {
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
-        const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
+        const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC_ID);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           setSettings(prev => ({ ...prev, ...snap.data() }));
@@ -40,7 +41,7 @@ export function useCoreSettings() {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
+      const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC_ID);
       await setDoc(docRef, {
         ...settings,
         updatedAt: serverTimestamp()

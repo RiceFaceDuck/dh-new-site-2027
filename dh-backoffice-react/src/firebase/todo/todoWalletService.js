@@ -1,5 +1,5 @@
 import { db } from '../config';
-import { doc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, runTransaction, increment, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 
 const appId = typeof window !== 'undefined' && typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
 const isCanvas = typeof window !== 'undefined' && window.location.hostname.includes('canvas');
@@ -59,6 +59,12 @@ export const todoWalletService = {
               const logRef = doc(collection(db, getLogsPath()));
 
               if (action === 'APPROVE') {
+                  // ✅ [SECURITY FIX] ป้องกันยอดเงินติดลบ กรณีมีการอนุมัติซ้ำซ้อน
+                  const currentPending = Number(userSnap.data().pendingWithdrawal || 0);
+                  if (currentPending < amount) {
+                      throw new Error("ยอดเงินรอถอนของลูกค้ามีไม่เพียงพอ (อาจถูกดำเนินการไปแล้ว)");
+                  }
+
                   // ✅ กรณีอนุมัติโอนเงิน (หักเงินรอถอนออกอย่างถาวร)
                   transaction.update(userRef, {
                       pendingWithdrawal: increment(-amount),
@@ -93,6 +99,12 @@ export const todoWalletService = {
                   });
 
               } else if (action === 'REJECT') {
+                  // ✅ [SECURITY FIX] ป้องกันยอดเงินติดลบ กรณีมีการปฏิเสธซ้ำซ้อน
+                  const currentPending = Number(userSnap.data().pendingWithdrawal || 0);
+                  if (currentPending < amount) {
+                      throw new Error("ยอดเงินรอถอนของลูกค้ามีไม่เพียงพอ (อาจถูกดำเนินการไปแล้ว)");
+                  }
+
                   // ❌ กรณีปฏิเสธ (ดึงเงินรอถอน คืนกลับเข้ากระเป๋า Wallet ให้ลูกค้าอัตโนมัติ)
                   transaction.update(userRef, {
                       pendingWithdrawal: increment(-amount),
@@ -134,5 +146,46 @@ export const todoWalletService = {
           console.error("🔥 processWalletWithdrawal Error:", error);
           throw error;
       }
+  },
+
+  createMockWithdrawal: async () => {
+    try {
+        const todosPath = getTodosPath();
+        await addDoc(collection(db, todosPath), {
+            taskType: 'WALLET_WITHDRAWAL',
+            status: 'PENDING',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            userId: 'mock-user-123',
+            customer: { uid: 'mock-user-123' },
+            customerCode: 'CUS-MOCK',
+            phoneNumber: '0812345678',
+            displayName: 'ลูกค้าจำลอง (Test)',
+            withdrawalDetails: {
+                amount: 500,
+                bankName: 'LINE',
+                accountName: 'ติดต่อผ่าน LINE OA',
+                accountNumber: 'LINE_CONTACT'
+            }
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Mock error:", error);
+        throw error;
+    }
+  },
+
+  clearMockWithdrawals: async () => {
+    try {
+        const todosPath = getTodosPath();
+        const q = query(collection(db, todosPath), where('customerCode', '==', 'CUS-MOCK'));
+        const snap = await getDocs(q);
+        const deletePromises = snap.docs.map(d => deleteDoc(doc(db, todosPath, d.id)));
+        await Promise.all(deletePromises);
+        return { success: true };
+    } catch (error) {
+        console.error("Clear mock error:", error);
+        throw error;
+    }
   }
 };

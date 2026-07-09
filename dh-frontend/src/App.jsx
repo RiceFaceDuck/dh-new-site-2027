@@ -29,9 +29,9 @@ const TermsOfService = React.lazy(() => import('./pages/legal/TermsOfService'));
 const CookiePolicy = React.lazy(() => import('./pages/legal/CookiePolicy'));
 
 import CookieConsentBanner from './components/common/CookieConsentBanner';
+import LineBrowserWarning from './components/common/LineBrowserWarning';
+import TopLoadingBar from './components/common/TopLoadingBar';
 
-// 🎯 นำเข้าระบบการตลาด เพื่อใช้งาน Smart Cache ประหยัด Reads
-import { marketingService } from './firebase/marketingService';
 
 // ==========================================
 // 🌟 Smart UX Feature: Auto Scroll to Top
@@ -48,11 +48,6 @@ const ScrollToTop = () => {
   return null;
 };
 
-const GlobalLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-  </div>
-);
 
 function App() {
 
@@ -61,10 +56,11 @@ function App() {
     <FavoritesProvider>
     <CartProvider>
       <Router>
+        <LineBrowserWarning />
         {/* ฝังลูกเล่น ScrollToTop ทำงานเงียบๆ ทุกครั้งที่ Route เปลี่ยน */}
         <ScrollToTop />
         
-        <Suspense fallback={<GlobalLoader />}>
+        <Suspense fallback={<TopLoadingBar />}>
           <Routes>
             {/* Routes ที่ใช้โครงสร้างหลัก (มี Header, Footer) */}
             <Route element={<MainLayout />}>

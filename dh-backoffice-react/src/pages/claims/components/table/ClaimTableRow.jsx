@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wrench, ArrowLeftRight, Check, Copy, Eye } from 'lucide-react';
 import { getWarrantyInfo, getSLAIndicator, getStatusDisplay } from '../../utils/claimFormatters';
 import { userService } from '../../../../firebase/userService';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const customerCache = {};
 
@@ -34,7 +35,7 @@ const CustomerDisplay = ({ uid, payloadName }) => {
   
   let displayName = payloadName && !payloadName.includes('ทั่วไป') ? payloadName : 'ไม่พบข้อมูลในระบบ';
   if (customer && !customer.notFound) {
-    displayName = customer.accountName || customer.displayName || customer.firstName || customer.email || displayName;
+    displayName = getCustomerDisplayName(customer, displayName);
   }
   
   return (

@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, limit, orderBy, where, startAfter } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils.js';
 
 const COLLECTION_NAME = 'products';
 
@@ -11,7 +12,7 @@ export const inventoryService = {
   getUniqueProductCategories: async () => {
     try {
       // ดึงจาก settings ก่อนเพื่อประหยัด read (เหมือนใน backoffice)
-      const docRef = doc(db, 'settings', 'product_categories');
+      const docRef = doc(db, getCollectionPath('settings'), 'product_categories');
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();

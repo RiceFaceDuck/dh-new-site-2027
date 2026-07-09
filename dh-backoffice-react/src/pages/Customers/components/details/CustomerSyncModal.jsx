@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, RefreshCw, AlertTriangle, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import { syncCustomerAccount } from '../../../../firebase/customerAdminService';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function CustomerSyncModal({ isOpen, onClose, customer, onSyncComplete }) {
   const [targetId, setTargetId] = useState('');
@@ -37,7 +38,7 @@ export default function CustomerSyncModal({ isOpen, onClose, customer, onSyncCom
     }
   };
 
-  const displayName = customer.storeName || customer.displayName || customer.accountName || 'ไม่ระบุชื่อ';
+  const displayName = getCustomerDisplayName(customer, customer).accountName || 'ไม่ระบุชื่อ';
 
   return createPortal(
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-100 flex items-center justify-center p-4">

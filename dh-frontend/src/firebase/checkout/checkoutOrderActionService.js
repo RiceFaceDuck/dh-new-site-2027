@@ -1,12 +1,13 @@
 import { db } from '../config';
 import { doc, collection, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const confirmOrderReceipt = async (orderId, userId) => {
   if (!orderId || !userId) throw new Error("ข้อมูลไม่ครบถ้วน");
 
-  const orderRef = doc(db, "orders", orderId);
-  const userRef = doc(db, "users", userId);
-  const txRef = doc(collection(db, "credit_transactions"));
+  const orderRef = doc(db, getCollectionPath('orders'), orderId);
+  const userRef = doc(db, getCollectionPath('users'), userId);
+  const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
 
   return await runTransaction(db, async (transaction) => {
     const orderDoc = await transaction.get(orderRef);
@@ -51,8 +52,8 @@ export const confirmOrderReceipt = async (orderId, userId) => {
 export const cancelOrder = async (orderId, userId) => {
   if (!orderId || !userId) throw new Error("ข้อมูลไม่ครบถ้วน");
 
-  const orderRef = doc(db, "orders", orderId);
-  const historyRef = doc(collection(db, `users/${userId}/historyLogs`));
+  const orderRef = doc(db, getCollectionPath('orders'), orderId);
+  const historyRef = doc(collection(db, getCollectionPath('users'), userId, 'historyLogs'));
 
   return await runTransaction(db, async (transaction) => {
     const orderDoc = await transaction.get(orderRef);

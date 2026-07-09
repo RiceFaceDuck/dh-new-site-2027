@@ -1,6 +1,8 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './config';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const PRIVACY_DOC = 'privacy_cookies_config';
 const CACHE_KEY = 'dh_privacy_config_cache';
 const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 ชั่วโมง
@@ -44,7 +46,7 @@ export const privacyCookiesClientService = {
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
+        const { data, timestamp } = safeJsonParse(cached);
         const now = new Date().getTime();
         if (now - timestamp < CACHE_EXPIRY_MS) {
           return data;
@@ -56,7 +58,7 @@ export const privacyCookiesClientService = {
 
     // 2. ถ้าแคชหมดอายุหรือไม่มีแคช ให้ดึงจาก Firestore
     try {
-      const docRef = doc(db, 'settings', PRIVACY_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), PRIVACY_DOC);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {

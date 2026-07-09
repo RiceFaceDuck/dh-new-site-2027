@@ -2,9 +2,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import viteCompression from 'vite-plugin-compression'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [tailwindcss(), react()],
+  plugins: [tailwindcss(), react(), viteCompression()],
+  resolve: {
+    alias: {
+      'dh-shared': path.resolve(__dirname, '../dh-shared')
+    }
+  },
+  server: {
+    fs: {
+      allow: ['..']
+    }
+  },
   build: {
     rollupOptions: {
       output: {

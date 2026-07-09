@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import toast from 'react-hot-toast';
 import { historyService } from '../../../../firebase/historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const useRbacSettings = () => {
   const [settings, setSettings] = useState(null);
@@ -11,7 +12,7 @@ export const useRbacSettings = () => {
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
-      const docRef = doc(db, 'settings', 'rbac_permissions');
+      const docRef = doc(db, getCollectionPath('settings'), 'rbac_permissions');
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         setSettings(snap.data());
@@ -41,7 +42,7 @@ export const useRbacSettings = () => {
 
   const saveSettings = async (newSettings) => {
     try {
-      const docRef = doc(db, 'settings', 'rbac_permissions');
+      const docRef = doc(db, getCollectionPath('settings'), 'rbac_permissions');
       await setDoc(docRef, { ...newSettings, updatedAt: serverTimestamp() }, { merge: true });
       setSettings(newSettings);
       

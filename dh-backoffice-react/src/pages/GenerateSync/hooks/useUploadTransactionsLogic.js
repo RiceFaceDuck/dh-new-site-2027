@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { transactionImportService } from '../../../firebase/transactionImportService';
 
+import { safeJsonParse } from 'dh-shared';
 export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
   const [file, setFile] = useState(null);
   const [parsedData, setParsedData] = useState(null);
@@ -39,7 +40,7 @@ export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
       try {
         const savedStr = localStorage.getItem('import_schema_mapping');
         if (savedStr) {
-          const parsed = JSON.parse(savedStr);
+          const parsed = safeJsonParse(savedStr);
           if (result.headers.includes(parsed.skuKey) && result.headers.includes(parsed.qtyKey)) {
              finalMatchedKeys = parsed;
              result.items = transactionImportService.applyMapping(result.rawJson, finalMatchedKeys);

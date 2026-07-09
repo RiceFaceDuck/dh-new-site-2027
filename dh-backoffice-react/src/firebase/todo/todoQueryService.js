@@ -1,13 +1,14 @@
 import { db } from '../config';
 import { collection, query, where, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
 import { MANAGER_TASK_TYPES } from '../managerTodoService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const todoQueryService = {
   // 📥 1. ระบบ Subscribe งาน "ส่วนกลาง" (ประหยัด Reads กรองจาก Server)
   subscribePendingTodos: (callback, onError) => {
     try {
       const q = query(
-        collection(db, 'todos'),
+        collection(db, getCollectionPath('todos')),
         where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
         orderBy('createdAt', 'desc'),
         limit(300) // 🚀 [Optimization] เพิ่ม Limit เป็น 300 เพื่อป้องกันงานข้ามประเภทดันตกขอบ
@@ -41,7 +42,7 @@ export const todoQueryService = {
 
   getCompletedTodos: async (limitCount = 50, dateRange = null) => {
       let qArgs = [
-          collection(db, 'todos'),
+          collection(db, getCollectionPath('todos')),
           where('status', 'in', ['completed', 'rejected', 'cancelled'])
       ];
 

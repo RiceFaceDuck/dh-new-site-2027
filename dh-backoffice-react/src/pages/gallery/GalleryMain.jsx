@@ -6,6 +6,7 @@ import { db } from '../../firebase/config';
 import ImageCard from '../../components/gallery/ImageCard';
 import InspectionBay from '../../components/gallery/InspectionBay';
 import UploadModal from '../../components/gallery/UploadModal';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function GalleryMain() {
   const [images, setImages] = useState([]);
@@ -20,7 +21,7 @@ export default function GalleryMain() {
   const fetchImagesFromFirebase = async () => {
     setIsLoading(true);
     try {
-      const productsRef = collection(db, 'products');
+      const productsRef = collection(db, getCollectionPath('products'));
       const q = query(productsRef, where('isActive', '==', true), limit(300));
       const snapshot = await getDocs(q);
       
@@ -113,13 +114,13 @@ export default function GalleryMain() {
 
     if (newImageData.sku) {
       try {
-        const q = query(collection(db, 'products'), where('sku', '==', newImageData.sku));
+        const q = query(collection(db, getCollectionPath('products')), where('sku', '==', newImageData.sku));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
           const productDoc = querySnapshot.docs[0];
           // อัปเดตทั้งลิงก์ปกติ และ Metadata ตามหลักการ Schema
-          await updateDoc(doc(db, 'products', productDoc.id), {
+          await updateDoc(doc(db, getCollectionPath('products'), productDoc.id), {
             images: arrayUnion(newImageData.url),
             imageMetadata: arrayUnion({
               url: newImageData.url,

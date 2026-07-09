@@ -3,8 +3,10 @@ import { Receipt, Copy, Ban, Clock, MapPin, Phone, User, CalendarDays, Loader2, 
 import OrderSummary from './OrderSummary';
 import OrderActions from './OrderActions';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
-import { auth } from '../../../firebase/config';
+import { auth, db } from '../../../firebase/config';
+
 import toast from 'react-hot-toast';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function OrderDetailModal(props) {
     const { 
@@ -23,6 +25,8 @@ export default function OrderDetailModal(props) {
     const [trackingInput, setTrackingInput] = useState(selectedOrder.trackingNumber || '');
     const [courierInput, setCourierInput] = useState(selectedOrder.shippingMethod || selectedOrder.courier || '');
     const [isUpdatingShipping, setIsUpdatingShipping] = useState(false);
+    
+
 
     const handleMarkAsShipped = async () => {
         if (!trackingInput.trim() || !courierInput.trim()) {
@@ -66,7 +70,7 @@ export default function OrderDetailModal(props) {
     const isCancelled = orderStat === 'cancelled' || orderStat === 'void';
     const isPaid = paymentStat === 'paid' || orderStat === 'paid';
     
-    const customerName = selectedOrder.customer?.accountName || selectedOrder.customer?.firstName || 'ลูกค้าทั่วไป (Walk-in)';
+    const customerName = getCustomerDisplayName(selectedOrder.customer, 'ลูกค้าทั่วไป (Walk-in)');
     const customerPhone = selectedOrder.customer?.phone || selectedOrder.walkInPhone || '-';
     
     // Formatting date safely
@@ -80,6 +84,8 @@ export default function OrderDetailModal(props) {
             formattedDate = new Date(selectedOrder.createdAt).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' });
         }
     }
+
+
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-100 flex items-center justify-center p-2 sm:p-4">

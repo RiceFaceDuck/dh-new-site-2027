@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Save, ArrowLeft, CheckCircle2, RefreshCw } from 'lucide-react';
-import { db } from '../../firebase/config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { knowledgeService } from '../../firebase/knowledgeService';
 import GuideModal from '../../components/common/GuideModal';
 
 export default function GlobalKnowledgeSettings() {
@@ -16,10 +15,9 @@ export default function GlobalKnowledgeSettings() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const configRef = doc(db, 'settings', 'knowledge_config');
-        const snap = await getDoc(configRef);
-        if (snap.exists()) {
-          setConfig({ ...config, ...snap.data() });
+        const data = await knowledgeService.getKnowledgeConfig();
+        if (data) {
+          setConfig({ ...config, ...data });
         }
       } catch (err) {
         console.error("Failed to load knowledge settings", err);
@@ -39,8 +37,7 @@ export default function GlobalKnowledgeSettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const configRef = doc(db, 'settings', 'knowledge_config');
-      await setDoc(configRef, config, { merge: true });
+      await knowledgeService.updateKnowledgeConfig(config);
       setIsDirty(false);
       alert('บันทึกการตั้งค่าระบบความรู้สำเร็จ');
     } catch (err) {

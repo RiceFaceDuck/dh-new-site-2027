@@ -1,210 +1,46 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { calculateEarnedPoints, getCreditSettings } from '../firebase/creditService';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { productService } from '../firebase/productService';
-import { ShoppingBag, ChevronLeft, Loader2, AlertTriangle } from 'lucide-react';
-import { useCart } from '../context/CartProvider';
-import { useToast } from '../context/ToastContext';
+import { ShoppingBag, ChevronLeft } from 'lucide-react';
+import { useCartLogic } from '../hooks/useCartLogic';
 
 import CartEmptyState from '../components/cart/CartEmptyState';
 import CartFreebieProgress from '../components/cart/CartFreebieProgress';
 import CartItemCard from '../components/cart/CartItemCard';
 import CartSummaryPanel from '../components/cart/CartSummaryPanel';
 import CartActivePromotions from '../components/cart/CartActivePromotions';
-
-const parseSafeNumber = (val) => {
-  if (val === null || val === undefined) return 0;
-  const num = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : Number(val);
-  return isNaN(num) ? 0 : num;
-};
+import CartSkeleton from '../components/cart/CartSkeleton';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  
-  // 🔥 ดึงข้อมูลจาก CartContext (รองรับทั้ง Guest และ User)
-  const { cartItems, totals, updateQuantity, removeFromCart, checkoutState, updateCheckoutConfig, isInitialized } = useCart();
-  
-  const [creditConfig, setCreditConfig] = useState(null);
-  const [updatingId, setUpdatingId] = useState(null);
-  const [freebies, setFreebies] = useState([]);
-  const [isFetchingFreebies, setIsFetchingFreebies] = useState(true);
-  const [itemErrors, setItemErrors] = useState({});
-  const [isValidatingCart, setIsValidatingCart] = useState(false);
-  const validatedRef = useRef(false);
+  const {
+    user,
+    cartItems,
+    totals,
+    subTotal,
+    promoDiscount,
+    netTotal,
+    earnedPoints,
+    isInitialized,
+    updatingId,
+    freebies,
+    isFetchingFreebies,
+    itemErrors,
+    isValidCart,
+    isValidatingCart,
+    itemToDelete,
+    setItemToDelete,
+    productCache,
+    checkoutState,
+    updateCheckoutConfig,
+    handleUpdateQty,
+    handleRemoveItem,
+    handlePromotionsEvaluated,
+    handleProceedToCheckout
+  } = useCartLogic();
 
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    fetchFreebies();
-    const loadCreditSettings = async () => {
-      try {
-        const config = await getCreditSettings();
-        setCreditConfig(config);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    loadCreditSettings();
-
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // 🚀 Real-time Cart Validation (เช็คสต๊อกและราคาล่าสุด)
-  const [productCache, setProductCache] = useState({});
-
-  useEffect(() => {
-    if (!isInitialized || cartItems.length === 0) return;
-
-    // หาว่ามีสินค้าใหม่ที่ยังไม่เคย fetch ไหม (เพื่อประหยัด Read quota)
-    const uncachedItems = cartItems.filter(item => {
-      const id = (item.id && item.id !== '-') ? item.id : item.sku;
-      return !productCache[id];
-    });
-
-    if (uncachedItems.length > 0 && !isValidatingCart) {
-      fetchAndValidate(uncachedItems);
-    } else if (Object.keys(productCache).length > 0) {
-      runValidation(cartItems, productCache);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized, cartItems]);
-
-  const fetchAndValidate = async (uncachedItems) => {
-    setIsValidatingCart(true);
-    try {
-      const idsToFetch = uncachedItems.map(item => (item.id && item.id !== '-') ? item.id : item.sku).filter(Boolean);
-      const freshProductsList = await productService.getProductsByIds(idsToFetch);
-      
-      const newCache = { ...productCache };
-      
-      // Index by id and sku for quick lookup
-      const freshMap = {};
-      freshProductsList.forEach(p => {
-        freshMap[p.id] = p;
-        if (p.sku) freshMap[p.sku] = p;
-      });
-
-      uncachedItems.forEach(item => {
-        const id = (item.id && item.id !== '-') ? item.id : item.sku;
-        newCache[id] = freshMap[id] || { notFound: true };
-      });
-      
-      setProductCache(newCache);
-      runValidation(cartItems, newCache);
-    } catch (e) {
-      console.error("Cart validation error", e);
-    } finally {
-      setIsValidatingCart(false);
-    }
-  };
-
-  const runValidation = (items, cache) => {
-    let errors = {};
-    items.forEach(cartItem => {
-      const id = (cartItem.id && cartItem.id !== '-') ? cartItem.id : cartItem.sku;
-      const fresh = cache[id];
-      const currentQty = cartItem.qty || cartItem.quantity || 1;
-      
-      if (!fresh || fresh.notFound) {
-        errors[id] = `สินค้านี้ไม่มีในระบบแล้ว`;
-        return;
-      }
-      
-      // เช็คสต๊อกและ Buffer
-      const buffer = fresh.bufferStock || 0;
-      if ((fresh.stockQuantity - currentQty) < buffer) {
-        errors[id] = buffer > 0 ? `สินค้าหมดชั่วคราว (ติด Buffer)` : `สินค้าไม่เพียงพอ`;
-        return;
-      }
-
-      // เช็คราคาเปลี่ยน
-      if (fresh.price !== cartItem.price) {
-        errors[id] = `ราคามีการเปลี่ยนแปลงเป็น ฿${fresh.price.toLocaleString()}`;
-      }
-    });
-    setItemErrors(errors);
-  };
-
-  const fetchFreebies = async () => {
-    try {
-      setIsFetchingFreebies(true);
-      const q = query(collection(db, 'freebies'), where('isActive', '==', true));
-      const snapshot = await getDocs(q);
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      items.sort((a, b) => a.minSpend - b.minSpend);
-      setFreebies(items);
-    } catch (error) {
-      console.error("🔥 Error fetching freebies:", error);
-    } finally {
-      setIsFetchingFreebies(false);
-    }
-  };
-
-  const handleUpdateQty = useCallback(async (productId, currentQty, change) => {
-    const newQty = currentQty + change;
-    if (newQty < 0) return; 
-
-    // ถ้าจำนวนจะเป็น 0 ให้ถามยืนยันก่อนลบ (ป้องกันการกดผิดแล้วสินค้าหาย)
-    if (newQty === 0) {
-      if (window.confirm("คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?")) {
-        handleRemoveItem(productId);
-      }
-      return;
-    }
-
-    setUpdatingId(productId);
-    try {
-      // เรียกใช้ Context (Optimistic UI ภายใน)
-      await updateQuantity(productId, change);
-    } catch (error) {
-      console.error("🔥 Error updating quantity:", error);
-      showToast("เกิดข้อผิดพลาด กรุณาลองใหม่", "error");
-    } finally {
-      setUpdatingId(null);
-    }
-  }, [updateQuantity, showToast]);
-
-  const handleRemoveItem = useCallback(async (productId) => {
-    if (!productId) return;
-    setUpdatingId(productId);
-    try {
-      await removeFromCart(productId);
-      showToast("ลบสินค้าออกจากตะกร้าแล้ว", "success");
-    } catch (error) {
-      console.error("🔥 Error removing item:", error);
-      showToast("เกิดข้อผิดพลาดในการลบ: " + error.message, "error");
-    } finally {
-      setUpdatingId(null);
-    }
-  }, [removeFromCart, showToast]);
-  const handlePromotionsEvaluated = (applicablePromotions) => {
-    const current = checkoutState.appliedPromotions || [];
-    if (JSON.stringify(current) !== JSON.stringify(applicablePromotions)) {
-      updateCheckoutConfig({ appliedPromotions: applicablePromotions });
-    }
-  };
-
-  const subTotal = parseSafeNumber(totals.subtotal);
-  const promoDiscount = (checkoutState.appliedPromotions || []).reduce((sum, p) => sum + (p.discountValue || 0), 0);
-  const netTotal = Math.max(0, subTotal - promoDiscount);
-  const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig, cartItems) : 0;
-
-  // จำลอง Loading เพื่อ UX ที่สมูท
   if (!isInitialized) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
-        <p className="text-sm text-gray-500 font-medium font-tech animate-pulse">กำลังโหลดตะกร้าสินค้าของคุณ...</p>
-      </div>
-    );
+    return <CartSkeleton />;
   }
 
   if (cartItems.length === 0) {
@@ -215,94 +51,14 @@ const Cart = () => {
     );
   }
 
-  // ดัดแปลงให้เข้ากับ CartSummaryPanel เดิม
   const cartData = {
     items: cartItems,
     total: totals.subtotal,
     totalQty: totals.count
   };
 
-  const isValidCart = Object.keys(itemErrors).length === 0;
-
-  const handleProceedToCheckout = async () => {
-    setIsValidatingCart(true);
-    try {
-      // ดึงสต๊อกและราคาสดใหม่จาก Database ทันทีก่อนกดสั่งซื้อ
-      const ids = cartItems.map(i => (i.id && i.id !== '-') ? i.id : i.sku).filter(Boolean);
-      const uniqueIds = [...new Set(ids)];
-      
-      const freshProductsList = await productService.getProductsByIds(uniqueIds);
-      
-      const newCache = { ...productCache };
-      const freshMap = {};
-      freshProductsList.forEach(p => {
-        freshMap[p.id] = p;
-        if (p.sku) freshMap[p.sku] = p;
-      });
-
-      uniqueIds.forEach(id => {
-        newCache[id] = freshMap[id] || { notFound: true };
-      });
-      
-      setProductCache(newCache);
-      
-      // ประเมินผลสดทันทีเพื่อตัดสินใจ Block หรือ Pass
-      let hasError = false;
-      let errors = {};
-      cartItems.forEach(cartItem => {
-        const id = (cartItem.id && cartItem.id !== '-') ? cartItem.id : cartItem.sku;
-        const fresh = newCache[id];
-        const currentQty = cartItem.qty || cartItem.quantity || 1;
-        
-        if (!fresh || fresh.notFound) {
-          errors[id] = `สินค้านี้ไม่มีในระบบแล้ว`;
-          hasError = true;
-          return;
-        }
-        
-        const buffer = fresh.bufferStock || 0;
-        if ((fresh.stockQuantity - currentQty) < buffer) {
-          errors[id] = buffer > 0 ? `สินค้าหมดชั่วคราว (ติด Buffer)` : `สินค้าไม่เพียงพอ`;
-          hasError = true;
-          return;
-        }
-  
-        if (fresh.price !== cartItem.price) {
-          errors[id] = `ราคามีการเปลี่ยนแปลงเป็น ฿${fresh.price.toLocaleString()}`;
-          hasError = true;
-        }
-      });
-
-      setItemErrors(errors);
-      
-      if (hasError) {
-        showToast("สต๊อกหรือราคามีการเปลี่ยนแปลง กรุณาตรวจสอบตะกร้า", "error");
-        
-        // 🚀 Auto-Scroll ชี้เป้าไปยังสินค้าที่มีปัญหา (Premium UX)
-        setTimeout(() => {
-          const firstErrorEl = document.querySelector('.border-red-400');
-          if (firstErrorEl) {
-            firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 150);
-
-        return; // บล็อคไม่ให้ไปหน้า Checkout
-      }
-
-      // ถ้าปลอดภัยทั้งหมด ให้ไปต่อ
-      navigate('/checkout');
-
-    } catch (e) {
-      console.error("Checkout validation error", e);
-      showToast("เกิดข้อผิดพลาดในการตรวจสอบ กรุณาลองใหม่", "error");
-    } finally {
-      setIsValidatingCart(false);
-    }
-  };
-
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6 md:py-8 min-h-[80vh] animate-in fade-in duration-500 relative">
-      
       <div className="flex items-center justify-between mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-black text-gray-800 flex items-center gap-3 font-tech uppercase tracking-tight">
           <ShoppingBag className="text-emerald-600" size={28} strokeWidth={2.5} /> 
@@ -312,7 +68,6 @@ const Cart = () => {
           <ChevronLeft size={16} className="mr-1" /> เลือกซื้อสินค้าต่อ
         </button>
       </div>
-
 
       {!user && (
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -327,7 +82,6 @@ const Cart = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         <div className="lg:col-span-2 space-y-4">
           {cartItems.map((item, index) => {
             const id = (item.id && item.id !== '-') ? item.id : item.sku;
@@ -371,11 +125,24 @@ const Cart = () => {
             isValidCart={isValidCart}
             isValidating={isValidatingCart}
             onCheckout={handleProceedToCheckout}
-            promotionsElement={<CartActivePromotions cartItems={cartItems} subTotal={subTotal} user={user} onPromotionsEvaluated={handlePromotionsEvaluated} />}
+            promotionsElement={
+              <CartActivePromotions 
+                cartItems={cartItems} 
+                subTotal={subTotal} 
+                user={user} 
+                onPromotionsEvaluated={handlePromotionsEvaluated} 
+              />
+            }
           />
         </div>
-
       </div>
+
+      <ConfirmDeleteModal 
+        isOpen={!!itemToDelete}
+        itemName={itemToDelete?.name}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => handleRemoveItem(itemToDelete?.id)}
+      />
     </div>
   );
 };

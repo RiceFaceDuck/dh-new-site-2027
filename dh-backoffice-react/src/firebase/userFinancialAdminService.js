@@ -1,13 +1,9 @@
 import { db, auth } from './config';
 import { collection, doc, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+
 
 const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
 
@@ -33,6 +29,7 @@ export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
             'metadata.lastFinancialUpdate': serverTimestamp()
         });
 
+        // 1. Audit Log สำหรับ Admin
         const auditRef = doc(collection(db, getCollectionPath('admin_audits')));
         batch.set(auditRef, {
             action: 'FINANCIAL_ADJUSTMENT',
@@ -45,6 +42,38 @@ export const adminAdjustFinancials = async (adminId, uid, adjustments) => {
             },
             timestamp: serverTimestamp()
         });
+
+        const txBaseId = `ADJ-${Date.now()}`;
+
+        // 2. Data Flow Fix: บันทึกลงกระเป๋าเงิน (Wallet) ของลูกค้าเพื่อให้ฝั่ง Frontend มองเห็น
+        if (walletAmount !== 0) {
+            const walletTxRef = doc(collection(db, getCollectionPath('users'), uid, 'wallet_transactions'));
+            batch.set(walletTxRef, {
+                transactionId: `${txBaseId}-W`,
+                type: walletAmount > 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+                amount: Math.abs(walletAmount),
+                status: 'SUCCESS',
+                note: `[Admin] ${reason}`,
+                operatorUid: adminId || 'System',
+                timestamp: serverTimestamp()
+            });
+        }
+
+        // 3. Data Flow Fix: บันทึกลงแต้มสะสม (Credit Points) ของลูกค้าเพื่อให้ฝั่ง Frontend มองเห็น
+        if (creditAmount !== 0) {
+            const creditTxRef = doc(collection(db, getCollectionPath('credit_transactions')));
+            batch.set(creditTxRef, {
+                transactionId: `${txBaseId}-C`,
+                uid: uid,
+                type: creditAmount > 0 ? 'deposit' : 'spend',
+                amount: Math.abs(creditAmount),
+                balanceAfter: newCredit,
+                referenceId: 'Admin_Adjustment',
+                recordedBy: adminId || 'System',
+                note: `[Admin] ${reason}`,
+                timestamp: serverTimestamp()
+            });
+        }
 
         await batch.commit();
         

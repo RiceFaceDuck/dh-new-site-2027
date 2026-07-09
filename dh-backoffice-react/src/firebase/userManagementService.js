@@ -1,13 +1,10 @@
 import { db, auth } from './config';
 import { collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+
 
 const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
 
@@ -127,7 +124,10 @@ const runCascadeUserDeactivation = async (targetUid, actorUid) => {
 export const suspendUser = async (adminId, targetUid) => {
     try {
         const userRef = getUserDocRef(targetUid);
-        await updateDoc(userRef, { status: 'suspended' });
+        await updateDoc(userRef, { 
+            status: 'suspended',
+            isActive: false
+        });
         
         await historyService.addLog('UserManagement', 'SuspendUser', targetUid, `ระงับบัญชีผู้ใช้ UID: ${targetUid}`, adminId || auth.currentUser?.uid);
         
@@ -143,7 +143,13 @@ export const suspendUser = async (adminId, targetUid) => {
 export const restoreUser = async (adminId, targetUid) => {
     try {
         const userRef = getUserDocRef(targetUid);
-        await updateDoc(userRef, { status: 'active' });
+        const userSnap = await getDoc(userRef);
+        const isStaffUser = userSnap.exists() ? (userSnap.data().isStaff === true) : false;
+
+        await updateDoc(userRef, { 
+            status: 'active',
+            isActive: isStaffUser
+        });
         
         await historyService.addLog('UserManagement', 'RestoreUser', targetUid, `ยกเลิกระงับบัญชีผู้ใช้ UID: ${targetUid}`, adminId || auth.currentUser?.uid);
         return { success: true };
@@ -200,4 +206,56 @@ export const updateUserEcosystem = async (uid, ecoData) => {
     }
 };
 
+export const updateUserPreferences = async (uid, preferences) => {
+    try {
+        const userRef = getUserDocRef(uid);
+        const updateData = {};
+        for (const [key, value] of Object.entries(preferences)) {
+            updateData[`preferences.${key}`] = value;
+        }
+        await updateDoc(userRef, updateData);
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserManagementService] Update Preferences Error:", error);
+        throw error;
+    }
+};
+
 // The remaining file ends here. Extracted functions removed.
+
+export const getPartnersWithCredits = async () => {
+    try {
+        const { query, where, or, getDocs } = await import('firebase/firestore');
+        const usersRef = collection(db, getCollectionPath('users'));
+        
+        const q = query(usersRef, or(
+            where('creditPoints', '>', 0),
+            where('role', '==', 'partner')
+        ));
+        
+        const snap = await getDocs(q);
+        const data = [];
+        snap.forEach(doc => {
+            const d = doc.data();
+            const balance = Number(d.creditPoints || 0);
+            
+            if (d.role === 'partner' || balance > 0) {
+                data.push({
+                    id: doc.id,
+                    name: getCustomerDisplayName(d, d).accountName || (d.firstName ? `${d.firstName} ${d.lastName || ''}`.trim() : null) || (d.email ? d.email.split('@')[0] : null) || d.phone || d.phoneNumber || 'Unknown Account',
+                    phone: d.phone || '-',
+                    email: d.email || '-',
+                    role: d.role || 'user',
+                    balance: balance,
+                    status: d.status || 'active',
+                });
+            }
+        });
+
+        data.sort((a, b) => b.balance - a.balance);
+        return data;
+    } catch (error) {
+        console.error("🔥 [UserManagementService] getPartnersWithCredits Error:", error);
+        throw error;
+    }
+};

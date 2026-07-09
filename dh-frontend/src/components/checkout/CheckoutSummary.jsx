@@ -76,6 +76,7 @@ const CheckoutSummary = ({
   // ดึงค่าเบื้องต้น
   const subtotal = totals?.subtotal || 0;
   const shippingCost = checkoutState?.shippingCost || 0;
+  const insuranceCost = checkoutState?.insuranceCost || 0;
   
   // ดึงข้อมูลโปรโมชั่น ของแถม และส่วนลดอื่นๆ
   const appliedPromotions = checkoutState?.appliedPromotions || [];
@@ -90,8 +91,8 @@ const CheckoutSummary = ({
   const totalDiscount = totalPromoDiscount + extraDiscountAmount;
   const totalCreditDiscount = usedWallet;
 
-  // คำนวณยอดสุทธิขั้นสุดท้าย
-  const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost - totalCreditDiscount);
+  // คำนวณยอดสุทธิขั้นสุดท้าย (รวมค่าประกันขนส่ง)
+  const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost + insuranceCost - totalCreditDiscount);
 
   return (
     <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
@@ -172,6 +173,14 @@ const CheckoutSummary = ({
               ฿{shippingCost.toLocaleString()}
             </span>
           </div>
+
+          {/* 3.1 ค่าประกันจัดส่ง */}
+          {insuranceCost > 0 && (
+            <div className="flex justify-between items-center text-amber-600 font-medium animate-in fade-in duration-200">
+              <span className="flex items-center gap-1">🛡️ 3.1 ค่าประกันภัยจัดส่ง</span>
+              <span>฿{insuranceCost.toLocaleString()}</span>
+            </div>
+          )}
 
           {/* 4. vat% */}
           <div className="flex justify-between items-center">

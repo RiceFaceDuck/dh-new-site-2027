@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { storefrontSettingsService, DEFAULT_HERO_CONFIG } from '../../../firebase/storefrontSettingsService';
+import { getRenderableImageUrl } from '../../../utils/imageUtils';
 
+import { safeJsonParse } from 'dh-shared';
 const CACHE_KEY = 'dh_hero_config_cache';
 
 const HeroSection = () => {
@@ -9,7 +11,7 @@ const HeroSection = () => {
   const [config, setConfig] = useState(() => {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : DEFAULT_HERO_CONFIG;
+      return cached ? safeJsonParse(cached) : DEFAULT_HERO_CONFIG;
     } catch (e) {
       return DEFAULT_HERO_CONFIG;
     }
@@ -49,7 +51,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 z-0 flex justify-end">
         <div className="w-full md:w-[70%] h-full relative">
           <img 
-            src={activeConfig.imageUrl || DEFAULT_HERO_CONFIG.imageUrl} 
+            src={getRenderableImageUrl(activeConfig.imageUrl || DEFAULT_HERO_CONFIG.imageUrl)} 
             alt="Electronic Repairs" 
             loading="eager"
             fetchpriority="high"

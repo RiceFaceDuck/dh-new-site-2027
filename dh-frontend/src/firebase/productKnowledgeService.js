@@ -1,5 +1,6 @@
 import { db } from './config';
 import { collection, addDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const productKnowledgeService = {
   /**
@@ -8,7 +9,7 @@ export const productKnowledgeService = {
    */
   getKnowledgeCreditConfig: async () => {
     try {
-      const configRef = doc(db, 'settings', 'knowledge_config');
+      const configRef = doc(db, getCollectionPath('settings'), 'knowledge_config');
       const docSnap = await getDoc(configRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -61,7 +62,7 @@ export const productKnowledgeService = {
         }
       };
 
-      const docRef = await addDoc(collection(db, 'todos'), todoData);
+      const docRef = await addDoc(collection(db, getCollectionPath('todos')), todoData);
       return { success: true, taskId: docRef.id };
     } catch (error) {
       console.error("Error submitting knowledge task:", error);

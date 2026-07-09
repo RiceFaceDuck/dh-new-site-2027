@@ -1,12 +1,8 @@
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const getCollectionPath = (colName) => {
-    if (typeof window !== 'undefined' && window.__app_id && window.location.hostname.includes('canvas')) {
-        return `artifacts/${window.__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+
 
 /**
  * สุ่มสร้าง Account ID มาตรฐาน 8 หลัก
@@ -36,11 +32,11 @@ export const checkAccountIdExists = async (accountId, excludeUid = null) => {
     const uppercaseId = accountId.toUpperCase();
     
     // เช็คในช่อง accountId
-    const q1 = query(usersRef, where('accountId', '==', uppercaseId));
+    const q1 = query(usersRef, where('accountId', '==', uppercaseId), limit(1));
     const snap1 = await getDocs(q1);
     
     // เช็คในช่อง customerCode เผื่อระบบเก่า
-    const q2 = query(usersRef, where('customerCode', '==', uppercaseId));
+    const q2 = query(usersRef, where('customerCode', '==', uppercaseId), limit(1));
     const snap2 = await getDocs(q2);
     
     let isExist = false;

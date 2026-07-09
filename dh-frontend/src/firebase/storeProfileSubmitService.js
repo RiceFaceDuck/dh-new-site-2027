@@ -1,5 +1,6 @@
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * 📦 Store Profile Submit Service (SRP)
@@ -101,13 +102,13 @@ export const storeProfileSubmitService = {
         };
 
         batch.set(adRef, adPayload, { merge: true });
-        batch.set(doc(db, 'todos', taskId), todoPayload, { merge: true });
+        batch.set(doc(db, getCollectionPath('todos'), taskId), todoPayload, { merge: true });
 
       } else {
         // หากปิดการรับลูกค้า
         batch.delete(activePartnerRef);
         batch.set(adRef, { status: 'INACTIVE', isActive: false, updatedAt: serverTimestamp() }, { merge: true });
-        batch.delete(doc(db, 'todos', taskId));
+        batch.delete(doc(db, getCollectionPath('todos'), taskId));
       }
       
       await batch.commit();

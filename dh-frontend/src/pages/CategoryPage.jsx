@@ -6,6 +6,7 @@ import { categoryService } from '../firebase/categoryService';
 import ProductList from '../components/ProductList';
 import { memoryCache } from '../utils/memoryCache';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CategoryPage = () => {
   const { type } = useParams();
@@ -67,7 +68,7 @@ const CategoryPage = () => {
     try {
       if (!isInitial) setLoadingMore(true);
 
-      const productsRef = collection(db, "products");
+      const productsRef = collection(db, getCollectionPath('products'));
       const lowerCaseType = type.trim().toLowerCase();
       
       let q;

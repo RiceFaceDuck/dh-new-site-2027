@@ -1,4 +1,4 @@
-import { collection, query, orderBy, limit, getDocs, doc, runTransaction, serverTimestamp, increment, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, runTransaction, serverTimestamp, increment, where, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -20,6 +20,29 @@ export const creditHistoryService = {
       console.error("🔥 System Error [getPointsHistory]:", error);
       return [];
     }
+  },
+
+  subscribeToCreditTransactions: (callback, limitCount = 100) => {
+    const q = query(
+      collection(db, getCollectionPath('credit_transactions')),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    );
+    
+    return onSnapshot(q, (snap) => {
+      const data = snap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          ...d,
+          timestamp: d.timestamp?.toDate()?.toISOString() || new Date().toISOString()
+        };
+      });
+      callback(data, null);
+    }, (error) => {
+      console.error("🔥 DH-Core System Error [Fetch History]:", error);
+      callback(null, error);
+    });
   }
 };
 

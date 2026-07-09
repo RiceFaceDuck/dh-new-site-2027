@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Building2, HelpCircle, Wallet } from 'lucide-react';
 import { auth, db } from '../../firebase/config';
 import { todoService } from '../../firebase/todoService';
-import { collection, addDoc, serverTimestamp, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { driveService } from '../../firebase/driveService';
 import GuideModal from '../../components/common/GuideModal';
 
@@ -51,24 +50,7 @@ export default function RefundManagement() {
 
     const handleMockData = async () => {
         try {
-            const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'todos'), {
-                taskType: 'WALLET_WITHDRAWAL',
-                status: 'PENDING',
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                userId: 'mock-user-123',
-                customer: { uid: 'mock-user-123' },
-                customerCode: 'CUS-MOCK',
-                phoneNumber: '0812345678',
-                displayName: 'ลูกค้าจำลอง (Test)',
-                withdrawalDetails: {
-                    amount: 500,
-                    bankName: 'LINE',
-                    accountName: 'ติดต่อผ่าน LINE OA',
-                    accountNumber: 'LINE_CONTACT'
-                }
-            });
+            await todoService.createMockWithdrawal();
             showNotification('สร้างคำร้องจำลองสำเร็จ!', 'success');
         } catch (error) {
             console.error("Mock error:", error);
@@ -78,11 +60,7 @@ export default function RefundManagement() {
 
     const handleClearMock = async () => {
         try {
-            const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
-            const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'todos'), where('customerCode', '==', 'CUS-MOCK'));
-            const snap = await getDocs(q);
-            const deletePromises = snap.docs.map(d => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'todos', d.id)));
-            await Promise.all(deletePromises);
+            await todoService.clearMockWithdrawals();
             showNotification('ล้างข้อมูลจำลองเรียบร้อยแล้ว!', 'success');
         } catch (error) {
             console.error("Clear mock error:", error);

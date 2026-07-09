@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { ShieldCheck, X, Settings2, Check, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import LazyImage from './LazyImage';
 
 export default function CookieConsentBanner() {
   const { 
@@ -42,13 +43,13 @@ export default function CookieConsentBanner() {
   return (
     <>
       {/* Banner */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pointer-events-none">
+      <div className="fixed bottom-[70px] md:bottom-0 left-0 right-0 z-[105] p-4 pointer-events-none">
         <div className="max-w-6xl mx-auto bg-[#0f172a]/95 backdrop-blur-xl rounded-2xl shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.3)] border border-white/10 p-5 sm:p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between pointer-events-auto transform transition-all duration-500 translate-y-0">
           
           <div className="flex gap-4 sm:gap-6 items-start flex-1">
             {config.logoUrl && (
               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
-                <img src={config.logoUrl} alt="Logo" className="w-full h-full object-contain p-1"  loading="lazy" />
+                <LazyImage src={config.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
               </div>
             )}
             <div>

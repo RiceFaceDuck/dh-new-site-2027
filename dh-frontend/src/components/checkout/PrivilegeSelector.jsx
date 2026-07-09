@@ -3,6 +3,8 @@ import { Ticket, Coins, Wallet, CheckCircle2, XCircle, AlertCircle } from 'lucid
 import { useCart } from '../../hooks/useCart';
 import { db, auth } from '../../firebase/config';
 import { collection, onSnapshot, doc, query, where, getDocs } from 'firebase/firestore';
+import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function PrivilegeSelector({ orderMode = 'retail' }) {
   const { checkoutState, updateCheckoutConfig, totals, cartItems } = useCart();
@@ -18,7 +20,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, getCollectionPath('users'), user.uid);
       const unsubUser = onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -43,9 +45,9 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
           const cachedPromoTime = sessionStorage.getItem(promoCacheKey + '_time');
           
           if (cachedPromoData && cachedPromoTime && now - parseInt(cachedPromoTime) < 1000 * 60 * 5) {
-            setPromotions(JSON.parse(cachedPromoData));
+            setPromotions(safeJsonParse(cachedPromoData, []));
           } else {
-            const promoQ = query(collection(db, 'promotions'), where('isActive', '==', true));
+            const promoQ = query(collection(db, getCollectionPath('promotions')), where('isActive', '==', true));
             const promoSnap = await getDocs(promoQ);
             const promoItems = promoSnap.docs
               .map(d => ({ id: d.id, ...d.data() }))
@@ -62,9 +64,9 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
           const cachedFreebieTime = sessionStorage.getItem(freebieCacheKey + '_time');
 
           if (cachedFreebieData && cachedFreebieTime && now - parseInt(cachedFreebieTime) < 1000 * 60 * 5) {
-            setFreebies(JSON.parse(cachedFreebieData));
+            setFreebies(safeJsonParse(cachedFreebieData, []));
           } else {
-            const freebieQ = query(collection(db, 'freebies'), where('isActive', '==', true));
+            const freebieQ = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
             const freebieSnap = await getDocs(freebieQ);
             const freebieItems = freebieSnap.docs
               .map(d => ({ id: d.id, ...d.data() }))

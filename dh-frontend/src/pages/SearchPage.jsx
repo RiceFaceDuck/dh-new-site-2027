@@ -3,9 +3,11 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore'; 
 import { db } from '../firebase/config';
 import ProductList from '../components/ProductList';
-import { memoryCache } from '../utils/memoryCache';
+// Removed memoryCache import since we are upgrading to sessionStorage
 import { Search, Loader2, Sparkles, ChevronLeft } from 'lucide-react';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
@@ -35,21 +37,42 @@ const SearchPage = () => {
   
 
   useEffect(() => {
-    const fetchAllProducts = async () => {
+    // 🚀 [Optimization] อย่าเพิ่งดึงข้อมูลถ้ายังไม่มีคำค้นหา เพื่อประหยัด Firestore Reads Quota
+    if (!queryParam.trim()) {
+      setLoading(false);
+      setProducts([]);
+      return;
+    }
+
+    const fetchProductsForSearch = async () => {
       try {
         setLoading(true);
-        // ใช้ Memory Cache ดึงสินค้า (เพื่อทำ Client-side Filtering แบบรวดเร็วและประหยัด Reads)
-        const cacheKey = `all_products_search_v2`;
-        const fetchFn = async () => {
-          // 🚀 [Optimization] ดึงข้อมูลสินค้าที่ Active เท่านั้นเพื่อทำ Client-side Filtering
-          const productsRef = collection(db, "products");
-          const q = query(productsRef, where("isActive", "==", true));
-          const snapshot = await getDocs(q);
-          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        };
+        const cacheKey = `search_products_active_capped`;
+        const cacheTimeKey = `${cacheKey}_time`;
+        const now = new Date().getTime();
+        
+        const cachedData = sessionStorage.getItem(cacheKey);
+        const cachedTime = sessionStorage.getItem(cacheTimeKey);
 
-        const allProducts = await memoryCache.getOrFetch(cacheKey, fetchFn, 5 * 60 * 1000);
-        setProducts(allProducts);
+        if (cachedData && cachedTime && (now - parseInt(cachedTime) < 5 * 60 * 1000)) {
+          setProducts(safeJsonParse(cachedData));
+        } else {
+          // 🚀 [Optimization] ดึงข้อมูลสินค้าที่ Active จำกัดไม่เกิน 1,000 รายการป้องกัน Quota หมด
+          const { limit } = await import('firebase/firestore');
+          const productsRef = collection(db, getCollectionPath('products'));
+          const q = query(productsRef, where("isActive", "==", true), limit(1000));
+          const snapshot = await getDocs(q);
+          const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(fetchedProducts));
+            sessionStorage.setItem(cacheTimeKey, now.toString());
+          } catch (e) {
+            console.warn("SessionStorage is full, caching failed.");
+          }
+          
+          setProducts(fetchedProducts);
+        }
       } catch (err) {
         console.error("Error fetching products for search:", err);
         setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้");
@@ -58,8 +81,8 @@ const SearchPage = () => {
       }
     };
 
-    fetchAllProducts();
-  }, []);
+    fetchProductsForSearch();
+  }, [queryParam]);
 
   useEffect(() => {
     if (!loading && products.length > 0) {
@@ -133,7 +156,7 @@ const SearchPage = () => {
         )}
 
         {/* Popular Tags (พยายามติด tags เพื่อเรียกใช้งาน) */}
-        {!queryParam && !loading && (
+        {!queryParam && (
           <div className="mb-8">
             <h3 className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2">
               <Sparkles size={16} className="text-amber-400" /> แท็กยอดนิยม (ค้นหาด่วน)

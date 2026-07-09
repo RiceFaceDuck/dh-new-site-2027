@@ -27,8 +27,9 @@ const WalletHistory = ({ historyLogs, loadingHistory }) => {
         ) : (
           <div className="divide-y divide-slate-100">
             {historyLogs.map((log, index) => {
-              const isEarn = log.type === 'deposit' || log.type === 'earn' || log.type === 'WITHDRAWAL_REJECTED';
-              const isWithdraw = log.type === 'WITHDRAWAL_REQUEST' || log.type === 'WITHDRAWAL_COMPLETED' || log.type === 'spend';
+              const typeUpper = (log.type || '').toUpperCase();
+              const isEarn = typeUpper === 'DEPOSIT' || typeUpper === 'EARN' || typeUpper === 'REFUND' || typeUpper === 'WITHDRAWAL_REJECTED';
+              const isWithdraw = typeUpper === 'WITHDRAWAL_REQUEST' || typeUpper === 'WITHDRAWAL_COMPLETED' || typeUpper === 'SPEND' || typeUpper === 'WITHDRAWAL';
               const amount = Number(log.amount || log.points || 0);
               
               return (

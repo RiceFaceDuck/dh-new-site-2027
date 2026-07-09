@@ -117,21 +117,47 @@ function AppContent() {
 
   if (isPendingApproval) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg text-center space-y-6">
-           <div className="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto">
-             <Clock size={40} />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 p-4 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-amber-400/20 blur-[100px] rounded-full pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div className="max-w-md w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-8 sm:p-10 rounded-[2rem] shadow-2xl border border-white/50 dark:border-slate-700/50 text-center relative z-10 animate-in zoom-in-95 duration-500">
+           
+           <div className="relative w-24 h-24 mx-auto mb-6">
+             <div className="absolute inset-0 bg-amber-100 dark:bg-amber-500/20 rounded-full animate-ping opacity-75"></div>
+             <div className="relative w-full h-full bg-gradient-to-tr from-amber-400 to-amber-300 text-white rounded-full flex items-center justify-center shadow-lg shadow-amber-500/30">
+               <Clock size={40} className="drop-shadow-sm" strokeWidth={2.5} />
+             </div>
            </div>
-           <div>
-             <h2 className="text-2xl font-bold text-gray-900 mb-2">รอการอนุมัติ</h2>
-             <p className="text-gray-600">
-               บัญชีของคุณกำลังรอการตรวจสอบและอนุมัติจากผู้จัดการระบบ<br/>
-               กรุณารอการติดต่อกลับ หรือแจ้งผู้จัดการเพื่อขออนุมัติ
-             </p>
+
+           <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">รอการอนุมัติสิทธิ์</h2>
+           <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8">
+             บัญชีของคุณกำลังรอการตรวจสอบจากผู้จัดการระบบ<br className="hidden sm:block"/>
+             กรุณารอการติดต่อกลับเพื่อเข้าใช้งาน Backoffice
+           </p>
+
+           {/* User Profile Card */}
+           <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 flex items-center gap-4 text-left mb-8 transition-transform hover:scale-[1.02]">
+             {user?.photoURL ? (
+               <img src={user.photoURL} alt="Profile" className="w-14 h-14 rounded-full object-cover shadow-sm border-2 border-white dark:border-slate-700" />
+             ) : (
+               <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xl shadow-sm border-2 border-white dark:border-slate-700">
+                 {user?.email?.charAt(0).toUpperCase() || 'U'}
+               </div>
+             )}
+             <div className="flex-1 min-w-0">
+               <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.displayName || 'พนักงานใหม่'}</p>
+               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
+             </div>
+             <div className="px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 rounded-full text-[10px] font-bold tracking-wide uppercase border border-amber-200 dark:border-amber-500/30 shadow-xs">
+               Pending
+             </div>
            </div>
+
            <button
              onClick={logout}
-             className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+             className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
            >
              ออกจากระบบ
            </button>

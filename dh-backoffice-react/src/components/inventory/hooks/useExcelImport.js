@@ -4,7 +4,7 @@ import { inventoryService } from '../../../firebase/inventoryService';
 
 export const EXPECTED_HEADERS = [
   'SKU', 'Name', 'Category', 'Brand', 'Unit', 'Price', 'RetailPrice', 
-  'StockQuantity', 'BufferStock', 'WarehouseLocation', 'ImageUrl', 
+  'StockQuantity', 'BufferStock', 'WarehouseLocation',
   'CompatibleModels', 'CompatiblePartNumbers', 'SubstituteSkus', 
   'LandingPageUrl', 'ShortDescription', 'Description', 
   'PackageW', 'PackageL', 'PackageH', 'Tags'
@@ -23,7 +23,7 @@ export function useExcelImport(onSuccess) {
       EXPECTED_HEADERS,
       [
         'EXM-001', 'Example Screen 15.6', 'Screen', 'Generic', 'ชิ้น', 1000, 1500,
-        10, 2, 'A1', 'https://example.com/img.jpg',
+        10, 2, 'A1',
         'ModelA, ModelB', 'Part123, Part456', 'ALT-001',
         'https://store.com/exm-001', 'Short desc', 'Full long desc',
         '30', '40', '5', 'tag1, tag2'
@@ -89,7 +89,7 @@ export function useExcelImport(onSuccess) {
       stockQuantity: num(rawRow['StockQuantity']),
       bufferStock: rawRow['BufferStock'] === '' ? null : num(rawRow['BufferStock']),
       warehouseLocation: String(rawRow['WarehouseLocation'] || '').trim(),
-      images: rawRow['ImageUrl'] ? [String(rawRow['ImageUrl']).trim()] : [],
+      images: [],
       compatibleModels: arr(rawRow['CompatibleModels']),
       compatiblePartNumbers: arr(rawRow['CompatiblePartNumbers']),
       substituteSkus: arr(rawRow['SubstituteSkus']).map(s => s.toUpperCase()),

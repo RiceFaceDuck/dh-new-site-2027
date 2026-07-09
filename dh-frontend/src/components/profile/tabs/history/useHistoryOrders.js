@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const useHistoryOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -13,7 +14,7 @@ export const useHistoryOrders = () => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         const q = query(
-          collection(db, 'orders'),
+          collection(db, getCollectionPath('orders')),
           where('userId', '==', user.uid),
           orderBy('createdAt', 'desc'),
           limit(100)

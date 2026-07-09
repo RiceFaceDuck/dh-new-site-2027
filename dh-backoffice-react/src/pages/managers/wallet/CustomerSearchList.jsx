@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, Loader2, User, Megaphone } from 'lucide-react';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function CustomerSearchList({
     searchTerm, setSearchTerm, handleSearch, isSearching, hasSearched,
@@ -55,7 +56,7 @@ export default function CustomerSearchList({
                                 >
                                     <div className="flex-1 min-w-0 pr-3">
                                         <div className={`font-black text-sm truncate flex items-center gap-2 ${selectedUser?.id === user.id ? 'text-indigo-700' : 'text-slate-700'}`}>
-                                            {user.accountName || user.displayName || user.firstName || 'ไม่ระบุชื่อ'}
+                                            {getCustomerDisplayName(user, 'ไม่ระบุชื่อ')}
                                             {user.role === 'partner' && <span className="shrink-0 text-[8px] bg-amber-500 text-white px-1.5 py-0.5 rounded-sm">Partner</span>}
                                         </div>
                                         <div className="text-[10px] font-bold text-slate-400 font-mono mt-1">ID: {user.customerCode || user.id.substring(0,8)}</div>

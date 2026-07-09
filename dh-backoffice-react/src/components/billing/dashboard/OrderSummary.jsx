@@ -42,7 +42,8 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
     const walletUsed = Number(selectedOrder.walletUsed || selectedOrder.walletUsedAmount || selectedOrder.summary?.walletUsed || selectedOrder.calculationLog?.usedWallet || 0);
     const vat = Number(selectedOrder.vat || selectedOrder.vatAmount || selectedOrder.taxAmount || selectedOrder.summary?.vat || 0);
     const paymentFee = Number(selectedOrder.paymentFee || selectedOrder.chargeAmount || selectedOrder.feeAmount || selectedOrder.summary?.paymentFee || 0);
-    const otherFees = Number(selectedOrder.otherFees || selectedOrder.extraFee || selectedOrder.summary?.otherFees || 0);
+    const otherFeeAmount = Number(selectedOrder.otherFeeAmount || selectedOrder.summary?.otherFeeAmount || selectedOrder.otherFees || selectedOrder.extraFee || selectedOrder.summary?.otherFees || 0);
+    const otherFeeName = selectedOrder.otherFeeName || selectedOrder.summary?.otherFeeName || '';
 
     // Check if bill is claimable
     const pStat = (paymentStat || '').toLowerCase();
@@ -60,7 +61,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
                     name: `[แถมฟรี] ${f.productName || f.title || f.itemName}`,
                     qty: f.qty || 1,
                     price: 0,
-                    isFreebie: true,
+                    isFreebie: true, note: (f.title || '') + (f.conditionText ? ' ('+f.conditionText.trim()+')' : ''), noteColor: 'rose',
                 });
             }
         });
@@ -80,7 +81,8 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
                 discount={discount}
                 shipping={shipping}
                 paymentFee={paymentFee}
-                otherFees={otherFees}
+                otherFees={otherFeeAmount}
+                otherFeeName={otherFeeName}
                 vat={vat}
                 walletUsed={walletUsed}
                 netTotal={netTotal}

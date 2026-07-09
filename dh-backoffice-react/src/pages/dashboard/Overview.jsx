@@ -39,7 +39,11 @@ const Overview = () => {
   }
 
   return (
-    <div className="space-y-2 animate-in fade-in duration-700 pb-10">
+    <div className="relative min-h-screen bg-slate-50/50 -m-4 p-4 sm:-m-6 sm:p-6 lg:-m-8 lg:p-8 overflow-hidden font-sans">
+      {/* Subtle Premium Background Glow */}
+      <div className="absolute top-0 left-0 right-0 h-[400px] bg-linear-to-b from-indigo-50/60 via-slate-50/20 to-transparent pointer-events-none"></div>
+
+      <div className="relative z-10 space-y-6 animate-in fade-in duration-700 pb-10 max-w-[1600px] mx-auto">
       
       {/* 🌟 Header & Actions */}
       <OverviewHeader 
@@ -136,6 +140,7 @@ const Overview = () => {
         tips="ปุ่ม 'Export Report' ด้านบนใช้สำหรับปรินท์รายงานหรือเซฟเป็น PDF เพื่อนำเสนอเข้าที่ประชุมได้ทันที"
         expectedResult="คุณจะมองเห็นสุขภาพของธุรกิจได้ในพริบตาเดียว และรู้ว่าต้องเข้าไปโฟกัสแก้ปัญหาจุดไหนต่อไป"
       />
+      </div>
     </div>
   );
 };

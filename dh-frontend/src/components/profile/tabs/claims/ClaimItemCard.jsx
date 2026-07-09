@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Wrench, ArrowLeftRight, Package, CheckCircle, Clock, XCircle, Send } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const getClaimStatusDisplay = (status, type) => {
   const isCancel = type?.startsWith('CANCEL_');
@@ -33,7 +34,7 @@ const ClaimItemCard = ({ claim }) => {
     if (!trackingNo.trim()) return alert('กรุณาระบุเลขพัสดุ');
     setIsUpdatingTracking(true);
     try {
-      const docRef = doc(db, 'todos', claim.id);
+      const docRef = doc(db, getCollectionPath('todos'), claim.id);
       await updateDoc(docRef, {
         'payload.trackingNo': trackingNo.trim(),
         updatedAt: serverTimestamp()

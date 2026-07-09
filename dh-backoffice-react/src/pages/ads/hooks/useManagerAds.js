@@ -3,6 +3,7 @@ import { collection, doc, onSnapshot, serverTimestamp, writeBatch, query, orderB
 import { db } from '../../../firebase/config';
 import { auth } from '../../../firebase/config';
 import { historyService } from '../../../firebase/historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
 
@@ -56,7 +57,7 @@ export function useManagerAds() {
       batch.set(doc(db, 'artifacts', appId, 'public', 'data', ad._collection, ad.id), actionData, { merge: true });
 
       const taskId = `TODO-${ad.id}`;
-      batch.set(doc(db, 'todos', taskId), actionData, { merge: true });
+      batch.set(doc(db, getCollectionPath('todos'), taskId), actionData, { merge: true });
 
       await batch.commit();
 

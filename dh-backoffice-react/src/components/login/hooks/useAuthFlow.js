@@ -1,16 +1,13 @@
 import { useState } from 'react';
-import { signInWithPopup, signOut } from 'firebase/auth';
+import { signInWithPopup, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../../../firebase/config';
 import { userService } from '../../../firebase/userService';
 import { todoService } from '../../../firebase/todoService';
+import { gasHistoryService } from '../../../firebase/gasHistoryService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+
 
 export const useAuthFlow = () => {
     const [loading, setLoading] = useState(false);
@@ -86,6 +83,15 @@ export const useAuthFlow = () => {
             });
             setViewMode('status');
 
+            gasHistoryService.log({
+                level: 'INFO',
+                module: 'AUTH',
+                action: 'LOGIN',
+                target: { id: user.uid, name: user.email },
+                details: { method: 'Google' },
+                actorOverride: { uid: user.uid, email: user.email, name: profile?.firstName || user.displayName || 'Staff' }
+            });
+
             // 🔄 ป้องกันปัญหาเด้งหลุดทันทีหลัง Login ด้วยข้อมูลเก่า
             localStorage.setItem('dh_last_activity', Date.now().toString());
 
@@ -99,6 +105,93 @@ export const useAuthFlow = () => {
                 setError('คุณได้ยกเลิกการเข้าระบบก่อนทำรายการเสร็จ');
             } else {
                 setError('เกิดข้อผิดพลาดในการเชื่อมต่อกับ Google กรุณาลองใหม่');
+            }
+            setLoading(false);
+        }
+    };
+
+    const handleEmailLogin = async (email, password) => {
+        setError('');
+        setLoading(true);
+        setStatusText('กำลังเข้าสู่ระบบด้วยอีเมล...');
+        setAttemptedEmail(email);
+
+        try {
+            const result = await signInWithEmailAndPassword(auth, email, password);
+            const user = result.user;
+
+            setStatusText('กำลังตรวจสอบข้อมูลในระบบ...');
+            const profile = await userService.syncUserProfile(user);
+
+            if (profile?.role === 'pending_approval' || profile?.role === 'pending') {
+                await signOut(auth);
+                setStatusData({
+                    type: 'pending',
+                    title: 'ผู้มีอำนาจกำลังตัดสินใจ',
+                    message: 'บัญชีของคุณอยู่ระหว่างรอการตรวจสอบและอนุมัติจากผู้จัดการ'
+                });
+                setViewMode('status');
+                setLoading(false);
+                return;
+            }
+
+            const userEmail = (user.email || '').toLowerCase();
+            const isOwner = [
+                'dh1notebook@gmail.com', 
+                'dh2notebook@gmail.com', 
+                'zhoulinjuan1@gmail.com'
+            ].includes(userEmail);
+
+            if (isOwner) {
+                setStatusText('กำลังเปิดสิทธิ์ระดับผู้ดูแลสูงสุด (Owner)...');
+                try {
+                    await userService.updateUserRole(user.uid, 'owner');
+                    const userRef = doc(db, getCollectionPath('users'), user.uid);
+                    await updateDoc(userRef, { isStaff: true, isActive: true, role: 'owner', roles: ['Owner'] });
+                } catch (e) { console.error("Force owner role failed", e); }
+            } else if (!profile?.isStaff && !['admin', 'manager', 'staff', 'packer'].includes(profile?.role)) {
+                await signOut(auth);
+                setStatusData({
+                    type: 'unauthorized',
+                    title: 'คุณไม่มีสิทธิ์',
+                    message: 'คุณไม่ใช้เจ้าหน้าที่พนักงานของ DH Notebook'
+                });
+                setViewMode('status');
+                setLoading(false);
+                return;
+            }
+
+            setStatusData({
+                type: 'success',
+                title: 'ยืนยันตัวตนสำเร็จ',
+                message: 'กำลังพาท่านเข้าสู่พื้นที่ทำงาน...',
+                user: { name: user.displayName || 'พนักงาน', photo: user.photoURL }
+            });
+            setViewMode('status');
+
+            gasHistoryService.log({
+                level: 'INFO',
+                module: 'AUTH',
+                action: 'LOGIN',
+                target: { id: user.uid, name: user.email },
+                details: { method: 'Email' },
+                actorOverride: { uid: user.uid, email: user.email, name: profile?.firstName || 'Staff' }
+            });
+
+            localStorage.setItem('dh_last_activity', Date.now().toString());
+
+            setTimeout(() => {
+                window.location.replace('/overview'); 
+            }, 1500);
+
+        } catch (err) {
+            console.error("Login Error:", err);
+            if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+            } else if (err.code === 'auth/operation-not-allowed') {
+                setError('ระบบล็อกอินด้วยอีเมลยังไม่เปิดใช้งานใน Firebase (Operation Not Allowed)');
+            } else {
+                setError('เกิดข้อผิดพลาด กรุณาลองใหม่: ' + err.message);
             }
             setLoading(false);
         }
@@ -193,6 +286,7 @@ export const useAuthFlow = () => {
         attemptedEmail,
         statusData,
         handleGoogleLogin,
+        handleEmailLogin,
         handleStaffRegistration,
         resetFlow
     };

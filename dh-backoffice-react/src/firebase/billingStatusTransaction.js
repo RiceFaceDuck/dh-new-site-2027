@@ -6,12 +6,14 @@ import { handleSalesStatsUpdate } from './billing/statusSalesHandler';
 import { handleWalletRefundAndClawback, handlePointsEarned } from './billing/statusWalletHandler';
 import { handlePromoFreebieReversal } from './billing/statusPromoHandler';
 import { getCreditPreloadRefs } from './credit/creditActionService';
+import { withToastError } from '../utils/safeAsync';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'orders';
 
 export const billingStatusTransaction = {
   updateOrderStatus: async (orderId, newStatus, currentStatus, actorUid) => {
-    try {
+    return withToastError((async () => {
       const actualActorUid = actorUid || (typeof currentStatus === 'string' && currentStatus.length > 15 ? currentStatus : 'system');
       const normalizedNewStatus = (newStatus || '').toLowerCase();
 
@@ -44,14 +46,14 @@ export const billingStatusTransaction = {
               for (const item of (orderData.items || [])) {
                   const itemIdentifier = item.id || item.sku;
                   if (item.isFreebie || !itemIdentifier) continue;
-                  const pRef = doc(db, 'products', itemIdentifier);
+                  const pRef = doc(db, getCollectionPath('products'), itemIdentifier);
                   productRefs.push({ ref: pRef, qty: item.qty });
                   productSnaps.push(await transaction.get(pRef));
               }
 
               const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
               if (customerUid && customerUid !== 'WALK-IN') {
-                  userRef = doc(db, 'users', customerUid);
+                  userRef = doc(db, getCollectionPath('users'), customerUid);
                   userSnap = await transaction.get(userRef);
               }
           }
@@ -69,15 +71,15 @@ export const billingStatusTransaction = {
           if (isCancelling || isConfirmingPayment) {
               if (orderData.appliedPromotions && Array.isArray(orderData.appliedPromotions)) {
                   for (const promo of orderData.appliedPromotions) {
-                      if (promo.id) promoFreebieSnaps.push({ type: 'promo', ref: doc(db, 'promotions', promo.id), snap: await transaction.get(doc(db, 'promotions', promo.id)) });
+                      if (promo.id) promoFreebieSnaps.push({ type: 'promo', ref: doc(db, getCollectionPath('promotions'), promo.id), snap: await transaction.get(doc(db, getCollectionPath('promotions'), promo.id)) });
                   }
               } else if (orderData.appliedPromotion && orderData.appliedPromotion.id) {
-                  promoFreebieSnaps.push({ type: 'promo', ref: doc(db, 'promotions', orderData.appliedPromotion.id), snap: await transaction.get(doc(db, 'promotions', orderData.appliedPromotion.id)) });
+                  promoFreebieSnaps.push({ type: 'promo', ref: doc(db, getCollectionPath('promotions'), orderData.appliedPromotion.id), snap: await transaction.get(doc(db, getCollectionPath('promotions'), orderData.appliedPromotion.id)) });
               }
 
               if (orderData.appliedFreebies && Array.isArray(orderData.appliedFreebies)) {
                   for (const freebie of orderData.appliedFreebies) {
-                      if (freebie.id) promoFreebieSnaps.push({ type: 'freebie', ref: doc(db, 'freebies', freebie.id), snap: await transaction.get(doc(db, 'freebies', freebie.id)) });
+                      if (freebie.id) promoFreebieSnaps.push({ type: 'freebie', ref: doc(db, getCollectionPath('freebies'), freebie.id), snap: await transaction.get(doc(db, getCollectionPath('freebies'), freebie.id)) });
                   }
               }
           }
@@ -121,7 +123,7 @@ export const billingStatusTransaction = {
           }
 
           if (isConfirmingPayment) {
-              inventorySettingsRef = doc(db, 'settings', 'inventory');
+              inventorySettingsRef = doc(db, getCollectionPath('settings'), 'inventory');
               inventorySettingsSnap = await transaction.get(inventorySettingsRef);
           }
 
@@ -145,7 +147,7 @@ export const billingStatusTransaction = {
              transaction.set(counterRef, { [yearStr]: currentSeq, updatedAt: serverTimestamp() }, { merge: true });
              const seqStr = String(currentSeq);
              const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-             updates.orderId = `DH-${yearStr}-${shardId}-${paddedSeq}`;
+             updates.orderId = `DH-${shardId}-${yearStr.slice(2)}-${paddedSeq}`;
           }
 
           if (isConfirmingPayment) {
@@ -203,7 +205,7 @@ export const billingStatusTransaction = {
         // 🎯 Auto-Cancel related pending todos
         try {
           const { collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
-          const todosRef = collection(db, 'todos');
+          const todosRef = collection(db, getCollectionPath('todos'));
           const q = query(todosRef, where('referenceId', '==', currentOrderId || orderId), where('status', '==', 'pending_manager'));
           const querySnapshot = await getDocs(q);
           
@@ -228,14 +230,11 @@ export const billingStatusTransaction = {
       await historyService.addLog('Billing', 'Update', orderId, logMessage, actorUid);
       
       return orderId;
-    } catch (error) { 
-      console.error("🔥 Error updating order status:", error);
-      throw error; 
-    }
+    })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะบิล");
   },
 
   markOrderAsShipped: async (orderId, trackingNumber, courier, actorUid) => {
-    try {
+    return withToastError((async () => {
       const actualActorUid = actorUid || 'system';
       await runTransaction(db, async (transaction) => {
         const docRef = doc(db, COLLECTION_NAME, orderId);
@@ -254,14 +253,11 @@ export const billingStatusTransaction = {
 
       await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "จัดส่งแล้ว" (ขนส่ง: ${courier}, เลขพัสดุ: ${trackingNumber})`, actualActorUid);
       return orderId;
-    } catch (error) {
-      console.error("🔥 Error marking order as shipped:", error);
-      throw error;
-    }
+    })(), "เกิดข้อผิดพลาดในการบันทึกข้อมูลจัดส่ง");
   },
 
   markOrderAsCompleted: async (orderId, actorUid) => {
-    try {
+    return withToastError((async () => {
       const actualActorUid = actorUid || 'system';
       await runTransaction(db, async (transaction) => {
         const docRef = doc(db, COLLECTION_NAME, orderId);
@@ -278,9 +274,6 @@ export const billingStatusTransaction = {
 
       await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "ส่งมอบสินค้าสำเร็จ" (รับหน้าร้าน)`, actualActorUid);
       return orderId;
-    } catch (error) {
-      console.error("🔥 Error marking order as completed:", error);
-      throw error;
-    }
+    })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะส่งมอบ");
   }
 };

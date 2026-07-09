@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { gasStockService } from '../../../firebase/gasStockService';
 
+import { safeJsonParse } from 'dh-shared';
 const CACHE_KEY = 'inventory_full_cache';
 const CACHE_EXPIRY_KEY = 'inventory_full_cache_expiry';
 const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours in ms
@@ -11,7 +12,7 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
       const cached = sessionStorage.getItem(CACHE_KEY);
       const expiry = sessionStorage.getItem(CACHE_EXPIRY_KEY);
       if (cached && expiry && new Date().getTime() < Number(expiry)) {
-        return JSON.parse(cached);
+        return safeJsonParse(cached);
       }
     } catch (e) {
       console.warn('Failed to parse cache', e);

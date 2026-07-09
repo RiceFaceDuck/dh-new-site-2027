@@ -1,6 +1,7 @@
 import { doc, getDocs, collection, writeBatch, query, where, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const categorySyncService = {
   /**
@@ -29,7 +30,7 @@ export const categorySyncService = {
       };
 
       // 1. Update settings/product_categories
-      const settingsRef = doc(db, 'settings', 'product_categories');
+      const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
       const settingsSnap = await getDoc(settingsRef);
       if (settingsSnap.exists()) {
         const data = settingsSnap.data();
@@ -52,7 +53,7 @@ export const categorySyncService = {
       await commitBatchIfNeeded();
 
       // 3. Update products
-      const productsRef = collection(db, 'products');
+      const productsRef = collection(db, getCollectionPath('products'));
       const productsSnap = await getDocs(query(productsRef, where('category', '==', oldCategoryName)));
       
       for (const d of productsSnap.docs) {

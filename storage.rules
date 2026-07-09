@@ -19,27 +19,33 @@ service firebase.storage {
     // 1. ภาพสลิปโอนเงิน (Slips)
     match /slips/{fileName} {
       allow read: if isStaff();
-      // ลูกค้าหรือพนักงานอัปโหลดได้ แต่ห้ามอัปเดตทับไฟล์เดิมเด็ดขาด
+      // ลูกค้าหรือพนักงานอัปโหลดได้ แต่ห้ามอัปเดตทับไฟล์เดิมเด็ดขาด (จำกัดเฉพาะ WebP/JPEG/PNG ขนาดไม่เกิน 2MB)
       allow write: if isAuthenticated() && resource == null
-                   && request.resource.size < 5 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
+                   && request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(webp|jpeg|png)');
     }
 
     // 2. รูปภาพสินค้าและหน้าเว็บ (Public Assets)
     match /products/{fileName} {
       allow read: if true;
-      allow write: if isStaff(); // ให้พนักงานหรือผู้จัดการเท่านั้นที่อัปโหลดได้
+      allow write: if isStaff()
+                   && request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(webp|jpeg|png)');
     }
     
     match /assets/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff()
+                   && request.resource.size < 5 * 1024 * 1024
+                   && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
     }
     
     // 3. รูปภาพโปรไฟล์พนักงานและคู่ค้า
     match /profiles/{userId}/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId
+                   && request.resource.size < 1 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(webp|jpeg|png)');
     }
     
     // 4. ค่าเริ่มต้นบล็อกไฟล์ที่ไม่ได้ระบุไว้

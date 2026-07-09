@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Package } from 'lucide-react';
+import LazyImage from '../common/LazyImage';
+import { getRenderableImageUrl } from '../../utils/imageUtils';
 
 export default function ProductImageSection({ product, imageUrl: defaultImageUrl, name }) {
   const [activeImage, setActiveImage] = useState(null);
@@ -9,15 +11,6 @@ export default function ProductImageSection({ product, imageUrl: defaultImageUrl
     setActiveImage(null);
     setImageError(false);
   }, [product?.id]);
-
-  const getRenderableImageUrl = (url) => {
-    if (!url) return '';
-    const match = String(url).match(/[-\w]{25,}/);
-    if (String(url).includes('drive.google.com') && match) {
-      return `https://lh3.googleusercontent.com/d/${match[0]}`;
-    }
-    return url;
-  };
 
   const rawImages = product?.images || product?.imageurl || [];
   const imagesArray = Array.isArray(rawImages) ? rawImages : (rawImages ? [rawImages] : []);
@@ -37,12 +30,14 @@ export default function ProductImageSection({ product, imageUrl: defaultImageUrl
     <div className="p-6 md:p-10 bg-slate-50 flex flex-col items-center justify-start border-b md:border-b-0 md:border-r border-slate-200">
       <div className="relative w-full max-w-md aspect-square bg-white rounded-xl shadow-xs overflow-hidden group mb-4 flex items-center justify-center">
         {currentImage && !imageError ? (
-          <img 
-            src={getRenderableImageUrl(currentImage)} 
+          <LazyImage 
+            src={currentImage} 
             alt={name} 
             onError={() => setImageError(true)}
+            fallbackSrc={null}
             className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700 ease-in-out"
-           loading="lazy" />
+            placeholderClassName="bg-slate-50 animate-pulse"
+           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50/50">
             <Package size={64} strokeWidth={1} className="mb-2 opacity-50" />

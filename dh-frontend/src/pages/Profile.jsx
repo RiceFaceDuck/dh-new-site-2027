@@ -15,6 +15,7 @@ import TabClaims from '../components/profile/tabs/TabClaims';
 import TabPrivacy from '../components/profile/tabs/TabPrivacy';
 import AuthForm from '../components/profile/AuthForm';
 import { Loader2 } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -33,7 +34,7 @@ const Profile = () => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
-          const userRef = doc(db, 'users', currentUser.uid);
+          const userRef = doc(db, getCollectionPath('users'), currentUser.uid);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             setUser({ ...currentUser, ...userSnap.data() });

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { collection, query, getDocs, where, or } from 'firebase/firestore';
-import { db } from '../../../../../firebase/config';
 import { Search, Loader2, Copy, Check, Users, ShieldAlert, BadgeInfo, RefreshCw } from 'lucide-react';
+import { getPartnersWithCredits } from '../../../../../firebase/userManagementService';
 
 // 🛡️ App ID สำหรับกำหนด Scope การเข้าถึง Database
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -18,41 +17,7 @@ export default function PartnerCreditsTab() {
   const fetchPartners = useCallback(async () => {
     setIsLoading(true);
     try {
-      const usersColPath = typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof __app_id !== 'undefined'
-        ? `artifacts/${__app_id}/public/data/users`
-        : 'users';
-      const usersRef = collection(db, usersColPath);
-      
-      // ใช้ or query ของ Firestore v10+ เพื่อลด Quota การดึง Users ทั้งระบบ
-      const q = query(usersRef, or(
-        where('creditPoints', '>', 0),
-        where('role', '==', 'partner')
-      ));
-      
-      const snap = await getDocs(q);
-      const data = [];
-      snap.forEach(doc => {
-        const d = doc.data();
-        // รวบรวมฟิลด์เครดิตทุกรูปแบบ (ป้องกันข้อมูลตกหล่นจากระบบเก่า)
-        const balance = Number(d.creditPoints || 0);
-        
-        // Double Check กรองอีกชั้น
-        if (d.role === 'partner' || balance > 0) {
-          data.push({
-            id: doc.id,
-            name: d.storeName || d.displayName || d.accountName || (d.firstName ? `${d.firstName} ${d.lastName || ''}`.trim() : null) || (d.email ? d.email.split('@')[0] : null) || d.phone || d.phoneNumber || 'Unknown Account',
-            phone: d.phone || '-',
-            email: d.email || '-',
-            role: d.role || 'user',
-            balance: balance,
-            status: d.status || 'active',
-          });
-        }
-      });
-
-      // เรียงลำดับยอดเงินจากมากไปน้อย (Top Holders)
-      data.sort((a, b) => b.balance - a.balance);
-      
+      const data = await getPartnersWithCredits();
       setPartners(data);
     } catch (error) {
       console.error("🔥 DH-Core System Error [Fetch Partners]:", error);

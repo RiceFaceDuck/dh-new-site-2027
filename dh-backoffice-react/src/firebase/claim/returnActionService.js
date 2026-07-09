@@ -3,6 +3,7 @@ import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { transactionService } from '../transactionService';
 import { gasStockService } from '../gasStockService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -53,7 +54,7 @@ export const returnActionService = {
 
     await runTransaction(db, async (transaction) => {
       // 2. เพิ่มสต๊อกกลับเข้าคลัง
-      const pRef = doc(db, 'products', payload.sku);
+      const pRef = doc(db, getCollectionPath('products'), payload.sku);
       const pSnap = await transaction.get(pRef);
       if (!pSnap.exists()) {
         throw new Error(`ไม่พบสินค้า SKU: ${payload.sku} ในระบบ`);
@@ -73,7 +74,7 @@ export const returnActionService = {
 
       // 4. บันทึกประวัติบิล
       if (payload.orderDocId) {
-        const orderRef = doc(db, 'orders', payload.orderDocId);
+        const orderRef = doc(db, getCollectionPath('orders'), payload.orderDocId);
         transaction.update(orderRef, {
           refundsAndClaims: arrayUnion({
             type: 'Return',
@@ -87,14 +88,25 @@ export const returnActionService = {
       }
     });
 
-    // 5. บันทึกกระเป๋าเงินนอก Transaction หลักของสต๊อก
-    if (payload.customerUid && payload.customerUid !== 'Walk-in') {
-      await transactionService.recordTransaction({
-        uid: payload.customerUid,
-        type: 'refund',
+    // 5. บันทึกกระเป๋าเงิน (Wallet) นอก Transaction หลักของสต๊อก
+    if (payload.customerUid && payload.customerUid !== 'Walk-in' && refundAmount > 0) {
+      const { doc, updateDoc, collection, setDoc, serverTimestamp, increment } = await import('firebase/firestore');
+      
+      const userRef = doc(db, getCollectionPath('users'), payload.customerUid);
+      await updateDoc(userRef, {
+        walletBalance: increment(refundAmount),
+        updatedAt: serverTimestamp()
+      });
+
+      const walletTxRef = doc(collection(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions'));
+      await setDoc(walletTxRef, {
+        transactionId: `TXW_REF_${payload.returnId}`,
+        type: 'REFUND',
         amount: refundAmount,
-        referenceId: payload.returnId,
-        recordedBy: adminUid
+        status: 'SUCCESS',
+        note: `คืนเงินเข้ากระเป๋า (รับคืนสินค้า ${payload.sku})`,
+        operatorUid: adminUid || 'System',
+        timestamp: serverTimestamp()
       });
     }
 

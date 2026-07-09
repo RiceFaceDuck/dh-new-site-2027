@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { History, Maximize2, Clock, User, ChevronRight, CheckCircle2, AlertCircle, Edit3, Trash2, PlusCircle, MessageSquare, Send, Pin, PinOff } from 'lucide-react';
 
+import { safeJsonParse } from 'dh-shared';
 const getActionColor = (action) => {
   const act = action?.toLowerCase() || '';
   if (act.includes('note') || act.includes('comment')) return 'text-amber-600';
@@ -22,7 +23,7 @@ const LogItem = ({ log, dateStr, timeStr, actionMethod, actor, isPinned, onToggl
   let rawDetails = log.details;
   if (typeof rawDetails === 'string') {
     try {
-      const parsed = JSON.parse(rawDetails);
+      const parsed = safeJsonParse(rawDetails);
       if (typeof parsed === 'object' && parsed !== null) {
         rawDetails = parsed;
       }

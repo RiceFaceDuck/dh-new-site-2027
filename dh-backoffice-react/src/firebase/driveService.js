@@ -1,5 +1,6 @@
 // ตัวกลางเชื่อมต่อระบบจัดการสินทรัพย์ดิจิทัล (Digital Asset Pipeline)
 // สื่อสารกับ Google Apps Script เพื่อนำไฟล์เข้า Google Drive ของบริษัท
+import imageCompression from 'browser-image-compression';
 
 // 📦 URL สำหรับอัปโหลดภาพสินค้า (ดั้งเดิม)
 const DRIVE_BRIDGE_URL = "https://script.google.com/macros/s/AKfycbzD3KW7juo-XNtw_kmPTPi2Pp4OtNVCAIQMGHdBVeUL1QPBQXgUhv3E_wRISEkOzML7/exec";
@@ -13,12 +14,22 @@ export const driveService = {
    * @param {File} file - ไฟล์ภาพ
    */
   uploadImage: async (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      
-      reader.onload = async () => {
-        const base64Data = reader.result.split(',')[1];
+    return new Promise(async (resolve, reject) => {
+      try {
+        const options = {
+          maxSizeMB: 0.8,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true,
+          initialQuality: 0.8,
+          fileType: 'image/webp'
+        };
+        const compressedFile = await imageCompression(file, options);
+        
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        
+        reader.onload = async () => {
+          const base64Data = reader.result.split(',')[1];
         
         try {
           const response = await fetch(DRIVE_BRIDGE_URL, {
@@ -50,7 +61,11 @@ export const driveService = {
         }
       };
       
-      reader.onerror = error => reject(error);
+        reader.onerror = error => reject(error);
+      } catch (error) {
+        console.error("Compression Error:", error);
+        reject(error);
+      }
     });
   },
 
@@ -59,12 +74,22 @@ export const driveService = {
    * @param {File} file - ไฟล์ภาพสลิป
    */
   uploadSlip: async (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      
-      reader.onload = async () => {
-        const base64Data = reader.result.split(',')[1];
+    return new Promise(async (resolve, reject) => {
+      try {
+        const options = {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 1000,
+          useWebWorker: true,
+          initialQuality: 0.7,
+          fileType: 'image/webp'
+        };
+        const compressedFile = await imageCompression(file, options);
+
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        
+        reader.onload = async () => {
+          const base64Data = reader.result.split(',')[1];
         
         try {
           console.log(`🚀 DH-Drive: กำลังส่งสลิปไปที่ ${DRIVE_SLIP_URL.substring(0, 40)}...`);
@@ -101,8 +126,11 @@ export const driveService = {
           reject(error);
         }
       };
-      
-      reader.onerror = error => reject(error);
+        reader.onerror = error => reject(error);
+      } catch (error) {
+        console.error("Compression Error:", error);
+        reject(error);
+      }
     });
   }
 };

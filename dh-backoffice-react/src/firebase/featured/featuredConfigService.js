@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, collection, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CONFIG_DOC_ID = 'featured_config';
 const COLLECTION_NAME = 'settings';
@@ -50,7 +51,7 @@ export const featuredConfigService = {
       // Note: In a production app with thousands of products, 
       // this should be done via Cloud Functions or batched over time to avoid memory/read limits.
       // But for a utility manager function triggered rarely, we can do batch writes.
-      const productsRef = collection(db, 'products');
+      const productsRef = collection(db, getCollectionPath('products'));
       const snapshot = await getDocs(productsRef);
       
       const batches = [];
@@ -58,7 +59,7 @@ export const featuredConfigService = {
       let operationCount = 0;
 
       snapshot.docs.forEach(document => {
-        const docRef = doc(db, 'products', document.id);
+        const docRef = doc(db, getCollectionPath('products'), document.id);
         currentBatch.update(docRef, { randomSeed: Math.random() });
         operationCount++;
 

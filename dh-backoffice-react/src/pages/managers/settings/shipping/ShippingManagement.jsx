@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Truck, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Truck, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useShippingManagement } from './hooks/useShippingManagement';
 import ShippingRuleForm from './components/ShippingRuleForm';
 import ShippingRuleList from './components/ShippingRuleList';
 import GuideModal from '../../../../components/common/GuideModal';
 
 export default function ShippingManagement() {
+  const navigate = useNavigate();
   const {
     rules,
     loading,
@@ -14,7 +16,10 @@ export default function ShippingManagement() {
     isProcessing,
     handleSaveRule,
     toggleActive,
-    deleteRule
+    deleteRule,
+    handleAddCondition,
+    handleRemoveCondition,
+    handleConditionChange
   } = useShippingManagement();
 
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -34,12 +39,20 @@ export default function ShippingManagement() {
           </p>
         </div>
         
-        <button 
-            onClick={() => setIsGuideOpen(true)} 
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-200 shadow-xs dh-active-press shrink-0"
-        >
-            <AlertCircle size={16} /> คู่มือการใช้งาน
-        </button>
+        <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
+          <button 
+              onClick={() => navigate('/managers')} 
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 shadow-xs dh-active-press shrink-0"
+          >
+              <ArrowLeft size={16} /> กลับไปแผงควบคุม
+          </button>
+          <button 
+              onClick={() => setIsGuideOpen(true)} 
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-200 shadow-xs dh-active-press shrink-0"
+          >
+              <AlertCircle size={16} /> คู่มือการใช้งาน
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -50,6 +63,9 @@ export default function ShippingManagement() {
             setForm={setForm} 
             handleSaveRule={handleSaveRule} 
             isProcessing={isProcessing} 
+            handleAddCondition={handleAddCondition}
+            handleRemoveCondition={handleRemoveCondition}
+            handleConditionChange={handleConditionChange}
           />
         </div>
 

@@ -5,12 +5,9 @@ import { generateAccountId } from './customer/accountIdService';
 import { gasHistoryService } from './gasHistoryService';
 import { computeCustomerChanges } from '../utils/customerDiffUtils';
 import { cascadeDisableCustomer, cleanupOrphanedTodos, cascadeDeleteCustomer } from './customer/customerCascadeService';
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+
 
 const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
 
@@ -37,7 +34,7 @@ export const createManualCustomer = async (data) => {
         });
         
         // 3. บันทึก History Log ตามกฎของระบบ Backoffice
-        const customerName = data.accountName || data.displayName || 'Unknown';
+        const customerName = getCustomerDisplayName(data, 'Unknown');
         await historyService.addLog('Customer', 'Create', docRef.id, `เพิ่มรายชื่อลูกค้าใหม่: ${customerName} (Account ID: ${accountId})`, auth.currentUser?.uid);
 
         console.log(`✅ [CustomerAdminService] Created manual customer with ID: ${docRef.id} and Account ID: ${accountId}`);
@@ -68,7 +65,7 @@ export const updateCustomerProfile = async (uid, data) => {
             updatedAt: serverTimestamp()
         });
         
-        const customerName = data.accountName || data.displayName || oldData.accountName || oldData.displayName || uid;
+        const customerName = getCustomerDisplayName(data, getCustomerDisplayName(oldData, uid));
         
         // 4. บันทึก History แบบละเอียด (ถ้ามีการเปลี่ยนแปลง)
         if (Object.keys(changes).length > 0) {
@@ -198,7 +195,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         batch.update(targetDoc.ref, updatePayload);
 
         // --- B. ย้ายรายการ Orders ---
-        const ordersRef = collection(db, 'orders');
+        const ordersRef = collection(db, getCollectionPath('orders'));
         const ordersQ = query(ordersRef, where('customer.uid', '==', manualUid));
         const ordersSnap = await getDocs(ordersQ);
         ordersSnap.forEach((docSnap) => {
@@ -210,7 +207,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         });
 
         // --- C. ย้ายรายการ Todos ---
-        const todosRef = collection(db, 'todos');
+        const todosRef = collection(db, getCollectionPath('todos'));
         const todosQ1 = query(todosRef, where('customerUid', '==', manualUid));
         const todosSnap1 = await getDocs(todosQ1);
         todosSnap1.forEach((docSnap) => {
@@ -233,7 +230,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         });
 
         // --- E. ย้ายรายการ Partners ---
-        const partnersRef = collection(db, 'partners');
+        const partnersRef = collection(db, getCollectionPath('partners'));
         const partnersQ = query(partnersRef, where('ownerId', '==', manualUid));
         const partnersSnap = await getDocs(partnersQ);
         partnersSnap.forEach((docSnap) => {
@@ -241,7 +238,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         });
         
         // --- F. ย้ายรายการ Credit Transactions ---
-        const creditsRef = collection(db, 'credit_transactions');
+        const creditsRef = collection(db, getCollectionPath('credit_transactions'));
         const creditsQ = query(creditsRef, where('uid', '==', manualUid));
         const creditsSnap = await getDocs(creditsQ);
         creditsSnap.forEach((docSnap) => {
@@ -270,8 +267,8 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         await batch.commit();
 
         // 4. บันทึก Audit Log อย่างละเอียด
-        const sourceName = manualData.accountName || manualData.displayName || manualUid;
-        const targetName = targetData.accountName || targetData.displayName || targetUid;
+        const sourceName = getCustomerDisplayName(manualData, manualUid);
+        const targetName = getCustomerDisplayName(targetData, targetUid);
         
         gasHistoryService.log({
             level: 'WARNING',

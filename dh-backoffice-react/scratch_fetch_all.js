@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSl7KV5HheJ4MSKR7udZkrMKQdSUBLJng",
@@ -15,7 +16,7 @@ const db = getFirestore(app);
 
 async function check() {
   const q = query(
-      collection(db, 'todos'),
+      collection(db, getCollectionPath('todos')),
       orderBy('createdAt', 'desc'),
       limit(20)
   );

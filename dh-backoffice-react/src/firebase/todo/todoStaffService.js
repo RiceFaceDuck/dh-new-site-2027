@@ -1,5 +1,6 @@
 import { db } from '../config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const todoStaffService = {
   // ============================================================================
@@ -30,7 +31,7 @@ export const todoStaffService = {
               updatedAt: serverTimestamp()
           };
 
-          const docRef = await addDoc(collection(db, 'todos'), todoPayload);
+          const docRef = await addDoc(collection(db, getCollectionPath('todos')), todoPayload);
           console.log(`✅ [TodoService] Staff Approval Task Created ID: ${docRef.id}`);
           return { success: true, taskId: docRef.id };
       } catch (error) {

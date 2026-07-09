@@ -1,5 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './config.js';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const SETTINGS_DOC = 'warranty';
 
@@ -21,7 +22,7 @@ export const warrantyClientService = {
     if (cachedWarrantyConfig) return cachedWarrantyConfig;
 
     try {
-      const docRef = doc(db, 'settings', SETTINGS_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();

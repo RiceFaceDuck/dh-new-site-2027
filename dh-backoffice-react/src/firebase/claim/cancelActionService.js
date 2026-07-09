@@ -3,6 +3,7 @@ import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { transactionService } from '../transactionService';
 import { gasStockService } from '../gasStockService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -20,7 +21,7 @@ export const cancelActionService = {
     let productData = null;
 
     await runTransaction(db, async (transaction) => {
-      const pRef = doc(db, 'products', payload.sku);
+      const pRef = doc(db, getCollectionPath('products'), payload.sku);
       
       // 1. จัดการสต๊อกของเสีย (Defect Stock)
       if (!isCancelReturn && hasArrived) {
@@ -54,7 +55,7 @@ export const cancelActionService = {
 
          // เอาออกจากประวัติ order
          if (payload.orderDocId) {
-             const orderRef = doc(db, 'orders', payload.orderDocId);
+             const orderRef = doc(db, getCollectionPath('orders'), payload.orderDocId);
              const orderSnap = await transaction.get(orderRef);
              if (orderSnap.exists()) {
                  const orderData = orderSnap.data();
@@ -74,7 +75,7 @@ export const cancelActionService = {
       });
     });
 
-    // 4. ดึงเงินคืนลูกค้ากลับ (นอก transaction เนื่องจากเรียก recordTransaction ซึ่งมี transaction ในตัว)
+    // 4. ดึงเงินคืนลูกค้ากลับ (กระเป๋าเงิน Wallet Cash)
     if (isCompleted && isCancelReturn) {
         let refundAmount = (payload.purchasePrice || 0) * qty;
         const penalty = Number(payload.freebiePenaltyAmount) || 0;
@@ -82,14 +83,24 @@ export const cancelActionService = {
           refundAmount = Math.max(0, refundAmount - penalty);
         }
 
-        if (payload.customerUid && payload.customerUid !== 'Walk-in') {
-          await transactionService.recordTransaction({
-            uid: payload.customerUid,
-            type: 'spend',
+        if (payload.customerUid && payload.customerUid !== 'Walk-in' && refundAmount > 0) {
+          const { doc, updateDoc, collection, setDoc, serverTimestamp, increment } = await import('firebase/firestore');
+          
+          const userRef = doc(db, getCollectionPath('users'), payload.customerUid);
+          await updateDoc(userRef, {
+            walletBalance: increment(-refundAmount),
+            updatedAt: serverTimestamp()
+          });
+
+          const walletTxRef = doc(collection(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions'));
+          await setDoc(walletTxRef, {
+            transactionId: `TXW_CB_${payload.returnId || Date.now()}`,
+            type: 'SPEND',
             amount: refundAmount,
-            referenceId: payload.returnId,
-            recordedBy: adminUid,
-            note: `ดึงยอดเงินคืนเนื่องจากผู้จัดการยกเลิกการคืนสินค้า${penalty > 0 ? ' (หักลบค่าปรับของแถม)' : ''}`
+            status: 'SUCCESS',
+            note: `ดึงยอดเงินคืนเนื่องจากผู้จัดการยกเลิกการคืนสินค้า${penalty > 0 ? ' (หักลบค่าปรับของแถม)' : ''}`,
+            operatorUid: adminUid || 'System',
+            timestamp: serverTimestamp()
           });
         }
     }

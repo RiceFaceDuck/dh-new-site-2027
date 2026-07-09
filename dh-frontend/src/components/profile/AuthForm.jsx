@@ -3,6 +3,16 @@ import { Mail, Lock, User, AlertCircle, ShieldCheck, ArrowRight, Loader2, Eye, E
 import { loginWithGoogle, loginWithEmail, registerWithEmail } from '../../firebase/authService';
 import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { parseConsentText } from '../../utils/textParser';
+import { Copy, CheckCircle2 } from 'lucide-react';
+
+const isInAppBrowser = () => {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    return (ua.indexOf("FBAV") > -1) || 
+           (ua.indexOf("FBAN") > -1) || 
+           (ua.indexOf("Line") > -1) || 
+           (ua.indexOf("Instagram") > -1) ||
+           (ua.indexOf("MicroMessenger") > -1);
+};
 
 // Google Icon SVG (Official Colors)
 const GoogleIcon = () => (
@@ -36,6 +46,21 @@ export default function AuthForm() {
     setFormData({ email: '', password: '', name: '' });
     setShowPassword(false);
   }, [isLogin]);
+
+  const [inAppBrowser, setInAppBrowser] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+      if (isInAppBrowser()) {
+          setInAppBrowser(true);
+      }
+  }, []);
+
+  const handleCopyUrl = () => {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -97,6 +122,30 @@ export default function AuthForm() {
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300">
       
+      {inAppBrowser && (
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center rounded-2xl">
+              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <h1 className="text-2xl font-bold mb-4 text-gray-800">ไม่สามารถล็อกอินในแอพนี้ได้</h1>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                  Google ไม่อนุญาตให้ล็อกอินผ่านหน้าต่างซ้อนของแอพ (เช่น LINE, Facebook) ด้วยเหตุผลด้านความปลอดภัย
+              </p>
+              <div className="bg-blue-50 p-4 rounded-xl mb-6 text-sm text-blue-700 w-full text-left">
+                  <strong>วิธีแก้ไข:</strong><br />
+                  กดปุ่ม <span className="inline-block px-2 py-0.5 bg-white rounded border border-blue-200 mx-1 shadow-xs">⋮</span> หรือ <span className="inline-block px-2 py-0.5 bg-white rounded border border-blue-200 mx-1 shadow-xs">⠇</span> ที่มุมขวาบน แล้วเลือก <strong>"เปิดในเบราว์เซอร์"</strong> (Open in Browser)
+              </div>
+              
+              <button 
+                  onClick={handleCopyUrl}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
+              >
+                  {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+                  {copied ? 'คัดลอกลิงก์แล้ว! ไปวางใน Safari/Chrome' : 'คัดลอกลิงก์ไปเปิดในเบราว์เซอร์ปกติ'}
+              </button>
+          </div>
+      )}
+
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-60 -mr-10 -mt-10 pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl opacity-60 -ml-10 -mb-10 pointer-events-none"></div>

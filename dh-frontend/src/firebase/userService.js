@@ -1,5 +1,6 @@
 import { db } from './config';
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // ==========================================
 // 🧠 Smart Memory Cache (ประหยัดค่าใช้จ่าย Firebase Reads)
@@ -44,7 +45,7 @@ export const userService = {
 
     try {
       console.log('☁️ [userService] Fetching profile from Firestore for:', uid);
-      const userRef = doc(db, 'users', uid);
+      const userRef = doc(db, getCollectionPath('users'), uid);
       const docSnap = await getDoc(userRef);
       
       if (docSnap.exists()) {
@@ -68,7 +69,7 @@ export const userService = {
     if (!uid) throw new Error('User ID is required');
     
     try {
-      const userRef = doc(db, 'users', uid);
+      const userRef = doc(db, getCollectionPath('users'), uid);
       
       // ดึงข้อมูลเดิมมาเทียบ (ประหยัด Write ถ้าไม่มีอะไรเปลี่ยน)
       const currentProfile = userProfileCache[uid] || (await getDoc(userRef)).data() || {};
@@ -116,7 +117,7 @@ export const userService = {
   updateEcosystem: async (uid, ecosystemData) => {
     if (!uid) throw new Error('User ID is required');
     try {
-      const userRef = doc(db, 'users', uid);
+      const userRef = doc(db, getCollectionPath('users'), uid);
       await setDoc(userRef, { ecosystem: ecosystemData, updatedAt: serverTimestamp() }, { merge: true });
       
       if (userProfileCache[uid]) {
@@ -138,7 +139,7 @@ export const userService = {
   subscribeToProfile: (uid, callback) => {
     if (!uid) return () => {};
     
-    const userRef = doc(db, 'users', uid);
+    const userRef = doc(db, getCollectionPath('users'), uid);
     const unsubscribe = onSnapshot(userRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
@@ -173,7 +174,7 @@ export const userService = {
     try {
       console.log('☁️ [userService] Fetching Private Tax Info from Firestore for:', uid);
       // 🔥 ดึงจาก Sub-collection ลับที่จำกัดสิทธิ์ด้วย Security Rules
-      const taxRef = doc(db, 'users', uid, 'private', 'taxInfo');
+      const taxRef = doc(db, getCollectionPath('users'), uid, 'private', 'taxInfo');
       const docSnap = await getDoc(taxRef);
       
       if (docSnap.exists()) {
@@ -198,7 +199,7 @@ export const userService = {
     
     try {
       // 🔥 บันทึกลง Sub-collection ลับ
-      const taxRef = doc(db, 'users', uid, 'private', 'taxInfo');
+      const taxRef = doc(db, getCollectionPath('users'), uid, 'private', 'taxInfo');
       const payload = {
         ...taxData,
         updatedAt: serverTimestamp() // ฝังเวลาเสมอ
@@ -233,7 +234,7 @@ export const userService = {
       const uid = user.uid;
       
       // 1. ลบเอกสารจาก Firestore (Hard Delete)
-      const userRef = doc(db, 'users', uid);
+      const userRef = doc(db, getCollectionPath('users'), uid);
       await setDoc(doc(db, 'users_deleted_log', uid), {
          deletedAt: serverTimestamp(),
          reason: "User requested deletion (PDPA)",

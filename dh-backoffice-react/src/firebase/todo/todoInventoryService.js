@@ -1,11 +1,12 @@
 import { db } from '../config';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const todoInventoryService = {
   // 🗑️ ส่งคำร้องขออนุมัติลบสินค้าไปยังผู้จัดการ
   requestProductDeletion: async (productData, requestedBy) => {
     try {
-      const taskRef = await addDoc(collection(db, 'todos'), {
+      const taskRef = await addDoc(collection(db, getCollectionPath('todos')), {
         type: 'PRODUCT_DELETE_APPROVAL',
         taskType: 'PRODUCT_DELETE_APPROVAL',
         title: `ขออนุมัติลบสินค้า: ${productData.sku}`,

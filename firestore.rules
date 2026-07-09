@@ -14,7 +14,14 @@ service cloud.firestore {
         request.auth.token.role == 'admin' ||
         request.auth.token.role == 'owner' ||
         request.auth.token.isStaff == true ||
-        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' // TODO: REMOVE LATER - Temporary bypass for development testing
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' ||
+        // 🚀 THE FIX: Check if document exists before getting to prevent Error short-circuiting
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin', 'owner'] ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true
+          )
+        )
       );
     }
 
@@ -23,7 +30,11 @@ service cloud.firestore {
         request.auth.token.role == 'manager' ||
         request.auth.token.role == 'admin' ||
         request.auth.token.role == 'owner' ||
-        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' // Bypass for owner
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['manager', 'admin', 'owner']
+        )
       );
     }
     
@@ -36,11 +47,25 @@ service cloud.firestore {
       // สงวนสิทธิ์การอ่านข้อมูลส่วนบุคคลเฉพาะเจ้าของและพนักงานเท่านั้น (PDPA Compliance)
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       
-      // 🚀 THE FIX: ป้องกันการแฮกยกระดับสิทธิ์ (Escalation of Privilege)
+      // 🚀 THE FIX: ป้องกันการแฮกยกระดับสิทธิ์และแก้ไขยอดเงิน (Escalation of Privilege & Financial Fraud)
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isStaff() || (
         isAuthenticated() && request.auth.uid == userId &&
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isStaff', 'uid']))
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'role', 'isStaff', 'uid', 'creditPoints', 'totalAccumulatedPoints', 
+          'stats', 'rank', 'accountId', 'customerCode', 'isActive', 'status'
+        ])) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'pendingWithdrawal']) ||
+          (
+            request.resource.data.get('walletBalance', 0) < resource.data.get('walletBalance', 0) &&
+            request.resource.data.get('walletBalance', 0) >= 0 &&
+            (
+              request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) ||
+              request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) + (resource.data.get('walletBalance', 0) - request.resource.data.get('walletBalance', 0))
+            )
+          )
+        )
       );
       
       // ให้สิทธิ์การเข้าถึง Subcollections (เช่น storeProfile, wallet)
@@ -56,7 +81,21 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isStaff() || (
         isAuthenticated() && request.auth.uid == userId &&
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isStaff', 'uid']))
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'role', 'isStaff', 'uid', 'creditPoints', 'totalAccumulatedPoints', 
+          'stats', 'rank', 'accountId', 'customerCode', 'isActive', 'status'
+        ])) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'pendingWithdrawal']) ||
+          (
+            request.resource.data.get('walletBalance', 0) < resource.data.get('walletBalance', 0) &&
+            request.resource.data.get('walletBalance', 0) >= 0 &&
+            (
+              request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) ||
+              request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) + (resource.data.get('walletBalance', 0) - request.resource.data.get('walletBalance', 0))
+            )
+          )
+        )
       );
       
       match /{document=**} {
@@ -71,10 +110,15 @@ service cloud.firestore {
       allow read: if true;
       // เฉพาะพนักงานเท่านั้นที่แก้ไขจำนวนสต๊อก หรือข้อมูลทั้งหมดได้
       allow write: if isStaff();
-      // อนุญาตให้ User ทั่วไป (ที่ล็อกอิน) อัปเดตได้เฉพาะคะแนนรีวิวและสต๊อก (เวลาสั่งซื้อ)
-      allow update: if isAuthenticated() && 
+      // 🚀 THE FIX (Inventory DoS): ป้องกันคนนอกยิง API แกล้งลดสต๊อกจนหมด
+      allow update: if isStaff() || (isAuthenticated() && 
                     request.resource.data.diff(resource.data).affectedKeys()
-                    .hasOnly(['reviewCount', 'averageRating', 'stockQuantity', 'stats']);
+                    .hasOnly(['reviewCount', 'averageRating', 'stockQuantity', 'stats']) &&
+                    (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['stockQuantity']) || (
+                        request.resource.data.stockQuantity >= 0 &&
+                        request.resource.data.stockQuantity >= (resource.data.stockQuantity - 100) &&
+                        request.resource.data.stockQuantity <= resource.data.stockQuantity // ห้ามเพิ่มสต๊อกเอง
+                    )));
     }
 
     // 2.1 รีวิวสินค้า (Product Reviews)
@@ -123,7 +167,7 @@ service cloud.firestore {
         request.resource.data.partnerId == request.auth.uid
       ) && (
         // 🚀 THE FIX: บังคับสถานะ Todo ให้เป็น pending หรือ todo เท่านั้น ป้องกันแฮกสร้างงานที่ผ่านการอนุมัติแล้ว
-        request.resource.data.status in ['todo', 'pending', 'waiting_item']
+        request.resource.data.status in ['todo', 'pending', 'waiting_item', 'PENDING']
       ));
       allow update: if isStaff() || (isAuthenticated() && (
         resource == null ||

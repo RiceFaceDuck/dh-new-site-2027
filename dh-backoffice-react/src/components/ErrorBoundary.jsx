@@ -1,4 +1,6 @@
 import React from 'react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../firebase/config';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -8,6 +10,30 @@ export class ErrorBoundary extends React.Component {
 
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
+  }
+
+  async componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+    
+    // Log to Firestore system_logs
+    try {
+      const user = auth?.currentUser;
+      await addDoc(collection(db, 'system_logs'), {
+        action: 'backoffice_crash',
+        category: 'ERROR',
+        details: {
+          errorMessage: error.toString(),
+          componentStack: errorInfo.componentStack,
+          url: window.location.href,
+          userAgent: navigator.userAgent
+        },
+        userUid: user?.uid || 'anonymous',
+        userRole: 'manager',
+        createdAt: serverTimestamp()
+      });
+    } catch (logError) {
+      console.error("Failed to log error to Firestore:", logError);
+    }
   }
 
   render() {

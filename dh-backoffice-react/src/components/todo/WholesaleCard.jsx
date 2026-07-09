@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { PackageOpen, Clock, Calendar, Check, X, ShieldAlert, BadgeCheck, FileText, ChevronDown, ChevronUp } from 'lucide-react';
-import { db } from '../../firebase/config';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { inventoryQueryService } from '../../firebase/inventory/inventoryQueryService';
 import ManagerBadge from './cards/ManagerBadge';
 import WholesaleTable from './cards/wholesale/WholesaleTable';
 import WholesaleSummary from './cards/wholesale/WholesaleSummary';
 import useWholesaleCalculator from './cards/wholesale/useWholesaleCalculator';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge, isManagerTab }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [fetchedData, setFetchedData] = useState({});
@@ -28,7 +29,7 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
           try {
             const cachedStr = sessionStorage.getItem('search_hybrid_cache');
             if (cachedStr) {
-              const cachedArr = JSON.parse(cachedStr);
+              const cachedArr = safeJsonParse(cachedStr);
               cachedArr.forEach(p => {
                 if (p.sku) cacheMap.set(p.sku, p.wholesalePrice || p.cost || p.price);
               });
@@ -49,15 +50,8 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
           });
 
           if (missingSkus.length > 0) {
-            for (let i = 0; i < missingSkus.length; i += 30) {
-              const batchSkus = missingSkus.slice(i, i + 30);
-              const q = query(collection(db, 'products'), where('sku', 'in', batchSkus));
-              const snapshot = await getDocs(q);
-              snapshot.forEach(doc => {
-                const data = doc.data();
-                newPrices[doc.id] = data.wholesalePrice || null;
-              });
-            }
+            const fetchedBatchPrices = await inventoryQueryService.getProductsPricesBatch(missingSkus);
+            Object.assign(newPrices, fetchedBatchPrices);
           }
           
           setFetchedData(prev => ({ ...prev, ...newPrices }));
@@ -199,7 +193,7 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ชื่อลูกค้า / กิจการ</span>
                 <span className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1">
-                  {customerObj.accountName || customerObj.name || 'ไม่ระบุ'} {customerObj.isVerified && <BadgeCheck size={14} className="text-blue-500" />}
+                  {getCustomerDisplayName(customerObj, 'ไม่ระบุ')} {customerObj.isVerified && <BadgeCheck size={14} className="text-blue-500" />}
                 </span>
               </div>
               <div className="flex flex-col gap-1">

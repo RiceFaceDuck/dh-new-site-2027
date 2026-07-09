@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { inventoryQueryService } from '../../firebase/inventory/inventoryQueryService';
 import { gasStockService } from '../../firebase/gasStockService';
 
+import { safeJsonParse } from 'dh-shared';
 const SEARCH_CACHE_KEY = 'search_hybrid_cache';
 const SEARCH_CACHE_EXPIRY = 'search_hybrid_cache_expiry';
 const CACHE_TTL = 2 * 60 * 60 * 1000;
@@ -25,7 +26,7 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
         const expiry = sessionStorage.getItem(SEARCH_CACHE_EXPIRY);
         
         if (cached && expiry && new Date().getTime() < Number(expiry)) {
-          setGasProductsCache(JSON.parse(cached));
+          setGasProductsCache(safeJsonParse(cached));
         } else {
           const gasData = await gasStockService.fetchBackupInventory();
           setGasProductsCache(gasData);

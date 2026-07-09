@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { MessageCircle, Facebook, MessageSquare, Youtube, Globe, Save, CheckCircle2, AlertCircle, Loader2, Link2 } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function SocialLinksForm({ user, initialData, onRefresh }) {
   const [formData, setFormData] = useState({
@@ -43,7 +44,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
 
     try {
       const db = getFirestore();
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, getCollectionPath('users'), user.uid);
       
       // บันทึกเฉพาะข้อมูล Social Links (merge: true สำคัญมาก เพื่อไม่ให้ข้อมูลส่วนอื่นพัง)
       await setDoc(userRef, {

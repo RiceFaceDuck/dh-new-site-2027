@@ -1,14 +1,15 @@
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService.js';
 import { doc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const todoWholesaleService = {
   // 📥 4. อนุมัติราคาส่ง 
   approveWholesaleRequest: async (taskId, orderId, newTotals, newItems, currentUser) => {
     try {
       return await runTransaction(db, async (transaction) => {
-        const taskRef = doc(db, 'todos', taskId);
-        const orderRef = doc(db, 'orders', orderId);
+        const taskRef = doc(db, getCollectionPath('todos'), taskId);
+        const orderRef = doc(db, getCollectionPath('orders'), orderId);
         const logRef = doc(collection(db, 'system_logs'));
 
         const orderDoc = await transaction.get(orderRef);
@@ -74,8 +75,8 @@ export const todoWholesaleService = {
   rejectWholesale: async (taskId, orderId, reason = 'ไม่ระบุเหตุผล', currentUser) => {
       try {
           return await runTransaction(db, async (transaction) => {
-              const taskRef = doc(db, 'todos', taskId);
-              const orderRef = doc(db, 'orders', orderId);
+              const taskRef = doc(db, getCollectionPath('todos'), taskId);
+              const orderRef = doc(db, getCollectionPath('orders'), orderId);
               
               const orderDoc = await transaction.get(orderRef);
               

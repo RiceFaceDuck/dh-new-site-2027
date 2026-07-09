@@ -10,7 +10,7 @@ import NoteSettings from './settings/panel/NoteSettings';
 export default function SettingsPanel({
     activeTab, updateActiveTab, handlePriceModeChange, custSearchRef, customerSearchText, setCustomerSearchText, 
     showCustDropdown, setShowCustDropdown, filteredCustomers, handleSelectCustomer, netTotal, setIsPromoModalOpen, handleRemovePromotion,
-    isProcessing, eligibleFreebies
+    isProcessing, eligibleFreebies, shippingRules
 }) {
     // ⚡ Local State
     const [localShipping, setLocalShipping] = useState(activeTab.shippingFee || '');
@@ -141,6 +141,7 @@ export default function SettingsPanel({
                     sectionClass={sectionClass}
                     labelClass={labelClass}
                     inputClass={inputClass}
+                    shippingRules={shippingRules}
                 />
 
                 <DiscountSettings

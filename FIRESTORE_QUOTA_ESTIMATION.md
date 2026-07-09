@@ -411,3 +411,37 @@ Firebase (Spark Plan) ให้โควต้าฟรีต่อวันอ�
 - **Total Reads:** **0 Reads** (ฟรี 100%)
 - **Total Writes:** **0 Writes**
 - **ประโยชน์:** ได้ UX ระดับ Zero-Latency โดยไม่เสียค่าโควต้า Firebase แม้แต่สตางค์เดียว!
+
+
+## 📊 การประเมินโควต้า (Dynamic Shipping Rules & Combo Evaluation)
+
+การเปลี่ยนมาดึงกฎจัดส่ง (shipping_rules) จาก Firestore มาคำนวณจริงแบบ Dynamic ที่หน้าบ้าน (Checkout):
+1. **การดึงข้อมูลเงื่อนไข (Shipping Rules Fetching)**
+   - ดึงข้อมูลเงื่อนไขจากคอลเลกชัน shipping_rules เฉพาะตอนโหลดหน้า Checkout 1 ครั้งต่อการทำธุรกรรม (One-time Fetch ด้วย getDocs แทน onSnapshot)
+   - กฎมีจำนวนน้อยมาก (ปกติ < 10 docs) = 10 Reads/ออเดอร์
+   - หากมีคำสั่งซื้อ 100 ออเดอร์/วัน = 1,000 Reads/วัน (ต่ำมากจนไม่มีผลกระทบต่อโควต้า 50,000 Reads ฟรีต่อวัน)
+2. **การทำงานของระบบ (Calculation Engine)**
+   - คำนวณแบบ Client-Side Pure-Logic ผ่าน evaluateShippingRules(cartItems, rules) ใน dh-shared ทำให้ไม่มีการส่งคำขอเขียน/อ่านเพิ่มในระหว่างลูกค้าเลือกเปลี่ยนวิธีส่ง
+3. **การบันทึกข้อมูล (Order Submission)**
+   - บันทึกยอดเงินสุทธิที่รวมค่าส่งและค่าประกันภัยจัดส่งเรียบร้อยแล้วลงใน order document (1 Write)
+
+
+## 📊 การประเมินโควต้า (Phase 3: Data Flow Audit & Architecture Refactoring)
+
+การอัปเกรดความเสถียรของระบบ (System Stability) และการล้างหนี้ทางเทคนิคใน Phase 3 ประกอบไปด้วย 2 ส่วนหลัก:
+
+### 1. ระบบจำลองข้อมูลผู้ทดสอบ (Canvas Isolation / Sandbox Mode)
+- **การทำงาน:** ปรับปรุงโค้ดมากกว่า 115 ไฟล์ให้ดึงข้อมูลผ่านฟังก์ชัน getCollectionPath(collectionName) แทนการฮาร์ดโค้ด
+- **โควต้าที่ใช้:** 
+  - **Reads:** 0 (เปลี่ยนแค่ชื่อ Path ไม่มีผลต่อจำนวน Query)
+  - **Writes:** 0
+  - **สรุป:** การเปลี่ยน Path ไปยังคอลเลกชัน sandbox_... เป็นเพียง Client-side String Interpolation จึงไม่มีค่าใช้จ่ายด้าน Quota ใดๆ เพิ่มเติม
+
+### 2. ศูนย์รวมชื่อลูกค้า (Centralized Customer Data Mapper)
+- **การทำงาน:** สร้างฟังก์ชัน getCustomerDisplayName(customer) แทนที่การเขียน Fallback แบบยาวๆ ซ้ำซ้อน 21 จุด
+- **โควต้าที่ใช้:**
+  - **Reads:** 0
+  - **Writes:** 0
+  - **สรุป:** เป็นการจัดการ Pure Logic ในฝั่ง Frontend (Client-side) เพื่อแก้ไขปัญหา Code Duplication ล้วนๆ ทำให้ระบบมีความแข็งแกร่งขึ้น (Robust) โดยไม่กระทบต่อเครือข่ายและโควต้าของ Firestore
+
+**ภาพรวม:** การอัปเกรดใน Phase นี้เน้นเรื่องการจัดการ Data Flow และ Code Structure ส่งผลให้ระบบเสถียรขึ้นและจัดการง่ายขึ้น **โดยไม่มีต้นทุน Quota Reads/Writes เพิ่มขึ้นเลย (Zero Impact 100%)**

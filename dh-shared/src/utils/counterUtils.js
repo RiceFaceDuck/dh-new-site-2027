@@ -12,5 +12,5 @@
 export const getRandomShard = (maxShards = 5) => {
     // Generate a random number between 1 and maxShards
     const shardNum = Math.floor(Math.random() * maxShards) + 1;
-    return `T${shardNum}`;
+    return `O${shardNum}`;
 };

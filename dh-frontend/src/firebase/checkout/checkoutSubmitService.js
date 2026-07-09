@@ -2,26 +2,44 @@ import { db } from '../config';
 import { doc, collection, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
 import { getCreditSettings, calculateEarnedPoints, adjustUserCreditWithTransaction } from '../credit/creditActionService';
 import { appendPaymentVerificationTodo, appendTaxInvoiceTodo } from '../todo/todoActionService';
-import { calculateNetTotal } from 'dh-shared';
+import { calculateNetTotal, parseFirebaseError } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+
+// 🚀 THE FIX (Anti-Spam): Rate Limiting Cache (In-Memory) ป้องกันการรัวคลิก
+const requestCache = new Map();
 
 export const submitOrder = async (user, cartItems, checkoutState, totals, slipUrl = null, saveProfile = false) => {
   if (!user || !user.uid) throw new Error("กรุณาเข้าสู่ระบบก่อนดำเนินการสั่งซื้อ");
-  if (!cartItems || cartItems.length === 0) throw new Error("ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อน");
+  
+  // Rate Limit Check (15 วินาทีต่อ 1 ออเดอร์)
+  const now = Date.now();
+  const lastRequest = requestCache.get(user.uid) || 0;
+  if (now - lastRequest < 15000) {
+    throw new Error("คุณทำรายการถี่เกินไป กรุณารอสักครู่ (Anti-Spam Protection)");
+  }
+  requestCache.set(user.uid, now);
+
+  if (!cartItems || cartItems.length === 0) {
+    requestCache.delete(user.uid); // Reset if failed validation
+    throw new Error("ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อน");
+  }
 
   const creditConfig = await getCreditSettings();
 
-  const orderRef = doc(collection(db, "orders")); 
-  const userRef = doc(db, "users", user.uid);
+  const orderRef = doc(collection(db, getCollectionPath('orders'))); 
+  const userRef = doc(db, getCollectionPath('users'), user.uid);
   const counterRef = doc(db, "system_counters", "orders");
 
-  return await runTransaction(db, async (transaction) => {
-    
-    // 1. Setup Reads (Must do all reads before writes in a transaction)
+  try {
+    return await runTransaction(db, async (transaction) => {
+      
+      // 1. Setup Reads (Must do all reads before writes in a transaction)
     const userDoc = await transaction.get(userRef);
     const counterDoc = await transaction.get(counterRef);
     const userData = userDoc.exists() ? userDoc.data() : {};
     
-    const systemPoolRef = doc(db, 'system_accounts', 'DH_CREDIT_POOL');
+    const systemPoolRef = doc(db, getCollectionPath('system_accounts'), 'DH_CREDIT_POOL');
     const sysSnap = await transaction.get(systemPoolRef);
 
     // [SECURITY & CONCURRENCY] Read all products to check stock and real prices
@@ -31,7 +49,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       const itemIdentifier = item.id || item.sku;
       if (!itemIdentifier) continue;
       
-      const pRef = doc(db, 'products', itemIdentifier);
+      const pRef = doc(db, getCollectionPath('products'), itemIdentifier);
       productRefs.push({ ref: pRef, item: item });
       productSnaps.push(await transaction.get(pRef));
     }
@@ -41,7 +59,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     if (checkoutState?.appliedPromotions?.length > 0) {
       for (const promo of checkoutState.appliedPromotions) {
         if (promo.id) {
-          const promoRef = doc(db, 'promotions', promo.id);
+          const promoRef = doc(db, getCollectionPath('promotions'), promo.id);
           promoSnaps.push({ snap: await transaction.get(promoRef), name: promo.name || 'โปรโมชัน' });
         }
       }
@@ -83,6 +101,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     const calculatedPrices = calculateNetTotal({
       items: verifiedItems,
       shippingCost: checkoutState?.shippingCost || 0,
+      otherFeeAmount: checkoutState?.insuranceCost || 0,
       discountAmount: checkoutState?.discountAmount || 0,
       promotions: checkoutState?.appliedPromotions || []
     });
@@ -124,7 +143,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       userId: user.uid,
       customer: {
         uid: user.uid,
-        accountName: userData.storeName || userData.displayName || userData.accountName || user.displayName || userData.email || user.email || 'ไม่พบ field ในระบบ',
+        accountName: getCustomerDisplayName(userData, getCustomerDisplayName(user, 'ไม่พบ field ในระบบ')),
         firstName: userData.nickname || userData.firstName || '',
         phone: userData.phone || user.phoneNumber || '',
         address: userData.shippingAddress?.address || ''
@@ -140,6 +159,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         ...totals,
         netTotal: finalNetTotal, // Use secure price
         subtotal: calculatedPrices.subtotal,
+        insuranceCost: checkoutState?.insuranceCost || 0
       },
       calculationLog: {
         promotions: appliedPromos, 
@@ -174,7 +194,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         updatedAt: serverTimestamp()
       });
       
-      const walletTxRef = doc(collection(db, `users/${user.uid}/wallet_transactions`));
+      const walletTxRef = doc(collection(db, getCollectionPath('users'), user.uid, 'wallet_transactions'));
       transaction.set(walletTxRef, {
         transactionId: `TXW-${orderRef.id}`,
         type: 'SPEND',
@@ -186,7 +206,16 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     }
     
     if (saveProfile && checkoutState?.customerData) {
-      transaction.update(userRef, { shippingAddress: checkoutState.customerData });
+      transaction.update(userRef, { 
+        shippingAddress: checkoutState.customerData,
+        'stats.lastOrderDate': serverTimestamp(),
+        'stats.lastPurchaseDate': serverTimestamp()
+      });
+    } else {
+      transaction.update(userRef, { 
+        'stats.lastOrderDate': serverTimestamp(),
+        'stats.lastPurchaseDate': serverTimestamp()
+      });
     }
 
     // Delegate Todo creation to SRP Service
@@ -194,7 +223,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     appendPaymentVerificationTodo(transaction, orderRef.id, user, checkoutState, { netTotal: payableAmount }, slipUrl);
     appendTaxInvoiceTodo(transaction, orderRef.id, user, checkoutState);
 
-    const historyRef = doc(collection(db, `users/${user.uid}/historyLogs`));
+    const historyRef = doc(collection(db, getCollectionPath('users'), user.uid, 'historyLogs'));
     transaction.set(historyRef, {
       orderId: orderRef.id,
       action: "PLACE_ORDER",
@@ -204,6 +233,11 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       createdAt: serverTimestamp()
     });
 
-    return { success: true, orderId: orderRef.id, message: "สร้างคำสั่งซื้อสำเร็จ", netTotal: finalNetTotal };
-  });
+      return { success: true, orderId: orderRef.id, message: "สร้างคำสั่งซื้อสำเร็จ", netTotal: finalNetTotal };
+    });
+  } catch (error) {
+    console.error("🔥 Error in submitOrder Transaction:", error);
+    // Rethrow to let the frontend handle the UI error message, using the new Global Error Parser
+    throw new Error(parseFirebaseError(error, "เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง"));
+  }
 };

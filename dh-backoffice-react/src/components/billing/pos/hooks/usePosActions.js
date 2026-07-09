@@ -4,6 +4,8 @@ import { driveService } from '../../../../firebase/driveService';
 import { offlinePosService } from '../../../../firebase/offlinePosService';
 import { toast } from 'react-hot-toast';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 export const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
 
 export const usePosActions = ({
@@ -58,7 +60,7 @@ export const usePosActions = ({
         if (cust) {
             let mem = {};
             try {
-                mem = JSON.parse(localStorage.getItem(`dh_cust_pref_${uid}`)) || {};
+                mem = safeJsonParse(localStorage.getItem(`dh_cust_pref_${uid}`)) || {};
             } catch (e) {
                 console.error("Failed to parse customer preference", e);
             }
@@ -177,9 +179,9 @@ export const usePosActions = ({
                 shippingFee: shippingFee, otherFeeName: activeTab.otherFeeName || '', otherFeeAmount: otherFeeAmount, vatAmount: sanitizeNum(vatAmount), netTotal: sanitizeNum(netTotal), walletUsed: walletUsed,
                 earnedPoints: status === 'Paid' ? earnedPoints : 0, remainingToPay: sanitizeNum(remainingToPay), cashReceived: activeTab.paymentMethod === 'Cash' ? sanitizeNum(activeTab.cashReceived) : null,
                 changeAmount: sanitizeNum(changeAmount) > 0 ? sanitizeNum(changeAmount) : 0, slipImage: activeTab.slipImage || null, appliedPromotion: activeTab.appliedPromoDetails || null,
-                appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
+                appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, conditionText: (f.minSpend > 0 ? `ยอด${f.minSpend}฿ ` : '') + (f.minQty > 0 ? `ครบ${f.minQty}ชิ้น ` : '') + (f.applicableSkus?.length > 0 ? `เฉพาะรุ่น` : ''), itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
                 thaiBahtText: convertToThaiBahtText(remainingToPay) || '', billNote: finalNote, sellerUid: auth.currentUser?.uid || 'System',
-                customer: activeTab.customer ? { uid: activeTab.customer.uid || '', accountName: activeTab.customer.accountName || activeTab.customer.displayName || activeTab.customer.firstName || activeTab.customer.name || '', phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: activeTab.customer.address || '', hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
+                customer: activeTab.customer ? { uid: activeTab.customer.uid || '', accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: activeTab.customer.address || '', hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
                 items: finalOrderItems
             };
 

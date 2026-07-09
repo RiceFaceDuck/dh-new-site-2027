@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { db } from '../../firebase/config';
-import { doc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { driveService } from '../../firebase/driveService';
-import { gasHistoryService } from '../../firebase/gasHistoryService';
+import { todoService } from '../../firebase/todoService';
 
 const TaxInvoiceCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -57,47 +55,7 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
           throw new Error("ไม่ได้รับ URL หลังจากอัปโหลด");
       }
 
-      const batch = writeBatch(db);
-
-      // 1. อัปเดต Order: บันทึก URL ใบกำกับภาษี
-      const orderRef = doc(db, 'orders', orderId);
-      batch.update(orderRef, {
-        taxInvoiceUrl: fileUrl,
-        taxInvoiceStatus: 'issued', // อัปเดตสถานะว่าออกให้แล้ว
-        updatedAt: serverTimestamp()
-      });
-
-      // 2. ปิดงาน To-do นี้
-      const taskRef = doc(db, 'todos', task.id);
-      batch.update(taskRef, {
-        status: 'completed',
-        completedAt: serverTimestamp(),
-        actionBy: currentUser?.uid || 'Admin'
-      });
-
-      // 3. แจ้งเตือนลูกค้าผ่าน History Log
-      if (task.userId) {
-          gasHistoryService.log({
-            module: 'Customer History',
-            action: 'TAX_INVOICE_ISSUED',
-            target: { id: orderId },
-            details: { legacy_details: `ใบกำกับภาษีพร้อมดาวน์โหลด เจ้าหน้าที่ได้อัปโหลดใบกำกับภาษีสำหรับออเดอร์ #${orderId.slice(-6).toUpperCase()} เรียบร้อยแล้ว` },
-            actorOverride: { uid: task.userId, name: 'System (For Customer)', email: 'N/A' }
-          });
-      }
-      
-      // 4. บันทึก Log กลาง
-      const logRef = doc(collection(db, 'system_logs'));
-      batch.set(logRef, {
-          actionType: 'TAX_INVOICE_ISSUED',
-          orderId: orderId,
-          taskId: task.id,
-          details: `ออกใบกำกับภาษีและอัปโหลดไฟล์สำเร็จ`,
-          createdBy: currentUser?.uid || 'System',
-          createdAt: serverTimestamp()
-      });
-
-      await batch.commit();
+      await todoService.completeTaxInvoiceTask(task, fileUrl, currentUser);
 
       if (onSuccess) onSuccess();
 

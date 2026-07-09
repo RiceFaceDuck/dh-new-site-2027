@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const useDataRepair = () => {
     const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ export const useDataRepair = () => {
 
         try {
             // 1. ตรวจหาบิล Cancelled ที่ยังไม่ได้คืนเงินหรือโปรโมชัน (เนื่องจากบัก Read-After-Write)
-            const q = query(collection(db, 'orders'), where('status', '==', 'cancelled'));
+            const q = query(collection(db, getCollectionPath('orders')), where('status', '==', 'cancelled'));
             const snapshot = await getDocs(q);
             
             let detected = [];
@@ -31,7 +32,7 @@ export const useDataRepair = () => {
                 if (walletUsed > 0 && data.customerInfo?.uid && !data.repairedAt) {
                     // Check if wallet transaction exists for refund
                     const wTxQuery = query(
-                        collection(db, `users/${data.customerInfo.uid}/wallet_transactions`),
+                        collection(db, getCollectionPath('users'), data.customerInfo.uid, 'wallet_transactions'),
                         where('referenceId', '==', data.orderId || orderDoc.id)
                     );
                     const wTxSnap = await getDocs(wTxQuery);
@@ -70,7 +71,7 @@ export const useDataRepair = () => {
         addLog("เริ่มสแกนตรวจสอบความถูกต้องของแต้ม (Credit Point Integrity Audit)...");
 
         try {
-            const usersRef = collection(db, 'users');
+            const usersRef = collection(db, getCollectionPath('users'));
             const usersSnap = await getDocs(usersRef);
             let detected = [];
 
@@ -81,7 +82,7 @@ export const useDataRepair = () => {
                 const actualAccumulated = Number(data.totalAccumulatedPoints || actualPoints);
 
                 // Fetch global credit transactions for this user
-                const txRef = collection(db, 'credit_transactions');
+                const txRef = collection(db, getCollectionPath('credit_transactions'));
                 const qTx = query(txRef, where('uid', '==', uid));
                 const txSnap = await getDocs(qTx);
                 
@@ -133,7 +134,7 @@ export const useDataRepair = () => {
         
         try {
             if (anomaly.type === 'CREDIT_SYNC') {
-                const userRef = doc(db, 'users', anomaly.customerUid);
+                const userRef = doc(db, getCollectionPath('users'), anomaly.customerUid);
                 await runTransaction(db, async (transaction) => {
                     const userSnap = await transaction.get(userRef);
                     if (!userSnap.exists()) throw new Error("ไม่พบบัญชีผู้ใช้งาน");
@@ -152,17 +153,17 @@ export const useDataRepair = () => {
 
             // Original Order Fix Logic
             await runTransaction(db, async (transaction) => {
-                const orderRef = doc(db, 'orders', anomaly.id);
+                const orderRef = doc(db, getCollectionPath('orders'), anomaly.id);
                 const orderSnap = await transaction.get(orderRef);
                 
                 if (!orderSnap.exists()) throw new Error("ไม่พบบิลในระบบ");
                 
-                const userRef = doc(db, 'users', anomaly.customerUid);
+                const userRef = doc(db, getCollectionPath('users'), anomaly.customerUid);
                 const userSnap = await transaction.get(userRef);
                 
                 if (anomaly.issue.includes('Missing Wallet Refund')) {
                     const txId = `TXW_REFUND_REPAIR_${anomaly.orderId || anomaly.id}`;
-                    const walletTxRef = doc(collection(db, `users/${anomaly.customerUid}/wallet_transactions`));
+                    const walletTxRef = doc(collection(db, getCollectionPath('users'), anomaly.customerUid, 'wallet_transactions'));
                     
                     transaction.set(walletTxRef, {
                         transactionId: txId,

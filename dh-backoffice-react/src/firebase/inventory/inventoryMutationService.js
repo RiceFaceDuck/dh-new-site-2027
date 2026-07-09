@@ -2,6 +2,7 @@ import { doc, setDoc, updateDoc, getDoc, serverTimestamp, collection, query, whe
 import { db, auth } from '../config';
 import { inventorySyncService } from './inventorySyncService';
 import { historyService } from '../historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'products';
 
@@ -94,7 +95,7 @@ export const inventoryMutationService = {
 
     // 🧹 Cleanup Orphaned Todos (Strict Data Relations)
     try {
-        const todosRef = collection(db, 'todos');
+        const todosRef = collection(db, getCollectionPath('todos'));
         const q = query(todosRef, where('referenceId', '==', sku));
         const querySnapshot = await getDocs(q);
         
@@ -128,7 +129,7 @@ export const inventoryMutationService = {
         });
 
         // 2. Remove from promotions
-        const promoQ = query(collection(db, 'promotions'), where('applicableSkus', 'array-contains', sku));
+        const promoQ = query(collection(db, getCollectionPath('promotions')), where('applicableSkus', 'array-contains', sku));
         const promoSnap = await getDocs(promoQ);
         promoSnap.forEach(docSnap => {
             batch.update(docSnap.ref, { applicableSkus: arrayRemove(sku) });
@@ -136,7 +137,7 @@ export const inventoryMutationService = {
         });
 
         // 3. Remove from freebies
-        const freebieQ = query(collection(db, 'freebies'), where('applicableSkus', 'array-contains', sku));
+        const freebieQ = query(collection(db, getCollectionPath('freebies')), where('applicableSkus', 'array-contains', sku));
         const freebieSnap = await getDocs(freebieQ);
         freebieSnap.forEach(docSnap => {
             batch.update(docSnap.ref, { applicableSkus: arrayRemove(sku) });

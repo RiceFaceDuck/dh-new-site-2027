@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, collection, getDocs, query, where, limit } from "firebase/firestore";
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSl7KV5HheJ4MSKR7udZkrMKQdSUBLJng",
@@ -15,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function check() {
-  const docRef = doc(db, 'settings', 'warranty');
+  const docRef = doc(db, getCollectionPath('settings'), 'warranty');
   const snap = await getDoc(docRef);
   console.log("=== WARRANTY SETTINGS ===");
   if (snap.exists()) {
@@ -26,7 +27,7 @@ async function check() {
 
   console.log("\n=== RECENT CLAIMS ===");
   const q = query(
-      collection(db, 'todos'),
+      collection(db, getCollectionPath('todos')),
       where('type', 'in', ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL']),
       limit(5)
   );

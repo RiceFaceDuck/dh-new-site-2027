@@ -1,5 +1,6 @@
 import React from 'react';
 import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store, User } from 'lucide-react';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function OrderTableRow({ order, setSelectedOrder }) {
     const statLower = (order.orderStatus || order.status || '').toLowerCase();
@@ -83,7 +84,7 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
             </td>
             <td className="py-2.5 px-4 align-middle">
                 <div className="font-black text-(--dh-text-main) text-[13px] truncate max-w-[280px] group-hover:text-(--dh-accent) transition-colors dh-text-glow">
-                    {order.customer?.accountName || order.customer?.firstName || 'ลูกค้าทั่วไป'}
+                    {getCustomerDisplayName(order.customer, 'ลูกค้าทั่วไป')}
                 </div>
                 {order.customer?.phone && (
                     <div className="text-[11px] text-(--dh-text-muted) mt-1 flex items-center gap-1 font-mono font-bold">

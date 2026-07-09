@@ -3,6 +3,7 @@ import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { productService } from '../../firebase/productService';
 import ProductList from '../ProductList';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function RelatedProducts({ currentProductId, category }) {
   const [products, setProducts] = useState([]);
@@ -20,7 +21,7 @@ export default function RelatedProducts({ currentProductId, category }) {
         setLoading(true);
         // Query products in the same category
         const q = query(
-          collection(db, 'products'),
+          collection(db, getCollectionPath('products')),
           where('category', '==', category),
           limit(5)
         );

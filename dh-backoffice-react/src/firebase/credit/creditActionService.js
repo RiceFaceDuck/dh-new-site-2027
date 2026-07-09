@@ -3,6 +3,7 @@ import { db } from '../config';
 import { historyService } from '../historyService';
 import { formatCredit } from './creditFormatService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const getUsersPath = () => {
@@ -159,7 +160,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     const userData = userSnap.data();
     const userEmail = userData.email || 'Migrated User';
-    const resolvedName = userData.storeName || userData.displayName || userData.accountName || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
+    const resolvedName = getCustomerDisplayName(userData, userData).accountName || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
 
     const transactionId = txRef.id;
     const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'add' : 'deduct';
@@ -198,13 +199,13 @@ export const adjustUserCredit = async (inputUid, amount, type, note, actorUid, r
     
     // ถ้าไม่ใช่ UID เต็มยาวๆ ให้ลองค้นหาดูเผื่อเป็นรหัสย่อ
     if (cleanInput.length < 20) {
-      let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput)));
+      let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
       if (!snap.empty) resolvedUid = snap.docs[0].id;
       else {
-        snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase())));
+        snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
         if (!snap.empty) resolvedUid = snap.docs[0].id;
         else {
-          snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput)));
+          snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
           if (!snap.empty) resolvedUid = snap.docs[0].id;
           else {
             // ค้นหาแบบ StartsWith ของ Document ID 

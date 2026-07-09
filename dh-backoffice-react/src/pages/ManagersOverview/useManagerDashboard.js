@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, getCountFromServer, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { userService } from '../../firebase/userService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * 🧠 สมองกลคุม Data & Firebase สำหรับหน้า Managers Overview
@@ -27,7 +28,7 @@ export const useManagerDashboard = () => {
   // ==========================================
   useEffect(() => {
     // 🔔 Fetch จำนวนงานที่รออนุมัติ (ใช้ getCountFromServer เพื่อประหยัดโควต้า 1 Read/Query)
-    const todosRef = collection(db, 'todos');
+    const todosRef = collection(db, getCollectionPath('todos'));
     const pendingTodosQuery = query(
       todosRef, 
       where('status', 'in', ['pending', 'pending_manager'])
@@ -44,7 +45,7 @@ export const useManagerDashboard = () => {
     fetchPendingTodosCount();
 
     // 👥 Subscribe จำนวนพนักงานรออนุมัติ (มักจะมีจำนวนไม่เยอะ)
-    const usersRef = collection(db, 'users');
+    const usersRef = collection(db, getCollectionPath('users'));
     const pendingStaffQuery = query(
       usersRef, 
       where('role', 'in', ['pending', 'pending_approval']),
@@ -84,7 +85,7 @@ export const useManagerDashboard = () => {
   const fetchVipUsers = useCallback(async () => {
     setIsLoadingVips(true);
     try {
-      const usersRef = collection(db, 'users');
+      const usersRef = collection(db, getCollectionPath('users'));
       const q = query(usersRef, where('rank', '==', 'VIP'), limit(100));
       const snapshot = await getDocs(q);
       const vipsData = snapshot.docs.map(doc => ({
@@ -106,7 +107,7 @@ export const useManagerDashboard = () => {
   // ❌ ปลดสิทธิ์ VIP
   const revokeVipStatus = async (userId) => {
     try {
-      const userRef = doc(db, 'users', userId);
+      const userRef = doc(db, getCollectionPath('users'), userId);
       await updateDoc(userRef, {
         rank: 'Customer' // หรือค่า Default ที่กำหนดไว้
       });

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "analyze": "vite build --mode analyze",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -16,6 +17,7 @@
     "browser-image-compression": "^2.0.2",
     "dh-shared": "file:../dh-shared",
     "firebase": "^12.10.0",
+    "framer-motion": "^12.42.2",
     "idb-keyval": "^6.2.6",
     "lucide-react": "^0.577.0",
     "react": "^19.2.7",
@@ -34,7 +36,9 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "postcss": "^8.5.8",
+    "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.3.2",
-    "vite": "^8.1.3"
+    "vite": "^8.1.3",
+    "vite-plugin-compression": "^0.5.1"
   }
 }

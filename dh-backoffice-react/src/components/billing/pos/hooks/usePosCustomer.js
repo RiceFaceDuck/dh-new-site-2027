@@ -13,7 +13,9 @@ export function usePosCustomer(customers) {
             (c.displayName || '').toLowerCase().includes(q) || 
             (c.email || '').toLowerCase().includes(q) || 
             (c.phone || '').includes(q) ||
-            (c.uid || c.id || '').toLowerCase() === q
+            (c.uid || c.id || '').toLowerCase().includes(q) ||
+            (c.accountId || '').toLowerCase().includes(q) ||
+            (c.customerCode || '').toLowerCase().includes(q)
         ).slice(0, 15);
     }, [customerSearchText, customers]);
 

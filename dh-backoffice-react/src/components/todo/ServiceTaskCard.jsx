@@ -1,8 +1,7 @@
 import React from 'react';
 import { Package, Truck, Wrench, ArrowLeftRight, Check, X, ShieldAlert, FileText, Image as ImageIcon } from 'lucide-react';
 import { claimService } from '../../firebase/claimService';
-import { db } from '../../firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
+import { todoService } from '../../firebase/todoService';
 
 export default function ServiceTaskCard({ task, onApprove, onReject }) {
   const { payload } = task;
@@ -18,10 +17,7 @@ export default function ServiceTaskCard({ task, onApprove, onReject }) {
     if (!trackingNo.trim()) return alert('กรุณาระบุเลขพัสดุ');
     setIsSavingTracking(true);
     try {
-        const taskRef = doc(db, 'todos', task.id);
-        await updateDoc(taskRef, {
-            'payload.trackingNo': trackingNo
-        });
+        await todoService.updateTodoTrackingNo(task.id, trackingNo);
         task.payload.trackingNo = trackingNo; // Optimistic update
         alert('บันทึกเลขพัสดุเรียบร้อย');
     } catch (err) {

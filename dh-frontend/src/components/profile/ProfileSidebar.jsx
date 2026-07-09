@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 // ⚡ นำเข้า Service จัดการการเงินแบบ Real-time
 import { useUserCredit, formatCredit } from '../../firebase/creditService';
 import { useWalletBalance } from '../../firebase/walletService';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 /**
  * 🎨 Premium Menu Button Component
@@ -83,7 +84,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
             </div>
 
             <h2 className="text-base md:text-lg font-bold text-white tracking-wide truncate w-full px-2 drop-shadow-md">
-              {user?.storeName || user?.displayName || 'DH Partner'}
+              {getCustomerDisplayName(user, 'DH Partner')}
             </h2>
             
             <button 

@@ -1,4 +1,4 @@
-import { collection, onSnapshot, query, orderBy, limit, getDocs, where, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, getDocs, where, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from './config';
 
 const COLLECTION_NAME = 'orders';
@@ -111,5 +111,22 @@ export const billingQueryService = {
           console.error("Error fetching order history:", error);
           return [];
       }
+  },
+
+  getOrderById: async (orderId) => {
+    try {
+      if (!orderId) return null;
+      const docRef = doc(db, COLLECTION_NAME, orderId);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        delete data.id;
+        return { ...data, id: snap.id };
+      }
+      return null;
+    } catch (error) {
+      console.error("🔥 Error fetching order by ID:", error);
+      return null;
+    }
   }
 };

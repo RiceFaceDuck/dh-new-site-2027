@@ -3,7 +3,8 @@ import {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan,
+  Truck
 } from 'lucide-react';
 import { menuConfigService } from '../../firebase/menuConfigService';
 
@@ -12,7 +13,8 @@ const iconMap = {
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
-  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan
+  Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan,
+  Truck
 };
 
 /**
@@ -68,6 +70,7 @@ const ToolCard = ({ title, subtitle, iconName, colorTheme, onClick, badge, isCom
 // --- Definitions (same as Layout Manager) ---
 import { AVAILABLE_MENUS } from './components/MenuLayoutManager';
 import { useNavigate } from 'react-router-dom';
+import WarrantyCheckModal from '../../components/common/WarrantyCheckModal';
 
 /**
  * 🛠️ ส่วนแผงเครื่องมือควบคุม (Quick Access Tools) แบบ Dynamic Layout
@@ -89,6 +92,7 @@ const QuickAccessTools = ({
 }) => {
   const [layout, setLayout] = useState({ zones: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -115,6 +119,7 @@ const QuickAccessTools = ({
       case 'promotions': return () => navigate('/managers/promotions');
       case 'freebie': return () => navigate('/managers/freebie');
       case 'refund': return () => navigate('/managers/refund');
+      case 'shipping': return () => navigate('/managers/shipping');
       case 'inventory_adjustment': return () => navigate('/managers/inventory-adjustment');
       case 'core_settings': return () => navigate('/managers/core-settings');
       // เมนูย่อยจากนโยบายกลาง (จะเปิด Global Settings Panel โดยระบุ Tab)
@@ -130,6 +135,7 @@ const QuickAccessTools = ({
       case 'redirect': return () => navigate('/managers/redirect');
       case 'scanner': return onOpenScannerModal;
       case 'data_repair': return () => navigate('/managers/data-repair');
+      case 'warranty_checker': return () => setIsWarrantyModalOpen(true);
       default: return undefined;
     }
   };
@@ -184,6 +190,11 @@ const QuickAccessTools = ({
           </div>
         );
       })}
+
+      <WarrantyCheckModal 
+        isOpen={isWarrantyModalOpen} 
+        onClose={() => setIsWarrantyModalOpen(false)} 
+      />
     </div>
   );
 };

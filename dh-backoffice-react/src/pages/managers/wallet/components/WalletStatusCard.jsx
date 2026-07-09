@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Phone, CheckCircle2, Copy, Wallet, Coins, ArrowDownToLine, Banknote, ArrowUpFromLine } from 'lucide-react';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function WalletStatusCard({ 
   selectedUser, 
@@ -18,7 +19,7 @@ export default function WalletStatusCard({
                 <div className="flex items-center gap-3 mb-5">
                     <div className="bg-white/10 p-2 rounded-xl backdrop-blur-xs border border-white/10"><User size={20} className="text-indigo-100" /></div>
                     <div>
-                        <h2 className="text-sm font-black text-white">{selectedUser.accountName || selectedUser.displayName || 'ลูกค้าทั่วไป'}</h2>
+                        <h2 className="text-sm font-black text-white">{getCustomerDisplayName(selectedUser, 'ลูกค้าทั่วไป')}</h2>
                         <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-200/70 font-mono mt-0.5">
                             <span>ID: {selectedUser.customerCode || selectedUser.id}</span>
                             {(selectedUser.phone || selectedUser.phoneNumber) && (

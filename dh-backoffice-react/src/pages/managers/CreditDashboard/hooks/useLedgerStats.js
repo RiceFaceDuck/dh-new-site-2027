@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { doc, onSnapshot, collection, query, where, getAggregateFromServer, sum, count } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -19,7 +20,7 @@ export default function useLedgerStats() {
   // ดึงยอดผู้ใช้งานจริง (ใช้ Aggregation เพื่อลดยอด Read จากหลักพันเหลือแค่ 3 Reads)
   const fetchRealUserStats = async () => {
     try {
-      const usersRef = collection(db, 'users');
+      const usersRef = collection(db, getCollectionPath('users'));
       
       // คิวรี่ 1: คนที่มีเครดิต > 0 (หาผลรวมเครดิต และจำนวนคน)
       const q1 = query(usersRef, where('creditPoints', '>', 0));

@@ -3,6 +3,7 @@ import { auth } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { userService } from '../firebase/userService';
 
+import { safeJsonParse } from 'dh-shared';
 export const FavoritesContext = createContext();
 
 export const useFavorites = () => {
@@ -22,7 +23,7 @@ export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState(() => {
     try {
       const saved = localStorage.getItem('dh_favorites');
-      return saved ? JSON.parse(saved) : [];
+      return saved ? safeJsonParse(saved) : [];
     } catch (e) { return []; }
   });
 
@@ -39,7 +40,7 @@ export const FavoritesProvider = ({ children }) => {
               const savedGuest = localStorage.getItem('dh_favorites');
               let mergedFavorites = [...profile.favorites];
               if (savedGuest) {
-                const guestFavs = JSON.parse(savedGuest);
+                const guestFavs = safeJsonParse(savedGuest);
                 let updated = false;
                 guestFavs.forEach(fav => {
                   if (!mergedFavorites.find(f => f.id === fav.id)) {
@@ -57,7 +58,7 @@ export const FavoritesProvider = ({ children }) => {
               // ยังไม่มี favorites ใน Firebase -> อัปโหลดจาก LocalStorage ไป
               const savedGuest = localStorage.getItem('dh_favorites');
               if (savedGuest) {
-                const guestFavs = JSON.parse(savedGuest);
+                const guestFavs = safeJsonParse(savedGuest);
                 await userService.updateUserProfile(user.uid, { favorites: guestFavs });
                 setFavorites(guestFavs);
                 localStorage.removeItem('dh_favorites');
@@ -74,7 +75,7 @@ export const FavoritesProvider = ({ children }) => {
         if (isMounted) {
           try {
             const saved = localStorage.getItem('dh_favorites');
-            setFavorites(saved ? JSON.parse(saved) : []);
+            setFavorites(saved ? safeJsonParse(saved) : []);
           } catch (e) { setFavorites([]); }
         }
       }

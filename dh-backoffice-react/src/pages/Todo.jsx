@@ -14,6 +14,7 @@ import { useWholesalePrices } from './todo/hooks/useWholesalePrices';
 import TodoPageHeader from './todo/components/TodoPageHeader';
 import TodoPageFilterBar from './todo/components/TodoPageFilterBar';
 import TodoPageList from './todo/components/TodoPageList';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function Todo() {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ export default function Todo() {
           // Save the tracking number locally and remotely for history/reference
           if (payload.trackingNo) {
             fullTask.payload = { ...fullTask.payload, trackingNo: payload.trackingNo };
-            await updateDoc(doc(db, 'todos', taskId), { 'payload.trackingNo': payload.trackingNo });
+            await updateDoc(doc(db, getCollectionPath('todos'), taskId), { 'payload.trackingNo': payload.trackingNo });
           }
           await claimService.markArrived(fullTask, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
         }
@@ -82,7 +83,7 @@ export default function Todo() {
       if (errMsg.includes('ไม่พบออเดอร์') || errMsg.includes('ไม่พบข้อมูล') || errMsg.includes('not found')) {
         if (window.confirm(`⚠️ เกิดข้อผิดพลาด: ออเดอร์หลักอาจถูกลบไปแล้ว\n\nรหัสงาน: ${taskId.slice(-6).toUpperCase()}\n\nต้องการลบงานค้างนี้ทิ้งถาวรหรือไม่?`)) {
            try {
-             await deleteDoc(doc(db, 'todos', taskId));
+             await deleteDoc(doc(db, getCollectionPath('todos'), taskId));
              alert('🗑️ ลบงานที่ค้างออกจากระบบเรียบร้อยแล้ว');
            } catch (deleteError) {
              alert(`ลบงานไม่สำเร็จ: ${deleteError.message}`);

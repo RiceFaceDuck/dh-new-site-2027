@@ -1,12 +1,23 @@
-import React from 'react';
-import { Loader2, UserPlus, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, UserPlus, ArrowLeft, Mail, Lock } from 'lucide-react';
 
 export default function LoginForm({ 
-    onLogin, 
+    onLogin,
+    onEmailLogin,
     onGoRegister, 
     loading, 
     statusText 
 }) {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleEmailSubmit = (e) => {
+        e.preventDefault();
+        if (email && password) {
+            onEmailLogin(email, password);
+        }
+    };
+
     return (
         <div className="space-y-4 animate-fade-in">
             <button 
@@ -30,6 +41,48 @@ export default function LoginForm({
                     </>
                 )}
             </button>
+            
+            {!loading && (
+                <div className="flex items-center justify-center gap-2 py-1">
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 w-full"></div>
+                    <span className="text-xs text-slate-400 font-medium whitespace-nowrap px-2">หรือใช้อีเมล</span>
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 w-full"></div>
+                </div>
+            )}
+
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+                <div className="relative">
+                    <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                    <input 
+                        type="email"
+                        placeholder="อีเมลพนักงาน"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                        required
+                    />
+                </div>
+                <div className="relative">
+                    <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                    <input 
+                        type="password"
+                        placeholder="รหัสผ่าน"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                        required
+                    />
+                </div>
+                <button 
+                    type="submit"
+                    disabled={loading || !email || !password}
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-colors shadow-xs"
+                >
+                    เข้าสู่ระบบ
+                </button>
+            </form>
             
             {!loading && (
                 <>

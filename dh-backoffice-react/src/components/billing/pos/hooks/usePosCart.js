@@ -3,6 +3,7 @@ import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQ
 import { gasStockService } from '../../../../firebase/gasStockService';
 import useDebounce from '../../../../hooks/useDebounce';
 
+import { safeJsonParse } from 'dh-shared';
 const SEARCH_CACHE_KEY = 'search_hybrid_cache';
 const SEARCH_CACHE_EXPIRY = 'search_hybrid_cache_expiry';
 const CACHE_TTL = 2 * 60 * 60 * 1000;
@@ -33,7 +34,7 @@ export function usePosCart(products) {
                 const expiry = sessionStorage.getItem(SEARCH_CACHE_EXPIRY);
                 
                 if (cached && expiry && new Date().getTime() < Number(expiry)) {
-                    setGasProductsCache(JSON.parse(cached));
+                    setGasProductsCache(safeJsonParse(cached));
                 } else {
                     const gasData = await gasStockService.fetchBackupInventory();
                     setGasProductsCache(gasData);

@@ -1,6 +1,7 @@
 import { writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId, setDoc } from 'firebase/firestore';
 import { db, auth } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventoryImportService = {
   // Check which SKUs already exist (chunked to respect 30 items 'in' limit)
@@ -12,7 +13,7 @@ export const inventoryImportService = {
     }
     
     for (const chunk of chunks) {
-      const q = query(collection(db, 'products'), where(documentId(), 'in', chunk));
+      const q = query(collection(db, getCollectionPath('products')), where(documentId(), 'in', chunk));
       const snap = await getDocs(q);
       snap.forEach(doc => existingSkus.add(doc.id));
     }
@@ -52,7 +53,7 @@ export const inventoryImportService = {
       for (const chunk of chunks) {
         const batch = writeBatch(db);
         chunk.forEach(p => {
-          const docRef = doc(db, 'products', p.sku);
+          const docRef = doc(db, getCollectionPath('products'), p.sku);
           
           // Inject category_lower for frontend query support
           if (p.category) {
@@ -99,7 +100,7 @@ export const inventoryImportService = {
     // Send to-do if requested
     if (toTodo.length > 0) {
       const todoId = `T-${Date.now()}`;
-      const docRef = doc(db, 'todos', todoId);
+      const docRef = doc(db, getCollectionPath('todos'), todoId);
       await setDoc(docRef, {
         type: 'PRODUCT_IMPORT_APPROVAL',
         title: `ตรวจสอบนำเข้าสินค้า (SKU ซ้ำ) ${toTodo.length} รายการ`,

@@ -1,13 +1,9 @@
 import { db } from '../config';
 import { collection, query, where, getDocs, writeBatch, serverTimestamp, doc } from 'firebase/firestore';
 import { historyService } from '../historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+
 
 export const cascadeDisableCustomer = async (uid, authUserUid, reason = "บัญชีลูกค้าถูกระงับ/ปิดใช้งาน") => {
     try {

@@ -12,6 +12,7 @@ import MarketingInfo from './MarketingInfo';
 import CustomerSyncModal from './CustomerSyncModal';
 import WalletDisplay from '../displays/WalletDisplay';
 import PointDisplay from '../displays/PointDisplay';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function DetailPanel({
   customer,
@@ -46,7 +47,7 @@ export default function DetailPanel({
       if (!customer?.id) return;
       setIsLoadingTax(true);
       try {
-        const taxRef = doc(db, 'users', customer.id, 'private', 'taxInfo');
+        const taxRef = doc(db, getCollectionPath('users'), customer.id, 'private', 'taxInfo');
         const snap = await getDoc(taxRef);
         if (snap.exists()) {
           setSecureTaxInfo(snap.data());

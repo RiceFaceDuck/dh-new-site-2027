@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 export const DEFAULT_THEME_CONFIG = {
   themeId: 'theme-trusted-partner', // เปลี่ยนค่าเริ่มต้นเป็น theme ใหม่
   backgroundUrl: '',
@@ -17,14 +19,14 @@ export function useStorefrontTheme() {
   const [themeConfig, setThemeConfig] = useState(() => {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : DEFAULT_THEME_CONFIG;
+      return cached ? safeJsonParse(cached) : DEFAULT_THEME_CONFIG;
     } catch (e) {
       return DEFAULT_THEME_CONFIG;
     }
   });
 
   useEffect(() => {
-    const docRef = doc(db, 'settings', 'storefrontTheme');
+    const docRef = doc(db, getCollectionPath('settings'), 'storefrontTheme');
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const newTheme = { ...DEFAULT_THEME_CONFIG, ...docSnap.data() };

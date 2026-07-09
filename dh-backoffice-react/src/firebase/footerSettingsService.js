@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const FOOTER_DOC = 'footer_config';
 
@@ -34,7 +35,7 @@ export const DEFAULT_FOOTER_CONFIG = {
 export const footerSettingsService = {
   getFooterConfig: async () => {
     try {
-      const docRef = doc(db, 'settings', FOOTER_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         return { ...DEFAULT_FOOTER_CONFIG, ...snap.data() };
@@ -48,7 +49,7 @@ export const footerSettingsService = {
 
   updateFooterConfig: async (configData) => {
     try {
-      const docRef = doc(db, 'settings', FOOTER_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
       await setDoc(docRef, {
         ...configData,
         updatedAt: serverTimestamp()

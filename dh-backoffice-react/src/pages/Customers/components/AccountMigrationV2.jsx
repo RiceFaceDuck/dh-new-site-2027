@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { db } from '../../../firebase/config';
 import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { Loader2, Wand2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function AccountMigrationV2() {
   const [loading, setLoading] = useState(false);
@@ -10,12 +11,7 @@ export default function AccountMigrationV2() {
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
-  const getCollectionPath = (colName) => {
-    if (typeof window !== 'undefined' && window.__app_id && window.location.hostname.includes('canvas')) {
-      return `artifacts/${window.__app_id}/public/data/${colName}`;
-    }
-    return colName;
-  };
+  
 
   const generateStandardId = () => {
     // Generate 8 random uppercase alphanumeric characters

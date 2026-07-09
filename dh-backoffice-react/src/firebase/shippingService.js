@@ -27,11 +27,16 @@ export const shippingService = {
       });
       
       if (uid) {
+        const isInsurance = ruleData.ruleType === 'insurance';
+        const logMsg = isInsurance 
+          ? `เพิ่มกฎค่าประกันภัยใหม่: ${ruleData.matchType === 'sku' ? `SKU ${ruleData.sku}` : 'ทุกสินค้า'} (${ruleData.minQty}-${ruleData.maxQty} ชิ้น) ค่าประกัน ${ruleData.shippingFee}บ.`
+          : `เพิ่มกฎค่าจัดส่งใหม่: ${ruleData.company} (${ruleData.matchType === 'sku' ? `SKU ${ruleData.sku}` : ruleData.productType}) (${ruleData.minQty}-${ruleData.maxQty} ชิ้น) ค่าจัดส่ง ${ruleData.shippingFee}บ.`;
+
         await historyService.addLog(
           'SystemConfig', 
           'Create', 
           'shipping', 
-          `เพิ่มกฎค่าจัดส่งใหม่: ${ruleData.company} (${ruleData.minQty}-${ruleData.maxQty} ชิ้น) ค่าจัดส่ง ${ruleData.shippingFee}บ.`, 
+          logMsg, 
           uid
         );
       }
@@ -72,7 +77,7 @@ export const shippingService = {
           'SystemConfig', 
           'Delete', 
           'shipping', 
-          `ลบกฎจัดส่งออกจากระบบ: ${ruleDesc}`, 
+          `ลบกฎจัดส่ง/ประกันภัยออกจากระบบ: ${ruleDesc}`, 
           uid
         );
       }

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, Crown, ShieldAlert, Search } from 'lucide-react';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 /**
  * 👑 หน้าต่างจัดการสิทธิ์ VIP (VIP Management Modal)
@@ -75,7 +76,7 @@ const VipManagementModal = ({ isOpen, onClose, vipUsers, isLoading, onFetchVips,
                             </div>
                             <div>
                                 <h4 className="text-[14px] font-bold text-(--dh-text-main)">
-                                  {user.accountName || user.firstName || 'ลูกค้า VIP'}
+                                  {getCustomerDisplayName(user, 'ลูกค้า VIP')}
                                 </h4>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[11px] text-(--dh-text-muted)">{user.email || 'ไม่มีอีเมล'}</span>
@@ -87,7 +88,7 @@ const VipManagementModal = ({ isOpen, onClose, vipUsers, isLoading, onFetchVips,
                         <td className="px-4 py-3 text-right">
                           <button 
                             onClick={() => {
-                              if(window.confirm(`ยืนยันการปลดสิทธิ์ VIP ของ ${user.accountName || user.firstName}?`)){
+                              if(window.confirm(`ยืนยันการปลดสิทธิ์ VIP ของ ${getCustomerDisplayName(user)}?`)){
                                 onRevokeVip(user.id);
                               }
                             }}

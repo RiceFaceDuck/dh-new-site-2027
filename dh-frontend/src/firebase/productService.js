@@ -1,5 +1,6 @@
-import { doc, getDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล
 const normalizeKey = (k) => String(k).replace(/[_\-\s]/g, '').toLowerCase();
@@ -27,7 +28,7 @@ export const productService = {
   async getProduct(sku) {
     if (!sku) return null;
     try {
-      const docRef = doc(db, "products", sku);
+      const docRef = doc(db, getCollectionPath('products'), sku);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
@@ -36,7 +37,7 @@ export const productService = {
       }
 
       // Fallback: search by sku field if document ID doesn't match
-      const q = query(collection(db, "products"), where("sku", "==", sku));
+      const q = query(collection(db, getCollectionPath('products')), where("sku", "==", sku), limit(1));
       const querySnapshot = await getDocs(q);
       
       if (!querySnapshot.empty) {
@@ -70,7 +71,7 @@ export const productService = {
         // Assume document IDs are the primary way to fetch
         // We use documentId() which maps to __name__ in Firestore
         const { documentId } = await import('firebase/firestore');
-        const q = query(collection(db, "products"), where(documentId(), "in", chunk));
+        const q = query(collection(db, getCollectionPath('products')), where(documentId(), "in", chunk));
         const querySnapshot = await getDocs(q);
         
         querySnapshot.forEach((docSnap) => {
@@ -82,7 +83,7 @@ export const productService = {
         const missingIds = chunk.filter(id => !fetchedIds.includes(id));
         
         if (missingIds.length > 0) {
-          const fallbackQ = query(collection(db, "products"), where("sku", "in", missingIds));
+          const fallbackQ = query(collection(db, getCollectionPath('products')), where("sku", "in", missingIds));
           const fallbackSnap = await getDocs(fallbackQ);
           fallbackSnap.forEach((docSnap) => {
             results.push(this.normalizeProductData({ id: docSnap.id, ...docSnap.data() }));
@@ -105,7 +106,7 @@ export const productService = {
     if (!sku) return () => {};
     
     // First try subscribing to the document directly (assuming SKU is document ID)
-    const docRef = doc(db, "products", sku);
+    const docRef = doc(db, getCollectionPath('products'), sku);
     
     // We will use onSnapshot on a query to handle both ID and SKU fields if possible,
     // but onSnapshot on docRef is much cheaper. Let's try docRef first, if it fails, fallback to query.
@@ -121,7 +122,7 @@ export const productService = {
       } else if (!isFallback) {
         isFallback = true;
         // Fallback to query if doc ID doesn't match
-        const q = query(collection(db, "products"), where("sku", "==", sku));
+        const q = query(collection(db, getCollectionPath('products')), where("sku", "==", sku), limit(1));
         fallbackUnsub = onSnapshot(q, (querySnapshot) => {
           if (!querySnapshot.empty) {
             const firstDoc = querySnapshot.docs[0];

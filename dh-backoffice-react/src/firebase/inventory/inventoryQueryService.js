@@ -1,12 +1,13 @@
 import { collection, doc, getDoc, getDocs, query, limit, startAfter, orderBy, where } from 'firebase/firestore';
 import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'products';
 
 export const inventoryQueryService = {
   getInventorySettings: async () => {
     try {
-      const docRef = doc(db, 'settings', 'inventory');
+      const docRef = doc(db, getCollectionPath('settings'), 'inventory');
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         return snap.data();
@@ -121,6 +122,29 @@ export const inventoryQueryService = {
     }
   },
 
+  getProductsPricesBatch: async (skus) => {
+    try {
+      if (!skus || skus.length === 0) return {};
+      const results = {};
+      const batches = [];
+      for (let i = 0; i < skus.length; i += 30) {
+        batches.push(skus.slice(i, i + 30));
+      }
+      for (const batch of batches) {
+        const q = query(collection(db, COLLECTION_NAME), where('sku', 'in', batch));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          results[doc.id] = data.wholesalePrice || null;
+        });
+      }
+      return results;
+    } catch (error) {
+      console.error("🔥 Error fetching product prices batch:", error);
+      return {};
+    }
+  },
+
   getProductImagesBatch: async (skus) => {
     try {
       if (!skus || skus.length === 0) return {};
@@ -152,7 +176,7 @@ export const inventoryQueryService = {
   getUniqueProductCategories: async () => {
     try {
       // 🚀 ประหยัด Reads โดยดึงจาก settings/product_categories
-      const docRef = doc(db, 'settings', 'product_categories');
+      const docRef = doc(db, getCollectionPath('settings'), 'product_categories');
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();

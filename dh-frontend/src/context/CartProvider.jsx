@@ -3,6 +3,7 @@ import { auth, db } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { cartService } from '../firebase/cartService';
+import { safeJsonParse } from 'dh-shared';
 
 export const CartStateContext = createContext();
 export const CartDispatchContext = createContext();
@@ -54,14 +55,14 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem('dh_cart');
-      return savedCart ? JSON.parse(savedCart) : [];
+      return savedCart ? safeJsonParse(savedCart, []) : [];
     } catch (e) { return []; }
   });
 
   const [checkoutState, setCheckoutState] = useState(() => {
     try {
       const saved = localStorage.getItem('dh_checkout_state');
-      return saved ? { ...defaultCheckoutState, ...JSON.parse(saved) } : defaultCheckoutState;
+      return saved ? { ...defaultCheckoutState, ...safeJsonParse(saved, {}) } : defaultCheckoutState;
     } catch (e) { return defaultCheckoutState; }
   });
 
@@ -132,7 +133,7 @@ export const CartProvider = ({ children }) => {
         const savedGuestCart = localStorage.getItem('dh_cart');
         if (savedGuestCart) {
           try {
-            const guestItems = JSON.parse(savedGuestCart);
+            const guestItems = safeJsonParse(savedGuestCart, []);
             if (guestItems.length > 0) {
               await cartService.mergeGuestCart(user.uid, guestItems);
               localStorage.removeItem('dh_cart'); // Clear guest cart after merge
@@ -167,7 +168,7 @@ export const CartProvider = ({ children }) => {
         }
         try {
           const savedCart = localStorage.getItem('dh_cart');
-          setCartItems(savedCart ? JSON.parse(savedCart) : []);
+          setCartItems(savedCart ? safeJsonParse(savedCart, []) : []);
         } catch (e) { setCartItems([]); }
       }
     });

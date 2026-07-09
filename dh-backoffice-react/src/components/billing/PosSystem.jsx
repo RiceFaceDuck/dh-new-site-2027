@@ -14,6 +14,7 @@ import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
 import { usePosShortcuts } from './pos/hooks/usePosShortcuts';
 import { useCartValidation } from './pos/hooks/useCartValidation';
 import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const convertToThaiBahtText = (number) => {
     if (isNaN(number) || number === 0) return "ศูนย์บาทถ้วน";
@@ -65,8 +66,25 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
     const submitLockRef = useRef(false);
 
     const [isPaymentPanelCollapsed, setIsPaymentPanelCollapsed] = useState(false);
-    const [isPaymentPanelLocked, setIsPaymentPanelLocked] = useState(false);
+    const [isPaymentPanelLocked, setIsPaymentPanelLocked] = useState(true);
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+    const [shippingRules, setShippingRules] = useState([]);
+
+    useEffect(() => {
+        const fetchShippingRules = async () => {
+            try {
+                const { collection, getDocs, query, where } = await import('firebase/firestore');
+                const { db } = await import('../../firebase/config');
+                const q = query(collection(db, 'shipping_rules'), where('isActive', '==', true));
+                const snap = await getDocs(q);
+                const rules = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setShippingRules(rules);
+            } catch (e) {
+                console.error("🔥 Error loading shipping rules in POS:", e);
+            }
+        };
+        fetchShippingRules();
+    }, []);
 
     const actions = usePosActions({
         posState, products, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText
@@ -84,7 +102,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
 
     const getTabTitle = (tab, index) => {
         if (tab.customer && tab.customer.uid !== 'WALK-IN') {
-            return tab.customer.accountName || tab.customer.displayName || tab.customer.firstName || tab.customer.name || `ลูกค้า ${index + 1}`;
+            return getCustomerDisplayName(tab.customer, `ลูกค้า ${index + 1}`);
         }
         if (tab.walkInName) return tab.walkInName;
         if (tab.orderId) return `บิล ${tab.orderId.slice(-4)}`;
@@ -130,7 +148,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                     <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} />
                 </div>
                 <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
-                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={actions.handleRemovePromotion} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} />
+                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={actions.handleRemovePromotion} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} />
                 </div>
             </div>
 

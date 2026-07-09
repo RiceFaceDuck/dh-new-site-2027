@@ -1,15 +1,7 @@
 import React from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../../../firebase/config';
-import { userService } from '../../../../firebase/userService';
+import { userStaffService, updateStaffDetails } from '../../../../firebase/userStaffService';
 import { Edit, X, User, Calendar, Phone } from 'lucide-react';
-
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+import { auth } from '../../../../firebase/config';
 
 export default function StaffEditModal({ editingStaff, setEditingStaff, showToast, setStaffList }) {
   const handleUpdateProfile = async (e) => {
@@ -26,12 +18,8 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
             : (editingStaff.displayName || '')
       };
 
-      if (userService.updateUserProfile) {
-        await userService.updateUserProfile(editingStaff.id, payload);
-      } else {
-        const userRef = doc(db, getCollectionPath('users'), editingStaff.id);
-        await updateDoc(userRef, payload);
-      }
+      const adminId = auth.currentUser?.uid || 'System';
+      await updateStaffDetails(adminId, editingStaff.id, payload);
       
       setStaffList(prev => prev.map(staff => 
         staff.id === editingStaff.id ? { ...staff, ...payload } : staff

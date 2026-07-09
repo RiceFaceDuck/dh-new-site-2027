@@ -3,6 +3,7 @@ import { db } from './config';
 import { 
   collection, query, where, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, limit, orderBy
 } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // ----------------------------------------------------------------------
 // 🏷️ ประกาศตัวแปรกลุ่มงานของ "ผู้จัดการ" (Manager Task Types)
@@ -33,7 +34,7 @@ export const managerTodoService = {
   // ----------------------------------------------------------------------
   subscribeManagerApprovals: (callback) => {
     // ดึงงานที่ยังไม่เสร็จ (todo หรือ pending) จาก Collection หลัก
-    const todosRef = collection(db, 'todos');
+    const todosRef = collection(db, getCollectionPath('todos'));
     const q = query(
       todosRef,
       where('status', 'in', ['todo', 'pending', 'pending_manager', 'waiting_item', 'processing']),
@@ -72,7 +73,7 @@ export const managerTodoService = {
         Object.entries(payload).filter(([_, v]) => v !== undefined)
       );
       
-      const taskRef = doc(db, 'todos', taskId);
+      const taskRef = doc(db, getCollectionPath('todos'), taskId);
       await updateDoc(taskRef, { 
         ...cleanPayload, 
         status: newStatus, 
@@ -92,7 +93,7 @@ export const managerTodoService = {
     try {
       if (!taskId) throw new Error("ไม่พบรหัสงาน (Task ID) ที่ต้องการลบ");
 
-      const taskRef = doc(db, 'todos', taskId);
+      const taskRef = doc(db, getCollectionPath('todos'), taskId);
       await deleteDoc(taskRef);
       return true;
     } catch (error) {

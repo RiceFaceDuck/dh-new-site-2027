@@ -1,12 +1,8 @@
 import { db } from './config';
 import { collection, doc, getDocs, getDoc, updateDoc, setDoc, serverTimestamp, query, where } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const getCollectionPath = (colName) => {
-    if (typeof __app_id !== 'undefined' && window.location.hostname.includes('canvas')) {
-        return `artifacts/${__app_id}/public/data/${colName}`;
-    }
-    return colName; 
-};
+
 
 const getUsersCollectionRef = () => collection(db, getCollectionPath('users'));
 const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
@@ -14,10 +10,11 @@ const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
 export const VALID_STAFF_ROLES = [
     'admin', 'manager', 'staff', 'packer', 
     'pending', 'pending_approval', 'pending-staff', 
-    'developer', 'owner', 'ผู้จัดการ', 'เจ้าของ'
+    'developer', 'owner', 'ผู้จัดการ', 'เจ้าของ',
+    'admin ฝ่ายขาย', 'จัดแพ็ค', 'การบัญชี', 'อื่นๆ'
 ];
 
-export const getAllStaff = async () => {
+export const getAllStaff = async (includeInactive = false) => {
     try {
         const usersRef = getUsersCollectionRef();
         
@@ -51,13 +48,21 @@ export const getAllStaff = async () => {
             });
         });
         
-        const allUsers = Array.from(allStaffMap.values());
+        const allUsers = Array.from(allStaffMap.values()).map(u => {
+            const isNotApproved = u.isApproved === false || (u.isApproved === undefined && u.isStaff !== true);
+            if (isNotApproved && u.role !== 'pending_approval') {
+                u.requestedRole = u.role;
+                u.role = 'pending_approval';
+            }
+            return u;
+        });
         
         // Final filtering in memory for simple conditions
-        return allUsers.filter(u => 
-            u.status !== 'deleted' &&
-            u.isActive !== false
-        );
+        return allUsers.filter(u => {
+            if (u.status === 'deleted') return false;
+            if (!includeInactive && u.isActive === false) return false;
+            return true;
+        });
     } catch (error) {
         console.error("❌ [UserStaffService] Get All Staff Error:", error);
         throw error;
@@ -102,6 +107,7 @@ export const registerPendingStaff = async (uid, email, staffData) => {
             // but we explicitly define isStaff and isActive flags for clarity
             isActive: false, 
             isStaff: false,
+            isApproved: false,
             metadata: {
                 createdAt: snap.exists() ? snap.data().metadata?.createdAt : serverTimestamp(),
                 updatedAt: serverTimestamp(),
@@ -133,4 +139,59 @@ export const updateStaffDetails = async (adminId, targetUid, updates) => {
         console.error("❌ [UserStaffService] Update Staff Details Error:", error);
         throw error;
     }
+};
+
+export const searchUsersForStaffPromotion = async (keyword) => {
+    try {
+        const usersRef = getUsersCollectionRef();
+        const snapshot = await getDocs(usersRef);
+        const results = [];
+        const searchWord = keyword.toLowerCase().trim();
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if ((data.email && data.email.toLowerCase().includes(searchWord)) ||
+                (data.phone && data.phone.includes(searchWord)) ||
+                (data.displayName && data.displayName.toLowerCase().includes(searchWord))) {
+                
+                const currentRole = String(data.role || (data.roles && data.roles[0]) || '').toLowerCase();
+                if (!['admin', 'manager', 'staff', 'packer', 'developer'].includes(currentRole)) {
+                    results.push({ id: doc.id, ...data });
+                }
+            }
+        });
+        return results;
+    } catch (error) {
+        console.error("❌ [UserStaffService] Search Users Error:", error);
+        throw error;
+    }
+};
+
+export const promoteUserToStaff = async (adminId, targetUid, newRole) => {
+    try {
+        // Also call the main userManagementService to track history, but here we update the document directly first
+        const userRef = getUserDocRef(targetUid);
+        await updateDoc(userRef, { 
+            isStaff: true, 
+            isActive: true, 
+            role: newRole,
+            roles: [newRole.charAt(0).toUpperCase() + newRole.slice(1)],
+            'metadata.roleUpdatedAt': serverTimestamp(),
+            'metadata.roleUpdatedBy': adminId
+        });
+        console.log(`✅ [UserStaffService] Promoted UID ${targetUid} to ${newRole}`);
+        return { success: true };
+    } catch (error) {
+        console.error("❌ [UserStaffService] Promote User Error:", error);
+        throw error;
+    }
+};
+
+export const userStaffService = {
+  getAllStaff,
+  getPendingStaff,
+  registerPendingStaff,
+  updateStaffDetails,
+  searchUsersForStaffPromotion,
+  promoteUserToStaff
 };

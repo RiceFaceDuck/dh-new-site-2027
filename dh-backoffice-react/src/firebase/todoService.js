@@ -22,12 +22,17 @@ export const todoService = {
   rejectTask: todoActionService.rejectTask,
   deleteTask: todoActionService.deleteTask,
   createManualTask: todoActionService.createManualTask,
+  updateTodoTrackingNo: todoActionService.updateTodoTrackingNo,
+  completeTaxInvoiceTask: todoActionService.completeTaxInvoiceTask,
 
   // Feature Specific
   verifyPaymentSlip: todoPaymentService.verifyPaymentSlip,
+  rejectPaymentSlip: todoPaymentService.rejectPaymentSlip,
   approveWholesaleRequest: todoWholesaleService.approveWholesaleRequest,
   rejectWholesale: todoWholesaleService.rejectWholesale,
   processWalletWithdrawal: todoWalletService.processWalletWithdrawal,
+  createMockWithdrawal: todoWalletService.createMockWithdrawal,
+  clearMockWithdrawals: todoWalletService.clearMockWithdrawals,
   createStaffApprovalTask: todoStaffService.createStaffApprovalTask,
   requestProductDeletion: todoInventoryService.requestProductDeletion,
 

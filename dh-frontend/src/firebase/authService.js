@@ -7,6 +7,7 @@ import {
   signOut 
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const googleProvider = new GoogleAuthProvider();
 // บังคับให้เลือกบัญชีทุกครั้ง ป้องกันการ Auto-login บัญชีผิด
@@ -25,7 +26,7 @@ const ensureUserProfile = async (user, additionalData = {}) => {
   if (!user) return null;
   
   try {
-    const userRef = doc(db, 'users', user.uid);
+    const userRef = doc(db, getCollectionPath('users'), user.uid);
     const userSnap = await getDoc(userRef);
     
     // ข้อมูลพื้นฐานที่ต้องอัปเดตทุกครั้งที่ Login

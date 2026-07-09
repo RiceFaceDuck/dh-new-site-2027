@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 import { Heart, Info, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function SupportSettings({ user, initialData, onRefresh }) {
   // ใช้ local state เพื่อความรวดเร็วในการแสดงผล (Optimistic UI)
@@ -28,7 +29,7 @@ export default function SupportSettings({ user, initialData, onRefresh }) {
 
     try {
       const db = getFirestore();
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, getCollectionPath('users'), user.uid);
 
       // 2. ส่งข้อมูลไปที่ Firestore
       await updateDoc(userRef, {

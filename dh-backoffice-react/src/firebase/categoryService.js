@@ -44,9 +44,11 @@ export const categoryService = {
       const compressedFile = await imageCompression(file, {
         maxSizeMB: 0.2, // บีบอัดไอคอนหมวดหมู่ให้เล็กที่สุด ไม่เกิน 200KB
         maxWidthOrHeight: 512,
-        useWebWorker: true
+        useWebWorker: true,
+        fileType: 'image/webp'
       });
-      const fileRef = ref(storage, `categories/${Date.now()}_${compressedFile.name.replace(/\s+/g, '_')}`);
+      const newName = compressedFile.name.replace(/\.[^/.]+$/, "") + ".webp";
+      const fileRef = ref(storage, `categories/${Date.now()}_${newName.replace(/\s+/g, '_')}`);
       await uploadBytes(fileRef, compressedFile);
       const downloadURL = await getDownloadURL(fileRef);
       return downloadURL;

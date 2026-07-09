@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../../../firebase/config';
 import { collection, query, where, documentId, getDocs } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const useWholesalePrices = (activeTodos) => {
   const [wholesaleInputs, setWholesaleInputs] = useState({});
@@ -36,7 +37,7 @@ export const useWholesalePrices = (activeTodos) => {
           for(let i=0; i < uniqueIds.length; i+=30) {
               const batchIds = uniqueIds.slice(i, i+30);
               try {
-                  const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));
+                  const q = query(collection(db, getCollectionPath('products')), where(documentId(), 'in', batchIds));
                   const snapshot = await getDocs(q);
                   const foundPrices = {};
                   snapshot.forEach(doc => { foundPrices[doc.id] = doc.data().wholesalePrice || null; });

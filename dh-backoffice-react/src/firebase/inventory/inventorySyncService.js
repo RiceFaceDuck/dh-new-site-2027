@@ -2,6 +2,7 @@ import { doc, setDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventorySyncService = {
   /**
@@ -9,7 +10,7 @@ export const inventorySyncService = {
    */
   syncCategory: async (newCategory, oldCategory = null) => {
     if (newCategory && newCategory !== oldCategory) {
-      const settingsRef = doc(db, 'settings', 'product_categories');
+      const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
       await setDoc(settingsRef, {
         categories: arrayUnion(newCategory)
       }, { merge: true });

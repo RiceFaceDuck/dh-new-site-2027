@@ -88,14 +88,16 @@ export default function StaffTable({
                       ) : (
                         <div className="relative inline-block w-40">
                           <select
-                              value={displayRole.toLowerCase()}
+                              value={displayRole.toLowerCase() === 'pending' ? 'pending_approval' : displayRole.toLowerCase()}
                               onChange={(e) => handleRoleChange(staff.id, e.target.value, staff.email)}
                               className={`w-full appearance-none pl-4 pr-8 py-2 bg-white dark:bg-slate-800 border rounded-xl text-xs font-black uppercase tracking-wider focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs transition-all text-center ${
                               displayRole.toLowerCase() === 'admin' ? 'text-purple-700 border-purple-200 dark:text-purple-400 dark:border-purple-800/50 hover:bg-purple-50 dark:hover:bg-purple-900/20' :
                               displayRole.toLowerCase() === 'manager' ? 'text-blue-700 border-blue-200 dark:text-blue-400 dark:border-blue-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/20' :
+                              displayRole.toLowerCase() === 'pending_approval' || displayRole.toLowerCase() === 'pending' ? 'text-amber-700 border-amber-200 dark:text-amber-400 dark:border-amber-800/50 hover:bg-amber-50 dark:hover:bg-amber-900/20' :
                               'text-slate-700 border-slate-200 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                               }`}
                           >
+                              <option value="pending_approval">รออนุมัติ</option>
                               {ROLES.map(r => <option key={r} value={r.toLowerCase()}>{r}</option>)}
                           </select>
                           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
@@ -107,14 +109,14 @@ export default function StaffTable({
 
                     <td className="px-6 py-4 text-center">
                       <div className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs border min-w-[100px] ${
-                        staff.isActive 
-                          ? 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800/50' 
-                          : staff.role === 'pending_approval'
+                        (staff.role === 'pending_approval' || staff.role === 'pending' || staff.role === 'pending-staff')
                           ? 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/20 dark:border-amber-800/50'
+                          : staff.isActive 
+                          ? 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800/50' 
                           : 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800/50'
                       }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${staff.isActive ? 'bg-emerald-500' : staff.role === 'pending_approval' ? 'bg-amber-500' : 'bg-red-500'}`}></div>
-                        {staff.role === 'pending_approval' ? 'รออนุมัติ' : staff.isActive ? 'ปกติ (Active)' : 'ระงับการใช้งาน'}
+                        <div className={`w-1.5 h-1.5 rounded-full ${(staff.role === 'pending_approval' || staff.role === 'pending' || staff.role === 'pending-staff') ? 'bg-amber-500' : staff.isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                        {(staff.role === 'pending_approval' || staff.role === 'pending' || staff.role === 'pending-staff') ? 'รออนุมัติ' : staff.isActive ? 'ปกติ (Active)' : 'ระงับการใช้งาน'}
                       </div>
                     </td>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { privacyCookiesClientService } from '../firebase/privacyCookiesClientService';
 
+import { safeJsonParse } from 'dh-shared';
 const LOCAL_STORAGE_KEY = 'dh_cookie_consent';
 
 export function useCookieConsent() {
@@ -23,7 +24,7 @@ export function useCookieConsent() {
       
       if (savedConsent) {
         try {
-          const parsed = JSON.parse(savedConsent);
+          const parsed = safeJsonParse(savedConsent);
           setConsentStatus('accepted');
           setUserPreferences(parsed.preferences || {});
           setIsBannerVisible(false);
@@ -45,13 +46,22 @@ export function useCookieConsent() {
         setUserPreferences(defaults);
         
         // Small delay before showing banner for better UX
-        setTimeout(() => setIsBannerVisible(true), 1500);
+        timer = setTimeout(() => setIsBannerVisible(true), 1500);
       }
       
       setIsLoading(false);
     }
     
+    let timer;
+    if (!localStorage.getItem(LOCAL_STORAGE_KEY)) {
+        // Will set timer in init
+    }
+
     init();
+
+    return () => {
+        if (timer) clearTimeout(timer);
+    };
   }, []);
 
   const acceptAll = () => {

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { todoService } from '../../firebase/todoService';
 import { creditCoreService } from '../../firebase/creditCoreService';
-import { db } from '../../firebase/config';
-import { gasHistoryService } from '../../firebase/gasHistoryService';
-import { doc, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { billingQueryService } from '../../firebase/billingQueryService';
 
 const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,8 +14,8 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
     const fetchOrder = async () => {
       try {
         if (!task?.orderId) return;
-        const snap = await getDoc(doc(db, 'orders', task.orderId));
-        if (snap.exists()) setOrderData(snap.data());
+        const data = await billingQueryService.getOrderById(task.orderId);
+        if (data) setOrderData(data);
       } catch (err) {
         console.error("Error fetching order data for slip:", err);
       }
@@ -58,29 +56,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
     setIsSubmitting(true);
     setErrorMsg('');
     try {
-      const batch = writeBatch(db);
-      const orderRef = doc(db, 'orders', task.orderId);
-      batch.update(orderRef, {
-        status: 'pending_payment',
-        paymentSlipUrl: null,
-        rejectReason: rejectReason,
-        updatedAt: serverTimestamp()
-      });
-      const taskRef = doc(db, 'todos', task.id);
-      batch.update(taskRef, {
-        status: 'rejected',
-        rejectReason: rejectReason,
-        completedAt: serverTimestamp(),
-        actionBy: currentUser?.displayName || 'Admin'
-      });
-      gasHistoryService.log({
-        module: 'Customer History',
-        action: 'SLIP_REJECTED',
-        target: { id: task.orderId },
-        details: { legacy_details: `หลักฐานการชำระเงินไม่ถูกต้อง/ไม่ชัดเจน\nเหตุผล: ${rejectReason}\nกรุณาอัปโหลดหลักฐานใหม่ครับ` },
-        actorOverride: { uid: task.userId, name: 'System (For Customer)', email: 'N/A' }
-      });
-      await batch.commit();
+      await todoService.rejectPaymentSlip(task, rejectReason, currentUser);
       if (onSuccess) onSuccess();
     } catch(err) {
       console.error("Reject Error", err);

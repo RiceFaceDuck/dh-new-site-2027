@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const PRIVACY_DOC = 'privacy_cookies_config';
 
@@ -43,7 +44,7 @@ export const DEFAULT_PRIVACY_CONFIG = {
 export const privacyCookiesService = {
   getPrivacyConfig: async () => {
     try {
-      const docRef = doc(db, 'settings', PRIVACY_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), PRIVACY_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         return { ...DEFAULT_PRIVACY_CONFIG, ...snap.data() };
@@ -57,7 +58,7 @@ export const privacyCookiesService = {
 
   updatePrivacyConfig: async (configData) => {
     try {
-      const docRef = doc(db, 'settings', PRIVACY_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), PRIVACY_DOC);
       await setDoc(docRef, {
         ...configData,
         updatedAt: serverTimestamp()

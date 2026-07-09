@@ -1,0 +1,692 @@
+[
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\checkout\\AddressSelector.jsx",
+    "line": 38,
+    "content": "const userDoc = await getDoc(doc(db, \"users\", auth.currentUser.uid));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\checkout\\AddressSelector.jsx",
+    "line": 45,
+    "content": "const taxDoc = await getDoc(doc(db, \"users\", auth.currentUser.uid, 'private', 'taxInfo'));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\checkout\\PrivilegeSelector.jsx",
+    "line": 22,
+    "content": "const userRef = doc(db, 'users', user.uid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\components\\product\\RelatedProducts.jsx",
+    "line": 23,
+    "content": "collection(db, 'products'),"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\profile\\forms\\PersonalInfoForm.jsx",
+    "line": 108,
+    "content": "const userRef = doc(db, 'users', user.uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\profile\\forms\\SocialLinksForm.jsx",
+    "line": 46,
+    "content": "const userRef = doc(db, 'users', user.uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\profile\\forms\\SupportSettings.jsx",
+    "line": 31,
+    "content": "const userRef = doc(db, 'users', user.uid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\components\\profile\\tabs\\history\\useHistoryOrders.js",
+    "line": 16,
+    "content": "collection(db, 'orders'),"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\profile\\tabs\\history\\useUploadSlip.js",
+    "line": 44,
+    "content": "const orderRef = doc(db, 'orders', selectedOrder.id);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\components\\profile\\tabs\\TabAdManager.jsx",
+    "line": 91,
+    "content": "const rootStoreRef = doc(db, 'users', user.uid, 'storeProfile', 'main');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\authService.js",
+    "line": 28,
+    "content": "const userRef = doc(db, 'users', user.uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutOrderActionService.js",
+    "line": 7,
+    "content": "const orderRef = doc(db, \"orders\", orderId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutOrderActionService.js",
+    "line": 8,
+    "content": "const userRef = doc(db, \"users\", userId);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutOrderActionService.js",
+    "line": 9,
+    "content": "const txRef = doc(collection(db, \"credit_transactions\"));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutOrderActionService.js",
+    "line": 54,
+    "content": "const orderRef = doc(db, \"orders\", orderId);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutSubmitService.js",
+    "line": 28,
+    "content": "const orderRef = doc(collection(db, \"orders\"));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutSubmitService.js",
+    "line": 29,
+    "content": "const userRef = doc(db, \"users\", user.uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutSubmitService.js",
+    "line": 50,
+    "content": "const pRef = doc(db, 'products', itemIdentifier);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutWholesaleService.js",
+    "line": 8,
+    "content": "const userDoc = await getDoc(doc(db, 'users', user.uid));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\firebase\\checkout\\checkoutWholesaleService.js",
+    "line": 20,
+    "content": "const orderRef = doc(collection(db, \"orders\"));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\productReviewService.js",
+    "line": 74,
+    "content": "const productRef = doc(db, 'products', productId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\productService.js",
+    "line": 30,
+    "content": "const docRef = doc(db, \"products\", sku);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\firebase\\productService.js",
+    "line": 39,
+    "content": "const q = query(collection(db, \"products\"), where(\"sku\", \"==\", sku), limit(1));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\firebase\\productService.js",
+    "line": 73,
+    "content": "const q = query(collection(db, \"products\"), where(documentId(), \"in\", chunk));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\firebase\\productService.js",
+    "line": 85,
+    "content": "const fallbackQ = query(collection(db, \"products\"), where(\"sku\", \"in\", missingIds));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\productService.js",
+    "line": 108,
+    "content": "const docRef = doc(db, \"products\", sku);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\firebase\\productService.js",
+    "line": 124,
+    "content": "const q = query(collection(db, \"products\"), where(\"sku\", \"==\", sku), limit(1));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\userService.js",
+    "line": 47,
+    "content": "const userRef = doc(db, 'users', uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\userService.js",
+    "line": 71,
+    "content": "const userRef = doc(db, 'users', uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\userService.js",
+    "line": 119,
+    "content": "const userRef = doc(db, 'users', uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\userService.js",
+    "line": 141,
+    "content": "const userRef = doc(db, 'users', uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\userService.js",
+    "line": 176,
+    "content": "const taxRef = doc(db, 'users', uid, 'private', 'taxInfo');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\userService.js",
+    "line": 201,
+    "content": "const taxRef = doc(db, 'users', uid, 'private', 'taxInfo');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\firebase\\userService.js",
+    "line": 236,
+    "content": "const userRef = doc(db, 'users', uid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\pages\\CategoryPage.jsx",
+    "line": 70,
+    "content": "const productsRef = collection(db, \"products\");"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-frontend\\src\\pages\\Profile.jsx",
+    "line": 36,
+    "content": "const userRef = doc(db, 'users', currentUser.uid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-frontend\\src\\pages\\SearchPage.jsx",
+    "line": 61,
+    "content": "const productsRef = collection(db, \"products\");"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\scratch_fetch_promo.js",
+    "line": 19,
+    "content": "const productsSnap = await getDocs(query(collection(db, 'products'), where('category', '==', 'Panel'), limit(5)));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\scratch_fetch_promo.js",
+    "line": 26,
+    "content": "const freebieItemSnap = await getDocs(query(collection(db, 'products'), where('sku', '==', 'TO0158')));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\scratch_verify_pos_order.js",
+    "line": 30,
+    "content": "const rootCreditRef = collection(db, 'credit_transactions');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\components\\common\\WarrantyCheckModal.jsx",
+    "line": 37,
+    "content": "const q = query(collection(db, 'orders'), where('orderId', '==', searchTerm.trim().toUpperCase()), limit(1));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\components\\overview\\TotalLiabilityDashboard.jsx",
+    "line": 20,
+    "content": "const usersRef = collection(db, 'users');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\components\\overview\\TotalLiabilityDashboard.jsx",
+    "line": 47,
+    "content": "const creditTxQuery = query(collection(db, 'credit_transactions'), orderBy('timestamp', 'desc'), limit(1));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\adManagementService.js",
+    "line": 92,
+    "content": "const rootStoreRef = doc(db, 'users', uid, 'storeProfile', 'main');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\billingDeleteService.js",
+    "line": 27,
+    "content": "const userRef = doc(db, 'users', customerUid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\billingStatusTransaction.js",
+    "line": 48,
+    "content": "const pRef = doc(db, 'products', itemIdentifier);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\billingStatusTransaction.js",
+    "line": 55,
+    "content": "userRef = doc(db, 'users', customerUid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\billingTransactionService.js",
+    "line": 22,
+    "content": "productRefs.push({ ref: doc(db, 'products', itemIdentifier), item });"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\billingTransactionService.js",
+    "line": 31,
+    "content": "userSnap = await transaction.get(doc(db, 'users', customerUid));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\billingTransactionService.js",
+    "line": 233,
+    "content": "const userRef = doc(db, 'users', customerUid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\categoryService.js",
+    "line": 166,
+    "content": "const productsRef = collection(db, 'products');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\categorySyncService.js",
+    "line": 55,
+    "content": "const productsRef = collection(db, 'products');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\cancelActionService.js",
+    "line": 23,
+    "content": "const pRef = doc(db, 'products', payload.sku);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\cancelActionService.js",
+    "line": 57,
+    "content": "const orderRef = doc(db, 'orders', payload.orderDocId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\cancelActionService.js",
+    "line": 88,
+    "content": "const userRef = doc(db, 'users', payload.customerUid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\claimActionService.js",
+    "line": 47,
+    "content": "await updateDoc(doc(db, 'products', payload.sku), {"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\claimActionService.js",
+    "line": 80,
+    "content": "const pRef = doc(db, 'products', payload.sku);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\claimActionService.js",
+    "line": 103,
+    "content": "const orderRef = doc(db, 'orders', payload.orderDocId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\returnActionService.js",
+    "line": 56,
+    "content": "const pRef = doc(db, 'products', payload.sku);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\returnActionService.js",
+    "line": 76,
+    "content": "const orderRef = doc(db, 'orders', payload.orderDocId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\claim\\returnActionService.js",
+    "line": 94,
+    "content": "const userRef = doc(db, 'users', payload.customerUid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\customerAdminService.js",
+    "line": 201,
+    "content": "const ordersRef = collection(db, 'orders');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\customerAdminService.js",
+    "line": 244,
+    "content": "const creditsRef = collection(db, 'credit_transactions');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\dataRepairService.js",
+    "line": 10,
+    "content": "const snap = await getDocs(collection(db, 'users'));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\dataRepairService.js",
+    "line": 27,
+    "content": "batch.update(doc(db, 'users', userDoc.id), updates);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\dataRepairService.js",
+    "line": 54,
+    "content": "const snap = await getDocs(collection(db, 'orders'));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\dataRepairService.js",
+    "line": 98,
+    "content": "batch.update(doc(db, 'orders', orderDoc.id), updates);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\dataRepairService.js",
+    "line": 125,
+    "content": "const snap = await getDocs(collection(db, 'products'));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\dataRepairService.js",
+    "line": 156,
+    "content": "batch.update(doc(db, 'products', productDoc.id), updates);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\featured\\featuredConfigService.js",
+    "line": 53,
+    "content": "const productsRef = collection(db, 'products');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\featured\\featuredConfigService.js",
+    "line": 61,
+    "content": "const docRef = doc(db, 'products', document.id);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\freebieService.js",
+    "line": 20,
+    "content": "const q = query(collection(db, 'products'), where('sku', 'in', chunk));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\inventory\\inventoryExportService.js",
+    "line": 17,
+    "content": "const q = query(collection(db, 'products'));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\inventory\\inventoryImportService.js",
+    "line": 15,
+    "content": "const q = query(collection(db, 'products'), where(documentId(), 'in', chunk));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\inventory\\inventoryImportService.js",
+    "line": 55,
+    "content": "const docRef = doc(db, 'products', p.sku);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\productKnowledgeAdminService.js",
+    "line": 17,
+    "content": "const productRef = doc(db, 'products', productId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\productKnowledgeAdminService.js",
+    "line": 18,
+    "content": "const userRef = doc(db, 'users', createdByUid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\firebase\\promotionService.js",
+    "line": 15,
+    "content": "const q = query(collection(db, 'products'), where('sku', 'in', chunk));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\todo\\todoActionService.js",
+    "line": 72,
+    "content": "const orderRef = doc(db, 'orders', task.payload.orderId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\todo\\todoPaymentService.js",
+    "line": 12,
+    "content": "const orderRef = doc(db, 'orders', orderId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\todo\\todoPaymentService.js",
+    "line": 63,
+    "content": "const pRef = doc(db, 'products', itemIdentifier);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\todo\\todoPaymentService.js",
+    "line": 72,
+    "content": "const pRef = doc(db, 'products', item.sku);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\todo\\todoPaymentService.js",
+    "line": 216,
+    "content": "const orderRef = doc(db, 'orders', task.orderId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\todo\\todoWholesaleService.js",
+    "line": 11,
+    "content": "const orderRef = doc(db, 'orders', orderId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\todo\\todoWholesaleService.js",
+    "line": 78,
+    "content": "const orderRef = doc(db, 'orders', orderId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\transactionImportService.js",
+    "line": 146,
+    "content": "const docRef = doc(db, 'products', update.sku);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\transactionImportService.js",
+    "line": 263,
+    "content": "const docRef = doc(db, 'products', item.sku);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\firebase\\transactionService.js",
+    "line": 15,
+    "content": "const userRef = doc(db, 'users', uid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\hooks\\useAutoCleanup.js",
+    "line": 28,
+    "content": "const ordersRef = collection(db, 'orders');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\Customers\\components\\details\\DetailPanel.jsx",
+    "line": 49,
+    "content": "const taxRef = doc(db, 'users', customer.id, 'private', 'taxInfo');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomerActions.js",
+    "line": 232,
+    "content": "const userRef = doc(db, 'users', u.id || u.uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomerData.js",
+    "line": 64,
+    "content": "await deleteDoc(doc(db, 'users', '0AUXLNHI'));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomerData.js",
+    "line": 65,
+    "content": "await deleteDoc(doc(db, 'users', '0AUxlnHi'));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomerData.js",
+    "line": 74,
+    "content": "q = query(collection(db, 'users'), where('updatedAt', '>', Timestamp.fromMillis(lastSync)));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomerData.js",
+    "line": 76,
+    "content": "q = query(collection(db, 'users'));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomerHistory.js",
+    "line": 34,
+    "content": "const ordersRef = collection(db, 'orders');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\gallery\\GalleryMain.jsx",
+    "line": 23,
+    "content": "const productsRef = collection(db, 'products');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\gallery\\GalleryMain.jsx",
+    "line": 116,
+    "content": "const q = query(collection(db, 'products'), where('sku', '==', newImageData.sku));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\gallery\\GalleryMain.jsx",
+    "line": 122,
+    "content": "await updateDoc(doc(db, 'products', productDoc.id), {"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\CreditDashboard\\hooks\\useLedgerStats.js",
+    "line": 22,
+    "content": "const usersRef = collection(db, 'users');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\hooks\\useAuditLedger.js",
+    "line": 80,
+    "content": "const userSnap = await getDoc(doc(db, 'users', uid));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\settings\\data_repair\\useDataRepair.js",
+    "line": 20,
+    "content": "const q = query(collection(db, 'orders'), where('status', '==', 'cancelled'));"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\settings\\data_repair\\useDataRepair.js",
+    "line": 73,
+    "content": "const usersRef = collection(db, 'users');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\settings\\data_repair\\useDataRepair.js",
+    "line": 84,
+    "content": "const txRef = collection(db, 'credit_transactions');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\settings\\data_repair\\useDataRepair.js",
+    "line": 136,
+    "content": "const userRef = doc(db, 'users', anomaly.customerUid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\settings\\data_repair\\useDataRepair.js",
+    "line": 155,
+    "content": "const orderRef = doc(db, 'orders', anomaly.id);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\managers\\settings\\data_repair\\useDataRepair.js",
+    "line": 160,
+    "content": "const userRef = doc(db, 'users', anomaly.customerUid);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\ManagersOverview\\useManagerDashboard.js",
+    "line": 47,
+    "content": "const usersRef = collection(db, 'users');"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\ManagersOverview\\useManagerDashboard.js",
+    "line": 87,
+    "content": "const usersRef = collection(db, 'users');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\pages\\ManagersOverview\\useManagerDashboard.js",
+    "line": 109,
+    "content": "const userRef = doc(db, 'users', userId);"
+  },
+  {
+    "type": "Hardcoded Path",
+    "file": "dh-backoffice-react\\src\\pages\\todo\\hooks\\useWholesalePrices.js",
+    "line": 39,
+    "content": "const q = query(collection(db, 'products'), where(documentId(), 'in', batchIds));"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-backoffice-react\\src\\scripts\\run_staff_test.test.js",
+    "line": 30,
+    "content": "const customerRef = doc(db, 'users', 'y2rGbkQNZugOcSebVUx5xdYNpjs1');"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-staff-app\\src\\firebase\\packingService.js",
+    "line": 77,
+    "content": "const orderRef = doc(db, 'orders', orderId);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-staff-app\\src\\firebase\\staffService.js",
+    "line": 8,
+    "content": "const userRef = doc(db, 'users', uid);"
+  },
+  {
+    "type": "Hardcoded Doc Path",
+    "file": "dh-staff-app\\src\\firebase\\staffService.js",
+    "line": 42,
+    "content": "const userRef = doc(db, 'users', uid);"
+  }
+]

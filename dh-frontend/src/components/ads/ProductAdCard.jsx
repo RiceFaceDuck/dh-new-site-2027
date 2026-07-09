@@ -251,7 +251,7 @@ const ProductAdCard = ({ ad }) => {
               className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors group/btn"
             >
               <span className="text-[10px] font-bold uppercase tracking-wider">
-                {isProduct ? 'เข้าชมสินค้า' : 'ติดต่อร้านค้า'}
+                {isProduct ? 'เข้าชมสินค้า' : 'ไปที่หน้าร้าน'}
               </span>
             </button>
           </div>
@@ -264,4 +264,4 @@ const ProductAdCard = ({ ad }) => {
   );
 };
 
-export default ProductAdCard;
+export default React.memo(ProductAdCard);

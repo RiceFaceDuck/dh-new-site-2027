@@ -1,17 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getRenderableImageUrl } from '../../utils/imageUtils';
 
 /**
  * LazyImage Component
  * Loads an image only when it enters the viewport using IntersectionObserver.
  * Displays a nice pulse placeholder while loading.
+ * Automatically handles Google Drive links and fallback images on error.
  */
-const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-200 animate-pulse", ...props }) => {
+const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-200 animate-pulse", onLoad, onError, fallbackSrc = "/logo.png", ...rest }) => {
   const [isIntersecting, setIsIntersecting] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const imgRef = useRef(null);
 
   useEffect(() => {
-    // Fallback if IntersectionObserver is not supported (rare in modern browsers)
+    // Reset state if src changes
+    setIsLoaded(false);
+    setHasError(false);
+  }, [src]);
+
+  useEffect(() => {
+    // Fallback if IntersectionObserver is not supported
     if (!('IntersectionObserver' in window)) {
       setIsIntersecting(true);
       return;
@@ -24,7 +33,7 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
           observer.disconnect(); // Stop observing once it's in view
         }
       },
-      { rootMargin: '100px 0px' } // Start loading 100px before it enters the viewport
+      { rootMargin: '100px 0px' }
     );
 
     if (imgRef.current) {
@@ -36,6 +45,8 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
     };
   }, []);
 
+  const finalSrc = (hasError || !src) ? fallbackSrc : getRenderableImageUrl(src);
+
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
       {/* Placeholder / Skeleton */}
@@ -44,14 +55,26 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
       )}
 
       {/* Actual Image */}
-      {isIntersecting && (
-        <img           src={src}
+      {isIntersecting && finalSrc && (
+        <img 
+          src={finalSrc}
           alt={alt}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => setIsLoaded(true)} // Prevent endless skeleton on error
-          {...props}
-         loading="lazy" />
+          className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className} ${hasError ? 'p-4 opacity-40' : ''}`}
+          onLoad={(e) => {
+            setIsLoaded(true);
+            if (onLoad) onLoad(e);
+          }}
+          onError={(e) => {
+             if (!hasError && fallbackSrc) {
+               setHasError(true);
+             } else {
+               setIsLoaded(true); 
+               if (onError) onError(e);
+             }
+          }}
+          {...rest}
+          loading="lazy" 
+        />
       )}
     </div>
   );

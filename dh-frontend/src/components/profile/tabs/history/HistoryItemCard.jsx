@@ -229,6 +229,16 @@ const HistoryItemCard = ({
                 <span>ค่าจัดส่ง</span>
                 <span>{order.totals?.shipping === 0 ? <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-sm">ส่งฟรี</span> : `฿${order.totals?.shipping?.toLocaleString() || 0}`}</span>
               </div>
+
+              {(() => {
+                const insuranceCost = Number(order.totals?.insuranceCost || (order.otherFeeName?.includes('ประกัน') ? order.otherFeeAmount : 0) || 0);
+                return insuranceCost > 0 ? (
+                  <div className="flex justify-between mt-1 text-slate-700 font-medium">
+                    <span className="flex items-center gap-1 text-[13px]">🛡️ ค่าประกันภัยจัดส่ง</span>
+                    <span className="text-[13px]">฿{insuranceCost.toLocaleString()}</span>
+                  </div>
+                ) : null;
+              })()}
               
               <div className="flex justify-between items-end font-black text-indigo-950 text-base pt-3 border-t-2 border-indigo-100 border-dashed mt-3">
                 <span>ยอดชำระสุทธิ</span>

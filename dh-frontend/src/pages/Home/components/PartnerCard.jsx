@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { trackAdClick } from '../../../firebase/credit/adCreditService';
 import { squadConfigService } from '../../../firebase/squadConfigService';
 import { logClick } from '../../../firebase/marketingAnalyticsService';
+import LazyImage from '../../../components/common/LazyImage';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const PartnerCard = ({ partner }) => {
   // Use storeProfile data if available, fallback to partner root level data
-  const avatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop';
-  const name = partner.storeName || partner.name || 'ช่างซ่อมอิสระ';
+  const avatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || null;
+  const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
   const role = partner.services || partner.role || 'ช่างซ่อมคอมพิวเตอร์';
 
   const handleClick = async () => {
@@ -24,7 +26,7 @@ const PartnerCard = ({ partner }) => {
       {/* Avatar Container */}
       <div className="relative shrink-0">
         <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-xl blur-md group-hover:blur-lg transition-all"></div>
-        <img src={avatar} alt={name} className="relative w-24 h-24 md:w-28 md:h-28 rounded-xl object-cover shadow-xs bg-slate-50 border border-slate-100/50"  loading="lazy" />
+        <LazyImage src={avatar} alt={name} className="relative w-24 h-24 md:w-28 md:h-28 rounded-xl object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
         
         {/* Pulsing Status Dot */}
         <div className="absolute -bottom-1 -right-1 flex h-4 w-4">

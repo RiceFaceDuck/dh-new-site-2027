@@ -4,6 +4,7 @@ import { findNearestPartner } from '../../firebase/partnerLocationService';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import LazyImage from '../common/LazyImage';
 
 // ==========================================
 // 🧩 Sub-Components (SRP)
@@ -101,12 +102,13 @@ const PartnerSupportBox = () => {
       
       {/* 🖼️ ฝั่งซ้าย: ภาพร้านค้า (สัดส่วน 1:1) */}
       <div className="w-[120px] sm:w-[140px] md:w-[150px] aspect-square relative shrink-0 overflow-hidden bg-slate-100 rounded-xl shadow-xs border border-slate-100 flex items-center justify-center">
-        <img 
+        <LazyImage 
           src={partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage || "/logo.png"} 
           alt="Shop Profile" 
           className={`absolute inset-0 w-full h-full ${partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage ? 'object-cover' : 'object-contain p-4 opacity-30'} transition-transform duration-700 group-hover:scale-105`}
-         loading="lazy" />
-        <div className="absolute inset-0 bg-linear-to-t from-slate-900/60 via-transparent to-transparent"></div>
+          placeholderClassName="absolute inset-0 w-full h-full bg-slate-200 animate-pulse"
+         />
+        <div className="absolute inset-0 bg-linear-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>
         <div className="absolute bottom-1.5 left-1.5 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-sm text-slate-900 flex items-center gap-1 shadow-md border border-white/50">
            <Award size={10} className="text-amber-500 shrink-0" />
            <span className="font-bold text-[7px] uppercase tracking-wider text-slate-800">Verified</span>

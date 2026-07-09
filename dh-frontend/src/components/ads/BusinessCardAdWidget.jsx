@@ -195,7 +195,7 @@ const BusinessCardAdWidget = ({ ad }) => {
             </div>
             
             <button className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors group/btn">
-              <span className="text-[10px] font-bold uppercase tracking-wider">ติดต่อร้านค้า</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">ไปที่หน้าร้าน</span>
             </button>
           </div>
 

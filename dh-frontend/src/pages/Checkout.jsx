@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { evaluateShippingRules } from 'dh-shared';
 import { useCheckoutLogic } from '../components/checkout/hooks/useCheckoutLogic';
 import { useToast } from '../context/ToastContext';
 import { ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useCart } from '../hooks/useCart';
@@ -20,49 +22,8 @@ import {
   TrustBadges
 } from '../components/checkout';
 
-// 🚀 Accordion Wrapper Component
-const AccordionSection = ({ title, summary, step, activeStep, setActiveStep, isCompleted, children }) => {
-  const isOpen = activeStep === step;
-  return (
-    <div className={`border rounded-xl mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'border-emerald-500 shadow-md' : 'border-gray-200 bg-white'}`}>
-      <div 
-        className={`p-4 flex items-center justify-between cursor-pointer select-none transition-colors ${isOpen ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-gray-50'}`}
-        onClick={() => setActiveStep(isOpen ? null : step)}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${isCompleted ? 'bg-emerald-500 text-white' : (isOpen ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-600')}`}>
-            {isCompleted ? <CheckCircle2 size={18} /> : step}
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
-            <h2 className="text-lg font-bold">{title}</h2>
-            {!isOpen && isCompleted && summary && (
-              <span className="text-sm text-gray-500 font-medium truncate max-w-[200px] sm:max-w-xs md:max-w-md">
-                — {summary}
-              </span>
-            )}
-          </div>
-        </div>
-        {isOpen ? <ChevronUp size={20} className="text-emerald-600 shrink-0" /> : <ChevronDown size={20} className="text-gray-400 shrink-0" />}
-      </div>
-      
-      {isOpen && (
-        <div className="p-4 md:p-6 border-t border-gray-100 bg-white animate-fade-in">
-          {children}
-          
-          <div className="mt-6 flex justify-end">
-            <button 
-              onClick={() => setActiveStep(step + 1)}
-              className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
-            >
-              ถัดไป
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
+import AccordionSection from '../components/checkout/AccordionSection';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const Checkout = () => {
   const {
     user,
@@ -91,11 +52,14 @@ const Checkout = () => {
   const [freebies, setFreebies] = useState([]);
   const [isFetchingFreebies, setIsFetchingFreebies] = useState(true);
 
+  const [shippingRules, setShippingRules] = useState([]);
+  const [isFetchingRules, setIsFetchingRules] = useState(true);
+
   useEffect(() => {
     const fetchFreebies = async () => {
       try {
         setIsFetchingFreebies(true);
-        const q = query(collection(db, 'freebies'), where('isActive', '==', true));
+        const q = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
         const snapshot = await getDocs(q);
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setFreebies(items);
@@ -105,8 +69,35 @@ const Checkout = () => {
         setIsFetchingFreebies(false);
       }
     };
+
+    const fetchShippingRules = async () => {
+      try {
+        setIsFetchingRules(true);
+        const q = query(collection(db, 'shipping_rules'), where('isActive', '==', true));
+        const snapshot = await getDocs(q);
+        const rules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setShippingRules(rules);
+      } catch (error) {
+        console.error("🔥 Error fetching shipping rules in Checkout:", error);
+      } finally {
+        setIsFetchingRules(false);
+      }
+    };
+
     fetchFreebies();
+    fetchShippingRules();
   }, []);
+
+  // 🧮 ประเมินราคาจัดส่งและประกันตามกฎ
+  const { shippingOptions, insuranceFee } = evaluateShippingRules(cartItems, shippingRules);
+  const insuranceCost = insuranceFee || 0;
+
+  // อัปเดตค่าประกันใน checkoutState อัตโนมัติเมื่อมีการเปลี่ยนแปลง
+  useEffect(() => {
+    if (checkoutState.insuranceCost !== insuranceCost) {
+      handleUpdateCheckoutState('insuranceCost', insuranceCost);
+    }
+  }, [insuranceCost, checkoutState.insuranceCost]);
 
   const handlePromotionsEvaluated = (applicablePromotions) => {
     const current = checkoutState.appliedPromotions || [];
@@ -128,7 +119,7 @@ const Checkout = () => {
   const totalPromoDiscount = appliedPromotions.reduce((sum, promo) => sum + (promo.discountValue || 0), 0);
   const totalDiscount = totalPromoDiscount + extraDiscountAmount;
   const totalCreditDiscount = usedWallet;
-  const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost - totalCreditDiscount);
+  const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost + insuranceCost - totalCreditDiscount);
 
   // Show error as a toast instead of forcing a scroll jump, but also scroll to error box
   useEffect(() => {
@@ -206,6 +197,7 @@ const Checkout = () => {
               <ShippingMethod 
                 selectedMethod={checkoutState.shippingCost}
                 onUpdate={(cost) => handleUpdateCheckoutState('shippingCost', cost)}
+                availableRules={shippingOptions}
               />
             </AccordionSection>
             

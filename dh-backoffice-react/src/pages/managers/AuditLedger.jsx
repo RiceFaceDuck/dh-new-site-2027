@@ -1,5 +1,7 @@
 import React from 'react';
 import { BookOpen, AlertTriangle, Wallet, Coins, Search, Clock, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { FixedSizeList as List } from 'react-window';
+import { AutoSizer } from 'react-virtualized-auto-sizer';
 import GuidePanel from '../../components/common/GuidePanel';
 import { useAuditLedger } from './hooks/useAuditLedger';
 
@@ -51,89 +53,97 @@ export default function AuditLedger() {
             )}
 
             {/* Table */}
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-sm font-semibold text-slate-600">
-                                <th className="p-4 whitespace-nowrap">วันเวลา</th>
-                                <th className="p-4 whitespace-nowrap">ลูกค้า / ผู้รับ</th>
-                                <th className="p-4 whitespace-nowrap">ประเภท / บัญชี</th>
-                                <th className="p-4 whitespace-nowrap text-right">จำนวน</th>
-                                <th className="p-4 whitespace-nowrap text-right">ยอดคงเหลือ</th>
-                                <th className="p-4 whitespace-nowrap">เลขอ้างอิง</th>
-                                <th className="p-4">หมายเหตุ / ผู้บันทึก</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan="7" className="p-8 text-center text-slate-500">
-                                        <div className="flex flex-col items-center justify-center gap-3">
-                                            <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                                            กำลังโหลดสมุดบัญชี...
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : transactions.length === 0 ? (
-                                <tr>
-                                    <td colSpan="7" className="p-8 text-center text-slate-500">ไม่พบประวัติการทำธุรกรรมในระบบ</td>
-                                </tr>
-                            ) : (
-                                transactions.map((tx) => (
-                                    <tr key={`${tx.source}-${tx.id}`} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="p-4 text-slate-500 whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5">
-                                                <Clock size={14} className="text-slate-400" />
-                                                <span>
-                                                    {tx.timestamp.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })} 
-                                                    {' '}
-                                                    <span className="text-slate-400">{tx.timestamp.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap">
-                                            <div className="font-medium text-slate-800">{tx.customerName}</div>
-                                            <div className="text-xs text-slate-400 font-mono mt-0.5" title={tx.customerUid}>UID: {tx.customerUid?.substring(0, 8)}...</div>
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
-                                                {tx.source === 'credit' ? (
-                                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 font-medium text-xs border border-purple-100">
-                                                        <Coins size={12} /> Credit Points
+            <div className="bg-white rounded-2xl shadow-xs border border-slate-200 flex flex-col h-[600px]">
+                {/* Header Row */}
+                <div className="bg-slate-50 border-b border-slate-200 text-sm font-semibold text-slate-600 flex pr-4">
+                    <div className="p-4 w-40 shrink-0">วันเวลา</div>
+                    <div className="p-4 flex-1 min-w-[200px]">ลูกค้า / ผู้รับ</div>
+                    <div className="p-4 w-40 shrink-0">ประเภท / บัญชี</div>
+                    <div className="p-4 w-32 shrink-0 text-right">จำนวน</div>
+                    <div className="p-4 w-32 shrink-0 text-right">ยอดคงเหลือ</div>
+                    <div className="p-4 w-40 shrink-0">เลขอ้างอิง</div>
+                    <div className="p-4 w-48 shrink-0">หมายเหตุ / ผู้บันทึก</div>
+                </div>
+                
+                {/* Body */}
+                <div className="flex-1 min-h-0 bg-white">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
+                            <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            กำลังโหลดสมุดบัญชี...
+                        </div>
+                    ) : transactions.length === 0 ? (
+                        <div className="flex items-center justify-center h-full text-slate-500">
+                            ไม่พบประวัติการทำธุรกรรมในระบบ
+                        </div>
+                    ) : (
+                        <AutoSizer>
+                            {({ height, width }) => (
+                                <List
+                                    height={height}
+                                    itemCount={transactions.length}
+                                    itemSize={72}
+                                    width={width}
+                                    itemData={transactions}
+                                >
+                                    {({ index, style, data }) => {
+                                        const tx = data[index];
+                                        return (
+                                            <div 
+                                                style={style} 
+                                                className="flex items-center text-sm border-b border-slate-100 hover:bg-slate-50/80 transition-colors group"
+                                            >
+                                                <div className="p-4 w-40 shrink-0 text-slate-500 whitespace-nowrap flex items-center gap-1.5">
+                                                    <Clock size={14} className="text-slate-400" />
+                                                    <div className="flex flex-col">
+                                                        <span>{tx.timestamp.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                                        <span className="text-xs text-slate-400">{tx.timestamp.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 flex-1 min-w-[200px] overflow-hidden">
+                                                    <div className="font-medium text-slate-800 truncate">{tx.customerName}</div>
+                                                    <div className="text-xs text-slate-400 font-mono mt-0.5 truncate" title={tx.customerUid}>UID: {tx.customerUid?.substring(0, 8)}...</div>
+                                                </div>
+                                                <div className="p-4 w-40 shrink-0">
+                                                    <div className="flex items-center gap-2">
+                                                        {tx.source === 'credit' ? (
+                                                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 font-medium text-xs border border-purple-100">
+                                                                <Coins size={12} /> Credit Points
+                                                            </span>
+                                                        ) : (
+                                                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium text-xs border border-blue-100">
+                                                                <Wallet size={12} /> Cash Wallet
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 w-32 shrink-0 text-right font-medium">
+                                                    <div className={`flex items-center justify-end gap-1 ${tx.type === 'earn' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                        {tx.type === 'earn' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                                        {tx.type === 'earn' ? '+' : '-'}{tx.amount?.toLocaleString()} {tx.source === 'credit' ? 'Pts' : '฿'}
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 w-32 shrink-0 text-right font-mono text-slate-600">
+                                                    {tx.balanceAfter !== null && tx.balanceAfter !== undefined ? tx.balanceAfter.toLocaleString() : '-'}
+                                                </div>
+                                                <div className="p-4 w-40 shrink-0">
+                                                    <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded-sm text-slate-600 border border-slate-200 truncate block">
+                                                        {tx.referenceId || '-'}
                                                     </span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium text-xs border border-blue-100">
-                                                        <Wallet size={12} /> Cash Wallet
-                                                    </span>
-                                                )}
+                                                </div>
+                                                <div className="p-4 w-48 shrink-0">
+                                                    <div className="text-slate-700 truncate group-hover:whitespace-normal group-hover:overflow-visible transition-all" title={tx.note}>{tx.note || '-'}</div>
+                                                    <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                                        By: <span className="font-medium text-slate-500 truncate">{tx.actor}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap text-right font-medium">
-                                            <div className={`flex items-center justify-end gap-1 ${tx.type === 'earn' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                {tx.type === 'earn' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                                                {tx.type === 'earn' ? '+' : '-'}{tx.amount?.toLocaleString()} {tx.source === 'credit' ? 'Pts' : '฿'}
-                                            </div>
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap text-right font-mono text-slate-600">
-                                            {tx.balanceAfter !== null && tx.balanceAfter !== undefined ? tx.balanceAfter.toLocaleString() : '-'}
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap">
-                                            <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded-sm text-slate-600 border border-slate-200">
-                                                {tx.referenceId || '-'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="text-slate-700 line-clamp-1 group-hover:line-clamp-none transition-all" title={tx.note}>{tx.note || '-'}</div>
-                                            <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                                                By: <span className="font-medium text-slate-500">{tx.actor}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                        );
+                                    }}
+                                </List>
                             )}
-                        </tbody>
-                    </table>
+                        </AutoSizer>
+                    )}
                 </div>
             </div>
         </div>

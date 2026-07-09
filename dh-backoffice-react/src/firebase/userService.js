@@ -20,7 +20,8 @@ import {
     restoreUser, 
     deleteUser, 
     updateUserLoginStatus, 
-    updateUserEcosystem
+    updateUserEcosystem,
+    updateUserPreferences
 } from './userManagementService';
 
 import {
@@ -67,6 +68,7 @@ export const userService = {
     deleteUser,
     updateUserLoginStatus,
     updateUserEcosystem,
+    updateUserPreferences,
     adminAdjustFinancials,
     registerPendingStaff, 
     updateStaffDetails,

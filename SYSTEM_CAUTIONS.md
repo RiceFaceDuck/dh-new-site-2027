@@ -2,6 +2,14 @@
 
 เอกสารนี้ใช้สำหรับบันทึก **ความเสี่ยงระดับรุนแรง (CAUTION!)** หรือ **Breaking Changes** ที่ AI Agent ตรวจพบและเห็นควรให้หลีกเลี่ยงหรือชะลอการดำเนินการ เพื่อเป็นการแจ้งเตือนให้ Agent หรือผู้พัฒนาคนอื่นทราบและใช้ความระมัดระวังเป็นพิเศษในอนาคต
 
+## 📅 [2026-07-09] บั๊กคำนวณราคา POS บน Server (Price Override) และการอ้างอิง ISSUES.md
+**ระบบที่เกี่ยวข้อง:** `dh-backoffice-react`, `usePosActions.js`, `billingTransactionService.js`
+**ระดับความเสี่ยง:** 🔴 รุนแรง (ยอดธุรกรรมทางการเงินคลาดเคลื่อน)
+
+**รายละเอียด:**
+- มีการค้นพบว่า Server-side Validation ใน `billingTransactionService.js` บังคับใช้ `retailPrice` เสมอ ทำให้ราคาส่ง B2B ที่คิดบนหน้าจอ POS ถูกปัดราคาเป็นราคาปลีกเมื่อบันทึกลง Firestore
+- ปัญหาและบั๊กอื่นๆ ที่พบจากการทดสอบหน้าร้าน POS ได้ถูกบันทึกแยกไว้ในไฟล์ [ISSUES.md](file:///c:/DH%20Notebook/Management%20System/ISSUES.md) ที่ root folder สำหรับการดึงอ้างอิงและดำเนินการแก้ไขในอนาคต
+
 ---
 
 ## 📅 [2026-07-06] ข้อควรระวังการอัปเกรด Dependency หลัก (Major Upgrades)

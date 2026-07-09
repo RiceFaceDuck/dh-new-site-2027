@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { db, auth } from '../../../../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { driveService } from '../../../../firebase/driveService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const useServiceAction = (serviceModal, setServiceModal) => {
   const [serviceForm, setServiceForm] = useState(null);
@@ -74,7 +75,7 @@ export const useServiceAction = (serviceModal, setServiceModal) => {
         requestedByName: auth.currentUser.displayName || auth.currentUser.email || 'ลูกค้า'
       };
 
-      await addDoc(collection(db, 'todos'), {
+      await addDoc(collection(db, getCollectionPath('todos')), {
         type: serviceModal.type === 'claim' ? "CLAIM_APPROVAL" : "RETURN_APPROVAL",
         title: `แจ้ง${serviceModal.type === 'claim' ? 'เคลม' : 'คืน'}สินค้า: ${serviceModal.item.name} (${serviceForm.transactionId})`,
         description: `บิลอ้างอิง: ${serviceModal.order.id}\nอาการ/เหตุผล: ${serviceForm.reasonCode}\nรายละเอียด: ${serviceForm.details || '-'}\nการกระทำ: ${serviceForm.actionType}\nจำนวน: ${payload.qty} ชิ้น`,

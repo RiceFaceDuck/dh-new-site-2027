@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * Hook สำหรับดึงประวัติการสั่งซื้อและการเคลมของลูกค้า
@@ -31,16 +32,22 @@ export const useCustomerHistory = () => {
 
     try {
       // ดึงประวัติบิล (Orders)
-      const ordersRef = collection(db, 'orders');
-      const ordersQuery = query(ordersRef, where('userId', '==', targetId));
-      const ordersSnapshot = await getDocs(ordersQuery);
+      const ordersRef = collection(db, getCollectionPath('orders'));
+      const [q1, q2] = await Promise.all([
+        getDocs(query(ordersRef, where('customer.uid', '==', targetId))),
+        getDocs(query(ordersRef, where('userId', '==', targetId)))
+      ]);
+      
+      const uniqueOrders = new Map();
+      q1.docs.forEach(doc => uniqueOrders.set(doc.id, { id: doc.id, ...doc.data() }));
+      q2.docs.forEach(doc => uniqueOrders.set(doc.id, { id: doc.id, ...doc.data() }));
+      const ordersData = Array.from(uniqueOrders.values());
       
       // ดึงประวัติเคลม (Claims)
       const claimsRef = collection(db, 'claims');
       const claimsQuery = query(claimsRef, where('uid', '==', targetId));
       const claimsSnapshot = await getDocs(claimsQuery);
 
-      const ordersData = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const claimsData = claimsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       setCustomerHistory({ 

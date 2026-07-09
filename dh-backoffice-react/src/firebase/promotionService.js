@@ -2,6 +2,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, o
 import { db } from './config';
 import { historyService } from './historyService';
 import { todoService } from './todoService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'promotions';
 
@@ -12,7 +13,7 @@ const validateSkus = async (skusArray) => {
   const validSkus = new Set();
   for (let i = 0; i < skusArray.length; i += 30) {
     const chunk = skusArray.slice(i, i + 30);
-    const q = query(collection(db, 'products'), where('sku', 'in', chunk));
+    const q = query(collection(db, getCollectionPath('products')), where('sku', 'in', chunk));
     const snapshot = await getDocs(q);
     snapshot.forEach(doc => validSkus.add(doc.data().sku));
   }

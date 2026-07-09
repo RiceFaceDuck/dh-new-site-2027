@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { billingStatusTransaction } from '../firebase/billingStatusTransaction';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const PENDING_TIMEOUT_HOURS = 24;
@@ -25,7 +26,7 @@ export const useAutoCleanup = () => {
         const timeoutDate = new Date(now - (PENDING_TIMEOUT_HOURS * 60 * 60 * 1000));
         const timeoutTimestamp = Timestamp.fromDate(timeoutDate);
         
-        const ordersRef = collection(db, 'orders');
+        const ordersRef = collection(db, getCollectionPath('orders'));
         const q = query(
           ordersRef,
           where('orderStatus', '==', 'pending'),

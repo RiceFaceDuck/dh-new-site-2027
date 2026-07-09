@@ -1,6 +1,8 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './config';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const FOOTER_DOC = 'footer_config';
 const CACHE_KEY = 'dh_footer_config_cache';
 const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 ชั่วโมง
@@ -39,7 +41,7 @@ export const footerClientService = {
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
-        const parsedCache = JSON.parse(cached);
+        const parsedCache = safeJsonParse(cached);
         const isExpired = Date.now() - parsedCache.timestamp > CACHE_EXPIRY_MS;
         
         if (!isExpired) {
@@ -52,7 +54,7 @@ export const footerClientService = {
 
     // 2. ถ้าไม่มี Cache หรือ Cache หมดอายุ ให้ดึงจาก Firebase
     try {
-      const docRef = doc(db, 'settings', FOOTER_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
       const snap = await getDoc(docRef);
       let configData = DEFAULT_FOOTER_CONFIG;
       

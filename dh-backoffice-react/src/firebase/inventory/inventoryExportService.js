@@ -1,10 +1,12 @@
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../config';
 import * as XLSX from 'xlsx';
+import { withToastError } from '../../utils/safeAsync';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventoryExportService = {
   exportToExcel: async (columns, options) => {
-    try {
+    return withToastError((async () => {
       const {
         categories = [],
         stockRange = { min: '', max: '' },
@@ -13,7 +15,7 @@ export const inventoryExportService = {
       } = options;
 
       // 1. ดึงข้อมูลสินค้าทั้งหมด (เนื่องจากการ Filter ซับซ้อนมาก ต้องทำฝั่ง Client)
-      const q = query(collection(db, 'products'));
+      const q = query(collection(db, getCollectionPath('products')));
       const snapshot = await getDocs(q);
       let products = snapshot.docs.map(doc => doc.data());
 
@@ -93,9 +95,6 @@ export const inventoryExportService = {
       XLSX.writeFile(wb, fileName);
       
       return { success: true, count: products.length };
-    } catch (error) {
-      console.error("Export failed:", error);
-      throw error;
-    }
+    })(), "เกิดข้อผิดพลาดในการส่งออกไฟล์ Excel");
   }
 };

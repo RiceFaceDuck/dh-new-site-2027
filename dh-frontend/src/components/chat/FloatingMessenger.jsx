@@ -15,6 +15,25 @@ const FloatingMessenger = () => {
   const [partner, setPartner] = useState(null);
   const [error, setError] = useState(null);
   const [showTooltip, setShowTooltip] = useState(true);
+  const [hasConsent, setHasConsent] = useState(() => {
+    try {
+      return !!localStorage.getItem('dh_cookie_consent');
+    } catch (e) {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handleConsentUpdate = () => {
+      try {
+        setHasConsent(!!localStorage.getItem('dh_cookie_consent'));
+      } catch (e) {
+        setHasConsent(false);
+      }
+    };
+    window.addEventListener('dh_cookie_consent_updated', handleConsentUpdate);
+    return () => window.removeEventListener('dh_cookie_consent_updated', handleConsentUpdate);
+  }, []);
 
   useEffect(() => {
     // รับสัญญาณเมื่อคลิกนามบัตรจากหน้าเว็บ
@@ -35,6 +54,8 @@ const FloatingMessenger = () => {
     const timer = setTimeout(() => setShowTooltip(false), 8000);
     return () => clearTimeout(timer);
   }, []);
+
+  if (!hasConsent) return null;
 
   const handleFindNearestPartner = async () => {
     setMode('radar');

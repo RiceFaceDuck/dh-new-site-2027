@@ -4,13 +4,8 @@ import { useManagerTodo } from '../../todo/hooks/useManagerTodo';
 import { managerActionService } from '../../../firebase/managerActionService';
 import { auth } from '../../../firebase/config';
 
-// Import New Formal Cards
-import FormalAdApprovalCard from '../../../components/todo/manager/cards/FormalAdApprovalCard';
-import FormalStaffApprovalCard from '../../../components/todo/manager/cards/FormalStaffApprovalCard';
-import FormalGenericTodoCard from '../../../components/todo/manager/cards/FormalGenericTodoCard';
-import FormalWholesaleCard from '../../../components/todo/manager/cards/FormalWholesaleCard';
-import FormalKnowledgeCard from '../../../components/todo/manager/cards/FormalKnowledgeCard';
-import FormalLeaveApprovalCard from '../../../components/todo/manager/cards/FormalLeaveApprovalCard';
+import TodoItem from '../../../components/todo/TodoItem';
+import WholesaleCard from '../../../components/todo/WholesaleCard';
 
 // Premium Skeleton Loader
 const PremiumSkeleton = () => (
@@ -242,40 +237,30 @@ export default function ManagerTaskSection() {
         {managerTodos.map(task => {
           const type = (task.type || task.taskType || '').toUpperCase();
           const isWholesale = type === 'WHOLESALE_REQUEST' || type === 'WHOLESALE_APPROVAL';
-          const isAdTask = ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type);
-          const isStaffApprovalTask = type === 'STAFF_APPROVAL';
-          const isLeaveApprovalTask = type === 'LEAVE_APPROVAL';
           
+          const urgencyClass = getUrgencyClass(task.priority);
+          // Map to urgencyLevel enum: low, medium, high
+          let urgencyLevel = 'low';
+          if (urgencyClass.includes('red')) urgencyLevel = 'high';
+          else if (urgencyClass.includes('orange')) urgencyLevel = 'medium';
+
           const props = {
             todo: task,
-            task: task, 
             isProcessing: processingId === task.id,
             isManagerTab: true,
-            urgencyClass: getUrgencyClass(task.priority),
-            handleAction: handleAction,
-            getStatusBadge: getStatusBadge,
-            formatDate: formatDate,
-            handleRejectClick: createRejectHandler(task),
-            getIconForType: getIconForType
+            urgencyLevel,
+            handleAction,
+            getStatusBadge,
+            formatDate,
+            handleRejectClick: () => createRejectHandler(task)(), // wrapper if needed, TodoItem calls it without args
+            getIconForType
           };
 
           if (isWholesale) {
-            return <FormalWholesaleCard key={task.id} {...props} />;
-          }
-          if (type === 'PRODUCT_KNOWLEDGE_APPROVAL') {
-            return <FormalKnowledgeCard key={task.id} {...props} />;
-          }
-          if (isStaffApprovalTask) {
-            return <FormalStaffApprovalCard key={task.id} {...props} />;
-          }
-          if (isLeaveApprovalTask) {
-            return <FormalLeaveApprovalCard key={task.id} {...props} />;
-          }
-          if (isAdTask) {
-            return <FormalAdApprovalCard key={task.id} {...props} />;
+            return <WholesaleCard key={task.id} {...props} />;
           }
           
-          return <FormalGenericTodoCard key={task.id} {...props} />;
+          return <TodoItem key={task.id} {...props} />;
         })}
       </div>
     </div>

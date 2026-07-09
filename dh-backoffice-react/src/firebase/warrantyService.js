@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config.js';
 import { historyService } from './historyService.js';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const SETTINGS_DOC = 'warranty';
 
@@ -28,7 +29,7 @@ export const warrantyService = {
     }
 
     try {
-      const docRef = doc(db, 'settings', SETTINGS_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();
@@ -51,7 +52,7 @@ export const warrantyService = {
   // ==========================================
   updateWarrantySettings: async (newData, managerUid) => {
     try {
-      const docRef = doc(db, 'settings', SETTINGS_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC);
       await setDoc(docRef, {
         ...newData,
         updatedAt: serverTimestamp(),

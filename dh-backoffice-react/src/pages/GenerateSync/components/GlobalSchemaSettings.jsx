@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings2, HelpCircle, Save, Check } from 'lucide-react';
 
+import { safeJsonParse } from 'dh-shared';
 export default function GlobalSchemaSettings({ embedded = false }) {
   const [aliases, setAliases] = useState({
     sku: 'sku, รหัสสินค้า, merchant, barcode, item code',
@@ -13,7 +14,7 @@ export default function GlobalSchemaSettings({ embedded = false }) {
     const saved = localStorage.getItem('global_schema_aliases');
     if (saved) {
       try {
-        setAliases(JSON.parse(saved));
+        setAliases(safeJsonParse(saved));
       } catch (e) {}
     }
   }, []);

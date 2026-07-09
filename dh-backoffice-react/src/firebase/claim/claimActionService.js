@@ -2,6 +2,7 @@ import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc, runTran
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -44,7 +45,7 @@ export const claimActionService = {
     });
 
     // เพิ่มสต๊อกสินค้าเสีย (Defect Stock) ไว้ตรวจสอบทีหลัง
-    await updateDoc(doc(db, 'products', payload.sku), { 
+    await updateDoc(doc(db, getCollectionPath('products'), payload.sku), { 
         defectQuantity: increment(qty) 
     });
 
@@ -77,7 +78,7 @@ export const claimActionService = {
     let productData = null;
 
     await runTransaction(db, async (transaction) => {
-      const pRef = doc(db, 'products', payload.sku);
+      const pRef = doc(db, getCollectionPath('products'), payload.sku);
       const pSnap = await transaction.get(pRef);
       if (!pSnap.exists()) {
         throw new Error(`ไม่พบสินค้า SKU: ${payload.sku} ในระบบ`);
@@ -100,7 +101,7 @@ export const claimActionService = {
       transaction.update(doc(db, TODOS_COLLECTION, todoId), updateData);
 
       if (payload.orderDocId) {
-        const orderRef = doc(db, 'orders', payload.orderDocId);
+        const orderRef = doc(db, getCollectionPath('orders'), payload.orderDocId);
         transaction.update(orderRef, {
           refundsAndClaims: arrayUnion({
             type: 'Claim',

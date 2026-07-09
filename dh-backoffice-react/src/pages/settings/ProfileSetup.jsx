@@ -29,10 +29,13 @@ export default function ProfileSetup({ user, onComplete }) {
         firstName: form.firstName,
         lastName: form.lastName,
         nickname: form.nickname,
-        role: form.role,
+        role: isOwner ? form.role : 'pending_approval',
+        requestedRole: form.role,
         photoURL: user.photoURL || '',
         userType: 'staff',
-        isApproved: false
+        isApproved: isOwner,
+        isActive: isOwner,
+        isStaff: isOwner
       };
       
       // บันทึกลงฐานข้อมูล Firestore

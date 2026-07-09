@@ -7,10 +7,11 @@ import { usePosCart } from './usePosCart';
 import { usePosCustomer } from './usePosCustomer';
 import { usePosPayment } from './usePosPayment';
 
+import { safeJsonParse } from 'dh-shared';
 const createNewTab = () => ({
     id: Date.now().toString(), orderId: null, docId: null, items: [], customer: null, priceMode: 'wholesale',
     walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
-    overallDiscount: 0, promoDiscount: 0, autoPromoEnabled: true, otherFeeName: '', otherFeeAmount: 0, 
+    autoShippingEnabled: true, overallDiscount: 0, promoDiscount: 0, autoPromoEnabled: true, otherFeeName: '', otherFeeAmount: 0, 
     paymentMethod: 'Transfer', bankAccount: 'KBANK', cashReceived: '', slipImage: null, billNote: '', receiptFormat: 'short',
     appliedPromoId: null, appliedPromoDetails: null, walletUsed: 0, useWallet: false
 });
@@ -19,7 +20,7 @@ const loadSavedState = () => {
     try {
         const saved = localStorage.getItem('dh_pos_autosave');
         if (saved) {
-            const parsed = JSON.parse(saved);
+            const parsed = safeJsonParse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
     } catch (e) { console.error('Failed to load autosave', e); }
@@ -80,6 +81,7 @@ export default function usePosState(products, customers, initialDraft) {
                     appliedPromoId: initialDraft.appliedPromotion?.id || null,
                     appliedPromoDetails: initialDraft.appliedPromotion || null,
                     autoPromoEnabled: false,
+                    autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : true,
                     paymentMethod: initialDraft.paymentMethod || 'Transfer',
                     bankAccount: initialDraft.bankAccount || 'KBANK',
                     fulfillmentType: initialDraft.fulfillmentType || 'Delivery',
@@ -123,7 +125,7 @@ export default function usePosState(products, customers, initialDraft) {
                 try {
                     const cachedStr = sessionStorage.getItem('search_hybrid_cache');
                     if (cachedStr) {
-                        const cachedArr = JSON.parse(cachedStr);
+                        const cachedArr = safeJsonParse(cachedStr);
                         cachedArr.forEach(p => cacheMap.set(p.sku, p.name));
                     }
                 } catch(e) {}

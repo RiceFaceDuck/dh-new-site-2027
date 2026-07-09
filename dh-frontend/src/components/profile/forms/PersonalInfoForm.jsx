@@ -9,6 +9,7 @@ import {
 import ContactInfoSection from './sections/ContactInfoSection';
 import ShippingAddressSection from './sections/ShippingAddressSection';
 import MapEcosystemSection from './sections/MapEcosystemSection';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function PersonalInfoForm({ user, initialData, onRefresh }) {
   // 🚀 โครงสร้าง State ใหม่ รองรับ Address แบบแยกส่วน
@@ -105,7 +106,7 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
 
     try {
       const db = getFirestore();
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, getCollectionPath('users'), user.uid);
       
       // อัปเดตข้อมูลลง Firestore (โครงสร้างใหม่ ไม่มี taxId, เพิ่ม address)
       await setDoc(userRef, {

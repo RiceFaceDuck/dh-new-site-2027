@@ -3,6 +3,7 @@ import { auth, db } from '../../firebase/config';
 import { inventoryService } from '../../firebase/inventoryService';
 import { userService } from '../../firebase/userService';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export function useProductSearchActions(selectedProduct, searchInputs) {
   const [chatSuffix, setChatSuffix] = useState('ครับ');
@@ -73,7 +74,7 @@ export function useProductSearchActions(selectedProduct, searchInputs) {
           }
         }
 
-        await addDoc(collection(db, 'todos'), {
+        await addDoc(collection(db, getCollectionPath('todos')), {
           type: 'KNOWLEDGE_APPROVAL',
           title: `ขอเพิ่มข้อมูล ${typeLabel} สำหรับ ${selectedProduct.sku}`,
           description: `พนักงานเสนอเพิ่มข้อมูล:\nSKU: ${selectedProduct.sku}\nข้อมูลที่เสนอ: ${value.trim()}`,

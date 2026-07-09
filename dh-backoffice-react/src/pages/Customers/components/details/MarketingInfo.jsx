@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Store, Megaphone, Loader2, Sparkles, Eye, MousePointerClick, Zap } from 'lucide-react';
+import { Store, Megaphone, Loader2, Sparkles, Eye, MousePointerClick, Zap, Ban, Trash2 } from 'lucide-react';
 import { adManagementService } from '../../../../firebase/adManagementService';
+
+const marketingCache = {};
 
 export default function MarketingInfo({ customer }) {
   const [storeProfile, setStoreProfile] = useState(null);
@@ -9,16 +11,28 @@ export default function MarketingInfo({ customer }) {
 
   useEffect(() => {
     const fetchData = async () => {
+      const uid = customer?.uid || customer?.id;
+      if (!uid) return;
+      
+      // ✅ ใช้ Cache เพื่อลด Quota อ่าน/เขียน หากเคยโหลดข้อมูลของลูกค้ารายนี้แล้ว
+      if (marketingCache[uid]) {
+        setStoreProfile(marketingCache[uid].storeProfile);
+        setAds(marketingCache[uid].ads);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
-        const uid = customer?.uid || customer?.id;
-        if (!uid) return;
         const [profileRes, adsRes] = await Promise.all([
           adManagementService.getStoreProfile(uid),
           adManagementService.getAdsByUserId(uid)
         ]);
         setStoreProfile(profileRes);
         setAds(adsRes || []);
+        
+        // Save to cache
+        marketingCache[uid] = { storeProfile: profileRes, ads: adsRes || [] };
       } catch (err) {
         console.error("Failed to load marketing data", err);
       } finally {
@@ -27,6 +41,32 @@ export default function MarketingInfo({ customer }) {
     };
     fetchData();
   }, [customer]);
+
+  const handlePauseAd = async (adId) => {
+    if (!window.confirm('คุณต้องการระงับ (Block) โฆษณานี้ชั่วคราวหรือไม่?')) return;
+    const res = await adManagementService.pauseAd(adId);
+    if (res.success) {
+      const newAds = ads.map(ad => ad.id === adId ? { ...ad, status: 'paused', isActive: false } : ad);
+      setAds(newAds);
+      const uid = customer?.uid || customer?.id;
+      if (marketingCache[uid]) marketingCache[uid].ads = newAds;
+    } else {
+      alert(res.message);
+    }
+  };
+
+  const handleDeleteAd = async (adId) => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบโฆษณานี้ถาวร? การกระทำนี้ไม่สามารถย้อนกลับได้')) return;
+    const res = await adManagementService.deleteAd(adId);
+    if (res.success) {
+      const newAds = ads.filter(ad => ad.id !== adId);
+      setAds(newAds);
+      const uid = customer?.uid || customer?.id;
+      if (marketingCache[uid]) marketingCache[uid].ads = newAds;
+    } else {
+      alert(res.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -149,7 +189,9 @@ export default function MarketingInfo({ customer }) {
                     <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-1 justify-center xl:justify-end font-medium uppercase tracking-wider">
                       <Eye size={12} /> Views
                     </div>
-                    <div className="font-bold text-slate-700 text-sm">{ad.impressions?.toLocaleString() || 0}</div>
+                    <div className="font-bold text-slate-700 text-sm">
+                      {Number(ad.stats?.views || ad.impressions || 0).toLocaleString()}
+                    </div>
                   </div>
                   
                   <div className="w-px h-8 bg-slate-200 hidden md:block"></div>
@@ -158,7 +200,9 @@ export default function MarketingInfo({ customer }) {
                     <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-1 justify-center xl:justify-end font-medium uppercase tracking-wider">
                       <MousePointerClick size={12} /> Clicks
                     </div>
-                    <div className="font-bold text-slate-700 text-sm">{ad.clicks?.toLocaleString() || 0}</div>
+                    <div className="font-bold text-slate-700 text-sm">
+                      {Number(ad.stats?.clicks || ad.clicks || 0).toLocaleString()}
+                    </div>
                   </div>
                   
                   <div className="w-px h-8 bg-slate-200 hidden md:block"></div>
@@ -168,9 +212,28 @@ export default function MarketingInfo({ customer }) {
                       <Zap size={12} /> Limit
                     </div>
                     <div className="font-bold text-emerald-600 text-[11px] bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
-                      {ad.isUnlimited ? '∞ ไม่จำกัด' : (ad.creditLimit || 'N/A')}
+                      {ad.creditLimit === -1 || ad.isUnlimited ? '∞ ไม่จำกัด' : (ad.creditLimit ? `${ad.creditLimit} Pts` : 'N/A')}
                     </div>
                   </div>
+                </div>
+
+                {/* Actions (Block / Delete) */}
+                <div className="flex gap-2 items-center xl:ml-4 w-full xl:w-auto justify-end mt-2 xl:mt-0">
+                  <button 
+                    onClick={() => handlePauseAd(ad.id)}
+                    disabled={ad.status === 'paused'}
+                    title="ระงับ (Block)"
+                    className="p-2 bg-white border border-slate-200 text-amber-500 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 rounded-lg transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Ban size={16} />
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteAd(ad.id)}
+                    title="ลบถาวร"
+                    className="p-2 bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 rounded-lg transition-colors shadow-xs"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
                 
               </div>

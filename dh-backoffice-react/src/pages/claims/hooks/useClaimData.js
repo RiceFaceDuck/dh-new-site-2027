@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, limit, orderBy } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { warrantyService } from '../../../firebase/warrantyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export function useClaimData() {
   const [requests, setRequests] = useState([]);
@@ -21,7 +22,7 @@ export function useClaimData() {
     warrantyService.getWarrantySettings().then(setWarrantyConfig).catch(console.error);
 
     const q = query(
-      collection(db, 'todos'),
+      collection(db, getCollectionPath('todos')),
       where('type', 'in', ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL']),
       orderBy('createdAt', 'desc'),
       limit(300)

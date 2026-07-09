@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { Sparkles, Tag, CheckCircle, AlertCircle } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated, hidden = false }) => {
   const [promotions, setPromotions] = useState([]);
@@ -23,7 +24,7 @@ const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated
           return;
         }
 
-        const q = query(collection(db, 'promotions'), where('isActive', '==', true));
+        const q = query(collection(db, getCollectionPath('promotions')), where('isActive', '==', true));
         const snapshot = await getDocs(q);
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const validItems = items.filter(p => !p.deletedAt); // Exclude soft deleted

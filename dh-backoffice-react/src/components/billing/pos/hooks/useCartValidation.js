@@ -29,7 +29,8 @@ export const useCartValidation = (activeTabId, activeTab, products, updateActive
             });
 
             if (alertMessages.length > 0) {
-                setTimeout(() => alert(`⚠️ สต็อกสินค้าไม่เพียงพอ:\n\n${alertMessages.join('\n')}`), 500);
+                const timer = setTimeout(() => alert(`⚠️ สต็อกสินค้าไม่เพียงพอ:\n\n${alertMessages.join('\n')}`), 500);
+                return () => clearTimeout(timer);
             }
             return;
         }
@@ -78,7 +79,8 @@ export const useCartValidation = (activeTabId, activeTab, products, updateActive
         if (isCartUpdated) {
             updateActiveTab({ items: validatedItems });
             if (alertMessages.length > 0) {
-                setTimeout(() => alert(`⚠️ อัปเดตข้อมูลบิลร่างล่าสุด:\n\n${alertMessages.join('\n')}`), 500);
+                const timer = setTimeout(() => alert(`⚠️ อัปเดตข้อมูลบิลร่างล่าสุด:\n\n${alertMessages.join('\n')}`), 500);
+                return () => clearTimeout(timer);
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps

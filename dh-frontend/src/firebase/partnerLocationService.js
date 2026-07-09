@@ -8,6 +8,7 @@ const CACHE_TTL_MINUTES = 15; // เก็บแคชไว้ 15 นาที 
 
 import { calculateDistance } from '../utils/geoUtils';
 
+import { safeJsonParse } from 'dh-shared';
 /**
  * 📦 ดึงข้อมูลพาร์ทเนอร์ที่เปิดรับการสนับสนุนทั้งหมด
  * (ระบบจะเช็คแคชใน sessionStorage ก่อนเพื่อประหยัด Reads/Writes)
@@ -18,7 +19,7 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
     if (!forceRefresh) {
       const cachedData = localStorage.getItem(CACHE_KEY);
       if (cachedData) {
-        const { data, timestamp } = JSON.parse(cachedData);
+        const { data, timestamp } = safeJsonParse(cachedData);
         const now = new Date().getTime();
         // ถ้าแคชยังไม่หมดอายุ (น้อยกว่า CACHE_TTL_MINUTES)
         if (now - timestamp < CACHE_TTL_MINUTES * 60 * 1000) {

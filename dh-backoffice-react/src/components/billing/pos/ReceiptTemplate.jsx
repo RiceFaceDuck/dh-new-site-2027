@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { X, Printer, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../../../firebase/config';
+import { userService } from '../../../firebase/userService';
+import { auth } from '../../../firebase/config';
 
 import ReceiptHeader from './receipt/ReceiptHeader';
 import ReceiptItems from './receipt/ReceiptItems';
 import ReceiptFooter from './receipt/ReceiptFooter';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function ReceiptTemplate({
     activeTab,
@@ -125,8 +126,7 @@ export default function ReceiptTemplate({
         if (customer?.id || customer?.uid) {
             setIsSavingPref(true);
             try {
-                const custRef = doc(db, 'users', customer.id || customer.uid);
-                await updateDoc(custRef, { 'preferences.receiptFormat': newFormat });
+                await userService.updateUserPreferences(customer.id || customer.uid, { receiptFormat: newFormat });
             } catch (error) { console.error(error); } finally { setIsSavingPref(false); }
         }
     };
@@ -215,7 +215,7 @@ export default function ReceiptTemplate({
     const rawPhone = customer ? customer.phone : data.walkInPhone;
     const isPickup = fulfillmentType === 'StorePickup' || fulfillmentType === 'ZeerBranch';
     const displayPhone = ((isPickup || !data.hidePhone) && rawPhone) ? rawPhone : '-';
-    const displayName = customer ? (customer.accountName || customer.firstName || customer.displayName || 'ลูกค้าทั่วไป') : (data.walkInName || 'ลูกค้าทั่วไป');
+    const displayName = customer ? (getCustomerDisplayName(customer, 'ลูกค้าทั่วไป')) : (data.walkInName || 'ลูกค้าทั่วไป');
 
     return (
         <div className="fixed inset-0 z-9999 bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-xs">

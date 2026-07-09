@@ -84,7 +84,7 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs
         const prev = prevMap.get(curr.sku);
         
         const currStock = Number(curr.stockQuantity) || 0;
-        const currPrice = Number(curr.Price) || 0;
+        let currPrice = Number(curr.Price) || 0;
 
         if (!prev) {
           if (currStock > 0) increased.push({ sku: curr.sku, name: curr.name, oldStock: 0, newStock: currStock });
@@ -93,6 +93,11 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs
 
         const prevStock = Number(prev.stockQuantity) || 0;
         const prevPrice = Number(prev.Price) || 0;
+        
+        // 🛠️ FIX: ป้องกันปัญหาราคาเปลี่ยนเป็น 0 เอง (กรณีไม่ได้อัปเดตราคาใน Sheet หรือดึงข้อมูลมาเป็น 0)
+        if (currPrice === 0 && prevPrice > 0) {
+            currPrice = prevPrice; 
+        }
 
         if (currStock > prevStock) {
           increased.push({ sku: curr.sku, name: curr.name, oldStock: prevStock, newStock: currStock });

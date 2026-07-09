@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { collection, collectionGroup, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export const useAuditLedger = () => {
     const [transactions, setTransactions] = useState([]);
@@ -12,10 +14,8 @@ export const useAuditLedger = () => {
             setIsLoading(true);
             setError(null);
             try {
-                const appId = window.__app_id || 'default-app-id';
-                
                 // 1. Fetch Global Credit Transactions
-                const creditRef = collection(db, 'artifacts', appId, 'public', 'data', 'credit_transactions');
+                const creditRef = collection(db, getCollectionPath('credit_transactions'));
                 const creditQ = query(creditRef, orderBy('timestamp', 'desc'), limit(100));
                 const creditSnap = await getDocs(creditQ);
                 
@@ -78,10 +78,10 @@ export const useAuditLedger = () => {
                     const uidNameMap = {};
                     await Promise.all(uniqueUids.map(async (uid) => {
                         if (!uid) return;
-                        const userSnap = await getDoc(doc(db, 'users', uid));
+                        const userSnap = await getDoc(doc(db, getCollectionPath('users'), uid));
                         if (userSnap.exists()) {
                             const u = userSnap.data();
-                            uidNameMap[uid] = u.storeName || u.displayName || u.firstName || 'Unknown';
+                            uidNameMap[uid] = getCustomerDisplayName(u, 'Unknown');
                         }
                     }));
                     

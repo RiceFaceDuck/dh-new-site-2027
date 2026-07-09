@@ -1,6 +1,8 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './config';
 
+import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const HERO_DOC = 'hero_config';
 
 export const DEFAULT_HERO_CONFIG = {
@@ -42,7 +44,7 @@ export const storefrontSettingsService = {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
           try {
-            const { data, timestamp } = JSON.parse(cached);
+            const { data, timestamp } = safeJsonParse(cached);
             if (Date.now() - timestamp < CACHE_TTL) {
               return data;
             }
@@ -52,7 +54,7 @@ export const storefrontSettingsService = {
         }
       }
 
-      const docRef = doc(db, 'settings', HERO_DOC);
+      const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
       const snap = await getDoc(docRef);
       let result = DEFAULT_HERO_CONFIG;
       if (snap.exists()) {
@@ -74,7 +76,7 @@ export const storefrontSettingsService = {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
           try {
-            const { data } = JSON.parse(cached);
+            const { data } = safeJsonParse(cached);
             return data;
           } catch (e) {
             // ignore

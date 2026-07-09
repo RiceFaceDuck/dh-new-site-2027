@@ -1,5 +1,6 @@
 import { collection, query, where, doc, writeBatch, serverTimestamp, onSnapshot, limit } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils.js';
 
 export const packingService = {
   /**
@@ -10,7 +11,7 @@ export const packingService = {
    */
   subscribeToActiveTasks: (callback, errorCallback) => {
     const q = query(
-      collection(db, 'todos'),
+      collection(db, getCollectionPath('todos')),
       where('type', '==', 'PACKING_TASK'),
       where('status', 'in', ['todo', 'in_progress', 'pending']),
       limit(100)
@@ -38,15 +39,20 @@ export const packingService = {
    * @param {string} taskId - The ID of the task
    */
   startPacking: async (taskId) => {
-    const taskRef = doc(db, 'todos', taskId);
-    const batch = writeBatch(db);
-    
-    batch.update(taskRef, { 
-      status: 'in_progress', 
-      updatedAt: serverTimestamp() 
-    });
-    
-    await batch.commit();
+    try {
+      const taskRef = doc(db, getCollectionPath('todos'), taskId);
+      const batch = writeBatch(db);
+      
+      batch.update(taskRef, { 
+        status: 'in_progress', 
+        updatedAt: serverTimestamp() 
+      });
+      
+      await batch.commit();
+    } catch (error) {
+      console.error("🔥 Error starting packing task:", error);
+      throw error;
+    }
   },
 
   /**
@@ -56,27 +62,32 @@ export const packingService = {
    * @param {string} trackingNumber - The tracking number
    */
   completePacking: async (taskId, orderId, trackingNumber) => {
-    const batch = writeBatch(db);
-    
-    // 1. ปิดคิวงานใน To-do
-    const taskRef = doc(db, 'todos', taskId);
-    batch.update(taskRef, {
-      status: 'completed',
-      completedAt: serverTimestamp(),
-      trackingNumber: trackingNumber
-    });
-
-    // 2. อัปเดตสถานะออเดอร์ให้ลูกค้าเห็นว่าจัดส่งแล้ว
-    if (orderId) {
-      const orderRef = doc(db, 'orders', orderId);
-      batch.update(orderRef, {
-        status: 'shipped',
-        trackingNumber: trackingNumber,
-        shippedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+    try {
+      const batch = writeBatch(db);
+      
+      // 1. ปิดคิวงานใน To-do
+      const taskRef = doc(db, getCollectionPath('todos'), taskId);
+      batch.update(taskRef, {
+        status: 'completed',
+        completedAt: serverTimestamp(),
+        trackingNumber: trackingNumber
       });
-    }
 
-    await batch.commit();
+      // 2. อัปเดตสถานะออเดอร์ให้ลูกค้าเห็นว่าจัดส่งแล้ว
+      if (orderId) {
+        const orderRef = doc(db, getCollectionPath('orders'), orderId);
+        batch.update(orderRef, {
+          status: 'shipped',
+          trackingNumber: trackingNumber,
+          shippedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+    } catch (error) {
+      console.error("🔥 Error completing packing task:", error);
+      throw error;
+    }
   }
 };

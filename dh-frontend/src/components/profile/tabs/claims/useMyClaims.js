@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db, auth } from '../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export function useMyClaims() {
   const [claims, setClaims] = useState([]);
@@ -13,7 +14,7 @@ export function useMyClaims() {
     }
 
     const q = query(
-      collection(db, 'todos'),
+      collection(db, getCollectionPath('todos')),
       where('createdByUid', '==', auth.currentUser.uid),
       where('type', 'in', ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL']),
       orderBy('createdAt', 'desc'),

@@ -7,6 +7,7 @@ export default function OrderSummaryTotals({
     shipping,
     paymentFee,
     otherFees,
+    otherFeeName = '',
     vat,
     walletUsed,
     netTotal,
@@ -39,10 +40,14 @@ export default function OrderSummaryTotals({
                         <span className="flex items-center gap-1" title="ค่าธรรมเนียมจากการรูดบัตร หรือบริการชำระเงินอื่นๆ">ค่าธรรมเนียมชำระเงิน</span>
                         <span>฿{(paymentFee || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
-                        <span className="flex items-center gap-1" title="ยอดเรียกเก็บเพิ่มเติม (ถ้ามี)">ค่าใช้จ่ายอื่นๆ</span>
-                        <span>฿{(otherFees || 0).toLocaleString()}</span>
-                    </div>
+                    {otherFees > 0 && (
+                        <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
+                            <span className="flex items-center gap-1" title={otherFeeName || "ยอดเรียกเก็บเพิ่มเติม (ถ้ามี)"}>
+                                {otherFeeName.includes('ประกัน') ? '🛡️ ' : ''}{otherFeeName || 'ค่าใช้จ่ายอื่นๆ'}
+                            </span>
+                            <span>฿{(otherFees || 0).toLocaleString()}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
                         <span className="flex items-center gap-1" title="ภาษีมูลค่าเพิ่ม 7% (คำนวณจากยอดสินค้าหักส่วนลด)">ภาษีมูลค่าเพิ่ม (VAT) <span className="cursor-help text-gray-300">?</span></span>
                         <span>฿{(vat || 0).toLocaleString()}</span>

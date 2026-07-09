@@ -1,5 +1,6 @@
 import { collection, doc, runTransaction, serverTimestamp, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'credit_transactions';
 
@@ -12,7 +13,7 @@ export const transactionService = {
     try {
       await runTransaction(db, async (transaction) => {
         // 1. ดึงข้อมูล User Profile ปัจจุบันเพื่อคำนวณยอด
-        const userRef = doc(db, 'users', uid);
+        const userRef = doc(db, getCollectionPath('users'), uid);
         const userDoc = await transaction.get(userRef);
         
         let currentBalance = 0;

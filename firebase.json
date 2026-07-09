@@ -4,6 +4,7 @@
     "indexes": "firestore.indexes.json"
   },
 
+
   "hosting": [
     {
       "site": "dhnotebook-work",
@@ -21,13 +22,20 @@
       ],
       "headers": [
         {
+          "source": "**/*.html",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+          ]
+        },
+        {
           "source": "**",
           "headers": [
             { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
             { "key": "X-Content-Type-Options", "value": "nosniff" },
             { "key": "X-XSS-Protection", "value": "1; mode=block" },
             { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com;" }
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" }
           ]
         }
       ]
@@ -48,13 +56,20 @@
       ],
       "headers": [
         {
+          "source": "**/*.html",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+          ]
+        },
+        {
           "source": "**",
           "headers": [
             { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
             { "key": "X-Content-Type-Options", "value": "nosniff" },
             { "key": "X-XSS-Protection", "value": "1; mode=block" },
             { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com;" }
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" }
           ]
         }
       ]
@@ -75,13 +90,20 @@
       ],
       "headers": [
         {
+          "source": "**/*.html",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+          ]
+        },
+        {
           "source": "**",
           "headers": [
             { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
             { "key": "X-Content-Type-Options", "value": "nosniff" },
             { "key": "X-XSS-Protection", "value": "1; mode=block" },
             { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com;" }
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" }
           ]
         }
       ]

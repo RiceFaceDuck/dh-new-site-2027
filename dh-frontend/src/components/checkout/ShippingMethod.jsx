@@ -5,7 +5,7 @@ import { useCart } from '../../hooks/useCart';
 // ข้อมูลจำลองสำหรับตัวเลือกการจัดส่ง (อนาคตสามารถดึงจาก Firebase ได้)
 
 
-export default function ShippingMethod({ orderMode = 'retail', availableRules = [] }) {
+export default function ShippingMethod({ orderMode = 'retail', availableRules = [], selectedMethod, onUpdate }) {
   // Mapping ไอคอน
   const getIcon = (type) => {
     switch (type) {
@@ -20,16 +20,18 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
     { id: 'pickup', name: 'รับสินค้าที่สาขา', cost: 0, est: 'พร้อมรับภายใน 2 ชม.', icon: Store, description: 'สาขาเซียร์รังสิต ชั้น 3' }
   ];
 
-  // ถ้ามีกฎจากหลังบ้านใช้หลังบ้าน ถ้าไม่มีใช้ค่าเริ่มต้น
+  // ถ้ามีกฎจากหลังบ้านใช้หลังบ้านควบคู่กับรับสินค้าหน้าร้าน
+  const calculatedOptions = availableRules.map(r => ({
+    id: r.company,
+    name: `จัดส่งโดย ${r.company}`,
+    cost: r.cost || 0,
+    est: '2-3 วันทำการ',
+    icon: Truck,
+    description: `จัดส่งด่วนโดย ${r.company} อ้างอิงตามเงื่อนไขสินค้าที่ตรงเกณฑ์`
+  }));
+
   const shippingOptions = availableRules.length > 0 
-    ? availableRules.map(r => ({
-        id: r.id,
-        name: r.name || r.id,
-        cost: r.cost || 0,
-        est: r.estimatedTime || 'ระบุไม่ได้',
-        icon: getIcon(r.type),
-        description: r.description || ''
-      }))
+    ? [...calculatedOptions, { id: 'pickup', name: 'รับสินค้าที่สาขา', cost: 0, est: 'พร้อมรับภายใน 2 ชม.', icon: Store, description: 'สาขาเซียร์รังสิต ชั้น 3' }]
     : defaultOptions;
 
   const { checkoutState, updateCheckoutConfig } = useCart();
@@ -43,21 +45,30 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
         shippingMethod: shippingOptions[0].id, 
         shippingCost: shippingOptions[0].cost 
       });
+      if (onUpdate) {
+        onUpdate(shippingOptions[0].cost);
+      }
     }
-  }, [orderMode, currentMethod, updateCheckoutConfig, shippingOptions]);
+  }, [orderMode, currentMethod, updateCheckoutConfig, shippingOptions, onUpdate]);
 
   // เมื่อโหมดเปลี่ยนเป็น wholesale ให้บังคับค่าขนส่งเป็น 0 ในระบบ เพื่อรอแอดมินประเมิน
   useEffect(() => {
     if (orderMode === 'wholesale') {
       updateCheckoutConfig({ shippingMethod: 'wholesale_pending', shippingCost: 0 });
+      if (onUpdate) {
+        onUpdate(0);
+      }
     }
-  }, [orderMode, updateCheckoutConfig]);
+  }, [orderMode, updateCheckoutConfig, onUpdate]);
 
   const handleSelect = (option) => {
     updateCheckoutConfig({ 
       shippingMethod: option.id, 
       shippingCost: option.cost 
     });
+    if (onUpdate) {
+      onUpdate(option.cost);
+    }
   };
 
   return (

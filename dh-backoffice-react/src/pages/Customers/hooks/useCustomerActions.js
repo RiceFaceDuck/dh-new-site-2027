@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { auth } from '../../../firebase/config';
 import { userService } from '../../../firebase/userService';
 import { todoService } from '../../../firebase/todoService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 /**
  * Hook สำหรับจัดการ Action ต่างๆ เช่น เพิ่ม, แก้ไข, ลบ ลูกค้า และเปลี่ยน Rank
@@ -87,7 +89,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       originalAccountId: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
       customerCode: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
       accountId: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
-      accountName: customer.accountName || customer.displayName || '',
+      accountName: getCustomerDisplayName(customer, ''),
       contactName: customer.contactName || customer.firstName || '',
       phone: customer.phone || customer.phoneNumber || '',
       email: customer.email || '',
@@ -168,7 +170,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   const handleDeleteCustomer = async () => {
     if (!selectedCustomer) return;
     const targetId = selectedCustomer.uid || selectedCustomer.id;
-    const customerName = selectedCustomer.accountName || selectedCustomer.displayName || selectedCustomer.id;
+    const customerName = getCustomerDisplayName(selectedCustomer, selectedCustomer).id;
     const isManager = managerRoles.includes(currentUserRole);
 
     if (isManager) {
@@ -229,7 +231,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
         let success = 0;
         for (const u of usersToMigrate) {
           try {
-            const userRef = doc(db, 'users', u.id || u.uid);
+            const userRef = doc(db, getCollectionPath('users'), u.id || u.uid);
             await updateDoc(userRef, {
                customerCode: deleteField(),
                // Ensure accountId exists

@@ -8,7 +8,7 @@ export const BestSellersPanel = ({ bestSellers = [] }) => {
   ];
 
   return (
-    <div className="bg-dh-surface rounded-md shadow-dh-card border border-dh-border p-6 relative overflow-hidden">
+    <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 h-[400px] flex flex-col">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-dh-border">
         <div>
           <h3 className="text-xl font-black text-dh-main flex items-center gap-2">

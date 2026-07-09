@@ -4,6 +4,7 @@ import { UserCircle, Coffee, CheckCircle, Clock, FileText, Send, X, ScanLine, Lo
 import { staffService } from '../firebase/staffService';
 import { auth } from '../firebase/config';
 
+import { safeJsonParse } from 'dh-shared/src/utils/safeJson.js';
 export default function ProfileMain() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -60,7 +61,7 @@ export default function ProfileMain() {
       setIsProcessing(true);
       
       try {
-        const data = JSON.parse(decodedText);
+        const data = safeJsonParse(decodedText);
         if (data.type === 'ATTENDANCE_SCAN') {
           // You could optionally verify the stationId and timestamp here
           // For now, if they scanned it, we update their attendance

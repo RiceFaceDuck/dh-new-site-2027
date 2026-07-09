@@ -3,6 +3,7 @@ import ClaimActionForm from './ClaimActionForm';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
 
+import { safeJsonParse } from 'dh-shared';
 const FreebieName = ({ item }) => {
     const [name, setName] = useState(item.name);
     
@@ -13,7 +14,7 @@ const FreebieName = ({ item }) => {
             try {
                 const cachedStr = sessionStorage.getItem('search_hybrid_cache');
                 if (cachedStr) {
-                    const cachedArr = JSON.parse(cachedStr);
+                    const cachedArr = safeJsonParse(cachedStr);
                     const matched = cachedArr.find(p => p.sku === item.sku);
                     if (matched && matched.name) {
                         cachedName = matched.name;

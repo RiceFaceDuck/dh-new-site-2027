@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Phone, X, Wallet, Sparkles } from 'lucide-react';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function ActiveCustomerCard({
     activeTab,
@@ -15,7 +16,7 @@ export default function ActiveCustomerCard({
     if (!activeTab.customer) return null;
 
     // แก้ไขบั๊กการดึงข้อมูลชื่อและเบอร์โทร ให้ตรวจสอบฟิลด์อื่นเผื่อไว้
-    const displayName = activeTab.customer.accountName || activeTab.customer.displayName || activeTab.customer.firstName || '-';
+    const displayName = getCustomerDisplayName(activeTab.customer, '-');
     const displayPhone = activeTab.customer.phone || activeTab.customer.phoneNumber || '';
 
     return (
