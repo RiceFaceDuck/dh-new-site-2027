@@ -1,7 +1,8 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'carts';
+const COLLECTION_NAME = getCollectionPath('carts');
 
 export const cartService = {
   /**

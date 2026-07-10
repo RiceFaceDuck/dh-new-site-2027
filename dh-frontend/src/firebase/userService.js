@@ -185,6 +185,8 @@ export const userService = {
       }
       return null;
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       // ไม่โยน Error เพื่อไม่ให้ UI แคช แต่ให้ Log ไว้แทน (กรณี User อาจจะยังไม่เคยตั้งค่า)
       console.warn('ℹ️ [userService] No Private Tax Info found or permission denied:', error.message);
       return null;

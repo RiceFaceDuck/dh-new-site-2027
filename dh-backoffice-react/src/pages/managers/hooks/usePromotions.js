@@ -114,6 +114,8 @@ export function usePromotions() {
       setIsModalOpen(false);
       loadPromotions();
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("เกิดข้อผิดพลาด: " + error.message);
     } finally {
       setIsProcessing(false);
@@ -125,6 +127,8 @@ export function usePromotions() {
       await promotionService.updatePromotion(promo.id, { isActive: !promo.isActive }, auth.currentUser, promo.isActive ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน');
       loadPromotions();
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
     }
   };
@@ -135,6 +139,8 @@ export function usePromotions() {
       await promotionService.deletePromotion(id, title, auth.currentUser);
       loadPromotions();
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("เกิดข้อผิดพลาดในการลบ");
     }
   };

@@ -61,6 +61,9 @@ export default function TabPrivacy({ user }) {
         await userService.deleteAccount(user, walletBalance);
         window.location.href = '/'; // Redirect to home
       } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
         alert(error.message);
       }
     }

@@ -6,15 +6,7 @@ import {
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-// 🛡️ กำหนด App ID สำหรับการเข้าถึงแบบ Enterprise Sandbox
-const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
-
-const getUsersPath = () => {
-    if (typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof window.__app_id !== 'undefined') {
-        return `artifacts/${window.__app_id}/public/data/users`;
-    }
-    return 'users';
-};
+import { getUsersPath } from 'dh-shared/src/firebase/pathUtils';
 
 // ==========================================
 // 🧠 Smart Cache System (สำหรับประวัติ Wallet)

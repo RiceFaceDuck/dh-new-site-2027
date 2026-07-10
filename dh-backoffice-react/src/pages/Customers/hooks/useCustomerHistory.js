@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import { limit, collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -34,8 +34,8 @@ export const useCustomerHistory = () => {
       // ดึงประวัติบิล (Orders)
       const ordersRef = collection(db, getCollectionPath('orders'));
       const [q1, q2] = await Promise.all([
-        getDocs(query(ordersRef, where('customer.uid', '==', targetId))),
-        getDocs(query(ordersRef, where('userId', '==', targetId)))
+        getDocs(query(ordersRef, where('customer.uid', '==', targetId), limit(300))),
+        getDocs(query(ordersRef, where('userId', '==', targetId), limit(300)))
       ]);
       
       const uniqueOrders = new Map();
@@ -44,8 +44,8 @@ export const useCustomerHistory = () => {
       const ordersData = Array.from(uniqueOrders.values());
       
       // ดึงประวัติเคลม (Claims)
-      const claimsRef = collection(db, 'claims');
-      const claimsQuery = query(claimsRef, where('uid', '==', targetId));
+      const claimsRef = collection(db, getCollectionPath('claims'));
+      const claimsQuery = query(claimsRef, where('uid', '==', targetId), limit(300));
       const claimsSnapshot = await getDocs(claimsQuery);
 
       const claimsData = claimsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

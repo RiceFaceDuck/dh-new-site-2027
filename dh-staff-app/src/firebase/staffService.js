@@ -21,7 +21,7 @@ export const staffService = {
   // Log Attendance from Scanner
   logAttendance: async (uid, name, stationId) => {
     try {
-      const logsRef = collection(db, 'attendance_logs');
+      const logsRef = collection(db, getCollectionPath('attendance_logs'));
       await addDoc(logsRef, {
         staffUid: uid,
         staffName: name || 'Staff',

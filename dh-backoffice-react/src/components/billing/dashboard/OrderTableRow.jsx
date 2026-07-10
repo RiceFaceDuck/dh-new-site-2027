@@ -40,10 +40,7 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
     const taxStatus = order.taxInvoiceStatus || (hasTaxInvoice ? 'pending' : null);
 
     return (
-        <tr 
-            onClick={() => setSelectedOrder(order)} 
-            className="group bg-(--dh-bg-base) even:bg-black/5 dark:even:bg-white/5 hover:bg-(--dh-bg-surface) border-b border-(--dh-border) transition-all duration-300 cursor-pointer"
-        >
+        <>
             <td className="py-2.5 px-6 align-middle relative">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-(--dh-accent) opacity-0 group-hover:opacity-100 transition-opacity duration-300 dh-glow"></div>
                 <div className="flex items-center gap-2 mb-1">
@@ -169,6 +166,6 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
                     })()}
                 </span>
             </td>
-        </tr>
+        </>
     );
 }

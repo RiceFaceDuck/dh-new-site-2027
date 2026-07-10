@@ -2,37 +2,18 @@ export const getAppId = () => {
     return typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 };
 
-export const isCanvasEnv = () => {
-    return typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof window.__app_id !== 'undefined';
-};
-
-/**
- * Get standard collection path
- * Uses artifacts/.../public/data in Canvas preview mode,
- * Uses Root Collection in Production mode.
- */
+// 🌟 กู้คืนระบบให้กลับไปดึงข้อมูลจากโครงสร้างเดิมทั้งหมด เพื่อให้โฆษณาและพนักงานกลับมา
 export const getCollectionPath = (collectionName) => {
-    if (isCanvasEnv()) {
+    if (typeof window !== "undefined" && window.location && window.location.hostname.includes('canvas')) {
         return `artifacts/${getAppId()}/public/data/${collectionName}`;
     }
     return collectionName;
 };
 
-/**
- * Get User Collection path
- * Uses artifacts/.../public/data/users in Canvas preview mode,
- * Uses Root 'users' in Production mode.
- */
 export const getUsersPath = () => {
-    if (isCanvasEnv()) {
-        return `artifacts/${getAppId()}/public/data/users`;
-    }
-    return 'users';
+    return getCollectionPath('users');
 };
 
-/**
- * Get Subcollection path under a User
- */
 export const getUserSubcollectionPath = (uid, subcollectionName) => {
     return `${getUsersPath()}/${uid}/${subcollectionName}`;
 };

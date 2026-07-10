@@ -1,15 +1,7 @@
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 import { sharedWalletService } from 'dh-shared/src/firebase/walletService';
-
-const appId = typeof window !== 'undefined' && typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
-
-const getUsersPath = () => {
-    if (typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof window.__app_id !== 'undefined') {
-        return `artifacts/${window.__app_id}/public/data/users`;
-    }
-    return 'users';
-};
+import { getUsersPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * Service สำหรับจัดการข้อมูล Wallet และ Credit Points ของลูกค้าฝั่ง Backoffice

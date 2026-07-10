@@ -20,7 +20,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
   useEffect(() => {
     if (!partnerId) return;
 
-    const reviewsRef = collection(db, 'artifacts', appId, 'public', 'data', 'partner_reviews', partnerId, 'comments');
+    const reviewsRef = collection(db, getCollectionPath('partner_reviews', partnerId, 'comments'));
     const q = query(reviewsRef, orderBy('createdAt', 'desc'), limit(15));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -41,7 +41,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
 
     try {
       setIsSubmitting(true);
-      const reviewsRef = collection(db, 'artifacts', appId, 'public', 'data', 'partner_reviews', partnerId, 'comments');
+      const reviewsRef = collection(db, getCollectionPath('partner_reviews', partnerId, 'comments'));
       
       await addDoc(reviewsRef, {
         userId: currentUser.uid,
@@ -67,7 +67,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
   const handleToggleHeart = async (reviewId, currentStatus) => {
     if (!isOwner) return;
     try {
-      const reviewRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_reviews', partnerId, 'comments', reviewId);
+      const reviewRef = doc(db, getCollectionPath('partner_reviews'), partnerId, 'comments', reviewId);
       await updateDoc(reviewRef, {
         ownerLiked: !currentStatus
       });
@@ -81,7 +81,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
     if (!replyText.trim()) return;
 
     try {
-      const reviewRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_reviews', partnerId, 'comments', reviewId);
+      const reviewRef = doc(db, getCollectionPath('partner_reviews'), partnerId, 'comments', reviewId);
       await updateDoc(reviewRef, {
         ownerReply: {
           text: replyText.trim(),

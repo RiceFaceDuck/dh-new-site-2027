@@ -113,6 +113,9 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
     try {
       await productReviewService.likeReview(commentId);
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       // Revert on error
       setComments(prev => prev.map(c => 
         c.id === commentId ? { ...c, likes: currentLikes, hasLikedLocal: false } : c

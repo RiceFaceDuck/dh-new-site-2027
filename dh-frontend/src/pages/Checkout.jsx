@@ -73,7 +73,7 @@ const Checkout = () => {
     const fetchShippingRules = async () => {
       try {
         setIsFetchingRules(true);
-        const q = query(collection(db, 'shipping_rules'), where('isActive', '==', true));
+        const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
         const snapshot = await getDocs(q);
         const rules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setShippingRules(rules);

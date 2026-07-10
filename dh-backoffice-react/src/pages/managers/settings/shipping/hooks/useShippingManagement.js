@@ -27,6 +27,8 @@ export function useShippingManagement() {
       const data = await shippingService.getShippingRules();
       setRules(data);
     } catch (e) {
+    console.error("🔥 Error:", e);
+
       alert("โหลดข้อมูลเงื่อนไขจัดส่งผิดพลาด");
     } finally {
       setLoading(false);
@@ -141,6 +143,8 @@ export function useShippingManagement() {
         throw new Error(res.message);
       }
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("เกิดข้อผิดพลาดในการบันทึก: " + error.message);
     } finally {
       setIsProcessing(false);
@@ -157,6 +161,8 @@ export function useShippingManagement() {
       await shippingService.toggleShippingRuleActive(rule.id, rule.isActive, desc, uid);
       fetchRules();
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("อัปเดตสถานะล้มเหลว");
     }
   };
@@ -172,6 +178,8 @@ export function useShippingManagement() {
       await shippingService.deleteShippingRule(rule.id, desc, uid);
       fetchRules();
     } catch(e) {
+    console.error("🔥 Error:", e);
+
       alert("ลบล้มเหลว");
     }
   };

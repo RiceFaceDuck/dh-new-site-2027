@@ -61,8 +61,7 @@ export const billingStatusTransaction = {
           if (isCancelling) {
               const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
               if (customerUid && customerUid !== 'WALK-IN') {
-                  const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
-                  settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+                  settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
                   settingsSnap = await transaction.get(settingsRef);
               }
           }

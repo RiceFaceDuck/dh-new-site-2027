@@ -1,5 +1,6 @@
 import { collection, onSnapshot, query, orderBy, limit, getDocs, where, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'orders';
 
@@ -96,7 +97,7 @@ export const billingQueryService = {
   getOrderHistory: async (orderId) => {
       try {
           const q = query(
-              collection(db, 'history_logs'), 
+              collection(db, getCollectionPath('history_logs')), 
               where('targetId', '==', orderId), 
               orderBy('timestamp', 'desc'),
               limit(100)

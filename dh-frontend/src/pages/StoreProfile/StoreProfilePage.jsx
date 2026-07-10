@@ -31,7 +31,7 @@ const StoreProfilePage = () => {
       try {
         setLoading(true);
         // Try getting from ActivePartners collection
-        const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', id);
+        const partnerRef = doc(db, getCollectionPath('ActivePartners'), id);
         const partnerSnap = await getDoc(partnerRef);
         
         if (partnerSnap.exists()) {

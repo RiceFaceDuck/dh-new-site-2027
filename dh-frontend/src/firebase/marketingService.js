@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore';
 
 import { trackAdView, trackAdClick, logImpression, logClick } from './marketingAnalyticsService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
@@ -43,7 +44,7 @@ export const marketingService = {
       if (adType === 'PRODUCT_LINK') collectionName = 'user_sku_ads';
       if (adType === 'BILLBOARD') collectionName = 'billboard_ads';
 
-      const adsRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+      const adsRef = collection(db, getCollectionPath(collectionName));
       const q = query(adsRef, where('status', '==', 'active'), where('type', '==', adType), limit(100));
       const snapshot = await getDocs(q);
       
@@ -116,9 +117,9 @@ export const marketingService = {
         createdBy: userId
       };
 
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId), adPayload);
+      batch.set(doc(db, getCollectionPath('partner_ads'), adId), adPayload);
       if (oldCollectionName !== 'partner_ads') {
-         batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload);
+         batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload);
       }
 
       batch.set(doc(db, 'central_todos', taskId), todoPayload); 
@@ -195,9 +196,9 @@ export const marketingService = {
         createdBy: userId
       };
 
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId), adPayload, { merge: true });
+      batch.set(doc(db, getCollectionPath('partner_ads'), adId), adPayload, { merge: true });
       if (oldCollectionName !== 'partner_ads') {
-         batch.set(doc(db, 'artifacts', appId, 'public', 'data', oldCollectionName, adId), adPayload, { merge: true });
+         batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload, { merge: true });
       }
 
       batch.set(doc(db, 'central_todos', taskId), todoPayload, { merge: true }); 
@@ -226,9 +227,9 @@ export const marketingService = {
 
   getUserPartnerAds: async (userId) => {
     try {
-      const p1 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('ownerId', '==', userId), limit(50)));
-      const p2 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads'), where('ownerId', '==', userId), limit(50)));
-      const p3 = getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'billboard_ads'), where('ownerId', '==', userId), limit(50)));
+      const p1 = getDocs(query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', userId), limit(50)));
+      const p2 = getDocs(query(collection(db, getCollectionPath('user_sku_ads')), where('ownerId', '==', userId), limit(50)));
+      const p3 = getDocs(query(collection(db, getCollectionPath('billboard_ads')), where('ownerId', '==', userId), limit(50)));
 
       const [s1, s2, s3] = await Promise.all([p1, p2, p3]);
       
@@ -242,6 +243,8 @@ export const marketingService = {
       uniqueAds.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
       return uniqueAds;
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       return [];
     }
   },

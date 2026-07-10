@@ -4,6 +4,8 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { transactionImportService } from '../../../firebase/transactionImportService';
 import { useAuth } from '../../../contexts/AuthContext';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import toast from 'react-hot-toast';
 
 export default function RecentImportsModal({ isOpen, onClose, latestSnapshot, onUploadComplete }) {
   const [batches, setBatches] = useState([]);
@@ -20,7 +22,7 @@ export default function RecentImportsModal({ isOpen, onClose, latestSnapshot, on
   const fetchBatches = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'import_batches'), orderBy('createdAt', 'desc'), limit(10));
+      const q = query(collection(db, getCollectionPath('import_batches')), orderBy('createdAt', 'desc'), limit(10));
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -51,6 +53,9 @@ export default function RecentImportsModal({ isOpen, onClose, latestSnapshot, on
       
       alert("ย้อนกลับสำเร็จ!");
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert("เกิดข้อผิดพลาด: " + error.message);
     } finally {
       setUndoingId(null);

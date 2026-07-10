@@ -1,5 +1,5 @@
 import { db, auth } from './config';
-import { collection, doc, updateDoc, deleteDoc, serverTimestamp, addDoc, setDoc, getDoc } from 'firebase/firestore';
+import { limit, collection, doc, updateDoc, deleteDoc, serverTimestamp, addDoc, setDoc, getDoc } from 'firebase/firestore';
 import { historyService } from './historyService';
 import { generateAccountId } from './customer/accountIdService';
 import { gasHistoryService } from './gasHistoryService';
@@ -141,7 +141,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         const usersRef = collection(db, getCollectionPath('users'));
         
         // 1. หาบัญชี Web ปลายทาง (Target)
-        const q = query(usersRef, where('accountId', '==', targetAccountId));
+        const q = query(usersRef, where('accountId', '==', targetAccountId), limit(300));
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
@@ -196,7 +196,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
 
         // --- B. ย้ายรายการ Orders ---
         const ordersRef = collection(db, getCollectionPath('orders'));
-        const ordersQ = query(ordersRef, where('customer.uid', '==', manualUid));
+        const ordersQ = query(ordersRef, where('customer.uid', '==', manualUid), limit(300));
         const ordersSnap = await getDocs(ordersQ);
         ordersSnap.forEach((docSnap) => {
             const currentCustomer = docSnap.data().customer || {};
@@ -208,13 +208,13 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
 
         // --- C. ย้ายรายการ Todos ---
         const todosRef = collection(db, getCollectionPath('todos'));
-        const todosQ1 = query(todosRef, where('customerUid', '==', manualUid));
+        const todosQ1 = query(todosRef, where('customerUid', '==', manualUid), limit(300));
         const todosSnap1 = await getDocs(todosQ1);
         todosSnap1.forEach((docSnap) => {
             batch.update(docSnap.ref, { customerUid: targetUid });
         });
 
-        const todosQ2 = query(todosRef, where('payload.customerUid', '==', manualUid));
+        const todosQ2 = query(todosRef, where('payload.customerUid', '==', manualUid), limit(300));
         const todosSnap2 = await getDocs(todosQ2);
         todosSnap2.forEach((docSnap) => {
             const currentPayload = docSnap.data().payload || {};
@@ -222,8 +222,8 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         });
 
         // --- D. ย้ายรายการ Claims ---
-        const claimsRef = collection(db, 'claims');
-        const claimsQ = query(claimsRef, where('customerUid', '==', manualUid));
+        const claimsRef = collection(db, getCollectionPath('claims'));
+        const claimsQ = query(claimsRef, where('customerUid', '==', manualUid), limit(300));
         const claimsSnap = await getDocs(claimsQ);
         claimsSnap.forEach((docSnap) => {
             batch.update(docSnap.ref, { customerUid: targetUid });
@@ -231,7 +231,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
 
         // --- E. ย้ายรายการ Partners ---
         const partnersRef = collection(db, getCollectionPath('partners'));
-        const partnersQ = query(partnersRef, where('ownerId', '==', manualUid));
+        const partnersQ = query(partnersRef, where('ownerId', '==', manualUid), limit(300));
         const partnersSnap = await getDocs(partnersQ);
         partnersSnap.forEach((docSnap) => {
             batch.update(docSnap.ref, { ownerId: targetUid });
@@ -239,7 +239,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         
         // --- F. ย้ายรายการ Credit Transactions ---
         const creditsRef = collection(db, getCollectionPath('credit_transactions'));
-        const creditsQ = query(creditsRef, where('uid', '==', manualUid));
+        const creditsQ = query(creditsRef, where('uid', '==', manualUid), limit(300));
         const creditsSnap = await getDocs(creditsQ);
         creditsSnap.forEach((docSnap) => {
             batch.update(docSnap.ref, { uid: targetUid });

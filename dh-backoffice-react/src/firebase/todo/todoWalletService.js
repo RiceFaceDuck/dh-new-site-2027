@@ -1,20 +1,13 @@
 import { db } from '../config';
 import { doc, collection, serverTimestamp, runTransaction, increment, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
-
-const appId = typeof window !== 'undefined' && typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
-const isCanvas = typeof window !== 'undefined' && window.location.hostname.includes('canvas');
-
-const getTodosPath = () => isCanvas ? `artifacts/${appId}/public/data/todos` : 'todos';
-const getUsersColPath = () => isCanvas ? `artifacts/${appId}/users` : 'users';
-const getLogsPath = () => isCanvas ? `artifacts/${appId}/public/data/system_logs` : 'system_logs';
+import { getCollectionPath, getUsersPath, getUserSubcollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const todoWalletService = {
   // 🏦 6. ประมวลผลคำขอถอนเงิน Wallet [NEW & HIGHLY SECURE]
   processWalletWithdrawal: async (taskId, action, adminInfo, extraData = {}) => {
       try {
           return await runTransaction(db, async (transaction) => {
-              const todosPath = getTodosPath();
-              const taskRef = doc(db, todosPath, taskId);
+              const taskRef = doc(db, getCollectionPath('todos'), taskId);
               const taskSnap = await transaction.get(taskRef);
 
               if (!taskSnap.exists()) {
@@ -39,13 +32,12 @@ export const todoWalletService = {
 
               if (!customerId || amount <= 0) throw new Error("ข้อมูลลูกค้าหรือจำนวนเงินไม่ถูกต้อง");
 
-              const usersPath = getUsersColPath();
-              const userRef = doc(db, usersPath, customerId);
+              const userRef = doc(db, getUsersPath(), customerId);
               const userSnap = await transaction.get(userRef);
               
               // ✨ UX UPGRADE: Auto-Clean กรณีลูกค้าถูกลบออกจากระบบ
               if (!userSnap.exists()) {
-                 transaction.update(taskRef, {
+                  transaction.update(taskRef, {
                       status: 'cancelled',
                       rejectReason: 'ระบบปิดงานอัตโนมัติ: บัญชีลูกค้ารายนี้ไม่มีอยู่ในระบบแล้ว',
                       completedAt: serverTimestamp(),
@@ -55,8 +47,8 @@ export const todoWalletService = {
               }
 
               const txId = `WD-${action}-${Date.now()}`;
-              const userTxRef = doc(collection(db, `${usersPath}/${customerId}/wallet_transactions`));
-              const logRef = doc(collection(db, getLogsPath()));
+              const userTxRef = doc(collection(db, getUserSubcollectionPath(customerId, 'wallet_transactions')));
+              const logRef = doc(collection(db, getCollectionPath('system_logs')));
 
               if (action === 'APPROVE') {
                   // ✅ [SECURITY FIX] ป้องกันยอดเงินติดลบ กรณีมีการอนุมัติซ้ำซ้อน
@@ -150,8 +142,7 @@ export const todoWalletService = {
 
   createMockWithdrawal: async () => {
     try {
-        const todosPath = getTodosPath();
-        await addDoc(collection(db, todosPath), {
+        await addDoc(collection(db, getCollectionPath('todos')), {
             taskType: 'WALLET_WITHDRAWAL',
             status: 'PENDING',
             createdAt: serverTimestamp(),
@@ -177,7 +168,7 @@ export const todoWalletService = {
 
   clearMockWithdrawals: async () => {
     try {
-        const todosPath = getTodosPath();
+        const todosPath = getCollectionPath('todos');
         const q = query(collection(db, todosPath), where('customerCode', '==', 'CUS-MOCK'));
         const snap = await getDocs(q);
         const deletePromises = snap.docs.map(d => deleteDoc(doc(db, todosPath, d.id)));

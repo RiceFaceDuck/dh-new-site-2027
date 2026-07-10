@@ -17,6 +17,8 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
       const url = await driveService.uploadAdImage(file, 'STORE_PROFILE');
       setStoreData({ ...storeData, storeImage: url });
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("อัปโหลดไม่สำเร็จ: " + error.message);
     } finally { 
       setUploadingStoreImage(false); 
@@ -35,6 +37,8 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
       if (currentGallery.length >= 5) return alert("อัปโหลดได้สูงสุด 5 รูป");
       setStoreData({ ...storeData, galleryImages: [...currentGallery, url] });
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("อัปโหลดไม่สำเร็จ: " + error.message);
     } finally { 
       setUploadingGallery(false); 
@@ -63,6 +67,8 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
       if (fetchMyAds) fetchMyAds();
       alert("บันทึกข้อมูลเรียบร้อยแล้ว");
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + error.message);
     } finally { 
       setSavingStore(false); 

@@ -1,5 +1,5 @@
 import { db, auth } from './config';
-import { collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
+import { limit, collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
 import { historyService } from './historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
@@ -50,7 +50,7 @@ const runCascadeUserDeactivation = async (targetUid, actorUid) => {
 
         // 1. Disable in partners collection
         const partnersRef = collection(db, getCollectionPath('partners'));
-        const partnersQ = query(partnersRef, where('ownerId', '==', targetUid));
+        const partnersQ = query(partnersRef, where('ownerId', '==', targetUid), limit(300));
         const partnersSnap = await getDocs(partnersQ);
         partnersSnap.forEach(docSnap => {
             batch.update(docSnap.ref, { isActive: false, updatedAt: serverTimestamp() });
@@ -66,7 +66,7 @@ const runCascadeUserDeactivation = async (targetUid, actorUid) => {
         const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
         for (const col of adCols) {
             const adsRef = collection(db, getCollectionPath(col));
-            const adsQ = query(adsRef, where('ownerId', '==', targetUid));
+            const adsQ = query(adsRef, where('ownerId', '==', targetUid), limit(300));
             const adsSnap = await getDocs(adsQ);
             adsSnap.forEach(adDoc => {
                 batch.update(adDoc.ref, {
@@ -83,10 +83,10 @@ const runCascadeUserDeactivation = async (targetUid, actorUid) => {
         const todosRef = collection(db, getCollectionPath('todos'));
         const activeStatuses = ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing'];
         
-        const q1 = query(todosRef, where('createdByUid', '==', targetUid), where('status', 'in', activeStatuses));
-        const q2 = query(todosRef, where('customerUid', '==', targetUid), where('status', 'in', activeStatuses));
-        const q3 = query(todosRef, where('assignedTo', '==', targetUid), where('status', 'in', activeStatuses));
-        const q4 = query(todosRef, where('payload.customerUid', '==', targetUid), where('status', 'in', activeStatuses));
+        const q1 = query(todosRef, where('createdByUid', '==', targetUid), where('status', 'in', activeStatuses), limit(300));
+        const q2 = query(todosRef, where('customerUid', '==', targetUid), where('status', 'in', activeStatuses), limit(300));
+        const q3 = query(todosRef, where('assignedTo', '==', targetUid), where('status', 'in', activeStatuses), limit(300));
+        const q4 = query(todosRef, where('payload.customerUid', '==', targetUid), where('status', 'in', activeStatuses), limit(300));
 
         const [snap1, snap2, snap3, snap4] = await Promise.all([
             getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4)
@@ -191,6 +191,8 @@ export const updateUserLoginStatus = async (uid, isOnline) => {
         const userRef = getUserDocRef(uid);
         await updateDoc(userRef, { isOnline });
     } catch (error) {
+    console.error("🔥 Error:", error);
+
         // เงียบไว้เพื่อไม่ให้รก Console
     }
 };
@@ -231,7 +233,7 @@ export const getPartnersWithCredits = async () => {
         const q = query(usersRef, or(
             where('creditPoints', '>', 0),
             where('role', '==', 'partner')
-        ));
+        ), limit(300));
         
         const snap = await getDocs(q);
         const data = [];

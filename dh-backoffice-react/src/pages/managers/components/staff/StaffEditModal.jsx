@@ -27,6 +27,9 @@ export default function StaffEditModal({ editingStaff, setEditingStaff, showToas
       setEditingStaff(null);
       showToast('success', 'บันทึกข้อมูลพนักงานสำเร็จ');
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       showToast('error', 'บันทึกข้อมูลล้มเหลว');
     }
   };

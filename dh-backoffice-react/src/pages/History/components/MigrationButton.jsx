@@ -3,6 +3,7 @@ import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config.js';
 import { gasHistoryService } from '../../../firebase/gasHistoryService.js';
 import { Loader2, DatabaseBackup } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function MigrationButton() {
   const [isMigrating, setIsMigrating] = useState(false);
@@ -16,7 +17,7 @@ export default function MigrationButton() {
     
     try {
       // 1. Fetch old logs
-      const q = query(collection(db, 'history_logs'), orderBy('timestamp', 'desc'), limit(500));
+      const q = query(collection(db, getCollectionPath('history_logs')), orderBy('timestamp', 'desc'), limit(500));
       const snapshot = await getDocs(q);
       
       const oldLogs = snapshot.docs.map(doc => {

@@ -2,8 +2,6 @@ import { collection, query, orderBy, limit, getDocs, doc, runTransaction, server
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
 export const creditHistoryService = {
   getPointsHistory: async (userId, limitCount = 30) => {
     if (!userId) return [];
@@ -29,7 +27,7 @@ export const creditHistoryService = {
       limit(limitCount)
     );
     
-    return onSnapshot(q, (snap) => {
+    const unsubscribe = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => {
         const d = doc.data();
         return {
@@ -43,6 +41,7 @@ export const creditHistoryService = {
       console.error("🔥 DH-Core System Error [Fetch History]:", error);
       callback(null, error);
     });
+    return unsubscribe;
   }
 };
 
@@ -54,7 +53,7 @@ export const trackAdClick = async (partnerId) => {
   if (!partnerId) return;
   try {
     const statDocId = `${new Date().getFullYear()}-${new Date().getMonth()+1}`;
-    const partnerStatsRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId, 'stats', statDocId);
+    const partnerStatsRef = doc(db, getCollectionPath('partners'), partnerId, 'stats', statDocId);
     
     await runTransaction(db, async (transaction) => {
       const docSnap = await transaction.get(partnerStatsRef);

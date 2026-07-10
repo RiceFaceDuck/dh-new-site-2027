@@ -1,25 +1,26 @@
 import React from 'react';
 import { Search } from 'lucide-react';
+import { TableVirtuoso } from 'react-virtuoso';
 import OrderTableRow from './OrderTableRow';
 
 export default function OrderListTable({ orders, loading, isSearching, limitAmount, setLimitAmount, setSelectedOrder }) {
     return (
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative z-0 bg-(--dh-bg-surface)">
-            <table className="w-full text-left border-collapse">
-                <thead className="bg-(--dh-text-main) sticky top-0 z-20 shadow-md">
-                    <tr className="border-b-4 border-(--dh-accent) text-(--dh-bg-base)">
-                        <th className="py-3 px-6 text-[12px] font-black uppercase tracking-wider w-[18%]">เลขที่บิล / วันที่</th>
-                        <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider text-center w-[12%]">สถานะ</th>
-                        <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[20%]">ชื่อร้าน / ลูกค้า</th>
-                        <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[13%]">เจ้าหน้าที่</th>
-                        <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[12%]">การจัดส่ง</th>
-                        <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[13%]">บริการหลังการขาย</th>
-                        <th className="py-3 px-6 text-[12px] font-black uppercase tracking-wider text-right w-[12%]">ยอดสุทธิ (NET)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {(loading || isSearching) && orders.length === 0 ? (
-                        Array.from({ length: 5 }).map((_, idx) => (
+        <div className="flex-1 w-full h-full min-h-[300px] relative z-0 bg-(--dh-bg-surface)">
+            {((loading || isSearching) && orders.length === 0) ? (
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-(--dh-text-main) sticky top-0 z-20 shadow-md">
+                        <tr className="border-b-4 border-(--dh-accent) text-(--dh-bg-base)">
+                            <th className="py-3 px-6 text-[12px] font-black uppercase tracking-wider w-[18%]">เลขที่บิล / วันที่</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider text-center w-[12%]">สถานะ</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[20%]">ชื่อร้าน / ลูกค้า</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[13%]">เจ้าหน้าที่</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[12%]">การจัดส่ง</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[13%]">บริการหลังการขาย</th>
+                            <th className="py-3 px-6 text-[12px] font-black uppercase tracking-wider text-right w-[12%]">ยอดสุทธิ (NET)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {Array.from({ length: 5 }).map((_, idx) => (
                             <tr key={`skeleton-${idx}`} className="border-b border-(--dh-border)/60 animate-pulse">
                                 <td className="py-4 px-6"><div className="h-4 bg-(--dh-border) rounded-sm w-3/4 mb-2"></div><div className="h-3 bg-(--dh-border)/50 rounded-sm w-1/2"></div></td>
                                 <td className="py-4 px-4 text-center"><div className="h-6 bg-(--dh-border) rounded-full w-20 mx-auto"></div></td>
@@ -29,31 +30,47 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
                                 <td className="py-4 px-4"><div className="h-4 bg-(--dh-border) rounded-sm w-2/3"></div></td>
                                 <td className="py-4 px-6 text-right"><div className="h-5 bg-(--dh-border) rounded-sm w-1/2 ml-auto"></div></td>
                             </tr>
-                        ))
-                    ) : orders.length === 0 ? (
-                        <tr key="not-found">
-                            <td colSpan="7" className="p-16 text-center text-(--dh-text-muted)">
-                                <div className="flex flex-col items-center justify-center gap-4">
-                                    <div className="w-16 h-16 bg-(--dh-bg-base) rounded-full flex items-center justify-center shadow-inner dh-inner-shadow">
-                                        <Search className="opacity-40" size={32}/>
-                                    </div>
-                                    <div className="text-center">
-                                        <span className="font-black text-lg block dh-text-glow">ไม่พบข้อมูลบิล</span>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    ) : (
-                        <>
-                            {orders.map((order, idx) => (
-                                <OrderTableRow 
-                                    key={order.id || order.orderId || `order-${idx}`} 
-                                    order={order} 
-                                    setSelectedOrder={setSelectedOrder} 
+                        ))}
+                    </tbody>
+                </table>
+            ) : (
+                <TableVirtuoso
+                    data={orders}
+                    className="custom-scrollbar w-full h-full flex-1"
+                    components={{
+                        Table: ({ style, ...props }) => <table {...props} style={style} className="w-full text-left border-collapse" />,
+                        TableHead: React.forwardRef((props, ref) => <thead {...props} ref={ref} className="bg-(--dh-text-main) sticky top-0 z-20 shadow-md" />),
+                        TableBody: React.forwardRef((props, ref) => <tbody {...props} ref={ref} />),
+                        TableRow: (props) => {
+                            const order = props.item;
+                            if (!order) return <tr {...props} />;
+                            return (
+                                <tr 
+                                    {...props}
+                                    onClick={() => setSelectedOrder(order)} 
+                                    className={`group bg-(--dh-bg-base) even:bg-black/5 dark:even:bg-white/5 hover:bg-(--dh-bg-surface) border-b border-(--dh-border) transition-all duration-300 cursor-pointer ${props.className || ''}`}
                                 />
-                            ))}
-                            {orders.length >= limitAmount && (
-                                <tr key="load-more">
+                            );
+                        },
+                        EmptyPlaceholder: () => (
+                            <tbody>
+                                <tr>
+                                    <td colSpan="7" className="p-16 text-center text-(--dh-text-muted)">
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <div className="w-16 h-16 bg-(--dh-bg-base) rounded-full flex items-center justify-center shadow-inner dh-inner-shadow">
+                                                <Search className="opacity-40" size={32}/>
+                                            </div>
+                                            <div className="text-center">
+                                                <span className="font-black text-lg block dh-text-glow">ไม่พบข้อมูลบิล</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        ),
+                        Footer: () => orders.length >= limitAmount ? (
+                            <tfoot>
+                                <tr>
                                     <td colSpan="7" className="py-5 text-center bg-(--dh-bg-base)/50 border-t border-(--dh-border)">
                                         <button 
                                             onClick={() => setLimitAmount(prev => prev + 25)} 
@@ -63,11 +80,28 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
                                         </button>
                                     </td>
                                 </tr>
-                            )}
-                        </>
+                            </tfoot>
+                        ) : null
+                    }}
+                    fixedHeaderContent={() => (
+                        <tr className="border-b-4 border-(--dh-accent) text-(--dh-bg-base)">
+                            <th className="py-3 px-6 text-[12px] font-black uppercase tracking-wider w-[18%]">เลขที่บิล / วันที่</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider text-center w-[12%]">สถานะ</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[20%]">ชื่อร้าน / ลูกค้า</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[13%]">เจ้าหน้าที่</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[12%]">การจัดส่ง</th>
+                            <th className="py-3 px-4 text-[12px] font-black uppercase tracking-wider w-[13%]">บริการหลังการขาย</th>
+                            <th className="py-3 px-6 text-[12px] font-black uppercase tracking-wider text-right w-[12%]">ยอดสุทธิ (NET)</th>
+                        </tr>
                     )}
-                </tbody>
-            </table>
+                    itemContent={(index, order) => (
+                        <OrderTableRow 
+                            order={order} 
+                            setSelectedOrder={setSelectedOrder} 
+                        />
+                    )}
+                />
+            )}
         </div>
     );
 }

@@ -84,7 +84,7 @@ export const todoActionService = {
         actionBy: currentUser?.uid || 'Admin'
       });
 
-      const logRef = doc(collection(db, 'system_logs'));
+      const logRef = doc(collection(db, getCollectionPath('system_logs')));
       batch.set(logRef, {
           actionType: 'TAX_INVOICE_ISSUED',
           orderId: task.payload.orderId,

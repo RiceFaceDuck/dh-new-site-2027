@@ -32,6 +32,9 @@ export default function FeaturedSettings() {
             });
             alert("บันทึกการตั้งค่าสำเร็จ ข้อมูลจะเปลี่ยนที่หน้าแรกทันที");
         } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
             alert("เกิดข้อผิดพลาดในการบันทึก: " + error.message);
         } finally {
             setIsSaving(false);
@@ -46,6 +49,9 @@ export default function FeaturedSettings() {
             const count = await featuredConfigService.reseedAllProducts();
             alert(`รีเซ็ตค่าการสุ่มสำเร็จ อัปเดตสินค้าทั้งหมด ${count} รายการ`);
         } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
             alert("เกิดข้อผิดพลาดในการรีเซ็ต: " + error.message);
         } finally {
             setIsReseeding(false);

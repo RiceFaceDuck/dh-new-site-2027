@@ -11,8 +11,9 @@ export const hardwareService = {
    */
   saveScan: async (appId, uid, scanData) => {
     try {
+      const { getCollectionPath } = await import('dh-shared/src/firebase/pathUtils');
       // 💡 ประหยัด Reads: เราทำการ Write อย่างเดียวแบบ AddDoc ไม่ต้องดึงข้อมูลเก่ามาเช็ค
-      const scansRef = collection(db, 'artifacts', appId, 'users', uid, 'hardware_scans');
+      const scansRef = collection(db, getCollectionPath('users'), uid, 'hardware_scans');
       const docRef = await addDoc(scansRef, {
         ...scanData,
         createdAt: serverTimestamp()

@@ -123,6 +123,8 @@ export function useStaffManagement() {
           ));
           showToast('success', `ดำเนินการ${actionText}สำเร็จ`);
         } catch (error) {
+    console.error("🔥 Error:", error);
+
           showToast('error', `ไม่สามารถ${actionText}ได้`);
         }
       },
@@ -147,6 +149,8 @@ export function useStaffManagement() {
           setStaffList(prev => prev.filter(staff => staff.id !== uid));
           showToast('success', 'ลบพนักงานสำเร็จ');
         } catch (error) {
+    console.error("🔥 Error:", error);
+
           showToast('error', 'ลบพนักงานล้มเหลว');
         }
       },

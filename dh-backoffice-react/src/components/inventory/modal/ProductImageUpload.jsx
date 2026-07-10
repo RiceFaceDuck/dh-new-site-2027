@@ -44,6 +44,9 @@ export default function ProductImageUpload({
       }
       
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert("เกิดข้อผิดพลาดในการอัปโหลดภาพ: " + error);
     } finally {
       setIsUploading(false);

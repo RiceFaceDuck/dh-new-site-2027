@@ -71,7 +71,7 @@ export const productService = {
         // Assume document IDs are the primary way to fetch
         // We use documentId() which maps to __name__ in Firestore
         const { documentId } = await import('firebase/firestore');
-        const q = query(collection(db, getCollectionPath('products')), where(documentId(), "in", chunk));
+        const q = query(collection(db, getCollectionPath('products')), where(documentId(), "in", chunk), limit(300));
         const querySnapshot = await getDocs(q);
         
         querySnapshot.forEach((docSnap) => {
@@ -83,7 +83,7 @@ export const productService = {
         const missingIds = chunk.filter(id => !fetchedIds.includes(id));
         
         if (missingIds.length > 0) {
-          const fallbackQ = query(collection(db, getCollectionPath('products')), where("sku", "in", missingIds));
+          const fallbackQ = query(collection(db, getCollectionPath('products')), where("sku", "in", missingIds), limit(300));
           const fallbackSnap = await getDocs(fallbackQ);
           fallbackSnap.forEach((docSnap) => {
             results.push(this.normalizeProductData({ id: docSnap.id, ...docSnap.data() }));
@@ -131,8 +131,6 @@ export const productService = {
             callback(null);
           }
         });
-      } else {
-         callback(null);
       }
     });
 

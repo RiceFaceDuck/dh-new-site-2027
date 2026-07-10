@@ -3,11 +3,9 @@
 กระดานนี้ใช้สำหรับติดตามงานและฟีเจอร์ที่จะพัฒนา เพื่อให้เห็นภาพรวมว่าตอนนี้กำลังทำอะไรอยู่ และมีอะไรที่ต้องทำถัดไป (Backlog)
 
 ## 🏃 Sprint ปัจจุบัน / กำลังดำเนินการ (In Progress)
-- [x] **Phase 2:** แก้ปัญหา UI ค้างด้วย Virtualization (`react-window`) สำหรับ `AuditLedger`
-- [x] **Phase 3:** สร้างเกราะป้องกันด้วย Unit Tests (`Vitest`) ให้กับโฟลเดอร์ `dh-shared` (taxEngine, priceEngine)
-- [x] **Phase 4:** ซ่อมแซมระบบความสัมพันธ์ข้อมูล (Cascade Soft-Delete Orphan Prevention) ตรวจสอบพบว่ามีการป้องการแบบ Strict Relation Check อยู่แล้ว
-- [x] ตกผลึกและบันทึกแนวคิดเบื้องต้นของระบบเคลมสินค้า (Claims & Warranty Concept) ลงใน `CONCEPT_NOTES.md`
+- [x] ตกผลึกและบันทึกแนวคิดเบื้องต้นของระบบเคลมสินค้า (Claims & Warranty Concept) ลง in `CONCEPT_NOTES.md`
 - [/] สอบถามและพูดคุยแนวคิดการเคลม (เปลี่ยนรุ่นอื่น, ตรวจสอบ S/N, ระยะเวลารับประกัน) เพื่อเตรียมตัวเขียนโค้ดในเฟสถัดไป
+- [x] ดำเนินการยกระดับความเสถียร แก้ไข Auth Block และทำความสะอาดโค้ด Firebase (Stability Audit, Auth Bypass & Firebase Clean Code)
 
 ## 📋 รายการเตรียมการพัฒนา (Backlog)
 *(ฟีเจอร์หรือบั๊กที่เตรียมข้อมูลความต้องการพร้อมแล้ว แต่ยังไม่กำหนดรอบพัฒนา)*
@@ -43,6 +41,8 @@
 
 ## ✅ งานที่เสร็จสิ้นล่าสุด (Recently Completed)
 *(เมื่อพัฒนางานเสร็จแล้ว ให้ย้ายมาที่หมวดหมู่นี้ เพื่อบันทึกประวัติการทำงาน)*
+- [x] **การยกระดับความเสถียร แก้ไข Auth Block และทำความสะอาดโค้ด Firebase (Stability Audit, Auth Bypass & Firebase Clean Code)** — แก้ไขปัญหา reCAPTCHA/App Check บน localhost ด้วย Debug Token ครอบคลุม 3 ระบบ และทำความสะอาดโค้ด Firebase เคลียร์ปัญหา resource leaks และอุดช่องโหว่ try/catch ในฟังก์ชันหลัก 6 ไฟล์ พร้อมอัปเดตสถานะ ISSUES.md ข้อ 5 และ 6 เป็น Resolved 🟢 Done
+- [x] **การตรวจสอบความเสถียรของระบบและแก้ไขบั๊ก squadConfig (System Stability Audit & Hotfix)** — ตรวจสอบโครงสร้างระบบเชิงลึก แก้ไขปัญหา Invalid document reference ของ squadConfig ทั้งหน้าบ้านและหลังบ้านโดยอิง getCollectionPath จาก dh-shared อัปเกรด Audit Checklist ครอบคลุม 85% และตั้งค่ากฎ AI Core Directives เรื่องความเร็วหน้าบ้านต้องมาก่อนการประหยัดโควต้าใน AGENTS.md
 - [x] **เฟส 5: วางรากฐานระบบจัดการหลังการขาย และอุดรอยรั่วข้อมูลระดับโครงสร้าง (After-Sales & Data Integrity Mastery)** — พัฒนาระบบ Claims & Warranty (เครื่องมือเช็คประกัน, คืนเงินเข้า Wallet), สร้างระบบซ่อมแซมข้อมูลเก่า (Data Repair System) และสคริปต์สำรองข้อมูลอัตโนมัติบน Local (Automated Backup)
 - [x] **Phase: ซ่อมแซมระบบแกนกลางและปรับปรุงแดชบอร์ด (Core System Repair & Dashboard Update)** — ตรวจสอบและแก้ไขช่องโหว่การตัดสต๊อก (Buffer Stock), แก้บั๊กระบบประวัติเครดิต/Wallet, ซ่อมแซม Dependencies ทั่วทั้งโปรเจกต์ (React 19, Vite 8) และจัดระเบียบหน้า Overview ใหม่
 - [x] **Phase: Staff Gateway & Privilege Manager** — ระบบรับสมัครพนักงานใหม่และอนุมัติสิทธิ์การจัดการหลังบ้าน (Staff Onboarding & Role Management) พร้อมบันทึกประวัติการทำงานและแก้ไขจุดแสดงผล UI

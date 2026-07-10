@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import HeroSection from './components/HeroSection';
 import QuickActions from './components/QuickActions';
 import FeaturedSpares from './components/FeaturedSpares';
@@ -15,6 +16,11 @@ const Home = () => {
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">
+      <Helmet>
+        <title>DH Notebook | อะไหล่โน๊ตบุ๊คคุณภาพอันดับ 1 จัดส่งทั่วประเทศ</title>
+        <meta name="description" content="ศูนย์รวมอะไหล่โน๊ตบุ๊ค แบตเตอรี่ หน้าจอ คีย์บอร์ด สายชาร์จ คุณภาพสูง รับประกันยาวนาน จัดส่งรวดเร็วทั่วประเทศ พร้อมบริการจากช่างมืออาชีพ" />
+        <meta name="keywords" content="อะไหล่โน๊ตบุ๊ค, แบตเตอรี่โน๊ตบุ๊ค, หน้าจอโน๊ตบุ๊ค, คีย์บอร์ดโน๊ตบุ๊ค, สายชาร์จ, ซ่อมคอม" />
+      </Helmet>
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 md:pt-8 space-y-8 md:space-y-12">
         
         {/* ========================================================

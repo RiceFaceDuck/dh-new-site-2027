@@ -72,7 +72,7 @@ const TabAdManager = ({ user }) => {
   useEffect(() => {
     if (!user) return;
     const adId = `AD-CARD-${user.uid}`;
-    const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);
+    const adRef = doc(db, getCollectionPath('partner_ads'), adId);
     
     const unsubscribe = onSnapshot(adRef, (snap) => {
       if (snap.exists()) {
@@ -139,6 +139,9 @@ const TabAdManager = ({ user }) => {
       const url = await driveService.uploadAdImage(file, formData.type);
       setFormData({ ...formData, imageUrl: url });
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert(error.message);
     } finally { setUploadingImage(false); }
   };
@@ -209,6 +212,9 @@ const TabAdManager = ({ user }) => {
       handleCloseForm();
       fetchMyAds();
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert("เกิดข้อผิดพลาดในการบันทึกโฆษณา");
     } finally { setSubmittingAd(false); }
   };
@@ -218,9 +224,9 @@ const TabAdManager = ({ user }) => {
       try {
         const batch = writeBatch(db);
         
-        batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId));
-        batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads', adId));
-        batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'billboard_ads', adId));
+        batch.delete(doc(db, getCollectionPath('partner_ads'), adId));
+        batch.delete(doc(db, getCollectionPath('user_sku_ads'), adId));
+        batch.delete(doc(db, getCollectionPath('billboard_ads'), adId));
         
         // 🚀 เก็บ History Log ว่ามีการลบ SKU โฆษณา
         const { serverTimestamp } = await import('firebase/firestore');
@@ -236,7 +242,10 @@ const TabAdManager = ({ user }) => {
         await batch.commit();
         
         fetchMyAds();
-      } catch (error) { alert("ลบไม่สำเร็จ กรุณาลองใหม่"); }
+      } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+ alert("ลบไม่สำเร็จ กรุณาลองใหม่"); }
     }
   };
 

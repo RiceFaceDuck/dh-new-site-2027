@@ -1,5 +1,5 @@
 import { db } from './config';
-import { collection, doc, getDocs, getDoc, updateDoc, setDoc, serverTimestamp, query, where } from 'firebase/firestore';
+import { limit, collection, doc, getDocs, getDoc, updateDoc, setDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 
@@ -74,7 +74,7 @@ export const getPendingStaff = async () => {
         const usersRef = getUsersCollectionRef();
         
         // 🚀 OPTIMIZATION: Query specifically by role
-        const q = query(usersRef, where('role', 'in', ['pending_approval', 'pending']));
+        const q = query(usersRef, where('role', 'in', ['pending_approval', 'pending']), limit(300));
         const snap = await getDocs(q);
         const pendingUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         

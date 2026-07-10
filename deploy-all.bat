@@ -53,7 +53,7 @@ echo.
 
 :: 4. Deploy to Firebase
 echo [*] Deploying to Firebase...
-call firebase deploy
+call firebase deploy --only hosting,firestore:rules,storage
 if !ERRORLEVEL! NEQ 0 (
     echo.
     echo [ERROR] Firebase deployment failed!

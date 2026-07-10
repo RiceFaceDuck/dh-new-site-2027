@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { cartService } from '../firebase/cartService';
 import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const CartStateContext = createContext();
 export const CartDispatchContext = createContext();
@@ -95,7 +96,7 @@ export const CartProvider = ({ children }) => {
           { total: 0, totalQty: 0 }
         );
 
-        const cartRef = doc(db, 'carts', uid);
+        const cartRef = doc(db, getCollectionPath('carts'), uid);
         const dbItems = items.map(item => ({
           id: item.id,
           sku: item.sku || '-',
@@ -142,7 +143,7 @@ export const CartProvider = ({ children }) => {
         }
 
         // เมื่อ Login แล้วให้ดึงข้อมูลจาก Firebase เป็นหลัก
-        const cartRef = doc(db, 'carts', user.uid);
+        const cartRef = doc(db, getCollectionPath('carts'), user.uid);
         unsubscribeSnapshot = onSnapshot(cartRef, { includeMetadataChanges: true }, (docSnap) => {
           // 🛡️ หลีกเลี่ยง UI Flicker: ข้ามการอัปเดตหากพบว่ามี writes ค้างในเครื่องของฝั่งเราเอง
           if (docSnap.metadata.hasPendingWrites) return;

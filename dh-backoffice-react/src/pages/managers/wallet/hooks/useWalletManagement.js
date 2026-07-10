@@ -44,7 +44,7 @@ export function useWalletManagement(navigate) {
                 if (settingsSnap.exists()) setGlobalLedger(settingsSnap.data().ledger);
 
                 const usersRef = collection(db, getUsersPath());
-                const qHasBalance = query(usersRef, where('walletBalance', '>', 0));
+                const qHasBalance = query(usersRef, where('walletBalance', '>', 0), limit(300));
                 let totalBal = 0; let count = 0;
                 try {
                     const snap = await getDocs(qHasBalance);
@@ -82,7 +82,7 @@ export function useWalletManagement(navigate) {
             collection(db, getCollectionPath('todos')),
             where('taskType', '==', 'WALLET_WITHDRAWAL'),
             where('status', 'in', ['PENDING', 'pending', 'todo'])
-        );
+        , limit(300));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

@@ -23,6 +23,7 @@ import imageCompression from 'browser-image-compression';
 import { db, storage, auth } from './config';
 import { historyService } from './historyService';
 import { sharedCategoryService } from 'dh-shared/src/firebase/categoryService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const COLLECTION_NAME = 'homepage_categories';
 
@@ -70,6 +71,8 @@ export const categoryService = {
       const fileRef = ref(storage, url);
       await deleteObject(fileRef);
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       console.warn('Warning: Failed to delete old icon from storage:', error);
     }
   },
@@ -165,7 +168,7 @@ export const categoryService = {
       // 1. Relation Check (Cost: 1 Read)
       // เปลี่ยนจาก 'categoryId' เป็น 'category_lower' เพื่อให้สอดคล้องกับ products
       if (type) {
-        const productsRef = collection(db, 'products');
+        const productsRef = collection(db, getCollectionPath('products'));
         const q = query(productsRef, where('category_lower', '==', type.trim().toLowerCase()), limit(1));
         const snap = await getDocs(q);
         

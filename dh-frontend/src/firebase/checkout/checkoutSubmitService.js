@@ -29,7 +29,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
   const orderRef = doc(collection(db, getCollectionPath('orders'))); 
   const userRef = doc(db, getCollectionPath('users'), user.uid);
-  const counterRef = doc(db, "system_counters", "orders");
+  const counterRef = doc(db, getCollectionPath('system_counters'), 'orders');
 
   try {
     return await runTransaction(db, async (transaction) => {

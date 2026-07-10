@@ -16,7 +16,7 @@ export function usePartnerSettings() {
   const fetchPartners = async () => {
     setLoading(true);
     try {
-      const partnersRef = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
+      const partnersRef = collection(db, getCollectionPath('partners'));
       const snapshot = await getDocs(partnersRef);
       
       const fetchedPartners = snapshot.docs.map(doc => ({
@@ -56,7 +56,7 @@ export function usePartnerSettings() {
     setActionLoading(partnerId);
     try {
       const newStatus = !currentStatus;
-      const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId);
+      const partnerRef = doc(db, getCollectionPath('partners'), partnerId);
       
       await updateDoc(partnerRef, {
         isActive: newStatus,
@@ -82,7 +82,7 @@ export function usePartnerSettings() {
     setActionLoading(`verify_${partnerId}`);
     try {
       const newStatus = !currentStatus;
-      const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId);
+      const partnerRef = doc(db, getCollectionPath('partners'), partnerId);
       
       await updateDoc(partnerRef, {
         isVerified: newStatus,

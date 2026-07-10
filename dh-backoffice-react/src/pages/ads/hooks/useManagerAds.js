@@ -31,7 +31,7 @@ export function useManagerAds() {
     };
 
     collections.forEach(colName => {
-      const colRef = collection(db, 'artifacts', appId, 'public', 'data', colName);
+      const colRef = collection(db, getCollectionPath(colName));
       // Query limiting to recent 50 ads per type to prevent quota leaks
       const q = query(colRef, orderBy('createdAt', 'desc'), limit(50));
       const unsub = onSnapshot(q, (snapshot) => {
@@ -54,7 +54,7 @@ export function useManagerAds() {
       const batch = writeBatch(db);
       const actionData = { status: action, updatedAt: serverTimestamp() };
 
-      batch.set(doc(db, 'artifacts', appId, 'public', 'data', ad._collection, ad.id), actionData, { merge: true });
+      batch.set(doc(db, getCollectionPath(ad._collection), ad.id), actionData, { merge: true });
 
       const taskId = `TODO-${ad.id}`;
       batch.set(doc(db, getCollectionPath('todos'), taskId), actionData, { merge: true });

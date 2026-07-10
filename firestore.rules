@@ -14,14 +14,7 @@ service cloud.firestore {
         request.auth.token.role == 'admin' ||
         request.auth.token.role == 'owner' ||
         request.auth.token.isStaff == true ||
-        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' ||
-        // 🚀 THE FIX: Check if document exists before getting to prevent Error short-circuiting
-        (
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin', 'owner'] ||
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true
-          )
-        )
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1'
       );
     }
 
@@ -30,11 +23,7 @@ service cloud.firestore {
         request.auth.token.role == 'manager' ||
         request.auth.token.role == 'admin' ||
         request.auth.token.role == 'owner' ||
-        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' ||
-        (
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['manager', 'admin', 'owner']
-        )
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1'
       );
     }
     
@@ -227,6 +216,23 @@ service cloud.firestore {
     match /freebies/{freebieId} {
       allow read: if true;
       allow write: if isStaff();
+    }
+    
+    // 5.1 ข้อมูลโฆษณาต่างๆ (Ads)
+    match /partner_ads/{adId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+    }
+    match /billboard_ads/{adId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+    }
+    match /user_sku_ads/{adId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
     }
     
     // 6. การตั้งค่าระบบ (Settings) และข้อมูลพื้นฐาน

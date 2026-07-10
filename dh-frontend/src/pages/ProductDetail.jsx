@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { useProductDetail } from './hooks/useProductDetail';
@@ -80,8 +81,36 @@ const ProductDetail = () => {
     );
   }
 
+  // สร้าง SEO Schema แบบ JSON-LD สำหรับ Google
+  const jsonLd = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product?.name || "อะไหล่โน๊ตบุ๊ค",
+    "image": product?.imageUrl || "",
+    "description": product?.shortDescription || product?.name,
+    "brand": {
+      "@type": "Brand",
+      "name": product?.brand || "OEM"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": window.location.href,
+      "priceCurrency": "THB",
+      "price": currentProductInfo?.salePrice || currentProductInfo?.price || 0,
+      "itemCondition": "https://schema.org/NewCondition",
+      "availability": currentProductInfo?.isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto w-full animate-fade-in pb-10">
+      <Helmet>
+        <title>{product?.name || 'รายละเอียดสินค้า'} | DH Notebook</title>
+        <meta name="description" content={product?.shortDescription || product?.name || 'รายละเอียดอะไหล่โน๊ตบุ๊คคุณภาพ'} />
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
+      </Helmet>
       
       <nav className="flex items-center flex-wrap text-sm font-medium text-slate-500 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100 w-fit">
         <Link 

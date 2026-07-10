@@ -117,7 +117,9 @@ export const usePosActions = ({
         try {
             const uploadedUrl = await driveService.uploadSlip(file);
             updateActiveTab({ slipImage: uploadedUrl, transactionRef: '', transferDateTime: '' });
-        } catch (error) { alert(`อัปโหลดไม่สำเร็จ: ${error.message}`); } finally { setIsUploadingSlip(false); }
+        } catch (error) {
+    console.error("🔥 Error:", error);
+ alert(`อัปโหลดไม่สำเร็จ: ${error.message}`); } finally { setIsUploadingSlip(false); }
     };
 
     const handleCheckout = async (status) => { 

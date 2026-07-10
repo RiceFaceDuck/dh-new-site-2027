@@ -1,0 +1,79 @@
+{
+  "missingUnsubscribe": [],
+  "hardcodedDbPaths": [],
+  "unpaginatedQueries": [
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\userManagementService.js",
+      "line": 233,
+      "snippet": "const q = query(usersRef, or("
+    }
+  ],
+  "missingConfirmations": [],
+  "catchWithoutLogging": [
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\claim\\claimRequestService.js",
+      "line": 105,
+      "snippet": "} catch (error) { throw error; }"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\claim\\claimRequestService.js",
+      "line": 206,
+      "snippet": "} catch (error) { throw error; }"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\claim\\claimRequestService.js",
+      "line": 249,
+      "snippet": "} catch (error) { throw error; }"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\freebieService.js",
+      "line": 85,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\freebieService.js",
+      "line": 109,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\freebieService.js",
+      "line": 119,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\freebieService.js",
+      "line": 129,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\userManagementService.js",
+      "line": 138,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\userManagementService.js",
+      "line": 156,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\userManagementService.js",
+      "line": 184,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-frontend\\src\\firebase\\authService.js",
+      "line": 105,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-frontend\\src\\firebase\\authService.js",
+      "line": 119,
+      "snippet": "} catch (error) {"
+    },
+    {
+      "file": "C:\\DH Notebook\\Management System\\dh-frontend\\src\\utils\\memoryCache.js",
+      "line": 44,
+      "snippet": "} catch (error) {"
+    }
+  ]
+}

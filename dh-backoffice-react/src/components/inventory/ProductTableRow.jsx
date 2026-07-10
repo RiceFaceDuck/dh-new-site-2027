@@ -7,10 +7,7 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) =>
                             : Number(globalBufferStock);
 
   return (
-    <tr 
-      onClick={() => onEdit(product)}
-      className="group cursor-pointer transition-all duration-200 border-b border-dh-border last:border-none even:bg-black/5 dark:even:bg-white/5 hover:bg-dh-accent-light/30 hover:shadow-[inset_4px_0_0_var(--dh-accent)]"
-    >
+    <>
       <td className="px-3 py-3 align-middle">
         <div className="w-10 h-10 bg-dh-base rounded-xl flex items-center justify-center text-dh-muted border border-dh-border overflow-hidden group-hover:border-dh-accent/50 group-hover:scale-105 transition-all shadow-xs mx-auto">
           {product.images?.[0] ? (
@@ -113,7 +110,7 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) =>
           <span className="text-[10px] font-bold text-dh-muted uppercase">{product.unit || 'ชิ้น'}</span>
         </div>
       </td>
-    </tr>
+    </>
   );
 }
 

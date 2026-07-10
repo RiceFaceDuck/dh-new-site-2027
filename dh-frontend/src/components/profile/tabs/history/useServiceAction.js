@@ -35,7 +35,9 @@ export const useServiceAction = (serviceModal, setServiceModal) => {
       } else {
          throw new Error("upload function not available");
       }
-    } catch (error) { 
+    } catch (error) {
+    console.error("🔥 Error:", error);
+ 
       alert('อัปโหลดภาพล้มเหลว: ' + error.message); 
     } finally { 
       setIsUploading(false); 
@@ -93,6 +95,8 @@ export const useServiceAction = (serviceModal, setServiceModal) => {
       alert(`ส่งเรื่องแจ้ง${serviceModal.type === 'claim' ? 'เคลม' : 'คืน'}สินค้าเรียบร้อย รอเจ้าหน้าที่ติดต่อกลับ!`);
       setServiceModal(null);
     } catch (err) {
+    console.error("🔥 Error:", err);
+
       alert('เกิดข้อผิดพลาด: ' + err.message);
     } finally {
       setIsSubmittingService(false);

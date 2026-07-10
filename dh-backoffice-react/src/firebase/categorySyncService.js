@@ -1,4 +1,4 @@
-import { doc, getDocs, collection, writeBatch, query, where, getDoc } from 'firebase/firestore';
+import { doc, getDocs, collection, writeBatch, query, where, getDoc, limit } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -44,8 +44,8 @@ export const categorySyncService = {
       }
 
       // 2. Update homepage_categories
-      const hcRef = collection(db, 'homepage_categories');
-      const hcSnap = await getDocs(query(hcRef, where('type', '==', oldCategoryName)));
+      const hcRef = collection(db, getCollectionPath('homepage_categories'));
+      const hcSnap = await getDocs(query(hcRef, where('type', '==', oldCategoryName), limit(500)));
       hcSnap.forEach(docSnap => {
         batch.update(docSnap.ref, { type: newCategoryName });
         batchCount++;
@@ -54,7 +54,7 @@ export const categorySyncService = {
 
       // 3. Update products
       const productsRef = collection(db, getCollectionPath('products'));
-      const productsSnap = await getDocs(query(productsRef, where('category', '==', oldCategoryName)));
+      const productsSnap = await getDocs(query(productsRef, where('category', '==', oldCategoryName), limit(500)));
       
       for (const d of productsSnap.docs) {
         batch.update(d.ref, { 

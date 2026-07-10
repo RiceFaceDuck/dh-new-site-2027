@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { pricingService } from '../../../../firebase/pricingService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export function usePricingSettings() {
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ export function usePricingSettings() {
   const fetchPricingLogs = async () => {
     setLoadingLogs(true);
     try {
-      const q = query(collection(db, 'history_logs'), orderBy('timestamp', 'desc'), limit(100));
+      const q = query(collection(db, getCollectionPath('history_logs')), orderBy('timestamp', 'desc'), limit(100));
       const logsSnap = await getDocs(q);
       const allLogs = logsSnap.docs.map(d => ({id: d.id, ...d.data()}));
       
@@ -67,6 +68,8 @@ export function usePricingSettings() {
       fetchPricingLogs(); 
       alert('บันทึกโครงสร้างราคาเรียบร้อยแล้ว');
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert('เกิดข้อผิดพลาดในการบันทึก');
     } finally {
       setSaving(false);

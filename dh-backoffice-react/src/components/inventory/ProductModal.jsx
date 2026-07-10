@@ -38,6 +38,9 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
         alert('ส่งคำร้องขออนุมัติลบสำเร็จ แจ้งเตือนไปยังผู้จัดการแล้ว');
         onClose(); 
       } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
         alert('เกิดข้อผิดพลาดในการส่งคำร้อง: ' + error.message);
       }
     }

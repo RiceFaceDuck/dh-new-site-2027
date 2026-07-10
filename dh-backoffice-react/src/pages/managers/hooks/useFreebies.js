@@ -124,6 +124,8 @@ export const useFreebies = () => {
       setIsModalOpen(false);
       loadFreebies();
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert("Error: " + error.message);
     } finally {
       setIsProcessing(false);

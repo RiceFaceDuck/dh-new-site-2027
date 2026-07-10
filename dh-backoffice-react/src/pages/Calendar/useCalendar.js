@@ -103,6 +103,8 @@ export function useCalendar() {
       });
       alert('บันทึกและส่ง Invite เรียบร้อยแล้ว');
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       alert(`เกิดข้อผิดพลาด: ${error.message}`);
     } finally {
       setIsSubmitting(false);

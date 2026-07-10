@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { limit, collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -18,7 +18,7 @@ const validateSkus = async (skusArray) => {
   const validSkus = new Set();
   for (let i = 0; i < skusArray.length; i += 30) {
     const chunk = skusArray.slice(i, i + 30);
-    const q = query(collection(db, getCollectionPath('products')), where('sku', 'in', chunk));
+    const q = query(collection(db, getCollectionPath('products')), where('sku', 'in', chunk), limit(300));
     const snapshot = await getDocs(q);
     snapshot.forEach(doc => validSkus.add(doc.data().sku));
   }
@@ -32,7 +32,7 @@ export const freebieService = {
   // 📥 ดึงกฎของแถมทั้งหมด
   getAllFreebies: async () => {
     try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'), limit(300));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
@@ -44,7 +44,7 @@ export const freebieService = {
   // 🟢 ดึงเฉพาะของแถมที่เปิดใช้งาน (ส่งไป POS)
   getActiveFreebies: async () => {
     try {
-      const q = query(collection(db, COLLECTION_NAME), where('isActive', '==', true));
+      const q = query(collection(db, COLLECTION_NAME), where('isActive', '==', true), limit(300));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       return items.sort((a, b) => b.minSpend - a.minSpend); // เรียงจากยอดซื้อสูงสุดไปต่ำสุด

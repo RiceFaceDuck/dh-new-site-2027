@@ -1,6 +1,7 @@
 import React from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -18,7 +19,7 @@ export class ErrorBoundary extends React.Component {
     // Log to Firestore system_logs
     try {
       const user = auth?.currentUser;
-      await addDoc(collection(db, 'system_logs'), {
+      await addDoc(collection(db, getCollectionPath('system_logs')), {
         action: 'backoffice_crash',
         category: 'ERROR',
         details: {

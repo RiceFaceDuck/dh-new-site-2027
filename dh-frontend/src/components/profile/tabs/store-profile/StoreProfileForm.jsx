@@ -31,6 +31,9 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
       const coords = await getUserCurrentLocation();
       setStoreData({ ...storeData, latitude: coords.latitude, longitude: coords.longitude });
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert(error.message);
     }
   };

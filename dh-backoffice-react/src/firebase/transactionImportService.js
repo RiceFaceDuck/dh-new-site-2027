@@ -39,7 +39,9 @@ export const transactionImportService = {
             if (saved) {
               aliases = { ...aliases, ...safeJsonParse(saved) };
             }
-          } catch(e) {}
+          } catch(e) {
+    console.error("🔥 Error:", e);
+}
 
           // Use loose match as bounded regex like the original: /sku|รหัสสินค้า/i
           const createLooseMatcher = (str) => {
@@ -66,6 +68,8 @@ export const transactionImportService = {
             headers: headers
           });
         } catch (error) {
+    console.error("🔥 Error:", error);
+
           reject(error);
         }
       };
@@ -166,7 +170,7 @@ export const transactionImportService = {
       }
 
       // 3.5. บันทึกข้อมูลลงใน import_batches เพื่อรองรับระบบ Undo
-      const batchDocRef = await addDoc(collection(db, 'import_batches'), {
+      const batchDocRef = await addDoc(collection(db, getCollectionPath('import_batches')), {
         createdAt: serverTimestamp(),
         actionType,
         actor: {

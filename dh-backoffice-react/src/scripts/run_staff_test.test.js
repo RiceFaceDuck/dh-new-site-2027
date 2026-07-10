@@ -32,7 +32,7 @@ describe('Staff Workflow Simulation', () => {
         const customerSnap = await getDoc(customerRef);
         const customerData = customerSnap.data();
 
-        const invQuery = query(collection(db, 'inventory'), where('stockQuantity', '>', 5), limit(1));
+        const invQuery = query(collection(db, getCollectionPath('inventory')), where('stockQuantity', '>', 5), limit(1));
         const invSnap = await getDocs(invQuery);
         const product = { id: invSnap.docs[0].id, ...invSnap.docs[0].data() };
 

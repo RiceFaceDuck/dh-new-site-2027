@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, getDocs, where, Timestamp } from 'firebase/firestore';
+import { limit, collection, query, getDocs, where, Timestamp } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
 import { safeJsonParse } from 'dh-shared';
@@ -72,9 +72,9 @@ export const useCustomerData = () => {
       // ดึงเฉพาะข้อมูลที่เปลี่ยนแปลงนับจากครั้งล่าสุดที่ Sync
       // ลดการอ่าน (Reads) ลงได้อย่างมหาศาลจากหลายพัน Read เหลือแค่หลัก 1-10 Read
       if (useCache && lastSync > 0) {
-        q = query(collection(db, getCollectionPath('users')), where('updatedAt', '>', Timestamp.fromMillis(lastSync)));
+        q = query(collection(db, getCollectionPath('users')), where('updatedAt', '>', Timestamp.fromMillis(lastSync)), limit(300));
       } else {
-        q = query(collection(db, getCollectionPath('users'))); 
+        q = query(collection(db, getCollectionPath('users')), limit(300)); 
       }
 
       const snapshot = await getDocs(q);

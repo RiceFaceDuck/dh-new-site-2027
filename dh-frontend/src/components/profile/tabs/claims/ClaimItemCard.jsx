@@ -41,6 +41,9 @@ const ClaimItemCard = ({ claim }) => {
       });
       alert('บันทึกเลขพัสดุเรียบร้อยแล้ว ผู้จัดการจะตรวจสอบพัสดุของคุณเร็วๆ นี้');
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert('เกิดข้อผิดพลาด: ' + error.message);
     } finally {
       setIsUpdatingTracking(false);

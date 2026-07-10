@@ -1,13 +1,12 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
-
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const creditSettingsService = {
   getCreditSettings: async () => {
     try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+      const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) return docSnap.data();
@@ -32,7 +31,7 @@ export const creditSettingsService = {
 
   updateCreditSettings: async (settingsData, uid) => {
     try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+      const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
       const payload = { ...settingsData, updatedAt: serverTimestamp(), updatedBy: uid || 'Admin' };
       await setDoc(docRef, payload, { merge: true });
 

@@ -31,6 +31,9 @@ export default function SquadHighlightSettings() {
             });
             alert("บันทึกการตั้งค่าสำเร็จ ข้อมูลจะเปลี่ยนที่หน้าแรกทันที");
         } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
             alert("เกิดข้อผิดพลาดในการบันทึก: " + error.message);
         } finally {
             setIsSaving(false);

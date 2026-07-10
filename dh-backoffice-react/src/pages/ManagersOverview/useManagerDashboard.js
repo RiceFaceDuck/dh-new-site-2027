@@ -32,7 +32,7 @@ export const useManagerDashboard = () => {
     const pendingTodosQuery = query(
       todosRef, 
       where('status', 'in', ['pending', 'pending_manager'])
-    );
+    , limit(300));
 
     const fetchPendingTodosCount = async () => {
       try {
@@ -63,7 +63,7 @@ export const useManagerDashboard = () => {
     // 👑 ดึงจำนวน VIP (ใช้ getCountFromServer เพื่อประหยัดการดึง Doc ทั้งหมดมาเพื่อนับ)
     const fetchVipCount = async () => {
       try {
-        const vipQuery = query(usersRef, where('rank', '==', 'VIP'));
+        const vipQuery = query(usersRef, where('rank', '==', 'VIP'), limit(300));
         const snapshot = await getCountFromServer(vipQuery);
         setStats(prev => ({ ...prev, vipCount: snapshot.data().count }));
       } catch (err) {

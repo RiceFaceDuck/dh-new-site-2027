@@ -40,6 +40,9 @@ const WithdrawModal = ({ user, walletBalance, isWithdrawModalOpen, setIsWithdraw
         window.open('https://lin.ee/your-line-id', '_blank');
       }, 2000);
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       setStatus({ type: 'error', message: error.message || 'เกิดข้อผิดพลาดในการทำรายการ' });
     } finally {
       setIsSubmitting(false);

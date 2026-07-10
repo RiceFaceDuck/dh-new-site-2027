@@ -40,6 +40,9 @@ export default function StaffAddModal({ showAddModal, setShowAddModal, showToast
       setSearchResults([]);
       fetchStaff(); 
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       showToast('error', 'ไม่สามารถแต่งตั้งได้');
     }
   };

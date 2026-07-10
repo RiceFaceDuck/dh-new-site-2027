@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { limit, collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -18,7 +18,7 @@ export const useDataRepair = () => {
 
         try {
             // 1. ตรวจหาบิล Cancelled ที่ยังไม่ได้คืนเงินหรือโปรโมชัน (เนื่องจากบัก Read-After-Write)
-            const q = query(collection(db, getCollectionPath('orders')), where('status', '==', 'cancelled'));
+            const q = query(collection(db, getCollectionPath('orders')), where('status', '==', 'cancelled'), limit(300));
             const snapshot = await getDocs(q);
             
             let detected = [];
@@ -34,7 +34,7 @@ export const useDataRepair = () => {
                     const wTxQuery = query(
                         collection(db, getCollectionPath('users'), data.customerInfo.uid, 'wallet_transactions'),
                         where('referenceId', '==', data.orderId || orderDoc.id)
-                    );
+                    , limit(300));
                     const wTxSnap = await getDocs(wTxQuery);
                     
                     // If no refund transaction exists
@@ -83,7 +83,7 @@ export const useDataRepair = () => {
 
                 // Fetch global credit transactions for this user
                 const txRef = collection(db, getCollectionPath('credit_transactions'));
-                const qTx = query(txRef, where('uid', '==', uid));
+                const qTx = query(txRef, where('uid', '==', uid), limit(300));
                 const txSnap = await getDocs(qTx);
                 
                 let expectedPoints = 0;
@@ -193,6 +193,8 @@ export const useDataRepair = () => {
             addLog(`✅ ซ่อมแซมบิล ${anomaly.orderId} สำเร็จ (คืนเงิน ฿${anomaly.amount})`);
             setAnomalies(prev => prev.filter(a => a.id !== anomaly.id));
         } catch (error) {
+    console.error("🔥 Error:", error);
+
             addLog(`❌ ซ่อมแซม ${anomaly.orderId} ล้มเหลว: ${error.message}`);
         }
     };

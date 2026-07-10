@@ -28,7 +28,7 @@ export function useAdSubscriptions() {
     };
 
     collections.forEach(colName => {
-      const colRef = collection(db, 'artifacts', appId, 'public', 'data', colName);
+      const colRef = collection(db, getCollectionPath(colName));
       // Query limiting to recent 50 ads per type to prevent quota leaks
       const q = query(colRef, orderBy('createdAt', 'desc'), limit(50));
       const unsub = onSnapshot(q, (snapshot) => {

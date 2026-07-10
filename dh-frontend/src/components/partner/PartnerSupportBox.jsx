@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Phone, CheckCircle2, MapPin, Award } from 'lucide-react';
-import { findNearestPartner } from '../../firebase/partnerLocationService';
+import { findNearestPartner, getFallbackPartner } from '../../firebase/partnerLocationService';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import LazyImage from '../common/LazyImage';
 
 // ==========================================
@@ -53,15 +54,26 @@ const PartnerSupportBox = () => {
     const fetchPartner = async () => {
       try {
         setLoading(true);
-        const location = await getUserCurrentLocation();
-        const nearest = await findNearestPartner(location.latitude, location.longitude, 30);
+        let nearest = null;
+        
+        try {
+          const location = await getUserCurrentLocation();
+          nearest = await findNearestPartner(location.latitude, location.longitude, 30);
+        } catch (locationErr) {
+          console.warn("📍 [Location] Permission denied or unavailable. Using fallback partner...");
+          nearest = await getFallbackPartner();
+        }
+
+        if (!nearest) {
+          console.warn("📍 [Location] No partner within 30km. Using fallback partner...");
+          nearest = await getFallbackPartner();
+        }
         
         if (nearest) {
           // 🚀 [THE FIX] ดึงรูปภาพจาก partner_ads (เหมือนหน้าสินค้า/โฮมเพจ) เพื่อให้รองรับร้านค้าเก่าที่เซฟข้อมูลไว้ก่อนอัปเดตระบบ
           try {
-            const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
             const adId = `AD-CARD-${nearest.partnerId || nearest.id}`;
-            const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);
+            const adRef = doc(db, getCollectionPath('partner_ads'), adId);
             const adSnap = await getDoc(adRef);
             
             if (adSnap.exists()) {
@@ -76,11 +88,11 @@ const PartnerSupportBox = () => {
 
           setPartner(nearest);
         } else {
-          setError("No partners nearby"); 
+          setError("No partners available"); 
         }
       } catch (err) {
-        console.error("Partner Box - Location Error:", err);
-        setError("Location permission denied");
+        console.error("Partner Box - System Error:", err);
+        setError("Error loading partner");
       } finally {
         setLoading(false);
       }

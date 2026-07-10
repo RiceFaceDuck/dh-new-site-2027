@@ -11,13 +11,14 @@ import {
   where,
   writeBatch
 } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // 🔐 ดึงสิทธิ์การเข้าถึงรหัส Sandbox App ID ที่ถูกต้อง (ยึดตามโครงสร้างความปลอดภัย)
 const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
 // 🚀 ฟังก์ชันช่วยเหลือสำหรับเรียก Collection
 // ตอนนี้ใช้ todos ที่ root level เพื่อลดความซ้ำซ้อน
-const getTodosCollection = () => collection(db, 'todos');
+const getTodosCollection = () => collection(db, getCollectionPath('todos'));
 
 // ฟังก์ชันหา Collection หลักของ Ad ตาม ID
 const getSpecificAdsCollectionPath = (adId) => {
@@ -38,7 +39,7 @@ export const adManagementService = {
   getAdsByStatus: async (status = 'pending') => {
     try {
       // 💡 ดึงจาก partner_ads เป็นหลัก เพราะ marketingService เซฟไว้ที่นี่ทั้งหมด
-      const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('status', '==', status));
+      const q = query(collection(db, getCollectionPath('partner_ads')), where('status', '==', status));
       const querySnapshot = await getDocs(q);
       const adsList = [];
       
@@ -65,7 +66,7 @@ export const adManagementService = {
    */
   getAdsByUserId: async (uid) => {
     try {
-      const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('ownerId', '==', uid));
+      const q = query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', uid));
       const querySnapshot = await getDocs(q);
       const adsList = [];
       querySnapshot.forEach((doc) => {
@@ -87,7 +88,7 @@ export const adManagementService = {
    */
   getStoreProfile: async (uid) => {
     try {
-      const storeRef = doc(db, 'artifacts', appId, 'users', uid, 'storeProfile', 'main');
+      const storeRef = doc(db, getCollectionPath('users'), uid, 'storeProfile', 'main');
       const rootStoreRef = doc(db, 'users', uid, 'storeProfile', 'main');
       
       const [storeSnap, rootSnap] = await Promise.all([
@@ -116,7 +117,7 @@ export const adManagementService = {
   approveAd: async (adId, taskId) => {
     try {
       const specificCol = getSpecificAdsCollectionPath(adId);
-      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      const adRef = doc(collection(db, getCollectionPath(specificCol)), adId);
       
       const adSnap = await getDoc(adRef);
       if (!adSnap.exists()) throw new Error("ไม่พบข้อมูลโฆษณา");
@@ -133,14 +134,14 @@ export const adManagementService = {
       batch.update(adRef, updatePayload);
 
       if (specificCol !== 'partner_ads') {
-        const partnerAdRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), adId);
+        const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
         batch.update(partnerAdRef, updatePayload);
       }
 
       // 🌟 THE FIX [Data Relationship]: Sync to ActivePartners only upon approval
       if (adData.type === 'BUSINESS_CARD') {
          const partnerId = adData.ownerId;
-         const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+         const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
          batch.set(activePartnerRef, {
             partnerId: partnerId,
             storeName: adData.partnerName || adData.title || '',
@@ -180,7 +181,7 @@ export const adManagementService = {
   rejectAd: async (adId, taskId, reason = 'ผิดเงื่อนไขการให้บริการของ DH Notebook') => {
     try {
       const specificCol = getSpecificAdsCollectionPath(adId);
-      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      const adRef = doc(collection(db, getCollectionPath(specificCol)), adId);
       
       const adSnap = await getDoc(adRef);
       const adData = adSnap.exists() ? adSnap.data() : null;
@@ -197,7 +198,7 @@ export const adManagementService = {
       batch.update(adRef, updatePayload);
 
       if (specificCol !== 'partner_ads') {
-        const partnerAdRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), adId);
+        const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
         batch.update(partnerAdRef, updatePayload);
       }
 
@@ -209,7 +210,7 @@ export const adManagementService = {
          
          if (partnerSnap.exists() && partnerSnap.data().isActive !== false) {
              const pData = partnerSnap.data();
-             const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+             const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
              batch.set(activePartnerRef, {
                 partnerId: partnerId,
                 storeName: pData.storeName || pData.accountName || pData.displayName || '',
@@ -225,7 +226,7 @@ export const adManagementService = {
              }, { merge: true });
          } else {
              // If partner doesn't exist or is not active, delete from ActivePartners
-             const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', partnerId);
+             const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
              batch.delete(activePartnerRef);
          }
       }
@@ -254,7 +255,7 @@ export const adManagementService = {
   pauseAd: async (adId) => {
     try {
       const specificCol = getSpecificAdsCollectionPath(adId);
-      const adRef = doc(collection(db, 'artifacts', appId, 'public', 'data', specificCol), adId);
+      const adRef = doc(collection(db, getCollectionPath(specificCol)), adId);
       
       const adSnap = await getDoc(adRef);
       
@@ -268,7 +269,7 @@ export const adManagementService = {
       await updateDoc(adRef, updatePayload);
 
       if (specificCol !== 'partner_ads') {
-        const partnerAdRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), adId);
+        const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
         await updateDoc(partnerAdRef, updatePayload).catch(()=>{});
       }
 
@@ -276,7 +277,7 @@ export const adManagementService = {
       if (adSnap.exists()) {
         const adData = adSnap.data();
         if (adData.type === 'BUSINESS_CARD') {
-           const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', adData.ownerId);
+           const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), adData.ownerId);
            // We have to use updateDoc or simple deleteDoc since pauseAd didn't use batch
            const { deleteDoc } = await import('firebase/firestore');
            await deleteDoc(activePartnerRef).catch(()=>{});
@@ -295,7 +296,7 @@ export const adManagementService = {
    */
   getPendingCount: async () => {
     try {
-      const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'partner_ads'), where('status', '==', 'pending'));
+      const q = query(collection(db, getCollectionPath('partner_ads')), where('status', '==', 'pending'));
       const snapshot = await getDocs(q);
       return snapshot.size; // คืนค่าตัวเลขจำนวนคำขอไปแสดงบน Widget
     } catch (error) {

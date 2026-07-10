@@ -103,6 +103,8 @@ export const inventoryQueryService = {
         viewed: Math.floor(Math.random() * 200) + 20
       };
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       return { sold: 0, returned: 0, viewed: 0 };
     }
   },

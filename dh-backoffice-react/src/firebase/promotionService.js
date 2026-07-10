@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { limit, collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { todoService } from './todoService';
@@ -13,7 +13,7 @@ const validateSkus = async (skusArray) => {
   const validSkus = new Set();
   for (let i = 0; i < skusArray.length; i += 30) {
     const chunk = skusArray.slice(i, i + 30);
-    const q = query(collection(db, getCollectionPath('products')), where('sku', 'in', chunk));
+    const q = query(collection(db, getCollectionPath('products')), where('sku', 'in', chunk), limit(300));
     const snapshot = await getDocs(q);
     snapshot.forEach(doc => validSkus.add(doc.data().sku));
   }
@@ -27,7 +27,7 @@ export const promotionService = {
   // 📥 ดึงโปรโมชันทั้งหมด (สำหรับหน้าจัดการของผู้จัดการ)
   getAllPromotions: async () => {
     try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'), limit(300));
       const snapshot = await getDocs(q);
       const allPromos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       return allPromos.filter(promo => !promo.deletedAt); // กรองโปรโมชันที่ถูกลบ (Soft Delete) ออก
@@ -43,7 +43,7 @@ export const promotionService = {
       const q = query(
         collection(db, COLLECTION_NAME), 
         where('isActive', '==', true)
-      );
+      , limit(300));
       const snapshot = await getDocs(q);
       // Sort in memory ประหยัด Index
       const promos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

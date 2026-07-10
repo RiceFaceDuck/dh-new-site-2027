@@ -4,12 +4,27 @@ import tailwindcss from '@tailwindcss/vite'
 import viteCompression from 'vite-plugin-compression'
 
 import { visualizer } from 'rollup-plugin-visualizer';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => ({
   plugins: [
     tailwindcss(), 
     react(), 
     viteCompression(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        maximumFileSizeToCacheInBytes: 5000000 // 5MB limit to prevent cache bloat
+      },
+      manifest: {
+        name: 'DH Backoffice',
+        short_name: 'DH Admin',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone'
+      }
+    }),
     mode === 'analyze' && visualizer({ open: true, filename: 'stats.html', gzipSize: true, brotliSize: true })
   ],
   resolve: {

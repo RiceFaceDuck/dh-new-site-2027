@@ -1,4 +1,4 @@
-import { collection, getDocs, query } from 'firebase/firestore';
+import { limit, collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../config';
 import * as XLSX from 'xlsx';
 import { withToastError } from '../../utils/safeAsync';
@@ -15,7 +15,7 @@ export const inventoryExportService = {
       } = options;
 
       // 1. ดึงข้อมูลสินค้าทั้งหมด (เนื่องจากการ Filter ซับซ้อนมาก ต้องทำฝั่ง Client)
-      const q = query(collection(db, getCollectionPath('products')));
+      const q = query(collection(db, getCollectionPath('products')), limit(300));
       const snapshot = await getDocs(q);
       let products = snapshot.docs.map(doc => doc.data());
 

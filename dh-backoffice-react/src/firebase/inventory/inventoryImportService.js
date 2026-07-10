@@ -1,4 +1,4 @@
-import { writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId, setDoc } from 'firebase/firestore';
+import { limit, writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId, setDoc } from 'firebase/firestore';
 import { db, auth } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -13,7 +13,7 @@ export const inventoryImportService = {
     }
     
     for (const chunk of chunks) {
-      const q = query(collection(db, getCollectionPath('products')), where(documentId(), 'in', chunk));
+      const q = query(collection(db, getCollectionPath('products')), where(documentId(), 'in', chunk), limit(300));
       const snap = await getDocs(q);
       snap.forEach(doc => existingSkus.add(doc.id));
     }

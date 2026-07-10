@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
 
@@ -9,7 +10,7 @@ export const squadConfigService = {
    */
   getConfig: async () => {
     try {
-      const configRef = doc(db, 'artifacts', appId, 'public', 'settings', 'squadConfig');
+      const configRef = doc(db, getCollectionPath('settings'), 'squadConfig');
       const snap = await getDoc(configRef);
       
       if (snap.exists()) {
@@ -31,7 +32,7 @@ export const squadConfigService = {
    */
   updateConfig: async (newConfig) => {
     try {
-      const configRef = doc(db, 'artifacts', appId, 'public', 'settings', 'squadConfig');
+      const configRef = doc(db, getCollectionPath('settings'), 'squadConfig');
       const snap = await getDoc(configRef);
       
       if (!snap.exists()) {

@@ -24,7 +24,7 @@ export const productReviewService = {
    */
   async getReviews(productId, pageSize = 5, lastDoc = null) {
     try {
-      const reviewsRef = collection(db, 'product_reviews');
+      const reviewsRef = collection(db, getCollectionPath('product_reviews'));
       
       let q = query(
         reviewsRef,
@@ -73,7 +73,7 @@ export const productReviewService = {
     if (!productId) throw new Error('Product ID is missing.');
 
     const productRef = doc(db, getCollectionPath('products'), productId);
-    const newReviewRef = doc(collection(db, 'product_reviews'));
+    const newReviewRef = doc(collection(db, getCollectionPath('product_reviews')));
 
     try {
       await runTransaction(db, async (transaction) => {

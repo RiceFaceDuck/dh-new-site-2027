@@ -1,11 +1,12 @@
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const shippingService = {
   async getShippingRules() {
     try {
-      const snap = await getDocs(collection(db, 'shipping_rules'));
+      const snap = await getDocs(collection(db, getCollectionPath('shipping_rules')));
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       // Sort: Active first, then ascending by minQty
       data.sort((a, b) => (b.isActive - a.isActive) || (a.minQty - b.minQty));
@@ -18,7 +19,7 @@ export const shippingService = {
 
   async addShippingRule(ruleData, uid) {
     try {
-      const docRef = await addDoc(collection(db, 'shipping_rules'), {
+      const docRef = await addDoc(collection(db, getCollectionPath('shipping_rules')), {
         ...ruleData,
         minQty: Number(ruleData.minQty),
         maxQty: Number(ruleData.maxQty),

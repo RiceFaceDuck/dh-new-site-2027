@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where, limit, startAfter } from 'firebase/firestore'; 
 import { db } from '../firebase/config';
@@ -130,6 +131,10 @@ const CategoryPage = () => {
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">
+      <Helmet>
+        <title>{type} | หมวดหมู่สินค้า DH Notebook</title>
+        <meta name="description" content={`เลือกซื้อ ${type} คุณภาพสูงจาก DH Notebook จัดส่งทั่วประเทศ`} />
+      </Helmet>
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 md:pt-4 space-y-4 md:space-y-6">
         
         {/* Header */}

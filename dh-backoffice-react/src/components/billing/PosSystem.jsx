@@ -75,7 +75,8 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
             try {
                 const { collection, getDocs, query, where } = await import('firebase/firestore');
                 const { db } = await import('../../firebase/config');
-                const q = query(collection(db, 'shipping_rules'), where('isActive', '==', true));
+                const { getCollectionPath } = await import('dh-shared/src/firebase/pathUtils');
+                const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
                 const snap = await getDocs(q);
                 const rules = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setShippingRules(rules);

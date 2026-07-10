@@ -1,9 +1,10 @@
  
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
-const CACHE_KEY = `active_partners_cache_v3_${appId}`;
+const CACHE_KEY = `active_partners_cache_v4_${appId}`;
 const CACHE_TTL_MINUTES = 15; // เก็บแคชไว้ 15 นาที เพื่อประหยัด Firebase Reads
 
 import { calculateDistance } from '../utils/geoUtils';
@@ -32,7 +33,7 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
 
     // 2. ถ้าแคชหมดอายุ หรือบังคับ Refresh ค่อยไปดึงจาก Firebase
     console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์ใหม่จาก Firebase...");
-    const partnersRef = collection(db, 'artifacts', appId, 'public', 'data', 'ActivePartners');
+    const partnersRef = collection(db, getCollectionPath('ActivePartners'));
     const snapshot = await getDocs(partnersRef);
     
     const partners = snapshot.docs.map(doc => ({
@@ -47,6 +48,7 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
     };
     localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
 
+
     return partners;
   } catch (error) {
     console.error("❌ [LocationService] เกิดข้อผิดพลาดในการดึงข้อมูลพาร์ทเนอร์:", error);
@@ -59,48 +61,74 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
  * ประเมินจาก: ระยะทาง (Distance) และ คะแนนเครดิต (Points)
  */
 export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) => {
-  if (!userLat || !userLon) return null;
+  try {
+    if (!userLat || !userLon) return null;
 
-  const partners = await fetchAllActivePartners();
-  
-  if (partners.length === 0) return null;
+    const partners = await fetchAllActivePartners();
+    
+    if (partners.length === 0) return null;
 
-  let bestPartner = null;
-  let maxScore = -Infinity;
+    let bestPartner = null;
+    let maxScore = -Infinity;
 
-  partners.forEach(partner => {
-    if (!partner.latitude || !partner.longitude) return;
+    partners.forEach(partner => {
+      if (!partner.latitude || !partner.longitude) return;
 
-    const distance = calculateDistance(
-      userLat, 
-      userLon, 
-      partner.latitude, 
-      partner.longitude
-    );
+      const distance = calculateDistance(
+        userLat, 
+        userLon, 
+        partner.latitude, 
+        partner.longitude
+      );
 
-    if (distance <= maxDistanceKm) {
-      const safeDistance = distance < 0.1 ? 0.1 : distance;
-      const creditPoints = partner.points || 1; 
-      
-      // 🌟 Weighted Search Algorithm
-      const score = creditPoints / safeDistance;
+      if (distance <= maxDistanceKm) {
+        const safeDistance = distance < 0.1 ? 0.1 : distance;
+        const creditPoints = partner.points || 1; 
+        
+        // 🌟 Weighted Search Algorithm
+        const score = creditPoints / safeDistance;
 
-      if (score > maxScore) {
-        maxScore = score;
-        bestPartner = { 
-          ...partner, 
-          distanceKm: distance,
-          score: score.toFixed(2),
-          formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${distance.toFixed(1)} กม.`
-        };
+        if (score > maxScore) {
+          maxScore = score;
+          bestPartner = { 
+            ...partner, 
+            distanceKm: distance,
+            score: score.toFixed(2),
+            formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${distance.toFixed(1)} กม.`
+          };
+        }
       }
-    }
-  });
+    });
 
-  return bestPartner;
+    return bestPartner;
+  } catch (error) {
+    console.error("❌ [LocationService] เกิดข้อผิดพลาดในการหาพาร์ทเนอร์ใกล้เคียง:", error);
+    return null;
+  }
 };
 
-
+/**
+ * 🌟 ระบบ Fallback: ดึงพาร์ทเนอร์ที่มีคะแนนสูงสุด (ใช้กรณีลูกค้าบล็อค Location หรือไม่มีใครอยู่ใกล้)
+ */
+export const getFallbackPartner = async () => {
+  try {
+    const partners = await fetchAllActivePartners();
+    if (partners.length === 0) return null;
+    
+    // เรียงตามคะแนน points (มากไปน้อย)
+    const sorted = [...partners].sort((a, b) => (b.points || 0) - (a.points || 0));
+    const best = sorted[0];
+    
+    return {
+      ...best,
+      score: best.points || 0,
+      formattedDistance: 'ร้านแนะนำ (ทั่วประเทศ)'
+    };
+  } catch (error) {
+    console.error("❌ [LocationService] Fallback Error:", error);
+    return null;
+  }
+};
 
 /**
  * 🧹 ล้างแคชของพาร์ทเนอร์ (ใช้เมื่อแอดมินหรือระบบต้องการบังคับดึงข้อมูลใหม่ทันที)

@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { marketingService } from '../firebase/marketingService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 /**
  * 🎯 Custom Hook: Smart Ad Injection Engine (ระบบสมองกลแทรกโฆษณา)
@@ -35,7 +36,7 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
       setLoadingAds(true);
       
       // 📥 1. ดึงการตั้งค่า Ratio จากระบบหลังบ้าน (Marketing Settings)
-      const settingsSnap = await getDoc(doc(db, 'artifacts', typeof window !== "undefined" && window.__app_id ? window.__app_id : 'default-app-id', 'public', 'data', 'settings', 'marketing'));
+      const settingsSnap = await getDoc(doc(db, getCollectionPath('settings'), 'marketing'));
       if (settingsSnap.exists() && settingsSnap.data().displayRatio) {
         const ratio = Number(settingsSnap.data().displayRatio);
         if (ratio > 0) setDisplayRatio(ratio);

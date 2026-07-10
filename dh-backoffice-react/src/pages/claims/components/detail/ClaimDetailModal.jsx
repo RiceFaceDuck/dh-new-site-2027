@@ -10,6 +10,7 @@ import ImageGallery from './ImageGallery';
 import ModalFooter from './ModalFooter';
 import ClaimStepper from './ClaimStepper';
 import PremiumDialog from '../../../../components/common/PremiumDialog';
+import GuidePanel from '../../../../components/common/GuidePanel';
 
 export default function ClaimDetailModal({ 
   selectedRequest, 
@@ -23,6 +24,7 @@ export default function ClaimDetailModal({
   const [userProfile, setUserProfile] = useState(null);
   const [isClosing, setIsClosing] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
+  const [warrantyConfig, setWarrantyConfig] = useState(null);
 
   // Freebie penalty states
   const [freebieReturned, setFreebieReturned] = useState(true);
@@ -33,6 +35,11 @@ export default function ClaimDetailModal({
       setTrackingNo(selectedRequest.payload?.trackingNo || '');
       setFreebieReturned(true);
       setFreebiePenaltyAmount(0);
+      
+      // Load warranty settings
+      import('../../../../firebase/warrantyService').then(({ warrantyService }) => {
+        warrantyService.getWarrantySettings().then(setWarrantyConfig).catch(console.error);
+      });
     }
   }, [selectedRequest]);
 
@@ -204,10 +211,29 @@ export default function ClaimDetailModal({
               setFreebieReturned={setFreebieReturned}
               freebiePenaltyAmount={freebiePenaltyAmount}
               setFreebiePenaltyAmount={setFreebiePenaltyAmount}
+              warrantyConfig={warrantyConfig}
             />
           </div>
           
           <ImageGallery images={selectedRequest.payload.images} />
+          
+          {/* GuidePanel In-App Documentation */}
+          <div className="mt-6 border-t border-dh-border pt-4">
+            <GuidePanel 
+              title="ระบบเคลมเปลี่ยนรุ่นสินค้า (Swap SKU)"
+              description="ระบบช่วยสลับสินค้าเป็นสินค้าอื่น (Swap SKU) พร้อมคิดราคาของใหม่และคืนเงินของเก่าเข้า Wallet อัตโนมัติ"
+              howTo={[
+                "ตรวจสอบอาการเสียและระยะรับประกันของสินค้าเดิมที่แสดงผลบนหน้าจอ",
+                "กดอนุมัติ (Approve) ➡️ พนักงานหน้าร้านกดได้รับของเสีย (Mark Arrived) สต๊อกของเสียเดิมจะเพิ่มเข้าระบบคลัง",
+                "กดเสร็จสิ้นกระบวนการ (Complete) ➡️ ระบบจะดึงเงินสินค้าเดิมคืนเข้า Wallet และหักเงินสินค้าใหม่จาก Wallet ลูกค้า เพื่อสร้างบิลใบเสร็จการขายใหม่รันเลขต่อเนื่องอัตโนมัติ"
+              ]}
+              tips={[
+                "กรณีสินค้าต่างประเภทกัน ระบบจะแจ้งเตือนความเข้ากันไม่ได้ของของแถม แนะนำให้ตรวจสอบกับลูกค้าและระบุค่าปรับ (Penalty) เพื่อหักเงินคืนหากลูกค้าไม่ได้คืนของแถม",
+                "วันหมดอายุประกันของสินค้าตัวใหม่สามารถตั้งค่าขยายหรือปรับเปลี่ยนได้อิสระ โดยมีค่าเริ่มต้นตามระยะเวลาประกันที่เหลือของตัวเดิม"
+              ]}
+              expectedResult="ยอดเงินสะสมในกระเป๋า Wallet ของลูกค้าจะมีการทำธุรกรรม 2 รายการ (REFUND และ SPEND) และ Order บิลขายใหม่จะรันเลขต่อเนื่องกับ POS เพื่อบันทึกประวัติการรับประกันอย่างถูกต้อง"
+            />
+          </div>
         </div>
 
         <ModalFooter 

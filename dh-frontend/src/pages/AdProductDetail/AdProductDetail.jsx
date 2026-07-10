@@ -17,14 +17,14 @@ const AdProductDetail = () => {
       try {
         setLoading(true);
         // Try getting from user_sku_ads
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_sku_ads', id);
+        const docRef = doc(db, getCollectionPath('user_sku_ads'), id);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
           setProduct({ id: docSnap.id, ...docSnap.data() });
         } else {
           // Fallback to partner_ads
-          const fallbackRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', id);
+          const fallbackRef = doc(db, getCollectionPath('partner_ads'), id);
           const fallbackSnap = await getDoc(fallbackRef);
           if (fallbackSnap.exists()) {
             setProduct({ id: fallbackSnap.id, ...fallbackSnap.data() });

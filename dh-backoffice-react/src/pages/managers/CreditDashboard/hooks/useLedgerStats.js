@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, collection, query, where, getAggregateFromServer, sum, count } from 'firebase/firestore';
+import { limit, doc, onSnapshot, collection, query, where, getAggregateFromServer, sum, count } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -23,13 +23,13 @@ export default function useLedgerStats() {
       const usersRef = collection(db, getCollectionPath('users'));
       
       // คิวรี่ 1: คนที่มีเครดิต > 0 (หาผลรวมเครดิต และจำนวนคน)
-      const q1 = query(usersRef, where('creditPoints', '>', 0));
+      const q1 = query(usersRef, where('creditPoints', '>', 0), limit(300));
       
       // คิวรี่ 2: พาร์ทเนอร์ (หาจำนวนพาร์ทเนอร์ทั้งหมด)
-      const q2 = query(usersRef, where('role', '==', 'partner'));
+      const q2 = query(usersRef, where('role', '==', 'partner'), limit(300));
       
       // คิวรี่ 3: พาร์ทเนอร์ที่มีเครดิต > 0 (เพื่อหักลบส่วนที่ซ้ำกัน)
-      const q3 = query(usersRef, where('role', '==', 'partner'), where('creditPoints', '>', 0));
+      const q3 = query(usersRef, where('role', '==', 'partner'), where('creditPoints', '>', 0), limit(300));
       
       const [agg1, agg2, agg3] = await Promise.all([
         getAggregateFromServer(q1, { totalCredit: sum('creditPoints'), activeUsers: count() }),
@@ -77,7 +77,7 @@ export default function useLedgerStats() {
       }));
 
       // 👇 FIX: แก้ Path ให้เป็น 6 ระดับ (เลขคู่)
-      const ledgerRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+      const ledgerRef = doc(db, getCollectionPath('settings'), 'credit_config');
       const unsubscribe = onSnapshot(ledgerRef, (docSnap) => {
         if (!isActive) return;
         

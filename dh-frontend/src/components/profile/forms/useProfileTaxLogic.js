@@ -88,6 +88,8 @@ export function useProfileTaxLogic(user) {
       setStatus({ type: 'success', message: 'บันทึกข้อมูลผู้เสียภาษีเรียบร้อยแล้ว แหล่งเก็บข้อมูลปลอดภัย 100%' });
       setShowTaxId(false);
     } catch (error) {
+    console.error("🔥 Error:", error);
+
       setStatus({ type: 'error', message: 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง' });
     } finally {
       setIsSaving(false);

@@ -2,8 +2,7 @@
 import { db } from './config';
 import { doc, getDoc, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { deductPartnerCredit, getCreditSettings } from './creditService';
-
-const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // ==========================================
 // 🧠 SMART CACHE & ANTI-FRAUD BUFFER SYSTEM
@@ -40,7 +39,7 @@ export const flushAdStatsBatch = async () => {
       for (const adId in statsToProcess[collectionName]) {
         const stats = statsToProcess[collectionName][adId];
         if (stats.views > 0 || stats.clicks > 0) {
-          const adRef = doc(db, 'artifacts', appId, 'public', 'data', collectionName, adId);
+          const adRef = doc(db, getCollectionPath(collectionName), adId);
           
           // 🔍 ดึงข้อมูลโฆษณามาเช็คสถานะการเงิน (Real-time Validation)
           const adSnap = await getDoc(adRef);

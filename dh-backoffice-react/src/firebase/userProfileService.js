@@ -66,7 +66,7 @@ export const listenToUserRole = (uid, callback) => {
     
     const userRef = getUserDocRef(uid);
     
-    return onSnapshot(userRef, (docSnap) => {
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
@@ -83,6 +83,7 @@ export const listenToUserRole = (uid, callback) => {
         console.error("❌ [UserProfileService] Listen Role Error:", error);
         callback('user', null, error); 
     });
+    return unsubscribe;
 };
 
 export const getUserProfile = async (uid) => {

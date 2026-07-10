@@ -2,16 +2,10 @@ import { doc, getDocs, runTransaction, collection, serverTimestamp, query, where
 import { db } from '../config';
 import { historyService } from '../historyService';
 import { formatCredit } from './creditFormatService';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCollectionPath, getUsersPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const getUsersPath = () => {
-    if (typeof window !== 'undefined' && window.location.hostname.includes('canvas') && typeof __app_id !== 'undefined') {
-        return `artifacts/${__app_id}/public/data/users`;
-    }
-    return 'users';
-};
 
 /**
  * ✨ Atomic Dual-Sync Credit Adjustment (SECURED & FINANCIAL GRADE)

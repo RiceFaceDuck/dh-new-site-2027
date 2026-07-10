@@ -1,5 +1,6 @@
 import { collection, doc, getDocs, setDoc, query, where } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
@@ -41,7 +42,8 @@ export const getActivePartners = async (forceRefresh = false) => {
   }
 
   try {
-    const partnersRef = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
+    const partnersRef = collection(db, getCollectionPath('partners'));
+
     const q = query(partnersRef, where('isActive', '==', true));
     const snapshot = await getDocs(q);
     const partners = snapshot.docs.map(doc => ({ userId: doc.id, ...doc.data() }));
@@ -54,23 +56,26 @@ export const getActivePartners = async (forceRefresh = false) => {
   }
 };
 
-
 export const updatePartnerProfile = async (userId, partnerData, isActive) => {
-  if (!userId) throw new Error("User ID is required");
-  const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', userId);
-  let coords = {};
-  if (partnerData?.mapsUrl) {
-    const extracted = extractCoordsFromUrl(partnerData.mapsUrl);
-    if (extracted) coords = extracted;
+  try {
+    if (!userId) throw new Error("User ID is required");
+    const partnerRef = doc(db, getCollectionPath('partners'), userId);
+    let coords = {};
+    if (partnerData?.mapsUrl) {
+      const extracted = extractCoordsFromUrl(partnerData.mapsUrl);
+      if (extracted) coords = extracted;
+    }
+    const payload = { ...partnerData, ...coords, isActive, updatedAt: new Date().toISOString() };
+    await setDoc(partnerRef, payload, { merge: true });
+    cachedPartners = null; 
+    lastFetchTime = 0;
+    return true;
+  } catch (error) {
+    console.error("Error updating partner profile:", error);
+    throw error;
   }
-  const payload = { ...partnerData, ...coords, isActive, updatedAt: new Date().toISOString() };
-  await setDoc(partnerRef, payload, { merge: true });
-  cachedPartners = null; 
-  lastFetchTime = 0;
-  return true;
 };
 
-// 🚀 [FIX]: เพิ่ม Named Export เพื่อแก้ปัญหา Uncaught SyntaxError
 export const partnerService = {
   getActivePartners,
   updatePartnerProfile,

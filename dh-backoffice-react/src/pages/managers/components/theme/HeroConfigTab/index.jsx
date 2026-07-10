@@ -68,6 +68,9 @@ export default function HeroConfigTab() {
             const url = await driveService.uploadImage(file);
             setHeroConfig(prev => ({ ...prev, imageUrl: url }));
         } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
             alert('❌ อัพโหลดรูปล้มเหลว: ' + error);
         } finally {
             setIsUploading(false);

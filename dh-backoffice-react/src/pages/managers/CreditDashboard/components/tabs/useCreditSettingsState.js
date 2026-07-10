@@ -26,7 +26,7 @@ export const useCreditSettingsState = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+        const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           const data = snap.data();
@@ -57,7 +57,7 @@ export const useCreditSettingsState = () => {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'credit_config');
+      const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
       await setDoc(docRef, { 
         config: settings,
         updatedAt: serverTimestamp() 

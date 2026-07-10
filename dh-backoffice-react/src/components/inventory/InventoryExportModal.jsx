@@ -90,6 +90,9 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
 
         setParsedSpecificSkus(skus);
       } catch (err) {
+    console.error("🔥 Error:", err);
+    toast.error(err?.message || "เกิดข้อผิดพลาด");
+
         alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบว่าเป็นไฟล์ Excel (.xlsx)');
       }
     };
@@ -125,6 +128,9 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
         onClose();
       }, 4000);
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert(error.message || "เกิดข้อผิดพลาดในการ Export ข้อมูล");
     } finally {
       setIsExporting(false);

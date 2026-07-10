@@ -29,13 +29,13 @@ export const storeProfileSubmitService = {
       const batch = writeBatch(db); 
 
       // 2. บันทึกข้อมูลร้านลงระบบ Profile หลัก
-      const storeRef = doc(db, 'artifacts', appId, 'users', user.uid, 'storeProfile', 'main');
+      const storeRef = doc(db, getCollectionPath('users'), user.uid, 'storeProfile', 'main');
       batch.set(storeRef, { ...finalStoreData, updatedAt: serverTimestamp() }, { merge: true });
 
       // Refs สำหรับการอัปเดตสถานะและแผนที่
-      const activePartnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'ActivePartners', user.uid);
+      const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), user.uid);
       const adId = `AD-CARD-${user.uid}`;
-      const adRef = doc(db, 'artifacts', appId, 'public', 'data', 'partner_ads', adId);
+      const adRef = doc(db, getCollectionPath('partner_ads'), adId);
       const taskId = `TODO-${adId}`;
 
       if (finalStoreData.isSupportActive) {

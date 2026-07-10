@@ -101,6 +101,8 @@ export const driveService = {
             reject(new Error(result.message || "อัปโหลดไม่สำเร็จ"));
           }
         } catch (error) {
+    console.error("🔥 Error:", error);
+
           reject(error);
         }
       };

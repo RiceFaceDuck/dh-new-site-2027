@@ -157,10 +157,12 @@ export const billingTransactionService = {
       let finalOrderId = orderData.orderId;
       let newDocId = null;
       let successfulUpdates = [];
+      let logsToPost = [];
       const statusLower = (orderData.orderStatus || orderData.status || '').toLowerCase();
 
       await runTransaction(db, async (transaction) => {
         successfulUpdates = []; 
+        logsToPost = [];
         
         // 1. Fetch Dependencies (READS)
         const deps = await fetchDependencies(transaction, orderData, statusLower);
@@ -189,14 +191,24 @@ export const billingTransactionService = {
             transaction.update(u.ref, { stockQuantity: u.newQty, 'stats.sold': increment(u.soldInc || 0) });
             successfulUpdates.push({ ...u.originalSnap.data(), sku: u.ref.id, stockQuantity: u.newQty });
             
-            setTimeout(() => {
-              gasHistoryService.log({ level: 'INFO', module: 'INVENTORY_SYNC', action: 'DETECT_SNAPSHOT', target: { id: 'DET-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + new Date().toTimeString().slice(0, 8).replace(/:/g, '') }, actorOverride: { uid: actorUid, name: 'System/Staff' }, details: { summary: { decreased: 1 }, decreased: [{ sku: u.ref.id, diff: -u.soldInc }] } }); gasHistoryService.log({
-                level: 'INFO', module: 'Billing', action: 'SALE',
+            logsToPost.push({
+              inventorySync: {
+                level: 'INFO',
+                module: 'INVENTORY_SYNC',
+                action: 'DETECT_SNAPSHOT',
+                target: { id: 'DET-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + new Date().toTimeString().slice(0, 8).replace(/:/g, '') },
+                actorOverride: { uid: actorUid, name: 'System/Staff' },
+                details: { summary: { decreased: 1 }, decreased: [{ sku: u.ref.id, diff: -u.soldInc }] }
+              },
+              billing: {
+                level: 'INFO',
+                module: 'Billing',
+                action: 'SALE',
                 actor: { uid: actorUid, name: 'System/Staff' },
                 target: { id: u.ref.id, name: u.originalSnap.data()?.name || 'Unknown', type: 'Product' },
-                details: { type: 'ขายออก', qtyChange: -u.soldInc, reference: finalOrderId, legacy_details: `ขายออกบิล ${finalOrderId}` }
-              });
-            }, 0);
+                details: { type: 'ขายออก', qtyChange: -u.soldInc, reference: 'PLACEHOLDER_ORDER_ID', legacy_details: 'PLACEHOLDER_DETAILS' }
+              }
+            });
           });
           
           (orderData.appliedPromotions || []).forEach(p => p.id && transaction.update(doc(db, getCollectionPath('promotions'), p.id), { quotaUsed: increment(1) }));
@@ -250,6 +262,18 @@ export const billingTransactionService = {
         successfulUpdates.forEach(p => gasStockService.queueUpdate(p));
         await gasStockService.forceSync();
       }
+
+      if (logsToPost.length > 0) {
+        logsToPost.forEach(log => {
+          const billingLog = { ...log.billing };
+          billingLog.details.reference = finalOrderId;
+          billingLog.details.legacy_details = `ขายออกบิล ${finalOrderId}`;
+          
+          gasHistoryService.log(log.inventorySync);
+          gasHistoryService.log(billingLog);
+        });
+      }
+
       await historyService.addLog('Billing', 'Create', finalOrderId, `สร้างบิลใหม่ ยอดสุทธิ ฿${(orderData.finalTotal || 0).toLocaleString()}`, actorUid);
 
       return { id: newDocId, orderId: finalOrderId };

@@ -10,7 +10,7 @@ export const todoWholesaleService = {
       return await runTransaction(db, async (transaction) => {
         const taskRef = doc(db, getCollectionPath('todos'), taskId);
         const orderRef = doc(db, getCollectionPath('orders'), orderId);
-        const logRef = doc(collection(db, 'system_logs'));
+        const logRef = doc(collection(db, getCollectionPath('system_logs')));
 
         const orderDoc = await transaction.get(orderRef);
         

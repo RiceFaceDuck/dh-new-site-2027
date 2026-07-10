@@ -55,6 +55,9 @@ export default function CustomerModal({
           setDuplicateIdToSync(null);
         }
       } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
         setIdError('เกิดข้อผิดพลาดในการตรวจสอบรหัส');
       } finally {
         setIsValidatingId(false);
@@ -104,6 +107,9 @@ export default function CustomerModal({
       onClose(); // ปิด Modal หลังจากซิงค์สำเร็จ
       // หน้าจอหลักจะ Refresh อัตโนมัติเมื่อ Modal ปิด
     } catch (err) {
+    console.error("🔥 Error:", err);
+    toast.error(err?.message || "เกิดข้อผิดพลาด");
+
       setIdError(err.message);
     } finally {
       setIsSyncing(false);

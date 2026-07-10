@@ -27,6 +27,9 @@ export default function SkuMerchantExport({ changes, isCalculating }) {
 
       setTimeout(() => setStatus('idle'), 5000);
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       setStatus('error');
       setMessage(error.message || 'เกิดข้อผิดพลาด');
       setTimeout(() => setStatus('idle'), 5000);

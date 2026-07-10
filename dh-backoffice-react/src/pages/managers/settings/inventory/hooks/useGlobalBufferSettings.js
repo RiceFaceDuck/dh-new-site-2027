@@ -20,6 +20,8 @@ export function useGlobalBufferSettings() {
                     setOriginalConfig(data);
                 }
             } catch (error) {
+    console.error("🔥 Error:", error);
+
                 // error handled in service
             } finally {
                 setIsLoading(false);
@@ -58,6 +60,8 @@ export function useGlobalBufferSettings() {
                 throw new Error(res.message);
             }
         } catch (error) {
+    console.error("🔥 Error:", error);
+
             alert(`❌ เกิดข้อผิดพลาด: ${error.message}`);
         } finally {
             setIsSaving(false);

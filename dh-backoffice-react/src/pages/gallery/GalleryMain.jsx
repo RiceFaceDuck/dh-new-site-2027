@@ -114,7 +114,7 @@ export default function GalleryMain() {
 
     if (newImageData.sku) {
       try {
-        const q = query(collection(db, getCollectionPath('products')), where('sku', '==', newImageData.sku));
+        const q = query(collection(db, getCollectionPath('products')), where('sku', '==', newImageData.sku), limit(300));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {

@@ -25,6 +25,9 @@ const TabHistory = () => {
       await cancelOrder(orderId, auth.currentUser.uid);
       alert('ยกเลิกคำสั่งซื้อสำเร็จ');
     } catch (error) {
+    console.error("🔥 Error:", error);
+    toast.error(error?.message || "เกิดข้อผิดพลาด");
+
       alert(error.message);
     } finally {
       setCancellingOrderId(null);
