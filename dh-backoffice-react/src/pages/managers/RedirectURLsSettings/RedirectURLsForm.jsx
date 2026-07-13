@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Save, AlertCircle, Link, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function RedirectURLsForm({ isOpen, onClose, onSubmit, initialData = null, isSubmitting = false }) {

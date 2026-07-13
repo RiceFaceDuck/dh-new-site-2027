@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 // 🚀 [NEW] นำเข้า formatCredit และไอคอน เพื่อยกระดับ UI
 import { formatCredit } from '../../firebase/creditService';
-import { Award } from 'lucide-react';
 import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { parseConsentText } from '../../utils/textParser';
 import { productService } from '../../firebase/productService';

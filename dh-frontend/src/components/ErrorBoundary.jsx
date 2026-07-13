@@ -59,7 +59,7 @@ export class ErrorBoundary extends React.Component {
             >
               รีเฟรชหน้าเว็บ
             </button>
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
               <div className="mt-6 text-left p-4 bg-slate-100 rounded-lg overflow-auto text-xs text-slate-600 max-h-48">
                 <p className="font-mono font-bold mb-1">{this.state.error && this.state.error.toString()}</p>
                 <pre className="font-mono">{this.state.error && this.state.error.stack}</pre>

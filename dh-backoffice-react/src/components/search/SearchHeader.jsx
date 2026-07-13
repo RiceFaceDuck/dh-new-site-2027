@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search as SearchIcon, PlusCircle, X, RefreshCw, FilterX, HelpCircle, Keyboard } from 'lucide-react';
 
 export default function SearchHeader({

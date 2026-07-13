@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calculator, ArrowRight, Info, ShieldAlert, TrendingUp, TrendingDown, Target, Zap, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calculator, ShieldAlert, TrendingUp, TrendingDown, Target, Zap, Bell } from 'lucide-react';
 import { creditSettingsService } from '../../../../../firebase/creditSettingsService';
 
 export default function CreditCalculatorTab() {

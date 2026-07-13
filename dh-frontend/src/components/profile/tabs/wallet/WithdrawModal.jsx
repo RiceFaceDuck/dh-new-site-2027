@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Building, CreditCard, User, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { X, Building, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { formatCredit } from '../../../../firebase/creditService';
 import { requestWalletWithdrawal } from '../../../../firebase/walletService';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Palette, Droplets } from 'lucide-react';
 
 export default function HeroGradientConfig({ overlay = { color: '#1f2937', opacity: 90 }, onChange }) {

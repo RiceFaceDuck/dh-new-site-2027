@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { categoryService } from '../../../firebase/categoryService';
 import { driveService } from '../../../firebase/driveService';
 import { inventoryQueryService } from '../../../firebase/inventory/inventoryQueryService';
+import { categorySyncService } from '../../../firebase/categorySyncService';
+import { auth } from '../../../firebase/config';
 
 import ImageUploadSection from './form/ImageUploadSection';
 import BasicInfoSection from './form/BasicInfoSection';
@@ -117,6 +119,16 @@ const CategoryFormModal = ({ isOpen, onClose, onSuccess, initialData }) => {
             null, 
             null  
           );
+
+          // 🚀 [Mass Update] Sync all products if name or type changed
+          const oldType = initialData.type || '';
+          const newType = type.trim();
+          const oldName = initialData.name || '';
+          const newName = name.trim();
+          if (oldType !== newType || oldName !== newName) {
+             const uid = auth.currentUser?.uid;
+             await categorySyncService.renameCategory(oldType, newType, oldName, newName, uid);
+          }
         } else {
           const newCat = await categoryService.createCategory(
             { name: name.trim(), type: type.trim(), buttonShape, filters: filtersArray, isActive }, // 🚀 เพิ่ม type, buttonShape, filters

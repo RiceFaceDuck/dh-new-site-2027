@@ -1,4 +1,3 @@
-import React from 'react';
 import CustomerRow from './CustomerRow';
 import { Loader2, Search } from 'lucide-react';
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, limit } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { billingStatusTransaction } from '../firebase/billingStatusTransaction';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -29,8 +29,9 @@ export const useAutoCleanup = () => {
         const ordersRef = collection(db, getCollectionPath('orders'));
         const q = query(
           ordersRef,
-          where('orderStatus', '==', 'pending'),
-          where('createdAt', '<', timeoutTimestamp)
+          where('orderStatus', 'in', ['pending', 'pending_payment', 'pending_payment_verification']),
+          where('createdAt', '<', timeoutTimestamp),
+          limit(100)
         );
         
         const querySnapshot = await getDocs(q);

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Crown } from 'lucide-react';
 
 export default function ManagerBadge({ show = true, text = "to-do ผู้จัดการ" }) {

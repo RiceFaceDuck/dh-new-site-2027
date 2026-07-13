@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { claimService } from '../../../../firebase/claimService';
 import { userService } from '../../../../firebase/userService';
 import { auth } from '../../../../firebase/config';
-import { Wrench, ArrowLeftRight, RefreshCw, Ban, Check, X, Loader2, Search, Gift, Shield } from 'lucide-react';
+import { Wrench, ArrowLeftRight, RefreshCw, Check, X, Loader2, Search, Shield } from 'lucide-react';
 
 const REASON_OPTIONS = [
     "(E) สินค้า ไม่ตรงปก / ผิดสเป็ค / การผลิตผิดพลาด",

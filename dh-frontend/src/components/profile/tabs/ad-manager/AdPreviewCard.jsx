@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import React from 'react';
 import { Eye, ExternalLink, Image as ImageIcon, CreditCard, ShoppingBag, MonitorPlay } from 'lucide-react';
 import ProductAdCard from '../../../ads/ProductAdCard';

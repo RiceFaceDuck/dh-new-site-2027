@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldCheck, Phone, CheckCircle2, MapPin, Award } from 'lucide-react';
 import { findNearestPartner, getFallbackPartner } from '../../firebase/partnerLocationService';
 import { useGeolocation } from '../../hooks/useGeolocation';
@@ -6,12 +6,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import LazyImage from '../common/LazyImage';
+import { useToast } from '../../context/ToastContext';
+
 
 // ==========================================
 // 🧩 Sub-Components (SRP)
 // ==========================================
 
 const PartnerServiceBadges = ({ servicesText }) => {
+  const { showToast } = useToast();
   if (!servicesText) return null;
   const servicesList = servicesText.split(',').map(s => s.trim()).filter(Boolean);
   
@@ -164,7 +167,7 @@ const PartnerSupportBox = () => {
 
             <div className="flex items-center gap-2 shrink-0">
               <button 
-                onClick={() => partner.lineUrl ? window.open(partner.lineUrl, '_blank') : alert('คุณยังไม่ได้เพิ่มลิงก์ LINE ในหน้าตั้งค่าร้านค้าครับ')} 
+                onClick={() => partner.lineUrl ? window.open(partner.lineUrl, '_blank') : showToast('คุณยังไม่ได้เพิ่มลิงก์ LINE ในหน้าตั้งค่าร้านค้าครับ', 'error')} 
                 className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.lineUrl ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.lineUrl ? "ติดต่อผ่าน LINE" : "ยังไม่มีข้อมูล LINE"}
               >
@@ -174,7 +177,7 @@ const PartnerSupportBox = () => {
               </button>
 
               <button 
-                onClick={() => partner.messengerUrl ? window.open(partner.messengerUrl, '_blank') : alert('คุณยังไม่ได้เพิ่มลิงก์ Messenger ในหน้าตั้งค่าร้านค้าครับ')} 
+                onClick={() => partner.messengerUrl ? window.open(partner.messengerUrl, '_blank') : showToast('คุณยังไม่ได้เพิ่มลิงก์ Messenger ในหน้าตั้งค่าร้านค้าครับ', 'error')} 
                 className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.messengerUrl ? 'bg-[#0084FF] hover:bg-[#0073e6]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.messengerUrl ? "ติดต่อผ่าน Messenger" : "ยังไม่มีข้อมูล Messenger"}
               >

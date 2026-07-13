@@ -23,7 +23,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize App Check
 let appCheck;
 if (typeof window !== "undefined") {
-  // eslint-disable-next-line no-undef
+   
   if (import.meta.env.VITE_RECAPTCHA_SITE_KEY && import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your-recaptcha-site-key') {
     appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),

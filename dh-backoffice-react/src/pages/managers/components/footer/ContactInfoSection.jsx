@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function ContactInfoSection({ footerConfig, handleCompanyChange }) {
     return (

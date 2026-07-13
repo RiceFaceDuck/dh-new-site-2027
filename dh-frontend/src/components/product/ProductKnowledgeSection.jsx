@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
-import { Plus, CheckCircle2, ShieldAlert, BookOpen, Layers } from 'lucide-react';
+import { Plus, CheckCircle2, ShieldAlert, Layers } from 'lucide-react';
 import { productKnowledgeService } from '../../firebase/productKnowledgeService';
 
 export default function ProductKnowledgeSection({ 

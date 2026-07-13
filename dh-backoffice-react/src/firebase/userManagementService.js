@@ -1,5 +1,5 @@
 import { db, auth } from './config';
-import { limit, collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
+import { limit, collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { historyService } from './historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';

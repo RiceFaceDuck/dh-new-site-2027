@@ -1,4 +1,3 @@
-import React from 'react';
 import { History, TrendingUp, TrendingDown, Clock, Loader2, FileText } from 'lucide-react';
 import { formatCredit } from '../../../../firebase/creditService';
 

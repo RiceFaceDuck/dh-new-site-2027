@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, X } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 // 📦 นำเข้า Components ดั้งเดิม
 import QuickAccessTools from './QuickAccessTools';

@@ -4,9 +4,7 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
-  deleteDoc, 
   query, 
-  orderBy, 
   writeBatch, 
   serverTimestamp,
   where,
@@ -33,7 +31,8 @@ export const categoryService = {
    * เรียงลำดับตาม order แบบ asc
    */
   getAllCategories: async () => {
-    return await sharedCategoryService.getAllCategories(db);
+    const categories = await sharedCategoryService.getAllCategories(db);
+    return categories.filter(c => !c.deletedAt);
   },
 
   /**
@@ -88,6 +87,18 @@ export const categoryService = {
       }
 
       const allCats = await categoryService.getAllCategories();
+      
+      // 🚀 DUPLICATE CHECK
+      const catName = categoryData.name.trim().toLowerCase();
+      const catType = (categoryData.type || '').trim().toLowerCase();
+      const isDuplicate = allCats.some(c => 
+        (c.name || '').trim().toLowerCase() === catName || 
+        ((c.type || '').trim().toLowerCase() === catType && catType !== '')
+      );
+      if (isDuplicate) {
+        throw new Error('หมวดหมู่หรือ Type นี้มีอยู่ในระบบแล้ว');
+      }
+
       const maxOrder = allCats.length > 0 ? Math.max(...allCats.map(c => c.order || 0)) : 0;
 
       const isActive = categoryData.isActive !== undefined ? categoryData.isActive : true;
@@ -106,9 +117,20 @@ export const categoryService = {
 
       const docRef = await addDoc(collection(db, COLLECTION_NAME), newData);
       
+      try {
+        const { arrayUnion, setDoc } = await import('firebase/firestore');
+        const settingsRef = doc(db, 'settings', 'product_categories');
+        await setDoc(settingsRef, {
+          categories: arrayUnion(categoryData.type || categoryData.name)
+        }, { merge: true });
+      } catch (syncErr) {
+        console.error('Warning: Failed to sync category to settings:', syncErr);
+      }
+      
       const uid = auth.currentUser?.uid;
       await historyService.addLog('Category', 'Create', 'category', `เพิ่มหมวดหมู่ใหม่: ${categoryData.name}`, uid);
       
+      sharedCategoryService.clearCache();
       return { id: docRef.id, ...newData };
     } catch (error) {
       console.error('Error in createCategory:', error);
@@ -122,6 +144,21 @@ export const categoryService = {
   updateCategory: async (id, categoryData, newIconFile, oldIconUrl) => {
     try {
       let imageUrl = categoryData.imageUrl !== undefined ? categoryData.imageUrl : oldIconUrl;
+
+      // 🚀 DUPLICATE CHECK for Update
+      if (categoryData.name || categoryData.type) {
+        const allCats = await categoryService.getAllCategories();
+        const catName = (categoryData.name || '').trim().toLowerCase();
+        const catType = (categoryData.type || '').trim().toLowerCase();
+        const isDuplicate = allCats.some(c => 
+          c.id !== id && // Exclude itself
+          ((c.name || '').trim().toLowerCase() === catName || 
+           ((c.type || '').trim().toLowerCase() === catType && catType !== ''))
+        );
+        if (isDuplicate) {
+          throw new Error('หมวดหมู่หรือ Type นี้ถูกใช้ไปแล้วโดยหมวดหมู่อื่น');
+        }
+      }
 
       if (newIconFile) {
         imageUrl = await categoryService.uploadIcon(newIconFile);
@@ -150,6 +187,7 @@ export const categoryService = {
       const uid = auth.currentUser?.uid;
       await historyService.addLog('Category', 'Update', 'category', `แก้ไขหมวดหมู่: ${categoryData.name}`, uid);
       
+      sharedCategoryService.clearCache();
       return { id, ...updatePayload };
     } catch (error) {
       console.error('Error in updateCategory:', error);
@@ -167,13 +205,29 @@ export const categoryService = {
       
       // 1. Relation Check (Cost: 1 Read)
       // เปลี่ยนจาก 'categoryId' เป็น 'category_lower' เพื่อให้สอดคล้องกับ products
-      if (type) {
-        const productsRef = collection(db, getCollectionPath('products'));
-        const q = query(productsRef, where('category_lower', '==', type.trim().toLowerCase()), limit(1));
-        const snap = await getDocs(q);
-        
-        if (!snap.empty) {
-          throw new Error('ไม่สามารถลบได้ เนื่องจากยังมีสินค้าเชื่อมโยงอยู่ในหมวดหมู่นี้');
+      // 🚀 ตรวจสอบทั้ง type และ name เผื่อว่าสินค้าผูกด้วยชื่อแทน type
+      const checkVal = type ? type.trim().toLowerCase() : (categoryData.name || '').trim().toLowerCase();
+      if (checkVal) {
+        // ดึงหมวดหมู่ทั้งหมดเพื่อตรวจสอบว่ามีหมวดหมู่อื่นที่ Active และมี type/name ซ้ำเหลืออยู่หรือไม่
+        const allCats = await categoryService.getAllCategories();
+        const hasOtherActiveCat = allCats.some(c => 
+          c.id !== id && 
+          (c.status === 'active' || c.isActive === true) && 
+          (type 
+            ? (c.type || '').trim().toLowerCase() === type.trim().toLowerCase()
+            : (c.name || '').trim().toLowerCase() === (categoryData.name || '').trim().toLowerCase()
+          )
+        );
+
+        // ถ้าไม่มีหมวดหมู่อื่นที่ Active เหลือรองรับสินค้า และมีสินค้าผูกอยู่ ค่อยบล็อกการลบ
+        if (!hasOtherActiveCat) {
+          const productsRef = collection(db, getCollectionPath('products'));
+          const q = query(productsRef, where('category_lower', '==', checkVal), limit(1));
+          const snap = await getDocs(q);
+          
+          if (!snap.empty) {
+            throw new Error('ไม่สามารถลบได้ เนื่องจากยังมีสินค้าเชื่อมโยงอยู่ในหมวดหมู่นี้');
+          }
         }
       }
 
@@ -202,6 +256,7 @@ export const categoryService = {
       const uid = auth.currentUser?.uid;
       await historyService.addLog('Category', 'Delete', 'category', `ลบหมวดหมู่: ID=${id} และเคลียร์ชื่อหมวดหมู่ออกจากระบบตั้งค่าหลัก`, uid);
       
+      sharedCategoryService.clearCache();
       return true;
     } catch (error) {
       console.error('Error in deleteCategory:', error);

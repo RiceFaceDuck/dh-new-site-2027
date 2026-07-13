@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { todoService } from '../firebase/todoService';
@@ -6,10 +6,10 @@ import { managerTodoService } from '../firebase/managerTodoService';
 import { userService } from '../firebase/userService';
 import { useGmail } from '../pages/emails/hooks/useGmail';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
-import { RefreshCw } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
 import { GatekeeperChecking, GatekeeperDenied } from './components/GatekeeperUI';
+import FloatingMiniCart from '../components/billing/FloatingMiniCart';
 
 export default function AdminLayout() {
   const { 
@@ -111,6 +111,8 @@ export default function AdminLayout() {
         <div className="absolute top-0 left-0 w-full h-[300px] bg-linear-to-b from-blue-50/30 to-transparent dark:from-blue-900/20 dark:to-transparent pointer-events-none -z-10"></div>
         <Outlet />
       </main>
+
+      <FloatingMiniCart />
     </div>
   );
 }

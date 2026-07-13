@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Ticket, Coins, Wallet, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Ticket, Coins, Wallet, CheckCircle2 } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { db, auth } from '../../firebase/config';
 import { collection, onSnapshot, doc, query, where, getDocs } from 'firebase/firestore';

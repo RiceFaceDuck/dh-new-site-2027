@@ -1,4 +1,3 @@
-import React from 'react';
 import { DollarSign, Target, TrendingUp } from 'lucide-react';
 
 export const SalesTargetCard = ({ metrics, progressPercent }) => {

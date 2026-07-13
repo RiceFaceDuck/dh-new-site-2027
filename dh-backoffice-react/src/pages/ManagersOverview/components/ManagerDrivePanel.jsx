@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, ExternalLink, CloudUpload } from 'lucide-react';
 
 export default function ManagerDrivePanel({ isOpen, onClose }) {

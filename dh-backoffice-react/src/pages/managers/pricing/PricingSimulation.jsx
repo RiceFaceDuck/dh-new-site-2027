@@ -1,12 +1,10 @@
-import React from 'react';
 import { Calculator } from 'lucide-react';
 
 export default function PricingSimulation({ 
   simCost, setSimCost, simCategory, setSimCategory, 
-  config, runSimulation, simResult 
+  config, runSimulation, simResult, categories = []
 }) {
   if (!config) return null;
-  const uniqueCategories = [...new Set(config.rules.map(r => r.category))];
 
   return (
     <div className="bg-(--dh-bg-surface) p-5 rounded-2xl shadow-xs border-2 border-indigo-500/20 flex-1 flex flex-col relative overflow-hidden transition-colors">
@@ -23,8 +21,12 @@ export default function PricingSimulation({
           </div>
           <div>
             <label className="text-[10px] font-black text-(--dh-text-muted) uppercase tracking-widest block mb-1">หมวดหมู่</label>
-            <select value={simCategory} onChange={(e) => setSimCategory(e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-xl px-3 py-2.5 text-sm font-bold text-(--dh-text-main) outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner cursor-pointer">
-              {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            <select value={simCategory} onChange={(e) => setSimCategory(e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-xl px-3 py-2.5 text-sm font-bold text-(--dh-text-main) outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all shadow-inner cursor-pointer appearance-none">
+              {categories.map(cat => (
+                <option key={cat.id || cat.type} value={cat.type}>
+                  {cat.name} {cat.type && cat.name !== cat.type ? `(${cat.type})` : ''}
+                </option>
+              ))}
               <option value="Other">อื่นๆ (ไม่มีกฎ)</option>
             </select>
           </div>

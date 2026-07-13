@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where, limit, startAfter } from 'firebase/firestore'; 
@@ -151,22 +151,13 @@ const CategoryPage = () => {
 
         {/* Product List */}
         <div>
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="bg-white p-4 rounded-2xl shadow-xs border border-slate-100 animate-pulse h-[350px] flex flex-col">
-                  <div className="w-full aspect-square bg-slate-200 rounded-xl mb-4"></div>
-                  <div className="h-4 bg-slate-200 rounded-sm w-3/4 mb-2"></div>
-                  <div className="h-4 bg-slate-200 rounded-sm w-1/2 mb-auto"></div>
-                  <div className="h-8 bg-slate-200 rounded-sm w-full mt-4"></div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-xs">
               <p className="font-semibold text-lg mb-1">พบข้อผิดพลาดในการโหลดข้อมูล</p>
               <p className="text-sm opacity-80">{error}</p>
             </div>
+          ) : loading ? (
+            <ProductList isLoading={true} showTitle={false} />
           ) : products.length > 0 ? (
             <>
               <ProductList products={products} />

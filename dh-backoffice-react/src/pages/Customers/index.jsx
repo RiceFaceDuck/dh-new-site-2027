@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useCustomers } from './hooks/useCustomers';
 import GuideModal from '../../components/common/GuideModal';
 

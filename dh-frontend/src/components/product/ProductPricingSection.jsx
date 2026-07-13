@@ -1,4 +1,3 @@
-import React from 'react';
 import { Cpu, Package, Truck, ShoppingCart, Heart, CheckCircle2 } from 'lucide-react';
 import VariantSelector from './VariantSelector';
 import { useFavorites } from '../../context/FavoritesProvider';
@@ -42,8 +41,19 @@ export default function ProductPricingSection({
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFav = product ? isFavorite(product.id) : false;
 
+  const handleCopy = (e) => {
+    e.preventDefault();
+    const currentUrl = window.location.href;
+    const textToPaste = `เข้าชมข้อมูลได้ทันทีเลย >> ${currentUrl} ขอบคุณที่ใช้บริการ และไว้วางใจ dh notebook`;
+    if (e.clipboardData) {
+      e.clipboardData.setData('text/plain', textToPaste);
+    } else if (window.clipboardData) {
+      window.clipboardData.setData('Text', textToPaste);
+    }
+  };
+
   return (
-    <div className="p-6 md:p-10 flex flex-col">
+    <div className="p-6 md:p-10 flex flex-col" onCopy={handleCopy}>
       <div className="mb-2 flex items-center justify-start">
         <span className="text-sm font-tech text-slate-500 font-bold flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-md">
           <Cpu size={14} className="text-slate-400" /> DH-SKU: {model}

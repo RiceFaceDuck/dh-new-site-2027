@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, X, ShieldCheck, ShieldAlert, Loader2, Package, Calendar } from 'lucide-react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { warrantyService } from '../../firebase/warrantyService';
-import { formatDistanceToNow, differenceInDays } from 'date-fns';
-import { th } from 'date-fns/locale';
+import { differenceInDays } from 'date-fns';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 

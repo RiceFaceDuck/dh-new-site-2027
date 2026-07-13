@@ -1,0 +1,953 @@
+
+> dh-frontend@0.0.0 lint
+> eslint .
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+
+C:\DH Notebook\Management System\dh-frontend\src\App.jsx
+  47:6   error  'ToastProvider' is not defined        react/jsx-no-undef
+  48:6   error  'FavoritesProvider' is not defined    react/jsx-no-undef
+  49:6   error  'CartProvider' is not defined         react/jsx-no-undef
+  50:8   error  'HelmetProvider' is not defined       react/jsx-no-undef
+  51:10  error  'Router' is not defined               react/jsx-no-undef
+  52:12  error  'LineBrowserWarning' is not defined   react/jsx-no-undef
+  56:12  error  'Suspense' is not defined             react/jsx-no-undef
+  56:32  error  'TopLoadingBar' is not defined        react/jsx-no-undef
+  57:14  error  'Routes' is not defined               react/jsx-no-undef
+  59:16  error  'Route' is not defined                react/jsx-no-undef
+  59:32  error  'MainLayout' is not defined           react/jsx-no-undef
+  60:18  error  'Route' is not defined                react/jsx-no-undef
+  60:43  error  'Home' is not defined                 react/jsx-no-undef
+  61:18  error  'Route' is not defined                react/jsx-no-undef
+  62:18  error  'Route' is not defined                react/jsx-no-undef
+  63:18  error  'Route' is not defined                react/jsx-no-undef
+  64:18  error  'Route' is not defined                react/jsx-no-undef
+  65:18  error  'Route' is not defined                react/jsx-no-undef
+  66:18  error  'Route' is not defined                react/jsx-no-undef
+  68:18  error  'Route' is not defined                react/jsx-no-undef
+  71:18  error  'Route' is not defined                react/jsx-no-undef
+  72:18  error  'Route' is not defined                react/jsx-no-undef
+  75:18  error  'Route' is not defined                react/jsx-no-undef
+  78:18  error  'Route' is not defined                react/jsx-no-undef
+  81:18  error  'Route' is not defined                react/jsx-no-undef
+  82:18  error  'Route' is not defined                react/jsx-no-undef
+  83:18  error  'Route' is not defined                react/jsx-no-undef
+  87:16  error  'Route' is not defined                react/jsx-no-undef
+  92:12  error  'CookieConsentBanner' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\CategoryList.jsx
+   5:39  warning  'onSelectType' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  32:12  error    'AlertCircle' is not defined                                                    react/jsx-no-undef
+  67:16  error    'Link' is not defined                                                           react/jsx-no-undef
+  91:20  error    'Package' is not defined                                                        react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\Footer.jsx
+  31:12  error  'FooterBrand' is not defined     react/jsx-no-undef
+  33:12  error  'FooterLinkZone' is not defined  react/jsx-no-undef
+  39:12  error  'FooterLinkZone' is not defined  react/jsx-no-undef
+  45:12  error  'FooterContact' is not defined   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\HeroBanner.jsx
+  33:14  error  'ShieldCheck' is not defined   react/jsx-no-undef
+  38:14  error  'Cpu' is not defined           react/jsx-no-undef
+  40:14  error  'ChevronRight' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\Navbar.jsx
+  107:14  error  'Link' is not defined             react/jsx-no-undef
+  128:18  error  'Search' is not defined           react/jsx-no-undef
+  143:16  error  'Search' is not defined           react/jsx-no-undef
+  156:16  error  'ShoppingCart' is not defined     react/jsx-no-undef
+  175:20  error  'User' is not defined             react/jsx-no-undef
+  208:22  error  'ChevronDown' is not defined      react/jsx-no-undef
+  223:26  error  'Link' is not defined             react/jsx-no-undef
+  228:28  error  'LayoutDashboard' is not defined  react/jsx-no-undef
+  232:26  error  'Link' is not defined             react/jsx-no-undef
+  237:28  error  'Wallet' is not defined           react/jsx-no-undef
+  250:44  error  'Loader2' is not defined          react/jsx-no-undef
+  250:93  error  'LogOut' is not defined           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ProductCard.jsx
+  16:10  error  'LazyImage' is not defined     react/jsx-no-undef
+  55:60  error  'CheckCircle2' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ProductList.jsx
+    1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+   31:9   warning  'navigate' is assigned a value but never used. Allowed unused vars must match /^_/u                                         unused-imports/no-unused-vars
+  100:19  error    'ShieldAlert' is not defined                                                                                                react/jsx-no-undef
+  114:33  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+  115:39  warning  'index' is defined but never used. Allowed unused args must match /^_/u                                                     unused-imports/no-unused-vars
+  149:14  error    'ProductAdCard' is not defined                                                                                              react/jsx-no-undef
+  156:15  warning  'id' is assigned a value but never used. Allowed unused vars must match /^_/u                                               unused-imports/no-unused-vars
+  156:19  warning  'name' is assigned a value but never used. Allowed unused vars must match /^_/u                                             unused-imports/no-unused-vars
+  156:25  warning  'price' is assigned a value but never used. Allowed unused vars must match /^_/u                                            unused-imports/no-unused-vars
+  156:39  warning  'imageUrl' is assigned a value but never used. Allowed unused vars must match /^_/u                                         unused-imports/no-unused-vars
+  156:49  warning  'brand' is assigned a value but never used. Allowed unused vars must match /^_/u                                            unused-imports/no-unused-vars
+  156:56  warning  'sku' is assigned a value but never used. Allowed unused vars must match /^_/u                                              unused-imports/no-unused-vars
+  162:12  error    'ProductCard' is not defined                                                                                                react/jsx-no-undef
+  183:14  error    'ChevronRight' is not defined                                                                                               react/jsx-no-undef
+  194:13  error    'Cpu' is not defined                                                                                                        react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\BannerAdWidget.jsx
+   96:10  error  'ImageIcon' is not defined          react/jsx-no-undef
+  147:14  error  'Info' is not defined               react/jsx-no-undef
+  157:12  error  'LazyImage' is not defined          react/jsx-no-undef
+  172:20  error  'Play' is not defined               react/jsx-no-undef
+  182:21  error  'MousePointerClick' is not defined  react/jsx-no-undef
+  207:16  error  'ChevronLeft' is not defined        react/jsx-no-undef
+  210:16  error  'ChevronRight' is not defined       react/jsx-no-undef
+  248:16  error  'X' is not defined                  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\BusinessCardAdWidget.jsx
+    1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+   75:14  error    'X' is not defined                                                                   react/jsx-no-undef
+   80:14  error    'LazyImage' is not defined                                                           react/jsx-no-undef
+   85:19  error    'LazyImage' is not defined                                                           react/jsx-no-undef
+   90:23  error    'ShieldCheck' is not defined                                                         react/jsx-no-undef
+  113:17  error    'Navigation' is not defined                                                          react/jsx-no-undef
+  124:21  error    'Phone' is not defined                                                               react/jsx-no-undef
+  130:21  error    'MessageCircle' is not defined                                                       react/jsx-no-undef
+  136:21  error    'Store' is not defined                                                               react/jsx-no-undef
+  157:12  error    'Sparkles' is not defined                                                            react/jsx-no-undef
+  163:12  error    'LazyImage' is not defined                                                           react/jsx-no-undef
+  175:16  error    'Store' is not defined                                                               react/jsx-no-undef
+  192:16  error    'ShieldCheck' is not defined                                                         react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\ProductAdCard.jsx
+    1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+   98:14  error    'X' is not defined                                                                   react/jsx-no-undef
+  103:14  error    'LazyImage' is not defined                                                           react/jsx-no-undef
+  108:19  error    'LazyImage' is not defined                                                           react/jsx-no-undef
+  113:23  error    'ShieldCheck' is not defined                                                         react/jsx-no-undef
+  144:17  error    'Navigation' is not defined                                                          react/jsx-no-undef
+  156:21  error    'Phone' is not defined                                                               react/jsx-no-undef
+  163:21  error    'MessageCircle' is not defined                                                       react/jsx-no-undef
+  170:34  error    'ShoppingBag' is not defined                                                         react/jsx-no-undef
+  170:61  error    'ExternalLink' is not defined                                                        react/jsx-no-undef
+  203:12  error    'LazyImage' is not defined                                                           react/jsx-no-undef
+  215:29  error    'ShoppingBag' is not defined                                                         react/jsx-no-undef
+  215:56  error    'Store' is not defined                                                               react/jsx-no-undef
+  243:18  error    'ShieldCheck' is not defined                                                         react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartActivePromotions.jsx
+  167:10  error  'Tag' is not defined          react/jsx-no-undef
+  210:26  error  'AlertCircle' is not defined  react/jsx-no-undef
+  215:26  error  'AlertCircle' is not defined  react/jsx-no-undef
+  220:26  error  'AlertCircle' is not defined  react/jsx-no-undef
+  235:22  error  'CheckCircle' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartEmptyState.jsx
+   6:10  error  'ShoppingBag' is not defined  react/jsx-no-undef
+  11:8   error  'Link' is not defined         react/jsx-no-undef
+  12:10  error  'ChevronLeft' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartFreebieProgress.jsx
+  123:18  error  'Gift' is not defined  react/jsx-no-undef
+  183:21  error  'Gift' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartItemCard.jsx
+   26:31   warning  'index' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  150:58   error    'Loader2' is not defined                                                 react/jsx-no-undef
+  150:160  error    'Trash2' is not defined                                                  react/jsx-no-undef
+  170:20   error    'AlertTriangle' is not defined                                           react/jsx-no-undef
+  183:20   error    'Minus' is not defined                                                   react/jsx-no-undef
+  187:22   error    'Loader2' is not defined                                                 react/jsx-no-undef
+  197:20   error    'Plus' is not defined                                                    react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartSummaryPanel.jsx
+    5:5   warning  'currentUser' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+   80:12  error    'ShieldCheck' is not defined                                                   react/jsx-no-undef
+   97:18  error    'MessageCircle' is not defined                                                 react/jsx-no-undef
+  103:18  error    'MessageSquare' is not defined                                                 react/jsx-no-undef
+  130:38  error    'ArrowRight' is not defined                                                    react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\chat\MessengerMenu.jsx
+   7:12  error  'AlertCircle' is not defined    react/jsx-no-undef
+  17:12  error  'MapPin' is not defined         react/jsx-no-undef
+  40:14  error  'MessageCircle' is not defined  react/jsx-no-undef
+  50:14  error  'ExternalLink' is not defined   react/jsx-no-undef
+  54:14  error  'ExternalLink' is not defined   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\chat\MessengerRadar.jsx
+  8:12  error  'Navigation' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\chat\MessengerResult.jsx
+   9:153  error  'ShieldCheck' is not defined    react/jsx-no-undef
+  13:10   error  'Store' is not defined          react/jsx-no-undef
+  20:16   error  'MapPin' is not defined         react/jsx-no-undef
+  40:14   error  'MessageCircle' is not defined  react/jsx-no-undef
+  46:14   error  'Phone' is not defined          react/jsx-no-undef
+  52:14   error  'ExternalLink' is not defined   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\AccordionSection.jsx
+  12:29  error  'CheckCircle2' is not defined     react/jsx-no-undef
+  23:20  error  'ChevronUp' is not defined        react/jsx-no-undef
+  23:84  error  'ChevronDown' is not defined      react/jsx-no-undef
+  26:8   error  'AnimatePresence' is not defined  react/jsx-no-undef
+  28:12  error  'motion' is not defined           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\AddressSelector.jsx
+  133:14  error  'MapPin' is not defined        react/jsx-no-undef
+  140:14  error  'CheckCircle2' is not defined  react/jsx-no-undef
+  151:16  error  'Building2' is not defined     react/jsx-no-undef
+  169:16  error  'User' is not defined          react/jsx-no-undef
+  186:16  error  'Phone' is not defined         react/jsx-no-undef
+  207:18  error  'AlertCircle' is not defined   react/jsx-no-undef
+  216:14  error  'Navigation' is not defined    react/jsx-no-undef
+  246:16  error  'CheckCircle2' is not defined  react/jsx-no-undef
+  255:14  error  'ShieldCheck' is not defined   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\CheckoutSuccess.jsx
+  17:21  error  'Briefcase' is not defined     react/jsx-no-undef
+  17:75  error  'CheckCircle2' is not defined  react/jsx-no-undef
+  37:14  error  'Receipt' is not defined       react/jsx-no-undef
+  44:27  error  'ArrowRight' is not defined    react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\CreditToggleBox.jsx
+  20:14  error  'Award' is not defined         react/jsx-no-undef
+  26:18  error  'Info' is not defined          react/jsx-no-undef
+  52:12  error  'CheckCircle2' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PaymentMethod.jsx
+  121:14   error  'CreditCard' is not defined                                      react/jsx-no-undef
+  127:86   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  127:105  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  140:12   error  'CreditCard' is not defined                                      react/jsx-no-undef
+  150:16   error  'ImageIcon' is not defined                                       react/jsx-no-undef
+  158:14   error  'CheckCircle2' is not defined                                    react/jsx-no-undef
+  187:28   error  'Check' is not defined                                           react/jsx-no-undef
+  187:60   error  'Copy' is not defined                                            react/jsx-no-undef
+  209:16   error  'AlertCircle' is not defined                                     react/jsx-no-undef
+  225:20   error  'Upload' is not defined                                          react/jsx-no-undef
+  240:18   error  'CheckCircle2' is not defined                                    react/jsx-no-undef
+  250:18   error  'X' is not defined                                               react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PaymentUploader.jsx
+   4:10  warning  'file' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  19:10  error    'UploadCloud' is not defined                                                     react/jsx-no-undef
+  28:16  error    'CheckCircle2' is not defined                                                    react/jsx-no-undef
+  33:14  error    'ImageIcon' is not defined                                                       react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx
+   13:10  warning  'availablePoints' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  218:10  error    'Ticket' is not defined                                                                     react/jsx-no-undef
+  231:16  error    'CheckCircle2' is not defined                                                               react/jsx-no-undef
+  270:16  error    'Coins' is not defined                                                                      react/jsx-no-undef
+  294:16  error    'Wallet' is not defined                                                                     react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\ShippingMethod.jsx
+   13:85  warning  'selectedMethod' is defined but never used. Allowed unused args must match /^_/u    unused-imports/no-unused-vars
+   15:9   warning  'getIcon' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   91:16  error    'PackageSearch' is not defined                                                      react/jsx-no-undef
+  123:37  error    'CheckCircle2' is not defined                                                       react/jsx-no-undef
+  151:12  error    'Info' is not defined                                                               react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\TaxInvoiceForm.jsx
+   82:16  error  'FileText' is not defined         react/jsx-no-undef
+  112:16  error  'Loader2' is not defined          react/jsx-no-undef
+  118:16  error  'TaxTypeSelector' is not defined  react/jsx-no-undef
+  120:16  error  'TaxFormFields' is not defined    react/jsx-no-undef
+  124:20  error  'ShieldCheck' is not defined      react/jsx-no-undef
+  130:22  error  'CheckCircle2' is not defined     react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\tax-invoice\TaxFormFields.jsx
+   16:43  error  'User' is not defined         react/jsx-no-undef
+   16:89  error  'Building2' is not defined    react/jsx-no-undef
+   31:56  error  'FileText' is not defined     react/jsx-no-undef
+   59:27  error  'EyeOff' is not defined       react/jsx-no-undef
+   59:60  error  'Eye' is not defined          react/jsx-no-undef
+   64:14  error  'AlertCircle' is not defined  react/jsx-no-undef
+   89:20  error  'Hash' is not defined         react/jsx-no-undef
+  108:12  error  'MapPin' is not defined       react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\tax-invoice\TaxTypeSelector.jsx
+  16:12  error  'User' is not defined       react/jsx-no-undef
+  35:12  error  'Building2' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\ConfirmDeleteModal.jsx
+  17:14  error  'Trash2' is not defined                                          react/jsx-no-undef
+  25:15  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  25:26  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\CookieConsentBanner.jsx
+   12:5   warning  'setIsBannerVisible' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   49:18  error    'LazyImage' is not defined                                                                     react/jsx-no-undef
+   54:18  error    'ShieldCheck' is not defined                                                                   react/jsx-no-undef
+   60:18  error    'Link' is not defined                                                                          react/jsx-no-undef
+   72:16  error    'Settings2' is not defined                                                                     react/jsx-no-undef
+   78:16  error    'Check' is not defined                                                                         react/jsx-no-undef
+   96:20  error    'Settings2' is not defined                                                                     react/jsx-no-undef
+  107:18  error    'X' is not defined                                                                             react/jsx-no-undef
+  149:18  error    'Link' is not defined                                                                          react/jsx-no-undef
+  150:42  error    'ExternalLink' is not defined                                                                  react/jsx-no-undef
+  152:18  error    'Link' is not defined                                                                          react/jsx-no-undef
+  153:33  error    'ExternalLink' is not defined                                                                  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\LineBrowserWarning.jsx
+  20:12   error  'AlertTriangle' is not defined                                   react/jsx-no-undef
+  25:196  error  'ExternalLink' is not defined                                    react/jsx-no-undef
+  25:241  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  25:259  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\footer\FooterBrand.jsx
+  15:10  error  'ShieldCheck' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\footer\FooterContact.jsx
+  11:12  error  'MapPin' is not defined         react/jsx-no-undef
+  17:13  error  'MessageCircle' is not defined  react/jsx-no-undef
+  23:13  error  'Phone' is not defined          react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\footer\FooterLinkZone.jsx
+  17:16  error  'ChevronRight' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\navigation\BottomNav.jsx
+  50:14  error  'Link' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\partner\PartnerSupportBox.jsx
+   20:12  error    'CheckCircle2' is not defined            react/jsx-no-undef
+   60:18  warning  'locationErr' is defined but never used  unused-imports/no-unused-vars
+  115:10  error    'LazyImage' is not defined               react/jsx-no-undef
+  123:13  error    'Award' is not defined                   react/jsx-no-undef
+  135:17  error    'MapPin' is not defined                  react/jsx-no-undef
+  142:17  error    'ShieldCheck' is not defined             react/jsx-no-undef
+  159:16  error    'Phone' is not defined                   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\partner\TopPartnerBanner.jsx
+  33:15  error  'Megaphone' is not defined   react/jsx-no-undef
+  46:26  error  'ArrowRight' is not defined  react/jsx-no-undef
+  50:15  error  'X' is not defined           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ImageZoomModal.jsx
+  134:14  error  'Download' is not defined      react/jsx-no-undef
+  143:12  error  'X' is not defined             react/jsx-no-undef
+  206:16  error  'ChevronLeft' is not defined   react/jsx-no-undef
+  212:16  error  'ChevronRight' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductDescriptionSection.jsx
+  8:10  error  'AlignLeft' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductImageSection.jsx
+   52:14  error  'LazyImage' is not defined       react/jsx-no-undef
+   63:18  error  'ZoomIn' is not defined          react/jsx-no-undef
+   75:14  error  'Package' is not defined         react/jsx-no-undef
+  109:8   error  'ImageZoomModal' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductKnowledgeSection.jsx
+   92:47  error  'CheckCircle2' is not defined  react/jsx-no-undef
+   92:76  error  'ShieldAlert' is not defined   react/jsx-no-undef
+  102:16  error  'Layers' is not defined        react/jsx-no-undef
+  109:18  error  'Plus' is not defined          react/jsx-no-undef
+  161:16  error  'Layers' is not defined        react/jsx-no-undef
+  168:18  error  'Plus' is not defined          react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductPricingSection.jsx
+    5:3   warning  'brand' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+   46:12  error    'Cpu' is not defined                                                     react/jsx-no-undef
+   84:8   error    'VariantSelector' is not defined                                         react/jsx-no-undef
+   95:12  error    'Package' is not defined                                                 react/jsx-no-undef
+  104:12  error    'Truck' is not defined                                                   react/jsx-no-undef
+  152:16  error    'CheckCircle2' is not defined                                            react/jsx-no-undef
+  158:16  error    'ShoppingCart' is not defined                                            react/jsx-no-undef
+  169:12  error    'Heart' is not defined                                                   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductSpecsSection.jsx
+  13:14  error  'FileText' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductVideoSection.jsx
+  9:12  error  'Youtube' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\RelatedProducts.jsx
+  52:8  error  'ProductList' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\AuthForm.jsx
+  126:20   error  'AlertCircle' is not defined                                     react/jsx-no-undef
+  134:275  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  134:293  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  141:30   error  'CheckCircle2' is not defined                                    react/jsx-no-undef
+  141:86   error  'Copy' is not defined                                            react/jsx-no-undef
+  155:14   error  'Lock' is not defined                                            react/jsx-no-undef
+  173:14   error  'Loader2' is not defined                                         react/jsx-no-undef
+  191:14   error  'AlertCircle' is not defined                                     react/jsx-no-undef
+  204:20   error  'User' is not defined                                            react/jsx-no-undef
+  224:18   error  'Mail' is not defined                                            react/jsx-no-undef
+  244:18   error  'Lock' is not defined                                            react/jsx-no-undef
+  263:34   error  'EyeOff' is not defined                                          react/jsx-no-undef
+  263:67   error  'Eye' is not defined                                             react/jsx-no-undef
+  296:16   error  'Loader2' is not defined                                         react/jsx-no-undef
+  300:18   error  'ArrowRight' is not defined                                      react/jsx-no-undef
+  321:14   error  'ShieldCheck' is not defined                                     react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\ProfileSidebar.jsx
+   28:35  error    'Sparkles' is not defined                                                                     react/jsx-no-undef
+   38:19  error    'ChevronRight' is not defined                                                                 react/jsx-no-undef
+   48:26  warning  'pendingWithdrawal' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   78:20  error    'Store' is not defined                                                                        react/jsx-no-undef
+   96:26  error    'Check' is not defined                                                                        react/jsx-no-undef
+   96:77  error    'Copy' is not defined                                                                         react/jsx-no-undef
+  106:19  error    'Loader2' is not defined                                                                      react/jsx-no-undef
+  121:19  error    'Loader2' is not defined                                                                      react/jsx-no-undef
+  133:19  error    'Loader2' is not defined                                                                      react/jsx-no-undef
+  157:18  error    'Store' is not defined                                                                        react/jsx-no-undef
+  164:18  error    'History' is not defined                                                                      react/jsx-no-undef
+  171:18  error    'ShoppingCart' is not defined                                                                 react/jsx-no-undef
+  178:18  error    'Heart' is not defined                                                                        react/jsx-no-undef
+  185:18  error    'Wrench' is not defined                                                                       react/jsx-no-undef
+  193:18  error    'Megaphone' is not defined                                                                    react/jsx-no-undef
+  201:18  error    'ShieldCheck' is not defined                                                                  react/jsx-no-undef
+  215:14  error    'LogOut' is not defined                                                                       react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\PersonalInfoForm.jsx
+  138:12  error  'User' is not defined                    react/jsx-no-undef
+  149:10  error  'ContactInfoSection' is not defined      react/jsx-no-undef
+  154:10  error  'ShippingAddressSection' is not defined  react/jsx-no-undef
+  159:10  error  'MapEcosystemSection' is not defined     react/jsx-no-undef
+  166:43  error  'CheckCircle2' is not defined            react/jsx-no-undef
+  166:91  error  'AlertCircle' is not defined             react/jsx-no-undef
+  179:18  error  'Loader2' is not defined                 react/jsx-no-undef
+  181:18  error  'Save' is not defined                    react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\ProfileTaxForm.jsx
+   22:12  error  'ShieldCheck' is not defined   react/jsx-no-undef
+   23:12  error  'Loader2' is not defined       react/jsx-no-undef
+   36:14  error  'ShieldCheck' is not defined   react/jsx-no-undef
+   63:18  error  'User' is not defined          react/jsx-no-undef
+   82:18  error  'Building2' is not defined     react/jsx-no-undef
+  101:20  error  'User' is not defined          react/jsx-no-undef
+  103:20  error  'Building2' is not defined     react/jsx-no-undef
+  126:18  error  'FileText' is not defined      react/jsx-no-undef
+  152:31  error  'EyeOff' is not defined        react/jsx-no-undef
+  152:64  error  'Eye' is not defined           react/jsx-no-undef
+  157:18  error  'AlertCircle' is not defined   react/jsx-no-undef
+  184:24  error  'Hash' is not defined          react/jsx-no-undef
+  206:18  error  'MapPin' is not defined        react/jsx-no-undef
+  225:43  error  'CheckCircle2' is not defined  react/jsx-no-undef
+  225:91  error  'AlertCircle' is not defined   react/jsx-no-undef
+  238:18  error  'Loader2' is not defined       react/jsx-no-undef
+  240:18  error  'Save' is not defined          react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\SocialLinksForm.jsx
+   92:14  error  'Link2' is not defined          react/jsx-no-undef
+  109:18  error  'MessageCircle' is not defined  react/jsx-no-undef
+  130:18  error  'Facebook' is not defined       react/jsx-no-undef
+  151:18  error  'MessageSquare' is not defined  react/jsx-no-undef
+  172:18  error  'Youtube' is not defined        react/jsx-no-undef
+  193:18  error  'Globe' is not defined          react/jsx-no-undef
+  214:18  error  'Link2' is not defined          react/jsx-no-undef
+  235:43  error  'CheckCircle2' is not defined   react/jsx-no-undef
+  235:82  error  'AlertCircle' is not defined    react/jsx-no-undef
+  249:18  error  'Loader2' is not defined        react/jsx-no-undef
+  254:18  error  'Save' is not defined           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\SupportSettings.jsx
+   58:16  error  'Heart' is not defined         react/jsx-no-undef
+   79:33  error  'Loader2' is not defined       react/jsx-no-undef
+   86:12  error  'Info' is not defined          react/jsx-no-undef
+  100:14  error  'AlertCircle' is not defined   react/jsx-no-undef
+  109:16  error  'CheckCircle2' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\sections\ContactInfoSection.jsx
+  15:16  error  'User' is not defined   react/jsx-no-undef
+  33:16  error  'Phone' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\sections\MapEcosystemSection.jsx
+   6:10  error  'Map' is not defined          react/jsx-no-undef
+  12:12  error  'Navigation' is not defined   react/jsx-no-undef
+  36:14  error  'Map' is not defined          react/jsx-no-undef
+  43:12  error  'AlertCircle' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\sections\ShippingAddressSection.jsx
+  16:16  error  'Home' is not defined       react/jsx-no-undef
+  34:16  error  'Building' is not defined   react/jsx-no-undef
+  52:16  error  'Building2' is not defined  react/jsx-no-undef
+  70:16  error  'MapPin' is not defined     react/jsx-no-undef
+  88:16  error  'Hash' is not defined       react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabClaims.jsx
+  22:14  error  'Wrench' is not defined         react/jsx-no-undef
+  38:12  error  'Loader2' is not defined        react/jsx-no-undef
+  42:12  error  'Wrench' is not defined         react/jsx-no-undef
+  48:14  error  'ClaimItemCard' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabFavorites.jsx
+   24:10  error  'Heart' is not defined             react/jsx-no-undef
+   37:16  error  'LayoutGrid' is not defined        react/jsx-no-undef
+   44:16  error  'List' is not defined              react/jsx-no-undef
+   55:12  error  'AlertCircle' is not defined       react/jsx-no-undef
+   81:18  error  'ShoppingCart' is not defined      react/jsx-no-undef
+   92:10  error  'Heart' is not defined             react/jsx-no-undef
+  102:12  error  'FavoriteItemCard' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabHistory.jsx
+  65:10  error  'HistoryFilterBar' is not defined    react/jsx-no-undef
+  68:8   error  'HistoryList' is not defined         react/jsx-no-undef
+  79:8   error  'UploadSlipModal' is not defined     react/jsx-no-undef
+  84:8   error  'ServiceActionModal' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabOverview.jsx
+   65:10  error  'Loader2' is not defined           react/jsx-no-undef
+   88:18  error  'Wallet' is not defined            react/jsx-no-undef
+  114:18  error  'Coins' is not defined             react/jsx-no-undef
+  139:12  error  'RefreshCw' is not defined         react/jsx-no-undef
+  144:14  error  'UserCheck' is not defined         react/jsx-no-undef
+  152:16  error  'Mail' is not defined              react/jsx-no-undef
+  159:20  error  'BadgeCheck' is not defined        react/jsx-no-undef
+  169:16  error  'Phone' is not defined             react/jsx-no-undef
+  179:16  error  'MapPin' is not defined            react/jsx-no-undef
+  189:16  error  'Calendar' is not defined          react/jsx-no-undef
+  203:16  error  'ShieldCheck' is not defined       react/jsx-no-undef
+  218:8   error  'PersonalInfoForm' is not defined  react/jsx-no-undef
+  219:8   error  'SocialLinksForm' is not defined   react/jsx-no-undef
+  221:10  error  'SupportSettings' is not defined   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabPrivacy.jsx
+   77:14  error  'ShieldCheck' is not defined    react/jsx-no-undef
+   90:14  error  'FileJson' is not defined       react/jsx-no-undef
+  111:16  error  'Loader2' is not defined        react/jsx-no-undef
+  113:16  error  'Download' is not defined       react/jsx-no-undef
+  125:14  error  'AlertTriangle' is not defined  react/jsx-no-undef
+  140:14  error  'Trash2' is not defined         react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabWallet.jsx
+  15:50  warning  'creditLoading' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  36:12  error    'Wallet' is not defined                                                                   react/jsx-no-undef
+  37:12  error    'Loader2' is not defined                                                                  react/jsx-no-undef
+  50:10  error    'ArrowLeft' is not defined                                                                react/jsx-no-undef
+  54:10  error    'WalletCard' is not defined                                                               react/jsx-no-undef
+  65:18  error    'Coins' is not defined                                                                    react/jsx-no-undef
+  82:8   error    'WalletHistory' is not defined                                                            react/jsx-no-undef
+  89:10  error    'WithdrawModal' is not defined                                                            react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdFormModal.jsx
+    1:1    warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+    8:32   warning  'remainingCredit' is defined but never used. Allowed unused args must match /^_/u    unused-imports/no-unused-vars
+   19:14   error    'Megaphone' is not defined                                                           react/jsx-no-undef
+   22:14   error    'Sparkles' is not defined                                                            react/jsx-no-undef
+   27:12   error    'X' is not defined                                                                   react/jsx-no-undef
+   38:69   error    'ShoppingBag' is not defined                                                         react/jsx-no-undef
+   39:73   error    'MonitorPlay' is not defined                                                         react/jsx-no-undef
+   77:106  error    'Tag' is not defined                                                                 react/jsx-no-undef
+   98:61   error    'RectangleHorizontal' is not defined                                                 react/jsx-no-undef
+   98:134  error    'Square' is not defined                                                              react/jsx-no-undef
+   98:195  error    'RectangleVertical' is not defined                                                   react/jsx-no-undef
+  110:101  error    'LinkIcon' is not defined                                                            react/jsx-no-undef
+  130:77   error    'UploadCloud' is not defined                                                         react/jsx-no-undef
+  137:92   error    'Loader2' is not defined                                                             react/jsx-no-undef
+  139:148  error    'UploadCloud' is not defined                                                         react/jsx-no-undef
+  151:126  error    'Infinity' is not defined                                                            react/jsx-no-undef
+  181:34   error    'Loader2' is not defined                                                             react/jsx-no-undef
+  181:105  error    'CheckCircle2' is not defined                                                        react/jsx-no-undef
+  184:16   error    'ShieldAlert' is not defined                                                         react/jsx-no-undef
+  193:16   error    'Eye' is not defined                                                                 react/jsx-no-undef
+  195:14   error    'AdPreviewCard' is not defined                                                       react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdListTable.jsx
+   1:1    warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+   7:10   error    'Activity' is not defined                                                            react/jsx-no-undef
+  16:199  error    'CheckCircle2' is not defined                                                        react/jsx-no-undef
+  17:176  error    'Clock' is not defined                                                               react/jsx-no-undef
+  18:175  error    'XCircle' is not defined                                                             react/jsx-no-undef
+  19:177  error    'Activity' is not defined                                                            react/jsx-no-undef
+  34:12   error    'Activity' is not defined                                                            react/jsx-no-undef
+  55:129  error    'ImageIcon' is not defined                                                           react/jsx-no-undef
+  64:26   error    'ExternalLink' is not defined                                                        react/jsx-no-undef
+  88:24   error    'Edit' is not defined                                                                react/jsx-no-undef
+  91:24   error    'Trash2' is not defined                                                              react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdPreviewCard.jsx
+   1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+  16:45  error    'CreditCard' is not defined                                                          react/jsx-no-undef
+  17:44  error    'ShoppingBag' is not defined                                                         react/jsx-no-undef
+  18:41  error    'MonitorPlay' is not defined                                                         react/jsx-no-undef
+  19:32  error    'Eye' is not defined                                                                 react/jsx-no-undef
+  51:14  error    'ProductAdCard' is not defined                                                       react/jsx-no-undef
+  83:24  error    'ExternalLink' is not defined                                                        react/jsx-no-undef
+  91:20  error    'ImageIcon' is not defined                                                           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdStatsOverview.jsx
+   1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+  19:14  error    'Wallet' is not defined                                                              react/jsx-no-undef
+  27:34  error    'Sparkles' is not defined                                                            react/jsx-no-undef
+  45:19  error    'Activity' is not defined                                                            react/jsx-no-undef
+  51:19  error    'ShieldCheck' is not defined                                                         react/jsx-no-undef
+  62:14  error    'Plus' is not defined                                                                react/jsx-no-undef
+  76:12  error    'TrendingUp' is not defined                                                          react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\claims\ClaimItemCard.jsx
+   58:48  error  'ArrowLeftRight' is not defined  react/jsx-no-undef
+  114:59  error  'Send' is not defined            react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\components\FavoriteItemCard.jsx
+   30:16  warning  'err' is defined but never used  unused-imports/no-unused-vars
+   95:10  error    'Heart' is not defined           react/jsx-no-undef
+  125:22  error    'Tag' is not defined             react/jsx-no-undef
+  131:22  error    'FileText' is not defined        react/jsx-no-undef
+  192:20  error    'ShoppingCart' is not defined    react/jsx-no-undef
+  207:18  error    'FileText' is not defined        react/jsx-no-undef
+  220:18  error    'Tag' is not defined             react/jsx-no-undef
+  227:24  error    'X' is not defined               react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\HistoryItemCard.jsx
+  144:21  warning  'orderDateStr' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  169:28  error    'Wrench' is not defined                                                                  react/jsx-no-undef
+  172:28  error    'ArrowLeftRight' is not defined                                                          react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\HistoryList.jsx
+  32:10  error  'HistoryItemCard' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\ServiceActionModal.jsx
+  29:47  error  'Wrench' is not defined          react/jsx-no-undef
+  29:95  error  'ArrowLeftRight' is not defined  react/jsx-no-undef
+  33:14  error  'X' is not defined               react/jsx-no-undef
+  69:16  error  'UploadCloud' is not defined     react/jsx-no-undef
+  74:35  error  'Loader2' is not defined         react/jsx-no-undef
+  83:24  error  'X' is not defined               react/jsx-no-undef
+  96:39  error  'Loader2' is not defined         react/jsx-no-undef
+  96:87  error  'Check' is not defined           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\WarrantyStatusBadge.jsx
+  86:12  error  'ShieldCheck' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileBasicInfo.jsx
+   2:59   warning  'isAdPending' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+   5:142  error    'ImageIcon' is not defined                                                     react/jsx-no-undef
+  14:97   error    'Store' is not defined                                                         react/jsx-no-undef
+  18:39   error    'Loader2' is not defined                                                       react/jsx-no-undef
+  18:88   error    'UploadCloud' is not defined                                                   react/jsx-no-undef
+  38:115  error    'Clock' is not defined                                                         react/jsx-no-undef
+  58:163  error    'Loader2' is not defined                                                       react/jsx-no-undef
+  74:16   error    'UploadCloud' is not defined                                                   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileForm.jsx
+   37:82   error  'Store' is not defined                                           react/jsx-no-undef
+   38:94   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+   38:107  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+   77:10   error  'StoreProfileBasicInfo' is not defined                           react/jsx-no-undef
+   87:10   error  'StoreProfileSocialLinks' is not defined                         react/jsx-no-undef
+   92:10   error  'StoreProfileLocation' is not defined                            react/jsx-no-undef
+  128:18   error  'Loader2' is not defined                                         react/jsx-no-undef
+  130:18   error  'Power' is not defined                                           react/jsx-no-undef
+  132:18   error  'Power' is not defined                                           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileLocation.jsx
+  106:95   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:125  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:185  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:205  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:225  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:238  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileSocialLinks.jsx
+   5:142  error  'MessageCircle' is not defined  react/jsx-no-undef
+   9:123  error  'Phone' is not defined          react/jsx-no-undef
+  13:121  error  'MessageCircle' is not defined  react/jsx-no-undef
+  17:121  error  'MessageCircle' is not defined  react/jsx-no-undef
+  21:121  error  'LinkIcon' is not defined       react/jsx-no-undef
+  25:121  error  'Youtube' is not defined        react/jsx-no-undef
+  33:121  error  'ShoppingCart' is not defined   react/jsx-no-undef
+  37:121  error  'ShoppingCart' is not defined   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\wallet\WalletCard.jsx
+  12:14  error  'Wallet' is not defined       react/jsx-no-undef
+  19:14  error  'ShieldCheck' is not defined  react/jsx-no-undef
+  26:16  error  'Clock' is not defined        react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\wallet\WalletHistory.jsx
+   7:10   error  'History' is not defined       react/jsx-no-undef
+  14:14   error  'Loader2' is not defined       react/jsx-no-undef
+  20:16   error  'History' is not defined       react/jsx-no-undef
+  39:38   error  'Clock' is not defined         react/jsx-no-undef
+  39:79   error  'TrendingUp' is not defined    react/jsx-no-undef
+  39:116  error  'TrendingDown' is not defined  react/jsx-no-undef
+  67:26   error  'FileText' is not defined      react/jsx-no-undef
+  83:32   error  'FileText' is not defined      react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\wallet\WithdrawModal.jsx
+   60:14   error  'X' is not defined                                               react/jsx-no-undef
+   63:14   error  'Building' is not defined                                        react/jsx-no-undef
+  103:17   error  'AlertCircle' is not defined                                     react/jsx-no-undef
+  107:104  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:114  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  117:45   error  'CheckCircle2' is not defined                                    react/jsx-no-undef
+  117:93   error  'AlertCircle' is not defined                                     react/jsx-no-undef
+  127:32   error  'Loader2' is not defined                                         react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\context\CartProvider.jsx
+   60:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+   67:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  173:18  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\context\FavoritesProvider.jsx
+  27:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  79:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\context\ToastContext.jsx
+  34:40  error  'CheckCircle2' is not defined  react/jsx-no-undef
+  34:69  error  'ShieldAlert' is not defined   react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\checkout\checkoutSubmitService.js
+  39:11  warning  'counterDoc' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  43:11  warning  'sysSnap' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\config.js
+  28:5  warning  'appCheck' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\credit\adCreditService.js
+  219:52  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  224:54  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\partnerService.js
+   5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u              unused-imports/no-unused-vars
+  27:7  warning  'calculateDistance' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\squadConfigService.js
+  5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\storefrontSettingsService.js
+  51:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  81:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\hooks\useStorefrontTheme.js
+  23:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\layouts\MainLayout.jsx
+  44:8   error  'Navbar' is not defined             react/jsx-no-undef
+  52:10  error  'React' is not defined              react/jsx-no-undef
+  52:36  error  'TopLoadingBar' is not defined      react/jsx-no-undef
+  53:25  error  'Outlet' is not defined             react/jsx-no-undef
+  59:10  error  'Footer' is not defined             react/jsx-no-undef
+  64:10  error  'BottomNav' is not defined          react/jsx-no-undef
+  70:8   error  'FloatingMessenger' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\layouts\SquadLayout.jsx
+  15:23  error  'Outlet' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\main.jsx
+  31:4   error  'React' is not defined                       react/jsx-no-undef
+  32:6   error  'PersistQueryClientProvider' is not defined  react/jsx-no-undef
+  36:8   error  'ErrorBoundary' is not defined               react/jsx-no-undef
+  37:10  error  'App' is not defined                         react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\AdProductDetail\AdProductDetail.jsx
+  8:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Cart.jsx
+   34:13  error  'CartSkeleton' is not defined          react/jsx-no-undef
+   40:10  error  'CartEmptyState' is not defined        react/jsx-no-undef
+   55:12  error  'ShoppingBag' is not defined           react/jsx-no-undef
+   59:12  error  'ChevronLeft' is not defined           react/jsx-no-undef
+   69:12  error  'Link' is not defined                  react/jsx-no-undef
+   83:16  error  'CartItemCard' is not defined          react/jsx-no-undef
+   97:14  error  'CartFreebieProgress' is not defined   react/jsx-no-undef
+  109:12  error  'CartSummaryPanel' is not defined      react/jsx-no-undef
+  120:16  error  'CartActivePromotions' is not defined  react/jsx-no-undef
+  131:8   error  'ConfirmDeleteModal' is not defined    react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Categories\CategoriesMain.jsx
+  16:18  error  'Link' is not defined            react/jsx-no-undef
+  29:16  error  'HelpCircle' is not defined      react/jsx-no-undef
+  48:12  error  'Info' is not defined            react/jsx-no-undef
+  54:10  error  'CategoryGrid' is not defined    react/jsx-no-undef
+  61:14  error  'FeaturedSpares' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Categories\components\CategoryCard.jsx
+   4:6   error  'Link' is not defined          react/jsx-no-undef
+  14:12  error  'LazyImage' is not defined     react/jsx-no-undef
+  21:14  error  'Package' is not defined       react/jsx-no-undef
+  33:10  error  'ChevronRight' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Categories\components\CategoryGrid.jsx
+  38:10  error  'CategoryCard' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\CategoryPage.jsx
+   12:10  warning  'categoryInfo' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  133:8   error    'Helmet' is not defined                                                                  react/jsx-no-undef
+  142:14  error    'Link' is not defined                                                                    react/jsx-no-undef
+  143:16  error    'ArrowLeft' is not defined                                                               react/jsx-no-undef
+  171:16  error    'ProductList' is not defined                                                             react/jsx-no-undef
+  178:24  error    'Loader2' is not defined                                                                 react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Checkout.jsx
+   42:10  warning  'isFetchingRules' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  124:13  error    'CheckoutSuccess' is not defined                                                            react/jsx-no-undef
+  159:14  error    'AccordionSection' is not defined                                                           react/jsx-no-undef
+  167:16  error    'AddressSelector' is not defined                                                            react/jsx-no-undef
+  175:14  error    'AccordionSection' is not defined                                                           react/jsx-no-undef
+  183:16  error    'ShippingMethod' is not defined                                                             react/jsx-no-undef
+  190:14  error    'AccordionSection' is not defined                                                           react/jsx-no-undef
+  198:16  error    'TaxInvoiceForm' is not defined                                                             react/jsx-no-undef
+  204:14  error    'AccordionSection' is not defined                                                           react/jsx-no-undef
+  212:16  error    'PaymentMethod' is not defined                                                              react/jsx-no-undef
+  227:16  error    'CreditToggleBox' is not defined                                                            react/jsx-no-undef
+  236:16  error    'CheckoutSummary' is not defined                                                            react/jsx-no-undef
+  247:16  error    'TrustBadges' is not defined                                                                react/jsx-no-undef
+  255:8   error    'CartActivePromotions' is not defined                                                       react/jsx-no-undef
+  262:8   error    'CartFreebieProgress' is not defined                                                        react/jsx-no-undef
+  274:10  error    'WholesaleRequestModal' is not defined                                                      react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\HardwareScanner\HardwareScanner.jsx
+   76:18  warning  'error' is defined but never used                                unused-imports/no-unused-vars
+  100:12  error    'ShieldCheck' is not defined                                     react/jsx-no-undef
+  108:10  error    'AuthForm' is not defined                                        react/jsx-no-undef
+  123:16  error    'CheckCircle' is not defined                                     react/jsx-no-undef
+  137:28  error    'CheckCircle' is not defined                                     react/jsx-no-undef
+  137:66  error    'Copy' is not defined                                            react/jsx-no-undef
+  143:32  error    'Monitor' is not defined                                         react/jsx-no-undef
+  144:32  error    'Battery' is not defined                                         react/jsx-no-undef
+  145:32  error    'Cpu' is not defined                                             react/jsx-no-undef
+  146:32  error    'HardDrive' is not defined                                       react/jsx-no-undef
+  147:32  error    'LayoutGrid' is not defined                                      react/jsx-no-undef
+  153:18  error    'Info' is not defined                                            react/jsx-no-undef
+  158:35  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  158:51  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  189:14  error    'Monitor' is not defined                                         react/jsx-no-undef
+  200:14  error    'Download' is not defined                                        react/jsx-no-undef
+  228:12  error    'ShieldCheck' is not defined                                     react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\Home.jsx
+  11:8   error  'Helmet' is not defined          react/jsx-no-undef
+  21:10  error  'HeroSection' is not defined     react/jsx-no-undef
+  26:10  error  'ScrollReveal' is not defined    react/jsx-no-undef
+  27:12  error  'QuickActions' is not defined    react/jsx-no-undef
+  33:10  error  'ScrollReveal' is not defined    react/jsx-no-undef
+  34:12  error  'SquadHighlight' is not defined  react/jsx-no-undef
+  41:12  error  'ScrollReveal' is not defined    react/jsx-no-undef
+  42:14  error  'FeaturedSpares' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\FeaturedSpares.jsx
+  27:10  error  'Link' is not defined         react/jsx-no-undef
+  33:12  error  'ArrowRight' is not defined   react/jsx-no-undef
+  50:12  error  'RefreshCw' is not defined    react/jsx-no-undef
+  56:12  error  'ProductList' is not defined  react/jsx-no-undef
+  60:12  error  'Sparkles' is not defined     react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\HeroSection.jsx
+  14:14  warning  'e' is defined but never used                                        unused-imports/no-unused-vars
+  56:13  error    Unknown property 'fetchpriority' found, use 'fetchPriority' instead  react/no-unknown-property
+  80:14  error    'Link' is not defined                                                react/jsx-no-undef
+  85:14  error    'Link' is not defined                                                react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\PartnerCard.jsx
+  25:10  error  'LazyImage' is not defined  react/jsx-no-undef
+  55:10  error  'Link' is not defined       react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\QuickActions.jsx
+   8:14  error  'LayoutGrid' is not defined     react/jsx-no-undef
+  16:14  error  'CalendarCheck' is not defined  react/jsx-no-undef
+  24:14  error  'MapPin' is not defined         react/jsx-no-undef
+  64:14  error  'Link' is not defined           react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\SquadHighlight.jsx
+  30:10  error  'Link' is not defined         react/jsx-no-undef
+  44:14  error  'PartnerCard' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\ProductDetail.jsx
+   53:10  error  'ShieldAlert' is not defined                react/jsx-no-undef
+   63:12  error  'Link' is not defined                       react/jsx-no-undef
+   94:8   error  'Helmet' is not defined                     react/jsx-no-undef
+  103:10  error  'Link' is not defined                       react/jsx-no-undef
+  107:12  error  'ChevronLeft' is not defined                react/jsx-no-undef
+  112:14  error  'Link' is not defined                       react/jsx-no-undef
+  129:14  error  'ProductImageSection' is not defined        react/jsx-no-undef
+  131:16  error  'ProductCommunitySection' is not defined    react/jsx-no-undef
+  140:14  error  'ProductPricingSection' is not defined      react/jsx-no-undef
+  164:16  error  'ProductKnowledgeSection' is not defined    react/jsx-no-undef
+  170:16  error  'ProductDescriptionSection' is not defined  react/jsx-no-undef
+  175:16  error  'PartnerSupportBox' is not defined          react/jsx-no-undef
+  182:20  error  'ProductVideoSection' is not defined        react/jsx-no-undef
+  191:12  error  'ProductCommunitySection' is not defined    react/jsx-no-undef
+  198:10  error  'ProductSpecsSection' is not defined        react/jsx-no-undef
+  203:10  error  'RelatedProducts' is not defined            react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Profile.jsx
+   81:10  error  'Loader2' is not defined         react/jsx-no-undef
+   91:10  error  'AuthForm' is not defined        react/jsx-no-undef
+  100:17  error  'TabOverview' is not defined     react/jsx-no-undef
+  102:17  error  'TabWallet' is not defined       react/jsx-no-undef
+  104:17  error  'TabWallet' is not defined       react/jsx-no-undef
+  107:17  error  'TabAdManager' is not defined    react/jsx-no-undef
+  109:17  error  'TabHistory' is not defined      react/jsx-no-undef
+  111:17  error  'TabClaims' is not defined       react/jsx-no-undef
+  113:17  error  'TabFavorites' is not defined    react/jsx-no-undef
+  115:17  error  'TabPrivacy' is not defined      react/jsx-no-undef
+  117:17  error  'TabOverview' is not defined     react/jsx-no-undef
+  127:12  error  'ProfileSidebar' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\ProvidersPage.jsx
+   28:16   error  'Users' is not defined                                           react/jsx-no-undef
+   42:14   error  'HelpCircle' is not defined                                      react/jsx-no-undef
+   48:10   error  'ProvidersFilterBar' is not defined                              react/jsx-no-undef
+   57:10   error  'ProvidersList' is not defined                                   react/jsx-no-undef
+   73:18   error  'X' is not defined                                               react/jsx-no-undef
+   78:20   error  'HelpCircle' is not defined                                      react/jsx-no-undef
+   93:73   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+   93:93   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  103:83   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  103:93   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  103:96   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  103:106  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\components\ProvidersFilterBar.jsx
+  15:12  error  'Search' is not defined      react/jsx-no-undef
+  39:18  error  'MapPin' is not defined      react/jsx-no-undef
+  44:18  error  'Navigation' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\components\ProvidersList.jsx
+  36:12  error  'PartnerCard' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\hooks\useProvidersList.js
+  15:10  warning  'permissionRequested' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\SearchPage.jsx
+   68:20   warning  'e' is defined but never used                                    unused-imports/no-unused-vars
+  117:14   error    'Link' is not defined                                            react/jsx-no-undef
+  118:16   error    'ChevronLeft' is not defined                                     react/jsx-no-undef
+  121:16   error    'Search' is not defined                                          react/jsx-no-undef
+  138:16   error    'Search' is not defined                                          react/jsx-no-undef
+  148:15   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  148:28   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  160:16   error    'Sparkles' is not defined                                        react/jsx-no-undef
+  164:18   error    'Link' is not defined                                            react/jsx-no-undef
+  180:16   error    'Loader2' is not defined                                         react/jsx-no-undef
+  190:16   error    'Search' is not defined                                          react/jsx-no-undef
+  195:14   error    'ProductList' is not defined                                     react/jsx-no-undef
+  198:16   error    'Sparkles' is not defined                                        react/jsx-no-undef
+  199:98   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  199:111  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Squad\Squad.jsx
+  14:8  error  'SquadHeader' is not defined     react/jsx-no-undef
+  21:8  error  'Pitch' is not defined           react/jsx-no-undef
+  24:8  error  'SquadActions' is not defined    react/jsx-no-undef
+  31:8  error  'SquadBottomNav' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Squad\components\Pitch.jsx
+  55:16  error  'PlayerNode' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\StoreProfilePage.jsx
+   10:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   64:10  error    'Link' is not defined                                                             react/jsx-no-undef
+  193:14  error    'PartnerReviews' is not defined                                                   react/jsx-no-undef
+  309:10  error    'PartnerAds' is not defined                                                       react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerAds.jsx
+   6:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  68:12  error    'ProductAdCard' is not defined                                                    react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerReviews.jsx
+  7:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\CookiePolicy.jsx
+   8:14  error  'Cookie' is not defined                                          react/jsx-no-undef
+  40:55  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  40:69  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\PrivacyPolicy.jsx
+  8:14  error  'Shield' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\TermsOfService.jsx
+   8:14   error  'ScrollText' is not defined                                      react/jsx-no-undef
+  35:84   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  35:105  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+✖ 704 problems (647 errors, 57 warnings)
+  1 error and 7 warnings potentially fixable with the `--fix` option.
+

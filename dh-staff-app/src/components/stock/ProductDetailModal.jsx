@@ -1,4 +1,3 @@
-import React from 'react';
 
 const ProductDetailModal = ({ product, onClose }) => {
   if (!product) return null;

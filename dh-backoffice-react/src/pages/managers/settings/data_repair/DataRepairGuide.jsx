@@ -1,4 +1,3 @@
-import React from 'react';
 import GuidePanel from '../../../../components/common/GuidePanel';
 
 const DataRepairGuide = () => {

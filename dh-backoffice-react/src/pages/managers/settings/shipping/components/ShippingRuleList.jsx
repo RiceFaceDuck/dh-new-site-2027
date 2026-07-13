@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShieldCheck, AlertCircle, Trash2, Truck, ShieldAlert, Layers } from 'lucide-react';
 
 export default function ShippingRuleList({ rules, loading, toggleActive, deleteRule }) {

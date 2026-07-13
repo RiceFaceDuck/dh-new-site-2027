@@ -1,4 +1,3 @@
-import React from 'react';
 import { MapPin, ExternalLink, ShieldCheck, CheckCircle2, XCircle, Loader2, User, Mail } from 'lucide-react';
 
 export default function PartnerCard({ 

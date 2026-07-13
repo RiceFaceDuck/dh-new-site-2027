@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { User, Building2, FileText, AlertCircle, Eye, EyeOff, Hash, MapPin } from 'lucide-react';
 
 export default function TaxFormFields({ taxInfo, handleChange }) {

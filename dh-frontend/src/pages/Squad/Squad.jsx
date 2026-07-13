@@ -1,4 +1,3 @@
-import React from 'react';
 import { useSquadSelection } from './hooks/useSquadSelection';
 import SquadHeader from './components/SquadHeader';
 import Pitch from './components/Pitch';

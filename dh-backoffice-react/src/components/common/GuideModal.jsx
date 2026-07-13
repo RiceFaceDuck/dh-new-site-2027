@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { HelpCircle, X, BookOpen, Key, AlertCircle, Lightbulb } from 'lucide-react';
 
 export default function GuideModal({ 

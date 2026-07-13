@@ -1,5 +1,4 @@
-import React from 'react';
-import { Search, CalendarDays, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 
 export default function OrderFilterBar({ filter, setFilter, searchQuery, setSearchQuery, dateRange, setDateRange, totalSales, headerTitle, headerAction }) {
     const handleQuickDate = (days) => {

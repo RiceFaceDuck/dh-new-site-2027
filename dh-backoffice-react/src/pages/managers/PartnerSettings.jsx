@@ -1,4 +1,3 @@
-import React from 'react';
 import { Store, Filter, Loader2 } from 'lucide-react';
 import { usePartnerSettings } from './hooks/usePartnerSettings';
 import PartnerControls from './components/partners/PartnerControls';

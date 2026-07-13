@@ -1,4 +1,3 @@
-import React from 'react';
 import { Building2, Hash, Wand2, CheckCircle2, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function MainInfoSection({

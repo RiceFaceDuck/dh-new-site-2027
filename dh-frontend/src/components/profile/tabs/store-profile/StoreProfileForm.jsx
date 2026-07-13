@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
 import { Store, Power, Loader2 } from 'lucide-react';
-import { doc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { db } from '../../../../firebase/config';
-import { driveService } from '../../../../firebase/driveService';
-import { storeProfileSubmitService } from '../../../../firebase/storeProfileSubmitService';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
 
 import { useStoreProfile } from './hooks/useStoreProfile';
 import { useGeolocation } from '../../../../hooks/useGeolocation';
+import { useToast } from '../../../../context/ToastContext';
+
 
 const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd, fetchMyAds }) => {
+  const { showToast } = useToast();
   const {
     savingStore,
     uploadingStoreImage,
@@ -34,7 +32,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
     console.error("🔥 Error:", error);
     toast.error(error?.message || "เกิดข้อผิดพลาด");
 
-      alert(error.message);
+      showToast(error.message, 'error');
     }
   };
 

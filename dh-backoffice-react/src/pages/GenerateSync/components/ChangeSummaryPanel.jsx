@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Settings, Clock, RefreshCw, Info, Save, FileText, Loader2, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, TrendingDown, DollarSign, RefreshCw, Info, Save, FileText, Loader2, CheckCircle } from 'lucide-react';
 import { syncSnapshotService } from '../../../firebase/bigseller/syncSnapshotService';
 import { useAuth } from '../../../contexts/AuthContext';
 

@@ -3,6 +3,7 @@ import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { pricingService } from '../../../../firebase/pricingService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { categoryService } from '../../../../firebase/categoryService';
 
 export function usePricingSettings() {
   const [loading, setLoading] = useState(true);
@@ -19,10 +20,26 @@ export function usePricingSettings() {
   const [logs, setLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
 
+  const [categories, setCategories] = useState([]);
+
   useEffect(() => {
     fetchConfig();
     fetchPricingLogs();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryService.getAllCategories();
+      const uniqueData = Array.from(new Map(data.map(item => [
+        (item.name || '').trim().toLowerCase(), 
+        item
+      ])).values());
+      setCategories(uniqueData);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
 
   useEffect(() => {
     if (config && originalConfig) {
@@ -85,7 +102,7 @@ export function usePricingSettings() {
   const addRule = () => {
     const newRule = { 
       id: Date.now().toString(), 
-      category: 'หมวดหมู่ใหม่', 
+      category: '', 
       operator: '<', 
       threshold: 0, 
       action: '*', 
@@ -120,6 +137,7 @@ export function usePricingSettings() {
     loading, saving, config, isDirty,
     simCost, setSimCost, simCategory, setSimCategory, simResult,
     logs, loadingLogs, fetchPricingLogs,
-    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange, runSimulation
+    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange, runSimulation,
+    categories
   };
 }

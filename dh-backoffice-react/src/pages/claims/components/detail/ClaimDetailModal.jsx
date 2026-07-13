@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Wrench, ArrowLeftRight, Printer, X } from 'lucide-react';
 import { auth } from '../../../../firebase/config';
 import { userService } from '../../../../firebase/userService';

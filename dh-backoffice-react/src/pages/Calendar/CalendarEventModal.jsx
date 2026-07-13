@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Calendar as CalendarIcon, Clock, Users, AlignLeft, X } from 'lucide-react';
 import { EVENT_TYPES } from './useCalendar';
 

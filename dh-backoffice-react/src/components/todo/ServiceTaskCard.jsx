@@ -1,6 +1,5 @@
 import React from 'react';
-import { Package, Truck, Wrench, ArrowLeftRight, Check, X, ShieldAlert, FileText, Image as ImageIcon } from 'lucide-react';
-import { claimService } from '../../firebase/claimService';
+import { Package, Truck, Wrench, ArrowLeftRight, Check, ShieldAlert, Image as ImageIcon } from 'lucide-react';
 import { todoService } from '../../firebase/todoService';
 
 export default function ServiceTaskCard({ task, onApprove, onReject }) {

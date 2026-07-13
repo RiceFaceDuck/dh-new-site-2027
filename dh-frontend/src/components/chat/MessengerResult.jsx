@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShieldCheck, Store, MapPin, MessageCircle, Phone, ExternalLink } from 'lucide-react';
 
 const MessengerResult = ({ partner, setMode, openLink }) => {

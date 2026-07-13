@@ -1,4 +1,3 @@
-import React from 'react';
 import { Mail, Clock, Star, Bookmark, Loader2 } from 'lucide-react';
 
 export default function EmailList({ emails, isLoading, onSelect, activeTab, isLoadingMore, hasMore, onLoadMore, onToggleStar, onToggleImportant }) {

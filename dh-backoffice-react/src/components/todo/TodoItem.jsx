@@ -1,5 +1,4 @@
-import React from 'react';
-import { Info, AlertCircle, Calendar, Package, Truck, MessageSquare, Megaphone, UserPlus, Briefcase, Mail, Check, X, Play, ExternalLink, Image as ImageIcon, Clock } from 'lucide-react';
+import { Info, AlertCircle, Calendar, Package, Truck, MessageSquare, Megaphone, UserPlus } from 'lucide-react';
 import StaffApprovalCard from './cards/StaffApprovalCard';
 import AdApprovalCard from './cards/AdApprovalCard';
 import GenericTodoCard from './cards/GenericTodoCard';

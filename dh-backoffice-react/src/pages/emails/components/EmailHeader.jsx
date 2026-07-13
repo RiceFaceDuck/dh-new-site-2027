@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, CheckSquare, RefreshCw } from 'lucide-react';
 
 export default function EmailHeader({

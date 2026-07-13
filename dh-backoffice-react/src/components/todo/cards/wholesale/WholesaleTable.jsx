@@ -1,4 +1,3 @@
-import React from 'react';
 import { Package, HelpCircle } from 'lucide-react';
 
 export default function WholesaleTable({ cartItems, fetchedData, editedPrices, handlePriceChange, isProcessing }) {

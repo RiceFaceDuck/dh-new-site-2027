@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Truck, Calculator, Tag, Receipt, ShieldAlert } from 'lucide-react';
 import ToggleGroup from './ToggleGroup';
 import { evaluateShippingRules } from 'dh-shared';

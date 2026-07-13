@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link as LinkIcon, Loader2 } from 'lucide-react';
 import { auth } from '../../firebase/config';
 import { settingsService } from '../../firebase/settingsService';

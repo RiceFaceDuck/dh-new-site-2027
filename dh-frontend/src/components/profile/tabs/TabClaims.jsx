@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMyClaims } from './claims/useMyClaims';
 import ClaimItemCard from './claims/ClaimItemCard';
 import { Loader2, Wrench } from 'lucide-react';

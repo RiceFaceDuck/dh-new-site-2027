@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Wrench, ArrowLeftRight } from 'lucide-react';
 import { getStatusDisplay } from './HistoryStatusUtil';
-import WarrantyStatusBadge from './WarrantyStatusBadge';
 
 const HistoryItemCard = ({
   order,

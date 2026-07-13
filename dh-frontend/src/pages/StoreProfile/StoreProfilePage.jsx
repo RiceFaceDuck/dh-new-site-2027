@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc, collection } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from '../../firebase/config';
-import { extractCoordsFromUrl } from '../../firebase/partnerService';
-import PartnerReviews from './components/PartnerReviews';
 import PartnerAds from './components/PartnerAds';
-import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import StoreProfileHero from './components/StoreProfileHero';
+import StoreProfileInfo from './components/StoreProfileInfo';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // Ensure appId is defined
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
@@ -52,8 +52,22 @@ const StoreProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50/50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
+      <div className="min-h-screen bg-slate-50 pb-20 animate-pulse">
+        <div className="h-64 md:h-80 w-full bg-slate-200"></div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 md:-mt-32 relative z-10">
+          <div className="bg-white/80 rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+            <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl bg-slate-200 ring-4 ring-white shadow-sm shrink-0"></div>
+            <div className="flex-1 w-full text-center md:text-left flex flex-col items-center md:items-start pt-2">
+              <div className="h-8 bg-slate-200 rounded-md w-2/3 mb-4"></div>
+              <div className="h-4 bg-slate-200 rounded-sm w-1/3 mb-4"></div>
+              <div className="flex gap-2 mb-6">
+                <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
+                <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
+              </div>
+              <div className="h-10 bg-slate-200 rounded-lg w-full md:w-1/2"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -70,244 +84,11 @@ const StoreProfilePage = () => {
     );
   }
 
-  const avatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop';
-  const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
-  const role = partner.services || partner.role || 'บริการซ่อมคอมพิวเตอร์และอุปกรณ์ไอที';
-  const phone = partner.phone || partner.storeProfile?.phone || '';
-  const mapsUrl = partner.mapsUrl || partner.storeProfile?.mapsUrl || '';
-
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Premium Header/Cover */}
-      <div className="h-64 md:h-80 w-full bg-linear-to-r from-brand-dark via-brand to-brand-accent relative overflow-hidden">
-        {/* Abstract background shapes */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20">
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white blur-3xl"></div>
-          <div className="absolute bottom-0 right-10 w-64 h-64 rounded-full bg-blue-300 blur-3xl"></div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 md:-mt-32 relative z-10">
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
-          
-          {/* Avatar Area */}
-          <div className="relative group">
-            <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden ring-4 ring-white shadow-lg bg-white transform transition-transform group-hover:scale-105 duration-300">
-              <img src={avatar} alt={name} className="w-full h-full object-cover"  loading="lazy" />
-            </div>
-            {partner.isActive && (
-              <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full border-2 border-white shadow-xs flex items-center">
-                <span className="w-2 h-2 rounded-full bg-white mr-1.5 animate-pulse"></span>
-                กำลังเปิดรับงาน
-              </div>
-            )}
-          </div>
-
-          {/* Profile Info */}
-          <div className="flex-1 text-center md:text-left pt-2">
-            <h1 className="text-2xl md:text-4xl font-extrabold text-slate-800 tracking-tight mb-2">
-              {name}
-            </h1>
-            <p className="text-brand font-medium text-sm md:text-lg mb-4">{role}</p>
-            
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-              {phone && (
-                <a 
-                  href={`tel:${phone}`}
-                  onClick={() => console.log('Track click contact')} // Should deduct partner credit in full system
-                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-brand hover:bg-brand-dark transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  โทรติดต่อร้าน ({phone})
-                </a>
-              )}
-              {mapsUrl && (
-                <a 
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-6 py-3 border-2 border-brand/20 text-sm font-medium rounded-xl text-brand bg-brand/5 hover:bg-brand hover:text-white transition-all shadow-xs hover:shadow-lg transform hover:-translate-y-0.5"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  นำทางด้วย Google Maps
-                </a>
-              )}
-              <button 
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title: name, url: window.location.href });
-                  } else {
-                    navigator.clipboard.writeText(window.location.href);
-                    alert('คัดลอกลิงก์ร้านค้าแล้ว');
-                  }
-                }}
-                className="inline-flex items-center justify-center px-6 py-3 border-2 border-slate-200 text-sm font-medium rounded-xl text-slate-600 bg-white hover:bg-slate-50 transition-all shadow-xs hover:shadow-lg transform hover:-translate-y-0.5"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                แชร์ร้านค้านี้
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Details Section */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          <div className="md:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
-              <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-brand mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                รายละเอียดบริการ
-              </h3>
-              <div className="prose prose-slate max-w-none">
-                {partner.richDescription || partner.description ? (
-                  <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{partner.richDescription || partner.description}</p>
-                ) : (
-                  <p className="text-slate-500 italic">ร้านค้านี้ยังไม่ได้เพิ่มรายละเอียดเพิ่มเติม แต่พร้อมให้บริการตามหมวดหมู่ความเชี่ยวชาญครับ</p>
-                )}
-              </div>
-              
-              {partner.galleryImages && partner.galleryImages.length > 0 && (
-                <div className="mt-8">
-                  <h4 className="text-lg font-bold text-slate-700 mb-4">ผลงาน / แกลลอรี่ภาพ</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {partner.galleryImages.map((img, idx) => (
-                      <div key={idx} className="rounded-xl overflow-hidden aspect-square shadow-xs border border-slate-100">
-                        <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500 cursor-pointer" onClick={() => window.open(img, '_blank')}  loading="lazy" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Reviews & Ratings Section */}
-            <PartnerReviews partnerId={partner.id} ownerId={partner.ownerId} currentUser={currentUser} />
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-linear-to-br from-slate-50 to-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                การรับรองระบบ
-              </h3>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-sm text-slate-600">ยืนยันตัวตนกับระบบแล้ว</span>
-                </li>
-                {partner.points > 0 && (
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm text-slate-600">ช่างเครดิตดีเยี่ยม ({partner.points} Points)</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Location Section */}
-            {(partner.address || partner.landmarks) && (
-              <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-rose-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  ตำแหน่งที่ตั้งร้าน
-                </h3>
-                {partner.address && (
-                  <div className="mb-3">
-                    <p className="text-xs font-bold text-slate-500 uppercase">ที่อยู่ร้าน</p>
-                    <p className="text-sm text-slate-700">{partner.address}</p>
-                  </div>
-                )}
-                {partner.landmarks && (
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase">จุดสังเกต</p>
-                    <p className="text-sm text-slate-700">{partner.landmarks}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Social Links Section */}
-            {(partner.lineUrl || partner.messengerUrl || partner.websiteUrl || partner.youtubeUrl || partner.tiktokUrl || partner.shopeeUrl || partner.lazadaUrl) && (
-              <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  ช่องทางการติดต่อ
-                </h3>
-                <div className="flex flex-col gap-3">
-                  {partner.lineUrl && (
-                    <a href={partner.lineUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors group">
-                      <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-3 group-hover:bg-green-500 group-hover:text-white transition-colors">LINE</div>
-                      <span className="text-sm text-slate-600 font-medium group-hover:text-green-700">LINE Official</span>
-                    </a>
-                  )}
-                  {partner.messengerUrl && (
-                    <a href={partner.messengerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-blue-50 transition-colors group">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-500 group-hover:text-white transition-colors">FB</div>
-                      <span className="text-sm text-slate-600 font-medium group-hover:text-blue-700">Messenger</span>
-                    </a>
-                  )}
-                  {partner.websiteUrl && (
-                    <a href={partner.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-slate-50 transition-colors group">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mr-3 group-hover:bg-slate-800 group-hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
-                      </div>
-                      <span className="text-sm text-slate-600 font-medium group-hover:text-slate-800">เว็บไซต์ร้าน</span>
-                    </a>
-                  )}
-                  {partner.youtubeUrl && (
-                    <a href={partner.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-red-50 transition-colors group">
-                      <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center mr-3 group-hover:bg-red-600 group-hover:text-white transition-colors">YT</div>
-                      <span className="text-sm text-slate-600 font-medium group-hover:text-red-700">YouTube</span>
-                    </a>
-                  )}
-                  {partner.tiktokUrl && (
-                    <a href={partner.tiktokUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-slate-100 transition-colors group">
-                      <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center mr-3 group-hover:bg-black group-hover:text-white transition-colors">TT</div>
-                      <span className="text-sm text-slate-600 font-medium group-hover:text-black">TikTok</span>
-                    </a>
-                  )}
-                  {partner.shopeeUrl && (
-                    <a href={partner.shopeeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-orange-50 transition-colors group">
-                      <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mr-3 group-hover:bg-orange-500 group-hover:text-white transition-colors">SH</div>
-                      <span className="text-sm text-slate-600 font-medium group-hover:text-orange-700">Shopee</span>
-                    </a>
-                  )}
-                  {partner.lazadaUrl && (
-                    <a href={partner.lazadaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-indigo-50 transition-colors group">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3 group-hover:bg-indigo-800 group-hover:text-white transition-colors">LZ</div>
-                      <span className="text-sm text-slate-600 font-medium group-hover:text-indigo-800">Lazada</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        {/* Ads Section */}
+      <StoreProfileHero partner={partner} />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pb-8">
+        <StoreProfileInfo partner={partner} currentUser={currentUser} />
         <PartnerAds partnerId={partner.id} />
       </div>
     </div>

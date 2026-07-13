@@ -1,6 +1,6 @@
 import { gasStockService } from '../gasStockService';
 import { db } from '../config';
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';class BigSellerQueryService {
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class BigSellerQueryService {
   /**
    * ดึงเวลา Reset ล่าสุดจาก Firestore
    */

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import BillingDashboard from '../../components/billing/BillingDashboard';
 import PosSystem from '../../components/billing/PosSystem';
-import { inventoryService } from '../../firebase/inventoryService';
 import { useCustomerData } from '../Customers/hooks/useCustomerData';
+import { useLocation } from 'react-router-dom';
 
 const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   const [viewMode, setViewMode] = useState('dashboard');
@@ -15,9 +15,14 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
 
   // Products array is no longer pre-fetched to save Firebase reads
   // PosSystem will fetch dynamically via server-side search
+  const location = useLocation();
+  const resumeTabId = location.state?.resumeTabId;
+
   useEffect(() => {
-    // Kept empty to maintain component structure if needed
-  }, [viewMode]);
+    if (resumeTabId) {
+      setViewMode('pos');
+    }
+  }, [resumeTabId]);
 
   if (viewMode === 'pos') {
     return (
@@ -32,6 +37,7 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
            customers={customers}
            onSwitchView={() => setViewMode('dashboard')} 
            initialDraft={draftOrder} 
+           resumeTabId={resumeTabId}
          />
       </div>
     );

@@ -1,4 +1,3 @@
-import React from 'react';
 import { TrendingUp, ShoppingBag } from 'lucide-react';
 import WalletDisplay from '../displays/WalletDisplay';
 import PointDisplay from '../displays/PointDisplay';

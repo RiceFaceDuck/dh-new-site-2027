@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, Loader2, User, Megaphone } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 

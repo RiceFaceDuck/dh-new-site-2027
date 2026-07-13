@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const BarcodeScanner = ({ isActive, onClose, onScanSuccess }) => {
   const [manualCode, setManualCode] = useState('');

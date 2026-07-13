@@ -1,4 +1,3 @@
-import React from 'react';
 import { Type, Info } from 'lucide-react';
 
 export default function ConsentTextSection({ consentTexts = {}, updateConsentText }) {

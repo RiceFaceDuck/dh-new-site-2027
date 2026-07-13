@@ -3,8 +3,11 @@ import { db, auth } from '../../../../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { driveService } from '../../../../firebase/driveService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { useToast } from '../../../../context/ToastContext';
+
 
 export const useServiceAction = (serviceModal, setServiceModal) => {
+  const { showToast } = useToast();
   const [serviceForm, setServiceForm] = useState(null);
   const [isSubmittingService, setIsSubmittingService] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,7 +41,7 @@ export const useServiceAction = (serviceModal, setServiceModal) => {
     } catch (error) {
     console.error("🔥 Error:", error);
  
-      alert('อัปโหลดภาพล้มเหลว: ' + error.message); 
+      showToast('อัปโหลดภาพล้มเหลว: ' + error.message, 'error'); 
     } finally { 
       setIsUploading(false); 
     }
@@ -47,8 +50,8 @@ export const useServiceAction = (serviceModal, setServiceModal) => {
   const handleSubmitService = async (e) => {
     e.preventDefault();
     if (!serviceForm || !serviceModal) return;
-    if (serviceForm.qty < 1 || serviceForm.qty > serviceModal.item.quantity) return alert('ระบุจำนวนไม่ถูกต้อง');
-    if (!serviceForm.reasonCode) return alert('กรุณาระบุ สาเหตุ / อาการ');
+    if (serviceForm.qty < 1 || serviceForm.qty > serviceModal.item.quantity) return showToast('ระบุจำนวนไม่ถูกต้อง', 'error');
+    if (!serviceForm.reasonCode) return showToast('กรุณาระบุ สาเหตุ / อาการ', 'error');
 
     setIsSubmittingService(true);
     try {
@@ -92,12 +95,12 @@ export const useServiceAction = (serviceModal, setServiceModal) => {
         updatedAt: serverTimestamp()
       });
 
-      alert(`ส่งเรื่องแจ้ง${serviceModal.type === 'claim' ? 'เคลม' : 'คืน'}สินค้าเรียบร้อย รอเจ้าหน้าที่ติดต่อกลับ!`);
+      showToast(`ส่งเรื่องแจ้ง${serviceModal.type === 'claim' ? 'เคลม' : 'คืน'}สินค้าเรียบร้อย รอเจ้าหน้าที่ติดต่อกลับ!`, 'success');
       setServiceModal(null);
     } catch (err) {
     console.error("🔥 Error:", err);
 
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+      showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
     } finally {
       setIsSubmittingService(false);
     }

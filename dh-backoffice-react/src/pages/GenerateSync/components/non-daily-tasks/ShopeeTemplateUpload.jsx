@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, RefreshCw, Database } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Upload, CheckCircle, AlertCircle, RefreshCw, Database } from 'lucide-react';
 import { bigSellerImportService } from '../../../../firebase/bigseller';
 import { historyService } from '../../../../firebase/historyService';
 

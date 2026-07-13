@@ -1,4 +1,3 @@
-import React from 'react';
 import { Phone, Mail, MessageCircle, Facebook, MessageSquare, Youtube, Globe, Link2, Copy, CheckCircle2 } from 'lucide-react';
 
 export default function ContactInfo({ customer, handleCopy, copiedField }) {

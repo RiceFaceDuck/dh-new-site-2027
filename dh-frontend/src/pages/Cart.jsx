@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, ChevronLeft } from 'lucide-react';
 import { useCartLogic } from '../hooks/useCartLogic';

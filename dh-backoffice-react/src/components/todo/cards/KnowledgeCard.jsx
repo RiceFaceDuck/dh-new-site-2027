@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BookOpen, Check, X, Package, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Check, X, Package, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 export default function KnowledgeCard({ todo, isProcessing, isManagerTab, urgencyLevel, handleAction, getStatusBadge, formatDate, handleRejectClick, getIconForType }) {
   const { payload, title, description, createdByName, createdAt, id, type } = todo;

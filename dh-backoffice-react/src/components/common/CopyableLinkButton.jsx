@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ExternalLink, Copy } from 'lucide-react';
 
 export default function CopyableLinkButton({ url, label, className, defaultIcon: DefaultIcon }) {

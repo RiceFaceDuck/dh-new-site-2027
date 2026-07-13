@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Ban, Trash2, Eye, History, FileEdit, Printer, X, Loader2 } from 'lucide-react';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
 import { auth } from '../../../firebase/config';

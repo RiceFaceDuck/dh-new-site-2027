@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-import React from 'react';
+ 
 import { Wallet, Plus, Activity, TrendingUp, ShieldCheck, Sparkles } from 'lucide-react';
 
 const AdStatsOverview = ({ userCredit, onOpenForm }) => {

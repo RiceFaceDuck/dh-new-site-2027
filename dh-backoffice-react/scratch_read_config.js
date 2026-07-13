@@ -1,5 +1,3 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
 import fs from "fs";
 
 // Read config from dh-backoffice-react/src/firebase/config.js

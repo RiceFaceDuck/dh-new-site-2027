@@ -1,4 +1,3 @@
-import React from 'react';
 import { MapPin, CheckCircle2, Copy, Navigation } from 'lucide-react';
 
 export default function ShippingInfo({ getFormattedAddress, handleCopy, copiedField, customer }) {

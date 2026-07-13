@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Printer, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { X, Printer, ToggleLeft, ToggleRight } from 'lucide-react';
 import { userService } from '../../../firebase/userService';
 import { auth } from '../../../firebase/config';
 

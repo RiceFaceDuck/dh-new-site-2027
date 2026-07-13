@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../firebase/config';
 import { historyService } from '../../firebase/historyService';
 
 export function useProductHistory(selectedProduct) {

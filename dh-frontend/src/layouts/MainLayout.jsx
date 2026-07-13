@@ -6,7 +6,6 @@ import BottomNav from '../components/navigation/BottomNav';
 import FloatingMessenger from '../components/chat/FloatingMessenger';
 
 // 🚀 นำเข้า Component ป้ายแบนเนอร์ผู้สนับสนุน
-import TopPartnerBanner from '../components/partner/TopPartnerBanner';
 
 // 🚀 นำเข้า Loading Bar สำหรับเปลี่ยนหน้า
 import TopLoadingBar from '../components/common/TopLoadingBar';

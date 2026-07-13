@@ -1,6 +1,6 @@
 import { db } from '../config';
 import { doc, collection, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
-import { getCreditSettings, calculateEarnedPoints, adjustUserCreditWithTransaction } from '../credit/creditActionService';
+import { getCreditSettings, calculateEarnedPoints } from '../credit/creditActionService';
 import { appendPaymentVerificationTodo, appendTaxInvoiceTodo } from '../todo/todoActionService';
 import { calculateNetTotal, parseFirebaseError } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -155,6 +155,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       paymentMethod: checkoutState?.paymentMethod || "transfer",
       paymentSlipUrl: slipUrl,
       status: slipUrl ? "pending_payment_verification" : "pending_payment", 
+      orderStatus: slipUrl ? "pending_payment_verification" : "pending_payment",
       totals: {
         ...totals,
         netTotal: finalNetTotal, // Use secure price
@@ -232,6 +233,11 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       amount: finalNetTotal,
       createdAt: serverTimestamp()
     });
+
+    // ✅ [CONCURRENCY FIX] Lock Promo/Freebie Quota immediately upon checkout to prevent overselling
+    (appliedPromos || []).forEach(p => p.id && transaction.update(doc(db, getCollectionPath('promotions'), p.id), { quotaUsed: increment(1) }));
+    (checkoutState?.qualifiedFreebies || []).forEach(f => f.id && transaction.update(doc(db, getCollectionPath('freebies'), f.id), { quotaUsed: increment(f.qty || 1) }));
+
 
       return { success: true, orderId: orderRef.id, message: "สร้างคำสั่งซื้อสำเร็จ", netTotal: finalNetTotal };
     });

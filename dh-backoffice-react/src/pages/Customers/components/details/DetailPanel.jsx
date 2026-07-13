@@ -21,7 +21,6 @@ export default function DetailPanel({
   onEdit,
   onDelete
 }) {
-  if (!customer) return null;
 
   // State สำหรับเก็บข้อมูลภาษีความปลอดภัยสูง
   const [secureTaxInfo, setSecureTaxInfo] = useState(null);
@@ -63,6 +62,8 @@ export default function DetailPanel({
 
     fetchSecureTaxData();
   }, [customer?.id]);
+
+  if (!customer) return null;
 
   // Utility functions สำหรับฟอร์แมตข้อมูล
   const formatCurrency = (num) => Number(num || 0).toLocaleString('th-TH');

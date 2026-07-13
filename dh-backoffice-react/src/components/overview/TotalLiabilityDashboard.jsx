@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, collectionGroup, getAggregateFromServer, sum, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { Wallet, Coins, Clock, RefreshCw, AlertCircle } from 'lucide-react';

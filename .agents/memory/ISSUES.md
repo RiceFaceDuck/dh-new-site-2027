@@ -32,3 +32,11 @@
   1. ปรับปรุง `billingTransactionService.js` โดยแยกการยิง Logs (setTimeout) ออกมาอยู่ภายนอก `runTransaction` ในส่วนของ Post-Transaction Effects ป้องกันการเกิด Log ซ้ำซ้อนเมื่อเกิด Transaction Retry
   2. แก้ไขปัญหา Sandbox Path Mismatch ใน `todoWalletService.js` ที่เดิมมีการฮาร์ดโค้ดพาธ `users` เป็น `artifacts/${appId}/users` (ไม่ตรงตามมาตรฐาน) ให้มาเรียกใช้งานผ่าน `getUsersPath()` และ `getUserSubcollectionPath()` จาก `dh-shared`
   3. ปรับปรุงฮาร์ดโค้ดพาธคอลเลกชัน `system_logs` ใน `todoPaymentService.js`, `todoWholesaleService.js`, และ `todoActionService.js` ให้เรียกใช้งานผ่าน `getCollectionPath('system_logs')` แทน เพื่อแยกแยะข้อมูล Sandbox ใน Canvas Env ได้อย่างถูกต้องและแม่นยำ
+
+## 🚨 8. ช่องโหว่ Business Logic ของระบบ Wallet และข้อผิดพลาด Permission Denied
+* **สถานะ**: 🔴 รอการแก้ไข (Pending)
+* **รายละเอียดปัญหา**:
+  1. **Permission Denied ฝั่ง Frontend:** โค้ด Frontend ฝั่งผู้ใช้ มีการสั่งแก้ค่า `creditPoints` ของตัวเองโดยตรงเมื่อ Checkout เสร็จสิ้น ซึ่งถูกบล็อกด้วย `firestore.rules` (Security Grade) ทำให้กระบวนการแจกแต้มขัดข้อง (ผู้ใช้ไม่ได้รับแต้ม และระบบอาจแสดง Error)
+  2. **Race Condition ใน Backoffice:** ฟังก์ชัน `handlePaymentCompletion` แยก Transaction เป็น 2 ส่วน (เปลี่ยนสถานะออเดอร์ใน Transaction แต่แจกแต้มแยกต่างหาก) ทำให้ถ้าตอนแจกแต้มเกิด Error ออเดอร์จะถูกมาร์คว่าแจกแต้มแล้วอย่างถาวร ทำให้เครดิตหาย (Phantom Credit)
+  3. **ID Collisions ใน Frontend:** โค้ดฝั่ง Frontend ยังใช้ `transactionId: EARN-${Date.now()}` ซึ่งมีโอกาสซ้ำซ้อนสูง
+* **แผนการแก้ไข (Plan)**: รอดำเนินการปรับปรุงโค้ด `handlePaymentCompletion` ใน Backoffice ให้อยู่ใน Transaction เดียวกัน, เปลี่ยนไปใช้ Backend/Backoffice แจกแต้มแทน Frontend, และเปลี่ยนใช้ Firestore doc().id

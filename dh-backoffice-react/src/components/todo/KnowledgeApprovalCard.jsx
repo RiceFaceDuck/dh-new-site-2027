@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BookOpen, Check, X, Loader2, Package } from 'lucide-react';
 
 export default function KnowledgeApprovalCard({ task, isProcessing, handleAction }) {

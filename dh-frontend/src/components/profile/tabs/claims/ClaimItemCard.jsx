@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Wrench, ArrowLeftRight, Package, CheckCircle, Clock, XCircle, Send } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { useToast } from '../../../../context/ToastContext';
+
 
 const getClaimStatusDisplay = (status, type) => {
+  const { showToast } = useToast();
   const isCancel = type?.startsWith('CANCEL_');
   if (isCancel && status !== 'cancelled') {
     return { label: 'ขอยกเลิก (รออนุมัติ)', color: 'bg-red-50 text-red-600 border-red-200', icon: XCircle };
@@ -31,7 +34,7 @@ const ClaimItemCard = ({ claim }) => {
   const [isUpdatingTracking, setIsUpdatingTracking] = useState(false);
 
   const handleUpdateTracking = async () => {
-    if (!trackingNo.trim()) return alert('กรุณาระบุเลขพัสดุ');
+    if (!trackingNo.trim()) return showToast('กรุณาระบุเลขพัสดุ', 'error');
     setIsUpdatingTracking(true);
     try {
       const docRef = doc(db, getCollectionPath('todos'), claim.id);
@@ -39,12 +42,12 @@ const ClaimItemCard = ({ claim }) => {
         'payload.trackingNo': trackingNo.trim(),
         updatedAt: serverTimestamp()
       });
-      alert('บันทึกเลขพัสดุเรียบร้อยแล้ว ผู้จัดการจะตรวจสอบพัสดุของคุณเร็วๆ นี้');
+      showToast('บันทึกเลขพัสดุเรียบร้อยแล้ว ผู้จัดการจะตรวจสอบพัสดุของคุณเร็วๆ นี้', 'success');
     } catch (error) {
     console.error("🔥 Error:", error);
     toast.error(error?.message || "เกิดข้อผิดพลาด");
 
-      alert('เกิดข้อผิดพลาด: ' + error.message);
+      showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
     } finally {
       setIsUpdatingTracking(false);
     }

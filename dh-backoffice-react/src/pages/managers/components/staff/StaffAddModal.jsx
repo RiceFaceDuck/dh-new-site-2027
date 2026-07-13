@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { userStaffService, searchUsersForStaffPromotion, promoteUserToStaff } from '../../../../firebase/userStaffService';
+import { useState } from 'react';
+import { searchUsersForStaffPromotion, promoteUserToStaff } from '../../../../firebase/userStaffService';
 import { userService } from '../../../../firebase/userService';
 import { Users, Search, X, UserPlus, Mail } from 'lucide-react';
 import { auth } from '../../../../firebase/config';

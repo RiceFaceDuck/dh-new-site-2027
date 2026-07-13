@@ -1,4 +1,3 @@
-import React from 'react';
 import { Ban, Check, X, Package, CheckCircle2 } from 'lucide-react';
 
 export default function ModalFooter({ 

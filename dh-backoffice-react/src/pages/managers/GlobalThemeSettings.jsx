@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ImageIcon, MonitorPlay, Settings2 } from 'lucide-react';
 import ThemeConfigTab from './components/theme/ThemeConfigTab';
 import HeroConfigTab from './components/theme/HeroConfigTab/index';

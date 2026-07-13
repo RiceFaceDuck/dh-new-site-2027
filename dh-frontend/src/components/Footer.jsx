@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { footerClientService } from '../firebase/footerClientService';
 import FooterBrand from './footer/FooterBrand';
 import FooterLinkZone from './footer/FooterLinkZone';

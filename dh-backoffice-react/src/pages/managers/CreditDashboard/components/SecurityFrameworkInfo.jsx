@@ -1,4 +1,3 @@
-import React from 'react';
 import { Lock, Database, Fingerprint, Server } from 'lucide-react';
 
 export default function SecurityFrameworkInfo() {

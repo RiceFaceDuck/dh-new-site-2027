@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShieldAlert, Calendar, Search, X, Download, HelpCircle, ShieldCheck } from 'lucide-react';
 import WarrantyCheckModal from '../../../components/common/WarrantyCheckModal';
 

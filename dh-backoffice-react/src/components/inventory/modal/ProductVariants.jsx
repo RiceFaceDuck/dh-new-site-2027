@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, Settings, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function ProductVariants({ form, setForm }) {

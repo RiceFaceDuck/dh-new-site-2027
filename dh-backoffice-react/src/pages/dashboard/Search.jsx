@@ -1,7 +1,4 @@
-import React, { useEffect } from 'react';
-import { 
-  PlusCircle, X, RefreshCw, HelpCircle, Clock, History, Send, Info
-} from 'lucide-react';
+
 import { useProductSearch } from '../hooks/useProductSearch';
 import { HighlightText } from '../../components/search/HighlightText';
 

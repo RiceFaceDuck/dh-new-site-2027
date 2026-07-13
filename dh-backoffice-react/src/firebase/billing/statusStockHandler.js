@@ -1,4 +1,4 @@
-import { doc, increment } from 'firebase/firestore';
+import { increment } from 'firebase/firestore';
 import { gasStockService } from '../gasStockService';
 
 export const handleStockDeduction = (transaction, db, productRefs, productSnaps, inventorySettingsSnap) => {

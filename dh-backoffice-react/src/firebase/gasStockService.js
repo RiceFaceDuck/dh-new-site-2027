@@ -1,4 +1,3 @@
-import { auth } from './config.js';
 import { gasHistoryService } from './gasHistoryService.js';
 
 // URL ใหม่จากการอัปเดต Deployment (แบบละเอียดยิบ)

@@ -85,17 +85,13 @@ export const featuredQueryService = {
     } catch (error) {
       console.error("Error fetching random products:", error);
       // Fallback
-      try {
-        const fallbackQuery = query(
-          collection(db, PRODUCTS_COLLECTION),
-          limit(limitCount * 2)
-        );
-        const fallbackSnap = await getDocs(fallbackQuery);
-        const fbProducts = fallbackSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        return fbProducts.filter(p => p.isActive !== false).slice(0, limitCount);
-      } catch (fallbackError) {
-        throw fallbackError;
-      }
+      const fallbackQuery = query(
+        collection(db, PRODUCTS_COLLECTION),
+        limit(limitCount * 2)
+      );
+      const fallbackSnap = await getDocs(fallbackQuery);
+      const fbProducts = fallbackSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      return fbProducts.filter(p => p.isActive !== false).slice(0, limitCount);
     }
   }
 };

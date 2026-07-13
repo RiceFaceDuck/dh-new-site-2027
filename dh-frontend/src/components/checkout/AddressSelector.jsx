@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, User, Phone, Building2, CheckCircle2, ShieldCheck, Navigation, AlertCircle } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { auth, db } from '../../firebase/config';

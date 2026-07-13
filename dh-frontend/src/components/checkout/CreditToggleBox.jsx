@@ -1,4 +1,3 @@
-import React from 'react';
 import { Award, CheckCircle2, Info } from 'lucide-react';
 import { formatCredit } from '../../firebase/creditService';
 

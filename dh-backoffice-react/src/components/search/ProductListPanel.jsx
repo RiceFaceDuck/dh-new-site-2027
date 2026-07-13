@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { PackageX, Search as SearchIcon, Inbox } from 'lucide-react';
 
 export default function ProductListPanel({

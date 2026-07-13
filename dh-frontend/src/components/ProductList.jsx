@@ -1,9 +1,8 @@
-/* eslint-disable react/prop-types */
-import React, { useState, useMemo } from 'react';
-import { ChevronRight, ShoppingCart, CheckCircle2, Loader2, Cpu, ShieldAlert } from 'lucide-react';
+ 
+import { useState, useMemo } from 'react';
+import { ChevronRight, Cpu, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
-import { cartService } from '../firebase/cartService';
 import { useCartDispatch } from '../context/CartProvider';
 import { useToast } from '../context/ToastContext';
 
@@ -11,7 +10,6 @@ import ProductAdCard from './ads/ProductAdCard';
 import ProductCard from './ProductCard';
 // 🚀 HOTFIX: แก้ไขการ Import ให้ถูกต้อง (Default Import)
 import useAdInjection from '../hooks/useAdInjection';
-import LazyImage from './common/LazyImage';
 import { getRenderableImageUrl } from '../utils/imageUtils';
 
 const normalizeKey = (k) => String(k).replace(/[_-\s]/g, '').toLowerCase();

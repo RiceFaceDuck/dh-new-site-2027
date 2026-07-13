@@ -1,5 +1,4 @@
-import React from 'react';
-import { userStaffService, updateStaffDetails } from '../../../../firebase/userStaffService';
+import { updateStaffDetails } from '../../../../firebase/userStaffService';
 import { Edit, X, User, Calendar, Phone } from 'lucide-react';
 import { auth } from '../../../../firebase/config';
 

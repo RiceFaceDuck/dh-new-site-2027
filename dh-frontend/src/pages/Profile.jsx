@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -14,7 +14,6 @@ import TabFavorites from '../components/profile/tabs/TabFavorites';
 import TabClaims from '../components/profile/tabs/TabClaims';
 import TabPrivacy from '../components/profile/tabs/TabPrivacy';
 import AuthForm from '../components/profile/AuthForm';
-import { Loader2 } from 'lucide-react';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const Profile = () => {
@@ -86,9 +85,26 @@ const Profile = () => {
   // 🌀 Loading State
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-500">
-        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
-        <p className="text-sm font-bold text-slate-400 tracking-widest uppercase">Loading Profile...</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar Skeleton */}
+          <div className="w-full lg:w-64 shrink-0 flex flex-col gap-4">
+            <div className="bg-slate-200 h-32 rounded-2xl w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-xl w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-xl w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-xl w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-xl w-full mt-8"></div>
+          </div>
+          {/* Main Content Skeleton */}
+          <div className="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-xs">
+            <div className="h-8 bg-slate-200 rounded-md w-1/3 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="h-24 bg-slate-200 rounded-2xl w-full"></div>
+              <div className="h-24 bg-slate-200 rounded-2xl w-full"></div>
+            </div>
+            <div className="h-40 bg-slate-200 rounded-2xl w-full"></div>
+          </div>
+        </div>
       </div>
     );
   }

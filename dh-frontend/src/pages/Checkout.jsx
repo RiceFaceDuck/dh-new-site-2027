@@ -1,9 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { evaluateShippingRules } from 'dh-shared';
 import { useCheckoutLogic } from '../components/checkout/hooks/useCheckoutLogic';
 import { useToast } from '../context/ToastContext';
-import { ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useCart } from '../hooks/useCart';

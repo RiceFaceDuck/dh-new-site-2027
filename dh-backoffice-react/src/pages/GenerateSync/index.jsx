@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import GenerateActions from './components/GenerateActions';
 import ChangeSummaryPanel from './components/ChangeSummaryPanel';
 import UploadTransactions from './components/UploadTransactions';
-import GlobalSchemaSettings from './components/GlobalSchemaSettings';
 import GuideModal from '../../components/common/GuideModal';
 import GenerateSyncHeader from './components/GenerateSyncHeader';
 import GenerateSyncStatusBar from './components/GenerateSyncStatusBar';

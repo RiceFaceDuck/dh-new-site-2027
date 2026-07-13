@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Info, X } from 'lucide-react';
 
 export default function ProductTags({ form, addArrayItem, removeArrayItem }) {

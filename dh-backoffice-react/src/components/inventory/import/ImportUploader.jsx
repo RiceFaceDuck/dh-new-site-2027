@@ -1,4 +1,3 @@
-import React from 'react';
 import { Download, UploadCloud } from 'lucide-react';
 
 export default function ImportUploader({ handleDownloadTemplate, handleFileUpload, fileInputRef }) {

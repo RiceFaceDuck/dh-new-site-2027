@@ -1,8 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, ThumbsUp, MoreHorizontal, Send, Sparkles, Star, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { productReviewService } from '../../firebase/productReviewService';
 import { useToast } from '../../context/ToastContext';
+import { 
+  Star, 
+  MessageCircle, 
+  Heart, 
+  Share2, 
+  Loader2, 
+  Send, 
+  ThumbsUp, 
+  MoreHorizontal, 
+  Sparkles 
+} from 'lucide-react';
+
+// Helper component for Star Rating (Display)
+const StarDisplay = ({ val }) => {
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map(star => (
+        <Star 
+          key={star} 
+          size={12} 
+          className={star <= val ? "text-amber-400 fill-amber-400" : "text-slate-200"} 
+        />
+      ))}
+    </div>
+  );
+};
 
 export default function ProductCommunitySection({ productId, reviewCount = 0, averageRating = 0 }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -26,13 +51,6 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
     });
     return () => unsubscribe();
   }, [auth]);
-
-  useEffect(() => {
-    if (productId) {
-      loadComments(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
 
   const loadComments = async (isInitial = false) => {
     if (!productId || (loading && !isInitial)) return;
@@ -66,6 +84,13 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (productId) {
+      loadComments(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
 
   const handleSubmit = async () => {
     if (!currentUser) {
@@ -113,8 +138,8 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
     try {
       await productReviewService.likeReview(commentId);
     } catch (error) {
-    console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
+      console.error("🔥 Error:", error);
+      showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
 
       // Revert on error
       setComments(prev => prev.map(c => 
@@ -122,21 +147,6 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
       ));
       showToast("ไม่สามารถกดถูกใจได้", "error");
     }
-  };
-
-  // Helper component for Star Rating (Display)
-  const StarDisplay = ({ val }) => {
-    return (
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map(star => (
-          <Star 
-            key={star} 
-            size={12} 
-            className={star <= val ? "text-amber-400 fill-amber-400" : "text-slate-200"} 
-          />
-        ))}
-      </div>
-    );
   };
 
   return (

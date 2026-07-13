@@ -1,7 +1,6 @@
-import React from 'react';
 import { Settings, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
-export default function PricingRulesTable({ config, addRule, removeRule, handleRuleChange }) {
+export default function PricingRulesTable({ config, addRule, removeRule, handleRuleChange, categories = [] }) {
   if (!config) return null;
 
   return (
@@ -33,7 +32,14 @@ export default function PricingRulesTable({ config, addRule, removeRule, handleR
               <tr key={rule.id} className="hover:bg-(--dh-bg-base) transition-colors group relative">
                 <td className="px-4 py-2.5 relative">
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-(--dh-accent) opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <input type="text" value={rule.category} onChange={(e) => handleRuleChange(index, 'category', e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all" />
+                  <select value={rule.category} onChange={(e) => handleRuleChange(index, 'category', e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all cursor-pointer appearance-none">
+                    <option value="" disabled>-- เลือกหมวดหมู่ --</option>
+                    {categories.map(cat => (
+                      <option key={cat.id || cat.type} value={cat.type}>
+                        {cat.name} {cat.type && cat.name !== cat.type ? `(${cat.type})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td className="px-3 py-2.5 text-center">
                   <select value={rule.operator} onChange={(e) => handleRuleChange(index, 'operator', e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) cursor-pointer text-center">

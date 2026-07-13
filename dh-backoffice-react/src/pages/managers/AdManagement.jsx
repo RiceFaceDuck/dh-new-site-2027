@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // 🛠️ นำเข้า db ให้ตรงกับโครงสร้างโปรเจกต์
-import { db } from '../../firebase/config'; 
 import { useAdSubscriptions } from './hooks/useAdSubscriptions';
 import { adManagementService } from '../../firebase/adManagementService';
 import GuidePanel from '../../components/common/GuidePanel';
 import { 
-  Loader2, CheckCircle, XCircle, Megaphone, ExternalLink, 
+  Loader2, CheckCircle, XCircle, 
   Image as ImageIcon, CreditCard, ShoppingBag, MonitorPlay, 
   Search, ShieldCheck, Clock, ArrowLeft
 } from 'lucide-react';

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { ShoppingBag, ArrowLeft, ExternalLink, ShieldCheck, Tag, Loader2 } from 'lucide-react';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { Loader2, ArrowLeft, ShoppingBag, ShieldCheck, Tag, ExternalLink } from 'lucide-react';
 
 const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 

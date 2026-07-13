@@ -178,8 +178,10 @@ export const billingStatusTransaction = {
           }
 
           if (isCancelling) {
-             if (normalizedCurrentStatus === 'paid') {
+             if (orderData.isStockDeducted || normalizedCurrentStatus === 'paid') {
                  handleStockReturn(transaction, db, productRefs, productSnaps);
+             }
+             if (normalizedCurrentStatus === 'paid') {
                  const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
                  handleSalesStatsUpdate(transaction, db, totalSaleAmount, orderData, true);
              }

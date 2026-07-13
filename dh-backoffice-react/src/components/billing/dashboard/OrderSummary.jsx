@@ -1,4 +1,3 @@
-import React from 'react';
 import OrderSummaryItems from './order-summary/OrderSummaryItems';
 import OrderSummaryTotals from './order-summary/OrderSummaryTotals';
 

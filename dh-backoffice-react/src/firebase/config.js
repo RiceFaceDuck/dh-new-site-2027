@@ -1,7 +1,7 @@
-﻿// นำเข้า functions ที่จำเป็นจาก Firebase SDK
+// นำเข้า functions ที่จำเป็นจาก Firebase SDK
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth"; // [UPDATE] เพิ่ม GoogleAuthProvider และ Persistence
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider } from "firebase/auth"; // [UPDATE] เพิ่ม GoogleAuthProvider และ Persistence
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
@@ -23,7 +23,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize App Check
 let appCheck;
 if (typeof window !== "undefined") {
-  // eslint-disable-next-line no-undef
+   
   if (import.meta.env.VITE_RECAPTCHA_SITE_KEY && import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your-recaptcha-site-key') {
     appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
@@ -37,7 +37,7 @@ if (typeof window !== "undefined") {
 // Initialize Services (Export ไปใช้งานใน Service อื่นๆ ของ Backoffice)
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache()
+  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
 });
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider(); // [UPDATE] Export ตัวแปร googleProvider สำหรับ Login

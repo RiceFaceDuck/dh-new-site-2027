@@ -1,4 +1,3 @@
-import React from 'react';
 import { PackageSearch, Filter, LayoutList, Receipt, ReceiptText, ShieldAlert, Tags } from 'lucide-react';
 
 const TodoPageFilterBar = ({ 

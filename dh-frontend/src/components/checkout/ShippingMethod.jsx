@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Truck, Zap, Store, Info, CheckCircle2, PackageSearch } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShoppingBag, ShieldAlert } from 'lucide-react';
 
 export default function HistoryInfo({ history, formatCurrency, formatDate }) {

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Lock, Unlock, ShieldAlert, Save, Loader2, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, Save, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function GlobalSettingsHeader({ 

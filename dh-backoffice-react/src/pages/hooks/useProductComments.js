@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { db, auth } from '../../firebase/config';
+import { auth } from '../../firebase/config';
 import { historyService } from '../../firebase/historyService';
-import { serverTimestamp } from 'firebase/firestore';
 import { inventoryMutationService } from '../../firebase/inventory/inventoryMutationService';
 
 export function useProductComments(selectedProduct, setSelectedProduct, setAllProducts) {

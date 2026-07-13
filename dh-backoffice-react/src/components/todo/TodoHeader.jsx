@@ -1,4 +1,3 @@
-import React from 'react';
 import { Plus, History, HelpCircle } from 'lucide-react';
 
 /**

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Receipt, Copy, Ban, Clock, MapPin, Phone, User, CalendarDays, Loader2, CheckCircle, Package } from 'lucide-react';
+import { useState } from 'react';
+import { Receipt, Copy, Clock, MapPin, Phone, User, CalendarDays, Loader2, CheckCircle, Package } from 'lucide-react';
 import OrderSummary from './OrderSummary';
 import OrderActions from './OrderActions';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
-import { auth, db } from '../../../firebase/config';
+import { auth } from '../../../firebase/config';
 
 import toast from 'react-hot-toast';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
@@ -20,12 +20,13 @@ export default function OrderDetailModal(props) {
         handleCloseModal,
         setActiveTab
     } = props;
-    if (!selectedOrder) return null;
-
-    const [trackingInput, setTrackingInput] = useState(selectedOrder.trackingNumber || '');
-    const [courierInput, setCourierInput] = useState(selectedOrder.shippingMethod || selectedOrder.courier || '');
+    const [trackingInput, setTrackingInput] = useState(selectedOrder?.trackingNumber || '');
+    const [courierInput, setCourierInput] = useState(selectedOrder?.shippingMethod || selectedOrder?.courier || '');
     const [isUpdatingShipping, setIsUpdatingShipping] = useState(false);
     
+    if (!selectedOrder) return null;
+    
+
 
 
     const handleMarkAsShipped = async () => {

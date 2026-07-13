@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const StatCard = ({ title, value, unit, icon: Icon, colorClass, subtitleText, activePulse }) => {
   return (

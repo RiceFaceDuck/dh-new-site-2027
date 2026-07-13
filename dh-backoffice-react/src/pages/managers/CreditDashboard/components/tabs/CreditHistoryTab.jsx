@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Download, Loader2 } from 'lucide-react';
 import { creditHistoryService } from '../../../../../firebase/creditHistoryService';
 

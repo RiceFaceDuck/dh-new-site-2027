@@ -1,5 +1,4 @@
-import React from 'react';
-import { Wallet, ShieldCheck, Clock, ArrowRightLeft } from 'lucide-react';
+import { Wallet, ShieldCheck, Clock } from 'lucide-react';
 import { formatCredit } from '../../../../firebase/creditService';
 
 const WalletCard = ({ walletBalance, pendingWithdrawal, setIsWithdrawModalOpen }) => {

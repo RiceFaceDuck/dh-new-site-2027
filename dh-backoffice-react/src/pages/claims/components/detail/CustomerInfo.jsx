@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Check, Copy } from 'lucide-react';
 import { getStatusDisplay } from '../../utils/claimFormatters';
 

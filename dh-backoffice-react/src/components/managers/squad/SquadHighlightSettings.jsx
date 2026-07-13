@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
+import { Save, Loader2, Sparkles } from 'lucide-react';
 import { squadConfigService } from '../../../firebase/squad/squadConfigService';
 
 export default function SquadHighlightSettings() {

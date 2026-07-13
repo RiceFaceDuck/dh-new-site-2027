@@ -1,4 +1,4 @@
-import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, increment, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
@@ -110,6 +110,14 @@ export const claimActionService = {
         'stats.sold': increment(qty)
       });
 
+      // หักสต๊อกของเสีย (เคลียร์ยอด Defect ที่รับมาตอน Mark Arrived)
+      if (isSwapSku) {
+         const defectRef = doc(db, getCollectionPath('products'), payload.sku);
+         transaction.update(defectRef, { defectQuantity: increment(-qty) });
+      } else {
+         transaction.update(pRef, { defectQuantity: increment(-qty) });
+      }
+
       // 2. อัปเดตสถานะใบเคลม To-do
       transaction.update(doc(db, TODOS_COLLECTION, todoId), updateData);
 
@@ -136,6 +144,13 @@ export const claimActionService = {
         const userSnap = await transaction.get(userRef);
 
         if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const currentWallet = Number(userData.walletBalance || 0);
+
+          if (netDifference > 0 && currentWallet < netDifference) {
+            throw new Error(`ลูกค้ามียอดเงินใน Wallet ไม่เพียงพอสำหรับชำระส่วนต่าง (ยอดคงเหลือ ${currentWallet} บาท, ต้องการชำระเพิ่ม ${netDifference} บาท) กรุณาให้ลูกค้าเติมเงินก่อนทำรายการ`);
+          }
+
           // คำนวณ Wallet ใหม่: คืนเงินค่าของเก่า และหักเงินค่าของใหม่
           // Wallet = Wallet + refundAmount - chargeAmount (ซึ่งก็คือ Wallet - netDifference)
           transaction.update(userRef, {

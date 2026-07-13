@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, CalendarCheck } from 'lucide-react';
 import QRCode from 'react-qr-code';
 

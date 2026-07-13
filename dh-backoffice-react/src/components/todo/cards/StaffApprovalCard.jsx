@@ -1,4 +1,3 @@
-import React from 'react';
 import { UserPlus, Mail, Briefcase, Calendar, Check, X } from 'lucide-react';
 import ManagerBadge from './ManagerBadge';
 

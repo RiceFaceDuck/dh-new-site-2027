@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { MonitorPlay, Loader2, BookOpen, Save, AlertTriangle, X, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MonitorPlay, Loader2, BookOpen, X, Check } from 'lucide-react';
 import { heroConfigService } from '../../../../../firebase/heroConfigService';
 import { driveService } from '../../../../../firebase/driveService';
 import GlobalSettingsHeader from '../../../../../components/managers/GlobalSettingsHeader';

@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Search, AlertCircle, CheckCircle2, UserPlus, Eye, EyeOff, ArrowLeft, Briefcase } from 'lucide-react';
-import { ROLES } from '../../firebase/userService';
 import StaffTable from './components/staff/StaffTable';
 import StaffAddModal from './components/staff/StaffAddModal';
 import StaffEditModal from './components/staff/StaffEditModal';

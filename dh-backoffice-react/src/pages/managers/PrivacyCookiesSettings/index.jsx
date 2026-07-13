@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShieldCheck, Loader2, HelpCircle } from 'lucide-react';
 import GlobalSettingsHeader from '../../../components/managers/GlobalSettingsHeader';
 import SaveConfirmationModal from '../../../components/managers/SaveConfirmationModal';

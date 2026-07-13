@@ -1,4 +1,3 @@
-import React from 'react';
 import { Heart, ShoppingCart, LayoutGrid, List, AlertCircle } from 'lucide-react';
 import { useFavoriteManagement } from './hooks/useFavoriteManagement';
 import FavoriteItemCard from './components/FavoriteItemCard';

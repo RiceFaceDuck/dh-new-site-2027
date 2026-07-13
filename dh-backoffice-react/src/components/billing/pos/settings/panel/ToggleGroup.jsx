@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function ToggleGroup({ options, activeValue, onChange, disabled }) {
     return (

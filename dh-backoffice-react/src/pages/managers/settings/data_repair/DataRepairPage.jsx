@@ -1,4 +1,3 @@
-import React from 'react';
 import DataRepairForm from './DataRepairForm';
 import DataRepairGuide from './DataRepairGuide';
 import { useDataRepair } from './useDataRepair';

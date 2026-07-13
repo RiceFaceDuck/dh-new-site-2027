@@ -1,4 +1,3 @@
-import React from 'react';
 import { Megaphone, X, Save } from 'lucide-react';
 
 export default function PromotionModal({ 

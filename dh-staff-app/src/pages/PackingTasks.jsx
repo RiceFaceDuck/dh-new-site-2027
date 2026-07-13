@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { packingService } from '../firebase/packingService';
 import PackingTaskCard from '../components/packing/PackingTaskCard';
 import TrackingModal from '../components/packing/TrackingModal';

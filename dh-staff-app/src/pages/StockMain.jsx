@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { inventoryService } from '../firebase/inventoryService';
 import ProductCard from '../components/stock/ProductCard';
 import CategoryFilter from '../components/stock/CategoryFilter';

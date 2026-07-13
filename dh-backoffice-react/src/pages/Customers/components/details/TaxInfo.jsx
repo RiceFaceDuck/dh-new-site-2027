@@ -1,4 +1,3 @@
-import React from 'react';
 import { Building2, User, CheckCircle2, Copy, FileText, Loader2 } from 'lucide-react';
 
 export default function TaxInfo({ isLoadingTax, secureTaxInfo, handleCopy, copiedField }) {

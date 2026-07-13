@@ -1,0 +1,199 @@
+import React, { useRef, useEffect, useState } from 'react';
+import { Plus, ArrowLeft, X, HelpCircle } from 'lucide-react';
+import { auth } from '../../firebase/config';
+
+import CartPanel from './pos/CartPanel';
+import PaymentPanel from './pos/PaymentPanel';
+import SettingsPanel from './pos/SettingsPanel';
+import ReceiptTemplate from './pos/ReceiptTemplate'; 
+import PosHeader from './pos/layout/PosHeader';
+import GuideModal from '../common/GuideModal';
+import PromoModal from './pos/layout/PromoModal';
+import usePosState from './pos/hooks/usePosState';
+import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
+import { usePosShortcuts } from './pos/hooks/usePosShortcuts';
+import { useCartValidation } from './pos/hooks/useCartValidation';
+import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
+import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+
+const convertToThaiBahtText = (number) => {
+    if (isNaN(number) || number === 0) return "ศูนย์บาทถ้วน";
+    const numberStr = parseFloat(number).toFixed(2);
+    const [bahtStr, satangStr] = numberStr.split('.');
+    const readNumber = (numStr) => {
+        const numbers = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+        const positions = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
+        let text = ""; const length = numStr.length;
+        for (let i = 0; i < length; i++) {
+            const digit = parseInt(numStr[i]); const position = length - i - 1;
+            if (digit !== 0) {
+                if (position === 0 && digit === 1 && length > 1 && parseInt(numStr[i-1]) !== 0) text += "เอ็ด";
+                else if (position === 1 && digit === 2) text += "ยี่สิบ";
+                else if (position === 1 && digit === 1) text += "สิบ";
+                else text += numbers[digit] + positions[position % 6];
+            }
+            if (position % 6 === 0 && position > 0 && digit !== 0) text += "ล้าน";
+        }
+        return text;
+    };
+    let result = readNumber(bahtStr) + "บาท";
+    if (satangStr === "00") result += "ถ้วน"; else result += readNumber(satangStr) + "สตางค์";
+    return result;
+};
+
+const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, slate: {} };
+
+export default function PosSystem({ products = [], customers = [], onSwitchView, initialDraft }) {
+    const posState = usePosState(products, customers, initialDraft);
+    const {
+        cartTabs: safeCartTabs, setCartTabs,
+        activeTabId, setActiveTabId,
+        searchQuery, setSearchQuery, showDropdown, setShowDropdown,
+        actionBoxItem, setActionBoxItem, isProcessing, setIsProcessing,
+        showPreview, setShowPreview, previewSlip, setPreviewSlip,
+        isUploadingSlip, setIsUploadingSlip, customerSearchText, setCustomerSearchText,
+        showCustDropdown, setShowCustDropdown, activePromotions,
+        isPromoModalOpen, setIsPromoModalOpen,
+        createNewTab, closeTab, activeTab, updateActiveTab,
+        handlePriceModeChange, searchResults, filteredCustomers,
+        itemSubTotal, manualDiscount, promoDiscount, totalDiscount,
+        shippingFee, otherFeeAmount, vatAmount, netTotal,
+        walletUsed, remainingToPay, earnedPoints, changeAmount, eligibleFreebies
+    } = posState;
+
+    const searchRef = useRef(null);
+    const custSearchRef = useRef(null);
+    const submitLockRef = useRef(false);
+
+    const [isPaymentPanelCollapsed, setIsPaymentPanelCollapsed] = useState(false);
+    const [isPaymentPanelLocked, setIsPaymentPanelLocked] = useState(true);
+    const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+    const [shippingRules, setShippingRules] = useState([]);
+
+    useEffect(() => {
+        const fetchShippingRules = async () => {
+            try {
+                const { collection, getDocs, query, where } = await import('firebase/firestore');
+                const { db } = await import('../../firebase/config');
+                const { getCollectionPath } = await import('dh-shared/src/firebase/pathUtils');
+                const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
+                const snap = await getDocs(q);
+                const rules = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setShippingRules(rules);
+            } catch (e) {
+                console.error("🔥 Error loading shipping rules in POS:", e);
+            }
+        };
+        fetchShippingRules();
+    }, []);
+
+    const actions = usePosActions({
+        posState, products, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText
+    });
+
+    usePosShortcuts({
+        safeCartTabs, searchRef, activeTabId, handleFileUpload: actions.handleFileUpload
+    });
+
+    const handleInteractWithOtherPanels = () => {
+        if (!isPaymentPanelLocked && !isPaymentPanelCollapsed) {
+            setIsPaymentPanelCollapsed(true);
+        }
+    };
+
+    const getTabTitle = (tab, index) => {
+        if (tab.customer && tab.customer.uid !== 'WALK-IN') {
+            return getCustomerDisplayName(tab.customer, `ลูกค้า ${index + 1}`);
+        }
+        if (tab.walkInName) return tab.walkInName;
+        if (tab.orderId) return `บิล ${tab.orderId.slice(-4)}`;
+        return `บิล ${index + 1}`;
+    };
+
+    useCartValidation(activeTabId, activeTab, products, updateActiveTab);
+    usePromotionLogic(itemSubTotal, activePromotions, activeTab, updateActiveTab, actions.applyPromotionLogic);
+
+    const handleSearchKeyDown = (e) => {
+        if (e.key === 'Enter' && searchQuery.trim() !== '') {
+            // 🚀 [UPDATED] ใช้ searchResults จาก Dynamic Server Search แทน products array
+            const exactMatch = searchResults.find(p => p.sku?.toLowerCase() === searchQuery.trim().toLowerCase());
+            if (exactMatch) actions.addItemToCart(exactMatch); else if (searchResults.length > 0) actions.addItemToCart(searchResults[0]);
+        }
+        if (e.key === 'Escape') { setShowDropdown(false); setSearchQuery(''); }
+    };
+
+    const activePhone = activeTab?.customer ? activeTab.customer.phone : activeTab?.walkInPhone;
+    const isPhoneMissing = (!activeTab?.hidePhone) && (!activePhone || activePhone.trim() === '');
+    const hasOutOfStock = activeTab?.items.some(item => sanitizeNum(item.stock) < sanitizeNum(item.qty));
+
+    return (
+        <div className="flex flex-col h-full bg-(--dh-bg-base) font-sans relative text-(--dh-text-main) transition-colors duration-300">
+            <PosHeader 
+                onSwitchView={onSwitchView} 
+                isProcessing={isProcessing} 
+                setIsGuideModalOpen={setIsGuideModalOpen} 
+                safeCartTabs={safeCartTabs} 
+                activeTabId={activeTabId} 
+                setActiveTabId={setActiveTabId} 
+                getTabTitle={getTabTitle} 
+                createNewTab={createNewTab} 
+                setCartTabs={setCartTabs} 
+                closeTab={closeTab}
+            />
+
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-(--dh-bg-base) p-2 gap-2">
+                <div className="w-full flex-1 flex flex-col h-full bg-(--dh-bg-surface) rounded-lg border border-gray-200 z-10 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+                    <div className="flex-1 flex flex-col overflow-hidden" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
+                        <CartPanel searchRef={searchRef} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDropdown={showDropdown} setShowDropdown={setShowDropdown} handleSearchKeyDown={handleSearchKeyDown} clearCart={actions.clearCart} activeTab={activeTab} searchResults={searchResults} addItemToCart={actions.addItemToCart} actionBoxItem={actionBoxItem} setActionBoxItem={setActionBoxItem} updateItemAction={actions.updateItemAction} removeItem={actions.removeItem} eligibleFreebies={eligibleFreebies} noteColorMap={noteColorMap} isProcessing={isProcessing} isCacheLoading={posState.isCacheLoading} />
+                    </div>
+                    <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} />
+                </div>
+                <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
+                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={actions.handleRemovePromotion} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} />
+                </div>
+            </div>
+
+            {isPromoModalOpen && (
+                <PromoModal 
+                    setIsPromoModalOpen={setIsPromoModalOpen} 
+                    activePromotions={activePromotions} 
+                    itemSubTotal={itemSubTotal} 
+                    activeTab={activeTab} 
+                    actions={actions} 
+                />
+            )}
+
+            {previewSlip && (
+                <div className="fixed inset-0 z-100 bg-black/80 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-xs" onClick={() => setPreviewSlip(null)}>
+                    <div className="relative max-w-2xl"><button onClick={() => setPreviewSlip(null)} className="absolute -top-12 right-0 text-white opacity-70 hover:opacity-100 dh-active-press bg-black/50 p-2 rounded-full"><X size={24}/></button><img src={previewSlip} alt="Slip" className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"  loading="lazy" /></div>
+                </div>
+            )}
+
+            {showPreview && (
+                <ReceiptTemplate activeTab={activeTab} updateActiveTab={updateActiveTab} onClose={() => setShowPreview(false)} convertToThaiBahtText={convertToThaiBahtText} itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} eligibleFreebies={eligibleFreebies} />
+            )}
+
+            {isGuideModalOpen && (
+                <GuideModal 
+                    isOpen={isGuideModalOpen} 
+                    onClose={() => setIsGuideModalOpen(false)} 
+                    title="คู่มือการใช้งาน: เปิดบิลการขาย"
+                    config={{
+                        description: "ระบบเปิดบิลการขาย (POS) รองรับการสร้างหลายบิลพร้อมกัน (Multi-tabs) การตัดสต็อกและจัดการส่วนลด/ภาษี",
+                        howTo: [
+                            "<strong>โซนตะกร้าสินค้า (ซ้ายบน):</strong> กด <code>F3</code> เพื่อพิมพ์ค้นหาสินค้า หรือใช้เครื่องยิงบาร์โค้ดสแกนได้ทันที สามารถคลิกที่ชื่อสินค้าเพื่อแก้ไขจำนวนหรือส่วนลดรายชิ้น",
+                            "<strong>โซนตั้งค่าบิล (ขวามือ):</strong> ค้นหาลูกค้าด้วยชื่อหรือเบอร์โทร เลือกระดับราคา (B2B/ปลีก) รูปแบบภาษี และเพิ่มค่าจัดส่งหรือส่วนลดท้ายบิล",
+                            "<strong>โซนชำระเงิน (ด้านล่าง):</strong> ระบุยอดเงินสด แนบสลิปโอนเงิน (กด <code>Ctrl+V</code> เพื่อวางรูปสลิป) แผงชำระจะยุบอัตโนมัติ กดปุ่ม <code>ล็อค</code> (ไอคอนกุญแจ) เพื่อเปิดค้างไว้"
+                        ],
+                        tips: [
+                            "สามารถใช้ <code>Ctrl + Enter</code> เพื่อยืนยันการรับชำระเงิน (Paid) อย่างรวดเร็ว",
+                            "หากต้องการเพิ่มบิลร่างใหม่ กดไอคอน <code>+</code> หรือใช้ <code>Alt + N</code>",
+                            "การใช้เมาส์คลิกปุ่มจ่ายพอดี (Exact) ช่วยให้รับเงินได้รวดเร็วขึ้นในกรณีที่ลูกค้าจ่ายเงินพอดี"
+                        ],
+                        expectedResults: "เมื่อกด <strong>ยืนยันชำระเงิน</strong> ระบบจะตัดสต็อกสินค้าทันทีและสร้างบิลหมายเลข (DH-xxxx) พร้อมบันทึกยอดขายและประวัติให้ลูกค้า"
+                    }}
+                />
+            )}
+        </div>
+    );
+}

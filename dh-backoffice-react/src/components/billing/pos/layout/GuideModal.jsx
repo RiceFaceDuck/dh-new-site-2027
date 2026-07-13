@@ -1,4 +1,3 @@
-import React from 'react';
 import { HelpCircle, X } from 'lucide-react';
 
 export default function GuideModal({ setIsGuideModalOpen }) {

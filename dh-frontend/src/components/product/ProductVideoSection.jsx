@@ -1,4 +1,3 @@
-import React from 'react';
 import { Youtube } from 'lucide-react';
 
 export default function ProductVideoSection({ videoId }) {

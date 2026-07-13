@@ -1,0 +1,22 @@
+
+> dh-staff-app@0.0.0 lint
+> eslint .
+
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\stock\ProductCard.jsx
+  14:5  warning  'stockStatus' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\stock\ProductDetailModal.jsx
+  15:5  warning  'stockStatus' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\config.js
+  28:5  warning  'appCheck' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-staff-app\src\pages\PackingTasks.jsx
+  23:8  warning  'error' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-staff-app\src\pages\ProfileMain.jsx
+  10:10  warning  'profile' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+✖ 5 problems (0 errors, 5 warnings)
+

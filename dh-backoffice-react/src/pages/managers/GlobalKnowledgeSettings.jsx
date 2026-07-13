@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Save, ArrowLeft, CheckCircle2, RefreshCw } from 'lucide-react';
 import { knowledgeService } from '../../firebase/knowledgeService';

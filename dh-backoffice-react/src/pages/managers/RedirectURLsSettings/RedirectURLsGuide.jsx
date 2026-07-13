@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowRightLeft, Lightbulb, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export default function RedirectURLsGuide() {

@@ -1,5 +1,5 @@
 import { db } from '../config';
-import { doc, setDoc, getDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 export const syncSnapshotService = {
   saveSnapshot: async (changes, uid, userName) => {

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, ExternalLink, X, Info, Image as ImageIcon, ChevronLeft, ChevronRight, MousePointerClick } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Play, X, Info, Image as ImageIcon, ChevronLeft, ChevronRight, MousePointerClick } from 'lucide-react';
 import { marketingService } from '../../firebase/marketingService';
 import LazyImage from '../common/LazyImage';
 

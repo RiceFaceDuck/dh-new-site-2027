@@ -1,4 +1,3 @@
-import React from 'react';
 import { Cookie } from 'lucide-react';
 
 export default function CookiePolicy() {

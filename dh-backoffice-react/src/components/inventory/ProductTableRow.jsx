@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image as ImageIcon, AlertCircle, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
+import { Image as ImageIcon, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
 
 const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) => {
   const effectiveBuffer = (product.bufferStock !== undefined && product.bufferStock !== null && product.bufferStock !== '') 

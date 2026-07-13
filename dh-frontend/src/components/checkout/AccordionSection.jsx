@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

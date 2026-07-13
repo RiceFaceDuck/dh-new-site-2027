@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle, Eye, Trash2, FileText } from 'lucide-react';
 
 export default function TemplateUploadCard({

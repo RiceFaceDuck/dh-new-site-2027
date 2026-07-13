@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { auth } from '../../../firebase/config';
 import { cancelOrder } from '../../../firebase/checkoutService';
 import { useHistoryOrders } from './history/useHistoryOrders';
@@ -6,8 +6,11 @@ import HistoryFilterBar from './history/HistoryFilterBar';
 import HistoryList from './history/HistoryList';
 import UploadSlipModal from './history/UploadSlipModal';
 import ServiceActionModal from './history/ServiceActionModal';
+import { useToast } from '../../../context/ToastContext';
+
 
 const TabHistory = () => {
+  const { showToast } = useToast();
   const { orders, isLoading } = useHistoryOrders();
   const [filter, setFilter] = useState('all');
 
@@ -23,12 +26,12 @@ const TabHistory = () => {
     setCancellingOrderId(orderId);
     try {
       await cancelOrder(orderId, auth.currentUser.uid);
-      alert('ยกเลิกคำสั่งซื้อสำเร็จ');
+      showToast('ยกเลิกคำสั่งซื้อสำเร็จ', 'success');
     } catch (error) {
     console.error("🔥 Error:", error);
     toast.error(error?.message || "เกิดข้อผิดพลาด");
 
-      alert(error.message);
+      showToast(error.message, 'error');
     } finally {
       setCancellingOrderId(null);
     }

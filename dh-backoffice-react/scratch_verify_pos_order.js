@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, getDoc, collection, getDocs, query, where, limit, orderBy } from "firebase/firestore";
+import { getFirestore, collection, getDocs, query, limit, orderBy } from "firebase/firestore";
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const firebaseConfig = {

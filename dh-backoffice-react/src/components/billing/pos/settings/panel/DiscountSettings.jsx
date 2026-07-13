@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tag, FileText } from 'lucide-react';
 
 export default function DiscountSettings({

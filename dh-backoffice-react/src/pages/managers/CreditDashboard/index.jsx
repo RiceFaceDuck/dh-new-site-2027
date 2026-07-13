@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, CheckCircle2, Activity, Server, Database, Loader2, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, CheckCircle2, Activity, Server, Loader2, ArrowLeft } from 'lucide-react';
 
 // นำเข้า Components ย่อยของ Dashboard
 import DashboardTabs from './components/DashboardTabs';

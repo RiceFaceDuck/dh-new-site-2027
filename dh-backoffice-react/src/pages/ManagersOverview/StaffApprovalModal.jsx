@@ -1,6 +1,5 @@
-import React from 'react';
 import { 
-  X, CheckCircle2, Search, UserPlus, 
+  X, CheckCircle2, Search, 
   Mail, Briefcase, Calendar, ShieldCheck, User 
 } from 'lucide-react';
 

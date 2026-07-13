@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search as SearchIcon, X, RefreshCw, UserPlus, ChevronRight } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 

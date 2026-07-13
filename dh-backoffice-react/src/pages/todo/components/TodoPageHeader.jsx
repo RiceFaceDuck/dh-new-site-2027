@@ -1,4 +1,3 @@
-import React from 'react';
 import { Inbox, HelpCircle, History, Plus } from 'lucide-react';
 
 const TodoPageHeader = ({ navigate, setShowHelp, setShowNewTaskModal }) => {

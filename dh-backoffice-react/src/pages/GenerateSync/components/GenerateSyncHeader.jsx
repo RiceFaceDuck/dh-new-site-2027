@@ -1,5 +1,4 @@
-import React from 'react';
-import { HelpCircle, Settings } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 export default function GenerateSyncHeader({ onOpenSettings, onOpenGuide }) {
   return (

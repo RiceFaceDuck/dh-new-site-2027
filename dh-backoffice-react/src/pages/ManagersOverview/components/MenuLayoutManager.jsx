@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   X, Save, Plus, GripVertical, Loader2
 } from 'lucide-react';

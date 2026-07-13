@@ -1,0 +1,144 @@
+
+> dh-staff-app@0.0.0 lint
+> eslint .
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\ErrorBoundary.jsx
+  32:14  error  'process' is not defined                   no-undef
+  42:23  error  'children' is missing in props validation  react/prop-types
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\packing\PackingTaskCard.jsx
+   3:3    error  'task' is missing in props validation                              react/prop-types
+   4:3    error  'processingId' is missing in props validation                      react/prop-types
+   5:3    error  'onStartPacking' is missing in props validation                    react/prop-types
+   6:3    error  'onSelectTask' is missing in props validation                      react/prop-types
+   8:29   error  'task.status' is missing in props validation                       react/prop-types
+  17:88   error  'task.invoiceId' is missing in props validation                    react/prop-types
+  39:67   error  'task.customerName' is missing in props validation                 react/prop-types
+  41:22   error  'task.shippingAddress' is missing in props validation              react/prop-types
+  41:39   error  'task.shippingAddress.address' is missing in props validation      react/prop-types
+  41:54   error  'task.shippingAddress' is missing in props validation              react/prop-types
+  41:71   error  'task.shippingAddress.subdistrict' is missing in props validation  react/prop-types
+  41:90   error  'task.shippingAddress' is missing in props validation              react/prop-types
+  41:107  error  'task.shippingAddress.district' is missing in props validation     react/prop-types
+  41:123  error  'task.shippingAddress' is missing in props validation              react/prop-types
+  41:140  error  'task.shippingAddress.province' is missing in props validation     react/prop-types
+  41:156  error  'task.shippingAddress' is missing in props validation              react/prop-types
+  41:173  error  'task.shippingAddress.zipcode' is missing in props validation      react/prop-types
+  43:81   error  'task.shippingAddress' is missing in props validation              react/prop-types
+  43:98   error  'task.shippingAddress.phone' is missing in props validation        react/prop-types
+  52:31   error  'task.items' is missing in props validation                        react/prop-types
+  52:38   error  'task.items.length' is missing in props validation                 react/prop-types
+  56:17   error  'task.items' is missing in props validation                        react/prop-types
+  56:24   error  'task.items.map' is missing in props validation                    react/prop-types
+  90:48   error  'task.id' is missing in props validation                           react/prop-types
+  91:45   error  'task.id' is missing in props validation                           react/prop-types
+  94:36   error  'task.id' is missing in props validation                           react/prop-types
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\packing\TrackingModal.jsx
+   3:3   error  'selectedTask' is missing in props validation                          react/prop-types
+   4:3   error  'trackingNumber' is missing in props validation                        react/prop-types
+   5:3   error  'setTrackingNumber' is missing in props validation                     react/prop-types
+   6:3   error  'errorMsg' is missing in props validation                              react/prop-types
+   7:3   error  'setErrorMsg' is missing in props validation                           react/prop-types
+   8:3   error  'onClose' is missing in props validation                               react/prop-types
+   9:3   error  'onComplete' is missing in props validation                            react/prop-types
+  10:3   error  'processingId' is missing in props validation                          react/prop-types
+  30:85  error  'selectedTask.customerName' is missing in props validation             react/prop-types
+  31:80  error  'selectedTask.shippingAddress' is missing in props validation          react/prop-types
+  31:97  error  'selectedTask.shippingAddress.address' is missing in props validation  react/prop-types
+  49:51  error  'selectedTask.id' is missing in props validation                       react/prop-types
+  52:42  error  'selectedTask.id' is missing in props validation                       react/prop-types
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\stock\BarcodeScanner.jsx
+  3:27  error  'isActive' is missing in props validation       react/prop-types
+  3:37  error  'onClose' is missing in props validation        react/prop-types
+  3:46  error  'onScanSuccess' is missing in props validation  react/prop-types
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\stock\CategoryFilter.jsx
+   2:27  error  'categories' is missing in props validation        react/prop-types
+   2:39  error  'selectedCategory' is missing in props validation  react/prop-types
+   2:57  error  'onSelectCategory' is missing in props validation  react/prop-types
+  16:19  error  'categories.map' is missing in props validation    react/prop-types
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\stock\ProductCard.jsx
+   3:24  error    'product' is missing in props validation                                                react/prop-types
+   3:33  error    'onClick' is missing in props validation                                                react/prop-types
+   9:15  error    'product.stockQuantity' is missing in props validation                                  react/prop-types
+  13:22  error    'product.stockQuantity' is missing in props validation                                  react/prop-types
+  14:5   warning  'stockStatus' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  20:29  error    'product.images' is missing in props validation                                         react/prop-types
+  20:47  error    'product.images' is missing in props validation                                         react/prop-types
+  20:54  error    'product.images.length' is missing in props validation                                  react/prop-types
+  20:76  error    'product.images' is missing in props validation                                         react/prop-types
+  30:44  error    'product.name' is missing in props validation                                           react/prop-types
+  38:96  error    'product.sku' is missing in props validation                                            react/prop-types
+  39:98  error    'product.name' is missing in props validation                                           react/prop-types
+  44:73  error    'product.stockQuantity' is missing in props validation                                  react/prop-types
+
+C:\DH Notebook\Management System\dh-staff-app\src\components\stock\ProductDetailModal.jsx
+   2:31   error    'product' is missing in props validation                                                react/prop-types
+   2:40   error    'onClose' is missing in props validation                                                react/prop-types
+  10:15   error    'product.stockQuantity' is missing in props validation                                  react/prop-types
+  14:22   error    'product.stockQuantity' is missing in props validation                                  react/prop-types
+  15:5    warning  'stockStatus' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  20:29   error    'product.images' is missing in props validation                                         react/prop-types
+  20:47   error    'product.images' is missing in props validation                                         react/prop-types
+  20:54   error    'product.images.length' is missing in props validation                                  react/prop-types
+  20:76   error    'product.images' is missing in props validation                                         react/prop-types
+  39:46   error    'product.name' is missing in props validation                                           react/prop-types
+  55:103  error    'product.sku' is missing in props validation                                            react/prop-types
+  56:86   error    'product.name' is missing in props validation                                           react/prop-types
+  63:89   error    'product.category' is missing in props validation                                       react/prop-types
+  68:78   error    'product.stockQuantity' is missing in props validation                                  react/prop-types
+  75:69   error    'product.retailPrice' is missing in props validation                                    react/prop-types
+  75:91   error    'product.retailPrice' is missing in props validation                                    react/prop-types
+  77:23   error    'product.price' is missing in props validation                                          react/prop-types
+  80:71   error    'product.price' is missing in props validation                                          react/prop-types
+
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\config.js
+  28:5  warning  'appCheck' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-staff-app\src\pages\PackingTasks.jsx
+  23:8  warning  'error' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-staff-app\src\pages\ProfileMain.jsx
+  10:10  warning  'profile' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                unused-imports/no-unused-vars
+  35:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  33 |     const currentName = currentUser?.displayName || MOCK_NAME;
+  34 |     
+> 35 |     setUser({ uid: currentUid, displayName: currentName });
+     |     ^^^^^^^ Avoid calling setState() directly within an effect
+  36 |
+  37 |     staffService.getStaffProfile(currentUid).then(data => {
+  38 |       if (data) {  react-hooks/set-state-in-effect
+
+C:\DH Notebook\Management System\dh-staff-app\src\pages\StockMain.jsx
+   69:5    error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  67 |   // 3. ปรับค่า Pagination ถ้ามีการเปลี่ยน Filter/Search
+  68 |   useEffect(() => {
+> 69 |     setDisplayedCount(20);
+     |     ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  70 |   }, [selectedCategory, searchQuery]);
+  71 |
+  72 |   const loadMore = () => {  react-hooks/set-state-in-effect
+  157:103  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react/no-unescaped-entities
+  157:117  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react/no-unescaped-entities
+
+✖ 86 problems (81 errors, 5 warnings)
+

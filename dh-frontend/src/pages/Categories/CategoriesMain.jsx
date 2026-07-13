@@ -1,4 +1,3 @@
-import React from 'react';
 import { useCategories } from './hooks/useCategories';
 import CategoryGrid from './components/CategoryGrid';
 import { Info, HelpCircle } from 'lucide-react';

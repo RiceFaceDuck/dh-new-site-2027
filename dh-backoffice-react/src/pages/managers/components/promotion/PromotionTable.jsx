@@ -1,4 +1,3 @@
-import React from 'react';
 import { Percent, Banknote, Edit2, Trash2, Megaphone } from 'lucide-react';
 
 export default function PromotionTable({ promotions, loading, handleToggleActive, handleOpenModal, handleDelete }) {

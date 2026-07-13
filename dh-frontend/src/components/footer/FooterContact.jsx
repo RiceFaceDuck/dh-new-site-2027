@@ -1,4 +1,3 @@
-import React from 'react';
 import { MapPin, MessageCircle, Phone } from 'lucide-react';
 
 const FooterContact = ({ companyConfig }) => {

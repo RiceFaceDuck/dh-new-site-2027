@@ -1,5 +1,4 @@
-import React from 'react';
-import { ArrowRight, ShieldCheck, CheckCircle2, MessageCircle, MessageSquare } from 'lucide-react';
+import { ArrowRight, ShieldCheck, MessageCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
   const CartSummaryPanel = ({ 

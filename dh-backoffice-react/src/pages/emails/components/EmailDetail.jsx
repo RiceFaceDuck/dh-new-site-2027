@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, User, Clock, Reply, AlertCircle } from 'lucide-react';
 import { fetchEmailDetail, markAsRead } from '../../../firebase/gmailService';
 import EmailReplyForm from './EmailReplyForm';

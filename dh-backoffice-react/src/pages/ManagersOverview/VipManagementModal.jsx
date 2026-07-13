@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { X, Crown, ShieldAlert, Search } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 

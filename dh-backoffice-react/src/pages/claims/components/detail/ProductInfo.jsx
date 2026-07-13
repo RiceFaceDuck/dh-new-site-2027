@@ -1,4 +1,3 @@
-import React from 'react';
 import { Package, Truck, Check, Copy, Gift, AlertCircle, RefreshCw, ShieldAlert, ShieldCheck, Calendar } from 'lucide-react';
 
 export default function ProductInfo({ 

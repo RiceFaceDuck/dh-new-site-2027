@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box } from 'lucide-react';
 import CartTableRow from './CartTableRow';
 

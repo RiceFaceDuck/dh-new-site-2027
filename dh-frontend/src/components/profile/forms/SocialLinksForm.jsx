@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { MessageCircle, Facebook, MessageSquare, Youtube, Globe, Save, CheckCircle2, AlertCircle, Loader2, Link2 } from 'lucide-react';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';

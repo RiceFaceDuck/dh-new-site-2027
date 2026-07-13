@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShieldCheck, Loader2 } from 'lucide-react';
 import GlobalSettingsHeader from '../../../components/managers/GlobalSettingsHeader';
 import SaveConfirmationModal from '../../../components/managers/SaveConfirmationModal';

@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function HeroLivePreview({ config }) {
     const activeConfig = config;

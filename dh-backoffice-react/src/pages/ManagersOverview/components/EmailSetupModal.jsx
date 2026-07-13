@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Mail, Link as LinkIcon, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { saveGmailCredentials } from '../../../firebase/gmailService';
 

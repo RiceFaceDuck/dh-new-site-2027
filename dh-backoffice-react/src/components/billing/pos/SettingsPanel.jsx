@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Settings, SlidersHorizontal } from 'lucide-react';
 import TerminalConfigDropdown from './settings/TerminalConfigDropdown';
 import CustomerSection from './settings/CustomerSection';

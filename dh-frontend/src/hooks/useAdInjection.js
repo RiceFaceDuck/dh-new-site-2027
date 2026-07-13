@@ -85,8 +85,8 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
       const chunk = regularProducts.slice(i, i + displayRatio);
       
       // 🎲 สุ่มตำแหน่งที่จะแทรกโฆษณา "ภายในกลุ่มนี้" (ตั้งแต่ 0 ถึง ชิ้นสุดท้ายของกลุ่ม)
-      // กฎใหม่: ปลดล็อคการบังคับโฆษณาขึ้นเป็นชิ้นแรก ให้สุ่มได้อย่างอิสระ 100%
-      const randomInsertPos = Math.floor(Math.random() * chunk.length);
+      // กฎใหม่: ปลดล็อคการบังคับโฆษณาขึ้นเป็นชิ้นแรก ให้สุ่มได้อย่างอิสระ 100% (ใช้ deterministic pseudo-random แทน)
+      const randomInsertPos = (i * 997 + chunk.length * 31) % chunk.length;
 
       for (let j = 0; j < chunk.length; j++) {
         // เมื่อวนลูปถึงตำแหน่งที่สุ่มได้ ให้ยัดโฆษณาลงไป

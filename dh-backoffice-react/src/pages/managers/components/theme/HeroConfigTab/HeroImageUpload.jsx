@@ -1,4 +1,3 @@
-import React from 'react';
 import { ImageIcon, UploadCloud, Loader2 } from 'lucide-react';
 
 export default function HeroImageUpload({ imageUrl, onUpload, isUploading }) {

@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { db } from './config';
 import { 
   collection, query, where, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, limit, orderBy

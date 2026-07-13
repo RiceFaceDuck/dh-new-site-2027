@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Package } from 'lucide-react';
 import LazyImage from '../../../components/common/LazyImage';

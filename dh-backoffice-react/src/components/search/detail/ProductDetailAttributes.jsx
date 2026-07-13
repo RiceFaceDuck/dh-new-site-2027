@@ -1,4 +1,3 @@
-import React from 'react';
 import { PlusCircle, RefreshCw, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { HighlightText } from '../HighlightText';
 import CopyableLinkButton from '../../common/CopyableLinkButton';

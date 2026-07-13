@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { UserCircle, Coffee, CheckCircle, Clock, FileText, Send, X, ScanLine, Loader2, AlertCircle } from 'lucide-react';
 import { staffService } from '../firebase/staffService';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { MessageCircle, Phone, Link as LinkIcon, Youtube, ShoppingCart } from 'lucide-react';
 
 const StoreProfileSocialLinks = ({ storeData, setStoreData }) => {

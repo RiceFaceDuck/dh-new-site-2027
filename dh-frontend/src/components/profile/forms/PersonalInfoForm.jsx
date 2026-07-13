@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import { getAuth, updateProfile } from 'firebase/auth';
+import { updateProfile } from 'firebase/auth';
 import { 
   User, Save, CheckCircle2, AlertCircle, 
   Loader2

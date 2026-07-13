@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { UploadCloud, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 
 export default function PaymentUploader({ onUpload }) {

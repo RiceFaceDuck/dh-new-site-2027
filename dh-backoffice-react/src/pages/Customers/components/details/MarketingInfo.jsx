@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Store, Megaphone, Loader2, Sparkles, Eye, MousePointerClick, Zap, Ban, Trash2 } from 'lucide-react';
 import { adManagementService } from '../../../../firebase/adManagementService';
 

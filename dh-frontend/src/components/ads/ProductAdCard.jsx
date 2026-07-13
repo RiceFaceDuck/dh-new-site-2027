@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ExternalLink, Store, ShoppingBag, Phone, X, MessageCircle, ShieldCheck, Navigation } from 'lucide-react';
@@ -188,71 +188,55 @@ const ProductAdCard = ({ ad }) => {
     <>
       <div 
         ref={cardRef}
-        className="group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 ring-1 ring-slate-100 hover:ring-indigo-100 transform hover:-translate-y-1"
+        className="group relative flex flex-col h-full cursor-pointer bg-slate-100 p-2 md:p-3 rounded-xl border border-slate-200 overflow-hidden hover:border-indigo-300 hover:shadow-premium-hover transition-all duration-300 animate-in fade-in"
       >
-        {/* 🏷️ ป้าย Sponsored */}
-        {ad.isSponsoredAd && (
-          <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 bg-slate-900/60 backdrop-blur-md border border-white/20 rounded-sm text-md shadow-xs">
-            <span className="text-[8px] font-black text-white uppercase tracking-widest mt-0.5">Sponsored</span>
-          </div>
-        )}
-
         {/* 🖼️ พื้นที่รูปภาพ */}
         <div 
-          className="relative aspect-square w-full overflow-hidden bg-slate-50 cursor-pointer"
+          className="relative aspect-square w-full bg-white rounded-lg flex items-center justify-center overflow-hidden mb-2 cursor-pointer"
           onClick={handleAdClick}
         >
+          <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 to-transparent opacity-50 pointer-events-none"></div>
           <LazyImage 
             src={ad.imageUrl} 
             alt={ad.title || 'Advertisement'} 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 mix-blend-multiply relative z-10"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-slate-900/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+          {/* 🏷️ ป้าย Sponsored */}
+          {ad.isSponsoredAd && (
+            <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-slate-800/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-700/50 shadow-xs z-20">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+              <span className="text-[9px] md:text-[10px] font-bold text-white uppercase tracking-wider">
+                SPONSORED
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 📝 พื้นที่เนื้อหา */}
-        <div className="p-3.5 flex flex-col grow justify-between bg-linear-to-b from-white to-slate-50/30 cursor-pointer" onClick={handleAdClick}>
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-              {isProduct ? <ShoppingBag size={10}/> : <Store size={10}/>}
-              <span className="truncate">{ad.partnerName || ad.customerName || 'DH Partner'}</span>
-            </div>
-
-            <h3 className="font-bold text-sm text-slate-800 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors">
-              {ad.title}
-            </h3>
-
-            {ad.description && (
-              <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
-                {ad.description}
-              </p>
-            )}
-            
-            {/* ❌ เอาเบอร์โทรออกจากการ์ดหลัก เพื่อให้ต้องคลิกเข้ามาดูใน Pop-up เท่านั้น */}
+        <div className="flex flex-col grow px-1 cursor-pointer" onClick={handleAdClick}>
+          <h3 className="text-sm md:text-base font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors leading-relaxed">
+            {ad.title}
+          </h3>
+          <div className="text-[10px] md:text-xs text-slate-600 line-clamp-1 mb-2 flex items-center gap-1 uppercase">
+            {isProduct ? <ShoppingBag size={12} className="shrink-0"/> : <Store size={12} className="shrink-0"/>}
+            <span className="truncate">{ad.partnerName || ad.customerName || 'DH Partner'}</span>
           </div>
 
           {/* 💰 ปุ่ม Call to Action */}
-          <div className="mt-3 pt-3 border-t border-slate-100/80 flex items-center justify-between">
-            {isProduct && ad.price ? (
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] text-slate-400 font-medium">฿</span>
-                <span className="text-base font-black text-emerald-600 tracking-tight">
-                  {Number(ad.price).toLocaleString()}
-                </span>
-              </div>
-            ) : (
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <ShieldCheck size={12} className="text-emerald-500"/> Verified
-              </div>
-            )}
+          <div className="mt-auto flex flex-col pt-1">
+            <div className="text-base md:text-lg font-bold text-slate-800 leading-none mb-3 h-5 flex items-center">
+              {isProduct && ad.price ? (
+                `฿${Number(ad.price).toLocaleString()}`
+              ) : (
+                <span className="flex items-center gap-1 text-emerald-600 text-sm"><ShieldCheck size={16}/> Verified</span>
+              )}
+            </div>
 
-            {/* 🚀 ปุ่มเปลี่ยนเป็น "เข้าชมสินค้า" หรือ "ติดต่อร้านค้า" */}
             <button 
-              className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors group/btn"
+              className="w-full py-1.5 md:py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-xs z-20 text-xs font-bold uppercase tracking-widest bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white hover:shadow-md active:scale-95"
             >
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                {isProduct ? 'เข้าชมสินค้า' : 'ไปที่หน้าร้าน'}
-              </span>
+              {isProduct ? 'เข้าชมสินค้า' : 'ไปที่หน้าร้าน'}
             </button>
           </div>
         </div>

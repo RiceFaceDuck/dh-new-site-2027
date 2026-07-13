@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 
 const checklistPath = 'c:/DH Notebook/Management System/Audit Checklist.md';
 let content = fs.readFileSync(checklistPath, 'utf8');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../../hooks/useCart';
 import { submitOrder, createWholesaleRequest } from '../../../firebase/checkoutService';
@@ -77,10 +77,10 @@ export function useCheckoutLogic() {
     }
   }, [cartItems, orderResult, navigate]);
 
-  const handleUpdateCheckoutState = (key, value) => {
+  const handleUpdateCheckoutState = useCallback((key, value) => {
     setCheckoutState((prev) => ({ ...prev, [key]: value }));
     if (errorMessage) setErrorMessage('');
-  };
+  }, [errorMessage]);
 
   useEffect(() => {
     if (useCreditToggle && creditBalance > 0) {

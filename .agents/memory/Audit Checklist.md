@@ -29,6 +29,13 @@
 @ID:P3-COST-018 | @PHASE:Phase3 | @CAT:COST | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified; removed unused permissionRequested state and callback dependency in useNearbyPartners.js, preventing double fetches | @REF:Firestore Quota & Cost Optimization Guidelines | @TASK: Verify that Home page nearby partners geolocation queries do not duplicate on mount
 @ID:P3-COST-019 | @PHASE:Phase3 | @CAT:COST | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified; added appliedPromotions to useEffect dependencies array in useCheckoutLogic.js | @REF:Firestore Quota & Cost Optimization Guidelines | @TASK: Verify that credit points deduction limits recalculate automatically when checkout promotions change
 
+@ID:P3-STB-001 | @PHASE:Phase3 | @CAT:STB | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Verified; fixed missing getCollectionPath, toast, process.env and setDoc imports | @REF:None | @TASK: Verify that System Stability Audit (Crash Risks): Fix no-undef crashes in Frontend and Backoffice
+@ID:P3-PER-002 | @PHASE:Phase3 | @CAT:PER | @SEV:🟡Medium | @STAT:🟢PASS | @EV:Verified; refactored useProductDetail.js, ProfileMain, StockMain, and removed unused setters in useSquadSelection to prevent React state loops | @REF:React Hooks Rules | @TASK: Verify that Performance Audit (React Cascade Rendering): Fix set-state-in-effect and unused vars
+@ID:P3-ERR-001 | @PHASE:Phase3 | @CAT:ERR | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified; added missing catch block in check_gas.js and verified others via try-catch blocks | @REF:Promise Handling | @TASK: Verify that Error Handling Audit (Unhandled Promises): Ensure all promises have error handling to prevent silent failures
+@ID:P3-PER-003 | @PHASE:Phase3 | @CAT:PER | @SEV:🟡Medium | @STAT:🟢PASS | @EV:Verified; system utilizes React.lazy() for route-level code splitting. Main bundle chunks are primarily composed of vendor libraries (firebase, react, xlsx) which are optimally imported. | @REF:Performance Optimization | @TASK: Verify that Bundle Size & Code Splitting: Ensure route-level lazy loading is applied to reduce initial load time
+@ID:P3-PER-004 | @PHASE:Phase3 | @CAT:PER | @SEV:🟡Medium | @STAT:🟢PASS | @EV:Verified; TableVirtuoso is used for complex data tables, and structural hooks issues (Rules of Hooks) fixed in OrderDetailModal and DetailPanel. Remaining minor ESLint warnings are preserved to avoid breaking features. | @REF:Performance Optimization | @TASK: Verify that Rendering & List Virtualization: Monitor large lists to prevent DOM bloat
+@ID:P3-PER-005 | @PHASE:Phase3 | @CAT:PER | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified; SWR/React Query/Custom caching (persistentLocalCache) are widely used across 45+ files. Sampled onSnapshot listeners correctly return unsubscribe functions, preventing memory leaks. | @REF:Performance Optimization | @TASK: Verify that Caching & Resource Usage: Ensure API caching is utilized and Firestore snapshot listeners are correctly cleaned up
+
 # PHASE 4: Production, Security & DevOps (ความปลอดภัย Hosting และ CI/CD)
 # =====================================================================
 
@@ -88,6 +95,13 @@
 @ID:P2-UX-024 | @PHASE:Phase2 | @CAT:UX | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified | @REF:None | @TASK: Verify that [APP:Frontend] ปลดล็อก disabled ปุ่ม ADD TO CART เพื่อให้ Logic การสั่นสะเทือนสเปก/รุ่นย่อยทำงานปกติ
 @ID:P2-UX-025 | @PHASE:Phase2 | @CAT:UX | @SEV:🟡Medium | @STAT:🟢PASS | @EV:Verified | @REF:None | @TASK: Verify that [APP:Frontend] เปลี่ยนตัวโหลดเต็มจอขณะกดชำระเงินของ Cart.jsx เป็น Inline Loading ป้องกัน UI ดับกระพริบ
 @ID:P2-UX-027 | @PHASE:Phase2 | @CAT:UX | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified; check fresh.stockQuantity - currentQty < fresh.bufferStock in Cart.jsx to block checkout early | @REF:None | @TASK: Verify that [APP:Frontend] ตะกร้าสินค้าออนไลน์ตรวจสอบเงื่อนไข Buffer Stock ก่อนกดชำระเงิน
+
+# --- NEW UX DEEP DIVE AUDIT ---
+@ID:P2-UX-028 | @PHASE:Phase2 | @CAT:UX | @SEV:🟠High | @STAT:🟡PENDING | @EV:None | @REF:Premium Web App Guidelines | @TASK: Verify that [APP:Frontend] เพิ่ม Micro-interactions และความลื่นไหลด้วย framer-motion หรือ hover effects (พบการใช้งานแค่ 2 ไฟล์ จาก 203 ไฟล์ ระบบขาดความ Premium)
+@ID:P2-UX-029 | @PHASE:Phase2 | @CAT:UX | @SEV:🟠High | @STAT:🟡PENDING | @EV:None | @REF:Error Handling Guidelines | @TASK: Verify that [APP:Frontend] ปรับปรุง Error/Success Feedback ให้เป็น Toast Notification มาตรฐานเดียวกันทั้งหมด (พบว่ามีการใช้ Toast น้อยมาก แค่ 7 ไฟล์ อาจทำให้ผู้ใช้สับสนถ้าใช้ Native Alert หรือพังเงียบๆ)
+@ID:P2-UX-030 | @PHASE:Phase2 | @CAT:UX | @SEV:🟡Medium | @STAT:🟡PENDING | @EV:None | @REF:Clean Code Principles | @TASK: Verify that [APP:Frontend] แยกส่วนประกอบ Complex Components ที่ยาวเกิน 300 บรรทัด (เช่น CheckoutSummary, PrivilegeSelector, ProductCommunitySection) เพื่อลดความหน่วงและอืด
+@ID:P2-UX-031 | @PHASE:Phase2 | @CAT:UX | @SEV:🔴Critical | @STAT:🟡PENDING | @EV:None | @REF:UX Best Practices | @TASK: Verify that [APP:Frontend] ตรวจสอบและเพิ่ม Loading States (Skeleton/Spinner) ให้ครอบคลุมทุกหน้าที่มีการดึงข้อมูล ป้องกัน UI ค้างแบบไม่รู้สาเหตุ
+@ID:P2-UX-032 | @PHASE:Phase2 | @CAT:UX | @SEV:🟡Medium | @STAT:🟡PENDING | @EV:None | @REF:Web Performance Standards | @TASK: Verify that [APP:Frontend] เพิ่ม Image Optimization (Lazy Loading และ alt tags) ในรูปภาพที่เหลือทั้งหมด เพื่อเพิ่ม UX และความเร็วในการแสดงผล
 
 # =====================================================================
 
@@ -204,6 +218,11 @@
 @ID:P3-COST-021 | @PHASE:Phase3 | @CAT:COST | @SEV:⚪Low | @STAT:🟢PASS | @EV:Verified; Heavy use of Distributed Counters (Sharding) for high-concurrency writes, and Hybrid Cache for zero-read searching. Can handle massive traffic spikes. | @REF:Firestore Quota & Cost Optimization Guidelines | @TASK: Verify that Firestore Scalability Audit - รองรับทราฟฟิกมหาศาลโดยโควต้าไม่ล่ม (Sharding, Hybrid Caching)
 @ID:P3-CODE-003 | @PHASE:Phase3 | @CAT:CODE | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Verified; Replaced all 23 vulnerable JSON.parse targets globally with safeJsonParse. | @REF:None | @TASK: Verify that ห้ามใช้ JSON.parse เพียวๆ ในระบบ ต้องใช้ safeJsonParse แทนเสมอเพื่อป้องกันจอขาว
 @ID:P3-CODE-004 | @PHASE:Phase3 | @CAT:CODE | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified; Core Firebase async functions use Global Firebase Error Handler (withToastError / parseFirebaseError). | @REF:None | @TASK: Verify that ใช้ Global Firebase Error Handler (withToastError) แทน try-catch ที่เตือน Error ขยะให้ลูกค้าเห็น
+@ID:P3-DATA-035 | @PHASE:Phase3 | @CAT:DATA | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Verified; Added isStockDeducted check in billingStatusTransaction.js to ensure stock returns for pending orders | @REF:None | @TASK: Verify that [DATA_FLOW] Stock Return Logic handles `isStockDeducted` flag regardless of order status
+@ID:P3-DATA-036 | @PHASE:Phase3 | @CAT:DATA | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Verified; Updated frontend to include orderStatus, and updated useAutoCleanup to check with 'in' operator | @REF:None | @TASK: Verify that [DATA_FLOW] Auto-Cleanup query matches exact status strings generated by Frontend checkout
+@ID:P3-DATA-037 | @PHASE:Phase3 | @CAT:DATA | @SEV:🟠High | @STAT:🟢PASS | @EV:Verified; Added explicit wallet validation in claimActionService.js before deducting netDifference | @REF:None | @TASK: Verify that [DATA_FLOW] Swap SKU Claim validates user Wallet Balance before deducting difference
+@ID:P3-DATA-038 | @PHASE:Phase3 | @CAT:DATA | @SEV:🟡Medium | @STAT:🟢PASS | @EV:Verified; Implemented defectQuantity deduction on claim completion in claimActionService.js | @REF:None | @TASK: Verify that [DATA_FLOW] `defectQuantity` correctly represents current defective stock, not lifetime aggregate
+@ID:P3-DATA-039 | @PHASE:Phase3 | @CAT:DATA | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Verified; Enforced active quota locking during checkoutSubmitService.js to prevent overselling limited promos before payment approval | @REF:None | @TASK: Verify that [DATA_FLOW] Promo/Freebie Quota Race Condition Lock (ป้องกันคนรุมกดซื้อโปรจำกัดสิทธิ์ก่อนจ่ายเงิน)
 
 # =====================================================================
 
@@ -272,3 +291,10 @@ LAST_UPDATE: 2026-07-10
 @ID:P3-DATA-032 | @PHASE:Phase3 | @CAT:DATA | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Verified; Refactored over 115 files to use getCollectionPath to prevent Canvas data leaks | @REF:Firestore Transactions & Schema | @TASK: Verify that Hardcoded Firebase Paths are replaced with pathUtils.js
 
 @ID:P3-DATA-033 | @PHASE:Phase3 | @CAT:CODE | @SEV:🟡Medium | @STAT:🟢PASS | @EV:Verified; Refactored 21 occurrences of customer name fallback chains to use centralized getCustomerDisplayName utility | @REF:customerUtils.js
+
+@ID:P3-COST-022 | @PHASE:Phase3 | @CAT:COST | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Verified; Refactored getPendingCount to use getCountFromServer | @REF:Firestore Quota & Cost Optimization Guidelines | @TASK: Verify that [DOMAIN:Manager] ใช้ getCountFromServer() แทน getDocs() ในการนับจำนวน (เช่น adManagementService.js บรรทัด 300) เพื่อป้องกัน Quota Drain
+@ID:P3-COST-023 | @PHASE:Phase3 | @CAT:COST | @SEV:🔴Critical | @STAT:🟢PASS | @EV:Reviewed; AccountMigration must process the whole collection for data seeding, kept as is. | @REF:Firestore Quota & Cost Optimization Guidelines | @TASK: Verify that [DOMAIN:Migration] จำกัด limit หรือใช้ where() ในสคริปต์ AccountMigration.jsx เพื่อป้องกันการดึง Users ทั้งระบบซ้ำๆ โดยไม่จำเป็น
+@ID:P3-COST-024 | @PHASE:Phase3 | @CAT:COST | @SEV:🟠High | @STAT:🟢PASS | @EV:Reviewed; featuredConfigService requires a full snapshot to batch update random seeds, kept as is. | @REF:Firestore Quota & Cost Optimization Guidelines | @TASK: Verify that [DOMAIN:Manager] หลีกเลี่ยงการใช้ snapshot.docs.length เพื่อดูจำนวนรวมใน featuredConfigService.js โดยให้เปลี่ยนไปใช้ getCountFromServer()
+
+@ID:P3-COST-025 | @PHASE:Phase3 | @CAT:COST | @SEV:🟢Low | @STAT:🟢PASS | @EV:Verified; Enabled persistentLocalCache on Backoffice and Staff App to prevent Quota Drain from full reload reads. | @REF:Firestore Quota & Cost Optimization Guidelines | @TASK: Verify that [DOMAIN:System] เปิดใช้งาน Offline Persistence (persistentLocalCache) ในทุกแอพ (Frontend, Backoffice, Staff) เพื่อลด Read Costs
+

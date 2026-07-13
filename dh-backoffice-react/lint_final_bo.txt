@@ -1,0 +1,925 @@
+
+> dh-backoffice@0.0.1 lint
+> eslint .
+
+
+C:\DH Notebook\Management System\dh-backoffice-react\scratch_read_config.js
+  10:9  warning  'configObjString' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\scratch_update_checklist.js
+  7:27  error  Unexpected control character(s) in regular expression: \x00  no-control-regex
+
+C:\DH Notebook\Management System\dh-backoffice-react\scratch_verify_pos_order.js
+  20:7  warning  'CUSTOMER_UID' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\FloatingMiniCart.jsx
+   68:24  warning  'e' is defined but never used. Allowed unused args must match /^_/u                                            unused-imports/no-unused-vars
+   89:23  warning  'prev' is defined but never used. Allowed unused args must match /^_/u                                         unused-imports/no-unused-vars
+  104:6   warning  React Hook useEffect has a missing dependency: 'loadDrafts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\PosSystem.jsx
+   51:56  warning  'setIsProcessing' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+   53:26  warning  'setIsUploadingSlip' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   58:54  warning  'totalDiscount' is assigned a value but never used. Allowed unused vars must match /^_/u       unused-imports/no-unused-vars
+  131:11  warning  'isPhoneMissing' is assigned a value but never used. Allowed unused vars must match /^_/u      unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\dashboard\OrderDetailModal.jsx
+  15:9  warning  'setShowPrintPreview' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  16:9  warning  'onResumeDraft' is assigned a value but never used. Allowed unused vars must match /^_/u        unused-imports/no-unused-vars
+  17:9  warning  'executeVoidOrder' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+  18:9  warning  'handleDeleteOrder' is assigned a value but never used. Allowed unused vars must match /^_/u    unused-imports/no-unused-vars
+  19:9  warning  'isVoiding' is assigned a value but never used. Allowed unused vars must match /^_/u            unused-imports/no-unused-vars
+  21:9  warning  'setActiveTab' is assigned a value but never used. Allowed unused vars must match /^_/u         unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\dashboard\OrderListTable.jsx
+  42:36  error  Component definition is missing display name  react/display-name
+  43:36  error  Component definition is missing display name  react/display-name
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\dashboard\OrderTableRow.jsx
+  4:48  warning  'setSelectedOrder' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\dashboard\order-summary\OrderSummaryItems.jsx
+  23:21  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  23:24  error    Empty block statement          no-empty
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\PaymentPanel.jsx
+  8:79   warning  'vatOnShipping' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  8:105  warning  'vatType' is defined but never used. Allowed unused args must match /^_/u        unused-imports/no-unused-vars
+  9:33   warning  'changeAmount' is defined but never used. Allowed unused args must match /^_/u   unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\ReceiptTemplate.jsx
+  30:52  warning  'paymentMethod' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\SettingsPanel.jsx
+  46:8  warning  React Hook useEffect has missing dependencies: 'activeTab.billNote', 'activeTab.otherFeeAmount', 'activeTab.otherFeeName', 'activeTab.overallDiscount', and 'activeTab.shippingFee'. Either include them or remove the dependency array. If 'setLocalShipping' needs the current value of 'activeTab.shippingFee', you can also switch to useReducer instead of useState and read 'activeTab.shippingFee' in the reducer  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\cart\CartTableRow.jsx
+  14:63  warning  'actionBoxItem' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\cart\SearchArea.jsx
+  50:35  warning  'isBestSeller' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\hooks\usePosActions.js
+  13:5   warning  'products' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  63:74  error    'uid' is not defined                                                        no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\hooks\usePosCart.js
+  11:28  warning  'products' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\hooks\usePosPayment.js
+  49:8  warning  React Hook useMemo has a missing dependency: 'getEligibleTotals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  62:8  warning  React Hook useMemo has a missing dependency: 'getEligibleTotals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\hooks\usePosState.js
+  148:25  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  148:28  error    Empty block statement          no-empty
+  159:38  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\settings\CustomerSection.jsx
+  13:5   warning  'customerSearchText' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  54:13  error    The value assigned to 'formatted' is not used in subsequent statements                no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\settings\panel\DiscountSettings.jsx
+  4:5  warning  'activeTab' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\billing\pos\settings\panel\NoteSettings.jsx
+  4:5  warning  'activeTab' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\inventory\InventoryExportModal.jsx
+  2:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\inventory\ProductTable.jsx
+  32:22  error  Component definition is missing display name  react/display-name
+  35:22  error  Component definition is missing display name  react/display-name
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\inventory\ProductTableRow.jsx
+  4:37  warning  'onEdit' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\inventory\hooks\useExcelImport.js
+  56:16  warning  'err' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\inventory\hooks\useInventorySearch.js
+  145:16  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\inventory\hooks\useProductForm.js
+  62:7  error  Error: Cannot access variable before it is declared
+
+`checkUserRole` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  60 |       setCategories(categoriesData && categoriesData.length > 0 ? categoriesData : DEFAULT_CATEGORIES);
+  61 |       
+> 62 |       checkUserRole();
+     |       ^^^^^^^^^^^^^ `checkUserRole` accessed before it is declared
+  63 |       loadPricingConfig();
+  64 |       loadPlatformRegex(); 
+  65 |     }
+
+  66 |   }, [isOpen, productData, categoriesData]);
+  67 |
+> 68 |   const checkUserRole = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 69 |     if (auth.currentUser) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 70 |       const profile = await userService.getUserProfile(auth.currentUser.uid);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 71 |       if (profile) setUserRole(profile.role);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 72 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 73 |   };
+     | ^^^^^ `checkUserRole` is declared here
+  74 |
+  75 |   const loadPricingConfig = async () => {
+  76 |     const config = await pricingService.getPricingConfig();  react-hooks/immutability
+  63:7  error  Error: Cannot access variable before it is declared
+
+`loadPricingConfig` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  61 |       
+  62 |       checkUserRole();
+> 63 |       loadPricingConfig();
+     |       ^^^^^^^^^^^^^^^^^ `loadPricingConfig` accessed before it is declared
+  64 |       loadPlatformRegex(); 
+  65 |     }
+  66 |   }, [isOpen, productData, categoriesData]);
+
+  73 |   };
+  74 |
+> 75 |   const loadPricingConfig = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |     const config = await pricingService.getPricingConfig();
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 77 |     setPricingConfig(config);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 78 |   };
+     | ^^^^^ `loadPricingConfig` is declared here
+  79 |
+  80 |   const loadPlatformRegex = async () => {
+  81 |     const regexRules = await settingsService.getPlatformRegex();                                                                                                                                                                react-hooks/immutability
+  64:7  error  Error: Cannot access variable before it is declared
+
+`loadPlatformRegex` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  62 |       checkUserRole();
+  63 |       loadPricingConfig();
+> 64 |       loadPlatformRegex(); 
+     |       ^^^^^^^^^^^^^^^^^ `loadPlatformRegex` accessed before it is declared
+  65 |     }
+  66 |   }, [isOpen, productData, categoriesData]);
+  67 |
+
+  78 |   };
+  79 |
+> 80 |   const loadPlatformRegex = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 81 |     const regexRules = await settingsService.getPlatformRegex();
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 82 |     setPlatformRegex(regexRules);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 83 |   };
+     | ^^^^^ `loadPlatformRegex` is declared here
+  84 |
+  85 |   const isManagerOrOwner = ['Manager', 'Owner', 'manager', 'owner', 'admin', 'Admin', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน'].includes(userRole);
+  86 |                                                                                                                   react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\inventory\modal\ProductImageUpload.jsx
+  2:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\managers\featured\FeaturedSettings.jsx
+   2:8  error  'React' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  unused-imports/no-unused-imports
+  13:9  error  Error: Cannot access variable before it is declared
+
+`fetchConfig` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  11 |
+  12 |     useEffect(() => {
+> 13 |         fetchConfig();
+     |         ^^^^^^^^^^^ `fetchConfig` accessed before it is declared
+  14 |     }, []);
+  15 |
+  16 |     const fetchConfig = async () => {
+
+  14 |     }, []);
+  15 |
+> 16 |     const fetchConfig = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |         try {
+     | ^^^^^^^^^^^^^
+> 18 |             const data = await featuredConfigService.getConfig();
+     | ^^^^^^^^^^^^^
+> 19 |             setConfig(data);
+     | ^^^^^^^^^^^^^
+> 20 |         } catch (error) {
+     | ^^^^^^^^^^^^^
+> 21 |             console.error("Failed to load config", error);
+     | ^^^^^^^^^^^^^
+> 22 |         } finally {
+     | ^^^^^^^^^^^^^
+> 23 |             setIsLoading(false);
+     | ^^^^^^^^^^^^^
+> 24 |         }
+     | ^^^^^^^^^^^^^
+> 25 |     };
+     | ^^^^^^^ `fetchConfig` is declared here
+  26 |
+  27 |     const handleSave = async () => {
+  28 |         setIsSaving(true);  react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\managers\squad\SquadHighlightSettings.jsx
+  12:9  error  Error: Cannot access variable before it is declared
+
+`fetchConfig` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  10 |
+  11 |     useEffect(() => {
+> 12 |         fetchConfig();
+     |         ^^^^^^^^^^^ `fetchConfig` accessed before it is declared
+  13 |     }, []);
+  14 |
+  15 |     const fetchConfig = async () => {
+
+  13 |     }, []);
+  14 |
+> 15 |     const fetchConfig = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |         try {
+     | ^^^^^^^^^^^^^
+> 17 |             const data = await squadConfigService.getConfig();
+     | ^^^^^^^^^^^^^
+> 18 |             setConfig(data);
+     | ^^^^^^^^^^^^^
+> 19 |         } catch (error) {
+     | ^^^^^^^^^^^^^
+> 20 |             console.error("Failed to load config", error);
+     | ^^^^^^^^^^^^^
+> 21 |         } finally {
+     | ^^^^^^^^^^^^^
+> 22 |             setIsLoading(false);
+     | ^^^^^^^^^^^^^
+> 23 |         }
+     | ^^^^^^^^^^^^^
+> 24 |     };
+     | ^^^^^^^ `fetchConfig` is declared here
+  25 |
+  26 |     const handleSave = async () => {
+  27 |         setIsSaving(true);  react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\search\HistoryLogPanel.jsx
+  30:13  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  30:16  error    Empty block statement          no-empty
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\todo\KnowledgeApprovalCard.jsx
+  5:27  warning  'description' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\todo\ServiceTaskCard.jsx
+  20:9  error  Error: This value cannot be modified
+
+Modifying component props or hook arguments is not allowed. Consider using a local variable instead.
+
+  18 |     try {
+  19 |         await todoService.updateTodoTrackingNo(task.id, trackingNo);
+> 20 |         task.payload.trackingNo = trackingNo; // Optimistic update
+     |         ^^^^^^^^^^^^ `task` cannot be modified
+  21 |         alert('บันทึกเลขพัสดุเรียบร้อย');
+  22 |     } catch (err) {
+  23 |         alert('Error saving tracking: ' + err.message);  react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\todo\TaxInvoiceCard.jsx
+  51:9  error  There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\todo\WholesaleCard.jsx
+  36:20  warning  'e' is defined but never used                                            unused-imports/no-unused-vars
+  36:23  error    Empty block statement                                                    no-empty
+  80:11  error    The value assigned to 'finalPrice' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\todo\cards\StaffApprovalCard.jsx
+  4:123  warning  'formatDate' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\todo\cards\wholesale\useWholesaleCalculator.js
+   5:9   warning  The 'cartItems' logical expression could make the dependencies of useMemo Hook (at line 59) change on every render. To fix this, wrap the initialization of 'cartItems' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  30:11  error    The value assigned to 'finalWholesalePrice' is not used in subsequent statements                                                                                                                   no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\todo\forms\NewTaskModal.jsx
+  46:143  error  Comments inside children section of tag should be placed inside braces  react/jsx-no-comment-textnodes
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\contexts\AuthContext.jsx
+   8:14  warning  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file                      react-refresh/only-export-components
+   9:14  warning  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file                      react-refresh/only-export-components
+  11:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  17:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  18:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\bigseller\bigSellerExportService.js
+   94:7  error  There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+  167:7  error  There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingPrintService.js
+  7:35  warning  'currentCount' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingStatusTransaction.js
+   42:15  error  The value assigned to 'inventorySettingsRef' is not used in subsequent statements  no-useless-assignment
+  210:64  error  'currentOrderId' is not defined                                                    no-undef
+  223:81  error  'currentOrderId' is not defined                                                    no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billing\statusWalletHandler.js
+  19:9  error    The value assigned to 'refundAmount' is not used in subsequent statements                    no-useless-assignment
+  32:9  warning  'cancelledPending' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claim\claimActionService.js
+  163:39  error  'collection' is not defined  no-undef
+  175:38  error  'collection' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claim\claimRequestService.js
+   12:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  112:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  213:5  error  Unnecessary try/catch wrapper  no-useless-catch
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claim\returnActionService.js
+  10:42  warning  'adminName' is defined but never used. Allowed unused args must match /^_/u         unused-imports/no-unused-vars
+  28:29  warning  'adminUid' is defined but never used. Allowed unused args must match /^_/u          unused-imports/no-unused-vars
+  28:39  warning  'adminName' is defined but never used. Allowed unused args must match /^_/u         unused-imports/no-unused-vars
+  29:13  warning  'payload' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\config.js
+  28:5  warning  'appCheck' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\creditHistoryService.js
+  71:52  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  76:54  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js
+  8:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  8:49  error    '__app_id' is not defined                                                         no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\dataRepairService.js
+   29:11  warning  'totalToUpdate' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  100:11  warning  'totalToUpdate' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  158:11  warning  'totalToUpdate' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\driveService.js
+  17:24  error  Promise executor functions should not be async  no-async-promise-executor
+  77:24  error  Promise executor functions should not be async  no-async-promise-executor
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\freebieService.js
+   59:5  error  Unnecessary try/catch wrapper  no-useless-catch
+   91:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  115:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  125:5  error  Unnecessary try/catch wrapper  no-useless-catch
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\heroConfigService.js
+  74:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\historyService.js
+   3:7   warning  'COLLECTION_NAME' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   7:42  warning  'arg5' is defined but never used. Allowed unused args must match /^_/u                      unused-imports/no-unused-vars
+   9:9   error    The value assigned to 'action' is not used in subsequent statements                         no-useless-assignment
+  10:9   error    The value assigned to 'targetId' is not used in subsequent statements                       no-useless-assignment
+  11:9   error    The value assigned to 'detailsStr' is not used in subsequent statements                     no-useless-assignment
+  35:40  warning  'lastDocRef' is assigned a value but never used. Allowed unused args must match /^_/u       unused-imports/no-unused-vars
+  35:81  warning  'actionFilter' is assigned a value but never used. Allowed unused args must match /^_/u     unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js
+  98:28  warning  'sku' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventorySourcingService.js
+  6:41  warning  'uid' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\pricingService.js
+  120:11  error  The value assigned to 'isMatch' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\productKnowledgeAdminService.js
+  21:11  warning  'transactionRef' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\squad\squadConfigService.js
+  5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\todo\todoPaymentService.js
+  37:15  warning  'yearMonth' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\transactionImportService.js
+  115:15  error  The value assigned to 'newStock' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userManagementService.js
+  125:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  144:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  162:5  error  Unnecessary try/catch wrapper  no-useless-catch
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\warrantyService.test.js
+  38:59  warning  't' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  68:72  warning  't' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  84:52  warning  't' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\layouts\components\Sidebar.jsx
+  13:3  warning  'pendingStaffCount' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\components\details\DetailPanel.jsx
+  1:8  error  'React' is defined but never used      unused-imports/no-unused-imports
+  9:8  error  'StatsInfo' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\components\details\MarketingInfo.jsx
+  52:32  error  Error: This value cannot be modified
+
+Modifying a variable defined outside a component or hook is not allowed. Consider using an effect.
+
+  50 |       setAds(newAds);
+  51 |       const uid = customer?.uid || customer?.id;
+> 52 |       if (marketingCache[uid]) marketingCache[uid].ads = newAds;
+     |                                ^^^^^^^^^^^^^^^^^^^ value cannot be modified
+  53 |     } else {
+  54 |       alert(res.message);
+  55 |     }  react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\ChangeSummaryPanel.jsx
+  27:81  warning  'lastResetDate' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\GenerateSyncHeader.jsx
+  3:46  warning  'onOpenSettings' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\GlobalSchemaSettings.jsx
+  18:16  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  18:19  error    Empty block statement          no-empty
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\RecentImportsModal.jsx
+  18:7  error  Error: Cannot access variable before it is declared
+
+`fetchBatches` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  16 |   useEffect(() => {
+  17 |     if (isOpen) {
+> 18 |       fetchBatches();
+     |       ^^^^^^^^^^^^ `fetchBatches` accessed before it is declared
+  19 |     }
+  20 |   }, [isOpen]);
+  21 |
+
+  20 |   }, [isOpen]);
+  21 |
+> 22 |   const fetchBatches = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 23 |     setLoading(true);
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 24 |     try {
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 38 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 39 |   };
+     | ^^^^^ `fetchBatches` is declared here
+  40 |
+  41 |   const handleUndo = async (batchId) => {
+  42 |     if (!window.confirm("ยืนยันการย้อนกลับ? สต็อกจะถูกทับด้วยค่าก่อนการนำเข้าทันที")) return;  react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\TemplateSettingsModal.jsx
+  109:9  error  The value assigned to 'mapping' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\daily-tasks\InventoryCountExport.jsx
+  40:5  error  'toast' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\daily-tasks\SkuMerchantExport.jsx
+  31:5  error  'toast' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\non-daily-tasks\ShopeeTemplateUpload.jsx
+  42:5  error  'toast' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\History\components\HistoryTable.jsx
+  10:3   warning  'moduleFilter' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  11:3   warning  'actionFilter' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  77:19  error    The value assigned to 'detailSummary' is not used in subsequent statements      no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\History\hooks\useHistoryLogs.js
+   6:7   warning  'getTodayString' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  15:23  warning  'setLoadingMore' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\History\utils\historyFormatters.jsx
+  17:7  error  The value assigned to 'relative' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\QuickAccessTools.jsx
+  90:3  warning  'vipCount' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\components\MenuLayoutManager.jsx
+  16:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\components\hooks\useMenuDragAndDrop.js
+  22:7  error  Error: Cannot access variable before it is declared
+
+`loadData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  20 |   useEffect(() => {
+  21 |     if (isOpen) {
+> 22 |       loadData();
+     |       ^^^^^^^^ `loadData` accessed before it is declared
+  23 |     }
+  24 |   }, [isOpen]);
+  25 |
+
+  24 |   }, [isOpen]);
+  25 |
+> 26 |   const loadData = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |     setIsLoading(true);
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |     const layout = await menuConfigService.getMenuLayout();
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 36 |     setIsLoading(false);
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 37 |   };
+     | ^^^^^ `loadData` is declared here
+  38 |
+  39 |   const handleSave = async () => {
+  40 |     setIsSaving(true);  react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\useManagerDashboard.js
+  24:27  warning  'setIsLoadingStaffs' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Todo.jsx
+  52:19  error  'updateTodoStatus' is not defined  no-undef
+  74:19  error  'updateDoc' is not defined         no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ads\components\ads\AdsList.jsx
+  47:56  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  45 |                {getTypeBadge(ad.type)}
+  46 |                <span className="text-[10px] text-slate-400">
+> 47 |                  {new Date(ad.createdAt?.toMillis() || Date.now()).toLocaleDateString('th-TH')}
+     |                                                        ^^^^^^^^^^ Cannot call impure function
+  48 |                </span>
+  49 |             </div>
+  50 |               react-hooks/purity
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ads\hooks\useManagerAds.js
+  8:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\billing\BillingMain.jsx
+  10:20  warning  'setProducts' is assigned a value but never used. Allowed unused vars must match /^_/u           unused-imports/no-unused-vars
+  11:29  warning  'setIsProductsLoading' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\claims\components\ClaimPrintView.jsx
+  6:24  error  Component definition is missing display name  react/display-name
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\claims\components\detail\ClaimDetailModal.jsx
+  21:3  warning  'getStatusDisplay' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\claims\components\table\ClaimTable.jsx
+  5:65  warning  'getStatusDisplay' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\claims\hooks\useClaimActions.js
+  8:42  warning  'successMsg' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\claims\utils\claimFormatters.jsx
+  21:7  error  The value assigned to 'label' is not used in subsequent statements      no-useless-assignment
+  22:7  error  The value assigned to 'color' is not used in subsequent statements      no-useless-assignment
+  23:7  error  The value assigned to 'textColor' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\dashboard\Overview.jsx
+  121:14  error  Unknown property 'jsx' found  react/no-unknown-property
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\emails\EmailMain.jsx
+  13:54  warning  'searchQuery' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\emails\hooks\useGmail.js
+   66:13  error    The value assigned to 'q' is not used in subsequent statements                                                  no-useless-assignment
+  124:6   warning  React Hook useEffect has a missing dependency: 'fetchEmails'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\hooks\useProductComments.js
+  6:73  warning  'setAllProducts' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\hooks\useProductHistory.js
+  51:6  warning  React Hook useEffect has a missing dependency: 'selectedProduct'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\hooks\useProductSearchActions.js
+  129:16  warning  'err' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\AdManagement.jsx
+   14:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           unused-imports/no-unused-vars
+  163:62  error    Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  161 |                      {getTypeBadge(ad.type)}
+  162 |                      <span className="text-[10px] text-slate-400">
+> 163 |                        {new Date(ad.createdAt?.toMillis() || Date.now()).toLocaleDateString('th-TH')}
+      |                                                              ^^^^^^^^^^ Cannot call impure function
+  164 |                      </span>
+  165 |                   </div>
+  166 |                     react-hooks/purity
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\CreditDashboard\components\SystemHealthPanel.jsx
+  3:3  warning  'healthStatus' is assigned a value but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\CreditDashboard\components\tabs\PartnerCreditsTab.jsx
+   6:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   6:49  error    '__app_id' is not defined                                                         no-undef
+  50:14  warning  'err' is defined but never used                                                   unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\CreditDashboard\components\tabs\useCreditSettingsState.js
+   6:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   6:49  error    '__app_id' is not defined                                                         no-undef
+  29:32  error    'getCollectionPath' is not defined                                                no-undef
+  60:30  error    'getCollectionPath' is not defined                                                no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\CreditDashboard\hooks\useLedgerStats.js
+  6:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  6:49  error    '__app_id' is not defined                                                         no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\CreditDashboard\hooks\useSystemHealth.js
+  5:49  error  '__app_id' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\GlobalKnowledgeSettings.jsx
+  29:6  warning  React Hook useEffect has a missing dependency: 'config'. Either include it or remove the dependency array. You can also do a functional update 'setConfig(c => ...)' if you only need 'config' in the 'setConfig' call  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\PartnerSettings.jsx
+  21:41  error  'useState' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\RedirectURLsSettings\index.jsx
+  41:9  error  The value assigned to 'success' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\RedirectURLsSettings\useRedirectURLsState.js
+  15:14  warning  'error' is defined but never used  unused-imports/no-unused-vars
+  33:14  warning  'error' is defined but never used  unused-imports/no-unused-vars
+  48:14  warning  'error' is defined but never used  unused-imports/no-unused-vars
+  63:14  warning  'error' is defined but never used  unused-imports/no-unused-vars
+  75:14  warning  'error' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\RefundManagement.jsx
+  22:16  warning  'walletHoldersCount' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  22:36  warning  'isDashboardLoading' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  23:26  warning  'isLoadingRequests' is assigned a value but never used. Allowed unused vars must match /^_/u   unused-imports/no-unused-vars
+  24:62  warning  'setHasSearched' is assigned a value but never used. Allowed unused vars must match /^_/u      unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\WalletManagement.jsx
+  22:26  warning  'isLoadingRequests' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  23:62  warning  'setHasSearched' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\components\staff\StaffAddModal.jsx
+  44:5  error  'toast' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\components\staff\StaffEditModal.jsx
+  30:5  error  'toast' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\components\theme\HeroConfigTab\HeroTitleEditor.jsx
+  32:11  warning  'previewHtml' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\components\theme\HeroConfigTab\index.jsx
+  72:5  error  'toast' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\useAdSubscriptions.js
+   5:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  31:37  error    'getCollectionPath' is not defined                                                no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\useFreebies.js
+  31:5  error  Error: Cannot access variable before it is declared
+
+`loadFreebies` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  29 |
+  30 |   useEffect(() => {
+> 31 |     loadFreebies();
+     |     ^^^^^^^^^^^^ `loadFreebies` accessed before it is declared
+  32 |     loadCategories();
+  33 |   }, []);
+  34 |
+
+  44 |   };
+  45 |
+> 46 |   const loadFreebies = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 47 |     setLoading(true);
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 48 |     const data = await freebieService.getAllFreebies();
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 49 |     setFreebies(data);
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 50 |     setLoading(false);
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 51 |   };
+     | ^^^^^ `loadFreebies` is declared here
+  52 |
+  53 |   const resetForm = () => setFormData({
+  54 |     id: null,                                                                                                                                                                                                                                                                                                                    react-hooks/immutability
+  32:5  error  Error: Cannot access variable before it is declared
+
+`loadCategories` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  30 |   useEffect(() => {
+  31 |     loadFreebies();
+> 32 |     loadCategories();
+     |     ^^^^^^^^^^^^^^ `loadCategories` accessed before it is declared
+  33 |   }, []);
+  34 |
+  35 |   const loadCategories = async () => {
+
+  33 |   }, []);
+  34 |
+> 35 |   const loadCategories = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 36 |     try {
+     | ^^^^^^^^^
+> 37 |       const data = await categoryService.getAllCategories();
+     | ^^^^^^^^^
+> 38 |       // Only keep active categories with a valid type
+     | ^^^^^^^^^
+> 39 |       const activeTypes = data.filter(c => c.isActive !== false && c.type);
+     | ^^^^^^^^^
+> 40 |       setCategories(activeTypes);
+     | ^^^^^^^^^
+> 41 |     } catch (error) {
+     | ^^^^^^^^^
+> 42 |       console.error("Error loading categories:", error);
+     | ^^^^^^^^^
+> 43 |     }
+     | ^^^^^^^^^
+> 44 |   };
+     | ^^^^^ `loadCategories` is declared here
+  45 |
+  46 |   const loadFreebies = async () => {
+  47 |     setLoading(true);  react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\usePartnerSettings.js
+   7:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   7:49  error    '__app_id' is not defined                                                         no-undef
+  19:42  error    'getCollectionPath' is not defined                                                no-undef
+  59:34  error    'getCollectionPath' is not defined                                                no-undef
+  85:34  error    'getCollectionPath' is not defined                                                no-undef
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\usePromotions.js
+  30:5  error  Error: Cannot access variable before it is declared
+
+`loadPromotions` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  28 |
+  29 |   useEffect(() => {
+> 30 |     loadPromotions();
+     |     ^^^^^^^^^^^^^^ `loadPromotions` accessed before it is declared
+  31 |   }, []);
+  32 |
+  33 |   const loadPromotions = async () => {
+
+  31 |   }, []);
+  32 |
+> 33 |   const loadPromotions = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 34 |     setLoading(true);
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 35 |     try {
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 42 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 43 |   };
+     | ^^^^^ `loadPromotions` is declared here
+  44 |
+  45 |   const resetForm = () => {
+  46 |     setFormData({   react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\useStaffManagement.js
+  27:5  error    Error: Cannot access variable before it is declared
+
+`fetchStaff` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  25 |
+  26 |   useEffect(() => {
+> 27 |     fetchStaff();
+     |     ^^^^^^^^^^ `fetchStaff` accessed before it is declared
+  28 |   }, []);
+  29 |
+  30 |   const fetchStaff = async () => {
+
+  28 |   }, []);
+  29 |
+> 30 |   const fetchStaff = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 31 |     setLoading(true);
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 32 |     try {
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 45 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^
+> 46 |   };
+     | ^^^^^ `fetchStaff` is declared here
+  47 |
+  48 |   const showToast = (type, message) => {
+  49 |     setToast({ type, message });  react-hooks/immutability
+  28:6  warning  React Hook useEffect has a missing dependency: 'fetchStaff'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\inventory\StockAdjustment.jsx
+  6:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\pricing\hooks\usePricingSettings.js
+  26:5  error  Error: Cannot access variable before it is declared
+
+`fetchConfig` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  24 |
+  25 |   useEffect(() => {
+> 26 |     fetchConfig();
+     |     ^^^^^^^^^^^ `fetchConfig` accessed before it is declared
+  27 |     fetchPricingLogs();
+  28 |     fetchCategories();
+  29 |   }, []);
+
+  49 |   }, [config, originalConfig]);
+  50 |
+> 51 |   const fetchConfig = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 52 |     const data = await pricingService.getPricingConfig();
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 53 |     data.rules.sort((a, b) => a.category.localeCompare(b.category) || a.threshold - b.threshold);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 54 |     setConfig(data);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 55 |     setOriginalConfig(JSON.parse(JSON.stringify(data)));
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 56 |     setLoading(false);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 57 |   };
+     | ^^^^^ `fetchConfig` is declared here
+  58 |
+  59 |   const fetchPricingLogs = async () => {
+  60 |     setLoadingLogs(true);  react-hooks/immutability
+  27:5  error  Error: Cannot access variable before it is declared
+
+`fetchPricingLogs` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  25 |   useEffect(() => {
+  26 |     fetchConfig();
+> 27 |     fetchPricingLogs();
+     |     ^^^^^^^^^^^^^^^^ `fetchPricingLogs` accessed before it is declared
+  28 |     fetchCategories();
+  29 |   }, []);
+  30 |
+
+  57 |   };
+  58 |
+> 59 |   const fetchPricingLogs = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 60 |     setLoadingLogs(true);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 61 |     try {
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 75 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |   };
+     | ^^^^^ `fetchPricingLogs` is declared here
+  77 |
+  78 |   const handleSave = async () => {
+  79 |     if (!isDirty) return;                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/immutability
+  28:5  error  Error: Cannot access variable before it is declared
+
+`fetchCategories` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  26 |     fetchConfig();
+  27 |     fetchPricingLogs();
+> 28 |     fetchCategories();
+     |     ^^^^^^^^^^^^^^^ `fetchCategories` accessed before it is declared
+  29 |   }, []);
+  30 |
+  31 |   const fetchCategories = async () => {
+
+  29 |   }, []);
+  30 |
+> 31 |   const fetchCategories = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 32 |     try {
+     | ^^^^^^^^^
+> 33 |       const data = await categoryService.getAllCategories();
+     …
+     | ^^^^^^^^^
+> 41 |     }
+     | ^^^^^^^^^
+> 42 |   };
+     | ^^^^^ `fetchCategories` is declared here
+  43 |
+  44 |   useEffect(() => {
+  45 |     if (config && originalConfig) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/immutability
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\settings\rbac\RbacForm.jsx
+  33:11  error  The value assigned to 'newRoles' is not used in subsequent statements  no-useless-assignment
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\WalletModals.jsx
+  4:43  warning  'setAdjType' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\components\TransactionTable.jsx
+  24:22  error  Component definition is missing display name  react/display-name
+  27:22  error  Component definition is missing display name  react/display-name
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js
+    9:12  warning  'globalLedger' is assigned a value but never used. Allowed unused vars must match /^_/u   unused-imports/no-unused-vars
+   11:12  warning  'globalHistory' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+   54:25  warning  'e' is defined but never used                                                             unused-imports/no-unused-vars
+   62:25  warning  'e' is defined but never used                                                             unused-imports/no-unused-vars
+   68:25  warning  'e' is defined but never used                                                             unused-imports/no-unused-vars
+  150:13  error    There is no `cause` attached to the symptom error being thrown                            preserve-caught-error
+
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\todo\components\TodoPageList.jsx
+  14:3  warning  'fetchedPrices' is defined but never used. Allowed unused args must match /^_/u       unused-imports/no-unused-vars
+  15:3  warning  'wholesaleInputs' is defined but never used. Allowed unused args must match /^_/u     unused-imports/no-unused-vars
+  16:3  warning  'setWholesaleInputs' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+✖ 225 problems (99 errors, 126 warnings)
+  5 errors and 0 warnings potentially fixable with the `--fix` option.
+

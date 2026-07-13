@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Phone } from 'lucide-react';
 
 export default function ContactInfoSection({ formData, handleChange }) {

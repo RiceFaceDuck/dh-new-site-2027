@@ -7,12 +7,12 @@ import { useCartDispatch } from '../../context/CartProvider';
 import { useToast } from '../../context/ToastContext';
 
 import { safeJsonParse } from 'dh-shared';
-export const useProductDetail = (id) => {
+export const useProductDetail = (id, initialData = null) => {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // 🧠 SMART FETCH
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true); 
+  // 🧠 SMART FETCH: Use initialData (from ProductCard) immediately if available
+  const [product, setProduct] = useState(initialData);
+  const [loading, setLoading] = useState(!initialData); // Don't show loading if we have initialData
   const [error, setError] = useState(null);
 
   const [isAdding, setIsAdding] = useState(false);
@@ -75,11 +75,17 @@ export const useProductDetail = (id) => {
   const initialVariant = searchParams.get('variant') ? safeJsonParse(decodeURIComponent(searchParams.get('variant'))) : null;
   const [selectedVariant, setSelectedVariantState] = useState(initialVariant);
 
+  const variantParam = searchParams.get('variant');
+  
   // 🔄 รีเซ็ตค่าเลือกประเภทสินค้าเมื่อเปลี่ยนหน้าหรือ URL searchParams เปลี่ยนแปลง
   useEffect(() => {
-    const currentVariant = searchParams.get('variant') ? safeJsonParse(decodeURIComponent(searchParams.get('variant'))) : null;
-    setSelectedVariantState(currentVariant);
-  }, [id, searchParams]);
+    const currentVariant = variantParam ? safeJsonParse(decodeURIComponent(variantParam)) : null;
+    setSelectedVariantState(prev => {
+      const isSame = JSON.stringify(prev) === JSON.stringify(currentVariant);
+      return isSame ? prev : currentVariant;
+    });
+
+  }, [id, variantParam]);
 
   // อัปเดต URL เมื่อเปลี่ยน Variant
   const setSelectedVariant = (newVariant) => {

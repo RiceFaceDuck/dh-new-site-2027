@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Lock, Unlock, Receipt } from 'lucide-react';
 import BillSummary from './payment/BillSummary';
 import PaymentMethods from './payment/PaymentMethods';

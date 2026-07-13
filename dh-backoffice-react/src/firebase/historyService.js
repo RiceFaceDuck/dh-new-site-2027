@@ -1,5 +1,3 @@
-import { collection, addDoc, getDocs, query, orderBy, limit, startAfter, serverTimestamp, where } from 'firebase/firestore';
-import { db, auth } from './config.js';
 import { gasHistoryService } from './gasHistoryService.js';
 
 const COLLECTION_NAME = 'history_logs';

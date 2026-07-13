@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Loader2, Boxes } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
 import ProductTable from '../../components/inventory/ProductTable';
 import ProductModal from '../../components/inventory/ProductModal';
 import InventoryImportModal from '../../components/inventory/InventoryImportModal';
@@ -108,6 +108,7 @@ export default function Inventory() {
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
         filterCategory={filterCategory} setFilterCategory={setFilterCategory}
         salesPeriod={salesPeriod} setSalesPeriod={setSalesPeriod}
+        categories={categories}
         onAddProduct={handleAddProduct}
         onImportProduct={() => setIsImportModalOpen(true)}
         onExportProduct={() => setIsExportModalOpen(true)}
@@ -159,6 +160,7 @@ export default function Inventory() {
         onSave={handleSaveProduct} 
         productData={editingProduct} 
         globalBufferStock={globalBufferStock}
+        categoriesData={categories}
       />
 
       <InventoryImportModal 

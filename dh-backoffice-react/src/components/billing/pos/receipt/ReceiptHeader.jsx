@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar, Truck, Store, Phone } from 'lucide-react';
 
 export default function ReceiptHeader({ 

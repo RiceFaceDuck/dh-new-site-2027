@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const HighlightText = ({ text, highlightData }) => {
   if (!text) return <span className="text-dh-muted opacity-70">n/a</span>;

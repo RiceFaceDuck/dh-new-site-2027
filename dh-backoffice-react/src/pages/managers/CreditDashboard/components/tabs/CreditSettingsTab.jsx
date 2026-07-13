@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Settings, Bell } from 'lucide-react';
 import { useCreditSettingsState } from './useCreditSettingsState';
 import CreditSettingsForm from './CreditSettingsForm';

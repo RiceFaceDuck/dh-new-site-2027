@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, limit, orderBy, where, startAfter } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils.js';
 

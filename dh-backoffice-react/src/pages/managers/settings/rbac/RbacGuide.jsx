@@ -1,4 +1,3 @@
-import React from 'react';
 import GuideModal from '../../../../components/common/GuideModal';
 
 export default function RbacGuide({ isOpen, onClose }) {

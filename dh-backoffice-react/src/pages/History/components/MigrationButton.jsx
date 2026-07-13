@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config.js';
 import { gasHistoryService } from '../../../firebase/gasHistoryService.js';

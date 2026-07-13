@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calculator } from 'lucide-react';
 
 export default function SmartRoundingPolicy({ config, handleRoundingChange }) {

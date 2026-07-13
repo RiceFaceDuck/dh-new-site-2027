@@ -1,5 +1,4 @@
-import React from 'react';
-import { PackageSearch, Clock, TrendingUp, Check, X } from 'lucide-react';
+import { PackageSearch, Clock, TrendingUp, Check } from 'lucide-react';
 import GuidePanel from '../../components/common/GuidePanel';
 import { useSourcingRequests } from './hooks/useSourcingRequests';
 

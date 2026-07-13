@@ -1,7 +1,6 @@
-import { doc, updateDoc, serverTimestamp, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
-import { transactionService } from '../transactionService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 

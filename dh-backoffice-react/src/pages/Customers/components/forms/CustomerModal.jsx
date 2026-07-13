@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
 import { 
-  X, UserPlus, Save, Loader2, Building2, 
-  MapPin, Phone, Mail, Truck, Hash, Wand2, CheckCircle2, AlertCircle, RefreshCw
+  X, UserPlus, Save, Loader2
 } from 'lucide-react';
 import { generateAccountId, checkAccountIdExists } from '../../../../firebase/customer/accountIdService';
 import { syncCustomerAccount } from '../../../../firebase/customerAdminService';

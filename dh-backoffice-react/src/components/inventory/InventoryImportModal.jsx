@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { X, UploadCloud, Database, CheckCircle, Loader2 } from 'lucide-react';
 import { useExcelImport } from './hooks/useExcelImport';
 

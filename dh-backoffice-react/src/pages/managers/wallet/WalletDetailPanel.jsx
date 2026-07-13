@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Wallet, Coins, Loader2 } from 'lucide-react';
 import WalletStatusCard from './components/WalletStatusCard';
 import TransactionTable from './components/TransactionTable';

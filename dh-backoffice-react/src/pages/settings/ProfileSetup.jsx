@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { userService } from '../../firebase/userService';
 import { UserCircle, Loader2, Save, ShieldCheck } from 'lucide-react';
 

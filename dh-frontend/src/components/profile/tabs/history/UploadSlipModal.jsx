@@ -1,4 +1,3 @@
-import React from 'react';
 import { useUploadSlip } from './useUploadSlip';
 
 const UploadSlipModal = ({ selectedOrder, closeModal }) => {

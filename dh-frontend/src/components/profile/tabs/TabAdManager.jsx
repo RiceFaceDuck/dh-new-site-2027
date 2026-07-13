@@ -16,8 +16,11 @@ import AdFormModal from './ad-manager/AdFormModal';
 import StoreProfileForm from './store-profile/StoreProfileForm';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import { useToast } from '../../../context/ToastContext';
+
 
 const sanitizeData = (obj) => {
+  const { showToast } = useToast();
   const cleaned = {};
   for (let key in obj) {
     if (obj[key] === undefined) cleaned[key] = null;
@@ -132,7 +135,7 @@ const TabAdManager = ({ user }) => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return alert("กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 5MB");
+    if (file.size > 5 * 1024 * 1024) return showToast("กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 5MB", 'error');
 
     setUploadingImage(true);
     try {
@@ -140,15 +143,15 @@ const TabAdManager = ({ user }) => {
       setFormData({ ...formData, imageUrl: url });
     } catch (error) {
     console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
+    showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
 
-      alert(error.message);
+      showToast(error.message, 'error');
     } finally { setUploadingImage(false); }
   };
 
   const handleEditAd = (ad) => {
     if (ad.type === 'BUSINESS_CARD') {
-       alert("นามบัตรถูกจัดการผ่าน 'ข้อมูลร้านซ่อม' กรุณาไปแก้ไขที่แท็บข้อมูลร้านซ่อมครับ");
+       showToast("นามบัตรถูกจัดการผ่าน 'ข้อมูลร้านซ่อม' กรุณาไปแก้ไขที่แท็บข้อมูลร้านซ่อมครับ", 'info');
        setActiveSubTab('store');
        return;
     }
@@ -180,11 +183,11 @@ const TabAdManager = ({ user }) => {
   const handleSubmitAd = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.targetUrl || !formData.imageUrl) {
-      return alert("กรุณากรอกข้อมูลและอัปโหลดรูปภาพให้ครบถ้วน");
+      return showToast("กรุณากรอกข้อมูลและอัปโหลดรูปภาพให้ครบถ้วน", 'info');
     }
     
     const finalCreditLimit = isUnlimited ? -1 : (Number(creditLimit) || 0);
-    if (!isUnlimited && finalCreditLimit < 10) return alert("กรุณาตั้งค่างบโฆษณาขั้นต่ำ 10 แต้ม");
+    if (!isUnlimited && finalCreditLimit < 10) return showToast("กรุณาตั้งค่างบโฆษณาขั้นต่ำ 10 แต้ม", 'error');
 
     setSubmittingAd(true);
     try {
@@ -203,19 +206,19 @@ const TabAdManager = ({ user }) => {
       
       if (isEditMode && editingAdId) {
         await marketingService.updatePartnerAd(user.uid, editingAdId, formData.type, adPayload, finalCreditLimit);
-        alert("ส่งคำขอแก้ไขโฆษณาสำเร็จ! ระบบได้ส่งเรื่องให้ผู้จัดการตรวจสอบอีกครั้ง");
+        showToast("ส่งคำขอแก้ไขโฆษณาสำเร็จ! ระบบได้ส่งเรื่องให้ผู้จัดการตรวจสอบอีกครั้ง", 'success');
       } else {
         await marketingService.submitPartnerAd(user.uid, formData.type, adPayload, finalCreditLimit);
-        alert("สร้างคำขอโฆษณาสำเร็จ! ระบบได้ส่งเรื่องให้ผู้จัดการตรวจสอบแล้ว");
+        showToast("สร้างคำขอโฆษณาสำเร็จ! ระบบได้ส่งเรื่องให้ผู้จัดการตรวจสอบแล้ว", 'success');
       }
 
       handleCloseForm();
       fetchMyAds();
     } catch (error) {
     console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
+    showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
 
-      alert("เกิดข้อผิดพลาดในการบันทึกโฆษณา");
+      showToast("เกิดข้อผิดพลาดในการบันทึกโฆษณา", 'error');
     } finally { setSubmittingAd(false); }
   };
 
@@ -244,8 +247,8 @@ const TabAdManager = ({ user }) => {
         fetchMyAds();
       } catch (error) {
     console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
- alert("ลบไม่สำเร็จ กรุณาลองใหม่"); }
+    showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
+ showToast("ลบไม่สำเร็จ กรุณาลองใหม่", 'success'); }
     }
   };
 

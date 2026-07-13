@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { driveService } from '../../../../../firebase/driveService';
 import { storeProfileSubmitService } from '../../../../../firebase/storeProfileSubmitService';
+import { useToast } from '../../../../../context/ToastContext';
+
 
 export const useStoreProfile = (storeData, setStoreData, user, appId, businessCardAd, fetchMyAds) => {
+  const { showToast } = useToast();
   const [savingStore, setSavingStore] = useState(false);
   const [uploadingStoreImage, setUploadingStoreImage] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -10,7 +13,7 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
   const handleStoreImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return alert("ไฟล์ใหญ่เกินไป (Max 5MB)");
+    if (file.size > 5 * 1024 * 1024) return showToast("ไฟล์ใหญ่เกินไป (Max 5MB, 'error')");
     
     setUploadingStoreImage(true);
     try {
@@ -19,7 +22,7 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
     } catch (error) {
     console.error("🔥 Error:", error);
 
-      alert("อัปโหลดไม่สำเร็จ: " + error.message);
+      showToast("อัปโหลดไม่สำเร็จ: " + error.message, 'success');
     } finally { 
       setUploadingStoreImage(false); 
     }
@@ -28,18 +31,18 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
   const handleGalleryImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return alert("ไฟล์ใหญ่เกินไป (Max 5MB)");
+    if (file.size > 5 * 1024 * 1024) return showToast("ไฟล์ใหญ่เกินไป (Max 5MB, 'error')");
     
     setUploadingGallery(true);
     try {
       const url = await driveService.uploadAdImage(file, 'STORE_GALLERY');
       const currentGallery = storeData.galleryImages || [];
-      if (currentGallery.length >= 5) return alert("อัปโหลดได้สูงสุด 5 รูป");
+      if (currentGallery.length >= 5) return showToast("อัปโหลดได้สูงสุด 5 รูป", 'error');
       setStoreData({ ...storeData, galleryImages: [...currentGallery, url] });
     } catch (error) {
     console.error("🔥 Error:", error);
 
-      alert("อัปโหลดไม่สำเร็จ: " + error.message);
+      showToast("อัปโหลดไม่สำเร็จ: " + error.message, 'success');
     } finally { 
       setUploadingGallery(false); 
     }
@@ -57,7 +60,7 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
   const handleSaveStore = async (e) => {
     e.preventDefault();
     if (!storeData.storeName || !storeData.phone) {
-      return alert("กรุณากรอกข้อมูล ชื่อร้าน และ เบอร์โทร ให้ครบถ้วน");
+      return showToast("กรุณากรอกข้อมูล ชื่อร้าน และ เบอร์โทร ให้ครบถ้วน", 'info');
     }
     
     setSavingStore(true);
@@ -65,11 +68,11 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
       const updatedStoreData = await storeProfileSubmitService.saveStoreProfile(appId, user, storeData, businessCardAd);
       setStoreData(updatedStoreData);
       if (fetchMyAds) fetchMyAds();
-      alert("บันทึกข้อมูลเรียบร้อยแล้ว");
+      showToast("บันทึกข้อมูลเรียบร้อยแล้ว", 'success');
     } catch (error) {
     console.error("🔥 Error:", error);
 
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + error.message);
+      showToast("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + error.message, 'info');
     } finally { 
       setSavingStore(false); 
     }

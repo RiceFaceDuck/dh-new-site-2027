@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { UploadCloud, CheckCircle, AlertCircle, RefreshCw, FileSpreadsheet, X, HelpCircle, Settings2, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import GlobalSchemaSettings from './GlobalSchemaSettings';

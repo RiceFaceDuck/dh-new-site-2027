@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { hardwareService } from '../../firebase/hardwareService';
 import AuthForm from '../../components/profile/AuthForm';
-import { Monitor, Battery, HardDrive, Cpu, Download, Copy, CheckCircle, Info, ShieldCheck, ArrowRight, LayoutGrid } from 'lucide-react';
+import { Monitor, Battery, HardDrive, Cpu, Download, Copy, CheckCircle, Info, ShieldCheck, LayoutGrid } from 'lucide-react';
 import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { parseConsentText } from '../../utils/textParser';
 

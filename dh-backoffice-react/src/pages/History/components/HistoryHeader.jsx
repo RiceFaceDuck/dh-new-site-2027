@@ -1,4 +1,3 @@
-import React from 'react';
 import MigrationButton from './MigrationButton';
 
 export default function HistoryHeader({

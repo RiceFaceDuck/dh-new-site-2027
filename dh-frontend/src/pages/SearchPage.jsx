@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore'; 
 import { db } from '../firebase/config';
 import ProductList from '../components/ProductList';
 // Removed memoryCache import since we are upgrading to sessionStorage
-import { Search, Loader2, Sparkles, ChevronLeft } from 'lucide-react';
+import { Search, Sparkles, ChevronLeft } from 'lucide-react';
 
 import { safeJsonParse } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -177,12 +177,7 @@ const SearchPage = () => {
 
         {/* Results */}
         <div>
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Loader2 className="animate-spin w-10 h-10 mb-4 text-brand" /> 
-              <span className="text-sm font-medium animate-pulse">กำลังประมวลผลฐานข้อมูล...</span>
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-xs">
               <p className="font-semibold text-lg mb-1">เกิดข้อผิดพลาด</p>
               <p className="text-sm opacity-80">{error}</p>
@@ -193,14 +188,18 @@ const SearchPage = () => {
               <p className="text-lg font-bold tracking-wide text-slate-700">ระบุคำค้นหาเพื่อหาสินค้า</p>
               <p className="text-sm mt-1">สามารถพิมพ์ชื่อรุ่น แบรนด์ หรือ รหัสสินค้าได้เลย</p>
             </div>
-          ) : filteredProducts.length > 0 ? (
-            <ProductList products={filteredProducts} />
-          ) : (
+          ) : !loading && filteredProducts.length === 0 ? (
             <div className="bg-slate-50 text-slate-500 p-12 rounded-3xl text-center border-2 border-dashed border-slate-200 flex flex-col items-center">
               <Sparkles size={48} className="text-slate-300 mb-4" />
               <p className="text-lg font-bold tracking-wide text-slate-700">ไม่พบสินค้าที่ตรงกับ "{queryParam}"</p>
               <p className="text-sm mt-1">ลองใช้คำค้นหาที่กว้างขึ้น หรือค้นหาด้วยแบรนด์/แท็ก</p>
             </div>
+          ) : (
+            <ProductList 
+              products={filteredProducts} 
+              isLoading={loading} 
+              showTitle={false} 
+            />
           )}
         </div>
 

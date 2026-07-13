@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Upload, X, Tag, FileImage, FileText, Image as ImageIcon, Maximize } from 'lucide-react';
 import { driveService } from '../../firebase/driveService'; // ✨ เรียกใช้ Service ของบริษัทโดยตรง
 

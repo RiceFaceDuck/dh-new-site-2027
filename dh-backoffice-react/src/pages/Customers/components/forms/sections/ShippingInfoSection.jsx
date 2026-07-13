@@ -1,4 +1,3 @@
-import React from 'react';
 import { Truck, MapPin } from 'lucide-react';
 
 export default function ShippingInfoSection({ formData, handleChange }) {

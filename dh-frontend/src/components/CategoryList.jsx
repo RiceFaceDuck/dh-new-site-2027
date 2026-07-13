@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Package, AlertCircle } from 'lucide-react';
 import { categoryService } from '../firebase/categoryService';
 

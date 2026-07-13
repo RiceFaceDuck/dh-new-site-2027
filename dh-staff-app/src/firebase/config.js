@@ -1,7 +1,7 @@
 // นำเข้า functions ที่จำเป็นจาก Firebase SDK
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
@@ -23,7 +23,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize App Check
 let appCheck;
 if (typeof window !== "undefined") {
-  // eslint-disable-next-line no-undef
+   
   if (import.meta.env.VITE_RECAPTCHA_SITE_KEY && import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your-recaptcha-site-key') {
     appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
@@ -36,7 +36,9 @@ if (typeof window !== "undefined") {
 
 // Initialize Services (Export ไปใช้งานใน Service อื่นๆ สำหรับ Staff App)
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+});
 export const storage = getStorage(app);
 
 // Analytics

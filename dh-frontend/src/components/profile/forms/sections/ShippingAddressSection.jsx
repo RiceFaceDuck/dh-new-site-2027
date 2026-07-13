@@ -1,4 +1,3 @@
-import React from 'react';
 import { Home, Building, Building2, MapPin, Hash } from 'lucide-react';
 
 export default function ShippingAddressSection({ formData, handleChange }) {

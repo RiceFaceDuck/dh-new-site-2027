@@ -1,4 +1,4 @@
-import { collection, doc, addDoc, updateDoc, serverTimestamp, getDocs, query, where, runTransaction } from 'firebase/firestore';
+import { collection, doc, updateDoc, serverTimestamp, getDocs, query, where, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Building2, HelpCircle } from 'lucide-react';
 import { auth } from '../../firebase/config';

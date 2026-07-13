@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const SquadHeader = ({ totalPoints, formation, onFormationChange }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

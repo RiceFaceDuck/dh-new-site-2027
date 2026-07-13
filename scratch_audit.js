@@ -58,7 +58,9 @@ function analyzeFile(file) {
 
 const targetDirs = [
   path.join(__dirname, 'dh-backoffice-react', 'src'),
-  path.join(__dirname, 'dh-frontend', 'src')
+  path.join(__dirname, 'dh-frontend', 'src'),
+  path.join(__dirname, 'dh-staff-app', 'src'),
+  path.join(__dirname, 'dh-shared', 'src')
 ];
 
 let pendingDirs = targetDirs.length;

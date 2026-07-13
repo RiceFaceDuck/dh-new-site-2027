@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Copy, Layers, CheckCircle2 } from 'lucide-react';
 
 const ImageCard = ({ image, onCompare, isComparing }) => {

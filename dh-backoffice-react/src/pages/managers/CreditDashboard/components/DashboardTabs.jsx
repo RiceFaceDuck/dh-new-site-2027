@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowRightLeft, History, Users, Settings, Calculator } from 'lucide-react';
 
 export default function DashboardTabs({ activeTab = 'adjust', onTabChange }) {

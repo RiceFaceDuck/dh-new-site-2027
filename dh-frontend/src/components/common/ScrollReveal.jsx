@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 /**
  * ScrollReveal - คอมโพเนนต์อัจฉริยะสำหรับสร้างแอนิเมชัน Animate On Scroll (AOS) แบบไร้ปลั๊กอิน
@@ -21,14 +21,16 @@ const ScrollReveal = ({
       return;
     }
 
+    const currentRef = domRef.current;
+
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         // เมื่อ Element เลื่อนเข้ามาในจอ (Viewport)
         if (entry.isIntersecting) {
           setIsVisible(true);
           // เลิกติดตามทันทีที่แอนิเมชันทำงานไปแล้ว 1 ครั้ง เพื่อลดภาระเครื่อง
-          if (domRef.current) {
-            observer.unobserve(domRef.current);
+          if (currentRef) {
+            observer.unobserve(currentRef);
           }
         }
       });
@@ -38,13 +40,13 @@ const ScrollReveal = ({
       rootMargin: "0px 0px -50px 0px" 
     });
 
-    if (domRef.current) {
-      observer.observe(domRef.current);
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
     return () => { 
-      if (domRef.current) {
-        observer.unobserve(domRef.current); 
+      if (currentRef) {
+        observer.unobserve(currentRef); 
       }
     };
   }, []);

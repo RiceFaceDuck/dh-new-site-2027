@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShieldCheckIcon, ClockIcon, CheckCircleIcon, XCircleIcon } from './AdIcons';
 import { HelpCircle } from 'lucide-react';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Clock, CheckCircle, XCircle, Ban, Flame, Zap, Timer, Package, Settings } from 'lucide-react';
 
 // ✨ อัปเกรดลูกเล่นที่ 1: ระบบคำนวณหลอดประกัน (Warranty Progress)

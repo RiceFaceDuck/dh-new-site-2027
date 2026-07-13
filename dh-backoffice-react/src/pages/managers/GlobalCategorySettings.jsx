@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LayoutTemplate, ArrowLeft, Layers, Sparkles, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CategoryManager from '../../components/managers/category/CategoryManager';

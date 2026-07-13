@@ -1,4 +1,3 @@
-import React from 'react';
 import { History, X, RefreshCw, Clock } from 'lucide-react';
 
 export default function HistoryModal({ isHistoryModalOpen, setIsHistoryModalOpen, loadingHistory, historyLogs }) {

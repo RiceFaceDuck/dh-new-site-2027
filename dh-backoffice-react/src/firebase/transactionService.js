@@ -1,4 +1,4 @@
-import { collection, doc, runTransaction, serverTimestamp, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, doc, runTransaction, serverTimestamp, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 

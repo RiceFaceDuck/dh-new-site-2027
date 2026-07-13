@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Image, Upload, Loader2 } from 'lucide-react';
 import { driveService } from '../../../../firebase/driveService';
 

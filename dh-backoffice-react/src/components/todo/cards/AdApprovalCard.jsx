@@ -1,4 +1,3 @@
-import React from 'react';
 import { Megaphone, ExternalLink, Image as ImageIcon, Clock, Calendar, Check, X } from 'lucide-react';
 import ManagerBadge from './ManagerBadge';
 

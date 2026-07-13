@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShieldAlert, Lock, Loader2, Check, Save } from 'lucide-react';
 
 const FlatToggle = ({ checked, onChange, label, description }) => (

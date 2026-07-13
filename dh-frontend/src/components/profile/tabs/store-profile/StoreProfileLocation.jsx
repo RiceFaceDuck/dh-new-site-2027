@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, CheckCircle2, Search, Loader2, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Search, CheckCircle2, Loader2, Info } from 'lucide-react';
+import { useToast } from '../../../../context/ToastContext';
+
 
 const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, locationLoading }) => {
+  const { showToast } = useToast();
   const [resolvingName, setResolvingName] = useState(false);
   const [resolvedName, setResolvedName] = useState('');
-
-  useEffect(() => {
-    if (storeData.latitude && storeData.longitude) {
-      reverseGeocode(storeData.latitude, storeData.longitude);
-    }
-  }, [storeData.latitude, storeData.longitude]);
 
   const reverseGeocode = async (lat, lng) => {
     try {
@@ -29,10 +26,17 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
     }
   };
 
+  useEffect(() => {
+    if (storeData.latitude && storeData.longitude) {
+      reverseGeocode(storeData.latitude, storeData.longitude);
+    }
+  }, [storeData.latitude, storeData.longitude]);
+
+
   const handleParseCoordinates = async () => {
     const text = storeData.googleMapLink || '';
     if (!text.trim()) {
-      alert('กรุณาวางตัวเลขพิกัดก่อนครับ');
+      showToast('กรุณาวางตัวเลขพิกัดก่อนครับ', 'error');
       return;
     }
 
@@ -48,7 +52,7 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
     match = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
     if (match) return updateLocation(parseFloat(match[1]), parseFloat(match[2]));
 
-    alert('ไม่พบตัวเลขพิกัดในข้อความ กรุณาคัดลอกเฉพาะ "ตัวเลขพิกัด" (เช่น 13.956842, 100.567251) จาก Google Maps มาวางครับ');
+    showToast('ไม่พบตัวเลขพิกัดในข้อความ กรุณาคัดลอกเฉพาะ "ตัวเลขพิกัด" (เช่น 13.956842, 100.567251) จาก Google Maps มาวางครับ', 'error');
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Loader2, Wallet, ArrowLeft } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Loader2, Search, Image as ImageIcon, CreditCard, ShoppingBag, MonitorPlay, XCircle, CheckCircle } from 'lucide-react';
 import { ClockIcon } from './AdIcons';
 

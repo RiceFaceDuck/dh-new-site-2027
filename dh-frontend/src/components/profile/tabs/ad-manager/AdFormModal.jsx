@@ -1,8 +1,7 @@
-/* eslint-disable react/prop-types */
-import React from 'react';
+ 
 import { 
   Megaphone, X, Link as LinkIcon, UploadCloud, Loader2, CheckCircle2, 
-  ShoppingBag, MonitorPlay, Sparkles, AlertCircle,
+  ShoppingBag, MonitorPlay, Sparkles,
   RectangleHorizontal, Square, RectangleVertical, Tag, Infinity,
   Eye, ShieldAlert
 } from 'lucide-react';

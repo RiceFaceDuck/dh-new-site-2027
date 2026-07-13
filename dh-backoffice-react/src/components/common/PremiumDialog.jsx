@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 
 export default function PremiumDialog({ 

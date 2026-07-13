@@ -1,5 +1,4 @@
-import React from 'react';
-import { BookOpen, AlertTriangle, Wallet, Coins, Search, Clock, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { BookOpen, AlertTriangle, Wallet, Coins, Clock, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { FixedSizeList as List } from 'react-window';
 import { AutoSizer } from 'react-virtualized-auto-sizer';
 import GuidePanel from '../../components/common/GuidePanel';

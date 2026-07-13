@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, Upload, CheckCircle2, Copy, Image as ImageIcon, AlertCircle, X, Check } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { formatCredit } from '../../firebase/creditService';

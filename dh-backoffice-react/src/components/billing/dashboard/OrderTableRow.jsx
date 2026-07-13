@@ -1,4 +1,3 @@
-import React from 'react';
 import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store, User } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 

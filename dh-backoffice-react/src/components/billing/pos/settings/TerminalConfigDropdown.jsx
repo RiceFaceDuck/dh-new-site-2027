@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, SlidersHorizontal, Printer, Volume2, Phone } from 'lucide-react';
 
 export default function TerminalConfigDropdown({

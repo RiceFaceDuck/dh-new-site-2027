@@ -1,4 +1,4 @@
-import { limit, collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { limit, collection, addDoc, updateDoc, doc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { todoService } from './todoService';

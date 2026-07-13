@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, MapPin, Navigation } from 'lucide-react';
 
 const ProvidersFilterBar = ({ 

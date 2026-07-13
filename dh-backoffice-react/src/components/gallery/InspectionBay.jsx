@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Maximize2, Trash2, Moon, Sun, Image as ImageIcon, X } from 'lucide-react';
 
 const InspectionBay = ({ images, onRemove, onClear, onClose }) => {

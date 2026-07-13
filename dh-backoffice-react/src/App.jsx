@@ -1,11 +1,10 @@
-import React, { Suspense, lazy } from 'react'
+import { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Clock, Loader2 } from 'lucide-react' 
 
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ManagerRoute from './components/routing/ManagerRoute'
 import AdminLayout from './layouts/AdminLayout'
-import { ErrorBoundary } from './components/ErrorBoundary.jsx' 
 
 // 🚀 Lazy Load Components for Performance
 const Overview = lazy(() => import('./pages/dashboard/Overview'))

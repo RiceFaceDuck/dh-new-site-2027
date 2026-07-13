@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calculator, Save, ArrowLeft, CheckCircle2, RefreshCw, HelpCircle } from 'lucide-react';
 import GuideModal from '../../components/common/GuideModal';
@@ -16,7 +16,7 @@ export default function PricingSettings() {
     loading, saving, config, isDirty,
     simCost, setSimCost, simCategory, setSimCategory, simResult,
     logs, loadingLogs, fetchPricingLogs,
-    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange, runSimulation
+    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange, runSimulation, categories
   } = usePricingSettings();
 
   if (loading || !config) return <div className="flex justify-center items-center h-full bg-(--dh-bg-base)"><RefreshCw className="animate-spin text-(--dh-accent)" size={40} /></div>;
@@ -68,7 +68,8 @@ export default function PricingSettings() {
             config={config} 
             addRule={addRule} 
             removeRule={removeRule} 
-            handleRuleChange={handleRuleChange} 
+            handleRuleChange={handleRuleChange}
+            categories={categories}
           />
           <PricingHistoryLog 
             logs={logs} 
@@ -87,6 +88,7 @@ export default function PricingSettings() {
             simCost={simCost} setSimCost={setSimCost}
             simCategory={simCategory} setSimCategory={setSimCategory}
             config={config} runSimulation={runSimulation} simResult={simResult}
+            categories={categories}
           />
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useShippingManagement } from './hooks/useShippingManagement';

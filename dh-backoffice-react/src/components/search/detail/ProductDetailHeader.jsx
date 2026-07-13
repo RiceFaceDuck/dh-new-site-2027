@@ -1,4 +1,3 @@
-import React from 'react';
 import { PackageX, Maximize2, AlertCircle, Box, MapPin, ExternalLink, RefreshCw } from 'lucide-react';
 import { HighlightText } from '../HighlightText';
 import CopyableLinkButton from '../../common/CopyableLinkButton';

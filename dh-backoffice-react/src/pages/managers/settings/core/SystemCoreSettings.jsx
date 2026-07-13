@@ -1,4 +1,3 @@
-import React from 'react';
 import { useCoreSettings } from './useCoreSettings';
 import CoreForm from './CoreForm';
 import CoreGuide from './CoreGuide';

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { History, Maximize2, Clock, User, ChevronRight, CheckCircle2, AlertCircle, Edit3, Trash2, PlusCircle, MessageSquare, Send, Pin, PinOff } from 'lucide-react';
+import { useState } from 'react';
+import { History, Maximize2, Trash2, Send, Pin, PinOff } from 'lucide-react';
 
 import { safeJsonParse } from 'dh-shared';
 const getActionColor = (action) => {

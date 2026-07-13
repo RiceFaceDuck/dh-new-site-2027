@@ -1,5 +1,4 @@
-import React from 'react';
-import { Trophy, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Trophy, TrendingUp } from 'lucide-react';
 
 export const BestSellersPanel = ({ bestSellers = [] }) => {
   // Use passed data or fallback

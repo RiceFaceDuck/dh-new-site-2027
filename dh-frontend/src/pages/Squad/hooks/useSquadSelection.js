@@ -16,10 +16,10 @@ const INITIAL_SQUAD = [
 ];
 
 export const useSquadSelection = () => {
-  const [squad, setSquad] = useState(INITIAL_SQUAD);
+  const [squad] = useState(INITIAL_SQUAD);
   const [formation, setFormation] = useState('4-3-3');
-  const [bank, setBank] = useState(1.2);
-  const [totalPoints, setTotalPoints] = useState(89);
+  const [bank] = useState(1.2);
+  const [totalPoints] = useState(89);
 
   const handleAutoPick = useCallback(() => {
     // In a real app, this would call an API or complex logic

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings2, HelpCircle, Save, Check } from 'lucide-react';
 
 import { safeJsonParse } from 'dh-shared';

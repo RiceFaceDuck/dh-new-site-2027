@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 
 export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, changes, isSaving }) {

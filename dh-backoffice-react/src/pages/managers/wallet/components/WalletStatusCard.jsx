@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Phone, CheckCircle2, Copy, Wallet, Coins, ArrowDownToLine, Banknote, ArrowUpFromLine } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 

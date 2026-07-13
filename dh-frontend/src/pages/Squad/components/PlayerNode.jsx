@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * PlayerNode - Displays an individual player on the pitch.

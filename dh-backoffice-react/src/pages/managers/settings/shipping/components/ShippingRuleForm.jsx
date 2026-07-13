@@ -1,4 +1,3 @@
-import React from 'react';
 import { Plus, Save, Loader2, ShieldCheck, Truck, Trash2, Layers } from 'lucide-react';
 
 const companies = ['Kerry Express', 'J&T Express', 'Flash Express', 'EMS', 'Lalamove', 'ผู้ขายจัดส่งเอง', 'อื่นๆ'];

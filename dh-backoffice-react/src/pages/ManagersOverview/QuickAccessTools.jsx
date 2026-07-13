@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Settings, History, Users, Calculator, Mail, Crown, 
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 

@@ -21,9 +21,15 @@ export default function useInventoryData(PAGE_LIMIT = 50) {
         categoryService.getAllCategories()
       ]);
       
+      // Deduplicate strictly by name to avoid UI duplicates (e.g. "ลำโพง" showing up twice)
+      const uniqueData = Array.from(new Map(categoriesResult.map(item => [
+        (item.name || '').trim().toLowerCase(), 
+        item
+      ])).values());
+      
       setGlobalBufferStock(settingsResult.defaultBufferStock !== undefined ? settingsResult.defaultBufferStock : 2);
       setProducts(productsResult.products);
-      setCategories(categoriesResult.map(c => c.name));
+      setCategories(uniqueData);
       setLastVisibleDoc(productsResult.lastDoc);
       setHasMore(productsResult.products.length === PAGE_LIMIT);
     } catch (error) {

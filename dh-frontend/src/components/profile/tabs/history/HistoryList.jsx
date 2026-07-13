@@ -1,4 +1,3 @@
-import React from 'react';
 import HistoryItemCard from './HistoryItemCard';
 
 const HistoryList = ({

@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, collection, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 

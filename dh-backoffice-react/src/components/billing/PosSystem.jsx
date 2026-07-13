@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Plus, ArrowLeft, X, HelpCircle } from 'lucide-react';
-import { auth } from '../../firebase/config';
+import { useRef, useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 
 import CartPanel from './pos/CartPanel';
 import PaymentPanel from './pos/PaymentPanel';
@@ -43,7 +42,7 @@ const convertToThaiBahtText = (number) => {
 
 const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, slate: {} };
 
-export default function PosSystem({ products = [], customers = [], onSwitchView, initialDraft }) {
+export default function PosSystem({ products = [], customers = [], onSwitchView, initialDraft, resumeTabId }) {
     const posState = usePosState(products, customers, initialDraft);
     const {
         cartTabs: safeCartTabs, setCartTabs,
@@ -86,6 +85,12 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
         };
         fetchShippingRules();
     }, []);
+
+    useEffect(() => {
+        if (resumeTabId && safeCartTabs.some(t => t.id === resumeTabId)) {
+            setActiveTabId(resumeTabId);
+        }
+    }, [resumeTabId, safeCartTabs, setActiveTabId]);
 
     const actions = usePosActions({
         posState, products, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText

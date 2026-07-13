@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileEdit, Receipt } from 'lucide-react';
 
 export default function PaymentActions({

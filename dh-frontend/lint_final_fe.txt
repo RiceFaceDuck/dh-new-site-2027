@@ -1,0 +1,539 @@
+
+> dh-frontend@0.0.0 lint
+> eslint .
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+
+C:\DH Notebook\Management System\dh-frontend\src\components\CategoryList.jsx
+  1:8   error    'React' is defined but never used                                               unused-imports/no-unused-imports
+  2:16  error    'useLocation' is defined but never used                                         unused-imports/no-unused-imports
+  7:39  warning  'onSelectType' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\Footer.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\HeroBanner.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\Navbar.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ProductList.jsx
+    1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+    2:8   error    'React' is defined but never used                                                                                                                                                                                                               unused-imports/no-unused-imports
+    3:24  error    'ShoppingCart' is defined but never used                                                                                                                                                                                                        unused-imports/no-unused-imports
+    3:38  error    'CheckCircle2' is defined but never used                                                                                                                                                                                                        unused-imports/no-unused-imports
+    3:52  error    'Loader2' is defined but never used                                                                                                                                                                                                             unused-imports/no-unused-imports
+    6:10  error    'cartService' is defined but never used                                                                                                                                                                                                         unused-imports/no-unused-imports
+   14:8   error    'LazyImage' is defined but never used                                                                                                                                                                                                           unused-imports/no-unused-imports
+   36:9   warning  'navigate' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                             unused-imports/no-unused-vars
+   48:9   warning  The 'displayProducts' conditional could make the dependencies of useMemo Hook (at line 143) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'displayProducts' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  117:33  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render                                                                                                                      react-hooks/rules-of-hooks
+  118:39  warning  'index' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                         unused-imports/no-unused-vars
+  159:15  warning  'id' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                   unused-imports/no-unused-vars
+  159:19  warning  'name' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                 unused-imports/no-unused-vars
+  159:25  warning  'price' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                unused-imports/no-unused-vars
+  159:39  warning  'imageUrl' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                             unused-imports/no-unused-vars
+  159:49  warning  'brand' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                unused-imports/no-unused-vars
+  159:56  warning  'sku' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\BannerAdWidget.jsx
+  1:8   error  'React' is defined but never used         unused-imports/no-unused-imports
+  2:16  error  'ExternalLink' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\BusinessCardAdWidget.jsx
+  1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+  2:8   error    'React' is defined but never used                                                    unused-imports/no-unused-imports
+  4:10  error    'ExternalLink' is defined but never used                                             unused-imports/no-unused-imports
+  4:31  error    'ShoppingBag' is defined but never used                                              unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\ProductAdCard.jsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartActivePromotions.jsx
+  1:8   error  'React' is defined but never used     unused-imports/no-unused-imports
+  4:10  error  'Sparkles' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartEmptyState.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartFreebieProgress.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartItemCard.jsx
+  27:31  warning  'index' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartSummaryPanel.jsx
+  1:8   error    'React' is defined but never used                                              unused-imports/no-unused-imports
+  2:35  error    'CheckCircle2' is defined but never used                                       unused-imports/no-unused-imports
+  7:5   warning  'currentUser' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\chat\MessengerMenu.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\chat\MessengerRadar.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\chat\MessengerResult.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\AccordionSection.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\AddressSelector.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\CheckoutSuccess.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\CreditToggleBox.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PaymentMethod.jsx
+    1:8    error  'React' is defined but never used                                unused-imports/no-unused-imports
+  128:86   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  128:105  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PaymentUploader.jsx
+  1:8   error    'React' is defined but never used                                                unused-imports/no-unused-imports
+  5:10  warning  'file' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx
+    1:8   error    'React' is defined but never used                                                                                                    unused-imports/no-unused-imports
+    2:47  error    'XCircle' is defined but never used                                                                                                  unused-imports/no-unused-imports
+    2:56  error    'AlertCircle' is defined but never used                                                                                              unused-imports/no-unused-imports
+   14:10  warning  'availablePoints' is assigned a value but never used. Allowed unused vars must match /^_/u                                           unused-imports/no-unused-vars
+  191:6   warning  React Hook useEffect has a missing dependency: 'checkoutState?.qualifiedFreebies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\ShippingMethod.jsx
+   1:8   error    'React' is defined but never used                                                                                                                                                                         unused-imports/no-unused-imports
+   8:85  warning  'selectedMethod' is defined but never used. Allowed unused args must match /^_/u                                                                                                                          unused-imports/no-unused-vars
+  10:9   warning  'getIcon' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                        unused-imports/no-unused-vars
+  33:9   warning  The 'shippingOptions' conditional could make the dependencies of useEffect Hook (at line 52) change on every render. To fix this, wrap the initialization of 'shippingOptions' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\TaxInvoiceForm.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\tax-invoice\TaxFormFields.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\tax-invoice\TaxTypeSelector.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\ConfirmDeleteModal.jsx
+   1:8   error  'React' is defined but never used                                unused-imports/no-unused-imports
+   2:10  error  'AlertTriangle' is defined but never used                        unused-imports/no-unused-imports
+   2:33  error  'X' is defined but never used                                    unused-imports/no-unused-imports
+  27:15  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  27:26  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\CookieConsentBanner.jsx
+   1:8  error    'React' is defined but never used                                                              unused-imports/no-unused-imports
+  15:5  warning  'setIsBannerVisible' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\LineBrowserWarning.jsx
+   1:8    error  'React' is defined but never used                                unused-imports/no-unused-imports
+  26:241  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  26:259  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\footer\FooterBrand.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\footer\FooterContact.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\footer\FooterLinkZone.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\navigation\BottomNav.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\partner\PartnerSupportBox.jsx
+    1:8   error    'React' is defined but never used                                                                                          unused-imports/no-unused-imports
+   62:18  warning  'locationErr' is defined but never used                                                                                    unused-imports/no-unused-vars
+  102:6   warning  React Hook useEffect has a missing dependency: 'getUserCurrentLocation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\components\partner\TopPartnerBanner.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ImageZoomModal.jsx
+  134:14  error  'Download' is not defined      react/jsx-no-undef
+  143:12  error  'X' is not defined             react/jsx-no-undef
+  206:16  error  'ChevronLeft' is not defined   react/jsx-no-undef
+  212:16  error  'ChevronRight' is not defined  react/jsx-no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductDescriptionSection.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductImageSection.jsx
+  6:66  warning  'defaultImageUrl' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductKnowledgeSection.jsx
+  1:8   error  'React' is defined but never used     unused-imports/no-unused-imports
+  3:43  error  'BookOpen' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductPricingSection.jsx
+  1:8  error    'React' is defined but never used                                        unused-imports/no-unused-imports
+  8:3  warning  'brand' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductSpecsSection.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductVideoSection.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\RelatedProducts.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\AuthForm.jsx
+    1:8    error  'React' is defined but never used                                unused-imports/no-unused-imports
+  136:275  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  136:293  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\ProfileSidebar.jsx
+   4:10  error    'CreditCard' is defined but never used                                                        unused-imports/no-unused-imports
+   4:22  error    'Package' is defined but never used                                                           unused-imports/no-unused-imports
+   5:11  error    'Settings' is defined but never used                                                          unused-imports/no-unused-imports
+   6:3   error    'Wallet' is defined but never used                                                            unused-imports/no-unused-imports
+   6:11  error    'Coins' is defined but never used                                                             unused-imports/no-unused-imports
+   6:18  error    'Award' is defined but never used                                                             unused-imports/no-unused-imports
+  52:26  warning  'pendingWithdrawal' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\PersonalInfoForm.jsx
+  1:8   error  'React' is defined but never used    unused-imports/no-unused-imports
+  3:10  error  'getAuth' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\ProfileTaxForm.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\SocialLinksForm.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\SupportSettings.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\sections\ContactInfoSection.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\sections\MapEcosystemSection.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\forms\sections\ShippingAddressSection.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabClaims.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabFavorites.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabHistory.jsx
+   1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+  29:5  error  'toast' is not defined             no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabOverview.jsx
+  1:8   error  'React' is defined but never used      unused-imports/no-unused-imports
+  6:33  error  'Building2' is defined but never used  unused-imports/no-unused-imports
+  6:44  error  'Award' is defined but never used      unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabPrivacy.jsx
+   1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+  65:5  error  'toast' is not defined             no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabWallet.jsx
+   1:8   error    'React' is defined but never used                                                         unused-imports/no-unused-imports
+  20:50  warning  'creditLoading' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdFormModal.jsx
+   1:1   warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+   2:8   error    'React' is defined but never used                                                    unused-imports/no-unused-imports
+   5:39  error    'AlertCircle' is defined but never used                                              unused-imports/no-unused-imports
+   6:56  error    Shadowing of global property 'Infinity'                                              no-shadow-restricted-names
+  14:32  warning  'remainingCredit' is defined but never used. Allowed unused args must match /^_/u    unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdListTable.jsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+  2:8  error    'React' is defined but never used                                                    unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdPreviewCard.jsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdStatsOverview.jsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'react/prop-types')
+  2:8  error    'React' is defined but never used                                                    unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\claims\ClaimItemCard.jsx
+   1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+  45:5  error  'toast' is not defined             no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\components\FavoriteItemCard.jsx
+  31:16  warning  'err' is defined but never used                                                                                                                                                                                                                  unused-imports/no-unused-vars
+  37:6   warning  React Hook useEffect has a missing dependency: 'onLiveDataLoaded'. Either include it or remove the dependency array. If 'onLiveDataLoaded' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\HistoryItemCard.jsx
+    4:8   error    'WarrantyStatusBadge' is defined but never used                                          unused-imports/no-unused-imports
+  146:21  warning  'orderDateStr' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\HistoryList.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\ServiceActionModal.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\WarrantyStatusBadge.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileBasicInfo.jsx
+  1:8   error    'React' is defined but never used                                              unused-imports/no-unused-imports
+  4:59  warning  'isAdPending' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileForm.jsx
+   1:8    error  'React' is defined but never used                                unused-imports/no-unused-imports
+   1:17   error  'useState' is defined but never used                             unused-imports/no-unused-imports
+   3:10   error  'doc' is defined but never used                                  unused-imports/no-unused-imports
+   3:15   error  'serverTimestamp' is defined but never used                      unused-imports/no-unused-imports
+   3:32   error  'writeBatch' is defined but never used                           unused-imports/no-unused-imports
+   4:10   error  'db' is defined but never used                                   unused-imports/no-unused-imports
+   5:10   error  'driveService' is defined but never used                         unused-imports/no-unused-imports
+   6:10   error  'storeProfileSubmitService' is defined but never used            unused-imports/no-unused-imports
+  35:5    error  'toast' is not defined                                           no-undef
+  47:94   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  47:107  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileLocation.jsx
+  106:95   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:125  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:185  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:205  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:225  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:238  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileSocialLinks.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\wallet\WalletCard.jsx
+  1:8   error  'React' is defined but never used           unused-imports/no-unused-imports
+  2:38  error  'ArrowRightLeft' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\wallet\WalletHistory.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\wallet\WithdrawModal.jsx
+    1:8    error  'React' is defined but never used                                unused-imports/no-unused-imports
+    2:23   error  'CreditCard' is defined but never used                           unused-imports/no-unused-imports
+    2:35   error  'User' is defined but never used                                 unused-imports/no-unused-imports
+   44:5    error  'toast' is not defined                                           no-undef
+  108:104  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  108:114  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\context\CartProvider.jsx
+   60:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+   67:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  173:18  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\context\FavoritesProvider.jsx
+  27:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  79:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\context\ToastContext.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\checkout\checkoutSubmitService.js
+  39:11  warning  'counterDoc' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  43:11  warning  'sysSnap' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\config.js
+  28:5  warning  'appCheck' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\credit\adCreditService.js
+  219:52  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  224:54  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\partnerService.js
+   5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u              unused-imports/no-unused-vars
+  27:7  warning  'calculateDistance' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\squadConfigService.js
+  5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\storefrontSettingsService.js
+  51:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  81:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\hooks\useStorefrontTheme.js
+  23:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\layouts\MainLayout.jsx
+  9:8  error  'TopPartnerBanner' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\layouts\SquadLayout.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\AdProductDetail\AdProductDetail.jsx
+  8:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Cart.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Categories\CategoriesMain.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Categories\components\CategoryCard.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Categories\components\CategoryGrid.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\CategoryPage.jsx
+   1:8   error    'React' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     unused-imports/no-unused-imports
+  15:10  warning  'categoryInfo' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               unused-imports/no-unused-vars
+  32:9   error    Error: Cannot access variable before it is declared
+
+`loadProducts` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  30 |     observer.current = new IntersectionObserver(entries => {
+  31 |       if (entries[0].isIntersecting && hasMore) {
+> 32 |         loadProducts(false);
+     |         ^^^^^^^^^^^^ `loadProducts` accessed before it is declared
+  33 |       }
+  34 |     });
+  35 |     if (node) observer.current.observe(node);
+
+   66 |   }, [type]);
+   67 |
+>  68 |   const loadProducts = async (isInitial = false) => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  69 |     try {
+      | ^^^^^^^^^
+>  70 |       if (!isInitial) setLoadingMore(true);
+      …
+      | ^^^^^^^^^
+> 129 |     }
+      | ^^^^^^^^^
+> 130 |   };
+      | ^^^^^ `loadProducts` is declared here
+  131 |
+  132 |   return (
+  133 |     <div className="w-full flex flex-col animate-fade-in pb-16">  react-hooks/immutability
+  36:6   warning  React Hook useCallback has a missing dependency: 'loadProducts'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Checkout.jsx
+    1:8   error    'React' is defined but never used                                                                                             unused-imports/no-unused-imports
+    5:10  error    'ChevronDown' is defined but never used                                                                                       unused-imports/no-unused-imports
+    5:23  error    'ChevronUp' is defined but never used                                                                                         unused-imports/no-unused-imports
+    5:34  error    'CheckCircle2' is defined but never used                                                                                      unused-imports/no-unused-imports
+    6:10  error    'motion' is defined but never used                                                                                            unused-imports/no-unused-imports
+    6:18  error    'AnimatePresence' is defined but never used                                                                                   unused-imports/no-unused-imports
+   56:10  warning  'isFetchingRules' is assigned a value but never used. Allowed unused vars must match /^_/u                                    unused-imports/no-unused-vars
+  100:6   warning  React Hook useEffect has a missing dependency: 'handleUpdateCheckoutState'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\HardwareScanner\HardwareScanner.jsx
+    1:8   error    'React' is defined but never used                                unused-imports/no-unused-imports
+    2:23  error    'Link' is defined but never used                                 unused-imports/no-unused-imports
+    8:92  error    'ArrowRight' is defined but never used                           unused-imports/no-unused-imports
+   78:18  warning  'error' is defined but never used                                unused-imports/no-unused-vars
+  160:35  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  160:51  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\Home.jsx
+   1:8  error  'React' is defined but never used           unused-imports/no-unused-imports
+  10:8  error  'BannerAdWidget' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\FeaturedSpares.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\HeroSection.jsx
+   1:8   error    'React' is defined but never used                                    unused-imports/no-unused-imports
+  15:14  warning  'e' is defined but never used                                        unused-imports/no-unused-vars
+  57:13  error    Unknown property 'fetchpriority' found, use 'fetchPriority' instead  react/no-unknown-property
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\PartnerCard.jsx
+  1:17  error  'useState' is defined but never used            unused-imports/no-unused-imports
+  3:10  error  'trackAdClick' is defined but never used        unused-imports/no-unused-imports
+  4:10  error  'squadConfigService' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\QuickActions.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\SquadHighlight.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\ProductDetail.jsx
+   1:8   error    'React' is defined but never used                                                    unused-imports/no-unused-imports
+   1:17  error    'useState' is defined but never used                                                 unused-imports/no-unused-imports
+   1:27  error    'useEffect' is defined but never used                                                unused-imports/no-unused-imports
+   3:53  error    'useSearchParams' is defined but never used                                          unused-imports/no-unused-imports
+   4:10  error    'useToast' is defined but never used                                                 unused-imports/no-unused-imports
+  23:9   warning  'location' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Profile.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\ProvidersPage.jsx
+    1:8    error  'React' is defined but never used                                unused-imports/no-unused-imports
+   96:73   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+   96:93   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:83   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:93   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:96   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:106  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\components\ProvidersFilterBar.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\components\ProvidersList.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\hooks\useProvidersList.js
+  15:10  warning  'permissionRequested' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\SearchPage.jsx
+    1:8    error    'React' is defined but never used                                unused-imports/no-unused-imports
+   70:20   warning  'e' is defined but never used                                    unused-imports/no-unused-vars
+  150:15   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  150:28   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  201:98   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  201:111  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Squad\Squad.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Squad\components\Pitch.jsx
+   1:8  error    'React' is defined but never used                                                unused-imports/no-unused-imports
+  19:9  warning  'rows' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\StoreProfilePage.jsx
+   1:8   error    'React' is defined but never used                                                 unused-imports/no-unused-imports
+   3:23  error    'collection' is defined but never used                                            unused-imports/no-unused-imports
+   6:10  error    'extractCoordsFromUrl' is defined but never used                                  unused-imports/no-unused-imports
+  12:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  34:36  error    'getCollectionPath' is not defined                                                no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerAds.jsx
+  1:8   error    'React' is defined but never used                                                 unused-imports/no-unused-imports
+  2:10  error    'collection' is defined but never used                                            unused-imports/no-unused-imports
+  2:22  error    'query' is defined but never used                                                 unused-imports/no-unused-imports
+  2:29  error    'where' is defined but never used                                                 unused-imports/no-unused-imports
+  2:36  error    'getDocs' is defined but never used                                               unused-imports/no-unused-imports
+  3:10  error    'db' is defined but never used                                                    unused-imports/no-unused-imports
+  9:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerReviews.jsx
+  7:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\CookiePolicy.jsx
+   1:8   error  'React' is defined but never used                                unused-imports/no-unused-imports
+  42:55  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  42:69  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\PrivacyPolicy.jsx
+  1:8  error  'React' is defined but never used  unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\TermsOfService.jsx
+   1:8    error  'React' is defined but never used                                unused-imports/no-unused-imports
+  37:84   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  37:105  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+✖ 269 problems (202 errors, 67 warnings)
+  155 errors and 7 warnings potentially fixable with the `--fix` option.
+

@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
+import { useState, useEffect } from 'react';
 import ProductAdCard from '../../../components/ads/ProductAdCard';
 
 import { getUserPartnerAds } from '../../../firebase/marketingService';

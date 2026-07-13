@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, Filter, RefreshCw, UserPlus, Wallet, Star, FileText, Coins, HelpCircle } from 'lucide-react';
 
 export default function CustomerHeader({ 

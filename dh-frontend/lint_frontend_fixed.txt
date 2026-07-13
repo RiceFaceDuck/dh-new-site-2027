@@ -1,0 +1,213 @@
+
+> dh-frontend@0.0.0 lint
+> eslint .
+
+
+C:\DH Notebook\Management System\dh-frontend\src\App.jsx
+   6:7  warning  'CategoryPage' is assigned a value but never used. Allowed unused vars must match /^_/u      unused-imports/no-unused-vars
+   7:7  warning  'CategoriesMain' is assigned a value but never used. Allowed unused vars must match /^_/u    unused-imports/no-unused-vars
+   8:7  warning  'SearchPage' is assigned a value but never used. Allowed unused vars must match /^_/u        unused-imports/no-unused-vars
+   9:7  warning  'ProductDetail' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+  10:7  warning  'Profile' is assigned a value but never used. Allowed unused vars must match /^_/u           unused-imports/no-unused-vars
+  11:7  warning  'StoreProfilePage' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  12:7  warning  'AdProductDetail' is assigned a value but never used. Allowed unused vars must match /^_/u   unused-imports/no-unused-vars
+  14:7  warning  'Cart' is assigned a value but never used. Allowed unused vars must match /^_/u              unused-imports/no-unused-vars
+  15:7  warning  'Checkout' is assigned a value but never used. Allowed unused vars must match /^_/u          unused-imports/no-unused-vars
+  16:7  warning  'SquadLayout' is assigned a value but never used. Allowed unused vars must match /^_/u       unused-imports/no-unused-vars
+  17:7  warning  'Squad' is assigned a value but never used. Allowed unused vars must match /^_/u             unused-imports/no-unused-vars
+  18:7  warning  'HardwareScanner' is assigned a value but never used. Allowed unused vars must match /^_/u   unused-imports/no-unused-vars
+  19:7  warning  'ProvidersPage' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+  22:7  warning  'PrivacyPolicy' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+  23:7  warning  'TermsOfService' is assigned a value but never used. Allowed unused vars must match /^_/u    unused-imports/no-unused-vars
+  24:7  warning  'CookiePolicy' is assigned a value but never used. Allowed unused vars must match /^_/u      unused-imports/no-unused-vars
+  33:7  warning  'ScrollToTop' is assigned a value but never used. Allowed unused vars must match /^_/u       unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\CategoryList.jsx
+  5:39  warning  'onSelectType' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ProductList.jsx
+    1:1   error    Definition for rule 'react/prop-types' was not found                                                                        react/prop-types
+   31:9   warning  'navigate' is assigned a value but never used. Allowed unused vars must match /^_/u                                         unused-imports/no-unused-vars
+   73:9   warning  'SkeletonCard' is assigned a value but never used. Allowed unused vars must match /^_/u                                     unused-imports/no-unused-vars
+  114:33  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+  115:39  warning  'index' is defined but never used. Allowed unused args must match /^_/u                                                     unused-imports/no-unused-vars
+  156:15  warning  'id' is assigned a value but never used. Allowed unused vars must match /^_/u                                               unused-imports/no-unused-vars
+  156:19  warning  'name' is assigned a value but never used. Allowed unused vars must match /^_/u                                             unused-imports/no-unused-vars
+  156:25  warning  'price' is assigned a value but never used. Allowed unused vars must match /^_/u                                            unused-imports/no-unused-vars
+  156:39  warning  'imageUrl' is assigned a value but never used. Allowed unused vars must match /^_/u                                         unused-imports/no-unused-vars
+  156:49  warning  'brand' is assigned a value but never used. Allowed unused vars must match /^_/u                                            unused-imports/no-unused-vars
+  156:56  warning  'sku' is assigned a value but never used. Allowed unused vars must match /^_/u                                              unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\BusinessCardAdWidget.jsx
+  1:1  error  Definition for rule 'react/prop-types' was not found  react/prop-types
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ads\ProductAdCard.jsx
+  1:1  error  Definition for rule 'react/prop-types' was not found  react/prop-types
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartItemCard.jsx
+  26:31  warning  'index' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartSummaryPanel.jsx
+  5:5  warning  'currentUser' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\CheckoutSummary.jsx
+  8:7  warning  'FreebieDisplayName' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PaymentUploader.jsx
+  4:10  warning  'file' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx
+  13:10  warning  'availablePoints' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\ShippingMethod.jsx
+   13:85  warning  'selectedMethod' is defined but never used. Allowed unused args must match /^_/u    unused-imports/no-unused-vars
+   15:9   warning  'getIcon' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  106:19  warning  'Icon' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\CookieConsentBanner.jsx
+  12:5  warning  'setIsBannerVisible' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\navigation\BottomNav.jsx
+  30:17  warning  'Icon' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\partner\PartnerSupportBox.jsx
+  12:7   warning  'PartnerServiceBadges' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  28:7   warning  'SkeletonLoader' is assigned a value but never used. Allowed unused vars must match /^_/u        unused-imports/no-unused-vars
+  60:18  warning  'locationErr' is defined but never used                                                          unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductCommunitySection.jsx
+   6:3  error    'Star' is defined but never used                                                        unused-imports/no-unused-imports
+   7:3  error    'MessageCircle' is defined but never used                                               unused-imports/no-unused-imports
+   8:3  error    'Heart' is defined but never used                                                       unused-imports/no-unused-imports
+   9:3  error    'Share2' is defined but never used                                                      unused-imports/no-unused-imports
+  10:3  error    'Loader2' is defined but never used                                                     unused-imports/no-unused-imports
+  11:3  error    'Send' is defined but never used                                                        unused-imports/no-unused-imports
+  12:3  error    'ThumbsUp' is defined but never used                                                    unused-imports/no-unused-imports
+  13:3  error    'MoreHorizontal' is defined but never used                                              unused-imports/no-unused-imports
+  14:3  error    'Sparkles' is defined but never used                                                    unused-imports/no-unused-imports
+  18:7  warning  'StarDisplay' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductPricingSection.jsx
+  5:3  warning  'brand' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\AuthForm.jsx
+  16:7  warning  'GoogleIcon' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\ProfileSidebar.jsx
+  15:7   warning  'MenuButton' is assigned a value but never used. Allowed unused vars must match /^_/u         unused-imports/no-unused-vars
+  48:26  warning  'pendingWithdrawal' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabWallet.jsx
+  15:50  warning  'creditLoading' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdFormModal.jsx
+  1:1   error    Definition for rule 'react/prop-types' was not found                               react/prop-types
+  8:32  warning  'remainingCredit' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdListTable.jsx
+  1:1  error  Definition for rule 'react/prop-types' was not found  react/prop-types
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdPreviewCard.jsx
+  1:1  error  Definition for rule 'react/prop-types' was not found  react/prop-types
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdStatsOverview.jsx
+  1:1  error  Definition for rule 'react/prop-types' was not found  react/prop-types
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\claims\ClaimItemCard.jsx
+  28:9  warning  'StatusIcon' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\components\FavoriteItemCard.jsx
+  30:16  warning  'err' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\HistoryItemCard.jsx
+  144:21  warning  'orderDateStr' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileBasicInfo.jsx
+  2:59  warning  'isAdPending' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileLocation.jsx
+  2:10  error  'MapPin' is defined but never used        unused-imports/no-unused-imports
+  2:18  error  'Search' is defined but never used        unused-imports/no-unused-imports
+  2:26  error  'CheckCircle2' is defined but never used  unused-imports/no-unused-imports
+  2:40  error  'Loader2' is defined but never used       unused-imports/no-unused-imports
+  2:49  error  'Info' is defined but never used          unused-imports/no-unused-imports
+
+C:\DH Notebook\Management System\dh-frontend\src\context\CartProvider.jsx
+   60:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+   67:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  173:18  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\context\FavoritesProvider.jsx
+  27:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  79:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\checkout\checkoutSubmitService.js
+  39:11  warning  'counterDoc' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  43:11  warning  'sysSnap' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\config.js
+  28:5  warning  'appCheck' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\credit\adCreditService.js
+  219:52  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  224:54  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\partnerService.js
+   5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u              unused-imports/no-unused-vars
+  27:7  warning  'calculateDistance' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\squadConfigService.js
+  5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\storefrontSettingsService.js
+  51:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  81:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\hooks\useStorefrontTheme.js
+  23:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\AdProductDetail\AdProductDetail.jsx
+  2:21  error    'Link' is defined but never used                                                  unused-imports/no-unused-imports
+  6:10  error    'Loader2' is defined but never used                                               unused-imports/no-unused-imports
+  6:19  error    'ArrowLeft' is defined but never used                                             unused-imports/no-unused-imports
+  6:30  error    'ShoppingBag' is defined but never used                                           unused-imports/no-unused-imports
+  6:43  error    'ShieldCheck' is defined but never used                                           unused-imports/no-unused-imports
+  6:56  error    'Tag' is defined but never used                                                   unused-imports/no-unused-imports
+  6:61  error    'ExternalLink' is defined but never used                                          unused-imports/no-unused-imports
+  8:7   warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\CategoryPage.jsx
+  12:10  warning  'categoryInfo' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Checkout.jsx
+  42:10  warning  'isFetchingRules' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\HardwareScanner\HardwareScanner.jsx
+   76:18  warning  'error' is defined but never used                                                    unused-imports/no-unused-vars
+  246:7   warning  'DataCard' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  258:7   warning  'StepCard' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\HeroSection.jsx
+  14:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\hooks\useProvidersList.js
+  15:10  warning  'permissionRequested' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\SearchPage.jsx
+  68:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Squad\components\PlayerNode.jsx
+  53:7  warning  'EmptyNode' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\StoreProfilePage.jsx
+  10:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerAds.jsx
+  6:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerReviews.jsx
+  7:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+✖ 109 problems (29 errors, 80 warnings)
+  21 errors and 0 warnings potentially fixable with the `--fix` option.
+

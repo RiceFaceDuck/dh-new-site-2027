@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { warrantyClientService } from '../../../../firebase/warrantyClientService';
 import { ShieldCheck } from 'lucide-react';
 

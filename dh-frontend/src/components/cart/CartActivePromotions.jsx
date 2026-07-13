@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { Sparkles, Tag, CheckCircle, AlertCircle } from 'lucide-react';
+import { Tag, CheckCircle, AlertCircle } from 'lucide-react';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated, hidden = false }) => {

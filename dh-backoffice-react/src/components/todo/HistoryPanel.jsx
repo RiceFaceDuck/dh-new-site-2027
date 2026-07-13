@@ -1,4 +1,3 @@
-import React from 'react';
 import { History, X, RotateCcw } from 'lucide-react';
 
 export default function HistoryPanel({ showCompletedPanel, setShowCompletedPanel, loadingCompleted, completedTodos, handleRecallTodo }) {

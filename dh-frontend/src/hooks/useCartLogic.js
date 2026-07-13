@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useState, useEffect, useCallback } from 'react';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from '../firebase/config';
 import { productService } from '../firebase/productService';
@@ -30,6 +30,21 @@ export const useCartLogic = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [productCache, setProductCache] = useState({});
 
+  const fetchFreebies = async () => {
+    try {
+      setIsFetchingFreebies(true);
+      const q = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true), limit(100));
+      const snapshot = await getDocs(q);
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      items.sort((a, b) => a.minSpend - b.minSpend);
+      setFreebies(items);
+    } catch (error) {
+      console.error("🔥 Error fetching freebies:", error);
+    } finally {
+      setIsFetchingFreebies(false);
+    }
+  };
+
   useEffect(() => {
     fetchFreebies();
     const loadCreditSettings = async () => {
@@ -48,21 +63,6 @@ export const useCartLogic = () => {
     });
     return () => unsubscribe();
   }, []);
-
-  const fetchFreebies = async () => {
-    try {
-      setIsFetchingFreebies(true);
-      const q = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
-      const snapshot = await getDocs(q);
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      items.sort((a, b) => a.minSpend - b.minSpend);
-      setFreebies(items);
-    } catch (error) {
-      console.error("🔥 Error fetching freebies:", error);
-    } finally {
-      setIsFetchingFreebies(false);
-    }
-  };
 
   const runValidation = useCallback((items, cache) => {
     let errors = {};

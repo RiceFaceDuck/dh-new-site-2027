@@ -17,10 +17,10 @@ export const driveService = {
     return new Promise(async (resolve, reject) => {
       try {
         const options = {
-          maxSizeMB: 0.8,
-          maxWidthOrHeight: 1200,
+          maxSizeMB: 0.3, // Reduced from 0.8 to 0.3 (300KB max)
+          maxWidthOrHeight: 1200, // Keep width large for zoom, webp will compress well
           useWebWorker: true,
-          initialQuality: 0.8,
+          initialQuality: 0.7, // Reduced from 0.8 to 0.7
           fileType: 'image/webp'
         };
         const compressedFile = await imageCompression(file, options);

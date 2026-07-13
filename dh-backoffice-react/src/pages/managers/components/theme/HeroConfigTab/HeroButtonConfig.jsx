@@ -1,4 +1,3 @@
-import React from 'react';
 import { MonitorPlay, Link as LinkIcon } from 'lucide-react';
 
 export default function HeroButtonConfig({ 

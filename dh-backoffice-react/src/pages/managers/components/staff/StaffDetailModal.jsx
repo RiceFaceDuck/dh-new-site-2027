@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   Users, ShieldAlert, Phone, User, Calendar, ShieldCheck, 
   Activity, BarChart, Target, Star, Clock, X, Mail

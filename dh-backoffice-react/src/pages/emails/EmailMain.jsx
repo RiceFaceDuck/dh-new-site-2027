@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { useGmail } from './hooks/useGmail';
 import EmailList from './components/EmailList';

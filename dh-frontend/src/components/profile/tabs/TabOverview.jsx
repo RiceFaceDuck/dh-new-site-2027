@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { 
   Loader2, ShieldCheck, UserCheck, RefreshCw, BadgeCheck, Mail, Calendar, 
-  Wallet, Coins, MapPin, Phone, Building2, Award
+  Wallet, Coins, MapPin, Phone
 } from 'lucide-react';
 
 // 🚀 นำเข้า Services ที่ได้รับการอัปเกรดแล้ว

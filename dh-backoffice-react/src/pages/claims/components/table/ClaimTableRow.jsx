@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Wrench, ArrowLeftRight, Check, Copy, Eye } from 'lucide-react';
 import { getWarrantyInfo, getSLAIndicator, getStatusDisplay } from '../../utils/claimFormatters';
 import { userService } from '../../../../firebase/userService';

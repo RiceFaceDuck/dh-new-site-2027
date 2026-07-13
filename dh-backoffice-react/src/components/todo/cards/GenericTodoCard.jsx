@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Clock, Calendar, Check, X, Play } from 'lucide-react';
-import ManagerBadge from './ManagerBadge';
 
 export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urgencyLevel, handleAction, getStatusBadge, formatDate, handleRejectClick, getIconForType }) {
   const [trackingNo, setTrackingNo] = useState(todo.payload?.trackingNo || '');

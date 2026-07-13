@@ -1,5 +1,4 @@
-import React from 'react';
-import { Clock, CheckCircle, XCircle, Ban, ArrowLeftRight, Wrench, Package } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Ban, Wrench, Package } from 'lucide-react';
 
 export default function ClaimStatsRow({ stats, activeTab, setActiveTab }) {
   const tabs = [

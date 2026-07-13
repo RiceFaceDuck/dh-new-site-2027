@@ -1,4 +1,3 @@
-import React from 'react';
 import { Image as ImageIcon, Eye } from 'lucide-react';
 
 export default function ImageGallery({ images }) {

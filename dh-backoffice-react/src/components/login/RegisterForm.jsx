@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Loader2, ChevronLeft, Briefcase } from 'lucide-react';
 
 export default function RegisterForm({ 

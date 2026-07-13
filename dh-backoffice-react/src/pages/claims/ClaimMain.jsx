@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useClaimData } from './hooks/useClaimData';
 import ClaimHeader from './components/ClaimHeader';
 import ClaimStatsRow from './components/ClaimStatsRow';
@@ -6,7 +6,6 @@ import ClaimTable from './components/table/ClaimTable';
 import ClaimDetailModal from './components/detail/ClaimDetailModal';
 import ClaimPrintView from './components/ClaimPrintView';
 import GuideModal from '../../components/common/GuideModal';
-import { HelpCircle } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 
 const claimGuideConfig = {

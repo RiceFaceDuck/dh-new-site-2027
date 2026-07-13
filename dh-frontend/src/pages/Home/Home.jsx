@@ -1,4 +1,3 @@
-import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import HeroSection from './components/HeroSection';
 import QuickActions from './components/QuickActions';
@@ -7,7 +6,6 @@ import SquadHighlight from './components/SquadHighlight';
 import { useHomeProducts } from './hooks/useHomeProducts';
 
 // นำเข้า Component ป้ายแบนเนอร์โฆษณา (BILLBOARD) แบบเดิม
-import BannerAdWidget from '../../components/ads/BannerAdWidget';
 import ScrollReveal from '../../components/common/ScrollReveal';
 
 const Home = () => {

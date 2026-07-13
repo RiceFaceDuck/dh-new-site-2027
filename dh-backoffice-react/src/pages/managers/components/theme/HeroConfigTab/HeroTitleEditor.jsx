@@ -1,4 +1,3 @@
-import React from 'react';
 import { Type, Plus, Trash2, ArrowUp, ArrowDown, Monitor, Smartphone, Bold, Italic, Underline, Strikethrough } from 'lucide-react';
 
 export default function HeroTitleEditor({ titleSegments = [], onChange }) {

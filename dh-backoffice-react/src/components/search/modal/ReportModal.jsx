@@ -1,4 +1,3 @@
-import React from 'react';
 import { PlusCircle, X, Send, RefreshCw, Info } from 'lucide-react';
 
 export default function ReportModal({ isReportModalOpen, setIsReportModalOpen, reportForm, setReportForm, isReporting, handleSubmitReport }) {

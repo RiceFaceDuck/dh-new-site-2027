@@ -12,12 +12,12 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
       onClick={() => navigate(`/product/${id}`, { state: { product } })} 
       className="group cursor-pointer bg-slate-100 p-2 md:p-3 rounded-xl border border-slate-200 overflow-hidden flex flex-col hover:border-brand-light hover:shadow-premium-hover transition-all duration-300 relative animate-in fade-in"
     >
-      <div className="relative aspect-square w-full bg-white rounded-lg flex items-center justify-center p-4 overflow-hidden mb-2">
+      <div className="relative aspect-square w-full bg-white rounded-lg flex items-center justify-center overflow-hidden mb-2">
         <div className="absolute inset-0 bg-linear-to-br from-brand-light/20 to-transparent opacity-50 pointer-events-none"></div>
         <LazyImage 
           src={imageUrl} 
           alt={name} 
-          className="w-full h-full group-hover:scale-105 transition-transform duration-500 mix-blend-multiply relative z-10"
+          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply relative z-10"
           onError={(e) => { e.target.src = '/logo.png' }}
         />
         

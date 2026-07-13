@@ -97,28 +97,20 @@ export const loginWithGoogle = async () => {
 // 2. เข้าสู่ระบบด้วย Email
 // ==========================================
 export const loginWithEmail = async (email, password) => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    // เรียกใช้ระบบรักษาความปลอดภัยข้อมูลอัปเดต Last Login และซ่อมแซม Schema
-    await ensureUserProfile(userCredential.user);
-    return userCredential.user;
-  } catch (error) {
-    throw error;
-  }
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  // เรียกใช้ระบบรักษาความปลอดภัยข้อมูลอัปเดต Last Login และซ่อมแซม Schema
+  await ensureUserProfile(userCredential.user);
+  return userCredential.user;
 };
 
 // ==========================================
 // 3. สมัครสมาชิกด้วย Email
 // ==========================================
 export const registerWithEmail = async (email, password, name) => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    // สร้าง Profile ใหม่พร้อมแนบชื่อที่กรอกเข้ามา
-    await ensureUserProfile(userCredential.user, { name: name });
-    return userCredential.user;
-  } catch (error) {
-    throw error;
-  }
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  // สร้าง Profile ใหม่พร้อมแนบชื่อที่กรอกเข้ามา
+  await ensureUserProfile(userCredential.user, { name: name });
+  return userCredential.user;
 };
 
 // ==========================================

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, Lightbulb, CheckCircle2 } from 'lucide-react';
 
 export default function CoreGuide() {

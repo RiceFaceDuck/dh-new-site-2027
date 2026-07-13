@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getRenderableImageUrl } from '../../utils/imageUtils';
 
 /**
@@ -46,6 +46,9 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
   }, []);
 
   const finalSrc = (hasError || !src) ? fallbackSrc : getRenderableImageUrl(src);
+  
+  // Prevent object-cover from overriding if user passes object-contain or similar
+  const imgObjectFit = className.includes('object-') ? '' : 'object-cover';
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
@@ -59,7 +62,7 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
         <img 
           src={finalSrc}
           alt={alt}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className} ${hasError ? 'p-4 opacity-40' : ''}`}
+          className={`w-full h-full transition-opacity duration-500 ${imgObjectFit} ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className} ${hasError ? 'p-4 opacity-40' : ''}`}
           onLoad={(e) => {
             setIsLoaded(true);
             if (onLoad) onLoad(e);

@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, doc, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { useToast } from '../../../context/ToastContext';
+
 
 // 🔐 App ID logic matching the rest of the app
 const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
 const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
+  const { showToast } = useToast();
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState('');
   const [rating, setRating] = useState(5);
@@ -36,8 +40,8 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
-    if (!currentUser) return alert('กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น');
-    if (!newReview.trim()) return alert('กรุณาระบุความคิดเห็น');
+    if (!currentUser) return showToast('กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น', 'error');
+    if (!newReview.trim()) return showToast('กรุณาระบุความคิดเห็น', 'error');
 
     try {
       setIsSubmitting(true);
@@ -58,7 +62,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
       setRating(5);
     } catch (error) {
       console.error('Error adding review:', error);
-      alert('เกิดข้อผิดพลาดในการส่งรีวิว');
+      showToast('เกิดข้อผิดพลาดในการส่งรีวิว', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -92,7 +96,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
       setReplyText('');
     } catch (error) {
       console.error('Error adding reply:', error);
-      alert('เกิดข้อผิดพลาดในการตอบกลับ');
+      showToast('เกิดข้อผิดพลาดในการตอบกลับ', 'error');
     }
   };
 

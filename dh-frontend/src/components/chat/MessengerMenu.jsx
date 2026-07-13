@@ -1,4 +1,3 @@
-import React from 'react';
 import { AlertCircle, MessageCircle, MapPin, ExternalLink } from 'lucide-react';
 
 const MessengerMenu = ({ error, handleFindNearestPartner }) => {

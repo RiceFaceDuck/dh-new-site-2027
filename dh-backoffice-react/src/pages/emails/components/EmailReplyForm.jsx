@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Send, X, AlertCircle } from 'lucide-react';
 import { sendEmail } from '../../../firebase/gmailService';
 

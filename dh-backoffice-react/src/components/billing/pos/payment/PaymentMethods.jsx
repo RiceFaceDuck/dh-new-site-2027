@@ -1,4 +1,3 @@
-import React from 'react';
 import { Landmark, Banknote, CreditCard, ScanLine, AlertCircle, UploadCloud, Trash2 } from 'lucide-react';
 
 export default function PaymentMethods({

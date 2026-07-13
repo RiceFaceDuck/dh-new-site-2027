@@ -6,17 +6,22 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 export const categorySyncService = {
   /**
    * Rename a category across all collections (products, homepage_categories, settings)
-   * @param {string} oldCategoryName The existing category name
-   * @param {string} newCategoryName The new category name
+   * @param {string} oldType The existing category type
+   * @param {string} newType The new category type
+   * @param {string} oldName The existing category name
+   * @param {string} newName The new category name
    * @param {string} actorUid The user ID performing the action
    */
-  renameCategory: async (oldCategoryName, newCategoryName, actorUid = 'system') => {
-    if (!oldCategoryName || !newCategoryName || oldCategoryName === newCategoryName) {
-      throw new Error('Invalid category names provided for sync.');
+  renameCategory: async (oldType, newType, oldName, newName, actorUid = 'system') => {
+    if (!oldType || !newType || !oldName || !newName) {
+      throw new Error('Invalid category names/types provided for sync.');
+    }
+    if (oldType.trim().toLowerCase() === newType.trim().toLowerCase() && oldName.trim() === newName.trim()) {
+      return 0; // No changes needed
     }
 
     try {
-      console.log(`Starting category sync: ${oldCategoryName} -> ${newCategoryName}`);
+      console.log(`Starting category sync: ${oldType} -> ${newType}`);
       let batch = writeBatch(db);
       let batchCount = 0;
       let totalUpdated = 0;
@@ -35,7 +40,9 @@ export const categorySyncService = {
       if (settingsSnap.exists()) {
         const data = settingsSnap.data();
         if (data.categories && Array.isArray(data.categories)) {
-          const newCategories = data.categories.map(c => c === oldCategoryName ? newCategoryName : c);
+          const newCategories = data.categories.map(c => 
+            (c.toLowerCase() === oldType.toLowerCase() || c === oldName) ? (newType || newName) : c
+          );
           // Also deduplicate in case newCategoryName already existed
           const uniqueCategories = [...new Set(newCategories)];
           batch.update(settingsRef, { categories: uniqueCategories });
@@ -43,23 +50,23 @@ export const categorySyncService = {
         }
       }
 
-      // 2. Update homepage_categories
+      // 2. Update homepage_categories (In case of duplicates or other docs sharing the same type/name)
       const hcRef = collection(db, getCollectionPath('homepage_categories'));
-      const hcSnap = await getDocs(query(hcRef, where('type', '==', oldCategoryName), limit(500)));
-      hcSnap.forEach(docSnap => {
-        batch.update(docSnap.ref, { type: newCategoryName });
+      const hcSnap1 = await getDocs(query(hcRef, where('type', '==', oldType), limit(500)));
+      hcSnap1.forEach(docSnap => {
+        batch.update(docSnap.ref, { type: newType, name: newName });
         batchCount++;
       });
       await commitBatchIfNeeded();
 
-      // 3. Update products
+      // 3. Update products (Match by category_lower)
       const productsRef = collection(db, getCollectionPath('products'));
-      const productsSnap = await getDocs(query(productsRef, where('category', '==', oldCategoryName), limit(500)));
+      const productsSnap = await getDocs(query(productsRef, where('category_lower', '==', oldType.trim().toLowerCase()), limit(500)));
       
       for (const d of productsSnap.docs) {
         batch.update(d.ref, { 
-          category: newCategoryName,
-          category_lower: newCategoryName.toLowerCase() 
+          category: newType || newName,
+          category_lower: (newType || newName).trim().toLowerCase()
         });
         batchCount++;
         totalUpdated++;
@@ -75,7 +82,7 @@ export const categorySyncService = {
         'Settings', 
         'Update', 
         'GlobalCategory', 
-        `เปลี่ยนชื่อหมวดหมู่จาก "${oldCategoryName}" เป็น "${newCategoryName}" (อัปเดตสินค้า ${totalUpdated} รายการ)`, 
+        `ซิงค์ข้อมูลประเภทสินค้าจาก "${oldType}" เป็น "${newType}" (อัปเดตสินค้า ${totalUpdated} รายการ)`, 
         actorUid
       );
 

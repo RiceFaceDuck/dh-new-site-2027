@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Settings, CheckCircle } from 'lucide-react';
 import TemplateSettingsModal from './TemplateSettingsModal';
 import SkuMerchantExport from './daily-tasks/SkuMerchantExport';

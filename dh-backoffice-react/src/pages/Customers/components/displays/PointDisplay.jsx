@@ -1,4 +1,3 @@
-import React from 'react';
 import { useCustomerFinancials } from '../../hooks/useCustomerFinancials';
 import { Loader2 } from 'lucide-react';
 

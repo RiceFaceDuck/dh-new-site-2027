@@ -1,4 +1,3 @@
-import React from 'react';
 import { Save, Edit2, Trash2, X } from 'lucide-react';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableMenuItem } from '../SortableMenuItem';

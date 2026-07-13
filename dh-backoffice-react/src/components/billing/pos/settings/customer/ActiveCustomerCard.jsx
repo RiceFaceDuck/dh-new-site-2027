@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShieldCheck, Phone, X, Wallet, Sparkles } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 

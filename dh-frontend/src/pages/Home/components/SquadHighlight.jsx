@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import PartnerCard from './PartnerCard';
 import { useNearbyPartners } from '../hooks/useNearbyPartners';
@@ -36,9 +35,18 @@ const SquadHighlight = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-          <span className="ml-3 text-slate-500">กำลังค้นหาร้านซ่อมใกล้คุณ...</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-2 md:p-2.5 flex items-center space-x-3 md:space-x-4 h-full">
+              <div className="w-[120px] h-[120px] md:w-[155px] md:h-[155px] bg-slate-200 rounded-xl shrink-0"></div>
+              <div className="flex-1 flex flex-col justify-center py-1">
+                <div className="h-5 bg-slate-200 rounded-md w-3/4 mb-2"></div>
+                <div className="h-3 bg-slate-200 rounded-sm w-1/2 mb-3"></div>
+                <div className="h-6 bg-slate-200 rounded-full w-24 mb-3"></div>
+                <div className="h-8 bg-slate-200 rounded-xl w-28"></div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : partners.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Activity, User, Building2 } from 'lucide-react';
 
 export default function PendingWithdrawals({ pendingRequests, onActionClick }) {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import WholesaleCard from '../../../components/todo/WholesaleCard';
 import PaymentCard from '../../../components/todo/PaymentCard'; 

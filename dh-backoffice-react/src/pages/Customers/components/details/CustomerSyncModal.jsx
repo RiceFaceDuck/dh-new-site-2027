@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, RefreshCw, AlertTriangle, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import { syncCustomerAccount } from '../../../../firebase/customerAdminService';

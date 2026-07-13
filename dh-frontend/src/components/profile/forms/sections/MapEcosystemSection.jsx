@@ -1,4 +1,3 @@
-import React from 'react';
 import { Map, Navigation, AlertCircle } from 'lucide-react';
 
 export default function MapEcosystemSection({ formData, handleChange, isValidMapUrl }) {

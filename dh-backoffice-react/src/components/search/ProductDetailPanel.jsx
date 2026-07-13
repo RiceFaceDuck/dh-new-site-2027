@@ -1,5 +1,4 @@
-import React from 'react';
-import { Search as SearchIcon, Copy, Settings, Check, Info } from 'lucide-react';
+import { Search as SearchIcon, Copy, Settings, Check } from 'lucide-react';
 import ProductDetailHeader from './detail/ProductDetailHeader';
 import ProductDetailAttributes from './detail/ProductDetailAttributes';
 

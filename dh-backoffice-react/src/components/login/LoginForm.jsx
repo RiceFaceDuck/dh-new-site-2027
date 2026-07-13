@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Loader2, UserPlus, ArrowLeft, Mail, Lock } from 'lucide-react';
 
 export default function LoginForm({ 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Phone, ShieldCheck, Save, Loader2 } from 'lucide-react';
 
 export default function WalkInCustomerCard({

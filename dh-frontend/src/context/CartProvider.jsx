@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { auth, db } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { cartService } from '../firebase/cartService';
 import { safeJsonParse } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';

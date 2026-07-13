@@ -1,4 +1,3 @@
-import React from 'react';
 import { Clock, Coins, Star, History } from 'lucide-react';
 
 export default function PointTransactionTable({ pointTransactions }) {

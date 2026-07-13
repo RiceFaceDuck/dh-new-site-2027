@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Wand2 } from 'lucide-react';
 import { userService } from '../../../../firebase/userService';
 import CustomerSearchInput from './customer/CustomerSearchInput';

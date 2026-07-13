@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   ShieldCheck, Download, Trash2, FileJson, AlertTriangle, Loader2 
 } from 'lucide-react';
 import { userService } from '../../../firebase/userService';
 import { useWalletBalance } from '../../../firebase/walletService';
+import { useToast } from '../../../context/ToastContext';
+
 
 export default function TabPrivacy({ user }) {
+  const { showToast } = useToast();
   const { walletBalance } = useWalletBalance(user?.uid);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportData = async () => {
+  const { showToast } = useToast();
     if (!user?.uid) return;
     setIsExporting(true);
     try {
@@ -49,7 +53,7 @@ export default function TabPrivacy({ user }) {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error exporting data:", error);
-      alert("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง");
+      showToast("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง", 'info');
     } finally {
       setIsExporting(false);
     }
@@ -64,7 +68,7 @@ export default function TabPrivacy({ user }) {
     console.error("🔥 Error:", error);
     toast.error(error?.message || "เกิดข้อผิดพลาด");
 
-        alert(error.message);
+        showToast(error.message, 'error');
       }
     }
   };

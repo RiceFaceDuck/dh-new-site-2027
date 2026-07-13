@@ -1,0 +1,20 @@
+
+> dh-staff-app@0.0.0 lint
+> eslint .
+
+
+Oops! Something went wrong! :(
+
+ESLint: 10.7.0
+
+ConfigError: Config (unnamed): Key "plugins": Key "unused-imports/no-unused-imports": Expected an object.
+    at rethrowConfigError (C:\DH Notebook\Management System\dh-staff-app\node_modules\@eslint\config-array\dist\cjs\index.cjs:343:8)
+    at C:\DH Notebook\Management System\dh-staff-app\node_modules\@eslint\config-array\dist\cjs\index.cjs:1407:5
+    at Array.reduce (<anonymous>)
+    at FlatConfigArray.getConfigWithStatus (C:\DH Notebook\Management System\dh-staff-app\node_modules\@eslint\config-array\dist\cjs\index.cjs:1400:43)
+    at FlatConfigArray.getConfig (C:\DH Notebook\Management System\dh-staff-app\node_modules\@eslint\config-array\dist\cjs\index.cjs:1429:15)
+    at entryFilter (C:\DH Notebook\Management System\dh-staff-app\node_modules\eslint\lib\eslint\eslint-helpers.js:325:27)
+    at async NodeHfs.<anonymous> (file:///C:/DH%20Notebook/Management%20System/dh-staff-app/node_modules/@humanfs/core/src/hfs.js:574:24)
+    at async NodeHfs.walk (file:///C:/DH%20Notebook/Management%20System/dh-staff-app/node_modules/@humanfs/core/src/hfs.js:614:3)
+    at async globSearch (C:\DH Notebook\Management System\dh-staff-app\node_modules\eslint\lib\eslint\eslint-helpers.js:366:20)
+    at async Promise.allSettled (index 0)

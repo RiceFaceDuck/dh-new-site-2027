@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Inbox, Star, Bookmark, Send, Edit3, MailOpen, Copy, Check } from 'lucide-react';
 
 export default function EmailSidebar({ 

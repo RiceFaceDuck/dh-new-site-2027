@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calendar, UserCircle, Check, X, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, Check, X, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function LeaveApprovalCard({ 
   todo, 

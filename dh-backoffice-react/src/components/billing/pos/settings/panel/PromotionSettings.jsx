@@ -1,4 +1,3 @@
-import React from 'react';
 import { Megaphone, Check, X } from 'lucide-react';
 
 export default function PromotionSettings({

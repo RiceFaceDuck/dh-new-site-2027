@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, Upload, Layers, AlertCircle, Image as ImageIcon, RefreshCw, Eye } from 'lucide-react';
 import { collection, getDocs, query, where, updateDoc, doc, arrayUnion, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';

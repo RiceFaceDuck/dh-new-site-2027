@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-import React from 'react';
+ 
 import { Trash2, ExternalLink, Activity, Image as ImageIcon, CheckCircle2, Clock, XCircle, Edit } from 'lucide-react';
 
 const AdListTable = ({ ads, onEditAd, onDeleteAd }) => {

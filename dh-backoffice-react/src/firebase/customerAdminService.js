@@ -1,5 +1,5 @@
 import { db, auth } from './config';
-import { limit, collection, doc, updateDoc, deleteDoc, serverTimestamp, addDoc, setDoc, getDoc } from 'firebase/firestore';
+import { limit, collection, doc, updateDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { historyService } from './historyService';
 import { generateAccountId } from './customer/accountIdService';
 import { gasHistoryService } from './gasHistoryService';

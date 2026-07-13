@@ -1,7 +1,7 @@
-/* eslint-disable react/prop-types */
-import React, { useEffect, useRef, useState } from 'react';
+ 
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ExternalLink, Store, ShoppingBag, Phone, X, MessageCircle, ShieldCheck, Navigation, Sparkles } from 'lucide-react';
+import { Store, Phone, X, MessageCircle, ShieldCheck, Navigation, Sparkles } from 'lucide-react';
 import { marketingService } from '../../../firebase/marketingService';
 import LazyImage from '../../common/LazyImage';
 

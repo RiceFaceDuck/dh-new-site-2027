@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShieldCheck, Cpu, ChevronRight } from 'lucide-react';
 
 const HeroBanner = () => {

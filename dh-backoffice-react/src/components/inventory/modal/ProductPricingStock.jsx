@@ -1,4 +1,3 @@
-import React from 'react';
 import { AlertTriangle, Shield } from 'lucide-react';
 
 const DEFAULT_UNITS = ['ชิ้น', 'คู่ (L+R)', 'เมตร', 'แผ่น', 'ชุด', 'อื่นๆ'];

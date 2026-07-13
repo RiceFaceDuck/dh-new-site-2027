@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PackageOpen, Clock, Calendar, Check, X, ShieldAlert, BadgeCheck, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { inventoryQueryService } from '../../firebase/inventory/inventoryQueryService';
-import ManagerBadge from './cards/ManagerBadge';
 import WholesaleTable from './cards/wholesale/WholesaleTable';
 import WholesaleSummary from './cards/wholesale/WholesaleSummary';
 import useWholesaleCalculator from './cards/wholesale/useWholesaleCalculator';

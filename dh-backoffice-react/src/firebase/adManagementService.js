@@ -9,7 +9,8 @@ import {
   serverTimestamp,
   query,
   where,
-  writeBatch
+  writeBatch,
+  getCountFromServer
 } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -297,8 +298,8 @@ export const adManagementService = {
   getPendingCount: async () => {
     try {
       const q = query(collection(db, getCollectionPath('partner_ads')), where('status', '==', 'pending'));
-      const snapshot = await getDocs(q);
-      return snapshot.size; // คืนค่าตัวเลขจำนวนคำขอไปแสดงบน Widget
+      const snapshot = await getCountFromServer(q);
+      return snapshot.data().count; // คืนค่าตัวเลขจำนวนคำขอไปแสดงบน Widget
     } catch (error) {
       console.error("❌ Error getting pending count:", error);
       return 0;

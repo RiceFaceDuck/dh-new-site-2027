@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
 import { billingService } from '../../../firebase/billingService';
 import { todoService } from '../../../firebase/todoService';
 

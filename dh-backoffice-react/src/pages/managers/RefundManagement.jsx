@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Building2, HelpCircle, Wallet } from 'lucide-react';
-import { auth, db } from '../../firebase/config';
+import { auth } from '../../firebase/config';
 import { todoService } from '../../firebase/todoService';
 import { driveService } from '../../firebase/driveService';
 import GuideModal from '../../components/common/GuideModal';
 
 import { useWalletManagement } from './wallet/hooks/useWalletManagement';
-import WalletDashboardStats from './wallet/WalletDashboardStats';
 import PendingWithdrawals from './wallet/PendingWithdrawals';
 import CustomerSearchList from './wallet/CustomerSearchList';
 import WalletDetailPanel from './wallet/WalletDetailPanel';

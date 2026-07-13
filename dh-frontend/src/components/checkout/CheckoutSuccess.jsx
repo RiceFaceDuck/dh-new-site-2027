@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Briefcase, Receipt, ArrowRight } from 'lucide-react';
 

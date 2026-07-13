@@ -1,9 +1,8 @@
  
 import React from 'react';
 import { 
-  Store, CreditCard, Package, History, 
-  LogOut, Settings, Megaphone, Heart, ShoppingCart, ChevronRight, Loader2,
-  Wallet, Coins, Award, Sparkles, Wrench, Copy, Check, ShieldCheck
+  Store, History, 
+  LogOut, Megaphone, Heart, ShoppingCart, ChevronRight, Loader2, Sparkles, Wrench, Copy, Check, ShieldCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 
 const noteColorStyles = {
     slate: { text: '#475569', bg: '#f8fafc', border: '#cbd5e1' },

@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Search, AlertTriangle, CheckCircle, Package, ShieldAlert, History, Loader2, Info, ArrowLeft, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';

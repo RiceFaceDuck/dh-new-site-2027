@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AlertCircle, CheckCircle2, ClipboardList, Info, HelpCircle, UserPlus, Calendar, Package, Truck, MessageSquare, Megaphone } from 'lucide-react';
 import { useManagerTodo } from '../../todo/hooks/useManagerTodo';
 import { managerActionService } from '../../../firebase/managerActionService';

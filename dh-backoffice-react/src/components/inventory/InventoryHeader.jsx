@@ -1,17 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, FileSpreadsheet, FileUp, Boxes, CalendarClock, RefreshCw, DatabaseBackup, HelpCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, Plus, FileSpreadsheet, FileUp, Boxes, CalendarClock, RefreshCw, HelpCircle } from 'lucide-react';
 import { gasStockService } from '../../firebase/gasStockService';
-import { inventoryService } from '../../firebase/inventoryService';
 
 export default function InventoryHeader({
   searchTerm, setSearchTerm,
   filterCategory, setFilterCategory,
   salesPeriod, setSalesPeriod,
+  categories = [],
   onAddProduct,
   onImportProduct,
   onExportProduct,
   onGuideOpen
 }) {
+  const CATEGORY_MAP = {
+    'Panel': '💻',
+    'Screen': '💻',
+    'Battery': '🔋',
+    'Keyboard': '⌨️',
+    'Adapter': '🔌',
+    'Hinge': '⛓️',
+    'Cable': '🪢',
+    'Cooling Fan': '❄️',
+    'Speaker': '🔊',
+    'Other': '📦'
+  };
+
   const [pendingCount, setPendingCount] = useState(gasStockService.getPendingCount());
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -68,11 +81,15 @@ export default function InventoryHeader({
             className="text-xs bg-transparent outline-hidden text-white font-bold cursor-pointer w-full appearance-none pr-2 [&>option]:text-slate-900"
           >
             <option value="All">ทุกหมวดหมู่</option>
-            <option value="Screen">💻 Screen (จอ)</option>
-            <option value="Battery">🔋 Battery</option>
-            <option value="Keyboard">⌨️ Keyboard</option>
-            <option value="Adapter">🔌 Adapter</option>
-            <option value="Hinge">⛓️ Hinge (บานพับ)</option>
+            {categories.map((cat) => {
+              const catType = cat.type || cat.name;
+              const emoji = CATEGORY_MAP[catType] || '📦';
+              return (
+                <option key={cat.id || catType} value={catType}>
+                  {emoji} {cat.name} {cat.type && cat.name !== cat.type ? `(${cat.type})` : ''}
+                </option>
+              );
+            })}
           </select>
         </div>
 

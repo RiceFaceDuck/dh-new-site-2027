@@ -1,7 +1,7 @@
-import React from 'react';
 import { X, Save, Trash2, Loader2 } from 'lucide-react';
 import { auth } from '../../firebase/config';
 import { todoService } from '../../firebase/todoService';
+import toast from 'react-hot-toast';
 
 import ProductImageUpload from './modal/ProductImageUpload';
 import ProductBasicInfo from './modal/ProductBasicInfo';
@@ -11,7 +11,7 @@ import ProductVariants from './modal/ProductVariants';
 import ProductTags from './modal/ProductTags';
 import useProductForm from './hooks/useProductForm';
 
-export default function ProductModal({ isOpen, onClose, onSave, productData, globalBufferStock = 2 }) {
+export default function ProductModal({ isOpen, onClose, onSave, productData, globalBufferStock = 2, categoriesData }) {
   const {
     form, setForm,
     isUploading, setIsUploading,
@@ -27,7 +27,7 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
     addArrayItem,
     removeArrayItem,
     handleLinkChange
-  } = useProductForm(productData, isOpen);
+  } = useProductForm(productData, isOpen, categoriesData);
 
   const handleRequestDelete = async () => {
     if (!productData) return;
@@ -36,12 +36,10 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
       try {
         await todoService.requestProductDeletion(form, auth.currentUser.uid);
         alert('ส่งคำร้องขออนุมัติลบสำเร็จ แจ้งเตือนไปยังผู้จัดการแล้ว');
-        onClose(); 
+        onClose();
       } catch (error) {
-    console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
-
-        alert('เกิดข้อผิดพลาดในการส่งคำร้อง: ' + error.message);
+        console.error('🔥 Error:', error);
+        toast.error(error?.message || 'เกิดข้อผิดพลาด');
       }
     }
   };

@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, ArrowDownToLine, ArrowUpFromLine, Banknote, FileText, Loader2, Save } from 'lucide-react';
 
 export default function WalletModals({

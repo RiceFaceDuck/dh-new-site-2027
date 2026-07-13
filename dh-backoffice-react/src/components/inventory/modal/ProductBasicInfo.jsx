@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, Plus, X, Copy, Check } from 'lucide-react';
 
 export default function ProductBasicInfo({
@@ -55,7 +55,7 @@ export default function ProductBasicInfo({
               </button>
             )}
           </div>
-          <div className="relative" title={!!productData ? 'คลิกเพื่อคัดลอก SKU' : ''}>
+          <div className="relative" title={productData ? 'คลิกเพื่อคัดลอก SKU' : ''}>
             <input type="text" disabled={!!productData} required value={form.sku} 
               onChange={e => setForm({...form, sku: e.target.value.toUpperCase()})}
               className="w-full p-2.5 border border-dh-border rounded-xl bg-dh-base focus:bg-dh-surface focus:border-dh-accent outline-hidden font-bold text-dh-main placeholder:text-dh-muted/50 transition-all disabled:opacity-70 uppercase" 
@@ -74,7 +74,7 @@ export default function ProductBasicInfo({
           <div className="flex gap-2">
             <select value={form.category} onChange={e => handleCategoryChange(e.target.value)}
               className="w-full p-2.5 border border-dh-border rounded-xl outline-hidden focus:border-dh-accent bg-dh-base focus:bg-dh-surface text-sm font-bold text-dh-main transition-all cursor-pointer">
-              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              {categories.map(cat => <option key={cat.type || cat.name} value={cat.type || cat.name}>{cat.name}</option>)}
             </select>
             {isManagerOrOwner && (
               <button type="button" onClick={handleAddCategory} className="bg-dh-base border border-dh-border text-dh-muted px-3 rounded-xl hover:bg-dh-surface hover:text-dh-accent transition-colors shadow-xs" title="เพิ่มหมวดหมู่ใหม่">

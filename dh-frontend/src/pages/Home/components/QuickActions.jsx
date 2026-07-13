@@ -1,8 +1,9 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutGrid, CalendarCheck, MapPin } from 'lucide-react';
+import { useToast } from '../../../context/ToastContext';
 
 const QuickActions = () => {
+  const { showToast } = useToast();
   const actions = [
     {
       id: 'shop-parts',
@@ -39,8 +40,8 @@ const QuickActions = () => {
             return (
               <div
                 key={action.id}
-                onClick={() => alert('บริการนี้กำลังอยู่ระหว่างการพัฒนา')}
-                className="relative flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4]/50 rounded-xl border border-[#B3E1C1]/50 shadow-xs cursor-not-allowed group opacity-80"
+                onClick={() => showToast('บริการนี้กำลังอยู่ระหว่างการพัฒนา', 'info')}
+                className="relative flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4]/50 rounded-xl border border-[#B3E1C1]/50 shadow-xs cursor-not-allowed group opacity-80 active:scale-95 transition-all duration-300"
               >
                 <div className="mr-4 md:mr-5 shrink-0 opacity-60">
                   {action.icon}
@@ -67,7 +68,7 @@ const QuickActions = () => {
             <Link
               key={action.id}
               to={action.link}
-              className="flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4] rounded-xl border border-[#B3E1C1] shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+              className="flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4] rounded-xl border border-[#B3E1C1] shadow-xs hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all duration-300 group"
             >
               <div className="mr-4 md:mr-5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
                 {action.icon}

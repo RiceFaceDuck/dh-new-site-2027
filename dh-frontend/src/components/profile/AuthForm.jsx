@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Lock, User, AlertCircle, ShieldCheck, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { loginWithGoogle, loginWithEmail, registerWithEmail } from '../../firebase/authService';
 import { useCookieConsent } from '../../hooks/useCookieConsent';

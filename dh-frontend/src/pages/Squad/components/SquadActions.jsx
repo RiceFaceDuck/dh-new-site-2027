@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * SquadActions - Bottom action bar for Auto Pick, Reset, and Save Team.

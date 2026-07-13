@@ -1,4 +1,3 @@
-import React from 'react';
 import SearchArea from './cart/SearchArea';
 import CartTable from './cart/CartTable';
 

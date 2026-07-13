@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle2, Clock, Package, AlertCircle } from 'lucide-react';
 
 export default function ClaimStepper({ status, isCancel }) {

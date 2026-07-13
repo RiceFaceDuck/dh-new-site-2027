@@ -1,4 +1,4 @@
-import { doc, increment } from 'firebase/firestore';
+import { increment } from 'firebase/firestore';
 
 export const handlePromoFreebieReversal = async (transaction, db, orderData, promoFreebieSnaps = []) => {
   // 1. คืนโควตาโปรโมชัน และ ของแถม จาก Preloaded Snaps

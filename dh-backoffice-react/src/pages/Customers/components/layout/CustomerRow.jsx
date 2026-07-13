@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Crown, Star, Building2, User, FileText, Copy, CheckCircle2 } from 'lucide-react';
 import WalletDisplay from '../displays/WalletDisplay';
 import PointDisplay from '../displays/PointDisplay';

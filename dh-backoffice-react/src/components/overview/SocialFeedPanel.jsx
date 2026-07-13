@@ -1,4 +1,3 @@
-import React from 'react';
 import { MessageCircle, Heart, Share2, ThumbsUp, Activity, MessageSquare } from 'lucide-react';
 
 export const SocialFeedPanel = () => {

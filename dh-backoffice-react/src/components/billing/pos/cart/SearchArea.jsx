@@ -1,5 +1,4 @@
-import React from 'react';
-import { ScanBarcode, Eraser, Lock, Star, CheckCircle, Search } from 'lucide-react';
+import { ScanBarcode, Eraser, Lock, CheckCircle, Search } from 'lucide-react';
 
 export default function SearchArea({ 
     searchRef, searchQuery, setSearchQuery, showDropdown, setShowDropdown, 

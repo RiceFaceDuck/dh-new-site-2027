@@ -1,4 +1,4 @@
-import { doc, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, serverTimestamp, increment } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const handleSalesStatsUpdate = (transaction, db, totalSaleAmount, orderData, isCancelling) => {

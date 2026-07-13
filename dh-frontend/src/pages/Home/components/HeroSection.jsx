@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { storefrontSettingsService, DEFAULT_HERO_CONFIG } from '../../../firebase/storefrontSettingsService';
 import { getRenderableImageUrl } from '../../../utils/imageUtils';
@@ -54,7 +54,7 @@ const HeroSection = () => {
             src={getRenderableImageUrl(activeConfig.imageUrl || DEFAULT_HERO_CONFIG.imageUrl)} 
             alt="Electronic Repairs" 
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
             className="w-full h-full object-cover"
           />
           {/* Dynamic Gradient overlay */}

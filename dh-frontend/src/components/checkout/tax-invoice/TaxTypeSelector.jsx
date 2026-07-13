@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Building2 } from 'lucide-react';
 
 export default function TaxTypeSelector({ type, onChange }) {

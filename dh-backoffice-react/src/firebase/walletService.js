@@ -1,4 +1,3 @@
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 import { sharedWalletService } from 'dh-shared/src/firebase/walletService';
 import { getUsersPath } from 'dh-shared/src/firebase/pathUtils';

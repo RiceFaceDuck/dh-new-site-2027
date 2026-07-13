@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { HelpCircle, X, Users } from 'lucide-react';
 import { useProvidersList } from './hooks/useProvidersList';
 import ProvidersFilterBar from './components/ProvidersFilterBar';

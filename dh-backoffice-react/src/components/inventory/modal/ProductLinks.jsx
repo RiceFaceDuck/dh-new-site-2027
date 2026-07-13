@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link as LinkIcon, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function ProductLinks({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, ArrowLeft, HelpCircle, X, CloudOff, RefreshCw } from 'lucide-react';
 import { offlinePosService } from '../../../../firebase/offlinePosService';
 import { toast } from 'react-hot-toast';

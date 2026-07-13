@@ -1,4 +1,3 @@
-import React from 'react';
 import { Store, UploadCloud, Loader2, Clock, Image as ImageIcon } from 'lucide-react';
 
 const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploadingStoreImage, handleStoreImageUpload, uploadingGallery, handleGalleryImageUpload, handleRemoveGalleryImage }) => {

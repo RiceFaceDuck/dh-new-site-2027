@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { promotionService } from '../../../../firebase/promotionService';
 import { freebieService } from '../../../../firebase/freebieService';
 import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
@@ -6,6 +6,7 @@ import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQ
 import { usePosCart } from './usePosCart';
 import { usePosCustomer } from './usePosCustomer';
 import { usePosPayment } from './usePosPayment';
+import { auth } from '../../../../firebase/config';
 
 import { safeJsonParse } from 'dh-shared';
 const createNewTab = () => ({
@@ -18,10 +19,25 @@ const createNewTab = () => ({
 
 const loadSavedState = () => {
     try {
-        const saved = localStorage.getItem('dh_pos_autosave');
+        const uid = auth?.currentUser?.uid || 'guest';
+        const saved = localStorage.getItem(`dh_pos_autosave_${uid}`);
+        
         if (saved) {
             const parsed = safeJsonParse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } else {
+            // Auto-Migration: If no new staff-specific save exists, check for old global save
+            const oldSaved = localStorage.getItem('dh_pos_autosave');
+            if (oldSaved) {
+                const parsedOld = safeJsonParse(oldSaved);
+                if (Array.isArray(parsedOld) && parsedOld.length > 0) {
+                    // Save to new key to complete migration
+                    localStorage.setItem(`dh_pos_autosave_${uid}`, oldSaved);
+                    // Clear old to avoid duplication for other users on same PC
+                    localStorage.removeItem('dh_pos_autosave');
+                    return parsedOld;
+                }
+            }
         }
     } catch (e) { console.error('Failed to load autosave', e); }
     return [createNewTab()];
@@ -43,7 +59,8 @@ export default function usePosState(products, customers, initialDraft) {
     const [activeFreebies, setActiveFreebies] = useState([]);
 
     useEffect(() => {
-        localStorage.setItem('dh_pos_autosave', JSON.stringify(cartTabs));
+        const uid = auth?.currentUser?.uid || 'guest';
+        localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(cartTabs));
     }, [cartTabs]);
 
     useEffect(() => {

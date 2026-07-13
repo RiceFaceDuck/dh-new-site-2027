@@ -1,4 +1,3 @@
-import React from 'react';
 import { Save, Layers, Server } from 'lucide-react';
 
 export default function CoreForm({ settings, updateSettings, saveSettings, isSaving }) {

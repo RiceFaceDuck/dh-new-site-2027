@@ -1,4 +1,3 @@
-import React from 'react';
 import { Users, Wallet, Clock, Loader2 } from 'lucide-react';
 
 export default function WalletDashboardStats({ isDashboardLoading, walletHoldersCount, stats }) {

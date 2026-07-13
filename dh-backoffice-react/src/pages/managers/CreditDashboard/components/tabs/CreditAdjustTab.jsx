@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { auth } from '../../../../../firebase/config';
 import { creditCoreService } from '../../../../../firebase/creditCoreService';
 

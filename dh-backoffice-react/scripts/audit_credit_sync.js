@@ -1,5 +1,3 @@
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin (Modify path to service account key as needed)
 // const serviceAccount = require('./serviceAccountKey.json');
