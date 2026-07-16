@@ -36,8 +36,7 @@ export default function CustomerSection({
             setLocalSearchText('');
         }
         setCustomerSearchText(''); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab.id, activeTab.customer?.uid, activeTab.walkInName]); 
+    }, [activeTab.id, activeTab.customer, activeTab.walkInName]); 
 
     useEffect(() => { 
         setShowWalkInPhoneInput(false); 

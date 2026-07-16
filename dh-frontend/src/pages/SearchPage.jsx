@@ -6,7 +6,6 @@ import ProductList from '../components/ProductList';
 // Removed memoryCache import since we are upgrading to sessionStorage
 import { Search, Sparkles, ChevronLeft } from 'lucide-react';
 
-import { safeJsonParse } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,31 +47,20 @@ const SearchPage = () => {
       try {
         setLoading(true);
         const cacheKey = `search_products_active_capped`;
-        const cacheTimeKey = `${cacheKey}_time`;
-        const now = new Date().getTime();
-        
-        const cachedData = sessionStorage.getItem(cacheKey);
-        const cachedTime = sessionStorage.getItem(cacheTimeKey);
 
-        if (cachedData && cachedTime && (now - parseInt(cachedTime) < 5 * 60 * 1000)) {
-          setProducts(safeJsonParse(cachedData));
-        } else {
-          // 🚀 [Optimization] ดึงข้อมูลสินค้าที่ Active จำกัดไม่เกิน 1,000 รายการป้องกัน Quota หมด
+        const fetchAllActiveProducts = async () => {
           const { limit } = await import('firebase/firestore');
           const productsRef = collection(db, getCollectionPath('products'));
-          const q = query(productsRef, where("isActive", "==", true), limit(1000));
+          // 🚀 [Optimization] เพิ่มโควต้าเป็น 5,000 รายการเพื่อให้ค้นหาเจอครบ อาศัย In-Memory Cache (RAM)
+          const q = query(productsRef, where("isActive", "==", true), limit(5000));
           const snapshot = await getDocs(q);
-          const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(fetchedProducts));
-            sessionStorage.setItem(cacheTimeKey, now.toString());
-          } catch (e) {
-            console.warn("SessionStorage is full, caching failed.");
-          }
-          
-          setProducts(fetchedProducts);
-        }
+          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        };
+
+        const { memoryCache } = await import('../utils/memoryCache');
+        const fetchedProducts = await memoryCache.getOrFetch(cacheKey, fetchAllActiveProducts, 5 * 60 * 1000);
+        
+        setProducts(fetchedProducts || []);
       } catch (err) {
         console.error("Error fetching products for search:", err);
         setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้");
@@ -136,7 +124,7 @@ const SearchPage = () => {
               placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
               className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-3 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
             />
-            <button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-brand text-white p-2 rounded-lg hover:bg-brand-dark transition-colors shadow-xs active:scale-95">
+            <button type="submit" aria-label="ค้นหาสินค้า" title="ค้นหาสินค้า" className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-brand text-white p-2 rounded-lg hover:bg-brand-dark transition-colors shadow-xs active:scale-95">
               <Search size={16} strokeWidth={2.5} />
             </button>
           </form>

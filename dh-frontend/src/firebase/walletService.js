@@ -196,8 +196,8 @@ export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
         timestamp: serverTimestamp()
       });
 
-      // 4. 🌟 [COOL FEATURE] ยิงตรงเข้า To-do ส่วนกลางของระบบหลังบ้าน (Backoffice)
-      const todoRef = doc(collection(db, getCollectionPath('todos')));
+      // 4. 🌟 [COOL FEATURE] ยิงตรงเข้า To-do ส่วนกลางของระบบหลังบ้าน (Backoffice) โดยใช้ Idempotent Key เป็น ID ของเอกสาร
+      const todoRef = doc(db, getCollectionPath('todos'), `WD-${userId}-${txId}`);
       transaction.set(todoRef, {
         taskId: txId,
         taskType: 'WALLET_WITHDRAWAL',

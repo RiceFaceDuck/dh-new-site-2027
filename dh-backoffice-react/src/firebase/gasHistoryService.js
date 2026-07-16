@@ -1,4 +1,6 @@
-import { auth } from './config.js';
+import { auth, db } from './config.js';
+import { addDoc, collection, getDocs, query, where, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // The Google Apps Script Web App URL deployed by the user
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwdYyuYHv2BqJqx0ksRZyB8iAWLKO2y465Tbio03CTazBMBXh-KrRqaAEAGKtyUnBa4kg/exec';
@@ -28,32 +30,8 @@ class GasHistoryService {
   }
 
   _registerUnloadEvents() {
-    // visibilitychange works best on mobile & modern browsers for unloads
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        this._flushSync();
-      }
-    });
-
-    // Fallback for older browsers
-    window.addEventListener('beforeunload', () => {
-      this._flushSync();
-    });
-  }
-
-  _flushSync() {
-    if (this.queue.length === 0) return;
-    
-    const batch = [...this.queue];
-    this.queue = []; // clear queue
-    
-    try {
-      // navigator.sendBeacon is highly reliable for sending data when the page unloads.
-      const blob = new Blob([JSON.stringify(batch)], { type: 'text/plain;charset=utf-8' });
-      navigator.sendBeacon(GAS_WEB_APP_URL, blob);
-    } catch (err) {
-      console.error("Failed to send beacon", err);
-    }
+    // Unload events are no longer needed for data preservation since we use the Firestore Outbox Pattern.
+    // Data is safely stored in 'gas_outbox' immediately upon calling log().
   }
 
   /**
@@ -97,32 +75,54 @@ class GasHistoryService {
         client_timestamp: new Date().toISOString(),
       };
 
-      this.queue.push(logEntry);
-
-      if (this.queue.length >= this.MAX_QUEUE_SIZE) {
-        this._flush();
-      }
+      // Outbox Pattern: Save to Firestore immediately instead of memory queue
+      addDoc(collection(db, getCollectionPath('gas_outbox')), {
+        payload: logEntry,
+        status: 'pending',
+        creatorUid: actor.uid || 'anonymous',
+        createdAt: serverTimestamp()
+      }).catch(err => console.error("Failed to enqueue gas history to outbox:", err));
     } catch (err) {
       console.error("Failed to construct history log", err);
     }
   }
 
   async _flush() {
-    if (this.queue.length === 0 || this.isFlushing) return;
-
+    if (this.isFlushing) return;
     this.isFlushing = true;
-    const batch = [...this.queue];
-    this.queue = []; // clear queue immediately to accept new logs
 
     try {
-      // POST without expecting a CORS preflight failure by using mode: 'no-cors' 
-      // Wait, GAS returns JSON. If we use no-cors, we can't read the response.
-      // GAS Web Apps deployed to execute as "Me" and access "Anyone" allow standard CORS if doPost returns ContentService.createTextOutput().setMimeType(JSON).
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        this.isFlushing = false;
+        return; // Only process outbox if user is logged in
+      }
+
+      const outboxRef = collection(db, getCollectionPath('gas_outbox'));
+      const q = query(
+        outboxRef,
+        where('status', '==', 'pending'),
+        where('creatorUid', '==', currentUser.uid),
+        limit(this.MAX_QUEUE_SIZE || 15)
+      );
       
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        this.isFlushing = false;
+        return;
+      }
+
+      const batch = [];
+      const docRefs = [];
+      snapshot.forEach(docSnap => {
+        batch.push(docSnap.data().payload);
+        docRefs.push(docSnap.ref);
+      });
+
       const response = await fetch(GAS_WEB_APP_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'text/plain;charset=utf-8', // GAS handles text/plain best to avoid CORS preflight options issues
+          'Content-Type': 'text/plain;charset=utf-8', 
         },
         body: JSON.stringify(batch)
       });
@@ -131,14 +131,13 @@ class GasHistoryService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // If we care about the response:
-      // const resData = await response.json();
-      // console.log("Flush success", resData);
+      // ✅ SUCCESS: Delete processed logs from outbox to free up quota
+      const batchDelete = writeBatch(db);
+      docRefs.forEach(ref => batchDelete.delete(ref));
+      await batchDelete.commit();
 
     } catch (error) {
-      console.error("🔥 Failed to flush logs to GAS:", error);
-      // Re-queue the failed logs at the front
-      this.queue = [...batch, ...this.queue];
+      console.error("🔥 Failed to flush outbox logs to GAS:", error);
     } finally {
       this.isFlushing = false;
     }

@@ -30,7 +30,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
       setStoreData({ ...storeData, latitude: coords.latitude, longitude: coords.longitude });
     } catch (error) {
     console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
+    showToast(error?.message || "เกิดข้อผิดพลาด", "error");
 
       showToast(error.message, 'error');
     }

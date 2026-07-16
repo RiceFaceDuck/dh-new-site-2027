@@ -15,19 +15,22 @@ export const createManualCustomer = async (data) => {
     try {
         const usersRef = collection(db, getCollectionPath('users'));
         
-        // ถ้าระบุรหัสมาเอง (customerCode/accountId) ให้ใช้ค่านั้น ถ้าไม่ระบุ ให้สร้างใหม่มาตรฐาน
-        const accountId = data.accountId || data.customerCode || generateAccountId();
-
         // 1. สร้าง Document ใหม่เพื่อให้ Firestore สุ่ม ID ให้ก่อน
         const docRef = doc(usersRef);
+
+        // ถ้าระบุรหัสมาเอง (customerCode/accountId) ให้ใช้ค่านั้น ถ้าไม่ระบุ ให้สร้างมาตรฐาน 8 หลักจาก UID
+        const accountId = data.accountId || data.customerCode || docRef.id.substring(0, 8).toUpperCase();
         await setDoc(docRef, {
             ...data,
             uid: docRef.id,
             accountId: accountId,
-            customerCode: accountId, // เก็บไว้เพื่อ backward compatibility
+            name: data.accountName || data.name || 'ผู้ใช้งานใหม่', // Unified name for frontend
             isManualCustomer: true,
             role: data.rank || 'Customer',
             status: 'active',
+            // 💰 เตรียมโครงสร้างการเงินให้พร้อมคำนวณ (ป้องกัน NaN)
+            walletBalance: 0,
+            creditPoints: 0,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             source: 'manual_entry'
@@ -137,7 +140,7 @@ export const deleteCustomer = async (targetUid, customerName) => {
 
 export const syncCustomerAccount = async (manualUid, targetAccountId) => {
     try {
-        const { query, where, getDocs, writeBatch } = await import('firebase/firestore');
+        const { query, where, getDocs, runTransaction } = await import('firebase/firestore');
         const usersRef = collection(db, getCollectionPath('users'));
         
         // 1. หาบัญชี Web ปลายทาง (Target)
@@ -151,6 +154,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         const targetDoc = querySnapshot.docs[0];
         const targetData = targetDoc.data();
         const targetUid = targetDoc.id;
+        const targetDocRef = targetDoc.ref;
 
         if (!targetData.email) {
             throw new Error(`บัญชีปลายทางยังไม่ได้ยืนยัน Email ไม่สามารถควบรวมได้`);
@@ -160,114 +164,127 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
             throw new Error(`ไม่สามารถซิงค์ข้อมูลเข้าตัวเองได้`);
         }
 
-        // 2. ดึงข้อมูลบัญชี Manual ต้นทาง
         const manualRef = getUserDocRef(manualUid);
-        const manualSnap = await getDoc(manualRef);
-        
-        if (!manualSnap.exists()) {
-            throw new Error(`ไม่พบข้อมูลบัญชีต้นทาง`);
-        }
-        
-        const manualData = manualSnap.data();
 
-        // 3. เริ่มโอนย้ายข้อมูล (Batch)
-        // สร้าง batch เพื่ออัปเดตข้อมูลทุกอย่างพร้อมกัน
-        const batch = writeBatch(db);
-
-        // --- A. อัปเดตข้อมูลลูกค้า (รวม Wallet/Points) ---
-        const combinedWallet = Number(targetData.walletBalance || 0) + Number(manualData.walletBalance || 0);
-        const combinedPoints = Number(targetData.creditPoints || targetData.stats?.rewardPoints || 0) + Number(manualData.creditPoints || manualData.stats?.rewardPoints || 0);
-        
-        const updatePayload = {
-            walletBalance: combinedWallet,
-            creditPoints: combinedPoints,
-            updatedAt: serverTimestamp()
-        };
-
-        // โอนย้ายข้อมูลติดต่อ (ถ้าปลายทางยังไม่มี)
-        if (!targetData.phone && manualData.phone) updatePayload.phone = manualData.phone;
-        if (!targetData.address && manualData.address) updatePayload.address = manualData.address;
-        if ((!targetData.accountName || targetData.accountName === targetData.displayName) && manualData.accountName) updatePayload.accountName = manualData.accountName;
-        
-        // กรณีมี Rank ให้เลือก Rank ที่สูงกว่า (สมมติว่าอัปเดตถ้าต้นทางมี)
-        if (manualData.rank && !targetData.rank) updatePayload.rank = manualData.rank;
-
-        batch.update(targetDoc.ref, updatePayload);
-
+        // 2. ดึงข้อมูลลูกหลานทั้งหมดไว้ก่อน (เตรียมความพร้อมก่อนเข้า Transaction)
         // --- B. ย้ายรายการ Orders ---
         const ordersRef = collection(db, getCollectionPath('orders'));
         const ordersQ = query(ordersRef, where('customer.uid', '==', manualUid), limit(300));
         const ordersSnap = await getDocs(ordersQ);
-        ordersSnap.forEach((docSnap) => {
-            const currentCustomer = docSnap.data().customer || {};
-            batch.update(docSnap.ref, { 
-                customer: { ...currentCustomer, uid: targetUid },
-                updatedAt: serverTimestamp()
-            });
-        });
 
         // --- C. ย้ายรายการ Todos ---
         const todosRef = collection(db, getCollectionPath('todos'));
         const todosQ1 = query(todosRef, where('customerUid', '==', manualUid), limit(300));
         const todosSnap1 = await getDocs(todosQ1);
-        todosSnap1.forEach((docSnap) => {
-            batch.update(docSnap.ref, { customerUid: targetUid });
-        });
 
         const todosQ2 = query(todosRef, where('payload.customerUid', '==', manualUid), limit(300));
         const todosSnap2 = await getDocs(todosQ2);
-        todosSnap2.forEach((docSnap) => {
-            const currentPayload = docSnap.data().payload || {};
-            batch.update(docSnap.ref, { payload: { ...currentPayload, customerUid: targetUid } });
-        });
 
         // --- D. ย้ายรายการ Claims ---
         const claimsRef = collection(db, getCollectionPath('claims'));
         const claimsQ = query(claimsRef, where('customerUid', '==', manualUid), limit(300));
         const claimsSnap = await getDocs(claimsQ);
-        claimsSnap.forEach((docSnap) => {
-            batch.update(docSnap.ref, { customerUid: targetUid });
-        });
 
         // --- E. ย้ายรายการ Partners ---
         const partnersRef = collection(db, getCollectionPath('partners'));
         const partnersQ = query(partnersRef, where('ownerId', '==', manualUid), limit(300));
         const partnersSnap = await getDocs(partnersQ);
-        partnersSnap.forEach((docSnap) => {
-            batch.update(docSnap.ref, { ownerId: targetUid });
-        });
         
         // --- F. ย้ายรายการ Credit Transactions ---
         const creditsRef = collection(db, getCollectionPath('credit_transactions'));
         const creditsQ = query(creditsRef, where('uid', '==', manualUid), limit(300));
         const creditsSnap = await getDocs(creditsQ);
-        creditsSnap.forEach((docSnap) => {
-            batch.update(docSnap.ref, { uid: targetUid });
-        });
 
         // --- F.2 ย้ายรายการ Wallet Transactions ---
         const oldWalletTxRef = collection(db, getCollectionPath('users'), manualUid, 'wallet_transactions');
         const walletTxSnap = await getDocs(oldWalletTxRef);
-        walletTxSnap.forEach((docSnap) => {
-            const newTxRef = doc(collection(db, getCollectionPath('users'), targetUid, 'wallet_transactions'), docSnap.id);
-            batch.set(newTxRef, docSnap.data());
-            batch.delete(docSnap.ref);
-        });
 
-        // --- G. ลบหรือปิดใช้งานบัญชีเดิม (Soft Delete) ---
-        batch.update(manualRef, {
-            status: 'merged',
-            isActive: false,
-            mergedInto: targetUid,
-            updatedAt: serverTimestamp(),
-            mergedAt: serverTimestamp(),
-            mergedBy: auth.currentUser?.uid
-        });
+        let logManualData = {};
 
-        await batch.commit();
+        // 3. เริ่มโอนย้ายข้อมูล (Transaction ป้องกันเงินหาย)
+        await runTransaction(db, async (transaction) => {
+            // A. ดึงข้อมูลล่าสุดแบบล็อก (Pessimistic Lock)
+            const tTargetSnap = await transaction.get(targetDocRef);
+            const tManualSnap = await transaction.get(manualRef);
+            
+            if (!tTargetSnap.exists() || !tManualSnap.exists()) {
+                throw new Error("ข้อมูลบัญชีปลายทางหรือต้นทางสูญหายระหว่างทำรายการ");
+            }
+
+            const tTargetData = tTargetSnap.data();
+            const tManualData = tManualSnap.data();
+            logManualData = tManualData;
+
+            // คำนวณเงินและพ้อยท์แบบสดๆ ณ วินาทีนั้น
+            const combinedWallet = Number(tTargetData.walletBalance || 0) + Number(tManualData.walletBalance || 0);
+            const combinedPoints = Number(tTargetData.creditPoints || tTargetData.stats?.rewardPoints || 0) + Number(tManualData.creditPoints || tManualData.stats?.rewardPoints || 0);
+            const combinedAccumulated = Number(tTargetData.totalAccumulatedPoints || tTargetData.creditPoints || 0) + Number(tManualData.totalAccumulatedPoints || tManualData.creditPoints || 0);
+            
+            const updatePayload = {
+                walletBalance: combinedWallet,
+                creditPoints: combinedPoints,
+                totalAccumulatedPoints: combinedAccumulated,
+                updatedAt: serverTimestamp()
+            };
+
+            // โอนย้ายข้อมูลติดต่อ (ถ้าปลายทางยังไม่มี)
+            if (!tTargetData.phone && tManualData.phone) updatePayload.phone = tManualData.phone;
+            if (!tTargetData.address && tManualData.address) updatePayload.address = tManualData.address;
+            if ((!tTargetData.accountName || tTargetData.accountName === tTargetData.displayName) && tManualData.accountName) updatePayload.accountName = tManualData.accountName;
+            
+            if (tManualData.rank && !tTargetData.rank) updatePayload.rank = tManualData.rank;
+
+            transaction.update(targetDocRef, updatePayload);
+
+            // G. อัปเดตสถานะบัญชีเดิม (Soft Delete)
+            transaction.update(manualRef, {
+                status: 'merged',
+                isActive: false,
+                mergedInto: targetUid,
+                updatedAt: serverTimestamp(),
+                mergedAt: serverTimestamp(),
+                mergedBy: auth.currentUser?.uid
+            });
+
+            // อัปเดตข้อมูลลูกหลานทั้งหมด
+            ordersSnap.forEach((docSnap) => {
+                const currentCustomer = docSnap.data().customer || {};
+                transaction.update(docSnap.ref, { 
+                    customer: { ...currentCustomer, uid: targetUid },
+                    updatedAt: serverTimestamp()
+                });
+            });
+
+            todosSnap1.forEach((docSnap) => {
+                transaction.update(docSnap.ref, { customerUid: targetUid });
+            });
+
+            todosSnap2.forEach((docSnap) => {
+                const currentPayload = docSnap.data().payload || {};
+                transaction.update(docSnap.ref, { payload: { ...currentPayload, customerUid: targetUid } });
+            });
+
+            claimsSnap.forEach((docSnap) => {
+                transaction.update(docSnap.ref, { customerUid: targetUid });
+            });
+
+            partnersSnap.forEach((docSnap) => {
+                transaction.update(docSnap.ref, { ownerId: targetUid });
+            });
+            
+            creditsSnap.forEach((docSnap) => {
+                transaction.update(docSnap.ref, { uid: targetUid });
+            });
+
+            walletTxSnap.forEach((docSnap) => {
+                const newTxRef = doc(collection(db, getCollectionPath('users'), targetUid, 'wallet_transactions'), docSnap.id);
+                transaction.set(newTxRef, docSnap.data());
+                transaction.delete(docSnap.ref);
+            });
+        });
 
         // 4. บันทึก Audit Log อย่างละเอียด
-        const sourceName = getCustomerDisplayName(manualData, manualUid);
+        const sourceName = getCustomerDisplayName(logManualData, manualUid);
         const targetName = getCustomerDisplayName(targetData, targetUid);
         
         gasHistoryService.log({
@@ -278,8 +295,8 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
             details: {
                 legacy_details: `โอนย้ายข้อมูลทั้งหมดจากบัญชี: ${sourceName} ไปยังบัญชีเว็บ: ${targetName} (${targetAccountId}) สำเร็จ`,
                 merge_stats: {
-                    walletTransferred: manualData.walletBalance || 0,
-                    pointsTransferred: manualData.creditPoints || 0,
+                    walletTransferred: logManualData.walletBalance || 0,
+                    pointsTransferred: logManualData.creditPoints || 0,
                     ordersMoved: ordersSnap.size,
                     claimsMoved: claimsSnap.size,
                     todosMoved: todosSnap1.size + todosSnap2.size,
@@ -291,7 +308,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         return { 
             success: true, 
             targetUid, 
-            message: `โอนย้ายสำเร็จ (บิล ${ordersSnap.size} รายการ, เงิน ${formatCurrency(manualData.walletBalance || 0)} บาท)` 
+            message: `โอนย้ายสำเร็จ (บิล ${ordersSnap.size} รายการ, เงิน ${formatCurrency(logManualData.walletBalance || 0)} บาท)` 
         };
     } catch (error) {
         console.error("❌ [CustomerAdminService] Sync Customer Account Error:", error);

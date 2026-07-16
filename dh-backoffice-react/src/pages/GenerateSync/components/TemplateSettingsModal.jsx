@@ -50,8 +50,8 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
             action: 'Upload Template',
             target: { id: key, type: 'Local Storage' },
             details: { message: `Uploaded new template for ${key}` }
-          });
-        });
+          }).catch(console.error);
+        }).catch(console.error);
       } catch (error) {
         console.error("Failed to parse file", error);
         alert("เกิดข้อผิดพลาดในการอ่านไฟล์");
@@ -74,8 +74,8 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
         action: 'Remove Template',
         target: { id: key, type: 'Local Storage' },
         details: { message: `Removed template for ${key}` }
-      });
-    });
+      }).catch(console.error);
+    }).catch(console.error);
   };
 
   const getHeadersFromBase64 = (base64) => {
@@ -106,7 +106,7 @@ export default function TemplateSettingsModal({ isOpen, onClose }) {
     if (!base64) return;
     
     const headers = getHeadersFromBase64(base64);
-    let mapping = [];
+    let mapping;
     
     if (key === 'bigseller_template_sku') {
       mapping = [

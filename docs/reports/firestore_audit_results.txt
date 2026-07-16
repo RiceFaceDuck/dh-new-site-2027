@@ -1,0 +1,176 @@
+
+--- getDocs (136) ---
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartActivePromotions.jsx:28 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx:51 -> const promoSnap = await getDocs(promoQ);
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx:70 -> const freebieSnap = await getDocs(freebieQ);
+C:\DH Notebook\Management System\dh-frontend\src\components\product\RelatedProducts.jsx:29 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\credit\creditHistoryService.js:48 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\featuredQueryService.js:57 -> let snapshot = await getDocs(q1);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\featuredQueryService.js:69 -> const snapshot2 = await getDocs(q2);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\featuredQueryService.js:92 -> const fallbackSnap = await getDocs(fallbackQuery);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\marketingService.js:49 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\marketingService.js:230 -> const p1 = getDocs(query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', userId), limit(50)));
+C:\DH Notebook\Management System\dh-frontend\src\firebase\marketingService.js:231 -> const p2 = getDocs(query(collection(db, getCollectionPath('user_sku_ads')), where('ownerId', '==', userId), limit(50)));
+C:\DH Notebook\Management System\dh-frontend\src\firebase\marketingService.js:232 -> const p3 = getDocs(query(collection(db, getCollectionPath('billboard_ads')), where('ownerId', '==', userId), limit(50)));
+C:\DH Notebook\Management System\dh-frontend\src\firebase\partnerLocationService.js:37 -> const snapshot = await getDocs(partnersRef);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\partnerService.js:48 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productReviewService.js:46 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productService.js:41 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productService.js:75 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productService.js:87 -> const fallbackSnap = await getDocs(fallbackQ);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productService.js:245 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\storefrontSettingsService.js:94 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\storefrontSettingsService.js:106 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\firebase\walletService.js:116 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\hooks\useCartLogic.js:37 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-frontend\src\pages\SearchPage.jsx:56 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\adManagementService.js:44 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\adManagementService.js:71 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingDeleteService.js:57 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:55 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:66 -> const [snap1, snap2, snap3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:79 -> const [snap1, snap2, snap3, snap4] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4)]);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:105 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:138 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingStatusTransaction.js:215 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\categoryService.js:226 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\categorySyncService.js:55 -> const hcSnap1 = await getDocs(query(hcRef, where('type', '==', oldType), limit(500)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\categorySyncService.js:64 -> const productsSnap = await getDocs(query(productsRef, where('category_lower', '==', oldType.trim().toLowerCase()), limit(500)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claim\claimRequestService.js:20 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claim\claimRequestService.js:131 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claimService.js:39 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:201 -> let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:204 -> snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:207 -> snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:211 -> snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:417 -> let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:420 -> snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:423 -> snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\credit\creditActionService.js:426 -> snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\creditHistoryService.js:15 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\accountIdService.js:37 -> const snap1 = await getDocs(q1);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\accountIdService.js:41 -> const snap2 = await getDocs(q2);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:12 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:36 -> const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:76 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:97 -> return getDocs(adsQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:123 -> const ordersSnap = await getDocs(ordersQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:139 -> const claimsSnap = await getDocs(claimsQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:148 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:173 -> const ordersSnap = await getDocs(ordersQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:178 -> const todosSnap1 = await getDocs(todosQ1);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:181 -> const todosSnap2 = await getDocs(todosQ2);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:186 -> const claimsSnap = await getDocs(claimsQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:191 -> const partnersSnap = await getDocs(partnersQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:196 -> const creditsSnap = await getDocs(creditsQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customerAdminService.js:200 -> const walletTxSnap = await getDocs(oldWalletTxRef);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\dataRepairService.js:11 -> const snap = await getDocs(collection(db, getCollectionPath('users')));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\dataRepairService.js:55 -> const snap = await getDocs(collection(db, getCollectionPath('orders')));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\dataRepairService.js:126 -> const snap = await getDocs(collection(db, getCollectionPath('products')));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\featured\featuredConfigService.js:55 -> const snapshot = await getDocs(productsRef);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\freebieService.js:22 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\freebieService.js:36 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\freebieService.js:48 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\gasHistoryService.js:109 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryExportService.js:19 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryImportService.js:18 -> return getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryMutationService.js:100 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryMutationService.js:125 -> const substituteSnap = await getDocs(substituteQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryMutationService.js:133 -> const promoSnap = await getDocs(promoQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryMutationService.js:141 -> const freebieSnap = await getDocs(freebieQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:31 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:45 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:56 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:69 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:76 -> const snapExact = await getDocs(qExact);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:89 -> const snapPrefix = await getDocs(qPrefix);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:115 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:137 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:163 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\promotionService.js:17 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\promotionService.js:31 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\promotionService.js:47 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\redirectURLsService.js:12 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\shippingService.js:9 -> const snap = await getDocs(collection(db, getCollectionPath('shipping_rules')));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\shippingService.js:24 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\todo\todoQueryService.js:64 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\todo\todoWalletService.js:173 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\transactionService.js:69 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userManagementService.js:54 -> const partnersSnap = await getDocs(partnersQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userManagementService.js:70 -> return getDocs(adsQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userManagementService.js:96 -> getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4)
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userManagementService.js:242 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userStaffService.js:36 -> const promises = [getDocs(q1), getDocs(q3)];
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userStaffService.js:37 -> if (q2) promises.push(getDocs(q2));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userStaffService.js:78 -> const snap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userStaffService.js:147 -> const snapshot = await getDocs(usersRef);
+C:\DH Notebook\Management System\dh-backoffice-react\src\hooks\useAutoCleanup.js:37 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\components\AccountMigration.jsx:24 -> const snapshot = await getDocs(usersRef);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\components\AccountMigrationV2.jsx:33 -> const snapshot = await getDocs(usersRef);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\hooks\useCustomerData.js:83 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\hooks\useCustomerHistory.js:37 -> getDocs(query(ordersRef, where('customer.uid', '==', targetId), limit(300))),
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\hooks\useCustomerHistory.js:38 -> getDocs(query(ordersRef, where('userId', '==', targetId), limit(300)))
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\Customers\hooks\useCustomerHistory.js:49 -> const claimsSnapshot = await getDocs(claimsQuery);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\gallery\GalleryMain.jsx:26 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\gallery\GalleryMain.jsx:118 -> const querySnapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\GenerateSync\components\RecentImportsModal.jsx:26 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\History\components\MigrationButton.jsx:21 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\useAuditLedger.js:20 -> const creditSnap = await getDocs(creditQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\useAuditLedger.js:45 -> const walletSnap = await getDocs(walletQ);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\usePartnerSettings.js:20 -> const snapshot = await getDocs(partnersRef);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\pricing\hooks\usePricingSettings.js:63 -> const logsSnap = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\settings\data_repair\useDataRepair.js:22 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\settings\data_repair\useDataRepair.js:38 -> const wTxSnap = await getDocs(wTxQuery);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\settings\data_repair\useDataRepair.js:75 -> const usersSnap = await getDocs(usersRef);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\settings\data_repair\useDataRepair.js:87 -> const txSnap = await getDocs(qTx);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:50 -> const snap = await getDocs(qHasBalance);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:58 -> const activeSnap = await getDocs(qActiveUsers);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:66 -> const histSnap = await getDocs(qHist);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:107 -> const snapWallet = await getDocs(qWallet);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:111 -> const snapPoints = await getDocs(qPoints);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:134 -> const snap = await getDocs(query(usersRef, limit(100)));
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\useManagerDashboard.js:90 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\todo\hooks\useWholesalePrices.js:41 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-backoffice-react\src\scripts\run_staff_test.test.js:37 -> const invSnap = await getDocs(invQuery);
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\inventoryService.js:27 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\inventoryService.js:50 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-shared\src\firebase\categoryService.js:21 -> const snapshot = await getDocs(q);
+C:\DH Notebook\Management System\dh-shared\src\firebase\categoryService.js:43 -> const snapshot = await getDocs(categoriesRef);
+
+--- onSnapshot (30) ---
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx:24 -> const unsubUser = onSnapshot(userRef, (docSnap) => {
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\claims\useMyClaims.js:24 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\useHistoryOrders.js:23 -> unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabAdManager.jsx:80 -> const unsubscribe = onSnapshot(adRef, (snap) => {
+C:\DH Notebook\Management System\dh-frontend\src\context\CartProvider.jsx:147 -> unsubscribeSnapshot = onSnapshot(cartRef, { includeMetadataChanges: true }, (docSnap) => {
+C:\DH Notebook\Management System\dh-frontend\src\firebase\credit\creditRealtimeService.js:31 -> const unsubProfile = onSnapshot(profileRef, (snap) => {
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productService.js:119 -> const mainUnsub = onSnapshot(docRef, (docSnap) => {
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productService.js:126 -> fallbackUnsub = onSnapshot(q, (querySnapshot) => {
+C:\DH Notebook\Management System\dh-frontend\src\firebase\userService.js:143 -> const unsubscribe = onSnapshot(userRef, (snap) => {
+C:\DH Notebook\Management System\dh-frontend\src\firebase\walletService.js:51 -> const unsubscribe = onSnapshot(userRef, (snap) => {
+C:\DH Notebook\Management System\dh-frontend\src\hooks\useStorefrontTheme.js:30 -> const unsubscribe = onSnapshot(docRef, (docSnap) => {
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerReviews.jsx:30 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\overview\TotalLiabilityDashboard.jsx:50 -> const unsubscribeWallet = onSnapshot(walletTxQuery, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\components\overview\TotalLiabilityDashboard.jsx:54 -> const unsubscribeCredit = onSnapshot(creditTxQuery, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:27 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\creditHistoryService.js:30 -> const unsubscribe = onSnapshot(q, (snap) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\managerTodoService.js:45 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\todo\todoQueryService.js:17 -> return onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userProfileService.js:69 -> const unsubscribe = onSnapshot(userRef, (docSnap) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ads\hooks\useManagerAds.js:37 -> const unsub = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\claims\hooks\useClaimData.js:31 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\CreditDashboard\hooks\useLedgerStats.js:82 -> const unsubscribe = onSnapshot(ledgerRef, (docSnap) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\CreditDashboard\hooks\useSystemHealth.js:18 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\hooks\useAdSubscriptions.js:34 -> const unsub = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:87 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\useManagerDashboard.js:55 -> const unsubscribeStaff = onSnapshot(pendingStaffQuery, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\todo\hooks\useCentralTodo.js:32 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\todo\hooks\useSourcingRequests.js:12 -> const unsubscribe = onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\packingService.js:20 -> return onSnapshot(q, (snapshot) => {
+C:\DH Notebook\Management System\dh-shared\src\firebase\walletService.js:12 -> const unsubscribe = onSnapshot(
+
+--- Unbounded getDocs (4) ---
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\dataRepairService.js:11 -> const snap = await getDocs(collection(db, getCollectionPath('users')));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\dataRepairService.js:55 -> const snap = await getDocs(collection(db, getCollectionPath('orders')));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\dataRepairService.js:126 -> const snap = await getDocs(collection(db, getCollectionPath('products')));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\shippingService.js:9 -> const snap = await getDocs(collection(db, getCollectionPath('shipping_rules')));

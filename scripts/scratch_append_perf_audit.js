@@ -1,0 +1,7 @@
+
+# --- PERFORMANCE DEEP AUDIT (JULY 2026) ---
+@ID:P3-PER-010 | @PHASE:Phase3 | @CAT:PER | @SEV:🔴Critical | @STAT:🟡PENDING | @EV:Found missing unsubscribe in Staff App | @REF:Performance Audit | @TASK: Fix missing onSnapshot unsubscribe in `dh-staff-app/src/firebase/inventoryService.js` to prevent memory leaks
+@ID:P3-PER-011 | @PHASE:Phase3 | @CAT:PER | @SEV:🟠High | @STAT:🟡PENDING | @EV:Detected await getDoc(s) inside loops | @REF:Performance Audit | @TASK: Fix potential N+1 Queries in `customerCascadeService.js`, `inventoryImportService.js`, `userManagementService.js`, and `useAuditLedger.js`
+@ID:P2-PER-030 | @PHASE:Phase2 | @CAT:PER | @SEV:🟡Medium | @STAT:🟡PENDING | @EV:Found img tags missing loading="lazy" | @REF:Performance Audit | @TASK: Implement loading="lazy" on 14+ images across frontend and backoffice (e.g., PaymentMethod.jsx, ProductCommunitySection.jsx, CategoryCard.jsx, PaymentCard.jsx) to reduce bundle bloat
+@ID:P3-PER-012 | @PHASE:Phase3 | @CAT:PER | @SEV:🟡Medium | @STAT:🟡PENDING | @EV:Found map loops without virtualization on large lists | @REF:Performance Audit | @TASK: Apply virtualization (TableVirtuoso/react-window) or pagination to heavy list components (SearchPage.jsx, CategoryPage.jsx, Billing tabs, ClaimTable.jsx)
+@ID:P3-PER-013 | @PHASE:Phase3 | @CAT:PER | @SEV:🟡Medium | @STAT:🟡PENDING | @EV:Detected over 40 useEffects with missing dependency arrays | @REF:Performance Audit | @TASK: Clean up React Hook Cascades in 40+ files across the system to prevent unnecessary re-renders

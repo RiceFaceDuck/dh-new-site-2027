@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebase/config';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, where } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { historyService } from '../../../firebase/historyService';
 
 /**
  * 🎯 Hook สำหรับจัดการข้อมูล To-do ส่วนกลาง (Operations, CS, Sales)
@@ -96,13 +97,17 @@ export const useCentralTodo = (filterType = 'ALL') => {
     setIsSubmitting(true);
     
     try {
-      await addDoc(collection(db, getCollectionPath('todos')), {
+      const docRef = await addDoc(collection(db, getCollectionPath('todos')), {
         ...taskData,
         type: 'MANUAL', // บังคับว่าเป็นงานที่สร้างเอง
-        status: 'PENDING',
+        status: 'pending', // แก้บั๊ก: ต้องพิมพ์เล็กตาม query
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      
+      // 📝 บันทึก History Log ว่ามีการสร้างงานใหม่
+      historyService.addLog('TODO', 'CREATE_TASK', docRef.id, `สร้างงานใหม่ (Manual): ${taskData.title}`);
+      
       return true;
     } catch (err) {
       console.error("🔥 Error adding manual todo:", err);

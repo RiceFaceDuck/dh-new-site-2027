@@ -2,7 +2,7 @@
 import { 
   Megaphone, X, Link as LinkIcon, UploadCloud, Loader2, CheckCircle2, 
   ShoppingBag, MonitorPlay, Sparkles,
-  RectangleHorizontal, Square, RectangleVertical, Tag, Infinity,
+  RectangleHorizontal, Square, RectangleVertical, Tag, Infinity as InfinityIcon,
   Eye, ShieldAlert
 } from 'lucide-react';
 import AdPreviewCard from './AdPreviewCard';
@@ -153,7 +153,7 @@ const AdFormModal = ({
               <label className="text-[11px] font-bold text-slate-400 uppercase">กำหนดงบประมาณ (Credit Limit)</label>
               <label className="flex items-center gap-2 cursor-pointer bg-slate-700/50 px-3 py-1.5 rounded-full hover:bg-slate-600 transition-colors">
                  <input type="checkbox" checked={isUnlimited} onChange={(e) => setIsUnlimited(e.target.checked)} className="rounded-sm text-emerald-500 focus:ring-emerald-500 w-3.5 h-3.5" />
-                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1"><Infinity size={12}/> ไม่จำกัดงบ</span>
+                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1"><InfinityIcon size={12}/> ไม่จำกัดงบ</span>
               </label>
             </div>
             

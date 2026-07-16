@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { limit, collection, query, getDocs, where, Timestamp } from 'firebase/firestore';
+import { useState, useEffect, useCallback } from 'react';
+import { limit, collection, query, getDocs, where, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
 import { safeJsonParse } from 'dh-shared';
@@ -35,7 +35,7 @@ export const useCustomerData = () => {
     setCustomers(customersOnly);
   };
 
-  const fetchCustomers = async (useCache = true) => {
+  const fetchCustomers = useCallback(async (useCache = true) => {
     if (!useCache) setIsRefreshing(true);
     try {
       let cachedUsers = [];
@@ -72,9 +72,12 @@ export const useCustomerData = () => {
       // ดึงเฉพาะข้อมูลที่เปลี่ยนแปลงนับจากครั้งล่าสุดที่ Sync
       // ลดการอ่าน (Reads) ลงได้อย่างมหาศาลจากหลายพัน Read เหลือแค่หลัก 1-10 Read
       if (useCache && lastSync > 0) {
-        q = query(collection(db, getCollectionPath('users')), where('updatedAt', '>', Timestamp.fromMillis(lastSync)), limit(300));
+        // 🕰️ THE FIX: Add a 5-minute buffer to account for clock skew between local machine and Firestore server
+        const bufferMs = 5 * 60 * 1000;
+        const safeSyncTime = Math.max(0, lastSync - bufferMs);
+        q = query(collection(db, getCollectionPath('users')), where('updatedAt', '>', Timestamp.fromMillis(safeSyncTime)), limit(300));
       } else {
-        q = query(collection(db, getCollectionPath('users')), limit(300)); 
+        q = query(collection(db, getCollectionPath('users')), orderBy('createdAt', 'desc'), limit(300)); 
       }
 
       const snapshot = await getDocs(q);
@@ -122,12 +125,11 @@ export const useCustomerData = () => {
       setLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCustomers(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchCustomers]);
 
   return { customers, setCustomers, loading, isRefreshing, fetchCustomers, CACHE_KEY };
 };

@@ -122,11 +122,11 @@ export const marketingService = {
          batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload);
       }
 
-      batch.set(doc(db, 'central_todos', taskId), todoPayload); 
+      batch.set(doc(db, getCollectionPath('central_todos'), taskId), todoPayload); 
 
       // 🚀 History Log: บันทึกการส่งคำร้องเข้า Central To-Do
       const logId = `submit_ad_${adId}_${Date.now()}`;
-      batch.set(doc(db, 'system_logs', logId), {
+      batch.set(doc(db, getCollectionPath('system_logs'), logId), {
         module: 'Marketing',
         action: 'SubmitAd',
         targetId: adId,
@@ -201,11 +201,11 @@ export const marketingService = {
          batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload, { merge: true });
       }
 
-      batch.set(doc(db, 'central_todos', taskId), todoPayload, { merge: true }); 
+      batch.set(doc(db, getCollectionPath('central_todos'), taskId), todoPayload, { merge: true }); 
 
       // 🚀 History Log: บันทึกการขอแก้ไขคำร้องโฆษณา
       const logId = `update_ad_${adId}_${Date.now()}`;
-      batch.set(doc(db, 'system_logs', logId), {
+      batch.set(doc(db, getCollectionPath('system_logs'), logId), {
         module: 'Marketing',
         action: 'UpdateAdRequest',
         targetId: adId,

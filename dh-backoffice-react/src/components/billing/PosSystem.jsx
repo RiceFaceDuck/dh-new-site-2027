@@ -72,12 +72,8 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
     useEffect(() => {
         const fetchShippingRules = async () => {
             try {
-                const { collection, getDocs, query, where } = await import('firebase/firestore');
-                const { db } = await import('../../firebase/config');
-                const { getCollectionPath } = await import('dh-shared/src/firebase/pathUtils');
-                const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
-                const snap = await getDocs(q);
-                const rules = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const { shippingService } = await import('../../firebase/shippingService');
+                const rules = await shippingService.getActiveShippingRules();
                 setShippingRules(rules);
             } catch (e) {
                 console.error("🔥 Error loading shipping rules in POS:", e);

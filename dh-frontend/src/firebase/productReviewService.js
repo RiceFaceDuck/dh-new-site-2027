@@ -125,7 +125,7 @@ export const productReviewService = {
    */
   async likeReview(reviewId) {
     try {
-      const reviewRef = doc(db, 'product_reviews', reviewId);
+      const reviewRef = doc(db, getCollectionPath('product_reviews'), reviewId);
       await updateDoc(reviewRef, {
         likes: increment(1)
       });

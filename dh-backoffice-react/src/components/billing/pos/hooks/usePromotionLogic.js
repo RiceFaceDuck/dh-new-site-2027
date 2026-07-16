@@ -74,6 +74,5 @@ export const usePromotionLogic = (
                 appliedPromoDetails: null 
             });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [itemSubTotal, activePromotions, activeTab?.autoPromoEnabled, activeTab?.appliedPromoId, activeTab?.promoDiscount, activeTab?.items, activeTab?.customer, activeTab?.priceMode]);
+    }, [itemSubTotal, activePromotions, activeTab?.autoPromoEnabled, activeTab?.appliedPromoId, activeTab?.promoDiscount, activeTab?.items, activeTab?.customer, activeTab?.priceMode, updateActiveTab]);
 };

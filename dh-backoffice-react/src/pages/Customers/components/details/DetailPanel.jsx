@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Edit2, Trash2, Building2, User, Copy, Check, TrendingUp, ShoppingBag, Sparkles } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
@@ -6,7 +6,6 @@ import { db } from '../../../../firebase/config';
 import ContactInfo from './ContactInfo';
 import ShippingInfo from './ShippingInfo';
 import TaxInfo from './TaxInfo';
-import StatsInfo from './StatsInfo';
 import HistoryInfo from './HistoryInfo';
 import MarketingInfo from './MarketingInfo';
 import CustomerSyncModal from './CustomerSyncModal';

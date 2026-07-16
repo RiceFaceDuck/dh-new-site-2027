@@ -89,10 +89,15 @@ export const cascadeDeleteCustomer = async (uid, authUserUid) => {
 
         // 3. Pause active ads
         const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
-        for (const col of adCols) {
+        
+        // Execute queries in parallel to avoid N+1 waterfall
+        const adSnapshots = await Promise.all(adCols.map(async (col) => {
             const adsRef = collection(db, getCollectionPath(col));
             const adsQ = query(adsRef, where('ownerId', '==', uid));
-            const adsSnap = await getDocs(adsQ);
+            return getDocs(adsQ);
+        }));
+
+        adSnapshots.forEach(adsSnap => {
             adsSnap.forEach(adDoc => {
                 batch.update(adDoc.ref, {
                     status: 'paused',
@@ -102,7 +107,7 @@ export const cascadeDeleteCustomer = async (uid, authUserUid) => {
                 });
                 hasUpdates = true;
             });
-        }
+        });
 
         if (hasUpdates) {
             await batch.commit();
@@ -111,6 +116,38 @@ export const cascadeDeleteCustomer = async (uid, authUserUid) => {
 
         // 4. Cleanup Todos
         await cleanupOrphanedTodos(uid, authUserUid, "บัญชีลูกค้าถูกลบ");
+
+        // 5. Cleanup Orders & Claims (Soft mark as deleted user to prevent unknown data)
+        const ordersRef = collection(db, getCollectionPath('orders'));
+        const ordersQ = query(ordersRef, where('customer.uid', '==', uid));
+        const ordersSnap = await getDocs(ordersQ);
+        
+        const childBatch = writeBatch(db);
+        let hasChildUpdates = false;
+        
+        ordersSnap.forEach(docSnap => {
+            childBatch.update(docSnap.ref, { 
+                'customer.isDeleted': true, 
+                'customer.deletedAt': serverTimestamp(),
+                updatedAt: serverTimestamp() 
+            });
+            hasChildUpdates = true;
+        });
+
+        const claimsRef = collection(db, getCollectionPath('claims'));
+        const claimsQ = query(claimsRef, where('customerUid', '==', uid));
+        const claimsSnap = await getDocs(claimsQ);
+        claimsSnap.forEach(docSnap => {
+            childBatch.update(docSnap.ref, { 
+                isCustomerDeleted: true,
+                updatedAt: serverTimestamp() 
+            });
+            hasChildUpdates = true;
+        });
+
+        if (hasChildUpdates) {
+            await childBatch.commit();
+        }
 
     } catch (err) {
         console.error("🔥 Cascade Delete Error:", err);

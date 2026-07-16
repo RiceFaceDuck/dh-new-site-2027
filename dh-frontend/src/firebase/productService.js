@@ -229,6 +229,30 @@ export const productService = {
     };
   },
 
+  async getProductsByCategory(category, lastVisible, limitCount = 40) {
+    try {
+      const { collection, query, where, limit, startAfter, getDocs } = await import('firebase/firestore');
+      const productsRef = collection(db, getCollectionPath('products'));
+      const lowerCaseType = category.trim().toLowerCase();
+      
+      let q;
+      if (!lastVisible) {
+        q = query(productsRef, where("category_lower", "==", lowerCaseType), limit(limitCount));
+      } else {
+        q = query(productsRef, where("category_lower", "==", lowerCaseType), startAfter(lastVisible), limit(limitCount));
+      }
+
+      const snapshot = await getDocs(q);
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+      
+      return { docs, lastDoc };
+    } catch (error) {
+      console.error("Error fetching products by category:", error);
+      throw error;
+    }
+  },
+
   extractYouTubeId(url) {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;

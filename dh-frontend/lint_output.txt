@@ -1,0 +1,251 @@
+
+> dh-frontend@0.0.0 lint
+> eslint .
+
+
+C:\DH Notebook\Management System\dh-frontend\src\components\CategoryList.jsx
+  7:39  warning  'onSelectType' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\ProductList.jsx
+   34:9   warning  'navigate' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                             unused-imports/no-unused-vars
+   46:9   warning  The 'displayProducts' conditional could make the dependencies of useMemo Hook (at line 141) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'displayProducts' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  115:33  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render                                                                                                                      react-hooks/rules-of-hooks
+  116:39  warning  'index' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                         unused-imports/no-unused-vars
+  157:15  warning  'id' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                   unused-imports/no-unused-vars
+  157:19  warning  'name' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                 unused-imports/no-unused-vars
+  157:25  warning  'price' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                unused-imports/no-unused-vars
+  157:39  warning  'imageUrl' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                             unused-imports/no-unused-vars
+  157:49  warning  'brand' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                unused-imports/no-unused-vars
+  157:56  warning  'sku' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartItemCard.jsx
+  27:31  warning  'index' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\cart\CartSummaryPanel.jsx
+  6:5  warning  'currentUser' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PaymentMethod.jsx
+  128:86   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  128:105  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PaymentUploader.jsx
+  5:10  warning  'file' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx
+   14:10  warning  'availablePoints' is assigned a value but never used. Allowed unused vars must match /^_/u                                           unused-imports/no-unused-vars
+  191:6   warning  React Hook useEffect has a missing dependency: 'checkoutState?.qualifiedFreebies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\ShippingMethod.jsx
+   8:85  warning  'selectedMethod' is defined but never used. Allowed unused args must match /^_/u                                                                                                                          unused-imports/no-unused-vars
+  10:9   warning  'getIcon' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                        unused-imports/no-unused-vars
+  33:9   warning  The 'shippingOptions' conditional could make the dependencies of useEffect Hook (at line 52) change on every render. To fix this, wrap the initialization of 'shippingOptions' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\ConfirmDeleteModal.jsx
+  26:15  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  26:26  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\CookieConsentBanner.jsx
+  15:5  warning  'setIsBannerVisible' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\common\LineBrowserWarning.jsx
+  26:241  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  26:259  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\partner\PartnerSupportBox.jsx
+   17:11   warning  'showToast' is assigned a value but never used. Allowed unused vars must match /^_/u                                       unused-imports/no-unused-vars
+   65:18   warning  'locationErr' is defined but never used                                                                                    unused-imports/no-unused-vars
+  105:6    warning  React Hook useEffect has a missing dependency: 'getUserCurrentLocation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  170:91   error    'showToast' is not defined                                                                                                 no-undef
+  180:101  error    'showToast' is not defined                                                                                                 no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductImageSection.jsx
+  1:8   error    'React' is defined but never used                                                  unused-imports/no-unused-imports
+  8:66  warning  'defaultImageUrl' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\product\ProductPricingSection.jsx
+  7:3  warning  'brand' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\AuthForm.jsx
+  136:275  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  136:293  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\ProfileSidebar.jsx
+  51:26  warning  'pendingWithdrawal' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabHistory.jsx
+  32:5  error  'toast' is not defined  no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabPrivacy.jsx
+  16:25  error  React Hook "useToast" is called in function "handleExportData" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  69:5   error  'toast' is not defined                                                                                                                                                                                                                                  no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\TabWallet.jsx
+   1:10  error    'useState' is defined but never used                                                      unused-imports/no-unused-imports
+  19:50  warning  'creditLoading' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\ad-manager\AdFormModal.jsx
+   5:56  error    Shadowing of global property 'Infinity'                                            no-shadow-restricted-names
+  13:32  warning  'remainingCredit' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\claims\ClaimItemCard.jsx
+  10:11  warning  'showToast' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                         unused-imports/no-unused-vars
+  10:25  error    React Hook "useToast" is called in function "getClaimStatusDisplay" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  37:36  error    'showToast' is not defined                                                                                                                                                                                                                                   no-undef
+  45:7   error    'showToast' is not defined                                                                                                                                                                                                                                   no-undef
+  48:5   error    'toast' is not defined                                                                                                                                                                                                                                       no-undef
+  50:7   error    'showToast' is not defined                                                                                                                                                                                                                                   no-undef
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\components\FavoriteItemCard.jsx
+  31:16  warning  'err' is defined but never used                                                                                                                                                                                                                  unused-imports/no-unused-vars
+  37:6   warning  React Hook useEffect has a missing dependency: 'onLiveDataLoaded'. Either include it or remove the dependency array. If 'onLiveDataLoaded' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\HistoryItemCard.jsx
+  145:21  warning  'orderDateStr' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileBasicInfo.jsx
+  3:59  warning  'isAdPending' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileForm.jsx
+  33:5    error  'toast' is not defined                                           no-undef
+  45:94   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  45:107  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\store-profile\StoreProfileLocation.jsx
+  109:95   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  109:125  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  110:185  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  110:205  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  110:225  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  110:238  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\wallet\WalletHistory.jsx
+  4:55  warning  'type' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\context\CartProvider.jsx
+   60:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+   67:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  173:18  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\context\FavoritesProvider.jsx
+  27:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  79:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\checkout\checkoutOrderActionService.js
+  9:9  warning  'userRef' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\checkout\checkoutSubmitService.js
+  39:11  warning  'counterDoc' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  43:11  warning  'sysSnap' is assigned a value but never used. Allowed unused vars must match /^_/u     unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\config.js
+  28:5  warning  'appCheck' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\credit\adCreditService.js
+  219:52  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+  224:54  warning  'adTitle' is defined but never used. Allowed unused args must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\partnerService.js
+   5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u              unused-imports/no-unused-vars
+  27:7  warning  'calculateDistance' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\squadConfigService.js
+  5:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\firebase\storefrontSettingsService.js
+  51:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+  81:20  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\hooks\useStorefrontTheme.js
+  23:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\AdProductDetail\AdProductDetail.jsx
+  8:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\CategoryPage.jsx
+  15:10  warning  'categoryInfo' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               unused-imports/no-unused-vars
+  32:9   error    Error: Cannot access variable before it is declared
+
+`loadProducts` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  30 |     observer.current = new IntersectionObserver(entries => {
+  31 |       if (entries[0].isIntersecting && hasMore) {
+> 32 |         loadProducts(false);
+     |         ^^^^^^^^^^^^ `loadProducts` accessed before it is declared
+  33 |       }
+  34 |     });
+  35 |     if (node) observer.current.observe(node);
+
+   66 |   }, [type]);
+   67 |
+>  68 |   const loadProducts = async (isInitial = false) => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  69 |     try {
+      | ^^^^^^^^^
+>  70 |       if (!isInitial) setLoadingMore(true);
+      …
+      | ^^^^^^^^^
+> 129 |     }
+      | ^^^^^^^^^
+> 130 |   };
+      | ^^^^^ `loadProducts` is declared here
+  131 |
+  132 |   return (
+  133 |     <div className="w-full flex flex-col animate-fade-in pb-16">  react-hooks/immutability
+  36:6   warning  React Hook useCallback has a missing dependency: 'loadProducts'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Checkout.jsx
+  54:10  warning  'isFetchingRules' is assigned a value but never used. Allowed unused vars must match /^_/u                                    unused-imports/no-unused-vars
+  98:6   warning  React Hook useEffect has a missing dependency: 'handleUpdateCheckoutState'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\HardwareScanner\HardwareScanner.jsx
+   78:18  warning  'error' is defined but never used                                unused-imports/no-unused-vars
+  160:35  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  160:51  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Home\components\HeroSection.jsx
+  15:14  warning  'e' is defined but never used  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\ProductDetail.jsx
+  21:9  warning  'location' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\ProvidersPage.jsx
+   96:73   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+   96:93   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:83   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:93   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:96   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  106:106  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Providers\hooks\useProvidersList.js
+  15:10  warning  'permissionRequested' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\SearchPage.jsx
+   70:20   warning  'e' is defined but never used                                    unused-imports/no-unused-vars
+  150:15   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  150:28   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  194:98   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  194:111  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\Squad\components\Pitch.jsx
+  19:9  warning  'rows' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\StoreProfilePage.jsx
+  12:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerAds.jsx
+  7:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\StoreProfile\components\PartnerReviews.jsx
+  9:7  warning  'appId' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\CookiePolicy.jsx
+  41:55  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  41:69  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\DH Notebook\Management System\dh-frontend\src\pages\legal\TermsOfService.jsx
+  36:84   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  36:105  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+✖ 112 problems (48 errors, 64 warnings)
+  2 errors and 0 warnings potentially fixable with the `--fix` option.
+

@@ -89,8 +89,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
     if (productId) {
       loadComments(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+      }, [productId]);
 
   const handleSubmit = async () => {
     if (!currentUser) {
@@ -209,7 +208,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
               <img 
                 src={currentUser?.photoURL || `https://ui-avatars.com/api/?name=${currentUser?.displayName || 'U'}&background=0D8ABC&color=fff`} 
                 alt="Me" 
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-contain" 
                loading="lazy" />
             </div>
             <input 
@@ -256,7 +255,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
           <div key={comment.id} className="group/comment flex gap-4 animate-fade-in">
             {/* Avatar */}
             <div className="relative shrink-0">
-              <img src={comment.userAvatar} alt={comment.userName} className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs"  loading="lazy" />
+              <img src={comment.userAvatar} alt={comment.userName} className="w-10 h-10 rounded-full object-contain border border-slate-200 shadow-xs"  loading="lazy" />
               {comment.verified && (
                 <div className="absolute -bottom-1 -right-1 bg-cyber-emerald text-white rounded-full p-0.5 border-2 border-white shadow-xs" title="DH Verified Buyer">
                   <Sparkles size={10} />

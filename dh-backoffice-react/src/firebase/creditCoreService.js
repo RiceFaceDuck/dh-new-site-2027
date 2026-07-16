@@ -1,5 +1,5 @@
 import { getUserTier, formatCredit, calculateEarnedPoints } from './credit/creditFormatService';
-import { adjustUserCredit, handlePaymentCompletion, clawbackPoints } from './credit/creditActionService';
+import { adjustUserCredit, handlePaymentCompletion, clawbackPoints, adjustUserWallet } from './credit/creditActionService';
 
 // ==========================================
 // ⚙️ Core Credit Service (Facade Pattern)
@@ -12,6 +12,7 @@ export const creditCoreService = {
   getUserTier,
   calculateEarnedPoints,
   adjustUserCredit,
+  adjustUserWallet,
   handlePaymentCompletion,
   clawbackPoints
 };

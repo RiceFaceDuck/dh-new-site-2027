@@ -1,7 +1,7 @@
 import { Wallet, ShieldCheck, Clock } from 'lucide-react';
 import { formatCredit } from '../../../../firebase/creditService';
 
-const WalletCard = ({ walletBalance, pendingWithdrawal, setIsWithdrawModalOpen }) => {
+const WalletCard = ({ walletBalance, pendingWithdrawal }) => {
   return (
     <div className="bg-linear-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
@@ -33,7 +33,7 @@ const WalletCard = ({ walletBalance, pendingWithdrawal, setIsWithdrawModalOpen }
           )}
           
           <button 
-            onClick={() => setIsWithdrawModalOpen(true)}
+            onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook?text=ต้องการขอคืนเงินค้างในระบบ%20Wallet', '_blank')}
             disabled={walletBalance <= 0}
             className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 text-[10px] font-medium rounded-lg transition-all border border-white/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
           >

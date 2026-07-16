@@ -62,28 +62,53 @@ export function usePosCart(products) {
         });
     }, [gasProductsCache, initialProducts]);
 
-    // ✨ Local Filter (0ms Latency)
-    const searchResults = useMemo(() => {
-        if (!debouncedSearch.trim()) {
-            return mergedProducts.slice(0, 15);
-        }
-        
-        const term = debouncedSearch.trim().toLowerCase();
-        
-        // Exact SKU Match
-        const exactMatch = mergedProducts.find(p => p.sku && p.sku.toLowerCase() === term);
-        if (exactMatch) return [{ ...exactMatch, matchType: 'exact' }];
-        
-        // Similar Match
-        const filtered = mergedProducts.filter(p => 
-            (p.sku && p.sku.toLowerCase().includes(term)) ||
-            (p.name && p.name.toLowerCase().includes(term)) ||
-            (p.brand && p.brand.toLowerCase().includes(term)) ||
-            (p.category && p.category.toLowerCase().includes(term)) ||
-            (p.tags && p.tags.some(t => t.toLowerCase().includes(term)))
-        );
-        
-        return filtered.slice(0, 15).map(p => ({ ...p, matchType: 'similar' }));
+    const [searchResults, setSearchResults] = useState([]);
+
+    // ✨ Local Filter & Fallback Search (0ms Latency for Cache, Fallback for new products)
+    useEffect(() => {
+        const fetchSearch = async () => {
+            if (!debouncedSearch.trim()) {
+                setSearchResults(mergedProducts.slice(0, 15));
+                return;
+            }
+            
+            const term = debouncedSearch.trim().toLowerCase();
+            
+            // 1. Exact SKU Match in Cache
+            const exactMatch = mergedProducts.find(p => p.sku && p.sku.toLowerCase() === term);
+            if (exactMatch) {
+                setSearchResults([{ ...exactMatch, matchType: 'exact' }]);
+                return;
+            }
+            
+            // 2. Similar Match in Cache
+            const filtered = mergedProducts.filter(p => 
+                (p.sku && p.sku.toLowerCase().includes(term)) ||
+                (p.name && p.name.toLowerCase().includes(term)) ||
+                (p.brand && p.brand.toLowerCase().includes(term)) ||
+                (p.category && p.category.toLowerCase().includes(term)) ||
+                (p.tags && p.tags.some(t => t.toLowerCase().includes(term)))
+            );
+            
+            if (filtered.length > 0) {
+                setSearchResults(filtered.slice(0, 15).map(p => ({ ...p, matchType: 'similar' })));
+                return;
+            }
+
+            // 3. Fallback to Firebase (Zero-Read bypassed for newly added items)
+            try {
+                const fbMatch = await inventoryQueryService.getProductBySku(debouncedSearch.trim().toUpperCase());
+                if (fbMatch) {
+                    setSearchResults([{ ...fbMatch, matchType: 'exact' }]);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch (error) {
+                setSearchResults([]);
+            }
+        };
+
+        fetchSearch();
     }, [debouncedSearch, mergedProducts]);
 
     return {

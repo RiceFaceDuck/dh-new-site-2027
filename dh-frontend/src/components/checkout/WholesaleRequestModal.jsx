@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const WholesaleRequestModal = ({ isOpen, onClose, onSubmit, companyName }) => {
   const [reason, setReason] = useState('');
@@ -39,15 +40,26 @@ const WholesaleRequestModal = ({ isOpen, onClose, onSubmit, companyName }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-      ></div>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs"
+            onClick={onClose}
+          ></motion.div>
 
-      {/* Modal Box */}
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+          {/* Modal Box */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+          >
         
         {/* Header */}
         <div className="bg-linear-to-r from-indigo-50 to-white px-6 py-5 border-b border-gray-100 flex items-center gap-3">
@@ -139,8 +151,10 @@ const WholesaleRequestModal = ({ isOpen, onClose, onSubmit, companyName }) => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 

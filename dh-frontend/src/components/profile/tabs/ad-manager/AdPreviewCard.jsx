@@ -75,7 +75,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
             
             {formData.imageUrl ? (
               <>
-                <img src={formData.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Billboard Preview"  loading="lazy" />
+                <img src={formData.imageUrl} className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" alt="Billboard Preview"  loading="lazy" />
                 {/* Gradient Overlay for Text Visibility */}
                 <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-900/90 via-slate-900/40 to-transparent p-5 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                     <h3 className="text-white font-bold text-lg sm:text-xl line-clamp-1 drop-shadow-md">

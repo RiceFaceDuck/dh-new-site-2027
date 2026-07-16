@@ -19,7 +19,7 @@ export function useSourcingRequests() {
 
   const updateStatus = async (id, status) => {
     try {
-      await updateDoc(doc(db, 'sourcing_requests', id), { status });
+      await updateDoc(doc(db, getCollectionPath('sourcing_requests'), id), { status });
       return true;
     } catch (error) {
       console.error("Error updating sourcing request status:", error);

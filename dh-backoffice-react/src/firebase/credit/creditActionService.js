@@ -1,7 +1,7 @@
 import { doc, getDocs, runTransaction, collection, serverTimestamp, query, where, documentId, limit } from 'firebase/firestore';
 import { db } from '../config';
 import { historyService } from '../historyService';
-import { formatCredit } from './creditFormatService';
+import { formatCredit, calculateEarnedPoints } from './creditFormatService';
 import { getCollectionPath, getUsersPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
@@ -27,6 +27,7 @@ export const getCreditPreloadRefs = (uid, type, referenceId = null) => {
 };
 
 export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null, preloadedSnaps = null) => {
+  try {
     if (!uid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
 
     const numAmount = Number(amount);
@@ -176,6 +177,10 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     console.info(`✅ [Credit Engine] Sub-Transaction TXM-${referenceId || 'MANUAL'} Prepped for UID: ${uid} | Amount: ${amount}`);
     return { success: true, transactionId, newBalance: newPointsBalance };
+  } catch (error) {
+    console.error("🔥 Error in adjustUserCreditWithTransaction:", error);
+    throw error;
+  }
 };
 
 /**
@@ -240,17 +245,51 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       if (!orderDoc.exists()) throw new Error("ไม่พบข้อมูลคำสั่งซื้อในระบบ");
       
       const orderData = orderDoc.data();
-      const pendingPoints = orderData.pendingCredits || 0;
+      if (orderData.pointsAwarded) return;
+
+      // ✨ SECURITY FIX: อิงยอดเงินจาก Transaction เท่านั้น เลิกเชื่อ Frontend (Zero-Trust)
+      const finalTotal = Number(orderData.finalTotal || orderData.totals?.netTotal || orderData.netTotal || 0);
+      const walletUsedAmount = Number(orderData.walletUsedAmount || orderData.calculationLog?.usedWallet || 0);
+      const amountForPoints = Math.max(0, finalTotal - walletUsedAmount);
       
-      if (orderData.pointsAwarded || pendingPoints <= 0) return;
+      const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
+      const settingsSnap = await transaction.get(settingsRef);
+      const creditConfig = settingsSnap.exists() ? settingsSnap.data() : null;
+      
+      const userRef = doc(db, getCollectionPath('users'), userId);
+      const userSnap = await transaction.get(userRef);
+      const userTotalAccumulatedPoints = userSnap.exists() ? Number(userSnap.data().totalAccumulatedPoints || userSnap.data().creditPoints || 0) : 0;
+      
+      const calculatedPoints = calculateEarnedPoints(amountForPoints, creditConfig, orderData.items || [], userTotalAccumulatedPoints);
+      
+      if (calculatedPoints <= 0) {
+          transaction.update(orderRef, { pendingCredits: 0, pointsAwarded: true, awardedAt: serverTimestamp() });
+          return;
+      }
 
-      pendingPointsToAward = pendingPoints;
+      pendingPointsToAward = calculatedPoints;
 
-      transaction.update(orderRef, { pendingCredits: 0, pointsAwarded: true, awardedAt: serverTimestamp() });
+      await adjustUserCreditWithTransaction(
+        transaction,
+        userId,
+        calculatedPoints,
+        'deposit',
+        `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`,
+        'System_Order_Completion',
+        orderId
+      );
+
+      transaction.update(orderRef, { pendingCredits: calculatedPoints, pointsAwarded: true, awardedAt: serverTimestamp() });
     });
     
-    if (pendingPointsToAward > 0) {
-      await adjustUserCredit(userId, pendingPointsToAward, 'deposit', `ได้รับแต้มจากการสั่งซื้อรหัส ${orderId}`, 'System_Order_Completion', orderId);
+    if (pendingPointsToAward > 0 && historyService && historyService.addLog) {
+      await historyService.addLog(
+        'CyberAuditCore', 
+        'CreditDeposit', 
+        userId, 
+        `เพิ่มเครดิต ฿${pendingPointsToAward.toLocaleString()} (แต้มจากการสั่งซื้อรหัส ${orderId})`, 
+        'System_Order_Completion'
+      );
     }
     
     return true;
@@ -270,6 +309,143 @@ export const clawbackPoints = async (uid, points, referenceId, actorUid) => {
     return true;
   } catch (error) {
     console.error("🔥 System Error [clawbackPoints]:", error);
+    throw error;
+  }
+};
+
+/**
+ * 🔒 Atomic Wallet Balance Adjustment (Error Correction Engine)
+ * สำหรับปรับยอดกระเป๋าเงินเพื่อแก้ไขตัวเลขทางบัญชีที่ผิดพลาดใน Transaction
+ */
+export const adjustUserWalletWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null) => {
+  try {
+    if (!uid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
+
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเงินไม่ถูกต้อง ต้องมากกว่า 0");
+    }
+    if (numAmount > 10000000) {
+      throw new Error("ระบบปฏิเสธการทำรายการ: จำนวนเงินเกินเพดานสูงสุดที่กำหนดต่อครั้ง (Anti-Fraud Lock)");
+    }
+
+    const safeAmount = Math.round(numAmount * 100) / 100;
+    
+    const usersColPathTx = getUsersPath();
+    const userRef = doc(db, usersColPathTx, uid);
+    
+    // ✅ [SECURITY FIX] ป้องกันการกดเบิ้ล/ส่งซ้ำ (Idempotency Check)
+    let txRef;
+    if (referenceId) {
+      txRef = doc(db, usersColPathTx, uid, 'wallet_transactions', `ADJ_WALLET_${referenceId}`);
+      const txSnap = await transaction.get(txRef);
+      if (txSnap.exists()) {
+        throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
+      }
+    } else {
+      txRef = doc(collection(db, usersColPathTx, uid, 'wallet_transactions'));
+    }
+
+    const userSnap = await transaction.get(userRef);
+    if (!userSnap || !userSnap.exists()) {
+      throw new Error("ไม่พบบัญชีผู้ใช้งานที่ระบุ");
+    }
+
+    const currentWallet = Number(userSnap.data().walletBalance || 0);
+    let newWalletBalance = currentWallet;
+
+    if (type === 'adjust_add' || type === 'deposit' || type === 'add') {
+      newWalletBalance += safeAmount;
+    } else if (type === 'adjust_deduct' || type === 'deduct' || type === 'withdraw') {
+      if (currentWallet < safeAmount) {
+        throw new Error(`ยอดเงินคงเหลือใน Wallet มีไม่เพียงพอสำหรับการปรับยอด (ต้องการปรับลด ${safeAmount} บาท, มีเพียง ${currentWallet} บาท)`);
+      }
+      newWalletBalance -= safeAmount;
+    } else {
+      throw new Error("ประเภทการปรับปรุง Wallet ไม่ถูกต้องในระบบ");
+    }
+
+    newWalletBalance = Math.round(newWalletBalance * 100) / 100;
+
+    // Update wallet balance on user doc
+    transaction.update(userRef, {
+      walletBalance: newWalletBalance,
+      updatedAt: serverTimestamp()
+    });
+
+    const userData = userSnap.data();
+    const userEmail = userData.email || 'Migrated User';
+    const resolvedName = getCustomerDisplayName(userData, userData).accountName || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
+
+    // บันทึกธุรกรรมลงใน wallet_transactions
+    // REFUND = ปรับยอดเพิ่ม (มีผลบวก), SPEND = ปรับยอดลด (มีผลลบ)
+    const mappedType = (type === 'adjust_add' || type === 'deposit' || type === 'add') ? 'REFUND' : 'SPEND';
+    
+    transaction.set(txRef, {
+      transactionId: referenceId ? `TXW_ADJ_${referenceId}` : txRef.id,
+      type: mappedType,
+      amount: safeAmount,
+      balanceAfter: newWalletBalance,
+      status: 'SUCCESS',
+      note: note || (mappedType === 'REFUND' ? 'ปรับเพิ่มยอดเงิน Wallet (แก้ไขข้อผิดพลาด)' : 'ปรับลดยอดเงิน Wallet (แก้ไขข้อผิดพลาด)'),
+      operatorUid: actorUid || 'System',
+      timestamp: serverTimestamp()
+    });
+
+    console.info(`✅ [Wallet Engine] Sub-Transaction ADJUST Prepped for UID: ${uid} | Amount: ${amount}`);
+    return { success: true, transactionId: txRef.id, newBalance: newWalletBalance };
+  } catch (error) {
+    console.error("🔥 Error in adjustUserWalletWithTransaction:", error);
+    throw error;
+  }
+};
+
+/**
+ * 🔒 Non-transactional wrapper for adjusting wallet balance
+ * รองรับการยิงตรงและระบบ Smart UID Resolver
+ */
+export const adjustUserWallet = async (inputUid, amount, type, note, actorUid, referenceId = null) => {
+  try {
+    if (!inputUid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
+
+    const cleanInput = inputUid.trim();
+    let resolvedUid = cleanInput;
+    const usersColPath = getUsersPath();
+    const usersRefColl = collection(db, usersColPath);
+    
+    if (cleanInput.length < 20) {
+      let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
+      if (!snap.empty) resolvedUid = snap.docs[0].id;
+      else {
+        snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
+        if (!snap.empty) resolvedUid = snap.docs[0].id;
+        else {
+          snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
+          if (!snap.empty) resolvedUid = snap.docs[0].id;
+          else {
+            snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
+            if (!snap.empty) resolvedUid = snap.docs[0].id;
+          }
+        }
+      }
+    }
+    const uid = resolvedUid;
+
+    let transactionId = null;
+    let newBalance = 0;
+    await runTransaction(db, async (transaction) => {
+      const result = await adjustUserWalletWithTransaction(transaction, uid, amount, type, note, actorUid, referenceId);
+      transactionId = result.transactionId;
+      newBalance = result.newBalance;
+    });
+
+    const mappedType = (type === 'adjust_add' || type === 'deposit' || type === 'add') ? 'WalletCorrectionAdd' : 'WalletCorrectionDeduct';
+    if (historyService && historyService.addLog) {
+      await historyService.addLog('CyberAuditCore', mappedType, uid, `ปรับปรุงตัวเลขกระเป๋าเงิน ฿${amount.toLocaleString()} (สาเหตุ: ${note})`, actorUid);
+    }
+    return { success: true, transactionId, newBalance };
+  } catch (error) {
+    console.error("🔥 System Error [adjustUserWallet]:", error);
     throw error;
   }
 };

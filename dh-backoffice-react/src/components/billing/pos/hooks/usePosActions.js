@@ -56,11 +56,13 @@ export const usePosActions = ({
     };
 
     const handleSelectCustomer = (uidOrId) => {
+        console.log("handleSelectCustomer called with:", uidOrId);
         const cust = customers.find(c => c.uid === uidOrId || c.id === uidOrId);
+        console.log("Customer found:", JSON.stringify(cust));
         if (cust) {
             let mem = {};
             try {
-                mem = safeJsonParse(localStorage.getItem(`dh_cust_pref_${uid}`)) || {};
+                mem = safeJsonParse(localStorage.getItem(`dh_cust_pref_${uidOrId}`)) || {};
             } catch (e) {
                 console.error("Failed to parse customer preference", e);
             }
@@ -145,8 +147,7 @@ export const usePosActions = ({
             const yy = String(now.getFullYear()).slice(2); const mm = String(now.getMonth() + 1).padStart(2, '0'); const dd = String(now.getDate()).padStart(2, '0');
             const hh = String(now.getHours()).padStart(2, '0'); const min = String(now.getMinutes()).padStart(2, '0'); const sec = String(now.getSeconds()).padStart(2, '0');
             
-            let finalOrderId = activeTab.orderId || `TEMP-${yy}${mm}${dd}-${hh}${min}${sec}`; 
-            if ((status === 'Paid' || status === 'OnAccount') && finalOrderId.startsWith('TEMP-')) finalOrderId = `DH${yy}${mm}${dd}-${hh}${min}${sec}`; 
+            let finalOrderId = activeTab.orderId || `DH-TEMP-${yy}${mm}${dd}-${hh}${min}${sec}`;
 
             const finalNote = activeTab.billNote ? `${activeTab.billNote}\n[บันทึกโดยระบบอัตโนมัติ]` : '[บันทึกโดยระบบอัตโนมัติ]';
 
@@ -189,6 +190,10 @@ export const usePosActions = ({
 
             // 🟢 [OFFLINE SUPPORT] Check if network is offline
             if (!navigator.onLine) {
+                if ((status === 'Paid' || status === 'OnAccount') && finalOrderId.startsWith('DH-TEMP-')) {
+                    finalOrderId = `DH${yy}${mm}${dd}-${hh}${min}${sec}`; 
+                    orderData.orderId = finalOrderId;
+                }
                 orderData.offlineStatus = 'pending';
                 await offlinePosService.saveOfflineOrder(orderData);
                 posState.closeTab(activeTab.id); 
@@ -197,12 +202,13 @@ export const usePosActions = ({
                 return;
             }
 
-            await billingService.createOrder(orderData, auth.currentUser?.uid || 'System', 'POS');
+            const result = await billingService.createOrder(orderData, auth.currentUser?.uid || 'System', 'POS');
+            const actualOrderId = result?.orderId || finalOrderId;
             
             // ลบแท็บปัจจุบันแบบไม่ต้องเด้งถาม เพราะเซฟเสร็จแล้ว
             posState.closeTab(activeTab.id); 
             onSwitchView();
-            toast.success(`บันทึกบิล ${finalOrderId} สำเร็จ!`);
+            toast.success(`บันทึกบิล ${actualOrderId} สำเร็จ!`);
         } catch (error) { toast.error(`ข้อผิดพลาด: ${error.message}`); } finally { submitLockRef.current = false; setIsProcessing(false); }
     };
 

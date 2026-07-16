@@ -80,7 +80,7 @@ const CategoryList = ({ selectedType, onSelectType }) => {
                     : 'bg-white border-slate-100 group-hover:shadow-md group-hover:border-blue-400'
                 }`}>
                   {cat.imageUrl ? (
-                    <img 
+                    <img loading="lazy" 
                       src={cat.imageUrl} 
                       alt={cat.name} 
                       className={`w-8 h-8 object-contain transition-transform duration-200 ${isSelected ? 'scale-110' : 'group-hover:scale-110'}`}

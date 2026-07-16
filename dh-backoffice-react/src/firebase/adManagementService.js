@@ -90,7 +90,7 @@ export const adManagementService = {
   getStoreProfile: async (uid) => {
     try {
       const storeRef = doc(db, getCollectionPath('users'), uid, 'storeProfile', 'main');
-      const rootStoreRef = doc(db, 'users', uid, 'storeProfile', 'main');
+      const rootStoreRef = doc(db, getCollectionPath('users'), uid, 'storeProfile', 'main');
       
       const [storeSnap, rootSnap] = await Promise.all([
         getDoc(storeRef),
@@ -206,7 +206,7 @@ export const adManagementService = {
       // 🌟 THE FIX [Data Relationship]: Restore from ActivePartners if rejected
       if (adData && adData.type === 'BUSINESS_CARD') {
          const partnerId = adData.ownerId;
-         const partnerRef = doc(db, 'partners', partnerId);
+         const partnerRef = doc(db, getCollectionPath('partners'), partnerId);
          const partnerSnap = await getDoc(partnerRef);
          
          if (partnerSnap.exists() && partnerSnap.data().isActive !== false) {

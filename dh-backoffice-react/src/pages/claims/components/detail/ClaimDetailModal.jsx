@@ -39,7 +39,7 @@ export default function ClaimDetailModal({
       // Load warranty settings
       import('../../../../firebase/warrantyService').then(({ warrantyService }) => {
         warrantyService.getWarrantySettings().then(setWarrantyConfig).catch(console.error);
-      });
+      }).catch(console.error);
     }
   }, [selectedRequest]);
 

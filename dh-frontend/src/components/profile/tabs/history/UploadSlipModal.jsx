@@ -1,4 +1,5 @@
 import { useUploadSlip } from './useUploadSlip';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const UploadSlipModal = ({ selectedOrder, closeModal }) => {
   const handleClose = () => {
@@ -15,12 +16,24 @@ const UploadSlipModal = ({ selectedOrder, closeModal }) => {
     handleUploadSlip
   } = useUploadSlip(selectedOrder, handleClose);
 
-  if (!selectedOrder) return null;
-
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs" onClick={isUploading ? null : handleClose}></div>
-      <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95">
+    <AnimatePresence>
+      {selectedOrder && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs" 
+            onClick={isUploading ? null : handleClose}
+          ></motion.div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-8"
+          >
         
         {!uploadSuccess ? (
           <>
@@ -47,7 +60,7 @@ const UploadSlipModal = ({ selectedOrder, closeModal }) => {
                 <div className="space-y-2 text-center w-full">
                   {previewUrl ? (
                     <div className="relative mx-auto h-40 w-28 rounded-xl overflow-hidden shadow-md border border-gray-200">
-                      <img src={previewUrl} alt="Preview" className="h-full w-full object-cover"  loading="lazy" />
+                      <img src={previewUrl} alt="Preview" className="h-full w-full object-contain"  loading="lazy" />
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                         <span className="text-white text-sm font-bold bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-xs">เปลี่ยนรูป</span>
                       </div>
@@ -111,8 +124,10 @@ const UploadSlipModal = ({ selectedOrder, closeModal }) => {
             </div>
           </div>
         )}
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 

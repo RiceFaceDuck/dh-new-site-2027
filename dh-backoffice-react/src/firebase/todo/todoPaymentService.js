@@ -39,9 +39,8 @@ export const todoPaymentService = {
         const yearStr = date.getFullYear().toString();
         
         // --- ระบบออกเลขบิลแบบรันตามลำดับ (Sequential Running Number) ---
-        const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
-        const shardId = getRandomShard(5);
-        const counterRef = doc(db, 'counters', `receipt_sequence_${shardId}`);
+        const terminalId = 'T1'; // T1 for Todo System
+        const counterRef = doc(db, getCollectionPath('counters'), `receipt_sequence_global`);
         const counterDoc = await transaction.get(counterRef);
 
         let currentSeq = 1;
@@ -52,7 +51,7 @@ export const todoPaymentService = {
         
         const seqStr = String(currentSeq);
         const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-        const generatedOrderId = `DH-${shardId}-${yearStr.slice(2)}-${paddedSeq}`;
+        const generatedOrderId = `DH-${yearStr.slice(2)}-${paddedSeq}`;
 
         // --- 2.5 PRELOAD PRODUCTS FOR STOCK DEDUCTION ---
         const isStockAlreadyDeducted = !!orderData.isStockDeducted;
@@ -126,18 +125,7 @@ export const todoPaymentService = {
           createdAt: serverTimestamp()
         });
 
-        if (userId) {
-            // Replaced direct Firestore write with GAS History Logger
-            gasHistoryService.log({
-                module: 'Customer History',
-                action: 'PAYMENT_APPROVED',
-                target: { id: orderId },
-                details: { 
-                  legacy_details: `ตรวจสอบยอดชำระเงินสำเร็จ. กำลังเข้าสู่กระบวนการจัดเตรียมสินค้า (เอกสารอ้างอิง: ${generatedOrderId})`
-                },
-                actorOverride: { uid: userId, name: 'System (For Customer)', email: 'N/A' }
-            });
-        }
+        // ❌ [MOVED] gasHistoryService.log is moved outside the transaction to prevent duplicate logs on retries.
 
         const localStockUpdates = [];
         for (const data of productSnapsToUpdate) {
@@ -168,10 +156,22 @@ export const todoPaymentService = {
             }
         }
 
-        return { success: true, invoiceId: generatedOrderId, stockUpdates: localStockUpdates };
+        return { success: true, invoiceId: generatedOrderId, stockUpdates: localStockUpdates, userIdForLog: userId };
       }, { maxAttempts: 15 });
 
       // --- Post-Transaction execution: Sync to Google Sheets & Log history ---
+      if (result && result.success && result.userIdForLog) {
+          gasHistoryService.log({
+              module: 'Customer History',
+              action: 'PAYMENT_APPROVED',
+              target: { id: orderId },
+              details: { 
+                legacy_details: `ตรวจสอบยอดชำระเงินสำเร็จ. กำลังเข้าสู่กระบวนการจัดเตรียมสินค้า (เอกสารอ้างอิง: ${result.invoiceId})`
+              },
+              actorOverride: { uid: result.userIdForLog, name: 'System (For Customer)', email: 'N/A' }
+          });
+      }
+
       if (result && result.stockUpdates && result.stockUpdates.length > 0) {
         for (const update of result.stockUpdates) {
           // Push update to GAS queue

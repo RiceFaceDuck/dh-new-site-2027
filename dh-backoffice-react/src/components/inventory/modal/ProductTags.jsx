@@ -8,7 +8,7 @@ export default function ProductTags({ form, addArrayItem, removeArrayItem }) {
     <div className="bg-dh-surface p-4 rounded-2xl border border-dh-border shadow-xs">
       <label className="text-[10px] font-bold text-dh-muted uppercase tracking-wider mb-1.5 flex items-center gap-1"><Info size={14}/> Tags ค้นหา</label>
       <div className="flex flex-wrap gap-1.5 p-2 border border-dh-border rounded-xl min-h-[44px] bg-dh-base focus-within:bg-dh-surface focus-within:border-dh-accent transition-all shadow-inner">
-        {form.tags.map(t => (
+        {(form.tags || []).map(t => (
           <span key={t} className="bg-dh-accent text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-xs">
             {t} <X size={10} className="cursor-pointer hover:text-white/70 transition-colors" onClick={() => removeArrayItem('tags', t)}/>
           </span>

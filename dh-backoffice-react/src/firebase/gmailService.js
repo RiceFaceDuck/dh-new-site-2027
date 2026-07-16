@@ -1,5 +1,6 @@
 import { db } from './config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 let cachedWebAppUrl = null;
 
@@ -8,7 +9,7 @@ let cachedWebAppUrl = null;
  */
 export const checkGmailConfigured = async () => {
   try {
-    const docRef = doc(db, 'system_config', 'gmail_auth');
+    const docRef = doc(db, getCollectionPath('system_config'), 'gmail_auth');
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) return false;
     
@@ -24,7 +25,7 @@ export const checkGmailConfigured = async () => {
  * Admin: Save the Web App URL.
  */
 export const saveGmailCredentials = async (webAppUrl) => {
-  const docRef = doc(db, 'system_config', 'gmail_auth');
+  const docRef = doc(db, getCollectionPath('system_config'), 'gmail_auth');
   await setDoc(docRef, {
     web_app_url: webAppUrl,
     updated_at: serverTimestamp()
@@ -39,7 +40,7 @@ const fetchFromGAS = async (action, data = {}) => {
   let url = cachedWebAppUrl;
   
   if (!url) {
-    const docRef = doc(db, 'system_config', 'gmail_auth');
+    const docRef = doc(db, getCollectionPath('system_config'), 'gmail_auth');
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists() || !docSnap.data().web_app_url) {
       throw new Error("ระบบยังไม่ได้ตั้งค่า Web App URL");

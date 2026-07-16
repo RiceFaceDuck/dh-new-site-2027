@@ -1,6 +1,7 @@
 import { collection, doc, updateDoc, serverTimestamp, getDocs, query, where, runTransaction } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const TODOS_COLLECTION = 'todos';
 
@@ -33,7 +34,7 @@ export const claimRequestService = {
         const yearMonth = `${date.getFullYear().toString().slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
         const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
         const shardId = getRandomShard(5);
-        const counterRef = doc(db, 'counters', `claim_sequence_${shardId}`);
+        const counterRef = doc(db, getCollectionPath('counters'), `claim_sequence_${shardId}`);
         const counterDoc = await transaction.get(counterRef);
 
         let currentSeq = 1;
@@ -67,6 +68,17 @@ export const claimRequestService = {
           actionType: claimForm.actionType || 'เคลม/ซ่อม', 
           inspectorName: claimForm.inspectorName || null,
           images: claimForm.images || [], 
+          
+          // ✅ [SECURITY FIX] เพิ่มข้อมูลสำหรับการเคลมเปลี่ยนรุ่น (Swap SKU)
+          originalPricePerUnit: item.pricePerUnit || item.price || 0,
+          isSwapSku: claimForm.isSwapSku || false,
+          swapSku: claimForm.swapSku || null,
+          swapProductName: claimForm.swapProductName || null,
+          swapPricePerUnit: claimForm.swapPricePerUnit || 0,
+          newWarrantyDays: claimForm.newWarrantyDays || null,
+          freebiePenaltyAmount: claimForm.freebiePenaltyAmount || 0,
+          freebiesStatus: claimForm.freebiesStatus || null,
+
           requestedBy: userUid || '', 
           requestedByName: userName || ''
         };
@@ -133,7 +145,7 @@ export const claimRequestService = {
         const yearMonth = `${date.getFullYear().toString().slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
         const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
         const shardId = getRandomShard(5);
-        const counterRef = doc(db, 'counters', `return_sequence_${shardId}`);
+        const counterRef = doc(db, getCollectionPath('counters'), `return_sequence_${shardId}`);
         const counterDoc = await transaction.get(counterRef);
 
         let currentSeq = 1;

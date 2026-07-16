@@ -81,23 +81,28 @@ export default function WalletManagement() {
         setActiveTab('wallet');
     };
 
+    const [currentRefId, setCurrentRefId] = useState('');
+
     const handleAdjustmentSubmit = async (e) => {
         e.preventDefault();
         const amount = Number(adjAmount);
         
         if (!amount || amount <= 0 || isNaN(amount)) return showNotification('กรุณาระบุจำนวนเงินให้ถูกต้อง', 'error');
-        if (!adjNote.trim()) return showNotification('กรุณาระบุหมายเหตุ', 'error');
+        if (!adjNote.trim()) return showNotification('กรุณาระบุหมายเหตุการแก้ไขบัญชี', 'error');
 
         setIsSubmitting(true);
         try {
-            await creditCoreService.adjustUserCredit(
+            // ✅ [SECURITY FIX] เรียกใช้ adjustUserWallet เพื่อแก้บั๊กปรับยอดผิดกระเป๋า 
+            // ✅ และส่ง currentRefId (UUID) เพื่อป้องกันการส่งซ้ำระดับเครือข่าย
+            await creditCoreService.adjustUserWallet(
                 selectedUser.id, amount, 
-                adjType === 'deposit' ? 'deposit' : 'deduct', 
-                `[Wallet] ${adjNote}`, 
-                auth.currentUser?.uid || 'Admin'
+                adjType === 'deposit' ? 'adjust_add' : 'adjust_deduct', 
+                `[แก้ไขข้อผิดพลาดทางบัญชี] ${adjNote}`, 
+                auth.currentUser?.uid || 'Admin',
+                currentRefId || crypto.randomUUID()
             );
 
-            showNotification(`✅ ทำรายการสำเร็จ`);
+            showNotification(`✅ แก้ไขยอดเงินกระเป๋าเงินสำเร็จ`);
             setIsModalOpen(false);
             setAdjAmount(''); setAdjNote('');
             
@@ -197,7 +202,7 @@ export default function WalletManagement() {
                     activeTab={activeTab} setActiveTab={setActiveTab}
                     transactions={transactions} pointTransactions={pointTransactions}
                     isLoadingTx={isLoadingTx}
-                    onOpenAdjustModal={(type) => { setAdjType(type); setIsModalOpen(true); }}
+                    onOpenAdjustModal={(type) => { setAdjType(type); setCurrentRefId(crypto.randomUUID()); setIsModalOpen(true); }}
                 />
             </div>
 

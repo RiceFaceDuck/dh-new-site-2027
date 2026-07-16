@@ -119,7 +119,7 @@ export const categoryService = {
       
       try {
         const { arrayUnion, setDoc } = await import('firebase/firestore');
-        const settingsRef = doc(db, 'settings', 'product_categories');
+        const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
         await setDoc(settingsRef, {
           categories: arrayUnion(categoryData.type || categoryData.name)
         }, { merge: true });
@@ -236,7 +236,7 @@ export const categoryService = {
 
       // 2. Clean up from settings/product_categories list
       try {
-        const settingsRef = doc(db, 'settings', 'product_categories');
+        const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
         const settingsSnap = await getDoc(settingsRef);
         if (settingsSnap.exists()) {
           const data = settingsSnap.data();

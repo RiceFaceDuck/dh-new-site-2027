@@ -32,8 +32,7 @@ export default function CreditDashboard() {
   // ตรวจสอบระบบอัตโนมัติเมื่อเปิดหน้า Dashboard
   useEffect(() => {
     checkHealth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkHealth]);
 
   // 🚀 ฟังก์ชันศูนย์กลางในการรับรู้เมื่อมีการทำธุรกรรมใน Tab ต่างๆ
   const handleSubmitTransaction = async (transactionCallback, successMessage = 'ทำรายการสำเร็จ') => {

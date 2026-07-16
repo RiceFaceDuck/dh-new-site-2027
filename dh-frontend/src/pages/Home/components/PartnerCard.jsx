@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { logClick } from '../../../firebase/marketingAnalyticsService';
 import LazyImage from '../../../components/common/LazyImage';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import { getRenderableImageUrl } from '../../../utils/imageUtils';
 
 const PartnerCard = ({ partner }) => {
   // Use storeProfile data if available, fallback to partner root level data
-  const avatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || null;
+  const rawAvatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || partner.photoURL || partner.profileImage || partner.profilePicture || partner.logo || partner.photo || null;
+  const avatar = getRenderableImageUrl(rawAvatar);
   const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
   const role = partner.services || partner.role || 'ช่างซ่อมคอมพิวเตอร์';
 
@@ -24,7 +26,7 @@ const PartnerCard = ({ partner }) => {
       {/* Avatar Container */}
       <div className="relative shrink-0">
         <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-xl blur-md group-hover:blur-lg transition-all"></div>
-        <LazyImage src={avatar} alt={name} className="relative w-[120px] h-[120px] md:w-[155px] md:h-[155px] rounded-xl object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
+        <LazyImage src={avatar} alt={name} className="relative w-[120px] h-[120px] md:w-[155px] md:h-[155px] rounded-xl object-contain shadow-xs bg-slate-50 border border-slate-100/50" />
         
         {/* Pulsing Status Dot */}
         <div className="absolute -bottom-1 -right-1 flex h-4.5 w-4.5 z-20">

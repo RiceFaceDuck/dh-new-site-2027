@@ -1,7 +1,7 @@
 import { History, TrendingUp, TrendingDown, Clock, Loader2, FileText } from 'lucide-react';
 import { formatCredit } from '../../../../firebase/creditService';
 
-const WalletHistory = ({ historyLogs, loadingHistory }) => {
+const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
   return (
     <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
@@ -27,8 +27,16 @@ const WalletHistory = ({ historyLogs, loadingHistory }) => {
           <div className="divide-y divide-slate-100">
             {historyLogs.map((log, index) => {
               const typeUpper = (log.type || '').toUpperCase();
-              const isEarn = typeUpper === 'DEPOSIT' || typeUpper === 'EARN' || typeUpper === 'REFUND' || typeUpper === 'WITHDRAWAL_REJECTED';
-              const isWithdraw = typeUpper === 'WITHDRAWAL_REQUEST' || typeUpper === 'WITHDRAWAL_COMPLETED' || typeUpper === 'SPEND' || typeUpper === 'WITHDRAWAL';
+              const isCredit = log.source === 'credit';
+              
+              const isEarn = isCredit 
+                ? ['ADD', 'EARN', 'DEPOSIT', 'REFUND'].includes(typeUpper)
+                : ['DEPOSIT', 'REFUND', 'REFUND_POS', 'WITHDRAWAL_REJECTED'].includes(typeUpper);
+
+              const isWithdraw = isCredit
+                ? ['DEDUCT', 'SPEND', 'CLAWBACK'].includes(typeUpper)
+                : ['WITHDRAWAL_REQUEST', 'WITHDRAWAL_COMPLETED', 'WITHDRAWAL', 'SPEND'].includes(typeUpper);
+
               const amount = Number(log.amount || log.points || 0);
               
               return (

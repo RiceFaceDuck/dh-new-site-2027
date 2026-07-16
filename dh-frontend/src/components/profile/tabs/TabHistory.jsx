@@ -29,7 +29,7 @@ const TabHistory = () => {
       showToast('ยกเลิกคำสั่งซื้อสำเร็จ', 'success');
     } catch (error) {
     console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
+    showToast(error?.message || "เกิดข้อผิดพลาด", "error");
 
       showToast(error.message, 'error');
     } finally {

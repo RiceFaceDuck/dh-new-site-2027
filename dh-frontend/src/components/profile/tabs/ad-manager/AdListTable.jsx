@@ -53,7 +53,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd }) => {
               <tr key={ad.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="p-4">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 shadow-xs">
-                    {ad.imageUrl ? <img src={ad.imageUrl} alt="Ad" className="w-full h-full object-cover"  loading="lazy" /> : <ImageIcon size={20} className="text-slate-300" />}
+                    {ad.imageUrl ? <img src={ad.imageUrl} alt="Ad" className="w-full h-full object-contain"  loading="lazy" /> : <ImageIcon size={20} className="text-slate-300" />}
                   </div>
                 </td>
                 <td className="p-4">

@@ -27,15 +27,15 @@ export const ShippingForm = ({ info, setInfo, saveAddress, setSaveAddress }) => 
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase mb-1 block">Recipient Name</label>
-        <input required type="text" value={info.fullName} onChange={e => setInfo({...info, fullName: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all font-medium" />
+        <input required name="fullName" type="text" value={info.fullName} onChange={e => setInfo({...info, fullName: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all font-medium" />
       </div>
       <div className="space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase mb-1 block">Phone Number</label>
-        <input required type="tel" value={info.phone} onChange={e => setInfo({...info, phone: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all font-medium" />
+        <input required name="phone" type="tel" value={info.phone} onChange={e => setInfo({...info, phone: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all font-medium" />
       </div>
       <div className="md:col-span-2 space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase mb-1 block">Full Address</label>
-        <textarea required rows="2" value={info.address} onChange={e => setInfo({...info, address: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all resize-none font-medium"></textarea>
+        <textarea required name="address" rows="2" value={info.address} onChange={e => setInfo({...info, address: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm focus:bg-white outline-hidden transition-all resize-none font-medium"></textarea>
       </div>
     </div>
     <label className="mt-5 flex items-center gap-3 cursor-pointer group">

@@ -2,11 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { evaluateShippingRules } from 'dh-shared';
 import { useCheckoutLogic } from '../components/checkout/hooks/useCheckoutLogic';
 import { useToast } from '../context/ToastContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { useCart } from '../hooks/useCart';
 import CartActivePromotions from '../components/cart/CartActivePromotions';
 import CartFreebieProgress from '../components/cart/CartFreebieProgress';
+import { memoryCache } from '../utils/memoryCache';
 
 import {
   AddressSelector,
@@ -21,7 +20,6 @@ import {
 } from '../components/checkout';
 
 import AccordionSection from '../components/checkout/AccordionSection';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const Checkout = () => {
   const {
     user,
@@ -54,36 +52,38 @@ const Checkout = () => {
   const [isFetchingRules, setIsFetchingRules] = useState(true);
 
   useEffect(() => {
-    const fetchFreebies = async () => {
+    const loadCheckoutData = async () => {
       try {
         setIsFetchingFreebies(true);
-        const q = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
-        const snapshot = await getDocs(q);
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setFreebies(items);
+        setIsFetchingRules(true);
+
+        const fetchFreebiesFn = async () => {
+          const { storefrontSettingsService } = await import('../firebase/storefrontSettingsService');
+          return await storefrontSettingsService.getActiveFreebies();
+        };
+
+        const fetchRulesFn = async () => {
+          const { storefrontSettingsService } = await import('../firebase/storefrontSettingsService');
+          return await storefrontSettingsService.getActiveShippingRules();
+        };
+
+        const [cachedFreebies, cachedRules] = await Promise.all([
+          memoryCache.getOrFetch('active_freebies', fetchFreebiesFn, 10 * 60 * 1000), // Cache 10 นาที
+          memoryCache.getOrFetch('active_shipping_rules', fetchRulesFn, 60 * 60 * 1000) // Cache 1 ชม.
+        ]);
+
+        setFreebies(cachedFreebies || []);
+        setShippingRules(cachedRules || []);
+
       } catch (error) {
-        console.error("🔥 Error fetching freebies in Checkout:", error);
+        console.error("🔥 Error fetching checkout data:", error);
       } finally {
         setIsFetchingFreebies(false);
-      }
-    };
-
-    const fetchShippingRules = async () => {
-      try {
-        setIsFetchingRules(true);
-        const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
-        const snapshot = await getDocs(q);
-        const rules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setShippingRules(rules);
-      } catch (error) {
-        console.error("🔥 Error fetching shipping rules in Checkout:", error);
-      } finally {
         setIsFetchingRules(false);
       }
     };
 
-    fetchFreebies();
-    fetchShippingRules();
+    loadCheckoutData();
   }, []);
 
   // 🧮 ประเมินราคาจัดส่งและประกันตามกฎ
@@ -95,7 +95,7 @@ const Checkout = () => {
     if (checkoutState.insuranceCost !== insuranceCost) {
       handleUpdateCheckoutState('insuranceCost', insuranceCost);
     }
-  }, [insuranceCost, checkoutState.insuranceCost]);
+    }, [insuranceCost, checkoutState.insuranceCost]);
 
   const handlePromotionsEvaluated = (applicablePromotions) => {
     const current = checkoutState.appliedPromotions || [];
@@ -282,14 +282,12 @@ const Checkout = () => {
       />
 
       {/* Modal ขอราคาส่ง */}
-      {isWholesaleModalOpen && (
-        <WholesaleRequestModal 
-          isOpen={isWholesaleModalOpen}
-          onClose={() => setIsWholesaleModalOpen(false)}
-          onSubmit={handleSubmitWholesale}
-          companyName={checkoutState.customerData?.company || ''}
-        />
-      )}
+      <WholesaleRequestModal 
+        isOpen={isWholesaleModalOpen}
+        onClose={() => setIsWholesaleModalOpen(false)}
+        onSubmit={handleSubmitWholesale}
+        companyName={checkoutState.customerData?.company || ''}
+      />
     </div>
   );
 };

@@ -29,48 +29,53 @@ export const inventoryAdjustmentService = {
 
       const productRef = doc(db, COLLECTION_NAME, sku);
 
-      await runTransaction(db, async (transaction) => {
-        const productSnap = await transaction.get(productRef);
-        
-        if (!productSnap.exists()) {
-          throw new Error(`ไม่พบสินค้า SKU: ${sku}`);
-        }
+      try {
+        await runTransaction(db, async (transaction) => {
+          const productSnap = await transaction.get(productRef);
+          
+          if (!productSnap.exists()) {
+            throw new Error(`ไม่พบสินค้า SKU: ${sku}`);
+          }
 
-        const data = productSnap.data();
-        const oldStock = data.stockQuantity || 0;
+          const data = productSnap.data();
+          const oldStock = data.stockQuantity || 0;
 
-        if (oldStock === newStock) {
-          throw new Error("จำนวนสต๊อคใหม่ตรงกับสต๊อคเดิม ไม่มีการเปลี่ยนแปลง");
-        }
+          if (oldStock === newStock) {
+            throw new Error("จำนวนสต๊อคใหม่ตรงกับสต๊อคเดิม ไม่มีการเปลี่ยนแปลง");
+          }
 
-        // ปรับปรุงข้อมูลใน Database
-        transaction.update(productRef, {
-          stockQuantity: newStock,
-          updatedAt: serverTimestamp()
-        });
-
-        // บันทึก History Log โดยส่งเข้าคิวหลัง Transaction สำเร็จ
-        setTimeout(() => {
-          gasHistoryService.log({
-            level: oldStock > newStock ? 'WARN' : 'INFO',
-            module: 'Inventory Adjustment',
-            action: 'Adjust Stock',
-            actor: {
-              uid: managerUser?.uid || 'Unknown',
-              name: managerUser?.displayName || managerUser?.email || 'System'
-            },
-            target: { id: sku, name: data.name, type: 'Product' },
-            details: {
-              legacy_details: `ปรับปรุงสต๊อคกรณีพิเศษ: ${reason}`,
-              reason: reason,
-              note: note || '',
-              changes: {
-                stockQuantity: { from: oldStock, to: newStock }
-              }
-            }
+          // ปรับปรุงข้อมูลใน Database
+          transaction.update(productRef, {
+            stockQuantity: newStock,
+            updatedAt: serverTimestamp()
           });
-        }, 0);
-      });
+
+          // บันทึก History Log โดยส่งเข้าคิวหลัง Transaction สำเร็จ
+          setTimeout(() => {
+            gasHistoryService.log({
+              level: oldStock > newStock ? 'WARN' : 'INFO',
+              module: 'Inventory Adjustment',
+              action: 'Adjust Stock',
+              actor: {
+                uid: managerUser?.uid || 'Unknown',
+                name: managerUser?.displayName || managerUser?.email || 'System'
+              },
+              target: { id: sku, name: data.name, type: 'Product' },
+              details: {
+                legacy_details: `ปรับปรุงสต๊อคกรณีพิเศษ: ${reason}`,
+                reason: reason,
+                note: note || '',
+                changes: {
+                  stockQuantity: { from: oldStock, to: newStock }
+                }
+              }
+            });
+          }, 0);
+        });
+      } catch (error) {
+        console.error("🔥 Error in adjustStock transaction:", error);
+        throw error;
+      }
 
       return { success: true, message: 'ปรับปรุงสต๊อคสำเร็จ' };
     })(), "เกิดข้อผิดพลาดในการปรับปรุงสต๊อก");

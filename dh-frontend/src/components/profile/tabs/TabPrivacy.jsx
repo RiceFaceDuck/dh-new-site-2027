@@ -13,7 +13,6 @@ export default function TabPrivacy({ user }) {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportData = async () => {
-  const { showToast } = useToast();
     if (!user?.uid) return;
     setIsExporting(true);
     try {
@@ -65,10 +64,8 @@ export default function TabPrivacy({ user }) {
         await userService.deleteAccount(user, walletBalance);
         window.location.href = '/'; // Redirect to home
       } catch (error) {
-    console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
-
-        showToast(error.message, 'error');
+        console.error("🔥 Error:", error);
+        showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
       }
     }
   };

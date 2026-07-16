@@ -5,6 +5,7 @@ import { ExternalLink, Store, ShoppingBag, Phone, X, MessageCircle, ShieldCheck,
 import { useNavigate } from 'react-router-dom';
 import { marketingService } from '../../firebase/marketingService';
 import LazyImage from '../common/LazyImage';
+import { getRenderableImageUrl } from '../../utils/imageUtils';
 
 const ProductAdCard = ({ ad }) => {
   const navigate = useNavigate();
@@ -74,6 +75,9 @@ const ProductAdCard = ({ ad }) => {
 
   if (!ad) return null;
 
+  const rawImage = ad.imageUrl || ad.imageurl || ad.image || (ad.images && ad.images[0]) || ad.img || ad.picture || ad.photo || ad.storeImage || ad.avatar || ad.photoURL || ad.profileImage || (ad.storeProfile && ad.storeProfile.logoUrl) || '/logo.png';
+  const safeImageUrl = getRenderableImageUrl(rawImage);
+
   const isProduct = ad.type === 'PRODUCT_LINK';
 
   // ==========================================
@@ -102,12 +106,12 @@ const ProductAdCard = ({ ad }) => {
 
           {/* 🏙️ Cover Image & Partner Info */}
           <div className="w-full h-44 sm:h-52 bg-slate-200 relative shrink-0">
-            <LazyImage src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+            <LazyImage src={safeImageUrl} alt={ad.title} className="w-full h-full object-contain" />
             <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
             
             <div className="absolute bottom-4 left-4 right-4 flex items-end gap-4">
                <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg shrink-0 border border-white/20">
-                 <LazyImage src={ad.imageUrl} alt="Partner" className="w-full h-full object-cover rounded-xl" />
+                 <LazyImage src={safeImageUrl} alt="Partner" className="w-full h-full object-contain rounded-xl" />
                </div>
                <div className="pb-1 text-white flex-1">
                  <div className="flex items-center gap-1.5 mb-1.5">
@@ -197,9 +201,9 @@ const ProductAdCard = ({ ad }) => {
         >
           <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 to-transparent opacity-50 pointer-events-none"></div>
           <LazyImage 
-            src={ad.imageUrl} 
+            src={safeImageUrl} 
             alt={ad.title || 'Advertisement'} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 mix-blend-multiply relative z-10"
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply relative z-10"
           />
           
           {/* 🏷️ ป้าย Sponsored */}
@@ -218,10 +222,19 @@ const ProductAdCard = ({ ad }) => {
           <h3 className="text-sm md:text-base font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors leading-relaxed">
             {ad.title}
           </h3>
-          <div className="text-[10px] md:text-xs text-slate-600 line-clamp-1 mb-2 flex items-center gap-1 uppercase">
-            {isProduct ? <ShoppingBag size={12} className="shrink-0"/> : <Store size={12} className="shrink-0"/>}
-            <span className="truncate">{ad.partnerName || ad.customerName || 'DH Partner'}</span>
-          </div>
+          {(() => {
+            const rawDisplayName = ad.partnerName || ad.customerName || 'DH Partner';
+            const isTitleSameAsName = ad.title?.trim().toLowerCase() === rawDisplayName.trim().toLowerCase();
+            const customSubtitle = ad.description || ad.role || ad.services || (isProduct ? 'สินค้าแนะนำ' : 'Official Partner');
+            const displaySubtitle = isTitleSameAsName ? customSubtitle : rawDisplayName;
+            
+            return (
+              <div className="text-[10px] md:text-xs text-slate-600 line-clamp-1 mb-2 flex items-center gap-1 uppercase">
+                {isProduct ? <ShoppingBag size={12} className="shrink-0"/> : <Store size={12} className="shrink-0"/>}
+                <span className="truncate">{displaySubtitle}</span>
+              </div>
+            );
+          })()}
 
           {/* 💰 ปุ่ม Call to Action */}
           <div className="mt-auto flex flex-col pt-1">

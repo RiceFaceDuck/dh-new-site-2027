@@ -3,6 +3,7 @@ import { limit, doc, onSnapshot, collection, query, where, getAggregateFromServe
 import { db } from '../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
+// eslint-disable-next-line no-undef
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 export default function useLedgerStats() {
@@ -112,7 +113,7 @@ export default function useLedgerStats() {
     return () => {
       isActive = false;
       if (unsubscribe && typeof unsubscribe.then === 'function') {
-        unsubscribe.then(unsub => unsub && unsub());
+        unsubscribe.then(unsub => unsub && unsub()).catch(console.error);
       } else if (typeof unsubscribe === 'function') {
         unsubscribe();
       }

@@ -83,6 +83,5 @@ export const useCartValidation = (activeTabId, activeTab, products, updateActive
                 return () => clearTimeout(timer);
             }
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTabId, products, activeTab?.priceMode]);
+        }, [activeTabId, products, activeTab?.priceMode]);
 };

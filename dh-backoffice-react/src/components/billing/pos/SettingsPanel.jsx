@@ -43,7 +43,7 @@ export default function SettingsPanel({
         setLocalOtherName(activeTab.otherFeeName || '');
         setLocalOtherAmount(activeTab.otherFeeAmount || '');
         setLocalBillNote(activeTab.billNote || '');
-    }, [activeTab.id]);
+    }, [activeTab.id, activeTab.shippingFee, activeTab.overallDiscount, activeTab.otherFeeName, activeTab.otherFeeAmount, activeTab.billNote]);
 
     useEffect(() => {
         function handleClickOutside(event) { if (custSearchRef.current && !custSearchRef.current.contains(event.target)) setShowCustDropdown(false); }
@@ -72,8 +72,7 @@ export default function SettingsPanel({
         }
 
         if (needsUpdate) updateActiveTab(updates);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab?.id]); 
+    }, [activeTab?.id, activeTab?.fulfillmentType, activeTab?.priceMode, activeTab?.vatType, activeTab?.autoPromoEnabled, activeTab?.courier, terminalConfig.defaultFulfillment, terminalConfig.defaultPriceMode, terminalConfig.defaultVatType, terminalConfig.defaultCourier, updateActiveTab]); 
 
 
     // 🎨 UI Classes 

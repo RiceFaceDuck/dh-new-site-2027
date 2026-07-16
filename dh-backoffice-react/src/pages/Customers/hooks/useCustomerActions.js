@@ -21,7 +21,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
     if (auth.currentUser) {
       userService.getUserProfile(auth.currentUser.uid).then(profile => {
         if (profile && profile.role) setCurrentUserRole(profile.role);
-      });
+      }).catch(console.error);
     }
   }, []);
 
@@ -60,7 +60,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
     try {
       const payload = {
         ...newCustomer,
-        customerCode: newCustomer.customerCode.trim() || `CUST-${Math.floor(Math.random() * 10000)}`
+        customerCode: newCustomer.customerCode?.trim() || ''
       };
       
       await userService.createManualCustomer(payload);
@@ -234,8 +234,10 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
             const userRef = doc(db, getCollectionPath('users'), u.id || u.uid);
             await updateDoc(userRef, {
                customerCode: deleteField(),
-               // Ensure accountId exists
-               accountId: u.accountId || u.customerCode?.substring(0,8)?.toUpperCase() || u.id?.substring(0,8)?.toUpperCase()
+               // บังคับแปลงเป็น 8 หลักมาตรฐานจาก UID ถ้ารหัสเดิมเป็นรูปแบบอื่น
+               accountId: (u.accountId && u.accountId.length === 8 && !u.accountId.startsWith('CUST')) 
+                 ? u.accountId 
+                 : (u.id || u.uid).substring(0, 8).toUpperCase()
             });
             success++;
           } catch(err) {

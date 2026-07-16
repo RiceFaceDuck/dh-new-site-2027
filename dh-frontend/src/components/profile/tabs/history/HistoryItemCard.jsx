@@ -147,7 +147,7 @@ const HistoryItemCard = ({
               return (
                 <div key={idx} className="flex gap-3 text-sm bg-gray-50/70 p-3 rounded-xl border border-gray-100">
                   <div className="w-14 h-14 bg-white rounded-lg border border-gray-200 overflow-hidden shrink-0 shadow-xs">
-                      {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover"  loading="lazy" /> : null}
+                      {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain"  loading="lazy" /> : null}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-800 line-clamp-1">{item.name}</p>

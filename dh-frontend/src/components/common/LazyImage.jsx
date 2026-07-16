@@ -47,8 +47,8 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
 
   const finalSrc = (hasError || !src) ? fallbackSrc : getRenderableImageUrl(src);
   
-  // Prevent object-cover from overriding if user passes object-contain or similar
-  const imgObjectFit = className.includes('object-') ? '' : 'object-cover';
+  // Prevent object-contain from overriding if user passes object-contain or similar
+  const imgObjectFit = className.includes('object-') ? '' : 'object-contain';
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
@@ -75,6 +75,7 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
                if (onError) onError(e);
              }
           }}
+          referrerPolicy="no-referrer"
           {...rest}
           loading="lazy" 
         />

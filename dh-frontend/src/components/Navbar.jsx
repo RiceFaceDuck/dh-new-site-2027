@@ -97,7 +97,7 @@ const Navbar = () => {
           
           <div className="flex items-center shrink-0">
             <Link to="/" className="flex items-center group">
-              <img 
+              <img loading="lazy" 
                 src="/logo.jpg" 
                 alt="DH Notebook Logo" 
                 className="h-10 md:h-12 w-auto object-contain rounded-lg shadow-xs group-hover:scale-105 transition-transform duration-300"
@@ -178,7 +178,7 @@ const Navbar = () => {
                   >
                     <div className="relative">
                       {currentUser.photoURL ? (
-                        <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-slate-200"  loading="lazy" />
+                        <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-contain border border-slate-200"  loading="lazy" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-linear-to-br from-brand-light to-white text-brand flex items-center justify-center font-bold text-sm border border-brand-light">
                           {getInitial(currentUser.email)}

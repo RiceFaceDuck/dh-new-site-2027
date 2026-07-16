@@ -2,11 +2,11 @@ import { collection, onSnapshot, query, orderBy, limit, getDocs, where, Timestam
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'orders';
+const getOrdersColRef = () => collection(db, getCollectionPath('orders'));
 
 export const billingQueryService = {
   subscribeRecentOrders: (maxLimit = 100, dateRange = null, callback) => {
-    let qArgs = [collection(db, COLLECTION_NAME)];
+    let qArgs = [getOrdersColRef()];
     
     if (dateRange?.start) {
       const start = new Date(dateRange.start); 
@@ -48,7 +48,7 @@ export const billingQueryService = {
       const isOrderNum = term.toUpperCase().startsWith('DH-') || term.toUpperCase().startsWith('TEMP-');
       
       let results = [];
-      const colRef = collection(db, COLLECTION_NAME);
+      const colRef = getOrdersColRef();
 
       if (isOrderNum) {
         const q = query(colRef, where('orderId', '==', term.toUpperCase()), limit(50));
@@ -117,7 +117,7 @@ export const billingQueryService = {
   getOrderById: async (orderId) => {
     try {
       if (!orderId) return null;
-      const docRef = doc(db, COLLECTION_NAME, orderId);
+      const docRef = doc(db, getCollectionPath('orders'), orderId);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const data = snap.data();
@@ -128,6 +128,23 @@ export const billingQueryService = {
     } catch (error) {
       console.error("🔥 Error fetching order by ID:", error);
       return null;
+    }
+  },
+  
+  getOrderByOrderId: async (orderIdString) => {
+    try {
+      if (!orderIdString) return null;
+      const q = query(getOrdersColRef(), where('orderId', '==', orderIdString.trim().toUpperCase()), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const data = snap.docs[0].data();
+        delete data.id;
+        return { ...data, id: snap.docs[0].id };
+      }
+      return null;
+    } catch (error) {
+      console.error("🔥 Error fetching order by Order ID:", error);
+      throw error;
     }
   }
 };

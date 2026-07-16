@@ -187,8 +187,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
         qualifiedFreebies: validFreebies
       });
     }
-
-  }, [totals?.subtotal, promotions, freebies, customerType, checkoutState?.discountAmount, cartItems, updateCheckoutConfig]);
+    }, [totals?.subtotal, promotions, freebies, customerType, checkoutState?.discountAmount, cartItems, updateCheckoutConfig]);
 
   // 🛡 3. Wallet Loop Prevention
   useEffect(() => {

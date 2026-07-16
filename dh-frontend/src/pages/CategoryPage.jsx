@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, Link } from 'react-router-dom';
-import { collection, getDocs, query, where, limit, startAfter } from 'firebase/firestore'; 
-import { db } from '../firebase/config';
+
 import { categoryService } from '../firebase/categoryService';
 import ProductList from '../components/ProductList';
 import { memoryCache } from '../utils/memoryCache';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CategoryPage = () => {
   const { type } = useParams();
@@ -22,6 +20,51 @@ const CategoryPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const itemsPerPage = 40;
 
+  const loadProducts = useCallback(async (isInitial = false) => {
+    try {
+      if (!isInitial) setLoadingMore(true);
+
+      const { productService } = await import('../firebase/productService');
+
+      let fetchedProducts = [];
+      const lowerCaseType = type.trim().toLowerCase();
+
+      if (isInitial) {
+        const cacheKey = `category_${lowerCaseType}`;
+        const fetchFn = async () => {
+          return await productService.getProductsByCategory(lowerCaseType, null, itemsPerPage);
+        };
+
+        const cachedResult = await memoryCache.getOrFetch(cacheKey, fetchFn, 3 * 60 * 1000);
+        fetchedProducts = cachedResult.docs;
+        if (cachedResult.lastDoc) setLastVisible(cachedResult.lastDoc);
+      } else {
+        const result = await productService.getProductsByCategory(lowerCaseType, lastVisible, itemsPerPage);
+        fetchedProducts = result.docs;
+        if (result.lastDoc) {
+          setLastVisible(result.lastDoc);
+        }
+      }
+      
+      if (fetchedProducts.length < itemsPerPage) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+
+      if (isInitial) {
+        setProducts(fetchedProducts);
+      } else {
+        setProducts(prev => [...prev, ...fetchedProducts]);
+      }
+
+    } catch (error) {
+      console.error("Error loading products:", error);
+    } finally {
+      if (!isInitial) setLoadingMore(false);
+    }
+  }, [type, lastVisible]);
+
   // Infinite Scroll setup
   const observer = useRef();
   const lastProductElementRef = useCallback(node => {
@@ -31,9 +74,9 @@ const CategoryPage = () => {
       if (entries[0].isIntersecting && hasMore) {
         loadProducts(false);
       }
-    });
+    }, { rootMargin: '400px' });
     if (node) observer.current.observe(node);
-  }, [loading, loadingMore, hasMore]);
+  }, [loading, loadingMore, hasMore, loadProducts]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -62,72 +105,9 @@ const CategoryPage = () => {
     };
 
     fetchInitialData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type]);
+    }, [type]);
 
-  const loadProducts = async (isInitial = false) => {
-    try {
-      if (!isInitial) setLoadingMore(true);
 
-      const productsRef = collection(db, getCollectionPath('products'));
-      const lowerCaseType = type.trim().toLowerCase();
-      
-      let q;
-      if (isInitial || !lastVisible) {
-        q = query(
-          productsRef, 
-          where("category_lower", "==", lowerCaseType), 
-          limit(itemsPerPage)
-        );
-      } else {
-        q = query(
-          productsRef, 
-          where("category_lower", "==", lowerCaseType), 
-          startAfter(lastVisible),
-          limit(itemsPerPage)
-        );
-      }
-
-      let fetchedProducts = [];
-
-      if (isInitial) {
-        const cacheKey = `category_${lowerCaseType}`;
-        const fetchFn = async () => {
-          const snapshot = await getDocs(q);
-          const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
-          return { docs, lastDoc };
-        };
-
-        const cachedResult = await memoryCache.getOrFetch(cacheKey, fetchFn, 3 * 60 * 1000);
-        fetchedProducts = cachedResult.docs;
-        if (cachedResult.lastDoc) setLastVisible(cachedResult.lastDoc);
-      } else {
-        const querySnapshot = await getDocs(q);
-        fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (querySnapshot.docs.length > 0) {
-          setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-        }
-      }
-      
-      if (fetchedProducts.length < itemsPerPage) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
-
-      if (isInitial) {
-        setProducts(fetchedProducts);
-      } else {
-        setProducts(prev => [...prev, ...fetchedProducts]);
-      }
-
-    } catch (error) {
-      console.error("Error loading products:", error);
-    } finally {
-      if (!isInitial) setLoadingMore(false);
-    }
-  };
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">

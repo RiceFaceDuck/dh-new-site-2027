@@ -197,7 +197,7 @@ export default function ProductVariants({ form, setForm }) {
           {/* Options List */}
           {form.variantOptions && form.variantOptions.length > 0 && (
             <div className="space-y-4 p-4 border border-dh-border rounded-xl bg-dh-base/30">
-              {form.variantOptions.map((opt, index) => (
+              {(form.variantOptions || []).map((opt, index) => (
                 <div key={index} className="flex flex-col sm:flex-row gap-4 p-3 border border-dh-border rounded-xl bg-dh-surface">
                   <div className="w-full sm:w-1/4 flex justify-between items-center sm:items-start">
                     <span className="font-bold text-dh-main mt-1">{opt.name}</span>
@@ -237,7 +237,7 @@ export default function ProductVariants({ form, setForm }) {
                 </tr>
               </thead>
               <tbody>
-                {form.variants.map((v, index) => (
+                {(form.variants || []).map((v, index) => (
                   <tr key={index} className="border-b border-dh-border hover:bg-dh-base/30">
                     <td className="px-4 py-3 font-medium text-dh-main">
                       {Object.values(v.attributes).join(' / ')}

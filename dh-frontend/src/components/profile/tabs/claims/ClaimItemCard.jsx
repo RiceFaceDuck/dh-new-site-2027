@@ -3,11 +3,9 @@ import { Wrench, ArrowLeftRight, Package, CheckCircle, Clock, XCircle, Send } fr
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
-import { useToast } from '../../../../context/ToastContext';
 
 
 const getClaimStatusDisplay = (status, type) => {
-  const { showToast } = useToast();
   const isCancel = type?.startsWith('CANCEL_');
   if (isCancel && status !== 'cancelled') {
     return { label: 'ขอยกเลิก (รออนุมัติ)', color: 'bg-red-50 text-red-600 border-red-200', icon: XCircle };
@@ -45,8 +43,6 @@ const ClaimItemCard = ({ claim }) => {
       showToast('บันทึกเลขพัสดุเรียบร้อยแล้ว ผู้จัดการจะตรวจสอบพัสดุของคุณเร็วๆ นี้', 'success');
     } catch (error) {
     console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
-
       showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
     } finally {
       setIsUpdatingTracking(false);

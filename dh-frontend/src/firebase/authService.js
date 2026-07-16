@@ -39,12 +39,15 @@ const ensureUserProfile = async (user, additionalData = {}) => {
     if (!userSnap.exists()) {
       // 🌟 กรณี User ใหม่: สร้าง Schema ให้สมบูรณ์แบบ
       console.log('✨ [Auth] Creating new professional profile...');
+      const customerName = user.displayName || additionalData.name || 'ผู้ใช้งานใหม่';
       await setDoc(userRef, {
         uid: user.uid,
         accountId: user.uid.substring(0, 8).toUpperCase(), // รหัสลูกค้าสุดเท่ (8 หลักแรกของ UID)
-        name: user.displayName || additionalData.name || 'ผู้ใช้งานใหม่',
+        name: customerName,
+        accountName: customerName, // Unified with backoffice
         photoURL: user.photoURL || '',
-        role: 'customer',
+        role: 'Customer', // Unified exact match
+        status: 'active', // Unified default status
         // 💰 เตรียมโครงสร้างการเงิน (Ecosystem)
         walletBalance: 0,
         creditPoints: 0,
@@ -53,6 +56,7 @@ const ensureUserProfile = async (user, additionalData = {}) => {
           mapUrl: ''
         },
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(), // Unified delta sync
         ...loginData
       });
     } else {
@@ -60,11 +64,9 @@ const ensureUserProfile = async (user, additionalData = {}) => {
       const existingData = userSnap.data();
       const updateData = { ...loginData };
 
-      // ถ้าไม่มี Account ID (User เก่า) ให้สร้างให้ใหม่
-      if (!existingData.accountId) updateData.accountId = user.uid.substring(0, 8).toUpperCase();
-      // การันตีว่ามีฟิลด์การเงิน ไม่พังตอนเรียกใช้
-      if (existingData.walletBalance === undefined) updateData.walletBalance = 0;
-      if (existingData.creditPoints === undefined) updateData.creditPoints = 0;
+      // 🚫 ยกเลิกการ Auto-heal ฟิลด์สงวนสิทธิ์ (accountId, walletBalance, creditPoints) ออกจากหน้าบ้าน
+      // เพื่อป้องกัน Permission Denied จาก Firestore Rules
+      
       if (!existingData.ecosystem) updateData.ecosystem = { mapUrl: '' };
 
       // ใช้ { merge: true } เพื่อไม่ให้ทับข้อมูลอื่นๆ ที่ลูกค้าเคยกรอกไว้ (เช่น เบอร์โทร)

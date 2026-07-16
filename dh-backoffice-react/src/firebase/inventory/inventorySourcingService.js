@@ -1,13 +1,14 @@
 import { doc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from '../config';
 import { todoService } from '../todoService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventorySourcingService = {
   reportNonExisting: async (reportData, uid) => {
     if (!reportData || !reportData.keyword || !reportData.keyword.trim()) return;
     try {
       const slugId = reportData.keyword.trim().toLowerCase().replace(/[^a-z0-9ก-๙]/g, '-');
-      const docRef = doc(db, 'sourcing_requests', slugId);
+      const docRef = doc(db, getCollectionPath('sourcing_requests'), slugId);
       
       await setDoc(docRef, {
         keyword: reportData.keyword.trim(),

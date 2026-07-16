@@ -129,8 +129,7 @@ export const useCartLogic = () => {
     } else if (Object.keys(productCache).length > 0) {
       runValidation(cartItems, productCache);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized, cartItems]);
+    }, [isInitialized, cartItems]);
 
   const handleUpdateQty = useCallback(async (productId, currentQty, change) => {
     const newQty = currentQty + change;

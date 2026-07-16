@@ -247,7 +247,7 @@ export const transactionImportService = {
    */
   revertTransactionBatch: async (batchId, currentUser) => {
     try {
-      const batchRef = doc(db, 'import_batches', batchId);
+      const batchRef = doc(db, getCollectionPath('import_batches'), batchId);
       const batchSnap = await getDoc(batchRef);
       if (!batchSnap.exists()) throw new Error("ไม่พบข้อมูลประวัติการนำเข้านี้");
       

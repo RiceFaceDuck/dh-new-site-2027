@@ -19,11 +19,11 @@ export default function WalletModals({
                             </button>
                             <h2 className="text-xl font-bold flex items-center gap-2">
                                 {adjType === 'deposit' ? <ArrowDownToLine className="w-6 h-6" /> : adjType === 'cash_withdrawal' ? <Banknote className="w-6 h-6" /> : <ArrowUpFromLine className="w-6 h-6" />}
-                                {adjType === 'deposit' ? 'เพิ่มเงิน Wallet' : adjType === 'cash_withdrawal' ? 'จ่ายคืนเป็นเงินสด' : 'หักเงิน Wallet'}
+                                {adjType === 'deposit' ? 'ปรับเพิ่มยอดเงิน (แก้ไขบัญชี)' : adjType === 'cash_withdrawal' ? 'จ่ายคืนเป็นเงินสด' : 'ปรับลดยอดเงิน (แก้ไขบัญชี)'}
                             </h2>
                             <p className="text-white/80 text-sm mt-1 truncate pr-8">บัญชี: {selectedUser.displayName || selectedUser.accountName}</p>
                         </div>
-
+ 
                         <form onSubmit={handleAdjustmentSubmit} className="flex flex-col">
                             <div className="p-6 bg-white flex flex-col gap-4">
                                 <div>
@@ -50,7 +50,7 @@ export default function WalletModals({
                                 </div>
                                 
                                 <div>
-                                    <label className="text-xs font-black text-slate-700 mb-1.5 block">รายละเอียด / อ้างอิง (Memo) <span className="text-rose-500">*</span></label>
+                                    <label className="text-xs font-black text-slate-700 mb-1.5 block">รายละเอียด / เหตุผลการแก้ไขตัวเลข <span className="text-rose-500">*</span></label>
                                     <div className="relative">
                                         <FileText size={16} className="absolute left-3 top-3 text-slate-400" />
                                         <textarea 
@@ -58,7 +58,7 @@ export default function WalletModals({
                                             value={adjNote}
                                             onChange={e => setAdjNote(e.target.value)}
                                             className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm text-slate-800 outline-hidden focus:border-indigo-500 focus:bg-white transition-all min-h-[80px]"
-                                            placeholder={adjType === 'deposit' ? "เช่น คืนเงินจากออเดอร์ยกเลิก..." : adjType === 'cash_withdrawal' ? "เช่น ลูกค้ารับเงินสดที่เคาน์เตอร์โดย นาย..." : "เช่น ดึงเงินคืนระบบ..."}
+                                            placeholder={adjType === 'deposit' ? "ระบุเหตุผลการปรับปรุงเพิ่มยอด เช่น คีย์ยอดคืนเงินเคลมบิลผิด..." : adjType === 'cash_withdrawal' ? "เช่น ลูกค้ารับเงินสดที่เคาน์เตอร์โดย นาย..." : "ระบุเหตุผลการปรับปรุงลดยอด..."}
                                         ></textarea>
                                     </div>
                                 </div>

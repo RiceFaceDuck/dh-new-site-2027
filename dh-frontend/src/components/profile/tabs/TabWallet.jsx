@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Loader2, Wallet, ArrowLeft } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +6,6 @@ import { useWalletBalance } from '../../../firebase/walletService';
 import { useWalletData } from './wallet/useWalletData';
 import WalletCard from './wallet/WalletCard';
 import WalletHistory from './wallet/WalletHistory';
-import WithdrawModal from './wallet/WithdrawModal';
 import { useUserCredit, formatCredit } from '../../../firebase/creditService';
 import { Coins } from 'lucide-react';
 
@@ -23,16 +21,12 @@ export default function TabWallet({ type = 'wallet' }) {
   // กรองประวัติตามประเภท
   const filteredLogs = historyLogs.filter(log => {
     if (type === 'credit') {
-      // Credit logs usually don't have 'withdraw' types like wallet does, or they have 'points' instead of 'amount'
-      // Another way is to just check if it has 'points' or the note contains 'เครดิต'
-      return log.points !== undefined || log.note?.includes('แต้ม') || log.type === 'spend' || log.type === 'earn';
+      return log.source === 'credit';
     } else {
-      // Wallet logs
-      return log.amount !== undefined || log.type?.includes('WITHDRAWAL') || log.type === 'deposit';
+      return log.source === 'wallet';
     }
   });
 
-  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   if (walletLoading) {
     return (
@@ -59,7 +53,6 @@ export default function TabWallet({ type = 'wallet' }) {
         <WalletCard 
           walletBalance={walletBalance} 
           pendingWithdrawal={pendingWithdrawal} 
-          setIsWithdrawModalOpen={setIsWithdrawModalOpen} 
         />
       ) : (
         <div className="bg-linear-to-br from-indigo-950 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
@@ -89,15 +82,6 @@ export default function TabWallet({ type = 'wallet' }) {
         loadingHistory={loadingHistory} 
         type={type}
       />
-
-      {type === 'wallet' && (
-        <WithdrawModal 
-          user={user} 
-          walletBalance={walletBalance} 
-          isWithdrawModalOpen={isWithdrawModalOpen} 
-          setIsWithdrawModalOpen={setIsWithdrawModalOpen} 
-        />
-      )}
     </div>
   );
 }

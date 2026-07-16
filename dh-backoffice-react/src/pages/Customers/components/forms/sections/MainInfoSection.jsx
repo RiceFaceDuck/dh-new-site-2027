@@ -51,7 +51,7 @@ export default function MainInfoSection({
                     <div className="relative">
                         <input 
                             type="text" 
-                            placeholder="เช่น CUST-001" 
+                            placeholder="เช่น GHUE8VJZ" 
                             className={`w-full px-3 py-2.5 pr-8 border rounded-lg focus:ring-1 outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main uppercase font-mono ${
                                 idError ? 'border-rose-400 focus:ring-rose-400' : 
                                 idSuccess ? 'border-emerald-400 focus:ring-emerald-400' : 'border-dh-border focus:ring-dh-accent'

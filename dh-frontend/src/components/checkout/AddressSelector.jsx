@@ -176,10 +176,17 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
               value={formData.fullName}
               onChange={handleChange}
               placeholder="เช่น สมชาย ใจดี" 
-              className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 transition-all duration-200 text-slate-800 ${
-                orderMode === 'wholesale' ? 'focus:border-amber-500 focus:ring-amber-500/20' : 'focus:border-indigo-500 focus:ring-indigo-500/20'
+              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:bg-white focus:ring-2 transition-all duration-200 text-slate-800 ${
+                errors.fullName
+                  ? 'border-red-300 bg-red-50 focus:ring-red-500/20 focus:border-red-500'
+                  : orderMode === 'wholesale' ? 'border-slate-200 focus:border-amber-500 focus:ring-amber-500/20' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'
               }`}
             />
+            {errors.fullName && (
+              <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium animate-fade-in">
+                <AlertCircle className="w-3 h-3" /> {errors.fullName}
+              </p>
+            )}
           </div>
           {/* เบอร์โทรศัพท์ */}
           <div>
@@ -223,11 +230,19 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
             value={formData.address}
             onChange={handleChange}
             placeholder="บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" 
-            className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 transition-all duration-200 resize-none leading-relaxed text-slate-800 ${
-              orderMode === 'wholesale' ? 'focus:border-amber-500 focus:ring-amber-500/20' : 'focus:border-indigo-500 focus:ring-indigo-500/20'
+            className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:bg-white focus:ring-2 transition-all duration-200 resize-none leading-relaxed text-slate-800 ${
+              errors.address
+                ? 'border-red-300 bg-red-50 focus:ring-red-500/20 focus:border-red-500'
+                : orderMode === 'wholesale' ? 'border-slate-200 focus:border-amber-500 focus:ring-amber-500/20' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'
             }`}
           />
-          <p className="text-xs text-slate-400 mt-1.5 pl-1 font-medium">กรุณาระบุรหัสไปรษณีย์ให้ถูกต้อง เพื่อความรวดเร็วในการคัดแยกพัสดุ</p>
+          {errors.address ? (
+            <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium animate-fade-in">
+              <AlertCircle className="w-3 h-3" /> {errors.address}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400 mt-1.5 pl-1 font-medium">กรุณาระบุรหัสไปรษณีย์ให้ถูกต้อง เพื่อความรวดเร็วในการคัดแยกพัสดุ</p>
+          )}
         </div>
 
         {/* Smart UX: Save to profile feature (Custom Checkbox) */}

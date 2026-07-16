@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, AlertCircle, Tag, AlignLeft, Loader2, Type } from 'lucide-react';
 
+const initialFormState = {
+  title: '',
+  description: '',
+  priority: 'MEDIUM', // HIGH, MEDIUM, LOW
+  type: 'MANUAL',     // ประเภทงาน
+  dueDate: ''
+};
+
 /**
  * 🎯 Component: Modal สำหรับสร้างงานใหม่ (Manual Task)
  * แยกตัวออกมาเพื่อให้หน้าหลักโค้ดสะอาด และจัดการ State ของฟอร์มได้อิสระ
  */
 export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }) {
   // 📝 1. กำหนดค่าเริ่มต้นของฟอร์ม
-  const initialFormState = {
-    title: '',
-    description: '',
-    priority: 'MEDIUM', // HIGH, MEDIUM, LOW
-    type: 'MANUAL',     // ประเภทงาน
-    dueDate: ''
-  };
-
   const [formData, setFormData] = useState(initialFormState);
 
   // 🔄 2. เคลียร์ฟอร์มทุกครั้งที่เปิด Modal ใหม่
@@ -22,7 +22,6 @@ export default function NewTaskModal({ isOpen, onClose, onSubmit, isSubmitting }
     if (isOpen) {
       setFormData(initialFormState);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // หากไม่ได้สั่งให้เปิด ให้ return null (ไม่แสดงผล)

@@ -1,5 +1,6 @@
 import { db } from '../config';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const syncSnapshotService = {
   saveSnapshot: async (changes, uid, userName) => {
@@ -37,7 +38,7 @@ export const syncSnapshotService = {
       });
 
       // 2. บันทึก Snapshot ล่าสุดไว้ที่ system_counters เพื่อให้แผงซ้ายดึงไปเทียบง่ายๆ (ใช้แค่ 1 Read)
-      const lastSnapshotRef = doc(db, 'system_counters', 'last_detect_snapshot');
+      const lastSnapshotRef = doc(db, getCollectionPath('system_counters'), 'last_detect_snapshot');
       await setDoc(lastSnapshotRef, {
         transactionId: txId,
         timestamp: serverTimestamp(),
@@ -53,7 +54,7 @@ export const syncSnapshotService = {
 
   getLatestSnapshot: async () => {
     try {
-      const docRef = doc(db, 'system_counters', 'last_detect_snapshot');
+      const docRef = doc(db, getCollectionPath('system_counters'), 'last_detect_snapshot');
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         return snap.data();

@@ -66,6 +66,37 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
       })
     : products;
 
+  // 🚀 เพิ่ม Fallback Search ถ้าระบุ SKU ตรงๆ แล้วหาในแคชไม่เจอ
+  const [fallbackProduct, setFallbackProduct] = useState(null);
+
+  useEffect(() => {
+    const fetchFallback = async () => {
+      if (searchTerm.trim() && !isFetchingAll) {
+        const term = searchTerm.trim().toLowerCase();
+        const foundInCache = sourceProducts.some(p => p.sku.toLowerCase() === term || p.sku.toLowerCase().includes(term));
+        if (!foundInCache) {
+          try {
+            // ดึงจาก inventoryQueryService (ต้อง import ก่อน)
+            const { inventoryQueryService } = await import('../../../firebase/inventory/inventoryQueryService');
+            const fbMatch = await inventoryQueryService.getProductBySku(searchTerm.trim().toUpperCase());
+            if (fbMatch) {
+              setFallbackProduct(fbMatch);
+            } else {
+              setFallbackProduct(null);
+            }
+          } catch (e) {
+            setFallbackProduct(null);
+          }
+        } else {
+          setFallbackProduct(null);
+        }
+      } else {
+        setFallbackProduct(null);
+      }
+    };
+    fetchFallback();
+  }, [searchTerm, sourceProducts, isFetchingAll]);
+
   let processedProducts = sourceProducts.filter(p => {
     const term = searchTerm.toLowerCase();
     const matchesSearch = p.sku.toLowerCase().includes(term) || 
@@ -74,6 +105,10 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
     const matchesCategory = filterCategory === 'All' || p.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
+
+  if (fallbackProduct && !processedProducts.some(p => p.sku === fallbackProduct.sku)) {
+    processedProducts = [fallbackProduct, ...processedProducts];
+  }
 
   // 🚀 เพิ่มระบบจัดเรียง (Sorting)
   if (sortConfig?.key) {

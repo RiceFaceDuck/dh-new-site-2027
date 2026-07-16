@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 
@@ -7,6 +7,8 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 export default function useSystemHealth() {
   const [healthStatus, setHealthStatus] = useState('healthy'); 
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+  const isCheckingRef = import('react').then ? null : null; // hack to avoid unused import, let's just use regular ref.
+  const checkingRef = React.useRef(false);
   const [healthLogs, setHealthLogs] = useState([]);
 
   useEffect(() => {
@@ -50,8 +52,8 @@ export default function useSystemHealth() {
 
   // ฟังก์ชันตรวจสอบสถานะระบบ (Diagnostics)
   const checkHealth = useCallback(async () => {
-    if (isCheckingHealth) return;
-    
+    if (checkingRef.current) return;
+    checkingRef.current = true;
     setIsCheckingHealth(true);
     addLog("Initiating system diagnostics...", "info");
 
@@ -69,9 +71,10 @@ export default function useSystemHealth() {
       setHealthStatus('critical');
       addLog(`ERR: Failed to connect to core services.`, "error");
     } finally {
+      checkingRef.current = false;
       setIsCheckingHealth(false);
     }
-  }, [addLog, isCheckingHealth]);
+  }, [addLog]);
 
   return {
     healthStatus,

@@ -76,7 +76,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
             {/* Avatar Icon */}
             <div className="w-20 h-20 rounded-2xl bg-slate-800/80 border border-slate-700/50 p-1 flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-105 backdrop-blur-xs">
                 {user?.photoURL ? (
-                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover rounded-xl"  loading="lazy" />
+                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-contain rounded-xl"  loading="lazy" />
                 ) : (
                   <Store size={36} className="text-indigo-400" />
                 )}

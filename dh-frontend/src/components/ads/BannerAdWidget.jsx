@@ -155,11 +155,11 @@ const BannerAdWidget = () => {
           className={`relative w-full h-full flex-1 cursor-pointer overflow-hidden ${aspectClass}`}
           onClick={handleBannerClick}
         >
-          {/* บังคับ absolute inset-0 และ object-cover เพื่อให้รูปภาพไม่เพี้ยนเวลา Grid ยืด */}
+          {/* บังคับ absolute inset-0 และ object-contain เพื่อให้รูปภาพไม่เพี้ยนเวลา Grid ยืด */}
           <LazyImage 
             src={currentBanner.imageUrl} 
             alt={currentBanner.title || "Advertisement"} 
-            className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]"
+            className="absolute inset-0 w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]"
           />
           
           {/* 🌌 Overlay อัจฉริยะ */}

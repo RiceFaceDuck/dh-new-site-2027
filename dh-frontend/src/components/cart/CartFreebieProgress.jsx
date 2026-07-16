@@ -170,7 +170,7 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
 
               {/* Product Image Thumbnail */}
               <div className={`w-14 h-14 md:w-16 md:h-16 bg-white rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1.5 relative z-10 shadow-md ${isUnavailable ? 'opacity-70 grayscale' : ''}`}>
-                <img 
+                <img loading="lazy" 
                   src={freebieProduct?.imageUrl || '/logo.png'} 
                   alt={freebieProduct?.name || currentFreebie.itemName} 
                   className={`w-full h-full object-contain transition-transform duration-500 ${isUnavailable ? '' : 'group-hover:scale-110'}`}

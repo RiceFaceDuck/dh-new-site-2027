@@ -5,6 +5,7 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getUserTier } from './creditFormatService';
 
 export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null) => {
+  try {
     if (!uid) throw new Error("UID Missing");
     const safeAmount = Math.round(Number(amount) * 100) / 100;
     if (safeAmount <= 0) throw new Error("จำนวนเครดิตไม่ถูกต้อง");
@@ -71,6 +72,10 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     });
 
     return { success: true, transactionId: txRef.id, newBalance: newWalletBalance };
+  } catch (error) {
+    console.error("🔥 Error in adjustUserCreditWithTransaction:", error);
+    throw error;
+  }
 };
 
 export const getCreditSettings = async () => {

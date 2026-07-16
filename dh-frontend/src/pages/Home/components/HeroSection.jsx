@@ -55,7 +55,7 @@ const HeroSection = () => {
             alt="Electronic Repairs" 
             loading="eager"
             fetchPriority="high"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
           {/* Dynamic Gradient overlay */}
           <div 

@@ -85,5 +85,29 @@ export const storefrontSettingsService = {
       }
       return DEFAULT_HERO_CONFIG;
     }
+  },
+
+  getActiveFreebies: async () => {
+    try {
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("🔥 Error fetching active freebies:", error);
+      return [];
+    }
+  },
+
+  getActiveShippingRules: async () => {
+    try {
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("🔥 Error fetching active shipping rules:", error);
+      return [];
+    }
   }
 };

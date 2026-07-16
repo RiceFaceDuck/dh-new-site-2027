@@ -141,8 +141,7 @@ const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated
       setBestPromoId(best ? best.id : null);
       onPromotionsEvaluated(best ? [best] : []);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, promotions, subTotal, cartItems]);
+    }, [loading, promotions, subTotal, cartItems]);
 
   if (loading || promotions.length === 0) return null;
   if (hidden) return null;

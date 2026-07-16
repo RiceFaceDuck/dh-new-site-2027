@@ -25,7 +25,7 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {partner.galleryImages.map((img, idx) => (
                   <div key={idx} className="rounded-xl overflow-hidden aspect-square shadow-xs border border-slate-100">
-                    <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500 cursor-pointer" onClick={() => window.open(img, '_blank')}  loading="lazy" />
+                    <img loading="lazy" src={img} alt={`Gallery ${idx}`} className="w-full h-full object-contain hover:scale-110 transition-transform duration-500 cursor-pointer" onClick={() => window.open(img, '_blank')} />
                   </div>
                 ))}
               </div>

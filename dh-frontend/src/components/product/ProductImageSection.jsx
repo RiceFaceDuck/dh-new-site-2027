@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Package } from 'lucide-react';
 import LazyImage from '../common/LazyImage';
 import { getRenderableImageUrl } from '../../utils/imageUtils';
@@ -135,10 +135,10 @@ export default function ProductImageSection({ product, imageUrl: defaultImageUrl
                 currentImage === img ? 'border-blue-500 shadow-xs' : 'border-slate-200 hover:border-slate-300'
               }`}
             >
-              <img 
+              <img loading="lazy" 
                 src={getRenderableImageUrl(img)} 
                 alt={`${name} thumbnail ${idx}`} 
-                className="w-full h-full object-cover rounded-sm shadow-xs opacity-90 hover:opacity-100"
+                className="w-full h-full object-contain rounded-sm shadow-xs opacity-90 hover:opacity-100"
                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Err'; }} 
                loading="lazy" />
             </button>

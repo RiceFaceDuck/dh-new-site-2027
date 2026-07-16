@@ -233,7 +233,7 @@ const TabAdManager = ({ user }) => {
         
         // 🚀 เก็บ History Log ว่ามีการลบ SKU โฆษณา
         const { serverTimestamp } = await import('firebase/firestore');
-        batch.set(doc(db, 'system_logs', `delete_ad_${adId}_${Date.now()}`), {
+        batch.set(doc(db, getCollectionPath('system_logs'), `delete_ad_${adId}_${Date.now()}`), {
           module: 'Marketing',
           action: 'DeleteAd',
           targetId: adId,

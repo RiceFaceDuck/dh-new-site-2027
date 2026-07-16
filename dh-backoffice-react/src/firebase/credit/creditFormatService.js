@@ -11,11 +11,32 @@ export const formatCredit = (points = 0) => {
   return new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 }).format(points);
 };
 
-export const calculateEarnedPoints = (amount, config, userTotalAccumulatedPoints = 0) => {
+export const calculateEarnedPoints = (amount, config, items = [], userTotalAccumulatedPoints = 0) => {
   if (!amount || amount <= 0 || !config) return 0;
-  const earningRate = config.earningRate || 100;
+  const earningRate = config.earningRate || config.pointsEarningRate || 100;
   let basePoints = Math.floor(amount / earningRate);
   const userTier = getUserTier(userTotalAccumulatedPoints);
-  let multiplier = config.tierMultiplier || userTier.multiplier; 
-  return Math.floor(basePoints * multiplier);
+  let multiplier = config.tierMultiplier || userTier.multiplier;
+  let totalPoints = Math.floor(basePoints * multiplier);
+
+  if (config.skuBonusRules && items.length > 0) {
+    const rules = config.skuBonusRules.split('\n').filter(Boolean);
+    const skuMap = {};
+    rules.forEach(rule => {
+      const [sku, pts] = rule.split(':');
+      if (sku && pts) {
+        skuMap[sku.trim().toUpperCase()] = parseInt(pts.trim(), 10);
+      }
+    });
+
+    items.forEach(item => {
+      const itemSku = (item.sku || item.productSku || '').toUpperCase();
+      if (itemSku && skuMap[itemSku]) {
+        const qty = item.quantity || item.qty || 1;
+        totalPoints += skuMap[itemSku] * qty;
+      }
+    });
+  }
+
+  return totalPoints;
 };

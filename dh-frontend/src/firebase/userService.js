@@ -243,10 +243,12 @@ export const userService = {
       }); // เก็บ Log เล็กน้อย
       
       // ลบข้อมูลหลัก
-      await import('firebase/firestore').then(({ deleteDoc }) => deleteDoc(userRef));
+      const { deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(userRef);
       
       // 2. ลบออกจาก Firebase Auth
-      await import('firebase/auth').then(({ deleteUser }) => deleteUser(user));
+      const { deleteUser } = await import('firebase/auth');
+      await deleteUser(user);
       
       clearUserCache(uid);
       console.log('✅ [userService] Account permanently deleted.');

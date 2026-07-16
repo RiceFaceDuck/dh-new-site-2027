@@ -17,6 +17,18 @@ export const shippingService = {
     }
   },
 
+  async getActiveShippingRules() {
+    try {
+      const { query, where } = await import('firebase/firestore');
+      const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("🔥 Error loading active shipping rules:", error);
+      throw error;
+    }
+  },
+
   async addShippingRule(ruleData, uid) {
     try {
       const docRef = await addDoc(collection(db, getCollectionPath('shipping_rules')), {
@@ -50,7 +62,7 @@ export const shippingService = {
 
   async toggleShippingRuleActive(ruleId, currentStatus, ruleDesc, uid) {
     try {
-      await updateDoc(doc(db, 'shipping_rules', ruleId), { isActive: !currentStatus });
+      await updateDoc(doc(db, getCollectionPath('shipping_rules'), ruleId), { isActive: !currentStatus });
       
       if (uid) {
         const actionText = !currentStatus ? "เปิดใช้งาน" : "ปิดใช้งาน";
@@ -71,7 +83,7 @@ export const shippingService = {
 
   async deleteShippingRule(ruleId, ruleDesc, uid) {
     try {
-      await updateDoc(doc(db, 'shipping_rules', ruleId), { isActive: false, deletedAt: serverTimestamp() });
+      await updateDoc(doc(db, getCollectionPath('shipping_rules'), ruleId), { isActive: false, deletedAt: serverTimestamp() });
       
       if (uid) {
         await historyService.addLog(

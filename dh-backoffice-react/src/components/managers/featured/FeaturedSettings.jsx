@@ -1,5 +1,5 @@
 import { toast } from 'react-hot-toast';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, RefreshCw, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { featuredConfigService } from '../../../firebase/featured/featuredConfigService';
 

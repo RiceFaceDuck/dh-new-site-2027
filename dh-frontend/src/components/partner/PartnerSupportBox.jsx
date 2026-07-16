@@ -120,7 +120,7 @@ const PartnerSupportBox = () => {
         <LazyImage 
           src={partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage || "/logo.png"} 
           alt="Shop Profile" 
-          className={`absolute inset-0 w-full h-full ${partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage ? 'object-cover' : 'object-contain p-4 opacity-30'} transition-transform duration-700 group-hover:scale-105`}
+          className={`absolute inset-0 w-full h-full ${partner.storeImage || partner.fallbackAdImage || partner.storeLogoUrl || partner.profileImage ? 'object-contain' : 'object-contain p-4 opacity-30'} transition-transform duration-700 group-hover:scale-105`}
           placeholderClassName="absolute inset-0 w-full h-full bg-slate-200 animate-pulse"
          />
         <div className="absolute inset-0 bg-linear-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>

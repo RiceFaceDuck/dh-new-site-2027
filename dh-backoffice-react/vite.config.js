@@ -7,6 +7,10 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => ({
+  server: {
+    port: 3168,
+    strictPort: true
+  },
   plugins: [
     tailwindcss(), 
     react(), 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { calculateVat } from 'dh-shared';
 const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
 
@@ -10,7 +10,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     const shippingFee = activeTab ? sanitizeNum(activeTab.shippingFee) : 0;
     const otherFeeAmount = activeTab ? sanitizeNum(activeTab.otherFeeAmount) : 0;
 
-    const getEligibleTotals = (skus, types) => {
+    const getEligibleTotals = useCallback((skus, types) => {
         const hasSkus = skus && skus.length > 0;
         const hasTypes = types && types.length > 0;
 
@@ -32,7 +32,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
             }
         });
         return { subtotal: eligibleSubtotal, qty: eligibleQty };
-    };
+    }, [itemSubTotal, itemTotalQty, activeTab]);
 
     const eligibleFreebies = useMemo(() => {
         return activeFreebies.filter(f => {
@@ -46,7 +46,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
             if (f.customerType && f.customerType !== 'ALL' && f.customerType !== currentCustomerType) return false;
             return true;
         });
-    }, [activeFreebies, activeTab, currentCustomerType]);
+    }, [activeFreebies, activeTab, currentCustomerType, getEligibleTotals]);
 
     const validPromotions = useMemo(() => {
         return activePromotions.filter(p => {
@@ -59,7 +59,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
             if (p.customerType && p.customerType !== 'ALL' && p.customerType !== currentCustomerType) return false;
             return true;
         });
-    }, [activePromotions, activeTab, currentCustomerType]);
+    }, [activePromotions, activeTab, currentCustomerType, getEligibleTotals]);
 
     let autoPromoDiscount = 0;
     let autoPromoDetails = null;

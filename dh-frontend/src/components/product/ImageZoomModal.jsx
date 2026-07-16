@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { applyWatermarkToImage, fetchImageAsBlobUrl } from '../../utils/watermarkUtils';
 import { getRenderableImageUrl } from '../../utils/imageUtils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ImageZoomModal({ 
   images, 
@@ -95,8 +96,6 @@ export default function ImageZoomModal({
     };
   }, [currentIndex, images, isOpen]);
 
-  if (!isOpen) return null;
-
   // Touch Swipe Logic
   const minSwipeDistance = 50;
 
@@ -117,10 +116,15 @@ export default function ImageZoomModal({
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
-    >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={onClose}
+        >
       {/* Close Button */}
       <div className="absolute top-4 right-4 z-[110] flex items-center gap-3">
         {/* Download Button (Moved to top right next to close button) */}
@@ -162,7 +166,7 @@ export default function ImageZoomModal({
           <div className="relative w-full h-full flex items-center justify-center">
             {watermarkedImage && (
               <div className="relative max-w-full max-h-full flex items-center justify-center group">
-                <img 
+                <img loading="lazy" 
                   src={watermarkedImage} 
                   alt={`${productName} - Zoomed`} 
                   className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm transition-transform duration-300"
@@ -233,16 +237,18 @@ export default function ImageZoomModal({
                   currentIndex === idx ? 'border-brand scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-50 hover:opacity-100'
                 }`}
               >
-                <img 
+                <img loading="lazy" 
                   src={getRenderableImageUrl(img)} 
                   alt="thumbnail" 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </button>
             ))}
           </div>
         </div>
       )}
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

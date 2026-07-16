@@ -79,12 +79,12 @@ const BusinessCardAdWidget = ({ ad }) => {
 
           {/* 🏙️ Cover Image & Partner Info */}
           <div className="w-full h-44 sm:h-52 bg-slate-200 relative shrink-0">
-            <LazyImage src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+            <LazyImage src={ad.imageUrl} alt={ad.title} className="w-full h-full object-contain" />
             <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
             
             <div className="absolute bottom-4 left-4 right-4 flex items-end gap-4">
                <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg shrink-0 border border-white/20">
-                 <LazyImage src={ad.imageUrl} alt="Partner" className="w-full h-full object-cover rounded-xl" />
+                 <LazyImage src={ad.imageUrl} alt="Partner" className="w-full h-full object-contain rounded-xl" />
                </div>
                <div className="pb-1 text-white flex-1">
                  <div className="flex items-center gap-1.5 mb-1.5">
@@ -165,7 +165,7 @@ const BusinessCardAdWidget = ({ ad }) => {
           <LazyImage 
             src={ad.imageUrl} 
             alt={ad.title || 'Advertisement'} 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-linear-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>

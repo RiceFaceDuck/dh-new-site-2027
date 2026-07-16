@@ -65,6 +65,17 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       }
     }
 
+    // [SECURITY] Read Freebies to validate in real-time
+    const freebieSnaps = [];
+    if (checkoutState?.qualifiedFreebies?.length > 0) {
+      for (const freebie of checkoutState.qualifiedFreebies) {
+        if (freebie.id) {
+          const freebieRef = doc(db, getCollectionPath('freebies'), freebie.id);
+          freebieSnaps.push({ snap: await transaction.get(freebieRef), name: freebie.name || 'ของแถม', requestedQty: freebie.qty || 1 });
+        }
+      }
+    }
+
     // 2. Validations
     const useWallet = Number(checkoutState?.useWallet || 0);
     if (useWallet < 0) {
@@ -87,6 +98,18 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       const now = new Date();
       if (promoData.startDate && new Date(promoData.startDate) > now) throw new Error(`โปรโมชัน ${name} ยังไม่เริ่ม`);
       if (promoData.endDate && new Date(promoData.endDate) < now) throw new Error(`โปรโมชัน ${name} หมดอายุแล้ว`);
+    });
+
+    // Validate Freebies
+    freebieSnaps.forEach(({ snap, name, requestedQty }) => {
+      if (!snap.exists()) throw new Error(`ของแถม ${name} ถูกลบออกจากระบบแล้ว`);
+      const data = snap.data();
+      if (data.deletedAt || !data.isActive) throw new Error(`ของแถม ${name} ถูกปิดใช้งานแล้ว`);
+      if (data.quotaLimit && data.quotaLimit > 0) {
+        if ((data.quotaUsed || 0) + requestedQty > data.quotaLimit) {
+          throw new Error(`ของแถม ${name} สิทธิ์เต็มแล้ว`);
+        }
+      }
     });
 
     // [SECURITY] Calculate exact net total using dh-shared PriceEngine
@@ -235,7 +258,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     });
 
     // ✅ [CONCURRENCY FIX] Lock Promo/Freebie Quota immediately upon checkout to prevent overselling
-    (appliedPromos || []).forEach(p => p.id && transaction.update(doc(db, getCollectionPath('promotions'), p.id), { quotaUsed: increment(1) }));
+    (checkoutState?.appliedPromotions || []).forEach(p => p.id && transaction.update(doc(db, getCollectionPath('promotions'), p.id), { quotaUsed: increment(1) }));
     (checkoutState?.qualifiedFreebies || []).forEach(f => f.id && transaction.update(doc(db, getCollectionPath('freebies'), f.id), { quotaUsed: increment(f.qty || 1) }));
 
 

@@ -79,7 +79,7 @@ const ServiceActionModal = ({ serviceModal, setServiceModal }) => {
               <div className="flex gap-3 mt-4 overflow-x-auto pb-2 custom-scrollbar">
                 {serviceForm.images.map((img, i) => (
                   <div key={i} className="relative w-20 h-20 shrink-0 group">
-                    <img src={img} className="w-full h-full object-cover rounded-xl border border-gray-200 shadow-xs"  loading="lazy" />
+                    <img src={img} className="w-full h-full object-contain rounded-xl border border-gray-200 shadow-xs"  loading="lazy" />
                     <button type="button" onClick={() => setServiceForm(prev => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }))} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 shadow-md transition-all">
                       <X size={12} strokeWidth={3}/>
                     </button>

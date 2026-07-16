@@ -140,9 +140,9 @@ export default function ProductImageUpload({
         )}
       </div>
       
-      {form.images.length > 0 && (
+      {(form.images || []).length > 0 && (
         <div className="grid grid-cols-5 gap-2">
-          {form.images.map((imgUrl, idx) => {
+          {(form.images || []).map((imgUrl, idx) => {
             const isHidden = form.hiddenImages?.includes(imgUrl);
             return (
               <div key={idx} 

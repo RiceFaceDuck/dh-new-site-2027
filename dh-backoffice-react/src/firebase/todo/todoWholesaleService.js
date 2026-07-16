@@ -7,7 +7,7 @@ export const todoWholesaleService = {
   // 📥 4. อนุมัติราคาส่ง 
   approveWholesaleRequest: async (taskId, orderId, newTotals, newItems, currentUser) => {
     try {
-      return await runTransaction(db, async (transaction) => {
+      const result = await runTransaction(db, async (transaction) => {
         const taskRef = doc(db, getCollectionPath('todos'), taskId);
         const orderRef = doc(db, getCollectionPath('orders'), orderId);
         const logRef = doc(collection(db, getCollectionPath('system_logs')));
@@ -51,20 +51,25 @@ export const todoWholesaleService = {
           createdAt: serverTimestamp()
         });
 
-        if (userId) {
-            gasHistoryService.log({
-                module: 'Customer History',
-                action: 'WHOLESALE_APPROVED',
-                target: { id: orderId },
-                details: { 
-                  legacy_details: `คำขอราคาส่งได้รับการอนุมัติ! ออเดอร์ #${orderId.slice(-6)} อัปเดตราคาใหม่แล้ว`,
-                  amount: newTotals.netTotal
-                },
-                actorOverride: { uid: userId, name: 'System (For Customer)', email: 'N/A' }
-            });
-        }
-        return { success: true };
+        // ❌ [MOVED] gasHistoryService.log is moved outside the transaction to prevent duplicate logs on retries.
+        return { success: true, userIdForLog: userId };
       });
+
+      // --- Post-Transaction execution ---
+      if (result && result.success && result.userIdForLog) {
+          gasHistoryService.log({
+              module: 'Customer History',
+              action: 'WHOLESALE_APPROVED',
+              target: { id: orderId },
+              details: { 
+                legacy_details: `คำขอราคาส่งได้รับการอนุมัติ! ออเดอร์ #${orderId.slice(-6)} อัปเดตราคาใหม่แล้ว`,
+                amount: newTotals.netTotal
+              },
+              actorOverride: { uid: result.userIdForLog, name: 'System (For Customer)', email: 'N/A' }
+          });
+      }
+      
+      return result;
     } catch (error) {
       console.error("🔥 approveWholesale Error:", error);
       throw error;

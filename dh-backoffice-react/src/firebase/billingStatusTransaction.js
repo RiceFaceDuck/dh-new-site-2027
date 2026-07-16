@@ -39,7 +39,6 @@ export const billingStatusTransaction = {
           let userSnap = null;
           let settingsRef = null;
           let settingsSnap = null;
-          let inventorySettingsRef = null;
           let inventorySettingsSnap = null;
           
           if (isCancelling || isConfirmingPayment) {
@@ -89,11 +88,18 @@ export const billingStatusTransaction = {
           const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
           const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
           const amountForPoints = totalSaleAmount - walletUsed;
-          let earnedPoints = 0;
-          if (amountForPoints > 0) earnedPoints = Math.floor(amountForPoints / 100);
+          
+          let earnedPoints = Number(orderData.pendingCredits || 0);
+          if (earnedPoints <= 0 && amountForPoints > 0) {
+              earnedPoints = Math.floor(amountForPoints / 100); // เช็คขั้นต่ำเพื่อเปิดทางไปสู่การ Preload settings
+          }
 
-          let clawbackPoints = Number(orderData.earnedPoints || 0); 
-          if (orderData.pendingCredits && orderData.pendingCredits > 0 && normalizedCurrentStatus !== 'received') clawbackPoints = 0; 
+          let clawbackPoints = 0; 
+          if (orderData.pointsAwarded) {
+              clawbackPoints = Number(orderData.pendingCredits || orderData.earnedPoints || 0);
+          } else if (orderData.pendingCredits && orderData.pendingCredits > 0 && normalizedCurrentStatus !== 'received') {
+              clawbackPoints = 0; 
+          }
           
           const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
           if (customerUid && customerUid !== 'WALK-IN') {
@@ -122,8 +128,7 @@ export const billingStatusTransaction = {
           }
 
           if (isConfirmingPayment) {
-              inventorySettingsRef = doc(db, getCollectionPath('settings'), 'inventory');
-              inventorySettingsSnap = await transaction.get(inventorySettingsRef);
+              inventorySettingsSnap = await transaction.get(doc(db, getCollectionPath('settings'), 'inventory'));
           }
 
           let updates = { 
@@ -135,10 +140,9 @@ export const billingStatusTransaction = {
           const needsNewOrderId = !currentOrderId.startsWith('DH-');
 
           if (needsNewOrderId && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed')) {
+             const terminalId = 'O1'; // Default fallback 
              const yearStr = new Date().getFullYear().toString();
-             const { getRandomShard } = await import('dh-shared/src/utils/counterUtils');
-             const shardId = getRandomShard(5);
-             const counterRef = doc(db, 'counters', `receipt_sequence_${shardId}`);
+             const counterRef = doc(db, getCollectionPath('counters'), `receipt_sequence_global`);
              const counterSnap = await transaction.get(counterRef);
              let currentSeq = 1;
              if (counterSnap.exists()) currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
@@ -146,7 +150,7 @@ export const billingStatusTransaction = {
              transaction.set(counterRef, { [yearStr]: currentSeq, updatedAt: serverTimestamp() }, { merge: true });
              const seqStr = String(currentSeq);
              const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-             updates.orderId = `DH-${shardId}-${yearStr.slice(2)}-${paddedSeq}`;
+             updates.orderId = `DH-${yearStr.slice(2)}-${paddedSeq}`;
           }
 
           if (isConfirmingPayment) {
@@ -207,7 +211,7 @@ export const billingStatusTransaction = {
         try {
           const { collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
           const todosRef = collection(db, getCollectionPath('todos'));
-          const q = query(todosRef, where('referenceId', '==', currentOrderId || orderId), where('status', '==', 'pending_manager'));
+          const q = query(todosRef, where('referenceId', '==', orderId), where('status', '==', 'pending_manager'));
           const querySnapshot = await getDocs(q);
           
           if (!querySnapshot.empty) {
@@ -220,7 +224,7 @@ export const billingStatusTransaction = {
               });
             });
             await batch.commit();
-            console.log(`Auto-cancelled ${querySnapshot.size} todos for order ${currentOrderId || orderId}`);
+            console.log(`Auto-cancelled ${querySnapshot.size} todos for order ${orderId}`);
           }
         } catch (todoErr) {
           console.error("🔥 Error auto-cancelling todos:", todoErr);

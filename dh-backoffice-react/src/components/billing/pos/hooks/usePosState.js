@@ -9,13 +9,17 @@ import { usePosPayment } from './usePosPayment';
 import { auth } from '../../../../firebase/config';
 
 import { safeJsonParse } from 'dh-shared';
-const createNewTab = () => ({
-    id: Date.now().toString(), orderId: null, docId: null, items: [], customer: null, priceMode: 'wholesale',
-    walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
+const createNewTab = () => {
+    const yy = new Date().getFullYear().toString().slice(2);
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    return {
+        id: Date.now().toString(), orderId: `DH-TEMP-${randomSuffix}`, docId: null, items: [], customer: null, priceMode: 'wholesale',
+        walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
     autoShippingEnabled: true, overallDiscount: 0, promoDiscount: 0, autoPromoEnabled: true, otherFeeName: '', otherFeeAmount: 0, 
     paymentMethod: 'Transfer', bankAccount: 'KBANK', cashReceived: '', slipImage: null, billNote: '', receiptFormat: 'short',
     appliedPromoId: null, appliedPromoDetails: null, walletUsed: 0, useWallet: false
-});
+    };
+};
 
 const loadSavedState = () => {
     try {

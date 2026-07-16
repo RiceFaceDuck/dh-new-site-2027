@@ -28,7 +28,7 @@ export function usePricingSettings() {
     fetchCategories();
   }, []);
 
-  const fetchCategories = async () => {
+  async function fetchCategories() {
     try {
       const data = await categoryService.getAllCategories();
       const uniqueData = Array.from(new Map(data.map(item => [
@@ -39,7 +39,7 @@ export function usePricingSettings() {
     } catch (err) {
       console.error('Error fetching categories:', err);
     }
-  };
+  }
 
   useEffect(() => {
     if (config && originalConfig) {
@@ -48,15 +48,15 @@ export function usePricingSettings() {
     }
   }, [config, originalConfig]);
 
-  const fetchConfig = async () => {
+  async function fetchConfig() {
     const data = await pricingService.getPricingConfig();
     data.rules.sort((a, b) => a.category.localeCompare(b.category) || a.threshold - b.threshold);
     setConfig(data);
     setOriginalConfig(JSON.parse(JSON.stringify(data)));
     setLoading(false);
-  };
+  }
 
-  const fetchPricingLogs = async () => {
+  async function fetchPricingLogs() {
     setLoadingLogs(true);
     try {
       const q = query(collection(db, getCollectionPath('history_logs')), orderBy('timestamp', 'desc'), limit(100));
@@ -73,7 +73,7 @@ export function usePricingSettings() {
     } finally {
       setLoadingLogs(false);
     }
-  };
+  }
 
   const handleSave = async () => {
     if (!isDirty) return;

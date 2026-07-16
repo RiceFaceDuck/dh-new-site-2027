@@ -1,7 +1,7 @@
  
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { VirtuosoGrid } from 'react-virtuoso';
 import { ChevronRight, Cpu, ShieldAlert } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { useCartDispatch } from '../context/CartProvider';
 import { useToast } from '../context/ToastContext';
@@ -31,7 +31,6 @@ const getVal = (obj, possibleKeys) => {
 };
 
 const ProductList = ({ products, loading, error, title = "", showTitle = false }) => {
-  const navigate = useNavigate();
   const { addToCart } = useCartDispatch();
   const { showToast } = useToast();
   const [addingState, setAddingState] = useState({}); 
@@ -43,7 +42,38 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
   const isLoading = loading || loadingAds;
   
   // 🧠 3. ป้องกันกรณีโฆษณาโหลดไม่ขึ้น ให้มี fallback ไปแสดงสินค้าเพียวๆ ได้
-  const displayProducts = productsWithAds && productsWithAds.length > 0 ? productsWithAds : (products || []);
+  const displayProducts = useMemo(() => {
+    return productsWithAds && productsWithAds.length > 0 ? productsWithAds : (products || []);
+  }, [productsWithAds, products]);
+
+  // ⚡ ประหยัด Performance: แปลงข้อมูลทั้งหมดล่วงหน้าผ่าน useMemo แทนการเรียก getVal นับร้อยครั้งใน Render
+  const mappedDisplayProducts = useMemo(() => {
+    return displayProducts.map((item) => {
+      if (item.isSponsoredAd) return item; // ถ้าเป็นโฆษณา ไม่ต้องทำอะไร
+      
+      const product = item;
+      const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
+      let imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
+      imageUrl = getRenderableImageUrl(imageUrl);
+      
+      const rawPrice = getVal(product, ['retailprice', 'regularprice', 'ราคาปลีก', 'price', 'saleprice', 'ราคา', 'sellprice']);
+      const price = (rawPrice !== null && rawPrice !== undefined) ? Number(String(rawPrice).replace(/[^0-9.-]+/g,"")) : 0;
+      
+      const rawStock = getVal(product, ['stock', 'quantity', 'qty', 'amount', 'คงเหลือ', 'สต๊อก', 'inventory', 'instock', 'available', 'จำนวน', 'จำนวนสินค้า', 'stockquantity']);
+      let stock = 0;
+      if (typeof rawStock === 'object' && rawStock !== null) {
+        stock = rawStock.quantity || 0;
+      } else {
+        stock = (rawStock !== null && rawStock !== undefined) ? Number(String(rawStock).replace(/[^0-9.-]+/g,"")) : 0;
+      }
+      
+      const name = getVal(product, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
+      const brand = getVal(product, ['brand', 'manufacturer', 'ยี่ห้อ', 'category']) || 'OEM';
+      const sku = getVal(product, ['sku', 'code', 'productcode', 'รหัสสินค้า', 'barcode']) || product.id?.substring(0, 8);
+      
+      return { ...product, id: product.id, name, price, stock, imageUrl, brand, sku };
+    });
+  }, [displayProducts]);
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation(); 
@@ -111,64 +141,39 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     );
   }
 
-  // ⚡ ประหยัด Performance: แปลงข้อมูลทั้งหมดล่วงหน้าผ่าน useMemo แทนการเรียก getVal นับร้อยครั้งใน Render
-  const mappedDisplayProducts = useMemo(() => {
-    return displayProducts.map((item, index) => {
-      if (item.isSponsoredAd) return item; // ถ้าเป็นโฆษณา ไม่ต้องทำอะไร
-      
-      const product = item;
-      const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
-      let imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
-      imageUrl = getRenderableImageUrl(imageUrl);
-      
-      const rawPrice = getVal(product, ['retailprice', 'regularprice', 'ราคาปลีก', 'price', 'saleprice', 'ราคา', 'sellprice']);
-      const price = (rawPrice !== null && rawPrice !== undefined) ? Number(String(rawPrice).replace(/[^0-9.-]+/g,"")) : 0;
-      
-      const rawStock = getVal(product, ['stock', 'quantity', 'qty', 'amount', 'คงเหลือ', 'สต๊อก', 'inventory', 'instock', 'available', 'จำนวน', 'จำนวนสินค้า', 'stockquantity']);
-      let stock = 0;
-      if (typeof rawStock === 'object' && rawStock !== null) {
-        stock = rawStock.quantity || 0;
-      } else {
-        stock = (rawStock !== null && rawStock !== undefined) ? Number(String(rawStock).replace(/[^0-9.-]+/g,"")) : 0;
-      }
-      
-      const name = getVal(product, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
-      const brand = getVal(product, ['brand', 'manufacturer', 'ยี่ห้อ', 'category']) || 'OEM';
-      const sku = getVal(product, ['sku', 'code', 'productcode', 'รหัสสินค้า', 'barcode']) || product.id?.substring(0, 8);
-      
-      return { ...product, id: product.id, name, price, stock, imageUrl, brand, sku };
-    });
-  }, [displayProducts]);
-
-  // 🧠 Core Display Engine: ลูปจาก Array ที่ถูกเตรียมมาแล้ว
-  const renderMixedGrid = () => {
-    return mappedDisplayProducts.map((item, index) => {
-      // 🟢 ตรวจจับโฆษณา: หากเป็นโฆษณา ให้โยนเข้า Component ProductAdCard
-      if (item.isSponsoredAd) {
-        return (
-          <div key={`ad-inject-${item.id || index}-${index}`} className="col-span-1 h-full animate-in fade-in zoom-in duration-500">
-            <ProductAdCard ad={item} />
-          </div>
-        );
-      }
-
-      // 🔵 หากไม่ใช่โฆษณา ให้แสดงเป็นสินค้าปกติ
-      const mappedProduct = item;
-      const { id, name, price, stock, imageUrl, brand, sku } = mappedProduct;
-      const hasStock = stock > 0;
 
 
-      return (
-        <div key={`product-${mappedProduct.id}-${index}`} className="col-span-1 h-full animate-in fade-in duration-300">
-          <ProductCard 
-            product={mappedProduct} 
-            hasStock={hasStock} 
-            addingState={addingState[mappedProduct.id]} 
-            onAddToCart={handleAddToCart} 
-          />
-        </div>
-      );
-    });
+  const gridComponents = useMemo(() => ({
+    List: React.forwardRef(({ style, children, ...props }, ref) => (
+      <div
+        ref={ref}
+        {...props}
+        style={{ ...style, width: '100%' }}
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 px-1"
+      >
+        {children}
+      </div>
+    )),
+    Item: ({ children, ...props }) => (
+      <div {...props} className="col-span-1 h-full animate-in fade-in duration-300">
+        {children}
+      </div>
+    )
+  }), []);
+
+  const renderItem = (index, item) => {
+    if (item.isSponsoredAd) {
+      return <ProductAdCard ad={item} />;
+    }
+    const hasStock = item.stock > 0;
+    return (
+      <ProductCard 
+        product={item} 
+        hasStock={hasStock} 
+        addingState={addingState[item.id]} 
+        onAddToCart={handleAddToCart} 
+      />
+    );
   };
 
   return (
@@ -196,9 +201,13 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No Products Found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 px-1">
-          {renderMixedGrid()}
-        </div>
+        <VirtuosoGrid
+          useWindowScroll
+          data={mappedDisplayProducts}
+          components={gridComponents}
+          itemContent={renderItem}
+          overscan={500}
+        />
       )}
     </div>
   );

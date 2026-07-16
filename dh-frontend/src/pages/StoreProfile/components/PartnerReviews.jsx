@@ -194,7 +194,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
       <div className="space-y-6">
         {reviews.map((review) => (
           <div key={review.id} className="group flex gap-4">
-            <img src={review.userPhoto} alt={review.userName} className="w-12 h-12 rounded-full border border-slate-200 shadow-xs object-cover"  loading="lazy" />
+            <img src={review.userPhoto} alt={review.userName} className="w-12 h-12 rounded-full border border-slate-200 shadow-xs object-contain"  loading="lazy" />
             <div className="flex-1">
               <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 relative">
                 

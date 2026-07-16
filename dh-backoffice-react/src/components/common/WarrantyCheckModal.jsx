@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, X, ShieldCheck, ShieldAlert, Loader2, Package, Calendar } from 'lucide-react';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../../firebase/config';
 import { warrantyService } from '../../firebase/warrantyService';
 import { differenceInDays } from 'date-fns';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function WarrantyCheckModal({ isOpen, onClose }) {
@@ -35,13 +32,12 @@ export default function WarrantyCheckModal({ isOpen, onClose }) {
     setResults(null);
 
     try {
-      const q = query(collection(db, getCollectionPath('orders')), where('orderId', '==', searchTerm.trim().toUpperCase()), limit(1));
-      const snap = await getDocs(q);
+      const { billingQueryService } = await import('../../firebase/billingQueryService');
+      const orderData = await billingQueryService.getOrderByOrderId(searchTerm);
 
-      if (snap.empty) {
+      if (!orderData) {
         setErrorMsg(`ไม่พบข้อมูลบิลรหัส: ${searchTerm}`);
       } else {
-        const orderData = snap.docs[0].data();
         setResults({ order: orderData, items: orderData.items || [] });
       }
     } catch (err) {

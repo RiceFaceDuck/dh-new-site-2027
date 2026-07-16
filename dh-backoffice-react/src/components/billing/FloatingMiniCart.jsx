@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ShoppingCart, X, ChevronRight, Store } from 'lucide-react';
 import { auth } from '../../firebase/config';
 import { safeJsonParse } from 'dh-shared';
@@ -74,7 +74,7 @@ export default function FloatingMiniCart() {
     setIsOpen(!isOpen);
   };
 
-  const loadDrafts = () => {
+  const loadDrafts = useCallback(() => {
     const uid = auth?.currentUser?.uid || 'guest';
     const saved = localStorage.getItem(`dh_pos_autosave_${uid}`);
     if (saved) {
@@ -95,13 +95,13 @@ export default function FloatingMiniCart() {
         }
       }
     }
-  };
+  }, [activeTabId]);
 
   useEffect(() => {
     loadDrafts();
     const interval = setInterval(loadDrafts, 2000); // Poll for updates from other tabs
     return () => clearInterval(interval);
-  }, []);
+  }, [loadDrafts]);
 
   // Hide the widget if we are already on the billing page (POS active)
   if (location.pathname.includes('/billing')) {

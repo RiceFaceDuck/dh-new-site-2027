@@ -1,6 +1,7 @@
 import { db, auth } from './config';
 import { doc, getDoc } from 'firebase/firestore';
 import { historyService } from './historyService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 let cachedWebAppUrl = null;
 
@@ -12,7 +13,7 @@ const fetchFromGAS = async (action, data = {}) => {
   
   if (!url) {
     // ใช้ Web App URL ตัวเดียวกับที่แอดมินตั้งไว้ให้ระบบ Gmail (เพื่อให้แอดมินแก้ไขจุดเดียวจบ)
-    const docRef = doc(db, 'system_config', 'gmail_auth');
+    const docRef = doc(db, getCollectionPath('system_config'), 'gmail_auth');
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists() || !docSnap.data().web_app_url) {
       throw new Error("ระบบยังไม่ได้ตั้งค่า Google Web App URL (กรุณาไปที่หน้า Email Setup)");

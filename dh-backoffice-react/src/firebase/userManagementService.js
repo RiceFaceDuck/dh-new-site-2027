@@ -64,10 +64,14 @@ const runCascadeUserDeactivation = async (targetUid, actorUid) => {
 
         // 3. Pause active ads
         const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
-        for (const col of adCols) {
+        const adPromises = adCols.map(col => {
             const adsRef = collection(db, getCollectionPath(col));
             const adsQ = query(adsRef, where('ownerId', '==', targetUid), limit(300));
-            const adsSnap = await getDocs(adsQ);
+            return getDocs(adsQ);
+        });
+        
+        const adSnapshots = await Promise.all(adPromises);
+        adSnapshots.forEach(adsSnap => {
             adsSnap.forEach(adDoc => {
                 batch.update(adDoc.ref, {
                     status: 'paused',
@@ -77,7 +81,7 @@ const runCascadeUserDeactivation = async (targetUid, actorUid) => {
                 });
                 hasUpdates = true;
             });
-        }
+        });
 
         // 4. Cancel active/pending todos (as creator, assignee, or customer)
         const todosRef = collection(db, getCollectionPath('todos'));

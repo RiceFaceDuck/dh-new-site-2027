@@ -13,10 +13,12 @@ export const useWalletData = (user) => {
       setLoadingHistory(true);
       try {
         const creditData = await getCreditHistory(user.uid);
-        const creditLogs = Array.isArray(creditData) ? creditData : (creditData?.logs || []);
+        const creditLogs = (Array.isArray(creditData) ? creditData : (creditData?.logs || []))
+          .map(log => ({ ...log, source: 'credit' }));
 
         const walletData = await getWalletHistory(user.uid);
-        const walletLogs = Array.isArray(walletData) ? walletData : (walletData?.logs || []);
+        const walletLogs = (Array.isArray(walletData) ? walletData : (walletData?.logs || []))
+          .map(log => ({ ...log, source: 'wallet' }));
 
         if (isMounted) {
           const combinedLogs = [...creditLogs, ...walletLogs].sort((a, b) => {

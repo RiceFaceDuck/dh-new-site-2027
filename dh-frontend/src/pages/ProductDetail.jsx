@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useProductDetail } from './hooks/useProductDetail';
 import { calculateEarnedPoints } from '../firebase/creditService';
 import { ChevronLeft, ShieldAlert } from 'lucide-react';
@@ -18,7 +18,7 @@ import {
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const location = useLocation();
+  
   const navigate = useNavigate();
   
   const {

@@ -56,9 +56,9 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
               },
               timestamp: serverTimestamp()
             }).catch(err => console.error('Failed to log missing SKU', err));
-          });
-        });
-      });
+          }).catch(console.error);
+        }).catch(console.error);
+      }).catch(console.error);
     }
   }, [sku, realId, name, item]);
 
@@ -126,7 +126,7 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
     <div id={`cart-item-${realId}`} className={`rounded-2xl shadow-xs border p-4 flex flex-col sm:flex-row gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md ${displayError ? 'border-red-400 bg-red-50/70 shadow-red-100/50' : 'bg-white border-gray-100'} ${isUpdating && localQty === originalQty ? 'opacity-70 pointer-events-none scale-[0.99]' : ''} ${shake ? 'animate-shake' : ''}`}>
       
       <div className={`w-full sm:w-28 h-28 bg-white rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-2 border relative group shadow-xs transition-colors ${displayError ? 'border-red-200' : 'border-gray-100'}`}>
-        <img 
+        <img loading="lazy" 
           src={imageUrl} 
           alt={name} 
           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"

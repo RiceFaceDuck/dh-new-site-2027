@@ -1,0 +1,61 @@
+
+--- Query without limit (59) ---
+C:\DH Notebook\Management System\dh-frontend\src\components\checkout\PrivilegeSelector.jsx:69 -> const freebieQ = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
+C:\DH Notebook\Management System\dh-frontend\src\components\product\RelatedProducts.jsx:23 -> const q = query( collection(db, getCollectionPath('products')),
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\claims\useMyClaims.js:16 -> const q = query( collection(db, getCollectionPath('todos')),
+C:\DH Notebook\Management System\dh-frontend\src\components\profile\tabs\history\useHistoryOrders.js:16 -> const q = query( collection(db, getCollectionPath('orders')),
+C:\DH Notebook\Management System\dh-frontend\src\firebase\featuredQueryService.js:50 -> let q1 = query( productsRef, where('randomSeed', '>=', randomSeed),
+C:\DH Notebook\Management System\dh-frontend\src\firebase\featuredQueryService.js:63 -> let q2 = query( productsRef, where('randomSeed', '<', randomSeed),
+C:\DH Notebook\Management System\dh-frontend\src\firebase\featuredQueryService.js:88 -> const fallbackQuery = query( collection(db, PRODUCTS_COLLECTION),
+C:\DH Notebook\Management System\dh-frontend\src\firebase\partnerService.js:47 -> const q = query(partnersRef, where('isActive', '==', true));
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productReviewService.js:29 -> let q = query( reviewsRef, where('productId', '==', productId),
+C:\DH Notebook\Management System\dh-frontend\src\firebase\productReviewService.js:37 -> q = query( reviewsRef, where('productId', '==', productId),
+C:\DH Notebook\Management System\dh-frontend\src\firebase\storefrontSettingsService.js:93 -> const q = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\adManagementService.js:43 -> const q = query(collection(db, getCollectionPath('partner_ads')), where('status', '==', status));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\adManagementService.js:70 -> const q = query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', uid));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\adManagementService.js:300 -> const q = query(collection(db, getCollectionPath('partner_ads')), where('status', '==', 'pending'));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingDeleteService.js:56 -> const q = query(todosRef, where('referenceId', '==', orderId));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:25 -> const q = query(...qArgs);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingQueryService.js:99 -> const q = query( collection(db, getCollectionPath('history_logs')),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\billingStatusTransaction.js:214 -> const q = query(todosRef, where('referenceId', '==', orderId), where('status', '==', 'pending_manager'));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claim\claimRequestService.js:15 -> const q = query( collection(db, TODOS_COLLECTION),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claim\claimRequestService.js:126 -> const q = query( collection(db, TODOS_COLLECTION),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\claimService.js:38 -> const q = query(...qArgs);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\creditHistoryService.js:9 -> const q = query( collection(db, getCollectionPath('credit_transactions')),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\creditHistoryService.js:24 -> const q = query( collection(db, getCollectionPath('credit_transactions')),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:11 -> const q = query(partnersRef, where('ownerId', '==', uid));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:32 -> const q1 = query(todosRef, where('customerUid', '==', uid), where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item'
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:34 -> const q2 = query(todosRef, where('payload.customerUid', '==', uid), where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiti
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:75 -> const q = query(partnersRef, where('ownerId', '==', uid));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:96 -> const adsQ = query(adsRef, where('ownerId', '==', uid));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:122 -> const ordersQ = query(ordersRef, where('customer.uid', '==', uid));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\customer\customerCascadeService.js:138 -> const claimsQ = query(claimsRef, where('customerUid', '==', uid));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\gasHistoryService.js:102 -> const q = query( outboxRef, where('status', '==', 'pending'),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryMutationService.js:99 -> const q = query(todosRef, where('referenceId', '==', sku));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryMutationService.js:124 -> const substituteQ = query(collection(db, COLLECTION_NAME), where('substituteSkus', 'array-contains', sku));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryMutationService.js:140 -> const freebieQ = query(collection(db, getCollectionPath('freebies')), where('applicableSkus', 'array-contains', sku));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:83 -> const qPrefix = query( collection(db, COLLECTION_NAME),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:136 -> const q = query(collection(db, COLLECTION_NAME), where('sku', 'in', batch));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\inventory\inventoryQueryService.js:162 -> const q = query(collection(db, COLLECTION_NAME), where('sku', 'in', batch));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\managerTodoService.js:38 -> const q = query( todosRef, where('status', 'in', ['todo', 'pending', 'pending_manager', 'waiting_item', 'processing']),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\promotionService.js:43 -> const q = query( collection(db, COLLECTION_NAME),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\redirectURLsService.js:11 -> const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\todo\todoQueryService.js:10 -> const q = query( collection(db, getCollectionPath('todos')),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\todo\todoQueryService.js:63 -> const q = query(...qArgs);
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\todo\todoWalletService.js:172 -> const q = query(collection(db, todosPath), where('customerCode', '==', 'CUS-MOCK'));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\transactionService.js:68 -> const q = query(collection(db, COLLECTION_NAME), orderBy("timestamp", "desc"));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userManagementService.js:237 -> const q = query(usersRef, or( where('creditPoints', '>', 0),
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userStaffService.js:30 -> const q1 = query(usersRef, where('role', 'in', chunk1));
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userStaffService.js:31 -> const q2 = chunk2.length > 0 ? query(usersRef, where('role', 'in', chunk2)) : null;
+C:\DH Notebook\Management System\dh-backoffice-react\src\firebase\userStaffService.js:34 -> const q3 = query(usersRef, where('isStaff', '==', true));
+C:\DH Notebook\Management System\dh-backoffice-react\src\hooks\useAutoCleanup.js:30 -> const q = query( ordersRef, where('orderStatus', 'in', ['pending', 'pending_payment', 'pending_payment_verification']),
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\claims\hooks\useClaimData.js:24 -> const q = query( collection(db, getCollectionPath('todos')),
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\settings\data_repair\useDataRepair.js:34 -> const wTxQuery = query( collection(db, getCollectionPath('users'), data.customerInfo.uid, 'wallet_transactions'),
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\managers\wallet\hooks\useWalletManagement.js:81 -> const q = query( collection(db, getCollectionPath('todos')),
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\useManagerDashboard.js:32 -> const pendingTodosQuery = query( todosRef, where('status', 'in', ['pending', 'pending_manager'])
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\ManagersOverview\useManagerDashboard.js:49 -> const pendingStaffQuery = query( usersRef, where('role', 'in', ['pending', 'pending_approval']),
+C:\DH Notebook\Management System\dh-backoffice-react\src\pages\todo\hooks\useCentralTodo.js:25 -> const q = query( collection(db, getCollectionPath('todos')),
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\inventoryService.js:26 -> const q = query(collection(db, COLLECTION_NAME), where('isActive', '==', true));
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\inventoryService.js:49 -> const q = query(collection(db, COLLECTION_NAME), where('isActive', '==', true));
+C:\DH Notebook\Management System\dh-staff-app\src\firebase\packingService.js:13 -> const q = query( collection(db, getCollectionPath('todos')),
+C:\DH Notebook\Management System\dh-shared\src\firebase\categoryService.js:20 -> const q = query(collection(db, collectionName), orderBy('order', 'asc'));

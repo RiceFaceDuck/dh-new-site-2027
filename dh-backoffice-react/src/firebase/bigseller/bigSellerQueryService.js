@@ -1,12 +1,15 @@
 import { gasStockService } from '../gasStockService';
 import { db } from '../config';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class BigSellerQueryService {
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+
+class BigSellerQueryService {
   /**
    * ดึงเวลา Reset ล่าสุดจาก Firestore
    */
   async getLastResetTime() {
     try {
-      const docRef = doc(db, 'system_counters', 'bigseller_baseline');
+      const docRef = doc(db, getCollectionPath('system_counters'), 'bigseller_baseline');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists() && docSnap.data().lastResetAt) {
         return docSnap.data().lastResetAt.toDate();
@@ -22,7 +25,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class 
    */
   async resetBaseline(currentInventory) {
     try {
-      const docRef = doc(db, 'system_counters', 'bigseller_baseline');
+      const docRef = doc(db, getCollectionPath('system_counters'), 'bigseller_baseline');
       const payload = {
         lastResetAt: serverTimestamp(),
         inventory: currentInventory
@@ -53,7 +56,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';class 
       }
 
       // 3. ตรวจสอบ Baseline จาก Firestore
-      const docRef = doc(db, 'system_counters', 'bigseller_baseline');
+      const docRef = doc(db, getCollectionPath('system_counters'), 'bigseller_baseline');
       const docSnap = await getDoc(docRef);
 
       let previousInventory = [];

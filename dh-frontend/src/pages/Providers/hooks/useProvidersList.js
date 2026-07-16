@@ -12,7 +12,7 @@ export const useProvidersList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
-  const [permissionRequested, setPermissionRequested] = useState(false);
+  
   
   // Pagination State
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
@@ -43,7 +43,7 @@ export const useProvidersList = () => {
 
     if (showExplanation && !hasRequested) {
       sessionStorage.setItem(HAS_REQUESTED_LOCATION_KEY, 'true');
-      setPermissionRequested(true);
+      
     }
 
     setLocationError(null);

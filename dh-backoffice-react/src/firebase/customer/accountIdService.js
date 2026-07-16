@@ -31,25 +31,30 @@ export const checkAccountIdExists = async (accountId, excludeUid = null) => {
     const usersRef = collection(db, getCollectionPath('users'));
     const uppercaseId = accountId.toUpperCase();
     
-    // เช็คในช่อง accountId
-    const q1 = query(usersRef, where('accountId', '==', uppercaseId), limit(1));
-    const snap1 = await getDocs(q1);
-    
-    // เช็คในช่อง customerCode เผื่อระบบเก่า
-    const q2 = query(usersRef, where('customerCode', '==', uppercaseId), limit(1));
-    const snap2 = await getDocs(q2);
-    
-    let isExist = false;
+    try {
+        // เช็คในช่อง accountId
+        const q1 = query(usersRef, where('accountId', '==', uppercaseId), limit(1));
+        const snap1 = await getDocs(q1);
+        
+        // เช็คในช่อง customerCode เผื่อระบบเก่า
+        const q2 = query(usersRef, where('customerCode', '==', uppercaseId), limit(1));
+        const snap2 = await getDocs(q2);
+        
+        let isExist = false;
 
-    // ตรวจสอบจาก snap1
-    snap1.forEach(doc => {
-        if (doc.id !== excludeUid) isExist = true;
-    });
+        // ตรวจสอบจาก snap1
+        snap1.forEach(doc => {
+            if (doc.id !== excludeUid) isExist = true;
+        });
 
-    // ตรวจสอบจาก snap2
-    snap2.forEach(doc => {
-        if (doc.id !== excludeUid) isExist = true;
-    });
+        // ตรวจสอบจาก snap2
+        snap2.forEach(doc => {
+            if (doc.id !== excludeUid) isExist = true;
+        });
 
-    return isExist;
+        return isExist;
+    } catch (error) {
+        console.error("🔥 Error checking accountId:", error);
+        return false; // In case of error, default to false or handle it appropriately
+    }
 };
