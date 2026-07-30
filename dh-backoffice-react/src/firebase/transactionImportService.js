@@ -16,7 +16,31 @@ export const transactionImportService = {
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+          
+          let workbook;
+          if (file.name.toLowerCase().endsWith('.csv')) {
+             // 🚀 ตรวจสอบและแก้ปัญหา Encoding ภาษาไทยเพี้ยนใน CSV (UTF-8 vs TIS-620/Windows-874)
+             const decoderUtf8 = new TextDecoder('utf-8', { fatal: true });
+             let text = '';
+             let isUtf8 = true;
+             try {
+                text = decoderUtf8.decode(data);
+             } catch (err) {
+                isUtf8 = false; // มี Byte ที่ไม่ใช่ UTF-8
+             }
+             
+             // ถ้าอ่านแบบ UTF-8 ไม่ได้ หรือมีอักขระแปลกๆ ให้ลองใช้ windows-874 (TIS-620)
+             if (!isUtf8 || text.includes('\uFFFD') || text.includes('à¸')) {
+                const decoderThai = new TextDecoder('windows-874');
+                text = decoderThai.decode(data);
+             }
+             
+             // เอา String ที่ถอดรหัสภาษาไทยถูกต้องแล้วไปให้ XLSX อ่าน
+             workbook = XLSX.read(text, { type: 'string' });
+          } else {
+             // สำหรับไฟล์ Excel (.xlsx, .xls) ทำงานได้ปกติอยู่แล้ว
+             workbook = XLSX.read(data, { type: 'array' });
+          }
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
           const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
