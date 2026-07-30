@@ -135,6 +135,18 @@ export const transactionImportService = {
       const skipped = [];
 
       // 2. คำนวณสต็อกใหม่
+      const aggregatedMap = new Map();
+      items.forEach(item => {
+        const skuKey = String(item.sku).trim().toUpperCase();
+        if (aggregatedMap.has(skuKey)) {
+          const existing = aggregatedMap.get(skuKey);
+          existing.quantity += item.quantity;
+        } else {
+          aggregatedMap.set(skuKey, { ...item, skuKey, originalSku: item.sku });
+        }
+      });
+      const aggregatedItems = Array.from(aggregatedMap.values());
+
       aggregatedItems.forEach(item => {
         const product = inventoryMap.get(item.skuKey);
         if (product) {
