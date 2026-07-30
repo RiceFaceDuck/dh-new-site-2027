@@ -12,37 +12,40 @@ export default function TransactionTable({ transactions }) {
     );
   }
 
+  // 🚀 Performance Optimization: Memoize Table Components
+  const virtuosoComponents = React.useMemo(() => ({
+    Table: ({ style, ...props }) => (
+      <table {...props} style={style} className="w-full text-left" />
+    ),
+    TableHead: React.forwardRef((props, ref) => (
+      <thead {...props} ref={ref} className="bg-white sticky top-0 z-10 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 shadow-xs" />
+    )),
+    TableBody: React.forwardRef((props, ref) => (
+      <tbody {...props} ref={ref} className="divide-y divide-slate-100" />
+    )),
+    TableRow: (props) => (
+      <tr {...props} className={`hover:bg-slate-50 transition-colors group ${props.className || ''}`} />
+    ),
+    EmptyPlaceholder: () => (
+      <tbody>
+        <tr>
+          <td colSpan="3">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
+              <Wallet size={40} className="mb-2 opacity-30" strokeWidth={1.5} />
+              <span className="font-bold text-xs">ยังไม่มีความเคลื่อนไหวทางบัญชี</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    )
+  }), []);
+
   return (
     <div className="w-full h-full flex flex-col min-h-[300px]">
       <TableVirtuoso
         data={transactions}
         className="custom-scrollbar w-full h-full flex-1"
-        components={{
-          Table: ({ style, ...props }) => (
-            <table {...props} style={style} className="w-full text-left" />
-          ),
-          TableHead: React.forwardRef((props, ref) => (
-            <thead {...props} ref={ref} className="bg-white sticky top-0 z-10 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 shadow-xs" />
-          )),
-          TableBody: React.forwardRef((props, ref) => (
-            <tbody {...props} ref={ref} className="divide-y divide-slate-100" />
-          )),
-          TableRow: (props) => (
-            <tr {...props} className={`hover:bg-slate-50 transition-colors group ${props.className || ''}`} />
-          ),
-          EmptyPlaceholder: () => (
-            <tbody>
-              <tr>
-                <td colSpan="3">
-                  <div className="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
-                    <Wallet size={40} className="mb-2 opacity-30" strokeWidth={1.5} />
-                    <span className="font-bold text-xs">ยังไม่มีความเคลื่อนไหวทางบัญชี</span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          )
-        }}
+        components={virtuosoComponents}
         fixedHeaderContent={() => (
           <tr>
             <th className="px-5 py-3">รายละเอียด (Description)</th>

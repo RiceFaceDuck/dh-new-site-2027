@@ -63,7 +63,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
             </div>
             
             <h3 className="text-lg font-black text-slate-800 dark:text-white mb-4 text-center">
-              นำเข้าข้อมูลอัปเดตสต็อก (Excel/CSV)
+              นำเข้าข้อมูล การซื้อ/ขาย/เคลม/คืน จาก Bigseller
             </h3>
             
             <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-xl mb-6 w-full max-w-sm">
@@ -71,19 +71,19 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
                 onClick={() => setActionType('deduct')}
                 title="คลิกเพื่อนำเข้าไฟล์ที่ต้องการตัด/ลดจำนวนสต็อก (เช่น ยอดขาย, ของชำรุด)"
                 className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
-                  actionType === 'deduct' ? 'bg-white dark:bg-slate-600 text-rose-600 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                  actionType === 'deduct' ? 'bg-white dark:bg-slate-600 text-blue-600 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
-                หักสต็อก (-)
+                ขาย/เคลม (-)
               </button>
               <button
                 onClick={() => setActionType('add')}
                 title="คลิกเพื่อนำเข้าไฟล์ที่ต้องการเพิ่มจำนวนสต็อก (เช่น รับของเข้า, ลูกค้าคืนของ)"
                 className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
-                  actionType === 'add' ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                  actionType === 'add' ? 'bg-white dark:bg-slate-600 text-amber-600 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
-                เพิ่มสต็อก (+)
+                คืน/ตีกลับ/จัดส่งไม่สำเร็จ (+)
               </button>
             </div>
 
@@ -157,10 +157,10 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <FileSpreadsheet className={actionType === 'deduct' ? 'text-rose-500' : 'text-emerald-500'} size={20} />
+                  <FileSpreadsheet className={actionType === 'deduct' ? 'text-blue-500' : 'text-amber-500'} size={20} />
                   พรีวิวข้อมูล ({parsedData?.items.length} รายการ)
-                  <span className={`text-xs px-2 py-1 rounded-full font-bold ml-2 ${actionType === 'deduct' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                    โหมด: {actionType === 'deduct' ? 'หักสต็อก (-)' : 'เพิ่มสต็อก (+)'}
+                  <span className={`text-xs px-2 py-1 rounded-full font-bold ml-2 ${actionType === 'deduct' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                    โหมด: {actionType === 'deduct' ? 'ขาย/เคลม (-)' : 'คืน/ตีกลับ/จัดส่งไม่สำเร็จ (+)'}
                   </span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">{message}</p>
@@ -247,7 +247,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
                   {parsedData?.items.slice(0, 50).map((item, idx) => (
                     <tr key={idx} className="hover:bg-white transition-colors">
                       <td className="px-3 py-2 font-medium text-slate-700">{item.sku}</td>
-                      <td className={`px-3 py-2 font-bold text-right ${actionType === 'deduct' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      <td className={`px-3 py-2 font-bold text-right ${actionType === 'deduct' ? 'text-blue-600' : 'text-amber-600'}`}>
                         {actionType === 'deduct' ? '-' : '+'}{item.quantity}
                       </td>
                       {parsedData?.matchedKeys.priceKey && (
@@ -272,8 +272,8 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
               onClick={handleUpload}
               className={`w-full py-3 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 shadow-lg text-white ${
                 actionType === 'deduct' 
-                  ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/25' 
-                  : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/25'
+                  ? 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25' 
+                  : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/25'
               }`}
             >
               <CheckCircle size={20} />

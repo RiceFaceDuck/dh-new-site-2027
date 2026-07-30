@@ -124,7 +124,7 @@ const SearchPage = () => {
               placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
               className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-3 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
             />
-            <button type="submit" aria-label="ค้นหาสินค้า" title="ค้นหาสินค้า" className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-brand text-white p-2 rounded-lg hover:bg-brand-dark transition-colors shadow-xs active:scale-95">
+            <button type="submit" disabled={loading} aria-label="ค้นหาสินค้า" title="ค้นหาสินค้า" className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-white p-2 rounded-lg transition-colors shadow-xs active:scale-95 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-brand hover:bg-brand-dark'}`}>
               <Search size={16} strokeWidth={2.5} />
             </button>
           </form>
@@ -138,7 +138,11 @@ const SearchPage = () => {
               "{queryParam}"
             </span>
             <span className="text-sm text-slate-500 ml-auto">
-              พบ {filteredProducts.length} รายการ
+              {loading ? (
+                <span className="animate-pulse">กำลังประมวลผล...</span>
+              ) : (
+                `พบ ${filteredProducts.length} รายการ`
+              )}
             </span>
           </div>
         )}

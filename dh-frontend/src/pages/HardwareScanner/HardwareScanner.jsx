@@ -8,8 +8,10 @@ import AuthForm from '../../components/profile/AuthForm';
 import { Monitor, Battery, HardDrive, Cpu, Download, Copy, CheckCircle, Info, ShieldCheck, LayoutGrid } from 'lucide-react';
 import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { parseConsentText } from '../../utils/textParser';
+import { getCollectionPath } from 'dh-shared';
 
 const HardwareScanner = () => {
+
   const location = useLocation();
   const auth = getAuth();
   
@@ -29,8 +31,9 @@ const HardwareScanner = () => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
-          const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+          const userRef = doc(db, getCollectionPath('users'), currentUser.uid);
           const userSnap = await getDoc(userRef);
+
           if (userSnap.exists()) {
             setUser({ ...currentUser, ...userSnap.data() });
           } else {
@@ -179,7 +182,7 @@ const HardwareScanner = () => {
           เช็คสเปคอะไหล่ <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-500 to-green-500">ง่ายนิดเดียว</span>
         </h1>
         <p className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto">
-          ไม่ต้องแกะเครื่อง ไม่ต้องกลัวผิดรุ่น เพียงโหลดโปรแกรมขนาดจิ๋วของเรา เพื่อตรวจสอบรหัสฮาร์ดแวร์ที่แท้จริง
+          ไม่ต้องแกะเครื่อง เพียงโหลดโปรแกรมขนาดจิ๋วของเรา เพื่อช่วยค้นหารหัสฮาร์ดแวร์และนำไปเทียบหาอะไหล่ที่ใช้งานร่วมกันได้มากที่สุด
         </p>
       </div>
 
@@ -192,7 +195,7 @@ const HardwareScanner = () => {
           </div>
           <h2 className="text-2xl font-bold text-slate-800 mb-3">โปรแกรม DH Hardware Scanner</h2>
           <p className="text-slate-500 mb-8 max-w-md">
-            รองรับเฉพาะ Windows ปลอดภัย 100% ไม่มีไวรัส ช่วยให้ทีมงานประเมินราคาอะไหล่ได้แม่นยำทันที
+            รองรับเฉพาะ Windows ปลอดภัย ไม่มีไวรัส ช่วยส่งข้อมูลฮาร์ดแวร์ให้ทีมงานประเมินและหาอะไหล่ที่เหมาะสมที่สุด
           </p>
           <a 
             href={downloadLink}
@@ -233,7 +236,7 @@ const HardwareScanner = () => {
         <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
           {config?.consentTexts?.scanner 
             ? parseConsentText(config.consentTexts.scanner, config?.policyLinks?.termsOfServiceUrl, config?.policyLinks?.privacyPolicyUrl, "text-[#0870B8] hover:underline font-medium")
-            : parseConsentText("รูปแบบการทำงาน: โปรแกรมนี้ทำงานโดยการอ่านค่ารหัสประจำตัวอุปกรณ์ (Hardware IDs) จากระบบปฏิบัติการ ซึ่งเป็นข้อมูลทางเทคนิคของชิ้นส่วนต่างๆ ในระดับฮาร์ดแวร์ (เช่น รหัสจอกระจก, รุ่นเมนบอร์ด) โดยไม่มีการเข้าถึงไฟล์ส่วนตัว เอกสาร หรือรหัสผ่านใดๆ ทั้งสิ้น\n\nการจัดเก็บข้อมูล: เมื่อโปรแกรมทำงานเสร็จสิ้น ผลลัพธ์สเปคเครื่องจะแสดงบนหน้าเว็บไซต์นี้ และหากคุณเข้าสู่ระบบอยู่ ข้อมูลสเปคเครื่องนี้จะถูกบันทึกลงในโปรไฟล์บัญชีของคุณโดยอัตโนมัติ เพื่อใช้ประโยชน์ในการเทียบอะไหล่ให้ตรงรุ่นแบบ 100% และใช้เป็นข้อมูลอ้างอิงในการรับประกันสินค้าของ DH Notebook")}
+            : parseConsentText("รูปแบบการทำงาน: โปรแกรมนี้ทำงานโดยการอ่านค่ารหัสประจำตัวอุปกรณ์ (Hardware IDs) จากระบบปฏิบัติการ ซึ่งเป็นข้อมูลทางเทคนิคของชิ้นส่วนต่างๆ ในระดับฮาร์ดแวร์ (เช่น รหัสจอกระจก, รุ่นเมนบอร์ด) โดยไม่มีการเข้าถึงไฟล์ส่วนตัว เอกสาร หรือรหัสผ่านใดๆ ทั้งสิ้น\n\nการจัดเก็บข้อมูล: เมื่อโปรแกรมทำงานเสร็จสิ้น ผลลัพธ์สเปคเครื่องจะแสดงบนหน้าเว็บไซต์นี้ และหากคุณเข้าสู่ระบบอยู่ ข้อมูลสเปคเครื่องนี้จะถูกบันทึกลงในโปรไฟล์บัญชีของคุณโดยอัตโนมัติ เพื่อใช้ประโยชน์ในการเทียบหาอะไหล่ที่ใช้งานร่วมกันได้มากที่สุด และใช้เป็นข้อมูลอ้างอิงในการรับประกันสินค้าของ DH Notebook")}
         </div>
       </div>
 

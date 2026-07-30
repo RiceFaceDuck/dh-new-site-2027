@@ -1,4 +1,4 @@
-import { Building2, Hash, Wand2, CheckCircle2, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Building2, Hash, Wand2, CheckCircle2, X, Loader2, AlertCircle, RefreshCw, Crown } from 'lucide-react';
 
 export default function MainInfoSection({
     formData,
@@ -103,6 +103,26 @@ export default function MainInfoSection({
                         value={formData.accountName || ''} 
                         onChange={e => handleChange('accountName', e.target.value)}
                     />
+                </div>
+
+                <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-xs font-semibold text-dh-muted flex items-center gap-1">
+                        <Crown size={12} className="text-indigo-600" /> ระดับสิทธิ์บัญชี (Role / Rank)
+                    </label>
+                    <select
+                        className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface font-bold text-dh-main"
+                        value={formData.rank || formData.role || 'Customer'}
+                        onChange={e => {
+                            const val = e.target.value;
+                            handleChange('rank', val);
+                            handleChange('role', val);
+                        }}
+                    >
+                        <option value="Customer">Member / Customer (ลูกค้าทั่วไป)</option>
+                        <option value="Wholesale">Wholesale / Mechanic (ช่างซ่อม / ราคาส่ง)</option>
+                        <option value="Partner">Partner / VIP (ร้านค้าพันธมิตร)</option>
+                        <option value="Enterprise">Enterprise (คู่ค้าองค์กร)</option>
+                    </select>
                 </div>
             </div>
         </div>

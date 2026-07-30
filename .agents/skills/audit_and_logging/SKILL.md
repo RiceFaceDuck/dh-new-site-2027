@@ -6,7 +6,7 @@ description: Use this skill when asked to write audit logs, manage ISSUES.md, or
 # Audit & Logging Procedures
 
 ## 1. Audit Log Awareness
-การเปลี่ยนแปลงข้อมูลสำคัญโดยเฉพาะที่เกิดจากผู้ใช้งาน (Staff/Manager) จะต้องมีระบบจัดการเพื่อบันทึกประวัติ (History Log) ด้วยเสมอ เพื่อให้สามารถตรวจสอบย้อนหลังได้
+Any modifications to critical data, especially those initiated by users (Staff/Manager), MUST be accompanied by a history tracking system (History Log) to ensure traceability.
 
 ## 2. Issues & Audit Coordination
-หากตรวจพบข้อผิดพลาดหรือบั๊กในระบบไม่ว่าจะเป็นส่วนงานหรือหน้าที่ใดก็ตาม ให้สามารถบันทึกและจัดการปัญหาลงในไฟล์ `ISSUES.md` ที่โฟลเดอร์ `.agents/memory/` ได้ทันที และต้องประสานงานข้อมูลร่วมกับไฟล์ตรวจสอบระบบ (`Audit Checklist.md` และ `Audit_Archive.md`) ทุกครั้ง เพื่อให้การแก้ไขบั๊กมีประวัติและอ้างอิงได้อย่างถูกต้อง
+If any system error or bug is detected in any module or function, immediately record and manage the issue in the `ISSUES.md` file located in `.agents/memory/`. This must always be coordinated with the system audit files (`Audit Checklist.md` and `Audit_Archive.md` located in the `docs/reports/` folder) to ensure bug fixes have a proper history and reference.

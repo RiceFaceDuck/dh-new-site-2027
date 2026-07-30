@@ -1,50 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Gift } from 'lucide-react';
 import { productService } from '../../firebase/productService';
+import { usePromotions } from '../../hooks/usePromotions';
 
-const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkoutState, updateCheckoutConfig, hidden = false }) => {
+const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: propIsLoading, cartItems, checkoutState, updateCheckoutConfig, hidden = false }) => {
   const [freebieProduct, setFreebieProduct] = useState(null);
-
-  const getEligibleTotals = (freebie) => {
-    const skus = freebie.applicableSkus;
-    const types = freebie.applicableTypes;
-    const hasSkus = skus && skus.length > 0;
-    const hasTypes = types && types.length > 0;
-
-    if (!hasSkus && !hasTypes) return {
-      subtotal: subTotal,
-      qty: (cartItems || []).reduce((sum, item) => sum + Math.max(1, item.qty || item.quantity || 1), 0)
-    };
-
-    let eligibleSubtotal = 0;
-    let eligibleQty = 0;
-    (cartItems || []).forEach(item => {
-      let isEligible = false;
-      const itemSku = String(item.sku || '').toUpperCase();
-      const itemType = String(item.type || item.category || '').toUpperCase();
-
-      if (hasSkus && skus.some(s => String(s).toUpperCase() === itemSku)) isEligible = true;
-      if (hasTypes && types.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
-      
-      if (isEligible) {
-        const itemPrice = item.price || 0;
-        const itemQty = Math.max(1, item.qty || item.quantity || 1);
-        eligibleSubtotal += (itemPrice * itemQty);
-        eligibleQty += itemQty;
-      }
-    });
-    return { subtotal: eligibleSubtotal, qty: eligibleQty };
-  };
+  
+  const { freebies: hookFreebies, isLoading: hookIsLoading, getEligibleTotals } = usePromotions();
+  
+  const freebies = propFreebies || hookFreebies;
+  const isLoading = propIsLoading || hookIsLoading;
 
   const nextFreebie = !isLoading && freebies ? freebies.find(f => {
-    const { subtotal, qty } = getEligibleTotals(f);
+    const { subtotal, qty } = getEligibleTotals(f.applicableSkus, f.applicableTypes, cartItems, subTotal);
     if (f.minSpend > 0 && f.minSpend > subtotal) return true;
     if (f.minQty > 0 && f.minQty > qty) return true;
     return false;
   }) : null; 
 
   const currentFreebie = !isLoading && freebies ? [...freebies].reverse().find(f => {
-    const { subtotal, qty } = getEligibleTotals(f);
+    const { subtotal, qty } = getEligibleTotals(f.applicableSkus, f.applicableTypes, cartItems, subTotal);
     const hasSkus = f.applicableSkus && f.applicableSkus.length > 0;
     const hasTypes = f.applicableTypes && f.applicableTypes.length > 0;
     
@@ -123,7 +98,7 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
               <div className="flex items-center gap-2">
                 <Gift className="text-emerald-500 animate-pulse" size={20} />
                 <span className="text-xs md:text-sm font-bold text-emerald-800">
-                ซื้อเพิ่มอีก <span className="text-emerald-600">{nextFreebie.minQty > 0 && nextFreebie.minSpend === 0 ? `${nextFreebie.minQty - getEligibleTotals(nextFreebie).qty} ชิ้น` : `฿${(nextFreebie.minSpend - getEligibleTotals(nextFreebie).subtotal).toLocaleString()}`}</span>
+                ซื้อเพิ่มอีก <span className="text-emerald-600">{nextFreebie.minQty > 0 && nextFreebie.minSpend === 0 ? `${nextFreebie.minQty - getEligibleTotals(nextFreebie.applicableSkus, nextFreebie.applicableTypes, cartItems, subTotal).qty} ชิ้น` : `฿${(nextFreebie.minSpend - getEligibleTotals(nextFreebie.applicableSkus, nextFreebie.applicableTypes, cartItems, subTotal).subtotal).toLocaleString()}`}</span>
                 </span>
               </div>
               <span className="text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1.5 rounded-lg shadow-xs border border-emerald-200 transition-colors hover:bg-emerald-200">
@@ -133,7 +108,7 @@ const CartFreebieProgress = ({ freebies, subTotal, isLoading, cartItems, checkou
             <div className="w-full bg-emerald-200/60 rounded-full h-2.5 overflow-hidden">
               <div 
                 className="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out relative" 
-                style={{ width: `${Math.min(nextFreebie.minQty > 0 && nextFreebie.minSpend === 0 ? (getEligibleTotals(nextFreebie).qty / nextFreebie.minQty) * 100 : (getEligibleTotals(nextFreebie).subtotal / nextFreebie.minSpend) * 100, 100)}%` }}
+                style={{ width: `${Math.min(nextFreebie.minQty > 0 && nextFreebie.minSpend === 0 ? (getEligibleTotals(nextFreebie.applicableSkus, nextFreebie.applicableTypes, cartItems, subTotal).qty / nextFreebie.minQty) * 100 : (getEligibleTotals(nextFreebie.applicableSkus, nextFreebie.applicableTypes, cartItems, subTotal).subtotal / nextFreebie.minSpend) * 100, 100)}%` }}
               >
                  <div className="absolute inset-0 bg-white/20 animate-[pulse_2s_ease-in-out_infinite]"></div>
               </div>

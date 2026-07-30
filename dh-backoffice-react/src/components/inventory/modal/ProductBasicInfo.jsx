@@ -74,7 +74,10 @@ export default function ProductBasicInfo({
           <div className="flex gap-2">
             <select value={form.category} onChange={e => handleCategoryChange(e.target.value)}
               className="w-full p-2.5 border border-dh-border rounded-xl outline-hidden focus:border-dh-accent bg-dh-base focus:bg-dh-surface text-sm font-bold text-dh-main transition-all cursor-pointer">
-              {categories.map(cat => <option key={cat.type || cat.name} value={cat.type || cat.name}>{cat.name}</option>)}
+              {categories.map(cat => {
+                const val = cat.type || cat.name;
+                return <option key={cat.id || val} value={val}>{cat.name || val}</option>;
+              })}
             </select>
             {isManagerOrOwner && (
               <button type="button" onClick={handleAddCategory} className="bg-dh-base border border-dh-border text-dh-muted px-3 rounded-xl hover:bg-dh-surface hover:text-dh-accent transition-colors shadow-xs" title="เพิ่มหมวดหมู่ใหม่">

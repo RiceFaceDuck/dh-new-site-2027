@@ -5,24 +5,27 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventorySourcingService = {
   reportNonExisting: async (reportData, uid) => {
-    if (!reportData || !reportData.keyword || !reportData.keyword.trim()) return;
+    const cleanKeyword = reportData?.keyword?.trim();
+    if (!cleanKeyword) return;
     try {
-      const slugId = reportData.keyword.trim().toLowerCase().replace(/[^a-z0-9ก-๙]/g, '-');
+      let slugId = cleanKeyword.toLowerCase().replace(/[^a-z0-9ก-๙]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      if (!slugId) {
+        slugId = `req-${Date.now()}`;
+      }
       const docRef = doc(db, getCollectionPath('sourcing_requests'), slugId);
       
       await setDoc(docRef, {
-        keyword: reportData.keyword.trim(),
-        category: reportData.category || '',
-        customerName: reportData.customerName || '',
-        referenceLink: reportData.referenceLink || '',
+        keyword: cleanKeyword,
+        category: reportData.category?.trim() || '',
+        customerName: reportData.customerName?.trim() || '',
+        referenceLink: reportData.referenceLink?.trim() || '',
         sampleImage: reportData.sampleImage || '', 
-        demandCount: increment(1),
-        lastRequestedAt: serverTimestamp(),
-        status: 'pending'
+        lastRequestedAt: serverTimestamp()
       }, { merge: true });
       
     } catch (error) {
       console.error("🔥 Error reporting non-existing product:", error);
+      throw error;
     }
   },
 

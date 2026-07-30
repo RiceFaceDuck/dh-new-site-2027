@@ -4,7 +4,7 @@ import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const TODOS_COLLECTION = 'todos';
+const TODOS_COLLECTION = getCollectionPath('todos');
 
 export const returnActionService = {
   approveRequest: async (task, adminUid, adminName) => {
@@ -107,9 +107,45 @@ export const returnActionService = {
           });
         }
 
-        // 5. บันทึกกระเป๋าเงิน (Wallet) ภายใต้ Transaction เดียวกัน เพื่อความปลอดภัย
+        // 5. บันทึกกระเป๋าเงิน (Wallet) และดึงแต้มคืน ภายใต้ Transaction เดียวกัน เพื่อความปลอดภัย
         if (payload.customerUid && payload.customerUid !== 'Walk-in' && refundAmount > 0) {
           const userRef = doc(db, getCollectionPath('users'), payload.customerUid);
+          
+          // 5.1 🌟 อ่านข้อมูลสำหรับดึงแต้มสะสมคืน (Clawback Points) ตามสัดส่วนเงินที่คืนให้ลูกค้า
+          const clawbackPoints = Math.floor(refundAmount / 100);
+          let creditPreloadSnaps = null;
+          
+          if (clawbackPoints > 0) {
+            const { getCreditPreloadRefs } = await import('../credit/creditActionService');
+            const creditRefs = getCreditPreloadRefs(payload.customerUid, 'clawback', `RTN_${payload.returnId}`);
+            
+            // อ่านข้อมูลก่อนทำการเขียน (Firestore Rules: READS must happen before WRITES)
+            const [txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
+              transaction.get(creditRefs.txRef),
+              transaction.get(creditRefs.settingsRef),
+              transaction.get(creditRefs.userRef),
+              transaction.get(creditRefs.walletRef),
+              transaction.get(creditRefs.activePartnerRef)
+            ]);
+            creditPreloadSnaps = { txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap };
+          }
+
+          // 5.2 หักแต้มสะสม (Clawback)
+          if (clawbackPoints > 0 && creditPreloadSnaps) {
+            const { adjustUserCreditWithTransaction } = await import('../credit/creditActionService');
+            await adjustUserCreditWithTransaction(
+              transaction,
+              payload.customerUid,
+              clawbackPoints,
+              'clawback',
+              `ดึงแต้มคืนจากการรับคืนสินค้า (บิล ${payload.orderId || '-'}, สินค้า ${payload.sku})`,
+              adminUid || 'System',
+              `RTN_${payload.returnId}`,
+              creditPreloadSnaps
+            );
+          }
+
+          // 5.3 คืนเงินเข้า Wallet Cash (ใช้อัปเดตแบบอิสระ)
           transaction.update(userRef, {
             walletBalance: increment(refundAmount),
             updatedAt: serverTimestamp()

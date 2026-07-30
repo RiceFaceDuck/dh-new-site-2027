@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { Plus, AlertTriangle, ArrowLeft, HelpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import GuideModal from '../common/GuideModal';
 import { billingService } from '../../firebase/billingService';
 import { auth } from '../../firebase/config';
 
 import useBillingOrders from './hooks/useBillingOrders';
 import OrderFilterBar from './dashboard/OrderFilterBar';
 import OrderListTable from './dashboard/OrderListTable';
-import OrderDetailModal from './dashboard/OrderDetailModal';
-import ReceiptTemplate from './pos/ReceiptTemplate';
+
+// ⚡ Lazy Loading Heavy Modals
+const OrderDetailModal = lazy(() => import('./dashboard/OrderDetailModal'));
+const GuideModal = lazy(() => import('../common/GuideModal'));
+const ReceiptTemplate = lazy(() => import('./pos/ReceiptTemplate'));
 
 export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelectorMode = false, onCancelSelector }) {
     const {
@@ -179,41 +181,47 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                 />
             </div>
 
-            <OrderDetailModal 
-                selectedOrder={selectedOrder} 
-                handleCloseModal={handleCloseModal} 
-                activeTab={activeTab} 
-                setActiveTab={setActiveTab} 
-                executeVoidOrder={executeVoidOrder} 
-                isVoiding={isVoiding} 
-                handleDeleteOrder={handleDeleteOrder} 
-                setShowPrintPreview={setShowPrintPreview} 
-                onResumeDraft={onResumeDraft} 
-            />
+            <Suspense fallback={null}>
+                {selectedOrder && (
+                    <OrderDetailModal 
+                        selectedOrder={selectedOrder} 
+                        handleCloseModal={handleCloseModal} 
+                        activeTab={activeTab} 
+                        setActiveTab={setActiveTab} 
+                        executeVoidOrder={executeVoidOrder} 
+                        isVoiding={isVoiding} 
+                        handleDeleteOrder={handleDeleteOrder} 
+                        setShowPrintPreview={setShowPrintPreview} 
+                        onResumeDraft={onResumeDraft} 
+                    />
+                )}
 
-            {/* Print Preview Modal */}
-            {showPrintPreview && selectedOrder && (
-                <ReceiptTemplate 
-                    orderData={selectedOrder}
-                    onClose={() => setShowPrintPreview(false)}
-                />
-            )}
+                {/* Print Preview Modal */}
+                {showPrintPreview && selectedOrder && (
+                    <ReceiptTemplate 
+                        orderData={selectedOrder}
+                        onClose={() => setShowPrintPreview(false)}
+                    />
+                )}
 
-            <GuideModal 
-                isOpen={showGuide}
-                onClose={() => setShowGuide(false)}
-                title="คู่มือรายการบิล (Orders Dashboard)"
-                manualText="หน้าจอนี้ใช้สำหรับตรวจสอบรายการบิลทั้งหมดที่ถูกสร้างขึ้นในระบบ ไม่ว่าจะมาจากหน้าร้าน (POS) หรือมาจากการสั่งซื้อล่วงหน้า"
-                howTo={[
-                    "ค้นหาบิลด้วย 'เลขบิล' หรือ 'ชื่อลูกค้า' ในช่องค้นหา",
-                    "สามารถคลิกที่แถวของบิลเพื่อดูรายละเอียด หรือ สั่งพิมพ์ใบเสร็จย้อนหลังได้",
-                    "กด 'สร้างบิลใหม่' เพื่อเข้าสู่หน้าระบบขายหน้าร้าน (POS)",
-                    "ดูรายชื่อพนักงานที่ทำรายการเปิดบิลขายได้ที่คอลัมน์ 'เจ้าหน้าที่'",
-                    "ตรวจสอบสถานะบริการหลังการขาย เช่น ป้ายเคลมสินค้า เปลี่ยนสินค้า หรือประวัติภาษีที่คอลัมน์ 'บริการหลังการขาย'"
-                ]}
-                tips="บิลที่เป็นสถานะ 'ฉบับร่าง' (Draft) จะมีปุ่มให้กดทำรายการต่อ (Resume) ได้ทันที! และสามารถสังเกตจำนวนเคลม/เปลี่ยน หรือสถานะการขอใบกำกับภาษี (รอ/ออกแล้ว) ได้จากตารางโดยตรง"
-                expectedResult="หากกดยกเลิกบิล (Void) ระบบจะทำการคืนสต็อกสินค้าอัตโนมัติ และคืนยอดเงินเครดิตให้ลูกค้าทันที"
-            />
+                {showGuide && (
+                    <GuideModal 
+                        isOpen={showGuide}
+                        onClose={() => setShowGuide(false)}
+                        title="คู่มือรายการบิล (Orders Dashboard)"
+                        manualText="หน้าจอนี้ใช้สำหรับตรวจสอบรายการบิลทั้งหมดที่ถูกสร้างขึ้นในระบบ ไม่ว่าจะมาจากหน้าร้าน (POS) หรือมาจากการสั่งซื้อล่วงหน้า"
+                        howTo={[
+                            "ค้นหาบิลด้วย 'เลขบิล' หรือ 'ชื่อลูกค้า' ในช่องค้นหา",
+                            "สามารถคลิกที่แถวของบิลเพื่อดูรายละเอียด หรือ สั่งพิมพ์ใบเสร็จย้อนหลังได้",
+                            "กด 'สร้างบิลใหม่' เพื่อเข้าสู่หน้าระบบขายหน้าร้าน (POS)",
+                            "ดูรายชื่อพนักงานที่ทำรายการเปิดบิลขายได้ที่คอลัมน์ 'เจ้าหน้าที่'",
+                            "ตรวจสอบสถานะบริการหลังการขาย เช่น ป้ายเคลมสินค้า เปลี่ยนสินค้า หรือประวัติภาษีที่คอลัมน์ 'บริการหลังการขาย'"
+                        ]}
+                        tips="บิลที่เป็นสถานะ 'ฉบับร่าง' (Draft) จะมีปุ่มให้กดทำรายการต่อ (Resume) ได้ทันที! และสามารถสังเกตจำนวนเคลม/เปลี่ยน หรือสถานะการขอใบกำกับภาษี (รอ/ออกแล้ว) ได้จากตารางโดยตรง"
+                        expectedResult="หากกดยกเลิกบิล (Void) ระบบจะทำการคืนสต็อกสินค้าอัตโนมัติ และคืนยอดเงินเครดิตให้ลูกค้าทันที"
+                    />
+                )}
+            </Suspense>
         </div>
     );
 }

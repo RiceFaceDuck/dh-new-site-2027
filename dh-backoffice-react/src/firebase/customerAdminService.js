@@ -5,8 +5,9 @@ import { generateAccountId } from './customer/accountIdService';
 import { gasHistoryService } from './gasHistoryService';
 import { computeCustomerChanges } from '../utils/customerDiffUtils';
 import { cascadeDisableCustomer, cleanupOrphanedTodos, cascadeDeleteCustomer } from './customer/customerCascadeService';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCollectionPath, formatCurrency } from 'dh-shared';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+
 
 
 const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
@@ -20,13 +21,21 @@ export const createManualCustomer = async (data) => {
 
         // ถ้าระบุรหัสมาเอง (customerCode/accountId) ให้ใช้ค่านั้น ถ้าไม่ระบุ ให้สร้างมาตรฐาน 8 หลักจาก UID
         const accountId = data.accountId || data.customerCode || docRef.id.substring(0, 8).toUpperCase();
+        const resolvedName = data.accountName || data.displayName || data.name || 'ลูกค้าใหม่';
+
         await setDoc(docRef, {
             ...data,
             uid: docRef.id,
+            id: docRef.id,
             accountId: accountId,
-            name: data.accountName || data.name || 'ผู้ใช้งานใหม่', // Unified name for frontend
+            customerCode: accountId,
+            name: resolvedName,
+            accountName: resolvedName,
+            displayName: resolvedName,
+            storeName: resolvedName,
             isManualCustomer: true,
-            role: data.rank || 'Customer',
+            role: data.rank || data.role || 'Customer',
+            rank: data.rank || data.role || 'Customer',
             status: 'active',
             // 💰 เตรียมโครงสร้างการเงินให้พร้อมคำนวณ (ป้องกัน NaN)
             walletBalance: 0,
@@ -35,9 +44,13 @@ export const createManualCustomer = async (data) => {
             updatedAt: serverTimestamp(),
             source: 'manual_entry'
         });
+
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('dh_cache_customers');
+        }
         
         // 3. บันทึก History Log ตามกฎของระบบ Backoffice
-        const customerName = getCustomerDisplayName(data, 'Unknown');
+        const customerName = getCustomerDisplayName(data, resolvedName);
         await historyService.addLog('Customer', 'Create', docRef.id, `เพิ่มรายชื่อลูกค้าใหม่: ${customerName} (Account ID: ${accountId})`, auth.currentUser?.uid);
 
         console.log(`✅ [CustomerAdminService] Created manual customer with ID: ${docRef.id} and Account ID: ${accountId}`);
@@ -316,4 +329,4 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
     }
 };
 
-const formatCurrency = (num) => Number(num || 0).toLocaleString('th-TH');
+

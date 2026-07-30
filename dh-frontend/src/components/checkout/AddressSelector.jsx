@@ -65,8 +65,12 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
         }
       }
     };
-    fetchUserProfile();
-  }, [checkoutState?.addressInfo?.fullName]);
+    
+    // Only fetch once when component mounts and user is available
+    if (auth.currentUser?.uid && !checkoutState?.addressInfo?.fullName) {
+        fetchUserProfile();
+    }
+  }, [auth.currentUser?.uid]); // ✅ Fix: removed checkoutState dependency to prevent infinite fetch loops during typing
 
   // 🛡 UX Validation: เช็คว่ากรอกข้อมูลสำคัญครบหรือยัง
   const isComplete = orderMode === 'retail' 

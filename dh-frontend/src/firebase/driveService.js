@@ -33,10 +33,14 @@ export const driveService = {
             fileName: `SLIP_FRONTEND_${Date.now()}_${file.name.replace(/\s+/g, '_')}`
           };
 
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
           const response = await fetch(DRIVE_SLIP_URL, {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: controller.signal
           });
+          clearTimeout(timeoutId);
 
           const result = await response.json();
 
@@ -83,10 +87,14 @@ export const driveService = {
             fileName: `PRODUCT_FRONTEND_${Date.now()}_${file.name.replace(/\s+/g, '_')}`
           };
 
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
           const response = await fetch(DRIVE_PRODUCT_URL, {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: controller.signal
           });
+          clearTimeout(timeoutId);
 
           const result = await response.json();
 
@@ -101,8 +109,6 @@ export const driveService = {
             reject(new Error(result.message || "อัปโหลดไม่สำเร็จ"));
           }
         } catch (error) {
-    console.error("🔥 Error:", error);
-
           reject(error);
         }
       };
@@ -117,7 +123,6 @@ export const driveService = {
   uploadAdImage: async (file, adType = 'GENERAL') => {
     if (!file) throw new Error("กรุณาเลือกไฟล์ภาพโฆษณา");
 
-    // 🛡️ ป้องกันไฟล์ยักษ์ (Max 5MB) - ช่วยให้ Apps Script ไม่ Timeout และหน้าเว็บโหลดโฆษณาได้ไว
     const MAX_FILE_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       throw new Error("ขนาดไฟล์ภาพใหญ่เกินไป (จำกัด 5MB) กรุณาบีบอัดภาพเพื่อคุณภาพการแสดงผลที่ดีที่สุด");
@@ -131,7 +136,6 @@ export const driveService = {
         try {
           const base64Data = reader.result.split(',')[1];
           
-          // 🏷️ จัดระเบียบชื่อไฟล์ ให้ฝ่าย Admin ค้นหาใน Drive ได้ง่ายขึ้น
           const safeFileName = file.name.replace(/\s+/g, '_');
           const payload = {
             base64: base64Data,
@@ -139,10 +143,14 @@ export const driveService = {
             fileName: `AD_${adType.toUpperCase()}_${Date.now()}_${safeFileName}`
           };
 
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
           const response = await fetch(DRIVE_AD_URL, {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: controller.signal
           });
+          clearTimeout(timeoutId);
 
           const result = await response.json();
 
@@ -174,7 +182,6 @@ export const driveService = {
    */
   uploadUserSkuImage: async (file) => {
     console.log("⚠️ [DriveService] uploadUserSkuImage is deprecated. Routing to uploadAdImage...");
-    // วิ่งไปใช้ Engine เดียวกัน พร้อมระบุ Type ว่าเป็น SKU
     return driveService.uploadAdImage(file, 'SKU');
   }
 };

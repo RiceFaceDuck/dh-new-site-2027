@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { User, Wand2 } from 'lucide-react';
+import { User, Wand2, UserPlus, Sparkles } from 'lucide-react';
 import { userService } from '../../../../firebase/userService';
 import CustomerSearchInput from './customer/CustomerSearchInput';
 import WalkInCustomerCard from './customer/WalkInCustomerCard';
 import ActiveCustomerCard from './customer/ActiveCustomerCard';
+import QuickAddCustomerModal from './customer/QuickAddCustomerModal';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function CustomerSection({
@@ -26,6 +27,10 @@ export default function CustomerSection({
     const [tempCustomerPhone, setTempCustomerPhone] = useState('');
     const [isSavingCustomer, setIsSavingCustomer] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+    // Smart Quick Add Modal States
+    const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
+    const [quickAddInitialText, setQuickAddInitialText] = useState('');
 
     useEffect(() => {
         if (activeTab.customer) {
@@ -113,16 +118,34 @@ export default function CustomerSection({
                 <label className={`${labelClass} text-blue-600`}>
                     <User size={14}/> ข้อมูลลูกค้า 
                 </label>
-                {!activeTab.customer && !activeTab.walkInName && (
-                    <button onClick={() => {
-                        const randomName = `Walk-in #${Math.floor(1000 + Math.random() * 9000)}`;
-                        updateActiveTab({ walkInName: randomName, hidePhone: false, walkInPhone: '' });
-                        setLocalSearchText(randomName);
-                        setShowWalkInPhoneInput(false);
-                    }} className="text-[10px] flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors font-bold uppercase bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded-sm shadow-xs group" title="เสกชื่อลูกค้า Walk-in อัตโนมัติ">
-                        <Wand2 size={10} className="group-hover:rotate-12 transition-transform"/> Auto-Fill
-                    </button>
-                )}
+                <div className="flex items-center gap-1.5">
+                    {/* 💛 ปุ่มสีเหลืองเด่นชัด (ADD TO CART Style) เพิ่มลูกค้าใหม่ด้วย Smart Quick Paste ด้านซ้าย Auto-Fill */}
+                    {!activeTab.customer && (
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                setQuickAddInitialText(localSearchText);
+                                setIsQuickAddModalOpen(true);
+                            }} 
+                            className="text-[10px] flex items-center gap-1 text-slate-900 font-black uppercase bg-yellow-400 hover:bg-yellow-500 active:scale-95 border border-yellow-500/40 px-2 py-1 rounded-sm shadow-xs transition-all cursor-pointer group"
+                            title="เปิดระบบจัดสรรข้อมูลลูกค้าอัตโนมัติ (Smart Quick Paste)"
+                        >
+                            <UserPlus size={11} className="group-hover:scale-110 transition-transform" />
+                            <span>+ เพิ่มลูกค้าใหม่</span>
+                        </button>
+                    )}
+
+                    {!activeTab.customer && !activeTab.walkInName && (
+                        <button onClick={() => {
+                            const randomName = `Walk-in #${Math.floor(1000 + Math.random() * 9000)}`;
+                            updateActiveTab({ walkInName: randomName, hidePhone: false, walkInPhone: '' });
+                            setLocalSearchText(randomName);
+                            setShowWalkInPhoneInput(false);
+                        }} className="text-[10px] flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors font-bold uppercase bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded-sm shadow-xs group" title="เสกชื่อลูกค้า Walk-in อัตโนมัติ">
+                            <Wand2 size={10} className="group-hover:rotate-12 transition-transform"/> Auto-Fill
+                        </button>
+                    )}
+                </div>
             </div>
 
             <CustomerSearchInput 
@@ -142,6 +165,10 @@ export default function CustomerSection({
                 setShowWalkInPhoneInput={setShowWalkInPhoneInput}
                 filteredCustomers={filteredCustomers}
                 custSearchRef={custSearchRef}
+                onOpenQuickAddModal={(text) => {
+                    setQuickAddInitialText(text || localSearchText);
+                    setIsQuickAddModalOpen(true);
+                }}
             />
 
             <WalkInCustomerCard 
@@ -164,6 +191,22 @@ export default function CustomerSection({
                 formatPhoneNumber={formatPhoneNumber}
                 isProcessing={isProcessing}
                 netTotal={netTotal}
+            />
+
+            {/* 🌟 Smart Quick Add Customer Modal */}
+            <QuickAddCustomerModal 
+                isOpen={isQuickAddModalOpen}
+                onClose={() => setIsQuickAddModalOpen(false)}
+                initialText={quickAddInitialText}
+                onCustomerCreated={(newCustomer) => {
+                    updateActiveTab({ 
+                        customer: newCustomer, 
+                        walkInName: '', 
+                        walletUsed: 0, 
+                        hidePhone: false 
+                    });
+                    setLocalSearchText(getCustomerDisplayName(newCustomer, ''));
+                }}
             />
         </div>
     );

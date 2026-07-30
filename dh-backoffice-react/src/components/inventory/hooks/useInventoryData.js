@@ -1,58 +1,68 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '../../../firebase/inventoryService';
 import { categoryService } from '../../../firebase/categoryService';
 
 export default function useInventoryData(PAGE_LIMIT = 50) {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [loadingMore, setLoadingMore] = useState(false);
-  const [globalBufferStock, setGlobalBufferStock] = useState(2);
   
-  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-
-  const fetchInitialProducts = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data, isLoading: loading, refetch: fetchInitialProducts } = useQuery({
+    queryKey: ['inventoryInitial', PAGE_LIMIT],
+    queryFn: async () => {
       const [settingsResult, productsResult, categoriesResult] = await Promise.all([
         inventoryService.getInventorySettings(),
         inventoryService.getPaginatedProducts(PAGE_LIMIT),
         categoryService.getAllCategories()
       ]);
+
+      const rawProducts = productsResult.products || [];
+      const statsMap = await inventoryService.fetchProductStats(rawProducts);
+
+      const productsWithStats = rawProducts.map(p => {
+        const stats = statsMap[p.sku] || { stockIn: 0, sales: 0, claim: 0 };
+        return {
+          ...p,
+          stockInHistory: { ...p.stockInHistory, '30': stats.stockIn },
+          salesHistory: { ...p.salesHistory, '30': stats.sales },
+          claimHistory: { ...p.claimHistory, '30': stats.claim }
+        };
+      });
       
-      // Deduplicate strictly by name to avoid UI duplicates (e.g. "ลำโพง" showing up twice)
+      // Deduplicate strictly by name to avoid UI duplicates
       const uniqueData = Array.from(new Map(categoriesResult.map(item => [
         (item.name || '').trim().toLowerCase(), 
         item
       ])).values());
       
-      setGlobalBufferStock(settingsResult.defaultBufferStock !== undefined ? settingsResult.defaultBufferStock : 2);
-      setProducts(productsResult.products);
-      setCategories(uniqueData);
-      setLastVisibleDoc(productsResult.lastDoc);
-      setHasMore(productsResult.products.length === PAGE_LIMIT);
-    } catch (error) {
-      console.error("Error fetching initial inventory data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [PAGE_LIMIT]);
-
-  useEffect(() => {
-    fetchInitialProducts();
-  }, [fetchInitialProducts]);
+      return {
+        globalBufferStock: settingsResult.defaultBufferStock !== undefined ? settingsResult.defaultBufferStock : 2,
+        products: productsWithStats,
+        categories: uniqueData,
+        lastVisibleDoc: productsResult.lastDoc,
+        hasMore: rawProducts.length === PAGE_LIMIT
+      };
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 mins for instant loads
+  });
 
   const loadMore = async () => {
-    if (!lastVisibleDoc || loadingMore) return;
+    if (!data?.lastVisibleDoc || loadingMore || !data?.hasMore) return;
     setLoadingMore(true);
     
     try {
-      const { products: newProducts, lastDoc } = await inventoryService.getPaginatedProducts(PAGE_LIMIT, lastVisibleDoc);
+      const { products: newProducts, lastDoc } = await inventoryService.getPaginatedProducts(PAGE_LIMIT, data.lastVisibleDoc);
       
-      setProducts(prev => [...prev, ...newProducts]);
-      setLastVisibleDoc(lastDoc);
-      setHasMore(newProducts.length === PAGE_LIMIT);
+      // Update cache directly
+      queryClient.setQueryData(['inventoryInitial', PAGE_LIMIT], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          products: [...old.products, ...newProducts],
+          lastVisibleDoc: lastDoc,
+          hasMore: newProducts.length === PAGE_LIMIT
+        };
+      });
     } catch (error) {
       console.error("Error loading more products:", error);
     } finally {
@@ -61,22 +71,25 @@ export default function useInventoryData(PAGE_LIMIT = 50) {
   };
 
   const updateProductInState = (productData, isEdit) => {
-    setProducts(prev => {
+    queryClient.setQueryData(['inventoryInitial', PAGE_LIMIT], (old) => {
+      if (!old) return old;
+      let newProducts;
       if (isEdit) {
-        return prev.map(p => p.sku === productData.sku ? productData : p);
+        newProducts = old.products.map(p => p.sku === productData.sku ? productData : p);
       } else {
-        return [productData, ...prev];
+        newProducts = [productData, ...old.products];
       }
+      return { ...old, products: newProducts };
     });
   };
 
   return {
-    products,
-    categories,
+    products: data?.products || [],
+    categories: data?.categories || [],
     loading,
     loadingMore,
-    globalBufferStock,
-    hasMore,
+    globalBufferStock: data?.globalBufferStock || 2,
+    hasMore: data?.hasMore || false,
     loadMore,
     fetchInitialProducts,
     updateProductInState

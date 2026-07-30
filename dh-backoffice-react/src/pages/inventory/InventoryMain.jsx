@@ -1,21 +1,25 @@
-import { useState, useRef, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useCallback, lazy, Suspense } from 'react';
+import { Loader2, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import ProductTable from '../../components/inventory/ProductTable';
-import ProductModal from '../../components/inventory/ProductModal';
-import InventoryImportModal from '../../components/inventory/InventoryImportModal';
-import InventoryExportModal from '../../components/inventory/InventoryExportModal';
 import InventoryHeader from '../../components/inventory/InventoryHeader';
 import { inventoryService } from '../../firebase/inventoryService';
 
 import useInventoryData from '../../components/inventory/hooks/useInventoryData';
 import useInventorySearch from '../../components/inventory/hooks/useInventorySearch';
 import useDebounce from '../../hooks/useDebounce'; // ✨ Import useDebounce
-import GuideModal from '../../components/common/GuideModal';
+import { useAuth } from '../../contexts/AuthContext';
+
+// ⚡ Lazy Loading Heavy Modals
+const ProductModal = lazy(() => import('../../components/inventory/ProductModal'));
+const InventoryImportModal = lazy(() => import('../../components/inventory/InventoryImportModal'));
+const InventoryExportModal = lazy(() => import('../../components/inventory/InventoryExportModal'));
+const GuideModal = lazy(() => import('../../components/common/GuideModal'));
 
 export default function Inventory() {
+  const { isManagerOrOwner } = useAuth();
   const {
-    products, categories, loading, loadingMore, globalBufferStock,
-    hasMore, loadMore, fetchInitialProducts, updateProductInState
+    products, categories, loading, globalBufferStock,
+    fetchInitialProducts, updateProductInState
   } = useInventoryData();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,37 +35,24 @@ export default function Inventory() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
-  // ✨ ส่ง debouncedSearchTerm ไปใช้ค้นหาแทน searchTerm
+  const handleOpenMasterSheet = () => {
+    if (isManagerOrOwner) {
+      window.open('https://docs.google.com/spreadsheets/d/1f3ZyfZM6nwE3OSNeseMqlqElDqv7Kxt_UL3H1IPTLos/edit?usp=sharing', '_blank');
+    } else {
+      alert('คุณไม่สามารถใช้งานได้\nต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า หรือ ตำแหน่งที่อนุมัติ ให้ใช้งานได้');
+    }
+  };
+
+  // ✨ ส่ง debouncedSearchTerm ไปใช้ค้นหา และดึงข้อมูล Pagination
   const { 
     filteredProducts, isSearching, 
-    hasMoreCache, loadMoreCache, // ดึงฟังก์ชันจัดการหน้าของ Cache ออกมา
+    totalItems, currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage, totalPages,
+    startIndex, endIndex,
     updateCache, clearCache 
   } = useInventorySearch(
     products, debouncedSearchTerm, filterCategory, sortConfig, salesPeriod
   );
-
-  const isGlobalActionActive = debouncedSearchTerm || filterCategory !== 'All' || sortConfig.key;
-
-  // ✨ Infinite Scroll Logic รองรับทั้ง Firebase และ Cache
-  const observer = useRef();
-  const lastElementRef = useCallback(node => {
-    if (loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        if (isGlobalActionActive && hasMoreCache) {
-          // โหลดเพิ่มจาก Cache
-          loadMoreCache();
-        } else if (!isGlobalActionActive && hasMore) {
-          // โหลดเพิ่มจาก Firebase
-          loadMore();
-        }
-      }
-    });
-    
-    if (node) observer.current.observe(node);
-  }, [loadingMore, hasMore, hasMoreCache, isGlobalActionActive, loadMore, loadMoreCache]);
 
   const handleSort = useCallback((key) => {
     setSortConfig(prev => {
@@ -124,7 +115,7 @@ export default function Inventory() {
       ) : (
         <div className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
           
-          <div className="flex-1 bg-white dark:bg-slate-900 border border-dh-border rounded-xl shadow-xs overflow-y-auto custom-scrollbar flex flex-col relative transition-all duration-300">
+          <div className="flex-1 bg-white dark:bg-slate-900 border border-dh-border rounded-xl shadow-xs overflow-hidden flex flex-col relative transition-all duration-300">
             {isSearching && (
                <div className="absolute top-0 left-0 w-full h-1 bg-dh-accent/20 overflow-hidden z-30">
                  <div className="w-1/3 h-full bg-dh-accent animate-[slideRight_1s_ease-in-out_infinite]"></div>
@@ -140,64 +131,124 @@ export default function Inventory() {
               onEdit={handleEditProduct} 
             />
             
-            {( (!isGlobalActionActive && hasMore) || (isGlobalActionActive && hasMoreCache) ) && (
-              <div ref={lastElementRef} className="flex justify-center items-center p-6 shrink-0 bg-transparent">
-                {(!isGlobalActionActive && loadingMore) && (
-                  <div className="flex items-center gap-2 text-dh-muted font-bold animate-pulse">
-                     <Loader2 className="animate-spin w-5 h-5 text-dh-accent" />
-                     กำลังดึงข้อมูลเพิ่มเติม...
+            {/* 📄 Pagination Bar (แถบควบคุมเปลี่ยนหน้า 21/50/100/250 รายการ) */}
+            {!loading && totalItems > 0 && (
+              <div className="px-4 py-2 bg-dh-surface border-t border-dh-border flex flex-wrap items-center justify-between gap-3 shrink-0 text-sm shadow-xs rounded-b-xl z-10">
+                <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-dh-muted">
+                  <div>
+                    แสดง <span className="text-dh-accent font-bold">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</span> จากทั้งหมด <span className="text-dh-main font-bold">{totalItems.toLocaleString()}</span> รายการ
                   </div>
-                )}
+                  
+                  <div className="flex items-center gap-1.5 border-l border-dh-border pl-4">
+                    <span className="text-dh-muted text-xs">แสดงหน้าละ:</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                      className="px-2 py-1 bg-dh-base border border-dh-border rounded-md text-xs font-bold text-dh-main focus:outline-none focus:border-dh-accent cursor-pointer"
+                    >
+                      <option value={21}>21 รายการ</option>
+                      <option value={50}>50 รายการ</option>
+                      <option value={100}>100 รายการ</option>
+                      <option value={250}>250 รายการ</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage <= 1}
+                    className="px-3 py-1.5 bg-dh-base border border-dh-border hover:border-dh-accent text-dh-main hover:text-dh-accent rounded-md font-bold text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+                    title="หน้าก่อนหน้า"
+                  >
+                    <ChevronLeft size={14} />
+                    <span>ย้อนกลับ</span>
+                  </button>
+
+                  <div className="px-3 py-1 bg-dh-base border border-dh-border rounded-md text-xs font-bold text-dh-main">
+                    หน้า <span className="text-dh-accent">{currentPage}</span> / {totalPages}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage >= totalPages}
+                    className="px-3 py-1.5 bg-dh-base border border-dh-border hover:border-dh-accent text-dh-main hover:text-dh-accent rounded-md font-bold text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+                    title="หน้าถัดไป"
+                  >
+                    <span>ถัดไป</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
 
-      <ProductModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSave={handleSaveProduct} 
-        productData={editingProduct} 
-        globalBufferStock={globalBufferStock}
-        categoriesData={categories}
-      />
+      <Suspense fallback={null}>
+        {isModalOpen && (
+          <ProductModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            onSave={handleSaveProduct} 
+            productData={editingProduct} 
+            globalBufferStock={globalBufferStock}
+            categoriesData={categories}
+          />
+        )}
 
-      <InventoryImportModal 
-        isOpen={isImportModalOpen} 
-        onClose={() => setIsImportModalOpen(false)} 
-        onSuccess={() => {
-          setIsImportModalOpen(false);
-          clearCache();
-          fetchInitialProducts();
-        }}
-      />
+        {isImportModalOpen && (
+          <InventoryImportModal 
+            isOpen={isImportModalOpen} 
+            onClose={() => setIsImportModalOpen(false)} 
+            onSuccess={() => {
+              setIsImportModalOpen(false);
+              clearCache();
+              fetchInitialProducts();
+            }}
+          />
+        )}
 
-      <InventoryExportModal 
-        isOpen={isExportModalOpen} 
-        onClose={() => setIsExportModalOpen(false)} 
-        availableCategories={categories}
-      />
+        {isExportModalOpen && (
+          <InventoryExportModal 
+            isOpen={isExportModalOpen} 
+            onClose={() => setIsExportModalOpen(false)} 
+            availableCategories={categories}
+          />
+        )}
 
-      <GuideModal 
-        isOpen={isGuideOpen}
-        onClose={() => setIsGuideOpen(false)}
-        title="คู่มือการใช้งาน: ระบบคลังสินค้า (Inventory)"
-        config={{
-          description: "หน้านี้ใช้สำหรับจัดการสต๊อกสินค้า กำหนดราคาขาย ราคาต้นทุน และซิงค์ข้อมูลกับ Google Sheets เพื่อออกใบเสร็จแบบอัตโนมัติ",
-          howTo: [
-            "1. <b>ค้นหาสินค้า:</b> พิมพ์ SKU หรือชื่อรุ่นในช่องค้นหา ระบบจะค้นหาให้อัตโนมัติ (ไม่ต้องกด Enter)",
-            "2. <b>แก้ไขสต๊อก/ราคา:</b> กดปุ่ม ✏️ หลังชื่อสินค้า เพื่อแก้ไขข้อมูล ข้อมูลจะถูกอัปเดตแบบเรียลไทม์",
-            "3. <b>นำเข้า/ส่งออก (Import/Export):</b> ใช้ปุ่ม Import เพื่อนำเข้าสินค้าหลายรายการพร้อมกันจากไฟล์ Excel/CSV",
-            "4. <b>ระบบซิงค์อัตโนมัติ (Auto-Sync):</b> ข้อมูลสต๊อกและราคาจะถูกส่งไปอัปเดตที่ Google Sheets อัตโนมัติทุกครั้งที่มีการแก้ไขหรือเกิดยอดขายใหม่"
-          ],
-          tips: [
-            "คุณสามารถดู 'ยอดขาย 30 วัน' เพื่อประกอบการตัดสินใจเติมสต๊อกได้จากเมนู Dropdown ด้านบน",
-            "หากสินค้าใกล้หมด (ต่ำกว่า Buffer Stock ที่ตั้งไว้) จำนวนสต๊อกจะแสดงเป็นสีแดงเพื่อแจ้งเตือน"
-          ],
-          expectedResults: "การเพิ่มหรือแก้ไขสินค้าที่นี่ จะส่งผลกับหน้า POS ทันที แต่บน Google Sheets ต้องรอระบบซิงค์ (ประมาณ 10 วินาที)"
-        }}
-      />
+        {isGuideOpen && (
+          <GuideModal 
+            isOpen={isGuideOpen}
+            onClose={() => setIsGuideOpen(false)}
+            title="คู่มือการใช้งาน: ระบบคลังสินค้า (Inventory)"
+            config={{
+              description: "หน้านี้ใช้สำหรับจัดการสต๊อกสินค้า กำหนดราคาขาย ราคาต้นทุน และซิงค์ข้อมูลกับ Google Sheets เพื่อออกใบเสร็จแบบอัตโนมัติ",
+              howTo: [
+                "1. <b>ค้นหาสินค้า:</b> พิมพ์ SKU หรือชื่อรุ่นในช่องค้นหา ระบบจะค้นหาให้อัตโนมัติ (ไม่ต้องกด Enter)",
+                "2. <b>แก้ไขสต๊อก/ราคา:</b> กดปุ่ม ✏️ หลังชื่อสินค้า เพื่อแก้ไขข้อมูล ข้อมูลจะถูกอัปเดตแบบเรียลไทม์",
+                "3. <b>นำเข้า/ส่งออก (Import/Export):</b> ใช้ปุ่ม Import เพื่อนำเข้าสินค้าหลายรายการพร้อมกันจากไฟล์ Excel/CSV",
+                "4. <b>ระบบซิงค์อัตโนมัติ (Auto-Sync):</b> ข้อมูลสต๊อกและราคาจะถูกส่งไปอัปเดตที่ Google Sheets อัตโนมัติทุกครั้งที่มีการแก้ไขหรือเกิดยอดขายใหม่"
+              ],
+              tips: [
+                "คุณสามารถดู 'ยอดขาย 30 วัน' เพื่อประกอบการตัดสินใจเติมสต๊อกได้จากเมนู Dropdown ด้านบน",
+                "หากสินค้าใกล้หมด (ต่ำกว่า Buffer Stock ที่ตั้งไว้) จำนวนสต๊อกจะแสดงเป็นสีแดงเพื่อแจ้งเตือน"
+              ],
+              expectedResults: "การเพิ่มหรือแก้ไขสินค้าที่นี่ จะส่งผลกับหน้า POS ทันที แต่บน Google Sheets ต้องรอระบบซิงค์ (ประมาณ 10 วินาที)"
+            }}
+            extraFooter={
+              <button 
+                onClick={handleOpenMasterSheet}
+                title="เปิดฐานข้อมูล Google Sheet"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm shadow-xs transition-colors dh-active-press"
+              >
+                <Lock size={16} className="text-amber-500" />
+                Master DB
+              </button>
+            }
+          />
+        )}
+      </Suspense>
     </div>
   );
 }// trigger 

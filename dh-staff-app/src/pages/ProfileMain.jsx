@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
-import { UserCircle, Coffee, CheckCircle, Clock, FileText, Send, X, ScanLine, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { UserCircle, Coffee, CheckCircle, Clock, FileText, Send, X, ScanLine } from 'lucide-react';
 import { staffService } from '../firebase/staffService';
 import { auth } from '../firebase/config';
+import QRScannerModal from '../components/QRScannerModal';
 
-import { safeJsonParse } from 'dh-shared/src/utils/safeJson.js';
 export default function ProfileMain() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -12,8 +11,6 @@ export default function ProfileMain() {
   
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
-  const [scanResult, setScanResult] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const [leaveForm, setLeaveForm] = useState({
     type: 'sick',
@@ -28,71 +25,33 @@ export default function ProfileMain() {
   const MOCK_NAME = 'พนักงาน AI ผู้ช่วยทดสอบจริง';
 
   useEffect(() => {
-    const currentUser = auth.currentUser;
-    const currentUid = currentUser?.uid || MOCK_UID;
-    const currentName = currentUser?.displayName || MOCK_NAME;
-    
-    setUser({ uid: currentUid, displayName: currentName });
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      const currentUid = currentUser?.uid || MOCK_UID;
+      const currentName = currentUser?.displayName || MOCK_NAME;
+      
+      setUser({ uid: currentUid, displayName: currentName });
 
-    staffService.getStaffProfile(currentUid).then(data => {
-      if (data) {
-        setProfile(data);
-        if (data.workStatus) setWorkStatus(data.workStatus);
-      }
+      staffService.getStaffProfile(currentUid).then(data => {
+        if (data) {
+          setProfile(data);
+          if (data.workStatus) setWorkStatus(data.workStatus);
+        }
+      });
     });
+
+    return () => unsubscribe();
   }, []);
 
-  // Initialize Scanner when showScanner changes
-  useEffect(() => {
-    let scanner = null;
-    
-    if (showScanner) {
-      scanner = new Html5QrcodeScanner(
-        "staff-reader",
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        false
-      );
-
-      scanner.render(onScanSuccess, onScanFailure);
+  // Callback เมื่อสแกน QR Code สำเร็จ
+  const handleAttendanceScanSuccess = useCallback(async (data) => {
+    if (data.type === 'ATTENDANCE_SCAN') {
+      await staffService.logAttendance(user.uid, user.displayName, data.stationId || 'MAIN_COUNTER');
+      await staffService.updateWorkStatus(user.uid, 'active');
+      setWorkStatus('active');
+    } else {
+      throw new Error('QR Code ไม่ถูกต้อง');
     }
-
-    async function onScanSuccess(decodedText) {
-      if (scanner) scanner.pause();
-      setIsProcessing(true);
-      
-      try {
-        const data = safeJsonParse(decodedText);
-        if (data.type === 'ATTENDANCE_SCAN') {
-          // You could optionally verify the stationId and timestamp here
-          // For now, if they scanned it, we update their attendance
-          
-          await staffService.logAttendance(user.uid, user.displayName, data.stationId || 'MAIN_COUNTER');
-          await staffService.updateWorkStatus(user.uid, 'active');
-          setWorkStatus('active');
-          
-          setScanResult({ success: true, message: 'ลงเวลาเข้างานสำเร็จ' });
-        } else {
-          throw new Error('QR Code ไม่ถูกต้อง');
-        }
-      } catch (error) {
-        console.error('Scan error:', error);
-        setScanResult({ success: false, message: 'การสแกนล้มเหลว หรือ QR Code ไม่รองรับ' });
-      } finally {
-        setIsProcessing(false);
-        setTimeout(() => {
-          setScanResult(null);
-          setShowScanner(false);
-          if (scanner) scanner.clear();
-        }, 3000);
-      }
-    }
-
-    function onScanFailure() {}
-
-    return () => {
-      if (scanner) scanner.clear().catch(e => console.error(e));
-    };
-  }, [showScanner, user]);
+  }, [user]);
 
   const handleStatusChange = async (newStatus) => {
     if (!user) return;
@@ -162,39 +121,11 @@ export default function ProfileMain() {
             </button>
           </>
         ) : (
-          <div className="w-full relative">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-gray-800">กำลังสแกน...</h3>
-              <button onClick={() => setShowScanner(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={20}/>
-              </button>
-            </div>
-            
-            <div id="staff-reader" className="w-full bg-black rounded-xl overflow-hidden border border-slate-200 relative"></div>
-            
-            {/* Overlay Processing */}
-            {isProcessing && (
-              <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 top-[40px] rounded-xl">
-                <Loader2 size={40} className="animate-spin text-blue-500 mb-2" />
-                <p className="font-bold text-blue-600">กำลังตรวจสอบข้อมูล...</p>
-              </div>
-            )}
-            
-            {/* Overlay Result */}
-            {scanResult && !isProcessing && (
-              <div className="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center z-10 top-[40px] rounded-xl animate-in zoom-in text-center p-4">
-                {scanResult.success ? (
-                  <CheckCircle size={60} className="text-emerald-500 mb-3 animate-bounce" />
-                ) : (
-                  <AlertCircle size={60} className="text-rose-500 mb-3 animate-pulse" />
-                )}
-                <h3 className={`text-lg font-black mb-1 ${scanResult.success ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  {scanResult.success ? 'สำเร็จ!' : 'ผิดพลาด'}
-                </h3>
-                <p className="font-bold text-slate-600 text-sm">{scanResult.message}</p>
-              </div>
-            )}
-          </div>
+          <QRScannerModal
+            isOpen={showScanner}
+            onClose={() => setShowScanner(false)}
+            onScanSuccess={handleAttendanceScanSuccess}
+          />
         )}
       </div>
 

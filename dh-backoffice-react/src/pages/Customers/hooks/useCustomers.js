@@ -1,11 +1,13 @@
+import { useEffect } from 'react';
 import { useCustomerData } from './useCustomerData';
 import { useCustomerFilters } from './useCustomerFilters';
 import { useCustomerActions } from './useCustomerActions';
 import { useCustomerHistory } from './useCustomerHistory';
+import { fetchOrderStatsForPage } from '../services/customerOrderStatsService';
 
 /**
  * Main Hook (Facade) สำหรับระบบ Customers
- * ทำหน้าที่รวบรวม Hook ย่อยทั้ง 4 ตัวเข้าด้วยกัน 
+ * ทำหน้าที่รวบรวม Hook ย่อยเข้าด้วยกัน 
  * และเป็นจุดเดียว (Single Point of Entry) ที่ UI จะเรียกใช้งาน
  */
 export const useCustomers = () => {
@@ -16,6 +18,7 @@ export const useCustomers = () => {
     loading,
     isRefreshing,
     fetchCustomers,
+    enrichCustomersWithOrderStats,
     CACHE_KEY
   } = useCustomerData();
 
@@ -34,9 +37,23 @@ export const useCustomers = () => {
   const historyHook = useCustomerHistory();
 
   // ==========================================
-  // Orchestration: รวมฟังก์ชันที่ต้องเรียกข้าม Hook
+  // Orchestration: โหลดสถิติบิลและ 30D เฉพาะ 21 รายชื่อในหน้าปัจจุบัน
   // ==========================================
-  
+  useEffect(() => {
+    const paginated = filterHook.state.paginatedCustomers;
+    if (!paginated || paginated.length === 0 || loading) return;
+
+    let isSubscribed = true;
+
+    fetchOrderStatsForPage(paginated).then(statsMap => {
+      if (isSubscribed && statsMap && Object.keys(statsMap).length > 0) {
+        enrichCustomersWithOrderStats(statsMap);
+      }
+    }).catch(err => console.error("Failed to enrich page order stats:", err));
+
+    return () => { isSubscribed = false; };
+  }, [filterHook.state.currentPage, filterHook.state.paginatedCustomers.map(c => c.uid || c.id).join(','), loading, enrichCustomersWithOrderStats]);
+
   // จัดการเมื่อคลิกเลือกบรรทัดลูกค้า
   const handleSelectCustomer = (customer) => {
     const targetId = customer?.uid || customer?.id;
@@ -52,7 +69,7 @@ export const useCustomers = () => {
     // ถ้ากดเลือกคนใหม่
     actionHook.actions.setSelectedCustomer(customer); // 1. จำว่าเลือกใคร
     actionHook.actions.setIsEditMode(false);          // 2. ปิดโหมดแก้ไข (เผื่อเปิดค้างไว้)
-    historyHook.actions.fetchCustomerHistory(targetId); // 3. วิ่งไปโหลดประวัติ
+    historyHook.actions.fetchCustomerHistory(customer); // 3. วิ่งไปโหลดประวัติแบบครอบคลุมทุก ID
   };
 
   // ==========================================

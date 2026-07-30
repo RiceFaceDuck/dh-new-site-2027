@@ -1,6 +1,6 @@
-import { Inbox, HelpCircle, History, Plus } from 'lucide-react';
+import { Inbox, HelpCircle, History, Plus, PackageSearch } from 'lucide-react';
 
-const TodoPageHeader = ({ navigate, setShowHelp, setShowNewTaskModal }) => {
+const TodoPageHeader = ({ navigate, setShowHelp, setShowNewTaskModal, setShowSourcingModal }) => {
   return (
     <div className="dh-header-gradient p-4 sm:p-6 relative z-10 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] transition-colors duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -20,7 +20,13 @@ const TodoPageHeader = ({ navigate, setShowHelp, setShowNewTaskModal }) => {
             </p>
           </div>
         </div>
-        <div className="flex gap-3 relative z-10 w-full sm:w-auto mt-4 sm:mt-0">
+        <div className="flex gap-3 relative z-10 w-full sm:w-auto mt-4 sm:mt-0 flex-wrap">
+          <button 
+            onClick={() => setShowSourcingModal(true)}
+            className="px-4 py-2.5 bg-purple-600/90 hover:bg-purple-600 text-white border border-purple-400/40 font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-[13px] shrink-0 whitespace-nowrap shadow-xs"
+          >
+            <PackageSearch size={18} strokeWidth={2.5} /> สินค้าไม่มีขาย
+          </button>
           <button 
             onClick={() => navigate('/todo/archive')}
             className="px-5 py-2.5 bg-slate-800/50 hover:bg-slate-800/70 text-white border border-slate-700/50 font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image as ImageIcon, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
+import { normalizeCategoryName } from '../../firebase/warrantyService';
 
 const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) => {
   const effectiveBuffer = (product.bufferStock !== undefined && product.bufferStock !== null && product.bufferStock !== '') 
@@ -8,10 +9,10 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) =>
 
   return (
     <>
-      <td className="px-3 py-3 align-middle">
+      <td className="px-3 py-3 align-middle w-14 text-center">
         <div className="w-10 h-10 bg-dh-base rounded-xl flex items-center justify-center text-dh-muted border border-dh-border overflow-hidden group-hover:border-dh-accent/50 group-hover:scale-105 transition-all shadow-xs mx-auto">
           {product.images?.[0] ? (
-            <img src={product.images[0]} alt={product.sku} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = ''; }}  loading="lazy" />
+            <img src={product.images[0]} alt={product.sku} width={40} height={40} className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = ''; }}  loading="lazy" />
           ) : (
             <ImageIcon size={18} className="opacity-50" />
           )}
@@ -28,27 +29,27 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) =>
           {product.tags?.length > 2 && <span className="text-[10px] bg-dh-base text-dh-muted px-2 py-0.5 rounded-full border border-dh-border">+{product.tags.length - 2}</span>}
         </div>
       </td>
-      <td className="px-3 py-3 align-middle whitespace-nowrap">
+      <td className="px-3 py-3 text-right align-middle whitespace-nowrap w-28 shrink-0">
         <span className="text-[12px] font-bold text-dh-muted bg-dh-base px-2.5 py-1 rounded-lg border border-dh-border shadow-xs group-hover:bg-dh-surface transition-colors">
-          {product.category}
+          {product.category || 'General'}
         </span>
       </td>
 
-      <td className="px-3 py-3 text-right align-middle whitespace-nowrap">
+      <td className="px-3 py-3 text-right align-middle whitespace-nowrap w-32 shrink-0">
         <div className="font-black text-[18px] text-dh-main inline-flex items-baseline gap-0.5 group-hover:text-dh-accent transition-colors">
           <span className="text-[12px] opacity-70">฿</span>
           {Number(product.Price || 0).toLocaleString()}
         </div>
       </td>
 
-      <td className="px-3 py-3 text-right align-middle whitespace-nowrap">
+      <td className="px-3 py-3 text-right align-middle whitespace-nowrap w-28 shrink-0">
         <div className="font-medium text-[13px] text-dh-muted opacity-80 group-hover:opacity-100 group-hover:text-dh-main transition-all">
           <span className="text-[11px] mr-0.5">฿</span>
           {Number(product.retailPrice || 0).toLocaleString()}
         </div>
       </td>
 
-      <td className="px-2 py-3 text-center align-middle whitespace-nowrap border-l border-dh-border/50">
+      <td className="px-2 py-3 text-center align-middle whitespace-nowrap w-24 shrink-0">
         <div className="group/tooltip relative inline-flex justify-center">
           <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-xs transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
             (product.stockInHistory?.[salesPeriod] || 0) > 0 
@@ -66,7 +67,7 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) =>
         </div>
       </td>
 
-      <td className="px-2 py-3 text-center align-middle whitespace-nowrap">
+      <td className="px-2 py-3 text-center align-middle whitespace-nowrap w-24 shrink-0">
         <div className="group/tooltip relative inline-flex justify-center">
           <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-xs transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
             (product.salesHistory?.[salesPeriod] || 0) > 0 
@@ -84,7 +85,7 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) =>
         </div>
       </td>
 
-      <td className="px-2 py-3 text-center align-middle whitespace-nowrap">
+      <td className="px-2 py-3 text-center align-middle whitespace-nowrap w-24 shrink-0">
         <div className="group/tooltip relative inline-flex justify-center">
           <span className={`font-bold text-[12px] px-2 py-1 rounded-lg border shadow-xs transition-colors inline-flex items-center justify-center min-w-[36px] gap-0.5 ${
             (product.claimHistory?.[salesPeriod] || 0) > 0 
@@ -102,8 +103,8 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock }) =>
         </div>
       </td>
 
-      <td className="px-3 py-3 text-center align-middle whitespace-nowrap">
-        <div className="inline-flex items-baseline gap-1">
+      <td className="px-3 py-3 text-right align-middle whitespace-nowrap w-28 shrink-0">
+        <div className="inline-flex items-baseline justify-end gap-1">
           <div className={`font-black text-[22px] tracking-tight ${Number(product.stockQuantity) <= effectiveBuffer ? 'text-red-500' : 'text-dh-main group-hover:text-dh-accent transform group-hover:scale-110'} transition-all`}>
             {product.stockQuantity || 0}
           </div>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { CheckCircle2, ShieldAlert } from 'lucide-react';
 
 
@@ -22,6 +22,14 @@ export const ToastProvider = ({ children }) => {
     toastTimeoutRef.current = setTimeout(() => {
       setToast({ show: false, message: '', type: 'success' });
     }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (

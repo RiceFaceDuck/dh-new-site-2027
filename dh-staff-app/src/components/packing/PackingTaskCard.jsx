@@ -1,4 +1,6 @@
 
+import { memo } from 'react';
+
 const PackingTaskCard = ({ 
   task, 
   processingId, 
@@ -54,7 +56,7 @@ const PackingTaskCard = ({
         
         <div className="space-y-3">
           {task.items?.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-gray-100 shadow-xs">
+            <div key={item.id || item.sku || idx} className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-gray-100 shadow-xs">
               {/* กล่องติ๊กถูก (ทำหลอกๆ ให้พนักงานกดเล่นเวลาหยิบของ) */}
               <div className="w-6 h-6 rounded-sm border-2 border-gray-300 shrink-0 active:bg-indigo-100 active:border-indigo-400 transition-colors cursor-pointer hover:bg-gray-50"></div>
               
@@ -100,4 +102,4 @@ const PackingTaskCard = ({
   );
 };
 
-export default PackingTaskCard;
+export default memo(PackingTaskCard);

@@ -1,8 +1,8 @@
-import { collection, doc, runTransaction, serverTimestamp, query, orderBy, getDocs } from 'firebase/firestore';
+import { collection, doc, runTransaction, serverTimestamp, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'credit_transactions';
+const COLLECTION_NAME = getCollectionPath('credit_transactions');
 
 export const transactionService = {
   /**
@@ -63,14 +63,14 @@ export const transactionService = {
     }
   },
 
-  getAllTransactions: async () => {
+  getAllTransactions: async (limitCount = 50) => {
     try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy("timestamp", "desc"));
+      const q = query(collection(db, COLLECTION_NAME), orderBy("timestamp", "desc"), limit(limitCount));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
       console.error("🔥 Error fetching transactions: ", error);
-      return [];
+      throw error;
     }
   }
 };

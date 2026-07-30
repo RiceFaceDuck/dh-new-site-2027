@@ -4,7 +4,7 @@ import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const TODOS_COLLECTION = 'todos';
+const TODOS_COLLECTION = getCollectionPath('todos');
 
 export const claimActionService = {
   approveRequest: async (task, adminUid, adminName) => {
@@ -45,14 +45,22 @@ export const claimActionService = {
       const { payload, id: todoId } = task;
       const qty = Number(payload.qty || 1);
       
-      await updateDoc(doc(db, TODOS_COLLECTION, todoId), {
-        status: 'processing',
-        updatedAt: serverTimestamp()
-      });
+      await runTransaction(db, async (transaction) => {
+        const todoRef = doc(db, TODOS_COLLECTION, todoId);
+        const todoSnap = await transaction.get(todoRef);
+        
+        if (!todoSnap.exists()) throw new Error("ไม่พบรายการคำขอ (Todo not found)");
+        if (todoSnap.data().status === 'processing') throw new Error("รายการนี้กำลังถูกดำเนินการไปแล้ว (Task is already processing)");
 
-      // เพิ่มสต๊อกสินค้าเสีย (Defect Stock) ไว้ตรวจสอบทีหลัง
-      await updateDoc(doc(db, getCollectionPath('products'), payload.sku), { 
-          defectQuantity: increment(qty) 
+        transaction.update(todoRef, {
+          status: 'processing',
+          updatedAt: serverTimestamp()
+        });
+        
+        // เพิ่มสต๊อกสินค้าเสีย (Defect Stock) ไว้ตรวจสอบทีหลัง
+        transaction.update(doc(db, getCollectionPath('products'), payload.sku), { 
+            defectQuantity: increment(qty) 
+        });
       });
 
       gasHistoryService.log({
@@ -132,13 +140,7 @@ export const claimActionService = {
           'stats.sold': increment(qty)
         });
 
-        // หักสต๊อกของเสีย (เคลียร์ยอด Defect ที่รับมาตอน Mark Arrived)
-        if (isSwapSku) {
-           const defectRef = doc(db, getCollectionPath('products'), payload.sku);
-           transaction.update(defectRef, { defectQuantity: increment(-qty) });
-        } else {
-           transaction.update(pRef, { defectQuantity: increment(-qty) });
-        }
+        // [REMOVED] การหัก defectQuantity ถูกนำออก เนื่องจากของเสียยังคงอยู่ในระบบจนกว่าจะเคลมกับ Supplier สำเร็จ
 
         // 2. อัปเดตสถานะใบเคลม To-do
         transaction.update(doc(db, TODOS_COLLECTION, todoId), updateData);
@@ -352,11 +354,35 @@ export const claimActionService = {
 
   rejectRequest: async (task, reason, adminUid, adminName) => {
     try {
-      await updateDoc(doc(db, TODOS_COLLECTION, task.id), {
-        status: 'rejected',
-        handledBy: adminUid,
-        rejectReason: reason,
-        updatedAt: serverTimestamp()
+      await runTransaction(db, async (transaction) => {
+        const todoRef = doc(db, TODOS_COLLECTION, task.id);
+        const todoSnap = await transaction.get(todoRef);
+        
+        if (!todoSnap.exists()) throw new Error("ไม่พบรายการคำขอ (Todo not found)");
+        
+        const currentData = todoSnap.data();
+        if (currentData.status === 'rejected') throw new Error("รายการนี้ถูกปฏิเสธไปแล้ว");
+
+        // 🌟 ถ้ารายการนี้เคยผ่านขั้นตอนรับของเข้า (processing) ไปแล้ว ต้องลบ defectQuantity คืน
+        if (currentData.status === 'processing' && currentData.payload?.sku) {
+          const qty = Number(currentData.payload.qty || 1);
+          const pRef = doc(db, getCollectionPath('products'), currentData.payload.sku);
+          const pSnap = await transaction.get(pRef);
+          
+          if (pSnap.exists()) {
+             // คืนค่า defectQuantity (หักออก เพราะไม่อนุมัติให้เคลม)
+             transaction.update(pRef, { 
+                 defectQuantity: increment(-qty) 
+             });
+          }
+        }
+
+        transaction.update(todoRef, {
+          status: 'rejected',
+          handledBy: adminUid,
+          rejectReason: reason,
+          updatedAt: serverTimestamp()
+        });
       });
       
       gasHistoryService.log({
@@ -365,12 +391,32 @@ export const claimActionService = {
         action: 'Reject',
         target: { id: task.payload.claimId, type: 'Task' },
         details: {
-          legacy_details: `ไม่อนุมัติคำขอ: ${reason}`,
+          legacy_details: `ไม่อนุมัติคำขอ: ${reason} (คืนสต๊อกของเสียเรียบร้อยถ้ามี)`,
           reason: reason,
           task_id: task.id
         },
         actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
       });
+
+      // 🌟 บันทึกประวัติย่อยกรณีมีการดึงของเสียคืน
+      if (task.status === 'processing') {
+         setTimeout(() => {
+           gasHistoryService.log({
+             level: 'INFO',
+             module: 'Claim',
+             action: 'SKU_DEFECT_REVERT',
+             target: { id: task.payload.sku, type: 'Product' },
+             details: {
+               type: 'ยกเลิกของเสีย',
+               qtyChange: -(Number(task.payload.qty) || 1),
+               reference: task.payload.claimId,
+               legacy_details: `ไม่อนุมัติการเคลม ดึงยอดของเสียกลับคืน (${task.payload.claimId})`
+             },
+             actorOverride: { uid: adminUid, name: adminName || 'Manager' }
+           });
+         }, 0);
+      }
+
       return true;
     } catch (error) {
       console.error("🔥 Error in rejectRequest:", error);

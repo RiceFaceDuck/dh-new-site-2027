@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, ArrowLeft, HelpCircle, X, CloudOff, RefreshCw } from 'lucide-react';
+import { Plus, ArrowLeft, HelpCircle, X, CloudOff, RefreshCw, ShoppingBag, Receipt } from 'lucide-react';
 import { offlinePosService } from '../../../../firebase/offlinePosService';
 import { toast } from 'react-hot-toast';
 
@@ -60,7 +60,7 @@ export default function PosHeader({
 
     return (
         <div className="flex items-center justify-between px-4 py-2 border-b border-[#D3DCEB] bg-[#EFF2F9] text-[#2A305A] shrink-0 z-20 shadow-xs">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
                 <button onClick={onSwitchView} disabled={isProcessing} className="p-1 text-gray-500 hover:text-[#2A305A] transition-colors dh-active-press"><ArrowLeft size={20}/></button>
                 <h1 className="font-black text-sm tracking-wide text-[#2A305A]">เปิดบิลการขาย</h1>
                 <button onClick={() => setIsGuideModalOpen(true)} className="text-gray-400 hover:text-[#D51C39] transition-colors ml-1" title="คู่มือการใช้งาน">
@@ -80,22 +80,84 @@ export default function PosHeader({
                 )}
             </div>
             
-            <div className="flex items-center gap-1 overflow-x-auto max-w-[60vw] custom-scrollbar">
-                {safeCartTabs.map((tab, idx) => (
-                    <button key={tab.id} onClick={() => !isProcessing && setActiveTabId(tab.id)}
-                        className={`px-3 py-2 text-xs font-black transition-all border-t-2 rounded-t-lg mt-1 mr-1 flex items-center gap-1.5 group
-                            ${activeTabId === tab.id ? 'border-t-[#D51C39] text-[#2A305A] bg-(--dh-bg-base) shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-10 relative' : 'border-t-transparent text-gray-500 bg-[#D9E2EC] hover:text-gray-800 hover:bg-[#CBD5E1]'}`}>
-                        <span>{getTabTitle(tab, idx)} {tab.orderId && <span className="text-[9px] opacity-60 font-mono bg-black/5 px-1 rounded-sm">(Draft)</span>}</span>
-                        <div 
-                            onClick={(e) => { e.stopPropagation(); if (!isProcessing) closeTab(tab.id); }}
-                            className={`p-0.5 rounded-full transition-all flex items-center justify-center ${activeTabId === tab.id ? 'hover:bg-red-500/20 text-red-500 opacity-60 hover:opacity-100' : 'hover:bg-black/10 opacity-0 group-hover:opacity-50 hover:opacity-100!'}`}
-                            title="ปิดแท็บ"
+            {/* 🌟 Modern Premium Draft Tabs Bar */}
+            <div className="flex items-center gap-1.5 overflow-x-auto max-w-[70vw] custom-scrollbar py-0.5 px-1">
+                {safeCartTabs.map((tab, idx) => {
+                    const isActive = activeTabId === tab.id;
+                    const items = tab.items || [];
+                    const itemCount = items.reduce((sum, i) => sum + (i.qty || i.quantity || 1), 0);
+                    const totalAmt = items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || i.quantity || 1)), 0);
+
+                    return (
+                        <button 
+                            key={tab.id} 
+                            onClick={() => !isProcessing && setActiveTabId(tab.id)}
+                            className={`px-3 py-1.5 text-xs font-bold transition-all rounded-lg flex items-center gap-2 border group relative shrink-0 shadow-xs cursor-pointer ${
+                                isActive 
+                                    ? 'bg-white text-slate-900 border-red-500 shadow-md ring-2 ring-red-500/20 scale-[1.02] z-10 font-extrabold' 
+                                    : 'bg-slate-200/90 text-slate-700 border-slate-300 hover:bg-slate-300 hover:text-slate-900'
+                            }`}
                         >
-                            <X size={12} strokeWidth={3}/>
-                        </div>
-                    </button>
-                ))}
-                <button onClick={() => { if (!isProcessing) { const newTab = createNewTab(); if(typeof setCartTabs === 'function') { setCartTabs([...safeCartTabs, newTab]); setActiveTabId(newTab.id); } } }} className="p-1.5 ml-1 text-gray-500 hover:text-[#2A305A] hover:bg-gray-200 transition-colors bg-white/50 border border-gray-200 rounded-md dh-active-press mt-1"><Plus size={16}/></button>
+                            <div className={`p-1 rounded-md transition-colors ${isActive ? 'bg-red-50 text-red-600' : 'bg-slate-300/60 text-slate-600'}`}>
+                                <Receipt size={13} strokeWidth={2.5} />
+                            </div>
+
+                            <div className="flex flex-col items-start text-left leading-tight">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="truncate max-w-[130px]">{getTabTitle(tab, idx)}</span>
+                                    <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border ${
+                                        isActive 
+                                            ? 'bg-amber-100 text-amber-800 border-amber-300/80 shadow-2xs' 
+                                            : 'bg-slate-300/80 text-slate-600 border-slate-400/50'
+                                    }`}>
+                                        Draft
+                                    </span>
+                                </div>
+
+                                {itemCount > 0 ? (
+                                    <span className={`text-[10px] font-semibold mt-0.5 ${isActive ? 'text-emerald-600 font-bold' : 'text-slate-500'}`}>
+                                        {itemCount} รายการ • ฿{totalAmt.toLocaleString()}
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px] text-slate-400 mt-0.5 italic">
+                                        ตะกร้าว่าง
+                                    </span>
+                                )}
+                            </div>
+
+                            {safeCartTabs.length > 1 && (
+                                <div 
+                                    onClick={(e) => { e.stopPropagation(); if (!isProcessing) closeTab(tab.id); }}
+                                    className={`p-1 rounded-full transition-all flex items-center justify-center ml-0.5 ${
+                                        isActive 
+                                            ? 'bg-slate-100 hover:bg-red-500 hover:text-white text-slate-400' 
+                                            : 'hover:bg-red-500 hover:text-white text-slate-400 opacity-60 group-hover:opacity-100'
+                                    }`}
+                                    title="ปิดแท็บ"
+                                >
+                                    <X size={11} strokeWidth={3}/>
+                                </div>
+                            )}
+                        </button>
+                    );
+                })}
+
+                <button 
+                    onClick={() => { 
+                        if (!isProcessing) { 
+                            const newTab = createNewTab(); 
+                            if(typeof setCartTabs === 'function') { 
+                                setCartTabs([...safeCartTabs, newTab]); 
+                                setActiveTabId(newTab.id); 
+                            } 
+                        } 
+                    }} 
+                    className="flex items-center gap-1 px-2.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all rounded-lg shadow-xs cursor-pointer shrink-0 border border-emerald-700/50"
+                    title="เปิดบิลร่างใหม่"
+                >
+                    <Plus size={15} strokeWidth={3}/>
+                    <span className="text-[11px]">เปิดบิลใหม่</span>
+                </button>
             </div>
         </div>
     );

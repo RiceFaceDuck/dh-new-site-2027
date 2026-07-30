@@ -24,7 +24,7 @@
 
 ---
 
-## 1. Collection: `homepage_categories`
+## 1. Collection: `homepage_categories` `[READ-HEAVY]`
 **Firestore Path:** `/homepage_categories/{categoryId}`
 **Role:** Manages the display of categories on the Storefront. Managers can customize the layout, UI shape, and connection to backend product types.
 
@@ -73,7 +73,7 @@ export interface ProductCategoriesSettings {
 
 ---
 
-## 3. Collection: `freebies`
+## 3. Collection: `freebies` `[READ-HEAVY]`
 **Firestore Path:** `/freebies/{freebieId}`
 **Role:** Manages marketing incentives (free items).
 
@@ -116,7 +116,7 @@ export interface Freebie {
 
 ---
 
-## 4. Collection: `promotions`
+## 4. Collection: `promotions` `[READ-HEAVY]`
 **Firestore Path:** `/promotions/{promoId}`
 **Role:** Manages marketing discounts and promo codes.
 
@@ -159,7 +159,7 @@ export interface Promotion {
 
 ---
 
-## 5. Collection: `shipping_rules`
+## 5. Collection: `shipping_rules` `[READ-HEAVY]`
 **Firestore Path:** `/shipping_rules/{ruleId}`
 **Role:** Manages dynamic shipping cost calculation rules based on company, product type, and quantity.
 

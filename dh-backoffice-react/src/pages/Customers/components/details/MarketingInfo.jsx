@@ -97,6 +97,8 @@ export default function MarketingInfo({ customer }) {
       case 'active': return <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-bold">ACTIVE</span>;
       case 'pending': return <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 border border-amber-200 rounded-full text-[10px] font-bold">PENDING</span>;
       case 'rejected': return <span className="px-2 py-0.5 bg-rose-500/10 text-rose-600 border border-rose-200 rounded-full text-[10px] font-bold">REJECTED</span>;
+      case 'OUT_OF_CREDIT': return <span className="px-2 py-0.5 bg-purple-500/10 text-purple-600 border border-purple-200 rounded-full text-[10px] font-bold">OUT OF CREDIT</span>;
+      case 'COMPLETED': return <span className="px-2 py-0.5 bg-blue-500/10 text-blue-600 border border-blue-200 rounded-full text-[10px] font-bold">COMPLETED</span>;
       default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold">{status?.toUpperCase() || 'UNKNOWN'}</span>;
     }
   };

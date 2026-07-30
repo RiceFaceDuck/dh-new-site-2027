@@ -1,13 +1,14 @@
-import { limit, writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId, setDoc } from 'firebase/firestore';
+import { limit, writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId } from 'firebase/firestore';
 import { db, auth } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
+import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventoryImportService = {
-  // Check which SKUs already exist (chunked to respect 30 items 'in' limit)
-  checkExistingSkus: async (skus) => {
+  // Check which SKUs already exist and fetch their data
+  fetchExistingProducts: async (skus) => {
     try {
-      const existingSkus = new Set();
+      const existingProducts = new Map();
       const chunks = [];
       for (let i = 0; i < skus.length; i += 30) {
         chunks.push(skus.slice(i, i + 30));
@@ -20,12 +21,12 @@ export const inventoryImportService = {
       
       const snapshots = await Promise.all(chunkPromises);
       snapshots.forEach(snap => {
-        snap.forEach(doc => existingSkus.add(doc.id));
+        snap.forEach(doc => existingProducts.set(doc.id, doc.data()));
       });
       
-      return existingSkus;
+      return existingProducts;
     } catch (error) {
-      console.error("🔥 Error in checkExistingSkus:", error);
+      console.error("🔥 Error in fetchExistingProducts:", error);
       throw error;
     }
   },
@@ -33,20 +34,17 @@ export const inventoryImportService = {
   processBulkImport: async (products, conflictStrategy) => {
     try {
       const skus = products.map(p => p.sku);
-      const existingSkus = await inventoryImportService.checkExistingSkus(skus);
+      const existingProductsMap = await inventoryImportService.fetchExistingProducts(skus);
       
       const toWrite = [];
       const toSkip = [];
-      const toTodo = [];
       
       products.forEach(p => {
-        if (existingSkus.has(p.sku)) {
+        if (existingProductsMap.has(p.sku)) {
           if (conflictStrategy === 'overwrite') {
             toWrite.push(p);
-          } else if (conflictStrategy === 'todo') {
-            toTodo.push(p);
           } else {
-            toSkip.push(p);
+            toSkip.push(p); // skip is default for existing if not overwrite
           }
         } else {
           toWrite.push(p); // New items always written
@@ -64,18 +62,52 @@ export const inventoryImportService = {
           const batch = writeBatch(db);
           chunk.forEach(p => {
             const docRef = doc(db, getCollectionPath('products'), p.sku);
+            const isNew = !existingProductsMap.has(p.sku);
+            const existingData = existingProductsMap.get(p.sku);
             
             // Inject category_lower for frontend query support
             if (p.category) {
               p.category_lower = p.category.trim().toLowerCase();
             }
 
+            // 📦 บันทึกประวัติสินค้าเข้าจาก Excel Import (Fix Duplicate Stock Receipt Bug)
+            const isAddStockExplicit = p._addStockAmount !== undefined;
+            const addedStock = Number(p._addStockAmount || 0);
+            const newStockQty = Number(p.stockQuantity || 0);
+            
+            // Clean up temporary frontend properties before saving
+            const productDataToSave = { ...p };
+            delete productDataToSave._addStockAmount;
+            delete productDataToSave._hasStockConflict;
+
             batch.set(docRef, {
-              ...p,
+              ...productDataToSave,
               updatedAt: serverTimestamp(),
               // Only set createdAt if new (merge handles it, but just safely applying it)
-              ...(existingSkus.has(p.sku) ? {} : { createdAt: serverTimestamp() })
-            }, { merge: true }); // Merge ensures we don't accidentally wipe fields we didn't specify
+              ...(isNew ? { createdAt: serverTimestamp() } : {})
+            }, { merge: true }); 
+            
+            if (isNew && newStockQty > 0) {
+               // ของใหม่ รับเข้าตามจำนวน
+               const receiptRef = doc(collection(db, getCollectionPath('stock_receipts')));
+               batch.set(receiptRef, {
+                 sku: p.sku,
+                 quantity: newStockQty,
+                 source: 'excel_import',
+                 createdBy: auth.currentUser?.uid || 'System',
+                 createdAt: serverTimestamp()
+               });
+            } else if (!isNew && isAddStockExplicit && addedStock > 0) {
+               // ของเก่า และผู้ใช้อัพช่อง AddStock เท่านั้น ถึงจะนับว่าเป็นการรับเข้า
+               const receiptRef = doc(collection(db, getCollectionPath('stock_receipts')));
+               batch.set(receiptRef, {
+                 sku: p.sku,
+                 quantity: addedStock,
+                 source: 'excel_import_addstock',
+                 createdBy: auth.currentUser?.uid || 'System',
+                 createdAt: serverTimestamp()
+               });
+            }
           });
           await batch.commit();
         }
@@ -92,7 +124,11 @@ export const inventoryImportService = {
         });
 
         toWrite.forEach(p => {
-          const isNew = !existingSkus.has(p.sku);
+          const isNew = !existingProductsMap.has(p.sku);
+          
+          // 🚀 Queue update to Google Sheets so Realtime BigSeller Sync detects it
+          gasStockService.queueUpdate(p);
+
           gasHistoryService.log({
             level: 'INFO',
             module: 'Inventory',
@@ -107,29 +143,10 @@ export const inventoryImportService = {
         });
       }
       
-      // Send to-do if requested
-      if (toTodo.length > 0) {
-        const todoId = `T-${Date.now()}`;
-        const docRef = doc(db, getCollectionPath('todos'), todoId);
-        await setDoc(docRef, {
-          type: 'PRODUCT_IMPORT_APPROVAL',
-          title: `ตรวจสอบนำเข้าสินค้า (SKU ซ้ำ) ${toTodo.length} รายการ`,
-          description: `พบ SKU ซ้ำซ้อนขณะนำเข้าด้วย Excel กรุณาตรวจสอบและอนุมัติการอัพเดทข้อมูลทับของเดิม`,
-          priority: 'Normal',
-          status: 'pending_manager',
-          referenceType: 'BulkImport',
-          referenceId: todoId,
-          payload: { items: toTodo },
-          createdByUid: auth.currentUser?.uid || 'System',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      }
-      
       return {
         successCount: toWrite.length,
         skippedCount: toSkip.length,
-        todoCount: toTodo.length
+        todoCount: 0
       };
     } catch (error) {
       console.error("🔥 Error in processBulkImport:", error);

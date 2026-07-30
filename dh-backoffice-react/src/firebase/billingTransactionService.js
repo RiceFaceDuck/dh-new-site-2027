@@ -4,11 +4,11 @@ import { historyService } from './historyService';
 import { gasStockService } from './gasStockService';
 import { gasHistoryService } from './gasHistoryService';
 import { getCreditPreloadRefs, adjustUserCreditWithTransaction } from './credit/creditActionService';
-import { calculateEarnedPoints } from './credit/creditFormatService';
+import { calculateEarnedPoints, getUserTier } from './credit/creditFormatService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'orders';
+const COLLECTION_NAME = getCollectionPath('orders');
 const POINTS_RATE = 100;
 
 // ==========================================
@@ -264,11 +264,25 @@ export const billingTransactionService = {
           const newOrderRef = doc(db, COLLECTION_NAME, finalOrderId);
           newDocId = newOrderRef.id;
 
+          // 🧹 If upgrading a temp draft (orderData.id) to a final order (finalOrderId), delete old temp draft doc from Firestore
+          if (orderData.id && orderData.id !== finalOrderId) {
+            const oldDraftRef = doc(db, COLLECTION_NAME, orderData.id);
+            transaction.delete(oldDraftRef);
+          }
+
           if (statusLower === 'paid' || statusLower === 'approved') {
             transaction.set(doc(db, getCollectionPath('counters'), `receipt_sequence_global`), { [yearStr]: (counterSnap?.data()?.[yearStr] || 0) + 1, updatedAt: serverTimestamp() }, { merge: true });
           }
 
           const dataToSave = { ...orderData };
+          if (userSnap && userSnap.exists()) {
+            const uData = userSnap.data() || {};
+            if (dataToSave.customer) {
+              dataToSave.customer.role = uData.role || uData.rank || 'Customer';
+              dataToSave.customer.rank = uData.rank || uData.role || 'Customer';
+              dataToSave.customer.tier = getUserTier(Number(uData.totalAccumulatedPoints || uData.creditPoints || 0))?.name || 'Member';
+            }
+          }
           if (dataToSave.customer) dataToSave.customer.displayName = dataToSave.customer.displayName || dataToSave.customer.accountName || '';
           if (dataToSave.customerInfo) dataToSave.customerInfo.displayName = dataToSave.customerInfo.displayName || dataToSave.customerInfo.accountName || '';
           if (dataToSave.summary) { dataToSave.summary.finalTotal = finalSecureNetTotal; dataToSave.summary.netTotal = finalSecureNetTotal; }
@@ -317,8 +331,10 @@ export const billingTransactionService = {
       if (logsToPost.length > 0) {
         logsToPost.forEach(log => {
           const billingLog = { ...log.billing };
+          const sku = billingLog.target?.id || '';
+          billingLog.details.sku = sku;
           billingLog.details.reference = finalOrderId;
-          billingLog.details.legacy_details = `ขายออกบิล ${finalOrderId}`;
+          billingLog.details.legacy_details = sku ? `[${sku}] ขายออกบิล ${finalOrderId}` : `ขายออกบิล ${finalOrderId}`;
           
           gasHistoryService.log(log.inventorySync);
           gasHistoryService.log(billingLog);

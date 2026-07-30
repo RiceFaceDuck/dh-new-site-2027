@@ -43,7 +43,7 @@ const HistoryItemCard = ({
           <p className="text-xs text-gray-500 mt-0.5">สั่งซื้อเมื่อ: {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : 'N/A'}</p>
         </div>
         <div className="flex flex-col sm:items-end gap-1">
-            <span className={`px-3 py-1.5 text-xs font-bold rounded-full border w-max ${statusObj.color}`}>
+            <span data-testid="order-status" className={`px-3 py-1.5 text-xs font-bold rounded-full border w-max ${statusObj.color}`}>
               {statusObj.text}
             </span>
             {/* แจ้งเตือนบิลในหน้าย่อ ถ้ามีใบกำกับภาษีออกแล้ว */}

@@ -57,26 +57,26 @@ Firebase reads/writes are a primary cost driver. The system enforces:
 4. **Imports**: Utilize `dh-shared` for any mathematical or business logic that might be needed by more than one application.
 5. **Database Path Imports**: Always import `getCollectionPath` or related helpers from `dh-shared` to construct Firestore paths. Hardcoding collection names (like `collection(db, 'users')`) is strictly forbidden to ensure Sandbox/Production isolation compatibility.
 
-## 6. JSDoc Type-Precision Standards (มาตรฐานโครงสร้างข้อมูล)
+## 6. JSDoc Type-Precision Standards
 
-เพื่อความแม่นยำ 100% ในโครงการที่เป็น JavaScript ล้วน ทุกฟังก์ชันบริการ (Services) หรือ Hooks หลักที่ทำงานกับโครงสร้างข้อมูลที่ซับซ้อน จะต้องประกาศ JSDoc Type เสมอ เพื่อให้ AI และผู้พัฒนาตรวจจับโครงสร้างอ็อบเจกต์ได้โดยไม่ต้องเดาฟิลด์:
+To ensure 100% precision in a pure JavaScript project, all core Services or Hooks dealing with complex data structures MUST declare JSDoc Types. This allows AI and developers to infer object structures without guessing fields:
 
-1. **การประกาศ Parameter และ Return Type:**
+1. **Parameter and Return Type Declarations:**
    ```javascript
    /**
-    * อัปเดตข้อมูลแต้มสะสมของผู้ใช้งานในระบบ
-    * @param {string} userId - ID ของผู้ใช้งาน
-    * @param {number} pointsToAdjust - จำนวนแต้มที่จะปรับปรุง (บวกหรือลบ)
-    * @param {object} metadata - ข้อมูลประกอบการทำรายการ
-    * @param {string} metadata.reason - เหตุผลการปรับแต้ม
-    * @param {string} metadata.operatorId - ID ของผู้จัดการที่ดำเนินการ
-    * @returns {Promise<boolean>} สถานะการทำงานสำเร็จหรือไม่
+    * Updates user reward points in the system
+    * @param {string} userId - User ID
+    * @param {number} pointsToAdjust - Points to adjust (positive or negative)
+    * @param {object} metadata - Transaction metadata
+    * @param {string} metadata.reason - Reason for adjustment
+    * @param {string} metadata.operatorId - Manager ID who executed the transaction
+    * @returns {Promise<boolean>} Success status
     */
    export const adjustUserPoints = async (userId, pointsToAdjust, metadata) => { ... }
    ```
 
-2. **การอ้างอิง Schema Type:**
-   ระบุฟิลด์ที่สำคัญที่สอดคล้องกับตารางข้อกำหนดใน `Schema Key/` (เช่น `orders`, `credit_transactions`, `todos`) เสมอ เพื่อลดความผิดพลาดของการสะกดฟิลด์ผิด (Typo) และปัญหากับ `firestore.rules`
+2. **Schema Type Referencing:**
+   Always reference important fields aligned with the schema definitions in `Schema Key/` (e.g., `orders`, `credit_transactions`, `todos`) to minimize typo errors and conflicts with `firestore.rules`.
 
 ---
 *Note: For finding specific files or code, rely on global search (e.g., `grep`) rather than maintaining a manual file tree, as the structure is highly dynamic.*

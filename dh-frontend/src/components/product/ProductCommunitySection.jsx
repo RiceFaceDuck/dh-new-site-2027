@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { productReviewService } from '../../firebase/productReviewService';
 import { useToast } from '../../context/ToastContext';
@@ -39,7 +39,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
   // Form State
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
-  const [reviewText, setReviewText] = useState('');
+  const reviewTextRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { showToast } = useToast();
@@ -97,6 +97,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
       return;
     }
     
+    const reviewText = reviewTextRef.current?.value || '';
     if (!reviewText.trim()) {
       showToast("กรุณาเขียนความคิดเห็น", "warning");
       return;
@@ -113,7 +114,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
       await productReviewService.addReview(productId, newReview, currentUser);
       
       showToast("ขอบคุณสำหรับรีวิวของคุณ!", "success");
-      setReviewText('');
+      if (reviewTextRef.current) reviewTextRef.current.value = '';
       setRating(5);
       
       // Reload comments to show the new one
@@ -212,9 +213,8 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
                loading="lazy" />
             </div>
             <input 
+              ref={reviewTextRef}
               type="text" 
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
               placeholder={currentUser ? "เขียนความคิดเห็น หรือสอบถามข้อมูล..." : "กรุณาเข้าสู่ระบบเพื่อเขียนรีวิว..."} 
               disabled={submitting || !currentUser}

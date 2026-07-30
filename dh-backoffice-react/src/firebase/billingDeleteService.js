@@ -4,7 +4,7 @@ import { gasHistoryService } from './gasHistoryService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'orders';
+const COLLECTION_NAME = getCollectionPath('orders');
 
 export const billingDeleteService = {
   deleteOrderPermanently: async (orderId, actorUid) => {
@@ -22,6 +22,19 @@ export const billingDeleteService = {
 
       const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
       const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
+
+      // 🌟 ดึง Todos ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction หรือก่อนทำการลบ
+      let pendingTodoRefs = [];
+      try {
+          const todosRef = collection(db, getCollectionPath('todos'));
+          const q = query(todosRef, where('referenceId', '==', orderId));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+              querySnapshot.forEach(docSnap => pendingTodoRefs.push(docSnap.ref));
+          }
+      } catch (e) {
+          console.error("🔥 Error querying related todos:", e);
+      }
 
       if (walletUsed > 0 && customerUid && customerUid !== 'WALK-IN') {
          await runTransaction(db, async (transaction) => {
@@ -44,31 +57,38 @@ export const billingDeleteService = {
                      timestamp: serverTimestamp()
                  });
              }
+             
+             // 🎯 Auto-Cancel related pending todos INSIDE transaction
+             if (pendingTodoRefs.length > 0) {
+                 for (const tRef of pendingTodoRefs) {
+                     transaction.update(tRef, {
+                        status: 'cancelled',
+                        handledBy: actorUid || 'system',
+                        updatedAt: serverTimestamp(),
+                        internalNote: 'Auto-cancelled due to order deletion.'
+                     });
+                 }
+             }
+
              transaction.delete(docRef);
          });
       } else {
-         await deleteDoc(docRef);
-      }
-
-      // Cleanup Orphaned Todos
-      try {
-          const todosRef = collection(db, getCollectionPath('todos'));
-          const q = query(todosRef, where('referenceId', '==', orderId));
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-              const batch = writeBatch(db);
-              querySnapshot.forEach((todoDoc) => {
-                  batch.update(todoDoc.ref, {
-                      status: 'cancelled',
-                      handledBy: actorUid || 'system',
-                      updatedAt: serverTimestamp()
-                  });
-              });
-              await batch.commit();
-          }
-      } catch (todoError) {
-          console.error("🔥 Error cleaning up related todos:", todoError);
+         // กรณีที่ลบธรรมดา ไม่ได้ใช้เงินในกระเป๋า (Draft Bill)
+         if (pendingTodoRefs.length > 0) {
+             const batch = writeBatch(db);
+             for (const tRef of pendingTodoRefs) {
+                 batch.update(tRef, {
+                    status: 'cancelled',
+                    handledBy: actorUid || 'system',
+                    updatedAt: serverTimestamp(),
+                    internalNote: 'Auto-cancelled due to order deletion.'
+                 });
+             }
+             batch.delete(docRef);
+             await batch.commit();
+         } else {
+             await deleteDoc(docRef);
+         }
       }
 
       gasHistoryService.log({

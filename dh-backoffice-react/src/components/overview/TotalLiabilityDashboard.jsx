@@ -3,7 +3,8 @@ import { collection, collectionGroup, getAggregateFromServer, sum, onSnapshot, q
 import { db } from '../../firebase/config';
 import { Wallet, Coins, Clock, RefreshCw, AlertCircle } from 'lucide-react';
 import GuidePanel from '../common/GuidePanel';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCollectionPath, COLLECTION_GROUPS } from 'dh-shared';
+
 
 export default function TotalLiabilityDashboard() {
   const [stats, setStats] = useState({
@@ -44,8 +45,9 @@ export default function TotalLiabilityDashboard() {
     fetchAggregation();
 
     // 🚀 Real-time triggers
-    const walletTxQuery = query(collectionGroup(db, 'wallet_transactions'), orderBy('timestamp', 'desc'), limit(1));
+    const walletTxQuery = query(collectionGroup(db, COLLECTION_GROUPS.WALLET_TRANSACTIONS), orderBy('timestamp', 'desc'), limit(1));
     const creditTxQuery = query(collection(db, getCollectionPath('credit_transactions')), orderBy('timestamp', 'desc'), limit(1));
+
 
     const unsubscribeWallet = onSnapshot(walletTxQuery, (snapshot) => {
       if (!snapshot.empty && !snapshot.docs[0].metadata.hasPendingWrites) fetchAggregation();

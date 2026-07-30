@@ -40,6 +40,13 @@ export default function Customers() {
         <div className={`transition-all duration-300 ${state.selectedCustomer ? 'w-full md:w-1/2 lg:w-2/3 hidden md:flex flex-col' : 'w-full flex flex-col'} bg-white border border-dh-border`}>
           <CustomerTable 
             filteredCustomers={displayCustomers}
+            paginatedCustomers={state.paginatedCustomers}
+            totalCustomersCount={state.filteredCustomers.length}
+            currentPage={state.currentPage}
+            totalPages={state.totalPages}
+            onNextPage={actions.nextPage}
+            onPrevPage={actions.prevPage}
+            onGoToPage={actions.goToPage}
             visibleCount={state.visibleCount}
             onScroll={actions.handleScroll}
             loading={state.loading}

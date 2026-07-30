@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, limit } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, writeBatch, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -8,12 +8,32 @@ export function useSourcingRequests() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, getCollectionPath('sourcing_requests')), orderBy('demandCount', 'desc'), limit(100));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRequests(data);
+    let unsubscribe = () => {};
+    try {
+      const q = query(collection(db, getCollectionPath('sourcing_requests')), limit(100));
+      unsubscribe = onSnapshot(
+        q, 
+        (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          data.sort((a, b) => {
+            const timeA = a.lastRequestedAt?.toMillis ? a.lastRequestedAt.toMillis() : 0;
+            const timeB = b.lastRequestedAt?.toMillis ? b.lastRequestedAt.toMillis() : 0;
+            return timeB - timeA;
+          });
+          setRequests(data);
+          setLoading(false);
+        },
+        (error) => {
+          console.warn("⚠️ sourcing_requests snapshot error:", error);
+          setRequests([]);
+          setLoading(false);
+        }
+      );
+    } catch (err) {
+      console.warn("⚠️ sourcing_requests query catch:", err);
+      setRequests([]);
       setLoading(false);
-    });
+    }
     return () => unsubscribe();
   }, []);
 
@@ -28,9 +48,26 @@ export function useSourcingRequests() {
     }
   };
 
+  const resetAllRequests = async () => {
+    if (!requests || requests.length === 0) return true;
+    try {
+      const batch = writeBatch(db);
+      requests.forEach((req) => {
+        batch.delete(doc(db, getCollectionPath('sourcing_requests'), req.id));
+      });
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error("Error resetting sourcing requests:", error);
+      alert("เกิดข้อผิดพลาดในการ Reset ข้อมูล");
+      return false;
+    }
+  };
+
   return {
     requests,
     loading,
-    updateStatus
+    updateStatus,
+    resetAllRequests
   };
 }

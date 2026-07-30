@@ -3,7 +3,7 @@ import { db } from './config';
 import { historyService } from './historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'freebies';
+const COLLECTION_NAME = getCollectionPath('freebies');
 
 // Helper for validating SKUs (max 30 per 'in' query)
 const validateSkus = async (skusArray) => {

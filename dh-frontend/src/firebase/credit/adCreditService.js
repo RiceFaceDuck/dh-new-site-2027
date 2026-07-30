@@ -1,7 +1,42 @@
-import { collection, doc, getDoc, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, writeBatch, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config';
 import { getUsersPath, invalidateCreditHistoryCache } from './creditConfig';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+
+/**
+ * 🛑 ฟังก์ชันหยุดโฆษณาทุกตัวของเจ้าของเมื่อ Credit หมด (Out-Of-Credit Auto-Shutdown)
+ */
+export const pauseUserAdsOnOutOfCredit = async (partnerId) => {
+  if (!partnerId) return;
+  try {
+    const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
+    const batch = writeBatch(db);
+    let hasUpdates = false;
+
+    const snapshots = await Promise.all(adCols.map(col => {
+      const q = query(collection(db, getCollectionPath(col)), where('ownerId', '==', partnerId), where('status', '==', 'active'));
+      return getDocs(q);
+    }));
+
+    snapshots.forEach(snap => {
+      snap.forEach(docSnap => {
+        batch.update(docSnap.ref, {
+          status: 'OUT_OF_CREDIT',
+          isActive: false,
+          updatedAt: serverTimestamp()
+        });
+        hasUpdates = true;
+      });
+    });
+
+    if (hasUpdates) {
+      await batch.commit();
+      console.log(`🛑 [adCreditService] Auto-suspended active ads for zero-credit partner: ${partnerId}`);
+    }
+  } catch (err) {
+    console.error("🔥 Error auto-pausing ads on zero credit:", err);
+  }
+};
 
 export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'click_contact') => {
   if (!partnerId || cost <= 0) return false;
@@ -13,6 +48,8 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
   const storeProfileRef = doc(db, usersPath, partnerId, 'storeProfile', 'main');
 
   try {
+    let isZeroCredit = false;
+
     await runTransaction(db, async (transaction) => {
       const userDoc = await transaction.get(userRef);
       if (!userDoc.exists()) return;
@@ -22,6 +59,7 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
       if (currentPoints <= 0) {
         transaction.delete(activePartnerRef); 
         transaction.update(storeProfileRef, { isSupportActive: false }); 
+        isZeroCredit = true;
         return; 
       }
 
@@ -36,6 +74,7 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
       if (newBalance <= 0) {
         transaction.delete(activePartnerRef);
         transaction.update(storeProfileRef, { isSupportActive: false });
+        isZeroCredit = true;
       }
 
       transaction.set(txRef, {
@@ -49,6 +88,10 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
         timestamp: serverTimestamp()
       });
     });
+
+    if (isZeroCredit) {
+      await pauseUserAdsOnOutOfCredit(partnerId);
+    }
 
     invalidateCreditHistoryCache(partnerId);
     return true;
@@ -162,10 +205,14 @@ export const trackAdImpressions = async (partnerIds, config) => {
     const promises = partnerIds.map(async (partnerId) => {
       const partnerStatsRef = doc(db, getCollectionPath('partners'), partnerId, 'stats', statDocId);
       
+      let shouldDeduct = false;
+
       await runTransaction(db, async (transaction) => {
         const docSnap = await transaction.get(partnerStatsRef);
         let unbilled = 1;
         let totalImp = 1;
+
+        shouldDeduct = false;
 
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -175,11 +222,15 @@ export const trackAdImpressions = async (partnerIds, config) => {
 
         if (unbilled >= 100) {
           transaction.set(partnerStatsRef, { impressions: totalImp, unbilledImpressions: 0, updatedAt: serverTimestamp() }, { merge: true });
-          partnersToDeduct.push(partnerId);
+          shouldDeduct = true;
         } else {
           transaction.set(partnerStatsRef, { impressions: totalImp, unbilledImpressions: unbilled, updatedAt: serverTimestamp() }, { merge: true });
         }
       });
+      
+      if (shouldDeduct) {
+        partnersToDeduct.push(partnerId);
+      }
     });
 
     await Promise.all(promises);

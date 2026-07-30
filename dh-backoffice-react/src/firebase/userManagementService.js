@@ -176,10 +176,16 @@ export const deleteUser = async (adminId, targetUid) => {
             }
         }
 
-        // 🗑️ Hard Delete (PDPA Right to be Forgotten)
-        await deleteDoc(userRef);
+        // 🗑️ Soft Delete & Anonymize (Preserves historic Order & Claim snapshot references)
+        await updateDoc(userRef, {
+            isDeleted: true,
+            status: 'deleted',
+            isActive: false,
+            deletedAt: serverTimestamp(),
+            deletedBy: adminId || auth.currentUser?.uid || 'system'
+        });
         
-        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid} (Hard Delete ถาวร)`, adminId || auth.currentUser?.uid);
+        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid} (Soft Delete สงวนประวัติบิล/เคลมเดิม)`, adminId || auth.currentUser?.uid);
         
         // 🔒 Cascade deactivation for partners, ActivePartners, ads, and todos
         await runCascadeUserDeactivation(targetUid, adminId || auth.currentUser?.uid || 'system');

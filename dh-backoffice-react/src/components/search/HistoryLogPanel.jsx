@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { History, Maximize2, Trash2, Send, Pin, PinOff } from 'lucide-react';
 
 import { safeJsonParse } from 'dh-shared';
@@ -11,6 +11,47 @@ const getActionColor = (action) => {
   return 'text-slate-500';
 };
 
+const formatDetailText = (rawDetails, actionText) => {
+  if (!rawDetails) return '';
+  
+  let target = rawDetails;
+  if (typeof target === 'string') {
+    const trimmed = target.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        const parsed = safeJsonParse(target);
+        if (parsed && typeof parsed === 'object') {
+          target = parsed;
+        }
+      } catch (e) {}
+    } else {
+      return target;
+    }
+  }
+
+  if (typeof target === 'object' && target !== null) {
+    if (target.note || target.text || target.comment || target.description) {
+      return target.note || target.text || target.comment || target.description;
+    }
+    if (target.reference) {
+      return `ออเดอร์ #${target.reference}`;
+    }
+    if (target.legacy_details && typeof target.legacy_details === 'string') {
+      const leg = target.legacy_details;
+      const match = leg.match(/DH-[A-Za-z0-9-]+/);
+      if (match) return `ออเดอร์ #${match[0]}`;
+      const cleaned = leg.replace(/\[.*?\]\s*/g, '').replace(/ลดสต๊อก\s*\d+\s*ชิ้น/g, '').replace(/ขายออกบิล\s*/g, 'ออเดอร์ #').trim();
+      return cleaned || leg;
+    }
+    if (target.changes && typeof target.changes === 'object') {
+      const changeKeys = Object.keys(target.changes);
+      if (changeKeys.length > 0) return `แก้ไข: ${changeKeys.join(', ')}`;
+    }
+  }
+
+  return String(target);
+};
+
 const LogItem = ({ log, dateStr, timeStr, actionMethod, actor, isPinned, onTogglePin, onDeleteNote, isSimplified = false }) => {
   const [isExpanded, setIsExpanded] = useState(isPinned); 
   const isNote = actionMethod === 'note';
@@ -21,7 +62,7 @@ const LogItem = ({ log, dateStr, timeStr, actionMethod, actor, isPinned, onToggl
   let actionText = log.action || 'RECORD';
   
   let rawDetails = log.details;
-  if (typeof rawDetails === 'string') {
+  if (typeof rawDetails === 'string' && (rawDetails.trim().startsWith('{') || rawDetails.trim().startsWith('['))) {
     try {
       const parsed = safeJsonParse(rawDetails);
       if (typeof parsed === 'object' && parsed !== null) {
@@ -47,74 +88,78 @@ const LogItem = ({ log, dateStr, timeStr, actionMethod, actor, isPinned, onToggl
   else if (actLower.includes('sale') || actLower.includes('sell') || actLower.includes('order')) actionText = 'ขายออก';
   else if (actLower.includes('claim')) actionText = 'เคลม';
 
-  const qtyStr = qty > 0 ? `+${qty}` : (qty < 0 ? `${qty}` : '0');
-  const qtyColor = qty > 0 ? 'text-emerald-600' : (qty < 0 ? 'text-red-600' : 'text-slate-400');
+  const qtyStr = qty !== 0 ? (qty > 0 ? `+${qty}` : `${qty}`) : '';
+  const qtyBadgeColor = qty > 0 
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+    : (qty < 0 ? 'bg-red-100 text-red-800 border-red-300' : 'bg-slate-100 text-slate-600 border-slate-300');
 
-  let detailTextFull = typeof rawDetails === 'object' ? JSON.stringify(rawDetails, null, 2) : rawDetails;
-  let detailTextShort = typeof rawDetails === 'object' ? JSON.stringify(rawDetails) : rawDetails;
+  const formattedDetails = formatDetailText(rawDetails, actionText);
 
   return (
-    <div className={`group relative bg-white border ${isSimplified ? 'border-amber-400 shadow-xs' : 'border-slate-200'} rounded-lg mb-2 hover:border-slate-300 hover:shadow-xs transition-all cursor-pointer`}>
+    <div className={`group relative bg-white border-b border-slate-200/80 hover:bg-slate-50 transition-colors cursor-pointer ${isPinned ? 'bg-amber-50/70 border-l-4 border-l-amber-400' : ''}`}>
       
-      {/* Top Line (Compact / Single Line View) */}
       <div 
-        className="flex items-center gap-2 px-2.5 py-2 pr-8 overflow-hidden" 
+        className="px-2.5 py-1.5 flex items-center justify-between gap-1.5 min-h-[36px]"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <span className={`text-sm font-black shrink-0 font-mono w-6 text-center ${qtyColor}`}>
-          {qtyStr}
-        </span>
-        
-        <span className={`text-[13px] font-bold shrink-0 uppercase ${colorClass}`}>
-          {actionText}
-        </span>
-        
-        {!isExpanded && (
-           <span className="text-slate-600 text-[13px] font-medium truncate flex-1 ml-1">
-             {detailTextShort}
-           </span>
-        )}
+        {/* Left Side: Action Badge + Qty + Detail */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${colorClass} bg-slate-50 border-slate-200`}>
+            {actionText}
+          </span>
 
-        <span className={`text-slate-400 text-[11px] font-medium shrink-0 whitespace-nowrap ${!isExpanded ? 'ml-2' : 'ml-auto'}`}>
-          {dateStr} {timeStr}
-        </span>
+          {qtyStr && (
+            <span className={`text-[11px] font-black font-mono px-1 py-0.5 rounded border shrink-0 ${qtyBadgeColor}`}>
+              {qtyStr}
+            </span>
+          )}
 
-        <span className="text-slate-500 text-xs font-bold shrink-0 truncate max-w-[100px] ml-2">
-          {actor}
-        </span>
+          {formattedDetails && (
+            <span className="text-slate-800 text-[12px] font-semibold truncate flex-1">
+              {formattedDetails}
+            </span>
+          )}
+        </div>
+
+        {/* Right Side: Actor + Timestamp */}
+        <div className="flex items-center gap-1.5 shrink-0 text-[11px] pl-1">
+          <span className="text-slate-700 font-bold truncate max-w-[90px]" title={actor}>
+            {actor}
+          </span>
+          <span className="text-slate-400 font-mono text-[10px] whitespace-nowrap">
+            {dateStr} {timeStr}
+          </span>
+        </div>
       </div>
-      
-      {/* Expanded Details Section */}
-      {isExpanded && (
-        <div 
-          className="text-slate-800 text-[13px] font-medium pb-3 px-3 leading-relaxed wrap-break-word whitespace-pre-wrap ml-1 border-t border-slate-100 pt-2 bg-slate-50/50 rounded-b-lg font-mono"
-          onClick={() => setIsExpanded(false)}
-        >
-          {detailTextFull}
+
+      {/* Expanded details view if clicked */}
+      {isExpanded && formattedDetails && (
+        <div className="px-3 py-2 text-xs text-slate-700 bg-slate-100/90 border-t border-slate-200 wrap-break-word font-mono leading-relaxed">
+          {typeof rawDetails === 'object' ? JSON.stringify(rawDetails, null, 2) : rawDetails}
         </div>
       )}
 
-      {/* Pin Button */}
-      {isNote && onTogglePin && (
-        <button 
-          onClick={(e) => { e.stopPropagation(); onTogglePin(log); }}
-          className={`absolute right-1.5 top-1.5 p-1 rounded-md transition-all z-20 ${isPinned ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-amber-600 hover:bg-slate-100'}`}
-          title={isPinned ? 'เลิกปักหมุด' : 'ปักหมุดบันทึกนี้'}
-        >
-          {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-        </button>
-      )}
-
-      {/* Delete Button */}
-      {isNote && onDeleteNote && (
-        <button 
-          onClick={(e) => { e.stopPropagation(); onDeleteNote(log); }}
-          className={`absolute right-8 top-1.5 p-1 rounded-md transition-all z-20 text-slate-300 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50`}
-          title="ลบโน๊ต"
-        >
-          <Trash2 size={14} />
-        </button>
-      )}
+      {/* Pin / Delete Actions */}
+      <div className="absolute right-1 top-1.5 hidden group-hover:flex items-center gap-1 bg-white/95 px-1 py-0.5 rounded border border-slate-200 shadow-xs z-10">
+        {isNote && onTogglePin && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onTogglePin(log); }}
+            className={`p-1 rounded hover:bg-slate-100 ${isPinned ? 'text-amber-600' : 'text-slate-400'}`}
+            title={isPinned ? 'เลิกปักหมุด' : 'ปักหมุด'}
+          >
+            {isPinned ? <PinOff size={12} /> : <Pin size={12} />}
+          </button>
+        )}
+        {isNote && onDeleteNote && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onDeleteNote(log); }}
+            className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-600"
+            title="ลบ"
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -123,11 +168,31 @@ export default function HistoryLogPanel({
   selectedProduct, setIsHistoryModalOpen, loadingHistory, historyLogs,
   newComment, setNewComment, handleAddComment, isSubmittingComment, handleAddNoteSuccess, handleTogglePinComment, handleDeleteNote
 }) {
+  const [visibleLimit, setVisibleLimit] = useState(21);
   const pinnedComments = selectedProduct?.pinnedComments || [];
   const deletedNotes = selectedProduct?.deletedNotes || [];
   
+  useEffect(() => {
+    setVisibleLimit(21);
+  }, [selectedProduct?.sku]);
+
   // กรองประวัติที่ถูกผู้ใช้กด "ลบ" (ซ่อน) ออกไป
   const displayLogs = historyLogs.filter(log => !deletedNotes.includes(log.id));
+  const mainLogs = [...displayLogs]
+    .filter(log => !pinnedComments.some(c => c.id === log.id))
+    .sort((a, b) => {
+      const getTime = (t) => {
+        if (!t) return 0;
+        if (typeof t.toMillis === 'function') return t.toMillis();
+        if (t.seconds) return t.seconds * 1000;
+        if (typeof t === 'string' || typeof t === 'number') return new Date(t).getTime();
+        return 0;
+      };
+      return getTime(b.timestamp) - getTime(a.timestamp);
+    });
+
+  const visibleLogs = mainLogs.slice(0, visibleLimit);
+  const hasMoreLogs = mainLogs.length > visibleLimit;
 
   return (
     <div className="w-[20%] min-w-[280px] max-w-[380px] bg-[#F8FAFC] flex flex-col overflow-hidden shrink-0 transition-colors duration-300 border-l border-slate-200 z-10 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)]">
@@ -139,8 +204,10 @@ export default function HistoryLogPanel({
             <History size={16} strokeWidth={2.5}/>
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">ประวัติการทำงาน</h3>
-            <p className="text-xs font-bold text-slate-400">Activity Timeline</p>
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+              ประวัติ อ้างอิง: <span className="text-indigo-600">{selectedProduct?.sku || '-'}</span>
+            </h3>
+            <p className="text-xs font-bold text-slate-400">รายการความเคลื่อนไหว Activity Timeline</p>
           </div>
         </div>
         <button 
@@ -156,9 +223,6 @@ export default function HistoryLogPanel({
       <div className="flex-1 overflow-y-auto custom-scrollbar relative px-3 py-3">
         {selectedProduct ? (
           <div className="flex flex-col h-full">
-            <div className="text-xs font-bold text-center text-slate-400 mb-3 pb-3 border-b border-slate-200 uppercase tracking-widest shrink-0">
-              รหัสอ้างอิง: <span className="text-indigo-600">{selectedProduct.sku}</span>
-            </div>
 
             {loadingHistory ? (
               <div className="flex flex-col items-center justify-center py-10 opacity-60">
@@ -180,7 +244,9 @@ export default function HistoryLogPanel({
                         let dateStr = '-';
                         let timeStr = '-';
                         if (log.timestamp) {
-                          let d = typeof log.timestamp.toDate === 'function' ? log.timestamp.toDate() : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date());
+                          let d = typeof log.timestamp.toDate === 'function' 
+                            ? log.timestamp.toDate() 
+                            : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date(log.timestamp));
                           dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
                           timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                         }
@@ -196,14 +262,13 @@ export default function HistoryLogPanel({
                 )}
                 
                 {/* --- Main Timeline --- */}
-                {[...displayLogs]
-                  .filter(log => !pinnedComments.some(c => c.id === log.id))
-                  .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0))
-                  .map((log) => {
+                {visibleLogs.map((log) => {
                   let dateStr = '-';
                   let timeStr = '-';
                   if (log.timestamp) {
-                    let d = typeof log.timestamp.toDate === 'function' ? log.timestamp.toDate() : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date());
+                    let d = typeof log.timestamp.toDate === 'function' 
+                      ? log.timestamp.toDate() 
+                      : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date(log.timestamp));
                     dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
                     timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                   }
@@ -215,10 +280,21 @@ export default function HistoryLogPanel({
                     />
                   );
                 })}
-                <div className="text-center mt-4">
-                  <span className="inline-block px-4 py-1.5 bg-slate-100 border border-slate-200 text-xs font-bold text-slate-400 rounded-full uppercase tracking-wider">
-                    สิ้นสุดประวัติ
-                  </span>
+
+                <div className="text-center mt-3 mb-2">
+                  {hasMoreLogs ? (
+                    <button
+                      onClick={() => setVisibleLimit(prev => prev + 21)}
+                      className="w-full py-2 px-3 bg-white hover:bg-indigo-50 border border-slate-300 hover:border-indigo-300 text-indigo-600 text-xs font-bold rounded-lg transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5"
+                    >
+                      <span>แสดงเพิ่มเติม (+21)</span>
+                      <span className="text-[10px] text-slate-400 font-medium">({mainLogs.length - visibleLimit} เหลือ)</span>
+                    </button>
+                  ) : (
+                    <span className="inline-block px-4 py-1 bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-400 rounded-full uppercase tracking-wider">
+                      สิ้นสุดประวัติ
+                    </span>
+                  )}
                 </div>
               </div>
             ) : (

@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { auth } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { userService } from '../firebase/userService';
@@ -87,7 +87,7 @@ export const FavoritesProvider = ({ children }) => {
     };
   }, []);
 
-  const toggleFavorite = async (product) => {
+  const toggleFavorite = useCallback(async (product) => {
     setFavorites(prev => {
       const exists = prev.find(p => p.id === product.id);
       let newFavs;
@@ -107,13 +107,13 @@ export const FavoritesProvider = ({ children }) => {
       }
       return newFavs;
     });
-  };
+  }, []);
 
-  const isFavorite = (productId) => {
+  const isFavorite = useCallback((productId) => {
     return favorites.some(p => p.id === productId);
-  };
+  }, [favorites]);
 
-  const updateFavoriteDetails = async (productId, note, tags) => {
+  const updateFavoriteDetails = useCallback(async (productId, note, tags) => {
     setFavorites(prev => {
       const exists = prev.find(p => p.id === productId);
       if (!exists) return prev;
@@ -132,10 +132,17 @@ export const FavoritesProvider = ({ children }) => {
       }
       return newFavs;
     });
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    favorites,
+    toggleFavorite,
+    isFavorite,
+    updateFavoriteDetails
+  }), [favorites, toggleFavorite, isFavorite, updateFavoriteDetails]);
 
   return (
-    <FavoritesContext.Provider value={{ favorites, toggleFavorite, isFavorite, updateFavoriteDetails }}>
+    <FavoritesContext.Provider value={contextValue}>
       {children}
     </FavoritesContext.Provider>
   );

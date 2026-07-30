@@ -47,6 +47,7 @@ const ensureUserProfile = async (user, additionalData = {}) => {
         accountName: customerName, // Unified with backoffice
         photoURL: user.photoURL || '',
         role: 'Customer', // Unified exact match
+        rank: 'Customer', // Synced rank field
         status: 'active', // Unified default status
         // 💰 เตรียมโครงสร้างการเงิน (Ecosystem)
         walletBalance: 0,

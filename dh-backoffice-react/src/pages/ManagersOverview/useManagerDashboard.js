@@ -27,6 +27,8 @@ export const useManagerDashboard = () => {
   // 2. Real-time Subscriptions & Initial Fetches
   // ==========================================
   useEffect(() => {
+    let isMounted = true;
+    
     // 🔔 Fetch จำนวนงานที่รออนุมัติ (ใช้ getCountFromServer เพื่อประหยัดโควต้า 1 Read/Query)
     const todosRef = collection(db, getCollectionPath('todos'));
     const pendingTodosQuery = query(
@@ -37,7 +39,7 @@ export const useManagerDashboard = () => {
     const fetchPendingTodosCount = async () => {
       try {
         const snapshot = await getCountFromServer(pendingTodosQuery);
-        setStats(prev => ({ ...prev, pendingTasksCount: snapshot.data().count }));
+        if (isMounted) setStats(prev => ({ ...prev, pendingTasksCount: snapshot.data().count }));
       } catch (error) {
         console.error("Error fetching pending tasks count:", error);
       }
@@ -53,6 +55,7 @@ export const useManagerDashboard = () => {
     );
 
     const unsubscribeStaff = onSnapshot(pendingStaffQuery, (snapshot) => {
+      if (!isMounted) return;
       setStats(prev => ({ ...prev, pendingStaffCount: snapshot.size }));
       const staffsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setPendingStaffs(staffsData);
@@ -65,7 +68,7 @@ export const useManagerDashboard = () => {
       try {
         const vipQuery = query(usersRef, where('rank', '==', 'VIP'), limit(300));
         const snapshot = await getCountFromServer(vipQuery);
-        setStats(prev => ({ ...prev, vipCount: snapshot.data().count }));
+        if (isMounted) setStats(prev => ({ ...prev, vipCount: snapshot.data().count }));
       } catch (err) {
         console.error("Error fetching VIP count:", err);
       }
@@ -73,6 +76,7 @@ export const useManagerDashboard = () => {
     fetchVipCount();
 
     return () => {
+      isMounted = false;
       unsubscribeStaff();
     };
   }, []);

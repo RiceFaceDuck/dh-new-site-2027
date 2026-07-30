@@ -51,7 +51,7 @@ const CategoriesMain = () => {
         >
           <Info className="text-slate-400 w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 md:mt-0 shrink-0" />
           <p className="text-xs md:text-sm text-slate-600 leading-snug">
-            คุณสามารถใช้ <span className="font-semibold text-slate-700">Part Number (PN)</span> ของอะไหล่ที่อยู่บนสติ๊กเกอร์ นำไปค้นหาในช่องด้านบนสุดเพื่อความแม่นยำ 100%
+            คุณสามารถใช้ <span className="font-semibold text-slate-700">Part Number (PN)</span> ของอะไหล่ที่อยู่บนสติ๊กเกอร์ นำไปค้นหาในช่องด้านบนสุดเพื่อช่วยเพิ่มความแม่นยำในการค้นหา
           </p>
         </div>
 

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Trash2, X, Gift } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const noteColorMap = {
     slate: { badge: 'bg-slate-50 text-slate-600 border-slate-200', dot: 'bg-slate-400' },
@@ -11,7 +12,7 @@ const noteColorMap = {
 
 export default function CartTableRow({
     item, index, isFreebie, isProcessing,
-    isActive, setActionBoxItem, updateItemAction, removeItem, actionBoxItem
+    isActive, setActionBoxItem, updateItemAction, removeItem
 }) {
     const actionBoxRef = useRef(null);
 
@@ -38,7 +39,13 @@ export default function CartTableRow({
 
     return (
         <React.Fragment>
-            <tr onClick={() => { if (!isProcessing && !isFreebie) setActionBoxItem(isActive ? null : item.sku); }} 
+            <motion.tr 
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => { if (!isProcessing && !isFreebie) setActionBoxItem(isActive ? null : item.sku); }} 
                 className={`product-row group border-b border-gray-100 transition-colors ${isProcessing ? 'cursor-not-allowed' : (isFreebie ? 'cursor-default' : 'cursor-pointer')} ${rowBg}`}>
                 
                 <td className="py-2 px-3 text-center text-slate-400 text-xs font-mono">
@@ -55,9 +62,16 @@ export default function CartTableRow({
                     <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[11px] font-mono text-slate-500">{item.sku}</p>
                         {item.note && !isActive && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-xs font-medium tracking-wide border ${noteColorMap[item.noteColor || 'slate']?.badge || noteColorMap['slate'].badge}`}>
-                                {item.note}
-                            </span>
+                            <div className="flex flex-wrap gap-1 items-center">
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-xs font-medium tracking-wide border ${noteColorMap[item.noteColor || 'slate']?.badge || noteColorMap['slate'].badge}`}>
+                                    {item.note}
+                                </span>
+                                {item.conditions?.map((cond, i) => (
+                                    <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-xs bg-slate-100 text-slate-600 border border-slate-200">
+                                        {cond}
+                                    </span>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </td>
@@ -96,9 +110,9 @@ export default function CartTableRow({
                         <button onClick={(e) => { e.stopPropagation(); if (!isProcessing) removeItem(item.sku); }} disabled={isProcessing} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"><Trash2 size={16}/></button>
                     )}
                 </td>
-            </tr>
+            </motion.tr>
             
-            {!isFreebie && isActive && (
+            {isActive && !isFreebie && (
                 <tr className="bg-[#ffbb00]/15 border-b border-[#ffbb00]/30 shadow-inner">
                     <td colSpan="7" className="p-3 pl-12 relative" ref={actionBoxRef}>
                         <button onClick={() => setActionBoxItem(null)} className="absolute top-2 right-2 p-1 text-amber-700 hover:text-amber-900 bg-white/50 hover:bg-white rounded-md transition-colors"><X size={14}/></button>
@@ -133,3 +147,22 @@ export default function CartTableRow({
         </React.Fragment>
     );
 }
+
+const arePropsEqual = (prev, next) => {
+    return (
+        prev.index === next.index &&
+        prev.isFreebie === next.isFreebie &&
+        prev.isProcessing === next.isProcessing &&
+        prev.isActive === next.isActive &&
+        prev.item.sku === next.item.sku &&
+        prev.item.qty === next.item.qty &&
+        prev.item.price === next.item.price &&
+        prev.item.discount === next.item.discount &&
+        prev.item.note === next.item.note &&
+        prev.item.noteColor === next.item.noteColor &&
+        prev.item.name === next.item.name &&
+        prev.item.stock === next.item.stock
+    );
+};
+
+export const MemoizedCartTableRow = React.memo(CartTableRow, arePropsEqual);

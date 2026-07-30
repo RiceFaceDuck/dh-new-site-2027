@@ -44,7 +44,7 @@ const Cart = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="w-full relative">
+      <div className="w-full max-w-4xl mx-auto py-12 px-4 relative">
         <CartEmptyState />
       </div>
     );

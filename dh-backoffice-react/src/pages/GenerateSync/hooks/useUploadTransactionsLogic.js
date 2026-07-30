@@ -53,8 +53,14 @@ export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
 
       setParsedData({ ...result, matchedKeys: finalMatchedKeys });
       setCurrentMapping(finalMatchedKeys);
-      setStatus('preview');
-      setMessage(`พบข้อมูล ${result.items.length} รายการ (อ้างอิงจากคอลัมน์: ${finalMatchedKeys.skuKey}, ${finalMatchedKeys.qtyKey})`);
+      
+      if (result.items.length > 0) {
+        setStatus('preview');
+        setMessage(`พบข้อมูล ${result.items.length} รายการ (โปรดตรวจสอบความถูกต้องและกดยืนยัน)`);
+      } else {
+        setStatus('preview');
+        setMessage(`พบข้อมูล ${result.items.length} รายการ (โปรดตรวจสอบตั้งค่าคอลัมน์)`);
+      }
     } catch (error) {
       console.error(error);
       setStatus('error');
@@ -80,18 +86,18 @@ export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
     
     localStorage.setItem('import_schema_mapping', JSON.stringify(newMapping));
     
-    setMessage(`พบข้อมูล ${newItems.length} รายการ (อ้างอิงจากคอลัมน์: ${newMapping.skuKey}, ${newMapping.qtyKey})`);
+    setMessage(`พบข้อมูล ${newItems.length} รายการ`);
   };
 
-  const handleUpload = async () => {
-    if (!parsedData || !parsedData.items) return;
+  const performUpload = async (itemsToUpload) => {
+    if (!itemsToUpload || itemsToUpload.length === 0) return;
 
     setStatus('uploading');
     setMessage('กำลังประมวลผลการปรับสต็อก...');
 
     try {
       const result = await transactionImportService.processTransactions(
-        parsedData.items, 
+        itemsToUpload, 
         actionType,
         currentUser
       );
@@ -115,6 +121,11 @@ export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
       setStatus('error');
       setMessage(error.message || 'เกิดข้อผิดพลาดในการประมวลผลสต็อก');
     }
+  };
+
+  const handleUpload = () => {
+    if (!parsedData || !parsedData.items) return;
+    performUpload(parsedData.items);
   };
 
   return {

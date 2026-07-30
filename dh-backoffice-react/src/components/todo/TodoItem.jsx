@@ -1,9 +1,15 @@
-import { Info, AlertCircle, Calendar, Package, Truck, MessageSquare, Megaphone, UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import PremiumDialog from '../common/PremiumDialog';
+import { Info, AlertCircle, Calendar, Package, Truck, MessageSquare, Megaphone, UserPlus, ShieldCheck } from 'lucide-react';
+import { formatDate } from 'dh-shared';
 import StaffApprovalCard from './cards/StaffApprovalCard';
 import AdApprovalCard from './cards/AdApprovalCard';
 import GenericTodoCard from './cards/GenericTodoCard';
 import LeaveApprovalCard from './cards/LeaveApprovalCard';
 import KnowledgeCard from './cards/KnowledgeCard';
+import PromotionCard from './cards/PromotionCard';
+
 
 export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLevel, handleAction }) {
   
@@ -11,6 +17,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
   const getIconForType = (type) => {
     const normalizedType = type?.toUpperCase();
     switch (normalizedType) {
+      case 'WARRANTY_SETUP': return <ShieldCheck size={20} className="text-amber-500" />;
       case 'STAFF_APPROVAL': return <UserPlus size={20} className="text-blue-500" />;
       case 'MANUAL_TASK': return <Calendar size={20} className="text-dh-accent" />;
       case 'PACKING_TASK': return <Package size={20} className="text-orange-500" />;
@@ -29,15 +36,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
     }
   };
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return '-';
-    // รองรับทั้งแบบ Firestore Timestamp และ ISO String
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleString('th-TH', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-  };
+
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -49,26 +48,36 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
     }
   };
 
+  const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
+
   // 🛡️ ฟังก์ชันกลางสำหรับจัดการการยกเลิก/ปฏิเสธงาน (UX Fail-Safe)
   const handleRejectClick = () => {
     const actionName = isManagerTab ? 'ปฏิเสธคำขอ' : 'ยกเลิกงาน';
     
-    // ลูกเล่น: บังคับให้ใส่เหตุผล ไม่ให้ลักไก่ส่งค่าว่าง
-    const reason = window.prompt(`⚠️ คุณกำลังจะ ${actionName}\n\nกรุณาระบุเหตุผลที่ชัดเจนเพื่อบันทึกลงระบบ (บังคับ):`);
-    
-    if (reason === null) return; // User กด Cancel ในหน้าต่าง Prompt
-    
-    if (reason.trim().length < 2) {
-      alert('❌ กรุณาระบุเหตุผลให้ชัดเจนกว่านี้ (อย่างน้อย 2 ตัวอักษร)');
-      return;
-    }
-
-    // ส่งโครงสร้างที่ถูกต้องให้ Todo.jsx โดยนำ payload เดิมไปส่งรวมด้วย
-    handleAction(todo.id, 'reject', todo.type, { 
-      ...(todo.payload || {}), // ดึง payload เก่าติดไปด้วยสำหรับ Service ที่ต้องการ (เช่น claimService)
-      orderId: todo.orderId || todo.payload?.orderId,
-      reason: reason.trim(), 
-      adPayload: todo.adPayload 
+    setDialogConfig({
+      isOpen: true,
+      title: `⚠️ คุณกำลังจะ ${actionName}`,
+      message: 'กรุณาระบุเหตุผลที่ชัดเจนเพื่อบันทึกลงระบบ (บังคับ):',
+      type: 'warning',
+      requireInput: true,
+      allowEmptyInput: false,
+      inputPlaceholder: 'ระบุเหตุผล (อย่างน้อย 2 ตัวอักษร)...',
+      onConfirm: (reason) => {
+        if (typeof reason !== 'string' || reason.trim().length < 2) {
+          toast.error('❌ กรุณาระบุเหตุผลให้ชัดเจนกว่านี้ (อย่างน้อย 2 ตัวอักษร)');
+          return;
+        }
+        setDialogConfig({ ...dialogConfig, isOpen: false });
+        
+        // ส่งโครงสร้างที่ถูกต้องให้ Todo.jsx โดยนำ payload เดิมไปส่งรวมด้วย
+        handleAction(todo.id, 'reject', todo.type, { 
+          ...(todo.payload || {}), // ดึง payload เก่าติดไปด้วยสำหรับ Service ที่ต้องการ (เช่น claimService)
+          orderId: todo.orderId || todo.payload?.orderId,
+          reason: reason.trim(), 
+          adPayload: todo.adPayload 
+        });
+      },
+      onCancel: () => setDialogConfig({ ...dialogConfig, isOpen: false })
     });
   };
 
@@ -77,26 +86,61 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
   const isStaffApprovalTask = type === 'STAFF_APPROVAL';
   const isLeaveApprovalTask = type === 'LEAVE_APPROVAL';
   const isKnowledgeTask = type === 'PRODUCT_KNOWLEDGE_APPROVAL';
+  const isPromotionTask = type === 'PROMOTION_ALERT' || todo.type === 'promotion_alert' || (todo.title && todo.title.includes('แจ้งโปรโมชัน'));
 
   const props = {
     todo, isProcessing, isManagerTab, urgencyLevel, handleAction, getStatusBadge, formatDate, handleRejectClick, getIconForType
   };
 
+  if (isPromotionTask) {
+    return (
+      <>
+        <PromotionCard todo={todo} formatDate={formatDate} />
+        <PremiumDialog {...dialogConfig} />
+      </>
+    );
+  }
+
   if (isStaffApprovalTask) {
-    return <StaffApprovalCard {...props} />;
+    return (
+      <>
+        <StaffApprovalCard {...props} />
+        <PremiumDialog {...dialogConfig} />
+      </>
+    );
   }
 
   if (isAdTask) {
-    return <AdApprovalCard {...props} />;
+    return (
+      <>
+        <AdApprovalCard {...props} />
+        <PremiumDialog {...dialogConfig} />
+      </>
+    );
   }
 
   if (isLeaveApprovalTask) {
-    return <LeaveApprovalCard {...props} />;
+    return (
+      <>
+        <LeaveApprovalCard {...props} />
+        <PremiumDialog {...dialogConfig} />
+      </>
+    );
   }
 
   if (isKnowledgeTask) {
-    return <KnowledgeCard {...props} />;
+    return (
+      <>
+        <KnowledgeCard {...props} />
+        <PremiumDialog {...dialogConfig} />
+      </>
+    );
   }
 
-  return <GenericTodoCard {...props} />;
+  return (
+    <>
+      <GenericTodoCard {...props} />
+      <PremiumDialog {...dialogConfig} />
+    </>
+  );
 }

@@ -6,16 +6,18 @@ import BarcodeScanner from '../components/stock/BarcodeScanner';
 import ProductDetailModal from '../components/stock/ProductDetailModal';
 
 const StockMain = () => {
-  const [allProducts, setAllProducts] = useState([]);
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   
-  // Pagination (Client-side)
-  const [displayedCount, setDisplayedCount] = useState(20);
+  // Pagination (Server-side)
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
 
   // Scanner Modal
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -23,54 +25,67 @@ const StockMain = () => {
   // Product Detail Modal
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // 1. ดึงข้อมูลครั้งแรกครั้งเดียว (Categories & All Active Products)
+  // 1. ดึงหมวดหมู่ครั้งแรกครั้งเดียว
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
+      try {
+        const cats = await inventoryService.getUniqueProductCategories();
+        setCategories(cats);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // 2. ดึงข้อมูลสินค้าแบบ Pagination เมื่อ Filter หรือ Search เปลี่ยนแปลง (Debounced)
+  useEffect(() => {
+    const fetchFirstPage = async () => {
       setIsLoading(true);
       try {
-        const [cats, prods] = await Promise.all([
-          inventoryService.getUniqueProductCategories(),
-          inventoryService.getAllActiveProducts()
-        ]);
-        setCategories(cats);
-        setAllProducts(prods);
+        const res = await inventoryService.getPaginatedProducts({ 
+          category: selectedCategory, 
+          searchQuery 
+        });
+        setProducts(res.products || []);
+        setLastDoc(res.lastDoc);
+        setHasMore(res.hasMore);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching products:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchData();
-  }, []);
-
-  // 2. Filter Products locally (ประหยัดค่า Read อย่างมหาศาล และเร็วมาก)
-  const filteredProducts = useMemo(() => {
-    let result = allProducts;
-
-    // Filter by Category
-    if (selectedCategory !== 'All') {
-      result = result.filter(p => p.category === selectedCategory);
-    }
-
-    // Filter by Search Query
-    if (searchQuery.trim()) {
-      const queryLower = searchQuery.toLowerCase().trim();
-      result = result.filter(p => 
-        (p.sku && p.sku.toLowerCase().includes(queryLower)) || 
-        (p.name && p.name.toLowerCase().includes(queryLower))
-      );
-    }
-
-    return result;
-  }, [allProducts, selectedCategory, searchQuery]);
-
-  // 3. ปรับค่า Pagination ถ้ามีการเปลี่ยน Filter/Search
-  useEffect(() => {
-    setDisplayedCount(20);
+    
+    const timer = setTimeout(() => {
+      fetchFirstPage();
+    }, 400); // 400ms debounce
+    
+    return () => clearTimeout(timer);
   }, [selectedCategory, searchQuery]);
 
-  const loadMore = () => {
-    setDisplayedCount(prev => prev + 20);
+  const loadMore = async () => {
+    if (!hasMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const res = await inventoryService.getPaginatedProducts({ 
+        category: selectedCategory, 
+        searchQuery, 
+        lastDocItem: { docSnap: lastDoc } 
+      });
+      setProducts(prev => {
+        // Prevent duplicate IDs from Firestore pagination anomalies
+        const existingIds = new Set(prev.map(p => p.id));
+        const newProducts = res.products.filter(p => !existingIds.has(p.id));
+        return [...prev, ...newProducts];
+      });
+      setLastDoc(res.lastDoc);
+      setHasMore(res.hasMore);
+    } catch (error) {
+       console.error("Error loading more:", error);
+    } finally {
+       setIsLoadingMore(false);
+    }
   };
 
   // Handle Scan Success
@@ -82,9 +97,6 @@ const StockMain = () => {
   const handleProductClick = useCallback((product) => {
     setSelectedProduct(product);
   }, []);
-
-  const currentProducts = filteredProducts.slice(0, displayedCount);
-  const hasMore = displayedCount < filteredProducts.length;
 
   return (
     <div className="bg-gray-50 min-h-screen pb-24">
@@ -142,7 +154,7 @@ const StockMain = () => {
              <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
              <p className="text-gray-500 font-medium">กำลังโหลดข้อมูลสินค้า...</p>
            </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : products.length === 0 ? (
            <div className="bg-white rounded-3xl p-8 text-center shadow-xs border border-gray-100 mt-6">
              <div className="w-20 h-20 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
@@ -153,10 +165,10 @@ const StockMain = () => {
         ) : (
           <>
             <p className="text-xs font-bold text-gray-400 px-1 mb-2 uppercase tracking-wide flex justify-between">
-              <span>ผลการค้นหา {filteredProducts.length} รายการ</span>
+              <span>ผลการค้นหา {products.length} {hasMore ? '+' : ''} รายการ</span>
               {searchQuery && <span className="text-indigo-500 line-clamp-1 max-w-[150px] text-right">"{searchQuery}"</span>}
             </p>
-            {currentProducts.map(product => (
+            {products.map(product => (
               <ProductCard 
                 key={product.id} 
                 product={product} 
@@ -167,9 +179,10 @@ const StockMain = () => {
             {hasMore && (
               <button 
                 onClick={loadMore}
-                className="w-full py-4 mt-4 bg-white border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 font-bold hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex justify-center items-center gap-2"
+                disabled={isLoadingMore}
+                className="w-full py-4 mt-4 bg-white border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 font-bold hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
               >
-                โหลดเพิ่มเติม
+                {isLoadingMore ? 'กำลังโหลด...' : 'โหลดเพิ่มเติม'}
               </button>
             )}
           </>

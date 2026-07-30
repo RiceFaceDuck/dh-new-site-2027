@@ -1,15 +1,13 @@
- 
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { calculateDistance } from '../utils/geoUtils';
+import { safeJsonParse } from 'dh-shared';
 
 const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
 const CACHE_KEY = `active_partners_cache_v4_${appId}`;
 const CACHE_TTL_MINUTES = 15; // เก็บแคชไว้ 15 นาที เพื่อประหยัด Firebase Reads
 
-import { calculateDistance } from '../utils/geoUtils';
-
-import { safeJsonParse } from 'dh-shared';
 /**
  * 📦 ดึงข้อมูลพาร์ทเนอร์ที่เปิดรับการสนับสนุนทั้งหมด
  * (ระบบจะเช็คแคชใน sessionStorage ก่อนเพื่อประหยัด Reads/Writes)
@@ -34,7 +32,8 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
     // 2. ถ้าแคชหมดอายุ หรือบังคับ Refresh ค่อยไปดึงจาก Firebase
     console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์ใหม่จาก Firebase...");
     const partnersRef = collection(db, getCollectionPath('ActivePartners'));
-    const snapshot = await getDocs(partnersRef);
+    const q = query(partnersRef, limit(500));
+    const snapshot = await getDocs(q);
     
     const partners = snapshot.docs.map(doc => ({
       id: doc.id,
@@ -47,7 +46,6 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
       timestamp: new Date().getTime()
     };
     localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
-
 
     return partners;
   } catch (error) {

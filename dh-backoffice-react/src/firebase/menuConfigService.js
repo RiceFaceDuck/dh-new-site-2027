@@ -9,7 +9,7 @@ const DEFAULT_LAYOUT = {
     {
       id: "zone-1",
       title: "👥 จัดการบุคคลและทั่วไป",
-      menuIds: ["vip", "staff", "history", "drive", "credit"]
+      menuIds: ["vip", "staff", "role_tier", "history", "drive", "credit"]
     },
     {
       id: "zone-2",
@@ -46,12 +46,11 @@ export const menuConfigService = {
                 return DEFAULT_LAYOUT;
             }
             
-            // Auto-inject 'footer' into zone-5 if it's completely missing from all zones
-            const hasFooter = data.zones.some(z => z.menuIds.includes("footer"));
-            if (!hasFooter) {
-                const zone5 = data.zones.find(z => z.id === "zone-5");
-                if (zone5) {
-                    zone5.menuIds.splice(1, 0, "footer"); // แทรกหลัง theme
+            const hasRoleTier = data.zones.some(z => z.menuIds.includes("role_tier"));
+            if (!hasRoleTier) {
+                const zone1 = data.zones.find(z => z.id === "zone-1");
+                if (zone1) {
+                    zone1.menuIds.splice(2, 0, "role_tier"); // แทรกหลัง staff
                     await setDoc(docRef, data);
                 }
             }

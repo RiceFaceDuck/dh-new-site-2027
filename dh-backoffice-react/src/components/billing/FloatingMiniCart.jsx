@@ -7,6 +7,7 @@ import { useRef } from 'react';
 
 export default function FloatingMiniCart() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
   const [drafts, setDrafts] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
   const navigate = useNavigate();
@@ -19,10 +20,10 @@ export default function FloatingMiniCart() {
   const elementStartPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Default position: Middle Right
+    // Default position: Bottom Right edge (~72% height)
     setPosition({
-      x: window.innerWidth - 80,
-      y: window.innerHeight / 2 - 28,
+      x: window.innerWidth - 60,
+      y: Math.max(100, Math.floor(window.innerHeight * 0.72)),
     });
   }, []);
 
@@ -80,28 +81,37 @@ export default function FloatingMiniCart() {
     if (saved) {
       const parsed = safeJsonParse(saved);
       if (Array.isArray(parsed)) {
-        // Filter out empty tabs (no items and no customer and no docId)
-        const validDrafts = parsed.filter(t => t.items?.length > 0 || t.customer || t.docId);
+        // Filter out empty tabs and finished tabs
+        const validDrafts = parsed.filter(t => {
+          const stat = (t.orderStatus || t.status || t.paymentStatus || '').toLowerCase();
+          const isFinished = stat === 'approved' || stat === 'completed' || stat === 'paid' || stat === 'cancelled';
+          return !isFinished && (t.items?.length > 0 || t.customer || t.docId);
+        });
         setDrafts(validDrafts);
         
         // Auto-select first tab if current activeTabId is not found
         if (validDrafts.length > 0) {
-            setDrafts(prev => {
-                if (!validDrafts.some(d => d.id === activeTabId)) {
-                    setActiveTabId(validDrafts[0].id);
+            setActiveTabId(prevActiveId => {
+                if (!validDrafts.some(d => d.id === prevActiveId)) {
+                    return validDrafts[0].id;
                 }
-                return validDrafts;
+                return prevActiveId;
             });
         }
       }
     }
-  }, [activeTabId]);
+  }, []);
 
   useEffect(() => {
     loadDrafts();
     const interval = setInterval(loadDrafts, 2000); // Poll for updates from other tabs
     return () => clearInterval(interval);
   }, [loadDrafts]);
+
+  // Hide if dismissed by user for this session
+  if (isDismissed) {
+    return null;
+  }
 
   // Hide the widget if we are already on the billing page (POS active)
   if (location.pathname.includes('/billing')) {
@@ -216,24 +226,44 @@ export default function FloatingMiniCart() {
         </div>
       )}
 
-      {/* Floating Button */}
-      <button 
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onClick={handleClick}
-        className={`w-14 h-14 ${isOpen ? 'bg-slate-800' : 'bg-[#D51C39]'} text-white rounded-full shadow-xl hover:shadow-[#D51C39]/30 flex items-center justify-center transition-colors relative border-2 border-white dark:border-slate-800 ${isDragging ? 'cursor-grabbing scale-105' : 'cursor-grab hover:-translate-y-0.5'}`}
-        style={{ touchAction: 'none' }}
-      >
-        {isOpen ? <X size={24} className="pointer-events-none" /> : <ShoppingCart size={24} className="pointer-events-none" />}
-        
-        {!isOpen && drafts.length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-amber-400 text-amber-950 text-[11px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white dark:border-slate-800 shadow-sm animate-bounce pointer-events-none">
-            {drafts.length}
-          </span>
+      {/* Floating Button Container */}
+      <div className="relative">
+        <div 
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onClick={handleClick}
+          role="button"
+          tabIndex={0}
+          className={`w-14 h-14 ${isOpen ? 'bg-slate-800' : 'bg-[#D51C39]'} text-white rounded-full shadow-xl hover:shadow-[#D51C39]/30 flex items-center justify-center transition-colors relative border-2 border-white dark:border-slate-800 ${isDragging ? 'cursor-grabbing scale-105' : 'cursor-grab hover:-translate-y-0.5'}`}
+          style={{ touchAction: 'none' }}
+        >
+          {isOpen ? <X size={24} className="pointer-events-none" /> : <ShoppingCart size={24} className="pointer-events-none" />}
+          
+          {!isOpen && drafts.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-amber-400 text-amber-950 text-[11px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white dark:border-slate-800 shadow-sm animate-bounce pointer-events-none">
+              {drafts.length}
+            </span>
+          )}
+        </div>
+
+        {/* ปุ่ม x ปิดเล็กๆ เมื่อหุบอยู่ */}
+        {!isOpen && (
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDismissed(true);
+            }}
+            title="ปิดชั่วคราว (เปิดใหม่เมื่อ Refresh F5)"
+            className="absolute -top-1 -left-1 w-5 h-5 bg-slate-800 hover:bg-black text-white rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-md transition-transform hover:scale-110 z-20 pointer-events-auto cursor-pointer"
+          >
+            <X size={10} className="stroke-[3]" />
+          </button>
         )}
-      </button>
+      </div>
     </div>
   );
 }

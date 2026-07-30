@@ -102,9 +102,18 @@ export default function ClaimDetailModal({
     if (isReturn && !trackingNo) {
         confirmAction({
             title: 'แจ้งเตือน',
-            message: 'คุณยังไม่ได้ระบุเลขพัสดุสำหรับคืนสินค้า หากไม่มีให้ข้ามไป ยืนยันการดำเนินการหรือไม่?',
+            message: 'คุณยังไม่ได้ระบุเลขพัสดุสำหรับคืนสินค้า (กรอกเลขพัสดุด้านล่าง หรือหากไม่มีให้เว้นว่างเพื่อข้าม)',
             type: 'warning',
-            actionFn: () => handleApprove(trackingNo)
+            requireInput: true,
+            allowEmptyInput: true,
+            inputPlaceholder: 'ระบุเลขพัสดุคืนสินค้า (ถ้ามี)...',
+            actionFn: (inputTracking) => {
+              const finalTracking = typeof inputTracking === 'string' && inputTracking.trim() ? inputTracking.trim() : trackingNo;
+              if (typeof inputTracking === 'string' && inputTracking.trim()) {
+                setTrackingNo(inputTracking.trim());
+              }
+              return handleApprove(finalTracking);
+            }
         });
         return;
     }

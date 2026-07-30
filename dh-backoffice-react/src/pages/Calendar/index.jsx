@@ -24,6 +24,29 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+// 🚀 Performance Optimization: Move static components and functions outside to prevent re-renders
+const EventComponent = ({ event }) => {
+  return (
+    <div className="flex items-center text-xs truncate px-1">
+      <strong>{event.title}</strong>
+    </div>
+  );
+};
+
+const eventPropGetter = (event) => {
+  const typeInfo = EVENT_TYPES.find(t => t.id === event.type) || EVENT_TYPES[3];
+  return {
+    style: {
+      backgroundColor: typeInfo.color,
+      borderRadius: '6px',
+      opacity: 0.9,
+      color: 'white',
+      border: 'none',
+      display: 'block'
+    }
+  };
+};
+
 export default function CalendarPage() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const {
@@ -39,28 +62,7 @@ export default function CalendarPage() {
     handleSubmit
   } = useCalendar();
 
-  // Custom Event Component เพื่อให้สีสันสวยงามตาม Type
-  const EventComponent = ({ event }) => {
-    return (
-      <div className="flex items-center text-xs truncate px-1">
-        <strong>{event.title}</strong>
-      </div>
-    );
-  };
-
-  const eventPropGetter = (event) => {
-    const typeInfo = EVENT_TYPES.find(t => t.id === event.type) || EVENT_TYPES[3];
-    return {
-      style: {
-        backgroundColor: typeInfo.color,
-        borderRadius: '6px',
-        opacity: 0.9,
-        color: 'white',
-        border: 'none',
-        display: 'block'
-      }
-    };
-  };
+  // Custom Event Component เพื่อให้สีสันสวยงามตาม Type (Moved outside)
 
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900">

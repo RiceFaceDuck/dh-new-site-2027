@@ -62,7 +62,7 @@ const LazyImage = ({ src, alt, className = "", placeholderClassName = "bg-slate-
         <img 
           src={finalSrc}
           alt={alt}
-          className={`w-full h-full transition-opacity duration-500 ${imgObjectFit} ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className} ${hasError ? 'p-4 opacity-40' : ''}`}
+          className={`w-full h-full transition-all duration-500 ${imgObjectFit} ${isLoaded ? 'opacity-100 blur-none scale-100' : 'opacity-0 blur-xs scale-105'} ${className} ${hasError ? 'p-4 opacity-40' : ''}`}
           onLoad={(e) => {
             setIsLoaded(true);
             if (onLoad) onLoad(e);

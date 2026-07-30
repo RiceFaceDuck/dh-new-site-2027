@@ -8,6 +8,7 @@ import ReceiptTemplate from './pos/ReceiptTemplate';
 import PosHeader from './pos/layout/PosHeader';
 import GuideModal from '../common/GuideModal';
 import PromoModal from './pos/layout/PromoModal';
+import FreebieModal from './pos/layout/FreebieModal';
 import usePosState from './pos/hooks/usePosState';
 import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
 import { usePosShortcuts } from './pos/hooks/usePosShortcuts';
@@ -150,7 +151,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                     <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} />
                 </div>
                 <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
-                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} handleRemovePromotion={actions.handleRemovePromotion} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} />
+                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} setIsFreebieModalOpen={posState.setIsFreebieModalOpen} handleRemovePromotion={actions.handleRemovePromotion} handleRemoveFreebie={actions.handleRemoveFreebie} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} />
                 </div>
             </div>
 
@@ -161,6 +162,16 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                     itemSubTotal={itemSubTotal} 
                     activeTab={activeTab} 
                     actions={actions} 
+                />
+            )}
+
+            {posState.isFreebieModalOpen && (
+                <FreebieModal 
+                    setIsFreebieModalOpen={posState.setIsFreebieModalOpen} 
+                    activeFreebies={posState.activeFreebies} 
+                    itemSubTotal={itemSubTotal} 
+                    activeTab={activeTab} 
+                    updateActiveTab={updateActiveTab} 
                 />
             )}
 

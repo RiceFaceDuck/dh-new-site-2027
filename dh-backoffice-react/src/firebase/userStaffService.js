@@ -144,23 +144,33 @@ export const updateStaffDetails = async (adminId, targetUid, updates) => {
 export const searchUsersForStaffPromotion = async (keyword) => {
     try {
         const usersRef = getUsersCollectionRef();
-        const snapshot = await getDocs(usersRef);
-        const results = [];
         const searchWord = keyword.toLowerCase().trim();
+        
+        // Optimize: Use Firestore native queries with prefix matching to prevent fetching entire users collection
+        const prefixEnd = searchWord + '\uf8ff';
+        
+        const [emailSnap, phoneSnap, nameSnap] = await Promise.all([
+            getDocs(query(usersRef, where('email', '>=', searchWord), where('email', '<=', prefixEnd), limit(20))),
+            getDocs(query(usersRef, where('phone', '>=', searchWord), where('phone', '<=', prefixEnd), limit(20))),
+            getDocs(query(usersRef, where('displayName', '>=', searchWord), where('displayName', '<=', prefixEnd), limit(20)))
+        ]);
 
-        snapshot.forEach(doc => {
+        const resultsMap = new Map();
+        
+        const processDoc = (doc) => {
             const data = doc.data();
-            if ((data.email && data.email.toLowerCase().includes(searchWord)) ||
-                (data.phone && data.phone.includes(searchWord)) ||
-                (data.displayName && data.displayName.toLowerCase().includes(searchWord))) {
-                
-                const currentRole = String(data.role || (data.roles && data.roles[0]) || '').toLowerCase();
-                if (!['admin', 'manager', 'staff', 'packer', 'developer'].includes(currentRole)) {
-                    results.push({ id: doc.id, ...data });
-                }
+            const currentRole = String(data.role || (data.roles && data.roles[0]) || '').toLowerCase();
+            // Filter out existing staff/admins
+            if (!['admin', 'manager', 'staff', 'packer', 'developer'].includes(currentRole)) {
+                resultsMap.set(doc.id, { id: doc.id, ...data });
             }
-        });
-        return results;
+        };
+
+        emailSnap.forEach(processDoc);
+        phoneSnap.forEach(processDoc);
+        nameSnap.forEach(processDoc);
+
+        return Array.from(resultsMap.values());
     } catch (error) {
         console.error("❌ [UserStaffService] Search Users Error:", error);
         throw error;

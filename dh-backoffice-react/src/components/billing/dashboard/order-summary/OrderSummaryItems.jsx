@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ClaimActionForm from './ClaimActionForm';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
 
 import { safeJsonParse } from 'dh-shared';
@@ -86,21 +87,24 @@ export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
                             {isClaimable && <th className="px-3 py-1.5 w-8"></th>}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-(--dh-border)/50">
+                    <motion.tbody layout>
+                        <AnimatePresence>
                         {selectedOrder.items.map((item, idx) => {
                             const qty = item.qty || item.quantity || 1;
                             const price = item.price || 0;
                             const isFreebie = price === 0 || item.isFreebie;
-                            const pastActions = selectedOrder.refundsAndClaims?.filter(rc => rc.sku === item.sku) || [];
-                            const usedQty = pastActions.reduce((sum, action) => sum + (Number(action.qty) || 1), 0);
-                            const availableQty = qty - usedQty;
                             
                             const isExpanded = expandedRowIdx === idx;
-                            const rowClickable = isClaimable && !isFreebie && availableQty > 0;
+                            const rowClickable = isClaimable && !isFreebie;
 
                             return (
                                 <React.Fragment key={idx}>
-                                    <tr 
+                                    <motion.tr 
+                                        layout
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        transition={{ duration: 0.2 }}
                                         onClick={() => rowClickable && toggleRow(idx)}
                                         className={`group transition-colors ${rowClickable ? 'cursor-pointer hover:bg-orange-50/50' : 'hover:bg-(--dh-bg-base)'} ${isExpanded ? 'bg-orange-50/50' : ''}`}
                                     >
@@ -160,10 +164,15 @@ export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
                                                 )}
                                             </td>
                                         )}
-                                    </tr>
+                                    </motion.tr>
                                     {/* Expanded Form Row */}
                                     {isExpanded && rowClickable && (
-                                        <tr className="bg-orange-50/50">
+                                        <motion.tr
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            className="bg-orange-50/50"
+                                        >
                                             <td colSpan={isClaimable ? 6 : 5} className="p-0">
                                                 <ClaimActionForm 
                                                     item={item} 
@@ -171,12 +180,13 @@ export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
                                                     onCancel={() => setExpandedRowIdx(null)} 
                                                 />
                                             </td>
-                                        </tr>
+                                        </motion.tr>
                                     )}
                                 </React.Fragment>
                             );
                         })}
-                    </tbody>
+                        </AnimatePresence>
+                    </motion.tbody>
                 </table>
             </div>
         </div>

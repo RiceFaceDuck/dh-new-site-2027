@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { userService, SUPER_ADMINS } from '../firebase/userService';
@@ -194,7 +194,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       if (user) {
         gasHistoryService.log({
@@ -210,16 +210,16 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error logging out:', error);
     }
-  };
+  }, [user]);
 
-  const isManagerOrOwner = () => {
+  const isManagerOrOwner = useCallback(() => {
     if (!profile) return false;
     const r = (profile.role || '').toLowerCase();
     const email = (user?.email || '').toLowerCase();
     return r === 'manager' || r.includes('owner') || r.includes('vp 1') || r === 'ผู้จัดการ' || r === 'เจ้าของ' || SUPER_ADMINS.includes(email);
-  };
+  }, [profile, user]);
 
-  const stateValue = {
+  const stateValue = useMemo(() => ({
     user,
     profile,
     loading,
@@ -229,12 +229,12 @@ export const AuthProvider = ({ children }) => {
     accessDenied,
     denyReason,
     isManagerOrOwner
-  };
+  }), [user, profile, loading, isCheckingAuth, isPendingApproval, isProfileSetupRequired, accessDenied, denyReason, isManagerOrOwner]);
 
-  const dispatchValue = {
+  const dispatchValue = useMemo(() => ({
     logout,
     setIsProfileSetupRequired
-  };
+  }), [logout]);
 
   return (
     <AuthStateContext.Provider value={stateValue}>

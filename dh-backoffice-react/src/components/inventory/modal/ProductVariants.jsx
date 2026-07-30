@@ -30,7 +30,10 @@ export default function ProductVariants({ form, setForm }) {
       const updatedOptions = [...form.variantOptions];
       
       if (!updatedOptions[optionIndex].values.includes(val)) {
-        updatedOptions[optionIndex].values.push(val);
+        updatedOptions[optionIndex] = {
+          ...updatedOptions[optionIndex],
+          values: [...updatedOptions[optionIndex].values, val]
+        };
         setForm({ ...form, variantOptions: updatedOptions });
       }
       setInputStr('');
@@ -39,7 +42,10 @@ export default function ProductVariants({ form, setForm }) {
 
   const handleRemoveOptionValue = (optionIndex, valueIndex) => {
     const updatedOptions = [...form.variantOptions];
-    updatedOptions[optionIndex].values = updatedOptions[optionIndex].values.filter((_, i) => i !== valueIndex);
+    updatedOptions[optionIndex] = {
+      ...updatedOptions[optionIndex],
+      values: updatedOptions[optionIndex].values.filter((_, i) => i !== valueIndex)
+    };
     setForm({ ...form, variantOptions: updatedOptions });
   };
 

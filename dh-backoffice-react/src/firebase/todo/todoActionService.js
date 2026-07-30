@@ -1,5 +1,5 @@
 import { db } from '../config';
-import { doc, updateDoc, deleteDoc, addDoc, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, addDoc, serverTimestamp, collection, writeBatch, arrayUnion, runTransaction } from 'firebase/firestore';
 import { MANAGER_TASK_TYPES } from '../managerTodoService';
 import { gasHistoryService } from '../gasHistoryService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -19,17 +19,46 @@ export const todoActionService = {
 
   startTask: async (taskId) => {
       const taskRef = doc(db, getCollectionPath('todos'), taskId);
-      await updateDoc(taskRef, { status: 'in_progress', updatedAt: serverTimestamp() });
+      await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(taskRef);
+        if (!snap.exists()) throw new Error("ไม่พบรายการนี้");
+        if (snap.data().status !== 'todo' && snap.data().status !== 'pending') throw new Error("รายการนี้ไม่ได้อยู่ในสถานะรอเริ่มต้น");
+        transaction.update(taskRef, { status: 'in_progress', updatedAt: serverTimestamp() });
+      });
   },
 
   completeTask: async (taskId) => {
       const taskRef = doc(db, getCollectionPath('todos'), taskId);
-      await updateDoc(taskRef, { status: 'completed', completedAt: serverTimestamp() });
+      await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(taskRef);
+        if (!snap.exists()) throw new Error("ไม่พบรายการนี้");
+        if (snap.data().status === 'completed' || snap.data().status === 'rejected') throw new Error("รายการนี้ถูกจัดการไปแล้ว");
+        transaction.update(taskRef, { status: 'completed', completedAt: serverTimestamp() });
+      });
   },
 
   rejectTask: async (taskId, reason = '') => {
       const taskRef = doc(db, getCollectionPath('todos'), taskId);
-      await updateDoc(taskRef, { status: 'rejected', rejectReason: reason, completedAt: serverTimestamp() });
+      await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(taskRef);
+        if (!snap.exists()) throw new Error("ไม่พบรายการนี้");
+        if (snap.data().status === 'completed' || snap.data().status === 'rejected') throw new Error("รายการนี้ถูกจัดการไปแล้ว");
+        transaction.update(taskRef, { status: 'rejected', rejectReason: reason, completedAt: serverTimestamp() });
+      });
+  },
+
+  acknowledgePromotionAlert: async (taskId, user) => {
+    if (!user || !user.uid) throw new Error("ไม่พบข้อมูลผู้ใช้งาน");
+    const taskRef = doc(db, getCollectionPath('todos'), taskId);
+    await updateDoc(taskRef, {
+      [`acknowledgedBy.${user.uid}`]: {
+        uid: user.uid,
+        name: user.displayName || user.email || 'Staff',
+        at: new Date().toISOString()
+      },
+      acknowledgedUsers: arrayUnion(user.uid),
+      updatedAt: serverTimestamp()
+    });
   },
 
   createManualTask: async (taskForm, user) => {

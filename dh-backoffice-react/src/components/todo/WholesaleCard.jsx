@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PackageOpen, Clock, Calendar, Check, X, ShieldAlert, BadgeCheck, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { inventoryQueryService } from '../../firebase/inventory/inventoryQueryService';
 import WholesaleTable from './cards/wholesale/WholesaleTable';
@@ -7,7 +7,7 @@ import useWholesaleCalculator from './cards/wholesale/useWholesaleCalculator';
 
 import { safeJsonParse } from 'dh-shared';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
-export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge, isManagerTab }) {
+const WholesaleCard = React.memo(function WholesaleCard({ todo, isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge, isManagerTab }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [fetchedData, setFetchedData] = useState({});
   const [isFetching, setIsFetching] = useState(false);
@@ -129,24 +129,28 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
   const getUrgencyStyles = (level) => {
     switch (level) {
       case 'high': 
-        return 'border-l-4 border-l-red-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-red-400 bg-red-50/30';
+        return 'bg-gradient-to-br from-rose-50/70 via-white to-pink-50/40 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-300 hover:-translate-y-0.5';
       case 'medium': 
-        return 'border-l-4 border-l-orange-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-orange-400 bg-orange-50/30';
+        return 'bg-gradient-to-br from-amber-50/70 via-white to-orange-50/40 border border-amber-200/80 shadow-sm hover:shadow-md hover:border-amber-300 hover:-translate-y-0.5';
       default: 
-        return 'border-2 border-gray-200 hover:border-blue-400 bg-white';
+        return 'bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/40 border border-blue-200/80 shadow-sm hover:shadow-md hover:border-blue-300 hover:-translate-y-0.5';
     }
   };
 
   return (
     <div 
-      className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] p-3 sm:p-4 flex flex-col relative overflow-hidden transition-all transform hover:-translate-y-0.5 mb-4 ${getUrgencyStyles(urgencyLevel)}`}
+      className={`rounded-2xl transition-all duration-200 p-4 flex flex-col relative overflow-hidden h-full ${getUrgencyStyles(urgencyLevel)}`}
     >
       
-      {isManagerTab && <div className="absolute top-0 right-0 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10 shadow-xs">Manager</div>}
+      {isManagerTab && (
+        <div className="absolute top-0 right-0 bg-linear-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-bl-xl shadow-xs z-10 uppercase tracking-wider">
+          Manager
+        </div>
+      )}
 
       {isProcessing && (
-        <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/70 backdrop-blur-xs z-20 flex flex-col items-center justify-center transition-all duration-300">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-xs z-20 flex flex-col items-center justify-center transition-all duration-300">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mb-2"></div>
         </div>
       )}
 
@@ -156,23 +160,23 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
         className="flex flex-row justify-between items-center gap-3 relative z-10 cursor-pointer select-none"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800 shadow-xs flex items-center justify-center shrink-0">
-            <PackageOpen size={20} className="text-blue-600 dark:text-blue-400" />
+          <div className="w-10 h-10 bg-linear-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 shadow-xs flex items-center justify-center shrink-0">
+            <PackageOpen size={20} className="text-blue-600" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-1.5 leading-none mb-1">
+            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5 leading-snug mb-1">
               คำขออนุมัติราคาส่ง
-              <span className="bg-blue-100 text-blue-700 text-[9px] uppercase px-1.5 py-0.5 rounded-sm shadow-xs">B2B</span>
+              <span className="bg-blue-100 text-blue-700 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shadow-2xs">B2B</span>
             </h3>
-            <div className="flex items-center flex-wrap gap-2">
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-sm border border-slate-200">
+            <div className="flex items-center flex-wrap gap-2 pr-12">
+              <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                 Order: #{todo.payload?.orderId?.slice(-6).toUpperCase() || 'N/A'}
               </span>
               {getStatusBadge(todo.status)}
             </div>
           </div>
         </div>
-        <div className="text-slate-400 hover:text-slate-600">
+        <div className="text-slate-400 hover:text-slate-600 p-1">
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
       </div>
@@ -283,4 +287,6 @@ export default function WholesaleCard({ todo, isProcessing, urgencyLevel, handle
       )}
     </div>
   );
-}
+});
+
+export default WholesaleCard;

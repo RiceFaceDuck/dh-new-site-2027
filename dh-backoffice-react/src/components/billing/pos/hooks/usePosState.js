@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { promotionService } from '../../../../firebase/promotionService';
 import { freebieService } from '../../../../firebase/freebieService';
 import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
@@ -15,7 +15,7 @@ const createNewTab = () => {
     return {
         id: Date.now().toString(), orderId: `DH-TEMP-${randomSuffix}`, docId: null, items: [], customer: null, priceMode: 'wholesale',
         walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
-    autoShippingEnabled: true, overallDiscount: 0, promoDiscount: 0, autoPromoEnabled: true, otherFeeName: '', otherFeeAmount: 0, 
+        autoShippingEnabled: false, overallDiscount: 0, overallDiscountType: 'BAHT', promoDiscount: 0, autoPromoEnabled: true, autoFreebieEnabled: true, disabledFreebieIds: [], manualFreebieIds: [], otherFeeName: '', otherFeeAmount: 0, 
     paymentMethod: 'Transfer', bankAccount: 'KBANK', cashReceived: '', slipImage: null, billNote: '', receiptFormat: 'short',
     appliedPromoId: null, appliedPromoDetails: null, walletUsed: 0, useWallet: false
     };
@@ -26,20 +26,30 @@ const loadSavedState = () => {
         const uid = auth?.currentUser?.uid || 'guest';
         const saved = localStorage.getItem(`dh_pos_autosave_${uid}`);
         
+        const filterValidTabs = (tabs) => {
+            if (!Array.isArray(tabs)) return [];
+            return tabs.filter(t => {
+                const stat = (t.orderStatus || t.status || t.paymentStatus || '').toLowerCase();
+                return stat !== 'approved' && stat !== 'completed' && stat !== 'paid' && stat !== 'cancelled';
+            });
+        };
+
         if (saved) {
             const parsed = safeJsonParse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            const valid = filterValidTabs(parsed);
+            if (valid.length > 0) return valid;
         } else {
             // Auto-Migration: If no new staff-specific save exists, check for old global save
             const oldSaved = localStorage.getItem('dh_pos_autosave');
             if (oldSaved) {
                 const parsedOld = safeJsonParse(oldSaved);
-                if (Array.isArray(parsedOld) && parsedOld.length > 0) {
+                const validOld = filterValidTabs(parsedOld);
+                if (validOld.length > 0) {
                     // Save to new key to complete migration
-                    localStorage.setItem(`dh_pos_autosave_${uid}`, oldSaved);
+                    localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(validOld));
                     // Clear old to avoid duplication for other users on same PC
                     localStorage.removeItem('dh_pos_autosave');
-                    return parsedOld;
+                    return validOld;
                 }
             }
         }
@@ -60,6 +70,7 @@ export default function usePosState(products, customers, initialDraft) {
     const [isUploadingSlip, setIsUploadingSlip] = useState(false);
     const [activePromotions, setActivePromotions] = useState([]);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+    const [isFreebieModalOpen, setIsFreebieModalOpen] = useState(false);
     const [activeFreebies, setActiveFreebies] = useState([]);
 
     useEffect(() => {
@@ -69,6 +80,10 @@ export default function usePosState(products, customers, initialDraft) {
 
     useEffect(() => {
         if (initialDraft) {
+            const draftStat = (initialDraft.orderStatus || initialDraft.status || initialDraft.paymentStatus || '').toLowerCase();
+            if (draftStat === 'approved' || draftStat === 'completed' || draftStat === 'paid' || draftStat === 'cancelled') {
+                return;
+            }
             setCartTabs(prev => {
                 const draftId = (initialDraft.id || initialDraft.orderId) ? String(initialDraft.id || initialDraft.orderId) : Date.now().toString();
                 
@@ -96,13 +111,14 @@ export default function usePosState(products, customers, initialDraft) {
                     vatType: initialDraft.vatType || 'exempt',
                     vatOnShipping: initialDraft.vatOnShipping || false,
                     overallDiscount: initialDraft.overallDiscount || 0,
+                    overallDiscountType: initialDraft.overallDiscountType || 'BAHT',
                     useWallet: Boolean(initialDraft.walletUsed > 0),
                     walletUsed: initialDraft.walletUsed || 0,
                     promoDiscount: initialDraft.promoDiscount || 0,
                     appliedPromoId: initialDraft.appliedPromotion?.id || null,
                     appliedPromoDetails: initialDraft.appliedPromotion || null,
                     autoPromoEnabled: false,
-                    autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : true,
+                    autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : false,
                     paymentMethod: initialDraft.paymentMethod || 'Transfer',
                     bankAccount: initialDraft.bankAccount || 'KBANK',
                     fulfillmentType: initialDraft.fulfillmentType || 'Delivery',
@@ -179,9 +195,15 @@ export default function usePosState(products, customers, initialDraft) {
     const safeCartTabs = cartTabs.length > 0 ? cartTabs : [createNewTab()];
     const activeTab = safeCartTabs.find(t => t.id === activeTabId) || safeCartTabs[0];
 
-    const updateActiveTab = (updates) => {
-        setCartTabs(prev => prev.map(tab => tab.id === activeTabId ? { ...tab, ...updates } : tab));
-    };
+    const updateActiveTab = useCallback((updates) => {
+        setCartTabs(prev => prev.map(tab => {
+            if (tab.id === activeTabId) {
+                const evaluatedUpdates = typeof updates === 'function' ? updates(tab) : updates;
+                return { ...tab, ...evaluatedUpdates };
+            }
+            return tab;
+        }));
+    }, [activeTabId]);
 
     const closeTab = (tabId) => {
         setCartTabs(prev => {
@@ -229,6 +251,7 @@ export default function usePosState(products, customers, initialDraft) {
         previewSlip, setPreviewSlip,
         isUploadingSlip, setIsUploadingSlip,
         isPromoModalOpen, setIsPromoModalOpen,
+        isFreebieModalOpen, setIsFreebieModalOpen,
         
         // Marketing Data
         activePromotions, setActivePromotions,

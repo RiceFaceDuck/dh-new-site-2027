@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   query,
   where,
+  limit,
   writeBatch,
   getCountFromServer
 } from 'firebase/firestore';
@@ -40,7 +41,7 @@ export const adManagementService = {
   getAdsByStatus: async (status = 'pending') => {
     try {
       // 💡 ดึงจาก partner_ads เป็นหลัก เพราะ marketingService เซฟไว้ที่นี่ทั้งหมด
-      const q = query(collection(db, getCollectionPath('partner_ads')), where('status', '==', status));
+      const q = query(collection(db, getCollectionPath('partner_ads')), where('status', '==', status), limit(500));
       const querySnapshot = await getDocs(q);
       const adsList = [];
       
@@ -67,12 +68,39 @@ export const adManagementService = {
    */
   getAdsByUserId: async (uid) => {
     try {
-      const q = query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', uid));
-      const querySnapshot = await getDocs(q);
-      const adsList = [];
-      querySnapshot.forEach((doc) => {
-        adsList.push({ id: doc.id, ...doc.data() });
+      const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
+      const snapshots = await Promise.all(adCols.map(col => {
+        const q = query(collection(db, getCollectionPath(col)), where('ownerId', '==', uid), limit(500));
+        return getDocs(q);
+      }));
+
+      const adsMap = new Map();
+
+      snapshots.forEach(snap => {
+        snap.forEach(docSnap => {
+          const data = { id: docSnap.id, ...docSnap.data() };
+          if (!adsMap.has(docSnap.id)) {
+            adsMap.set(docSnap.id, data);
+          } else {
+            const existing = adsMap.get(docSnap.id);
+            const existingViews = Number(existing.stats?.views || existing.impressions || 0);
+            const existingClicks = Number(existing.stats?.clicks || existing.clicks || 0);
+            const newViews = Number(data.stats?.views || data.impressions || 0);
+            const newClicks = Number(data.stats?.clicks || data.clicks || 0);
+
+            adsMap.set(docSnap.id, {
+              ...existing,
+              ...data,
+              stats: {
+                views: Math.max(existingViews, newViews),
+                clicks: Math.max(existingClicks, newClicks)
+              }
+            });
+          }
+        });
       });
+
+      const adsList = Array.from(adsMap.values());
       return adsList.sort((a, b) => {
         const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
         const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
@@ -267,23 +295,25 @@ export const adManagementService = {
         updatedAt: serverTimestamp()
       };
       
-      await updateDoc(adRef, updatePayload);
+      const batch = writeBatch(db);
+      
+      batch.update(adRef, updatePayload);
 
       if (specificCol !== 'partner_ads') {
         const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
-        await updateDoc(partnerAdRef, updatePayload).catch(()=>{});
+        batch.update(partnerAdRef, updatePayload);
       }
 
       // 🌟 THE FIX [Data Relationship]: Remove from ActivePartners if paused
       if (adSnap.exists()) {
         const adData = adSnap.data();
-        if (adData.type === 'BUSINESS_CARD') {
+        if (adData.type === 'BUSINESS_CARD' && adData.ownerId) {
            const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), adData.ownerId);
-           // We have to use updateDoc or simple deleteDoc since pauseAd didn't use batch
-           const { deleteDoc } = await import('firebase/firestore');
-           await deleteDoc(activePartnerRef).catch(()=>{});
+           batch.delete(activePartnerRef);
         }
       }
+
+      await batch.commit();
 
       return { success: true, message: 'ระงับการแสดงผลโฆษณานี้ชั่วคราวสำเร็จ' };
     } catch (error) {

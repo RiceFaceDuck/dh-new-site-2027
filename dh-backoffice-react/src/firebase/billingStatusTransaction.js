@@ -9,7 +9,7 @@ import { getCreditPreloadRefs } from './credit/creditActionService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'orders';
+const COLLECTION_NAME = getCollectionPath('orders');
 
 export const billingStatusTransaction = {
   updateOrderStatus: async (orderId, newStatus, currentStatus, actorUid) => {
@@ -17,7 +17,19 @@ export const billingStatusTransaction = {
       const actualActorUid = actorUid || (typeof currentStatus === 'string' && currentStatus.length > 15 ? currentStatus : 'system');
       const normalizedNewStatus = (newStatus || '').toLowerCase();
 
-      await runTransaction(db, async (transaction) => {
+      // 🌟 ดึง Todos ที่รออนุมัติ (pending_manager) ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction
+      let pendingTodoRefs = [];
+      if (normalizedNewStatus === 'cancelled') {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const todosRef = collection(db, getCollectionPath('todos'));
+        const q = query(todosRef, where('referenceId', '==', orderId), where('status', '==', 'pending_manager'));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          querySnapshot.forEach(docSnap => pendingTodoRefs.push(docSnap.ref));
+        }
+      }
+
+      const result = await runTransaction(db, async (transaction) => {
           const docRef = doc(db, COLLECTION_NAME, orderId);
           const docSnap = await transaction.get(docRef);
           
@@ -198,42 +210,95 @@ export const billingStatusTransaction = {
              }
              
              await handlePromoFreebieReversal(transaction, db, orderData, promoFreebieSnaps);
-          }
+
+              // 🎯 ATOMIC REFUND TODO: Create Manual Refund To-do inside transaction
+              const manualRefundAmt = (totalSaleAmount - walletUsed);
+              if (manualRefundAmt > 0 && normalizedCurrentStatus === 'paid') {
+                const refundTodoRef = doc(collection(db, getCollectionPath('todos')));
+                const cUid = orderData.customer?.uid || orderData.customerInfo?.uid || 'Unknown';
+                const cName = orderData.customer?.name || orderData.customer?.displayName || 'ลูกค้า';
+                transaction.set(refundTodoRef, {
+                  id: refundTodoRef.id,
+                  type: 'REFUND_MANUAL',
+                  status: 'pending_manager',
+                  title: `รอโอนเงินคืนลูกค้า (ยกเลิกบิล ${orderId})`,
+                  description: `บิล ${orderId} ถูกยกเลิก แต่มีการจ่ายผ่านเงินสด/โอนเงิน โปรดโอนเงินคืนลูกค้าจำนวน ฿${manualRefundAmt.toLocaleString()} และแนบสลิป`,
+                  referenceId: orderId,
+                  customerUid: cUid,
+                  customerName: cName,
+                  payload: {
+                    orderId: orderId,
+                    refundAmount: manualRefundAmt,
+                    walletRefunded: walletUsed
+                  },
+                  priority: 'high',
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                });
+              }
+           }
+
+           // 🎯 Auto-Cancel related pending todos INSIDE transaction
+           if (isCancelling && pendingTodoRefs.length > 0) {
+               for (const tRef of pendingTodoRefs) {
+                   transaction.update(tRef, {
+                      status: 'cancelled',
+                      updatedAt: serverTimestamp(),
+                      handledBy: actualActorUid,
+                      internalNote: 'Auto-cancelled due to order cancellation.'
+                   });
+               }
+           }
 
           transaction.update(docRef, updates);
+          
+          // Return necessary data for outside-transaction side-effects
+          return {
+              manualRefundAmount: isCancelling ? (totalSaleAmount - walletUsed) : 0,
+              customerUid: orderData.customer?.uid || orderData.customerInfo?.uid || 'Unknown',
+              customerName: orderData.customer?.name || orderData.customer?.displayName || 'ลูกค้า',
+              walletUsed,
+              normalizedCurrentStatus
+          };
       }, { maxAttempts: 15 });
 
       let logMessage = `เปลี่ยนสถานะบิลเป็น: ${normalizedNewStatus}`;
       if (normalizedNewStatus === 'cancelled') {
-        logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม กลับสู่ระบบเรียบร้อยแล้ว)';
-        
-        // 🎯 Auto-Cancel related pending todos
-        try {
-          const { collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
-          const todosRef = collection(db, getCollectionPath('todos'));
-          const q = query(todosRef, where('referenceId', '==', orderId), where('status', '==', 'pending_manager'));
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            const batch = writeBatch(db);
-            querySnapshot.forEach((todoDoc) => {
-              batch.update(todoDoc.ref, { 
-                status: 'cancelled', 
-                updatedAt: serverTimestamp(),
-                internalNote: 'Auto-cancelled due to order cancellation.'
-              });
-            });
-            await batch.commit();
-            console.log(`Auto-cancelled ${querySnapshot.size} todos for order ${orderId}`);
-          }
-        } catch (todoErr) {
-          console.error("🔥 Error auto-cancelling todos:", todoErr);
-        }
+        logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม/ยกเลิกคำร้อง กลับสู่ระบบเรียบร้อยแล้ว)';
       }
       if (normalizedNewStatus === 'paid') logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
 
       await historyService.addLog('Billing', 'Update', orderId, logMessage, actorUid);
       
+      // 🎯 Auto-Create Refund To-do if there is manual cash/PromptPay refund
+      if (normalizedNewStatus === 'cancelled' && result.manualRefundAmount > 0 && result.normalizedCurrentStatus === 'paid') {
+          try {
+              const { doc: firestoreDoc, collection: firestoreCollection, setDoc, serverTimestamp: fbServerTimestamp } = await import('firebase/firestore');
+              const refundTodoRef = firestoreDoc(firestoreCollection(db, getCollectionPath('todos')));
+              await setDoc(refundTodoRef, {
+                  id: refundTodoRef.id,
+                  type: 'REFUND_MANUAL',
+                  status: 'pending_manager',
+                  title: `รอโอนเงินคืนลูกค้า (ยกเลิกบิล ${orderId})`,
+                  description: `บิล ${orderId} ถูกยกเลิก แต่มีการจ่ายผ่านเงินสด/โอนเงิน โปรดโอนเงินคืนลูกค้าจำนวน ฿${result.manualRefundAmount.toLocaleString()} และแนบสลิป`,
+                  referenceId: orderId,
+                  customerUid: result.customerUid,
+                  customerName: result.customerName,
+                  payload: {
+                      orderId: orderId,
+                      refundAmount: result.manualRefundAmount,
+                      walletRefunded: result.walletUsed
+                  },
+                  priority: 'high',
+                  createdAt: fbServerTimestamp(),
+                  updatedAt: fbServerTimestamp()
+              });
+              console.log(`✅ Created manual refund To-do for ${orderId} (${result.manualRefundAmount} THB)`);
+          } catch (refundErr) {
+              console.error("🔥 Error creating refund to-do:", refundErr);
+          }
+      }
+
       return orderId;
     })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะบิล");
   },

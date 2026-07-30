@@ -1,7 +1,9 @@
-import { History, TrendingUp, TrendingDown, Clock, Loader2, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { History, TrendingUp, TrendingDown, Clock, Loader2, FileText, X } from 'lucide-react';
 import { formatCredit } from '../../../../firebase/creditService';
 
 const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
+  const [activeSlipUrl, setActiveSlipUrl] = useState(null);
   return (
     <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
@@ -67,14 +69,13 @@ const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
                   </div>
                   <div className="flex items-center gap-4">
                     {log.slipUrl && (
-                      <a 
-                        href={log.slipUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="hidden sm:flex px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg text-xs font-bold transition-colors items-center gap-1.5 border border-blue-100 shadow-xs shrink-0"
+                      <button 
+                        type="button"
+                        onClick={() => setActiveSlipUrl(log.slipUrl)} 
+                        className="hidden sm:flex px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg text-xs font-bold transition-colors items-center gap-1.5 border border-blue-100 shadow-xs shrink-0 cursor-pointer"
                       >
                         <FileText className="w-3.5 h-3.5" /> ดูสลิป
-                      </a>
+                      </button>
                     )}
                     <div className="text-right shrink-0">
                       <p className={`text-base font-black font-mono ${isWithdraw ? 'text-amber-600' : isEarn ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -88,9 +89,9 @@ const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
                           
                           {/* Show slip icon on mobile only if present */}
                           {log.slipUrl && (
-                            <a href={log.slipUrl} target="_blank" rel="noopener noreferrer" className="sm:hidden text-blue-500 hover:text-blue-600 ml-1">
+                            <button type="button" onClick={() => setActiveSlipUrl(log.slipUrl)} className="sm:hidden text-blue-500 hover:text-blue-600 ml-1 cursor-pointer">
                               <FileText className="w-3.5 h-3.5" />
-                            </a>
+                            </button>
                           )}
                         </p>
                       )}
@@ -102,6 +103,30 @@ const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
           </div>
         )}
       </div>
+
+      {/* Slip Preview Modal */}
+      {activeSlipUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+              <h4 className="font-bold text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4 text-emerald-400" /> หลักฐานการโอนเงิน (Slip)
+              </h4>
+              <button onClick={() => setActiveSlipUrl(null)} className="p-1 text-slate-400 hover:text-white rounded-full bg-white/10 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 bg-slate-950 flex justify-center items-center min-h-[300px]">
+              <img src={activeSlipUrl} alt="สลิปโอนเงิน" className="max-h-[500px] w-auto object-contain rounded-lg shadow-md" />
+            </div>
+            <div className="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setActiveSlipUrl(null)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition-colors">
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

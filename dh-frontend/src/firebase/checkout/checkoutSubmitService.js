@@ -1,6 +1,7 @@
 import { db } from '../config';
 import { doc, collection, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
 import { getCreditSettings, calculateEarnedPoints } from '../credit/creditActionService';
+import { getUserTier } from '../credit/creditFormatService';
 import { appendPaymentVerificationTodo, appendTaxInvoiceTodo } from '../todo/todoActionService';
 import { calculateNetTotal, parseFirebaseError } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -29,18 +30,20 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
   const orderRef = doc(collection(db, getCollectionPath('orders'))); 
   const userRef = doc(db, getCollectionPath('users'), user.uid);
-  const counterRef = doc(db, getCollectionPath('system_counters'), 'orders');
 
   try {
     return await runTransaction(db, async (transaction) => {
       
       // 1. Setup Reads (Must do all reads before writes in a transaction)
     const userDoc = await transaction.get(userRef);
-    const counterDoc = await transaction.get(counterRef);
     const userData = userDoc.exists() ? userDoc.data() : {};
     
     const systemPoolRef = doc(db, getCollectionPath('system_accounts'), 'DH_CREDIT_POOL');
     const sysSnap = await transaction.get(systemPoolRef);
+
+    const inventorySettingsRef = doc(db, getCollectionPath('settings'), 'inventory');
+    const inventorySettingsSnap = await transaction.get(inventorySettingsRef);
+    const globalBuffer = inventorySettingsSnap.exists() ? (inventorySettingsSnap.data().defaultBufferStock ?? 2) : 2;
 
     // [SECURITY & CONCURRENCY] Read all products to check stock and real prices
     const productRefs = [];
@@ -142,7 +145,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     productSnaps.forEach((snap, index) => {
       if (snap.exists()) {
         const currentStock = snap.data().stockQuantity || 0;
-        const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : 0;
+        const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : globalBuffer;
         const requiredQty = productRefs[index].item.qty;
         
         if ((currentStock - requiredQty) < itemBuffer) {
@@ -169,7 +172,10 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
         accountName: getCustomerDisplayName(userData, getCustomerDisplayName(user, 'ไม่พบ field ในระบบ')),
         firstName: userData.nickname || userData.firstName || '',
         phone: userData.phone || user.phoneNumber || '',
-        address: userData.shippingAddress?.address || ''
+        address: userData.shippingAddress?.address || '',
+        role: userData.role || userData.rank || 'Customer',
+        rank: userData.rank || userData.role || 'Customer',
+        tier: getUserTier(Number(userData.totalAccumulatedPoints || userData.creditPoints || 0), creditConfig?.tiers)?.name || 'Member'
       },
       items: verifiedItems,
       shippingAddress: checkoutState?.customerData || null,
@@ -207,18 +213,21 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     stockUpdates.forEach(u => {
       transaction.update(u.ref, { 
         stockQuantity: u.newQty, 
-        'stats.sold': increment(u.soldInc || 0) 
+        'stats.sold': increment(u.soldInc || 0),
+        lastOrderId: orderRef.id
       });
     });
 
     if (useWallet > 0) {
+      const walletTxRef = doc(collection(db, getCollectionPath('users'), user.uid, 'wallet_transactions'));
+      
       // ✅ [SECURITY] Deduct strictly from walletBalance, NEVER from creditPoints
       transaction.update(userRef, {
         walletBalance: increment(-useWallet),
+        lastWalletTxId: walletTxRef.id,
         updatedAt: serverTimestamp()
       });
       
-      const walletTxRef = doc(collection(db, getCollectionPath('users'), user.uid, 'wallet_transactions'));
       transaction.set(walletTxRef, {
         transactionId: `TXW-${orderRef.id}`,
         type: 'SPEND',

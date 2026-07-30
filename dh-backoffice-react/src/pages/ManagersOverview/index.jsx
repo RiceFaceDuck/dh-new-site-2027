@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Lock } from 'lucide-react';
 
 // 📦 นำเข้า Components ดั้งเดิม
 import QuickAccessTools from './QuickAccessTools';
@@ -16,12 +16,14 @@ import ManagerQRGeneratorModal from './components/ManagerQRGeneratorModal';
 
 // 🌟 นำเข้า Hook ของ Dashboard
 import { useManagerDashboard } from './useManagerDashboard';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function ManagersOverview() {
   const navigate = useNavigate();
   
   // 🌟 เรียกใช้งานข้อมูล Dashboard ดั้งเดิม
   const dashboardLogic = useManagerDashboard() || {};
+  const { isManagerOrOwner } = useAuth();
   
   // 🌟 States สำหรับ Modals
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -57,6 +59,14 @@ export default function ManagersOverview() {
     }
   };
 
+  const handleOpenMasterSheet = () => {
+    if (isManagerOrOwner) {
+      window.open('https://docs.google.com/spreadsheets/d/1f3ZyfZM6nwE3OSNeseMqlqElDqv7Kxt_UL3H1IPTLos/edit?usp=sharing', '_blank');
+    } else {
+      alert('คุณไม่สามารถใช้งานได้\nต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า หรือ ตำแหน่งที่อนุมัติ ให้ใช้งานได้');
+    }
+  };
+
   return (
     <div className="w-full max-w-[1800px] mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       
@@ -72,12 +82,23 @@ export default function ManagersOverview() {
             จัดการและอนุมัติรายการสำคัญ, ตรวจสอบสถิติองค์กร
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-full border border-white/20 relative z-10 shadow-xs">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
-          </span>
-          <span className="text-xs font-bold text-white tracking-wider">System Live</span>
+        <div className="flex items-center gap-3 relative z-10">
+          <button 
+             onClick={handleOpenMasterSheet}
+             title="เปิดฐานข้อมูล Google Sheet"
+             className="bg-white/10 hover:bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full border border-white/20 transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+          >
+             <Lock className="w-4 h-4 text-white" />
+             <span className="text-xs font-bold text-white tracking-wider hidden sm:inline-block">Master DB</span>
+          </button>
+          
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-full border border-white/20 shadow-xs">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+            </span>
+            <span className="text-xs font-bold text-white tracking-wider">System Live</span>
+          </div>
         </div>
       </div>
 

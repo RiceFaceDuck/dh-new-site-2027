@@ -122,7 +122,7 @@ export const marketingService = {
          batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload);
       }
 
-      batch.set(doc(db, getCollectionPath('central_todos'), taskId), todoPayload); 
+      batch.set(doc(db, getCollectionPath('todos'), taskId), todoPayload); 
 
       // 🚀 History Log: บันทึกการส่งคำร้องเข้า Central To-Do
       const logId = `submit_ad_${adId}_${Date.now()}`;
@@ -201,7 +201,7 @@ export const marketingService = {
          batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload, { merge: true });
       }
 
-      batch.set(doc(db, getCollectionPath('central_todos'), taskId), todoPayload, { merge: true }); 
+      batch.set(doc(db, getCollectionPath('todos'), taskId), todoPayload, { merge: true }); 
 
       // 🚀 History Log: บันทึกการขอแก้ไขคำร้องโฆษณา
       const logId = `update_ad_${adId}_${Date.now()}`;
@@ -249,6 +249,117 @@ export const marketingService = {
     }
   },
 
+  toggleAdStatus: async (adId, currentStatus, adType) => {
+    if (!adId) return false;
+    try {
+      const isCurrentlyActive = ['APPROVED', 'ACTIVE'].includes(String(currentStatus).toUpperCase());
+      const newStatus = isCurrentlyActive ? 'paused' : 'active';
+      const newIsActive = !isCurrentlyActive;
+
+      const updatePayload = {
+        status: newStatus,
+        isActive: newIsActive,
+        updatedAt: serverTimestamp()
+      };
+
+      const resolveCollection = (type) => {
+        if (!type) return null;
+        const t = String(type).toLowerCase();
+        if (t.includes('partner') || t === 'partner_ads') return 'partner_ads';
+        if (t.includes('billboard') || t === 'billboard_ads') return 'billboard_ads';
+        if (t.includes('sku') || t === 'user_sku_ads') return 'user_sku_ads';
+        return null;
+      };
+
+      const targetCol = resolveCollection(adType);
+      const adCols = targetCol ? [targetCol] : ['partner_ads', 'billboard_ads', 'user_sku_ads'];
+      const batch = writeBatch(db);
+
+      // 🚀 Quota Optimization: ดึงเฉพาะคอลเลกชันเป้าหมายเมื่อทราบ adType ประหยัด Reads จาก 3 เหลือ 1 Read
+      const snaps = await Promise.all(adCols.map(col => getDoc(doc(db, getCollectionPath(col), adId))));
+      
+      let updatedCount = 0;
+      snaps.forEach(snap => {
+        if (snap.exists()) {
+          batch.update(snap.ref, updatePayload);
+          updatedCount++;
+        }
+      });
+
+      if (updatedCount > 0) {
+        await batch.commit();
+      }
+
+      activeAdsCache.lastFetch = {}; // ล้าง cache
+      return { success: true, newStatus };
+    } catch (err) {
+      console.error("🔥 Error toggling ad status:", err);
+      throw err;
+    }
+  },
+
+  resubmitPartnerAd: async (userId, adId, adType) => {
+    if (!userId || !adId) return false;
+    try {
+      const batch = writeBatch(db);
+      const updatePayload = {
+        status: 'PENDING',
+        updatedAt: serverTimestamp(),
+        resubmittedAt: serverTimestamp()
+      };
+
+      const resolveCollection = (type) => {
+        if (!type) return null;
+        const t = String(type).toLowerCase();
+        if (t.includes('partner') || t === 'partner_ads') return 'partner_ads';
+        if (t.includes('billboard') || t === 'billboard_ads') return 'billboard_ads';
+        if (t.includes('sku') || t === 'user_sku_ads') return 'user_sku_ads';
+        return null;
+      };
+
+      const targetCol = resolveCollection(adType);
+      const adCols = targetCol ? [targetCol] : ['partner_ads', 'billboard_ads', 'user_sku_ads'];
+      const snaps = await Promise.all(adCols.map(col => getDoc(doc(db, getCollectionPath(col), adId))));
+      
+      let adData = {};
+      snaps.forEach(snap => {
+        if (snap.exists()) {
+          batch.update(snap.ref, updatePayload);
+          adData = { ...snap.data() };
+        }
+      });
+
+      // ดันคำร้องใหม่ไปยัง central_todos เพื่อให้ผู้จัดการเห็นอยู่ด้านบนสุด
+      const taskId = `TODO-RESUBMIT-${adId}`;
+      const legacyTaskType = adType === 'BILLBOARD' ? 'APPROVE_BILLBOARD_AD' : 'APPROVE_PARTNER_AD';
+      const todoPayload = {
+        taskId: taskId,
+        type: legacyTaskType,
+        taskType: legacyTaskType, 
+        status: 'pending',
+        priority: 'High',
+        title: `[ส่งคำร้องซ้ำ] ${adData.title || adData.productName || 'โฆษณาพาร์ทเนอร์'}`,
+        description: `พาร์ทเนอร์ส่งคำร้องขออนุมัติโฆษณาอีกครั้ง (Resubmitted)`,
+        targetSkuId: adId,    
+        partnerId: userId,    
+        customerName: adData.partnerName || 'พาร์ทเนอร์',
+        adDetails: adData,
+        requestedAt: serverTimestamp(), 
+        updatedAt: serverTimestamp(),
+        createdBy: userId
+      };
+
+      batch.set(doc(db, getCollectionPath('todos'), taskId), todoPayload, { merge: true });
+
+      await batch.commit();
+      activeAdsCache.lastFetch = {};
+      return { success: true };
+    } catch (err) {
+      console.error("🔥 Error resubmitting ad:", err);
+      throw err;
+    }
+  },
+
   trackAdView,
   trackAdClick,
   logImpression,
@@ -257,5 +368,5 @@ export const marketingService = {
 
 export const { 
   detectPlatform, getActivePartnerAds, submitPartnerAd, updatePartnerAd,
-  getUserPartnerAds 
+  getUserPartnerAds, toggleAdStatus, resubmitPartnerAd
 } = marketingService;

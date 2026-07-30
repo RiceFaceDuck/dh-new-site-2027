@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { gasStockService } from '../../../firebase/gasStockService';
 
 import { safeJsonParse } from 'dh-shared';
@@ -26,7 +26,7 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
   const isGlobalActionActive = searchTerm || filterCategory !== 'All' || sortConfig?.key;
 
   useEffect(() => {
-    if (isGlobalActionActive && !allProductsCache && !isFetchingAll) {
+    if (!allProductsCache && !isFetchingAll) {
       const fetchAll = async () => {
         setIsFetchingAll(true);
         try {
@@ -45,26 +45,70 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
           
         } catch (error) {
           console.error("Error fetching backup inventory from GAS:", error);
-          // Fallback mechanism to Firebase could be added here if GAS completely fails, but sticking to GAS-only for now to enforce quota saving.
         } finally {
           setIsFetchingAll(false);
         }
       };
       fetchAll();
     }
-  }, [isGlobalActionActive, allProductsCache, isFetchingAll]);
+  }, [allProductsCache, isFetchingAll]);
 
   // ใช้ cache ถ้ามี แต่ต้อง 'ผสาน' กับข้อมูล products เดิมจาก Firebase
-  // เพื่อกู้คืนรูปภาพ (images) และประวัติ (history) ของสินค้าที่โหลดมาแล้ว
-  const sourceProducts = isGlobalActionActive && allProductsCache 
-    ? allProductsCache.map(cacheProduct => {
-        // หาว่าสินค้านี้เคยถูกโหลดมาจาก Firebase แบบเต็มๆ หรือยัง
-        const fullProduct = products.find(p => p.sku === cacheProduct.sku);
-        return fullProduct 
-          ? { ...cacheProduct, ...fullProduct } // ถ้ามี ให้เอาข้อมูล Firebase ทับ เพื่อเอารูปและประวัติ
-          : cacheProduct;
-      })
-    : products;
+  // อย่างถูกต้อง: ต้องเอา live products เป็นตัวตั้ง แล้วค่อยเติมสินค้าจาก cache ที่ไม่อยู่ใน live
+  const rawSourceProducts = useMemo(() => {
+    if (!allProductsCache) return products;
+    
+    const liveSkus = new Set(products.map(p => p.sku));
+    const cacheMap = new Map(allProductsCache.map(cp => [cp.sku, cp]));
+    
+    // 1. Live products (ผสานข้อมูลจาก cache เข้าไป)
+    const merged = products.map(liveProduct => {
+      const cacheProduct = cacheMap.get(liveProduct.sku);
+      return cacheProduct ? { ...cacheProduct, ...liveProduct } : liveProduct;
+    });
+    
+    // 2. เติมสินค้าจาก Cache ที่ยังโหลดมาไม่ถึงใน Live (Pagination fallback)
+    allProductsCache.forEach(cp => {
+      if (!liveSkus.has(cp.sku)) {
+        merged.push(cp);
+      }
+    });
+    
+    return merged;
+  }, [allProductsCache, products]);
+
+  const [statsMap, setStatsMap] = useState({});
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadStats = async () => {
+      if (rawSourceProducts && rawSourceProducts.length > 0) {
+        try {
+          const { inventoryStatsService } = await import('../../../firebase/inventory/inventoryStatsService');
+          const res = await inventoryStatsService.fetchProductStats(rawSourceProducts, salesPeriod);
+          if (isMounted) {
+            setStatsMap(res);
+          }
+        } catch (e) {
+          console.error("Failed to load 30D stats:", e);
+        }
+      }
+    };
+    loadStats();
+    return () => { isMounted = false; };
+  }, [rawSourceProducts.length, salesPeriod]);
+
+  const sourceProducts = useMemo(() => {
+    return rawSourceProducts.map(p => {
+      const st = statsMap[p.sku] || {};
+      return {
+        ...p,
+        stockInHistory: { '30': 0, '60': 0, '90': 0, ...p.stockInHistory, ...(st.stockIn !== undefined ? { [salesPeriod]: st.stockIn } : {}) },
+        salesHistory: { '30': 0, '60': 0, '90': 0, ...p.salesHistory, ...(st.sales !== undefined ? { [salesPeriod]: st.sales } : {}) },
+        claimHistory: { '30': 0, '60': 0, '90': 0, ...p.claimHistory, ...(st.claim !== undefined ? { [salesPeriod]: st.claim } : {}) }
+      };
+    });
+  }, [rawSourceProducts, statsMap, salesPeriod]);
 
   // 🚀 เพิ่ม Fallback Search ถ้าระบุ SKU ตรงๆ แล้วหาในแคชไม่เจอ
   const [fallbackProduct, setFallbackProduct] = useState(null);
@@ -151,22 +195,30 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
     });
   }
 
-  // ✨ In-Memory Pagination (Virtualization for Cache)
-  const [displayLimit, setDisplayLimit] = useState(50);
+  // 📄 Pagination System (21, 50, 100, 250 items per page)
+  const [itemsPerPage, setItemsPerPage] = useState(21);
+  const [currentPage, setCurrentPage] = useState(1);
   
-  // รีเซ็ตจำนวนที่แสดงผลเมื่อเงื่อนไขการค้นหาเปลี่ยน
+  // รีเซ็ตกลับไปหน้า 1 เมื่อเงื่อนไขการค้นหา/ตัวกรอง/การจัดเรียง/จำนวนรายการต่อหน้าเปลี่ยน
   useEffect(() => {
-    setDisplayLimit(50);
-  }, [searchTerm, filterCategory, sortConfig?.key, sortConfig?.direction]);
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, sortConfig?.key, sortConfig?.direction, itemsPerPage]);
 
-  const loadMoreCache = () => {
-    setDisplayLimit(prev => prev + 50);
-  };
-
-  const hasMoreCache = isGlobalActionActive ? displayLimit < processedProducts.length : false;
+  const totalItems = processedProducts.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   
-  // ตัดข้อมูลมาแสดงผลแค่เท่ากับ limit ปัจจุบัน
-  const paginatedProducts = isGlobalActionActive ? processedProducts.slice(0, displayLimit) : processedProducts;
+  // ปรับ currentPage หากเกินจำนวนหน้าทั้งหมดที่มี
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  
+  // ตัดข้อมูลเฉพาะหน้าที่เลือก
+  const paginatedProducts = processedProducts.slice(startIndex, endIndex);
 
   const updateCache = (productData, isEdit) => {
     if (allProductsCache) {
@@ -192,8 +244,14 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
   return {
     filteredProducts: paginatedProducts,
     isSearching: isFetchingAll,
-    hasMoreCache,
-    loadMoreCache,
+    totalItems,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages,
+    startIndex,
+    endIndex,
     updateCache,
     clearCache
   };

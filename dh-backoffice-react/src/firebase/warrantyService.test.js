@@ -16,6 +16,12 @@ mock.module('./historyService.js', {
   }
 });
 
+mock.module('dh-shared/src/firebase/pathUtils.js', {
+  namedExports: {
+    getCollectionPath: (path) => path
+  }
+});
+
 // We use a shared object for mutable state in mocks
 const state = {
     getDocImpl: async () => ({ exists: () => false })
@@ -27,7 +33,13 @@ mock.module('firebase/firestore', {
     doc: (db, coll, id) => ({ db, coll, id }),
     getDoc: async (docRef) => state.getDocImpl(docRef),
     setDoc: async () => {},
-    serverTimestamp: () => 'mock-timestamp'
+    serverTimestamp: () => 'mock-timestamp',
+    collection: () => ({}),
+    getDocs: async () => ({ docs: [] }),
+    query: () => ({}),
+    where: () => ({}),
+    updateDoc: async () => {},
+    addDoc: async () => ({ id: 'mock-todo-id' })
   }
 });
 
@@ -100,5 +112,19 @@ describe('warrantyService.getWarrantySettings', () => {
     assert.strictEqual(consoleSpy.mock.callCount(), 1);
     
     consoleSpy.mock.restore();
+  });
+
+  test('normalizes synonyms and casing correctly', async (t) => {
+    const { normalizeCategoryName } = await import('./warrantyService.js');
+    assert.strictEqual(normalizeCategoryName('screen'), 'Panel');
+    assert.strictEqual(normalizeCategoryName('Screen'), 'Panel');
+    assert.strictEqual(normalizeCategoryName('PANEL'), 'Panel');
+    assert.strictEqual(normalizeCategoryName('other'), 'General');
+    assert.strictEqual(normalizeCategoryName('OTHER'), 'General');
+    assert.strictEqual(normalizeCategoryName('charger'), 'Adapter');
+    assert.strictEqual(normalizeCategoryName('คีย์บอร์ด'), 'Keyboard');
+    assert.strictEqual(normalizeCategoryName('แบตเตอรี่'), 'Battery');
+    assert.strictEqual(normalizeCategoryName('ram'), 'ram');
+    assert.strictEqual(normalizeCategoryName('SSD'), 'SSD');
   });
 });

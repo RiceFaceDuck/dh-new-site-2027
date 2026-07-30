@@ -19,8 +19,6 @@ const AdProductDetail = React.lazy(() => import('./pages/AdProductDetail/AdProdu
 
 const Cart = React.lazy(() => import('./pages/Cart'));
 const Checkout = React.lazy(() => import('./pages/Checkout'));
-const SquadLayout = React.lazy(() => import('./layouts/SquadLayout'));
-const Squad = React.lazy(() => import('./pages/Squad/Squad'));
 const HardwareScanner = React.lazy(() => import('./pages/HardwareScanner/HardwareScanner'));
 const ProvidersPage = React.lazy(() => import('./pages/Providers/ProvidersPage'));
 
@@ -91,9 +89,6 @@ function App() {
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
               </Route>
-              
-              {/* 🚀 ระบบหน้าแยกพิเศษสำหรับช่าง (ไม่มี Header/Footer ปกติ) */}
-              <Route path="/squad" element={<SquadLayout><Squad /></SquadLayout>} />
             </Routes>
           </Suspense>
           

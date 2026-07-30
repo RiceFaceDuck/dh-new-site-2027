@@ -1,29 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Ticket, Coins, Wallet, CheckCircle2 } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
+import { usePromotions } from '../../hooks/usePromotions';
 import { db, auth } from '../../firebase/config';
-import { collection, onSnapshot, doc, query, where, getDocs } from 'firebase/firestore';
-import { safeJsonParse } from 'dh-shared';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+
+// 🚀 Quota Optimization: Shared Singleton Listener to prevent re-subscribing on remount
+let cachedUserData = null;
+let currentSubscribingUid = null;
+let activeUnsub = null;
+const profileListeners = new Set();
+
+const subscribeToUserProfile = (uid, callback) => {
+  if (!uid) {
+    callback(null);
+    return () => {};
+  }
+
+  profileListeners.add(callback);
+
+  if (cachedUserData && currentSubscribingUid === uid) {
+    callback(cachedUserData);
+  }
+
+  if (currentSubscribingUid !== uid) {
+    if (activeUnsub) activeUnsub();
+    currentSubscribingUid = uid;
+    const userRef = doc(db, getCollectionPath('users'), uid);
+    activeUnsub = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        cachedUserData = docSnap.data();
+        profileListeners.forEach(cb => cb(cachedUserData));
+      }
+    });
+  }
+
+  return () => {
+    profileListeners.delete(callback);
+    if (profileListeners.size === 0 && activeUnsub) {
+      activeUnsub();
+      activeUnsub = null;
+      currentSubscribingUid = null;
+      cachedUserData = null;
+    }
+  };
+};
 
 export default function PrivilegeSelector({ orderMode = 'retail' }) {
   const { checkoutState, updateCheckoutConfig, totals, cartItems } = useCart();
   const appId = typeof import.meta.env.VITE_FIREBASE_APP_ID !== 'undefined' ? import.meta.env.VITE_FIREBASE_APP_ID : 'dh-notebook-69f3b';
 
-  // 📡 1. ดึงข้อมูลจริงจาก Firebase (Points, Wallet, Promotions, Freebies)
+  // 📡 1. ดึงข้อมูลผู้ใช้และ Promotions/Freebies
   const [availablePoints, setAvailablePoints] = useState(0);
   const [availableWallet, setAvailableWallet] = useState(0);
-  const [promotions, setPromotions] = useState([]);
-  const [freebies, setFreebies] = useState([]);
   const [customerType, setCustomerType] = useState('RETAIL');
+
+  const { promotions, freebies, isLoading, evaluatePromotion, evaluateFreebie } = usePromotions();
 
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
-      const userRef = doc(db, getCollectionPath('users'), user.uid);
-      const unsubUser = onSnapshot(userRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+      const cleanup = subscribeToUserProfile(user.uid, (data) => {
+        if (data) {
           setAvailablePoints(data.creditPoints || 0);
           setAvailableWallet(data.walletBalance || 0);
           
@@ -33,163 +72,70 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
           setCustomerType(cType);
         }
       });
-
-      // ⚡️ Cache promotions and freebies for 5 minutes to avoid Firestore read spikes
-      const fetchPromosAndFreebies = async () => {
-        try {
-          const now = new Date().getTime();
-          
-          // 1. Promotions Caching
-          const promoCacheKey = 'active_promotions_cache';
-          const cachedPromoData = sessionStorage.getItem(promoCacheKey);
-          const cachedPromoTime = sessionStorage.getItem(promoCacheKey + '_time');
-          
-          if (cachedPromoData && cachedPromoTime && now - parseInt(cachedPromoTime) < 1000 * 60 * 5) {
-            setPromotions(safeJsonParse(cachedPromoData, []));
-          } else {
-            const promoQ = query(collection(db, getCollectionPath('promotions')), where('isActive', '==', true));
-            const promoSnap = await getDocs(promoQ);
-            const promoItems = promoSnap.docs
-              .map(d => ({ id: d.id, ...d.data() }))
-              .filter(p => !p.deletedAt);
-            
-            sessionStorage.setItem(promoCacheKey, JSON.stringify(promoItems));
-            sessionStorage.setItem(promoCacheKey + '_time', now.toString());
-            setPromotions(promoItems);
-          }
-
-          // 2. Freebies Caching
-          const freebieCacheKey = 'active_freebies_cache';
-          const cachedFreebieData = sessionStorage.getItem(freebieCacheKey);
-          const cachedFreebieTime = sessionStorage.getItem(freebieCacheKey + '_time');
-
-          if (cachedFreebieData && cachedFreebieTime && now - parseInt(cachedFreebieTime) < 1000 * 60 * 5) {
-            setFreebies(safeJsonParse(cachedFreebieData, []));
-          } else {
-            const freebieQ = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true));
-            const freebieSnap = await getDocs(freebieQ);
-            const freebieItems = freebieSnap.docs
-              .map(d => ({ id: d.id, ...d.data() }))
-              .filter(f => !f.deletedAt);
-            
-            sessionStorage.setItem(freebieCacheKey, JSON.stringify(freebieItems));
-            sessionStorage.setItem(freebieCacheKey + '_time', now.toString());
-            setFreebies(freebieItems);
-          }
-        } catch (err) {
-          console.error("🔥 Error fetching promotions/freebies in PrivilegeSelector:", err);
-        }
-      };
-
-      fetchPromosAndFreebies();
-
-      return () => { unsubUser(); };
+      return cleanup;
     }
   }, [appId]);
 
   // Local States
   const [useWallet, setUseWallet] = useState((checkoutState?.useWallet || 0) > 0);
   
-  // Auto-calculation States for UI Display
-  const [bestPromo, setBestPromo] = useState(null);
-  const [earnedFreebies, setEarnedFreebies] = useState([]);
+  // 🛡 2. Pure Calculation using useMemo (คำนวณโปรโมชั่นและของแถมแบบ Pure Function)
+  const { bestPromo, bestDiscount, validFreebies } = useMemo(() => {
+    if (isLoading || !cartItems?.length) {
+      return { bestPromo: null, bestDiscount: 0, validFreebies: [] };
+    }
 
-  // 🛡 2. Auto-Apply Promotions and Freebies based on subtotal
-  useEffect(() => {
-    const getEligibleTotals = (skus, types) => {
-      const items = cartItems || [];
-      const hasSkus = skus && skus.length > 0;
-      const hasTypes = types && types.length > 0;
+    const subtotal = totals?.subtotal || 0;
 
-      if (!hasSkus && !hasTypes) {
-        const fullSubtotal = totals?.subtotal || 0;
-        const fullQty = items.reduce((sum, item) => sum + Math.max(1, item.qty || item.quantity || 1), 0);
-        return { subtotal: fullSubtotal, qty: fullQty };
-      }
-
-      let eligibleSubtotal = 0;
-      let eligibleQty = 0;
-      items.forEach(item => {
-        let isEligible = false;
-        const itemSku = String(item.sku || '').toUpperCase();
-        const itemType = String(item.type || item.category || '').toUpperCase();
-
-        if (hasSkus && skus.some(s => String(s).toUpperCase() === itemSku)) isEligible = true;
-        if (hasTypes && types.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
-        
-        if (isEligible) {
-          const itemPrice = item.price || 0;
-          const itemQty = Math.max(1, item.qty || item.quantity || 1);
-          eligibleSubtotal += (itemPrice * itemQty);
-          eligibleQty += itemQty;
-        }
-      });
-      return { subtotal: eligibleSubtotal, qty: eligibleQty };
-    };
-    
     // Evaluate Freebies
-    const validFreebies = freebies.filter(f => {
-      const { subtotal, qty } = getEligibleTotals(f.applicableSkus, f.applicableTypes);
-
-      if (!f.isActive || subtotal <= 0) return false;
-      if (f.minSpend && subtotal < f.minSpend) return false;
-      if (f.minQty && qty < f.minQty) return false;
-      if (f.startDate && new Date(f.startDate) > new Date()) return false;
-      if (f.endDate && new Date(f.endDate) < new Date()) return false;
-      if (f.quotaLimit && (f.quotaUsed || 0) >= f.quotaLimit) return false;
-      if (f.customerType && f.customerType !== 'ALL' && f.customerType !== customerType) return false;
-      return true;
+    const qualifiedFreebies = freebies.filter(f => {
+      const { isApplicable } = evaluateFreebie(f, cartItems, subtotal, customerType);
+      return isApplicable;
     });
-
-    setEarnedFreebies(validFreebies);
 
     // Evaluate Promotions
-    let bestDiscount = 0;
+    let maxDiscount = 0;
     let selectedPromo = null;
 
-    const validPromos = promotions.filter(p => {
-      const { subtotal, qty } = getEligibleTotals(p.applicableSkus, p.applicableTypes);
-
-      if (!p.isActive) return false;
-      if (p.minSpend > 0 && subtotal < p.minSpend) return false;
-      if (p.minQty > 0 && qty < p.minQty) return false;
-      if (p.startDate && new Date(p.startDate) > new Date()) return false;
-      if (p.endDate && new Date(p.endDate) < new Date()) return false;
-      if (p.quotaLimit && (p.quotaUsed || 0) >= p.quotaLimit) return false;
-      if (p.customerType && p.customerType !== 'ALL' && p.customerType !== customerType) return false;
-      return true;
-    });
-
-    validPromos.forEach(p => {
-      const { subtotal } = getEligibleTotals(p.applicableSkus, p.applicableTypes);
-      let calc = p.type === 'PERCENTAGE' ? subtotal * (p.value / 100) : p.value;
-      if (p.type === 'PERCENTAGE' && p.maxDiscount > 0) {
-        calc = Math.min(calc, p.maxDiscount);
-      }
-      calc = Math.floor(calc);
-      if (calc > bestDiscount) {
-        bestDiscount = calc;
+    promotions.forEach(p => {
+      const { isApplicable, discountValue } = evaluatePromotion(p, cartItems, subtotal, customerType);
+      if (isApplicable && discountValue > maxDiscount) {
+        maxDiscount = discountValue;
         selectedPromo = p;
       }
     });
 
-    setBestPromo(selectedPromo);
+    return {
+      bestPromo: selectedPromo,
+      bestDiscount: maxDiscount,
+      validFreebies: qualifiedFreebies
+    };
+  }, [isLoading, cartItems, freebies, promotions, totals?.subtotal, customerType, evaluateFreebie, evaluatePromotion]);
 
-    // Sync to checkout context
-    if (
-      checkoutState?.discountAmount !== bestDiscount ||
-      JSON.stringify(checkoutState?.qualifiedFreebies) !== JSON.stringify(validFreebies)
-    ) {
+  // Primitive hash for freebies to prevent JSON.stringify in dependencies
+  const freebiesHash = useMemo(() => {
+    return validFreebies.map(f => `${f.id}:${f.qty}`).join(',');
+  }, [validFreebies]);
+
+  // 🛡 3. Sync Calculated Promotion to Checkout Context cleanly
+  useEffect(() => {
+    if (isLoading) return;
+
+    const currentPromoTitle = checkoutState?.discountCode;
+    const newPromoTitle = bestPromo ? bestPromo.title : null;
+    const currentDiscount = checkoutState?.discountAmount || 0;
+
+    if (currentDiscount !== bestDiscount || currentPromoTitle !== newPromoTitle) {
       updateCheckoutConfig({
         discountAmount: bestDiscount,
-        discountCode: selectedPromo ? selectedPromo.title : null,
-        appliedPromotions: selectedPromo ? [selectedPromo] : [],
+        discountCode: newPromoTitle,
+        appliedPromotions: bestPromo ? [bestPromo] : [],
         qualifiedFreebies: validFreebies
       });
     }
-    }, [totals?.subtotal, promotions, freebies, customerType, checkoutState?.discountAmount, cartItems, updateCheckoutConfig]);
+  }, [bestDiscount, bestPromo, freebiesHash, isLoading, checkoutState?.discountAmount, checkoutState?.discountCode, validFreebies, updateCheckoutConfig]);
 
-  // 🛡 3. Wallet Loop Prevention
+  // 🛡 4. Sync Wallet Calculation to Checkout Context
   useEffect(() => {
     if (useWallet) {
       const remainingTotal = (totals?.subtotal || 0) + (checkoutState?.shippingCost || 0) - (checkoutState?.discountAmount || 0) - (checkoutState?.usePoints || 0);
@@ -199,7 +145,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
         updateCheckoutConfig({ useWallet: walletToDeduct });
       }
     } else if (checkoutState?.useWallet !== 0) {
-       updateCheckoutConfig({ useWallet: 0 });
+      updateCheckoutConfig({ useWallet: 0 });
     }
   }, [totals?.subtotal, checkoutState?.shippingCost, checkoutState?.discountAmount, checkoutState?.usePoints, checkoutState?.useWallet, useWallet, availableWallet, updateCheckoutConfig]);
 
@@ -207,7 +153,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     setUseWallet(e.target.checked);
   };
 
-  // 🛡 4. แก้ไขบั๊ก Rendered fewer hooks (ต้องย้าย Early Return มาไว้ล่างสุดเสมอ)
+  // Early Return
   if (orderMode === 'wholesale') {
     return null;
   }
@@ -242,11 +188,11 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
         </div>
 
         {/* แสดงของแถมอัตโนมัติ */}
-        {earnedFreebies.length > 0 && (
+        {validFreebies.length > 0 && (
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">ของแถมที่ได้รับ</label>
             <div className="space-y-2">
-              {earnedFreebies.map(f => (
+              {validFreebies.map(f => (
                 <div key={f.id} className="p-3 bg-pink-50 border border-pink-200 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">🎁</span>
@@ -263,7 +209,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
 
         <hr className="border-gray-100" />
 
-        {/* Credit Points - ปรับ UI ให้มินิมอล เล็กกะทัดรัด */}
+        {/* Credit Points */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <label className="block text-xs font-semibold text-gray-400 flex items-center gap-1.5">
@@ -287,7 +233,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
           <p className="text-[10px] text-gray-400 mt-1.5 ml-1">อัตราแลกเปลี่ยน 1 Point = 1 บาท</p>
         </div>
 
-        {/* Wallet Balance - ปรับ UI เล็กลงและดูเนียนตา */}
+        {/* Wallet Balance */}
         <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 bg-white rounded-lg shadow-xs text-blue-600">

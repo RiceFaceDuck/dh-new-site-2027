@@ -72,49 +72,65 @@ export const useDataRepair = () => {
 
         try {
             const usersRef = collection(db, getCollectionPath('users'));
-            const usersSnap = await getDocs(usersRef);
+            const usersQuery = query(usersRef, limit(200));
+            const usersSnap = await getDocs(usersQuery);
             let detected = [];
 
-            for (const userDoc of usersSnap.docs) {
-                const uid = userDoc.id;
-                const data = userDoc.data();
-                const actualPoints = Number(data.creditPoints || 0);
-                const actualAccumulated = Number(data.totalAccumulatedPoints || actualPoints);
+            const allUsers = usersSnap.docs;
 
-                // Fetch global credit transactions for this user
+            for (let i = 0; i < allUsers.length; i += 30) {
+                const userChunk = allUsers.slice(i, i + 30);
+                const chunkUids = userChunk.map(d => d.id);
+
                 const txRef = collection(db, getCollectionPath('credit_transactions'));
-                const qTx = query(txRef, where('uid', '==', uid), limit(300));
+                const qTx = query(txRef, where('uid', 'in', chunkUids));
                 const txSnap = await getDocs(qTx);
-                
-                let expectedPoints = 0;
-                let expectedAccumulated = 0;
-                let txCount = 0;
 
+                const txByUid = {};
+                chunkUids.forEach(uid => txByUid[uid] = []);
                 txSnap.forEach(docSnap => {
-                    txCount++;
                     const tx = docSnap.data();
-                    const amount = Number(tx.amount || 0);
-                    if (tx.type === 'add' || tx.type === 'earn' || tx.type === 'deposit') {
-                        expectedPoints += amount;
-                        expectedAccumulated += amount;
-                    } else if (tx.type === 'deduct' || tx.type === 'spend') {
-                        expectedPoints -= amount;
+                    if (tx.uid && txByUid[tx.uid]) {
+                        txByUid[tx.uid].push(tx);
                     }
                 });
 
-                if (txCount > 0) {
-                    if (expectedPoints !== actualPoints || expectedAccumulated !== actualAccumulated) {
-                        detected.push({
-                            id: `CREDIT_SYNC_${uid}`,
-                            orderId: uid, // Use orderId field for display as UID
-                            issue: `แต้มไม่ตรง (จริง: ${actualPoints}, ควรเป็น: ${expectedPoints})`,
-                            amount: Math.abs(expectedPoints - actualPoints),
-                            customerUid: uid,
-                            type: 'CREDIT_SYNC',
-                            expectedPoints,
-                            expectedAccumulated,
-                            data: data
-                        });
+                for (const userDoc of userChunk) {
+                    const uid = userDoc.id;
+                    const data = userDoc.data();
+                    const actualPoints = Number(data.creditPoints || 0);
+                    const actualAccumulated = Number(data.totalAccumulatedPoints || actualPoints);
+                    
+                    let expectedPoints = 0;
+                    let expectedAccumulated = 0;
+                    let txCount = 0;
+
+                    const userTxs = txByUid[uid] || [];
+                    userTxs.forEach(tx => {
+                        txCount++;
+                        const amount = Number(tx.amount || 0);
+                        if (tx.type === 'add' || tx.type === 'earn' || tx.type === 'deposit') {
+                            expectedPoints += amount;
+                            expectedAccumulated += amount;
+                        } else if (tx.type === 'deduct' || tx.type === 'spend') {
+                            expectedPoints -= amount;
+                        }
+                    });
+
+                    if (txCount > 0) {
+                        if (expectedPoints !== actualPoints || expectedAccumulated !== actualAccumulated) {
+                            detected.push({
+                                id: `CREDIT_SYNC_${uid}`,
+                                orderId: uid, // Use orderId field for display as UID
+                                issue: `แต้มไม่ตรง (จริง: ${actualPoints}, ควรเป็น: ${expectedPoints})`,
+                                amount: Math.abs(expectedPoints - actualPoints),
+                                customerUid: uid,
+                                type: 'CREDIT_SYNC',
+                                expectedPoints,
+                                expectedAccumulated,
+                                data: data
+                            });
+                        }
                     }
                 }
             }

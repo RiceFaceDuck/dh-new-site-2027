@@ -3,11 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Megaphone, Loader2, Store, Activity, Sparkles
 } from 'lucide-react';
-import { getAuth } from 'firebase/auth';
-import { doc, getDoc, onSnapshot, writeBatch } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { driveService } from '../../../firebase/driveService';
-import { marketingService } from '../../../firebase/marketingService';
+import { marketingService, toggleAdStatus } from '../../../firebase/marketingService';
 import { useUserCredit } from '../../../firebase/creditService';
 
 import AdStatsOverview from './ad-manager/AdStatsOverview';
@@ -18,9 +17,7 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 import { useToast } from '../../../context/ToastContext';
 
-
 const sanitizeData = (obj) => {
-  const { showToast } = useToast();
   const cleaned = {};
   for (let key in obj) {
     if (obj[key] === undefined) cleaned[key] = null;
@@ -30,6 +27,7 @@ const sanitizeData = (obj) => {
 };
 
 const TabAdManager = ({ user }) => {
+  const { showToast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState('store');
   const [loading, setLoading] = useState(true);
 
@@ -56,9 +54,8 @@ const TabAdManager = ({ user }) => {
     type: 'PRODUCT_LINK', title: '', description: '', imageUrl: '', targetUrl: '', platform: 'other', 
     billboardRatio: '16:9', price: ''
   });
-  
+
   const [uploadingImage, setUploadingImage] = useState(false);
-  
   const [creditLimit, setCreditLimit] = useState(100); 
   const [isUnlimited, setIsUnlimited] = useState(false);
   const COST_PER_IMPRESSION = 1; 
@@ -72,25 +69,18 @@ const TabAdManager = ({ user }) => {
     }
   }, [user]);
 
+  // 🚀 Real-time sync: businessCardAd derived directly from ads array for 100% cross-tab alignment
   useEffect(() => {
-    if (!user) return;
-    const adId = `AD-CARD-${user.uid}`;
-    const adRef = doc(db, getCollectionPath('partner_ads'), adId);
-    
-    const unsubscribe = onSnapshot(adRef, (snap) => {
-      if (snap.exists()) {
-        setBusinessCardAd({ id: snap.id, ...snap.data() });
-      } else {
-        setBusinessCardAd(null);
+    if (ads && ads.length > 0) {
+      const foundCard = ads.find(a => a.type === 'BUSINESS_CARD' || String(a.id).includes('BUSINESS_CARD') || String(a.id).includes('CARD'));
+      if (foundCard) {
+        setBusinessCardAd(foundCard);
       }
-    });
-
-    return () => unsubscribe();
-  }, [user, appId]);
-
-
+    }
+  }, [ads]);
 
   const fetchStoreData = async () => {
+    if (!user) return;
     try {
       const storeRef = doc(db, 'artifacts', appId, 'users', user.uid, 'storeProfile', 'main');
       const rootStoreRef = doc(db, getCollectionPath('users'), user.uid, 'storeProfile', 'main');
@@ -102,29 +92,33 @@ const TabAdManager = ({ user }) => {
       
       let mergedData = { ...storeData };
       
-      // ดึงข้อมูลจากทั้งสองแหล่ง โดยให้ความสำคัญกับแหล่งที่มีชื่อร้านก่อน
       if (rootSnap.exists()) {
         mergedData = { ...mergedData, ...rootSnap.data() };
       }
       
       if (storeSnap.exists()) {
         const artifactsData = storeSnap.data();
-        // ทับด้วย Artifacts เฉพาะกรณีที่ข้อมูลไม่ได้โล่งเตียน (กันกรณีเผลอกดเซฟทับ)
         if (artifactsData.storeName || !mergedData.storeName) {
            mergedData = { ...mergedData, ...artifactsData };
         }
       }
       
       setStoreData(mergedData);
-    } catch (error) { console.error("Error fetching store data:", error); } 
-    finally { setLoading(false); }
+    } catch (error) { 
+      console.error("Error fetching store data:", error); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const fetchMyAds = async () => {
+    if (!user) return;
     try {
       const myAds = await marketingService.getUserPartnerAds(user.uid);
       setAds(myAds);
-    } catch (error) { console.error("Error fetching my ads:", error); }
+    } catch (error) { 
+      console.error("Error fetching my ads:", error); 
+    }
   };
 
   const handleLinkChange = (e) => {
@@ -142,11 +136,11 @@ const TabAdManager = ({ user }) => {
       const url = await driveService.uploadAdImage(file, formData.type);
       setFormData({ ...formData, imageUrl: url });
     } catch (error) {
-    console.error("🔥 Error:", error);
-    showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
-
-      showToast(error.message, 'error');
-    } finally { setUploadingImage(false); }
+      console.error("🔥 Error:", error);
+      showToast(error?.message || "เกิดข้อผิดพลาดในการอัปโหลดรูป", 'error');
+    } finally { 
+      setUploadingImage(false); 
+    }
   };
 
   const handleEditAd = (ad) => {
@@ -215,40 +209,68 @@ const TabAdManager = ({ user }) => {
       handleCloseForm();
       fetchMyAds();
     } catch (error) {
-    console.error("🔥 Error:", error);
-    showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
-
-      showToast("เกิดข้อผิดพลาดในการบันทึกโฆษณา", 'error');
-    } finally { setSubmittingAd(false); }
+      console.error("🔥 Error submitting ad:", error);
+      showToast(error?.message || "เกิดข้อผิดพลาดในการบันทึกโฆษณา", 'error');
+    } finally { 
+      setSubmittingAd(false); 
+    }
   };
 
   const handleDeleteAd = async (adId) => {
     if(window.confirm("คุณต้องการลบโฆษณานี้ใช่หรือไม่? (หากลบแล้วจะใช้งานไม่ได้อีก)")) {
       try {
+        const { writeBatch } = await import('firebase/firestore');
         const batch = writeBatch(db);
         
         batch.delete(doc(db, getCollectionPath('partner_ads'), adId));
         batch.delete(doc(db, getCollectionPath('user_sku_ads'), adId));
         batch.delete(doc(db, getCollectionPath('billboard_ads'), adId));
         
-        // 🚀 เก็บ History Log ว่ามีการลบ SKU โฆษณา
-        const { serverTimestamp } = await import('firebase/firestore');
-        batch.set(doc(db, getCollectionPath('system_logs'), `delete_ad_${adId}_${Date.now()}`), {
-          module: 'Marketing',
-          action: 'DeleteAd',
-          targetId: adId,
-          details: `User ${user.uid} deleted ad/SKU: ${adId}`,
-          timestamp: serverTimestamp(),
-          performedBy: user.uid
-        });
-        
         await batch.commit();
-        
+        showToast("ลบแคมเปญโฆษณาเรียบร้อยแล้ว", 'info');
         fetchMyAds();
       } catch (error) {
-    console.error("🔥 Error:", error);
-    showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
- showToast("ลบไม่สำเร็จ กรุณาลองใหม่", 'success'); }
+        console.error("🔥 Delete error:", error);
+        showToast("เกิดข้อผิดพลาดในการลบโฆษณา", 'error');
+      }
+    }
+  };
+
+  const handleToggleAdStatus = async (ad) => {
+    if (!ad || !ad.id) return;
+    const isCurrentlyActive = ['APPROVED', 'ACTIVE'].includes(String(ad.status).toUpperCase());
+    const actionText = isCurrentlyActive ? 'พักแคมเปญชั่วคราว' : 'เปิดใช้งานโฆษณาต่อ';
+    const nextStatus = isCurrentlyActive ? 'paused' : 'active';
+
+    if (!isCurrentlyActive && userCredit <= 0) {
+      return showToast("ไม่สามารถเปิดใช้งานโฆษณาได้ เนื่องจาก Credit Point ของคุณหมด กรุณาเติม Credit ก่อน", 'error');
+    }
+
+    // 🚀 Instant Toggle (0ms Optimistic UI update across both tabs)
+    setAds(prevAds => prevAds.map(item => item.id === ad.id ? { ...item, status: nextStatus, isActive: !isCurrentlyActive } : item));
+
+    try {
+      await toggleAdStatus(ad.id, ad.status, ad.type);
+      showToast(`${actionText} เรียบร้อยแล้ว`, 'info');
+      fetchMyAds();
+    } catch (err) {
+      console.error("🔥 Error toggling status:", err);
+      // Rollback state on error
+      setAds(prevAds => prevAds.map(item => item.id === ad.id ? { ...item, status: ad.status } : item));
+      showToast("เกิดข้อผิดพลาดในการเปลี่ยนสถานะโฆษณา", 'error');
+    }
+  };
+
+  const handleResubmitAd = async (ad) => {
+    if (!ad || !ad.id) return;
+    try {
+      const { resubmitPartnerAd } = await import('../../../firebase/marketingService');
+      await resubmitPartnerAd(user.uid, ad.id, ad.type);
+      showToast("ส่งคำร้องขออนุมัติโฆษณาอีกครั้งสำเร็จ! ระบบส่งเรื่องขึ้นด้านบนสุดของหลังบ้านแล้ว", 'success');
+      fetchMyAds();
+    } catch (err) {
+      console.error("🔥 Error resubmitting ad:", err);
+      showToast("เกิดข้อผิดพลาดในการส่งคำร้องอีกครั้ง", 'error');
     }
   };
 
@@ -274,7 +296,7 @@ const TabAdManager = ({ user }) => {
         </div>
         <div className="flex bg-slate-100/80 p-1 rounded-xl shadow-inner border border-slate-200/50">
           <button onClick={() => setActiveSubTab('store')} className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeSubTab === 'store' ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}><Store size={16} /> ข้อมูลร้านซ่อม</button>
-          <button onClick={() => setActiveSubTab('ads')} className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeSubTab === 'ads' ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}><Activity size={16} /> โฆษณาสินค้า/แบนเนอร์</button>
+          <button onClick={() => setActiveSubTab('ads')} className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${activeSubTab === 'ads' ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}><Activity size={16} /> โฆษณาสินค้า/แบนเนอร์ ({ads.length})</button>
         </div>
       </div>
 
@@ -289,9 +311,6 @@ const TabAdManager = ({ user }) => {
         />
       )}
 
-      {/* =========================================================================
-          🛒 ADS MANAGER: จัดการเฉพาะสินค้าและแผ่นป้าย
-          ========================================================================= */}
       {activeSubTab === 'ads' && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {!isFormOpen && <AdStatsOverview userCredit={userCredit} onOpenForm={() => { setIsEditMode(false); setIsFormOpen(true); }} />}
@@ -309,10 +328,19 @@ const TabAdManager = ({ user }) => {
             />
           )}
 
-          {!isFormOpen && <AdListTable ads={ads} onEditAd={handleEditAd} onDeleteAd={handleDeleteAd} />}
+          {!isFormOpen && (
+            <AdListTable 
+              ads={ads} 
+              onEditAd={handleEditAd} 
+              onDeleteAd={handleDeleteAd} 
+              onToggleStatus={handleToggleAdStatus} 
+              onResubmitAd={handleResubmitAd}
+            />
+          )}
         </div>
       )}
     </div>
   );
 };
+
 export default TabAdManager;

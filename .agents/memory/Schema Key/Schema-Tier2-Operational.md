@@ -11,7 +11,7 @@
 
 ---
 
-## 1. Collection: `products`
+## 1. Collection: `products` `[ATOMIC-REQUIRED]`
 **Firestore Path:** `/products/{sku}`
 **Role:** The `products` collection stores all inventory items. It includes stock quantity, pricing, basic product data, and claim tracking information.
 
@@ -231,7 +231,7 @@ export interface HistoryLog {
 
 ---
 
-## 5. Collection: `system_logs`
+## 5. Collection: `system_logs` `[APPEND-ONLY]`
 **Firestore Path:** `/system_logs/{logId}`
 **Role:** Tracks critical system-level automated actions and approvals (e.g., Payment Verifications, Wholesale Approvals) performed by managers or system routines.
 

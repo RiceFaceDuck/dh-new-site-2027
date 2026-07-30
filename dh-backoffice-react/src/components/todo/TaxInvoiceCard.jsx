@@ -70,16 +70,16 @@ const TaxInvoiceCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const getUrgencyStyles = (level) => {
     switch (level) {
       case 'high': 
-        return 'border-l-4 border-l-red-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-red-400 bg-red-50/30';
+        return 'bg-gradient-to-br from-rose-50/70 via-white to-pink-50/40 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-300 hover:-translate-y-0.5';
       case 'medium': 
-        return 'border-l-4 border-l-orange-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-orange-400 bg-orange-50/30';
+        return 'bg-gradient-to-br from-amber-50/70 via-white to-orange-50/40 border border-amber-200/80 shadow-sm hover:shadow-md hover:border-amber-300 hover:-translate-y-0.5';
       default: 
-        return 'border-2 border-gray-200 hover:border-teal-400 bg-white';
+        return 'bg-gradient-to-br from-teal-50/70 via-white to-emerald-50/40 border border-teal-200/80 shadow-sm hover:shadow-md hover:border-teal-300 hover:-translate-y-0.5';
     }
   };
 
   return (
-    <div className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] overflow-hidden mb-4 transition-all transform hover:-translate-y-0.5 ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}>
+    <div className={`rounded-2xl transition-all duration-200 overflow-hidden flex flex-col h-full ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}>
       {/* 🔴 ส่วนหัว: ย่อ/ขยาย (Accordion Header) */}
       <div 
         onClick={() => setIsExpanded(!isExpanded)}

@@ -75,7 +75,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     });
   }, [displayProducts]);
 
-  const handleAddToCart = async (e, product) => {
+  const handleAddToCart = React.useCallback(async (e, product) => {
     e.stopPropagation(); 
     
     const auth = getAuth();
@@ -99,7 +99,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       showToast("เกิดข้อผิดพลาด: " + err.message, "error");
       setAddingState(prev => ({ ...prev, [product.id]: null }));
     }
-  };
+  }, [addToCart, showToast]);
 
   const SkeletonCard = () => (
     <div className="rounded-md border border-slate-200 bg-slate-100 p-2 md:p-3 flex flex-col h-full shadow-xs animate-pulse">
@@ -161,7 +161,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
     )
   }), []);
 
-  const renderItem = (index, item) => {
+  const renderItem = React.useCallback((index, item) => {
     if (item.isSponsoredAd) {
       return <ProductAdCard ad={item} />;
     }
@@ -174,7 +174,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
         onAddToCart={handleAddToCart} 
       />
     );
-  };
+  }, [addingState, handleAddToCart]);
 
   return (
     <div className="mb-12 md:mb-20">

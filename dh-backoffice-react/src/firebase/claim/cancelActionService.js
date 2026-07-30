@@ -4,7 +4,7 @@ import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const TODOS_COLLECTION = 'todos';
+const TODOS_COLLECTION = getCollectionPath('todos');
 
 export const cancelActionService = {
   approveCancel: async (task, adminUid, adminName) => {

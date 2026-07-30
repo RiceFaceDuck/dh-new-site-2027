@@ -1,4 +1,56 @@
-export const getUserTier = (points = 0) => {
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+
+let cachedTiers = null;
+let isSubscribed = false;
+
+let unsubscribe = null;
+
+export const initRoleTierConfigListener = () => {
+  if (isSubscribed) return;
+  isSubscribed = true;
+  try {
+    const docRef = doc(db, getCollectionPath('settings'), 'role_tier_config');
+    unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists() && snap.data()?.tiers) {
+        cachedTiers = snap.data().tiers;
+      }
+    }, (err) => {
+      console.warn("RoleTierConfig listener warning:", err);
+    });
+  } catch (e) {
+    console.warn("Failed to init RoleTierConfig listener:", e);
+  }
+};
+
+export const stopRoleTierConfigListener = () => {
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+  isSubscribed = false;
+};
+
+initRoleTierConfigListener();
+
+export const getUserTier = (points = 0, customTiers = null) => {
+  const activeTiers = customTiers || cachedTiers;
+  if (activeTiers && Array.isArray(activeTiers) && activeTiers.length > 0) {
+    const sortedTiers = [...activeTiers].sort((a, b) => (b.minPoints || 0) - (a.minPoints || 0));
+    const matched = sortedTiers.find(t => points >= (t.minPoints || 0));
+    if (matched) {
+      return {
+        name: matched.name || 'Member',
+        icon: matched.icon || '🌟',
+        color: matched.color || 'text-blue-600',
+        bg: matched.bg || 'bg-blue-50',
+        border: matched.border || 'border-blue-200',
+        multiplier: Number(matched.multiplier || 1.0)
+      };
+    }
+  }
+
   if (points >= 100000) return { name: 'Diamond', icon: '💎', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200', multiplier: 1.5 };
   if (points >= 10000) return { name: 'Platinum', icon: '👑', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', multiplier: 1.2 };
   if (points >= 5000) return { name: 'Gold', icon: '🥇', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', multiplier: 1.1 };

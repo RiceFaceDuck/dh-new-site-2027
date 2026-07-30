@@ -85,6 +85,11 @@ export const flushAdStatsBatch = async () => {
             }
 
             batch.update(adRef, updateData);
+            // 🚀 Dual-Write Sync: อัปเดตข้อมูลกลับมายัง partner_ads เสมอ เพื่อให้หน้า Ad Manager และ Backoffice แสดงสถิติตรงกัน
+            if (collectionName !== 'partner_ads') {
+               const masterRef = doc(db, getCollectionPath('partner_ads'), adId);
+               batch.update(masterRef, updateData);
+            }
             hasUpdates = true;
 
             // 💸 หักเครดิตจากกระเป๋าเจ้าของ

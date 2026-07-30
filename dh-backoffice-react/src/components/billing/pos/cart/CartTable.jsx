@@ -1,5 +1,6 @@
 import { Box } from 'lucide-react';
-import CartTableRow from './CartTableRow';
+import { MemoizedCartTableRow as CartTableRow } from './CartTableRow';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CartTable({
     activeTab,
@@ -25,16 +26,21 @@ export default function CartTable({
                             <th className="py-2.5 px-3 text-center w-10"></th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <motion.tbody layout>
+                        <AnimatePresence>
                         {activeTab.items.length === 0 ? (
-                            <tr>
+                            <motion.tr 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                exit={{ opacity: 0 }}
+                            >
                                 <td colSpan="7" className="py-20 text-center text-slate-400">
                                     <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
                                         <Box size={40} className="mb-3 opacity-20" strokeWidth={1.5} />
                                         <p className="text-sm font-bold tracking-wide">ตะกร้าว่างเปล่า</p>
                                     </div>
                                 </td>
-                            </tr>
+                            </motion.tr>
                         ) : (
                             <>
                                 {activeTab.items.map((item, index) => (
@@ -45,7 +51,6 @@ export default function CartTable({
                                         isFreebie={false}
                                         isProcessing={isProcessing}
                                         isActive={actionBoxItem === item.sku}
-                                        actionBoxItem={actionBoxItem}
                                         setActionBoxItem={setActionBoxItem}
                                         updateItemAction={updateItemAction}
                                         removeItem={removeItem}
@@ -67,14 +72,14 @@ export default function CartTable({
                                                 qty: freebie.qty || 1, 
                                                 price: 0, 
                                                 discount: 0,
-                                                note: `${freebie.title}${reasonStr}`,
+                                                note: freebie.title,
+                                                conditions: conditionText,
                                                 noteColor: 'rose'
                                             }}
                                             index={activeTab.items.length + index}
                                             isFreebie={true}
                                             isProcessing={isProcessing}
                                             isActive={false}
-                                            actionBoxItem={actionBoxItem}
                                             setActionBoxItem={setActionBoxItem}
                                             updateItemAction={updateItemAction}
                                             removeItem={removeItem}
@@ -83,7 +88,8 @@ export default function CartTable({
                                 })}
                             </>
                         )}
-                    </tbody>
+                        </AnimatePresence>
+                    </motion.tbody>
                 </table>
             </div>
         </div>

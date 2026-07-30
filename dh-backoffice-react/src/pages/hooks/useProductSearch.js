@@ -33,6 +33,10 @@ export function useProductSearch() {
   const {
     loading,
     filteredProducts,
+    totalFilteredCount,
+    hasMore,
+    loadMore,
+    displayLimit,
     mergedProducts,
     forceSync,
     updateProductData
@@ -91,15 +95,23 @@ export function useProductSearch() {
     return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
-  const handleSelectProduct = async (product) => {
+  const handleSelectProduct = async (product, index) => {
+    if (!product) return;
     setSelectedProduct(product);
+
+    if (typeof index === 'number' && index >= 0) {
+      setSelectedIndex(index);
+    } else {
+      const foundIdx = filteredProducts.findIndex(p => p.id === product.id || p.sku === product.sku);
+      if (foundIdx !== -1) setSelectedIndex(foundIdx);
+    }
+
     setSubstitutes([]);
     actionHooks.setReportForm(prev => ({ ...prev, category: product.category || '' }));
     setIsImageModalOpen(false); 
     
     setNewComment('');
     setShowCommentInput(false);
-    setIsImageModalOpen(false);
     
     // ✨ Live Fetch
     try {
@@ -117,7 +129,7 @@ export function useProductSearch() {
     }
   };
 
-  useProductSearchKeyboard(filteredProducts, selectedIndex, setSelectedIndex, handleSelectProduct, modalsState);
+  useProductSearchKeyboard(filteredProducts, selectedIndex, setSelectedIndex, handleSelectProduct, modalsState, loadMore, hasMore);
 
   const highlightData = useMemo(() => [
     { term: debouncedSearch1.trim(), colorClass: 'bg-yellow-200/90 text-yellow-900 font-bold border-b-2 border-yellow-500 shadow-xs' },
@@ -155,7 +167,7 @@ export function useProductSearch() {
     isSubmittingComment, showCommentInput, setShowCommentInput,
     isImageModalOpen, setIsImageModalOpen,
     isHistoryModalOpen, setIsHistoryModalOpen, isGuideModalOpen, setIsGuideModalOpen,
-    historyLogs, loadingHistory, filteredProducts, highlightData,
+    historyLogs, loadingHistory, filteredProducts, totalFilteredCount, hasMore, loadMore, displayLimit, highlightData,
     handleSelectProduct, handleAddComment, handleAddNoteSuccess, handleTogglePinComment, handleDeleteNote, getStockStatus, resetSearch
   };
 }

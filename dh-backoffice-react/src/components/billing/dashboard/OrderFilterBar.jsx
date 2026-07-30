@@ -1,7 +1,37 @@
-import { Search, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, RefreshCw, X, CornerDownLeft } from 'lucide-react';
 
 export default function OrderFilterBar({ filter, setFilter, searchQuery, setSearchQuery, dateRange, setDateRange, totalSales, headerTitle, headerAction }) {
+    const [tempQuery, setTempQuery] = useState(searchQuery || '');
+
+    // Keep tempQuery synced if searchQuery changes externally (e.g. reset)
+    useEffect(() => {
+        setTempQuery(searchQuery || '');
+    }, [searchQuery]);
+
+    const handleSearchSubmit = () => {
+        setSearchQuery(tempQuery.trim());
+    };
+
+    const handleClearSearch = () => {
+        setTempQuery('');
+        setSearchQuery('');
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSearchSubmit();
+        }
+    };
+
     const handleQuickDate = (days) => {
+        if (isQuickDateActive(days)) {
+            // Toggle off if already active
+            setDateRange({ start: '', end: '' });
+            return;
+        }
+
         const today = new Date();
         const end = today.toISOString().split('T')[0];
         
@@ -43,6 +73,7 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
 
     const handleReset = () => {
         setFilter('All');
+        setTempQuery('');
         setSearchQuery('');
         setDateRange({ start: '', end: '' });
     };
@@ -135,7 +166,7 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
                         {['All', 'Paid', 'Draft', 'Cancelled'].map(f => (
                             <button 
                                 key={f} 
-                                onClick={() => setFilter(f)} 
+                                onClick={() => setFilter(prev => (prev === f && f !== 'All') ? 'All' : f)} 
                                 className={`whitespace-nowrap px-4 py-2 text-[13px] font-black rounded-md transition-all duration-300 ${
                                     filter === f 
                                         ? 'bg-(--dh-text-main) text-(--dh-bg-surface) shadow-md transform scale-100' 
@@ -148,18 +179,48 @@ export default function OrderFilterBar({ filter, setFilter, searchQuery, setSear
                     </div>
 
                     {/* Search Box */}
-                    <div className="relative w-full sm:w-[300px] shrink-0 group h-[40px]">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--dh-text-muted) group-focus-within:text-(--dh-accent) transition-colors duration-300" size={16} strokeWidth={2.5}/>
+                    <div className="relative w-full sm:w-[360px] shrink-0 group h-[40px]">
+                        <button 
+                            type="button" 
+                            onClick={handleSearchSubmit} 
+                            title="กด Enter เพื่อค้นหา"
+                            className="absolute left-1 top-1/2 -translate-y-1/2 p-2.5 text-(--dh-text-muted) hover:text-(--dh-accent) transition-colors duration-200 z-10"
+                        >
+                            <Search size={16} strokeWidth={2.5}/>
+                        </button>
                         <input 
                             id="search-bill-input" 
                             type="text" 
-                            placeholder="พิมพ์ค้นหาเลขบิล, ลูกค้า..." 
-                            value={searchQuery} 
-                            onChange={e => setSearchQuery(e.target.value)} 
-                            className="w-full h-full pl-10 pr-10 bg-(--dh-bg-base) border border-(--dh-border) rounded-md text-[13px] outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all duration-300 text-(--dh-text-main) placeholder-(--dh-text-muted) font-bold shadow-inner" 
+                            placeholder="ค้นหาเลขบิล, SKU, สินค้า, S/N, ลูกค้า, เลขพัสดุ (กด Enter)..." 
+                            value={tempQuery} 
+                            onChange={e => setTempQuery(e.target.value)} 
+                            onKeyDown={handleKeyDown}
+                            className="w-full h-full pl-10 pr-20 bg-(--dh-bg-base) border border-(--dh-border) rounded-md text-[13px] outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all duration-300 text-(--dh-text-main) placeholder-(--dh-text-muted) font-bold shadow-inner" 
                         />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <span className="hidden sm:inline-flex items-center justify-center px-2 py-0.5 border border-(--dh-border) rounded-sm text-[10px] font-black text-(--dh-text-muted) bg-(--dh-bg-surface) shadow-xs">/</span>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10">
+                            {tempQuery ? (
+                                <>
+                                    <button 
+                                        type="button"
+                                        onClick={handleClearSearch}
+                                        title="ล้างคำค้นหา"
+                                        className="p-1 hover:bg-rose-500/10 text-(--dh-text-muted) hover:text-rose-500 rounded-sm transition-colors"
+                                    >
+                                        <X size={14} strokeWidth={2.5} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSearchSubmit}
+                                        title="กดเพื่อค้นหา"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 border border-(--dh-accent)/40 rounded-sm text-[10px] font-black text-white bg-(--dh-accent) hover:bg-(--dh-accent-hover) shadow-xs transition-colors cursor-pointer"
+                                    >
+                                        <span>Enter</span>
+                                        <CornerDownLeft size={10} strokeWidth={3} />
+                                    </button>
+                                </>
+                            ) : (
+                                <span className="hidden sm:inline-flex items-center justify-center px-2 py-0.5 border border-(--dh-border) rounded-sm text-[10px] font-black text-(--dh-text-muted) bg-(--dh-bg-surface) shadow-xs pointer-events-none">/</span>
+                            )}
                         </div>
                     </div>
                 </div>

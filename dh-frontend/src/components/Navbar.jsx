@@ -1,87 +1,40 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { Search, ShoppingCart, User, LogOut, Wallet, LayoutDashboard, ChevronDown, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { logoutUser } from '../firebase/authService';
+import { useNavbarScroll } from '../hooks/useNavbarScroll';
+import { useNavbarAuth } from '../hooks/useNavbarAuth';
 
 const Navbar = () => {
-  // State ดั้งเดิม
-  const [isVisible, setIsVisible] = useState(true);
   const { cartTotalQty } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 🌟 State ใหม่สำหรับจัดการ Auth & Dropdown
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const dropdownRef = useRef(null);
+  // 🌟 Custom Hooks สกัด Logic ออกจาก Component UI
+  const {
+    currentUser,
+    isDropdownOpen,
+    setIsDropdownOpen,
+    isLoggingOut,
+    dropdownRef,
+    handleLogout,
+    getInitial,
+  } = useNavbarAuth();
 
-  // 1. ตรวจสอบสถานะการ Login แบบ Real-time
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
+  // ปิด Dropdown เมื่อ Scroll ลง
+  const handleScrollDown = useCallback(() => {
+    setIsDropdownOpen(false);
+  }, [setIsDropdownOpen]);
 
-  // 2. จัดการการซ่อน/แสดง Navbar เมื่อ Scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        setIsVisible(false);
-        setIsDropdownOpen(false); // ปิด dropdown เวลาเลื่อนจอลง
-      } else {
-        setIsVisible(true);
-      }
-      setLastScrollY(currentScrollY);
-    };
+  const { isVisible } = useNavbarScroll(handleScrollDown);
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
-  // 3. ระบบปิด Dropdown เมื่อคลิกพื้นที่อื่น (Click-Outside)
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // 4. ฟังก์ชันออกจากระบบ
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logoutUser();
-      setIsDropdownOpen(false);
-      navigate('/');
-    } catch (error) {
-      console.error("Logout failed", error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  // 5. ฟังก์ชันค้นหาสินค้า
+  // ค้นหาสินค้า
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
-  };
-
-  // ดึงตัวอักษรตัวแรกของอีเมลมาทำเป็น Avatar ถ้าไม่มีรูป
-  const getInitial = (email) => {
-    return email ? email.charAt(0).toUpperCase() : 'U';
   };
 
   return (
@@ -90,19 +43,18 @@ const Navbar = () => {
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="flex justify-between items-center h-16 md:h-20">
           
           <div className="flex items-center shrink-0">
             <Link to="/" className="flex items-center group">
-              <img loading="lazy" 
+              <img 
+                loading="lazy" 
                 src="/logo.jpg" 
                 alt="DH Notebook Logo" 
                 className="h-10 md:h-12 w-auto object-contain rounded-lg shadow-xs group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => { e.target.src = '/logo.png' }}
-               loading="lazy" />
+                onError={(e) => { e.target.src = '/logo.png'; }}
+              />
             </Link>
           </div>
 
@@ -114,7 +66,7 @@ const Navbar = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 rounded-full focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 rounded-full focus:outline-hidden focus:ring-2 focus:ring-brand focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
               />
               <button type="submit" aria-label="ค้นหาสินค้า" className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-full hover:bg-brand-dark transition-colors shadow-xs">
                 <Search size={16} strokeWidth={2.5} />
@@ -147,7 +99,7 @@ const Navbar = () => {
             >
               <ShoppingCart size={22} strokeWidth={1.5} />
               {cartTotalQty > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand-accent text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-xs animate-fade-in">
+                <span className="absolute -top-1 -right-1 bg-brand-accent text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-xs transition-transform duration-300 scale-110 animate-bounce">
                   {cartTotalQty > 99 ? '99+' : cartTotalQty}
                 </span>
               )}
@@ -171,6 +123,10 @@ const Navbar = () => {
                 // 🟢 ล็อกอินแล้ว: แสดง Avatar และ Dropdown
                 <>
                   <button 
+                    type="button"
+                    aria-haspopup="true"
+                    aria-expanded={isDropdownOpen}
+                    aria-label="เมนูโปรไฟล์ผู้ใช้งาน"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className={`flex items-center gap-2.5 p-1.5 pr-3 rounded-full border transition-all duration-300 ${
                       isDropdownOpen ? 'bg-white/10 border-brand-accent shadow-inner' : 'bg-transparent border-white/20 hover:border-brand-accent hover:bg-white/10 shadow-xs'
@@ -178,17 +134,12 @@ const Navbar = () => {
                   >
                     <div className="relative">
                       {currentUser.photoURL ? (
-                        <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-contain border border-slate-200"  loading="lazy" />
+                        <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-contain border border-slate-200" loading="lazy" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-linear-to-br from-brand-light to-white text-brand flex items-center justify-center font-bold text-sm border border-brand-light">
                           {getInitial(currentUser.email)}
                         </div>
                       )}
-                      {/* 🔴 Gimmick: Notification Dot (Commented out to prevent fake alerts) */}
-                      {/* <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border border-white"></span>
-                      </span> */}
                     </div>
                     
                     <div className="hidden lg:flex flex-col items-start">

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Search, Receipt, Undo2, 
@@ -6,6 +7,8 @@ import {
   UserCog, Mail, Calendar, Lock, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import NetworkHealthIndicator from '../../components/common/NetworkHealthIndicator';
+import UserProfileModal from '../../components/profile/UserProfileModal';
 
 export default function Sidebar({ 
   todoCount, 
@@ -19,6 +22,7 @@ export default function Sidebar({
   const location = useLocation();
   const { user, profile, logout, isManagerOrOwner } = useAuth();
   const hasManagerAccess = isManagerOrOwner();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const navItems = [
     { category: 'Main Menu', categoryThai: 'ส่วนงานหลัก' },
@@ -143,10 +147,13 @@ export default function Sidebar({
       </nav>
 
       {/* Profile & Settings Area */}
-      <div className="p-3 border-t border-slate-100 dark:border-slate-700/50 shrink-0 bg-slate-50/50 dark:bg-slate-800/50">
+      <div className="p-3 border-t border-slate-100 dark:border-slate-700/50 shrink-0 bg-slate-50/50 dark:bg-slate-800/50 space-y-2.5">
         
         {/* User Info Block */}
-        <div className="relative group flex items-start gap-2.5 p-2 -mx-1 mb-3 rounded-2xl hover:bg-white dark:hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-xs">
+        <div 
+          onClick={() => setIsProfileModalOpen(true)}
+          className="relative group flex items-start gap-2.5 p-2 -mx-1 rounded-2xl hover:bg-white dark:hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-xs"
+        >
           
           {user?.photoURL ? (
             <img 
@@ -171,31 +178,48 @@ export default function Sidebar({
 
           <div 
             className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-indigo-50 dark:bg-slate-800 shadow-xs border border-indigo-100 dark:border-slate-600 text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
-            title="ตั้งค่าข้อมูลบัญชี (Coming Soon)"
-            onClick={() => alert('ส่วนตั้งค่าบัญชีส่วนตัว จะเปิดใช้งานในระบบ KPI เร็วๆ นี้ครับ')}
+            title="ตั้งค่าข้อมูลบัญชีส่วนตัว"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsProfileModalOpen(true);
+            }}
           >
             <UserCog size={16} />
           </div>
         </div>
         
+        {/* ⚡ Network Health Status Bar (Ultra Compact) */}
+        <div className="flex items-center justify-between gap-1 px-1 py-0.5 whitespace-nowrap">
+          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 shrink-0 uppercase tracking-wider">ระบบเชื่อมต่อ</span>
+          <NetworkHealthIndicator compact />
+        </div>
+
         {/* Action Buttons */}
         <div className="flex gap-2">
           <button 
             onClick={logout}
-            className="flex-1 group flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-colors outline-hidden border border-slate-200 dark:border-slate-700 shadow-xs bg-white dark:bg-slate-800"
+            className="flex-1 group flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-all outline-hidden border border-slate-200 dark:border-slate-700 shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
           >
-            <LogOut size={16} className="transition-transform group-hover:-translate-x-1" strokeWidth={2.5} />
+            <LogOut size={15} className="transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
             <span>เลิกงาน</span>
           </button>
           <button 
             onClick={toggleDarkMode}
-            className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors outline-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-xs bg-white dark:bg-slate-800"
+            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all outline-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
             title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
           >
-            {isDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}
+            {isDark ? <Sun size={17} strokeWidth={2.5} /> : <Moon size={17} strokeWidth={2.5} />}
           </button>
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      <UserProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+        user={user} 
+        profile={profile} 
+      />
     </aside>
   );
 }

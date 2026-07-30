@@ -11,7 +11,7 @@
 
 ---
 
-## 1. Collection: `orders`
+## 1. Collection: `orders` `[ATOMIC-REQUIRED]`
 **Firestore Path:** `/orders/{orderId}`
 **Role:** The `orders` collection stores all billing and POS transaction data.
 
@@ -95,7 +95,7 @@ The logic for interacting with the `orders` collection has been separated into:
 
 ---
 
-## 2. Collection: `credit_transactions`
+## 2. Collection: `credit_transactions` `[ATOMIC-REQUIRED]` `[APPEND-ONLY]`
 **Firestore Path:** `/credit_transactions/{transactionId}`
 **Role:** The `credit_transactions` collection stores all movements of a user's wallet/credit balance (`creditPoints`). It acts as a financial ledger to prevent data race conditions and provide a clear audit trail.
 
@@ -131,14 +131,14 @@ export interface CreditTransaction {
 ### Architectural Note
 The logic for managing credits and the `credit_transactions` collection is modularized:
 - **`creditService.js`**: Facade module exporting all credit functionalities.
-- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments. **NOTE**: The canonical source of truth for a user's balance is `userDoc.creditPoints`. The legacy `wallet` subcollection, `point_transactions` collection, `stats.rewardPoints`, and personal `credit_history` subcollection are ALL deprecated. Earning points from orders now directly increases `creditPoints`. History is globally stored in `credit_transactions`.
+- **`creditActionService.js`**: Handles atomic transactions for earning, spending, partner deductions, and Ad payments. **NOTE**: The canonical source of truth for a user's Reward Points is `userDoc.creditPoints` (100 THB = 1 Point). For Cash Wallet, it is `userDoc.walletBalance`. The legacy `wallet` subcollection, `point_transactions` collection, `stats.rewardPoints`, and personal `credit_history` subcollection are ALL deprecated. Earning points from orders now directly increases `creditPoints`. History is globally stored in `credit_transactions` and `wallet_transactions`.
 - **`creditHistoryService.js`**: Handles fetching wallet balance and paginated credit history.
 - **`creditRealtimeService.js`**: Manages real-time listeners for user's wallet balance and pending credits.
 - **`creditFormatService.js`**: Gamification and data formatting utilities.
 
 ---
 
-## 3. Collection: `counters`
+## 3. Collection: `counters` `[ATOMIC-REQUIRED]`
 **Firestore Path:** `/counters/{counterId}` (e.g. `receipt_sequence`)
 **Role:** The `counters` collection stores atomic counters used for generating sequential data such as receipt numbers.
 
@@ -161,7 +161,7 @@ export interface CounterDocument {
 
 ---
 
-## 4. Collection: `users`
+## 4. Collection: `users` `[ATOMIC-REQUIRED]`
 **Firestore Path:** `/users/{uid}`
 **Role:** The `users` collection stores user profiles, access controls, and staff registration details for both customers and staff members.
 
@@ -184,7 +184,8 @@ export interface CounterDocument {
 | `status`         | String  | Account status (used for Soft Delete).                                      | `"active"`, `"suspended"`, `"deleted"` | |
 | `gender`         | String  | User's gender.                                                              | `"male"`, `"female"`, `"unspecified"`| |
 | `startDate`      | String  | Date the user started working.                                              | `"2026-06-11"`                      | |
-| `creditPoints`   | Number  | Canonical source of truth for a user's wallet balance.                      | `150`                               | |
+| `creditPoints`   | Number  | Canonical source of truth for a user's Reward Points (100 THB = 1 Point).   | `150`                               | |
+| `walletBalance`  | Number  | Canonical source of truth for a user's Cash Wallet (Top-ups & Refunds).     | `5000`                              | |
 | `metadata`       | Map     | Additional info like creation date and update dates.                        | `{ createdAt: Timestamp }`          | |
 
 ### TypeScript Interface
@@ -215,6 +216,7 @@ export interface User {
   gender: "male" | "female" | "unspecified";
   startDate: string;
   creditPoints?: number;
+  walletBalance?: number;
   metadata: UserMetadata;
 }
 ```

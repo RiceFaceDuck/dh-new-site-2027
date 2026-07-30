@@ -1,16 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore'; 
 import { db } from '../../../firebase/config';
 import { userService, SUPER_ADMINS } from '../../../firebase/userService';
 import { historyService } from '../../../firebase/historyService';
 import { auth } from '../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
-
-
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useStaffManagement() {
-  const [staffList, setStaffList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -23,27 +21,17 @@ export function useStaffManagement() {
   const [viewingStaff, setViewingStaff] = useState(null); 
   const [showAddModal, setShowAddModal] = useState(false);
 
-  useEffect(() => {
-    fetchStaff();
-  }, []);
-
-  const fetchStaff = async () => {
-    setLoading(true);
-    try {
+  const { data: staffList = [], isLoading: loading, refetch: fetchStaff } = useQuery({
+    queryKey: ['staffList', 'all'],
+    queryFn: async () => {
       const data = await userService.getAllStaff(true);
-      const sortedData = data.sort((a, b) => {
+      return data.sort((a, b) => {
         if (SUPER_ADMINS.includes(a.email)) return -1;
         if (SUPER_ADMINS.includes(b.email)) return 1;
         return 0;
       });
-      setStaffList(sortedData);
-    } catch (error) {
-      showToast('error', 'ไม่สามารถดึงข้อมูลพนักงานได้');
-      console.error(error);
-    } finally {
-      setLoading(false);
     }
-  };
+  });
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -85,9 +73,12 @@ export function useStaffManagement() {
           // Log role change
           await historyService.addLog('StaffManagement', 'UpdateRole', uid, `เปลี่ยนตำแหน่งพนักงาน ${email} เป็น ${newRole}`, auth.currentUser?.uid);
 
-          setStaffList(prev => prev.map(staff => 
-            staff.id === uid ? { ...staff, role: newRole, computedRole: newRole.toLowerCase(), roles: [newRole], isStaff: isStaffNew, isActive: isStaffNew, isApproved: isStaffNew } : staff
-          ));
+          // Update React Query Cache directly for instant UI update
+          queryClient.setQueryData(['staffList', 'all'], (old) => 
+            old ? old.map(staff => 
+              staff.id === uid ? { ...staff, role: newRole, computedRole: newRole.toLowerCase(), roles: [newRole], isStaff: isStaffNew, isActive: isStaffNew, isApproved: isStaffNew } : staff
+            ) : []
+          );
           showToast('success', 'อัปเดตตำแหน่งสำเร็จ');
         } catch (error) {
           console.error("Update Role Failed:", error);
@@ -118,9 +109,12 @@ export function useStaffManagement() {
           // Log status change
           await historyService.addLog('StaffManagement', isSuspending ? 'Suspend' : 'Restore', uid, `${actionText}บัญชีพนักงาน ${email}`, auth.currentUser?.uid);
 
-          setStaffList(prev => prev.map(staff => 
-            staff.id === uid ? { ...staff, isActive: !isSuspending } : staff
-          ));
+          // Update React Query Cache directly
+          queryClient.setQueryData(['staffList', 'all'], (old) => 
+            old ? old.map(staff => 
+              staff.id === uid ? { ...staff, isActive: !isSuspending } : staff
+            ) : []
+          );
           showToast('success', `ดำเนินการ${actionText}สำเร็จ`);
         } catch (error) {
     console.error("🔥 Error:", error);
@@ -146,7 +140,10 @@ export function useStaffManagement() {
           // Log delete
           await historyService.addLog('StaffManagement', 'Delete', uid, `ลบบัญชีพนักงาน ${email}`, auth.currentUser?.uid);
 
-          setStaffList(prev => prev.filter(staff => staff.id !== uid));
+          // Update React Query Cache directly
+          queryClient.setQueryData(['staffList', 'all'], (old) => 
+            old ? old.filter(staff => staff.id !== uid) : []
+          );
           showToast('success', 'ลบพนักงานสำเร็จ');
         } catch (error) {
     console.error("🔥 Error:", error);

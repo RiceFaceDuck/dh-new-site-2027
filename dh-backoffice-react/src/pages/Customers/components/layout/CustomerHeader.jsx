@@ -68,14 +68,15 @@ export default function CustomerHeader({
           </select>
         </div>
 
-        {/* ปุ่ม Refresh */}
+        {/* ปุ่ม Refresh ข้อมูล */}
         <button 
-          onClick={() => onRefresh(false)} 
+          onClick={() => onRefresh(true)} 
           disabled={isRefreshing}
-          className="w-[36px] h-[36px] flex items-center justify-center bg-white/10 border border-white/20 hover:bg-white/20 text-white rounded-md transition-colors backdrop-blur-xs shadow-xs shrink-0 disabled:opacity-50"
-          title="ดึงข้อมูลใหม่"
+          className="h-[36px] px-3 flex items-center justify-center gap-1.5 bg-white border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 text-slate-700 hover:text-indigo-600 rounded-md font-bold text-xs transition-colors shadow-xs shrink-0 disabled:opacity-50"
+          title="รีเฟรชดึงข้อมูลล่าสุดจากฐานข้อมูล"
         >
-          <RefreshCw size={14} className={isRefreshing ? "animate-spin text-cyan-300" : ""} />
+          <RefreshCw size={14} className={isRefreshing ? "animate-spin text-indigo-600" : "text-indigo-500"} />
+          <span className="hidden lg:inline">รีเฟรช</span>
         </button>
 
         {/* ปุ่มคู่มือ */}

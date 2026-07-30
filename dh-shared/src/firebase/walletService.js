@@ -54,7 +54,7 @@ export const sharedWalletService = {
       return { walletBalance: 0, creditPoints: 0 };
     } catch (error) {
       console.error(`Error fetching wallet data for ${customerId}:`, error);
-      return { walletBalance: 0, creditPoints: 0 };
+      throw error;
     }
   }
 };

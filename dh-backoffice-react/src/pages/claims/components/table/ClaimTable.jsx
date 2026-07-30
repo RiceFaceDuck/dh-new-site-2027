@@ -1,9 +1,18 @@
-import { TableVirtuoso } from 'react-virtuoso';
-import { FileText } from 'lucide-react';
+import { FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState } from 'react';
 import ClaimTableRow from './ClaimTableRow';
 
-export default function ClaimTable({ filteredRequests, loading, getStatusDisplay, setSelectedRequest, warrantyConfig }) {
+export default function ClaimTable({ 
+  filteredRequests, 
+  loading, 
+  getStatusDisplay, 
+  setSelectedRequest, 
+  warrantyConfig,
+  currentPage = 1,
+  totalPages = 1,
+  totalItems = 0,
+  onPageChange
+}) {
   const [copiedText, setCopiedText] = useState(null);
 
   const handleQuickCopy = (e, text) => {
@@ -23,52 +32,76 @@ export default function ClaimTable({ filteredRequests, loading, getStatusDisplay
   }
 
   return (
-    <div className="flex-1 overflow-hidden h-full w-full rounded-b-xl">
-      <TableVirtuoso
-        data={filteredRequests}
-        className="custom-scrollbar w-full h-full"
-        components={{
-          Table: ({ style, ...props }) => (
-            <table {...props} style={style} className="w-full text-left border-collapse whitespace-nowrap" />
-          ),
-          TableHead: React.forwardRef((props, ref) => (
-            <thead {...props} ref={ref} className="bg-dh-surface/90 sticky top-0 z-20 backdrop-blur-md border-b border-dh-border shadow-xs">
+    <div className="flex-1 overflow-hidden h-full w-full flex flex-col justify-between rounded-b-xl">
+      {/* Single Table Container */}
+      <div className="flex-1 overflow-auto w-full custom-scrollbar">
+        <table className="w-full text-left border-collapse">
+          <thead className="sticky top-0 bg-dh-surface/95 backdrop-blur-md border-b border-dh-border shadow-xs z-10">
+            <tr>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[120px]">วันที่/เวลา ยื่น</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[135px]">Ref / Type</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[170px]">Customer / Order</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[110px]">วันที่สั่งซื้อ</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[150px]">Warranty</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left">Product & Reason</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-center w-[140px]">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-dh-border bg-dh-surface">
+            {filteredRequests.length === 0 ? (
               <tr>
-                <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider font-mono w-[100px]">วันที่/เวลา ยื่นธุรกรรม</th>
-                <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider w-[120px]">Ref / Type</th>
-                <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider w-[180px]">Customer / Order</th>
-                <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider w-[120px]">วันที่สั่งซื้อสินค้านี้</th>
-                <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider w-[130px]">Warranty</th>
-                <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider w-[35%] min-w-[350px]">Product & Reason</th>
-                <th className="px-4 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-center w-[120px]">Status</th>
-                <th className="px-4 py-3 w-10"></th>
-              </tr>
-            </thead>
-          )),
-          TableBody: React.forwardRef((props, ref) => (
-            <tbody {...props} ref={ref} className="bg-dh-surface" />
-          )),
-          EmptyPlaceholder: () => (
-            <tbody>
-              <tr>
-                <td colSpan="8" className="text-center py-16 text-dh-muted text-[13px] font-medium">
+                <td colSpan="7" className="text-center py-16 text-dh-muted text-[13px] font-medium">
                   <FileText className="w-8 h-8 opacity-20 mx-auto mb-2"/>
                   ไม่พบข้อมูล
                 </td>
               </tr>
-            </tbody>
-          )
-        }}
-        itemContent={(index, req) => (
-          <ClaimTableRow 
-            req={req}
-            setSelectedRequest={setSelectedRequest}
-            copiedText={copiedText}
-            handleQuickCopy={handleQuickCopy}
-            warrantyConfig={warrantyConfig}
-          />
-        )}
-      />
+            ) : (
+              filteredRequests.map((req) => (
+                <ClaimTableRow 
+                  key={req.id}
+                  req={req}
+                  setSelectedRequest={setSelectedRequest}
+                  copiedText={copiedText}
+                  handleQuickCopy={handleQuickCopy}
+                  warrantyConfig={warrantyConfig}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="px-4 py-2 bg-dh-surface border-t border-dh-border flex items-center justify-between shrink-0 text-xs font-bold text-dh-muted select-none">
+        <div>
+          แสดง {totalItems > 0 ? (currentPage - 1) * 21 + 1 : 0} - {Math.min(currentPage * 21, totalItems)} จาก {totalItems} รายการ
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onPageChange && onPageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+            className="px-3 py-1 bg-dh-surface border border-dh-border text-dh-main hover:bg-dh-base hover:text-dh-accent rounded-md font-bold text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
+            title="หน้าก่อนหน้า"
+          >
+            <ChevronLeft size={14} />
+            <span>ย้อนกลับ</span>
+          </button>
+          
+          <div className="px-3 py-1 bg-dh-base border border-dh-border rounded-md text-xs font-bold text-dh-main">
+            หน้า <span className="text-dh-accent">{currentPage}</span> / {totalPages}
+          </div>
+
+          <button
+            onClick={() => onPageChange && onPageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+            className="px-3 py-1 bg-dh-surface border border-dh-border text-dh-main hover:bg-dh-base hover:text-dh-accent rounded-md font-bold text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
+            title="หน้าถัดไป"
+          >
+            <span>ถัดไป</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

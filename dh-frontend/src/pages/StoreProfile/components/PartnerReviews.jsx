@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, doc, limit } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCollectionPath, formatDate } from 'dh-shared';
 import { useToast } from '../../../context/ToastContext';
+
 
 
 // 🔐 App ID logic matching the rest of the app
@@ -100,16 +101,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
     }
   };
 
-  // Helper to format date safely
-  const formatDate = (timestamp) => {
-    if (!timestamp) return 'กำลังประมวลผล...';
-    // Handle Firestore Timestamp
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('th-TH', { 
-      year: 'numeric', month: 'short', day: 'numeric', 
-      hour: '2-digit', minute: '2-digit' 
-    }).format(date);
-  };
+
 
   // Calculate average rating
   const avgRating = reviews.length > 0 

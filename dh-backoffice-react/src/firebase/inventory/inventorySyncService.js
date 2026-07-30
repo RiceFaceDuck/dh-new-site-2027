@@ -2,6 +2,7 @@ import { doc, setDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
+import { warrantyService } from '../warrantyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventorySyncService = {
@@ -15,6 +16,9 @@ export const inventorySyncService = {
         await setDoc(settingsRef, {
           categories: arrayUnion(newCategory)
         }, { merge: true });
+
+        // 🔔 ตรวจสอบและสร้าง To-Do ผู้จัดการหากยังไม่ได้ตั้งค่าระยะเวลารับประกัน
+        await warrantyService.checkAndTriggerWarrantyTaskForNewCategory(newCategory);
       }
     } catch (error) {
       console.error("🔥 Error syncing category:", error);

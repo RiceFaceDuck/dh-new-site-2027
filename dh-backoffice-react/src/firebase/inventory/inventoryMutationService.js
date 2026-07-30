@@ -1,10 +1,10 @@
-import { doc, setDoc, updateDoc, getDoc, serverTimestamp, collection, query, where, getDocs, writeBatch, arrayRemove } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, serverTimestamp, collection, query, where, getDocs, writeBatch, arrayRemove, limit } from 'firebase/firestore';
 import { db, auth } from '../config';
 import { inventorySyncService } from './inventorySyncService';
 import { historyService } from '../historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'products';
+const COLLECTION_NAME = getCollectionPath('products');
 
 export const inventoryMutationService = {
   addProduct: async (productData) => {
@@ -20,6 +20,22 @@ export const inventoryMutationService = {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+
+    // 📦 บันทึกประวัติสินค้าเข้า (Stock-In)
+    if (Number(productData.stockQuantity) > 0) {
+      try {
+        const receiptRef = doc(collection(db, getCollectionPath('stock_receipts')));
+        await setDoc(receiptRef, {
+          sku: productData.sku,
+          quantity: Number(productData.stockQuantity || 0),
+          source: 'manual_add',
+          createdBy: auth.currentUser?.uid || 'System',
+          createdAt: serverTimestamp()
+        });
+      } catch (errReceipt) {
+        console.warn("Stock receipt write error:", errReceipt);
+      }
+    }
 
     // 🚀 บันทึก History
     await historyService.addLog('Inventory', 'CreateProduct', productData.sku, `เพิ่มสินค้าใหม่ SKU: ${productData.sku}`, auth.currentUser?.uid);
@@ -40,6 +56,25 @@ export const inventoryMutationService = {
     if (docSnap.exists()) {
       const oldData = docSnap.data();
       let hasChanges = false;
+
+      // 📦 ตรวจสอบการปรับเพิ่มสต็อกเพื่อบันทึกประวัติสินค้าเข้า
+      if (newData.stockQuantity !== undefined && oldData.stockQuantity !== undefined) {
+        const addedStock = Number(newData.stockQuantity || 0) - Number(oldData.stockQuantity || 0);
+        if (addedStock > 0) {
+          try {
+            const receiptRef = doc(collection(db, getCollectionPath('stock_receipts')));
+            await setDoc(receiptRef, {
+              sku: sku,
+              quantity: addedStock,
+              source: 'manual_update',
+              createdBy: auth.currentUser?.uid || 'System',
+              createdAt: serverTimestamp()
+            });
+          } catch (errReceipt) {
+            console.warn("Stock receipt write error:", errReceipt);
+          }
+        }
+      }
       
       for (const key in newData) {
         if (key === 'updatedAt') continue;
@@ -121,7 +156,7 @@ export const inventoryMutationService = {
         let hasBatchOps = false;
 
         // 1. Remove from other products' substituteSkus
-        const substituteQ = query(collection(db, COLLECTION_NAME), where('substituteSkus', 'array-contains', sku));
+        const substituteQ = query(collection(db, COLLECTION_NAME), where('substituteSkus', 'array-contains', sku), limit(50));
         const substituteSnap = await getDocs(substituteQ);
         substituteSnap.forEach(docSnap => {
             batch.update(docSnap.ref, { substituteSkus: arrayRemove(sku) });
@@ -129,7 +164,7 @@ export const inventoryMutationService = {
         });
 
         // 2. Remove from promotions
-        const promoQ = query(collection(db, getCollectionPath('promotions')), where('applicableSkus', 'array-contains', sku));
+        const promoQ = query(collection(db, getCollectionPath('promotions')), where('applicableSkus', 'array-contains', sku), limit(50));
         const promoSnap = await getDocs(promoQ);
         promoSnap.forEach(docSnap => {
             batch.update(docSnap.ref, { applicableSkus: arrayRemove(sku) });
@@ -137,7 +172,7 @@ export const inventoryMutationService = {
         });
 
         // 3. Remove from freebies
-        const freebieQ = query(collection(db, getCollectionPath('freebies')), where('applicableSkus', 'array-contains', sku));
+        const freebieQ = query(collection(db, getCollectionPath('freebies')), where('applicableSkus', 'array-contains', sku), limit(50));
         const freebieSnap = await getDocs(freebieQ);
         freebieSnap.forEach(docSnap => {
             batch.update(docSnap.ref, { applicableSkus: arrayRemove(sku) });

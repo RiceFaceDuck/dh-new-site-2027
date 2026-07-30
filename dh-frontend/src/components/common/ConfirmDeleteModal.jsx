@@ -1,10 +1,32 @@
+import { useEffect, useRef } from 'react';
 import { Trash2 } from 'lucide-react';
 
 const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName }) => {
+  const previousFocusRef = useRef(null);
+  const cancelButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+      setTimeout(() => cancelButtonRef.current?.focus(), 50);
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') onClose();
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+          previousFocusRef.current.focus();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200"
@@ -30,8 +52,9 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName }) => {
         
         <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
           <button 
+            ref={cancelButtonRef}
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+            className="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-brand"
           >
             ยกเลิก
           </button>
@@ -40,7 +63,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName }) => {
               onConfirm();
               onClose();
             }}
-            className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-md transition-colors"
+            className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-md transition-colors focus:ring-2 focus:ring-red-400"
           >
             ลบสินค้า
           </button>

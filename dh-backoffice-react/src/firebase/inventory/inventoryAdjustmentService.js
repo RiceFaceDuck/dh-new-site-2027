@@ -62,7 +62,8 @@ export const inventoryAdjustmentService = {
               },
               target: { id: sku, name: data.name, type: 'Product' },
               details: {
-                legacy_details: `ปรับปรุงสต๊อคกรณีพิเศษ: ${reason}`,
+                legacy_details: `[${sku}] ปรับปรุงสต๊อคกรณีพิเศษ: ${reason}`,
+                sku: sku,
                 reason: reason,
                 note: note || '',
                 changes: {

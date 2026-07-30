@@ -3,6 +3,7 @@ import { billingService } from '../../../../firebase/billingService';
 import { driveService } from '../../../../firebase/driveService';
 import { offlinePosService } from '../../../../firebase/offlinePosService';
 import { toast } from 'react-hot-toast';
+import { useCallback } from 'react';
 
 import { safeJsonParse } from 'dh-shared';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
@@ -39,12 +40,14 @@ export const usePosActions = ({
         setTimeout(() => searchRef.current?.querySelector('input')?.focus(), 10);
     };
 
-    const updateItemAction = (sku, field, value) => updateActiveTab({ items: activeTab.items.map(i => i.sku === sku ? { ...i, [field]: value } : i) });
+    const updateItemAction = useCallback((sku, field, value) => {
+        updateActiveTab(tab => ({ items: tab.items.map(i => i.sku === sku ? { ...i, [field]: value } : i) }));
+    }, [updateActiveTab]);
     
-    const removeItem = (sku) => { 
-        updateActiveTab({ items: activeTab.items.filter(i => i.sku !== sku) }); 
-        if (posState.actionBoxItem === sku) setActionBoxItem(null); 
-    };
+    const removeItem = useCallback((sku) => { 
+        updateActiveTab(tab => ({ items: tab.items.filter(i => i.sku !== sku) })); 
+        setActionBoxItem(prev => prev === sku ? null : prev); 
+    }, [updateActiveTab, setActionBoxItem]);
     
     const clearCart = () => {
         if(window.confirm('คุณต้องการล้างบิลนี้ทิ้งใช่หรือไม่?')) { 
@@ -66,14 +69,19 @@ export const usePosActions = ({
             } catch (e) {
                 console.error("Failed to parse customer preference", e);
             }
+            const pref = { ...(cust.preferences || {}), ...mem };
             const isCompany = cust.accountName?.includes('บริษัท');
-            const targetMode = mem.priceMode || (isCompany ? 'wholesale' : 'retail');
+            const targetMode = pref.priceMode || pref.defaultPriceTier || (isCompany ? 'wholesale' : 'retail');
+            const targetVat = pref.vatType || pref.defaultVatMode || (isCompany ? 'included' : 'exempt');
+            const targetFulfillment = pref.fulfillmentType || (cust.logisticProvider ? 'Delivery' : 'StorePickup');
+            const targetCourier = pref.courier || pref.defaultCourier || (cust.logisticProvider || 'KEX');
+            const targetReceiptFormat = pref.receiptFormat || pref.defaultBillType || 'short';
             const updatedItems = activeTab.items.map(item => ({ ...item, price: targetMode === 'wholesale' ? item.baseWholesale : item.baseRetail }));
 
             updateActiveTab({ 
-                customer: cust, priceMode: targetMode, vatType: mem.vatType || (isCompany ? 'included' : 'exempt'),
-                fulfillmentType: mem.fulfillmentType || (cust.logisticProvider ? 'Delivery' : 'StorePickup'),
-                receiptFormat: mem.receiptFormat || 'short', paymentMethod: 'Transfer', walkInName: '', walkInPhone: '', hidePhone: false, items: updatedItems, walletUsed: 0 
+                customer: cust, priceMode: targetMode, vatType: targetVat,
+                fulfillmentType: targetFulfillment, courier: targetCourier,
+                receiptFormat: targetReceiptFormat, paymentMethod: 'Transfer', walkInName: '', walkInPhone: '', hidePhone: false, items: updatedItems, walletUsed: 0 
             });
             setCustomerSearchText(''); 
         } else {
@@ -88,10 +96,20 @@ export const usePosActions = ({
         if (!promo) return 0;
         
         let eligibleTotal = subTotalAmount;
-        if (promo.applicableSkus && promo.applicableSkus.length > 0 && items && items.length > 0) {
+        const hasSkus = promo.applicableSkus && promo.applicableSkus.length > 0;
+        const hasTypes = promo.applicableTypes && promo.applicableTypes.length > 0;
+
+        if ((hasSkus || hasTypes) && items && items.length > 0) {
             eligibleTotal = items.reduce((acc, item) => {
-                if (promo.applicableSkus.includes(item.sku)) {
-                    return acc + (item.price * sanitizeNum(item.qty));
+                const itemSku = String(item.sku || '').toUpperCase();
+                const itemType = String(item.type || item.category || '').toUpperCase();
+                let isEligible = false;
+
+                if (hasSkus && promo.applicableSkus.some(s => String(s).toUpperCase() === itemSku)) isEligible = true;
+                if (hasTypes && promo.applicableTypes.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
+
+                if (isEligible) {
+                    return acc + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty)));
                 }
                 return acc;
             }, 0);
@@ -111,6 +129,19 @@ export const usePosActions = ({
     };
 
     const handleRemovePromotion = () => { updateActiveTab({ promoDiscount: 0, appliedPromoId: null, appliedPromoDetails: null, autoPromoEnabled: false }); };
+
+    const handleRemoveFreebie = (freebieId) => {
+        const autoEnabled = activeTab?.autoFreebieEnabled !== false;
+        if (autoEnabled) {
+            const currentDisabled = activeTab?.disabledFreebieIds || [];
+            if (!currentDisabled.includes(freebieId)) {
+                updateActiveTab({ disabledFreebieIds: [...currentDisabled, freebieId] });
+            }
+        } else {
+            const currentManual = activeTab?.manualFreebieIds || [];
+            updateActiveTab({ manualFreebieIds: currentManual.filter(id => id !== freebieId) });
+        }
+    };
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
@@ -132,7 +163,7 @@ export const usePosActions = ({
         const hasOutOfStock = activeTab.items.some(item => sanitizeNum(item.stock) < sanitizeNum(item.qty));
 
         if (activeTab.items.length === 0) { toast.error('กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'); return; }
-        if (hasOutOfStock && status !== 'Draft') { toast.error('สินค้าไม่เพียงพอ กรุณาบันทึกร่างแทน'); return; }
+        if (hasOutOfStock && status !== 'Draft') { toast.success('⚠️ ดำเนินการขายสินค้าแบบสต็อกติดลบ (Bypass)'); }
         if (isPhoneMissing && status !== 'Draft') { toast.error('กรุณาระบุเบอร์โทรศัพท์ลูกค้า'); return; }
         if (status === 'Paid' && activeTab.paymentMethod === 'Cash' && sanitizeNum(activeTab.cashReceived) < remainingToPay) { toast.error('รับเงินมาไม่ครบ'); return; }
         if (netTotal < 0) { toast.error('ยอดสุทธิติดลบ'); return; }
@@ -220,6 +251,7 @@ export const usePosActions = ({
         handleSelectCustomer,
         handleApplyPromotion,
         handleRemovePromotion,
+        handleRemoveFreebie,
         handleFileUpload,
         handleCheckout,
         applyPromotionLogic

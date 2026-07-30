@@ -19,7 +19,11 @@ export const bufferService = {
 
   async updateBufferConfig(bufferStock, diffMsg, uid) {
     try {
-      await setDoc(doc(db, getCollectionPath('settings'), 'inventory'), { defaultBufferStock: bufferStock }, { merge: true });
+      const numStock = parseInt(bufferStock, 10);
+      if (isNaN(numStock) || numStock < 0) {
+        return { success: false, message: 'จำนวนบัฟเฟอร์ต้องเป็นตัวเลขถ้วนไม่ติดลบ' };
+      }
+      await setDoc(doc(db, getCollectionPath('settings'), 'inventory'), { defaultBufferStock: numStock }, { merge: true });
       if (diffMsg && uid) {
         await historyService.addLog(
           'SystemConfig', 

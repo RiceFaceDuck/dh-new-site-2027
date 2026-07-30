@@ -21,11 +21,63 @@ const getVal = (obj, possibleKeys) => {
   return null;
 };
 
+/**
+ * @typedef {Object} NormalizedProduct
+ * @property {string} id - Product SKU / Document ID
+ * @property {string} name - Product display name
+ * @property {string} brand - Product brand/manufacturer
+ * @property {string} model - Compatible Laptop Model
+ * @property {string} category - Product category/type
+ * @property {number} price - Retail price shown to customer
+ * @property {number} [salePrice] - Special discounted price (if applicable)
+ * @property {number} stockQuantity - Current physical stock
+ * @property {number} bufferStock - Min buffer stock setting
+ * @property {boolean} isOutOfStock - True if stockQuantity <= 0
+ * @property {boolean} isLowStock - True if stockQuantity <= bufferStock
+ * @property {string} [shortDescription] - Brief summary
+ * @property {string} [fullDescription] - Detailed HTML/text description
+ * @property {string} [imageUrl] - Cover image URL
+ * @property {string} [youtubeUrl] - YouTube link
+ * @property {string|null} videoId - Parsed YouTube ID
+ * @property {string|null} shopeeUrl - Shopee marketplace link
+ * @property {string|null} lazadaUrl - Lazada marketplace link
+ * @property {number} reviewCount - Total customer reviews
+ * @property {number} averageRating - Rating out of 5
+ * @property {Array} variantOptions - Product variants
+ * @property {Object} _raw - Raw Firestore Document Data
+ */
+
+let cachedGlobalBuffer = null;
+
 export const productService = {
   /**
+   * Fetch global buffer stock setting
+   * @returns {Promise<number>}
+   */
+  async getGlobalBuffer() {
+    if (cachedGlobalBuffer !== null) return cachedGlobalBuffer;
+    try {
+      const docRef = doc(db, getCollectionPath('settings'), 'inventory');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().defaultBufferStock !== undefined) {
+        cachedGlobalBuffer = Number(docSnap.data().defaultBufferStock);
+      } else {
+        cachedGlobalBuffer = 2; // fallback
+      }
+    } catch (error) {
+      console.error("Error fetching global buffer:", error);
+      cachedGlobalBuffer = 2;
+    }
+    return cachedGlobalBuffer;
+  },
+
+  /**
    * Fetch a single product by SKU and normalize its fields.
+   * @param {string} sku - SKU or Document ID
+   * @returns {Promise<NormalizedProduct|null>}
    */
   async getProduct(sku) {
+    await this.getGlobalBuffer();
     if (!sku) return null;
     try {
       const docRef = doc(db, getCollectionPath('products'), sku);
@@ -58,6 +110,8 @@ export const productService = {
   async getProductsByIds(ids) {
     if (!ids || ids.length === 0) return [];
     
+    await this.getGlobalBuffer();
+
     // Remove duplicates and filter falsy values
     const uniqueIds = [...new Set(ids.filter(Boolean))];
     const results = [];
@@ -168,7 +222,11 @@ export const productService = {
 
     // Stock
     const stockQuantity = getVal(raw, ['stockQuantity', 'stock', 'quantity', 'qty']) || 0;
-    const bufferStock = getVal(raw, ['bufferStock', 'buffer', 'minstock']) || 2; // Default buffer 2
+    
+    // Use bufferStock from product if exists, else fallback to Global Buffer (or 2)
+    const rawBuffer = getVal(raw, ['bufferStock', 'buffer', 'minstock']);
+    const bufferStock = rawBuffer !== null ? rawBuffer : (cachedGlobalBuffer ?? 2);
+    
     const isOutOfStock = stockQuantity <= 0;
     const isLowStock = stockQuantity > 0 && stockQuantity <= bufferStock;
 
@@ -231,6 +289,7 @@ export const productService = {
 
   async getProductsByCategory(category, lastVisible, limitCount = 40) {
     try {
+      await this.getGlobalBuffer();
       const { collection, query, where, limit, startAfter, getDocs } = await import('firebase/firestore');
       const productsRef = collection(db, getCollectionPath('products'));
       const lowerCaseType = category.trim().toLowerCase();

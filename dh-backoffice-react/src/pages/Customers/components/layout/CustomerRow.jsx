@@ -2,21 +2,22 @@ import { useState } from 'react';
 import { Crown, Star, Building2, User, FileText, Copy, CheckCircle2 } from 'lucide-react';
 import WalletDisplay from '../displays/WalletDisplay';
 import PointDisplay from '../displays/PointDisplay';
+import { getUserTier } from '../../../../firebase/credit/creditFormatService';
 
 export default function CustomerRow({ customer, isSelected, onSelect, gridLayout }) {
   const [copied, setCopied] = useState(false);
 
-  // ฟังก์ชันสี Badge อิงความเรียบหรู (Clean Corporate)
+  const points = Number(customer.totalAccumulatedPoints || customer.creditPoints || customer.stats?.totalAccumulatedPoints || 0);
+  const tier = getUserTier(points);
+
   const getRankBadge = (rank) => {
     const r = rank?.toLowerCase() || 'customer';
     if (r.includes('vip')) return { color: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100', icon: <Crown size={11} className="mr-1" /> };
     if (r.includes('partner')) return { color: 'bg-slate-800 text-white border-slate-800', icon: <Star size={11} className="mr-1 text-amber-400" /> };
     if (r.includes('wholesale')) return { color: 'bg-orange-50 text-orange-700 border-orange-100', icon: <Building2 size={11} className="mr-1" /> };
-    return { color: 'bg-slate-50 text-slate-500 border-slate-200', icon: <User size={11} className="mr-1" /> };
+    return { color: tier.bg + ' ' + tier.color + ' ' + tier.border, icon: <span className="mr-1 text-[10px]">{tier.icon}</span> };
   };
 
-
-  // ดึงข้อมูลและกำหนดค่าเริ่มต้น
   const badge = getRankBadge(customer.rank || customer.role);
   // 🌟 ฟังก์ชันหาชื่อที่ถูกต้องที่สุดของลูกค้า
   const resolveDisplayName = (c) => {
@@ -43,12 +44,12 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   // บังคับใช้ Document ID (customer.id) เท่านั้น เพื่อป้องกันการวิ่งไปหาบัญชีผีจาก Short UID
   const customerId = customer.id;
 
-  // ข้อมูลตัวเลขยอดสั่งซื้อ 30 วัน
-  const sales30Days = Number(customer.stats?.sales30Days || customer.stats?.monthlySales || 0);
+  // ข้อมูลตัวเลขยอดสั่งซื้อและจำนวนบิล 30 วัน
+  const sales30Days = Number(customer.sales30Days !== undefined ? customer.sales30Days : (customer.stats?.sales30Days || customer.stats?.monthlySales || 0));
+  const orderCount30Days = Number(customer.orderCount30Days !== undefined ? customer.orderCount30Days : (customer.stats?.orderCount30Days || 0));
 
   // 🌟 ตรวจสอบความแข็งแกร่งของข้อมูล: บิลล่าสุด (Last Order Date)
-  // ไม่ใช้ updatedAt เด็ดขาด เพราะการแก้โปรไฟล์ก็จะทำให้เวลาเปลี่ยน ซึ่งผิด Logic
-  const lastOrderTimestamp = customer.stats?.lastOrderDate || customer.stats?.lastPurchaseDate;
+  const lastOrderTimestamp = customer.lastOrderDate || customer.stats?.lastOrderDate || customer.stats?.lastPurchaseDate;
   
   let lastOrderText = '-';
   let daysSinceLastOrder = null;
@@ -129,7 +130,11 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
         <div className="flex justify-center min-w-0">
           <div className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-widest border ${badge.color} truncate max-w-full shadow-xs`}>
             {badge.icon}
-            <span className="truncate">{customer.rank || customer.role || 'MEMBER'}</span>
+            <span className="truncate">
+              {['customer', 'member', ''].includes((customer.rank || customer.role || '').toLowerCase())
+                ? tier.name.toUpperCase()
+                : (customer.rank || customer.role || 'MEMBER').toUpperCase()}
+            </span>
           </div>
         </div>
 
@@ -156,16 +161,23 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           {lastOrderText}
         </div>
 
-        {/* 9. ยอดสั่งซื้อ 30 วัน (30D PAID OUT) */}
-        <div className="text-right min-w-0">
+        {/* 9. ยอดสั่งซื้อ 30 วัน (30D PAID OUT) พร้อมจำนวนบิล */}
+        <div className="text-right min-w-0 flex items-center justify-end gap-1.5">
           {sales30Days > 0 ? (
-            <span className={`text-[13px] font-mono tracking-tight ${
-              sales30Days >= 10000 
-                ? 'text-emerald-600 font-black' 
-                : 'text-indigo-600 font-bold'
-            }`}>
-              ฿{sales30Days.toLocaleString('th-TH', {minimumFractionDigits: 2})}
-            </span>
+            <>
+              <span className={`text-[13px] font-mono tracking-tight ${
+                sales30Days >= 10000 
+                  ? 'text-emerald-600 font-black' 
+                  : 'text-indigo-600 font-bold'
+              }`}>
+                ฿{sales30Days.toLocaleString('th-TH', {minimumFractionDigits: 2})}
+              </span>
+              {orderCount30Days > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80 shrink-0">
+                  {orderCount30Days} บิล
+                </span>
+              )}
+            </>
           ) : (
             <span className="text-[12px] font-mono font-normal text-slate-300">0.00</span>
           )}

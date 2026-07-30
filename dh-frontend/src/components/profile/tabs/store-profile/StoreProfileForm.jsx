@@ -1,4 +1,5 @@
-import { Store, Power, Loader2 } from 'lucide-react';
+import React from 'react';
+import { Store } from 'lucide-react';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
@@ -6,7 +7,6 @@ import StoreProfileLocation from './StoreProfileLocation';
 import { useStoreProfile } from './hooks/useStoreProfile';
 import { useGeolocation } from '../../../../hooks/useGeolocation';
 import { useToast } from '../../../../context/ToastContext';
-
 
 const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd, fetchMyAds }) => {
   const { showToast } = useToast();
@@ -22,19 +22,19 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
     handleSaveStore
   } = useStoreProfile(storeData, setStoreData, user, appId, businessCardAd, fetchMyAds);
 
-  const { getUserCurrentLocation, isLocating } = useGeolocation();
+  const { getUserCurrentLocation } = useGeolocation();
 
   const handleGetLocation = async () => {
     try {
       const coords = await getUserCurrentLocation();
       setStoreData({ ...storeData, latitude: coords.latitude, longitude: coords.longitude });
     } catch (error) {
-    console.error("🔥 Error:", error);
-    showToast(error?.message || "เกิดข้อผิดพลาด", "error");
-
+      console.error("🔥 Error:", error);
       showToast(error.message, 'error');
     }
   };
+
+  const isCardLive = businessCardAd ? ['APPROVED', 'ACTIVE'].includes(String(businessCardAd.status).toUpperCase()) : storeData.isSupportActive;
 
   return (
     <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-xs overflow-hidden animate-in fade-in duration-300">
@@ -49,28 +49,27 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           <div className="text-right">
             <div className="text-xs font-bold text-white uppercase tracking-widest">นามบัตรโฆษณา</div>
             <div className="text-[10px]">
-              {!storeData.isSupportActive ? (
-                <span className="text-slate-400">⚫ ปิดการแสดงผล</span>
+              {businessCardAd?.status?.toUpperCase() === 'PAUSED' ? (
+                <span className="text-orange-400 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
               ) : isAdPending ? (
                 <span className="text-amber-400 animate-pulse font-bold">🟡 รอตรวจสอบ (Pending)</span>
-              ) : ['APPROVED', 'ACTIVE'].includes(businessCardAd?.status?.toUpperCase()) ? (
+              ) : isCardLive ? (
                 <span className="text-emerald-400 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
               ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (
                 <span className="text-rose-400 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
-              ) : businessCardAd?.status?.toUpperCase() === 'PAUSED' ? (
-                <span className="text-orange-400 font-bold">🟠 ถูกระงับการแสดงผล</span>
+              ) : !storeData.isSupportActive ? (
+                <span className="text-slate-400">⚫ ปิดการแสดงผล</span>
               ) : (
                 <span className="text-amber-400">🟡 รอการบันทึก</span>
               )}
             </div>
           </div>
           
-          {/* ล็อกสวิตช์: ปิดการใช้งาน เมื่ออยู่ในสถานะ PENDING เพื่อไม่ให้สับสน แต่ยังสามารถบันทึกข้อมูลหลักร้านได้ */}
           <label className={`relative inline-flex items-center ${isAdPending ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
             <input 
               type="checkbox" 
               className="sr-only peer" 
-              checked={storeData.isSupportActive} 
+              checked={isCardLive} 
               onChange={handleToggleSupport} 
               disabled={isAdPending} 
             />
@@ -100,43 +99,21 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           storeData={storeData} 
           setStoreData={setStoreData} 
           handleGetLocation={handleGetLocation} 
-          locationLoading={isLocating} 
         />
 
-        {/* PDPA Consent Checkbox */}
-        <div className="pt-6 border-t border-slate-200">
-          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex gap-4 items-start">
-            <div className="mt-1">
-              <input
-                type="checkbox"
-                id="pdpa-consent"
-                checked={storeData.pdpaConsent || false}
-                onChange={(e) => setStoreData({ ...storeData, pdpaConsent: e.target.checked })}
-                className="w-5 h-5 rounded-sm border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
-              />
-            </div>
-            <div>
-              <label htmlFor="pdpa-consent" className="text-sm text-slate-700 font-medium cursor-pointer block leading-relaxed">
-                <span className="text-indigo-700 font-bold block mb-1">การให้ความยินยอมเปิดเผยข้อมูล (PDPA)</span>
-                ข้าพเจ้ายินยอมให้นำข้อมูลที่กรอกทั้งหมด ได้แก่ <b className="text-slate-900">ชื่อร้าน, รูปภาพ, เบอร์โทรศัพท์, ช่องทางการติดต่อ, ที่อยู่ และพิกัดสถานที่ตั้ง (GPS)</b> ไปแสดงผลต่อสาธารณะบนแพลตฟอร์ม เพื่อวัตถุประสงค์ในการโฆษณาและการค้นหาร้านซ่อม
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* ปุ่ม Submit: กดได้ตลอดเวลาเพื่ออัปเดตข้อมูล แม้ว่าจะรออนุมัติโฆษณาอยู่ก็ตาม */}
-        <div className="pt-2 flex justify-end">
-          <button 
-            type="submit" 
-            disabled={savingStore || !storeData.pdpaConsent} 
-            className="w-full sm:w-auto px-10 py-4 font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-lg active:scale-95 bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/30 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+        <div className="pt-6 border-t border-slate-100 flex justify-end">
+          <button
+            type="submit"
+            disabled={savingStore}
+            className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {savingStore ? (
-              <><Loader2 size={24} className="animate-spin"/> กำลังบันทึกข้อมูล...</>
-            ) : isAdPending ? (
-              <><Power size={24}/> บันทึกและอัปเดตคำขอโฆษณาใหม่</>
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>กำลังบันทึก...</span>
+              </>
             ) : (
-              <><Power size={24}/> บันทึกข้อมูล</>
+              <span>บันทึกข้อมูลร้านค้า</span>
             )}
           </button>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Edit2, Trash2, Building2, User, Copy, Check, TrendingUp, ShoppingBag, Sparkles } from 'lucide-react';
+import { X, Edit2, Trash2, Building2, User, Copy, Check, TrendingUp, Sparkles } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 
@@ -9,9 +9,12 @@ import TaxInfo from './TaxInfo';
 import HistoryInfo from './HistoryInfo';
 import MarketingInfo from './MarketingInfo';
 import CustomerSyncModal from './CustomerSyncModal';
+import CustomerRefundModal from '../../../../components/customers/CustomerRefundModal';
 import WalletDisplay from '../displays/WalletDisplay';
 import PointDisplay from '../displays/PointDisplay';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCollectionPath, formatDate, formatCurrency } from 'dh-shared';
+
+import { getUserTier } from '../../../../firebase/credit/creditFormatService';
 
 export default function DetailPanel({
   customer,
@@ -30,6 +33,8 @@ export default function DetailPanel({
 
   // State สำหรับ Modal โอนย้ายบัญชี
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  // State สำหรับ Modal โอนเงินคืน/จ่ายเงินสด
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
 
   // State สำหรับจัดการ Tabs
   const [activeTab, setActiveTab] = useState('overview');
@@ -64,13 +69,7 @@ export default function DetailPanel({
 
   if (!customer) return null;
 
-  // Utility functions สำหรับฟอร์แมตข้อมูล
-  const formatCurrency = (num) => Number(num || 0).toLocaleString('th-TH');
-  const formatDate = (timestamp) => {
-    if (!timestamp) return '-';
-    const date = typeof timestamp === 'number' ? new Date(timestamp) : (timestamp.toDate ? timestamp.toDate() : new Date(timestamp));
-    return date.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' });
-  };
+
 
   // 🏡 Smart Address Decoder (แปลง Object เป็น String)
   const getFormattedAddress = () => {
@@ -116,11 +115,25 @@ export default function DetailPanel({
             <span className="truncate">{displayName}</span>
           </h2>
           <div className="flex items-center flex-wrap gap-2 mt-1.5">
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
-              customer.role === 'partner' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'
-            }`}>
-              {customer.role === 'partner' ? 'Partner' : 'Member'}
-            </span>
+            {(() => {
+              const points = Number(customer.totalAccumulatedPoints || customer.creditPoints || customer.stats?.totalAccumulatedPoints || 0);
+              const tier = getUserTier(points);
+              const isCustomRole = !['customer', 'member', ''].includes((customer.rank || customer.role || '').toLowerCase());
+
+              return (
+                <>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 border ${tier.bg || 'bg-blue-50'} ${tier.color || 'text-blue-600'} ${tier.border || 'border-blue-200'} shadow-xs`}>
+                    <span className="mr-1">{tier.icon}</span>
+                    {tier.name}
+                  </span>
+                  {isCustomRole && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 bg-slate-800 text-white shadow-xs">
+                      {customer.rank || customer.role}
+                    </span>
+                  )}
+                </>
+              );
+            })()}
             <button 
               onClick={() => handleCopy(displayAccountId, 'accountId')}
               title="คัดลอก Account ID"
@@ -158,25 +171,23 @@ export default function DetailPanel({
           
           {/* 🌟 New Compact Stats Row in Header */}
           <div className="flex items-center flex-wrap gap-3 mt-3 pt-3 border-t border-slate-200/60">
-            {/* ยอดค้างชำระ */}
-            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md border border-emerald-100">
-              <TrendingUp size={12} className="text-emerald-500" />
+            {/* ยอดค้างชำระ (คลิกเพื่อทำรายการโอนคืน / จ่ายเงินสด) */}
+            <button
+              type="button"
+              onClick={() => setIsRefundModalOpen(true)}
+              title="คลิกเพื่อโอนเงินคืน / จ่ายเงินสดให้ลูกค้า"
+              className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 px-2.5 py-1 rounded-md border border-emerald-200 cursor-pointer transition-all shadow-2xs hover:shadow-xs group"
+            >
+              <TrendingUp size={12} className="text-emerald-500 group-hover:scale-110 transition-transform" />
               <span className="text-[10px] font-bold uppercase">DH ค้างยอด:</span>
               <span className="text-xs font-black font-mono"><WalletDisplay customerId={customer.id} /></span>
-            </div>
+            </button>
             
             {/* พอยต์ */}
             <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md border border-amber-100">
               <Sparkles size={12} className="text-amber-500" />
               <span className="text-[10px] font-bold uppercase">Point:</span>
               <span className="text-xs font-black font-mono"><PointDisplay customerId={customer.id} /></span>
-            </div>
-
-            {/* ยอดสั่งซื้อรวม */}
-            <div className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md border border-slate-200">
-              <ShoppingBag size={12} className="text-slate-500" />
-              <span className="text-[10px] font-bold uppercase">ยอดสั่งซื้อ:</span>
-              <span className="text-xs font-black font-mono">{formatCurrency(customer.stats?.totalOrders || 0)}</span>
             </div>
           </div>
         </div>
@@ -293,6 +304,16 @@ export default function DetailPanel({
         onSyncComplete={() => {
           setIsSyncModalOpen(false);
           onClose(); // Close DetailPanel to force a refresh of the list
+        }}
+      />
+
+      <CustomerRefundModal 
+        isOpen={isRefundModalOpen}
+        onClose={() => setIsRefundModalOpen(false)}
+        customer={customer}
+        onSuccess={() => {
+          setIsRefundModalOpen(false);
+          onClose(); // ปิดแล้วรีเฟรชหน้าจอ
         }}
       />
     </div>

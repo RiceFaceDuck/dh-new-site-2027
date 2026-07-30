@@ -25,7 +25,8 @@ export const MANAGER_TASK_TYPES = [
   'STAFF_APPROVAL',      // งานตรวจสอบ/อนุมัติ พนักงานใหม่เข้าทำงาน
   'PRODUCT_DELETE_APPROVAL', // ขออนุมัติการลบสินค้า
   'BILL_CANCEL_APPROVAL',    // ขออนุมัติการยกเลิกบิล
-  'PRODUCT_KNOWLEDGE_APPROVAL' // ขออนุมัติเพิ่มข้อมูลรุ่น/พาร์ทที่รองรับ
+  'PRODUCT_KNOWLEDGE_APPROVAL', // ขออนุมัติเพิ่มข้อมูลรุ่น/พาร์ทที่รองรับ
+  'WARRANTY_SETUP'           // งานตั้งค่าระยะเวลารับประกันสำหรับหมวดสินค้าใหม่
 ];
 
 export const managerTodoService = {
@@ -82,7 +83,7 @@ export const managerTodoService = {
       return true;
     } catch (error) {
       console.error(`🔥 Error updating task [${taskId}]:`, error);
-      throw error; // ส่ง Error ให้ Component UI รับไปแสดงผลได้
+      throw error;
     }
   },
 

@@ -237,10 +237,11 @@ export const userService = {
       
       // 1. ลบเอกสารจาก Firestore (Hard Delete)
       const userRef = doc(db, getCollectionPath('users'), uid);
-      await setDoc(doc(db, 'users_deleted_log', uid), {
+      await setDoc(doc(db, getCollectionPath('users_deleted_log'), uid), {
          deletedAt: serverTimestamp(),
          reason: "User requested deletion (PDPA)",
       }); // เก็บ Log เล็กน้อย
+
       
       // ลบข้อมูลหลัก
       const { deleteDoc } = await import('firebase/firestore');

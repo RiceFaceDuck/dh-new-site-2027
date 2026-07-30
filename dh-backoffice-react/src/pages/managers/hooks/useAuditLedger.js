@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { collection, collectionGroup, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCollectionPath, COLLECTION_GROUPS } from 'dh-shared';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+
 
 export const useAuditLedger = () => {
     const [transactions, setTransactions] = useState([]);
@@ -41,8 +42,9 @@ export const useAuditLedger = () => {
                 // 2. Fetch Wallet Transactions across all users
                 // Note: requires index on wallet_transactions -> timestamp DESC
                 try {
-                    const walletQ = query(collectionGroup(db, 'wallet_transactions'), orderBy('timestamp', 'desc'), limit(100));
+                    const walletQ = query(collectionGroup(db, COLLECTION_GROUPS.WALLET_TRANSACTIONS), orderBy('timestamp', 'desc'), limit(100));
                     const walletSnap = await getDocs(walletQ);
+
                     
                     walletSnap.forEach(docSnap => {
                         const data = docSnap.data();

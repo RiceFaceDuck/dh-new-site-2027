@@ -1,36 +1,68 @@
-# 🤖 E2E Bot (ม้าดำ) Lessons Learned
+# 🤖 E2E Bot (Black Horse) Lessons Learned
 
-ไฟล์นี้ใช้เพื่อบันทึกบทเรียน ปัญหาที่พบเจอ และแนวทางแก้ไขจากการพัฒนาระบบบอททดสอบ E2E (ม้าดำ) เพื่อให้บอทมีความเสถียรและทำงานได้ลื่นไหลที่สุด
+This file records lessons, encountered issues, and solutions from developing the E2E (Black Horse) testing bot to ensure the bot remains stable and runs smoothly.
 
-## 1. ปัญหาหน้าตะกร้าสินค้า (Cart Issues)
-- **สินค้าติด Buffer (Out of Stock):** หากบอททดสอบเพิ่มสินค้าเดิมซ้ำๆ หลายครั้งจนสต๊อกสินค้าหมด (ติด Buffer) ระบบจะซ่อนปุ่ม "ดำเนินการสั่งซื้อ (Checkout)" และขึ้นข้อความเตือนให้ติดต่อพนักงาน
-  - **วิธีแก้ไข:** บอทต้องทำการ "ล้างตะกร้า (Clear Cart)" เสมอเมื่อเข้าไปที่หน้าตะกร้า หรือก่อนเริ่มสั่งซื้อใหม่ โดยให้กดปุ่มถังขยะ `button:has(svg.lucide-trash-2)` ลบสินค้าทั้งหมด
-  - **การสุ่มสินค้า:** ไม่ควรให้บอทกดปุ่ม "ADD TO CART" ชิ้นแรกสุดของหน้าเว็บเสมอไป เพราะอาจจะเจอสินค้าที่หมดสต๊อกแต่หน้าเว็บยังแสดงผลไม่ทัน ควรให้บอทสุ่มหยิบสินค้าชิ้นที่ 3, 4, หรือ 5 แทน
+## 1. Cart Issues
+- **Out of Stock Buffer:** If the bot adds the same item repeatedly until stock depletes, the system hides the "Checkout" button and shows a warning.
+  - **Fix:** The bot must ALWAYS "Clear Cart" when entering the cart page or before starting a new checkout, by clicking the trash icon `button:has(svg.lucide-trash-2)`.
+  - **Random Item Selection:** Do not make the bot click the very first "ADD TO CART" button because that item might be out of stock but the UI hasn't updated yet. The bot should randomly pick the 3rd, 4th, or 5th item.
 
-## 2. ปัญหาปุ่มและ Layout (UI Interactions)
-- **Cookie Banner บังปุ่ม:** แบนเนอร์ Cookie มักจะเด้งขึ้นมาบังปุ่ม "เข้าสู่ระบบ" หรือปุ่มอื่นๆ ทำให้ Playwright กดปุ่มไม่สำเร็จ (Timeout)
-  - **วิธีแก้ไข:** ต้องให้บอทกดยอมรับ Cookie (`acceptCookies()`) ทันทีที่เป็นไปได้ และใช้ `{ force: true }` ในการคลิกเพื่อบังคับกดปุ่มแม้จะมี Element อื่นบังอยู่
-- **ฟอร์มที่อยู่ (Checkout Forms):** ชื่อของ input ในฟอร์มอาจจะไม่ตรงกับมาตรฐาน เช่น ใช้ `name="fullName"` แทน `name="name"`
-  - **วิธีแก้ไข:** การดักจับ (Selector) ควรใช้ชื่อ `name="..."` ที่ตรงเป๊ะกับ React component ของหน้าบ้าน เพื่อป้องกัน Timeout
+## 2. UI Interactions (Buttons & Layouts)
+- **Cookie Banner Block:** The Cookie banner often overlaps the "Login" or other buttons, causing Playwright to timeout.
+  - **Fix:** The bot must accept cookies (`acceptCookies()`) immediately and use `{ force: true }` to force clicks even if elements are obscured.
+- **Checkout Forms:** Input names might not follow standard conventions (e.g., using `name="fullName"` instead of `name="name"`).
+  - **Fix:** Selectors MUST use the exact `name="..."` matching the React component to prevent timeouts.
 
-## 3. สถาปัตยกรรมบอท (Bot Architecture)
-- **SRP (Single Responsibility Principle):** การเขียนบอทในไฟล์เดียว (`bot_cross_system.js`) ทำให้โค้ดยาวและดูแลยาก
-  - **วิธีแก้ไข:** แบ่งโค้ดออกเป็น `pages/`, `services/`, และ `scenarios/` เพื่อให้แก้ไขได้ทีละส่วน และง่ายต่อการปรับปรุงในอนาคต (เช่น `ActionService` รับจบเรื่องการคลิกทั้งหมด)
+## 3. Bot Architecture
+- **Single Responsibility Principle (SRP):** Writing the entire bot in one file (`bot_cross_system.js`) makes it long and hard to maintain.
+  - **Fix:** Split code into `pages/`, `services/`, and `scenarios/` so each part can be modified independently (e.g., `ActionService` handles all clicking logic).
 
-## 4. โฟลว์การชำระเงินใหม่ (New Checkout Flow & Accordion)
-- **Checkout Accordion Trap:** การพยายามสั่งให้บอทกดปุ่ม "ถัดไป" ซ้ำๆ เพื่อไล่เปิด Accordion ทีละขั้น มักจะเจอบั๊กที่ทำให้บางแถบไม่ยอมเปิด หรือบอทไปกดปุ่มถัดไปของแถบอื่นที่ซ่อนอยู่ (Hidden DOM)
-  - **วิธีแก้ไข:** ควรสอนให้บอทเจาะจงคลิกเปิดแถบที่ต้องการไปเลย เช่น `locator('text="วิธีการชำระเงิน"').click()` จะชัวร์และเร็วกว่าการค่อยๆ กด Next
-- **Slip Upload Visibility:** ช่องแนบสลิป (`input[type="file"]`) อาจจะไม่ปรากฏใน DOM จนกว่าบอทจะกดเปิดแถบ "วิธีการชำระเงิน" และบางครั้งต้องกดเลือกวิธีชำระเงิน (เช่น "โอนเงิน") ก่อนถึงจะเจอช่องแนบสลิป
+## 4. New Checkout Flow & Accordion
+- **Checkout Accordion Trap:** Attempting to make the bot click "Next" repeatedly to open the Accordion sequentially often hits bugs where some tabs refuse to open or the bot clicks a hidden DOM element.
+  - **Fix:** Instruct the bot to specifically click the desired tab directly. For example, `locator('text="Payment Method"').click()` is faster and more reliable.
+- **Slip Upload Visibility:** The file input (`input[type="file"]`) might not appear in the DOM until the bot opens the "Payment Method" tab and selects a method (e.g., "Bank Transfer").
 
-## 5. อาการหน้าตะกร้าว่างเปล่า (Empty Cart due to Sync Cancel)
-- **SPA Navigation Conflict:** หากหน้าบ้านมีการใช้ระบบหน่วงเวลาบันทึกตะกร้าลงฐานข้อมูล (Debounce 500ms) แล้วบอททำการเปลี่ยนหน้าเว็บแบบ Hard Reload (`page.goto('/cart')`) ทันทีหลังจากหยิบสินค้า จะส่งผลให้การซิงก์ข้อมูลถูกตัดจบกลางอากาศ ทำให้ตะกร้าในฐานข้อมูลยังว่างเปล่า
-  - **วิธีแก้ไข:** ต้องให้บอท "ยืนรอ" `await this.page.waitForTimeout(3000)` เพื่อให้หน้าเว็บส่งข้อมูลไปที่ Firebase จนเสร็จก่อนเสมอ จึงจะเปลี่ยนหน้าเว็บได้
+## 5. Empty Cart due to Sync Cancel
+- **SPA Navigation Conflict:** If the frontend uses a Debounce (e.g., 500ms) to save the cart to Firestore, and the bot navigates away via Hard Reload (`page.goto('/cart')`) immediately after adding an item, the sync is aborted, resulting in an empty cart in the database.
+  - **Fix:** The bot MUST "wait" (`await this.page.waitForTimeout(3000)`) to ensure the frontend finishes syncing data to Firebase before changing pages.
 
-## 6. ปัญหาการสร้างลูกค้าและเปิดบิล POS (The "กรุณาระบุเบอร์โทรศัพท์ลูกค้า" Mystery)
-- **Firebase Permission Denied ที่ถูกซ่อนไว้:** แอดมิน/พนักงาน ไม่สามารถกดเพิ่มรายชื่อลูกค้าได้ หาก `firestore.rules` อนุญาตให้สร้างเอกสารได้เฉพาะเจ้าของบัญชี ทำให้การกดปุ่มบันทึกใน E2E Bot ล้มเหลวแบบเงียบๆ (Silent Fail) เพราะ Alert ถูก Auto-Dismiss
-  - **วิธีแก้ไข:** ต้องแน่ใจว่า `firestore.rules` มี `allow create: if isStaff() || ...` ให้พนักงานสามารถสร้าง Manual Customer ได้
-- **Firestore Data Fetch Limit (ลูกค้าใหม่ตกหล่น):** ในหน้า POS หากการดึงลูกค้า `useCustomerData.js` ใช้ `limit(300)` โดยไม่มีการเรียงลำดับ (`orderBy('createdAt', 'desc')`) ลูกค้าที่เพิ่งถูกสร้างขึ้นมาใหม่จะไม่ติดอยู่ใน Cache ส่งผลให้เวลาบอทค้นหาชื่อลูกค้า ระบบจะหาไม่เจอ
-- **Clock Skew (เวลาเครื่องเหลื่อมล้ำกับ Server):** แม้จะแก้ไข Fetch Limit แล้ว หากระบบมีลอจิก Delta Fetch (ซิงก์เฉพาะอัปเดตล่าสุด) โดยอ้างอิงจาก `lastSync = Date.now()` แต่เวลาบนเครื่องคอมพิวเตอร์ (Local Time) ดันเดินเร็วกว่าเวลาบนเซิร์ฟเวอร์ Firebase (`serverTimestamp()`) เพียงเล็กน้อย จะทำให้ Query `where('updatedAt', '>', lastSync)` มองไม่เห็นลูกค้าที่เพิ่งสร้างเสร็จใหม่ๆ!
-  - **วิธีแก้ไข (The Ultimate Fix):** ต้องเพิ่ม **Buffer Time (เช่น 5 นาที)** เข้าไปใน `lastSync` เสมอเวลาทำ Delta Sync เพื่อป้องกัน Clock Skew (`lastSync - 5 * 60 * 1000`)
-- **การใช้ Playwright ค้นหา Dropdown Option ที่คลุมเครือ:** การสั่งให้บอทคลิกด้วยโค้ด `div:has-text("ชื่อลูกค้า")` อาจจะทำให้บอทไปคลิกโดนปุ่ม **"ตกลงใช้ชื่อ Walk-in"** แทน (เพราะในปุ่ม Walk-in ก็ดันแสดงข้อความที่มีชื่อลูกค้าที่พิมพ์ค้นหาอยู่ด้วย) หากไม่พบลูกค้าระบบ
-- **String vs Object in Dropdown Props:** การแก้ไขปัญหาสายตาสั้น ห้ามแก้ผิดจุด เช่น การพยายามส่งค่าลูกค้า "ทั้งก้อน (Object)" ในฟังก์ชัน `handleSelectCustomer(c)` แทนที่จะเป็น ID (String) ตามที่ `usePosActions.js` คาดหวัง จะทำให้ระบบบั๊กพังยิ่งกว่าเดิม (ต้องเช็ค Type/Expected Argument ทุกครั้งก่อนแก้)
+## 6. Creating Customers & POS Billing (The Mystery of "Please specify customer phone number")
+- **Silent Firebase Permission Denied:** Admins/Staff cannot create new customers if `firestore.rules` only allows document creation by the account owner. The E2E Bot's save button fails silently because the alert is auto-dismissed.
+  - **Fix:** Ensure `firestore.rules` includes `allow create: if isStaff() || ...` so staff can create manual customers.
+- **Firestore Data Fetch Limit (Missing New Customers):** In the POS, if `useCustomerData.js` uses `limit(300)` without ordering (`orderBy('createdAt', 'desc')`), newly created customers won't be cached, causing the bot's search to fail.
+- **Clock Skew (Local vs Server Time):** Even with the Fetch Limit fixed, if the Delta Fetch logic uses `lastSync = Date.now()`, but the local computer time runs slightly faster than the Firebase server time (`serverTimestamp()`), the query `where('updatedAt', '>', lastSync)` will miss newly created customers!
+  - **Ultimate Fix:** ALWAYS add a **Buffer Time (e.g., 5 minutes)** to `lastSync` during Delta Syncs to prevent Clock Skew (`lastSync - 5 * 60 * 1000`).
+- **Ambiguous Playwright Dropdown Selectors:** Telling the bot to click `div:has-text("Customer Name")` might cause it to accidentally click the **"Use Walk-in Customer"** button (because that button's text might contain the searched name if not found).
+- **String vs Object in Dropdown Props:** Do not fix the wrong issue. Attempting to pass the entire customer object to `handleSelectCustomer(c)` instead of the ID (String) as expected by `usePosActions.js` will break the system further. (Always check types/expected arguments).
+
+## 7. Dynamic Watermarking & Mock Data Standards
+- **Watermark Placement Constraint:** The watermark text "AI เป็นผู้สร้างข้อมูล" should only be applied in the center of generated mock assets (e.g. transfer slips, product image assets) that are uploaded during the testing flow. It should NOT be injected as a DOM overlay on Playwright browser screenshots, to avoid obscuring the UI layout.
+- **Data Suffix Uniformity:** All mock fields filled during automated testing must be cleanly suffixed with `(AI เป็นผู้สร้างข้อมูล)` to prevent confusion with real data in audit logs.
+
+## 8. Artifact Screenshot Embedding Standard
+- **Artifact Image Copy Requirement:** When presenting screenshots from E2E_Bot tests to the user, ALWAYS copy the `.jpg` files from `C:\DH Notebook\E2E_Bot\screenshots\` into the artifact directory `<appDataDir>\brain\<conversation-id>\e2e_screenshots\` first, and render them inside an artifact markdown document so the UI can render and display the images cleanly.
+
+
+
+## ?? Interactive E2E Manual Review Workflow
+����ͼ�����ͧ��÷��ͺ UI/UX Ẻ˹�ҵ��˹�� ��黯ԺѵԵ���ӴѺ���:
+1. ��Ҵ���ҷ��ͺ (�ӷҧ��ѧ URL)
+2. ᤻�Ҿ˹�Ҩ�
+3. ���Ҿ��Ѻ & �� URL ����������� Antigravity
+4. Antigravity �����Թ��͹ (���Ѿ�����ʴ���/UI UX)
+5. �ͼ��������Թ��� (��ҹ/�ѹ�֡�ѭ��)
+6. �ѹ�֡�ѭ��
+7. �׹�ѹ�����Ҵ����������� ��еѴ�Թ���Ҩ���ѹ�������Ǻ�������͹
+
+
+## ?? Baseline Intelligence: ���¡�дѺ������Ҵ��鹰ҹ�ͧ��Ҵ�
+- **��èѴ��� Cookie:** �ء���駷�����˹��������� ��Ҵӵ�ͧ��Ǩ�ͺ��С����� '����Ѻ������' (Accept All Cookies) �ѵ��ѵ� ����������ẹ����ѧ UI ��ѡ
+- **������Ǩ�Ҿ��� (Auto-Scroll):** ��Ҵӵ�ͧ���ѡ����͹����� (Scroll Down) ��Ǩ�ͺ��������ǹ��ҧ�ͧ������� �����������Ҿ�����͹᤻˹�Ҩ����һ����Թ��
+
+- **����Ѵ����Է���Ҿ (Performance Measuring):** ��Ҵӵ�ͧ�֧��Ҥ������ǡ����Ŵ˹����纨ҡ window.performance.timing ���� (�� ��Ŵ�ç���ҧ��纡�� ms, ��Ŵ����ٻẺ��� ms) ���Ṻ����§ҹ����᤻˹�Ҩ� ���ͪ��µ�Ǩ�ͺ�ѭ�����˹�ǧ���ͪ��
+
+- **��Ѫ�ҡ������������ (Human-like Targeting):** ������/��觾� \data-testid\ ����Ѻ��÷��ͺ E2E �����Ҵ����Ըդ��Ҩҡ "��ͤ�������" (Visible Text) ���� ��������÷��ͺ���ͧ�ĵԡ�����С���ͧ��������§��������ö�ͧ�������ҡ����ش
+
+- **�ѭ�� Timeout (Hidden Elements):** ������ [href=...] ����Ѻ Navigation ����͹�����������Ͷ�� ����ⴹ�Ѻ���� UI ��� ���Шз���� Playwright Timeout �óչ������� page.goto() �ç� ᷹���ͤ���������������
+
+- **�Ƿҧ�����§ҹ��͹���ͺ:** ��͹����Ҵ��͡��ѹʤ�Ի�� ��ͧ������駼������ǧ˹��������ҡ��ѧ��价��ͺ��� '˹���˹' ��� 'URL ����'

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Settings, SlidersHorizontal } from 'lucide-react';
+import { Settings } from 'lucide-react';
+import { auth } from '../../../firebase/config';
+import { safeJsonParse } from 'dh-shared';
 import TerminalConfigDropdown from './settings/TerminalConfigDropdown';
 import CustomerSection from './settings/CustomerSection';
 import LogisticsSettings from './settings/panel/LogisticsSettings';
@@ -9,7 +11,7 @@ import NoteSettings from './settings/panel/NoteSettings';
 
 export default function SettingsPanel({
     activeTab, updateActiveTab, handlePriceModeChange, custSearchRef, customerSearchText, setCustomerSearchText, 
-    showCustDropdown, setShowCustDropdown, filteredCustomers, handleSelectCustomer, netTotal, setIsPromoModalOpen, handleRemovePromotion,
+    showCustDropdown, setShowCustDropdown, filteredCustomers, handleSelectCustomer, netTotal, setIsPromoModalOpen, setIsFreebieModalOpen, handleRemovePromotion, handleRemoveFreebie,
     isProcessing, eligibleFreebies, shippingRules
 }) {
     // ⚡ Local State
@@ -25,15 +27,23 @@ export default function SettingsPanel({
         quickShippingFees: [40, 60, 120] 
     };
 
+    const getTerminalConfigKey = (uid) => uid ? `dh_pos_config_v6_${uid}` : 'dh_pos_config_v6';
+
     const [terminalConfig, setTerminalConfig] = useState(() => {
-        try { return { ...defaultTerminalConfig, ...(JSON.parse(localStorage.getItem('dh_pos_config_v6')) || {}) }; } catch { return defaultTerminalConfig; }
+        try {
+            const uid = auth.currentUser?.uid;
+            const key = getTerminalConfigKey(uid);
+            const saved = localStorage.getItem(key) || localStorage.getItem('dh_pos_config_v6');
+            return { ...defaultTerminalConfig, ...(safeJsonParse(saved) || {}) };
+        } catch { return defaultTerminalConfig; }
     });
     const [isTerminalConfigOpen, setIsTerminalConfigOpen] = useState(false);
 
     const updateTerminalConfig = (key, val) => {
         const newConf = { ...terminalConfig, [key]: val };
         setTerminalConfig(newConf);
-        localStorage.setItem('dh_pos_config_v6', JSON.stringify(newConf));
+        const uid = auth.currentUser?.uid;
+        localStorage.setItem(getTerminalConfigKey(uid), JSON.stringify(newConf));
     };
 
     // ซิงค์ข้อมูลตอนเปลี่ยนบิล
@@ -86,17 +96,26 @@ export default function SettingsPanel({
 
             {/* HEADER */}
             <div className="px-4 py-3 shrink-0 flex items-center justify-between relative z-20 bg-(--dh-primary) text-white">
-                <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-white/10 border border-white/20 rounded-md shadow-xs text-white"><Settings size={14} /></div>
+                <button
+                    type="button"
+                    onClick={() => !isProcessing && setIsTerminalConfigOpen(!isTerminalConfigOpen)}
+                    disabled={isProcessing}
+                    className="flex items-center gap-2.5 group text-left cursor-pointer select-none"
+                    title="กดเพื่อตั้งค่าเครื่อง / POS Terminal Settings"
+                >
+                    <div className={`p-1.5 border rounded-md shadow-xs transition-all ${
+                        isTerminalConfigOpen 
+                            ? 'bg-white text-[#2A305A] border-white shadow-md scale-105' 
+                            : 'bg-white/10 border-white/20 text-white group-hover:bg-white/20 group-hover:border-white/30'
+                    }`}>
+                        <Settings size={16} className={`transition-transform duration-300 ${isTerminalConfigOpen ? 'rotate-90' : 'group-hover:rotate-45'}`} />
+                    </div>
                     <div>
-                        <h2 className="text-sm font-bold text-white leading-none">ตั้งค่าบิล (SETTINGS)</h2>
+                        <h2 className="text-sm font-bold text-white leading-none group-hover:text-cyan-200 transition-colors">
+                            ตั้งค่าบิล (SETTINGS)
+                        </h2>
                         <p className="text-[10px] font-bold text-gray-300 mt-1 uppercase tracking-widest">Control Panel</p>
                     </div>
-                </div>
-                <button onClick={() => !isProcessing && setIsTerminalConfigOpen(!isTerminalConfigOpen)} disabled={isProcessing}
-                    className={`p-2 rounded-md transition-all border group 
-                        ${isTerminalConfigOpen ? 'bg-white/20 text-white border-white/30 shadow-xs' : 'bg-transparent text-gray-300 border-white/10 hover:text-white hover:bg-white/10'}`}>
-                    <SlidersHorizontal size={14} className="group-hover:rotate-12 transition-transform"/>
                 </button>
 
                 {/* Dropdown ตั้งค่า POS */}
@@ -163,7 +182,9 @@ export default function SettingsPanel({
                     updateActiveTab={updateActiveTab}
                     isProcessing={isProcessing}
                     setIsPromoModalOpen={setIsPromoModalOpen}
+                    setIsFreebieModalOpen={setIsFreebieModalOpen}
                     handleRemovePromotion={handleRemovePromotion}
+                    handleRemoveFreebie={handleRemoveFreebie}
                     eligibleFreebies={eligibleFreebies}
                     sectionClass={sectionClass}
                     labelClass={labelClass}

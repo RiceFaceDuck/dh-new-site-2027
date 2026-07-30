@@ -1,12 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, lazy, Suspense } from 'react';
 import { useClaimData } from './hooks/useClaimData';
 import ClaimHeader from './components/ClaimHeader';
 import ClaimStatsRow from './components/ClaimStatsRow';
 import ClaimTable from './components/table/ClaimTable';
-import ClaimDetailModal from './components/detail/ClaimDetailModal';
 import ClaimPrintView from './components/ClaimPrintView';
-import GuideModal from '../../components/common/GuideModal';
 import { useReactToPrint } from 'react-to-print';
+
+// ⚡ Lazy Loading Heavy Modals
+const ClaimDetailModal = lazy(() => import('./components/detail/ClaimDetailModal'));
+const GuideModal = lazy(() => import('../../components/common/GuideModal'));
 
 const claimGuideConfig = {
   description: "ระบบนี้ใช้สำหรับ <b>จัดการการแจ้งเคลม (ซ่อม/เปลี่ยน) และ การคืนสินค้า (Refund)</b> เพื่อให้สามารถติดตามสถานะและประสานงานกับลูกค้าได้อย่างรวดเร็ว",
@@ -36,6 +38,9 @@ export default function ClaimMain() {
     endDate, setEndDate,
     selectedRequest, setSelectedRequest,
     filteredRequests,
+    paginatedRequests,
+    currentPage, setCurrentPage,
+    totalPages,
     stats,
     warrantyConfig
   } = useClaimData();
@@ -117,35 +122,45 @@ export default function ClaimMain() {
           
           <div className="flex-1 overflow-hidden bg-dh-surface rounded-xl border border-dh-border shadow-xs flex flex-col">
             <ClaimTable 
-              filteredRequests={filteredRequests}
+              filteredRequests={paginatedRequests}
               loading={loading}
               getStatusDisplay={getStatusDisplay}
               setSelectedRequest={setSelectedRequest}
               warrantyConfig={warrantyConfig}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredRequests.length}
+              onPageChange={setCurrentPage}
             />
           </div>
         </div>
       </div>
 
-      <ClaimDetailModal 
-        selectedRequest={selectedRequest}
-        setSelectedRequest={setSelectedRequest}
-        handlePrint={handlePrint}
-        handleQuickCopy={handleQuickCopy}
-        copiedText={copiedText}
-        getStatusDisplay={getStatusDisplay}
-      />
+      <Suspense fallback={null}>
+        {selectedRequest && (
+          <ClaimDetailModal 
+            selectedRequest={selectedRequest}
+            setSelectedRequest={setSelectedRequest}
+            handlePrint={handlePrint}
+            handleQuickCopy={handleQuickCopy}
+            copiedText={copiedText}
+            getStatusDisplay={getStatusDisplay}
+          />
+        )}
+
+        {isGuideOpen && (
+          <GuideModal 
+            isOpen={isGuideOpen} 
+            onClose={() => setIsGuideOpen(false)} 
+            title="คู่มือจัดการเคลม/คืนสินค้า"
+            config={claimGuideConfig}
+          />
+        )}
+      </Suspense>
 
       <div className="absolute top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden h-0">
         <ClaimPrintView ref={printRef} req={selectedRequest} />
       </div>
-
-      <GuideModal 
-        isOpen={isGuideOpen} 
-        onClose={() => setIsGuideOpen(false)} 
-        title="คู่มือจัดการเคลม/คืนสินค้า"
-        config={claimGuideConfig}
-      />
     </div>
   );
 }

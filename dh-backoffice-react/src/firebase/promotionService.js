@@ -4,7 +4,7 @@ import { historyService } from './historyService';
 import { todoService } from './todoService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'promotions';
+const COLLECTION_NAME = getCollectionPath('promotions');
 
 // Helper for validating SKUs (max 30 per 'in' query)
 const validateSkus = async (skusArray) => {

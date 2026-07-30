@@ -20,6 +20,7 @@ import {
 import imageCompression from 'browser-image-compression';
 import { db, storage, auth } from './config';
 import { historyService } from './historyService';
+import { warrantyService } from './warrantyService';
 import { sharedCategoryService } from 'dh-shared/src/firebase/categoryService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -32,7 +33,31 @@ export const categoryService = {
    */
   getAllCategories: async () => {
     const categories = await sharedCategoryService.getAllCategories(db);
-    return categories.filter(c => !c.deletedAt);
+    const activeList = categories.filter(c => !c.deletedAt);
+
+    try {
+      const docRef = doc(db, getCollectionPath('settings'), 'product_categories');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const pCats = snap.data().categories || [];
+        pCats.forEach(catStr => {
+          if (catStr && typeof catStr === 'string' && catStr.trim()) {
+            const cleanName = catStr.trim();
+            const exists = activeList.some(c => 
+              (c.name || '').trim().toLowerCase() === cleanName.toLowerCase() ||
+              (c.type || '').trim().toLowerCase() === cleanName.toLowerCase()
+            );
+            if (!exists) {
+              activeList.push({ id: `setting_${cleanName}`, name: cleanName, type: cleanName });
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.warn("⚠️ Warning merging product_categories into getAllCategories:", err);
+    }
+
+    return activeList;
   },
 
   /**
@@ -89,25 +114,39 @@ export const categoryService = {
       const allCats = await categoryService.getAllCategories();
       
       // 🚀 DUPLICATE CHECK
-      const catName = categoryData.name.trim().toLowerCase();
-      const catType = (categoryData.type || '').trim().toLowerCase();
-      const isDuplicate = allCats.some(c => 
-        (c.name || '').trim().toLowerCase() === catName || 
-        ((c.type || '').trim().toLowerCase() === catType && catType !== '')
+      const catName = categoryData.name.trim();
+      const catType = (categoryData.type || categoryData.name).trim();
+      const existingCat = allCats.find(c => 
+        (c.name || '').trim().toLowerCase() === catName.toLowerCase() || 
+        ((c.type || '').trim().toLowerCase() === catType.toLowerCase() && catType !== '')
       );
-      if (isDuplicate) {
-        throw new Error('หมวดหมู่หรือ Type นี้มีอยู่ในระบบแล้ว');
+
+      if (existingCat) {
+        try {
+          const { arrayUnion, setDoc } = await import('firebase/firestore');
+          const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
+          await setDoc(settingsRef, {
+            categories: arrayUnion(catType || catName)
+          }, { merge: true });
+
+          await warrantyService.checkAndTriggerWarrantyTaskForNewCategory(catType || catName);
+        } catch (syncErr) {
+          console.warn("⚠️ Warning syncing existing category to product_categories:", syncErr);
+        }
+
+        return { id: existingCat.id, name: existingCat.name || catName, type: existingCat.type || catType, isExisting: true };
       }
 
-      const maxOrder = allCats.length > 0 ? Math.max(...allCats.map(c => c.order || 0)) : 0;
+      // Safe order calculation avoiding NaN
+      const maxOrder = allCats.reduce((max, c) => (typeof c.order === 'number' && !isNaN(c.order) ? Math.max(max, c.order) : max), 0);
 
       const isActive = categoryData.isActive !== undefined ? categoryData.isActive : true;
 
       const newData = {
-        name: categoryData.name,
-        type: categoryData.type || '', // 🚀 ฟิลด์ Type
-        buttonShape: categoryData.buttonShape || 'circle', // 🚀 ทรงของปุ่ม
-        filters: categoryData.filters || [], // 🚀 ตัวกรองแนะนำ
+        name: catName,
+        type: catType, 
+        buttonShape: categoryData.buttonShape || 'circle', 
+        filters: categoryData.filters || [], 
         imageUrl: imageUrl, 
         isActive: isActive, 
         status: isActive ? 'active' : 'inactive', 
@@ -120,15 +159,19 @@ export const categoryService = {
       try {
         const { arrayUnion, setDoc } = await import('firebase/firestore');
         const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
+        const targetCatName = catType || catName;
         await setDoc(settingsRef, {
-          categories: arrayUnion(categoryData.type || categoryData.name)
+          categories: arrayUnion(targetCatName)
         }, { merge: true });
+
+        // 🔔 แจ้งเตือนผู้จัดการให้เข้าไปตั้งค่าประกันหมวดหมู่ใหม่
+        await warrantyService.checkAndTriggerWarrantyTaskForNewCategory(targetCatName);
       } catch (syncErr) {
         console.error('Warning: Failed to sync category to settings:', syncErr);
       }
       
       const uid = auth.currentUser?.uid;
-      await historyService.addLog('Category', 'Create', 'category', `เพิ่มหมวดหมู่ใหม่: ${categoryData.name}`, uid);
+      await historyService.addLog('Category', 'Create', 'category', `เพิ่มหมวดหมู่ใหม่: ${catName}`, uid);
       
       sharedCategoryService.clearCache();
       return { id: docRef.id, ...newData };

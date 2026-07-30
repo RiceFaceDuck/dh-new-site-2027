@@ -76,8 +76,26 @@ class GasHistoryService {
       };
 
       // Outbox Pattern: Save to Firestore immediately instead of memory queue
+      
+      // Helper to deeply remove undefined fields which cause Firestore errors
+      const removeUndefined = (obj) => {
+        if (Array.isArray(obj)) return obj.map(removeUndefined);
+        if (obj && typeof obj === 'object') {
+          if (typeof obj.toDate === 'function') return obj; // Preserve Firestore Timestamp
+          if (obj instanceof Date) return obj; // Preserve Date
+          return Object.fromEntries(
+            Object.entries(obj)
+              .filter(([_, v]) => v !== undefined)
+              .map(([k, v]) => [k, removeUndefined(v)])
+          );
+        }
+        return obj;
+      };
+
+      const cleanedLogEntry = removeUndefined(logEntry);
+
       addDoc(collection(db, getCollectionPath('gas_outbox')), {
-        payload: logEntry,
+        payload: cleanedLogEntry,
         status: 'pending',
         creatorUid: actor.uid || 'anonymous',
         createdAt: serverTimestamp()
@@ -92,17 +110,10 @@ class GasHistoryService {
     this.isFlushing = true;
 
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        this.isFlushing = false;
-        return; // Only process outbox if user is logged in
-      }
-
       const outboxRef = collection(db, getCollectionPath('gas_outbox'));
       const q = query(
         outboxRef,
         where('status', '==', 'pending'),
-        where('creatorUid', '==', currentUser.uid),
         limit(this.MAX_QUEUE_SIZE || 15)
       );
       

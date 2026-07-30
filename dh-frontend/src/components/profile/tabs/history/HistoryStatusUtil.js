@@ -1,5 +1,6 @@
 export const getStatusDisplay = (status) => {
-    switch (status) {
+    const normalizedStatus = (status || '').toLowerCase();
+    switch (normalizedStatus) {
       case 'awaiting_wholesale_price':
         return { text: '⏳ รอพิจารณาราคาส่ง', color: 'bg-purple-100 text-purple-700 border-purple-200' };
       case 'pending_payment':

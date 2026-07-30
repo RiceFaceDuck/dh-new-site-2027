@@ -1,4 +1,5 @@
 import { Package, Truck, Check, Copy, Gift, AlertCircle, RefreshCw, ShieldAlert, ShieldCheck, Calendar } from 'lucide-react';
+import { normalizeCategoryName } from '../../../../firebase/warrantyService';
 
 export default function ProductInfo({ 
   selectedRequest, 
@@ -28,19 +29,40 @@ export default function ProductInfo({
     let claimDays = 30; // Default General
     let categoryKey = 'General';
     
-    const itemCat = selectedRequest.payload.category || '';
-    if (itemCat) {
-       for (const key of Object.keys(warrantyConfig.categories || {})) {
-           if (itemCat.toLowerCase().includes(key.toLowerCase())) {
-               claimDays = warrantyConfig.categories[key].claimDays;
-               categoryKey = key;
-               break;
-           }
-       }
+    let itemCat = selectedRequest.payload?.category || '';
+    const itemSku = selectedRequest.payload?.sku || '';
+
+    // 🚀 SKU Prefix Fallback: หากออเดอร์เดิมไม่ได้บันทึก category ให้ระบุจากรหัส SKU
+    if (!itemCat && itemSku) {
+      const skuUpper = itemSku.toUpperCase();
+      if (skuUpper.startsWith('FADE') || skuUpper.startsWith('FAN')) itemCat = 'FAN';
+      else if (skuUpper.startsWith('SCR') || skuUpper.startsWith('PANEL')) itemCat = 'Panel';
+      else if (skuUpper.startsWith('BAT')) itemCat = 'Battery';
+      else if (skuUpper.startsWith('ADAP') || skuUpper.startsWith('CHARGER')) itemCat = 'Adapter';
+      else if (skuUpper.startsWith('KEY') || skuUpper.startsWith('KB')) itemCat = 'Keyboard';
     }
 
-    if (warrantyConfig.skus?.[selectedRequest.payload.sku]) {
-        claimDays = warrantyConfig.skus[selectedRequest.payload.sku].claimDays;
+    const normCat = normalizeCategoryName(itemCat);
+
+    if (warrantyConfig.categories?.[normCat]) {
+      claimDays = warrantyConfig.categories[normCat].claimDays;
+      categoryKey = normCat;
+    } else if (normCat && normCat !== 'General') {
+      categoryKey = normCat;
+      claimDays = 30;
+    } else {
+      // Substring match fallback
+      for (const key of Object.keys(warrantyConfig.categories || {})) {
+        if (itemCat.toLowerCase().includes(key.toLowerCase()) || normCat.toLowerCase().includes(key.toLowerCase())) {
+          claimDays = warrantyConfig.categories[key].claimDays;
+          categoryKey = key;
+          break;
+        }
+      }
+    }
+
+    if (warrantyConfig.skus?.[itemSku]) {
+      claimDays = warrantyConfig.skus[itemSku].claimDays;
     }
 
     const remainingDays = claimDays - passedDays;

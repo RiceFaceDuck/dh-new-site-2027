@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { auth, db } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -60,9 +60,11 @@ export const CartProvider = ({ children }) => {
     } catch (e) { return []; }
   });
 
+  const getCheckoutKey = (uid) => uid ? `dh_checkout_state_${uid}` : 'dh_checkout_state_guest';
+
   const [checkoutState, setCheckoutState] = useState(() => {
     try {
-      const saved = localStorage.getItem('dh_checkout_state');
+      const saved = localStorage.getItem('dh_checkout_state_guest') || localStorage.getItem('dh_checkout_state');
       return saved ? { ...defaultCheckoutState, ...safeJsonParse(saved, {}) } : defaultCheckoutState;
     } catch (e) { return defaultCheckoutState; }
   });
@@ -122,12 +124,31 @@ export const CartProvider = ({ children }) => {
     }, 500);
   }, []);
 
-  // Sync กับ Firebase
+  // Sync กับ Firebase & Load Checkout State per UID
   useEffect(() => {
     let unsubscribeSnapshot = null;
     
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user); // บันทึก State ว่ามี User ไหม
+      
+      // Load user-specific checkout state when user changes
+      try {
+        const userCheckoutKey = getCheckoutKey(user?.uid);
+        const savedUserCheckout = localStorage.getItem(userCheckoutKey);
+        if (savedUserCheckout) {
+          setCheckoutState({ ...defaultCheckoutState, ...safeJsonParse(savedUserCheckout, {}) });
+        } else if (user) {
+          // Migrate guest checkout state if user just logged in
+          const guestStateStr = localStorage.getItem('dh_checkout_state_guest') || localStorage.getItem('dh_checkout_state');
+          if (guestStateStr) {
+            const guestState = safeJsonParse(guestStateStr, {});
+            setCheckoutState({ ...defaultCheckoutState, ...guestState });
+            localStorage.setItem(userCheckoutKey, JSON.stringify(guestState));
+          }
+        }
+      } catch (e) {
+        console.error("Error restoring user checkout state:", e);
+      }
       
       if (user) {
         // 🔄 Merge Guest Cart to Firebase on Login
@@ -143,6 +164,11 @@ export const CartProvider = ({ children }) => {
         }
 
         // เมื่อ Login แล้วให้ดึงข้อมูลจาก Firebase เป็นหลัก
+        if (unsubscribeSnapshot) {
+          unsubscribeSnapshot();
+          unsubscribeSnapshot = null;
+        }
+
         const cartRef = doc(db, getCollectionPath('carts'), user.uid);
         unsubscribeSnapshot = onSnapshot(cartRef, { includeMetadataChanges: true }, (docSnap) => {
           // 🛡️ หลีกเลี่ยง UI Flicker: ข้ามการอัปเดตหากพบว่ามี writes ค้างในเครื่องของฝั่งเราเอง
@@ -188,11 +214,12 @@ export const CartProvider = ({ children }) => {
   }, [cartItems, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('dh_checkout_state', JSON.stringify(checkoutState));
+    const key = getCheckoutKey(currentUser?.uid);
+    localStorage.setItem(key, JSON.stringify(checkoutState));
     setIsInitialized(true); // ยืนยันว่าระบบพร้อมทำงาน
-  }, [checkoutState]);
+  }, [checkoutState, currentUser]);
 
-  const addToCart = async (product, quantity = 1) => {
+  const addToCart = useCallback(async (product, quantity = 1) => {
     const user = auth.currentUser;
     
     // ⚡ Optimistic UI Update: เพิ่มรายการในหน่วยความจำทันทีเพื่อให้สเตตตอบสนอง 60 FPS
@@ -228,9 +255,9 @@ export const CartProvider = ({ children }) => {
     });
 
     setIsCartOpen(true);
-  };
+  }, [syncCartToFirebaseDebounced]);
 
-  const removeFromCart = async (productId) => {
+  const removeFromCart = useCallback(async (productId) => {
     const user = auth.currentUser;
     
     // ⚡ Optimistic UI Update: ลบออกทันที
@@ -241,9 +268,9 @@ export const CartProvider = ({ children }) => {
       }
       return newItems;
     });
-  };
+  }, [syncCartToFirebaseDebounced]);
 
-  const updateQuantity = async (productId, amount) => {
+  const updateQuantity = useCallback(async (productId, amount) => {
     const user = auth.currentUser;
     
     // ⚡ Optimistic UI Update: ปรับจำนวนสินค้าทันที
@@ -261,11 +288,11 @@ export const CartProvider = ({ children }) => {
       }
       return newItems;
     });
-  };
+  }, [syncCartToFirebaseDebounced]);
 
   const updateCheckoutConfig = useCallback((updates) => setCheckoutState(prev => ({ ...prev, ...updates })), []);
   
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     const user = auth.currentUser;
     if (user) {
       // เรียกใช้ทันทีโดยไม่รอ await เพื่อความราบรื่น
@@ -275,16 +302,16 @@ export const CartProvider = ({ children }) => {
     setCheckoutState(defaultCheckoutState);
     localStorage.removeItem('dh_cart');
     localStorage.removeItem('dh_checkout_state');
-  };
+  }, []);
 
   // Calculations
-  const cartTotalQty = cartItems.reduce((acc, item) => acc + (item.qty || item.quantity || 0), 0);
-  const subtotal = cartItems.reduce((acc, item) => acc + ((item.price || 0) * (item.qty || item.quantity || 0)), 0);
+  const cartTotalQty = useMemo(() => cartItems.reduce((acc, item) => acc + (item.qty || item.quantity || 0), 0), [cartItems]);
+  const subtotal = useMemo(() => cartItems.reduce((acc, item) => acc + ((item.price || 0) * (item.qty || item.quantity || 0)), 0), [cartItems]);
   const totalDiscount = (checkoutState.discountAmount || 0) + (checkoutState.useWallet || 0);
   const grandTotal = checkoutState.isWholesaleRequest ? 0 : Math.max(0, subtotal + (checkoutState.shippingCost || 0) - totalDiscount);
 
   // การแยก Context ช่วยหยุดปัญหา God Context (N+1 Re-renders)
-  const stateValue = {
+  const stateValue = useMemo(() => ({
     cartItems,
     cartTotalQty,
     cartTotalAmount: subtotal,
@@ -292,16 +319,16 @@ export const CartProvider = ({ children }) => {
     isInitialized,
     isCartOpen,
     totals: { count: cartTotalQty, subtotal, shipping: checkoutState.shippingCost || 0, discount: totalDiscount, grandTotal, displayTotal: subtotal }
-  };
+  }), [cartItems, cartTotalQty, subtotal, checkoutState, isInitialized, isCartOpen, totalDiscount, grandTotal]);
 
-  const dispatchValue = {
+  const dispatchValue = useMemo(() => ({
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
     setIsCartOpen,
     updateCheckoutConfig
-  };
+  }), [addToCart, removeFromCart, updateQuantity, clearCart, updateCheckoutConfig]);
 
   return (
     <CartStateContext.Provider value={stateValue}>

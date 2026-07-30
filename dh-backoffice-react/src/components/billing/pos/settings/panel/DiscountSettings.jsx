@@ -5,28 +5,101 @@ export default function DiscountSettings({
     localDiscount, setLocalDiscount,
     localOtherName, setLocalOtherName,
     localOtherAmount, setLocalOtherAmount,
-    sectionClass, labelClass, inputClass
+    sectionClass
 }) {
+    const discountType = activeTab?.overallDiscountType || 'BAHT';
+    const isPercent = discountType === 'PERCENT';
+
+    const itemSubTotal = activeTab?.items?.reduce((sum, item) => {
+        const p = Number(item.price) || 0;
+        const d = Number(item.discount) || 0;
+        const q = Math.max(1, Number(item.qty) || 1);
+        return sum + ((p - d) * q);
+    }, 0) || 0;
+
+    const calcDiscountBaht = isPercent 
+        ? Math.round(itemSubTotal * ((parseFloat(localDiscount) || 0) / 100))
+        : (parseFloat(localDiscount) || 0);
+
     return (
-        <div className={`${sectionClass} grid grid-cols-2 gap-4`}>
+        <div className={`${sectionClass} grid grid-cols-2 gap-3`}>
+            {/* Left: ลดท้ายบิล */}
             <div>
-                <label className={labelClass}><Tag size={12}/> ลดท้ายบิล (฿)</label>
-                <input disabled={isProcessing} type="number" min="0" placeholder="0" value={localDiscount} onChange={(e) => setLocalDiscount(e.target.value)} onBlur={() => updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0 })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0 }); }} className={`${inputClass} border-red-200 bg-red-50 text-right text-red-600 font-bold focus:border-red-400 focus:ring-red-500/20`} />
-                {/* ✨ คีย์ลัดส่วนลด ล้าง, 50, 100, 500 */}
-                <div className="flex flex-wrap gap-1.5 mt-2 justify-end">
-                    <button onClick={() => { setLocalDiscount(''); updateActiveTab({ overallDiscount: 0 }); }} disabled={isProcessing} className="text-[10px] bg-red-100 hover:bg-red-200 border border-red-200 text-red-600 px-2 py-0.5 rounded-sm transition-colors active:scale-95">ล้าง</button>
-                    {[50, 100, 500].map(val => (
-                        <button key={val} onClick={() => { setLocalDiscount(val); updateActiveTab({ overallDiscount: val }); }} disabled={isProcessing} className="text-[10px] bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 px-2 py-0.5 rounded-sm transition-colors active:scale-95">
-                            -{val}
+                <div className="flex items-center justify-between h-6 mb-1.5">
+                    <label className="text-[10px] font-extrabold text-[#2A305A] uppercase tracking-wider flex items-center gap-1">
+                        <Tag size={12} className="text-rose-500"/> ลดท้ายบิล
+                    </label>
+                    <div className="inline-flex rounded-md p-0.5 bg-slate-200/80 border border-slate-300 text-[10px] font-black">
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => updateActiveTab({ overallDiscountType: 'BAHT' })}
+                            className={`px-1.5 py-0.5 rounded-xs transition-all cursor-pointer ${!isPercent ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900 font-bold'}`}
+                        >
+                            ฿
                         </button>
-                    ))}
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => updateActiveTab({ overallDiscountType: 'PERCENT' })}
+                            className={`px-1.5 py-0.5 rounded-xs transition-all cursor-pointer ${isPercent ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900 font-bold'}`}
+                        >
+                            %
+                        </button>
+                    </div>
                 </div>
+
+                <div className="h-9 relative flex items-center">
+                    <input 
+                        disabled={isProcessing} 
+                        type="number" 
+                        min="0" 
+                        max={isPercent ? "100" : undefined}
+                        placeholder={isPercent ? "0 %" : "0 ฿"} 
+                        value={localDiscount} 
+                        onChange={(e) => setLocalDiscount(e.target.value)} 
+                        onBlur={() => updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0, overallDiscountType: discountType })} 
+                        onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0, overallDiscountType: discountType }); }} 
+                        className="w-full h-full bg-white border border-gray-300 rounded-md px-3 text-right text-xs font-black text-rose-600 outline-hidden focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500/20 shadow-xs placeholder-gray-400" 
+                    />
+                </div>
+
+                {isPercent && parseFloat(localDiscount) > 0 && itemSubTotal > 0 && (
+                    <div className="text-[9px] text-rose-600 font-extrabold text-right mt-1">
+                        (ลดจริง -฿{calcDiscountBaht.toLocaleString()})
+                    </div>
+                )}
             </div>
+
+            {/* Right: ยอดอื่นๆ (+/-) */}
             <div>
-                <label className={labelClass}><FileText size={12}/> ยอดอื่นๆ (+/-)</label>
-                <div className="flex bg-white rounded-md border border-gray-300 overflow-hidden shadow-xs focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                    <input disabled={isProcessing} type="text" placeholder="ชื่อ..." value={localOtherName} onChange={(e) => setLocalOtherName(e.target.value)} onBlur={() => updateActiveTab({ otherFeeName: localOtherName })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ otherFeeName: localOtherName }); }} className="w-1/2 bg-transparent px-3 py-2 text-xs font-medium text-gray-800 outline-hidden border-r border-gray-200" />
-                    <input disabled={isProcessing} type="number" placeholder="0" value={localOtherAmount} onChange={(e) => setLocalOtherAmount(e.target.value)} onBlur={() => updateActiveTab({ otherFeeAmount: parseFloat(localOtherAmount) || 0 })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ otherFeeAmount: parseFloat(localOtherAmount) || 0 }); }} className="w-1/2 bg-transparent px-3 py-2 text-xs text-right font-bold text-gray-800 outline-hidden" />
+                <div className="flex items-center justify-between h-6 mb-1.5">
+                    <label className="text-[10px] font-extrabold text-[#2A305A] uppercase tracking-wider flex items-center gap-1">
+                        <FileText size={12} className="text-indigo-500"/> ยอดอื่นๆ (+/-)
+                    </label>
+                </div>
+
+                <div className="h-9 flex bg-white rounded-md border border-gray-300 overflow-hidden shadow-xs focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-500/20 transition-all">
+                    <input 
+                        disabled={isProcessing} 
+                        type="text" 
+                        placeholder="ชื่อรายการ..." 
+                        value={localOtherName} 
+                        onChange={(e) => setLocalOtherName(e.target.value)} 
+                        onBlur={() => updateActiveTab({ otherFeeName: localOtherName })} 
+                        onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ otherFeeName: localOtherName }); }} 
+                        className="w-1/2 h-full bg-transparent px-2.5 text-xs font-semibold text-slate-800 outline-hidden border-r border-gray-200 placeholder-gray-400" 
+                    />
+                    <input 
+                        disabled={isProcessing} 
+                        type="number" 
+                        placeholder="0" 
+                        value={localOtherAmount} 
+                        onChange={(e) => setLocalOtherAmount(e.target.value)} 
+                        onBlur={() => updateActiveTab({ otherFeeAmount: parseFloat(localOtherAmount) || 0 })} 
+                        onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ otherFeeAmount: parseFloat(localOtherAmount) || 0 }); }} 
+                        className="w-1/2 h-full bg-transparent px-2.5 text-xs text-right font-black text-slate-900 outline-hidden placeholder-gray-400" 
+                    />
                 </div>
             </div>
         </div>

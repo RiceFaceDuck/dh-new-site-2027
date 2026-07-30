@@ -1,9 +1,22 @@
-import { collection, doc, updateDoc, serverTimestamp, getDocs, query, where, runTransaction } from 'firebase/firestore';
+import { collection, doc, updateDoc, serverTimestamp, getDocs, query, where, runTransaction, limit } from 'firebase/firestore';
 import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const TODOS_COLLECTION = 'todos';
+
+const getItemCategory = (item) => {
+  let cat = item.category || item.category1 || item.type || '';
+  if (!cat && item.sku) {
+    const skuUpper = item.sku.toUpperCase();
+    if (skuUpper.startsWith('FADE') || skuUpper.startsWith('FAN')) cat = 'FAN';
+    else if (skuUpper.startsWith('SCR') || skuUpper.startsWith('PANEL')) cat = 'Panel';
+    else if (skuUpper.startsWith('BAT')) cat = 'Battery';
+    else if (skuUpper.startsWith('ADAP') || skuUpper.startsWith('CHARGER')) cat = 'Adapter';
+    else if (skuUpper.startsWith('KEY') || skuUpper.startsWith('KB')) cat = 'Keyboard';
+  }
+  return cat;
+};
 
 export const claimRequestService = {
   // ==========================================
@@ -15,7 +28,8 @@ export const claimRequestService = {
       const q = query(
         collection(db, TODOS_COLLECTION),
         where("referenceId", "==", bill.orderId || '-'),
-        where("type", "==", "CLAIM_APPROVAL")
+        where("type", "==", "CLAIM_APPROVAL"),
+        limit(10)
       );
       const snapshot = await getDocs(q);
       const existingClaims = snapshot.docs.map(d => d.data());
@@ -58,7 +72,7 @@ export const claimRequestService = {
           customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
           sku: item.sku || '', 
           productName: item.name || '', 
-          category: item.category || item.category1 || '',
+          category: getItemCategory(item),
           purchaseDate: claimForm.warrantyDate || null,
           symptomCode: claimForm.reasonCode || '', 
           symptomDetails: claimForm.details || '', 
@@ -126,7 +140,8 @@ export const claimRequestService = {
       const q = query(
         collection(db, TODOS_COLLECTION),
         where("referenceId", "==", bill.orderId || '-'),
-        where("type", "==", "RETURN_APPROVAL")
+        where("type", "==", "RETURN_APPROVAL"),
+        limit(10)
       );
       const snapshot = await getDocs(q);
       const existingReturns = snapshot.docs.map(d => d.data());
@@ -169,7 +184,7 @@ export const claimRequestService = {
           customerName: bill.customer?.name || 'ลูกค้าทั่วไป',
           sku: item.sku || '', 
           productName: item.name || '', 
-          category: item.category || item.category1 || '',
+          category: getItemCategory(item),
           purchasePrice: item.pricePerUnit || item.price || 0, 
           purchaseDate: returnForm.warrantyDate || null,
           returnReason: returnForm.reasonCode || '', 

@@ -1,136 +1,25 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase/config';
-import { Tag, CheckCircle, AlertCircle } from 'lucide-react';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { Tag, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { usePromotions } from '../../hooks/usePromotions';
 
 const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated, hidden = false }) => {
-  const [promotions, setPromotions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [bestPromoId, setBestPromoId] = useState(null);
+  const { promotions, isLoading, evaluatePromotion } = usePromotions();
 
   useEffect(() => {
-    const fetchPromotions = async () => {
-      try {
-        // 🔥 Caching เพื่อลดจำนวน Reads ใน Firestore ประหยัดโควต้า
-        const cacheKey = 'active_promotions_cache';
-        const cachedData = sessionStorage.getItem(cacheKey);
-        const cacheTime = sessionStorage.getItem(cacheKey + '_time');
-        const now = new Date().getTime();
-
-        if (cachedData && cacheTime && now - parseInt(cacheTime) < 1000 * 60 * 5) {
-          setPromotions(JSON.parse(cachedData));
-          setLoading(false);
-          return;
-        }
-
-        const q = query(collection(db, getCollectionPath('promotions')), where('isActive', '==', true));
-        const snapshot = await getDocs(q);
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const validItems = items.filter(p => !p.deletedAt); // Exclude soft deleted
-
-        sessionStorage.setItem(cacheKey, JSON.stringify(validItems));
-        sessionStorage.setItem(cacheKey + '_time', now.toString());
-
-        setPromotions(validItems);
-      } catch (error) {
-        console.error("🔥 Error fetching promotions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPromotions();
-  }, []);
-
-  // Function to evaluate if promotion is applicable
-  const evaluatePromotion = (promo) => {
-    let isApplicable = true;
-    let missingSpend = 0;
-    let missingQty = 0;
-
-    // Check customerType
-    if (promo.customerType && promo.customerType !== 'ALL') {
-      const userRole = user?.role?.toUpperCase() || 'RETAIL';
-      if (promo.customerType !== userRole) {
-        isApplicable = false;
-      }
-    }
-
-    // Check date range
-    const now = new Date();
-    if (promo.startDate && new Date(promo.startDate) > now) isApplicable = false;
-    if (promo.endDate && new Date(promo.endDate) < now) isApplicable = false;
-
-    // Check quota limit
-    if (promo.quotaLimit && promo.quotaLimit > 0) {
-      const used = promo.quotaUsed || 0;
-      if (used >= promo.quotaLimit) isApplicable = false;
-    }
-
-    // Check minSpend
-    if (promo.minSpend && subTotal < promo.minSpend) {
-      isApplicable = false;
-      missingSpend = promo.minSpend - subTotal;
-    }
-
-    // Check minQty
-    if (promo.minQty) {
-      const totalQty = cartItems.reduce((acc, item) => acc + (item.qty || item.quantity || 1), 0);
-      if (totalQty < promo.minQty) {
-        isApplicable = false;
-        missingQty = promo.minQty - totalQty;
-      }
-    }
-
-    // Check applicable SKUs
-    let hasApplicableSku = true;
-    if (promo.applicableSkus && promo.applicableSkus.length > 0) {
-      hasApplicableSku = cartItems.some(item => promo.applicableSkus.includes(item.sku));
-      if (!hasApplicableSku) isApplicable = false;
-    }
-
-    return { isApplicable, missingSpend, missingQty, hasApplicableSku };
-  };
-
-  const calculateDiscount = (promo) => {
-    let eligibleTotal = subTotal;
-    if (promo.applicableSkus && promo.applicableSkus.length > 0) {
-      eligibleTotal = cartItems.reduce((acc, item) => {
-        if (promo.applicableSkus.includes(item.sku)) {
-          return acc + ((item.price || 0) * (item.qty || item.quantity || 1));
-        }
-        return acc;
-      }, 0);
-    }
-    
-    if (promo.type === 'PERCENTAGE') {
-      let discount = eligibleTotal * ((promo.value || 0) / 100);
-      if (promo.maxDiscount) {
-        discount = Math.min(discount, promo.maxDiscount);
-      }
-      return discount;
-    } else if (promo.type === 'FIXED_AMOUNT') {
-      return Math.min(promo.value || 0, eligibleTotal);
-    }
-    return 0;
-  };
-
-  useEffect(() => {
-    if (!loading && onPromotionsEvaluated) {
+    if (!isLoading && onPromotionsEvaluated) {
       let best = null;
       let maxDiscount = 0;
 
       promotions.forEach(promo => {
-        const { isApplicable } = evaluatePromotion(promo);
+        const { isApplicable, discountValue } = evaluatePromotion(promo, cartItems, subTotal, user?.role?.toUpperCase() || 'RETAIL');
         if (isApplicable) {
-           const discount = calculateDiscount(promo);
-           if (discount > maxDiscount) {
-             maxDiscount = discount;
+           if (discountValue > maxDiscount) {
+             maxDiscount = discountValue;
              best = {
                id: promo.id,
                name: promo.title,
-               discountValue: discount,
+               discountValue: discountValue,
                type: promo.type,
                value: promo.value
              };
@@ -141,9 +30,9 @@ const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated
       setBestPromoId(best ? best.id : null);
       onPromotionsEvaluated(best ? [best] : []);
     }
-    }, [loading, promotions, subTotal, cartItems]);
+  }, [isLoading, promotions, subTotal, cartItems, user, onPromotionsEvaluated, evaluatePromotion]);
 
-  if (loading || promotions.length === 0) return null;
+  if (isLoading || promotions.length === 0) return null;
   if (hidden) return null;
 
   return (
@@ -172,9 +61,19 @@ const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated
 
       <div className="flex flex-col gap-2">
         {promotions.map(promo => {
-          const { isApplicable, missingSpend, missingQty, hasApplicableSku } = evaluatePromotion(promo);
+          const { isApplicable, missingSpend, missingQty, hasApplicableSku } = evaluatePromotion(promo, cartItems, subTotal, user?.role?.toUpperCase() || 'RETAIL');
           const isBest = isApplicable && promo.id === bestPromoId;
           const isEligibleButNotBest = isApplicable && promo.id !== bestPromoId;
+          
+          // ⌛ Calculate Expiry
+          let hoursLeft = null;
+          if (promo.endDate) {
+             const end = promo.endDate.toDate ? promo.endDate.toDate() : new Date(promo.endDate);
+             const diff = end.getTime() - new Date().getTime();
+             if (diff > 0 && diff <= 24 * 60 * 60 * 1000) {
+                 hoursLeft = Math.ceil(diff / (1000 * 60 * 60));
+             }
+          }
           
           return (
             <div 
@@ -198,6 +97,11 @@ const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated
                   {isEligibleButNotBest && (
                     <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-sm uppercase tracking-wider">
                       ELIGIBLE
+                    </span>
+                  )}
+                  {hoursLeft !== null && (
+                    <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-1 shadow-sm border border-orange-200 animate-pulse ml-auto sm:ml-0">
+                      <Clock size={10} /> หมดอายุใน {hoursLeft} ชม.
                     </span>
                   )}
                 </div>

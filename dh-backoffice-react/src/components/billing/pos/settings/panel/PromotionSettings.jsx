@@ -1,21 +1,73 @@
-import { Megaphone, Check, X } from 'lucide-react';
+import { Megaphone, Check, X, Gift } from 'lucide-react';
 
 export default function PromotionSettings({
     activeTab, updateActiveTab, isProcessing,
-    setIsPromoModalOpen, handleRemovePromotion, eligibleFreebies,
+    setIsPromoModalOpen, setIsFreebieModalOpen, handleRemovePromotion, handleRemoveFreebie, eligibleFreebies,
     sectionClass, labelClass
 }) {
+    const autoFreebieEnabled = activeTab.autoFreebieEnabled !== false;
+
     return (
         <div className={sectionClass}>
             <div className="flex items-center justify-between mb-2.5">
-                <label className={`${labelClass} text-fuchsia-600`}><Megaphone size={12}/> โปรโมชันและของแถม</label>
-                <button disabled={isProcessing} onClick={() => setIsPromoModalOpen(true)} className="bg-white border border-fuchsia-300 hover:bg-fuchsia-50 text-fuchsia-600 text-[10px] font-bold px-2.5 py-1 rounded-sm transition-colors">เลือกโปร</button>
+                <label className={`${labelClass} text-fuchsia-700 font-extrabold`}><Megaphone size={13}/> โปรโมชันและของแถม</label>
+                <div className="flex items-center gap-1.5">
+                    <button 
+                        type="button"
+                        disabled={isProcessing} 
+                        onClick={() => setIsPromoModalOpen(true)} 
+                        className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-[10px] font-black px-2.5 py-1 rounded-md transition-all shadow-xs active:scale-95 cursor-pointer"
+                    >
+                        เลือกโปร
+                    </button>
+                    <button 
+                        type="button"
+                        disabled={isProcessing} 
+                        onClick={() => setIsFreebieModalOpen && setIsFreebieModalOpen(true)} 
+                        className="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black px-2.5 py-1 rounded-md transition-all shadow-xs active:scale-95 cursor-pointer"
+                    >
+                        เลือกของแถม
+                    </button>
+                </div>
             </div>
             
-            <label className="flex items-center gap-2 text-[11px] font-bold text-gray-700 bg-white p-2.5 rounded-sm border border-gray-200 cursor-pointer hover:border-fuchsia-300 transition-colors">
-                <input disabled={isProcessing} type="checkbox" checked={activeTab.autoPromoEnabled} onChange={(e) => updateActiveTab({ autoPromoEnabled: e.target.checked })} className="w-3.5 h-3.5 rounded-sm text-blue-600 border-gray-300 bg-white cursor-pointer" />
-                รับโปรโมชันคุ้มสุดอัตโนมัติ
-            </label>
+            <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2.5 text-[11px] font-extrabold text-slate-800 bg-slate-50 hover:bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:border-fuchsia-400 transition-all shadow-2xs">
+                    <input 
+                        disabled={isProcessing} 
+                        type="checkbox" 
+                        checked={Boolean(activeTab.autoPromoEnabled)} 
+                        onChange={(e) => {
+                            const checked = e.target.checked;
+                            if (!checked) {
+                                updateActiveTab({ 
+                                    autoPromoEnabled: false, 
+                                    promoDiscount: 0, 
+                                    appliedPromoId: null, 
+                                    appliedPromoDetails: null 
+                                });
+                            } else {
+                                updateActiveTab({ autoPromoEnabled: true });
+                            }
+                        }} 
+                        className="w-4 h-4 rounded-md text-fuchsia-600 border-slate-300 bg-white cursor-pointer focus:ring-0" 
+                    />
+                    รับโปรโมชันคุ้มสุดอัตโนมัติ
+                </label>
+
+                <label className="flex items-center gap-2.5 text-[11px] font-extrabold text-slate-800 bg-slate-50 hover:bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:border-rose-400 transition-all shadow-2xs">
+                    <input 
+                        disabled={isProcessing} 
+                        type="checkbox" 
+                        checked={autoFreebieEnabled} 
+                        onChange={(e) => {
+                            updateActiveTab({ autoFreebieEnabled: e.target.checked });
+                        }} 
+                        className="w-4 h-4 rounded-md text-rose-600 border-slate-300 bg-white cursor-pointer focus:ring-0" 
+                    />
+                    รับของแถมอัตโนมัติเมื่อเข้าเกณฑ์
+                </label>
+            </div>
 
             {activeTab.appliedPromoDetails && (
                 <div className="bg-linear-to-br from-fuchsia-50 to-pink-50 border-2 border-fuchsia-200 shadow-xs rounded-lg p-3 flex flex-col mt-3 animate-in slide-in-from-bottom-2 relative overflow-hidden">
@@ -48,19 +100,31 @@ export default function PromotionSettings({
             {/* ของแถม */}
             {eligibleFreebies && eligibleFreebies.length > 0 && (
                 <div className="bg-rose-50 border border-rose-200 shadow-xs rounded-lg p-3 mt-3 animate-in slide-in-from-bottom-2">
-                    <span className="text-[11px] font-black text-rose-700 mb-2 flex items-center gap-1.5">
-                        <span className="text-[14px]">🎁</span> ได้รับของแถม:
+                    <span className="text-[11px] font-black text-rose-700 mb-2 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5"><span className="text-[14px]">🎁</span> ได้รับของแถม ({eligibleFreebies.length}):</span>
                     </span>
                     <div className="flex flex-col gap-1.5">
                         {eligibleFreebies.map(f => (
-                            <div key={f.id} className="flex flex-col bg-white/80 p-2 rounded-md border border-rose-100 shadow-xs">
+                            <div key={f.id} className="flex flex-col bg-white/80 p-2 rounded-md border border-rose-100 shadow-xs relative">
                                 <div className="flex justify-between items-center text-[11px]">
                                     <span className="font-bold text-rose-600 truncate flex-1 pr-2">{f.productName || f.itemName}</span>
-                                    <span className="font-black text-rose-700 bg-rose-200/50 px-2 py-0.5 rounded-full">x{f.qty}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="font-black text-rose-700 bg-rose-200/50 px-2 py-0.5 rounded-full">x{f.qty}</span>
+                                        {handleRemoveFreebie && (
+                                            <button 
+                                                disabled={isProcessing} 
+                                                onClick={() => handleRemoveFreebie(f.id)} 
+                                                title="ลบของแถมนี้ออก"
+                                                className="p-1 hover:bg-rose-100 text-rose-400 hover:text-rose-600 rounded-sm transition-colors"
+                                            >
+                                                <X size={13} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="mt-1 flex flex-col gap-0.5">
                                     <p className="text-[9px] font-medium text-rose-500/80">
-                                        ได้รับเพราะ {f.minSpend > 0 ? `ยอดซื้อถึง ${f.minSpend.toLocaleString()} บาท` : "เงื่อนไขเข้าเกณฑ์"}
+                                        {autoFreebieEnabled ? (f.minSpend > 0 ? `ได้รับเพราะ ยอดซื้อถึง ${f.minSpend.toLocaleString()} บาท` : "ได้รับเพราะ เงื่อนไขเข้าเกณฑ์") : "🎯 พนักงานเลือกของแถมนี้"}
                                         {f.minQty > 0 ? ` และครบ ${f.minQty} ชิ้น` : ""}
                                     </p>
                                     {f.applicableSkus?.length > 0 && (

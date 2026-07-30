@@ -1,4 +1,4 @@
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 
 const CACHE_DURATION = 5 * 60 * 1000; 
 
@@ -17,7 +17,7 @@ export const sharedCategoryService = {
    */
   getAllCategories: async (db, collectionName = 'homepage_categories') => {
     try {
-      const q = query(collection(db, collectionName), orderBy('order', 'asc'));
+      const q = query(collection(db, collectionName), orderBy('order', 'asc'), limit(100));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({
         id: doc.id,
@@ -39,8 +39,8 @@ export const sharedCategoryService = {
         return cacheStore.activeCategories.data;
       }
 
-      const categoriesRef = collection(db, collectionName);
-      const snapshot = await getDocs(categoriesRef);
+      const q = query(collection(db, collectionName), limit(100));
+      const snapshot = await getDocs(q);
       
       const categories = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -59,7 +59,7 @@ export const sharedCategoryService = {
       return activeCategories;
     } catch (error) {
       console.error('Error fetching active categories in shared:', error);
-      return []; 
+      throw error; 
     }
   },
   

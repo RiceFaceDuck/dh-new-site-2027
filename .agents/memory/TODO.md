@@ -1,57 +1,60 @@
 # 📌 DH Notebook: Project Roadmap & Tasks
 
-กระดานนี้ใช้สำหรับติดตามงานและฟีเจอร์ที่จะพัฒนา เพื่อให้เห็นภาพรวมว่าตอนนี้กำลังทำอะไรอยู่ และมีอะไรที่ต้องทำถัดไป (Backlog)
+This board tracks ongoing tasks and future features, providing a high-level overview of the current sprint and the backlog.
 
-## 🏃 Sprint ปัจจุบัน / กำลังดำเนินการ (In Progress)
-- [x] ตกผลึกและบันทึกแนวคิดเบื้องต้นของระบบเคลมสินค้า (Claims & Warranty Concept) ลงใน `docs/claims_concept.md`
-- [x] สอบถามและพูดคุยแนวคิดการเคลม (เปลี่ยนรุ่นอื่น, ตรวจสอบ S/N, ระยะเวลารับประกัน) เพื่อเตรียมตัวเขียนโค้ดในเฟสถัดไป
-- [x] ดำเนินการยกระดับความเสถียร แก้ไข Auth Block และทำความสะอาดโค้ด Firebase (Stability Audit, Auth Bypass & Firebase Clean Code)
-- [x] **ดำเนินการ Audit และอัปเกรดประสบการณ์ผู้ใช้งานหน้าบ้าน (Frontend UX & Speed Audit)** — อัปเกรด SearchPage (Zero-Read 5000 limit), Checkout (Memory Cache), Category (Infinite Scroll) และ Image Optimization
-- [/] **[PAUSED] ทดสอบระบบซื้อขาย E2E (ม้าดำ)** — พักการทดสอบชั่วคราวที่จุดการหยิบสินค้าลงตะกร้า (รออัปเกรดความสามารถ Force Click และกลไกของบอทม้าดำ)
-## 📋 รายการเตรียมการพัฒนา (Backlog)
-*(ฟีเจอร์หรือบั๊กที่เตรียมข้อมูลความต้องการพร้อมแล้ว แต่ยังไม่กำหนดรอบพัฒนา)*
-- [ ] **ปรับปรุงโครงสร้างเลขที่บิล (Order ID Generator)** -> แก้ปัญหาระบบ Prefix `O1, O2, O3, O4` ที่อาจทำให้เลขท้าย 4 ตัวถูกรีเซ็ต (เช่น กลับไปเป็น 0001) โดยต้องปรับเปลี่ยนให้ 4 หลักสุดท้าย **รันเดินหน้าเสมอ** อย่างต่อเนื่องเพื่อความสมดุลและไม่ให้สับสน หาก Prefix เดิมไม่มีความจำเป็น อาจพิจารณาถอดออกเพื่อให้โครงสร้าง ID เรียบง่ายและรันเป็นลำดับเดียวกันทั้งหมด
-- [ ] จัดรอบทำความสะอาดโค้ด (ESLint Refactoring) -> เคลียร์ตัวแปรที่ไม่ได้ใช้ (no-unused-vars) และจัดระเบียบ React Hooks เพื่อลดคำเตือนสะสมในระบบ
-- [ ] ติดตั้งระบบ PWA (Service Worker) ให้กับ Backoffice/POS เพื่อรองรับการเข้าใช้งานแบบออฟไลน์เต็มรูปแบบ (ทนทานต่อการ Refresh)
+## 🏃 Current Sprint (In Progress)
+- [x] **POS Billing Smart Quick Add Customer** — Yellow button "+ เพิ่มลูกค้าใหม่" with 2-step Smart Quick Paste text parser, role selection, and web account point binding.
+- [x] Crystallize and document the Claims & Warranty Concept into `docs/claims_concept.md`
+- [x] Discuss claims concepts (product replacement, S/N validation, warranty period) to prepare for the next development phase
+- [x] Execute Stability Audit, fix Auth Block, and perform Firebase Clean Code (Stability Audit, Auth Bypass & Firebase Clean Code)
+- [x] **Execute Frontend UX & Speed Audit** — Upgrade SearchPage (Zero-Read 5000 limit), Checkout (Memory Cache), Category (Infinite Scroll), and Image Optimization
+- [/] **[PAUSED] E2E Black Horse Testing** — Paused testing at the "Add to Cart" step (Waiting to upgrade the bot's Force Click capabilities and mechanics)
 
-## 💡 แผนงานในอนาคต / คลังไอเดีย (Future Backlog & Ideas)
-*(แนวคิดที่พับเก็บไว้ชั่วคราว ยังไม่มีกำหนดทำเร็วๆ นี้ เอาไว้เรียกดูไอเดีย)*
-- [ ] ระบบส่ง SMS/LINE แจ้งเตือนลูกค้าเวลาส่งเคลมเสร็จ หรือโอนเงินเข้า Wallet สำเร็จ (Claims & Wallet Notifications)
-- [ ] ระบบ Dashboard สรุปบัญชีแยกประเภท (General Ledger Dashboard) สำหรับเงิน Wallet และเครดิตของระบบเพื่อใช้วิเคราะห์ทางการเงินเชิงลึก
-- [ ] พัฒนาระบบสำรองข้อมูลอัตโนมัติบน Cloud (Cloud Functions Automated Backup) ส่งไฟล์เข้า Google Drive
-- [ ] วางระบบจับ Error (Production Monitoring) -> ติดตั้งระบบติดตามบั๊กแบบ Real-time (Sentry/Crashlytics) เพื่อลดความเสี่ยงหน้าจอขาวและบั๊กเงียบ
-- [ ] พัฒนาระบบตรวจสอบทุจริตและแจ้งเตือนยอดบิลผิดปกติ (FRAUD ALERT) -> ตรวจสอบยอดเงินและราคาสินค้าที่ถูกดัดแปลง (พักไว้เนื่องจากระบบยังไม่พร้อมและทำงานผิดพลาด)
-- [ ] พัฒนาระบบ Dark Mode สำหรับหน้า Overview และระบบหลังบ้าน -> ปรับสีกราฟิกและพื้นหลังให้รองรับโหมดกลางคืนอย่างเต็มรูปแบบ (ตามคำขอพักโครงการชั่วคราว)
-- [ ] ระบบติดตามสถิติการใช้งานฝั่งหน้าบ้านแบบ 0 Cost (Frontend Analytics via GAS) -> แอบเก็บสถิติความเร็วการโหลดเว็บและจำนวนการใช้โควต้า (Reads/Writes) ของลูกค้าหน้าบ้าน แล้วส่งข้อมูลไปเซฟลง Google Sheets (ผ่าน Apps Script) เพื่อให้ระบบหลังบ้านดึงมาแสดงผลที่ Overview ได้ฟรี 100%
-- [ ] อัปเกรด Firebase เป็น Blaze Plan (Pay as you go) เพื่อเปิดใช้งาน Firebase Storage และรัน Deploy กฎความปลอดภัย (`storage.rules`) ที่ทำค้างไว้
-- [ ] การเปิดบิลการขายแบบมัดจำค่าสินค้า (Deposit Invoice) -> ระบบการนับ, ระบบการติดตาม (to-do) และอื่นๆ เพื่อรองรับธุรกรรม "มัดจำสินค้า"
-- [ ] ระบบออกใบกำกับภาษีเต็มรูปแบบ (Full Tax Invoice System) -> ระบบจัดการและอัปโหลดไฟล์ใบกำกับภาษีให้สอดคล้องกับเลขที่บิล เชื่อมโยง To-do task (issue_tax_invoice) และแสดงผลความคืบหน้าของเอกสารบนหน้าตารางประวัติบิลโดยอัตโนมัติ
-- [ ] ระบบสลับสต๊อกเคลม Supplier (Supplier Dispatch) -> เมื่อสะสมของเสียในลังหน้าร้านครบ ส่งเคลมคืน Supplier จะหักลดยอดของเสีย (`defectQuantity` ลดลง) และเมื่อ Supplier ส่งของดีกลับมาทดแทน ค่อยกดรับเข้าสต๊อกสินค้าดี (`stockQuantity` เพิ่มขึ้น)
-- [ ] ระบบแอปพลิเคชันพนักงาน (Staff Mobile App) -> ระบบและส่วนงานทั้งหมดที่ใช้งานบนแอพพนักงาน สำหรับการเช็กสต๊อกและแพ็คสินค้าฝั่งพนักงาน
-- [ ] ระบบลงเวลาเข้า-ออกงานพนักงาน (Attendance Clock In/Out) -> ระบบสแกนลงเวลาเข้าและเลิกงานผ่าน QR Code ของพนักงาน
-- [ ] ระบบเขียนและอนุมัติใบลาพนักงาน (Leave Request & Approval) -> ระบบเขียนขอลางานผ่านแอปพนักงานเพื่อส่งคำขอให้ผู้จัดการหลังบ้านอนุมัติ
-- [ ] ระบบเปิด/ปิดโฆษณาชั่วคราว (Toggle Ad Campaign) -> ระบบสลับสถานะเปิด/ปิดโฆษณาชั่วคราวโดยพาร์ทเนอร์ เพื่อหยุดแสดงผลและหยุดหักแต้มชั่วคราวโดยไม่ต้องลบโฆษณาทิ้ง
-- [ ] การระบุกลุ่มเป้าหมายโฆษณา (Ad Targeting Options) -> ระบบระบุกลุ่มเป้าหมายสำหรับการลงโฆษณา เช่น แสดงผลตามรัศมีระยะทางร้านซ่อม หรือเฉพาะหน้าสินค้าบางประเภทเพื่อประหยัดเครดิตโฆษณา
-- [ ] ระบบ LINE Notify -> สำหรับยิงส่งคำแจ้งเตือนเข้ามือถือลูกค้า B2B ทันทีเมื่อผู้จัดการอนุมัติปรับลดราคาส่งใหม่เรียบร้อยแล้ว
-- [ ] แสดงราคาทุน บนตาราง ตรวจสอบ คำร้องขอราคาส่ง -> แสดงราคาทุน (Cost) และเปอร์เซ็นต์อัตรากำไร (% Margin) ในการปรับราคาบนตาราง Wholesale Table ป้องกันปัญหาแอดมินเคาะราคาต่ำเกินทุนจนขาดทุน
-- [ ] การดึงข้อมูล Tier ลูกค้า ยอดซื้อสะสมมาแสดงบนการ์ดคำขอ -> แสดงเกรดพาร์ทเนอร์ (Tier) และยอดรวมคำสั่งซื้อสำเร็จสะสมของร้านค้าลูกค้าบนการ์ด B2B เพื่อช่วยให้ผู้จัดการประเมินระดับส่วนลดพิเศษได้อย่างแม่นยำ
-- [ ] อุดรอยรั่วความปลอดภัยขั้นสูง (Security Rules & CSP) -> วางระบบป้องกัน XSS, ฝัง Headers และเพิ่ม Validation ป้องกันการอัปโหลดไฟล์แปลกปลอม
-- [ ] ติดตั้งระบบแจ้งเตือนและเฝ้าระวัง (Monitoring & Analytics) -> ติดตั้ง Error Tracking (Sentry/Crashlytics) และแจ้งเตือนเมื่อโควต้า Database ใกล้เต็ม
-- [ ] จัดระเบียบโค้ดขั้นสุด (Auto-Refactor & SRP) -> แยก Logic ของ Firebase ออกจาก UI Components เข้าสู่ Service Layer ให้สมบูรณ์
-- [ ] เพิ่มความเร็วแสดงผล UX (Virtual Lists) -> ใช้เทคนิค Lazy Loading และ Virtual Lists สำหรับหน้าจอที่มีข้อมูลมหาศาล
-- [ ] Audit ระบบ Wallet เชิงลึกในทุกมิติ (UX, Performance, Security, Business Logic) -> วิเคราะห์ Business Logic ทั้งหมด ค้นหาช่องโหว่และ Edge Case ที่อาจทำให้ยอดเงินผิดพลาด
+## 📋 Backlog (Ready for Development)
+*(Features or bugs with prepared requirements but not yet scheduled for a sprint)*
+- [ ] **Email Ownership Verification Link (Future Backlog)** -> Send automated verification email *"ทางบริษัท DH Notebook ต้องการยืนยันว่านี่คือ Email ของคุณ"* with button `[นี่คือเมลของฉัน]` to confirm email ownership before linking points (Documented in `docs/company_workflow.md`).
+- [ ] **Refactor Order ID Generator** -> Fix the `O1, O2, O3, O4` prefix system that resets the last 4 digits (e.g., back to 0001). The last 4 digits MUST **increment continuously** to maintain balance and avoid confusion. If prefixes are unnecessary, consider removing them for a simpler, continuous ID structure.
+- [ ] Schedule Code Cleanup (ESLint Refactoring) -> Clear unused variables (no-unused-vars) and organize React Hooks to reduce system warnings.
+- [ ] Install PWA (Service Worker) for Backoffice/POS to fully support offline usage (Refresh resilient).
 
-## ✅ งานที่เสร็จสิ้นล่าสุด (Recently Completed)
-*(เมื่อพัฒนางานเสร็จแล้ว ให้ย้ายมาที่หมวดหมู่นี้ เพื่อบันทึกประวัติการทำงาน)*
-- [x] **การจัดระเบียบแยกแยะสมอง AI ออกจากเอกสารโครงการ (Prismatic Brain & Business Docs Separation)** — แยกเอกสารส่วนงานธุรกิจ `claims_concept.md` และ `concept_notes.md` ย้ายไปไว้ที่โฟลเดอร์ `docs/` ที่ root ของโปรเจกต์อย่างเด็ดขาด, ปรับปรุงพาธและตัวเชื่อมโยงใน `AGENTS.md`, `COGNITIVE_INDEX.md` และ `TODO.md` ให้เป็นมาตรฐานสากล
-- [x] **การยกระดับความเสถียร แก้ไข Auth Block และทำความสะอาดโค้ด Firebase (Stability Audit, Auth Bypass & Firebase Clean Code)** — แก้ไขปัญหา reCAPTCHA/App Check บน localhost ด้วย Debug Token ครอบคลุม 3 ระบบ และทำความสะอาดโค้ด Firebase เคลียร์ปัญหา resource leaks และอุดช่องโหว่ try/catch ในฟังก์ชันหลัก 6 ไฟล์ พร้อมอัปเดตสถานะ ISSUES.md ข้อ 5 และ 6 เป็น Resolved 🟢 Done
-- [x] **การตรวจสอบความเสถียรของระบบและแก้ไขบั๊ก squadConfig (System Stability Audit & Hotfix)** — ตรวจสอบโครงสร้างระบบเชิงลึก แก้ไขปัญหา Invalid document reference ของ squadConfig ทั้งหน้าบ้านและหลังบ้านโดยอิง getCollectionPath จาก dh-shared อัปเกรด Audit Checklist ครอบคลุม 85% และตั้งค่ากฎ AI Core Directives เรื่องความเร็วหน้าบ้านต้องมาก่อนการประหยัดโควต้าใน AGENTS.md
-- [x] **เฟส 5: วางรากฐานระบบจัดการหลังการขาย และอุดรอยรั่วข้อมูลระดับโครงสร้าง (After-Sales & Data Integrity Mastery)** — พัฒนาระบบ Claims & Warranty (เครื่องมือเช็คประกัน, คืนเงินเข้า Wallet), สร้างระบบซ่อมแซมข้อมูลเก่า (Data Repair System) และสคริปต์สำรองข้อมูลอัตโนมัติบน Local (Automated Backup)
-- [x] **Phase: ซ่อมแซมระบบแกนกลางและปรับปรุงแดชบอร์ด (Core System Repair & Dashboard Update)** — ตรวจสอบและแก้ไขช่องโหว่การตัดสต๊อก (Buffer Stock), แก้บั๊กระบบประวัติเครดิต/Wallet, ซ่อมแซม Dependencies ทั่วทั้งโปรเจกต์ (React 19, Vite 8) และจัดระเบียบหน้า Overview ใหม่
-- [x] **Phase: Staff Gateway & Privilege Manager** — ระบบรับสมัครพนักงานใหม่และอนุมัติสิทธิ์การจัดการหลังบ้าน (Staff Onboarding & Role Management) พร้อมบันทึกประวัติการทำงานและแก้ไขจุดแสดงผล UI
+## 💡 Future Backlog & Ideas
+*(Concepts temporarily shelved. No immediate plans, kept for reference)*
+- [ ] **Automated LINE Notify for Refund Slips** -> Send automated LINE messages to customers/admins when refund slip is uploaded and approved.
+- [ ] SMS/LINE Notifications for completed claims or successful Wallet top-ups.
+- [ ] General Ledger Dashboard summarizing Wallet and system credits for deep financial analysis.
+- [ ] Cloud Functions Automated Backup to Google Drive.
+- [ ] Production Monitoring (Sentry/Crashlytics) for real-time bug tracking.
+- [ ] Fraud Alert System for abnormal order totals and manipulated prices (Paused due to inaccuracies).
+- [ ] Dark Mode for Overview and Backoffice (Paused as per request).
+- [ ] Frontend Analytics via GAS (Zero-Cost) -> Stealthily track page load speeds and Quota usage (Reads/Writes), saving data to Google Sheets via Apps Script for the backoffice Overview.
+- [ ] Upgrade Firebase to Blaze Plan (Pay as you go) to enable Storage and deploy `storage.rules`.
+- [ ] Deposit Invoice System -> Tracking and accounting for deposits.
+- [ ] Full Tax Invoice System -> Manage and upload tax invoices matching Order IDs, linking to the `issue_tax_invoice` task.
+- [ ] Supplier Dispatch System (Claims) -> Deduct `defectQuantity` when sending broken items to Supplier, and increment `stockQuantity` when receiving replacements.
+- [ ] Staff Mobile App -> All operational flows for staff inventory checks and packing.
+- [ ] Attendance Clock In/Out -> QR code scanning for staff shifts.
+- [ ] Ad Targeting Options -> Target specific radii or product categories to save ad credits.
+- [ ] LINE Notify -> Instant B2B customer alerts when a manager approves a new wholesale price.
+- [ ] Display Cost Price on Wholesale Requests -> Show Cost and % Margin on the Wholesale Table to prevent admins from setting prices below cost.
+- [ ] Display Customer Tier & Total Spent on B2B Requests -> Show Tier and Total Successful Orders on B2B cards to help managers evaluate discount levels accurately.
+- [ ] Advanced Security Rules & CSP -> XSS prevention, secure Headers, and strict file upload validation.
+- [ ] Monitoring & Analytics -> Sentry/Crashlytics and Database Quota alerts.
+- [ ] Extreme Auto-Refactor & SRP -> Completely separate Firebase Logic from UI Components into the Service Layer.
+- [ ] UX Rendering Speed (Virtual Lists) -> Use Lazy Loading and Virtual Lists for massive data screens.
+- [ ] Deep Wallet Audit -> Analyze all Business Logic for vulnerabilities and edge cases that could cause balance discrepancies.
+
+## ✅ Recently Completed
+*(Move completed sprint tasks here to maintain history)*
+- [x] **Ad System Instant 0ms Toggle & Cross-Tab Dual-Sync** — Added 0ms Optimistic UI updates, removed blocking browser alerts, created mobile card-based responsive layout, implemented triple-collection atomic batch write in `marketingService.js`, and synchronized `businessCardAd` state in real-time across Store Profile and Ad Manager tabs.
+- [x] **Ad System Dual-Sync & Toggle Campaign Engine** — Real-time 2-collection sync for Views/Clicks, auto out-of-credit campaign suspension, and user UI Toggle switch for pausing/resuming ad campaigns.
+- [x] **Stability Audit, Auth Bypass & Firebase Clean Code** — Fixed localhost reCAPTCHA/App Check via Debug Token across all 3 systems. Cleaned Firebase resource leaks and patched try/catch blocks in 6 core files. Resolved ISSUES.md #5 and #6 🟢 Done.
+- [x] **System Stability Audit & squadConfig Hotfix** — Deep structural check. Fixed invalid document reference for squadConfig using `getCollectionPath`. Upgraded Audit Checklist to 85% coverage. Set AI Core Directives prioritizing frontend speed over quota in AGENTS.md.
+- [x] **Phase 5: After-Sales & Data Integrity Mastery** — Claims & Warranty system (warranty checker, wallet refunds), Data Repair System, and Local Automated Backup scripts.
+- [x] **Phase: Core System Repair & Dashboard Update** — Fixed Buffer Stock deduction bugs, Wallet/Credit history bugs, upgraded overall Dependencies (React 19, Vite 8), and reorganized the Overview page.
+- [x] **Phase: Staff Gateway & Privilege Manager** — Staff Onboarding & Role Management with activity logging and UI fixes.
 
 ---
-**หมายเหตุสำหรับ AI (Antigravity):**
-- อัปเดตสถานะของฟีเจอร์ต่างๆ ลงในไฟล์นี้เสมอเมื่อได้รับแผนงานจากผู้ใช้
-- เมื่อนำงานขึ้น Production ให้ย้ายงานนั้นลงมาที่หมวด "งานที่เสร็จสิ้นล่าสุด"
-- **Sandbox Mode UI**: สร้างปุ่มสลับโหมดจำลองสำหรับพนักงาน/ผู้จัดการบนหน้าเว็บ (UI Toggle) โดยไม่ต้องแก้ไฟล์ .env พร้อมแถบ Banner แจ้งเตือนสีเหลือง/แดงกันสับสน (พับเก็บไว้ก่อน ยังไม่มีกำหนดพัฒนา)
+**Notes for AI (Antigravity):**
+- Always update task statuses in this file when receiving new plans from the user.
+- Upon deploying to Production, move the completed tasks to the "Recently Completed" section.
+- **Sandbox Mode UI**: Create a UI toggle for staff/managers to switch sandbox modes without editing `.env`, including a clear yellow/red warning banner (Shelved for now).

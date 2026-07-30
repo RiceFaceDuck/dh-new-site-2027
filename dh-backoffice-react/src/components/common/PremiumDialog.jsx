@@ -11,6 +11,7 @@ export default function PremiumDialog({
   confirmText = 'ยืนยัน',
   cancelText = 'ยกเลิก',
   requireInput = false,
+  allowEmptyInput = false,
   inputPlaceholder = 'กรุณาระบุเหตุผล...'
 }) {
   const [inputValue, setInputValue] = useState('');
@@ -33,7 +34,7 @@ export default function PremiumDialog({
   };
 
   const handleConfirm = () => {
-    if (requireInput && !inputValue.trim()) {
+    if (requireInput && !allowEmptyInput && !inputValue.trim()) {
       alert('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }

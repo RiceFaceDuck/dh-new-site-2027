@@ -8,6 +8,31 @@ import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 /**
+ * ✨ Smart UID Resolver (รองรับ รหัสสั้น 8 ตัว, เบอร์โทร, customerCode)
+ */
+export const resolveSmartUid = async (inputUid) => {
+  const cleanInput = inputUid.trim();
+  let resolvedUid = cleanInput;
+  const usersColPath = getUsersPath();
+  const usersRefColl = collection(db, usersColPath);
+  
+  if (cleanInput.length < 20) {
+    let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
+    if (!snap.empty) return snap.docs[0].id;
+    
+    snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
+    if (!snap.empty) return snap.docs[0].id;
+    
+    snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
+    if (!snap.empty) return snap.docs[0].id;
+    
+    snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
+    if (!snap.empty) return snap.docs[0].id;
+  }
+  return resolvedUid;
+};
+
+/**
  * ✨ Atomic Dual-Sync Credit Adjustment (SECURED & FINANCIAL GRADE)
  * สำหรับการทำรายการภายใน Transaction เดียวกัน (เช่น เรียกจาก BillingService)
  * รับ uid แบบตรงๆ เท่านั้น (ไม่ทำการ Query หา UID ย่อ)
@@ -191,30 +216,7 @@ export const adjustUserCredit = async (inputUid, amount, type, note, actorUid, r
     if (!inputUid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
 
     // ✨ Smart UID Resolver (รองรับ รหัสสั้น 8 ตัว, เบอร์โทร, customerCode)
-    const cleanInput = inputUid.trim();
-    let resolvedUid = cleanInput;
-    const usersColPath = getUsersPath();
-    const usersRefColl = collection(db, usersColPath);
-    
-    // ถ้าไม่ใช่ UID เต็มยาวๆ ให้ลองค้นหาดูเผื่อเป็นรหัสย่อ
-    if (cleanInput.length < 20) {
-      let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
-      if (!snap.empty) resolvedUid = snap.docs[0].id;
-      else {
-        snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
-        if (!snap.empty) resolvedUid = snap.docs[0].id;
-        else {
-          snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
-          if (!snap.empty) resolvedUid = snap.docs[0].id;
-          else {
-            // ค้นหาแบบ StartsWith ของ Document ID 
-            snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
-            if (!snap.empty) resolvedUid = snap.docs[0].id;
-          }
-        }
-      }
-    }
-    const uid = resolvedUid;
+    const uid = await resolveSmartUid(inputUid);
 
     let transactionId = null;
     await runTransaction(db, async (transaction) => {
@@ -408,28 +410,7 @@ export const adjustUserWallet = async (inputUid, amount, type, note, actorUid, r
   try {
     if (!inputUid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
 
-    const cleanInput = inputUid.trim();
-    let resolvedUid = cleanInput;
-    const usersColPath = getUsersPath();
-    const usersRefColl = collection(db, usersColPath);
-    
-    if (cleanInput.length < 20) {
-      let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
-      if (!snap.empty) resolvedUid = snap.docs[0].id;
-      else {
-        snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
-        if (!snap.empty) resolvedUid = snap.docs[0].id;
-        else {
-          snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
-          if (!snap.empty) resolvedUid = snap.docs[0].id;
-          else {
-            snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
-            if (!snap.empty) resolvedUid = snap.docs[0].id;
-          }
-        }
-      }
-    }
-    const uid = resolvedUid;
+    const uid = await resolveSmartUid(inputUid);
 
     let transactionId = null;
     let newBalance = 0;

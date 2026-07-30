@@ -36,9 +36,10 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
   const sku = rawSku || null;
 
   useEffect(() => {
-    // เก็บ History Log ถ้าหาสินค้าไม่เจอ SKU (ตาม Request)
+    // เก็บ History Log และแจ้งเตือนผู้ใช้ถ้าหาสินค้าไม่เจอ SKU
     if (!sku) {
       console.warn(`[History Log] Missing SKU for product ID: ${realId} - Name: ${name}`);
+      setLocalError("ไม่พบรหัสสินค้า (SKU)");
       
       // ยิง API ไปยังระบบหลังบ้านเพื่อบันทึก log แบบถาวร
       import('../../firebase/config').then(({ db }) => {
@@ -129,9 +130,11 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
         <img loading="lazy" 
           src={imageUrl} 
           alt={name} 
+          width={112}
+          height={112}
           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
           onError={(e) => e.target.src='/logo.png'}
-         loading="lazy" />
+        />
         {/* Glow effect ข้างหลังรูปเวลา Error */}
         {displayError && <div className="absolute inset-0 bg-red-500/5 animate-pulse mix-blend-multiply rounded-xl"></div>}
       </div>
@@ -164,10 +167,10 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
               ฿{price.toLocaleString()}
             </div>
 
-            <div className="flex items-center gap-3 justify-end flex-1">
-              {/* แจ้งเตือนข้อผิดพลาดที่ตัวสินค้า (Premium Interaction) วางข้างซ้ายของปุ่มบวกลบ */}
+            <div className="flex items-center gap-3 justify-end flex-1 relative min-h-[40px]">
+              {/* แจ้งเตือนข้อผิดพลาดที่ตัวสินค้า (Premium Interaction) วางแบบ absolute เพื่อไม่ให้ดัน Layout */}
               {displayError && (
-                <div className={`flex items-center gap-1.5 animate-fade-in transition-transform duration-300 ${shake ? 'scale-110' : 'scale-100'}`}>
+                <div className={`absolute right-full mr-4 flex items-center gap-1.5 animate-fade-in transition-transform duration-300 ${shake ? 'scale-110' : 'scale-100'}`}>
                   <AlertTriangle size={14} className={`transition-colors duration-300 ${shake ? 'text-red-600' : 'text-red-500'}`} />
                   <span className={`text-[11px] sm:text-xs font-bold whitespace-nowrap transition-colors duration-300 ${shake ? 'text-red-700' : 'text-red-600'}`}>
                     {displayError}

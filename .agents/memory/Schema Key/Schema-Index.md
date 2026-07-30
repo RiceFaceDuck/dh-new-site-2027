@@ -1,31 +1,37 @@
 # Firebase Schema & Keys
 
-ยินดีต้อนรับสู่คู่มือโครงสร้างฐานข้อมูล (Database Schema) ของ DH Notebook ระบบได้ถูกแบ่งย่อยออกเป็น 3 ระดับตาม **ความสำคัญ (Tiers)** เพื่อลดความเสี่ยงในการแก้ไข และเพื่อให้ AI สามารถนำ TypeScript Interfaces ไปใช้งานได้ง่ายขึ้น
+Welcome to the DH Notebook Database Schema guide. The system is divided into 3 Tiers based on **Importance** to minimize modification risks and to make it easier for AI to utilize TypeScript Interfaces.
 
-## การแบ่งระดับ Tiers
-กรุณาเลือกอ่านหรืออ้างอิงไฟล์ตามระดับของข้อมูลที่ต้องการทำงานด้วย:
+## Schema Tagging System
+Each schema table is labeled with a behavioral tag to dictate execution rules:
+* `[ATOMIC-REQUIRED]`: Modifying this collection MUST be done inside `runTransaction` or `writeBatch`.
+* `[READ-HEAVY]`: This collection is read frequently. MUST use aggressive caching (React Query / IndexedDB) or pagination.
+* `[APPEND-ONLY]`: Data here is for logging. DO NOT update or delete existing documents.
 
-### 🔴 [Tier 1: Critical Schemas (ระดับร้ายแรงสูงสุด)](./Schema-Tier1-Critical.md)
-**กลุ่มข้อมูล:** ระบบการเงิน, ธุรกรรม, และความปลอดภัย
-* `orders` (บิลทั้งหมด, รายได้, ส่วนลด)
-* `credit_transactions` (กระเป๋าเงิน, ประวัติการใช้เครดิต)
-* `counters` (ลำดับเลขที่ใบเสร็จ)
-* `users` (ข้อมูลผู้ใช้งาน, การกำหนดสิทธิ์)
+## Tier Classification
+Please refer to the files based on the data level you need to work with:
 
-### 🟡 [Tier 2: Operational Schemas (ระดับสำคัญต่อการทำงาน)](./Schema-Tier2-Operational.md)
-**กลุ่มข้อมูล:** ระบบจัดการหลังบ้าน, คลังสินค้า, และการอนุมัติ
-* `products` (ข้อมูลสินค้า, สต็อก)
-* `todos` (ระบบ Request/Approval ของ Manager)
-* `partners` (ข้อมูลช่าง, บริการ, พิกัดร้าน)
-* `history_logs` / `system_logs` (ระบบ Audit Trail)
+### 🔴 [Tier 1: Critical Schemas (Highest Risk)](./Schema-Tier1-Critical.md)
+**Data Group:** Finance, Transactions, and Security
+* `orders` `[ATOMIC-REQUIRED]` (All bills, revenues, discounts)
+* `credit_transactions` `[ATOMIC-REQUIRED]` `[APPEND-ONLY]` (Wallet, credit usage history)
+* `counters` `[ATOMIC-REQUIRED]` (Receipt sequence numbers)
+* `users` `[ATOMIC-REQUIRED]` (User profiles, permission assignments)
 
-### 🟢 [Tier 3: Configuration & UI Schemas (ระดับตั้งค่าและการแสดงผล)](./Schema-Tier3-Config.md)
-**กลุ่มข้อมูล:** ระบบการตลาด, UI Storefront, และ Settings ต่างๆ
-* `promotions` & `freebies` (ส่วนลด, ของแถม)
-* `homepage_categories` (หมวดหมู่หน้าแรก)
-* `settings/*` (ตั้งค่า UI, Footer, Cookie, ฯลฯ)
+### 🟡 [Tier 2: Operational Schemas (Important for Operations)](./Schema-Tier2-Operational.md)
+**Data Group:** Backoffice management, Inventory, and Approvals
+* `products` `[ATOMIC-REQUIRED]` (Product data, stock)
+* `todos` (Manager Request/Approval system)
+* `partners` (Technicians, services, store coordinates)
+* `history_logs` / `system_logs` `[APPEND-ONLY]` (Audit Trail system)
+
+### 🟢 [Tier 3: Configuration & UI Schemas (Settings & Display)](./Schema-Tier3-Config.md)
+**Data Group:** Marketing, Storefront UI, and Settings
+* `promotions` & `freebies` `[READ-HEAVY]` (Discounts, free items)
+* `homepage_categories` `[READ-HEAVY]` (Homepage categories)
+* `settings/*` `[READ-HEAVY]` (UI settings, Footer, Cookies, etc.)
 
 ---
 
 > [!TIP]
-> แต่ละไฟล์จะมี **TypeScript Interfaces** แนบไว้ใต้ตาราง Schema หากคุณเป็น Developer หรือ AI ที่ต้องเขียนโค้ด React สามารถคัดลอก Type เหล่านี้ไปใช้งานได้ทันทีเพื่อป้องกันข้อผิดพลาดจาก Typo
+> Each file includes **TypeScript Interfaces** attached below the Schema tables. If you are a Developer or AI writing React code, you can copy these Types directly to prevent Typo errors.

@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs, query, limit, startAfter, orderBy, wh
 import { db } from '../config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'products';
+const COLLECTION_NAME = getCollectionPath('products');
 
 export const inventoryQueryService = {
   getInventorySettings: async () => {

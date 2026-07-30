@@ -82,7 +82,7 @@ export default function ReceiptTemplate({
                 sku: f.itemName, 
                 name: `[แถมฟรี] ${f.productName || f.itemName}`, 
                 qty: Math.min(Number(f.qty) || 1, Number(f.maxPerBill) || Number(f.qty) || 1), 
-                price: 0, discount: 0, total: 0, isFreebie: true, note: `${f.title}${reasonStr}`, noteColor: 'rose'
+                price: 0, discount: 0, total: 0, isFreebie: true, note: f.title, conditions: conditionText, noteColor: 'rose'
             };
         });
         finalItems = [...finalItems, ...previewFreebies];

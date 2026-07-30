@@ -46,30 +46,26 @@ export const featuredQueryService = {
       const randomSeed = Math.random();
       const fetchPoolSize = limitCount * 3; // Fetch extra to filter out inactive ones in memory
 
-      // Query using ONLY randomSeed to avoid Firebase composite index requirement
-      let q1 = query(
+      // 🚀 Latency & UX Optimization: Execute q1 and q2 queries in parallel via Promise.all
+      const q1 = query(
         productsRef,
         where('randomSeed', '>=', randomSeed),
         orderBy('randomSeed'),
         limit(fetchPoolSize)
       );
 
-      let snapshot = await getDocs(q1);
-      let products = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      const q2 = query(
+        productsRef,
+        where('randomSeed', '<', randomSeed),
+        orderBy('randomSeed'),
+        limit(fetchPoolSize)
+      );
 
-      // If we didn't get enough products, fetch from the beginning (<= randomSeed)
-      if (products.length < fetchPoolSize) {
-        const remainingCount = fetchPoolSize - products.length;
-        let q2 = query(
-          productsRef,
-          where('randomSeed', '<', randomSeed),
-          orderBy('randomSeed'),
-          limit(remainingCount)
-        );
-        const snapshot2 = await getDocs(q2);
-        const products2 = snapshot2.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        products = [...products, ...products2];
-      }
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      const products1 = snap1.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      const products2 = snap2.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+
+      let products = [...products1, ...products2];
 
       // Filter active products in memory and slice to the requested limit
       const activeProducts = products.filter(p => p.isActive !== false);

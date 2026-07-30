@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => ({
     port: 8988,
     strictPort: true
   },
+  resolve: {
+    dedupe: ['firebase', 'firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage', 'firebase/app-check', 'firebase/analytics']
+  },
   plugins: [
     tailwindcss(), 
     react(), 

@@ -5,10 +5,10 @@ description: Use this skill when deploying to production, running deployment scr
 
 # Production Auto-Deployment Rule
 
-เมื่อมีการแก้ไขปัญหาบน **ระบบจริง (Production)** หรือปัญหาที่ไม่ได้เกิดจาก Localhost เอเจนต์จะต้อง **ตั้งคำถามแบบช้อยส์ตัวเลือก (Choices)** ผ่านเครื่องมือ `ask_question` เสมอ เพื่อถามความสมัครใจของผู้ใช้ว่าต้องการให้เอเจนต์รันคำสั่ง Deploy ขึ้นระบบจริงทันทีหรือไม่ หากผู้ใช้อยู่อนุญาต ค่อยรันคำสั่ง `Deploy-All.bat` หรือคำสั่ง Deploy ที่เกี่ยวข้อง
-- ห้ามรัน Deploy เองโดยพลการเด็ดขาด ต้องรอให้ผู้ใช้เลือกอนุญาตผ่าน Modal ช้อยส์ก่อนเสมอ
+When resolving issues on the **Live System (Production)** or issues not originating from Localhost, the agent MUST ALWAYS ask a **Multiple-Choice Question (Choices)** using the `ask_question` tool to verify the user's consent before running any deployment command to Production. Only run `Deploy-All.bat` or related deploy commands IF the user explicitly permits it.
+- NEVER run deployments arbitrarily. You must always wait for the user's choice via the modal first.
 
-## Choice Options Format (การจัดรูปแบบช้อยส์ตัวเลือก)
-เมื่อตั้งคำถามแบบช้อยส์ (Choices) เพื่อให้ผู้ใช้ตัดสินใจเลือกแผนงานหรือการพัฒนา ให้เขียนช้อยส์ในรูปแบบ: 
-`[ชื่อแผน] | Severity: <อิโมจิสี> Priority: <อิโมจิสี> | <จำนวนไฟล์โดยประมาณ> files | ผลลัพธ์: <ผลลัพธ์แบบสั้นกระชับมากๆ>` เสมอ 
-และอธิบายตัวเลือกแบบย่อมากๆ สั้นตรงประเด็นที่สุด
+## Choice Options Format
+When asking a multiple-choice question for planning or development, the options MUST strictly follow this format: 
+`[{Plan Name}] | Priority: <Color Emoji> | Severity: <Color Emoji> | ~{Approximate File Count} files | ผลลัพธ์: {Extremely concise and direct result in Thai}`
+Keep the option descriptions extremely short and straight to the point.

@@ -122,6 +122,7 @@ const QuickAccessTools = ({
       case 'shipping': return () => navigate('/managers/shipping');
       case 'inventory_adjustment': return () => navigate('/managers/inventory-adjustment');
       case 'core_settings': return () => navigate('/managers/core-settings');
+      case 'role_tier': return () => navigate('/managers/role-tier');
       // เมนูย่อยจากนโยบายกลาง (จะเปิด Global Settings Panel โดยระบุ Tab)
       case 'buffer': return () => navigate('/managers/buffer');
       case 'category': return () => navigate('/managers/category');

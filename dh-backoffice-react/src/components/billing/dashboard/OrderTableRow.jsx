@@ -1,7 +1,8 @@
+import React from 'react';
 import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store, User } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
-export default function OrderTableRow({ order, setSelectedOrder }) {
+const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrder }) {
     const statLower = (order.orderStatus || order.status || '').toLowerCase();
     const payStatLower = (order.paymentStatus || '').toLowerCase();
     const isPaid = payStatLower === 'paid' || statLower === 'paid';
@@ -21,22 +22,42 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
     const shippingName = order.shippingMethod || order.courier || 'จัดส่งเอกชน';
     const isCancelled = statLower === 'cancelled' || statLower === 'void';
 
-    // Calculate after-sales service quantities
-    const claimQty = order.refundsAndClaims
-        ? order.refundsAndClaims.filter(rc => rc.type === 'Claim').reduce((sum, rc) => sum + (rc.qty || 0), 0)
-        : 0;
+    // Calculate after-sales service quantities from order.refundsAndClaims, order.claims, order.returns, order.afterSales
+    const allRC = [
+        ...(Array.isArray(order.refundsAndClaims) ? order.refundsAndClaims : []),
+        ...(Array.isArray(order.claims) ? order.claims : []),
+        ...(Array.isArray(order.returns) ? order.returns : []),
+        ...(Array.isArray(order.afterSales) ? order.afterSales : [])
+    ];
 
-    const exchangeQty = order.refundsAndClaims
-        ? order.refundsAndClaims.filter(rc => rc.type === 'Exchange').reduce((sum, rc) => sum + (rc.qty || 0), 0)
-        : 0;
+    const claimQty = allRC
+        .filter(rc => {
+            const type = (rc.type || rc.actionType || '').toLowerCase();
+            return type.includes('claim') || type === 'repair';
+        })
+        .reduce((sum, rc) => sum + Number(rc.qty || rc.quantity || 1), 0);
 
-    const returnQty = order.refundsAndClaims
-        ? order.refundsAndClaims.filter(rc => rc.type === 'Return').reduce((sum, rc) => sum + (rc.qty || 0), 0)
-        : 0;
+    const exchangeQty = allRC
+        .filter(rc => {
+            const type = (rc.type || rc.actionType || '').toLowerCase();
+            return type.includes('exchange') || type.includes('swap');
+        })
+        .reduce((sum, rc) => sum + Number(rc.qty || rc.quantity || 1), 0);
 
-    // Check tax invoice status (prepared for future)
-    const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus);
-    const taxStatus = order.taxInvoiceStatus || (hasTaxInvoice ? 'pending' : null);
+    const returnQty = allRC
+        .filter(rc => {
+            const type = (rc.type || rc.actionType || '').toLowerCase();
+            return type.includes('return') || type.includes('refund');
+        })
+        .reduce((sum, rc) => sum + Number(rc.qty || rc.quantity || 1), 0);
+
+    // Pending service checks from order or active To-dos
+    const hasPendingClaim = !!(order.hasPendingClaim || order.pendingClaimCount > 0 || order.pendingClaim);
+    const hasPendingReturn = !!(order.hasPendingReturn || order.pendingReturnCount > 0 || order.pendingReturn);
+
+    // Check tax invoice status
+    const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus || order.taxInvoiceUrl || order.taxData || order.hasPendingTax);
+    const taxStatus = order.taxInvoiceStatus || (order.taxInvoiceUrl ? 'issued' : (hasTaxInvoice ? 'pending' : null));
 
     return (
         <>
@@ -94,8 +115,8 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
                     <div className="p-1 bg-slate-500/10 rounded-sm overflow-hidden shadow-inner flex items-center justify-center shrink-0">
                         <User size={12} className="text-slate-500"/>
                     </div>
-                    <span className="truncate max-w-[110px]" title={order.creatorName || order.actorName || 'พนักงาน'}>
-                        {order.creatorName || order.actorName || 'พนักงาน'}
+                    <span className="truncate max-w-[110px]" title={order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}>
+                        {order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}
                     </span>
                 </div>
             </td>
@@ -122,8 +143,13 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
             <td className="py-2.5 px-4 align-middle">
                 <div className="flex flex-wrap gap-1 justify-start items-center">
                     {claimQty > 0 && (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-600 text-[10px] font-black border border-orange-500/20 shadow-xs transition-transform hover:scale-105" title={`เคลมสินค้าจำนวน ${claimQty} ชิ้น`}>
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-600 text-[10px] font-black border border-orange-500/20 shadow-xs transition-transform hover:scale-105" title={`เคลมสินค้าสำเร็จจำนวน ${claimQty} ชิ้น`}>
                             เคลม {claimQty}
+                        </span>
+                    )}
+                    {hasPendingClaim && claimQty === 0 && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 text-[10px] font-black border border-orange-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="มีรายการขอเคลมสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
+                            เคลม (รอ)
                         </span>
                     )}
                     {exchangeQty > 0 && (
@@ -132,8 +158,13 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
                         </span>
                     )}
                     {returnQty > 0 && (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-600 text-[10px] font-black border border-purple-500/20 shadow-xs transition-transform hover:scale-105" title={`คืนสินค้าจำนวน ${returnQty} ชิ้น`}>
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-600 text-[10px] font-black border border-purple-500/20 shadow-xs transition-transform hover:scale-105" title={`คืนสินค้าสำเร็จจำนวน ${returnQty} ชิ้น`}>
                             คืน {returnQty}
+                        </span>
+                    )}
+                    {hasPendingReturn && returnQty === 0 && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-500 text-[10px] font-black border border-purple-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="มีรายการขอคืนสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
+                            คืน (รอ)
                         </span>
                     )}
                     {taxStatus === 'issued' && (
@@ -146,7 +177,7 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
                             ภาษี (รอ)
                         </span>
                     )}
-                    {claimQty === 0 && exchangeQty === 0 && returnQty === 0 && !taxStatus && (
+                    {claimQty === 0 && !hasPendingClaim && exchangeQty === 0 && returnQty === 0 && !hasPendingReturn && !taxStatus && (
                         <span className="text-[11px] text-(--dh-text-muted)">-</span>
                     )}
                 </div>
@@ -167,4 +198,6 @@ export default function OrderTableRow({ order, setSelectedOrder }) {
             </td>
         </>
     );
-}
+});
+
+export default OrderTableRow;

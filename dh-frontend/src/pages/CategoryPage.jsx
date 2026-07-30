@@ -79,6 +79,7 @@ const CategoryPage = () => {
   }, [loading, loadingMore, hasMore, loadProducts]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchInitialData = async () => {
       if (!type) return;
       
@@ -91,6 +92,8 @@ const CategoryPage = () => {
         
         // 1. Fetch category info for UI
         const activeCategories = await categoryService.getActiveCategories();
+        if (!isMounted) return;
+        
         const currentCat = activeCategories.find(c => c.type === type);
         setCategoryInfo(currentCat || null);
 
@@ -98,14 +101,15 @@ const CategoryPage = () => {
         await loadProducts(true);
       } catch (err) {
         console.error("Error fetching category data:", err);
-        setError(err.message);
+        if (isMounted) setError(err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchInitialData();
-    }, [type]);
+    return () => { isMounted = false; };
+  }, [type, loadProducts]);
 
 
 

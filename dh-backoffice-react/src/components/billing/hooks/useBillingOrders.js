@@ -1,15 +1,52 @@
 import { useState, useEffect } from 'react';
 import { billingService } from '../../../firebase/billingService';
+import { getStaffNickname } from 'dh-shared/src/utils/staffUtils';
 
 export default function useBillingOrders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('All'); 
-    const [searchQuery, setSearchQuery] = useState('');
-    const [limitAmount, setLimitAmount] = useState(25); 
+    const initialSearch = new URLSearchParams(window.location.search).get('search') || '';
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
+    const [limitAmount, setLimitAmount] = useState(21); 
     const [isSearching, setIsSearching] = useState(false);
     const [recentOrders, setRecentOrders] = useState([]);
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
+    const [serviceMap, setServiceMap] = useState({});
+    const [staffMap, setStaffMap] = useState({});
+
+    // Load staff map for nickname resolution
+    useEffect(() => {
+        let isMounted = true;
+        import('../../../firebase/userStaffService').then(({ getAllStaff }) => {
+            getAllStaff().then((staffList) => {
+                if (!isMounted || !Array.isArray(staffList)) return;
+                const map = {};
+                staffList.forEach(s => {
+                    if (s.id || s.uid) {
+                        map[s.id || s.uid] = s;
+                    }
+                });
+                setStaffMap(map);
+            }).catch(err => {
+                console.error("Error loading staff data:", err);
+            });
+        }).catch(err => {
+            console.error("Error dynamically importing userStaffService:", err);
+        });
+
+        return () => { isMounted = false; };
+    }, []);
+
+    // Subscribe to active service todos
+    useEffect(() => {
+        if (typeof billingService.subscribeActiveServiceTodos === 'function') {
+            const unsubscribeTodos = billingService.subscribeActiveServiceTodos((map) => {
+                setServiceMap(map);
+            });
+            return () => unsubscribeTodos();
+        }
+    }, []);
 
     // Subscribe to recent orders
     useEffect(() => {
@@ -21,34 +58,56 @@ export default function useBillingOrders() {
         return () => unsubscribe();
     }, [limitAmount, dateRange]);
 
-    // Handle normal view
+    // Enrich order with active service tasks and resolved staff nickname
+    const enrichOrder = (order) => {
+        const key = order.orderId || order.id;
+        const svc = serviceMap[key] || serviceMap[order.id] || serviceMap[order.orderId] || {};
+        const staffNickname = getStaffNickname(order, staffMap);
+        return {
+            ...order,
+            staffNickname,
+            hasPendingClaim: order.hasPendingClaim || svc.hasPendingClaim || false,
+            hasPendingReturn: order.hasPendingReturn || svc.hasPendingReturn || false,
+            hasPendingTax: order.hasPendingTax || svc.hasPendingTax || false
+        };
+    };
+
+    // Handle normal view when searchQuery is empty
     useEffect(() => {
-        if (!isSearching && (!searchQuery || searchQuery.length < 3)) {
+        if (!isSearching && (!searchQuery || searchQuery.trim().length < 2)) {
             setOrders(recentOrders);
         }
     }, [recentOrders, isSearching, searchQuery]);
 
-    // Search logic with debounce
+    // Search logic triggered on searchQuery update (Enter / submit)
     useEffect(() => {
-        if (!searchQuery || searchQuery.length < 3) {
+        const trimmedQuery = (searchQuery || '').trim();
+        if (!trimmedQuery || trimmedQuery.length < 2) {
             setIsSearching(false);
             setOrders(recentOrders); 
             return;
         }
 
-        const delayDebounceFn = setTimeout(async () => {
+        let isCancelled = false;
+        const fetchSearchResults = async () => {
             setIsSearching(true);
-            const searchResults = await billingService.searchOrders(searchQuery);
-            if (searchResults) setOrders(searchResults);
-            else setOrders(recentOrders); 
-            setIsSearching(false);
-        }, 500);
+            const searchResults = await billingService.searchOrders(trimmedQuery);
+            if (!isCancelled) {
+                if (searchResults) setOrders(searchResults);
+                else setOrders(recentOrders); 
+                setIsSearching(false);
+            }
+        };
 
-        return () => clearTimeout(delayDebounceFn);
+        fetchSearchResults();
+
+        return () => { isCancelled = true; };
     }, [searchQuery, recentOrders]);
 
+    const enrichedOrders = orders.map(enrichOrder);
+
     // Derived filtered orders
-    const filteredOrders = orders.filter(o => {
+    const filteredOrders = enrichedOrders.filter(o => {
         const stat = (o.orderStatus || o.status || '').toLowerCase();
         const payStat = (o.paymentStatus || '').toLowerCase();
 
@@ -66,9 +125,25 @@ export default function useBillingOrders() {
                               String(o.orderId || '').toLowerCase().includes(searchTarget) || 
                               String(o.customer?.accountName || '').toLowerCase().includes(searchTarget) ||
                               String(o.customer?.firstName || '').toLowerCase().includes(searchTarget) ||
+                              String(o.customer?.lastName || '').toLowerCase().includes(searchTarget) ||
                               String(o.customer?.phone || '').includes(searchTarget) ||
+                              String(o.customerInfo?.fullName || '').toLowerCase().includes(searchTarget) ||
+                              String(o.customerInfo?.phone || '').includes(searchTarget) ||
                               String(o.walkInName || '').toLowerCase().includes(searchTarget) ||
-                              String(o.walkInPhone || '').includes(searchTarget);
+                              String(o.walkInPhone || '').includes(searchTarget) ||
+                              String(o.staffNickname || '').toLowerCase().includes(searchTarget) ||
+                              String(o.createdBy || '').toLowerCase().includes(searchTarget) ||
+                              String(o.trackingNumber || o.trackingNo || o.shippingTracking || '').toLowerCase().includes(searchTarget) ||
+                              String(o.taxInvoiceInfo?.taxId || o.taxId || o.companyTaxId || '').toLowerCase().includes(searchTarget) ||
+                              String(o.taxInvoiceInfo?.companyName || '').toLowerCase().includes(searchTarget) ||
+                              String(o.notes || o.remark || o.memo || '').toLowerCase().includes(searchTarget) ||
+                              String(o.paymentMethod || o.paymentType || '').toLowerCase().includes(searchTarget) ||
+                              (Array.isArray(o.items) && o.items.some(item => 
+                                  String(item.sku || item.productCode || item.code || '').toLowerCase().includes(searchTarget) ||
+                                  String(item.name || item.productName || item.title || '').toLowerCase().includes(searchTarget) ||
+                                  String(item.model || item.brand || '').toLowerCase().includes(searchTarget) ||
+                                  String(item.sn || item.serialNumber || '').toLowerCase().includes(searchTarget)
+                              ));
         
         let matchesDate = true;
         if (dateRange.start || dateRange.end) {
@@ -101,7 +176,7 @@ export default function useBillingOrders() {
     });
 
     return {
-        orders,
+        orders: enrichedOrders,
         filteredOrders,
         loading,
         isSearching,
@@ -115,3 +190,4 @@ export default function useBillingOrders() {
         setDateRange
     };
 }
+

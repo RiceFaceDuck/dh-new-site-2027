@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { todoService } from '../../firebase/todoService';
 import { creditCoreService } from '../../firebase/creditCoreService';
 import { billingQueryService } from '../../firebase/billingQueryService';
+import PremiumDialog from '../common/PremiumDialog';
+import toast from 'react-hot-toast';
 
 const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -9,6 +11,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [orderData, setOrderData] = useState(null);
+  const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -44,25 +47,45 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   };
 
   const handleReject = async () => {
-    const rejectReason = window.prompt('ระบุเหตุผลที่ปฏิเสธสลิปนี้ (เพื่อให้ลูกค้าทราบและแก้ไข):');
-    if (rejectReason === null) return; // User cancelled prompt
-    if (rejectReason.trim() === '') {
-      alert('กรุณาระบุเหตุผลการปฏิเสธอย่างชัดเจน เพื่อแจ้งให้ลูกค้าทราบ');
-      return;
-    }
+    setDialogConfig({
+      isOpen: true,
+      title: '⚠️ ปฏิเสธสลิป',
+      message: 'ระบุเหตุผลที่ปฏิเสธสลิปนี้ (เพื่อให้ลูกค้าทราบและแก้ไข):',
+      type: 'warning',
+      requireInput: true,
+      allowEmptyInput: false,
+      inputPlaceholder: 'ระบุเหตุผล...',
+      onConfirm: async (rejectReason) => {
+        if (typeof rejectReason !== 'string' || rejectReason.trim() === '') {
+           toast.error('กรุณาระบุเหตุผลการปฏิเสธอย่างชัดเจน เพื่อแจ้งให้ลูกค้าทราบ');
+           return;
+        }
 
-    if (!window.confirm(`ยืนยันการปฏิเสธสลิปด้วยเหตุผล:\n"${rejectReason}"\n\nออเดอร์จะถูกตีกลับไปให้ลูกค้าแก้ไขและอัปโหลดหลักฐานใหม่`)) return;
-    
-    setIsSubmitting(true);
-    setErrorMsg('');
-    try {
-      await todoService.rejectPaymentSlip(task, rejectReason, currentUser);
-      if (onSuccess) onSuccess();
-    } catch(err) {
-      console.error("Reject Error", err);
-      setErrorMsg('เกิดข้อผิดพลาดในการปฏิเสธสลิป');
-      setIsSubmitting(false);
-    }
+        // Show second confirmation dialog
+        setDialogConfig({
+          isOpen: true,
+          title: 'ยืนยันการปฏิเสธสลิป',
+          message: `ยืนยันการปฏิเสธสลิปด้วยเหตุผล:\n"${rejectReason}"\n\nออเดอร์จะถูกตีกลับไปให้ลูกค้าแก้ไขและอัปโหลดหลักฐานใหม่`,
+          type: 'warning',
+          requireInput: false,
+          onConfirm: async () => {
+             setDialogConfig(prev => ({ ...prev, isOpen: false }));
+             setIsSubmitting(true);
+             setErrorMsg('');
+             try {
+               await todoService.rejectPaymentSlip(task, rejectReason, currentUser);
+               if (onSuccess) onSuccess();
+             } catch(err) {
+               console.error("Reject Error", err);
+               setErrorMsg('เกิดข้อผิดพลาดในการปฏิเสธสลิป');
+               setIsSubmitting(false);
+             }
+          },
+          onCancel: () => setDialogConfig(prev => ({ ...prev, isOpen: false }))
+        });
+      },
+      onCancel: () => setDialogConfig(prev => ({ ...prev, isOpen: false }))
+    });
   };
 
   const displayAmount = task.amount > 0 ? task.amount : (orderData?.totals?.grandTotal ?? orderData?.totals?.netTotal ?? 0);
@@ -70,18 +93,18 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const getUrgencyStyles = (level) => {
     switch (level) {
       case 'high': 
-        return 'border-l-4 border-l-red-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-red-400 bg-red-50/30';
+        return 'bg-gradient-to-br from-rose-50/70 via-white to-pink-50/40 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-300 hover:-translate-y-0.5';
       case 'medium': 
-        return 'border-l-4 border-l-orange-500 border-t-gray-200 border-r-gray-200 border-b-gray-200 hover:border-orange-400 bg-orange-50/30';
+        return 'bg-gradient-to-br from-amber-50/70 via-white to-orange-50/40 border border-amber-200/80 shadow-sm hover:shadow-md hover:border-amber-300 hover:-translate-y-0.5';
       default: 
-        return 'border-2 border-gray-200 hover:border-slate-400 bg-white';
+        return 'bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/40 border border-blue-200/80 shadow-sm hover:shadow-md hover:border-blue-300 hover:-translate-y-0.5';
     }
   };
 
   return (
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
-      className={`rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] transition-all overflow-hidden relative mb-4 cursor-pointer transform hover:-translate-y-0.5 ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
+      className={`rounded-2xl transition-all duration-200 overflow-hidden relative cursor-pointer flex flex-col h-full ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
     >
       
       {isSubmitting && (
@@ -250,6 +273,8 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
           </div>
         </div>
       )}
+      
+      <PremiumDialog {...dialogConfig} />
     </div>
   );
 };

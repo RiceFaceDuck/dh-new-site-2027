@@ -35,7 +35,7 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
          <PosSystem 
            products={products} 
            customers={customers}
-           onSwitchView={() => setViewMode('dashboard')} 
+           onSwitchView={() => { setDraftOrder(null); setViewMode('dashboard'); }} 
            initialDraft={draftOrder} 
            resumeTabId={resumeTabId}
          />

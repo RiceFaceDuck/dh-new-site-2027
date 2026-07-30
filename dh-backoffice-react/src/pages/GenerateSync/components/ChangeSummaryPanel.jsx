@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, RefreshCw, Info, Save, FileText, Loader2, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { TrendingUp, TrendingDown, DollarSign, RefreshCw, Info, Save, FileText, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
 import { syncSnapshotService } from '../../../firebase/bigseller/syncSnapshotService';
 import { useAuth } from '../../../contexts/AuthContext';
 
 export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualReset, onSnapshotSaved, isCalculating }) {
   const [viewMode, setViewMode] = useState('live'); // 'live' or 'saved'
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   
   const [isSaving, setIsSaving] = useState(false);
   const [savedTxId, setSavedTxId] = useState(null);
@@ -113,7 +115,14 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
           <div className="flex items-center gap-2">
             <TrendingUp size={16} /> สต็อกเพิ่มขึ้น
           </div>
-          <span className="bg-emerald-200/50 px-2 py-0.5 rounded-full text-xs">{increased.length} รายการ</span>
+          <button
+            onClick={() => navigate('/generate/details?type=increased')}
+            className="bg-emerald-200/70 hover:bg-emerald-300 text-emerald-950 px-2.5 py-0.5 rounded-full text-xs font-black transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs flex items-center gap-1"
+            title="คลิกเพื่อดูรายละเอียดตารางสต็อกเพิ่มขึ้น"
+          >
+            <span>{increased.length} รายการ</span>
+            <ExternalLink size={10} />
+          </button>
         </div>
         <div className="max-h-40 overflow-y-auto p-2">
           {increased.length === 0 ? (
@@ -138,7 +147,14 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
           <div className="flex items-center gap-2">
             <TrendingDown size={16} /> สต็อกลดลง
           </div>
-          <span className="bg-blue-200/50 px-2 py-0.5 rounded-full text-xs">{decreased.length} รายการ</span>
+          <button
+            onClick={() => navigate('/generate/details?type=decreased')}
+            className="bg-blue-200/80 hover:bg-blue-300 text-blue-950 px-2.5 py-0.5 rounded-full text-xs font-black transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs flex items-center gap-1"
+            title="คลิกเพื่อดูรายละเอียดตารางสต็อกลดลง"
+          >
+            <span>{decreased.length} รายการ</span>
+            <ExternalLink size={10} />
+          </button>
         </div>
         <div className="max-h-40 overflow-y-auto p-2">
           {decreased.length === 0 ? (
@@ -165,7 +181,14 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
           <div className="flex items-center gap-2">
             <DollarSign size={16} /> ราคาเปลี่ยนแปลง
           </div>
-          <span className="bg-amber-200/50 px-2 py-0.5 rounded-full text-xs">{priceChanged.length} รายการ</span>
+          <button
+            onClick={() => navigate('/generate/details?type=priceChanged')}
+            className="bg-amber-200/80 hover:bg-amber-300 text-amber-950 px-2.5 py-0.5 rounded-full text-xs font-black transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs flex items-center gap-1"
+            title="คลิกเพื่อดูรายละเอียดตารางการเปลี่ยนแปลงราคา"
+          >
+            <span>{priceChanged.length} รายการ</span>
+            <ExternalLink size={10} />
+          </button>
         </div>
         <div className="max-h-32 overflow-y-auto p-2 custom-scrollbar">
           {priceChanged.length === 0 ? (
@@ -190,7 +213,14 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
           <div className="flex items-center gap-2">
             <Info size={16} /> ข้อมูลทั่วไปเปลี่ยนแปลง
           </div>
-          <span className="bg-purple-200/50 px-2 py-0.5 rounded-full text-xs">{otherChanged.length} รายการ</span>
+          <button
+            onClick={() => navigate('/generate/details?type=otherChanged')}
+            className="bg-purple-200/80 hover:bg-purple-300 text-purple-950 px-2.5 py-0.5 rounded-full text-xs font-black transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs flex items-center gap-1"
+            title="คลิกเพื่อดูรายละเอียดตารางข้อมูลทั่วไปเปลี่ยนแปลง"
+          >
+            <span>{otherChanged.length} รายการ</span>
+            <ExternalLink size={10} />
+          </button>
         </div>
         <div className="max-h-32 overflow-y-auto p-2 custom-scrollbar">
           {otherChanged.length === 0 ? (
@@ -242,3 +272,4 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
     </div>
   );
 }
+

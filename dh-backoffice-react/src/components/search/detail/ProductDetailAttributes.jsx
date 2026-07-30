@@ -2,6 +2,30 @@ import { PlusCircle, RefreshCw, Link as LinkIcon, ExternalLink } from 'lucide-re
 import { HighlightText } from '../HighlightText';
 import CopyableLinkButton from '../../common/CopyableLinkButton';
 
+const renderPills = (data, highlightData, emptyText = 'n/a') => {
+  if (!data) return <span className="text-slate-400 font-medium italic text-xs">{emptyText}</span>;
+  let items = [];
+  if (Array.isArray(data)) {
+    items = data;
+  } else if (typeof data === 'string') {
+    items = data.split(/,|\n/).map(s => s.trim()).filter(Boolean);
+  }
+  if (items.length === 0) return <span className="text-slate-400 font-medium italic text-xs">{emptyText}</span>;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 py-0.5">
+      {items.map((item, idx) => (
+        <span 
+          key={idx} 
+          className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold rounded-lg border border-slate-200 dark:border-slate-700 text-xs shadow-2xs hover:border-indigo-300 transition-colors"
+        >
+          <HighlightText text={item} highlightData={highlightData} />
+        </span>
+      ))}
+    </div>
+  );
+};
+
 export default function ProductDetailAttributes({
   selectedProduct,
   highlightData,
@@ -9,91 +33,114 @@ export default function ProductDetailAttributes({
   submitKnowledge
 }) {
   return (
-    <div className="grid grid-cols-[100px_1fr] gap-y-1.5 pt-2">
+    <div className="flex flex-col gap-3 pt-3">
       
-      <div className="group/row contents">
-        <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-2.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40">Short</div>
-        <div className="font-bold text-dh-accent text-[13px] bg-dh-accent-light p-2.5 rounded-lg border border-dh-accent/20 whitespace-pre-wrap my-0.5 transition-colors group-hover/row:border-dh-accent/40 group-hover/row:shadow-xs">
-          {selectedProduct.shortDescription ? <HighlightText text={selectedProduct.shortDescription} highlightData={highlightData} /> : <span className="text-dh-muted font-medium">ไม่มีข้อมูลระบุ</span>}
-        </div>
-      </div>
-
-      <div className="group/row contents">
-        <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-2.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40">รายละเอียด</div>
-        <div className="font-bold text-dh-main text-[13px] whitespace-pre-wrap leading-relaxed py-2 px-2.5 rounded-lg transition-colors group-hover/row:bg-dh-base/40">
-          {selectedProduct.description ? <HighlightText text={selectedProduct.description} highlightData={highlightData} /> : '-'}
-        </div>
-      </div>
-
-      <div className="group/row contents">
-        <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-1.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40">แบรนด์ / หมวดหมู่</div>
-        <div className="font-black text-dh-main text-[13px] py-1 px-2.5 rounded-lg transition-colors group-hover/row:bg-dh-base/40">
-          {selectedProduct.brand || '-'} <span className="text-dh-border mx-2">|</span> {selectedProduct.category || '-'}
-        </div>
-      </div>
-
-      <div className="group/row contents">
-        <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-1.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40">โมเดลที่ขายอยู่</div>
-        <div className="font-black text-red-500 text-[13px] py-1 px-2.5 rounded-lg transition-colors group-hover/row:bg-red-50 dark:group-hover/row:bg-red-900/10">
-          {selectedProduct.sellingModel ? <HighlightText text={selectedProduct.sellingModel} highlightData={highlightData} /> : <span className="text-dh-muted">n/a</span>}
-        </div>
-      </div>
-
-      <div className="group/row contents">
-        <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-2.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40 flex flex-col items-start gap-1">
-          Compatible
-          <button type="button" disabled={isSubmittingKnowledge} onClick={(e) => submitKnowledge(e, 'model')} className="text-dh-main hover:text-dh-accent disabled:opacity-50 transition-colors flex items-center gap-1 bg-dh-surface px-1.5 py-0.5 rounded-sm border border-dh-border shadow-xs active:scale-95">
-            {isSubmittingKnowledge ? <RefreshCw size={10} className="animate-spin" /> : <PlusCircle size={10}/>} <span className="text-[9px] font-bold">เพิ่มรุ่น</span>
-          </button>
-        </div>
-        <div className="font-bold text-dh-main text-[13px] bg-dh-base p-2.5 rounded-lg border border-dh-border min-h-[40px] my-0.5 transition-all group-hover/row:shadow-xs group-hover/row:border-dh-border/80">
-          {selectedProduct.compatibleModels?.length ? <HighlightText text={selectedProduct.compatibleModels} highlightData={highlightData} /> : <span className="text-dh-muted italic font-medium">n/a</span>}
-        </div>
-      </div>
-
-      <div className="group/row contents">
-        <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-2.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40 flex flex-col items-start gap-1">
-          Part No.
-          <button type="button" disabled={isSubmittingKnowledge} onClick={(e) => submitKnowledge(e, 'part')} className="text-dh-main hover:text-dh-accent disabled:opacity-50 transition-colors flex items-center gap-1 bg-dh-surface px-1.5 py-0.5 rounded-sm border border-dh-border shadow-xs active:scale-95">
-            {isSubmittingKnowledge ? <RefreshCw size={10} className="animate-spin" /> : <PlusCircle size={10}/>} <span className="text-[9px] font-bold">เพิ่มพาร์ท</span>
-          </button>
-        </div>
-        <div className="font-bold text-dh-main text-[13px] bg-dh-base p-2.5 rounded-lg border border-dh-border min-h-[40px] uppercase my-0.5 transition-all group-hover/row:shadow-xs group-hover/row:border-dh-border/80 tracking-wide">
-          {selectedProduct.compatiblePartNumbers?.length ? <HighlightText text={selectedProduct.compatiblePartNumbers} highlightData={highlightData} /> : <span className="text-dh-muted italic font-medium">n/a</span>}
-        </div>
-      </div>
-
-      {(selectedProduct.tags?.length > 0 || selectedProduct.packageSize || selectedProduct.bufferStock) && (
-        <div className="group/row contents">
-          <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-1.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40">ข้อมูลเพิ่มเติม</div>
-          <div className="flex flex-wrap gap-1.5 text-[11px] py-1 px-2.5 rounded-lg transition-colors group-hover/row:bg-dh-base/40">
-            {selectedProduct.tags?.length > 0 && selectedProduct.tags.map((t, i) => (
-              <span key={i} className="bg-dh-base text-dh-main px-1.5 py-0.5 rounded-sm border border-dh-border font-extrabold shadow-xs">#{t}</span>
-            ))}
-            {selectedProduct.packageSize && (
-              <span className="bg-dh-base text-dh-main px-1.5 py-0.5 rounded-sm border border-dh-border font-extrabold shadow-xs">
-                📦 ขนาด: {selectedProduct.packageSize.w}x{selectedProduct.packageSize.l}x{selectedProduct.packageSize.h}
-              </span>
-            )}
-            {selectedProduct.bufferStock && (
-              <span className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded-sm border border-yellow-200 dark:border-yellow-800/50 font-extrabold shadow-xs">
-                ⚠️ กักสต็อก: {selectedProduct.bufferStock}
-              </span>
-            )}
+      {/* Short Description Banner */}
+      {selectedProduct.shortDescription && (
+        <div className="bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-xl px-3.5 py-2.5">
+          <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">SHORT</div>
+          <div className="font-semibold text-indigo-950 dark:text-indigo-200 text-xs leading-relaxed">
+            <HighlightText text={selectedProduct.shortDescription} highlightData={highlightData} />
           </div>
         </div>
       )}
 
-      <div className="group/row contents">
-        <div className="text-[11px] font-extrabold text-dh-muted uppercase tracking-wide pt-1.5 px-2 rounded-l-md transition-colors group-hover/row:bg-dh-base/40">ลิงก์ภายนอก</div>
-        <div className="flex flex-wrap gap-1.5 text-[11px] font-extrabold py-1 px-2.5 rounded-lg transition-colors group-hover/row:bg-dh-base/40">
-            {selectedProduct.landingPageUrl && <CopyableLinkButton url={selectedProduct.landingPageUrl} label="หน้าหลัก" defaultIcon={LinkIcon} className="flex items-center gap-1 px-2 py-1 bg-dh-surface text-dh-main rounded-sm border border-dh-border hover:border-dh-accent transition-all hover:-translate-y-px shadow-xs" />}
-            {selectedProduct.externalLinks?.shopee && <CopyableLinkButton url={selectedProduct.externalLinks.shopee} label="Shopee" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2 py-1 bg-[#ee4d2d]/10 text-[#ee4d2d] rounded-sm border border-[#ee4d2d]/20 hover:bg-[#ee4d2d]/20 transition-all hover:-translate-y-px shadow-xs" />}
-            {selectedProduct.externalLinks?.lazada && <CopyableLinkButton url={selectedProduct.externalLinks.lazada} label="Lazada" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2 py-1 bg-[#0f136d]/10 text-[#0f136d] dark:bg-[#2A2D8E]/30 dark:text-[#888DF2] rounded-sm border border-[#0f136d]/20 dark:border-[#888DF2]/30 hover:bg-[#0f136d]/20 transition-all hover:-translate-y-px shadow-xs" />}
-            {selectedProduct.externalLinks?.tiktok && <CopyableLinkButton url={selectedProduct.externalLinks.tiktok} label="TikTok" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2 py-1 bg-black/5 dark:bg-white/10 text-current rounded-sm border border-current/10 hover:bg-black/10 transition-all hover:-translate-y-px shadow-xs" />}
-            {(!selectedProduct.landingPageUrl && !selectedProduct.externalLinks?.shopee && !selectedProduct.externalLinks?.lazada && !selectedProduct.externalLinks?.tiktok) && <span className="text-dh-muted font-bold py-1">ไม่มีข้อมูลลิงก์</span>}
+      {/* Full Description Section */}
+      {selectedProduct.description && (
+        <div className="px-1 py-1">
+          <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1">รายละเอียด</div>
+          <div className="font-medium text-slate-800 dark:text-slate-200 text-xs whitespace-pre-wrap leading-relaxed">
+            <HighlightText text={selectedProduct.description} highlightData={highlightData} />
+          </div>
+        </div>
+      )}
+
+      {/* Brand & Category Strip */}
+      <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 px-3.5 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-xs flex-wrap">
+        <div>
+          <span className="text-slate-400 font-bold mr-1.5">แบรนด์:</span>
+          <span className="font-extrabold text-slate-800 dark:text-slate-100">{selectedProduct.brand || '-'}</span>
+        </div>
+        <span className="text-slate-300">|</span>
+        <div>
+          <span className="text-slate-400 font-bold mr-1.5">หมวดหมู่:</span>
+          <span className="font-extrabold text-slate-800 dark:text-slate-100">{selectedProduct.category || '-'}</span>
+        </div>
+        {selectedProduct.sellingModel && (
+          <>
+            <span className="text-slate-300">|</span>
+            <div>
+              <span className="text-slate-400 font-bold mr-1.5">โมเดลที่ขาย:</span>
+              <span className="font-extrabold text-red-600 dark:text-red-400"><HighlightText text={selectedProduct.sellingModel} highlightData={highlightData} /></span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Compatible Models Section */}
+      <div className="bg-white dark:bg-slate-800/30 rounded-xl border border-slate-200/90 dark:border-slate-700/80 p-3 shadow-2xs">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+            Compatible Models (รุ่นที่ใช้ด้วยกันได้)
+          </span>
+          <button 
+            type="button" 
+            disabled={isSubmittingKnowledge} 
+            onClick={(e) => submitKnowledge(e, 'model')} 
+            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-2 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1 border border-indigo-200 dark:border-indigo-800"
+          >
+            {isSubmittingKnowledge ? <RefreshCw size={11} className="animate-spin" /> : <PlusCircle size={11}/>}
+            <span>+ เพิ่มรุ่น</span>
+          </button>
+        </div>
+        {renderPills(selectedProduct.compatibleModels, highlightData, 'ไม่มีข้อมูลรุ่นรองรับ')}
+      </div>
+
+      {/* Compatible Part Numbers Section */}
+      <div className="bg-white dark:bg-slate-800/30 rounded-xl border border-slate-200/90 dark:border-slate-700/80 p-3 shadow-2xs">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
+            PART NO. (พาร์ทอะไหล่)
+          </span>
+          <button 
+            type="button" 
+            disabled={isSubmittingKnowledge} 
+            onClick={(e) => submitKnowledge(e, 'part')} 
+            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-2 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1 border border-indigo-200 dark:border-indigo-800"
+          >
+            {isSubmittingKnowledge ? <RefreshCw size={11} className="animate-spin" /> : <PlusCircle size={11}/>}
+            <span>+ เพิ่มพาร์ท</span>
+          </button>
+        </div>
+        {renderPills(selectedProduct.compatiblePartNumbers, highlightData, 'ไม่มีข้อมูลพาร์ท')}
+      </div>
+
+      {/* Extra Badges & External Links Footer */}
+      <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-200/70 dark:border-slate-700/60">
+        <div className="flex flex-wrap gap-1.5 text-[11px]">
+          {selectedProduct.tags?.length > 0 && selectedProduct.tags.map((t, i) => (
+            <span key={i} className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 font-bold">#{t}</span>
+          ))}
+          {selectedProduct.packageSize && (
+            <span className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 font-bold">
+              📦 ขนาด: {selectedProduct.packageSize.w}x{selectedProduct.packageSize.l}x{selectedProduct.packageSize.h}
+            </span>
+          )}
+          {selectedProduct.bufferStock && (
+            <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
+              ⚠️ กักสต็อก: {selectedProduct.bufferStock}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
+          {selectedProduct.landingPageUrl && <CopyableLinkButton url={selectedProduct.landingPageUrl} label="หน้าหลัก" defaultIcon={LinkIcon} className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg border border-slate-200 hover:border-indigo-300 transition-all shadow-2xs" />}
+          {selectedProduct.externalLinks?.shopee && <CopyableLinkButton url={selectedProduct.externalLinks.shopee} label="Shopee" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2.5 py-1 bg-[#ee4d2d]/10 text-[#ee4d2d] rounded-lg border border-[#ee4d2d]/20 hover:bg-[#ee4d2d]/20 transition-all shadow-2xs" />}
+          {selectedProduct.externalLinks?.lazada && <CopyableLinkButton url={selectedProduct.externalLinks.lazada} label="Lazada" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2.5 py-1 bg-[#0f136d]/10 text-[#0f136d] dark:bg-[#2A2D8E]/30 dark:text-[#888DF2] rounded-lg border border-[#0f136d]/20 dark:border-[#888DF2]/30 hover:bg-[#0f136d]/20 transition-all shadow-2xs" />}
+          {selectedProduct.externalLinks?.tiktok && <CopyableLinkButton url={selectedProduct.externalLinks.tiktok} label="TikTok" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-lg border border-slate-800 transition-all shadow-2xs" />}
         </div>
       </div>
+
     </div>
   );
 }

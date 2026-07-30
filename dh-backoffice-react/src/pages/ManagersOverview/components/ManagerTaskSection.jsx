@@ -23,32 +23,32 @@ const InAppDocPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="mb-4 bg-white rounded-md border border-slate-200 shadow-xs overflow-hidden transition-all">
+    <div className="mb-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden transition-all">
       <div 
-        className="px-4 py-3 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100"
+        className="px-4 py-3 bg-slate-50/80 flex items-center justify-between cursor-pointer hover:bg-slate-100/80 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-2 text-slate-700">
           <HelpCircle size={18} className="text-blue-600" />
-          <h3 className="font-bold text-sm tracking-wide">คู่มือการใช้งาน: ระบบอนุมัติผู้จัดการ (Manager Approvals)</h3>
+          <h3 className="font-bold text-xs sm:text-sm tracking-wide">คู่มือการใช้งาน: ระบบอนุมัติผู้จัดการ (Manager Approvals)</h3>
         </div>
         <span className="text-xs font-bold text-blue-600">{isOpen ? 'ซ่อนคู่มือ' : 'อ่านคู่มือ'}</span>
       </div>
       
       {isOpen && (
-        <div className="p-4 border-t border-slate-200 text-sm text-slate-700 space-y-4 bg-white">
+        <div className="p-4 border-t border-slate-200/70 text-xs sm:text-sm text-slate-700 space-y-4 bg-white">
           <div>
             <strong className="text-slate-800 flex items-center gap-1.5 mb-1">
               <span className="w-1.5 h-1.5 bg-blue-500 rounded-full inline-block"></span> ตำรา / คำอธิบาย:
             </strong>
-            <p className="pl-3 text-slate-600">ระบบนี้ใช้สำหรับรวบรวมคำขอทั้งหมดที่ต้องการการตัดสินใจจากผู้จัดการ เช่น การอนุมัติราคาส่ง B2B, อนุมัติพนักงานใหม่, อนุมัติโฆษณา และการตรวจสอบความรู้</p>
+            <p className="pl-3 text-slate-600 leading-relaxed">ระบบนี้ใช้สำหรับรวบรวมคำขอทั้งหมดที่ต้องการการตัดสินใจจากผู้จัดการ เช่น การอนุมัติราคาส่ง B2B, อนุมัติพนักงานใหม่, อนุมัติโฆษณา และการตรวจสอบความรู้</p>
           </div>
           <div>
             <strong className="text-slate-800 flex items-center gap-1.5 mb-1">
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span> วิธีการใช้งาน (How-to):
             </strong>
             <ol className="list-decimal pl-7 text-slate-600 space-y-1">
-              <li>คลิกที่แถบรายการเพื่อ <strong>"กางออก"</strong> และดูรายละเอียดของคำขอ (ระบบจะดึงข้อมูลเมื่อคลิกเพื่อประหยัดทรัพยากร)</li>
+              <li>คลิกที่แถบรายการเพื่อ <strong>"กางออก"</strong> และดูรายละเอียดของคำขอ</li>
               <li>ตรวจสอบข้อมูลให้ครบถ้วน เช่น นามบัตรลูกค้า หรือข้อมูลการขออนุมัติ</li>
               <li>กดปุ่ม <strong>"อนุมัติ"</strong> เพื่อยืนยัน หรือ <strong>"ปฏิเสธ"</strong> หากข้อมูลไม่ถูกต้อง</li>
             </ol>
@@ -59,10 +59,10 @@ const InAppDocPanel = () => {
             </strong>
             <ul className="list-disc pl-7 text-slate-600 space-y-1">
               <li>กดที่แถบรายการซ้ำเพื่อ <strong>พับเก็บ</strong> ช่วยให้หน้าจอไม่รก</li>
-              <li>ป้ายกำกับ <span className="bg-red-600 text-white px-1.5 py-0.5 rounded-sm text-[10px]">URGENT</span> หมายถึงงานด่วน ควรจัดการก่อน</li>
+              <li>ป้ายกำกับ <span className="bg-rose-600 text-white px-1.5 py-0.5 rounded-md text-[10px] font-bold">ด่วนมาก</span> หมายถึงงานด่วน ควรจัดการก่อน</li>
             </ul>
           </div>
-          <div className="bg-rose-50 p-3 rounded-md border border-rose-100">
+          <div className="bg-rose-50/70 p-3 rounded-xl border border-rose-100">
             <strong className="text-rose-800 flex items-center gap-1.5 mb-1">
               <AlertCircle size={14} /> ตัวอย่างผลลัพธ์ (Expected Results):
             </strong>

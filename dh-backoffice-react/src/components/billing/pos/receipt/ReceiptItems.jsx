@@ -47,10 +47,17 @@ export default function ReceiptItems({ items, startIndex = 0 }) {
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[8px] font-mono text-gray-400 uppercase">{item.sku}</span>
                                 {item.note && (
-                                    <span className="text-[8px] font-bold px-1 rounded-sm border leading-none" 
-                                            style={{ color: (noteColorStyles[item.noteColor] || noteColorStyles.slate).text, backgroundColor: (noteColorStyles[item.noteColor] || noteColorStyles.slate).bg }}>
-                                        {item.note}
-                                    </span>
+                                    <div className="flex flex-wrap gap-1 items-center">
+                                        <span className="text-[8px] font-bold px-1 rounded-sm border leading-none" 
+                                                style={{ color: (noteColorStyles[item.noteColor] || noteColorStyles.slate).text, backgroundColor: (noteColorStyles[item.noteColor] || noteColorStyles.slate).bg }}>
+                                            {item.note}
+                                        </span>
+                                        {item.conditions?.map((cond, i) => (
+                                            <span key={i} className="text-[8px] font-bold px-1 rounded-sm border leading-none bg-gray-100 text-gray-500 border-gray-200">
+                                                {cond}
+                                            </span>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </td>

@@ -35,8 +35,7 @@ export default defineConfig(({ mode }) => ({
     dedupe: ['firebase']
   },
   optimizeDeps: {
-    force: true,
-    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/analytics', 'firebase/app-check', 'zod']
+    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/analytics', 'firebase/app-check', 'zod', 'lucide-react']
   },
   build: {
     rollupOptions: {

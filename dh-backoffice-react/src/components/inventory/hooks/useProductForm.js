@@ -4,6 +4,7 @@ import { userService } from '../../../firebase/userService';
 import { pricingService } from '../../../firebase/pricingService';
 import { settingsService } from '../../../firebase/settingsService';
 import { categoryService } from '../../../firebase/categoryService';
+import { normalizeCategoryName } from '../../../firebase/warrantyService';
 import toast from 'react-hot-toast';
 
 export const INITIAL_FORM = {
@@ -24,7 +25,19 @@ export const INITIAL_FORM = {
   variants: [] // e.g., [{ id: '1', attributes: { สี: 'แดง' }, sku: 'SKU-R', retailPrice: 100, stockQuantity: 5 }]
 };
 
-export const DEFAULT_CATEGORIES = [{ name: 'Screen', type: 'Screen' }, { name: 'Battery', type: 'Battery' }];
+export const DEFAULT_CATEGORIES = [
+  { name: 'Cooling', type: 'Cooling' },
+  { name: 'FAN', type: 'FAN' },
+  { name: 'Panel', type: 'Panel' },
+  { name: 'Screen', type: 'Screen' },
+  { name: 'Adapter', type: 'Adapter' },
+  { name: 'Battery', type: 'Battery' },
+  { name: 'Keyboard', type: 'Keyboard' },
+  { name: 'Cable', type: 'Cable' },
+  { name: 'General', type: 'General' },
+  { name: 'ลำโพง', type: 'ลำโพง' },
+  { name: 'หน้าจอ', type: 'หน้าจอ' }
+];
 
 export default function useProductForm(productData, isOpen, categoriesData = []) {
   const [form, setForm] = useState(INITIAL_FORM);
@@ -51,13 +64,45 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
       if (!initData.hiddenImages) initData.hiddenImages = [];
       if (!initData.variantOptions) initData.variantOptions = [];
       if (!initData.variants) initData.variants = [];
-      
+
       setForm(initData);
       setIsUploading(false);
       setUploadProgress(0);
       setActiveImageUrl(initData.images?.[0] || '');
       setLinkValidation({ shopee: null, lazada: null, tiktok: null, facebook: null });
-      setCategories(categoriesData && categoriesData.length > 0 ? categoriesData : DEFAULT_CATEGORIES);
+
+      // 🚀 Aggregate ALL categories from defaults, DB, and product
+      const catMap = new Map();
+      
+      // 1. Add Default core categories
+      DEFAULT_CATEGORIES.forEach(c => {
+        catMap.set(c.type.toLowerCase(), { id: c.type, name: c.name, type: c.type });
+      });
+
+      // 2. Add categoriesData (from database)
+      if (categoriesData && categoriesData.length > 0) {
+        categoriesData.forEach(c => {
+          const val = c.type || c.name;
+          if (val && typeof val === 'string' && val.trim()) {
+            const cleanVal = val.trim();
+            const key = cleanVal.toLowerCase();
+            if (!catMap.has(key)) {
+              catMap.set(key, { id: c.id || cleanVal, name: cleanVal, type: cleanVal });
+            }
+          }
+        });
+      }
+
+      // 3. Add product's own category if missing
+      if (initData.category && typeof initData.category === 'string' && initData.category.trim()) {
+        const prodCat = initData.category.trim();
+        const key = prodCat.toLowerCase();
+        if (!catMap.has(key)) {
+          catMap.set(key, { id: `prod_${prodCat}`, name: prodCat, type: prodCat });
+        }
+      }
+
+      setCategories(Array.from(catMap.values()));
       
       checkUserRole();
       loadPricingConfig();
@@ -109,27 +154,39 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
     if (!newCat || !newCat.trim()) return;
     
     const catName = newCat.trim();
-    if (!categories.some(c => c.type === catName || c.name === catName)) {
-      try {
-        const loadingToast = toast.loading('กำลังบันทึกหมวดหมู่ใหม่...');
-        
-        // Save to Firebase
-        const newCategoryData = { name: catName, type: catName, isActive: true };
-        const savedDoc = await categoryService.createCategory(newCategoryData, null);
-        
-        toast.success(`เพิ่มหมวดหมู่ "${catName}" สำเร็จ!`, { id: loadingToast });
-        
-        // Update local state
-        const newCatObj = { id: savedDoc.id, name: catName, type: catName };
-        setCategories([...categories, newCatObj]);
-        handleCategoryChange(catName);
-        
-      } catch (err) {
-        console.error('Error adding category:', err);
-        toast.error('เพิ่มหมวดหมู่ไม่สำเร็จ');
-      }
-    } else {
-      toast.error('มีหมวดหมู่นี้อยู่แล้วในระบบ');
+    const existingCat = categories.find(c => 
+      (c.name || '').trim().toLowerCase() === catName.toLowerCase() ||
+      (c.type || '').trim().toLowerCase() === catName.toLowerCase()
+    );
+
+    if (existingCat) {
+      const targetVal = existingCat.type || existingCat.name;
+      handleCategoryChange(targetVal);
+      toast.success(`เลือกหมวดหมู่ "${targetVal}" เรียบร้อยแล้ว`);
+      return;
+    }
+
+    try {
+      const loadingToast = toast.loading('กำลังบันทึกหมวดหมู่ใหม่...');
+      
+      const newCategoryData = { name: catName, type: catName, isActive: true };
+      const savedDoc = await categoryService.createCategory(newCategoryData, null);
+      
+      const targetVal = savedDoc.type || savedDoc.name || catName;
+      toast.success(`เพิ่มหมวดหมู่ "${targetVal}" สำเร็จ!`, { id: loadingToast });
+      
+      const newCatObj = { id: savedDoc.id, name: targetVal, type: targetVal };
+      setCategories(prev => {
+        if (prev.some(c => (c.type || c.name || '').toLowerCase() === targetVal.toLowerCase())) {
+          return prev;
+        }
+        return [...prev, newCatObj];
+      });
+      handleCategoryChange(targetVal);
+      
+    } catch (err) {
+      console.error('Error adding category:', err);
+      toast.error(err?.message || 'เพิ่มหมวดหมู่ไม่สำเร็จ');
     }
   };
 

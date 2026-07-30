@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, Headphones, Store } from 'lucide-react';
 import { findNearestPartner } from '../../firebase/partnerLocationService'; 
 import { useGeolocation } from '../../hooks/useGeolocation';
@@ -22,6 +22,16 @@ const FloatingMessenger = () => {
       return false;
     }
   });
+
+  const partnerTimeoutRef = useRef(null);
+  const toggleTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (partnerTimeoutRef.current) clearTimeout(partnerTimeoutRef.current);
+      if (toggleTimeoutRef.current) clearTimeout(toggleTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const handleConsentUpdate = () => {
@@ -67,7 +77,8 @@ const FloatingMessenger = () => {
       const location = await getUserCurrentLocation();
       const nearest = await findNearestPartner(location.latitude, location.longitude, 30);
       
-      setTimeout(() => {
+      if (partnerTimeoutRef.current) clearTimeout(partnerTimeoutRef.current);
+      partnerTimeoutRef.current = setTimeout(() => {
         if (nearest) {
           setPartner(nearest);
           setMode('result');
@@ -89,7 +100,10 @@ const FloatingMessenger = () => {
     const nextState = !isOpen;
     setIsOpen(nextState);
     setShowTooltip(false);
-    if (!nextState) setTimeout(() => setMode('menu'), 300); 
+    if (!nextState) {
+      if (toggleTimeoutRef.current) clearTimeout(toggleTimeoutRef.current);
+      toggleTimeoutRef.current = setTimeout(() => setMode('menu'), 300); 
+    }
   };
 
   // 🚀 ระบบเปิดลิงก์อัตโนมัติ (เติม https:// ให้ทันทีถ้าไม่มี เพื่อแก้บั๊ก m.me)

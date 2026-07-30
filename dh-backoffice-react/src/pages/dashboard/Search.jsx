@@ -36,6 +36,9 @@ export default function Search() {
         {/* --- ส่วนที่ 2: Product List Panel (ด้านซ้าย) --- */}
         <ProductListPanel 
           filteredProducts={searchState.filteredProducts}
+          totalFilteredCount={searchState.totalFilteredCount}
+          hasMore={searchState.hasMore}
+          loadMore={searchState.loadMore}
           search1={searchState.search1} search2={searchState.search2} search3={searchState.search3}
           selectedProduct={searchState.selectedProduct}
           selectedIndex={searchState.selectedIndex}
@@ -43,6 +46,7 @@ export default function Search() {
           getStockStatus={searchState.getStockStatus}
           highlightData={searchState.highlightData}
           HighlightText={HighlightText}
+          openReportModal={searchState.openReportModal}
         />
 
         {/* --- ส่วนที่ 3: Product Detail Panel (ตรงกลาง) --- */}

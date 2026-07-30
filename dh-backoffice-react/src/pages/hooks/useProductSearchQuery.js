@@ -85,9 +85,16 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
     });
   }, [gasProductsCache, initialProducts, imageCache]);
 
-  const filteredProducts = useMemo(() => {
+  const [displayLimit, setDisplayLimit] = useState(21);
+
+  // Reset display limit when search inputs change
+  useEffect(() => {
+    setDisplayLimit(21);
+  }, [debouncedSearch1, debouncedSearch2, debouncedSearch3, stockFilter]);
+
+  const allFilteredProducts = useMemo(() => {
     if (!debouncedSearch1.trim() && !debouncedSearch2.trim() && !debouncedSearch3.trim() && stockFilter === 'ALL') {
-      return mergedProducts.slice(0, 15); 
+      return mergedProducts; 
     }
     
     const term1 = debouncedSearch1.toLowerCase();
@@ -120,8 +127,20 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
       if (stockFilter === 'OUT_OF_STOCK') return p.stockQuantity <= 0;
       
       return true;
-    }).slice(0, 50);
+    });
   }, [debouncedSearch1, debouncedSearch2, debouncedSearch3, stockFilter, mergedProducts]);
+
+  const filteredProducts = useMemo(() => {
+    return allFilteredProducts.slice(0, displayLimit);
+  }, [allFilteredProducts, displayLimit]);
+
+  const loadMore = () => {
+    if (displayLimit < allFilteredProducts.length) {
+      setDisplayLimit(prev => Math.min(prev + 21, allFilteredProducts.length));
+    }
+  };
+
+  const hasMore = displayLimit < allFilteredProducts.length;
 
   // ✨ Lazy Fetch Image Effect
   useEffect(() => {
@@ -158,6 +177,11 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
   return {
     loading,
     filteredProducts,
+    allFilteredProducts,
+    totalFilteredCount: allFilteredProducts.length,
+    displayLimit,
+    hasMore,
+    loadMore,
     mergedProducts,
     forceSync,
     updateProductData
