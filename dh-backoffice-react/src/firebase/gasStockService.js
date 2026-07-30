@@ -6,6 +6,7 @@ const GAS_STOCK_URL = 'https://script.google.com/macros/s/AKfycbzLaT5ytHzrhF20NO
 class GasStockService {
   constructor() {
     this.queue = [];
+    this.optimisticCache = new Map(); // เก็บค่าชั่วคราวระหว่างรอ GAS อัปเดต
     this.isFlushing = false;
     this.flushPromise = null;
     this.flushInterval = null;
@@ -88,7 +89,25 @@ class GasStockService {
       
       const result = await response.json();
       if (result.status === "success") {
-        return result.data || [];
+        const data = result.data || [];
+        
+        // 🚀 Optimistic Update: เอาค่าใหม่ที่อยู่ในคิวมาทับค่าจาก GAS ชั่วคราว (แก้บั๊ก 8 โชว์ 2)
+        if (this.optimisticCache.size > 0) {
+          const now = Date.now();
+          data.forEach(item => {
+            const sku = String(item.sku).trim().toUpperCase();
+            const cacheEntry = this.optimisticCache.get(sku);
+            if (cacheEntry) {
+              if (now - cacheEntry.timestamp < 60000) { // หมดอายุใน 60 วินาที
+                item.stockQuantity = cacheEntry.stockQuantity;
+              } else {
+                this.optimisticCache.delete(sku);
+              }
+            }
+          });
+        }
+        
+        return data;
       } else {
         throw new Error(result.message || "Unknown error from GAS");
       }
@@ -110,6 +129,13 @@ class GasStockService {
    */
   queueUpdate(productData) {
     try {
+      if (productData.sku) {
+        this.optimisticCache.set(String(productData.sku).trim().toUpperCase(), {
+          stockQuantity: productData.stockQuantity,
+          timestamp: Date.now()
+        });
+      }
+      
       this.queue.push({
         ...productData,
         _timestamp: new Date().toISOString()

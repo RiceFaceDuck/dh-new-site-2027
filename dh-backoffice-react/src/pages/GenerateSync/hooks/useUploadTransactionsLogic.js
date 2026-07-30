@@ -7,6 +7,7 @@ export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
   const [parsedData, setParsedData] = useState(null);
   const [status, setStatus] = useState('idle'); // idle, parsing, preview, uploading, success, error
   const [message, setMessage] = useState('');
+  const [result, setResult] = useState(null);
   const [actionType, setActionType] = useState('deduct'); // deduct or add
   const [currentMapping, setCurrentMapping] = useState({ skuKey: '', qtyKey: '', priceKey: '' });
   
@@ -95,6 +96,7 @@ export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
         currentUser
       );
       
+      setResult(result);
       setStatus('success');
       setMessage(result.message);
       
@@ -116,7 +118,7 @@ export function useUploadTransactionsLogic(currentUser, onUploadComplete) {
   };
 
   return {
-    file, parsedData, status, message, actionType, currentMapping,
+    file, parsedData, status, message, result, actionType, currentMapping,
     setActionType, handleFileChange, handleMappingChange, handleUpload, resetState,
     fileInputRef
   };

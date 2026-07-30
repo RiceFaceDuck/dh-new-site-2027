@@ -10,7 +10,7 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
   const { currentUser } = useAuth();
   
   const {
-    parsedData, status, message, actionType, currentMapping,
+    parsedData, status, message, result, actionType, currentMapping,
     setActionType, handleFileChange, handleMappingChange, handleUpload, resetState,
     fileInputRef
   } = useUploadTransactionsLogic(currentUser, onUploadComplete);
@@ -121,7 +121,35 @@ export default function UploadTransactions({ onUploadComplete, latestSnapshot })
         ) : status === 'success' ? (
           <div className="flex flex-col items-center justify-center py-10">
             <CheckCircle size={56} className="text-emerald-500 mb-4 animate-bounce" />
-            <h3 className="text-xl font-black text-emerald-600 mb-2">{message}</h3>
+            <h3 className="text-xl font-black text-emerald-600 mb-4">{message}</h3>
+            
+            <div className="w-full max-w-sm bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4 text-left space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold text-slate-600">อัปเดตสำเร็จ:</span>
+                <span className="text-sm font-bold text-emerald-600">{result?.updatedCount || 0} รายการ</span>
+              </div>
+              
+              {(result?.notFoundCount > 0 || result?.skippedCount > 0) && <div className="h-px bg-slate-200 my-2"></div>}
+              
+              {result?.notFoundCount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-rose-500 flex items-center gap-1">
+                    หา SKU ไม่พบ:
+                  </span>
+                  <span className="text-sm font-bold text-rose-600">{result?.notFoundCount} รายการ</span>
+                </div>
+              )}
+              
+              {result?.skippedCount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-amber-500 flex items-center gap-1">
+                    ข้าม (สต็อกเป็น 0 อยู่แล้ว):
+                  </span>
+                  <span className="text-sm font-bold text-amber-600">{result?.skippedCount} รายการ</span>
+                </div>
+              )}
+            </div>
+
             <p className="text-sm text-slate-500">ระบบกำลังรีเฟรชยอดสต็อก...</p>
           </div>
         ) : status === 'preview' ? (

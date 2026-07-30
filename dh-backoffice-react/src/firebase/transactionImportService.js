@@ -97,32 +97,40 @@ export const transactionImportService = {
    */
   processTransactions: async (items, actionType = 'deduct', managerUser) => {
     try {
-      // 1. ดึงข้อมูลสต็อกปัจจุบันจาก GAS (0 Firebase Reads)
+            // 1. ดึงข้อมูลสต็อกปัจจุบันจาก GAS (0 Firebase Reads)
       await gasStockService.forceSync();
       const currentInventory = await gasStockService.fetchBackupInventory();
       
       const inventoryMap = new Map();
-      currentInventory.forEach(item => inventoryMap.set(String(item.sku).trim(), item));
+      currentInventory.forEach(item => {
+        if (item.sku) inventoryMap.set(String(item.sku).trim().toUpperCase(), item);
+      });
 
       const validUpdates = [];
       const notFound = [];
+      const skipped = [];
 
       // 2. คำนวณสต็อกใหม่
-      items.forEach(item => {
-        const product = inventoryMap.get(item.sku);
+      aggregatedItems.forEach(item => {
+        const product = inventoryMap.get(item.skuKey);
         if (product) {
           const oldStock = Number(product.stockQuantity) || 0;
           let newStock = oldStock;
 
           if (actionType === 'deduct') {
-            newStock = Math.max(0, oldStock - item.quantity); // ป้องกันติดลบถ้าไม่ได้อนุญาต
+            if (oldStock > 0) {
+              newStock = Math.max(0, oldStock - item.quantity); // ป้องกันติดลบถ้าไม่ได้อนุญาต
+            } else {
+              skipped.push({ ...item, sku: item.originalSku, reason: 'Stock is already 0' });
+              return;
+            }
           } else {
             newStock = oldStock + item.quantity;
           }
 
           if (newStock !== oldStock || item.price !== undefined) {
             validUpdates.push({
-              sku: item.sku,
+              sku: product.sku, // ใช้รหัส SKU จริงจากฐานข้อมูลเสมอเพื่อป้องกันปัญหา Case Sensitive
               name: product.name,
               oldStock,
               newStock,
@@ -131,12 +139,12 @@ export const transactionImportService = {
             });
           }
         } else {
-          notFound.push(item);
+          notFound.push({ ...item, sku: item.originalSku }); // คืนค่า original กลับไปแสดงผล
         }
       });
 
       if (validUpdates.length === 0) {
-        return { success: true, updatedCount: 0, notFoundCount: notFound.length, message: "ไม่มีรายการที่ต้องอัปเดต" };
+        return { success: true, updatedCount: 0, notFoundCount: notFound.length, skippedCount: skipped.length, message: "ไม่มีรายการที่ต้องอัปเดต" };
       }
 
       // 3. Batch Update ไปที่ Firebase Firestore (N Writes, 0 Reads)
@@ -232,6 +240,7 @@ export const transactionImportService = {
         success: true,
         updatedCount: validUpdates.length,
         notFoundCount: notFound.length,
+        skippedCount: skipped.length,
         batchId: batchIdForLog,
         message: `อัปเดตสำเร็จ ${validUpdates.length} รายการ`
       };
