@@ -9,3 +9,4 @@ export * from './src/firebase/pathUtils.js';
 export { parseFirebaseError } from './src/utils/firebaseErrorHandler.js';
 
 
+export * from './src/utils/staffUtils.js';

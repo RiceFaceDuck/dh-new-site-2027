@@ -1,0 +1,401 @@
+{
+  "totalFilesScanned": 734,
+  "totalImportsChecked": 2686,
+  "brokenImports": [
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\scripts\\audit_credit_sync.js",
+      "relativeFile": "dh-backoffice-react\\scripts\\audit_credit_sync.js",
+      "lineNum": 3,
+      "lineText": "// const serviceAccount = require('./serviceAccountKey.json');",
+      "specifier": "./serviceAccountKey.json",
+      "attempted": "dh-backoffice-react\\scripts\\serviceAccountKey.json"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\scripts\\cleanup_legacy_credit.js",
+      "relativeFile": "dh-backoffice-react\\scripts\\cleanup_legacy_credit.js",
+      "lineNum": 3,
+      "lineText": "// const serviceAccount = require('./serviceAccountKey.json');",
+      "specifier": "./serviceAccountKey.json",
+      "attempted": "dh-backoffice-react\\scripts\\serviceAccountKey.json"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\scripts\\recover_merged_history.js",
+      "relativeFile": "dh-backoffice-react\\scripts\\recover_merged_history.js",
+      "lineNum": 3,
+      "lineText": "// const serviceAccount = require('./serviceAccountKey.json');",
+      "specifier": "./serviceAccountKey.json",
+      "attempted": "dh-backoffice-react\\scripts\\serviceAccountKey.json"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\components\\billing\\hooks\\useBillingOrders.js",
+      "relativeFile": "dh-backoffice-react\\src\\components\\billing\\hooks\\useBillingOrders.js",
+      "lineNum": 3,
+      "lineText": "import { getStaffNickname } from 'dh-shared/src/utils/staffUtils';",
+      "specifier": "dh-shared/src/utils/staffUtils",
+      "attempted": "dh-shared\\src\\utils\\staffUtils"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\components\\billing\\pos\\settings\\CustomerSection.jsx",
+      "relativeFile": "dh-backoffice-react\\src\\components\\billing\\pos\\settings\\CustomerSection.jsx",
+      "lineNum": 7,
+      "lineText": "import QuickAddCustomerModal from './customer/QuickAddCustomerModal';",
+      "specifier": "./customer/QuickAddCustomerModal",
+      "attempted": "dh-backoffice-react\\src\\components\\billing\\pos\\settings\\customer\\QuickAddCustomerModal"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\components\\billing\\PosSystem.jsx",
+      "relativeFile": "dh-backoffice-react\\src\\components\\billing\\PosSystem.jsx",
+      "lineNum": 11,
+      "lineText": "import FreebieModal from './pos/layout/FreebieModal';",
+      "specifier": "./pos/layout/FreebieModal",
+      "attempted": "dh-backoffice-react\\src\\components\\billing\\pos\\layout\\FreebieModal"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\components\\inventory\\hooks\\useInventorySearch.js",
+      "relativeFile": "dh-backoffice-react\\src\\components\\inventory\\hooks\\useInventorySearch.js",
+      "lineNum": 87,
+      "lineText": "const { inventoryStatsService } = await import('../../../firebase/inventory/inventoryStatsService');",
+      "specifier": "../../../firebase/inventory/inventoryStatsService",
+      "attempted": "dh-backoffice-react\\src\\firebase\\inventory\\inventoryStatsService"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\components\\todo\\TodoItem.jsx",
+      "relativeFile": "dh-backoffice-react\\src\\components\\todo\\TodoItem.jsx",
+      "lineNum": 11,
+      "lineText": "import PromotionCard from './cards/PromotionCard';",
+      "specifier": "./cards/PromotionCard",
+      "attempted": "dh-backoffice-react\\src\\components\\todo\\cards\\PromotionCard"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\firebase\\inventoryService.js",
+      "relativeFile": "dh-backoffice-react\\src\\firebase\\inventoryService.js",
+      "lineNum": 5,
+      "lineText": "import { inventoryStatsService } from './inventory/inventoryStatsService';",
+      "specifier": "./inventory/inventoryStatsService",
+      "attempted": "dh-backoffice-react\\src\\firebase\\inventory\\inventoryStatsService"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\layouts\\components\\Sidebar.jsx",
+      "relativeFile": "dh-backoffice-react\\src\\layouts\\components\\Sidebar.jsx",
+      "lineNum": 10,
+      "lineText": "import NetworkHealthIndicator from '../../components/common/NetworkHealthIndicator';",
+      "specifier": "../../components/common/NetworkHealthIndicator",
+      "attempted": "dh-backoffice-react\\src\\components\\common\\NetworkHealthIndicator"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\layouts\\components\\Sidebar.jsx",
+      "relativeFile": "dh-backoffice-react\\src\\layouts\\components\\Sidebar.jsx",
+      "lineNum": 11,
+      "lineText": "import UserProfileModal from '../../components/profile/UserProfileModal';",
+      "specifier": "../../components/profile/UserProfileModal",
+      "attempted": "dh-backoffice-react\\src\\components\\profile\\UserProfileModal"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\pages\\Customers\\components\\details\\DetailPanel.jsx",
+      "relativeFile": "dh-backoffice-react\\src\\pages\\Customers\\components\\details\\DetailPanel.jsx",
+      "lineNum": 12,
+      "lineText": "import CustomerRefundModal from '../../../../components/customers/CustomerRefundModal';",
+      "specifier": "../../../../components/customers/CustomerRefundModal",
+      "attempted": "dh-backoffice-react\\src\\components\\customers\\CustomerRefundModal"
+    },
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomers.js",
+      "relativeFile": "dh-backoffice-react\\src\\pages\\Customers\\hooks\\useCustomers.js",
+      "lineNum": 6,
+      "lineText": "import { fetchOrderStatsForPage } from '../services/customerOrderStatsService';",
+      "specifier": "../services/customerOrderStatsService",
+      "attempted": "dh-backoffice-react\\src\\pages\\Customers\\services\\customerOrderStatsService"
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\ads\\BusinessCardAdWidget.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\ads\\BusinessCardAdWidget.jsx",
+      "lineNum": 5,
+      "lineText": "import { marketingService } from '../../../firebase/marketingService';",
+      "specifier": "../../../firebase/marketingService",
+      "attempted": "dh-frontend\\firebase\\marketingService"
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\ads\\BusinessCardAdWidget.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\ads\\BusinessCardAdWidget.jsx",
+      "lineNum": 6,
+      "lineText": "import LazyImage from '../../common/LazyImage';",
+      "specifier": "../../common/LazyImage",
+      "attempted": "dh-frontend\\src\\common\\LazyImage"
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\cart\\CartActivePromotions.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\cart\\CartActivePromotions.jsx",
+      "lineNum": 3,
+      "lineText": "import { usePromotions } from '../../hooks/usePromotions';",
+      "specifier": "../../hooks/usePromotions",
+      "attempted": "dh-frontend\\src\\hooks\\usePromotions"
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\cart\\CartFreebieProgress.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\cart\\CartFreebieProgress.jsx",
+      "lineNum": 4,
+      "lineText": "import { usePromotions } from '../../hooks/usePromotions';",
+      "specifier": "../../hooks/usePromotions",
+      "attempted": "dh-frontend\\src\\hooks\\usePromotions"
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\PrivilegeSelector.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\PrivilegeSelector.jsx",
+      "lineNum": 4,
+      "lineText": "import { usePromotions } from '../../hooks/usePromotions';",
+      "specifier": "../../hooks/usePromotions",
+      "attempted": "dh-frontend\\src\\hooks\\usePromotions"
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\Navbar.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\Navbar.jsx",
+      "lineNum": 5,
+      "lineText": "import { useNavbarScroll } from '../hooks/useNavbarScroll';",
+      "specifier": "../hooks/useNavbarScroll",
+      "attempted": "dh-frontend\\src\\hooks\\useNavbarScroll"
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\Navbar.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\Navbar.jsx",
+      "lineNum": 6,
+      "lineText": "import { useNavbarAuth } from '../hooks/useNavbarAuth';",
+      "specifier": "../hooks/useNavbarAuth",
+      "attempted": "dh-frontend\\src\\hooks\\useNavbarAuth"
+    },
+    {
+      "package": "dh-staff-app",
+      "file": "C:\\_DH Notebook\\Management System\\dh-staff-app\\src\\pages\\ProfileMain.jsx",
+      "relativeFile": "dh-staff-app\\src\\pages\\ProfileMain.jsx",
+      "lineNum": 5,
+      "lineText": "import QRScannerModal from '../components/QRScannerModal';",
+      "specifier": "../components/QRScannerModal",
+      "attempted": "dh-staff-app\\src\\components\\QRScannerModal"
+    }
+  ],
+  "missingExports": [
+    {
+      "package": "dh-backoffice-react",
+      "file": "C:\\_DH Notebook\\Management System\\dh-backoffice-react\\src\\pages\\managers\\settings\\rbac\\index.jsx",
+      "relativeFile": "dh-backoffice-react\\src\\pages\\managers\\settings\\rbac\\index.jsx",
+      "lineNum": 1,
+      "lineText": "export { default } from './RbacSettingsPage';",
+      "importedName": "default",
+      "targetFile": "dh-backoffice-react\\src\\pages\\managers\\settings\\rbac\\RbacSettingsPage.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 1,
+      "lineText": "export { default as AddressSelector } from './AddressSelector';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\AddressSelector.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 2,
+      "lineText": "export { default as ShippingMethod } from './ShippingMethod';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\ShippingMethod.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 3,
+      "lineText": "export { default as PaymentMethod } from './PaymentMethod';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\PaymentMethod.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 4,
+      "lineText": "export { default as TaxInvoiceForm } from './TaxInvoiceForm';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\TaxInvoiceForm.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 5,
+      "lineText": "export { default as CheckoutSummary } from './CheckoutSummary';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\CheckoutSummary.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 6,
+      "lineText": "export { default as CheckoutSuccess } from './CheckoutSuccess';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\CheckoutSuccess.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 7,
+      "lineText": "export { default as WholesaleRequestModal } from './WholesaleRequestModal';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\WholesaleRequestModal.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 8,
+      "lineText": "export { default as CreditToggleBox } from './CreditToggleBox';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\CreditToggleBox.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\checkout\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\checkout\\index.js",
+      "lineNum": 9,
+      "lineText": "export { default as TrustBadges } from './TrustBadges';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\checkout\\TrustBadges.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 1,
+      "lineText": "export { default as ProductImageSection } from './ProductImageSection';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\ProductImageSection.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 2,
+      "lineText": "export { default as ProductPricingSection } from './ProductPricingSection';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\ProductPricingSection.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 3,
+      "lineText": "export { default as ProductKnowledgeSection } from './ProductKnowledgeSection';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\ProductKnowledgeSection.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 4,
+      "lineText": "export { default as ProductSpecsSection } from './ProductSpecsSection';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\ProductSpecsSection.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 5,
+      "lineText": "export { default as ProductCommunitySection } from './ProductCommunitySection';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\ProductCommunitySection.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 6,
+      "lineText": "export { default as ProductDescriptionSection } from './ProductDescriptionSection';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\ProductDescriptionSection.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 7,
+      "lineText": "export { default as ProductVideoSection } from './ProductVideoSection';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\ProductVideoSection.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\product\\index.js",
+      "relativeFile": "dh-frontend\\src\\components\\product\\index.js",
+      "lineNum": 8,
+      "lineText": "export { default as RelatedProducts } from './RelatedProducts';",
+      "importedName": "default",
+      "targetFile": "dh-frontend\\src\\components\\product\\RelatedProducts.jsx",
+      "availableExports": []
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\components\\profile\\tabs\\TabAdManager.jsx",
+      "relativeFile": "dh-frontend\\src\\components\\profile\\tabs\\TabAdManager.jsx",
+      "lineNum": 9,
+      "lineText": "import { marketingService, toggleAdStatus } from '../../../firebase/marketingService';",
+      "importedName": "toggleAdStatus",
+      "targetFile": "dh-frontend\\src\\firebase\\marketingService.js",
+      "availableExports": [
+        "marketingService"
+      ]
+    },
+    {
+      "package": "dh-frontend",
+      "file": "C:\\_DH Notebook\\Management System\\dh-frontend\\src\\pages\\StoreProfile\\components\\PartnerAds.jsx",
+      "relativeFile": "dh-frontend\\src\\pages\\StoreProfile\\components\\PartnerAds.jsx",
+      "lineNum": 4,
+      "lineText": "import { getUserPartnerAds } from '../../../firebase/marketingService';",
+      "importedName": "getUserPartnerAds",
+      "targetFile": "dh-frontend\\src\\firebase\\marketingService.js",
+      "availableExports": [
+        "marketingService"
+      ]
+    }
+  ]
+}

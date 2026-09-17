@@ -1,5 +1,5 @@
 import { useState, useRef, lazy, Suspense } from 'react';
-import { useClaimData } from './hooks/useClaimData';
+import { useClaimList } from './hooks/useClaimList';
 import ClaimHeader from './components/ClaimHeader';
 import ClaimStatsRow from './components/ClaimStatsRow';
 import ClaimTable from './components/table/ClaimTable';
@@ -29,6 +29,7 @@ const claimGuideConfig = {
 export default function ClaimMain() {
   const [copiedText, setCopiedText] = useState(null);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const { 
     loading,
@@ -36,14 +37,13 @@ export default function ClaimMain() {
     activeTab, setActiveTab,
     startDate, setStartDate,
     endDate, setEndDate,
-    selectedRequest, setSelectedRequest,
     filteredRequests,
     paginatedRequests,
     currentPage, setCurrentPage,
     totalPages,
     stats,
     warrantyConfig
-  } = useClaimData();
+  } = useClaimList();
 
   const getStatusDisplay = (status) => {
     switch(status) {

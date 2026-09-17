@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+﻿import { useRef, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
 import CartPanel from './pos/CartPanel';
@@ -8,7 +8,7 @@ import ReceiptTemplate from './pos/ReceiptTemplate';
 import PosHeader from './pos/layout/PosHeader';
 import GuideModal from '../common/GuideModal';
 import PromoModal from './pos/layout/PromoModal';
-import FreebieModal from './pos/layout/FreebieModal';
+import FreebieModal from '../../pages/managers/components/freebie/FreebieModal';
 import usePosState from './pos/hooks/usePosState';
 import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
 import { usePosShortcuts } from './pos/hooks/usePosShortcuts';
@@ -17,27 +17,27 @@ import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const convertToThaiBahtText = (number) => {
-    if (isNaN(number) || number === 0) return "ศูนย์บาทถ้วน";
+    if (isNaN(number) || number === 0) return "เธจเธนเธเธขเนเธเธฒเธ—เธ–เนเธงเธ";
     const numberStr = parseFloat(number).toFixed(2);
     const [bahtStr, satangStr] = numberStr.split('.');
     const readNumber = (numStr) => {
-        const numbers = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
-        const positions = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
+        const numbers = ["เธจเธนเธเธขเน", "เธซเธเธถเนเธ", "เธชเธญเธ", "เธชเธฒเธก", "เธชเธตเน", "เธซเนเธฒ", "เธซเธ", "เน€เธเนเธ”", "เนเธเธ”", "เน€เธเนเธฒ"];
+        const positions = ["", "เธชเธดเธ", "เธฃเนเธญเธข", "เธเธฑเธ", "เธซเธกเธทเนเธ", "เนเธชเธ", "เธฅเนเธฒเธ"];
         let text = ""; const length = numStr.length;
         for (let i = 0; i < length; i++) {
             const digit = parseInt(numStr[i]); const position = length - i - 1;
             if (digit !== 0) {
-                if (position === 0 && digit === 1 && length > 1 && parseInt(numStr[i-1]) !== 0) text += "เอ็ด";
-                else if (position === 1 && digit === 2) text += "ยี่สิบ";
-                else if (position === 1 && digit === 1) text += "สิบ";
+                if (position === 0 && digit === 1 && length > 1 && parseInt(numStr[i-1]) !== 0) text += "เน€เธญเนเธ”";
+                else if (position === 1 && digit === 2) text += "เธขเธตเนเธชเธดเธ";
+                else if (position === 1 && digit === 1) text += "เธชเธดเธ";
                 else text += numbers[digit] + positions[position % 6];
             }
-            if (position % 6 === 0 && position > 0 && digit !== 0) text += "ล้าน";
+            if (position % 6 === 0 && position > 0 && digit !== 0) text += "เธฅเนเธฒเธ";
         }
         return text;
     };
-    let result = readNumber(bahtStr) + "บาท";
-    if (satangStr === "00") result += "ถ้วน"; else result += readNumber(satangStr) + "สตางค์";
+    let result = readNumber(bahtStr) + "เธเธฒเธ—";
+    if (satangStr === "00") result += "เธ–เนเธงเธ"; else result += readNumber(satangStr) + "เธชเธ•เธฒเธเธเน";
     return result;
 };
 
@@ -77,7 +77,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                 const rules = await shippingService.getActiveShippingRules();
                 setShippingRules(rules);
             } catch (e) {
-                console.error("🔥 Error loading shipping rules in POS:", e);
+                console.error("๐”ฅ Error loading shipping rules in POS:", e);
             }
         };
         fetchShippingRules();
@@ -105,11 +105,11 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
 
     const getTabTitle = (tab, index) => {
         if (tab.customer && tab.customer.uid !== 'WALK-IN') {
-            return getCustomerDisplayName(tab.customer, `ลูกค้า ${index + 1}`);
+            return getCustomerDisplayName(tab.customer, `เธฅเธนเธเธเนเธฒ ${index + 1}`);
         }
         if (tab.walkInName) return tab.walkInName;
-        if (tab.orderId) return `บิล ${tab.orderId.slice(-4)}`;
-        return `บิล ${index + 1}`;
+        if (tab.orderId) return `เธเธดเธฅ ${tab.orderId.slice(-4)}`;
+        return `เธเธดเธฅ ${index + 1}`;
     };
 
     useCartValidation(activeTabId, activeTab, products, updateActiveTab);
@@ -117,7 +117,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
 
     const handleSearchKeyDown = (e) => {
         if (e.key === 'Enter' && searchQuery.trim() !== '') {
-            // 🚀 [UPDATED] ใช้ searchResults จาก Dynamic Server Search แทน products array
+            // ๐€ [UPDATED] เนเธเน searchResults เธเธฒเธ Dynamic Server Search เนเธ—เธ products array
             const exactMatch = searchResults.find(p => p.sku?.toLowerCase() === searchQuery.trim().toLowerCase());
             if (exactMatch) actions.addItemToCart(exactMatch); else if (searchResults.length > 0) actions.addItemToCart(searchResults[0]);
         }
@@ -189,20 +189,20 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                 <GuideModal 
                     isOpen={isGuideModalOpen} 
                     onClose={() => setIsGuideModalOpen(false)} 
-                    title="คู่มือการใช้งาน: เปิดบิลการขาย"
+                    title="เธเธนเนเธกเธทเธญเธเธฒเธฃเนเธเนเธเธฒเธ: เน€เธเธดเธ”เธเธดเธฅเธเธฒเธฃเธเธฒเธข"
                     config={{
-                        description: "ระบบเปิดบิลการขาย (POS) รองรับการสร้างหลายบิลพร้อมกัน (Multi-tabs) การตัดสต็อกและจัดการส่วนลด/ภาษี",
+                        description: "เธฃเธฐเธเธเน€เธเธดเธ”เธเธดเธฅเธเธฒเธฃเธเธฒเธข (POS) เธฃเธญเธเธฃเธฑเธเธเธฒเธฃเธชเธฃเนเธฒเธเธซเธฅเธฒเธขเธเธดเธฅเธเธฃเนเธญเธกเธเธฑเธ (Multi-tabs) เธเธฒเธฃเธ•เธฑเธ”เธชเธ•เนเธญเธเนเธฅเธฐเธเธฑเธ”เธเธฒเธฃเธชเนเธงเธเธฅเธ”/เธ เธฒเธฉเธต",
                         howTo: [
-                            "<strong>โซนตะกร้าสินค้า (ซ้ายบน):</strong> กด <code>F3</code> เพื่อพิมพ์ค้นหาสินค้า หรือใช้เครื่องยิงบาร์โค้ดสแกนได้ทันที สามารถคลิกที่ชื่อสินค้าเพื่อแก้ไขจำนวนหรือส่วนลดรายชิ้น",
-                            "<strong>โซนตั้งค่าบิล (ขวามือ):</strong> ค้นหาลูกค้าด้วยชื่อหรือเบอร์โทร เลือกระดับราคา (B2B/ปลีก) รูปแบบภาษี และเพิ่มค่าจัดส่งหรือส่วนลดท้ายบิล",
-                            "<strong>โซนชำระเงิน (ด้านล่าง):</strong> ระบุยอดเงินสด แนบสลิปโอนเงิน (กด <code>Ctrl+V</code> เพื่อวางรูปสลิป) แผงชำระจะยุบอัตโนมัติ กดปุ่ม <code>ล็อค</code> (ไอคอนกุญแจ) เพื่อเปิดค้างไว้"
+                            "<strong>เนเธเธเธ•เธฐเธเธฃเนเธฒเธชเธดเธเธเนเธฒ (เธเนเธฒเธขเธเธ):</strong> เธเธ” <code>F3</code> เน€เธเธทเนเธญเธเธดเธกเธเนเธเนเธเธซเธฒเธชเธดเธเธเนเธฒ เธซเธฃเธทเธญเนเธเนเน€เธเธฃเธทเนเธญเธเธขเธดเธเธเธฒเธฃเนเนเธเนเธ”เธชเนเธเธเนเธ”เนเธ—เธฑเธเธ—เธต เธชเธฒเธกเธฒเธฃเธ–เธเธฅเธดเธเธ—เธตเนเธเธทเนเธญเธชเธดเธเธเนเธฒเน€เธเธทเนเธญเนเธเนเนเธเธเธณเธเธงเธเธซเธฃเธทเธญเธชเนเธงเธเธฅเธ”เธฃเธฒเธขเธเธดเนเธ",
+                            "<strong>เนเธเธเธ•เธฑเนเธเธเนเธฒเธเธดเธฅ (เธเธงเธฒเธกเธทเธญ):</strong> เธเนเธเธซเธฒเธฅเธนเธเธเนเธฒเธ”เนเธงเธขเธเธทเนเธญเธซเธฃเธทเธญเน€เธเธญเธฃเนเนเธ—เธฃ เน€เธฅเธทเธญเธเธฃเธฐเธ”เธฑเธเธฃเธฒเธเธฒ (B2B/เธเธฅเธตเธ) เธฃเธนเธเนเธเธเธ เธฒเธฉเธต เนเธฅเธฐเน€เธเธดเนเธกเธเนเธฒเธเธฑเธ”เธชเนเธเธซเธฃเธทเธญเธชเนเธงเธเธฅเธ”เธ—เนเธฒเธขเธเธดเธฅ",
+                            "<strong>เนเธเธเธเธณเธฃเธฐเน€เธเธดเธ (เธ”เนเธฒเธเธฅเนเธฒเธ):</strong> เธฃเธฐเธเธธเธขเธญเธ”เน€เธเธดเธเธชเธ” เนเธเธเธชเธฅเธดเธเนเธญเธเน€เธเธดเธ (เธเธ” <code>Ctrl+V</code> เน€เธเธทเนเธญเธงเธฒเธเธฃเธนเธเธชเธฅเธดเธ) เนเธเธเธเธณเธฃเธฐเธเธฐเธขเธธเธเธญเธฑเธ•เนเธเธกเธฑเธ•เธด เธเธ”เธเธธเนเธก <code>เธฅเนเธญเธ</code> (เนเธญเธเธญเธเธเธธเธเนเธ) เน€เธเธทเนเธญเน€เธเธดเธ”เธเนเธฒเธเนเธงเน"
                         ],
                         tips: [
-                            "สามารถใช้ <code>Ctrl + Enter</code> เพื่อยืนยันการรับชำระเงิน (Paid) อย่างรวดเร็ว",
-                            "หากต้องการเพิ่มบิลร่างใหม่ กดไอคอน <code>+</code> หรือใช้ <code>Alt + N</code>",
-                            "การใช้เมาส์คลิกปุ่มจ่ายพอดี (Exact) ช่วยให้รับเงินได้รวดเร็วขึ้นในกรณีที่ลูกค้าจ่ายเงินพอดี"
+                            "เธชเธฒเธกเธฒเธฃเธ–เนเธเน <code>Ctrl + Enter</code> เน€เธเธทเนเธญเธขเธทเธเธขเธฑเธเธเธฒเธฃเธฃเธฑเธเธเธณเธฃเธฐเน€เธเธดเธ (Paid) เธญเธขเนเธฒเธเธฃเธงเธ”เน€เธฃเนเธง",
+                            "เธซเธฒเธเธ•เนเธญเธเธเธฒเธฃเน€เธเธดเนเธกเธเธดเธฅเธฃเนเธฒเธเนเธซเธกเน เธเธ”เนเธญเธเธญเธ <code>+</code> เธซเธฃเธทเธญเนเธเน <code>Alt + N</code>",
+                            "เธเธฒเธฃเนเธเนเน€เธกเธฒเธชเนเธเธฅเธดเธเธเธธเนเธกเธเนเธฒเธขเธเธญเธ”เธต (Exact) เธเนเธงเธขเนเธซเนเธฃเธฑเธเน€เธเธดเธเนเธ”เนเธฃเธงเธ”เน€เธฃเนเธงเธเธถเนเธเนเธเธเธฃเธ“เธตเธ—เธตเนเธฅเธนเธเธเนเธฒเธเนเธฒเธขเน€เธเธดเธเธเธญเธ”เธต"
                         ],
-                        expectedResults: "เมื่อกด <strong>ยืนยันชำระเงิน</strong> ระบบจะตัดสต็อกสินค้าทันทีและสร้างบิลหมายเลข (DH-xxxx) พร้อมบันทึกยอดขายและประวัติให้ลูกค้า"
+                        expectedResults: "เน€เธกเธทเนเธญเธเธ” <strong>เธขเธทเธเธขเธฑเธเธเธณเธฃเธฐเน€เธเธดเธ</strong> เธฃเธฐเธเธเธเธฐเธ•เธฑเธ”เธชเธ•เนเธญเธเธชเธดเธเธเนเธฒเธ—เธฑเธเธ—เธตเนเธฅเธฐเธชเธฃเนเธฒเธเธเธดเธฅเธซเธกเธฒเธขเน€เธฅเธ (DH-xxxx) เธเธฃเนเธญเธกเธเธฑเธเธ—เธถเธเธขเธญเธ”เธเธฒเธขเนเธฅเธฐเธเธฃเธฐเธงเธฑเธ•เธดเนเธซเนเธฅเธนเธเธเนเธฒ"
                     }}
                 />
             )}

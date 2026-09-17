@@ -5,7 +5,7 @@ import { Clock, Loader2 } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ManagerRoute from './components/routing/ManagerRoute'
 import AdminLayout from './layouts/AdminLayout'
-import CommandPalette from './components/CommandPalette'
+
 
 // 🚀 Lazy Load Components for Performance
 const Overview = lazy(() => import('./pages/dashboard/Overview'))
@@ -49,12 +49,15 @@ const GlobalFooterSettings = lazy(() => import('./pages/managers/GlobalFooterSet
 const PrivacyCookiesSettings = lazy(() => import('./pages/managers/PrivacyCookiesSettings/index.jsx'))
 const RedirectURLsSettings = lazy(() => import('./pages/managers/RedirectURLsSettings/index.jsx'))
 const RbacSettings = lazy(() => import('./pages/managers/settings/rbac/index.jsx'))
-const RoleTierSettings = lazy(() => import('./pages/managers/settings/role_tier/RoleTierSettingsPage'))
+const RoleTierSettings = lazy(() => import('./pages/managers/RoleTierSettings/RoleTierSettingsPage'))
+
 const SystemCoreSettings = lazy(() => import('./pages/managers/settings/core/SystemCoreSettings'))
 const DataRepairPage = lazy(() => import('./pages/managers/settings/data_repair/DataRepairPage'))
 const AuditLedger = lazy(() => import('./pages/managers/AuditLedger'))
 const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
-const GenerateSyncDetails = lazy(() => import('./pages/GenerateSync/GenerateSyncDetails.jsx'))
+const GenerateSyncDetails = lazy(() => import('./pages/GenerateSync/GenerateSyncDetails'))
+const CommandPalette = lazy(() => import('./components/CommandPalette'))
+
 
 const Placeholder = ({ title }) => (
   <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
@@ -170,7 +173,7 @@ function AppContent() {
 
   return (
     <Suspense fallback={<PageLoader />}>
-      <CommandPalette />
+      
       <Routes>
         <Route path="/" element={<AdminLayout />}>
           <Route index element={<Navigate to="/overview" replace />} />
@@ -208,7 +211,8 @@ function AppContent() {
             <Route path="managers/privacy-cookies" element={<PrivacyCookiesSettings />} />
             <Route path="managers/redirect" element={<RedirectURLsSettings />} />
             <Route path="managers/rbac" element={<RbacSettings />} />
-            <Route path="managers/role-tier" element={<RoleTierSettings />} />
+            <Route path="managers/role-tier-settings" element={<RoleTierSettings />} />
+            
             <Route path="managers/core-settings" element={<SystemCoreSettings />} />
             <Route path="managers/data-repair" element={<DataRepairPage />} />
             <Route path="managers/audit-ledger" element={<AuditLedger />} />
@@ -218,7 +222,8 @@ function AppContent() {
           <Route path="gallery" element={<GalleryMain />}/>
           <Route path="inventory" element={<Inventory/>}/>
           <Route path="generate" element={<GenerateSync />}/>
-          <Route path="generate/details" element={<GenerateSyncDetails />}/>
+          <Route path="generate/details/:referenceId" element={<GenerateSyncDetails />}/>
+          
           <Route path="customers" element={<Customers />}/>
           <Route path="emails" element={<EmailMain />}/>
           <Route path="calendar" element={<CalendarPage />}/>

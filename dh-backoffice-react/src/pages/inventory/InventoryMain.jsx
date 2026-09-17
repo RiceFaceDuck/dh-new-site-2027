@@ -1,13 +1,8 @@
-import { useState, useCallback, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { Loader2, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import ProductTable from '../../components/inventory/ProductTable';
 import InventoryHeader from '../../components/inventory/InventoryHeader';
-import { inventoryService } from '../../firebase/inventoryService';
-
-import useInventoryData from '../../components/inventory/hooks/useInventoryData';
-import useInventorySearch from '../../components/inventory/hooks/useInventorySearch';
-import useDebounce from '../../hooks/useDebounce'; // ✨ Import useDebounce
-import { useAuth } from '../../contexts/AuthContext';
+import useInventoryController from './useInventoryController';
 
 // ⚡ Lazy Loading Heavy Modals
 const ProductModal = lazy(() => import('../../components/inventory/ProductModal'));
@@ -16,81 +11,43 @@ const InventoryExportModal = lazy(() => import('../../components/inventory/Inven
 const GuideModal = lazy(() => import('../../components/common/GuideModal'));
 
 export default function Inventory() {
-  const { isManagerOrOwner } = useAuth();
   const {
-    products, categories, loading, globalBufferStock,
-    fetchInitialProducts, updateProductInState
-  } = useInventoryData();
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 300); // ✨ หน่วงเวลาพิมพ์ค้นหา 300ms
-
-  const [filterCategory, setFilterCategory] = useState('All');
-  const [salesPeriod, setSalesPeriod] = useState('30'); 
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-
-  const handleOpenMasterSheet = () => {
-    if (isManagerOrOwner) {
-      window.open('https://docs.google.com/spreadsheets/d/1f3ZyfZM6nwE3OSNeseMqlqElDqv7Kxt_UL3H1IPTLos/edit?usp=sharing', '_blank');
-    } else {
-      alert('คุณไม่สามารถใช้งานได้\nต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า หรือ ตำแหน่งที่อนุมัติ ให้ใช้งานได้');
-    }
-  };
-
-  // ✨ ส่ง debouncedSearchTerm ไปใช้ค้นหา และดึงข้อมูล Pagination
-  const { 
-    filteredProducts, isSearching, 
-    totalItems, currentPage, setCurrentPage,
-    itemsPerPage, setItemsPerPage, totalPages,
-    startIndex, endIndex,
-    updateCache, clearCache 
-  } = useInventorySearch(
-    products, debouncedSearchTerm, filterCategory, sortConfig, salesPeriod
-  );
-
-  const handleSort = useCallback((key) => {
-    setSortConfig(prev => {
-      let direction = 'desc';
-      if (prev.key === key && prev.direction === 'desc') {
-        direction = 'asc';
-      }
-      return { key, direction };
-    });
-  }, []);
-
-  const handleEditProduct = useCallback((p) => {
-    setEditingProduct(p);
-    setIsModalOpen(true);
-  }, []);
-
-  const handleSaveProduct = async (productData) => {
-    try {
-      const isEdit = !!editingProduct;
-      if (isEdit) {
-        await inventoryService.updateProduct(productData.sku, productData);
-      } else {
-        await inventoryService.addProduct(productData);
-      }
-      
-      updateProductInState(productData, isEdit);
-      updateCache(productData, isEdit);
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error saving product:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-    }
-  };
-
-  const handleAddProduct = () => {
-    setEditingProduct(null);
-    setIsModalOpen(true);
-  };
+    categories,
+    loading,
+    globalBufferStock,
+    searchTerm,
+    setSearchTerm,
+    filterCategory,
+    setFilterCategory,
+    salesPeriod,
+    setSalesPeriod,
+    sortConfig,
+    filteredProducts,
+    isSearching,
+    totalItems,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    isModalOpen,
+    setIsModalOpen,
+    isImportModalOpen,
+    setIsImportModalOpen,
+    isExportModalOpen,
+    setIsExportModalOpen,
+    editingProduct,
+    isGuideOpen,
+    setIsGuideOpen,
+    handleOpenMasterSheet,
+    handleSort,
+    handleEditProduct,
+    handleSaveProduct,
+    handleAddProduct,
+    handleImportSuccess,
+  } = useInventoryController();
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
@@ -201,11 +158,7 @@ export default function Inventory() {
           <InventoryImportModal 
             isOpen={isImportModalOpen} 
             onClose={() => setIsImportModalOpen(false)} 
-            onSuccess={() => {
-              setIsImportModalOpen(false);
-              clearCache();
-              fetchInitialProducts();
-            }}
+            onSuccess={handleImportSuccess}
           />
         )}
 
@@ -251,4 +204,4 @@ export default function Inventory() {
       </Suspense>
     </div>
   );
-}// trigger 
+}

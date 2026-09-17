@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Wrench, ArrowLeftRight, Printer, X } from 'lucide-react';
 import { auth } from '../../../../firebase/config';
 import { userService } from '../../../../firebase/userService';
-import { useClaimActions } from '../../hooks/useClaimActions';
+import { useClaimMutations } from '../../hooks/useClaimMutations';
 
 import CustomerInfo from './CustomerInfo';
 import ProductInfo from './ProductInfo';
@@ -58,7 +58,7 @@ export default function ClaimDetailModal({
     handleMarkArrived,
     handleComplete,
     handleReject
-  } = useClaimActions(selectedRequest, setSelectedRequest, userProfile, handleClose);
+  } = useClaimMutations(selectedRequest, setSelectedRequest, userProfile, handleClose);
 
   useEffect(() => {
     const fetchProfile = async () => {
