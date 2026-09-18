@@ -7,7 +7,7 @@ export default function NoteSettings({
 }) {
     return (
         <div className={sectionClass}>
-            <label className={`${labelClass} text-slate-700 font-extrabold mb-1.5`}><FileText size={13}/> หมายเหตุพิมพ์ในบิล (PRINT NOTE)</label>
+            <label className={labelClass}><FileText size={13}/> หมายเหตุพิมพ์ในบิล (PRINT NOTE)</label>
             <textarea 
                 disabled={isProcessing} 
                 placeholder="อ้างอิง PO, จุดสังเกตการจัดส่ง..." 

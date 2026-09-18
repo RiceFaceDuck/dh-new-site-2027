@@ -101,16 +101,16 @@ export default function PaymentPanel({
     }
 
     return (
-        <div className="shrink-0 bg-white border-t border-gray-200 flex flex-col font-sans relative">
+        <div className="shrink-0 bg-[#F0F4F8] border-t-2 border-[#2A305A] shadow-[0_-8px_25px_rgba(0,0,0,0.08)] flex flex-col font-sans relative z-10">
             
-            {/* Toolbar ด้านบนสำหรับเปิด/ปิด (ยื่นออกมาด้านบน) */}
-            <div className="absolute -top-10 right-4 flex items-center bg-white border border-gray-200 border-b-0 rounded-t-xl px-2 py-1 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20">
-                <button onClick={toggleLock} className={`p-1.5 rounded-md transition-colors ${isLocked ? 'text-[#D51C39] bg-red-50' : 'text-gray-500 hover:bg-gray-100'}`} title="ล็อคแผง">
-                    {isLocked ? <Lock size={16}/> : <Unlock size={16}/>}
+            {/* Toolbar ด้านบนสำหรับเปิด/ปิด (ยื่นออกมาด้านบนเป็น Docked Tab สีเข้ม) */}
+            <div className="absolute -top-9 right-4 flex items-center bg-[#2A305A] text-white border border-[#1A1F3D] rounded-t-lg px-2.5 py-0.5 shadow-md z-20">
+                <button onClick={toggleLock} className={`p-1.5 rounded-md transition-colors ${isLocked ? 'text-amber-300 bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/10'}`} title="ล็อคแผง">
+                    {isLocked ? <Lock size={15}/> : <Unlock size={15}/>}
                 </button>
-                <div className="w-px h-5 bg-gray-200 mx-1"></div>
-                <button onClick={toggleCollapse} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 transition-colors" title="ยุบแผง">
-                    <ChevronDown size={18}/>
+                <div className="w-px h-4 bg-white/20 mx-1"></div>
+                <button onClick={toggleCollapse} className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="ยุบแผง">
+                    <ChevronDown size={17}/>
                 </button>
             </div>
 
@@ -122,7 +122,7 @@ export default function PaymentPanel({
                     activeTab={activeTab} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} 
                 />
                 
-                <div className="w-full lg:w-[60%] p-4 flex flex-col justify-between bg-white relative">
+                <div className="w-full lg:w-[60%] p-4 flex flex-col justify-between bg-[#F8FAFC] relative">
                     <PaymentMethods 
                         activeTab={activeTab} updateActiveTab={updateActiveTab}
                         localCash={localCash} setLocalCash={setLocalCash}

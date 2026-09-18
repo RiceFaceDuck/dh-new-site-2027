@@ -108,7 +108,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
             <div className="flex flex-col h-full w-full bg-(--dh-bg-surface) overflow-hidden transition-all duration-300">
                 
                 {/* 🏷️ Header Area (Edge to Edge Design Support) */}
-                <div className="dh-header-gradient p-4 sm:p-6 pb-0 relative z-10 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] transition-colors duration-300">
+                <div className="dh-header-gradient px-4 py-3 sm:px-6 sm:py-3.5 relative z-10 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-white/10 transition-colors duration-300">
                     <OrderFilterBar 
                         filter={filter} 
                         setFilter={setFilter} 
@@ -118,23 +118,21 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                         setDateRange={setDateRange}
                         totalSales={totalSales}
                         headerTitle={
-                            <div className="flex items-center gap-4 relative z-10">
+                            <div className="flex items-center gap-3 relative z-10">
                                 {isSelectorMode ? (
-                                    <div className="relative p-3 bg-rose-100 text-rose-600 rounded-md shadow-inner flex items-center justify-center shrink-0 overflow-visible">
-                                        <div className="absolute inset-0 rounded-md border-2 border-rose-500 animate-ping opacity-50 duration-1000"></div>
-                                        <div className="absolute inset-0 bg-rose-500 rounded-md animate-pulse opacity-20"></div>
-                                        <AlertTriangle size={24} strokeWidth={2.5} className="relative z-10 animate-[bounce_2s_infinite]" />
+                                    <div className="relative p-2 bg-rose-500/20 text-rose-300 rounded-lg border border-rose-500/30 shadow-inner flex items-center justify-center shrink-0">
+                                        <AlertTriangle size={18} strokeWidth={2.5} className="relative z-10 animate-bounce" />
                                     </div>
                                 ) : (
-                                    <div className="w-11 h-11 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs hidden md:flex">
-                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
+                                    <div className="w-9 h-9 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs hidden md:flex">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
                                     </div>
                                 )}
                                 <div>
-                                    <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight leading-none whitespace-nowrap">
+                                    <h1 className="text-lg lg:text-xl font-black text-white tracking-tight leading-none whitespace-nowrap">
                                         {isSelectorMode ? 'เลือกบิลที่ต้องการเคลม/คืน' : 'รายการบิล (Orders)'}
                                     </h1>
-                                    <p className="text-[12px] text-slate-300 mt-1.5 font-bold uppercase tracking-wider hidden sm:block">
+                                    <p className="text-[11px] text-white/70 mt-1 font-bold uppercase tracking-wider hidden sm:block">
                                         {isSelectorMode ? 'ค้นหาบิลจากรหัส หรือชื่อลูกค้า เพื่อทำรายการ' : 'จัดการและตรวจสอบบิลการขาย'}
                                     </p>
                                 </div>
@@ -144,24 +142,24 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                             isSelectorMode ? (
                                 <button 
                                     onClick={onCancelSelector} 
-                                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-[13px] dh-active-press shrink-0 whitespace-nowrap"
+                                    className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-lg flex items-center gap-1.5 transition-all active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
                                 >
-                                    <ArrowLeft size={18} strokeWidth={3} /> ย้อนกลับ (หน้ารายการเคลม)
+                                    <ArrowLeft size={16} strokeWidth={2.5} /> ย้อนกลับ (หน้ารายการเคลม)
                                 </button>
                             ) : (
                                 <div className="flex gap-2 items-center">
                                     <button 
                                         onClick={() => setShowGuide(true)}
-                                        className="px-4 py-2.5 bg-slate-800/50 hover:bg-slate-800/70 text-white border border-slate-700/50 font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
+                                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold rounded-lg flex items-center gap-1.5 transition-all hover:-translate-y-0.5 active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
                                     >
-                                        <HelpCircle size={18} strokeWidth={3} /> คู่มือ
+                                        <HelpCircle size={15} strokeWidth={2.5} /> คู่มือ
                                     </button>
                                     {onSwitchView && (
                                         <button 
                                             onClick={onSwitchView} 
-                                            className="px-5 py-2.5 bg-(--dh-accent) hover:bg-(--dh-accent-hover) text-white font-black rounded-md flex items-center gap-2 transition-all duration-300 hover:shadow-[0_4px_15px_var(--dh-glow-color)] hover:-translate-y-0.5 active:scale-95 text-[13px] shrink-0 whitespace-nowrap"
+                                            className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-lg flex items-center gap-1.5 transition-all hover:shadow-[0_0_15px_rgba(6,182,212,0.5)] hover:-translate-y-0.5 active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
                                         >
-                                            <Plus size={18} strokeWidth={3} /> สร้างบิลใหม่
+                                            <Plus size={16} strokeWidth={3} /> สร้างบิลใหม่
                                         </button>
                                     )}
                                 </div>

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { TableVirtuoso } from 'react-virtuoso';
 import OrderTableRow from './OrderTableRow';
 
-const ITEMS_PER_PAGE = 21;
-
 export default function OrderListTable({ orders, loading, isSearching, limitAmount, setLimitAmount, setSelectedOrder }) {
     const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(21);
 
     // 🚀 Performance Optimization: Memoize Table Components to prevent full unmount on re-render
     const virtuosoComponents = React.useMemo(() => ({
@@ -48,18 +47,18 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
     }, [orders.length, isSearching]);
 
     const totalItems = orders.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     const validPage = Math.min(Math.max(1, currentPage), totalPages);
 
-    const startIndex = (validPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+    const startIndex = (validPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
     const paginatedOrders = orders.slice(startIndex, endIndex);
 
     const handleNextPage = () => {
         if (validPage < totalPages) {
             setCurrentPage(prev => prev + 1);
         } else if (orders.length >= limitAmount && typeof setLimitAmount === 'function') {
-            setLimitAmount(prev => prev + 21);
+            setLimitAmount(prev => prev + 100);
             setCurrentPage(prev => prev + 1);
         }
     };
@@ -127,11 +126,38 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
             {/* 📄 Pagination Bar (แถบเปลี่ยนหน้า 21 รายการ/หน้า) */}
             {!loading && totalItems > 0 && (
                 <div className="px-6 py-2.5 bg-(--dh-bg-base) border-t border-(--dh-border) flex flex-wrap items-center justify-between gap-3 shrink-0 text-sm shadow-xs relative z-10">
-                    <div className="text-xs font-semibold text-(--dh-text-muted)">
-                        แสดง <span className="text-(--dh-accent) font-bold">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</span> จากทั้งหมด <span className="text-(--dh-text-main) font-bold">{totalItems.toLocaleString()}</span> รายการ
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-(--dh-text-muted)">
+                        <div>
+                            แสดง <span className="text-(--dh-accent) font-bold">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</span> จากทั้งหมด <span className="text-(--dh-text-main) font-bold">{totalItems.toLocaleString()}</span> รายการ
+                        </div>
+                        <div className="flex items-center gap-1.5 border-l border-(--dh-border) pl-4">
+                            <span className="text-(--dh-text-muted) text-xs">แสดงหน้าละ:</span>
+                            <select
+                                value={pageSize}
+                                onChange={e => {
+                                    setPageSize(Math.max(10, Number(e.target.value) || 10));
+                                    setCurrentPage(1);
+                                }}
+                                className="px-2 py-1 bg-(--dh-bg-surface) border border-(--dh-border) rounded-md text-xs font-bold text-(--dh-text-main) focus:outline-none focus:border-(--dh-accent) cursor-pointer"
+                            >
+                                <option value={21}>21 รายการ</option>
+                                <option value={50}>50 รายการ</option>
+                                <option value={100}>100 รายการ</option>
+                                <option value={250}>250 รายการ</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-1.5">
+                        <button
+                            onClick={() => setCurrentPage(1)}
+                            disabled={validPage <= 1}
+                            className="px-2 py-1.5 bg-(--dh-bg-surface) border border-(--dh-border) hover:border-(--dh-accent) text-(--dh-text-main) hover:text-(--dh-accent) rounded-md font-bold text-xs flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+                            title="หน้าแรก"
+                        >
+                            <ChevronsLeft size={14} />
+                        </button>
+
                         <button
                             onClick={handlePrevPage}
                             disabled={validPage <= 1}
@@ -139,11 +165,21 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
                             title="หน้าก่อนหน้า"
                         >
                             <ChevronLeft size={14} />
-                            <span>ย้อนกลับ</span>
+                            <span className="hidden sm:inline">ย้อนกลับ</span>
                         </button>
 
-                        <div className="px-3 py-1 bg-(--dh-bg-surface) border border-(--dh-border) rounded-md text-xs font-bold text-(--dh-text-main)">
-                            หน้า <span className="text-(--dh-accent)">{validPage}</span> / {totalPages}
+                        <div className="flex items-center gap-1 px-2 py-1 bg-(--dh-bg-surface) border border-(--dh-border) rounded-md text-xs font-bold text-(--dh-text-main)">
+                            <span>หน้า</span>
+                            <select
+                                value={validPage}
+                                onChange={e => setCurrentPage(Math.max(1, Number(e.target.value) || 1))}
+                                className="bg-transparent border-none text-(--dh-accent) font-bold outline-none cursor-pointer appearance-none text-center px-1 hover:bg-(--dh-bg-base) rounded"
+                            >
+                                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map(pageNum => (
+                                    <option key={pageNum} value={pageNum}>{pageNum}</option>
+                                ))}
+                            </select>
+                            <span>/ {totalPages}</span>
                         </div>
 
                         <button
@@ -152,8 +188,17 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
                             className="px-3 py-1.5 bg-(--dh-bg-surface) border border-(--dh-border) hover:border-(--dh-accent) text-(--dh-text-main) hover:text-(--dh-accent) rounded-md font-bold text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
                             title="หน้าถัดไป"
                         >
-                            <span>ถัดไป</span>
+                            <span className="hidden sm:inline">ถัดไป</span>
                             <ChevronRight size={14} />
+                        </button>
+
+                        <button
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={validPage >= totalPages}
+                            className="px-2 py-1.5 bg-(--dh-bg-surface) border border-(--dh-border) hover:border-(--dh-accent) text-(--dh-text-main) hover:text-(--dh-accent) rounded-md font-bold text-xs flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+                            title="หน้าสุดท้าย"
+                        >
+                            <ChevronsRight size={14} />
                         </button>
                     </div>
                 </div>

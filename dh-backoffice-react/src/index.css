@@ -5,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  --font-sans: "Sarabun", system-ui, -apple-system, sans-serif;
   --color-dh-base: var(--dh-bg-base);
   --color-dh-surface: var(--dh-bg-surface);
   --color-dh-border: var(--dh-border);
@@ -233,7 +234,7 @@
   }
 
   body {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'Sarabun', system-ui, -apple-system, sans-serif;
     background-color: var(--dh-bg-base);
     color: var(--dh-text-main);
     /* เปลี่ยนหน้าจอหรือสลับโหมดให้ละมุนขึ้น ไม่แข็งกระด้าง */

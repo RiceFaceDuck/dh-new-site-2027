@@ -10,15 +10,38 @@ export default function PaymentMethods({
     isScanning, ocrStatus, setOcrStatus, handleFileWithOCR,
     setPreviewSlip, isUploadingSlip
 }) {
-    const inputClass = "w-full bg-white border border-gray-300 rounded-xs px-2.5 text-sm font-medium text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) transition-all";
+    const inputClass = "w-full bg-white border border-slate-300 rounded-md px-3 text-xs font-semibold text-slate-800 outline-hidden focus:border-[#2A305A] focus:ring-2 focus:ring-[#2A305A]/10 transition-all shadow-2xs";
 
     return (
         <div className="mb-4 flex-1">
             {/* แท็บเลือกวิธีจ่าย */}
-            <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xs border border-gray-200">
-                <button onClick={() => updateActiveTab({ paymentMethod: 'Transfer' })} className={`flex-1 py-1.5 text-xs font-semibold rounded-xs transition-all flex items-center justify-center gap-1.5 ${activeTab.paymentMethod === 'Transfer' ? 'bg-(--dh-success) text-white shadow-xs border border-(--dh-success)' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}><Landmark size={14}/> โอนเงิน</button>
-                <button onClick={() => updateActiveTab({ paymentMethod: 'Cash' })} className={`flex-1 py-1.5 text-xs font-semibold rounded-xs transition-all flex items-center justify-center gap-1.5 ${activeTab.paymentMethod === 'Cash' ? 'bg-(--dh-success) text-white shadow-xs border border-(--dh-success)' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}><Banknote size={14}/> เงินสด</button>
-                <button disabled className="flex-1 py-1.5 text-xs font-semibold rounded-xs text-gray-400 flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed"><CreditCard size={14}/> เครดิต</button>
+            <div className="flex gap-1.5 mb-4 bg-slate-100 p-1.5 rounded-lg border border-slate-200 shadow-2xs">
+                <button 
+                    onClick={() => updateActiveTab({ paymentMethod: 'Transfer' })} 
+                    className={`flex-1 py-2 text-xs font-extrabold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        activeTab.paymentMethod === 'Transfer' 
+                            ? 'bg-[#2A305A] text-white shadow-xs border border-[#1A1F3D] scale-[1.01]' 
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                >
+                    <Landmark size={14}/> โอนเงิน
+                </button>
+                <button 
+                    onClick={() => updateActiveTab({ paymentMethod: 'Cash' })} 
+                    className={`flex-1 py-2 text-xs font-extrabold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        activeTab.paymentMethod === 'Cash' 
+                            ? 'bg-[#2A305A] text-white shadow-xs border border-[#1A1F3D] scale-[1.01]' 
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                >
+                    <Banknote size={14}/> เงินสด
+                </button>
+                <button 
+                    disabled 
+                    className="flex-1 py-2 text-xs font-extrabold rounded-md text-slate-400 flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed"
+                >
+                    <CreditCard size={14}/> เครดิต
+                </button>
             </div>
             
             <div className="flex flex-col min-h-[140px] justify-center">
@@ -57,9 +80,20 @@ export default function PaymentMethods({
                 {activeTab.paymentMethod === 'Transfer' && (
                     <div className="flex justify-between items-stretch animate-in fade-in duration-200 h-full gap-3">
                         <div className="flex-1 flex flex-col gap-2.5">
-                            <select value={activeTab.bankAccount || 'KBANK'} onChange={(e) => updateActiveTab({ bankAccount: e.target.value })} className={`${inputClass} h-8 text-xs cursor-pointer`}>
-                                <option value="KBANK">เข้าบัญชี: กสิกรไทย</option><option value="SCB">เข้าบัญชี: ไทยพาณิชย์</option><option value="BBL">เข้าบัญชี: กรุงเทพ</option><option value="KTB">เข้าบัญชี: กรุงไทย</option>
-                            </select>
+                            <div className="relative h-8 group flex items-center">
+                                <select 
+                                    value={activeTab.bankAccount || 'BAY'} 
+                                    onChange={(e) => updateActiveTab({ bankAccount: e.target.value })} 
+                                    className={`${inputClass} h-full cursor-pointer pl-8 pr-2 text-xs`}
+                                >
+                                    <option value="BAY">เข้าบัญชี: กรุงศรี (default)</option>
+                                    <option value="KBANK">เข้าบัญชี: กสิกรไทย</option>
+                                    <option value="SCB">เข้าบัญชี: ไทยพาณิชย์</option>
+                                    <option value="BBL">เข้าบัญชี: กรุงเทพ</option>
+                                    <option value="KTB">เข้าบัญชี: กรุงไทย</option>
+                                </select>
+                                <Landmark size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+                            </div>
                             <div className="relative h-8 group">
                                 <input type="text" placeholder="หมายเลขธุรกรรม (ถ้ามี)" value={localTxRef} onChange={(e) => setLocalTxRef(e.target.value)} onBlur={() => updateActiveTab({ transactionRef: localTxRef })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ transactionRef: localTxRef }); }} className={`${inputClass} h-full ${ocrStatus === 'error' ? 'border-red-300 focus:border-red-500' : ''}`} />
                                 {isScanning && <ScanLine size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 animate-spin-slow" />}

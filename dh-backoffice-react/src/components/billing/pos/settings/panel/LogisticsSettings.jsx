@@ -71,9 +71,9 @@ export default function LogisticsSettings({
             {/* 2. FORMAT & VAT */}
             <div className={`${sectionClass} grid grid-cols-2 gap-4`}>
                 <div>
-                    <label className={labelClass}><Tag size={12}/> ระดับราคา</label>
+                    <label className={labelClass}><Tag size={12}/> ราคาขาย</label>
                     <ToggleGroup 
-                        options={[{ value: 'wholesale', label: 'B2B' }, { value: 'retail', label: 'ปลีก' }]}
+                        options={[{ value: 'wholesale', label: 'ร้านช่าง' }, { value: 'retail', label: 'ปลีก' }]}
                         activeValue={activeTab.priceMode} onChange={handlePriceModeChange} disabled={isProcessing}
                     />
                 </div>

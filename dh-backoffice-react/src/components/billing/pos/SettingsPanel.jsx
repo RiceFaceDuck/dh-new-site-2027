@@ -86,36 +86,27 @@ export default function SettingsPanel({
 
 
     // 🎨 UI Classes 
-    const inputClass = "w-full bg-white border border-gray-300 rounded-md px-2.5 py-1.5 text-xs font-semibold text-gray-800 outline-hidden focus:border-[#2A305A] focus:ring-1 focus:ring-[#2A305A] transition-all placeholder-gray-400 shadow-xs";
-    const labelClass = "text-[10px] font-bold text-gray-500 mb-1 flex items-center gap-1.5 uppercase tracking-wider";
-    const sectionClass = "p-3.5 border-b border-gray-200 last:border-0 transition-colors duration-300";
+    const inputClass = "w-full bg-white border border-gray-300 rounded-none rounded-tr-md px-2.5 py-1.5 text-xs font-semibold text-gray-800 outline-hidden focus:border-[#4ade80] focus:ring-1 focus:ring-[#4ade80] transition-all placeholder-gray-400 shadow-xs";
+    const labelClass = "text-xs font-bold text-white/90 mb-1 flex items-center gap-1.5 uppercase tracking-wider";
+    const sectionClass = "p-3.5 border-b border-white/10 last:border-0 transition-colors duration-300";
 
     return (
-        <div className="w-full h-full flex flex-col bg-(--dh-bg-surface) overflow-hidden z-10 font-sans relative">
+        <div className="w-full h-full flex flex-col bg-[#35416C] text-white overflow-y-auto max-h-full font-sans hide-scrollbar relative z-10">
             {isProcessing && <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-[1px] cursor-not-allowed transition-all duration-300"></div>}
 
             {/* HEADER */}
-            <div className="px-4 py-3 shrink-0 flex items-center justify-between relative z-20 bg-(--dh-primary) text-white">
+            <div className="p-3 border-b border-black/20 flex justify-between items-center bg-[#283254] sticky top-0 z-20 shadow-md">
                 <button
                     type="button"
                     onClick={() => !isProcessing && setIsTerminalConfigOpen(!isTerminalConfigOpen)}
                     disabled={isProcessing}
-                    className="flex items-center gap-2.5 group text-left cursor-pointer select-none"
-                    title="กดเพื่อตั้งค่าเครื่อง / POS Terminal Settings"
+                    className="flex items-center gap-2 text-white cursor-pointer hover:opacity-90 transition-opacity"
+                    title="ตั้งค่าบิลขาย"
                 >
-                    <div className={`p-1.5 border rounded-md shadow-xs transition-all ${
-                        isTerminalConfigOpen 
-                            ? 'bg-white text-[#2A305A] border-white shadow-md scale-105' 
-                            : 'bg-white/10 border-white/20 text-white group-hover:bg-white/20 group-hover:border-white/30'
-                    }`}>
-                        <Settings size={16} className={`transition-transform duration-300 ${isTerminalConfigOpen ? 'rotate-90' : 'group-hover:rotate-45'}`} />
+                    <div className="p-1.5 bg-white/10 rounded-md">
+                        <Settings size={18} className="text-white" />
                     </div>
-                    <div>
-                        <h2 className="text-sm font-bold text-white leading-none group-hover:text-cyan-200 transition-colors">
-                            ตั้งค่าบิล (SETTINGS)
-                        </h2>
-                        <p className="text-[10px] font-bold text-gray-300 mt-1 uppercase tracking-widest">Control Panel</p>
-                    </div>
+                    <span className="font-bold text-sm tracking-wide">ตั้งค่าบิลขาย</span>
                 </button>
 
                 {/* Dropdown ตั้งค่า POS */}
@@ -130,7 +121,7 @@ export default function SettingsPanel({
             </div>
 
             {/* CONTENT AREA */}
-            <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-300 ${isProcessing ? 'opacity-70' : ''}`}>
+            <div className={`p-3 flex flex-col gap-3 pb-8 overflow-y-auto custom-scrollbar transition-opacity duration-300 ${isProcessing ? 'opacity-70' : ''}`}>
 
                 {/* 1. CUSTOMER IDENTITY & SEARCH */}
                 <CustomerSection
@@ -162,6 +153,19 @@ export default function SettingsPanel({
                     shippingRules={shippingRules}
                 />
 
+                <PromotionSettings
+                    activeTab={activeTab}
+                    updateActiveTab={updateActiveTab}
+                    isProcessing={isProcessing}
+                    setIsPromoModalOpen={setIsPromoModalOpen}
+                    setIsFreebieModalOpen={setIsFreebieModalOpen}
+                    handleRemovePromotion={handleRemovePromotion}
+                    handleRemoveFreebie={handleRemoveFreebie}
+                    eligibleFreebies={eligibleFreebies}
+                    sectionClass={sectionClass}
+                    labelClass={labelClass}
+                />
+
                 <DiscountSettings
                     activeTab={activeTab}
                     updateActiveTab={updateActiveTab}
@@ -175,19 +179,6 @@ export default function SettingsPanel({
                     sectionClass={sectionClass}
                     labelClass={labelClass}
                     inputClass={inputClass}
-                />
-
-                <PromotionSettings
-                    activeTab={activeTab}
-                    updateActiveTab={updateActiveTab}
-                    isProcessing={isProcessing}
-                    setIsPromoModalOpen={setIsPromoModalOpen}
-                    setIsFreebieModalOpen={setIsFreebieModalOpen}
-                    handleRemovePromotion={handleRemovePromotion}
-                    handleRemoveFreebie={handleRemoveFreebie}
-                    eligibleFreebies={eligibleFreebies}
-                    sectionClass={sectionClass}
-                    labelClass={labelClass}
                 />
 
                 <NoteSettings

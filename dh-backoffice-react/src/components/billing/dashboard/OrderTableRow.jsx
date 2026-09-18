@@ -54,9 +54,12 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
     // Pending service checks from order or active To-dos
     const hasPendingClaim = !!(order.hasPendingClaim || order.pendingClaimCount > 0 || order.pendingClaim);
     const hasPendingReturn = !!(order.hasPendingReturn || order.pendingReturnCount > 0 || order.pendingReturn);
+    const hasPendingExchange = !!(order.hasPendingExchange || order.pendingExchangeCount > 0 || order.pendingExchange);
+    const isDraft = statLower === 'draft' || payStatLower === 'draft' || order.isDraft === true;
 
     // Check tax invoice status
     const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus || order.taxInvoiceUrl || order.taxData || order.hasPendingTax);
+    const isTaxInvoice = order.vatType === 'included' || order.vatType === 'excluded' || !!(order.isTaxInvoice || order.customer?.taxInvoiceNeeded || order.customer?.taxId || hasTaxInvoice);
     const taxStatus = order.taxInvoiceStatus || (order.taxInvoiceUrl ? 'issued' : (hasTaxInvoice ? 'pending' : null));
 
     return (
@@ -76,26 +79,30 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                     {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
                 </div>
             </td>
-            <td className="py-2.5 px-4 text-center align-middle">
+            <td className="py-2.5 px-4 text-left align-middle whitespace-nowrap">
                 {isCancelled ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 text-[10px] font-black border border-rose-500/20 shadow-xs transition-transform group-hover:scale-105">
-                        <Ban size={12} strokeWidth={2.5} /> ยกเลิกแล้ว
+                    <span className="inline-flex items-center justify-start gap-1.5 text-rose-600 text-sm font-black">
+                        <Ban size={15} strokeWidth={2.5} /> ยกเลิกแล้ว
+                    </span>
+                ) : isDraft ? (
+                    <span className="inline-flex items-center justify-start gap-1.5 text-purple-700 text-sm font-black">
+                        <Clock size={15} strokeWidth={2.5} /> ฉบับร่าง (Draft)
                     </span>
                 ) : statLower === 'completed' ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 text-[10px] font-black border border-blue-500/20 shadow-xs transition-transform group-hover:scale-105 dh-glow">
-                        <CheckCircle2 size={12} strokeWidth={2.5} /> เสร็จสิ้น
+                    <span className="inline-flex items-center justify-start gap-1.5 text-blue-700 text-sm font-black">
+                        ส่งออก 🚚
                     </span>
                 ) : statLower === 'approved' ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 shadow-xs transition-transform group-hover:scale-105 dh-glow">
-                        <CheckCircle2 size={12} strokeWidth={2.5} /> อนุมัติ / หักสต็อกแล้ว
+                    <span className="inline-flex items-center justify-start gap-1.5 text-indigo-700 text-sm font-black">
+                        print แล้ว 🖨️ / หักสต๊อคแล้ว 📤
                     </span>
                 ) : isPaid ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-teal-500/10 text-teal-600 text-[10px] font-black border border-teal-500/20 shadow-xs transition-transform group-hover:scale-105">
-                        <CheckCircle2 size={12} strokeWidth={2.5} /> ชำระเงินเรียบร้อย
+                    <span className="inline-flex items-center justify-start gap-1.5 text-teal-700 text-sm font-black">
+                        โอนแล้ว ✅ / หักสต๊อคแล้ว 📤
                     </span>
                 ) : (
-                    <span className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-black border border-orange-500/20 shadow-xs transition-transform group-hover:scale-105">
-                        <Clock size={12} strokeWidth={2.5} /> รอดำเนินการ
+                    <span className="inline-flex items-center justify-start gap-1.5 text-amber-700 text-sm font-black">
+                        <Clock size={15} strokeWidth={2.5} /> รอดำเนินการ
                     </span>
                 )}
             </td>
@@ -157,6 +164,11 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                             เปลี่ยน {exchangeQty}
                         </span>
                     )}
+                    {hasPendingExchange && exchangeQty === 0 && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-sky-500/10 text-sky-600 text-[10px] font-black border border-sky-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="มีรายการขอเปลี่ยนสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
+                            เปลี่ยน (รอ)
+                        </span>
+                    )}
                     {returnQty > 0 && (
                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-600 text-[10px] font-black border border-purple-500/20 shadow-xs transition-transform hover:scale-105" title={`คืนสินค้าสำเร็จจำนวน ${returnQty} ชิ้น`}>
                             คืน {returnQty}
@@ -165,6 +177,11 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                     {hasPendingReturn && returnQty === 0 && (
                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-500 text-[10px] font-black border border-purple-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="มีรายการขอคืนสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
                             คืน (รอ)
+                        </span>
+                    )}
+                    {isTaxInvoice && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-600 text-white text-[10px] font-black shadow-xs transition-transform hover:scale-105" title="ลูกค้าต้องการใบกำกับภาษี">
+                            📄 ใบกำกับภาษี
                         </span>
                     )}
                     {taxStatus === 'issued' && (
@@ -177,7 +194,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                             ภาษี (รอ)
                         </span>
                     )}
-                    {claimQty === 0 && !hasPendingClaim && exchangeQty === 0 && returnQty === 0 && !hasPendingReturn && !taxStatus && (
+                    {claimQty === 0 && !hasPendingClaim && exchangeQty === 0 && !hasPendingExchange && returnQty === 0 && !hasPendingReturn && !isTaxInvoice && !taxStatus && (
                         <span className="text-[11px] text-(--dh-text-muted)">-</span>
                     )}
                 </div>

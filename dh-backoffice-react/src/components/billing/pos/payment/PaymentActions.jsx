@@ -10,18 +10,32 @@ export default function PaymentActions({
                 Secure Checkout & Auto-Sync
             </div>
             <div className="grid grid-cols-4 gap-2">
-                <button onClick={() => handleCheckout('Draft')} disabled={isProcessing} className={`py-2.5 bg-(--dh-secondary) hover:bg-(--dh-secondary-hover) text-white rounded-xs font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 border-none text-xs ${hasOutOfStock ? 'bg-red-600 hover:bg-red-700' : ''}`}>
+                <button 
+                    type="button"
+                    onClick={() => handleCheckout('Draft')} 
+                    disabled={isProcessing} 
+                    className={`py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md font-bold transition-all shadow-2xs active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 border-none text-xs cursor-pointer ${hasOutOfStock ? 'bg-rose-600 hover:bg-rose-700' : ''}`}
+                >
                     <FileEdit size={14}/> {hasOutOfStock ? 'Draft (สต๊อก)' : 'บันทึกร่าง'}
                 </button>
-                <button onClick={() => handleCheckout('OnAccount')} disabled={isProcessing} className="py-2.5 bg-(--dh-secondary) hover:bg-(--dh-secondary-hover) text-white rounded-xs font-semibold transition-colors flex items-center justify-center gap-1.5 border-none text-xs">
+                <button 
+                    type="button"
+                    onClick={() => handleCheckout('OnAccount')} 
+                    disabled={isProcessing} 
+                    className="py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-md font-bold transition-all shadow-2xs active:scale-95 flex items-center justify-center gap-1.5 border-none text-xs cursor-pointer"
+                >
                     เครดิต (On Acc)
                 </button>
-                <button onClick={() => handleCheckout('Paid')} disabled={isProcessing || isCashShort} title="สามารถกดปุ่มลัด Ctrl + Enter เพื่อยืนยันได้"
-                    className={`col-span-2 py-2.5 rounded-xs font-bold text-sm transition-all flex items-center justify-center gap-2
-                        ${isCashShort ? 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-200' : 'bg-(--dh-success) hover:bg-(--dh-success-hover) text-white shadow-xs hover:shadow-sm active:scale-[0.98] disabled:opacity-70 border-none'}
+                <button 
+                    type="button"
+                    onClick={() => handleCheckout('Paid')} 
+                    disabled={isProcessing || isCashShort} 
+                    title="สามารถกดปุ่มลัด Ctrl + Enter เพื่อยืนยันได้"
+                    className={`col-span-2 py-2.5 rounded-md font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer
+                        ${isCashShort ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-70 border-none'}
                     `}
                 >
-                    {isProcessing ? <span className="animate-spin text-sm">⏳</span> : <Receipt size={16}/>} 
+                    {isProcessing ? <span className="animate-spin text-sm">⏳</span> : <Receipt size={17}/>} 
                     {isProcessing ? 'กำลังบันทึก...' : 'รับชำระเงิน (Paid)'}
                 </button>
             </div>

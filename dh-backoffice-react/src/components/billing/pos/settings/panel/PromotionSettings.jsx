@@ -10,7 +10,7 @@ export default function PromotionSettings({
     return (
         <div className={sectionClass}>
             <div className="flex items-center justify-between mb-2.5">
-                <label className={`${labelClass} text-fuchsia-700 font-extrabold`}><Megaphone size={13}/> โปรโมชันและของแถม</label>
+                <label className={labelClass}><Megaphone size={13} className="text-fuchsia-400"/> โปรโมชั่นและของแถม</label>
                 <div className="flex items-center gap-1.5">
                     <button 
                         type="button"

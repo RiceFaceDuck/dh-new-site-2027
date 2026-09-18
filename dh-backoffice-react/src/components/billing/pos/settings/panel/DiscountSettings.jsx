@@ -5,7 +5,7 @@ export default function DiscountSettings({
     localDiscount, setLocalDiscount,
     localOtherName, setLocalOtherName,
     localOtherAmount, setLocalOtherAmount,
-    sectionClass
+    sectionClass, labelClass
 }) {
     const discountType = activeTab?.overallDiscountType || 'BAHT';
     const isPercent = discountType === 'PERCENT';
@@ -26,7 +26,7 @@ export default function DiscountSettings({
             {/* Left: ลดท้ายบิล */}
             <div>
                 <div className="flex items-center justify-between h-6 mb-1.5">
-                    <label className="text-[10px] font-extrabold text-[#2A305A] uppercase tracking-wider flex items-center gap-1">
+                    <label className={labelClass || "text-xs font-bold text-white/90 mb-1 flex items-center gap-1.5 uppercase tracking-wider"}>
                         <Tag size={12} className="text-rose-500"/> ลดท้ายบิล
                     </label>
                     <div className="inline-flex rounded-md p-0.5 bg-slate-200/80 border border-slate-300 text-[10px] font-black">
@@ -74,8 +74,8 @@ export default function DiscountSettings({
             {/* Right: ยอดอื่นๆ (+/-) */}
             <div>
                 <div className="flex items-center justify-between h-6 mb-1.5">
-                    <label className="text-[10px] font-extrabold text-[#2A305A] uppercase tracking-wider flex items-center gap-1">
-                        <FileText size={12} className="text-indigo-500"/> ยอดอื่นๆ (+/-)
+                    <label className={labelClass || "text-xs font-bold text-white/90 mb-1 flex items-center gap-1.5 uppercase tracking-wider"}>
+                        <FileText size={12} className="text-indigo-400"/> ยอดอื่นๆ (+/-)
                     </label>
                 </div>
 

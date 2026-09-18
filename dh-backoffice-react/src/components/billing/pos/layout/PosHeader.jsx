@@ -88,6 +88,8 @@ export default function PosHeader({
                     const itemCount = items.reduce((sum, i) => sum + (i.qty || i.quantity || 1), 0);
                     const totalAmt = items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || i.quantity || 1)), 0);
 
+                    const isDraft = !!(tab.docId || items.length > 0 || tab.customer || tab.walkInName);
+
                     return (
                         <button 
                             key={tab.id} 
@@ -105,13 +107,15 @@ export default function PosHeader({
                             <div className="flex flex-col items-start text-left leading-tight">
                                 <div className="flex items-center gap-1.5">
                                     <span className="truncate max-w-[130px]">{getTabTitle(tab, idx)}</span>
-                                    <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border ${
-                                        isActive 
-                                            ? 'bg-amber-100 text-amber-800 border-amber-300/80 shadow-2xs' 
-                                            : 'bg-slate-300/80 text-slate-600 border-slate-400/50'
-                                    }`}>
-                                        Draft
-                                    </span>
+                                    {isDraft && (
+                                        <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border ${
+                                            isActive 
+                                                ? 'bg-amber-100 text-amber-800 border-amber-300/80 shadow-2xs' 
+                                                : 'bg-slate-300/80 text-slate-600 border-slate-400/50'
+                                        }`}>
+                                            Draft
+                                        </span>
+                                    )}
                                 </div>
 
                                 {itemCount > 0 ? (
@@ -145,11 +149,16 @@ export default function PosHeader({
                 <button 
                     onClick={() => { 
                         if (!isProcessing) { 
-                            const newTab = createNewTab(); 
-                            if(typeof setCartTabs === 'function') { 
-                                setCartTabs([...safeCartTabs, newTab]); 
-                                setActiveTabId(newTab.id); 
-                            } 
+                            const emptyIdx = safeCartTabs.findIndex(t => (!t.items || t.items.length === 0) && !t.customer && !t.walkInName && !t.docId && (!t.orderId || String(t.orderId).startsWith('DH-TEMP-')));
+                            if (emptyIdx !== -1) {
+                                setActiveTabId(safeCartTabs[emptyIdx].id);
+                            } else {
+                                const newTab = createNewTab(); 
+                                if(typeof setCartTabs === 'function') { 
+                                    setCartTabs([...safeCartTabs, newTab]); 
+                                    setActiveTabId(newTab.id); 
+                                } 
+                            }
                         } 
                     }} 
                     className="flex items-center gap-1 px-2.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all rounded-lg shadow-xs cursor-pointer shrink-0 border border-emerald-700/50"
