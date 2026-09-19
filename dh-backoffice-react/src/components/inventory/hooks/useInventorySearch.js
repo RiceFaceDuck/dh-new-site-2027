@@ -101,11 +101,28 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
   const sourceProducts = useMemo(() => {
     return rawSourceProducts.map(p => {
       const st = statsMap[p.sku] || {};
+      const resolveMetric = (statVal, fieldName, historyObj) => {
+        if (statVal != null && !isNaN(Number(statVal))) return Number(statVal);
+        const histVal = historyObj?.[salesPeriod];
+        if (histVal != null && !isNaN(Number(histVal))) return Number(histVal);
+        const flatVal = p[`${fieldName}.${salesPeriod}`];
+        if (flatVal != null && !isNaN(Number(flatVal))) return Number(flatVal);
+        const baseKey = fieldName.replace('History', '');
+        const fallback = p[`${baseKey}${salesPeriod}D`] ?? p[`${baseKey}30D`] ?? (fieldName === 'claimHistory' ? (p[`claims${salesPeriod}D`] ?? p.claims30D) : null);
+        if (fallback != null && !isNaN(Number(fallback))) return Number(fallback);
+        if (fieldName === 'salesHistory' && salesPeriod === '30') {
+          const sold = p.stats?.sold;
+          if (sold != null && !isNaN(Number(sold))) return Number(sold);
+        }
+        return 0;
+      };
+
       return {
         ...p,
-        stockInHistory: { '30': 0, '60': 0, '90': 0, ...p.stockInHistory, ...(st.stockIn !== undefined ? { [salesPeriod]: st.stockIn } : {}) },
-        salesHistory: { '30': 0, '60': 0, '90': 0, ...p.salesHistory, ...(st.sales !== undefined ? { [salesPeriod]: st.sales } : {}) },
-        claimHistory: { '30': 0, '60': 0, '90': 0, ...p.claimHistory, ...(st.claim !== undefined ? { [salesPeriod]: st.claim } : {}) }
+        stockInHistory: { ...p.stockInHistory, [salesPeriod]: resolveMetric(st.stockIn, 'stockInHistory', p.stockInHistory) },
+        salesHistory: { ...p.salesHistory, [salesPeriod]: resolveMetric(st.sales, 'salesHistory', p.salesHistory) },
+        claimHistory: { ...p.claimHistory, [salesPeriod]: resolveMetric(st.claim, 'claimHistory', p.claimHistory) },
+        adjustmentHistory: { ...p.adjustmentHistory, [salesPeriod]: resolveMetric(st.adjustment, 'adjustmentHistory', p.adjustmentHistory) }
       };
     });
   }, [rawSourceProducts, statsMap, salesPeriod]);
@@ -115,14 +132,18 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
 
   useEffect(() => {
     const fetchFallback = async () => {
-      if (searchTerm.trim() && !isFetchingAll) {
-        const term = searchTerm.trim().toLowerCase();
-        const foundInCache = sourceProducts.some(p => p.sku.toLowerCase() === term || p.sku.toLowerCase().includes(term));
+      const safeTerm = typeof searchTerm === 'string' ? searchTerm.trim() : (searchTerm != null ? String(searchTerm).trim() : '');
+      if (safeTerm && !isFetchingAll) {
+        const term = safeTerm.toLowerCase();
+        const foundInCache = sourceProducts.some(p => {
+          const s = p.sku ? String(p.sku).toLowerCase() : '';
+          return s === term || s.includes(term);
+        });
         if (!foundInCache) {
           try {
             // ดึงจาก inventoryQueryService (ต้อง import ก่อน)
             const { inventoryQueryService } = await import('../../../firebase/inventory/inventoryQueryService');
-            const fbMatch = await inventoryQueryService.getProductBySku(searchTerm.trim().toUpperCase());
+            const fbMatch = await inventoryQueryService.getProductBySku(safeTerm.toUpperCase());
             if (fbMatch) {
               setFallbackProduct(fbMatch);
             } else {
@@ -142,11 +163,29 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
   }, [searchTerm, sourceProducts, isFetchingAll]);
 
   let processedProducts = sourceProducts.filter(p => {
-    const term = searchTerm.toLowerCase();
-    const matchesSearch = p.sku.toLowerCase().includes(term) || 
-                          (p.name && p.name.toLowerCase().includes(term)) ||
-                          (p.tags && p.tags.some(tag => tag.toLowerCase().includes(term)));
-    const matchesCategory = filterCategory === 'All' || p.category === filterCategory;
+    const term = (typeof searchTerm === 'string' ? searchTerm : (searchTerm != null ? String(searchTerm) : '')).trim().toLowerCase();
+    const matchesSearch = !term || (() => {
+      const sku = p.sku ? String(p.sku).toLowerCase() : '';
+      const name = p.name ? String(p.name).toLowerCase() : '';
+      const cat = p.category ? String(p.category).toLowerCase() : '';
+      const brand = p.brand ? String(p.brand).toLowerCase() : '';
+      const model = p.model ? String(p.model).toLowerCase() : '';
+      let tagMatch = false;
+      if (p.tags) {
+        if (Array.isArray(p.tags)) {
+          tagMatch = p.tags.some(t => t && String(t).toLowerCase().includes(term));
+        } else if (typeof p.tags === 'string') {
+          tagMatch = p.tags.toLowerCase().includes(term);
+        }
+      }
+      return sku.includes(term) || name.includes(term) || cat.includes(term) || brand.includes(term) || model.includes(term) || tagMatch;
+    })();
+
+    const targetCat = (filterCategory || '').trim().toLowerCase();
+    const matchesCategory = !filterCategory || filterCategory === 'All' || 
+      (p.category && String(p.category).trim().toLowerCase() === targetCat) || 
+      (p.type && String(p.type).trim().toLowerCase() === targetCat) ||
+      p.category === filterCategory || p.type === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -161,8 +200,8 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
       
       switch (sortConfig.key) {
         case 'Price':
-          valA = Number(a.Price || 0);
-          valB = Number(b.Price || 0);
+          valA = Number(a.Price ?? a.price ?? a.wholesalePrice ?? 0);
+          valB = Number(b.Price ?? b.price ?? b.wholesalePrice ?? 0);
           break;
         case 'retailPrice':
           valA = Number(a.retailPrice || 0);
@@ -184,6 +223,16 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
           valA = Number(a.claimHistory?.[salesPeriod] || 0);
           valB = Number(b.claimHistory?.[salesPeriod] || 0);
           break;
+        case 'adjustment':
+          valA = Number(a.adjustmentHistory?.[salesPeriod] || 0);
+          valB = Number(b.adjustmentHistory?.[salesPeriod] || 0);
+          break;
+        case 'category':
+          valA = String(a.category || '');
+          valB = String(b.category || '');
+          return sortConfig.direction === 'asc' 
+            ? valA.localeCompare(valB, 'th') 
+            : valB.localeCompare(valA, 'th');
         default:
           valA = 0;
           valB = 0;
@@ -205,20 +254,35 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
   }, [searchTerm, filterCategory, sortConfig?.key, sortConfig?.direction, itemsPerPage]);
 
   const totalItems = processedProducts.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage) || 1);
   
+  // Clamped effective page to protect rendering slices and display bounds
+  const safeCurrentPage = totalItems === 0 ? 1 : Math.min(Math.max(1, currentPage), totalPages);
+
   // ปรับ currentPage หากเกินจำนวนหน้าทั้งหมดที่มี
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
+    } else if (currentPage < 1) {
+      setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const startIndex = totalItems === 0 ? 0 : (safeCurrentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   
   // ตัดข้อมูลเฉพาะหน้าที่เลือก
   const paginatedProducts = processedProducts.slice(startIndex, endIndex);
+
+  const handleSetCurrentPage = (pageOrFn) => {
+    setCurrentPage(prev => {
+      const target = typeof pageOrFn === 'function' ? pageOrFn(prev) : pageOrFn;
+      const num = Number(target);
+      if (isNaN(num) || num < 1) return 1;
+      if (num > totalPages) return totalPages;
+      return num;
+    });
+  };
 
   const updateCache = (productData, isEdit) => {
     if (allProductsCache) {
@@ -245,8 +309,8 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
     filteredProducts: paginatedProducts,
     isSearching: isFetchingAll,
     totalItems,
-    currentPage,
-    setCurrentPage,
+    currentPage: safeCurrentPage,
+    setCurrentPage: handleSetCurrentPage,
     itemsPerPage,
     setItemsPerPage,
     totalPages,

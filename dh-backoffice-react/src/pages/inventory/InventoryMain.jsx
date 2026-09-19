@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { Loader2, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, LoaderCircle, Lock } from 'lucide-react';
 import ProductTable from '../../components/inventory/ProductTable';
 import InventoryHeader from '../../components/inventory/InventoryHeader';
 import useInventoryController from './useInventoryController';
@@ -51,6 +51,32 @@ export default function Inventory() {
     handleRecalculateStats,
   } = useInventoryController();
 
+  const [searchProgress, setSearchProgress] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(15);
+
+  useEffect(() => {
+    if (loading) {
+      setLoadingProgress(15);
+      const timer = setInterval(() => {
+        setLoadingProgress(prev => (prev < 95 ? prev + Math.max(1, Math.floor((96 - prev) / 8)) : prev));
+      }, 120);
+      return () => clearInterval(timer);
+    } else {
+      setLoadingProgress(100);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (isSearching) {
+      setSearchProgress(10);
+      const timer = setInterval(() => {
+        setSearchProgress(prev => (prev < 92 ? prev + Math.floor(Math.random() * 6) + 3 : prev));
+      }, 180);
+      return () => clearInterval(timer);
+    }
+    setSearchProgress(100);
+  }, [isSearching]);
+
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
       
@@ -68,20 +94,34 @@ export default function Inventory() {
       />
 
       {loading ? (
-        <div className="flex flex-col justify-center items-center flex-1 bg-white border border-dh-border rounded-xl shadow-xs animate-in fade-in duration-500">
-          <Loader2 className="w-12 h-12 animate-spin text-dh-accent mb-4 drop-shadow-xs" />
-          <p className="text-dh-accent font-black tracking-wide text-lg">กำลังโหลดคลังสินค้า...</p>
-          <p className="text-dh-muted text-sm mt-1">Please wait a moment</p>
+        <div className="flex flex-col justify-center items-center flex-1 bg-white dark:bg-slate-900 border border-dh-border rounded-xl shadow-xs p-6 md:p-10 animate-in fade-in duration-500 max-w-md mx-auto my-auto w-full">
+          <div className="relative flex items-center justify-center mb-5">
+            <div className="w-16 h-16 rounded-full border-4 border-dh-accent/20 border-t-dh-accent animate-spin" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-dh-accent font-black text-sm">
+              {Math.min(100, Math.max(0, Math.round(loadingProgress)))}%
+            </div>
+          </div>
+          <h3 className="text-dh-accent font-black tracking-wide text-lg mb-1 text-center">
+            กำลังโหลดคลังสินค้า ({Math.min(100, Math.max(0, Math.round(loadingProgress)))}%)
+          </h3>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 mb-3 overflow-hidden border border-slate-200/60 dark:border-slate-700/60">
+            <div 
+              className="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 h-full rounded-full transition-all duration-300 ease-out" 
+              style={{ width: `${Math.min(100, Math.max(5, loadingProgress))}%` }} 
+            />
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 text-xs font-medium text-center mb-4 min-h-[18px]">
+            กรุณารอสักครู่...
+          </p>
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-dh-accent/10 border border-dh-accent/20 rounded-full text-[11px] font-bold text-dh-accent">
+            <span className="w-1.5 h-1.5 rounded-full bg-dh-accent animate-pulse" />
+            ระบบ Zero-Read Architecture Fast Loading
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
           
           <div className="flex-1 bg-white dark:bg-slate-900 border border-dh-border rounded-xl shadow-xs overflow-hidden flex flex-col relative transition-all duration-300">
-            {isSearching && (
-               <div className="absolute top-0 left-0 w-full h-1 bg-dh-accent/20 overflow-hidden z-30">
-                 <div className="w-1/3 h-full bg-dh-accent animate-[slideRight_1s_ease-in-out_infinite]"></div>
-               </div>
-            )}
             
             <ProductTable 
               products={filteredProducts} 
@@ -97,14 +137,22 @@ export default function Inventory() {
               <div className="px-4 py-2 bg-dh-surface border-t border-dh-border flex flex-wrap items-center justify-between gap-3 shrink-0 text-sm shadow-xs rounded-b-xl z-10">
                 <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-dh-muted">
                   <div>
-                    แสดง <span className="text-dh-accent font-bold">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</span> จากทั้งหมด <span className="text-dh-main font-bold">{totalItems.toLocaleString()}</span> รายการ
+                    {searchTerm ? (
+                      <>
+                        แสดง <span className="text-dh-accent font-bold">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</span> จาก (คำค้นหา <span className="text-dh-main font-bold">{searchTerm}</span>) พบทั้งหมด <span className="text-dh-main font-bold">{totalItems.toLocaleString()}</span> รายการ
+                      </>
+                    ) : (
+                      <>
+                        แสดง <span className="text-dh-accent font-bold">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</span> จากทั้งหมด <span className="text-dh-main font-bold">{totalItems.toLocaleString()}</span> รายการ
+                      </>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-1.5 border-l border-dh-border pl-4">
                     <span className="text-dh-muted text-xs">แสดงหน้าละ:</span>
                     <select
                       value={itemsPerPage}
-                      onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                      onChange={(e) => setItemsPerPage(Math.max(10, Number(e.target.value) || 10))}
                       className="px-2 py-1 bg-dh-base border border-dh-border rounded-md text-xs font-bold text-dh-main focus:outline-none focus:border-dh-accent cursor-pointer"
                     >
                       <option value={21}>21 รายการ</option>
@@ -115,7 +163,27 @@ export default function Inventory() {
                   </div>
                 </div>
 
+                {isSearching && (
+                  <div className="flex flex-1 justify-center animate-in fade-in zoom-in duration-300">
+                    <div className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-slate-950 px-3.5 py-1 rounded-full border-2 border-yellow-500 shadow-md shadow-yellow-400/20 font-black transition-all">
+                      <LoaderCircle size={13} className="animate-spin text-slate-950 stroke-[2.5]" />
+                      <span className="text-xs font-black tracking-wide">
+                        กำลังอัปเดตข้อมูล {Math.min(100, Math.max(0, Math.round(searchProgress)))}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage <= 1}
+                    className="px-2 py-1.5 bg-dh-base border border-dh-border hover:border-dh-accent text-dh-main hover:text-dh-accent rounded-md font-bold text-xs flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+                    title="หน้าแรก"
+                  >
+                    <ChevronsLeft size={14} />
+                  </button>
+
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage <= 1}
@@ -123,11 +191,21 @@ export default function Inventory() {
                     title="หน้าก่อนหน้า"
                   >
                     <ChevronLeft size={14} />
-                    <span>ย้อนกลับ</span>
+                    <span className="hidden sm:inline">ย้อนกลับ</span>
                   </button>
 
-                  <div className="px-3 py-1 bg-dh-base border border-dh-border rounded-md text-xs font-bold text-dh-main">
-                    หน้า <span className="text-dh-accent">{currentPage}</span> / {totalPages}
+                  <div className="flex items-center gap-1 px-2 py-1 bg-dh-base border border-dh-border rounded-md text-xs font-bold text-dh-main">
+                    <span>หน้า</span>
+                    <select
+                      value={currentPage}
+                      onChange={(e) => setCurrentPage(Math.max(1, Number(e.target.value) || 1))}
+                      className="bg-transparent border-none text-dh-accent font-bold outline-none cursor-pointer appearance-none text-center px-1 hover:bg-dh-surface rounded [&>option]:text-slate-900 dark:[&>option]:text-slate-100 dark:[&>option]:bg-slate-800"
+                    >
+                      {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                    <span>/ {totalPages}</span>
                   </div>
 
                   <button
@@ -136,8 +214,17 @@ export default function Inventory() {
                     className="px-3 py-1.5 bg-dh-base border border-dh-border hover:border-dh-accent text-dh-main hover:text-dh-accent rounded-md font-bold text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
                     title="หน้าถัดไป"
                   >
-                    <span>ถัดไป</span>
+                    <span className="hidden sm:inline">ถัดไป</span>
                     <ChevronRight size={14} />
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage >= totalPages}
+                    className="px-2 py-1.5 bg-dh-base border border-dh-border hover:border-dh-accent text-dh-main hover:text-dh-accent rounded-md font-bold text-xs flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+                    title="หน้าสุดท้าย"
+                  >
+                    <ChevronsRight size={14} />
                   </button>
                 </div>
               </div>
@@ -209,4 +296,3 @@ export default function Inventory() {
     </div>
   );
 }
-
