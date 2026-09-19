@@ -4,17 +4,34 @@ import PosSystem from '../../components/billing/PosSystem';
 import { useCustomerData } from '../Customers/hooks/useCustomerData';
 import { useLocation } from 'react-router-dom';
 
+// Scoped subcomponent to prevent customer directory reads on Order List Dashboard
+const PosViewWrapper = ({ onSwitchView, initialDraft, resumeTabId, products, isProductsLoading }) => {
+  const { customers, loading: isCustomersLoading } = useCustomerData();
+
+  return (
+    <div className="h-full overflow-hidden relative">
+      {(isProductsLoading || isCustomersLoading) && (
+        <div className="absolute inset-0 bg-white/50 backdrop-blur-xs z-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D51C39]"></div>
+        </div>
+      )}
+      <PosSystem 
+        products={products} 
+        customers={customers}
+        onSwitchView={onSwitchView} 
+        initialDraft={initialDraft} 
+        resumeTabId={resumeTabId}
+      />
+    </div>
+  );
+};
+
 const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   const [viewMode, setViewMode] = useState('dashboard');
   const [draftOrder, setDraftOrder] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [isProductsLoading, setIsProductsLoading] = useState(false);
+  const [products] = useState([]);
+  const [isProductsLoading] = useState(false);
   
-  // Use customer hook for fetching customers
-  const { customers, loading: isCustomersLoading } = useCustomerData();
-
-  // Products array is no longer pre-fetched to save Firebase reads
-  // PosSystem will fetch dynamically via server-side search
   const location = useLocation();
   const resumeTabId = location.state?.resumeTabId;
 
@@ -26,20 +43,13 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
 
   if (viewMode === 'pos') {
     return (
-      <div className="h-full overflow-hidden relative">
-         {(isProductsLoading || isCustomersLoading) && (
-           <div className="absolute inset-0 bg-white/50 backdrop-blur-xs z-50 flex items-center justify-center">
-             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D51C39]"></div>
-           </div>
-         )}
-         <PosSystem 
-           products={products} 
-           customers={customers}
-           onSwitchView={() => { setDraftOrder(null); setViewMode('dashboard'); }} 
-           initialDraft={draftOrder} 
-           resumeTabId={resumeTabId}
-         />
-      </div>
+      <PosViewWrapper 
+        products={products}
+        isProductsLoading={isProductsLoading}
+        onSwitchView={() => { setDraftOrder(null); setViewMode('dashboard'); }}
+        initialDraft={draftOrder}
+        resumeTabId={resumeTabId}
+      />
     );
   }
 

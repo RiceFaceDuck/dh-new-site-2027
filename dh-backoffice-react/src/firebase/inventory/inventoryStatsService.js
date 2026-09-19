@@ -1,4 +1,7 @@
-import { get } from 'idb-keyval';
+import { get, set, del } from 'idb-keyval';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { 
   IDB_STATS_CACHE_KEY, 
   IDB_STATS_MAP_KEY, 
@@ -8,7 +11,53 @@ import {
   parseStatsSnapshot 
 } from './migrationService';
 
+/**
+ * Purges and refreshes IndexedDB stats caches (IDB_STATS_CACHE_KEY, IDB_STATS_MAP_KEY)
+ * and fetches fresh stats from Firestore snapshot document.
+ * Returns the fresh stats map.
+ */
+export const recalculateDailyStats = async () => {
+  try {
+    // 1. Fetch fresh stats snapshot from Firestore FIRST
+    const snapshotRef = doc(db, getCollectionPath('catalogs'), 'inventory_stats_snapshot');
+    const snap = await getDoc(snapshotRef);
+
+    if (!snap || !snap.exists()) {
+      throw new Error('Snapshot document "inventory_stats_snapshot" not found in Firestore');
+    }
+
+    const rawData = snap.data();
+    const parsed = parseStatsSnapshot(rawData);
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Failed to parse inventory_stats_snapshot data');
+    }
+
+    // 2. Only upon successful Firestore snapshot fetch & parse, clear old caches and update IndexedDB
+    await Promise.all([
+      del(IDB_STATS_CACHE_KEY).catch(() => null),
+      del(IDB_STATS_MAP_KEY).catch(() => null),
+      del(IDB_STATS_SNAPSHOT_KEY).catch(() => null),
+      del('inventory_stats_cache').catch(() => null),
+      del('inventory_stats_map').catch(() => null),
+      del('inventory_stats_snapshot').catch(() => null)
+    ]);
+
+    await Promise.all([
+      set(IDB_STATS_SNAPSHOT_KEY, rawData).catch(() => null),
+      set(IDB_STATS_CACHE_KEY, parsed).catch(() => null),
+      set(IDB_STATS_MAP_KEY, parsed).catch(() => null)
+    ]);
+
+    return parsed;
+  } catch (error) {
+    console.error("⚠️ [inventoryStatsService] Error recalculating daily stats:", error);
+    throw error;
+  }
+};
+
 export const inventoryStatsService = {
+  recalculateDailyStats,
+  recalculateInventoryStats: recalculateDailyStats,
   /**
    * Fetches 5-dimension stats (stockIn, sales, claim, adjustment) for given products & salesPeriod.
    * Prioritizes IndexedDB snapshot cache (0ms / Zero Firestore Reads).

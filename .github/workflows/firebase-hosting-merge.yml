@@ -10,7 +10,7 @@ on:
 
 jobs:
   build_and_preview:
-    if: '${{ github.event_name == ''pull_request'' }}'
+    if: false # 🚫 Auto-deploy / preview permanently disabled per strict user mandate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
           projectId: dh-notebook-69f3b
 
   deploy_production:
-    if: '${{ github.event_name == ''push'' }}'
+    if: false # 🚫 Auto-deploy to live production permanently disabled per strict user mandate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

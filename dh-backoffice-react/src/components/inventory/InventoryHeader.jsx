@@ -10,7 +10,9 @@ export default function InventoryHeader({
   onAddProduct,
   onImportProduct,
   onExportProduct,
-  onGuideOpen
+  onGuideOpen,
+  onRecalculateStats,
+  isRecalculating = false
 }) {
   const CATEGORY_MAP = {
     'Panel': '💻',
@@ -153,6 +155,20 @@ export default function InventoryHeader({
               {pendingCount > 0 ? pendingCount : ""}
             </span>
           </button>
+
+          {/* 5D Stock Recalculation Button */}
+          {onRecalculateStats && (
+            <button
+              onClick={onRecalculateStats}
+              disabled={isRecalculating}
+              className="flex items-center justify-center gap-1.5 h-[36px] px-3 rounded-md bg-cyan-600/20 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-600/30 transition-all font-bold text-xs shadow-xs backdrop-blur-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              title="Sync ข้อมูลและคำนวณสถิติยอดเข้า/ยอดขาย/ของเสีย/ปรับยอดทั้งหมด"
+            >
+              <RefreshCw size={14} className={isRecalculating ? "animate-spin" : ""} />
+              <span className="hidden xl:inline">{isRecalculating ? "กำลังคำนวณ..." : "5D Sync"}</span>
+              <span className="xl:hidden">5D</span>
+            </button>
+          )}
 
           <button 
             onClick={onExportProduct}

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Search, Filter, User, Calendar, Layers, FileText } from 'lucide-react';
 
 export default function TransactionFilterBar({
@@ -24,7 +24,7 @@ export default function TransactionFilterBar({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="เธเนเธเธซเธฒ เน€เธฅเธเธเธดเธฅ, เน€เธฅเธเน€เธเธฅเธก, SKU, เธเธทเนเธญเธชเธดเธเธเนเธฒ, เธฅเธนเธเธเนเธฒ..."
+          placeholder="ค้นหา เลขบิล, เลขเคลม, SKU, ชื่อสินค้า, ลูกค้า..."
           className="w-full pl-9 pr-7 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
         />
         {searchQuery && (
@@ -32,7 +32,7 @@ export default function TransactionFilterBar({
             onClick={() => setSearchQuery('')}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 hover:text-slate-600 bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer"
           >
-            โ•
+            ✕
           </button>
         )}
       </div>
@@ -45,9 +45,9 @@ export default function TransactionFilterBar({
           onChange={(e) => setTimeFilter(e.target.value)}
           className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700 dark:text-slate-200 appearance-none cursor-pointer"
         >
-          <option value="since_reset">โฑ๏ธ เธฃเธญเธเธเธดเธเธเนเธเธฑเธเธเธธเธเธฑเธ</option>
-          <option value="today">๐“… เน€เธเธเธฒเธฐเธงเธฑเธเธเธตเน</option>
-          <option value="all">๐ เธเธฃเธฐเธงเธฑเธ•เธดเธ—เธฑเนเธเธซเธกเธ” (All)</option>
+          <option value="since_reset">⏱️ รอบซิงค์ปัจจุบัน</option>
+          <option value="today">📅 เฉพาะวันนี้</option>
+          <option value="all">🌐 ประวัติทั้งหมด (All)</option>
         </select>
       </div>
 
@@ -59,11 +59,11 @@ export default function TransactionFilterBar({
           onChange={(e) => setSelectedEventType(e.target.value)}
           className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700 dark:text-slate-200 appearance-none cursor-pointer"
         >
-          <option value="all">โก เน€เธซเธ•เธธเธเธฒเธฃเธ“เน: เธ—เธฑเนเธเธซเธกเธ”</option>
-          <option value="sale">๐’ เธเธฒเธขเธชเธดเธเธเนเธฒ (Order)</option>
-          <option value="claim">๐” เน€เธเธฅเธกเธชเธดเธเธเนเธฒ (Claim)</option>
-          <option value="adjust">๐ ๏ธ เธเธฃเธฑเธเธชเธ•เนเธญเธ (Count)</option>
-          <option value="price">๐ก เน€เธเธฅเธตเนเธขเธเธฃเธฒเธเธฒ (Price)</option>
+          <option value="all">⚡ เหตุการณ์: ทั้งหมด</option>
+          <option value="sale">🛒 ขายสินค้า (Order)</option>
+          <option value="claim">🔄 เคลมสินค้า (Claim)</option>
+          <option value="adjust">🛠️ ปรับสต็อก (Count)</option>
+          <option value="price">🟡 เปลี่ยนราคา (Price)</option>
         </select>
       </div>
 
@@ -75,7 +75,7 @@ export default function TransactionFilterBar({
           onChange={(e) => setSelectedCustomer(e.target.value)}
           className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700 dark:text-slate-200 appearance-none cursor-pointer"
         >
-          <option value="all">๐‘ค เธฅเธนเธเธเนเธฒ: เธ—เธฑเนเธเธซเธกเธ”</option>
+          <option value="all">👤 ลูกค้า: ทั้งหมด</option>
           {uniqueCustomers.map(cust => (
             <option key={cust} value={cust}>{cust}</option>
           ))}
@@ -96,7 +96,7 @@ export default function TransactionFilterBar({
           }`}
         >
           <Layers size={13} />
-          <span>เธเธฑเธ”เธเธฅเธธเนเธกเธ•เธฒเธกเน€เธฅเธเธเธดเธฅ</span>
+          <span>จัดกลุ่มตามเลขบิล</span>
         </button>
         <button
           onClick={() => setViewMode('itemized')}
@@ -107,7 +107,7 @@ export default function TransactionFilterBar({
           }`}
         >
           <FileText size={13} />
-          <span>เนเธชเธ”เธเนเธขเธเธเธดเนเธ</span>
+          <span>แสดงแยกชิ้น</span>
         </button>
       </div>
     </div>

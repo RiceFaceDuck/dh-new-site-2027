@@ -1,5 +1,5 @@
-const verifySlipOcr = require('./verifySlipOcr');
-const purgeOldSlips = require('./purgeOldSlips');
+const verifySlipOcr = require('./slips/verifySlipOcr');
+const purgeOldSlips = require('./slips/purgeOldSlips');
 
 module.exports = {
   ...verifySlipOcr,

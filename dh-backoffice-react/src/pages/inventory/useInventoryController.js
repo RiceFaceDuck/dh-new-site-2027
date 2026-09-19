@@ -4,6 +4,7 @@ import useInventoryData from '../../components/inventory/hooks/useInventoryData'
 import useInventorySearch from '../../components/inventory/hooks/useInventorySearch';
 import useDebounce from '../../hooks/useDebounce';
 import { inventoryService } from '../../firebase/inventoryService';
+import { inventoryStatsService } from '../../firebase/inventory/inventoryStatsService';
 
 export default function useInventoryController() {
   const { isManagerOrOwner } = useAuth();
@@ -24,6 +25,19 @@ export default function useInventoryController() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
+
+  const handleRecalculateStats = useCallback(async () => {
+    try {
+      setIsRecalculating(true);
+      await inventoryStatsService.recalculateDailyStats();
+      await fetchInitialProducts(); // Refresh UI after recalculate
+    } catch (error) {
+      console.error("Error recalculating stats:", error);
+    } finally {
+      setIsRecalculating(false);
+    }
+  }, [fetchInitialProducts]);
 
   const handleOpenMasterSheet = () => {
     if (isManagerOrOwner) {
@@ -117,6 +131,8 @@ export default function useInventoryController() {
     editingProduct,
     isGuideOpen,
     setIsGuideOpen,
+    isRecalculating,
+    handleRecalculateStats,
     handleOpenMasterSheet,
     handleSort,
     handleEditProduct,
@@ -125,3 +141,4 @@ export default function useInventoryController() {
     handleImportSuccess,
   };
 }
+

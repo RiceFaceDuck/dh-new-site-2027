@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Store, Phone, X, MessageCircle, ShieldCheck, Navigation, Sparkles } from 'lucide-react';
-import { marketingService } from '../../../firebase/marketingService';
-import LazyImage from '../../common/LazyImage';
+import { marketingService } from '../../firebase/marketingService';
+import LazyImage from '../common/LazyImage';
 
 const BusinessCardAdWidget = ({ ad }) => {
   const cardRef = useRef(null);

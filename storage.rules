@@ -8,29 +8,43 @@ service firebase.storage {
 
     function isStaff() {
       return isAuthenticated() && (
-        request.auth.token.role == 'staff' ||
-        request.auth.token.role == 'manager' ||
-        request.auth.token.role == 'admin' ||
-        request.auth.token.role == 'owner' ||
-        request.auth.token.isStaff == true
+        request.auth.token.role in ['staff', 'manager', 'admin', 'owner', 'vp', 'vp 1', 'VP 1', 'Staff', 'Manager', 'Admin', 'Owner', 'VP', 'packer', 'Packer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'] ||
+        request.auth.token.isStaff == true ||
+        (
+          !('role' in request.auth.token) && !('isStaff' in request.auth.token) &&
+          checkStaffDoc()
+        )
       );
     }
 
+    function checkStaffDoc() {
+      let docData = firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+      return docData.isStaff == true || docData.role in ['staff', 'manager', 'admin', 'owner', 'packer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'];
+    }
+
     // 1. ภาพสลิปโอนเงิน (Slips)
-    match /slips/{fileName} {
+    match /slips/{allPaths=**} {
       allow read: if isStaff();
-      // ลูกค้าหรือพนักงานอัปโหลดได้ แต่ห้ามอัปเดตทับไฟล์เดิมเด็ดขาด (จำกัดเฉพาะ WebP/JPEG/PNG ขนาดไม่เกิน 2MB)
-      allow write: if isAuthenticated() && resource == null
-                   && request.resource.size < 2 * 1024 * 1024
+      // 🛡️ ปลอดภัยระดับสูงสุด: ลูกค้าที่ล็อกอินหรือพนักงานอัปโหลดสลิปใหม่ได้ แต่ห้ามคนนอก และห้ามลูกค้าลบ/เขียนทับสลิป
+      allow create: if isAuthenticated()
+                   && request.resource.size < 5 * 1024 * 1024
                    && request.resource.contentType.matches('image/(webp|jpeg|png)');
+      allow update, delete: if isStaff();
     }
 
     // 2. รูปภาพสินค้าและหน้าเว็บ (Public Assets)
-    match /products/{fileName} {
+    match /products/{allPaths=**} {
       allow read: if true;
       allow write: if isStaff()
                    && request.resource.size < 2 * 1024 * 1024
                    && request.resource.contentType.matches('image/(webp|jpeg|png)');
+    }
+    
+    match /categories/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff()
+                   && request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(webp|jpeg|png|svg\\+xml)');
     }
     
     match /assets/{allPaths=**} {
@@ -43,12 +57,27 @@ service firebase.storage {
     // 3. รูปภาพโปรไฟล์พนักงานและคู่ค้า
     match /profiles/{userId}/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated() && request.auth.uid == userId
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff())
                    && request.resource.size < 1 * 1024 * 1024
                    && request.resource.contentType.matches('image/(webp|jpeg|png)');
     }
     
-    // 4. ค่าเริ่มต้นบล็อกไฟล์ที่ไม่ได้ระบุไว้
+    // 4. รูปภาพโฆษณาและร้านค้า (Ads & Stores)
+    match /ads/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff())
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(webp|jpeg|png)');
+    }
+
+    match /stores/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isStaff())
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(webp|jpeg|png)');
+    }
+    
+    // 5. ค่าเริ่มต้นบล็อกไฟล์ที่ไม่ได้ระบุไว้
     match /{allPaths=**} {
       allow read, write: if false;
     }

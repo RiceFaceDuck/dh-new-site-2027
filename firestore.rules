@@ -9,23 +9,35 @@ service cloud.firestore {
     
     function isStaff() {
       return isAuthenticated() && (
-        request.auth.token.role == 'staff' ||
-        request.auth.token.role == 'manager' ||
-        request.auth.token.role == 'admin' ||
-        request.auth.token.role == 'owner' ||
+        request.auth.token.role in ['staff', 'manager', 'admin', 'owner', 'vp', 'vp 1', 'VP 1', 'Staff', 'Manager', 'Admin', 'Owner', 'VP', 'packer', 'Packer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'] ||
         request.auth.token.isStaff == true ||
-        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' ||
-        request.auth.token.email == 'ai.manager@dhnotebook.com'
+        (request.auth.token.email in ['dh1notebook@gmail.com', 'dh2notebook@gmail.com', 'zhoulinjuan1@gmail.com', 'bentshan@gmail.com'] && request.auth.token.email_verified == true) ||
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' || // System Admin UID fallback
+        (
+          // 🛡️ ป้องกัน Quota Read รั่วไหล: รัน DB Fallback เฉพาะผู้ใช้เก่าที่ยังไม่ได้รับ Custom Claims บน Token เท่านั้น
+          !('role' in request.auth.token) && !('isStaff' in request.auth.token) &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin', 'owner', 'vp', 'vp 1', 'Staff', 'Manager', 'Admin', 'Owner', 'VP', 'VP 1', 'packer', 'Packer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ']
+          )
+        )
       );
     }
 
     function isManagerOrAdmin() {
       return isAuthenticated() && (
-        request.auth.token.role == 'manager' ||
-        request.auth.token.role == 'admin' ||
-        request.auth.token.role == 'owner' ||
-        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' ||
-        request.auth.token.email == 'ai.manager@dhnotebook.com'
+        request.auth.token.role in ['manager', 'admin', 'owner', 'vp', 'vp 1', 'VP 1', 'Manager', 'Admin', 'Owner', 'VP', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน'] ||
+        (request.auth.token.email in ['dh1notebook@gmail.com', 'dh2notebook@gmail.com', 'zhoulinjuan1@gmail.com', 'bentshan@gmail.com'] && request.auth.token.email_verified == true) ||
+        request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' || // System Admin UID fallback
+        (
+          // 🛡️ ป้องกัน Quota Read รั่วไหล: รัน DB Fallback เฉพาะผู้ใช้เก่าที่ยังไม่ได้รับ Custom Claims บน Token เท่านั้น
+          !('role' in request.auth.token) &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['manager', 'admin', 'owner', 'vp', 'vp 1', 'Manager', 'Admin', 'Owner', 'VP', 'VP 1', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน']
+          )
+        )
       );
     }
     
@@ -41,33 +53,66 @@ service cloud.firestore {
       // 🚀 THE FIX: ป้องกันการแฮกยกระดับสิทธิ์และแก้ไขยอดเงิน (Escalation of Privilege & Financial Fraud)
       allow create: if isStaff() || (
         isAuthenticated() && request.auth.uid == userId &&
-        (!request.resource.data.keys().hasAny(['role', 'isStaff', 'walletBalance', 'creditPoints', 'totalAccumulatedPoints']) ||
-         (
-           (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'customer' || request.resource.data.role == 'retail') &&
-           (!request.resource.data.keys().hasAny(['isStaff']) || request.resource.data.isStaff == false) &&
-           (!request.resource.data.keys().hasAny(['walletBalance']) || request.resource.data.walletBalance == 0) &&
-           (!request.resource.data.keys().hasAny(['creditPoints']) || request.resource.data.creditPoints == 0)
-         )
+        (
+          !request.resource.data.keys().hasAny(['email']) ||
+          request.resource.data.email == request.auth.token.email
+        ) &&
+        (
+          !request.resource.data.keys().hasAny(['walletBalance', 'creditPoints', 'totalAccumulatedPoints']) ||
+          (
+            request.resource.data.get('walletBalance', 0) == 0 &&
+            request.resource.data.get('creditPoints', 0) == 0
+          )
+        ) &&
+        (
+          !request.resource.data.keys().hasAny(['role', 'isStaff', 'isApproved', 'roles', 'userType']) ||
+          (
+            request.resource.data.get('role', 'Customer') in ['user', 'customer', 'retail', 'pending_approval', 'pending', 'Customer', 'User', 'Retail'] &&
+            request.resource.data.get('isStaff', false) == false &&
+            request.resource.data.get('isApproved', false) == false &&
+            !request.resource.data.keys().hasAny(['roles', 'userType'])
+          )
         )
       );
-      allow update: if isStaff() || (
-        isAuthenticated() && request.auth.uid == userId &&
+      allow update: if isManagerOrAdmin() || (
+        isStaff() &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'role', 'isStaff', 'uid', 'creditPoints', 'totalAccumulatedPoints', 
-          'rank', 'accountId', 'customerCode', 'isActive', 'status'
-        ])) &&
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats']) || (
-          request.resource.data.get('stats', {}).diff(resource.data.get('stats', {})).affectedKeys().hasOnly(['lastOrderDate', 'lastPurchaseDate'])
-        )) &&
+          'role', 'isStaff', 'uid', 'email', 'rank', 'accountId', 'customerCode', 'roles', 'userType',
+          'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'pendingWithdrawal'
+        ]))
+      ) || (
+        isAuthenticated() && request.auth.uid == userId &&
         (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'pendingWithdrawal', 'lastWalletTxId']) ||
+          // Allow setting or requesting pending_approval / pending status for oneself if isStaff remains false
           (
-            request.resource.data.get('walletBalance', 0) < resource.data.get('walletBalance', 0) &&
-            request.resource.data.get('walletBalance', 0) >= 0 &&
-            existsAfter(/databases/$(database)/documents/users/$(userId)/wallet_transactions/$(request.resource.data.lastWalletTxId)) &&
+            request.resource.data.role in ['pending_approval', 'pending', 'user', 'customer'] &&
+            request.resource.data.get('isStaff', false) == false &&
+            request.resource.data.get('isApproved', false) == false &&
+            request.resource.data.get('isActive', false) == false &&
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'creditPoints', 'totalAccumulatedPoints', 'walletBalance', 'pendingWithdrawal',
+              'rank', 'accountId', 'customerCode', 'roles', 'userType', 'status', 'stats'
+            ])
+          ) ||
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'role', 'isStaff', 'uid', 'email', 'creditPoints', 'totalAccumulatedPoints', 
+              'rank', 'accountId', 'customerCode', 'isActive', 'status', 'roles', 'userType'
+            ]) &&
+            (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats']) || (
+              request.resource.data.get('stats', {}).diff(resource.data.get('stats', {})).affectedKeys().hasOnly(['lastOrderDate', 'lastPurchaseDate', 'lastCheckoutAttempt'])
+            )) &&
             (
-              request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) ||
-              request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) + (resource.data.get('walletBalance', 0) - request.resource.data.get('walletBalance', 0))
+              !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'pendingWithdrawal', 'lastWalletTxId']) ||
+              (
+                request.resource.data.get('walletBalance', 0) < resource.data.get('walletBalance', 0) &&
+                request.resource.data.get('walletBalance', 0) >= 0 &&
+                existsAfter(/databases/$(database)/documents/users/$(userId)/wallet_transactions/$(request.resource.data.lastWalletTxId)) &&
+                (
+                  request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) ||
+                  request.resource.data.get('pendingWithdrawal', 0) == resource.data.get('pendingWithdrawal', 0) + (resource.data.get('walletBalance', 0) - request.resource.data.get('walletBalance', 0))
+                )
+              )
             )
           )
         )
@@ -76,13 +121,27 @@ service cloud.firestore {
       // 🛡️ ปลอดภัยระดับสูงสุด: แยกแยะสิทธิ์ Subcollections ป้องกันการแก้ไขประวัติธุรกรรมและการแฮก Legacy Wallet
       match /wallet_transactions/{txId} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-        allow create: if isStaff();
-        allow update, delete: if isStaff();
+        // 🚀 THE FIX: อนุญาตให้ลูกค้าระบุยอดตัด Wallet ตอนสั่งซื้อ โดยเช็คว่ายอดหักตรงกับ walletBalance ที่ลดลงจริงใน users
+        allow create: if isStaff() || (
+          isAuthenticated() && request.auth.uid == userId &&
+          request.resource.data.type == 'SPEND' &&
+          request.resource.data.amount > 0 &&
+          request.resource.data.status == 'SUCCESS' &&
+          request.resource.data.transactionId == txId &&
+          request.resource.data.keys().hasAll(['transactionId', 'type', 'amount', 'balanceAfter', 'status', 'timestamp']) &&
+          existsAfter(/databases/$(database)/documents/users/$(userId)) &&
+          request.resource.data.balanceAfter == getAfter(/databases/$(database)/documents/users/$(userId)).data.get('walletBalance', 0)
+        );
+        // 🛡️ บัญชีธุรกรรมการเงินต้องเป็น Immutable หรือจัดการโดยผู้จัดการ/แอดมินเท่านั้น ห้ามพนักงานทั่วไปแก้ไขหรือลบ
+        allow update, delete: if isManagerOrAdmin();
       }
       match /historyLogs/{logId} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
         allow create: if isAuthenticated() && request.auth.uid == userId;
         allow update, delete: if isStaff();
+      }
+      match /private/{docId} {
+        allow read, write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       }
       match /hardware_scans/{scanId} {
         allow read, write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
@@ -99,15 +158,24 @@ service cloud.firestore {
     // 1.1 ผู้ใช้ (Users) ในระบบ Artifacts
     match /artifacts/{appId}/users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isStaff() || (
+      allow create: if isStaff() || (
+        isAuthenticated() && request.auth.uid == userId &&
+        !request.resource.data.keys().hasAny(['role', 'isStaff', 'roles', 'userType', 'walletBalance', 'creditPoints', 'isApproved'])
+      );
+      allow update: if isManagerOrAdmin() || (
+        isStaff() &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'role', 'isStaff', 'uid', 'email', 'rank', 'accountId', 'customerCode', 'roles', 'userType',
+          'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'pendingWithdrawal'
+        ]))
+      ) || (
         isAuthenticated() && request.auth.uid == userId &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'role', 'isStaff', 'uid', 'creditPoints', 'totalAccumulatedPoints', 
-          'rank', 'accountId', 'customerCode', 'isActive', 'status'
+          'role', 'isStaff', 'uid', 'email', 'creditPoints', 'totalAccumulatedPoints', 
+          'rank', 'accountId', 'customerCode', 'isActive', 'status', 'roles', 'userType'
         ])) &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats']) || (
-          request.resource.data.get('stats', {}).diff(resource.data.get('stats', {})).affectedKeys().hasOnly(['lastOrderDate', 'lastPurchaseDate'])
+          request.resource.data.get('stats', {}).diff(resource.data.get('stats', {})).affectedKeys().hasOnly(['lastOrderDate', 'lastPurchaseDate', 'lastCheckoutAttempt'])
         )) &&
         (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'pendingWithdrawal', 'lastWalletTxId']) ||
@@ -126,8 +194,22 @@ service cloud.firestore {
       // 🛡️ ปลอดภัยระดับสูงสุดสำหรับระบบ Artifacts
       match /wallet_transactions/{txId} {
         allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
-        allow create: if isStaff();
-        allow update, delete: if isStaff();
+        // 🚀 THE FIX: อนุญาตให้ลูกค้าระบุยอดตัด Wallet ตอนสั่งซื้อ โดยเช็คว่ายอดหักตรงกับ walletBalance ที่ลดลงจริงใน users
+        allow create: if isStaff() || (
+          isAuthenticated() && request.auth.uid == userId &&
+          request.resource.data.type == 'SPEND' &&
+          request.resource.data.amount > 0 &&
+          request.resource.data.status == 'SUCCESS' &&
+          request.resource.data.transactionId == txId &&
+          request.resource.data.keys().hasAll(['transactionId', 'type', 'amount', 'balanceAfter', 'status', 'timestamp']) &&
+          existsAfter(/databases/$(database)/documents/artifacts/$(appId)/users/$(userId)) &&
+          request.resource.data.balanceAfter == getAfter(/databases/$(database)/documents/artifacts/$(appId)/users/$(userId)).data.get('walletBalance', 0)
+        );
+        // 🛡️ บัญชีธุรกรรมการเงินต้องเป็น Immutable หรือจัดการโดยผู้จัดการ/แอดมินเท่านั้น ห้ามพนักงานทั่วไปแก้ไขหรือลบ
+        allow update, delete: if isManagerOrAdmin();
+      }
+      match /private/{docId} {
+        allow read, write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       }
       match /hardware_scans/{scanId} {
         allow read, write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
@@ -141,48 +223,107 @@ service cloud.firestore {
       }
     }
 
+    // 2.0 แคตตาล็อกและสารบัญค้นหา (Catalogs & Search Index)
+    match /catalogs/{docId} {
+      // 🛡️ Public Catalog Artifacts: อนุญาตให้อ่านเฉพาะแคชสาธารณะที่ระบุไว้ใน Whitelist
+      // เอกสารภายในและข้อมูลลูกค้า (customers_*, sync_pending_changes, inventory_summary_*, inventory_stats_snapshot) สงวนสิทธิ์เฉพาะ isStaff()
+      allow read: if (
+        docId == 'search_index' ||
+        docId.matches('^search_index_p[0-9]+$') ||
+        docId.matches('^cat_.*') ||
+        docId == 'home_chunk' ||
+        docId == 'home_showcase' ||
+        docId.matches('^home_showcase_[0-9]+$') ||
+        docId == 'categories_index' ||
+        docId == 'ad_cards_bundle'
+      ) || isStaff();
+      allow write: if isStaff();
+    }
+
     // 2. สินค้าคงคลัง (Products)
     match /products/{productId} {
       // ลูกค้าทั่วไปอ่านได้
       allow read: if true;
       // เฉพาะพนักงานเท่านั้นที่แก้ไขจำนวนสต๊อก หรือข้อมูลทั้งหมดได้
       allow write: if isStaff();
-      // 🚀 THE FIX (Inventory DoS Hardened): บังคับให้ตรวจสอบว่ามี Order สร้างใน Transaction จริงผ่าน existsAfter
+      // 🚀 THE FIX (Inventory DoS & Review IDOR Hardened): แยกส่วนตรวจสอบ Review และ Stock ให้รัดกุม
       allow update: if isStaff() || (isAuthenticated() && 
-                    request.resource.data.diff(resource.data).affectedKeys()
-                    .hasOnly(['reviewCount', 'averageRating', 'stockQuantity', 'stats', 'lastOrderId']) &&
-                    (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['stockQuantity']) || (
-                        request.resource.data.get('stockQuantity', 0) >= 0 &&
-                        request.resource.data.get('stockQuantity', 0) >= (resource.data.get('stockQuantity', 0) - 100) &&
-                        request.resource.data.get('stockQuantity', 0) <= resource.data.get('stockQuantity', 0) &&
-                        existsAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastOrderId))
-                    )));
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewCount', 'averageRating', 'stockQuantity', 'stats', 'lastOrderId', 'updatedAt']) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['reviewCount', 'averageRating']) ||
+          (
+            request.resource.data.get('reviewCount', 0) == resource.data.get('reviewCount', 0) + 1 &&
+            request.resource.data.get('averageRating', 0) >= 1.0 &&
+            request.resource.data.get('averageRating', 0) <= 5.0
+          )
+        ) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['stockQuantity']) || 
+          (
+            request.resource.data.get('stockQuantity', 0) >= 0 &&
+            request.resource.data.get('stockQuantity', 0) < resource.data.get('stockQuantity', 0) &&
+            existsAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastOrderId)) &&
+            getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastOrderId)).data.userId == request.auth.uid &&
+            request.resource.data.get('stockQuantity', 0) == (resource.data.get('stockQuantity', 0) - (request.resource.data.get('stats', {}).get('sold', 0) - resource.data.get('stats', {}).get('sold', 0)))
+          )
+        )
+      );
     }
-
+    
+    // 2.2 คลังรูปภาพ (Gallery Images)
+    match /gallery_images/{imageId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
     // 2.1 รีวิวสินค้า (Product Reviews)
     match /product_reviews/{reviewId} {
       allow read: if true; // ทุกคนอ่านรีวิวได้
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid; // ต้องล็อกอินถึงจะเขียนรีวิวได้
-      allow update: if isAuthenticated(); // สำหรับการกด Like
+      allow update: if isStaff() || (
+        isAuthenticated() && (
+          (resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId'])) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'helpful', 'likeCount', 'likesCount'])
+        )
+      );
       allow delete: if isManagerOrAdmin(); // เฉพาะผู้ดูแลลบได้
+    }
+
+    // 🛡️ POS Order Idempotency Lock Collection
+    match /order_requests/{reqKey} {
+      allow read, write: if isStaff();
     }
 
     // 3. ระบบบิลและการเงิน (Orders & Credit)
     match /orders/{orderId} {
-      allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || resource.data.customer.uid == request.auth.uid));
-      // 🚀 THE FIX: บังคับให้สร้างออเดอร์ในสถานะเริ่มต้นเท่านั้น ป้องกันการโกงสลิป และจำกัด pendingCredits (Defense in Depth)
+      // 🛡️ Short-circuit customer ownership before isStaff() to eliminate spurious DB reads for customers lacking claims
+      allow read: if (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || resource.data.customer.uid == request.auth.uid)) || isStaff();
+      // 🚀 THE FIX: อนุญาตให้สร้างออเดอร์โดยจำกัดสถานะ แต่ลบเพดาน pendingCredits ออกเพราะ Backoffice จะคำนวณใหม่เสมอ (Zero-Trust)
       allow create: if isStaff() || (
-        isAuthenticated() && request.resource.data.userId == request.auth.uid &&
-        (!request.resource.data.keys().hasAll(['paymentStatus']) || request.resource.data.paymentStatus == 'pending') &&
-        (!request.resource.data.keys().hasAll(['isPaid']) || request.resource.data.isPaid == false) &&
-        (!request.resource.data.keys().hasAll(['pendingCredits']) || request.resource.data.pendingCredits <= (request.resource.data.get('totals', {}).get('netTotal', 0) + 10000))
+        isAuthenticated() && request.auth.uid == request.resource.data.userId &&
+        (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus == 'pending') &&
+        (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['pending', 'pending_payment', 'pending_payment_verification']) &&
+        (!request.resource.data.keys().hasAny(['orderStatus']) || request.resource.data.orderStatus in ['pending', 'pending_payment', 'pending_payment_verification']) &&
+        (!request.resource.data.keys().hasAny(['isPaid']) || request.resource.data.isPaid == false) &&
+        (!request.resource.data.keys().hasAny(['pendingCredits']) || request.resource.data.pendingCredits >= 0) &&
+        (!request.resource.data.keys().hasAny(['totals']) || request.resource.data.totals.netTotal >= 0)
       );
       allow update: if isStaff() || (
         isAuthenticated() && resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'orderStatus', 'receivedAt', 'cancelledBy', 'cancelledAt', 'updatedAt', 'pendingCredits']) &&
         (
-          (request.resource.data.status == 'received' && resource.data.status in ['shipped', 'completed', 'approved', 'paid']) ||
-          (request.resource.data.status == 'cancelled' && resource.data.status in ['pending', 'pending_payment'])
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'orderStatus', 'receivedAt', 'cancelledBy', 'cancelledAt', 'updatedAt', 'pendingCredits', 'paymentSlipUrl']) &&
+            (
+              (request.resource.data.status == 'received' && resource.data.status in ['shipped', 'completed', 'approved', 'paid']) ||
+              (request.resource.data.status == 'cancelled' && resource.data.status in ['pending', 'pending_payment']) ||
+              (request.resource.data.status == 'pending_payment_verification' && resource.data.status in ['pending', 'pending_payment', 'pending_payment_verification'])
+            )
+          ) ||
+          (
+            // 🛡️ PDPA Right to Erasure: อนุญาตให้เจ้าของออเดอร์เซ็นเซอร์ข้อมูลส่วนบุคคลของตัวเองในออเดอร์เก่าได้ (ห้ามแก้ข้อมูลการเงิน)
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customer', 'updatedAt']) &&
+            request.resource.data.customer.displayName == 'ผู้ใช้งานที่ถูกลบ' &&
+            request.resource.data.customer.phone == ''
+          )
         )
       );
       allow delete: if isStaff();
@@ -193,6 +334,23 @@ service cloud.firestore {
       allow read: if isStaff() || (isAuthenticated() && resource.data.uid == request.auth.uid);
       // เฉพาะระบบและพนักงานเขียนได้
       allow write: if isStaff();
+    }
+
+    // 3.1 ธุรกรรมสต๊อกและประวัติการเคลื่อนไหวสินค้ากลาง (Canonical Transactions Ledger)
+    match /transactions/{txId} {
+      // พนักงานดูได้ทั้งหมด หรือลูกค้าดูเฉพาะธุรกรรมที่ตนเองสร้างได้
+      allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.createdBy == request.auth.uid));
+      // อนุญาตให้พนักงาน หรือลูกค้า (กดยกเลิกออเดอร์หน้าร้าน) สร้างได้
+      allow create: if isStaff() || (isAuthenticated() && request.resource.data.createdBy == request.auth.uid);
+      allow update, delete: if isStaff();
+    }
+
+    match /claim_locks/{lockId} {
+      allow read, write: if isStaff();
+    }
+
+    match /return_locks/{lockId} {
+      allow read, write: if isStaff();
     }
 
     // 4. งานอนุมัติของ Manager (Todos & System Logs)
@@ -213,23 +371,36 @@ service cloud.firestore {
         request.resource.data.partnerId == request.auth.uid
       ) && (
         // 🚀 THE FIX: บังคับสถานะ Todo ให้เป็น pending หรือ todo เท่านั้น ป้องกันแฮกสร้างงานที่ผ่านการอนุมัติแล้ว
-        request.resource.data.status in ['todo', 'pending', 'waiting_item', 'PENDING']
+        request.resource.data.status in ['todo', 'pending', 'pending_manager', 'waiting_item', 'PENDING']
       ) && (
-        // 🛡️ ป้องกันแฮกเกอร์แอบสร้างงานสงวนสิทธิ์ของพนักงาน/ผู้จัดการ
+        // 🛡️ ป้องกันแฮกเกอร์แอบสร้างงานสงวนสิทธิ์ของพนักงาน/ผู้จัดการ (อนุญาตเฉพาะ STAFF_APPROVAL สำหรับสมัครพนักงานใหม่)
         !(request.resource.data.get('taskType', '') in [
-          'CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
-          'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 'STAFF_APPROVAL', 
+          'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
+          'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 
           'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
-          'WALLET_WITHDRAWAL'
+          'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
         ]) &&
         !(request.resource.data.get('type', '') in [
-          'CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
-          'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 'STAFF_APPROVAL', 
+          'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
+          'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 
           'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
-          'WALLET_WITHDRAWAL'
+          'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
         ])
       ));
-      allow update: if isStaff() || (isAuthenticated() && (
+      allow update: if isManagerOrAdmin() || (isStaff() && (
+        !(resource.data.get('taskType', '') in [
+          'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
+          'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 'STAFF_APPROVAL', 
+          'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
+          'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
+        ]) &&
+        !(resource.data.get('type', '') in [
+          'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
+          'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 'STAFF_APPROVAL', 
+          'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
+          'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
+        ])
+      )) || (isAuthenticated() && (
         resource == null ||
         resource.data.createdByUid == request.auth.uid || 
         resource.data.createdBy == request.auth.uid || 
@@ -241,8 +412,8 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid ||
         request.resource.data.partnerId == request.auth.uid
       ) && (
-        // 🚀 THE FIX: ห้ามแก้สถานะหรือจำนวนเงินหลังสร้างเสร็จ
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'type', 'amount', 'completedAt'])
+        // 🚀 THE FIX: ห้ามแก้สถานะ, จำนวนเงิน, และเนื้อหางานหลังสร้างเสร็จ
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'type', 'amount', 'completedAt', 'title', 'description', 'taskType'])
       ));
       allow delete: if isStaff() || (isAuthenticated() && (
         resource == null ||
@@ -254,28 +425,135 @@ service cloud.firestore {
     
     // 4.1 สินค้ายังไม่มีจำหน่าย (Sourcing Requests)
     match /sourcing_requests/{reqId} {
-      allow read: if isAuthenticated() || isStaff();
-      allow create, update: if isAuthenticated() || isStaff();
-      allow delete: if isAuthenticated() || isStaff();
+      // 🛡️ คุ้มครองข้อมูลส่วนบุคคล (PII & IDOR Protection): สงวนสิทธิ์การอ่านเฉพาะเจ้าของคำขอหรือพนักงานร้านเท่านั้น
+      allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || resource.data.createdByUid == request.auth.uid));
+      allow create: if isAuthenticated() || isStaff();
+      allow update: if isStaff() || (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.createdByUid == request.auth.uid));
+      allow delete: if isStaff() || (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.createdByUid == request.auth.uid));
+    }
+
+    match /claims/{claimId} {
+      allow read: if isStaff() || (isAuthenticated() && (
+        resource == null ||
+        resource.data.customerUid == request.auth.uid ||
+        resource.data.createdByUid == request.auth.uid ||
+        resource.data.requestedBy == request.auth.uid
+      ));
+      allow create: if isStaff() || (isAuthenticated() && (
+        request.resource.data.customerUid == request.auth.uid ||
+        request.resource.data.createdByUid == request.auth.uid ||
+        request.resource.data.requestedBy == request.auth.uid
+      ));
+      allow update: if isStaff() || (isAuthenticated() && (
+        resource == null ||
+        resource.data.customerUid == request.auth.uid ||
+        resource.data.createdByUid == request.auth.uid ||
+        resource.data.requestedBy == request.auth.uid
+      ) && (
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'type', 'amount'])
+      ));
+      allow delete: if isManagerOrAdmin();
     }
     
     // 4.2 ประวัติการรับเข้าสต๊อก (Stock Receipts)
     match /stock_receipts/{receiptId} {
-      allow read, write: if isStaff();
+      allow read, update, delete: if isStaff();
+      allow create: if isStaff() || (
+        isAuthenticated() && 
+        request.resource.data.source == 'checkout_order' &&
+        request.resource.data.createdBy == request.auth.uid
+      );
     }
     
     // 4.3 ประวัติการนำเข้าไฟล์สต๊อก (Import Batches)
     match /import_batches/{batchId} {
       allow read, write: if isStaff();
     }
+    match /inventory_import_batches/{batchId} {
+      allow read, write: if isStaff();
+    }
+
+    // 4.4 ประวัติการปรับปรุงสต๊อก (Stock Adjustments)
+    match /stock_adjustments/{adjId} {
+      allow read, write: if isStaff();
+    }
     
     match /system_logs/{logId} {
       allow read: if isManagerOrAdmin();
       allow write: if isManagerOrAdmin();
+      allow create: if isAuthenticated() && request.resource.data.get('category', '') in ['client_error', 'client_warning', 'telemetry'];
     }
     
-    // 🚀 THE FIX: อนุญาตให้ระบบ Outbox ทำงานได้สำหรับพนักงาน
+    // 🛡️ Admin Audits & Idempotency Locks
+    match /admin_audits/{auditId} {
+      allow read: if isManagerOrAdmin();
+      allow create: if isStaff();
+      allow update, delete: if isManagerOrAdmin();
+    }
+    match /wallet_requests/{lockKey} {
+      allow read, write: if isStaff();
+    }
+    match /returns/{returnId} {
+      allow read, write: if isStaff();
+    }
+    match /yearly_archives/{archiveId} {
+      allow read: if isStaff();
+      allow write: if isManagerOrAdmin();
+    }
+    // 🛡️ ปลดล็อก Workflow รีวิวร้านค้าคู่ค้า: อนุญาตให้เจ้าของร้านตอบกลับ (ownerReply) หรือกดไลก์ (ownerLiked) รีวิวในร้านตนเองได้
+    match /partner_reviews/{partnerId}/comments/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (
+        request.resource.data.get('userId', request.auth.uid) == request.auth.uid ||
+        isStaff()
+      );
+      allow update: if isStaff() || (
+        isAuthenticated() && request.auth.uid == partnerId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerLiked', 'ownerReply'])
+      );
+      allow delete: if isStaff();
+    }
+    match /partner_reviews/{document=**} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (
+        request.resource.data.get('userId', request.auth.uid) == request.auth.uid ||
+        isStaff()
+      );
+      allow update, delete: if isStaff();
+    }
+    
+    // 🚀 THE FIX: อนุญาตให้ระบบ Outbox ทำงานได้สำหรับพนักงาน แต่ลบไม่ได้
     match /gas_outbox/{logId} {
+      allow read: if isManagerOrAdmin();
+      allow create: if isStaff();
+      allow update, delete: if isManagerOrAdmin();
+    }
+
+    match /history_logs/{logId} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update, delete: if isManagerOrAdmin();
+    }
+
+    match /history_logs_daily/{dateDoc} {
+      allow read, write: if isStaff();
+    }
+
+    // 🛡️ บันทึกเวลาเข้า-ออกงานพนักงาน (Staff QR Attendance Logs)
+    match /attendance_logs/{logId} {
+      allow read: if isStaff();
+      allow create: if isStaff() && (
+        request.resource.data.staffUid == request.auth.uid || isManagerOrAdmin()
+      );
+      allow update, delete: if isManagerOrAdmin();
+    }
+    
+    // 🛡️ POS Order Idempotency Lock Collection in Artifacts
+    match /artifacts/{appId}/order_requests/{reqKey} {
+      allow read, write: if isStaff();
+    }
+    
+    match /artifacts/{appId}/history_logs_daily/{dateDoc} {
       allow read, write: if isStaff();
     }
     
@@ -284,10 +562,22 @@ service cloud.firestore {
       allow write: if isManagerOrAdmin();
     }
 
+    match /artifacts/{appId}/attendance_logs/{logId} {
+      allow read: if isStaff();
+      allow create: if isStaff() && (
+        request.resource.data.staffUid == request.auth.uid || isManagerOrAdmin()
+      );
+      allow update, delete: if isManagerOrAdmin();
+    }
+
     // 5. ข้อมูลอื่นๆ ที่เป็น Public (หมวดหมู่, หน้าแรก, โฆษณา)
     match /artifacts/{appId}/public/{document=**} {
       allow read: if true;
-      allow create: if isAuthenticated(); // 🚀 THE FIX: ให้สิทธิ์แค่สร้าง ไม่ให้เขียนทับของคนอื่น (ป้องกัน DoS)
+      allow create: if isAuthenticated() && (
+        !request.resource.data.keys().hasAny(['ownerId', 'createdBy']) ||
+        request.resource.data.get('ownerId', request.auth.uid) == request.auth.uid ||
+        request.resource.data.get('createdBy', request.auth.uid) == request.auth.uid
+      );
       allow update, delete: if isStaff();
     }
     match /homepage_categories/{catId} {
@@ -296,36 +586,76 @@ service cloud.firestore {
     }
     match /partners/{partnerId} {
       allow read: if true;
-      allow write: if isStaff() || (isAuthenticated() && request.auth.uid == partnerId);
+      allow create: if isStaff() || (isAuthenticated() && request.auth.uid == partnerId && !request.resource.data.keys().hasAny(['isVerified', 'isActive', 'commissionRate']));
+      allow update: if isStaff() || (isAuthenticated() && request.auth.uid == partnerId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isVerified', 'isActive', 'commissionRate']));
+      allow delete: if isManagerOrAdmin();
     }
     match /ActivePartners/{partnerId} {
       allow read: if true;
-      allow write: if isManagerOrAdmin(); // อนุมัติโดยระบบ
+      allow write: if isManagerOrAdmin();
     }
     match /promotions/{promoId} {
       allow read: if true;
-      allow write: if isStaff();
+      allow create, delete: if isStaff();
+      allow update: if isStaff() || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quotaUsed']) &&
+        request.resource.data.get('quotaUsed', 0) == resource.data.get('quotaUsed', 0) + 1
+      );
     }
     match /freebies/{freebieId} {
       allow read: if true;
-      allow write: if isStaff();
+      allow create, delete: if isStaff();
+      allow update: if isStaff() || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quotaUsed']) &&
+        request.resource.data.get('quotaUsed', 0) >= resource.data.get('quotaUsed', 0) + 1 &&
+        request.resource.data.get('quotaUsed', 0) <= resource.data.get('quotaUsed', 0) + 10
+      );
     }
     
     // 5.1 ข้อมูลโฆษณาต่างๆ (Ads)
     match /partner_ads/{adId} {
       allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow create: if isStaff() || (
+        isAuthenticated() && request.resource.data.ownerId == request.auth.uid &&
+        (!request.resource.data.keys().hasAny(['status', 'isActive']) || request.resource.data.status in ['pending', 'PENDING'])
+      );
+      allow update: if isStaff() || (
+        isAuthenticated() && resource.data.ownerId == request.auth.uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy'
+        ])
+      );
+      allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
     }
     match /billboard_ads/{adId} {
       allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow create: if isStaff() || (
+        isAuthenticated() && request.resource.data.ownerId == request.auth.uid &&
+        (!request.resource.data.keys().hasAny(['status', 'isActive']) || request.resource.data.status in ['pending', 'PENDING'])
+      );
+      allow update: if isStaff() || (
+        isAuthenticated() && resource.data.ownerId == request.auth.uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy'
+        ])
+      );
+      allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
     }
     match /user_sku_ads/{adId} {
       allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow create: if isStaff() || (
+        isAuthenticated() && request.resource.data.ownerId == request.auth.uid &&
+        (!request.resource.data.keys().hasAny(['status', 'isActive']) || request.resource.data.status in ['pending', 'PENDING'])
+      );
+      allow update: if isStaff() || (
+        isAuthenticated() && resource.data.ownerId == request.auth.uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy'
+        ])
+      );
+      allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
     }
     
     // 6. การตั้งค่าระบบ (Settings) และข้อมูลพื้นฐาน
@@ -336,9 +666,18 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isManagerOrAdmin();
     }
+    match /sync_mappings/{docId} {
+      allow read: if isStaff();
+      allow write: if isManagerOrAdmin();
+    }
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isManagerOrAdmin();
+      allow write: if isManagerOrAdmin() || (isStaff() && (
+        docId == 'bigseller_templates' ||
+        (docId == 'credit_config' && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'adClickCost', 'adImpressionCost', 'adImpressionCount', 'adMinBudget', 'rules'
+        ]))
+      ));
     }
     
     match /system_config/{docId} {
@@ -364,9 +703,30 @@ service cloud.firestore {
       allow write: if isStaff();
     }
     
+    // 7. รีวิวสินค้า (Product Reviews - Quota & Spam Guard)
+    match /product_reviews/{reviewId} {
+      // เปิดให้อ่านสาธารณะ สำหรับแสดงความคิดเห็นสินค้า
+      allow read: if true;
+      // อนุญาตให้ผู้ใช้ที่ล็อกอินแล้วเพิ่มรีวิว (ตรวจสอบ Rating 1-5 และ userId ตรงกับตัวเอง)
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() <= 2000;
+      // อนุญาตให้อัปเดต likes (หรือเจ้าของแก้ไข หรือ Staff)
+      allow update: if isAuthenticated() && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])) ||
+        (resource.data.userId == request.auth.uid) ||
+        isStaff()
+      );
+      // อนุญาตให้ลบเฉพาะเจ้าของรีวิว หรือ Staff
+      allow delete: if isStaff() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
     // 🚀 THE FIX: อนุญาตให้ดึงข้อมูลประวัติกระเป๋าเงินผ่าน collectionGroup ได้ สำหรับ Manager/Staff (Audit Ledger)
     match /{path=**}/wallet_transactions/{txId} {
       allow read: if isStaff();
     }
   }
 }
+

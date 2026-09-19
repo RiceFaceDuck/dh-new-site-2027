@@ -1,7 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { PackageCheck, ShoppingCart, RotateCcw, Wrench, Loader2 } from 'lucide-react';
 
 export default function TransactionMetricsHeader({ metrics, selectedEventType, setSelectedEventType, isInitialReady = true }) {
+  const isSaleSelected = selectedEventType === 'sale' || selectedEventType === 'order';
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {/* 1. All & Orders */}
@@ -16,35 +18,35 @@ export default function TransactionMetricsHeader({ metrics, selectedEventType, s
       >
         <div className="flex justify-between items-center mb-1">
           <span className={`text-xs font-semibold ${selectedEventType === 'all' ? 'text-indigo-100' : 'text-slate-500'}`}>
-            ๐“ฆ เธฃเธงเธกเธเธงเธฒเธกเน€เธเธฅเธทเนเธญเธเนเธซเธง
+            📦 รวมความเคลื่อนไหว
           </span>
           <PackageCheck size={16} className={selectedEventType === 'all' ? 'text-white' : 'text-indigo-500'} />
         </div>
         <p className="text-xl font-black">
-          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-indigo-400" /> : metrics.totalCount}{' '}
-          <span className="text-xs font-normal">เธฃเธฒเธขเธเธฒเธฃ</span>
+          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-indigo-400" /> : (metrics?.totalCount ?? metrics?.total ?? 0)}{' '}
+          <span className="text-xs font-normal">รายการ</span>
         </p>
       </button>
 
       {/* 2. Sales Orders */}
       <button
-        onClick={() => setSelectedEventType('order')}
+        onClick={() => setSelectedEventType('sale')}
         disabled={!isInitialReady}
         className={`p-3 rounded-xl text-left border transition-all cursor-pointer ${
-          selectedEventType === 'order'
+          isSaleSelected
             ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/10'
             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-slate-300'
         } ${!isInitialReady ? 'opacity-60 cursor-not-allowed' : ''}`}
       >
         <div className="flex justify-between items-center mb-1">
-          <span className={`text-xs font-semibold ${selectedEventType === 'order' ? 'text-blue-100' : 'text-slate-500'}`}>
-            ๐’ เธญเธญเน€เธ”เธญเธฃเนเธเธฒเธข
+          <span className={`text-xs font-semibold ${isSaleSelected ? 'text-blue-100' : 'text-slate-500'}`}>
+            🛒 ออเดอร์ขาย
           </span>
-          <ShoppingCart size={16} className={selectedEventType === 'order' ? 'text-white' : 'text-blue-500'} />
+          <ShoppingCart size={16} className={isSaleSelected ? 'text-white' : 'text-blue-500'} />
         </div>
         <p className="text-xl font-black">
-          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-blue-400" /> : metrics.orders}{' '}
-          <span className="text-xs font-normal">เธฃเธฒเธขเธเธฒเธฃ</span>
+          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-blue-400" /> : (metrics?.orders ?? metrics?.sales ?? 0)}{' '}
+          <span className="text-xs font-normal">รายการ</span>
         </p>
       </button>
 
@@ -60,13 +62,13 @@ export default function TransactionMetricsHeader({ metrics, selectedEventType, s
       >
         <div className="flex justify-between items-center mb-1">
           <span className={`text-xs font-semibold ${selectedEventType === 'claim' ? 'text-purple-100' : 'text-slate-500'}`}>
-            ๐” เน€เธเธฅเธก & เธชเธฅเธฑเธเธชเธดเธเธเนเธฒ
+            🔄 เคลม & สลับสินค้า
           </span>
           <RotateCcw size={16} className={selectedEventType === 'claim' ? 'text-white' : 'text-purple-500'} />
         </div>
         <p className="text-xl font-black">
-          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-purple-400" /> : metrics.claims}{' '}
-          <span className="text-xs font-normal">เธฃเธฒเธขเธเธฒเธฃ</span>
+          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-purple-400" /> : (metrics?.claims ?? 0)}{' '}
+          <span className="text-xs font-normal">รายการ</span>
         </p>
       </button>
 
@@ -82,13 +84,13 @@ export default function TransactionMetricsHeader({ metrics, selectedEventType, s
       >
         <div className="flex justify-between items-center mb-1">
           <span className={`text-xs font-semibold ${selectedEventType === 'adjust' ? 'text-emerald-100' : 'text-slate-500'}`}>
-            ๐ ๏ธ เธเธฃเธฑเธเธเธฃเธธเธเธชเธ•เนเธญเธ
+            🛠️ ปรับปรุงสต็อก
           </span>
           <Wrench size={16} className={selectedEventType === 'adjust' ? 'text-white' : 'text-emerald-500'} />
         </div>
         <p className="text-xl font-black">
-          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-emerald-400" /> : metrics.adjusts}{' '}
-          <span className="text-xs font-normal">เธฃเธฒเธขเธเธฒเธฃ</span>
+          {!isInitialReady ? <Loader2 size={16} className="animate-spin inline-block text-emerald-400" /> : (metrics?.adjusts ?? metrics?.adjust ?? 0)}{' '}
+          <span className="text-xs font-normal">รายการ</span>
         </p>
       </button>
     </div>

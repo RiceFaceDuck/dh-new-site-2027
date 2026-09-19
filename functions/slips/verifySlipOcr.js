@@ -17,7 +17,11 @@ function getVisionClient() {
  * Runs Cloud Vision OCR on the uploaded slip image, extracts Thai banking details,
  * and guards against duplicate slip submissions.
  */
-exports.verifySlipOcr = onCall({ cors: true, maxInstances: 10 }, async (request) => {
+exports.verifySlipOcr = onCall({ region: "asia-southeast1", cors: true, maxInstances: 10 }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'จำเป็นต้องเข้าสู่ระบบก่อนดำเนินการตรวจสอบสลิป');
+  }
+
   const { slipUrl, orderId = 'UNASSIGNED', expectedAmount = 0 } = request.data || {};
 
   if (!slipUrl) {
@@ -56,8 +60,12 @@ exports.verifySlipOcr = onCall({ cors: true, maxInstances: 10 }, async (request)
     let isDuplicate = false;
     let duplicateOrderId = null;
 
-    if (ocrData.transactionRef) {
-      const slipDocRef = db.collection('slip_records').doc(ocrData.transactionRef);
+    // 🛡️ Deduplication Guard: ไม่ตรวจจับสลิปซ้ำหากไม่พบ Transaction Ref หรือได้ค่า 'n/a'
+    const rawRef = ocrData.transactionRef ? String(ocrData.transactionRef).trim() : '';
+    const hasValidTxRef = rawRef !== '' && rawRef.toLowerCase() !== 'n/a';
+
+    if (hasValidTxRef) {
+      const slipDocRef = db.collection('slip_records').doc(rawRef);
       const slipSnap = await slipDocRef.get();
 
       if (slipSnap.exists) {
@@ -69,7 +77,7 @@ exports.verifySlipOcr = onCall({ cors: true, maxInstances: 10 }, async (request)
       } else {
         // บันทึกสลิปใหม่ลงใน slip_records
         await slipDocRef.set({
-          transactionRef: ocrData.transactionRef,
+          transactionRef: rawRef,
           orderId: String(orderId),
           destinationAccount: ocrData.destinationAccount || '',
           destinationBank: ocrData.bankAccount || '',
@@ -99,8 +107,7 @@ exports.verifySlipOcr = onCall({ cors: true, maxInstances: 10 }, async (request)
         destinationAccount: ocrData.destinationAccount || ''
       },
       isDuplicate,
-      duplicateOrderId,
-      warning: isDuplicate ? `⚠️ สลิปนี้ (Ref: ${ocrData.transactionRef}) เคยถูกใช้แล้วในบิล ${duplicateOrderId}` : null
+      warning: isDuplicate ? `⚠️ สลิปนี้ (Ref: ${ocrData.transactionRef}) เคยถูกใช้งานแล้วในระบบ กรุณาตรวจสอบสลิปโอนเงินของคุณ` : null
     };
 
   } catch (error) {

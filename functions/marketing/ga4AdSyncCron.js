@@ -53,6 +53,14 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
       const adId = adDoc.id;
       const adData = adDoc.data();
       const ownerId = adData.ownerId;
+
+      // 🛡️ Safety Guard: Skip partner ads with undefined owner IDs
+      if (!ownerId) {
+        console.warn(`⚠️ [GA4AdSyncCron] Skipping ad ${adId} because ownerId is undefined.`);
+        results.totalAdsProcessed++;
+        continue;
+      }
+
       const currentStats = adData.stats || { views: 0, clicks: 0 };
       const currentViews = Number(currentStats.views || 0);
       const currentClicks = Number(currentStats.clicks || 0);
@@ -91,6 +99,9 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
         const userRef = db.collection("users").doc(ownerId);
         const userSnap = await transaction.get(userRef);
         const userData = userSnap.exists ? userSnap.data() : {};
+
+        const settingsRef = db.collection("settings").doc("credit_config");
+        const settingsSnap = await transaction.get(settingsRef);
 
         const newSpent = (Number(freshAd.spentBudget || 0)) + totalDeduct;
         let isExhausted = false;
@@ -131,6 +142,24 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
             heldCreditPoints: newHeld,
             updatedAt: FieldValue.serverTimestamp()
           });
+
+          // 🛡️ Synchronously decrement settings/credit_config.ledger.totalAllocated inside transaction
+          if (settingsSnap.exists) {
+            const sData = settingsSnap.data();
+            const ledger = sData.ledger || { systemPoolMax: 10000000, totalAllocated: 0, status: 'SECURE' };
+            const currentAllocated = Number(ledger.totalAllocated || 0);
+            const safeDeduct = Math.round(totalDeduct);
+            const newAllocated = Math.max(0, currentAllocated - safeDeduct);
+
+            transaction.set(settingsRef, {
+              ledger: {
+                ...ledger,
+                totalAllocated: newAllocated,
+                lastAuditTime: FieldValue.serverTimestamp()
+              },
+              updatedAt: FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
 
           // บันทึกหลักฐานทางการบัญชีลง credit_transactions
           const txRef = db.collection("credit_transactions").doc();
@@ -178,6 +207,7 @@ exports.ga4AdSyncCron = onSchedule(
   {
     schedule: "0 * * * *", // ทุกๆ ต้นชั่วโมง
     timeZone: "Asia/Bangkok",
+    region: "asia-southeast1",
     retryCount: 1,
     memory: "256MiB"
   },
@@ -191,8 +221,19 @@ exports.ga4AdSyncCron = onSchedule(
  * 🌐 Manual HTTP Trigger สำหรับผู้ดูแลระบบกดซิงค์ทดสอบได้ทันที
  */
 exports.ga4AdSyncManual = onRequest(
-  { cors: true },
+  {
+    region: "asia-southeast1",
+    cors: true
+  },
   async (req, res) => {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : req.headers['x-cron-secret'];
+    const cronSecret = process.env.INTERNAL_CRON_SECRET;
+    if (!cronSecret || !token || token !== cronSecret) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Invalid or missing cron secret' });
+      return;
+    }
+
     try {
       const db = getFirestore();
       const results = await syncGA4AdStatsLogic(db, { forceAudit: true });

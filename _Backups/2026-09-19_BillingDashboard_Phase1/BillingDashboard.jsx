@@ -1,0 +1,225 @@
+import React, { useState, lazy, Suspense } from 'react';
+import { Plus, AlertTriangle, ArrowLeft, HelpCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { billingService } from '../../firebase/billingService';
+import { auth } from '../../firebase/config';
+
+import useBillingOrders from './hooks/useBillingOrders';
+import OrderFilterBar from './dashboard/OrderFilterBar';
+import OrderListTable from './dashboard/OrderListTable';
+
+// ⚡ Lazy Loading Heavy Modals
+const OrderDetailModal = lazy(() => import('./dashboard/OrderDetailModal'));
+const GuideModal = lazy(() => import('../common/GuideModal'));
+const ReceiptTemplate = lazy(() => import('./pos/ReceiptTemplate'));
+
+export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelectorMode = false, onCancelSelector }) {
+    const {
+        orders,
+        filteredOrders,
+        loading,
+        isSearching,
+        filter,
+        setFilter,
+        searchQuery,
+        setSearchQuery,
+        limitAmount,
+        setLimitAmount,
+        dateRange,
+        setDateRange
+    } = useBillingOrders();
+
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [activeTab, setActiveTab] = useState('detail'); 
+    const [isVoiding, setIsVoiding] = useState(false);
+    const [showPrintPreview, setShowPrintPreview] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
+
+    // Sync selectedOrder with live updates from Firebase
+    React.useEffect(() => {
+        if (selectedOrder && orders.length > 0) {
+            const liveOrder = orders.find(o => o.id === selectedOrder.id);
+            if (liveOrder) {
+                // Only update if something relevant changed (simple check on updatedAt or basic deep comparison could be better, but direct object ref change might cause infinite loops if we just setState on any array change. So we do a shallow JSON comparison to be safe)
+                if (JSON.stringify(liveOrder) !== JSON.stringify(selectedOrder)) {
+                    setSelectedOrder(liveOrder);
+                }
+            }
+        }
+    }, [orders, selectedOrder]);
+
+    const totalSales = filteredOrders.reduce((sum, order) => {
+        const stat = (order.orderStatus || order.status || '').toLowerCase();
+        if (stat === 'cancelled' || stat === 'void') return sum;
+        return sum + (Number(order.netTotal) || 0);
+    }, 0);
+
+    const handleCloseModal = () => {
+        setSelectedOrder(null);
+        setActiveTab('detail');
+    };
+
+    const executeVoidOrder = async (orderToVoid) => {
+        const currentStat = (orderToVoid.orderStatus || orderToVoid.status || '').toLowerCase();
+        
+        if (currentStat === 'cancelled' || currentStat === 'void') return toast.error('บิลนี้ถูกยกเลิกไปแล้ว');
+        if (currentStat === 'approved' || currentStat === 'completed') return toast.error('บิลที่อนุมัติ/เสร็จสิ้นแล้ว ไม่สามารถยกเลิกได้');
+        
+        const isPaid = currentStat === 'paid' || (orderToVoid.paymentStatus || '').toLowerCase() === 'paid';
+        const confirmMsg = isPaid 
+            ? `⚠️ ยืนยันการ "ยกเลิก" บิล ${orderToVoid.orderId} ใช่หรือไม่?\n\nระบบจะดำเนินการอัตโนมัติ:\n1. คืนสต็อกสินค้าทั้งหมด\n2. คืนยอดเงินสุทธิเข้า Wallet\n3. หักแต้ม Credit Points คืนจากลูกค้า\n4. ปรับลดยอดขายประจำวัน\n\n* การกระทำนี้ไม่สามารถย้อนกลับได้`
+            : `⚠️ ยืนยันการ "ยกเลิก" บิล ${orderToVoid.orderId} ใช่หรือไม่?\n(ระบบจะล้างยอดและสถานะให้เป็นยกเลิก)`;
+            
+        if (!window.confirm(confirmMsg)) return;
+
+        setIsVoiding(true);
+        const toastId = toast.loading('กำลังยกเลิกบิล...');
+        try {
+            await billingService.updateOrderStatus(orderToVoid.id, 'Cancelled', orderToVoid.orderStatus || orderToVoid.status, auth.currentUser?.uid || 'System');
+            toast.success(`ยกเลิกบิล ${orderToVoid.orderId} สำเร็จ!`, { id: toastId });
+            if (selectedOrder?.id === orderToVoid.id) handleCloseModal(); 
+        } catch (error) {
+            toast.error(`เกิดข้อผิดพลาดในการยกเลิกบิล: ${error.message}`, { id: toastId });
+        } finally {
+            setIsVoiding(false);
+        }
+    };
+
+    const handleDeleteOrder = async (orderToDel) => {
+        const confirmText = window.prompt(`🚨 คำเตือนขั้นสูงสุด: การลบบิลถาวรจะไม่สามารถกู้คืนได้ และประวัติจะหายไปทั้งหมด\n\nหากคุณต้องการลบจริงๆ โปรดพิมพ์คำว่า "DELETE" ด้านล่างนี้:`);
+        
+        if (confirmText !== "DELETE") {
+            toast.error("ยกเลิกการลบถาวร (คุณพิมพ์ข้อความไม่ถูกต้อง)");
+            return;
+        }
+
+        const toastId = toast.loading('กำลังลบบิลถาวร...');
+        try {
+            await billingService.deleteOrderPermanently(orderToDel.id, auth.currentUser?.uid);
+            toast.success(`ลบบิล ${orderToDel.orderId} ถาวรเรียบร้อยแล้ว`, { id: toastId });
+            if (selectedOrder?.id === orderToDel.id) handleCloseModal();
+        } catch (error) {
+            toast.error(`เกิดข้อผิดพลาดในการลบ: ${error.message}`, { id: toastId });
+        }
+    };
+
+    return (
+        <div className="flex flex-col h-full w-full bg-(--dh-bg-surface) relative overflow-hidden font-sans transition-colors duration-300">
+            <div className="flex flex-col h-full w-full bg-(--dh-bg-surface) overflow-hidden transition-all duration-300">
+                
+                {/* 🏷️ Header Area (Edge to Edge Design Support) */}
+                <div className="dh-header-gradient px-4 py-3 sm:px-6 sm:py-3.5 relative z-10 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-white/10 transition-colors duration-300">
+                    <OrderFilterBar 
+                        filter={filter} 
+                        setFilter={setFilter} 
+                        searchQuery={searchQuery} 
+                        setSearchQuery={setSearchQuery} 
+                        dateRange={dateRange}
+                        setDateRange={setDateRange}
+                        totalSales={totalSales}
+                        headerTitle={
+                            <div className="flex items-center gap-3 relative z-10">
+                                {isSelectorMode ? (
+                                    <div className="relative p-2 bg-rose-500/20 text-rose-300 rounded-lg border border-rose-500/30 shadow-inner flex items-center justify-center shrink-0">
+                                        <AlertTriangle size={18} strokeWidth={2.5} className="relative z-10 animate-bounce" />
+                                    </div>
+                                ) : (
+                                    <div className="w-9 h-9 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs hidden md:flex">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
+                                    </div>
+                                )}
+                                <div>
+                                    <h1 className="text-lg lg:text-xl font-black text-white tracking-tight leading-none whitespace-nowrap">
+                                        {isSelectorMode ? 'เลือกบิลที่ต้องการเคลม/คืน' : 'รายการบิล (Orders)'}
+                                    </h1>
+                                    <p className="text-[11px] text-white/70 mt-1 font-bold uppercase tracking-wider hidden sm:block">
+                                        {isSelectorMode ? 'ค้นหาบิลจากรหัส หรือชื่อลูกค้า เพื่อทำรายการ' : 'จัดการและตรวจสอบบิลการขาย'}
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                        headerAction={
+                            isSelectorMode ? (
+                                <button 
+                                    onClick={onCancelSelector} 
+                                    className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-lg flex items-center gap-1.5 transition-all active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
+                                >
+                                    <ArrowLeft size={16} strokeWidth={2.5} /> ย้อนกลับ (หน้ารายการเคลม)
+                                </button>
+                            ) : (
+                                <div className="flex gap-2 items-center">
+                                    <button 
+                                        onClick={() => setShowGuide(true)}
+                                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold rounded-lg flex items-center gap-1.5 transition-all hover:-translate-y-0.5 active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
+                                    >
+                                        <HelpCircle size={15} strokeWidth={2.5} /> คู่มือ
+                                    </button>
+                                    {onSwitchView && (
+                                        <button 
+                                            onClick={onSwitchView} 
+                                            className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-lg flex items-center gap-1.5 transition-all hover:shadow-[0_0_15px_rgba(6,182,212,0.5)] hover:-translate-y-0.5 active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
+                                        >
+                                            <Plus size={16} strokeWidth={3} /> สร้างบิลใหม่
+                                        </button>
+                                    )}
+                                </div>
+                            )
+                        }
+                    />
+                </div>
+
+                {/* 📊 Data Table Container */}
+                <OrderListTable 
+                    orders={filteredOrders} 
+                    loading={loading} 
+                    isSearching={isSearching} 
+                    limitAmount={limitAmount} 
+                    setLimitAmount={setLimitAmount} 
+                    setSelectedOrder={setSelectedOrder} 
+                />
+            </div>
+
+            <Suspense fallback={null}>
+                {selectedOrder && (
+                    <OrderDetailModal 
+                        selectedOrder={selectedOrder} 
+                        handleCloseModal={handleCloseModal} 
+                        activeTab={activeTab} 
+                        setActiveTab={setActiveTab} 
+                        executeVoidOrder={executeVoidOrder} 
+                        isVoiding={isVoiding} 
+                        handleDeleteOrder={handleDeleteOrder} 
+                        setShowPrintPreview={setShowPrintPreview} 
+                        onResumeDraft={onResumeDraft} 
+                    />
+                )}
+
+                {/* Print Preview Modal */}
+                {showPrintPreview && selectedOrder && (
+                    <ReceiptTemplate 
+                        orderData={selectedOrder}
+                        onClose={() => setShowPrintPreview(false)}
+                    />
+                )}
+
+                {showGuide && (
+                    <GuideModal 
+                        isOpen={showGuide}
+                        onClose={() => setShowGuide(false)}
+                        title="คู่มือรายการบิล (Orders Dashboard)"
+                        manualText="หน้าจอนี้ใช้สำหรับตรวจสอบรายการบิลทั้งหมดที่ถูกสร้างขึ้นในระบบ ไม่ว่าจะมาจากหน้าร้าน (POS) หรือมาจากการสั่งซื้อล่วงหน้า"
+                        howTo={[
+                            "ค้นหาบิลด้วย 'เลขบิล' หรือ 'ชื่อลูกค้า' ในช่องค้นหา",
+                            "สามารถคลิกที่แถวของบิลเพื่อดูรายละเอียด หรือ สั่งพิมพ์ใบเสร็จย้อนหลังได้",
+                            "กด 'สร้างบิลใหม่' เพื่อเข้าสู่หน้าระบบขายหน้าร้าน (POS)",
+                            "ดูรายชื่อพนักงานที่ทำรายการเปิดบิลขายได้ที่คอลัมน์ 'เจ้าหน้าที่'",
+                            "ตรวจสอบสถานะบริการหลังการขาย เช่น ป้ายเคลมสินค้า เปลี่ยนสินค้า หรือประวัติภาษีที่คอลัมน์ 'บริการหลังการขาย'"
+                        ]}
+                        tips="บิลที่เป็นสถานะ 'ฉบับร่าง' (Draft) จะมีปุ่มให้กดทำรายการต่อ (Resume) ได้ทันที! และสามารถสังเกตจำนวนเคลม/เปลี่ยน หรือสถานะการขอใบกำกับภาษี (รอ/ออกแล้ว) ได้จากตารางโดยตรง"
+                        expectedResult="หากกดยกเลิกบิล (Void) ระบบจะทำการคืนสต็อกสินค้าอัตโนมัติ และคืนยอดเงินเครดิตให้ลูกค้าทันที"
+                    />
+                )}
+            </Suspense>
+        </div>
+    );
+}

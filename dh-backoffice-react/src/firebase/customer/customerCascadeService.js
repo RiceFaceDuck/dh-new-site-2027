@@ -153,3 +153,31 @@ export const cascadeDeleteCustomer = async (uid, authUserUid) => {
         console.error("🔥 Cascade Delete Error:", err);
     }
 };
+
+/**
+ * 📦 Commit Firestore write operations in bounded chunks (max 450 docs per batch)
+ * @param {import('firebase/firestore').Firestore} [dbInstance]
+ * @param {Array<{type: 'update'|'delete'|'set', ref: any, data?: any}>} operations
+ * @returns {Promise<number>} Number of committed batch chunks
+ */
+export const commitBatchChunks = async (dbInstance, operations = []) => {
+    let commitCount = 0;
+    const targetDb = dbInstance || db;
+    for (let i = 0; i < operations.length; i += 450) {
+        const chunk = operations.slice(i, i + 450);
+        const batch = writeBatch(targetDb);
+        chunk.forEach((op) => {
+            if (op.type === 'update') {
+                batch.update(op.ref, op.data);
+            } else if (op.type === 'delete') {
+                batch.delete(op.ref);
+            } else if (op.type === 'set') {
+                batch.set(op.ref, op.data);
+            }
+        });
+        await batch.commit();
+        commitCount++;
+    }
+    return commitCount;
+};
+

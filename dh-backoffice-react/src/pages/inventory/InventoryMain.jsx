@@ -47,6 +47,8 @@ export default function Inventory() {
     handleSaveProduct,
     handleAddProduct,
     handleImportSuccess,
+    isRecalculating,
+    handleRecalculateStats,
   } = useInventoryController();
 
   return (
@@ -54,6 +56,8 @@ export default function Inventory() {
       
       <InventoryHeader 
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+        isRecalculating={isRecalculating}
+        onRecalculateStats={handleRecalculateStats}
         filterCategory={filterCategory} setFilterCategory={setFilterCategory}
         salesPeriod={salesPeriod} setSalesPeriod={setSalesPeriod}
         categories={categories}
@@ -205,3 +209,4 @@ export default function Inventory() {
     </div>
   );
 }
+

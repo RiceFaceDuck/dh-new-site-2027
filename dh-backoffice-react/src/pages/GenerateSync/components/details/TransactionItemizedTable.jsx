@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ExternalLink } from 'lucide-react';
 
 export default function TransactionItemizedTable({ filteredTransactions, onNavigateToTransaction }) {
@@ -9,19 +9,19 @@ export default function TransactionItemizedTable({ filteredTransactions, onNavig
           <thead>
             <tr className="bg-slate-100/90 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
               <th className="py-2.5 px-2.5 w-8 text-center text-[11px]">#</th>
-              <th className="py-2.5 px-2.5 min-w-[125px] text-[11px]">เธงเธฑเธเธ—เธตเน / เน€เธงเธฅเธฒ</th>
-              <th className="py-2.5 px-2.5 min-w-[130px] text-[11px]">เน€เธฅเธเธ—เธตเนเธเธธเธฃเธเธฃเธฃเธก</th>
-              <th className="py-2.5 px-2.5 min-w-[150px] text-[11px]">เธเธทเนเธญเธฅเธนเธเธเนเธฒ / เธเนเธญเธเธ—เธฒเธ</th>
-              <th className="py-2.5 px-2.5 min-w-[260px] text-[11px]">เธชเธดเธเธเนเธฒ & SKU</th>
-              <th className="py-2.5 px-2.5 min-w-[110px] text-center text-[11px]">เธเธฒเธฃเน€เธเธฅเธตเนเธขเธเนเธเธฅเธ</th>
-              <th className="py-2.5 px-2.5 min-w-[190px] text-[11px]">เน€เธซเธ•เธธเธเธฒเธฃเธ“เน</th>
+              <th className="py-2.5 px-2.5 min-w-[125px] text-[11px]">วันที่ / เวลา</th>
+              <th className="py-2.5 px-2.5 min-w-[130px] text-[11px]">เลขที่ธุรกรรม</th>
+              <th className="py-2.5 px-2.5 min-w-[150px] text-[11px]">ชื่อลูกค้า / ช่องทาง</th>
+              <th className="py-2.5 px-2.5 min-w-[260px] text-[11px]">สินค้า & SKU</th>
+              <th className="py-2.5 px-2.5 min-w-[110px] text-center text-[11px]">การเปลี่ยนแปลง</th>
+              <th className="py-2.5 px-2.5 min-w-[190px] text-[11px]">เหตุการณ์</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
             {filteredTransactions.length === 0 ? (
               <tr>
                 <td colSpan={7} className="text-center py-8 text-slate-400">
-                  เนเธกเนเธเธเธฃเธฒเธขเธเธฒเธฃเธเธธเธฃเธเธฃเธฃเธกเธ•เธฒเธกเน€เธเธทเนเธญเธเนเธเธ—เธตเนเธเธฃเธญเธ
+                  ไม่พบรายการธุรกรรมตามเงื่อนไขที่กรอง
                 </td>
               </tr>
             ) : (
@@ -35,7 +35,7 @@ export default function TransactionItemizedTable({ filteredTransactions, onNavig
                       <button
                         onClick={() => onNavigateToTransaction(tx.eventCategory, tx.txId)}
                         className="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:hover:bg-indigo-900 dark:text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800 text-[11px] font-mono font-bold transition-all cursor-pointer group/tx hover:shadow-2xs"
-                        title={`เธเธฅเธดเธเน€เธเธทเนเธญเน€เธเธดเธ”เธ”เธนเธฃเธฒเธขเธเธฒเธฃ ${tx.txId}`}
+                        title={`คลิกเพื่อเปิดดูรายการ ${tx.txId}`}
                       >
                         <span>{tx.txId}</span>
                         <ExternalLink size={10} className="opacity-60 group-hover/tx:opacity-100 group-hover/tx:translate-x-0.5 transition-all" />
@@ -61,7 +61,7 @@ export default function TransactionItemizedTable({ filteredTransactions, onNavig
                         {tx.oldValue !== '-' && tx.newValue !== '-' && tx.oldValue !== tx.newValue ? (
                           <>
                             <span className="text-slate-400 line-through text-[10px]">{tx.oldValue}</span>
-                            <span className="font-black text-slate-800 dark:text-white">โ” {tx.newValue}</span>
+                            <span className="font-black text-slate-800 dark:text-white">➔ {tx.newValue}</span>
                             <span className="font-black text-indigo-600 dark:text-indigo-400 ml-0.5">({tx.quantityDiffText})</span>
                           </>
                         ) : (

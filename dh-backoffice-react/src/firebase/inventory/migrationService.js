@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Migration Service - IDB Cache Key Constants & Snapshot Parser
  * Provides IndexedDB cache key constants and snapshot parsing for inventory stats.
  */
@@ -18,8 +18,13 @@ export const IDB_FULL_CACHE_KEY = 'dh_inv_full_cache';
 export function parseStatsSnapshot(raw) {
   if (!raw) return null;
   try {
-    if (typeof raw === 'string') return JSON.parse(raw);
-    if (typeof raw === 'object') return raw;
+    let parsed = raw;
+    if (typeof raw === 'string') parsed = JSON.parse(raw);
+    if (typeof parsed === 'object' && parsed !== null) {
+      if (parsed.statsMap && typeof parsed.statsMap === 'object') return parsed.statsMap;
+      if (parsed.statsBySku && typeof parsed.statsBySku === 'object') return parsed.statsBySku;
+      return parsed;
+    }
     return null;
   } catch {
     return null;

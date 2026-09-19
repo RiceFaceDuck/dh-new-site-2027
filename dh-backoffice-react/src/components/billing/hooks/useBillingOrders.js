@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { billingService } from '../../../firebase/billingService';
 import { getStaffNickname } from 'dh-shared/src/utils/staffUtils';
+import { readCachedOrders, subscribeRecentOrdersCatalog } from '../../../firebase/orderCacheService';
 
 export default function useBillingOrders() {
     const [orders, setOrders] = useState([]);
@@ -8,7 +9,7 @@ export default function useBillingOrders() {
     const [filter, setFilter] = useState('All'); 
     const initialSearch = new URLSearchParams(window.location.search).get('search') || '';
     const [searchQuery, setSearchQuery] = useState(initialSearch);
-    const [limitAmount, setLimitAmount] = useState(21); 
+    const [limitAmount, setLimitAmount] = useState(50); 
     const [isSearching, setIsSearching] = useState(false);
     const [recentOrders, setRecentOrders] = useState([]);
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -48,14 +49,52 @@ export default function useBillingOrders() {
         }
     }, []);
 
-    // Subscribe to recent orders
+    // ⚡ Fast Tier 1: Check Local Session/Memory Cache on initial mount (0ms instant render)
+    useEffect(() => {
+        const { orders: cached } = readCachedOrders();
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+            setRecentOrders(cached);
+            setLoading(false);
+        }
+    }, []);
+
+    // ⚡ Tier 2: Subscribe to recent orders (Cache & Overwrite via catalogs/recent_orders with direct query fallback)
     useEffect(() => {
         setLoading(true);
-        const unsubscribe = billingService.subscribeRecentOrders(limitAmount, dateRange, (data) => {
-            setRecentOrders(data);
-            setLoading(false);
-        });
-        return () => unsubscribe();
+
+        // If filtering by custom date, use direct collection query
+        if (dateRange.start || dateRange.end) {
+            const unsubscribe = billingService.subscribeRecentOrders(limitAmount, dateRange, (data) => {
+                setRecentOrders(data);
+                setLoading(false);
+            });
+            return () => unsubscribe();
+        }
+
+        let isFallbackActive = false;
+        let fallbackUnsub = null;
+
+        const unsubscribeCatalog = subscribeRecentOrdersCatalog(
+            (catalogOrders) => {
+                setRecentOrders(catalogOrders);
+                setLoading(false);
+            },
+            (fallbackReason) => {
+                if (!isFallbackActive) {
+                    isFallbackActive = true;
+                    console.log(`[OrderCache] Using direct collection query fallback (Reason: ${fallbackReason})`);
+                    fallbackUnsub = billingService.subscribeRecentOrders(limitAmount, dateRange, (data) => {
+                        setRecentOrders(data);
+                        setLoading(false);
+                    });
+                }
+            }
+        );
+
+        return () => {
+            if (typeof unsubscribeCatalog === 'function') unsubscribeCatalog();
+            if (typeof fallbackUnsub === 'function') fallbackUnsub();
+        };
     }, [limitAmount, dateRange]);
 
     // Enrich order with active service tasks and resolved staff nickname
@@ -173,6 +212,18 @@ export default function useBillingOrders() {
         }
                               
         return matchesFilter && matchesSearch && matchesDate;
+    }).sort((a, b) => {
+        const getTs = (o) => {
+            if (!o) return 0;
+            const t = o.createdAt || o.updatedAt || o.date;
+            if (!t) return 0;
+            if (typeof t.toDate === 'function') return t.toDate().getTime();
+            if (t.seconds) return t.seconds * 1000;
+            if (typeof t === 'number') return t;
+            const n = new Date(t).getTime();
+            return isNaN(n) ? 0 : n;
+        };
+        return getTs(b) - getTs(a);
     });
 
     return {

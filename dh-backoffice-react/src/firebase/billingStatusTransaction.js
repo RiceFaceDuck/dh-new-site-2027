@@ -8,6 +8,7 @@ import { handlePromoFreebieReversal } from './billing/statusPromoHandler';
 import { getCreditPreloadRefs } from './credit/creditActionService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { syncRecentOrdersCatalog } from './orderSyncService';
 
 const COLLECTION_NAME = getCollectionPath('orders');
 
@@ -299,6 +300,9 @@ export const billingStatusTransaction = {
           }
       }
 
+      // ⚡ Background Cache Sync: Refresh catalogs/recent_orders without blocking UI
+      syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
+
       return orderId;
     })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะบิล");
   },
@@ -322,6 +326,10 @@ export const billingStatusTransaction = {
       }, { maxAttempts: 15 });
 
       await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "จัดส่งแล้ว" (ขนส่ง: ${courier}, เลขพัสดุ: ${trackingNumber})`, actualActorUid);
+      
+      // ⚡ Background Cache Sync
+      syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
+
       return orderId;
     })(), "เกิดข้อผิดพลาดในการบันทึกข้อมูลจัดส่ง");
   },
@@ -343,6 +351,10 @@ export const billingStatusTransaction = {
       }, { maxAttempts: 15 });
 
       await historyService.addLog('Billing', 'Update', orderId, `อัปเดตสถานะเป็น "ส่งมอบสินค้าสำเร็จ" (รับหน้าร้าน)`, actualActorUid);
+      
+      // ⚡ Background Cache Sync
+      syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
+
       return orderId;
     })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะส่งมอบ");
   }

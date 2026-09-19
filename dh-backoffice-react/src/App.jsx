@@ -222,6 +222,7 @@ function AppContent() {
           <Route path="gallery" element={<GalleryMain />}/>
           <Route path="inventory" element={<Inventory/>}/>
           <Route path="generate" element={<GenerateSync />}/>
+          <Route path="generate/details" element={<GenerateSyncDetails />} />
           <Route path="generate/details/:referenceId" element={<GenerateSyncDetails />}/>
           
           <Route path="customers" element={<Customers />}/>

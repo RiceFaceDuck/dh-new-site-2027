@@ -3,7 +3,22 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
 
   "hosting": [
     {
@@ -28,6 +43,12 @@
           ]
         },
         {
+          "source": "**/*.@(js|css|png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|otf)",
+          "headers": [
+            { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          ]
+        },
+        {
           "source": "**",
           "headers": [
             { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
@@ -35,7 +56,7 @@
             { "key": "X-XSS-Protection", "value": "1; mode=block" },
             { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
             { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
-            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" }
+            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com https://nominatim.openstreetmap.org; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com;" }
           ]
         }
       ]
@@ -62,6 +83,12 @@
           ]
         },
         {
+          "source": "**/*.@(js|css|png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|otf)",
+          "headers": [
+            { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          ]
+        },
+        {
           "source": "**",
           "headers": [
             { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
@@ -69,7 +96,7 @@
             { "key": "X-XSS-Protection", "value": "1; mode=block" },
             { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
             { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
-            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" }
+            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com https://nominatim.openstreetmap.org; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com;" }
           ]
         }
       ]
@@ -96,6 +123,12 @@
           ]
         },
         {
+          "source": "**/*.@(js|css|png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|otf)",
+          "headers": [
+            { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          ]
+        },
+        {
           "source": "**",
           "headers": [
             { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
@@ -103,7 +136,7 @@
             { "key": "X-XSS-Protection", "value": "1; mode=block" },
             { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
             { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
-            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" }
+            { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google-analytics.com https://script.google.com https://script.googleusercontent.com https://nominatim.openstreetmap.org; img-src * data: blob:; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com;" }
           ]
         }
       ]
