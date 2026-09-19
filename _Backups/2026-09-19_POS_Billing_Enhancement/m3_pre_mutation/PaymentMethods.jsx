@@ -95,35 +95,32 @@ export default function PaymentMethods({
                                 <Landmark size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                             </div>
                             <div className="relative h-8 group">
-                                <input type="text" placeholder="หมายเลขธุรกรรม (ถ้ามี)" value={localTxRef} onChange={(e) => setLocalTxRef(e.target.value)} onBlur={() => updateActiveTab({ transactionRef: localTxRef })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ transactionRef: localTxRef }); }} className={`${inputClass} h-full ${ocrStatus === 'error' ? 'border-red-300 focus:border-red-500' : ocrStatus === 'success' ? 'border-emerald-400 focus:border-emerald-500' : ''}`} />
+                                <input type="text" placeholder="หมายเลขธุรกรรม (ถ้ามี)" value={localTxRef} onChange={(e) => setLocalTxRef(e.target.value)} onBlur={() => updateActiveTab({ transactionRef: localTxRef })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ transactionRef: localTxRef }); }} className={`${inputClass} h-full ${ocrStatus === 'error' ? 'border-red-300 focus:border-red-500' : ''}`} />
                                 {isScanning && <ScanLine size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 animate-spin-slow" />}
                             </div>
                             <div className="relative h-8 group">
-                                <input type="text" placeholder="วันที่ และ เวลาโอน" value={localTxDate} onChange={(e) => setLocalTxDate(e.target.value)} onBlur={() => updateActiveTab({ transferDateTime: localTxDate })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ transferDateTime: localTxDate }); }} className={`${inputClass} h-full ${ocrStatus === 'error' ? 'border-red-300 focus:border-red-500' : ocrStatus === 'success' ? 'border-emerald-400 focus:border-emerald-500' : ''}`} />
+                                <input type="text" placeholder="วันที่ และ เวลาโอน" value={localTxDate} onChange={(e) => setLocalTxDate(e.target.value)} onBlur={() => updateActiveTab({ transferDateTime: localTxDate })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ transferDateTime: localTxDate }); }} className={`${inputClass} h-full ${ocrStatus === 'error' ? 'border-red-300 focus:border-red-500' : ''}`} />
                             </div>
-                            <input type="text" placeholder="ชื่อผู้โอน / หมายเหตุ" value={localTxNote} onChange={(e) => setLocalTxNote(e.target.value)} onBlur={() => updateActiveTab({ transferNote: localTxNote })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ transferNote: localTxNote }); }} className={`${inputClass} h-8 ${ocrStatus === 'success' ? 'border-emerald-400 focus:border-emerald-500' : ''}`} />
+                            <input type="text" placeholder="ชื่อผู้โอน / หมายเหตุ" value={localTxNote} onChange={(e) => setLocalTxNote(e.target.value)} onBlur={() => updateActiveTab({ transferNote: localTxNote })} onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ transferNote: localTxNote }); }} className={`${inputClass} h-8`} />
                         </div>
 
                         {/* สลิปอัปโหลด */}
                         <div 
-                            className={`w-28 shrink-0 border border-dashed rounded-xs flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group transition-all duration-300 ${(activeTab.slipImage || activeTab.slipUrl) ? 'border-gray-300 bg-gray-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50/50 hover:bg-gray-50'}`} 
-                            onClick={(e) => { 
-                                const slip = activeTab.slipUrl || activeTab.slipImage;
-                                if (slip) { e.preventDefault(); setPreviewSlip(slip); } 
-                            }}
+                            className={`w-28 shrink-0 border border-dashed rounded-xs flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group transition-all duration-300 ${activeTab.slipImage ? 'border-gray-300 bg-gray-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50/50 hover:bg-gray-50'}`} 
+                            onClick={(e) => { if (activeTab.slipImage) { e.preventDefault(); setPreviewSlip(activeTab.slipImage); } }}
                         >
                             {isUploadingSlip && <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/90 backdrop-blur-xs"><div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mb-1"></div><span className="text-[9px] font-medium text-gray-500">UPLOADING...</span></div>}
-                            {!(activeTab.slipImage || activeTab.slipUrl) && !isUploadingSlip && <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" onChange={handleFileWithOCR} />}
+                            {!activeTab.slipImage && !isUploadingSlip && <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" onChange={handleFileWithOCR} />}
                             
-                            {(activeTab.slipImage || activeTab.slipUrl) && (
+                            {activeTab.slipImage && (
                                 <>
-                                    <img src={activeTab.slipUrl || activeTab.slipImage} alt="Slip" className="absolute inset-0 w-full h-full object-contain z-10 p-1" loading="lazy" />
+                                    <img src={activeTab.slipImage} alt="Slip" className="absolute inset-0 w-full h-full object-contain z-10 p-1"  loading="lazy" />
                                     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                                        <button onClick={(e) => { e.stopPropagation(); updateActiveTab({slipImage: null, slipUrl: null, slipStoragePath: null, ocrResult: null, slipVerificationStatus: 'idle', transactionRef: '', transferDateTime: '', transferNote: ''}); setOcrStatus('idle'); }} className="p-1.5 bg-red-500 hover:bg-red-600 rounded-xs text-white shadow-xs transition-all scale-90 hover:scale-100" title="ลบสลิป"><Trash2 size={14}/></button>
+                                        <button onClick={(e) => { e.stopPropagation(); updateActiveTab({slipImage:null, transactionRef: '', transferDateTime: '', transferNote: ''}); setOcrStatus('idle'); }} className="p-1.5 bg-red-500 hover:bg-red-600 rounded-xs text-white shadow-xs transition-all scale-90 hover:scale-100"><Trash2 size={14}/></button>
                                     </div>
                                 </>
                             )}
-                            {!(activeTab.slipImage || activeTab.slipUrl) && !isUploadingSlip && (
+                            {!activeTab.slipImage && !isUploadingSlip && (
                                 <div className="flex flex-col items-center gap-1.5 text-center p-2 text-gray-400 group-hover:text-gray-600 transition-colors">
                                     <UploadCloud size={20} strokeWidth={1.5} /> 
                                     <span className="text-[10px] font-medium leading-tight">แนบสลิป<br/><span className="text-[9px] opacity-70">(Ctrl+V)</span></span>

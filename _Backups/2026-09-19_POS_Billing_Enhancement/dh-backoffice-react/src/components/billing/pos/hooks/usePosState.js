@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { promotionService } from '../../../../firebase/promotionService';
 import { freebieService } from '../../../../firebase/freebieService';
 import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
-import { catalogHydrationService } from '../../../../firebase/catalogHydrationService';
 
 import { usePosCart } from './usePosCart';
 import { usePosCustomer } from './usePosCustomer';
@@ -10,17 +9,6 @@ import { usePosPayment } from './usePosPayment';
 import { auth } from '../../../../firebase/config';
 
 import { safeJsonParse } from 'dh-shared';
-
-// ⚡ Session & Memory Caching for Promotions & Freebies (Eliminates redundant Firestore reads on mount)
-const MARKETING_CACHE_KEY_PROMOS = 'dh_pos_promos_cache_v1';
-const MARKETING_CACHE_KEY_FREEBIES = 'dh_pos_freebies_cache_v1';
-const MARKETING_CACHE_KEY_TIME = 'dh_pos_marketing_cache_time_v1';
-const MARKETING_CACHE_TTL = 10 * 60 * 1000; // 10 minutes TTL
-
-let inMemoryPromos = null;
-let inMemoryFreebies = null;
-let inMemoryMarketingTimestamp = 0;
-
 const createNewTab = () => {
     const yy = new Date().getFullYear().toString().slice(2);
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
@@ -166,61 +154,23 @@ export default function usePosState(products, customers, initialDraft) {
 
     useEffect(() => {
         const fetchMarketingData = async () => {
-            const now = Date.now();
-
-            // 1. Check in-memory fast cache (0ms, 0 reads)
-            if (inMemoryPromos && inMemoryFreebies && (now - inMemoryMarketingTimestamp) < MARKETING_CACHE_TTL) {
-                setActivePromotions(inMemoryPromos);
-                setActiveFreebies(inMemoryFreebies);
-                return;
-            }
-
-            // 2. Check SessionStorage cache (0 reads across tab re-navigations)
             try {
-                const cachedTime = sessionStorage.getItem(MARKETING_CACHE_KEY_TIME);
-                if (cachedTime && (now - Number(cachedTime)) < MARKETING_CACHE_TTL) {
-                    const rawP = sessionStorage.getItem(MARKETING_CACHE_KEY_PROMOS);
-                    const rawF = sessionStorage.getItem(MARKETING_CACHE_KEY_FREEBIES);
-                    if (rawP && rawF) {
-                        const parsedP = safeJsonParse(rawP);
-                        const parsedF = safeJsonParse(rawF);
-                        if (Array.isArray(parsedP) && Array.isArray(parsedF)) {
-                            inMemoryPromos = parsedP;
-                            inMemoryFreebies = parsedF;
-                            inMemoryMarketingTimestamp = Number(cachedTime);
-                            setActivePromotions(parsedP);
-                            setActiveFreebies(parsedF);
-                            return;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn('[usePosState] SessionStorage read error:', e);
-            }
-
-            // 3. Cache Miss: Fetch active promos and freebies from Firestore
-            try {
-                const [promos, freebies] = await Promise.all([
-                    promotionService.getActivePromotions(), 
-                    freebieService.getActiveFreebies()
-                ]);
+                const [promos, freebies] = await Promise.all([promotionService.getActivePromotions(), freebieService.getActiveFreebies()]);
                 
-                // 🚀 Optimize: Read from fast cache to avoid N+1 queries
+                // 🚀 Optimize: Read from sessionStorage cache to avoid N+1 queries
                 let cacheMap = new Map();
                 try {
                     const cachedStr = sessionStorage.getItem('search_hybrid_cache');
                     if (cachedStr) {
                         const cachedArr = safeJsonParse(cachedStr);
-                        if (Array.isArray(cachedArr)) {
-                            cachedArr.forEach(p => cacheMap.set(p.sku, p.name));
-                        }
+                        cachedArr.forEach(p => cacheMap.set(p.sku, p.name));
                     }
                 } catch(e) {}
 
                 const enrichedFreebies = [];
                 for (const f of (freebies || [])) {
                     if (f.itemName) {
-                        let pName = cacheMap.get(f.itemName) || catalogHydrationService.findProductInCache(f.itemName)?.name;
+                        let pName = cacheMap.get(f.itemName);
                         // ถ้าไม่มีในแคชค่อยไปดึงจาก Server (Fallback)
                         if (!pName) {
                             try {
@@ -236,24 +186,8 @@ export default function usePosState(products, customers, initialDraft) {
                     }
                 }
                 
-                const validPromos = promos || [];
-                inMemoryPromos = validPromos;
-                inMemoryFreebies = enrichedFreebies;
-                inMemoryMarketingTimestamp = Date.now();
-
-                try {
-                    sessionStorage.setItem(MARKETING_CACHE_KEY_PROMOS, JSON.stringify(validPromos));
-                    sessionStorage.setItem(MARKETING_CACHE_KEY_FREEBIES, JSON.stringify(enrichedFreebies));
-                    sessionStorage.setItem(MARKETING_CACHE_KEY_TIME, String(inMemoryMarketingTimestamp));
-                } catch (storageErr) {
-                    console.warn('[usePosState] SessionStorage write error:', storageErr);
-                }
-
-                setActivePromotions(validPromos); 
-                setActiveFreebies(enrichedFreebies);
-            } catch(e) { 
-                console.error("🔥 Error loading marketing data:", e); 
-            }
+                setActivePromotions(promos || []); setActiveFreebies(enrichedFreebies);
+            } catch(e) { console.error(e); }
         };
         fetchMarketingData();
     }, []);
@@ -329,7 +263,6 @@ export default function usePosState(products, customers, initialDraft) {
         actionBoxItem: cartState.actionBoxItem, setActionBoxItem: cartState.setActionBoxItem,
         searchResults: cartState.searchResults,
         isCacheLoading: cartState.isCacheLoading,
-        products: cartState.products,
 
         // From usePosCustomer
         customerSearchText: customerState.customerSearchText, setCustomerSearchText: customerState.setCustomerSearchText,

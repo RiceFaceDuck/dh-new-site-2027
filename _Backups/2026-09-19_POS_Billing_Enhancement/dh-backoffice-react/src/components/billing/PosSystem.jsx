@@ -8,14 +8,12 @@ import ReceiptTemplate from './pos/ReceiptTemplate';
 import PosHeader from './pos/layout/PosHeader';
 import GuideModal from '../common/GuideModal';
 import PromoModal from './pos/layout/PromoModal';
-import PosFreebieModal from './pos/modals/PosFreebieModal';
-import { toast } from 'react-hot-toast';
+import FreebieModal from '../../pages/managers/components/freebie/FreebieModal';
 import usePosState from './pos/hooks/usePosState';
 import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
 import { usePosShortcuts } from './pos/hooks/usePosShortcuts';
 import { useCartValidation } from './pos/hooks/useCartValidation';
 import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
-import { findExactCatalogMatch } from './pos/hooks/usePosCart.js';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const convertToThaiBahtText = (number) => {
@@ -72,47 +70,14 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [shippingRules, setShippingRules] = useState([]);
 
-    // ⚡ Session & Memory Caching for Shipping Rules (Eliminates redundant Firestore reads on mount)
     useEffect(() => {
         const fetchShippingRules = async () => {
-            const SHIPPING_RULES_CACHE_KEY = 'dh_pos_shipping_rules_cache_v1';
-            const SHIPPING_RULES_CACHE_TIME_KEY = 'dh_pos_shipping_rules_time_v1';
-            const SHIPPING_RULES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-            const now = Date.now();
-
-            // 1. SessionStorage Check (0 reads on tab re-navigation)
-            try {
-                const cachedTime = sessionStorage.getItem(SHIPPING_RULES_CACHE_TIME_KEY);
-                if (cachedTime && (now - Number(cachedTime)) < SHIPPING_RULES_CACHE_TTL) {
-                    const rawRules = sessionStorage.getItem(SHIPPING_RULES_CACHE_KEY);
-                    if (rawRules) {
-                        const parsed = JSON.parse(rawRules);
-                        if (Array.isArray(parsed) && parsed.length > 0) {
-                            setShippingRules(parsed);
-                            return;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn('[PosSystem] SessionStorage read error:', e);
-            }
-
-            // 2. Cache Miss: Fetch from Firestore
             try {
                 const { shippingService } = await import('../../firebase/shippingService');
                 const rules = await shippingService.getActiveShippingRules();
-                const validRules = Array.isArray(rules) ? rules : [];
-
-                try {
-                    sessionStorage.setItem(SHIPPING_RULES_CACHE_KEY, JSON.stringify(validRules));
-                    sessionStorage.setItem(SHIPPING_RULES_CACHE_TIME_KEY, String(Date.now()));
-                } catch (storageErr) {
-                    console.warn('[PosSystem] SessionStorage write error:', storageErr);
-                }
-
-                setShippingRules(validRules);
+                setShippingRules(rules);
             } catch (e) {
-                console.error("🔥 Error loading shipping rules in POS:", e);
+                console.error("๐”ฅ Error loading shipping rules in POS:", e);
             }
         };
         fetchShippingRules();
@@ -124,10 +89,8 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
         }
     }, [resumeTabId, safeCartTabs, setActiveTabId]);
 
-    const activeProducts = ((posState.products && posState.products.length > 0) ? posState.products : products) || [];
-
     const actions = usePosActions({
-        posState, products: activeProducts, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText
+        posState, products, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText
     });
 
     usePosShortcuts({
@@ -149,24 +112,14 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
         return `บิล ${index + 1}`;
     };
 
-    useCartValidation(activeTabId, activeTab, activeProducts, updateActiveTab);
+    useCartValidation(activeTabId, activeTab, products, updateActiveTab);
     usePromotionLogic(itemSubTotal, activePromotions, activeTab, updateActiveTab, actions.applyPromotionLogic);
 
     const handleSearchKeyDown = (e) => {
         if (e.key === 'Enter' && searchQuery.trim() !== '') {
-            e.preventDefault();
-            if (posState.isCacheLoading) {
-                toast('กำลังโหลดแคตตาล็อกสินค้า กรุณารอสักครู่...', { icon: '⏳' });
-            }
-            // 🚀 Immediate synchronous exact match against loaded catalog (eliminates 300ms debounce race condition)
-            const exactMatch = findExactCatalogMatch(activeProducts, searchQuery);
-
-            if (exactMatch) {
-                actions.addItemToCart(exactMatch);
-            } else {
-                // ⚠️ Critical Safety: NEVER fall back to searchResults[0] (prevents adding wrong product)
-                toast.error('ไม่พบสินค้าตามรหัสบาร์โค้ดหรือ SKU นี้');
-            }
+            // 🚀 [UPDATED] ใช้ searchResults จาก Dynamic Server Search แทน products array
+            const exactMatch = searchResults.find(p => p.sku?.toLowerCase() === searchQuery.trim().toLowerCase());
+            if (exactMatch) actions.addItemToCart(exactMatch); else if (searchResults.length > 0) actions.addItemToCart(searchResults[0]);
         }
         if (e.key === 'Escape') { setShowDropdown(false); setSearchQuery(''); }
     };
@@ -213,12 +166,9 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
             )}
 
             {posState.isFreebieModalOpen && (
-                <PosFreebieModal 
-                    isOpen={posState.isFreebieModalOpen} 
-                    onClose={() => posState.setIsFreebieModalOpen(false)}
+                <FreebieModal 
                     setIsFreebieModalOpen={posState.setIsFreebieModalOpen} 
                     activeFreebies={posState.activeFreebies} 
-                    eligibleFreebies={eligibleFreebies} 
                     itemSubTotal={itemSubTotal} 
                     activeTab={activeTab} 
                     updateActiveTab={updateActiveTab} 

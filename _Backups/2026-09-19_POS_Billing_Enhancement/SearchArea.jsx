@@ -15,29 +15,31 @@ export default function SearchArea({
             )}
 
             <div className="relative flex-1 group">
-                <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#D51C39] transition-colors" size={18} strokeWidth={2}/>
-                
-                {isCacheLoading && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
-                        <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-[#D51C39]"></div>
-                        <span className="text-[10px] text-gray-400 font-semibold hidden sm:inline">โหลดแคตตาล็อก...</span>
+                {isCacheLoading ? (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                        <span className="text-gray-400 text-xs">กำลังโหลดข้อมูลสินค้า...</span>
                     </div>
+                ) : (
+                    <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#D51C39] transition-colors" size={18} strokeWidth={2}/>
                 )}
                 
                 <input 
                     type="text" 
-                    placeholder="ยิง Barcode หรือค้นหาสินค้า (F3)" 
+                    placeholder={isCacheLoading ? "" : "ยิง Barcode หรือค้นหาสินค้า (F3)"} 
                     value={searchQuery} 
                     onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
                     onFocus={() => setShowDropdown(true)} 
                     onClick={() => setShowDropdown(true)}
                     onBlur={() => setTimeout(() => setShowDropdown(false), 200)} 
                     onKeyDown={handleSearchKeyDown} 
-                    disabled={isProcessing}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-md border-2 border-transparent text-sm text-[#2A305A] focus:outline-hidden transition-all font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] placeholder-gray-400 bg-white focus:border-[#D51C39]/30 focus:ring-4 focus:ring-[#D51C39]/10"
+                    disabled={isProcessing || isCacheLoading}
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-md border-2 border-transparent text-sm text-[#2A305A] focus:outline-hidden transition-all font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] placeholder-gray-400
+                        ${isCacheLoading ? 'bg-gray-100 animate-pulse' : 'bg-white focus:border-[#D51C39]/30 focus:ring-4 focus:ring-[#D51C39]/10'}
+                    `}
                 />
                 
-                {showDropdown && searchResults.length > 0 && !isProcessing && (
+                {showDropdown && searchResults.length > 0 && !isProcessing && !isCacheLoading && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 shadow-2xl rounded-lg z-100 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200 origin-top">
                         <div className="bg-slate-50 text-slate-500 text-[10px] font-bold px-4 py-2 flex justify-between border-b border-gray-200 sticky top-0 z-10 uppercase tracking-wider">
                             <span>ผลการค้นหา ({searchResults.length})</span>
@@ -45,6 +47,7 @@ export default function SearchArea({
                         </div>
                         {searchResults.map((p, idx) => {
                             const isExact = p.matchType === 'exact';
+                            const isBestSeller = p.matchType === 'best-seller';
                             const isSimilar = p.matchType === 'similar';
                             
                             return (

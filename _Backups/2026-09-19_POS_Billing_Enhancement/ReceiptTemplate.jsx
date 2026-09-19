@@ -50,10 +50,9 @@ export default function ReceiptTemplate({
     const _vatType = orderData ? (orderData.vatType || 'exempt') : vatType;
     const _walletUsed = orderData ? (orderData.walletUsed || 0) : walletUsed;
     const _remainingToPay = orderData ? (orderData.remainingToPay || 0) : remainingToPay;
-    const _baseTotal = Math.max(0, _itemSubTotal - _manualDiscount - _promoDiscount) + _otherFeeAmount;
     let _netTotal = orderData 
         ? Number(orderData.netTotal || orderData.summary?.finalTotal || orderData.finalTotal || orderData.finalPayable || orderData.totalPrice || orderData.totalAmount || 0) 
-        : Math.round((_baseTotal + _shippingFee + (_vatType === 'excluded' ? _vatAmount : 0)) * 100) / 100;
+        : (_itemSubTotal - _manualDiscount - _promoDiscount + _otherFeeAmount + _shippingFee + _vatAmount);
 
     // 🔥 ULTIMATE FALLBACK: If _netTotal is 0, calculate it from the items array
     if (_netTotal === 0 && data.items && data.items.length > 0) {
@@ -62,7 +61,7 @@ export default function ReceiptTemplate({
 
     // 🟢 [FALLBACK CALCULATION] If discount is 0 but subTotal > netTotal, calculate actual discount
     if (orderData && _promoDiscount === 0 && _manualDiscount === 0 && _itemSubTotal > _netTotal) {
-        const calculatedDiff = _itemSubTotal + _shippingFee + _otherFeeAmount + (_vatType === 'excluded' ? _vatAmount : 0) - _netTotal;
+        const calculatedDiff = _itemSubTotal + _shippingFee + _otherFeeAmount + _vatAmount - _netTotal;
         if (calculatedDiff > 0) {
             _promoDiscount = calculatedDiff;
         }

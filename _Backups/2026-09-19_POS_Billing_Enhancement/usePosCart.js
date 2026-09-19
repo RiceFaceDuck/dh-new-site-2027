@@ -1,26 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService.js';
-import { catalogHydrationService } from '../../../../firebase/catalogHydrationService.js';
-import useDebounce from '../../../../hooks/useDebounce.js';
-
-/**
- * Immediate synchronous exact match against loaded catalog.
- * Checks both String(p.sku) and String(p.barcode) after trimming and lowercasing.
- */
-export const findExactCatalogMatch = (catalog = [], rawTerm = '') => {
-    if (!rawTerm || !Array.isArray(catalog)) return null;
-    const term = String(rawTerm).trim().toLowerCase();
-    if (!term) return null;
-    return catalog.find(p => {
-        if (!p) return false;
-        const sku = String(p.sku || '').trim().toLowerCase();
-        const barcode = String(p.barcode || '').trim().toLowerCase();
-        const barcodes = Array.isArray(p.barcodes) 
-            ? p.barcodes.map(b => String(b || '').trim().toLowerCase()) 
-            : [];
-        return (sku !== '' && sku === term) || (barcode !== '' && barcode === term) || barcodes.includes(term);
-    }) || null;
-};
+import { useState, useEffect, useMemo } from 'react';
+import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
+import { catalogHydrationService } from '../../../../firebase/catalogHydrationService';
+import useDebounce from '../../../../hooks/useDebounce';
 
 export function usePosCart(products) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -75,10 +56,6 @@ export function usePosCart(products) {
 
     const [searchResults, setSearchResults] = useState([]);
 
-    const findExactMatch = useCallback((term) => {
-        return findExactCatalogMatch(mergedProducts, term);
-    }, [mergedProducts]);
-
     // ✨ Local Filter & Fallback Search (0ms Latency for Cache, Fallback for new products)
     useEffect(() => {
         const fetchSearch = async () => {
@@ -89,28 +66,25 @@ export function usePosCart(products) {
             
             const term = debouncedSearch.trim().toLowerCase();
             
-            // 1. Exact SKU or Barcode Match in Cache (Synchronous & Defensively Typed)
-            const exactMatch = findExactCatalogMatch(mergedProducts, term);
+            // 1. Exact SKU or Barcode Match in Cache
+            const exactMatch = mergedProducts.find(p => 
+                (p.sku && p.sku.toLowerCase() === term) ||
+                (p.barcode && String(p.barcode).toLowerCase() === term)
+            );
             if (exactMatch) {
                 setSearchResults([{ ...exactMatch, matchType: 'exact' }]);
                 return;
             }
             
             // 2. Similar Match in Cache (SKU, Barcode, Name, Brand, Category, Tags)
-            const filtered = mergedProducts.filter(p => {
-                if (!p) return false;
-                const sku = String(p.sku || '').toLowerCase();
-                const barcode = String(p.barcode || '').toLowerCase();
-                const name = String(p.name || '').toLowerCase();
-                const brand = String(p.brand || '').toLowerCase();
-                const category = String(p.category || '').toLowerCase();
-                return sku.includes(term) ||
-                    barcode.includes(term) ||
-                    name.includes(term) ||
-                    brand.includes(term) ||
-                    category.includes(term) ||
-                    (Array.isArray(p.tags) && p.tags.some(t => String(t).toLowerCase().includes(term)));
-            });
+            const filtered = mergedProducts.filter(p => 
+                (p.sku && p.sku.toLowerCase().includes(term)) ||
+                (p.barcode && String(p.barcode).toLowerCase().includes(term)) ||
+                (p.name && p.name.toLowerCase().includes(term)) ||
+                (p.brand && p.brand.toLowerCase().includes(term)) ||
+                (p.category && p.category.toLowerCase().includes(term)) ||
+                (p.tags && p.tags.some(t => String(t).toLowerCase().includes(term)))
+            );
             
             if (filtered.length > 0) {
                 setSearchResults(filtered.slice(0, 15).map(p => ({ ...p, matchType: 'similar' })));
@@ -138,7 +112,6 @@ export function usePosCart(products) {
         showDropdown, setShowDropdown,
         actionBoxItem, setActionBoxItem,
         searchResults, isCacheLoading,
-        products: mergedProducts,
-        findExactMatch
+        products: mergedProducts
     };
 }

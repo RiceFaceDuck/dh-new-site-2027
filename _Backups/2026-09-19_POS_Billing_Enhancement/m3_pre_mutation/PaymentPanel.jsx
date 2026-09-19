@@ -32,38 +32,16 @@ export default function PaymentPanel({
     const displayChange = (activeTab.paymentMethod === 'Cash' && localCash) ? (currentCashFloat - remainingToPay) : 0;
 
     const [isScanning, setIsScanning] = useState(false);
-    const [ocrStatus, setOcrStatus] = useState(activeTab.slipVerificationStatus || 'idle');
+    const [ocrStatus, setOcrStatus] = useState('idle');
 
-    useEffect(() => {
-        if (activeTab.slipVerificationStatus) {
-            setOcrStatus(activeTab.slipVerificationStatus);
-        } else if (!activeTab.slipImage && !activeTab.slipUrl) {
-            setOcrStatus('idle');
-        }
-    }, [activeTab.slipVerificationStatus, activeTab.slipImage, activeTab.slipUrl]);
+    const triggerRealOCRCheck = () => {
+        setIsScanning(true); setOcrStatus('scanning');
+        setTimeout(() => { setIsScanning(false); setOcrStatus('error'); }, 1800);
+    };
 
-    const handleFileWithOCR = async (e) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-
-        setIsScanning(true);
-        setOcrStatus('scanning');
-
-        try {
-            const res = await handleFileUpload(e);
-            setIsScanning(false);
-            if (res?.ocrData && (res.ocrData.transactionRef !== 'n/a' || res.ocrData.transferDateTime !== 'n/a')) {
-                setOcrStatus('success');
-            } else if (res?.uploadedUrl) {
-                setOcrStatus('unverified');
-            } else {
-                setOcrStatus('error');
-            }
-        } catch (err) {
-            console.error("OCR process error:", err);
-            setIsScanning(false);
-            setOcrStatus('error');
-        }
+    const handleFileWithOCR = (e) => {
+        handleFileUpload(e);
+        if (e.target.files && e.target.files.length > 0) triggerRealOCRCheck();
     };
 
     useEffect(() => {

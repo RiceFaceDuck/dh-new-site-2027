@@ -1,8 +1,6 @@
-import { auth, storage } from '../../../../firebase/config';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { compressImageWithCanvas } from 'dh-shared/src/utils/imageProcessingUtils.js';
+import { auth } from '../../../../firebase/config';
 import { billingService } from '../../../../firebase/billingService';
-import { syncRecentOrdersCatalog } from '../../../../firebase/orderSyncService';
+import { driveService } from '../../../../firebase/driveService';
 import { offlinePosService } from '../../../../firebase/offlinePosService';
 import { toast } from 'react-hot-toast';
 import { useCallback } from 'react';
@@ -10,62 +8,6 @@ import { useCallback } from 'react';
 import { safeJsonParse } from 'dh-shared';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 export const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
-
-// Co-located Slip Storage Service (Firebase Storage upload with Canvas WebP compression)
-export const slipStorageService = {
-    uploadSlipImage: async (file, orderId = 'UNASSIGNED') => {
-        if (!file) throw new Error("กรุณาเลือกไฟล์สลิปโอนเงิน");
-        const compressedFile = await compressImageWithCanvas(file, {
-            maxWidth: 1200,
-            maxHeight: 1600,
-            quality: 0.85,
-            fileType: 'image/webp'
-        });
-        const timestamp = Date.now();
-        const rand = Math.floor(Math.random() * 10000);
-        const safeOrderId = String(orderId || 'UNASSIGNED').replace(/[\/\\#\?]/g, '_');
-        const storagePath = `slips/${safeOrderId}/${timestamp}_${rand}.webp`;
-        const storageRef = ref(storage, storagePath);
-        const metadata = {
-            contentType: 'image/webp',
-            cacheControl: 'public, max-age=31536000, immutable',
-            customMetadata: {
-                uploadedBy: auth.currentUser?.uid || 'anonymous',
-                orderId: safeOrderId,
-                uploadedAt: new Date().toISOString()
-            }
-        };
-        const snapshot = await uploadBytes(storageRef, compressedFile, metadata);
-        return await getDownloadURL(snapshot.ref);
-    },
-    extractSlipData: async (file, uploadedUrl) => {
-        try {
-            const ocrModule = await import(/* @vite-ignore */ 'tesseract.js').catch(() => null);
-            if (ocrModule && ocrModule.createWorker) {
-                const worker = await ocrModule.createWorker('tha+eng');
-                const ret = await worker.recognize(file);
-                await worker.terminate();
-                const text = ret?.data?.text || '';
-                const cleanText = text;
-                const refMatch = cleanText.match(/(?:รหัสอ้างอิง|เลขที่รายการ|Ref|Transaction\s*ID)[:\s]*([A-Za-z0-9]+)/i);
-                const dateMatch = cleanText.match(/(\d{1,2}\s+[^\d\s]+\s+\d{2,4}(?:\s*[-/]?\s*)\d{1,2}:\d{2})/) || cleanText.match(/(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\s+\d{1,2}:\d{2})/);
-                return {
-                    rawText: text,
-                    transactionRef: refMatch ? refMatch[1] : '',
-                    transferDateTime: dateMatch ? dateMatch[1] : '',
-                    transferNote: 'สแกนสลิปสำเร็จ'
-                };
-            }
-        } catch (e) {
-            console.warn('[Slip OCR] Client OCR fallback:', e);
-        }
-        return {
-            transactionRef: '',
-            transferDateTime: new Date().toISOString().replace('T', ' ').substring(0, 16),
-            transferNote: 'อัปโหลดสลิปสำเร็จ (รอตรวจสอบยอด)'
-        };
-    }
-};
 
 export const usePosActions = ({
     posState,
@@ -201,77 +143,16 @@ export const usePosActions = ({
         }
     };
 
-    const handleFileUpload = async (e, onOcrComplete = null) => {
-        const file = e?.target?.files?.[0] || e;
-        if (!file || !(file instanceof Blob)) return null;
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
         setIsUploadingSlip(true); 
         try {
-            const orderIdForSlip = activeTab.orderId || `POS_TEMP_${Date.now()}`;
-            const uploadFn = slipStorageService.uploadSlipImage || slipStorageService.uploadSlip;
-            const uploadedUrl = await uploadFn(file, orderIdForSlip);
-
-            // Extract or derive storagePath
-            let storagePath = '';
-            try {
-                const urlMatch = String(uploadedUrl || '').match(/\/o\/([^?]+)/);
-                if (urlMatch && urlMatch[1]) {
-                    storagePath = decodeURIComponent(urlMatch[1]);
-                }
-            } catch (_) {}
-
-            // Run OCR extraction
-            let ocrData = null;
-            try {
-                if (slipStorageService.extractSlipData) {
-                    ocrData = await slipStorageService.extractSlipData(file, uploadedUrl);
-                } else if (slipStorageService.verifySlipOcr) {
-                    const ocrRes = await slipStorageService.verifySlipOcr(uploadedUrl, orderIdForSlip, remainingToPay, file);
-                    ocrData = ocrRes?.ocrData || null;
-                } else if (slipStorageService.runClientTesseractOcr) {
-                    ocrData = await slipStorageService.runClientTesseractOcr(file);
-                }
-            } catch (ocrErr) {
-                console.warn("[POS OCR] Slip OCR extraction warning:", ocrErr);
-            }
-
-            const patch = {
-                slipImage: uploadedUrl,
-                slipUrl: uploadedUrl,
-                slipStoragePath: storagePath || `slips/${orderIdForSlip}`,
-                ocrResult: ocrData || null,
-                slipVerificationStatus: ocrData ? 'verified' : 'unverified'
-            };
-
-            // Auto-populate bank reference fields if found by OCR
-            if (ocrData) {
-                if (ocrData.transactionRef && ocrData.transactionRef !== 'n/a') {
-                    patch.transactionRef = ocrData.transactionRef;
-                }
-                if (ocrData.transferDateTime && ocrData.transferDateTime !== 'n/a') {
-                    patch.transferDateTime = ocrData.transferDateTime;
-                }
-                if (ocrData.transferNote && ocrData.transferNote !== 'n/a') {
-                    patch.transferNote = ocrData.transferNote;
-                } else if (ocrData.senderName && ocrData.senderName !== 'n/a') {
-                    patch.transferNote = `โอนโดย: ${ocrData.senderName}`;
-                }
-                if (ocrData.bankAccount && ['BAY', 'KBANK', 'SCB', 'BBL', 'KTB'].includes(ocrData.bankAccount)) {
-                    patch.bankAccount = ocrData.bankAccount;
-                }
-            }
-
-            updateActiveTab(patch);
-            if (typeof onOcrComplete === 'function') {
-                onOcrComplete(ocrData, uploadedUrl);
-            }
-            return { uploadedUrl, ocrData };
+            const uploadedUrl = await driveService.uploadSlip(file);
+            updateActiveTab({ slipImage: uploadedUrl, transactionRef: '', transferDateTime: '' });
         } catch (error) {
-            console.error("🔥 Error uploading slip:", error);
-            toast.error(`อัปโหลดสลิปไม่สำเร็จ: ${error.message}`);
-            return null;
-        } finally {
-            setIsUploadingSlip(false);
-        }
+    console.error("🔥 Error:", error);
+ alert(`อัปโหลดไม่สำเร็จ: ${error.message}`); } finally { setIsUploadingSlip(false); }
     };
 
     const handleCheckout = async (status) => { 
@@ -279,37 +160,10 @@ export const usePosActions = ({
 
         const activePhone = activeTab.customer ? (activeTab.customer.phone || activeTab.customer.phoneNumber || '') : (activeTab.walkInPhone || '');
         const isPhoneMissing = (!activeTab.hidePhone) && (!activePhone || activePhone.trim() === '');
-
-        // Check both individual line stock and aggregated stock across split lines (Caveat 3.2)
-        const lineOutOfStock = (activeTab.items || []).find(item => sanitizeNum(item.stock) < sanitizeNum(item.qty));
-        const aggregatedStockDemand = (activeTab.items || []).reduce((acc, item) => {
-            const key = item.sku || item.id || item.name || 'unknown';
-            const qty = sanitizeNum(item.qty);
-            const stock = sanitizeNum(item.stock);
-            if (!acc[key]) {
-                acc[key] = {
-                    key,
-                    name: item.name || item.itemName || key,
-                    totalQty: 0,
-                    stock: stock
-                };
-            } else {
-                acc[key].stock = Math.min(acc[key].stock, stock);
-            }
-            acc[key].totalQty += qty;
-            return acc;
-        }, {});
-
-        const aggregatedOutOfStock = Object.values(aggregatedStockDemand).find(
-            item => item.stock < item.totalQty
-        );
-        const outOfStockItem = aggregatedOutOfStock || lineOutOfStock;
+        const hasOutOfStock = activeTab.items.some(item => sanitizeNum(item.stock) < sanitizeNum(item.qty));
 
         if (activeTab.items.length === 0) { toast.error('กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'); return; }
-        if (outOfStockItem && status === 'Paid') {
-            toast.error(`สินค้า [${outOfStockItem.key || outOfStockItem.name}] สต็อกไม่เพียงพอ ไม่สามารถชำระเงินได้ (กรุณาบันทึกเป็นบิลร่าง Draft)`);
-            return;
-        }
+        if (hasOutOfStock && status !== 'Draft') { toast.success('⚠️ ดำเนินการขายสินค้าแบบสต็อกติดลบ (Bypass)'); }
         if (isPhoneMissing && status !== 'Draft') { toast.error('กรุณาระบุเบอร์โทรศัพท์ลูกค้า'); return; }
         if (status === 'Paid' && activeTab.paymentMethod === 'Cash' && sanitizeNum(activeTab.cashReceived) < remainingToPay) { toast.error('รับเงินมาไม่ครบ'); return; }
         if (netTotal < 0) { toast.error('ยอดสุทธิติดลบ'); return; }
@@ -353,20 +207,12 @@ export const usePosActions = ({
                 id: activeTab.docId || null, orderId: finalOrderId,
                 orderStatus: status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending'), paymentStatus: status === 'Draft' ? 'Unpaid' : status,
                 paymentMethod: activeTab.paymentMethod || 'Transfer', bankAccount: activeTab.paymentMethod === 'Transfer' ? (activeTab.bankAccount || '') : null,
-                transactionRef: activeTab.paymentMethod === 'Transfer' ? (activeTab.transactionRef || '') : '',
-                transferDateTime: activeTab.paymentMethod === 'Transfer' ? (activeTab.transferDateTime || '') : '',
-                transferNote: activeTab.paymentMethod === 'Transfer' ? (activeTab.transferNote || '') : '',
-                slipUrl: activeTab.paymentMethod === 'Transfer' ? (activeTab.slipUrl || activeTab.slipImage || null) : null,
-                slipImage: activeTab.paymentMethod === 'Transfer' ? (activeTab.slipImage || activeTab.slipUrl || null) : null,
-                slipStoragePath: activeTab.paymentMethod === 'Transfer' ? (activeTab.slipStoragePath || null) : null,
-                slipVerificationStatus: activeTab.paymentMethod === 'Transfer' ? (activeTab.slipVerificationStatus || (activeTab.slipUrl || activeTab.slipImage ? 'unverified' : 'none')) : 'none',
-                ocrResult: activeTab.paymentMethod === 'Transfer' ? (activeTab.ocrResult || null) : null,
                 fulfillmentType: activeTab.fulfillmentType || 'Delivery', courier: activeTab.fulfillmentType === 'Delivery' ? (activeTab.courier || '') : null,
                 receiptFormat: activeTab.receiptFormat || 'short', priceMode: activeTab.priceMode || 'wholesale', vatType: activeTab.vatType || 'exempt', vatOnShipping: Boolean(activeTab.vatOnShipping),
                 subTotal: sanitizeNum(itemSubTotal), overallDiscount: manualDiscount, promoDiscount: promoDiscount, discountTotal: sanitizeNum(activeTab.items.reduce((sum, item) => sum + (sanitizeNum(item.discount) * Math.max(1, sanitizeNum(item.qty))), 0) + totalDiscount),
                 shippingFee: shippingFee, otherFeeName: activeTab.otherFeeName || '', otherFeeAmount: otherFeeAmount, vatAmount: sanitizeNum(vatAmount), netTotal: sanitizeNum(netTotal), walletUsed: walletUsed,
                 earnedPoints: status === 'Paid' ? earnedPoints : 0, remainingToPay: sanitizeNum(remainingToPay), cashReceived: activeTab.paymentMethod === 'Cash' ? sanitizeNum(activeTab.cashReceived) : null,
-                changeAmount: sanitizeNum(changeAmount) > 0 ? sanitizeNum(changeAmount) : 0, appliedPromotion: activeTab.appliedPromoDetails || null,
+                changeAmount: sanitizeNum(changeAmount) > 0 ? sanitizeNum(changeAmount) : 0, slipImage: activeTab.slipImage || null, appliedPromotion: activeTab.appliedPromoDetails || null,
                 appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, conditionText: (f.minSpend > 0 ? `ยอด${f.minSpend}฿ ` : '') + (f.minQty > 0 ? `ครบ${f.minQty}ชิ้น ` : '') + (f.applicableSkus?.length > 0 ? `เฉพาะรุ่น` : ''), itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
                 thaiBahtText: convertToThaiBahtText(remainingToPay) || '', billNote: finalNote, sellerUid: auth.currentUser?.uid || 'System',
                 customer: activeTab.customer ? { uid: activeTab.customer.uid || '', accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: activeTab.customer.address || '', hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
@@ -389,9 +235,6 @@ export const usePosActions = ({
 
             const result = await billingService.createOrder(orderData, auth.currentUser?.uid || 'System', 'POS');
             const actualOrderId = result?.orderId || finalOrderId;
-
-            // ⚡ Sync recent orders catalog so order list displays new order immediately
-            syncRecentOrdersCatalog(actualOrderId).catch(e => console.warn("[POS OrderSync] Background sync error:", e));
             
             // ลบแท็บปัจจุบันแบบไม่ต้องเด้งถาม เพราะเซฟเสร็จแล้ว
             posState.closeTab(activeTab.id); 

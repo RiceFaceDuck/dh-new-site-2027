@@ -100,38 +100,30 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     const appliedPromoDetails = activeTab?.autoPromoEnabled ? autoPromoDetails : (activeTab?.appliedPromoId ? activeTab?.appliedPromoDetails : null);
     const totalDiscount = manualDiscount + promoDiscount;
     
-    // 🧮 Clean Separation of Calculations (VAT 7% & Shipping Correction)
-    const baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
-    const isVatOnShipping = Boolean(activeTab?.vatOnShipping);
-    const taxableAmount = baseTotal + (isVatOnShipping ? shippingFee : 0);
-    const vatType = activeTab?.vatType || 'exempt';
+    let baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
+    let taxableAmount = baseTotal + (activeTab?.vatOnShipping ? shippingFee : 0);
+    let vatTypeMapped = 'ไม่มี VAT';
+    if (activeTab?.vatType === 'included') vatTypeMapped = 'รวม VAT';
+    if (activeTab?.vatType === 'excluded') vatTypeMapped = 'แยก VAT';
 
-    let vatAmount = 0;
-    let netTotal = 0;
-
-    if (vatType === 'included') {
-        // VAT 7% extracted: (taxableAmount * 7 / 107). Net total is baseTotal + shippingFee. Zero double-counting of shipping!
-        vatAmount = Math.round((taxableAmount * 7 / 107) * 100) / 100;
-        netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
-    } else if (vatType === 'excluded') {
-        // VAT 7% added: (taxableAmount * 0.07). Net total is baseTotal + shippingFee + vatAmount. Zero dropping of shipping fee!
-        vatAmount = Math.round((taxableAmount * 0.07) * 100) / 100;
-        netTotal = Math.round((baseTotal + shippingFee + vatAmount) * 100) / 100;
-    } else {
-        // 'exempt' or 'none': VAT is 0. Net total is baseTotal + shippingFee.
-        vatAmount = 0;
-        netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
+    const vatResult = calculateVat(taxableAmount, vatTypeMapped);
+    let vatAmount = vatResult.vatAmount;
+    let netTotal = vatResult.finalTotal + (activeTab?.vatType !== 'excluded' ? shippingFee : 0);
+    if (activeTab?.vatType === 'excluded') {
+         // if excluded, calculateVat returns finalTotal = taxableAmount + vat. But taxableAmount included shipping already. So finalTotal already includes shipping.
+         netTotal = vatResult.finalTotal;
     }
+
 
     let walletUsed = sanitizeNum(activeTab?.walletUsed);
     if (activeTab?.useWallet && activeTab?.customer) {
         walletUsed = Math.min(sanitizeNum(activeTab.customer.walletBalance), netTotal);
     }
     
-    const remainingToPay = Math.max(0, Math.round((netTotal - walletUsed) * 100) / 100);
+    const remainingToPay = Math.max(0, netTotal - walletUsed);
     const earnedPoints = activeTab?.customer ? Math.floor(remainingToPay / 100) : 0;
     const changeAmount = (activeTab?.paymentMethod === 'Cash' && activeTab?.cashReceived) 
-        ? Math.round((sanitizeNum(activeTab.cashReceived) - remainingToPay) * 100) / 100 : 0;
+        ? (sanitizeNum(activeTab.cashReceived) - remainingToPay) : 0;
 
     return {
         itemSubTotal, manualDiscount, promoDiscount, totalDiscount,

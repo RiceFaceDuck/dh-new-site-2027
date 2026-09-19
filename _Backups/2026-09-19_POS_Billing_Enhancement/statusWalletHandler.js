@@ -99,7 +99,7 @@ export const handlePointsEarned = async (
                 const settingsSnap = creditPreloadSnaps?.settingsSnap;
                 if (settingsSnap && settingsSnap.exists()) {
                     const settingsData = settingsSnap.data() || {};
-                    const creditConfig = settingsData.config || settingsData.creditConfig || settingsData;
+                    const creditConfig = settingsData.creditConfig || {};
                     const userData = userSnap.data() || {};
                     const userTotalAccumulatedPoints = userData.totalAccumulatedPoints || 0;
                     

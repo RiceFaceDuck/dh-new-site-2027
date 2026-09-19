@@ -7,7 +7,6 @@ import { getCreditPreloadRefs, adjustUserCreditWithTransaction } from './credit/
 import { calculateEarnedPoints, getUserTier } from './credit/creditFormatService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
-import { syncRecentOrdersCatalog } from './orderSyncService';
 
 const COLLECTION_NAME = getCollectionPath('orders');
 const POINTS_RATE = 100;
@@ -115,17 +114,9 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
     return { ...item, retailPrice: securePrice, priceAtPurchase: securePrice, nameAtPurchase: secureName };
   });
 
-  const shippingCost = Number(orderData.summary?.shippingFee ?? orderData.shippingFee ?? 0);
-  const rawVatType = (orderData.summary?.vatType || orderData.vatType || '').toLowerCase();
-  const isVatOnShipping = orderData.vatOnShipping !== false && orderData.summary?.vatOnShipping !== false;
-  const isExcludedVat = rawVatType === 'excluded';
-
-  // When vatOnShipping is false and vatType is 'excluded', shippingCost must NOT be part of the taxable base
-  const taxableShippingCost = (!isVatOnShipping && isExcludedVat) ? 0 : shippingCost;
-
   const calculatedPrices = calculateNetTotal({
     items: verifiedItems,
-    shippingCost: taxableShippingCost,
+    shippingCost: Number(orderData.summary?.shippingFee ?? orderData.shippingFee ?? 0),
     otherFeeAmount: Number(orderData.summary?.otherFeeAmount ?? orderData.otherFeeAmount ?? 0),
     discountAmount: Number(
       orderData.summary?.manualDiscount ?? 
@@ -138,13 +129,11 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   });
 
   let vatTypeMapped = 'ไม่มี VAT';
-  if (rawVatType === 'included') vatTypeMapped = 'รวม VAT';
-  if (rawVatType === 'excluded') vatTypeMapped = 'แยก VAT';
+  if ((orderData.summary?.vatType || orderData.vatType) === 'included') vatTypeMapped = 'รวม VAT';
+  if ((orderData.summary?.vatType || orderData.vatType) === 'excluded') vatTypeMapped = 'แยก VAT';
   
   const vatResult = calculateVat(calculatedPrices.netTotal, vatTypeMapped);
-  const finalSecureNetTotal = (!isVatOnShipping && isExcludedVat)
-    ? Math.round((vatResult.finalTotal + shippingCost) * 100) / 100
-    : vatResult.finalTotal;
+  const finalSecureNetTotal = vatResult.finalTotal;
 
   const reportedNetTotal = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0);
   if (statusLower === 'paid' && Math.abs(finalSecureNetTotal - reportedNetTotal) > 2) {
@@ -176,7 +165,7 @@ function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, stat
         const settingsSnap = creditPreloadSnaps?.settingsSnap;
         if (settingsSnap && settingsSnap.exists()) {
             const settingsData = settingsSnap.data() || {};
-            const creditConfig = settingsData.config || settingsData.creditConfig || settingsData;
+            const creditConfig = settingsData.creditConfig || {};
             const userData = userSnap.data() || {};
             const userTotalAccumulatedPoints = userData.totalAccumulatedPoints || 0;
             
@@ -353,9 +342,6 @@ export const billingTransactionService = {
       }
 
       await historyService.addLog('Billing', 'Create', finalOrderId, `สร้างบิลใหม่ ยอดสุทธิ ฿${(orderData.finalTotal || 0).toLocaleString()}`, actorUid);
-
-      // ⚡ Background Cache Sync: Refresh catalogs/recent_orders so new order appears on dashboard immediately
-      syncRecentOrdersCatalog(finalOrderId).catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
 
       return { id: newDocId, orderId: finalOrderId };
     })(), "เกิดข้อผิดพลาดในการสร้างบิล");

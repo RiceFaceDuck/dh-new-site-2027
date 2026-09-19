@@ -8,14 +8,12 @@ import ReceiptTemplate from './pos/ReceiptTemplate';
 import PosHeader from './pos/layout/PosHeader';
 import GuideModal from '../common/GuideModal';
 import PromoModal from './pos/layout/PromoModal';
-import PosFreebieModal from './pos/modals/PosFreebieModal';
-import { toast } from 'react-hot-toast';
+import FreebieModal from '../../pages/managers/components/freebie/FreebieModal';
 import usePosState from './pos/hooks/usePosState';
 import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
 import { usePosShortcuts } from './pos/hooks/usePosShortcuts';
 import { useCartValidation } from './pos/hooks/useCartValidation';
 import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
-import { findExactCatalogMatch } from './pos/hooks/usePosCart.js';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const convertToThaiBahtText = (number) => {
@@ -124,7 +122,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
         }
     }, [resumeTabId, safeCartTabs, setActiveTabId]);
 
-    const activeProducts = ((posState.products && posState.products.length > 0) ? posState.products : products) || [];
+    const activeProducts = (posState.products && posState.products.length > 0) ? posState.products : products;
 
     const actions = usePosActions({
         posState, products: activeProducts, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText
@@ -154,19 +152,9 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
 
     const handleSearchKeyDown = (e) => {
         if (e.key === 'Enter' && searchQuery.trim() !== '') {
-            e.preventDefault();
-            if (posState.isCacheLoading) {
-                toast('กำลังโหลดแคตตาล็อกสินค้า กรุณารอสักครู่...', { icon: '⏳' });
-            }
-            // 🚀 Immediate synchronous exact match against loaded catalog (eliminates 300ms debounce race condition)
-            const exactMatch = findExactCatalogMatch(activeProducts, searchQuery);
-
-            if (exactMatch) {
-                actions.addItemToCart(exactMatch);
-            } else {
-                // ⚠️ Critical Safety: NEVER fall back to searchResults[0] (prevents adding wrong product)
-                toast.error('ไม่พบสินค้าตามรหัสบาร์โค้ดหรือ SKU นี้');
-            }
+            // 🚀 [UPDATED] ใช้ searchResults จาก Dynamic Server Search แทน products array
+            const exactMatch = searchResults.find(p => p.sku?.toLowerCase() === searchQuery.trim().toLowerCase());
+            if (exactMatch) actions.addItemToCart(exactMatch); else if (searchResults.length > 0) actions.addItemToCart(searchResults[0]);
         }
         if (e.key === 'Escape') { setShowDropdown(false); setSearchQuery(''); }
     };
@@ -213,12 +201,9 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
             )}
 
             {posState.isFreebieModalOpen && (
-                <PosFreebieModal 
-                    isOpen={posState.isFreebieModalOpen} 
-                    onClose={() => posState.setIsFreebieModalOpen(false)}
+                <FreebieModal 
                     setIsFreebieModalOpen={posState.setIsFreebieModalOpen} 
                     activeFreebies={posState.activeFreebies} 
-                    eligibleFreebies={eligibleFreebies} 
                     itemSubTotal={itemSubTotal} 
                     activeTab={activeTab} 
                     updateActiveTab={updateActiveTab} 
