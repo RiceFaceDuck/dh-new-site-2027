@@ -1,8 +1,7 @@
-import { limit, collection, getDocs, query } from 'firebase/firestore';
-import { db } from '../config';
 import * as XLSX from 'xlsx';
 import { withToastError } from '../../utils/safeAsync';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { catalogHydrationService } from '../catalogHydrationService';
+import { inventoryStatsService } from './inventoryStatsService';
 
 export const inventoryExportService = {
   exportToExcel: async (columns, options) => {
@@ -14,23 +13,34 @@ export const inventoryExportService = {
         sortOption = 'sku_asc'
       } = options;
 
-      // 1. ดึงข้อมูลสินค้าทั้งหมด (เนื่องจากการ Filter ซับซ้อนมาก ต้องทำฝั่ง Client)
-      const q = query(collection(db, getCollectionPath('products')), limit(300));
-      const snapshot = await getDocs(q);
-      let products = snapshot.docs.map(doc => doc.data());
+      // 1. ดึงข้อมูลสินค้าทั้งหมดจาก 3-Tier Catalog Cache (0 Firestore Reads on warm cache)
+      const { products: rawCatalog } = await catalogHydrationService.hydrateCatalog();
+      const baseProducts = Array.isArray(rawCatalog) ? rawCatalog : [];
 
-      // 2. การคัดกรองข้อมูล (Filtering)
+      // 2. เติมข้อมูลสถิติ 5 มิติ (30 วัน) จาก snapshot cache
+      const statsMap = await inventoryStatsService.fetchProductStats(baseProducts, '30');
+      let products = baseProducts.map(p => {
+        const upperSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
+        const st = statsMap[p.sku] || statsMap[upperSku] || {};
+        return {
+          ...p,
+          stockInHistory: { ...p.stockInHistory, '30': st.stockIn ?? p.stockInHistory?.['30'] ?? 0 },
+          salesHistory: { ...p.salesHistory, '30': st.sales ?? p.salesHistory?.['30'] ?? 0 },
+          claimHistory: { ...p.claimHistory, '30': st.claim ?? p.claimHistory?.['30'] ?? 0 },
+          adjustmentHistory: { ...p.adjustmentHistory, '30': st.adjustment ?? p.adjustmentHistory?.['30'] ?? 0 }
+        };
+      });
+
+      // 3. การคัดกรองข้อมูล (Filtering)
       if (specificSkus && specificSkus.length > 0) {
-        // หากมีการระบุ SKU จะข้ามเงื่อนไขอื่นทั้งหมด
         const skuSet = new Set(specificSkus.map(s => String(s).trim().toUpperCase()));
-        products = products.filter(p => skuSet.has(String(p.sku).toUpperCase()));
+        products = products.filter(p => skuSet.has(String(p.sku || '').trim().toUpperCase()));
       } else {
-        // กรองตามหมวดหมู่ (ถ้ามีการเลือก)
         if (categories.length > 0) {
-          products = products.filter(p => categories.includes(p.category));
+          const catSet = new Set(categories.map(c => String(c).trim().toLowerCase()));
+          products = products.filter(p => catSet.has(String(p.category || '').trim().toLowerCase()));
         }
 
-        // กรองตามช่วงจำนวนสต๊อก
         if (stockRange.min !== '') {
           const min = Number(stockRange.min);
           products = products.filter(p => Number(p.stockQuantity || 0) >= min);
@@ -41,11 +51,12 @@ export const inventoryExportService = {
         }
       }
 
-      // 3. การจัดเรียงข้อมูล (Sorting)
+      // 4. การจัดเรียงข้อมูล (Sorting)
       products.sort((a, b) => {
-        const getSales = (p) => p.salesHistory?.['30'] || 0;
-        const getClaims = (p) => p.claimHistory?.['30'] || 0;
-        const getStockIn = (p) => p.stockInHistory?.['30'] || 0;
+        const getSales = (p) => Number(p.salesHistory?.['30'] || 0);
+        const getClaims = (p) => Number(p.claimHistory?.['30'] || 0);
+        const getStockIn = (p) => Number(p.stockInHistory?.['30'] || 0);
+        const getAdjustment = (p) => Number(p.adjustmentHistory?.['30'] || 0);
 
         switch (sortOption) {
           case 'sku_asc': return (a.sku || '').localeCompare(b.sku || '');
@@ -57,6 +68,7 @@ export const inventoryExportService = {
           case 'sales_desc': return getSales(b) - getSales(a);
           case 'claims_desc': return getClaims(b) - getClaims(a);
           case 'stockin_desc': return getStockIn(b) - getStockIn(a);
+          case 'adjustments_desc': return getAdjustment(b) - getAdjustment(a);
           default: return 0;
         }
       });
@@ -65,17 +77,18 @@ export const inventoryExportService = {
         throw new Error("ไม่พบข้อมูลสินค้าที่ตรงกับเงื่อนไขที่ระบุ");
       }
 
-      // 4. การประกอบข้อมูล (Mapping)
+      // 5. การประกอบข้อมูล (Mapping)
       const exportData = products.map(product => {
         const row = {};
         columns.forEach(col => {
-          // เพิ่มเติมสำหรับข้อมูลพิเศษ
           if (col.key === 'sales30d') {
-            row[col.label] = product.salesHistory?.['30'] || 0;
+            row[col.label] = product.salesHistory?.['30'] ?? 0;
           } else if (col.key === 'claims30d') {
-            row[col.label] = product.claimHistory?.['30'] || 0;
+            row[col.label] = product.claimHistory?.['30'] ?? 0;
           } else if (col.key === 'stockin30d') {
-            row[col.label] = product.stockInHistory?.['30'] || 0;
+            row[col.label] = product.stockInHistory?.['30'] ?? 0;
+          } else if (col.key === 'adjustments30d') {
+            row[col.label] = product.adjustmentHistory?.['30'] ?? 0;
           } else {
             row[col.label] = product[col.key] !== undefined ? product[col.key] : '';
             if (Array.isArray(row[col.label])) {
@@ -86,7 +99,7 @@ export const inventoryExportService = {
         return row;
       });
 
-      // 5. สร้างไฟล์ Excel
+      // 6. สร้างไฟล์ Excel
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Inventory_Export');

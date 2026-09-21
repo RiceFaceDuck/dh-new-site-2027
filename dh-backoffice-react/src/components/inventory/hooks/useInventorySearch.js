@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { gasStockService } from '../../../firebase/gasStockService';
+import { catalogHydrationService } from '../../../firebase/catalogHydrationService';
 import useInventoryFilters from './useInventoryFilters';
 import useInventorySorting from './useInventorySorting';
 import useInventoryPagination from './useInventoryPagination';
@@ -33,21 +33,21 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
       const fetchAll = async () => {
         setIsFetchingAll(true);
         try {
-          // ดึงข้อมูล Backup แบบประหยัดโควต้า Firebase จาก GAS (Google Sheet)
-          const data = await gasStockService.fetchBackupInventory();
-          
-          setAllProductsCache(data);
-          
-          // เก็บลง sessionStorage
-          try {
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
-            sessionStorage.setItem(CACHE_EXPIRY_KEY, String(new Date().getTime() + CACHE_TTL));
-          } catch (storageError) {
-            console.warn("Could not save to sessionStorage (might be full)", storageError);
+          // ดึงข้อมูลผ่าน 3-Tier Zero-Read Architecture (Memory -> Session -> IDB -> Shards)
+          const { products: fullCatalog } = await catalogHydrationService.hydrateCatalog();
+          if (Array.isArray(fullCatalog) && fullCatalog.length > 0) {
+            setAllProductsCache(fullCatalog);
+            
+            // เก็บลง sessionStorage
+            try {
+              sessionStorage.setItem(CACHE_KEY, JSON.stringify(fullCatalog));
+              sessionStorage.setItem(CACHE_EXPIRY_KEY, String(new Date().getTime() + CACHE_TTL));
+            } catch (storageError) {
+              console.warn("Could not save to sessionStorage (might be full)", storageError);
+            }
           }
-          
         } catch (error) {
-          console.error("Error fetching backup inventory from GAS:", error);
+          console.error("Error hydrating catalog in useInventorySearch:", error);
         } finally {
           setIsFetchingAll(false);
         }
