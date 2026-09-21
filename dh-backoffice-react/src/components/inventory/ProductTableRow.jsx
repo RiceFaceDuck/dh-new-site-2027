@@ -18,10 +18,10 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }
     return 0;
   };
 
-  const stockIn = getHistoryCount(product.stockInHistory, salesPeriod, product[`stockIn${salesPeriod}D`] ?? product.stockIn30D);
-  const sales = getHistoryCount(product.salesHistory, salesPeriod, product[`sales${salesPeriod}D`] ?? product.sales30D ?? product.stats?.sold);
-  const claim = getHistoryCount(product.claimHistory, salesPeriod, product[`claims${salesPeriod}D`] ?? product.claims30D);
-  const adjustment = getHistoryCount(product.adjustmentHistory, salesPeriod, product[`adjustment${salesPeriod}D`] ?? product.adjustment30D);
+  const stockIn = getHistoryCount(product.stockInHistory, salesPeriod, product[`stockIn${salesPeriod}D`]);
+  const sales = getHistoryCount(product.salesHistory, salesPeriod, product[`sales${salesPeriod}D`] ?? (salesPeriod === '30' ? product.stats?.sold : null));
+  const claim = getHistoryCount(product.claimHistory, salesPeriod, product[`claims${salesPeriod}D`]);
+  const adjustment = getHistoryCount(product.adjustmentHistory, salesPeriod, product[`adjustment${salesPeriod}D`]);
 
   const priceVal = Number(product.Price ?? product.price ?? product.wholesalePrice ?? 0);
   const retailPriceVal = Number(product.retailPrice || 0);

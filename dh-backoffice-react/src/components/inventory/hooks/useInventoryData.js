@@ -20,12 +20,13 @@ export default function useInventoryData(PAGE_LIMIT = 50) {
       const statsMap = await inventoryService.fetchProductStats(rawProducts);
 
       const productsWithStats = rawProducts.map(p => {
-        const stats = statsMap[p.sku] || { stockIn: 0, sales: 0, claim: 0 };
+        const stats = statsMap[p.sku] || { stockIn: 0, sales: 0, claim: 0, adjustment: 0 };
         return {
           ...p,
           stockInHistory: { ...p.stockInHistory, '30': stats.stockIn },
           salesHistory: { ...p.salesHistory, '30': stats.sales },
-          claimHistory: { ...p.claimHistory, '30': stats.claim }
+          claimHistory: { ...p.claimHistory, '30': stats.claim },
+          adjustmentHistory: { ...p.adjustmentHistory, '30': stats.adjustment }
         };
       });
       

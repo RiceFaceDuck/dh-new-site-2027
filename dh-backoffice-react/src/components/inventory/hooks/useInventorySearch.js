@@ -100,16 +100,29 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
 
   const sourceProducts = useMemo(() => {
     return rawSourceProducts.map(p => {
-      const st = statsMap[p.sku] || {};
+      const upperSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
+      const st = statsMap[p.sku] || statsMap[upperSku] || {};
       const resolveMetric = (statVal, fieldName, historyObj) => {
-        if (statVal != null && !isNaN(Number(statVal))) return Number(statVal);
+        // 1. Authoritative 5D Snapshot: If statsMap has an authentic numeric value (including 0), use it directly
+        if (statVal != null && !isNaN(Number(statVal))) {
+          return Number(statVal);
+        }
+        // 2. Check product history object if statsMap does not have this SKU
         const histVal = historyObj?.[salesPeriod];
-        if (histVal != null && !isNaN(Number(histVal))) return Number(histVal);
+        if (histVal != null && !isNaN(Number(histVal))) {
+          return Number(histVal);
+        }
+        // 3. Flat dotted field fallback (only if valid number)
         const flatVal = p[`${fieldName}.${salesPeriod}`];
-        if (flatVal != null && !isNaN(Number(flatVal))) return Number(flatVal);
+        if (flatVal != null && !isNaN(Number(flatVal))) {
+          return Number(flatVal);
+        }
+        // 4. Flat fallback fields for specific period (e.g. sales30D, claims30D when salesPeriod === '30')
         const baseKey = fieldName.replace('History', '');
-        const fallback = p[`${baseKey}${salesPeriod}D`] ?? p[`${baseKey}30D`] ?? (fieldName === 'claimHistory' ? (p[`claims${salesPeriod}D`] ?? p.claims30D) : null);
-        if (fallback != null && !isNaN(Number(fallback))) return Number(fallback);
+        const fallback = p[`${baseKey}${salesPeriod}D`] ?? (salesPeriod === '30' ? (p[`${baseKey}30D`] ?? (fieldName === 'claimHistory' ? p.claims30D : null)) : null);
+        if (fallback != null && !isNaN(Number(fallback))) {
+          return Number(fallback);
+        }
         if (fieldName === 'salesHistory' && salesPeriod === '30') {
           const sold = p.stats?.sold;
           if (sold != null && !isNaN(Number(sold))) return Number(sold);

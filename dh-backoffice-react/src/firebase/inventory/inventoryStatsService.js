@@ -93,6 +93,25 @@ export const inventoryStatsService = {
         }
       }
 
+      // 3. Cold-Start Self-Healing: Fetch 1 snapshot doc directly from Firestore if IDB cache is empty
+      if (!normalizedStatsMap || Object.keys(normalizedStatsMap).length === 0) {
+        try {
+          const snapshotRef = doc(db, getCollectionPath('catalogs'), 'inventory_stats_snapshot');
+          const snap = await getDoc(snapshotRef);
+          if (snap && snap.exists()) {
+            const rawData = snap.data();
+            normalizedStatsMap = parseStatsSnapshot(rawData);
+            if (normalizedStatsMap && Object.keys(normalizedStatsMap).length > 0) {
+              set(IDB_STATS_SNAPSHOT_KEY, rawData).catch(() => null);
+              set(IDB_STATS_CACHE_KEY, normalizedStatsMap).catch(() => null);
+              set(IDB_STATS_MAP_KEY, normalizedStatsMap).catch(() => null);
+            }
+          }
+        } catch (fsErr) {
+          console.warn("⚠️ [inventoryStatsService] Cold-start snapshot 1-read skipped:", fsErr.message);
+        }
+      }
+
       if (normalizedStatsMap && typeof normalizedStatsMap === 'object') {
         for (const [skuKey, pStats] of Object.entries(normalizedStatsMap)) {
           const matchedSku = skuLookup[skuKey];
