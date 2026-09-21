@@ -5,12 +5,16 @@ import { Loader2 } from 'lucide-react';
  * Component สำหรับแสดงผลยอด "DH ค้างยอด" (Wallet Balance)
  * สามารถนำไปวางใน Table Row หรือ Detail Panel ได้ทันที
  */
-export default function WalletDisplay({ customerId, className = '' }) {
-  // ดึงข้อมูล Real-time ผ่าน Custom Hook ที่สร้างไว้ในขั้นตอนที่ 2
-  const { walletBalance, loading } = useCustomerFinancials(customerId);
+export default function WalletDisplay({ customerId, customer, className = '', showSymbol = true, live = false }) {
+  const targetId = live ? (customerId || customer?.id || customer?.uid) : null;
+  const { walletBalance, loading } = useCustomerFinancials(targetId);
 
-  // สถานะกำลังโหลดข้อมูล
-  if (loading) {
+  // ถ้าเป็น table row หรือไม่ live ให้ใช้ค่าจาก customer ตรงๆ ได้ทันที
+  const balance = live 
+    ? (loading ? (customer?.walletBalance ?? customer?.dhWallet ?? 0) : (walletBalance ?? 0))
+    : Number(customer?.walletBalance ?? customer?.dhWallet ?? customer?.creditBalance ?? 0);
+
+  if (live && loading && targetId && walletBalance === undefined) {
     return (
       <div className={`inline-flex items-center ${className}`}>
         <Loader2 size={14} className="animate-spin text-slate-300" />
@@ -18,19 +22,17 @@ export default function WalletDisplay({ customerId, className = '' }) {
     );
   }
 
-  // กรณีมียอด DH ค้างยอด
-  if (walletBalance > 0) {
-    return (
-      <span className={`text-[13px] font-mono font-bold text-emerald-600 tracking-tight ${className}`}>
-        ฿{walletBalance.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-      </span>
-    );
-  }
+  const formatted = balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const symbol = showSymbol ? '$' : '';
 
-  // กรณีไม่มียอด (0.00)
   return (
-    <span className={`text-[12px] font-mono font-normal text-slate-300 ${className}`}>
-      0.00
+    <span 
+      translate="no" 
+      className={`notranslate font-mono tracking-tight ${
+        className || (balance > 0 ? 'text-rose-600 font-bold text-[13px]' : 'text-slate-400 font-normal text-[12px]')
+      }`}
+    >
+      {symbol}{formatted}
     </span>
   );
 }

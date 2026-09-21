@@ -1,37 +1,6 @@
-import { useState } from 'react';
-import { Phone, Mail, MessageCircle, Facebook, MessageSquare, Youtube, Globe, Link2, Copy, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Phone, Mail, MessageCircle, Facebook, MessageSquare, Youtube, Globe, Link2, Copy, CheckCircle2 } from 'lucide-react';
 
 export default function ContactInfo({ customer, handleCopy, copiedField }) {
-  const [showPII, setShowPII] = useState(true);
-
-  // ฟังก์ชันจัดรูปแบบเบอร์โทรศัพท์ (มีขีด)
-  const formatPhone = (phone) => {
-    if (!phone) return '-';
-    const clean = phone.replace(/\D/g, '');
-    if (clean.length === 10) {
-      return `${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6)}`;
-    }
-    if (clean.length === 9) {
-      return `${clean.slice(0, 2)}-${clean.slice(2, 5)}-${clean.slice(5)}`;
-    }
-    return phone;
-  };
-
-  // ฟังก์ชัน Mask เบอร์โทรศัพท์สำหรับ PII
-  const maskPhone = (phone) => {
-    if (!phone) return '-';
-    const formatted = formatPhone(phone);
-    if (formatted.length >= 12) {
-      return `${formatted.slice(0, 4)}xxx-${formatted.slice(-4)}`;
-    }
-    return formatted;
-  };
-
-  const rawPhone = customer.phoneNumber || customer.phone || '';
-  const rawEmail = customer.email || '';
-  const displayPhone = rawPhone ? (showPII ? formatPhone(rawPhone) : maskPhone(rawPhone)) : '-';
-  const displayEmail = rawEmail ? (showPII ? rawEmail : rawEmail.replace(/(?<=.).(?=[^@]*?@)/g, '*')) : '-';
-
   // ฟังก์ชันช่วยสร้าง UI ของ Social Media
   const renderSocialLink = (icon, label, value, type) => {
     const isEmpty = !value;
@@ -76,32 +45,21 @@ export default function ContactInfo({ customer, handleCopy, copiedField }) {
     <div className="space-y-4">
       {/* ข้อมูลติดต่อพื้นฐาน */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> ข้อมูลติดต่อ
-          </h3>
-          <button 
-            onClick={() => setShowPII(!showPII)}
-            className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-indigo-600 font-medium px-2 py-0.5 bg-slate-100 rounded-md transition-colors"
-            title={showPII ? 'ซ่อนข้อมูลส่วนตัว' : 'แสดงข้อมูลส่วนตัวเต็ม'}
-          >
-            {showPII ? <EyeOff size={12} /> : <Eye size={12} />}
-            <span>{showPII ? 'ซ่อน PII' : 'แสดง PII'}</span>
-          </button>
-        </div>
-
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> ข้อมูลติดต่อ
+        </h3>
         <div className="grid grid-cols-2 gap-2">
-          <div className={`bg-slate-50 p-2.5 rounded-xl border relative group flex items-center gap-2.5 ${!rawPhone ? 'border-slate-100/50 opacity-70' : 'border-slate-200'}`}>
-            <Phone size={14} className={!rawPhone ? 'text-slate-300' : 'text-slate-500'}/>
+          <div className={`bg-slate-50 p-2.5 rounded-xl border relative group flex items-center gap-2.5 ${!customer.phone && !customer.phoneNumber ? 'border-slate-100/50 opacity-70' : 'border-slate-200'}`}>
+            <Phone size={14} className={(!customer.phone && !customer.phoneNumber) ? 'text-slate-300' : 'text-slate-500'}/>
             <div className="min-w-0">
               <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">เบอร์โทรศัพท์</p>
-              <p className={`text-xs font-medium truncate ${!rawPhone ? 'text-slate-400' : 'text-slate-800'}`}>
-                {displayPhone}
+              <p className={`text-xs font-medium truncate ${(!customer.phone && !customer.phoneNumber) ? 'text-slate-400' : 'text-slate-800'}`}>
+                {customer.phoneNumber || customer.phone || '-'}
               </p>
             </div>
-            {rawPhone && handleCopy && (
+            {(customer.phoneNumber || customer.phone) && handleCopy && (
               <button 
-                onClick={() => handleCopy(rawPhone, 'phone')}
+                onClick={() => handleCopy(customer.phoneNumber || customer.phone, 'phone')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 bg-white shadow-xs border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                 title="คัดลอกเบอร์โทร"
               >
@@ -109,17 +67,17 @@ export default function ContactInfo({ customer, handleCopy, copiedField }) {
               </button>
             )}
           </div>
-          <div className={`bg-slate-50 p-2.5 rounded-xl border relative group flex items-center gap-2.5 ${!rawEmail ? 'border-slate-100/50 opacity-70' : 'border-slate-200'}`}>
-            <Mail size={14} className={!rawEmail ? 'text-slate-300' : 'text-slate-500'}/>
+          <div className={`bg-slate-50 p-2.5 rounded-xl border relative group flex items-center gap-2.5 ${!customer.email ? 'border-slate-100/50 opacity-70' : 'border-slate-200'}`}>
+            <Mail size={14} className={!customer.email ? 'text-slate-300' : 'text-slate-500'}/>
             <div className="min-w-0 pr-6">
               <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">อีเมล</p>
-              <p className={`text-xs font-medium truncate ${!rawEmail ? 'text-slate-400' : 'text-slate-800'}`} title={rawEmail}>
-                {displayEmail}
+              <p className={`text-xs font-medium truncate ${!customer.email ? 'text-slate-400' : 'text-slate-800'}`} title={customer.email}>
+                {customer.email || '-'}
               </p>
             </div>
-            {rawEmail && handleCopy && (
+            {customer.email && handleCopy && (
               <button 
-                onClick={() => handleCopy(rawEmail, 'email')}
+                onClick={() => handleCopy(customer.email, 'email')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 bg-white shadow-xs border border-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                 title="คัดลอกอีเมล"
               >
@@ -129,7 +87,6 @@ export default function ContactInfo({ customer, handleCopy, copiedField }) {
           </div>
         </div>
       </div>
-
 
       {/* ช่องทางติดต่ออื่นๆ (Social Media) */}
       <div className="pt-2">

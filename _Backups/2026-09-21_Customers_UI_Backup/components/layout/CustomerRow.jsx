@@ -12,10 +12,10 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
 
   const getRankBadge = (rank) => {
     const r = rank?.toLowerCase() || 'customer';
-    if (r.includes('vip')) return { color: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200', icon: <Crown size={11} className="mr-1 text-fuchsia-600" />, label: 'VIP' };
-    if (r.includes('partner')) return { color: 'bg-slate-800 text-white border-slate-800', icon: <Star size={11} className="mr-1 text-amber-400" />, label: 'PARTNER' };
-    if (r.includes('wholesale') || r.includes('mechanic') || r.includes('ช่าง')) return { color: 'bg-sky-50 text-sky-700 border-sky-200', icon: <span className="mr-1 text-amber-500 text-[11px]">⚡</span>, label: 'ร้านช่าง' };
-    return { color: tier.bg + ' ' + tier.color + ' ' + tier.border, icon: <span className="mr-1 text-[10px]">{tier.icon}</span>, label: tier.name.toUpperCase() };
+    if (r.includes('vip')) return { color: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100', icon: <Crown size={11} className="mr-1" /> };
+    if (r.includes('partner')) return { color: 'bg-slate-800 text-white border-slate-800', icon: <Star size={11} className="mr-1 text-amber-400" /> };
+    if (r.includes('wholesale')) return { color: 'bg-orange-50 text-orange-700 border-orange-100', icon: <Building2 size={11} className="mr-1" /> };
+    return { color: tier.bg + ' ' + tier.color + ' ' + tier.border, icon: <span className="mr-1 text-[10px]">{tier.icon}</span> };
   };
 
   const badge = getRankBadge(customer.rank || customer.role);
@@ -105,13 +105,13 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
         </div>
 
         {/* 2. ชื่อ-นามสกุล */}
-        <div className="flex items-center gap-2 min-w-0 pr-2">
+        <div className="flex items-center gap-2.5 min-w-0 pr-2">
           <span className={`text-[13px] font-bold truncate tracking-tight ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
             {displayName}
           </span>
           {hasTax && (
-            <span className="shrink-0 flex items-center px-1.5 py-[1.5px] bg-blue-100 text-blue-700 rounded-xs text-[10px] font-black uppercase border border-blue-200 shadow-2xs" title="พร้อมออกใบกำกับภาษี">
-              <FileText size={10} className="mr-0.5" /> TAX
+            <span className="shrink-0 flex items-center px-1.5 py-[1.5px] bg-indigo-50 text-indigo-600 rounded-sm text-[9px] font-bold uppercase border border-indigo-100/50 shadow-xs" title="พร้อมออกใบกำกับภาษี">
+              <FileText size={9} className="mr-0.5" /> TAX
             </span>
           )}
         </div>
@@ -131,19 +131,21 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           <div className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-widest border ${badge.color} truncate max-w-full shadow-xs`}>
             {badge.icon}
             <span className="truncate">
-              {badge.label}
+              {['customer', 'member', ''].includes((customer.rank || customer.role || '').toLowerCase())
+                ? tier.name.toUpperCase()
+                : (customer.rank || customer.role || 'MEMBER').toUpperCase()}
             </span>
           </div>
         </div>
 
-        {/* 6. DH ค้างยอด */}
+        {/* 6. Wallet (เรียกใช้ Real-time Component แทน) */}
         <div className="text-right min-w-0">
-          <WalletDisplay customerId={customerId} customer={customer} />
+          <WalletDisplay customerId={customerId} />
         </div>
 
-        {/* 7. Points */}
+        {/* 7. Points (เรียกใช้ Real-time Component แทน) */}
         <div className="text-right min-w-0">
-          <PointDisplay customerId={customerId} customer={customer} />
+          <PointDisplay customerId={customerId} />
         </div>
 
         {/* 8. วันที่สั่งซื้อล่าสุด (บิลล่าสุด) */}
@@ -151,12 +153,34 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           daysSinceLastOrder === null 
             ? 'text-slate-300 font-normal' 
             : daysSinceLastOrder <= 7 
-              ? 'text-teal-600 font-bold' 
+              ? 'text-emerald-600 font-black' 
               : daysSinceLastOrder <= 30 
                 ? 'text-indigo-600 font-bold' 
                 : 'text-slate-400 font-medium'
         }`}>
           {lastOrderText}
+        </div>
+
+        {/* 9. ยอดสั่งซื้อ 30 วัน (30D PAID OUT) พร้อมจำนวนบิล */}
+        <div className="text-right min-w-0 flex items-center justify-end gap-1.5">
+          {sales30Days > 0 ? (
+            <>
+              <span className={`text-[13px] font-mono tracking-tight ${
+                sales30Days >= 10000 
+                  ? 'text-emerald-600 font-black' 
+                  : 'text-indigo-600 font-bold'
+              }`}>
+                ฿{sales30Days.toLocaleString('th-TH', {minimumFractionDigits: 2})}
+              </span>
+              {orderCount30Days > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80 shrink-0">
+                  {orderCount30Days} บิล
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-[12px] font-mono font-normal text-slate-300">0.00</span>
+          )}
         </div>
 
       </div>

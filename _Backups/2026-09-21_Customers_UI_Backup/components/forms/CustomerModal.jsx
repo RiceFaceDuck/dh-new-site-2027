@@ -175,19 +175,19 @@ export default function CustomerModal({
         </form>
 
         {/* Footer (Actions) */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/80 flex justify-end gap-3 rounded-b-2xl">
+        <div className="px-6 py-4 border-t border-dh-border bg-dh-surface flex justify-end gap-3 rounded-b-2xl">
           <button 
             type="button" 
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-100 font-medium text-sm transition-colors disabled:opacity-50"
+            className="px-5 py-2.5 bg-white border border-dh-border text-dh-main rounded-lg hover:bg-gray-50 font-bold text-sm transition-colors disabled:opacity-50"
           >
             ยกเลิก
           </button>
           <button 
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition-all flex justify-center items-center gap-2 shadow-xs active:scale-95 disabled:opacity-70"
+            className="px-6 py-2.5 bg-dh-accent text-white rounded-lg hover:bg-dh-accent-hover font-bold text-sm transition-all flex justify-center items-center gap-2 shadow-xs active:scale-95 disabled:opacity-70"
           >
             {isSubmitting ? (
               <><Loader2 size={16} className="animate-spin"/> กำลังบันทึก...</>

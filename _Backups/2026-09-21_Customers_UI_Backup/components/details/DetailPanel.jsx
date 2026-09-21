@@ -107,104 +107,110 @@ export default function DetailPanel({
 
   return (
     <div className="flex flex-col h-full bg-white border-l border-slate-200 shadow-2xl">
-      {/* 1. ส่วนหัวธีมมืด Dark Slate (Header & Actions) */}
-      <div className="p-3.5 sm:p-4 bg-slate-900 text-white border-b border-slate-800">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-white tracking-tight truncate" title={displayName}>
-            {displayName}
+      {/* 1. ส่วนหัว (Header & Actions) */}
+      <div className="p-5 border-b border-slate-200 flex justify-between items-start bg-slate-50/80">
+        <div className="min-w-0 pr-4">
+          <h2 className="text-xl font-bold text-slate-800 truncate flex items-center gap-2" title={displayName}>
+            {customer.role === 'partner' ? <Building2 className="w-5 h-5 text-indigo-600 shrink-0" /> : <User className="w-5 h-5 text-slate-400 shrink-0" />}
+            <span className="truncate">{displayName}</span>
           </h2>
-          <div className="flex items-center gap-1 shrink-0">
-            <button 
-              onClick={() => onEdit(customer)} 
-              className="p-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition-colors border border-slate-700/60 active:scale-95" 
-              title="แก้ไขข้อมูล"
-            >
-              <Edit2 size={13} />
-            </button>
-            <button 
-              onClick={onDelete} 
-              className="p-1 text-slate-300 hover:text-rose-400 hover:bg-rose-500/20 rounded-md transition-colors border border-slate-700/60 active:scale-95" 
-              title="ลบลูกค้า"
-            >
-              <Trash2 size={13} />
-            </button>
-          </div>
-        </div>
-
-        {/* แถวแสดง Badges */}
-        <div className="flex items-center gap-1.5 mt-2 flex-wrap text-xs text-slate-300">
-          {/* Badge ID */}
-          <div className="inline-flex items-center gap-1 bg-slate-800/90 px-2 py-0.5 rounded-md border border-slate-700 text-[11px] shrink-0">
-            <span className="text-slate-400">ID:</span>
-            <span className="font-mono text-slate-100 font-semibold">{displayAccountId}</span>
-            <button 
-              onClick={() => handleCopy(displayAccountId, 'accountId')}
-              className="hover:text-white transition-colors ml-0.5 text-slate-400"
-              title="คัดลอกรหัสบัญชี"
-            >
-              {copiedField === 'accountId' ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
-            </button>
-          </div>
-
-          {/* Badge บุคคล / นิติบุคคล */}
-          <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border shrink-0 ${
-            customer.customerType === 'individual' 
-              ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' 
-              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-          }`}>
-            {customer.customerType === 'individual' ? 'บุคคลธรรมดา' : 'นิติบุคคล / ร้านค้า'}
-          </span>
-
-          {/* Badge Tier / Rank */}
-          <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0">
-            ⭐ {(() => {
+          <div className="flex items-center flex-wrap gap-2 mt-1.5">
+            {(() => {
               const points = Number(customer.totalAccumulatedPoints || customer.creditPoints || customer.stats?.totalAccumulatedPoints || 0);
               const tier = getUserTier(points);
-              return tier.name || customer.rank || customer.role || 'Member';
+              const isCustomRole = !['customer', 'member', ''].includes((customer.rank || customer.role || '').toLowerCase());
+
+              return (
+                <>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 border ${tier.bg || 'bg-blue-50'} ${tier.color || 'text-blue-600'} ${tier.border || 'border-blue-200'} shadow-xs`}>
+                    <span className="mr-1">{tier.icon}</span>
+                    {tier.name}
+                  </span>
+                  {isCustomRole && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 bg-slate-800 text-white shadow-xs">
+                      {customer.rank || customer.role}
+                    </span>
+                  )}
+                </>
+              );
             })()}
-          </span>
-
-          {/* ปุ่มโอนย้ายข้อมูล */}
-          <button 
-            onClick={() => setIsSyncModalOpen(true)}
-            className="px-2.5 py-0.5 text-[11px] font-medium text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 rounded-md transition-all duration-200 flex items-center gap-1 whitespace-nowrap shadow-sm active:scale-95 shrink-0"
-            title="โอนย้ายข้อมูลบัญชีลูกค้า"
-          >
-            <Sparkles size={12} className="text-indigo-400" />
-            <span>โอนย้ายข้อมูล</span>
-          </button>
-
-          {/* Badge TAX */}
-          {Boolean(customer.hasTaxInfo || customer.taxInvoiceNeeded || customer.taxId) && (
-            <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0 flex items-center gap-0.5">
-              TAX
-            </span>
-          )}
+            <button 
+              onClick={() => handleCopy(displayAccountId, 'accountId')}
+              title="คัดลอก Account ID"
+              className={`flex items-center gap-1 text-[11px] font-mono tracking-wider px-1.5 py-0.5 rounded border transition-colors shrink-0 ${
+                copiedField === 'accountId' 
+                  ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                  : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200'
+              }`}
+            >
+              ID: {displayAccountId}
+              {copiedField === 'accountId' ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} className="opacity-70" />}
+            </button>
+            
+            {/* 🛡️ Data Sync Validation (Email as Key) */}
+            {customer.email ? (
+               <button 
+                 onClick={() => setIsSyncModalOpen(true)}
+                 title={`ผูกข้อมูลสำเร็จกับ: ${customer.email} (คลิกเพื่อซิงค์ข้อมูลไปบัญชีอื่น)`} 
+                 className="flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold tracking-wider bg-teal-50 text-teal-600 border border-teal-200 shrink-0 hover:bg-teal-100 hover:text-teal-700 transition-colors"
+               >
+                 <Check size={12} strokeWidth={3} />
+                 <span>SYNCED (EMAIL)</span>
+               </button>
+            ) : (
+               <button 
+                 onClick={() => setIsSyncModalOpen(true)}
+                 title="คลิกเพื่อผูกและโอนย้ายข้อมูลไปยังบัญชีหน้าเว็บ" 
+                 className="flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold tracking-wider bg-rose-50 text-rose-600 border border-rose-200 shrink-0 hover:bg-rose-100 hover:text-rose-700 transition-colors shadow-xs"
+               >
+                 <X size={12} strokeWidth={3} />
+                 <span>NO EMAIL SYNC</span>
+               </button>
+            )}
+          </div>
+          
+          {/* 🌟 New Compact Stats Row in Header */}
+          <div className="flex items-center flex-wrap gap-3 mt-3 pt-3 border-t border-slate-200/60">
+            {/* ยอดค้างชำระ (คลิกเพื่อทำรายการโอนคืน / จ่ายเงินสด) */}
+            <button
+              type="button"
+              onClick={() => setIsRefundModalOpen(true)}
+              title="คลิกเพื่อโอนเงินคืน / จ่ายเงินสดให้ลูกค้า"
+              className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 px-2.5 py-1 rounded-md border border-emerald-200 cursor-pointer transition-all shadow-2xs hover:shadow-xs group"
+            >
+              <TrendingUp size={12} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-bold uppercase">DH ค้างยอด:</span>
+              <span className="text-xs font-black font-mono"><WalletDisplay customerId={customer.id} /></span>
+            </button>
+            
+            {/* พอยต์ */}
+            <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md border border-amber-100">
+              <Sparkles size={12} className="text-amber-500" />
+              <span className="text-[10px] font-bold uppercase">Point:</span>
+              <span className="text-xs font-black font-mono"><PointDisplay customerId={customer.id} /></span>
+            </div>
+          </div>
         </div>
-
-        {/* แถวล่าง 2 กล่อง: DH ค้างยอด และ คะแนนสะสม */}
-        <div className="mt-3 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-3">
-          <div className="bg-slate-800/60 rounded-lg p-2.5 flex flex-col justify-between border border-slate-700/50">
-            <span className="text-[11px] font-semibold text-slate-400 tracking-wide">DH ค้างยอด</span>
-            <div className="flex items-center justify-between mt-1 gap-2">
-              <WalletDisplay customerId={customer.id} customer={customer} live={true} className="text-lg font-bold font-mono text-rose-400" />
-              <button 
-                onClick={() => setIsRefundModalOpen(true)}
-                className="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-semibold border border-rose-500/30 transition-all shrink-0 active:scale-95"
-                title="ขอคืนเงิน"
-              >
-                คืนเงิน
-              </button>
+        
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Guide Documentation Button */}
+          <div className="group relative">
+            <button className="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors flex items-center justify-center border border-transparent hover:border-indigo-100">
+              <span className="font-serif italic font-bold text-sm px-1">i</span>
+            </button>
+            {/* Tooltip Content (In-App Docs) */}
+            <div className="absolute right-0 top-full mt-2 w-72 p-4 bg-slate-900 text-white text-xs rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none group-hover:pointer-events-auto border border-slate-700">
+              <h4 className="font-bold text-sm text-indigo-300 mb-2 border-b border-slate-700 pb-1">📚 ระบบจัดการ Account ID</h4>
+              <p className="mb-2"><span className="text-emerald-400 font-semibold">ตำรา:</span> ระบบยึด Email เป็น Key หลัก หากลูกค้ามี Email ระบบจะแสดงป้าย <span className="text-teal-300">SYNCED</span> เพื่อยืนยันว่าข้อมูลตรงกันและปลอดภัย</p>
+              <p className="mb-2"><span className="text-emerald-400 font-semibold">How-to:</span> คุณสามารถแก้ไข Account ID ได้โดยกดปุ่ม "แก้ไขข้อมูล" ด้านล่าง ระบบจะเช็คความซ้ำซ้อนให้อัตโนมัติ</p>
+              <p className="mb-2"><span className="text-emerald-400 font-semibold">Tips:</span> ใช้ปุ่ม Generate ในหน้าแก้ไขเพื่อสุ่ม Account ID 8 หลักมาตรฐาน</p>
+              <p><span className="text-emerald-400 font-semibold">Expected:</span> หากเปลี่ยนรหัสสำเร็จ History Log จะบันทึกการกระทำของคุณไว้ตรวจสอบย้อนหลังได้ 100%</p>
             </div>
           </div>
-
-          <div className="bg-slate-800/60 rounded-lg p-2.5 flex flex-col justify-between border border-slate-700/50">
-            <span className="text-[11px] font-semibold text-slate-400 tracking-wide">คะแนนสะสม</span>
-            <div className="flex items-baseline gap-1 mt-1">
-              <PointDisplay customerId={customer.id} customer={customer} live={true} className="text-lg font-bold font-mono text-amber-400" />
-              <span className="text-xs font-semibold text-amber-300">แต้ม</span>
-            </div>
-          </div>
+          
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+            <X size={20} />
+          </button>
         </div>
       </div>
 

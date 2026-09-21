@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ShoppingBag, ShieldAlert, Loader2, PackageCheck, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import { ShoppingBag, ShieldAlert, Loader2, PackageCheck, ChevronDown, ChevronUp, Copy, Check, FileText } from 'lucide-react';
 
 export default function HistoryInfo({ history, formatCurrency, formatDate }) {
   const [showAllOrders, setShowAllOrders] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [copiedOrderId, setCopiedOrderId] = useState(null);
 
   if (history?.loading) {
@@ -16,7 +17,19 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
 
   const orders = history?.orders || [];
   const claims = history?.claims || [];
-  const visibleOrders = showAllOrders ? orders : orders.slice(0, 4);
+  const visibleOrders = showAllOrders ? orders : orders.slice(0, 5);
+
+  // คำนวณยอดเงินรวม
+  const getOrderNetTotal = (order) => {
+    return Number(order.summary?.finalTotal ?? order.finalTotal ?? order.netTotal ?? order.summary?.netTotal ?? order.totals?.netTotal ?? order.totalAmount ?? 0);
+  };
+
+  const totalSpent = orders.reduce((sum, order) => {
+    const amt = getOrderNetTotal(order);
+    return sum + (isNaN(amt) ? 0 : amt);
+  }, 0);
+
+  const totalClaimsAndReturns = orders.reduce((sum, order) => sum + (order.refundsAndClaims?.length || 0), 0) + claims.length;
 
   const handleCopyOrderId = (e, code) => {
     e.stopPropagation();
@@ -24,6 +37,10 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
     navigator.clipboard.writeText(code);
     setCopiedOrderId(code);
     setTimeout(() => setCopiedOrderId(null), 2000);
+  };
+
+  const toggleExpandOrder = (id) => {
+    setExpandedOrderId(prev => prev === id ? null : id);
   };
 
   const getStatusBadge = (statusStr) => {
@@ -44,29 +61,49 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
   };
 
   return (
-    <div className="space-y-4 pt-3 border-t border-slate-100">
-      {/* รายการสั่งซื้อ (Orders) */}
+    <div className="space-y-4 pt-2 border-t border-slate-100">
+      {/* 1. แถบสรุป 3 กล่องด้านบนตามดีไซน์ Production */}
+      {orders.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-indigo-50/80 to-blue-50/50 p-2.5 rounded-xl border border-indigo-100 text-center">
+          <div>
+            <span className="text-[9px] font-bold text-slate-400 block uppercase">ยอดซื้อรวม</span>
+            <span className="text-xs font-black text-indigo-700">฿{formatCurrency(totalSpent)}</span>
+          </div>
+          <div className="border-x border-indigo-100/80">
+            <span className="text-[9px] font-bold text-slate-400 block uppercase">จำนวนบิล</span>
+            <span className="text-xs font-black text-slate-700">{orders.length} บิล</span>
+          </div>
+          <div>
+            <span className="text-[9px] font-bold text-slate-400 block uppercase">เคลม/เปลี่ยน/คืน</span>
+            <span className="text-xs font-black text-rose-600">{totalClaimsAndReturns} รายการ</span>
+          </div>
+        </div>
+      )}
+
+      {/* 2. รายการสั่งซื้ออย่างละเอียด */}
       {orders.length > 0 ? (
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2.5">
             <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <ShoppingBag size={14} className="text-indigo-600" /> ประวัติสั่งซื้อล่าสุด ({orders.length} บิล)
+              <FileText size={14} className="text-indigo-600" /> ประวัติสั่งซื้ออย่างละเอียด ({orders.length} บิล)
             </h4>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {visibleOrders.map(order => {
               const orderCode = order.orderId || order.receiptNumber || order.id;
               const orderDate = order.createdAt || order.timestamp || order.orderDate || order.updatedAt;
-              const orderAmount = Number(order.summary?.finalTotal ?? order.finalTotal ?? order.netTotal ?? order.summary?.netTotal ?? order.totals?.netTotal ?? order.totalAmount ?? 0);
+              const orderAmount = getOrderNetTotal(order);
               const badge = getStatusBadge(order.status);
               const items = order.items || order.cartItems || [];
+              const isExpanded = expandedOrderId === order.id;
+              const orderClaims = order.refundsAndClaims || [];
 
               return (
                 <div key={order.id} className="p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-all shadow-xs group">
-                  <div className="flex justify-between items-start mb-1.5">
+                  <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono font-bold text-indigo-700 group-hover:text-indigo-900">
+                      <span className="text-xs font-mono font-black text-indigo-700 group-hover:text-indigo-900">
                         #{orderCode}
                       </span>
                       <button
@@ -83,24 +120,73 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
                     </span>
                   </div>
 
-                  {/* แสดงรายการสินค้าตัวอย่าง */}
+                  {/* แสดงรายการสินค้า */}
                   {items.length > 0 && (
-                    <div className="text-[11px] text-slate-600 mb-2 bg-slate-50 p-2 rounded-lg border border-slate-100/80 space-y-0.5">
-                      {items.slice(0, 2).map((item, idx) => (
-                        <div key={idx} className="truncate flex justify-between">
-                          <span className="truncate">{item.name || item.sku || 'สินค้า'}</span>
-                          <span className="font-mono font-medium text-slate-500 shrink-0 ml-2">x{item.qty || item.quantity || 1}</span>
-                        </div>
-                      ))}
-                      {items.length > 2 && (
-                        <p className="text-[10px] text-slate-400 font-medium pt-0.5">
-                          + อีก {items.length - 2} รายการ
-                        </p>
+                    <div className="text-[11px] text-slate-700 mb-2 bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-1">
+                      {(isExpanded ? items : items.slice(0, 3)).map((item, idx) => {
+                        const itemSku = item.sku || item.id || '';
+                        const itemClaims = orderClaims.filter(c => c && (c.sku === itemSku || items.length === 1));
+
+                        return (
+                          <div key={idx} className="flex flex-col border-b border-slate-200/50 last:border-0 pb-1 last:pb-0">
+                            <div className="flex justify-between items-start gap-1">
+                              <div className="truncate flex-1">
+                                <span className="font-medium text-slate-800 truncate block">{item.name || itemSku || 'สินค้า'}</span>
+                                {itemSku && <span className="font-mono text-[9px] text-slate-400 block font-bold">{itemSku}</span>}
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="font-mono text-[10px] font-bold text-slate-600">x{item.qty || item.quantity || 1}</span>
+                                {item.price > 0 && (
+                                  <span className="font-mono text-[10px] text-slate-400 block">฿{formatCurrency(item.price)}</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* ป้ายประวัติ เคยคืน / เคยเปลี่ยน / เคยเคลม */}
+                            {itemClaims.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {itemClaims.map((claimItem, cIdx) => {
+                                  const cType = String(claimItem.type || claimItem.actionType || '').toLowerCase();
+                                  const isSwap = Boolean(claimItem.isSwapSku || claimItem.swapSku) || cType.includes('exchange') || cType.includes('swap') || cType.includes('เปลี่ยน');
+                                  const isReturn = cType.includes('return') || cType.includes('refund') || cType.includes('คืน');
+
+                                  return (
+                                    <span 
+                                      key={cIdx} 
+                                      className={`text-[8.5px] font-black px-1.5 py-0.5 rounded border ${
+                                        isSwap 
+                                          ? 'bg-blue-50 text-blue-600 border-blue-200' 
+                                          : isReturn 
+                                            ? 'bg-purple-50 text-purple-600 border-purple-200' 
+                                            : 'bg-orange-50 text-orange-600 border-orange-200'
+                                      }`}
+                                    >
+                                      {isSwap ? 'เคยเปลี่ยนรุ่น' : isReturn ? 'เคยคืนสินค้า' : 'เคยเคลม'} x{claimItem.qty || 1}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {items.length > 3 && (
+                        <button
+                          onClick={() => toggleExpandOrder(order.id)}
+                          className="w-full text-center text-[10px] text-indigo-600 hover:underline font-bold pt-1 flex items-center justify-center gap-0.5"
+                        >
+                          {isExpanded ? (
+                            <span>ย่อซ่อนสินค้า</span>
+                          ) : (
+                            <span>ดูสินค้าทั้งหมด ({items.length} รายการ)</span>
+                          )}
+                        </button>
                       )}
                     </div>
                   )}
 
-                  <div className="flex justify-between items-end text-xs border-t border-slate-100 pt-2 mt-1">
+                  <div className="flex justify-between items-end text-xs border-t border-slate-100 pt-1.5 mt-1">
                     <span className="text-[11px] text-slate-400">{formatDate(orderDate)}</span>
                     <span className="font-mono font-bold text-indigo-600 text-sm">
                       ฿{formatCurrency(orderAmount)}
@@ -111,7 +197,7 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
             })}
           </div>
 
-          {orders.length > 4 && (
+          {orders.length > 5 && (
             <button 
               onClick={() => setShowAllOrders(prev => !prev)}
               className="w-full text-center text-[11px] text-indigo-600 hover:text-indigo-800 font-bold py-2 bg-indigo-50/60 hover:bg-indigo-100/60 rounded-xl mt-2 transition-all flex items-center justify-center gap-1 shadow-xs"
