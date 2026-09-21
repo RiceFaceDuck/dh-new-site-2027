@@ -32,11 +32,7 @@ Thumbs.db
 # Local configuration and settings
 PROJECT_SETTINGS.md
 
-# Agent Brains & Memory (Strictly Local - Do Not Push to GitHub)
-*ssr memory*
-*/ssr memory*
-**/ssr memory*.md
-docs/memory/
+# Agent Brains & Scratch (Do Not Push Subagent Temp)
 .agents/
-_agents/
+
 
