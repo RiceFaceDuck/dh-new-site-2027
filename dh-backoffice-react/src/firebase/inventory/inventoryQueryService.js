@@ -95,19 +95,6 @@ export const inventoryQueryService = {
     }
   },
 
-  getSalesStats30d: async (sku) => {
-    try {
-      return {
-        sold: Math.floor(Math.random() * 50) + 5, 
-        returned: Math.floor(Math.random() * 2),  
-        viewed: Math.floor(Math.random() * 200) + 20
-      };
-    } catch (error) {
-    console.error("🔥 Error:", error);
-
-      return { sold: 0, returned: 0, viewed: 0 };
-    }
-  },
 
   getProductBySku: async (sku) => {
     try {

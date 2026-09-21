@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { gasStockService } from '../../../firebase/gasStockService';
+import useInventoryFilters from './useInventoryFilters';
+import useInventorySorting from './useInventorySorting';
+import useInventoryPagination from './useInventoryPagination';
 
 import { safeJsonParse } from 'dh-shared';
 const CACHE_KEY = 'inventory_full_cache';
@@ -140,162 +143,25 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
     });
   }, [rawSourceProducts, statsMap, salesPeriod]);
 
-  // 🚀 เพิ่ม Fallback Search ถ้าระบุ SKU ตรงๆ แล้วหาในแคชไม่เจอ
-  const [fallbackProduct, setFallbackProduct] = useState(null);
+  // 1. Filtering (Keyword, category, tags, and fallback SKU search)
+  const { filteredProducts } = useInventoryFilters(sourceProducts, searchTerm, filterCategory, isFetchingAll);
 
-  useEffect(() => {
-    const fetchFallback = async () => {
-      const safeTerm = typeof searchTerm === 'string' ? searchTerm.trim() : (searchTerm != null ? String(searchTerm).trim() : '');
-      if (safeTerm && !isFetchingAll) {
-        const term = safeTerm.toLowerCase();
-        const foundInCache = sourceProducts.some(p => {
-          const s = p.sku ? String(p.sku).toLowerCase() : '';
-          return s === term || s.includes(term);
-        });
-        if (!foundInCache) {
-          try {
-            // ดึงจาก inventoryQueryService (ต้อง import ก่อน)
-            const { inventoryQueryService } = await import('../../../firebase/inventory/inventoryQueryService');
-            const fbMatch = await inventoryQueryService.getProductBySku(safeTerm.toUpperCase());
-            if (fbMatch) {
-              setFallbackProduct(fbMatch);
-            } else {
-              setFallbackProduct(null);
-            }
-          } catch (e) {
-            setFallbackProduct(null);
-          }
-        } else {
-          setFallbackProduct(null);
-        }
-      } else {
-        setFallbackProduct(null);
-      }
-    };
-    fetchFallback();
-  }, [searchTerm, sourceProducts, isFetchingAll]);
+  // 2. Sorting (Multi-column with Thai locale collation)
+  const { sortedProducts } = useInventorySorting(filteredProducts, sortConfig, salesPeriod);
 
-  let processedProducts = sourceProducts.filter(p => {
-    const term = (typeof searchTerm === 'string' ? searchTerm : (searchTerm != null ? String(searchTerm) : '')).trim().toLowerCase();
-    const matchesSearch = !term || (() => {
-      const sku = p.sku ? String(p.sku).toLowerCase() : '';
-      const name = p.name ? String(p.name).toLowerCase() : '';
-      const cat = p.category ? String(p.category).toLowerCase() : '';
-      const brand = p.brand ? String(p.brand).toLowerCase() : '';
-      const model = p.model ? String(p.model).toLowerCase() : '';
-      let tagMatch = false;
-      if (p.tags) {
-        if (Array.isArray(p.tags)) {
-          tagMatch = p.tags.some(t => t && String(t).toLowerCase().includes(term));
-        } else if (typeof p.tags === 'string') {
-          tagMatch = p.tags.toLowerCase().includes(term);
-        }
-      }
-      return sku.includes(term) || name.includes(term) || cat.includes(term) || brand.includes(term) || model.includes(term) || tagMatch;
-    })();
+  // 3. Pagination (Clamped bounds, safe slicing)
+  const {
+    itemsPerPage,
+    setItemsPerPage,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    slicePage
+  } = useInventoryPagination(sortedProducts.length, [searchTerm, filterCategory, sortConfig?.key, sortConfig?.direction]);
 
-    const targetCat = (filterCategory || '').trim().toLowerCase();
-    const matchesCategory = !filterCategory || filterCategory === 'All' || 
-      (p.category && String(p.category).trim().toLowerCase() === targetCat) || 
-      (p.type && String(p.type).trim().toLowerCase() === targetCat) ||
-      p.category === filterCategory || p.type === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  if (fallbackProduct && !processedProducts.some(p => p.sku === fallbackProduct.sku)) {
-    processedProducts = [fallbackProduct, ...processedProducts];
-  }
-
-  // 🚀 เพิ่มระบบจัดเรียง (Sorting)
-  if (sortConfig?.key) {
-    processedProducts = [...processedProducts].sort((a, b) => {
-      let valA, valB;
-      
-      switch (sortConfig.key) {
-        case 'Price':
-          valA = Number(a.Price ?? a.price ?? a.wholesalePrice ?? 0);
-          valB = Number(b.Price ?? b.price ?? b.wholesalePrice ?? 0);
-          break;
-        case 'retailPrice':
-          valA = Number(a.retailPrice || 0);
-          valB = Number(b.retailPrice || 0);
-          break;
-        case 'stock':
-          valA = Number(a.stockQuantity || 0);
-          valB = Number(b.stockQuantity || 0);
-          break;
-        case 'sales':
-          valA = Number(a.salesHistory?.[salesPeriod] || 0);
-          valB = Number(b.salesHistory?.[salesPeriod] || 0);
-          break;
-        case 'stockIn':
-          valA = Number(a.stockInHistory?.[salesPeriod] || 0);
-          valB = Number(b.stockInHistory?.[salesPeriod] || 0);
-          break;
-        case 'claim':
-          valA = Number(a.claimHistory?.[salesPeriod] || 0);
-          valB = Number(b.claimHistory?.[salesPeriod] || 0);
-          break;
-        case 'adjustment':
-          valA = Number(a.adjustmentHistory?.[salesPeriod] || 0);
-          valB = Number(b.adjustmentHistory?.[salesPeriod] || 0);
-          break;
-        case 'category':
-          valA = String(a.category || '');
-          valB = String(b.category || '');
-          return sortConfig.direction === 'asc' 
-            ? valA.localeCompare(valB, 'th') 
-            : valB.localeCompare(valA, 'th');
-        default:
-          valA = 0;
-          valB = 0;
-      }
-
-      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
-
-  // 📄 Pagination System (21, 50, 100, 250 items per page)
-  const [itemsPerPage, setItemsPerPage] = useState(21);
-  const [currentPage, setCurrentPage] = useState(1);
-  
-  // รีเซ็ตกลับไปหน้า 1 เมื่อเงื่อนไขการค้นหา/ตัวกรอง/การจัดเรียง/จำนวนรายการต่อหน้าเปลี่ยน
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterCategory, sortConfig?.key, sortConfig?.direction, itemsPerPage]);
-
-  const totalItems = processedProducts.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage) || 1);
-  
-  // Clamped effective page to protect rendering slices and display bounds
-  const safeCurrentPage = totalItems === 0 ? 1 : Math.min(Math.max(1, currentPage), totalPages);
-
-  // ปรับ currentPage หากเกินจำนวนหน้าทั้งหมดที่มี
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    } else if (currentPage < 1) {
-      setCurrentPage(1);
-    }
-  }, [currentPage, totalPages]);
-
-  const startIndex = totalItems === 0 ? 0 : (safeCurrentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  
-  // ตัดข้อมูลเฉพาะหน้าที่เลือก
-  const paginatedProducts = processedProducts.slice(startIndex, endIndex);
-
-  const handleSetCurrentPage = (pageOrFn) => {
-    setCurrentPage(prev => {
-      const target = typeof pageOrFn === 'function' ? pageOrFn(prev) : pageOrFn;
-      const num = Number(target);
-      if (isNaN(num) || num < 1) return 1;
-      if (num > totalPages) return totalPages;
-      return num;
-    });
-  };
+  const paginatedProducts = slicePage(sortedProducts);
 
   const updateCache = (productData, isEdit) => {
     if (allProductsCache) {
@@ -321,9 +187,9 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
   return {
     filteredProducts: paginatedProducts,
     isSearching: isFetchingAll,
-    totalItems,
-    currentPage: safeCurrentPage,
-    setCurrentPage: handleSetCurrentPage,
+    totalItems: sortedProducts.length,
+    currentPage,
+    setCurrentPage,
     itemsPerPage,
     setItemsPerPage,
     totalPages,

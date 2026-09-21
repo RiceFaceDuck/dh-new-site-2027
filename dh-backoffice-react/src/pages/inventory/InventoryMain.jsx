@@ -51,7 +51,6 @@ export default function Inventory() {
     handleRecalculateStats,
   } = useInventoryController();
 
-  const [searchProgress, setSearchProgress] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(15);
 
   useEffect(() => {
@@ -65,17 +64,6 @@ export default function Inventory() {
       setLoadingProgress(100);
     }
   }, [loading]);
-
-  useEffect(() => {
-    if (isSearching) {
-      setSearchProgress(10);
-      const timer = setInterval(() => {
-        setSearchProgress(prev => (prev < 92 ? prev + Math.floor(Math.random() * 6) + 3 : prev));
-      }, 180);
-      return () => clearInterval(timer);
-    }
-    setSearchProgress(100);
-  }, [isSearching]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
