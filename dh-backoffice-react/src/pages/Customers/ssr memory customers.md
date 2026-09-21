@@ -19,7 +19,7 @@
   </core_schema>
 
   <business_rules>
-    <rule id="1">Table layout strictly maintains 8 columns: CUSTOMER ID, PROFILE, PHONE, LOGISTIC, ROLE/TIER, DH ค้างยอด, POINTS, and บิลล่าสุด.</rule>
+    <rule id="1">Table layout maintains 9 balanced columns: CUSTOMER ID, PROFILE, PHONE, LOGISTIC, ROLE/TIER, DH ค้างยอด, POINTS, บิลล่าสุด, 30D PAID OUT using symmetrical grid formula [130px_minmax(180px,1.5fr)_110px_110px_90px_100px_90px_100px_110px] with gap-4.</rule>
     <rule id="2">DetailPanel header must render dark slate midnight theme (bg-slate-900) containing account badges, wallet display with refund button, and points display.</rule>
     <rule id="3">Order history displays 3 summary metric boxes (Total Spent, Total Bills, Total Claims/Returns) and detailed bill breakdown with return/claim badges.</rule>
     <rule id="4">Zero code mutation to business logic, Cloud Functions, background triggers, or data calculation scripts during UI/UX refinements.</rule>
@@ -32,7 +32,7 @@
   </cross_impact>
 
   <pitfalls_and_lessons>
-    <caution>Do not add 9th column (30D Paid Out) without user request; UI screenshot strictly specifies 8-column layout.</caution>
+    <caution>Always adhere to the symmetrical 110-110, 90-100, 90-100, 110 column rhythm with gap-4 for table balance.</caution>
     <caution>Always mask PII (phone/email) by default or provide toggleable eye button as shown in live production layout.</caution>
     <caution>Absolute deployment ban: Never run firebase deploy, functions deploy, or git push to remote servers.</caution>
   </pitfalls_and_lessons>

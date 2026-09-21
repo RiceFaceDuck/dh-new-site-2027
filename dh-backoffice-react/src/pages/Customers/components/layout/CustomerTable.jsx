@@ -16,8 +16,8 @@ export default function CustomerTable({
   selectedCustomer,
   onSelectCustomer
 }) {
-  // 📐 สูตรปรับตรงตามดีไซน์ Production (8 คอลัมน์ พอดีกับหน้าจอและ Sidebar)
-  const gridLayout = "grid grid-cols-[130px_minmax(180px,1.5fr)_115px_90px_100px_100px_80px_95px] gap-3 w-full";
+  // 📐 สูตรปรับตรงตามดีไซน์ Production (9 คอลัมน์ จังหวะสมมาตร 110-110, 90-100, 90-100, 110 พร้อม gap-4)
+  const gridLayout = "grid grid-cols-[130px_minmax(180px,1.5fr)_110px_110px_90px_100px_90px_100px_110px] gap-4 w-full";
 
   // ใช้ paginatedCustomers (21 คน) หากระบุมา หรือ Fallback ไป filteredCustomers
   const customersToRender = paginatedCustomers || filteredCustomers.slice(0, visibleCount || 21);
@@ -33,21 +33,22 @@ export default function CustomerTable({
         className="flex-1 overflow-auto scrollbar-thin relative flex flex-col justify-between"
         onScroll={onScroll}
       >
-        <div className="min-w-[960px] flex flex-col min-h-full">
+        <div className="min-w-[1080px] flex flex-col min-h-full">
           
           {/* 👑 Table Header (แถวบนสุด - ปักหมุดไว้ด้านบนเสมอ) */}
           <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
-            <div className={`px-4 py-3.5 text-[12px] font-bold text-slate-700 uppercase tracking-wider ${gridLayout}`}>
+            <div className={`px-4 py-3.5 text-[13px] font-bold text-slate-700 uppercase tracking-wider ${gridLayout}`}>
               <div className="flex items-center gap-1 whitespace-nowrap">
-                CUSTOMER ID <span className="text-indigo-600 font-bold">({totalItems.toLocaleString()})</span>
+                Customer ID <span className="text-indigo-600 font-bold">({totalItems.toLocaleString()})</span>
               </div>
-              <div className="flex items-center">PROFILE</div>
-              <div className="flex items-center">PHONE</div>
-              <div className="flex items-center">LOGISTIC</div>
-              <div className="flex items-center justify-center">ROLE/TIER</div>
+              <div className="flex items-center">Profile</div>
+              <div className="flex items-center">Phone</div>
+              <div className="flex items-center">Logistic</div>
+              <div className="flex items-center justify-center">Role/Tier</div>
               <div className="text-right">DH ค้างยอด</div>
-              <div className="text-right">POINTS</div>
+              <div className="text-right">Points</div>
               <div className="text-center">บิลล่าสุด</div>
+              <div className="text-right">30D Paid Out</div>
             </div>
           </div>
           

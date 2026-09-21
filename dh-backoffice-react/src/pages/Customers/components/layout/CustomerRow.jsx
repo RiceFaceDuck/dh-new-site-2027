@@ -10,11 +10,25 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   const points = Number(customer.totalAccumulatedPoints || customer.creditPoints || customer.stats?.totalAccumulatedPoints || 0);
   const tier = getUserTier(points);
 
+  // 📞 ฟังก์ชันจัดรูปแบบเบอร์โทรศัพท์ (มีขีด) ให้อ่านง่ายตรงตาม Production
+  const formatPhone = (phone) => {
+    if (!phone || phone === '-') return '-';
+    const clean = String(phone).replace(/\D/g, '');
+    if (clean.length === 10) {
+      return `${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6)}`;
+    }
+    if (clean.length === 9) {
+      return `${clean.slice(0, 2)}-${clean.slice(2, 5)}-${clean.slice(5)}`;
+    }
+    return phone;
+  };
+
   const getRankBadge = (rank) => {
     const r = rank?.toLowerCase() || 'customer';
     if (r.includes('vip')) return { color: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200', icon: <Crown size={11} className="mr-1 text-fuchsia-600" />, label: 'VIP' };
     if (r.includes('partner')) return { color: 'bg-slate-800 text-white border-slate-800', icon: <Star size={11} className="mr-1 text-amber-400" />, label: 'PARTNER' };
     if (r.includes('wholesale') || r.includes('mechanic') || r.includes('ช่าง')) return { color: 'bg-sky-50 text-sky-700 border-sky-200', icon: <span className="mr-1 text-amber-500 text-[11px]">⚡</span>, label: 'ร้านช่าง' };
+    if (tier.name === 'Gold' || r.includes('gold')) return { color: 'bg-amber-50 text-amber-700 border-amber-200', icon: <span className="mr-1 text-amber-500 text-[11px]">👑</span>, label: 'GOLD' };
     return { color: tier.bg + ' ' + tier.color + ' ' + tier.border, icon: <span className="mr-1 text-[10px]">{tier.icon}</span>, label: tier.name.toUpperCase() };
   };
 
@@ -36,7 +50,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   const isMigrated = Boolean(customer.accountId);
   const displayCode = customer.accountId || customer.customerCode || customer.id?.substring(0, 8)?.toUpperCase() || '-';
   
-  const phoneText = customer.phone || customer.phoneNumber || '-';
+  const phoneText = formatPhone(customer.phone || customer.phoneNumber);
   const logisticText = customer.logisticProvider || '-';
   const hasTax = Boolean(customer.hasTaxInfo);
   
@@ -105,7 +119,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
         </div>
 
         {/* 2. ชื่อ-นามสกุล */}
-        <div className="flex items-center gap-2 min-w-0 pr-2">
+        <div className="flex items-center gap-2.5 min-w-0 pr-2">
           <span className={`text-[13px] font-bold truncate tracking-tight ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
             {displayName}
           </span>
@@ -151,12 +165,34 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           daysSinceLastOrder === null 
             ? 'text-slate-300 font-normal' 
             : daysSinceLastOrder <= 7 
-              ? 'text-teal-600 font-bold' 
+              ? 'text-emerald-600 font-black' 
               : daysSinceLastOrder <= 30 
                 ? 'text-indigo-600 font-bold' 
                 : 'text-slate-400 font-medium'
         }`}>
           {lastOrderText}
+        </div>
+
+        {/* 9. ยอดสั่งซื้อ 30 วัน (30D PAID OUT) พร้อมจำนวนบิล */}
+        <div className="text-right min-w-0 flex items-center justify-end gap-1.5" translate="no">
+          {sales30Days > 0 ? (
+            <>
+              <span className={`notranslate text-[13px] font-mono tracking-tight ${
+                sales30Days >= 10000 
+                  ? 'text-emerald-600 font-black' 
+                  : 'text-indigo-600 font-bold'
+              }`}>
+                ฿{sales30Days.toLocaleString('th-TH', {minimumFractionDigits: 2})}
+              </span>
+              {orderCount30Days > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80 shrink-0">
+                  {orderCount30Days} บิล
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="notranslate text-[12px] font-mono font-normal text-slate-300">0.00</span>
+          )}
         </div>
 
       </div>
