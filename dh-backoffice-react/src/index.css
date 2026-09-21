@@ -105,9 +105,7 @@
     );
   }
   & .dh-header-gradient {
-    background: linear-gradient(-45deg, #0f172a, #1a2980, #2678c6, #1e3a8a);
-    background-size: 400% 400%;
-    animation: subtleGradientMove 15s ease infinite;
+    background: #1e3a8a;
     color: #ffffff;
   }
 
@@ -147,20 +145,13 @@
   }
 }
 @utility dh-header-gradient {
-  /* 8. Subtle Header Animated Gradient */
-  /* เฉดสีน้ำเงินไล่ไปฟ้าสว่าง (Royal Blue to Cyan) ตามภาพอ้างอิง */
-  background: linear-gradient(-45deg, #223485, #296eb4, #32a1d8, #3bc7ec);
-  background-size: 400% 400%;
-  animation: subtleGradientMove 15s ease infinite; /* ปรับความเร็วเป็น 15s ให้เห็นการไหลของสีชัดขึ้นนิดนึง */
+  /* 8. Locked Solid Dark Header (No gradient) */
+  background: #1e3a8a;
   color: #ffffff;
   .dark & {
-    background: linear-gradient(-45deg, #0f172a, #1a2980, #2678c6, #1e3a8a);
-    background-size: 400% 400%;
-    animation: subtleGradientMove 15s ease infinite;
+    background: #1e3a8a;
     color: #ffffff;
   }
-
-  /* 🔴 Shake Animation สำหรับ Error States */
 }
 
 /*
