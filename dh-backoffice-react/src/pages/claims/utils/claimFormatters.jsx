@@ -1,4 +1,4 @@
-import { Clock, CheckCircle, XCircle, Ban, Flame, Zap, Timer, Package, Settings } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Ban, Flame, Zap, Package, Settings } from 'lucide-react';
 
 // ✨ อัปเกรดลูกเล่นที่ 1: ระบบคำนวณหลอดประกัน (Warranty Progress)
 export const getWarrantyInfo = (purchaseDateStr, createdAt, warrantyPeriodDays = 365) => {
@@ -18,9 +18,9 @@ export const getWarrantyInfo = (purchaseDateStr, createdAt, warrantyPeriodDays =
   const warrantyPeriod = warrantyPeriodDays > 0 ? warrantyPeriodDays : 365;
   const remainingDays = warrantyPeriod - usedDays;
   
-  let label = '';
-  let color = '';
-  let textColor = '';
+  let label;
+  let color;
+  let textColor;
   let percentUsed = Math.min((usedDays / warrantyPeriod) * 100, 100);
   let percentRemaining = 100 - percentUsed;
 
@@ -41,7 +41,7 @@ export const getWarrantyInfo = (purchaseDateStr, createdAt, warrantyPeriodDays =
     color = 'bg-orange-500';
     textColor = 'text-orange-500';
   } else if (percentRemaining >= 70) {
-    label = `🟢 เหลืออีกเยอะ (${remainingDays} วัน)`;
+    label = `🟢 เหลือ ${remainingDays} วัน`;
     color = 'bg-emerald-500';
     textColor = 'text-emerald-500';
   } else {
@@ -61,21 +61,63 @@ export const getSLAIndicator = (createdAt, status) => {
 
   if (hoursDiff > 48) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-rose-500 animate-pulse bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded-sm border border-rose-200 dark:border-rose-800/50"><Flame className="w-3 h-3"/> ล่าช้า!</div>;
   if (hoursDiff > 24) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded-sm border border-orange-200 dark:border-orange-800/50"><Zap className="w-3 h-3"/> เร่งด่วน</div>;
-  return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-dh-muted bg-dh-base px-1.5 py-0.5 rounded-sm"><Timer className="w-3 h-3"/> ปกติ</div>;
+  return null;
 };
 
 export const getStatusDisplay = (req) => {
-  if (req.type.startsWith('CANCEL_') && req.status === 'pending_manager') {
-    return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-red-100/80 text-red-700 border border-red-200 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400 whitespace-nowrap"><Clock className="w-3.5 h-3.5" /> รออนุมัติยกเลิก</span>;
+  if (req.type?.startsWith('CANCEL_') && req.status === 'pending_manager') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-red-100/90 text-red-700 border border-red-300 dark:bg-red-500/20 dark:border-red-500/40 dark:text-red-400 whitespace-nowrap">
+        <Clock className="w-3.5 h-3.5" /> รออนุมัติยกเลิก
+      </span>
+    );
   }
   switch(req.status) {
-    case 'pending_manager': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-amber-100/80 text-amber-800 border border-amber-300 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 whitespace-nowrap"><Clock className="w-3.5 h-3.5" /> รอตรวจสอบ</span>;
-    case 'waiting_item': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-blue-100/80 text-blue-800 border border-blue-300 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400 whitespace-nowrap"><Package className="w-3.5 h-3.5" /> รอรับของเคลม</span>;
-    case 'processing': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-indigo-100/80 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-400 whitespace-nowrap"><Settings className="w-3.5 h-3.5" /> กำลังตรวจสอบ</span>;
+    case 'pending_manager':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-black bg-rose-100 text-rose-900 border border-rose-400 dark:bg-rose-500/20 dark:border-rose-500/40 dark:text-rose-300 whitespace-nowrap shadow-2xs">
+          <Clock className="w-3.5 h-3.5" /> รอรับเรื่อง
+        </span>
+      );
+    case 'waiting_item': {
+      const isSwap = !!req.payload?.isSwapSku || req.type === 'EXCHANGE_APPROVAL';
+      const isReturn = req.type === 'RETURN_APPROVAL' || req.originalType === 'RETURN_APPROVAL';
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-400 dark:bg-amber-500/20 dark:border-amber-500/40 dark:text-amber-300 whitespace-nowrap shadow-2xs">
+          <Package className="w-3.5 h-3.5" /> {isSwap ? 'รอรับของเปลี่ยน' : isReturn ? 'รอรับของคืน' : 'รอรับของเคลม'}
+        </span>
+      );
+    }
+    case 'processing':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-black bg-sky-100 text-sky-900 border border-sky-400 dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-300 whitespace-nowrap shadow-2xs">
+          <Settings className="w-3.5 h-3.5" /> กำลังตรวจสอบ
+        </span>
+      );
     case 'completed': 
-    case 'approved': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400 whitespace-nowrap"><CheckCircle className="w-3.5 h-3.5" /> เสร็จสิ้น</span>;
-    case 'rejected': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-rose-100/80 text-rose-800 border border-rose-300 dark:bg-rose-500/10 dark:border-rose-500/30 dark:text-rose-400 whitespace-nowrap"><XCircle className="w-3.5 h-3.5" /> ไม่อนุมัติ</span>;
-    case 'cancelled': return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-dh-base text-dh-muted border border-dh-border whitespace-nowrap"><Ban className="w-3.5 h-3.5" /> ยกเลิกรายการ</span>;
-    default: return <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold bg-dh-base text-dh-muted border border-dh-border whitespace-nowrap">{req.status}</span>;
+    case 'approved':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:border-emerald-500/40 dark:text-emerald-300 whitespace-nowrap">
+          <CheckCircle2 className="w-3.5 h-3.5" /> เสร็จสิ้น
+        </span>
+      );
+    case 'rejected':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40 dark:text-rose-300 whitespace-nowrap">
+          <XCircle className="w-3.5 h-3.5" /> ไม่อนุมัติ
+        </span>
+      );
+    case 'cancelled':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-dh-base text-dh-muted border border-dh-border whitespace-nowrap">
+          <Ban className="w-3.5 h-3.5" /> ยกเลิกรายการ
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-dh-base text-dh-muted border border-dh-border whitespace-nowrap">
+          {req.status}
+        </span>
+      );
   }
 };

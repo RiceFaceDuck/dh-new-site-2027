@@ -1,5 +1,5 @@
 import { useState, useRef, lazy, Suspense } from 'react';
-import { useClaimData } from './hooks/useClaimData';
+import { useClaimList } from './hooks/useClaimList';
 import ClaimHeader from './components/ClaimHeader';
 import ClaimStatsRow from './components/ClaimStatsRow';
 import ClaimTable from './components/table/ClaimTable';
@@ -41,11 +41,9 @@ export default function ClaimMain() {
     paginatedRequests,
     currentPage, setCurrentPage,
     totalPages,
-    pageSize, setPageSize,
     stats,
-    warrantyConfig,
-    customerProfiles
-  } = useClaimData();
+    warrantyConfig
+  } = useClaimList();
 
   const getStatusDisplay = (status) => {
     switch(status) {
@@ -129,12 +127,9 @@ export default function ClaimMain() {
               getStatusDisplay={getStatusDisplay}
               setSelectedRequest={setSelectedRequest}
               warrantyConfig={warrantyConfig}
-              customerProfiles={customerProfiles}
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={filteredRequests.length}
-              pageSize={pageSize}
-              setPageSize={setPageSize}
               onPageChange={setCurrentPage}
             />
           </div>
@@ -150,8 +145,6 @@ export default function ClaimMain() {
             handleQuickCopy={handleQuickCopy}
             copiedText={copiedText}
             getStatusDisplay={getStatusDisplay}
-            customerProfile={selectedRequest?.payload?.customerUid ? customerProfiles?.[selectedRequest.payload.customerUid] : null}
-            warrantyConfig={warrantyConfig}
           />
         )}
 
@@ -166,11 +159,7 @@ export default function ClaimMain() {
       </Suspense>
 
       <div className="absolute top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden h-0">
-        <ClaimPrintView 
-          ref={printRef} 
-          req={selectedRequest} 
-          preloadedCustomerProfile={selectedRequest?.payload?.customerUid ? customerProfiles?.[selectedRequest.payload.customerUid] : null}
-        />
+        <ClaimPrintView ref={printRef} req={selectedRequest} />
       </div>
     </div>
   );

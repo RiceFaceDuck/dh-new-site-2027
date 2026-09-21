@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, ArrowLeftRight, Check, Copy, Undo2 } from 'lucide-react';
+import { Wrench, ArrowLeftRight, Check, Copy } from 'lucide-react';
 import { getWarrantyInfo, getSLAIndicator, getStatusDisplay } from '../../utils/claimFormatters';
 import { userService } from '../../../../firebase/userService';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const customerCache = {};
 
-const CustomerDisplay = ({ uid, payloadName, customerProfile }) => {
-  const [customer, setCustomer] = useState(customerProfile || customerCache[uid] || null);
+const CustomerDisplay = ({ uid, payloadName }) => {
+  const [customer, setCustomer] = useState(customerCache[uid] || null);
   
   useEffect(() => {
-    if (customerProfile) {
-      customerCache[uid] = customerProfile;
-      setCustomer(customerProfile);
-      return;
-    }
     if (!uid || uid === 'Walk-in' || uid.includes('WALK-IN')) return;
     if (customerCache[uid]) return;
     
@@ -36,7 +31,7 @@ const CustomerDisplay = ({ uid, payloadName, customerProfile }) => {
     fetchUser();
     
     return () => { isMounted = false; };
-  }, [uid, customerProfile]);
+  }, [uid]);
   
   let displayName = payloadName && !payloadName.includes('ทั่วไป') ? payloadName : 'ไม่พบข้อมูลในระบบ';
   if (customer && !customer.notFound) {
@@ -44,46 +39,18 @@ const CustomerDisplay = ({ uid, payloadName, customerProfile }) => {
   }
   
   return (
-    <span className={`text-[13px] font-bold truncate max-w-[170px] block ${displayName === 'ไม่พบข้อมูลในระบบ' ? 'text-dh-muted italic text-[11px] font-normal' : 'text-dh-main'}`}>
+    <span className={`text-[13px] font-bold truncate max-w-[150px] block ${displayName === 'ไม่พบข้อมูลในระบบ' ? 'text-dh-muted italic text-[11px] font-normal' : 'text-dh-main'}`}>
       {displayName}
     </span>
   );
 };
 
-const ClaimTableRow = React.memo(function ClaimTableRow({ 
-  req, 
-  index = 0,
-  setSelectedRequest, 
-  copiedText, 
-  handleQuickCopy, 
-  warrantyConfig, 
-  customerProfile 
-}) {
+const ClaimTableRow = React.memo(function ClaimTableRow({ req, setSelectedRequest, copiedText, handleQuickCopy, warrantyConfig }) {
+  const isClaim = req.originalType === 'CLAIM_APPROVAL' || req.type === 'CLAIM_APPROVAL';
   const payload = req.payload || {};
   const dateObj = req.createdAt?.toDate ? new Date(req.createdAt.toDate()) : null;
-
-  const rawRef = String(payload.claimId || payload.returnId || payload.exchangeId || '').toUpperCase();
-  const isClaim = rawRef.startsWith('CLM') || req.type === 'CLAIM_APPROVAL' || req.originalType === 'CLAIM_APPROVAL';
-  const isExchange = !isClaim && (rawRef.startsWith('EXC') || req.type === 'EXCHANGE_APPROVAL' || req.originalType === 'EXCHANGE_APPROVAL' || req.type === 'SWAP_SKU' || !!payload.isSwapSku);
-  const isReturn = !isClaim && !isExchange && (rawRef.startsWith('RTN') || req.type === 'RETURN_APPROVAL' || req.originalType === 'RETURN_APPROVAL' || payload.actionType?.includes('คืน'));
-
-  let badgeLabel = 'เคลมสินค้า';
-  let badgeStyle = 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800';
-  let TypeIcon = Wrench;
-  let indicatorColor = 'bg-[#FF9B51]';
-
-  if (isExchange) {
-    badgeLabel = 'เปลี่ยนสินค้า';
-    badgeStyle = 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800';
-    TypeIcon = ArrowLeftRight;
-    indicatorColor = 'bg-[#38BDF8]';
-  } else if (isReturn) {
-    badgeLabel = 'คืนเงิน / คืนสินค้า';
-    badgeStyle = 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800';
-    TypeIcon = Undo2;
-    indicatorColor = 'bg-[#A78BFA]';
-  }
-
+  const indicatorColor = isClaim ? 'bg-[#FF9B51]' : 'bg-[#A78BFA]';
+  
   let warrantyDays = 365;
   if (warrantyConfig) {
     if (warrantyConfig.skus?.[payload.sku]) {
@@ -95,13 +62,17 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
 
       for (const cat of Object.keys(warrantyConfig.categories)) {
         const catLower = cat.toLowerCase();
+        // 1. Check exact match from payload.category
         if (categoryFromPayload === catLower) {
           foundCat = cat; break;
         }
+        // 2. Check substring match in SKU
         if (catLower === 'adapter' && skuUpper.startsWith('AD')) { foundCat = cat; break; }
         if (catLower === 'keyboard' && skuUpper.startsWith('KB')) { foundCat = cat; break; }
         if (catLower === 'panel' && skuUpper.startsWith('PN')) { foundCat = cat; break; }
         if (catLower === 'battery' && skuUpper.startsWith('BT')) { foundCat = cat; break; }
+        
+        // 3. Fallback: string includes
         if (payload.sku && payload.sku.toLowerCase().includes(catLower)) {
           foundCat = cat; break;
         }
@@ -114,20 +85,21 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
   }
 
   const warranty = getWarrantyInfo(payload.purchaseDate, req.createdAt, warrantyDays);
-  const isEven = index % 2 === 0;
+  const hoursDiff = dateObj ? (new Date() - dateObj) / (1000 * 60 * 60) : 0;
+  const isUrgent = req.status === 'pending_manager' && hoursDiff > 48;
 
   return (
     <tr 
       onClick={() => setSelectedRequest(req)} 
       className={`group transition-all cursor-pointer relative duration-200 
-        ${isEven ? 'bg-dh-surface' : 'bg-slate-50/50 dark:bg-slate-900/40'}
-        hover:bg-dh-base/70 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] z-0 hover:z-10`}
+        ${isUrgent ? 'bg-rose-50/50 hover:bg-rose-100/50 dark:bg-rose-900/10 dark:hover:bg-rose-900/20' : 'hover:bg-dh-base/60'}
+        hover:shadow-[0_0_10px_rgba(0,0,0,0.02)] z-0 hover:z-10 bg-dh-surface`}
     >
       <td className="px-3 py-2.5 align-middle relative border-b border-dh-border group-last:border-none w-[120px]">
         <div className={`absolute left-0 top-0 bottom-0 w-[4px] opacity-0 group-hover:opacity-100 transition-opacity ${indicatorColor} rounded-r-full`}></div>
         {dateObj ? (
           <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-slate-900 dark:text-white">{dateObj.toLocaleDateString('th-TH')}</span>
+            <span className="text-[12px] font-bold text-dh-main">{dateObj.toLocaleDateString('th-TH')}</span>
             <span className="text-[10px] text-dh-muted font-mono">{dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         ) : '-'}
@@ -135,19 +107,16 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
 
       <td className="px-3 py-2.5 align-middle border-b border-dh-border group-last:border-none w-[135px]">
         <div className="flex flex-col gap-1 items-start">
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${badgeStyle}`}>
-            <TypeIcon className="w-3 h-3" />
-            {badgeLabel}
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${isClaim ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800' : 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800'}`}>
+            {isClaim ? <Wrench className="w-2.5 h-2.5"/> : <ArrowLeftRight className="w-2.5 h-2.5"/>}
+            {payload.actionType || (isClaim ? 'เคลม/ซ่อม' : 'คืนสินค้า')}
           </span>
           <div className="group/copy flex items-center gap-1 font-mono text-[11px] font-bold text-dh-muted relative">
-            <span className="truncate">{payload.claimId || payload.returnId || payload.exchangeId}</span>
-            <button 
-              onClick={(e) => handleQuickCopy(e, payload.claimId || payload.returnId || payload.exchangeId)} 
-              className="opacity-0 group-hover/copy:opacity-100 hover:text-dh-accent transition-all p-0.5 rounded-sm bg-dh-base active:scale-95 shrink-0"
-            >
-              {copiedText === (payload.claimId || payload.returnId || payload.exchangeId) ? <Check className="w-3 h-3 text-emerald-500"/> : <Copy className="w-3 h-3"/>}
+            <span className="truncate">{payload.claimId || payload.returnId}</span>
+            <button onClick={(e) => handleQuickCopy(e, payload.claimId || payload.returnId)} className="opacity-0 group-hover/copy:opacity-100 hover:text-dh-accent transition-all p-0.5 rounded-sm bg-dh-base active:scale-95 shrink-0">
+              {copiedText === (payload.claimId || payload.returnId) ? <Check className="w-3 h-3 text-emerald-500"/> : <Copy className="w-3 h-3"/>}
             </button>
-            {copiedText === (payload.claimId || payload.returnId || payload.exchangeId) && (
+            {copiedText === (payload.claimId || payload.returnId) && (
                <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[9px] py-0.5 px-1.5 rounded-sm animate-bounce">Copied!</span>
             )}
           </div>
@@ -156,13 +125,10 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
 
       <td className="px-3 py-2.5 align-middle border-b border-dh-border group-last:border-none w-[170px]">
         <div className="flex flex-col gap-0.5 overflow-hidden">
-          <CustomerDisplay uid={payload.customerUid} payloadName={payload.customerName} customerProfile={customerProfile} />
+          <CustomerDisplay uid={payload.customerUid} payloadName={payload.customerName} />
           <div className="group/copy flex items-center gap-1 text-[11px] text-dh-muted relative">
             <span className="font-mono group-hover/copy:text-dh-accent transition-colors truncate">{payload.orderId}</span>
-            <button 
-              onClick={(e) => handleQuickCopy(e, payload.orderId)} 
-              className="opacity-0 group-hover/copy:opacity-100 hover:text-dh-accent transition-all p-0.5 rounded-sm bg-dh-base active:scale-95 shrink-0"
-            >
+            <button onClick={(e) => handleQuickCopy(e, payload.orderId)} className="opacity-0 group-hover/copy:opacity-100 hover:text-dh-accent transition-all p-0.5 rounded-sm bg-dh-base active:scale-95 shrink-0">
               {copiedText === payload.orderId ? <Check className="w-3 h-3 text-emerald-500"/> : <Copy className="w-3 h-3"/>}
             </button>
           </div>
@@ -172,7 +138,7 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
       <td className="px-3 py-2.5 align-middle border-b border-dh-border group-last:border-none w-[110px]">
         {payload.purchaseDate && !isNaN(new Date(payload.purchaseDate)) ? (
           <div className="flex flex-col gap-0.5">
-            <span className="text-[12px] font-bold text-slate-900 dark:text-white">
+            <span className="text-[12px] font-bold text-dh-main">
               {new Date(payload.purchaseDate).toLocaleDateString('th-TH')}
             </span>
             {warranty && (
@@ -190,9 +156,9 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
         {warranty ? (
           <div className="flex flex-col gap-1 w-full overflow-hidden" title={`การคำนวณแบบ Real-time ณ ปัจจุบัน\nซื้อเมื่อ: ${payload.purchaseDate && !isNaN(new Date(payload.purchaseDate)) ? new Date(payload.purchaseDate).toLocaleDateString('th-TH') : 'ไม่ระบุวันที่ซื้อ'}\nผ่านไปแล้ว: ${warranty.usedDays} วัน\n(รวมระยะเวลาประกัน ${warranty.warrantyPeriod} วัน)`}>
             <div className="flex justify-between items-end">
-              <span className={`text-[11px] font-bold ${warranty.textColor} truncate`}>{warranty.label}</span>
+              <span className={`text-[10px] font-bold ${warranty.textColor} truncate`}>{warranty.label}</span>
             </div>
-            <div className="w-full bg-slate-200/80 dark:bg-slate-700/80 rounded-full h-2 overflow-hidden border border-slate-300/80 dark:border-slate-600 shadow-inner">
+            <div className="w-full bg-dh-base rounded-full h-1.5 overflow-hidden border border-dh-border shadow-inner">
               <div className={`h-full ${warranty.color} transition-all duration-1000 ease-out`} style={{ width: `${warranty.percentUsed}%` }}></div>
             </div>
           </div>
@@ -204,7 +170,7 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
       <td className="px-3 py-2.5 align-middle border-b border-dh-border group-last:border-none overflow-hidden">
         <div className="flex flex-col gap-0.5 overflow-hidden">
           <div className="flex items-center gap-2">
-            <span className="text-[12px] font-black text-slate-900 dark:text-white truncate group-hover:text-dh-accent transition-colors">{payload.sku}</span>
+            <span className="text-[12px] font-black text-dh-main truncate group-hover:text-dh-accent transition-colors">{payload.sku}</span>
             <span className="text-[10px] bg-dh-base border border-dh-border px-1.5 py-0.5 rounded-md font-extrabold shrink-0">x{payload.qty || 1}</span>
           </div>
           <span className="text-[11px] text-dh-muted truncate block leading-snug" title={isClaim ? payload.symptomCode : payload.returnReason}>

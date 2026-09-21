@@ -1,0 +1,95 @@
+import { useState } from 'react';
+import { ShieldAlert, Calendar, Search, X, Download, HelpCircle, ShieldCheck } from 'lucide-react';
+import WarrantyCheckModal from '../../../components/common/WarrantyCheckModal';
+
+export default function ClaimHeader({ 
+  startDate, setStartDate, 
+  endDate, setEndDate, 
+  searchTerm, setSearchTerm,
+  onExport,
+  onOpenGuide
+}) {
+  const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 dh-header-gradient px-3 md:px-4 py-2 shrink-0 z-20 shadow-[0_2px_15px_-5px_rgba(0,0,0,0.3)] border-b border-dh-border sticky top-0 transition-colors duration-300">
+      <div className="flex items-center gap-4 relative z-10">
+        <div className="w-10 h-10 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs">
+          <ShieldAlert size={20} strokeWidth={2.5} />
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-black tracking-tight leading-none text-white">
+              Refund & Claim Dashboard
+            </h2>
+            {onOpenGuide && (
+              <button 
+                onClick={onOpenGuide}
+                className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all active:scale-95 shadow-xs"
+                title="คู่มือการใช้งาน"
+              >
+                <HelpCircle size={14} />
+              </button>
+            )}
+          </div>
+          <p className="text-slate-300 text-[10px] mt-0.5 font-bold flex items-center gap-2">
+            ติดตามสถานะการแจ้งเคลม และ คืนสินค้า
+            <span className="bg-white/10 border border-white/20 px-1.5 py-0.5 rounded-sm text-[9px] uppercase font-black text-white shadow-xs">View Only</span>
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-2 w-full md:w-auto relative z-10">
+        
+        {/* Warranty Check Button */}
+        <button 
+          onClick={() => setIsWarrantyModalOpen(true)}
+          className="h-[36px] px-3 bg-cyan-600 hover:bg-cyan-500 border border-cyan-400 rounded-md flex items-center gap-2 text-xs font-bold text-white transition-colors shadow-xs active:scale-95 shrink-0"
+        >
+          <ShieldCheck className="w-4 h-4 text-white" />
+          <span className="hidden sm:inline">ตรวจสอบประกัน</span>
+        </button>
+        {/* Calendar */}
+        <div className="bg-white border border-slate-200 h-[36px] px-3 rounded-md flex items-center gap-2 focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500 transition-colors shrink-0 shadow-xs">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent outline-hidden text-xs font-bold text-slate-900 dark:scheme-dark" />
+          <span className="text-slate-400 text-[10px]">-</span>
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent outline-hidden text-xs font-bold text-slate-900 dark:scheme-dark" />
+          {(startDate || endDate) && <button onClick={() => {setStartDate(''); setEndDate('')}} className="ml-1 text-slate-400 hover:text-red-500"><X className="w-3.5 h-3.5"/></button>}
+        </div>
+
+        {/* Search */}
+        <div className="relative group w-full sm:w-64 shrink-0">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-cyan-500 transition-colors z-10">
+            <Search size={16} />
+          </span>
+          <input 
+            type="text" 
+            placeholder="ค้นหาบิล, SKU, ลูกค้า..." 
+            className="pl-9 pr-8 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full outline-hidden focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-xs"
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-red-500 z-10"><X className="w-3.5 h-3.5"/></button>}
+        </div>
+
+        {/* Export Button */}
+        {onExport && (
+          <button 
+            onClick={onExport}
+            className="h-[36px] px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-md flex items-center gap-2 text-xs font-bold text-slate-700 transition-colors shadow-xs active:scale-95 shrink-0"
+            title="Export เป็นไฟล์ CSV"
+          >
+            <Download className="w-4 h-4 text-cyan-600" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+        )}
+      </div>
+
+      <WarrantyCheckModal 
+        isOpen={isWarrantyModalOpen} 
+        onClose={() => setIsWarrantyModalOpen(false)} 
+      />
+    </div>
+  );
+}

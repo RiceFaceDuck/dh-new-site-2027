@@ -144,17 +144,17 @@ export default function ProductInfo({
 
       {/* ส่วนแสดงอายุการรับประกัน (Warranty Status) */}
       {wStatus && (
-        <div className={`mb-4 p-3.5 rounded-xl border flex items-center justify-between gap-3 shadow-xs ${wStatus.isExpired ? 'bg-red-50/60 border-red-200 text-red-700 dark:bg-red-950/20 dark:border-red-900/40' : 'bg-emerald-50/60 border-emerald-200 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/40'}`}>
-          <div className="flex items-center gap-2.5">
-            {wStatus.isExpired ? <ShieldAlert className="w-5 h-5 text-red-500 shrink-0"/> : <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0"/>}
+        <div className={`mb-4 p-3.5 rounded-xl border flex items-center justify-between gap-3 shadow-inner ${wStatus.isExpired ? 'bg-red-50/50 border-red-100 text-red-700 dark:bg-red-950/10 dark:border-red-900/30' : 'bg-emerald-50/50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/10 dark:border-emerald-900/30'}`}>
+          <div className="flex items-center gap-2">
+            {wStatus.isExpired ? <ShieldAlert className="w-5 h-5 text-red-500"/> : <ShieldCheck className="w-5 h-5 text-emerald-500"/>}
             <div>
               <p className="text-[12px] font-black leading-tight">{wStatus.isExpired ? 'สินค้าหมดระยะรับประกัน' : 'สินค้าอยู่ภายใต้ระยะรับประกัน'}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">ระยะเวลารับประกัน {wStatus.categoryKey}: {wStatus.claimDays} วัน</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">ระยะประกันหมวด {wStatus.categoryKey}: {wStatus.claimDays} วัน</p>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <span className="text-[9px] font-bold text-slate-400 block mb-0.5 flex items-center justify-end gap-1"><Calendar size={10}/> ประกันคงเหลือ</span>
-            <span className={`text-xs font-black ${wStatus.isExpired ? 'text-red-600' : 'text-emerald-700'}`}>
+            <span className="text-[9px] font-bold text-slate-400 block mb-0.5 flex items-center justify-end gap-1"><Calendar size={10}/> ประกันเหลือ</span>
+            <span className="text-xs font-black">
               {wStatus.isExpired ? `หมดแล้ว ${Math.abs(wStatus.remainingDays)} วัน` : `${wStatus.remainingDays} วัน`}
             </span>
           </div>
