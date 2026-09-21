@@ -156,7 +156,7 @@ export default function Inventory() {
                     <div className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-slate-950 px-3.5 py-1 rounded-full border-2 border-yellow-500 shadow-md shadow-yellow-400/20 font-black transition-all">
                       <LoaderCircle size={13} className="animate-spin text-slate-950 stroke-[2.5]" />
                       <span className="text-xs font-black tracking-wide">
-                        กำลังอัปเดตข้อมูล {Math.min(100, Math.max(0, Math.round(searchProgress)))}%
+                        กำลังอัปเดตข้อมูล...
                       </span>
                     </div>
                   </div>

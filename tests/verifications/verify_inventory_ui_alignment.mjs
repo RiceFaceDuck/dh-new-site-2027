@@ -216,8 +216,8 @@ async function run() {
     fail('Pagination page size options mismatched');
   }
 
-  if (mainContent.includes('กำลังอัปเดตข้อมูล') && mainContent.includes('searchProgress')) {
-    pass('Searching progress indicator ("กำลังอัปเดตข้อมูล X%") implemented in pagination bar');
+  if (mainContent.includes('กำลังอัปเดตข้อมูล')) {
+    pass('Searching progress indicator ("กำลังอัปเดตข้อมูล...") implemented in pagination bar');
   } else {
     fail('Searching progress indicator missing in pagination bar');
   }
