@@ -77,22 +77,10 @@ export default function ProductDetailHeader({
               </>
             )}
           </button>
-          {selectedProduct.warehouseLocation && (
-            <span className="flex items-center gap-1 text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-dh-base dark:text-dh-muted px-2.5 py-1 rounded-lg border border-slate-200 dark:border-dh-border shadow-xs">
-              <MapPin size={13} className="text-slate-400"/> {selectedProduct.warehouseLocation}
-            </span>
-          )}
           <span className={`flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 rounded-lg border shadow-xs transition-colors ${selectedProduct.stockQuantity <= 0 ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-800' : selectedProduct.stockQuantity <= (selectedProduct.bufferStock || 2) ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`}>
             {selectedProduct.stockQuantity <= 0 ? <AlertCircle size={13}/> : <Box size={13}/>} 
             {stockStat.text} ({selectedProduct.stockQuantity})
           </span>
-
-          <CopyableLinkButton 
-            url={displayUrl} 
-            label="หน้าเว็บ" 
-            defaultIcon={ExternalLink} 
-            className="flex items-center gap-1 text-[11px] font-extrabold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-800/50 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1 rounded-lg shadow-xs transition-all hover:-translate-y-px" 
-          />
         </div>
 
         {/* Product Title (1 line max with truncation) */}
@@ -137,6 +125,45 @@ export default function ProductDetailHeader({
                 </div>
               </div>
             </>
+          )}
+        </div>
+
+        {/* Action Buttons Row */}
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          {selectedProduct.warehouseLocation && (
+            <span className="flex items-center gap-1 text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-dh-base dark:text-dh-muted px-2.5 py-1 rounded-lg border border-slate-200 dark:border-dh-border shadow-xs">
+              <MapPin size={13} className="text-slate-400"/> {selectedProduct.warehouseLocation}
+            </span>
+          )}
+          <CopyableLinkButton 
+            url={displayUrl} 
+            label="หน้าเว็บ" 
+            defaultIcon={ExternalLink} 
+            className="flex items-center gap-1 text-[11px] font-extrabold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-800/50 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1 rounded-lg shadow-xs transition-all hover:-translate-y-px" 
+          />
+          {selectedProduct.externalLinks?.shopee && (
+            <CopyableLinkButton 
+              url={selectedProduct.externalLinks.shopee} 
+              label="Shopee" 
+              defaultIcon={ExternalLink} 
+              className="flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 bg-[#ee4d2d]/10 text-[#ee4d2d] rounded-lg border border-[#ee4d2d]/20 hover:bg-[#ee4d2d]/20 transition-all shadow-xs hover:-translate-y-px" 
+            />
+          )}
+          {selectedProduct.externalLinks?.lazada && (
+            <CopyableLinkButton 
+              url={selectedProduct.externalLinks.lazada} 
+              label="Lazada" 
+              defaultIcon={ExternalLink} 
+              className="flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 bg-[#0f136d]/10 text-[#0f136d] dark:bg-[#2A2D8E]/30 dark:text-[#888DF2] rounded-lg border border-[#0f136d]/20 dark:border-[#888DF2]/30 hover:bg-[#0f136d]/20 transition-all shadow-xs hover:-translate-y-px" 
+            />
+          )}
+          {selectedProduct.externalLinks?.tiktok && (
+            <CopyableLinkButton 
+              url={selectedProduct.externalLinks.tiktok} 
+              label="TikTok" 
+              defaultIcon={ExternalLink} 
+              className="flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 bg-slate-900 text-white rounded-lg border border-slate-800 transition-all shadow-xs hover:-translate-y-px" 
+            />
           )}
         </div>
       </div>

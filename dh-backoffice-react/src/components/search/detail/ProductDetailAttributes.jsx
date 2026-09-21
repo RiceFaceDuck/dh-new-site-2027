@@ -1,6 +1,5 @@
-import { PlusCircle, RefreshCw, Link as LinkIcon, ExternalLink } from 'lucide-react';
+import { PlusCircle, RefreshCw } from 'lucide-react';
 import { HighlightText } from '../HighlightText';
-import CopyableLinkButton from '../../common/CopyableLinkButton';
 
 const renderPills = (data, highlightData, emptyText = 'n/a') => {
   if (!data) return <span className="text-slate-400 font-medium italic text-xs">{emptyText}</span>;
@@ -115,31 +114,26 @@ export default function ProductDetailAttributes({
         {renderPills(selectedProduct.compatiblePartNumbers, highlightData, 'ไม่มีข้อมูลพาร์ท')}
       </div>
 
-      {/* Extra Badges & External Links Footer */}
-      <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-200/70 dark:border-slate-700/60">
-        <div className="flex flex-wrap gap-1.5 text-[11px]">
-          {selectedProduct.tags?.length > 0 && selectedProduct.tags.map((t, i) => (
-            <span key={i} className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 font-bold">#{t}</span>
-          ))}
-          {selectedProduct.packageSize && (
-            <span className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 font-bold">
-              📦 ขนาด: {selectedProduct.packageSize.w}x{selectedProduct.packageSize.l}x{selectedProduct.packageSize.h}
-            </span>
-          )}
-          {selectedProduct.bufferStock && (
-            <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
-              ⚠️ กักสต็อก: {selectedProduct.bufferStock}
-            </span>
-          )}
+      {/* Extra Badges Footer */}
+      {(selectedProduct.tags?.length > 0 || (selectedProduct.packageSize && (selectedProduct.packageSize.w || selectedProduct.packageSize.l || selectedProduct.packageSize.h)) || selectedProduct.bufferStock > 0) && (
+        <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-200/70 dark:border-slate-700/60">
+          <div className="flex flex-wrap gap-1.5 text-[11px]">
+            {selectedProduct.tags?.length > 0 && selectedProduct.tags.map((t, i) => (
+              <span key={i} className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 font-bold">#{t}</span>
+            ))}
+            {selectedProduct.packageSize && (selectedProduct.packageSize.w || selectedProduct.packageSize.l || selectedProduct.packageSize.h) && (
+              <span className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 font-bold">
+                📦 ขนาด: {selectedProduct.packageSize.w}x{selectedProduct.packageSize.l}x{selectedProduct.packageSize.h}
+              </span>
+            )}
+            {selectedProduct.bufferStock > 0 && (
+              <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
+                ⚠️ กักสต็อก: {selectedProduct.bufferStock}
+              </span>
+            )}
+          </div>
         </div>
-
-        <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
-          {selectedProduct.landingPageUrl && <CopyableLinkButton url={selectedProduct.landingPageUrl} label="หน้าหลัก" defaultIcon={LinkIcon} className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg border border-slate-200 hover:border-indigo-300 transition-all shadow-2xs" />}
-          {selectedProduct.externalLinks?.shopee && <CopyableLinkButton url={selectedProduct.externalLinks.shopee} label="Shopee" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2.5 py-1 bg-[#ee4d2d]/10 text-[#ee4d2d] rounded-lg border border-[#ee4d2d]/20 hover:bg-[#ee4d2d]/20 transition-all shadow-2xs" />}
-          {selectedProduct.externalLinks?.lazada && <CopyableLinkButton url={selectedProduct.externalLinks.lazada} label="Lazada" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2.5 py-1 bg-[#0f136d]/10 text-[#0f136d] dark:bg-[#2A2D8E]/30 dark:text-[#888DF2] rounded-lg border border-[#0f136d]/20 dark:border-[#888DF2]/30 hover:bg-[#0f136d]/20 transition-all shadow-2xs" />}
-          {selectedProduct.externalLinks?.tiktok && <CopyableLinkButton url={selectedProduct.externalLinks.tiktok} label="TikTok" defaultIcon={ExternalLink} className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-lg border border-slate-800 transition-all shadow-2xs" />}
-        </div>
-      </div>
+      )}
 
     </div>
   );

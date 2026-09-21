@@ -68,6 +68,8 @@ export default function Search() {
           setIsHistoryModalOpen={searchState.setIsHistoryModalOpen}
           loadingHistory={searchState.loadingHistory}
           historyLogs={searchState.historyLogs}
+          isHistoryLoaded={searchState.isHistoryLoaded}
+          handleLoadHistory={searchState.handleLoadHistory}
           newComment={searchState.newComment}
           setNewComment={searchState.setNewComment}
           handleAddComment={searchState.handleAddComment}

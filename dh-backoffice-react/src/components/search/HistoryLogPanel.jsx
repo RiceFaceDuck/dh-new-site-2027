@@ -166,6 +166,7 @@ const LogItem = ({ log, dateStr, timeStr, actionMethod, actor, isPinned, onToggl
 
 export default function HistoryLogPanel({ 
   selectedProduct, setIsHistoryModalOpen, loadingHistory, historyLogs,
+  isHistoryLoaded = false, handleLoadHistory = () => {},
   newComment, setNewComment, handleAddComment, isSubmittingComment, handleAddNoteSuccess, handleTogglePinComment, handleDeleteNote
 }) {
   const [visibleLimit, setVisibleLimit] = useState(21);
@@ -211,8 +212,11 @@ export default function HistoryLogPanel({
           </div>
         </div>
         <button 
-          onClick={() => setIsHistoryModalOpen(true)}
-          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors active:scale-95"
+          onClick={() => {
+            if (!isHistoryLoaded) handleLoadHistory();
+            setIsHistoryModalOpen(true);
+          }}
+          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors active:scale-95 cursor-pointer"
           title="ขยายประวัติแบบเต็มจอ"
         >
           <Maximize2 size={16} strokeWidth={2}/>
@@ -225,84 +229,106 @@ export default function HistoryLogPanel({
           <div className="flex flex-col h-full">
 
             {loadingHistory ? (
-              <div className="flex flex-col items-center justify-center py-10 opacity-60">
-                <div className="w-6 h-6 border-2 border-slate-200 border-t-indigo-600 rounded-full animate-spin mb-2"></div>
-                <span className="text-xs font-bold text-slate-500">กำลังโหลดประวัติ...</span>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-7 h-7 border-2 border-slate-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
+                <span className="text-xs font-bold text-slate-500">กำลังดึงประวัติสินค้า...</span>
               </div>
-            ) : historyLogs.length > 0 ? (
-              <div className="flex flex-col pb-4">
-                
-                {/* --- Pinned Comments Section --- */}
-                {pinnedComments.length > 0 && (
-                  <div className="mb-4 pb-2 border-b-2 border-dashed border-slate-200">
-                    <div className="flex items-center gap-2 mb-2 px-1 text-amber-500">
-                      <Pin size={14} className="fill-amber-100" />
-                      <span className="text-xs font-black uppercase tracking-widest">รายการที่ปักหมุด ({pinnedComments.length}/1)</span>
+            ) : isHistoryLoaded ? (
+              historyLogs.length > 0 ? (
+                <div className="flex flex-col pb-4">
+                  
+                  {/* --- Pinned Comments Section --- */}
+                  {pinnedComments.length > 0 && (
+                    <div className="mb-4 pb-2 border-b-2 border-dashed border-slate-200">
+                      <div className="flex items-center gap-2 mb-2 px-1 text-amber-500">
+                        <Pin size={14} className="fill-amber-100" />
+                        <span className="text-xs font-black uppercase tracking-widest">รายการที่ปักหมุด ({pinnedComments.length}/1)</span>
+                      </div>
+                      <div className="flex flex-col">
+                        {pinnedComments.map((log) => {
+                          let dateStr = '-';
+                          let timeStr = '-';
+                          if (log.timestamp) {
+                            let d = typeof log.timestamp.toDate === 'function' 
+                              ? log.timestamp.toDate() 
+                              : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date(log.timestamp));
+                            dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+                            timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                          }
+                          const actor = log.actorName || log.performedBy || 'System';
+                          return (
+                            <LogItem 
+                              key={log.id} log={log} dateStr={dateStr} timeStr={timeStr} actionMethod="note" actor={actor} isPinned={true} onTogglePin={handleTogglePinComment} isSimplified={true}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      {pinnedComments.map((log) => {
-                        let dateStr = '-';
-                        let timeStr = '-';
-                        if (log.timestamp) {
-                          let d = typeof log.timestamp.toDate === 'function' 
-                            ? log.timestamp.toDate() 
-                            : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date(log.timestamp));
-                          dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
-                          timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                        }
-                        const actor = log.actorName || log.performedBy || 'System';
-                        return (
-                          <LogItem 
-                            key={log.id} log={log} dateStr={dateStr} timeStr={timeStr} actionMethod="note" actor={actor} isPinned={true} onTogglePin={handleTogglePinComment} isSimplified={true}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                
-                {/* --- Main Timeline --- */}
-                {visibleLogs.map((log) => {
-                  let dateStr = '-';
-                  let timeStr = '-';
-                  if (log.timestamp) {
-                    let d = typeof log.timestamp.toDate === 'function' 
-                      ? log.timestamp.toDate() 
-                      : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date(log.timestamp));
-                    dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
-                    timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                  }
-                  const actionMethod = log.action ? log.action.toLowerCase() : 'record';
-                  const actor = log.actorName || log.performedBy || 'System';
-                  return (
-                    <LogItem 
-                      key={log.id} log={log} dateStr={dateStr} timeStr={timeStr} actionMethod={actionMethod} actor={actor} isPinned={pinnedComments.some(c => c.id === log.id)} onTogglePin={actionMethod === 'note' ? handleTogglePinComment : undefined} onDeleteNote={handleDeleteNote}
-                    />
-                  );
-                })}
-
-                <div className="text-center mt-3 mb-2">
-                  {hasMoreLogs ? (
-                    <button
-                      onClick={() => setVisibleLimit(prev => prev + 21)}
-                      className="w-full py-2 px-3 bg-white hover:bg-indigo-50 border border-slate-300 hover:border-indigo-300 text-indigo-600 text-xs font-bold rounded-lg transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5"
-                    >
-                      <span>แสดงเพิ่มเติม (+21)</span>
-                      <span className="text-[10px] text-slate-400 font-medium">({mainLogs.length - visibleLimit} เหลือ)</span>
-                    </button>
-                  ) : (
-                    <span className="inline-block px-4 py-1 bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-400 rounded-full uppercase tracking-wider">
-                      สิ้นสุดประวัติ
-                    </span>
                   )}
+                  
+                  {/* --- Main Timeline --- */}
+                  {visibleLogs.map((log) => {
+                    let dateStr = '-';
+                    let timeStr = '-';
+                    if (log.timestamp) {
+                      let d = typeof log.timestamp.toDate === 'function' 
+                        ? log.timestamp.toDate() 
+                        : (log.timestamp.seconds ? new Date(log.timestamp.seconds * 1000) : new Date(log.timestamp));
+                      dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+                      timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    const actionMethod = log.action ? log.action.toLowerCase() : 'record';
+                    const actor = log.actorName || log.performedBy || 'System';
+                    return (
+                      <LogItem 
+                        key={log.id} log={log} dateStr={dateStr} timeStr={timeStr} actionMethod={actionMethod} actor={actor} isPinned={pinnedComments.some(c => c.id === log.id)} onTogglePin={actionMethod === 'note' ? handleTogglePinComment : undefined} onDeleteNote={handleDeleteNote}
+                      />
+                    );
+                  })}
+
+                  <div className="text-center mt-3 mb-2">
+                    {hasMoreLogs ? (
+                      <button
+                        onClick={() => setVisibleLimit(prev => prev + 21)}
+                        className="w-full py-2 px-3 bg-white hover:bg-indigo-50 border border-slate-300 hover:border-indigo-300 text-indigo-600 text-xs font-bold rounded-lg transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5"
+                      >
+                        <span>แสดงเพิ่มเติม (+21)</span>
+                        <span className="text-[10px] text-slate-400 font-medium">({mainLogs.length - visibleLimit} เหลือ)</span>
+                      </button>
+                    ) : (
+                      <span className="inline-block px-4 py-1 bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-400 rounded-full uppercase tracking-wider">
+                        สิ้นสุดประวัติ
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center flex-1 py-12 text-center opacity-60">
+                  <div className="w-12 h-12 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center mb-3 text-slate-400">
+                    <History size={24} />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-600 mb-1">ยังไม่มีประวัติการทำงาน</h4>
+                </div>
+              )
             ) : (
-              <div className="flex flex-col items-center justify-center flex-1 py-12 text-center opacity-60">
-                <div className="w-12 h-12 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center mb-3 text-slate-400">
-                  <History size={24} />
+              /* --- State: ยังไม่ได้กดดูประวัติ (On-Demand) --- */
+              <div className="flex flex-col items-center justify-center flex-1 py-10 text-center px-3">
+                <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mb-3 text-indigo-600 shadow-xs">
+                  <History size={22} strokeWidth={2.2} />
                 </div>
-                <h4 className="text-sm font-bold text-slate-600 mb-1">ยังไม่มีประวัติการทำงาน</h4>
+                <h4 className="text-xs font-black text-slate-700 mb-1 uppercase tracking-wide">
+                  ประวัติความเคลื่อนไหว
+                </h4>
+                <p className="text-[11px] text-slate-400 mb-4 max-w-[200px] leading-relaxed">
+                  กดปุ่มเพื่อดูประวัติการขาย ใบเคลม และบันทึกของสินค้านี้
+                </p>
+                <button 
+                  onClick={handleLoadHistory}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow-indigo-200 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <History size={14} strokeWidth={2.5} />
+                  <span>กดเพื่อดูประวัติ</span>
+                </button>
               </div>
             )}
             
@@ -317,13 +343,22 @@ export default function HistoryLogPanel({
                   className="w-full text-sm font-medium text-slate-800 bg-transparent border-none outline-hidden placeholder-slate-400 ml-1"
                   disabled={isSubmittingComment}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(handleAddNoteSuccess); }
+                    if (e.key === 'Enter' && !e.shiftKey) { 
+                      e.preventDefault(); 
+                      handleAddComment(() => {
+                        handleAddNoteSuccess && handleAddNoteSuccess();
+                        if (!isHistoryLoaded) handleLoadHistory();
+                      }); 
+                    }
                   }}
                 />
                 <button
-                  onClick={() => handleAddComment(handleAddNoteSuccess)}
+                  onClick={() => handleAddComment(() => {
+                    handleAddNoteSuccess && handleAddNoteSuccess();
+                    if (!isHistoryLoaded) handleLoadHistory();
+                  })}
                   disabled={!newComment.trim() || isSubmittingComment}
-                  className="shrink-0 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors flex items-center justify-center shadow-xs"
+                  className="shrink-0 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors flex items-center justify-center shadow-xs cursor-pointer"
                   title="บันทึกข้อความ"
                 >
                   {isSubmittingComment ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Send size={14} className="ml-px" />}

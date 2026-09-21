@@ -43,7 +43,10 @@ export function useProductSearch() {
   } = useProductSearchQuery(debouncedSearch1, debouncedSearch2, debouncedSearch3, stockFilter);
 
   // 2. Logic for History
-  const { historyLogs, setHistoryLogs, loadingHistory, isHistoryModalOpen, setIsHistoryModalOpen } = useProductHistory(selectedProduct);
+  const { 
+    historyLogs, setHistoryLogs, loadingHistory, isHistoryModalOpen, setIsHistoryModalOpen,
+    isHistoryLoaded, handleLoadHistory
+  } = useProductHistory(selectedProduct);
 
   // 3. Logic for Comments
   const {
@@ -167,6 +170,7 @@ export function useProductSearch() {
     isSubmittingComment, showCommentInput, setShowCommentInput,
     isImageModalOpen, setIsImageModalOpen,
     isHistoryModalOpen, setIsHistoryModalOpen, isGuideModalOpen, setIsGuideModalOpen,
+    isHistoryLoaded, handleLoadHistory,
     historyLogs, loadingHistory, filteredProducts, totalFilteredCount, hasMore, loadMore, displayLimit, highlightData,
     handleSelectProduct, handleAddComment, handleAddNoteSuccess, handleTogglePinComment, handleDeleteNote, getStockStatus, resetSearch
   };
