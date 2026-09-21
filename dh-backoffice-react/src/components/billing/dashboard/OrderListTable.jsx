@@ -15,11 +15,19 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
         TableRow: (props) => {
             const order = props.item;
             if (!order) return <tr {...props} />;
+            const itemIndex = props['data-item-index'];
+            const isEven = typeof itemIndex === 'number' ? (itemIndex % 2 === 0) : null;
+
+            // 🎨 Corporate Navy & Crisp White: Row 0 is Crisp White, Row 1 is Soft Cool Slate
+            const stripeBg = isEven !== null
+                ? (isEven ? 'bg-white dark:bg-slate-900' : 'bg-[#F4F6F9] dark:bg-slate-800/50')
+                : 'odd:bg-white even:bg-[#F4F6F9] dark:odd:bg-slate-900 dark:even:bg-slate-800/50';
+
             return (
                 <tr 
                     {...props}
                     onClick={() => setSelectedOrder(order)} 
-                    className={`group bg-(--dh-bg-base) even:bg-black/5 dark:even:bg-white/5 hover:bg-(--dh-bg-surface) border-b border-(--dh-border) transition-all duration-300 cursor-pointer ${props.className || ''}`}
+                    className={`group ${stripeBg} hover:bg-blue-50/70 dark:hover:bg-slate-700/60 border-b border-slate-200/75 dark:border-slate-800/80 transition-colors duration-150 cursor-pointer ${props.className || ''}`}
                 />
             );
         },
@@ -85,7 +93,7 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
                         </thead>
                         <tbody>
                             {Array.from({ length: 5 }).map((_, idx) => (
-                                <tr key={`skeleton-${idx}`} className="border-b border-(--dh-border)/60 animate-pulse">
+                                <tr key={`skeleton-${idx}`} className={`border-b border-slate-200/75 dark:border-slate-800/80 ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-[#F4F6F9] dark:bg-slate-800/50'} animate-pulse`}>
                                     <td className="py-4 px-6"><div className="h-4 bg-(--dh-border) rounded-sm w-3/4 mb-2"></div><div className="h-3 bg-(--dh-border)/50 rounded-sm w-1/2"></div></td>
                                     <td className="py-4 px-4 text-center"><div className="h-6 bg-(--dh-border) rounded-full w-20 mx-auto"></div></td>
                                     <td className="py-4 px-4"><div className="h-4 bg-(--dh-border) rounded-sm w-full mb-2"></div><div className="h-3 bg-(--dh-border)/50 rounded-sm w-1/3"></div></td>

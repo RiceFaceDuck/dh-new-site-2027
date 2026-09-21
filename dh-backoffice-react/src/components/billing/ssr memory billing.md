@@ -33,5 +33,6 @@
     2. ⚠️ Unbounded Customer Scanning: Do not call `useCustomerData()` at `BillingMain.jsx` root; keep isolated in `PosViewWrapper` to prevent read storm.
     3. ⚠️ Server Parity on Shipping VAT: POS UI (`usePosPayment.js`) and backend (`billingTransactionService.js`) must align `vatOnShipping` logic to avoid price discrepancy rejections.
     4. ⚠️ High Read on Direct Query: Querying `collection('orders')` causes 50 reads; always use `orderCacheService` (`catalogs/recent_orders`) for 0-read warm dashboard.
+    5. ⚠️ Zebra Striping & Virtual Scrolling: Do not rely on `even:bg-black/5` on light surfaces (imperceptible 0.4% delta). Calculate parity via `data-item-index` for stable `bg-white` vs `bg-[#F4F6F9]` enterprise contrast.
   </pitfalls_and_lessons>
 </grimoire>
