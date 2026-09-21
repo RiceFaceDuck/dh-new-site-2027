@@ -1,4 +1,5 @@
-import { ShieldCheck, Users } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { ShieldCheck, Users, RefreshCw } from 'lucide-react';
 
 export function GatekeeperChecking() {
   return (
@@ -19,6 +20,58 @@ export function GatekeeperChecking() {
 export function GatekeeperDenied({ denyReason, handleLogout }) {
   const isError = denyReason === 'error';
   const isBlocked = denyReason === 'blocked';
+  const [isAutoReloading, setIsAutoReloading] = useState(false);
+  const reloadTriggeredRef = useRef(false);
+
+  // 🔄 ระบบ Auto-Reload อัตโนมัติเมื่อเกิดข้อผิดพลาดด้านสิทธิ์/การเชื่อมต่อ (ป้องกันพนักงานตกใจ)
+  useEffect(() => {
+    if (!isError || reloadTriggeredRef.current) return;
+
+    const RELOAD_KEY = 'dh_gatekeeper_reload_count';
+    const RELOAD_TIME_KEY = 'dh_gatekeeper_reload_timestamp';
+    const MAX_RETRIES = 2;
+    const RETRY_WINDOW_MS = 30000; // 30 วินาที
+
+    const now = Date.now();
+    const lastTimestamp = parseInt(sessionStorage.getItem(RELOAD_TIME_KEY) || '0', 10);
+    let count = parseInt(sessionStorage.getItem(RELOAD_KEY) || '0', 10);
+
+    // รีเซ็ตตัวนับหากเวลาผ่านไปเกินกรอบ 30 วินาที
+    if (now - lastTimestamp > RETRY_WINDOW_MS) {
+      count = 0;
+    }
+
+    if (count < MAX_RETRIES) {
+      reloadTriggeredRef.current = true;
+      setIsAutoReloading(true);
+      sessionStorage.setItem(RELOAD_KEY, (count + 1).toString());
+      sessionStorage.setItem(RELOAD_TIME_KEY, now.toString());
+
+      // สั่งรีเฟรชหน้าจอให้อัตโนมัติทันที
+      const timer = setTimeout(() => {
+        window.location.reload();
+      }, 400);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isError]);
+
+  // ถ้าอยู่ในสถานะกำลัง Auto-Reload ให้แสดงหน้าต่างนุ่มนวล กำลังเชื่อมต่อใหม่
+  if (isError && isAutoReloading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors p-4">
+        <div className="p-8 sm:p-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-[2rem] shadow-2xl text-center max-w-md w-full border border-blue-100 dark:border-blue-900/30 animate-in zoom-in-95 duration-300">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/30 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-blue-600 dark:border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+            <RefreshCw className="absolute inset-0 m-auto text-blue-600 dark:text-blue-500 animate-spin" size={24} />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">กำลังโหลดข้อมูลใหม่...</h3>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">ระบบกำลังซิงค์ข้อมูลสิทธิ์การเข้าใช้งานให้อัตโนมัติ</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors p-4 relative overflow-hidden">
@@ -38,14 +91,14 @@ export function GatekeeperDenied({ denyReason, handleLogout }) {
         </div>
         
         <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">
-          {isError ? 'ไม่พบข้อมูลสิทธิ์การเข้าใช้งาน' : isBlocked ? 'บัญชีถูกระงับการใช้งาน' : 'บัญชีรอการอนุมัติ'}
+          {isError ? 'เซสชันหมดอายุ หรือการเชื่อมต่อขัดข้อง' : isBlocked ? 'บัญชีถูกระงับการใช้งาน' : 'บัญชีรอการอนุมัติ'}
         </h2>
         
         <div className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed font-medium text-sm">
           {isError ? (
             <p>
-              ระบบไม่พบข้อมูลสิทธิ์การเข้าถึง Backoffice สำหรับบัญชีของคุณ<br/><br/>
-              หากคุณเป็นพนักงานใหม่ กรุณาติดต่อผู้จัดการเพื่อเพิ่มข้อมูลเข้าสู่ระบบ หรือตรวจสอบว่าคุณใช้อีเมลที่ถูกต้องในการเข้าสู่ระบบ
+              ระบบไม่สามารถซิงค์ข้อมูลสิทธิ์ได้ในขณะนี้ อาจเกิดจากเซสชันหมดเวลา หรือสัญญาณเครือข่ายขัดข้องชั่วคราว<br/><br/>
+              กรุณากดโหลดข้อมูลใหม่ หรือกลับไปหน้าเข้าสู่ระบบเพื่อลงชื่อเข้าใช้งานอีกครั้ง
             </p>
           ) : isBlocked ? (
             <p>บัญชีของคุณถูกระงับการเข้าถึงชั่วคราว<br/>กรุณาติดต่อผู้จัดการหรือผู้ดูแลระบบเพื่อตรวจสอบ</p>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { userService, SUPER_ADMINS } from '../firebase/userService';
@@ -30,8 +30,9 @@ export const AuthProvider = ({ children }) => {
   const [accessDenied, setAccessDenied] = useState(false);
   const [denyReason, setDenyReason] = useState('pending'); // 'pending' | 'blocked' | 'error'
 
+  const unsubscribeRoleRef = useRef(null);
+
   useEffect(() => {
-    let unsubscribeRole = () => {};
     let timeoutId;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -50,12 +51,25 @@ export const AuthProvider = ({ children }) => {
         const userEmail = (currentUser.email || '').toLowerCase();
         const isExecutive = SUPER_ADMINS.includes(userEmail);
 
-        unsubscribeRole = userService.listenToUserRole(currentUser.uid, (roleStr, roleData, error) => {
+        if (unsubscribeRoleRef.current) {
+          unsubscribeRoleRef.current();
+          unsubscribeRoleRef.current = null;
+        }
+
+        unsubscribeRoleRef.current = userService.listenToUserRole(currentUser.uid, (roleStr, roleData, error) => {
           clearTimeout(timeoutId);
           setLoading(false);
 
           if (error) {
             console.error("🔥 [AuthContext] Error fetching role:", error);
+            // 🛡️ หากหลุดการเชื่อมต่อ หรือ user ถูก sign out ไปแล้ว ไม่ต้องตั้ง accessDenied
+            if (!auth.currentUser) {
+              setIsCheckingAuth(false);
+              setUser(null);
+              setProfile(null);
+              setAccessDenied(false);
+              return;
+            }
             setIsCheckingAuth(false);
             setAccessDenied(true);
             setDenyReason('error');
@@ -121,6 +135,10 @@ export const AuthProvider = ({ children }) => {
 
       } else {
         clearTimeout(timeoutId);
+        if (unsubscribeRoleRef.current) {
+          unsubscribeRoleRef.current();
+          unsubscribeRoleRef.current = null;
+        }
         setUser(null);
         setProfile(null);
         setLoading(false);
@@ -135,7 +153,10 @@ export const AuthProvider = ({ children }) => {
     return () => {
       clearTimeout(timeoutId);
       unsubscribeAuth();
-      unsubscribeRole();
+      if (unsubscribeRoleRef.current) {
+        unsubscribeRoleRef.current();
+        unsubscribeRoleRef.current = null;
+      }
     };
   }, []);
 
@@ -154,7 +175,16 @@ export const AuthProvider = ({ children }) => {
         const now = Date.now();
         if (now - lastActivity > INACTIVITY_LIMIT_MS) {
           console.warn("⚠️ [AuthContext] Inactivity timeout reached. Logging out.");
-          signOut(auth).catch(err => console.error("Logout error:", err));
+          localStorage.removeItem(ACTIVITY_KEY);
+          if (unsubscribeRoleRef.current) {
+            unsubscribeRoleRef.current();
+            unsubscribeRoleRef.current = null;
+          }
+          signOut(auth)
+            .catch(err => console.error("Logout error:", err))
+            .finally(() => {
+              window.location.reload();
+            });
           return true;
         }
       }
@@ -206,6 +236,10 @@ export const AuthProvider = ({ children }) => {
         });
       }
       localStorage.removeItem('dh_last_activity');
+      if (unsubscribeRoleRef.current) {
+        unsubscribeRoleRef.current();
+        unsubscribeRoleRef.current = null;
+      }
       await signOut(auth);
     } catch (error) {
       console.error('Error logging out:', error);
