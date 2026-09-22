@@ -162,58 +162,6 @@ export const inventoryQueryService = {
     }
   },
 
-  getRandomActiveProducts: async (maxLimit = 20) => {
-    try {
-      const pool = [
-        { name: 'Panel', categories: ['Panel', 'panel', 'Screen', 'screen', 'หน้าจอ (panel)', 'หน้าจอ'], prefixes: ['PANEL', 'panel', 'Panel', 'PNL', 'pnl', 'SCR', 'scr', 'N156', 'n156', 'B156', 'b156', 'LP156', 'lp156', 'DIS', 'dis'] },
-        { name: 'Cable', categories: ['Cable', 'cable', 'สายไฟ', 'สายแพ'], prefixes: ['CA', 'ca', 'CBL', 'cbl', 'CAAC', 'caac', 'CAHP', 'CADE'] },
-        { name: 'Keyboard', categories: ['Keyboard', 'keyboard', 'คีย์บอร์ด'], prefixes: ['KB', 'kb', 'KBD', 'kbd', 'KBDE', 'kbde', 'KBAC', 'KBHP'] },
-        { name: 'Battery', categories: ['Battery', 'battery', 'แบตเตอรี่'], prefixes: ['BAT', 'bat', 'BT', 'bt', 'BTAC', 'BTHP'] },
-        { name: 'Speaker', categories: ['Speaker', 'speaker', 'ลำโพง'], prefixes: ['SPK', 'spk', 'SP', 'sp'] },
-        { name: 'FAN', categories: ['FAN', 'fan', 'Cooling', 'พัดลม'], prefixes: ['FAN', 'fan', 'FN', 'fn', 'COOL', 'cool'] },
-        { name: 'RAM/Storage', categories: ['RAM', 'ram', 'SSD', 'ssd', 'Harddisk'], prefixes: ['RAM', 'ram', 'RM', 'rm', 'SSD', 'ssd', 'HDD', 'hdd'] },
-        { name: 'Adapter', categories: ['Adapter', 'adapter', 'อะแดปเตอร์'], prefixes: ['AD', 'ad', 'ADT', 'adt', 'ADL', 'adl', 'ADHC', 'ADLE', 'ADTO', 'ADSA'] }
-      ];
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      let items = [];
-      for (const cat of pick.categories) {
-        try {
-          const q = query(collection(db, COLLECTION_NAME), where('category', '==', cat), limit(15));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            break;
-          }
-        } catch (err) {
-          console.warn(`⚠️ [InventoryQuery] Category pool lookup failed for "${cat}":`, err?.message || err);
-        }
-      }
-      if (items.length === 0) {
-        const shuffled = [...pick.prefixes].sort(() => Math.random() - 0.5);
-        for (const pfx of shuffled) {
-          try {
-            const q = query(collection(db, COLLECTION_NAME), where('sku', '>=', pfx), where('sku', '<=', pfx + '\uf8ff'), limit(15));
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-              items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-              break;
-            }
-          } catch (err) {
-            console.warn(`⚠️ [InventoryQuery] Prefix lookup failed for "${pfx}":`, err?.message || err);
-          }
-        }
-      }
-      if (items.length > 0) return items.sort(() => Math.random() - 0.5);
-
-      const fallbackQuery = query(collection(db, COLLECTION_NAME), limit(50));
-      const fallbackSnap = await getDocs(fallbackQuery);
-      return fallbackSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (error) {
-      console.error("🔥 Error fetching random active products:", error);
-      return [];
-    }
-  },
-
   getUniqueProductCategories: async () => {
     try {
       // 🚀 ประหยัด Reads โดยดึงจาก settings/product_categories

@@ -1,39 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calculator, ArrowLeft, RefreshCw, Save, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Calculator, Save, ArrowLeft, CheckCircle2, RefreshCw, HelpCircle } from 'lucide-react';
 import GuideModal from '../../components/common/GuideModal';
 import { usePricingSettings } from './pricing/hooks/usePricingSettings';
-import SmartRoundingPolicy from './pricing/SmartRoundingPolicy';
 import PricingRulesTable from './pricing/PricingRulesTable';
 import PricingHistoryLog from './pricing/PricingHistoryLog';
+import SmartRoundingPolicy from './pricing/SmartRoundingPolicy';
 import PricingSimulation from './pricing/PricingSimulation';
 
 export default function PricingSettings() {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
-
+  
   const {
     loading, saving, config, isDirty,
-    simMode, setSimMode,
-    skuInput, setSkuInput,
-    simProduct, searchingSku, skuError,
-    simulateBySku, handleRandomSku,
-    simCost, setSimCost,
-    simCategory, setSimCategory,
-    simResult, matchedRuleId,
-    runSimulation,
+    simCost, setSimCost, simCategory, setSimCategory, simResult,
     logs, loadingLogs, fetchPricingLogs,
-    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange,
-    categories
+    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange, runSimulation, categories
   } = usePricingSettings();
 
-  if (loading || !config) {
-    return (
-      <div className="flex justify-center items-center h-full bg-(--dh-bg-base)">
-        <RefreshCw className="animate-spin text-(--dh-accent)" size={40} />
-      </div>
-    );
-  }
+  if (loading || !config) return <div className="flex justify-center items-center h-full bg-(--dh-bg-base)"><RefreshCw className="animate-spin text-(--dh-accent)" size={40} /></div>;
 
   return (
     <div className="flex flex-col h-full bg-(--dh-bg-base) p-3 lg:p-4 overflow-hidden font-sans relative transition-colors duration-300 gap-3 lg:gap-4">
@@ -41,50 +27,34 @@ export default function PricingSettings() {
       {/* Header Panel */}
       <div className="flex items-center justify-between px-5 py-4 bg-(--dh-bg-surface) rounded-2xl shadow-xs border border-(--dh-border) shrink-0 z-20 transition-all duration-300">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/managers')}
-            className="p-2 hover:bg-(--dh-bg-base) rounded-lg text-(--dh-text-muted) hover:text-(--dh-text-main) transition-colors active:scale-95 cursor-pointer"
-          >
-            <ArrowLeft size={22} strokeWidth={2.5} />
+          <button onClick={() => navigate('/managers')} className="p-2 hover:bg-(--dh-bg-base) rounded-lg text-(--dh-text-muted) hover:text-(--dh-text-main) transition-colors active:scale-95">
+            <ArrowLeft size={22} strokeWidth={2.5}/>
           </button>
           <div>
             <h1 className="text-xl font-black text-(--dh-text-main) flex items-center gap-2 leading-none">
               <Calculator className="text-(--dh-accent)" size={24} strokeWidth={2.5} /> โครงสร้างราคาปลีก
             </h1>
-            <p className="text-[11px] font-bold text-(--dh-text-muted) mt-1.5 uppercase tracking-wider">
-              Retail Pricing Engine Configuration
-            </p>
+            <p className="text-[11px] font-bold text-(--dh-text-muted) mt-1.5 uppercase tracking-wider">Retail Pricing Engine Configuration</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowGuide(true)}
-            className="ml-2 p-1.5 bg-(--dh-bg-base) hover:bg-slate-200 text-(--dh-text-muted) rounded-lg transition-colors border border-(--dh-border) shadow-xs cursor-pointer"
+          <button 
+            onClick={() => setShowGuide(true)} 
+            className="ml-2 p-1.5 bg-(--dh-bg-base) hover:bg-slate-200 text-(--dh-text-muted) rounded-lg transition-colors border border-(--dh-border) shadow-xs"
           >
-            <HelpCircle size={18} strokeWidth={2.5} />
+            <HelpCircle size={18} strokeWidth={2.5}/>
           </button>
         </div>
-
+        
         {/* Smart Save Button */}
-        <button
-          type="button"
-          onClick={handleSave}
+        <button 
+          onClick={handleSave} 
           disabled={saving || !isDirty}
-          className={`px-6 py-2.5 rounded-xl font-black text-sm transition-all duration-300 flex items-center gap-2 shadow-xs active:scale-95 cursor-pointer
-            ${
-              isDirty && !saving
-                ? 'bg-(--dh-accent) hover:bg-(--dh-accent-hover) text-white shadow-[0_0_15px_var(--dh-accent-light)] animate-pulse border border-transparent'
-                : 'bg-(--dh-bg-base) text-(--dh-text-muted) border border-(--dh-border) cursor-not-allowed opacity-60'
-            }
+          className={`px-6 py-2.5 rounded-xl font-black text-sm transition-all duration-300 flex items-center gap-2 shadow-xs active:scale-95
+            ${isDirty && !saving 
+              ? 'bg-(--dh-accent) hover:bg-(--dh-accent-hover) text-white shadow-[0_0_15px_var(--dh-accent-light)] animate-pulse border border-transparent' 
+              : 'bg-(--dh-bg-base) text-(--dh-text-muted) border border-(--dh-border) cursor-not-allowed opacity-60'}
           `}
         >
-          {saving ? (
-            <RefreshCw className="animate-spin" size={16} strokeWidth={2.5} />
-          ) : isDirty ? (
-            <Save size={16} strokeWidth={2.5} />
-          ) : (
-            <CheckCircle2 size={16} strokeWidth={2.5} />
-          )}
+          {saving ? <RefreshCw className="animate-spin" size={16} strokeWidth={2.5} /> : (isDirty ? <Save size={16} strokeWidth={2.5} /> : <CheckCircle2 size={16} strokeWidth={2.5} />)}
           {saving ? 'กำลังบันทึก...' : isDirty ? 'บันทึกการตั้งค่า' : 'เป็นปัจจุบัน'}
         </button>
       </div>
@@ -92,53 +62,39 @@ export default function PricingSettings() {
       {/* Main Content Grid */}
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col xl:flex-row gap-3 lg:gap-4">
         
-        {/* LEFT COLUMN: SmartRoundingPolicy (Top Horizontal Bar) + PricingRulesTable + Collapsible History Log */}
+        {/* LEFT: Rules & Logs */}
         <div className="flex-1 flex flex-col gap-3 lg:gap-4 min-w-0">
-          <SmartRoundingPolicy
-            config={config}
-            handleRoundingChange={handleRoundingChange}
-          />
-          <PricingRulesTable
-            config={config}
-            addRule={addRule}
-            removeRule={removeRule}
+          <PricingRulesTable 
+            config={config} 
+            addRule={addRule} 
+            removeRule={removeRule} 
             handleRuleChange={handleRuleChange}
             categories={categories}
-            matchedRuleId={matchedRuleId}
           />
-          <PricingHistoryLog
-            logs={logs}
-            loadingLogs={loadingLogs}
-            fetchPricingLogs={fetchPricingLogs}
+          <PricingHistoryLog 
+            logs={logs} 
+            loadingLogs={loadingLogs} 
+            fetchPricingLogs={fetchPricingLogs} 
           />
         </div>
 
-        {/* RIGHT COLUMN: Pricing Simulation */}
-        <div className="w-full xl:w-[38%] flex flex-col gap-3 lg:gap-4 shrink-0 min-w-[340px] min-h-[500px]">
-          <PricingSimulation
-            simMode={simMode}
-            setSimMode={setSimMode}
-            skuInput={skuInput}
-            setSkuInput={setSkuInput}
-            simProduct={simProduct}
-            searchingSku={searchingSku}
-            skuError={skuError}
-            simulateBySku={simulateBySku}
-            handleRandomSku={handleRandomSku}
-            simCost={simCost}
-            setSimCost={setSimCost}
-            simCategory={simCategory}
-            setSimCategory={setSimCategory}
-            config={config}
-            runSimulation={runSimulation}
-            simResult={simResult}
+        {/* RIGHT: Rounding Policy & Simulation Tool */}
+        <div className="w-full xl:w-[35%] flex flex-col gap-3 lg:gap-4 shrink-0 min-w-[320px]">
+          <SmartRoundingPolicy 
+            config={config} 
+            handleRoundingChange={handleRoundingChange} 
+          />
+          <PricingSimulation 
+            simCost={simCost} setSimCost={setSimCost}
+            simCategory={simCategory} setSimCategory={setSimCategory}
+            config={config} runSimulation={runSimulation} simResult={simResult}
             categories={categories}
           />
         </div>
 
       </div>
 
-      <GuideModal
+      <GuideModal 
         isOpen={showGuide}
         onClose={() => setShowGuide(false)}
         title="คู่มือตั้งราคาอัตโนมัติ (Pricing Engine)"

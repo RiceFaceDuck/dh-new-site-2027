@@ -1,19 +1,93 @@
-import { Settings, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { useMemo, useRef, useEffect } from 'react';
+import { Settings, Plus, Trash2, AlertTriangle, Sparkles } from 'lucide-react';
 
-export default function PricingRulesTable({ config, addRule, removeRule, handleRuleChange, categories = [] }) {
+// Helper ตรวจสอบและแปลงหมวดหมู่
+const normalizeCategory = (name) => {
+  if (!name || typeof name !== 'string') return 'General';
+  const clean = name.trim();
+  const lower = clean.toLowerCase();
+  if (!clean) return 'General';
+  if (['panel', 'screen', 'display', 'หน้าจอ', 'จอคอม', 'จอ'].some(e => lower === e || lower.includes(e))) return 'Panel';
+  if (['keyboard', 'คีย์บอร์ด'].some(e => lower === e || lower.includes(e))) return 'Keyboard';
+  if (['battery', 'แบตเตอรี่', 'แบต'].some(e => lower === e || lower.includes(e))) return 'Battery';
+  if (['adapter', 'charger', 'อแดปเตอร์', 'อะแดปเตอร์', 'สายชาร์จ'].some(e => lower === e || lower.includes(e))) return 'Adapter';
+  if (['speaker', 'ลำโพง', 'built in audio', 'audio', 'sound'].some(e => lower === e || lower.includes(e))) return 'Speaker';
+  if (['cooling fan', 'fan', 'พัดลม'].some(e => lower === e || lower.includes(e))) return 'FAN';
+  if (['cooling', 'ชุดระบายความร้อน', 'heatsink', 'ฮีตซิงค์'].some(e => lower === e || lower.includes(e))) return 'Cooling';
+  if (['cable', 'สายไฟ', 'สายแพ', 'สายสัญญาณ'].some(e => lower === e || lower.includes(e))) return 'Cable';
+  if (['hinge', 'บานพับ'].some(e => lower === e || lower.includes(e))) return 'Hinge';
+  return clean;
+};
+
+export default function PricingRulesTable({ 
+  config, 
+  addRule, 
+  removeRule, 
+  handleRuleChange, 
+  categories = [],
+  matchedRuleId = null 
+}) {
+  const rowRefs = useRef({});
+
+  const formattedCategories = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    (categories || []).forEach(item => {
+      const val = item.type || item.name;
+      const normKey = normalizeCategory(val);
+      if (!seen.has(normKey)) {
+        seen.add(normKey);
+        result.push({
+          id: item.id || val,
+          value: val,
+          name: item.name,
+          normKey: normKey
+        });
+      }
+    });
+    return result;
+  }, [categories]);
+
+  useEffect(() => {
+    if (matchedRuleId && rowRefs.current[matchedRuleId]) {
+      rowRefs.current[matchedRuleId].scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  }, [matchedRuleId]);
+
   if (!config) return null;
 
   return (
     <div className="flex-1 flex flex-col bg-(--dh-bg-surface) rounded-2xl shadow-xs border border-(--dh-border) overflow-hidden transition-colors duration-300 min-h-[400px]">
-      <div className="p-4 border-b border-(--dh-border) bg-(--dh-bg-base) flex justify-between items-center shrink-0">
-        <h2 className="font-black text-sm text-(--dh-text-main) uppercase tracking-widest flex items-center gap-2">
-          <Settings size={16} className="text-(--dh-text-muted)"/> เงื่อนไขราคา (Pricing Rules)
+      
+      {/* Header Bar */}
+      <div className="p-4 border-b border-indigo-500/20 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex justify-between items-center shrink-0 shadow-sm">
+        <h2 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2.5">
+          <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <Settings size={16} />
+          </div>
+          <span className="bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent drop-shadow-xs">
+            เงื่อนไขราคา (Pricing Rules)
+          </span>
+          {matchedRuleId && (
+            <span className="text-[10px] bg-amber-400/20 text-amber-300 border border-amber-400/40 px-2.5 py-0.5 rounded-full font-black flex items-center gap-1 animate-pulse backdrop-blur-xs">
+              <Sparkles size={11} className="text-amber-400" /> ไฮไลต์กฎที่ตรงกับสินค้า
+            </span>
+          )}
         </h2>
-        <button onClick={addRule} className="text-xs bg-(--dh-bg-surface) hover:bg-(--dh-text-main) hover:text-(--dh-bg-surface) border border-(--dh-border) text-(--dh-text-main) px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 transition-colors shadow-xs active:scale-95">
-          <Plus size={14} strokeWidth={3}/> เพิ่มเงื่อนไข
+
+        <button 
+          type="button"
+          onClick={addRule} 
+          className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl font-black flex items-center gap-1.5 transition-all shadow-md hover:shadow-indigo-500/20 active:scale-95 cursor-pointer"
+        >
+          <Plus size={14} strokeWidth={3} /> เพิ่มเงื่อนไข
         </button>
       </div>
       
+      {/* Rules Table */}
       <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative">
         <table className="w-full text-left text-sm min-w-[700px] border-collapse">
           <thead className="bg-(--dh-bg-surface) text-[10px] font-black text-(--dh-text-muted) uppercase tracking-widest sticky top-0 z-10 border-b-2 border-(--dh-border) shadow-xs">
@@ -28,54 +102,124 @@ export default function PricingRulesTable({ config, addRule, removeRule, handleR
             </tr>
           </thead>
           <tbody className="divide-y divide-(--dh-border)">
-            {config.rules.map((rule, index) => (
-              <tr key={rule.id} className="hover:bg-(--dh-bg-base) transition-colors group relative">
-                <td className="px-4 py-2.5 relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-(--dh-accent) opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <select value={rule.category} onChange={(e) => handleRuleChange(index, 'category', e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all cursor-pointer appearance-none">
-                    <option value="" disabled>-- เลือกหมวดหมู่ --</option>
-                    {categories.map(cat => (
-                      <option key={cat.id || cat.type} value={cat.type}>
-                        {cat.name} {cat.type && cat.name !== cat.type ? `(${cat.type})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-3 py-2.5 text-center">
-                  <select value={rule.operator} onChange={(e) => handleRuleChange(index, 'operator', e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) cursor-pointer text-center">
-                    <option value="<">{'< (น้อยกว่า)'}</option><option value="<=">{'<= (ไม่เกิน)'}</option><option value=">">{'> (มากกว่า)'}</option><option value=">=">{'>= (ตั้งแต่)'}</option><option value="all">ทั้งหมด</option>
-                  </select>
-                </td>
-                <td className="px-3 py-2.5">
-                  <input type="number" value={rule.threshold} onChange={(e) => handleRuleChange(index, 'threshold', Number(e.target.value))} disabled={rule.operator === 'all'} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) disabled:opacity-50 disabled:cursor-not-allowed transition-all" />
-                </td>
-                <td className="px-3 py-2.5 text-center">
-                  <select value={rule.action} onChange={(e) => handleRuleChange(index, 'action', e.target.value)} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-black text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) cursor-pointer text-center text-blue-600 dark:text-blue-400">
-                    <option value="*">* (คูณ)</option><option value="/">/ (หาร)</option>
-                  </select>
-                </td>
-                <td className="px-3 py-2.5">
-                  <input type="number" step="0.01" value={rule.value} onChange={(e) => handleRuleChange(index, 'value', Number(e.target.value))} className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all" />
-                </td>
-                <td className="px-3 py-2.5 text-center">
-                  <button onClick={() => handleRuleChange(index, 'isActive', !rule.isActive)} className={`text-[10px] px-3 py-1.5 rounded-md font-black uppercase tracking-wider transition-colors border ${rule.isActive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-(--dh-bg-surface) text-(--dh-text-muted) border-(--dh-border) opacity-60 hover:opacity-100'}`}>
-                    {rule.isActive ? 'ON' : 'OFF'}
-                  </button>
-                </td>
-                <td className="px-4 py-2.5 text-right">
-                  <button onClick={() => removeRule(index)} className="p-1.5 text-(--dh-text-muted) hover:text-rose-500 bg-(--dh-bg-base) hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                    <Trash2 size={16} strokeWidth={2.5}/>
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {config.rules.map((rule, index) => {
+              const isMatched = matchedRuleId === rule.id;
+              return (
+                <tr 
+                  key={rule.id} 
+                  ref={el => rowRefs.current[rule.id] = el}
+                  className={`transition-all duration-300 group relative ${
+                    isMatched 
+                      ? 'bg-blue-500/20 dark:bg-blue-600/30 border-l-4 border-l-blue-600 ring-1 ring-blue-500/40 font-black z-10 shadow-xs' 
+                      : 'hover:bg-(--dh-bg-base)'
+                  }`}
+                >
+                  <td className="px-4 py-2.5 relative">
+                    {!isMatched && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-(--dh-accent) opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    )}
+                    <select 
+                      value={rule.category} 
+                      onChange={(e) => handleRuleChange(index, 'category', e.target.value)} 
+                      className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all cursor-pointer appearance-none"
+                    >
+                      <option value="" disabled>-- เลือกหมวดหมู่ --</option>
+                      {rule.category && !formattedCategories.some(cat => normalizeCategory(cat.value) === normalizeCategory(rule.category)) && (
+                        <option value={rule.category}>{rule.category}</option>
+                      )}
+                      {formattedCategories.map(cat => (
+                        <option key={cat.id || cat.value} value={cat.value}>
+                          {cat.name} ({cat.normKey})
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  <td className="px-3 py-2.5 text-center">
+                    <select 
+                      value={rule.operator} 
+                      onChange={(e) => handleRuleChange(index, 'operator', e.target.value)} 
+                      className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) cursor-pointer text-center"
+                    >
+                      <option value="<">{'< (น้อยกว่า)'}</option>
+                      <option value="<=">{'<= (ไม่เกิน)'}</option>
+                      <option value=">">{'> (มากกว่า)'}</option>
+                      <option value=">=">{'>= (ตั้งแต่)'}</option>
+                      <option value="all">ทั้งหมด</option>
+                    </select>
+                  </td>
+
+                  <td className="px-3 py-2.5">
+                    <input 
+                      type="number" 
+                      value={rule.threshold} 
+                      onChange={(e) => handleRuleChange(index, 'threshold', Math.max(0, Number(e.target.value) || 0))} 
+                      disabled={rule.operator === 'all'} 
+                      className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) disabled:opacity-50 disabled:cursor-not-allowed transition-all" 
+                    />
+                  </td>
+
+                  <td className="px-3 py-2.5 text-center">
+                    <select 
+                      value={rule.action} 
+                      onChange={(e) => handleRuleChange(index, 'action', e.target.value)} 
+                      className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-black text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) cursor-pointer text-center text-blue-600 dark:text-blue-400"
+                    >
+                      <option value="*">* (คูณ)</option>
+                      <option value="/">/ (หาร)</option>
+                    </select>
+                  </td>
+
+                  <td className="px-3 py-2.5">
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      value={rule.value} 
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        const cleanVal = isNaN(val) ? 1 : val;
+                        handleRuleChange(index, 'value', rule.action === '/' && cleanVal <= 0 ? 0.01 : cleanVal);
+                      }} 
+                      className="w-full bg-(--dh-bg-base) border border-(--dh-border) rounded-md px-2.5 py-1.5 text-xs font-bold text-(--dh-text-main) outline-hidden focus:border-(--dh-accent) focus:ring-1 focus:ring-(--dh-accent-light) transition-all" 
+                    />
+                  </td>
+
+                  <td className="px-3 py-2.5 text-center">
+                    <button 
+                      type="button"
+                      onClick={() => handleRuleChange(index, 'isActive', !rule.isActive)} 
+                      className={`text-[10px] px-3 py-1.5 rounded-md font-black uppercase tracking-wider transition-colors border cursor-pointer ${
+                        rule.isActive 
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
+                          : 'bg-(--dh-bg-surface) text-(--dh-text-muted) border-(--dh-border) opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      {rule.isActive ? 'ON' : 'OFF'}
+                    </button>
+                  </td>
+
+                  <td className="px-4 py-2.5 text-right">
+                    <button 
+                      type="button"
+                      onClick={() => removeRule(index)} 
+                      className="p-1.5 text-(--dh-text-muted) hover:text-rose-500 bg-(--dh-bg-base) hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+                    >
+                      <Trash2 size={16} strokeWidth={2.5}/>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
+      {/* Top-Down Note */}
       <div className="p-3 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-bold border-t border-(--dh-border) flex items-start gap-2 shrink-0">
         <AlertTriangle size={14} className="shrink-0 mt-0.5 opacity-80"/>
         <p>ระบบจะทำงานแบบ Top-Down ตามลำดับหมวดหมู่ (หากหมวดหมู่เดียวกันมีเงื่อนไขแคบกว่า แนะนำให้ลาก/พิมพ์ไว้ด้านบน)</p>
       </div>
+
     </div>
   );
 }
