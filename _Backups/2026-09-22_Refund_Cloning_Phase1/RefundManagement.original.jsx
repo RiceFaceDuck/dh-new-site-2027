@@ -1,27 +1,27 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Building2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Building2, HelpCircle, Wallet } from 'lucide-react';
 import { auth } from '../../firebase/config';
-import { creditCoreService } from '../../firebase/creditCoreService';
 import { todoService } from '../../firebase/todoService';
 import { driveService } from '../../firebase/driveService';
 import GuideModal from '../../components/common/GuideModal';
 
 import { useWalletManagement } from './wallet/hooks/useWalletManagement';
-import WalletDashboardStats from './wallet/WalletDashboardStats';
 import PendingWithdrawals from './wallet/PendingWithdrawals';
 import CustomerSearchList from './wallet/CustomerSearchList';
 import WalletDetailPanel from './wallet/WalletDetailPanel';
 import WalletModals from './wallet/WalletModals';
+import { creditCoreService } from '../../firebase/creditCoreService';
 
 export default function RefundManagement() {
     const navigate = useNavigate();
     
-    // Core state and Firebase logic via extracted hook
+    // We reuse useWalletManagement since it handles all wallet logic, 
+    // but the UI focus is on Refunds.
     const {
         stats, walletHoldersCount, isDashboardLoading,
-        pendingRequests,
-        searchTerm, setSearchTerm, isSearching, hasSearched, searchResults, defaultUsers,
+        pendingRequests, isLoadingRequests,
+        searchTerm, setSearchTerm, isSearching, hasSearched, setHasSearched, searchResults, defaultUsers,
         selectedUser, setSelectedUser, activeTab, setActiveTab,
         transactions, pointTransactions, isLoadingTx, handleSearch, loadTransactions
     } = useWalletManagement(navigate);
@@ -67,7 +67,13 @@ export default function RefundManagement() {
         }
     };
 
-    // Action Handlers
+    // Filter pending requests to show only LINE refund requests (or all, depending on migration)
+    // We assume any withdrawal to 'LINE' is a refund via LINE request
+    const refundRequests = pendingRequests.filter(req => 
+        req.withdrawalDetails?.bankName === 'LINE' || 
+        req.withdrawalDetails?.accountNumber === 'LINE_CONTACT'
+    );
+
     const handleProcessAction = async (e) => {
         e.preventDefault();
         if (!selectedTask) return;
@@ -112,28 +118,23 @@ export default function RefundManagement() {
         setActiveTab('wallet');
     };
 
-    const [currentRefId, setCurrentRefId] = useState('');
-
     const handleAdjustmentSubmit = async (e) => {
         e.preventDefault();
         const amount = Number(adjAmount);
         
         if (!amount || amount <= 0 || isNaN(amount)) return showNotification('กรุณาระบุจำนวนเงินให้ถูกต้อง', 'error');
-        if (!adjNote.trim()) return showNotification('กรุณาระบุหมายเหตุการแก้ไขบัญชี', 'error');
+        if (!adjNote.trim()) return showNotification('กรุณาระบุหมายเหตุ', 'error');
 
         setIsSubmitting(true);
         try {
-            // ✅ [SECURITY FIX] เรียกใช้ adjustUserWallet เพื่อแก้บั๊กปรับยอดผิดกระเป๋า 
-            // ✅ และส่ง currentRefId (UUID) เพื่อป้องกันการส่งซ้ำระดับเครือข่าย
-            await creditCoreService.adjustUserWallet(
+            await creditCoreService.adjustUserCredit(
                 selectedUser.id, amount, 
-                adjType === 'deposit' ? 'adjust_add' : 'adjust_deduct', 
-                `[แก้ไขข้อผิดพลาดทางบัญชี] ${adjNote}`, 
-                auth.currentUser?.uid || 'Admin',
-                currentRefId || crypto.randomUUID()
+                adjType === 'deposit' ? 'deposit' : 'deduct', 
+                `[Refund] ${adjNote}`, 
+                auth.currentUser?.uid || 'Admin'
             );
 
-            showNotification(`✅ แก้ไขยอดเงินกระเป๋าเงินสำเร็จ`);
+            showNotification(`✅ ทำรายการสำเร็จ`);
             setIsModalOpen(false);
             setAdjAmount(''); setAdjNote('');
             
@@ -165,7 +166,6 @@ export default function RefundManagement() {
     return (
         <div className="flex flex-col h-full bg-slate-50 p-3 lg:p-4 overflow-hidden font-sans relative">
             
-            {/* Notification Toast */}
             {notification && (
                 <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-3 font-bold animate-in slide-in-from-right fade-in duration-300 ${
                     notification.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'
@@ -182,30 +182,39 @@ export default function RefundManagement() {
                         <ArrowLeft size={20} strokeWidth={2.5} />
                     </button>
                     <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase tracking-widest mb-1.5 border border-indigo-100">
-                            <Building2 size={12} /> Financial Operations
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md text-[10px] font-black uppercase tracking-widest mb-1.5 border border-emerald-100">
+                            <Building2 size={12} /> Refund Operations
                         </div>
-                        <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">ศูนย์จัดการกระเป๋าเงินและรับเรื่องคืนเงิน (Wallet & Refund Operations)</h1>
+                        <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">ศูนย์จัดการรับเรื่องคืนเงิน (Refund Management)</h1>
                     </div>
-                    <button 
-                        onClick={() => setShowGuide(true)}
-                        className="ml-2 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all shadow-xs border border-slate-200"
-                    >
-                        <HelpCircle size={20} strokeWidth={2.5} />
-                    </button>
+                    
+                    {/* Total Liability Stat */}
+                    <div className="hidden md:flex ml-8 items-center gap-3 bg-rose-50/50 px-4 py-2 rounded-xl border border-rose-100">
+                        <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-xs">
+                            <Wallet size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">ยอดเงินฝากค้างในระบบทั้งหมด</p>
+                            <p className="text-2xl font-black text-rose-600 font-mono leading-none mt-1 tracking-tight">
+                                -฿{stats?.totalBalance ? stats.totalBalance.toLocaleString() : '0.00'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2 ml-auto">
+                        <button 
+                            onClick={() => setShowGuide(true)}
+                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all shadow-xs border border-slate-200"
+                        >
+                            <HelpCircle size={20} strokeWidth={2.5} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Top Dashboard Stats */}
-            <WalletDashboardStats 
-                isDashboardLoading={isDashboardLoading}
-                walletHoldersCount={walletHoldersCount}
-                stats={stats}
-            />
-
             {/* Pending Requests Section */}
             <PendingWithdrawals 
-                pendingRequests={pendingRequests}
+                pendingRequests={refundRequests}
                 onActionClick={(task, type) => {
                     setSelectedTask(task);
                     setActionType(type);
@@ -233,7 +242,7 @@ export default function RefundManagement() {
                     activeTab={activeTab} setActiveTab={setActiveTab}
                     transactions={transactions} pointTransactions={pointTransactions}
                     isLoadingTx={isLoadingTx}
-                    onOpenAdjustModal={(type) => { setAdjType(type); setCurrentRefId(crypto.randomUUID()); setIsModalOpen(true); }}
+                    onOpenAdjustModal={(type) => { setAdjType(type); setIsModalOpen(true); }}
                 />
             </div>
 
@@ -256,16 +265,20 @@ export default function RefundManagement() {
             <GuideModal 
                 isOpen={showGuide}
                 onClose={() => setShowGuide(false)}
-                title="คู่มือจัดการกระเป๋าเงินและรับเรื่องคืนเงิน (Wallet & Refund Operations)"
-                manualText="ระบบนี้มีไว้สำหรับตรวจสอบและอนุมัติยอดเงินเข้า-ออกกระเป๋าเงินของลูกค้า ทั้งยอดที่เกิดจากการเคลม, การเติมเงิน, หรือการคืนเงินและถอนเงิน"
-                howTo={[
-                    "1. ดูรายการที่รออนุมัติ (Pending) ด้านบน",
-                    "2. กดปุ่ม อนุมัติ (Approve) หรือ ปฏิเสธ (Reject) พร้อมใส่เหตุผล",
-                    "3. หากต้องการดึงดูประวัติลูกค้าเฉพาะคน ให้พิมพ์ค้นหาชื่อ/เบอร์โทร ทางด้านซ้าย",
-                    "4. สามารถเพิ่มหรือลดยอดเงิน/แต้ม ได้โดยตรงที่ปุ่มการจัดการในหน้ารายละเอียดลูกค้า"
-                ]}
-                tips="ปุ่ม 'คัดลอกเบอร์โทรลูกค้าทั้งหมด' จะช่วยให้ทีมเซลล์นำเบอร์ไปบรอดแคสต์ (Broadcast) แจ้งสิทธิพิเศษผ่าน SMS/Line ได้ทันที"
-                expectedResult="ทุกครั้งที่มีการอนุมัติ/ปรับยอด ระบบจะบันทึกประวัติไว้ใน Statement ของลูกค้าอย่างโปร่งใส และตรวจสอบย้อนหลังได้เสมอ"
+                title="คู่มือจัดการรับเรื่องคืนเงิน (Refund Management)"
+                config={{
+                    description: "ระบบนี้มีไว้สำหรับตรวจสอบและจัดการคำร้องขอคืนเงินที่มาจากลูกค้าผ่านช่องทาง LINE โดยตรง",
+                    howTo: [
+                        "เมื่อลูกค้ากดขอคืนเงินจากระบบและแจ้งผ่าน LINE คำร้องจะปรากฏที่นี่",
+                        "ตรวจสอบแชท LINE ว่าลูกค้าส่งเลขบัญชีเพื่อรับเงินโอนหรือยัง",
+                        "หากโอนแล้ว ให้กดปุ่ม <b>'อนุมัติ'</b> (Approve) เพื่อตัดยอดเงินรอโอนออกจากระบบ",
+                        "หากปฏิเสธการโอนเงิน (เช่น ลูกค้าเปลี่ยนใจ) ให้กด <b>'ปฏิเสธ'</b> เพื่อคืนยอดเงินกลับเข้า Wallet ลูกค้าตามเดิม"
+                    ],
+                    tips: [
+                        "ใช้ช่องค้นหาด้านซ้ายเพื่อค้นหาชื่อ/เบอร์โทรลูกค้า แล้วปรับลดยอดเงินโดยตรงได้ทันที"
+                    ],
+                    expectedResults: "รายการทุกอย่างจะถูกบันทึกลง Statement ลูกค้าอย่างชัดเจน และสามารถตรวจสอบย้อนหลังผ่านเมนูประวัติได้เสมอ"
+                }}
                 extraFooter={
                     <>
                         <button 
