@@ -12,12 +12,12 @@ export default function PartnerCreditsTab() {
   const [copiedId, setCopiedId] = useState(null);
 
   // ==========================================================
-  // 🚀 ดึงข้อมูลบัญชีที่มียอดเครดิต (Optimized Cached Query)
+  // 🚀 ดึงข้อมูลบัญชีที่มียอดเครดิต (Optimized Query)
   // ==========================================================
-  const fetchPartners = useCallback(async (force = false) => {
+  const fetchPartners = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getPartnersWithCredits(force);
+      const data = await getPartnersWithCredits();
       setPartners(data);
     } catch (error) {
       console.error("🔥 DH-Core System Error [Fetch Partners]:", error);
@@ -27,7 +27,7 @@ export default function PartnerCreditsTab() {
   }, []);
 
   useEffect(() => {
-    fetchPartners(false);
+    fetchPartners();
   }, [fetchPartners]);
 
   // กรองข้อมูลด้วยคำค้นหา
@@ -94,7 +94,7 @@ export default function PartnerCreditsTab() {
             />
           </div>
           <button 
-            onClick={() => fetchPartners(true)}
+            onClick={fetchPartners}
             disabled={isLoading}
             className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             title="รีเฟรชข้อมูล (Refresh)"

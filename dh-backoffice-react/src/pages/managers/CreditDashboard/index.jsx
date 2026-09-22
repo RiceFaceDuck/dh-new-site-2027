@@ -1,23 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, CheckCircle2, Activity, Server, Loader2, ArrowLeft } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Activity, 
+  Server, 
+  Loader2, 
+  ArrowLeft,
+  RefreshCw,
+  Zap,
+  Layers,
+  Lock
+} from 'lucide-react';
 
 // นำเข้า Components ย่อยของ Dashboard
 import DashboardTabs from './components/DashboardTabs';
-import SecurityFrameworkInfo from './components/SecurityFrameworkInfo';
-import SystemHealthPanel from './components/SystemHealthPanel';
 import LedgerStatsCards from './components/LedgerStatsCards';
 
-// นำเข้า Tabs
+// นำเข้า Tabs ทั้ง 5 หมวด
 import CreditAdjustTab from './components/tabs/CreditAdjustTab';
 import CreditHistoryTab from './components/tabs/CreditHistoryTab';
 import PartnerCreditsTab from './components/tabs/PartnerCreditsTab';
 import CreditSettingsTab from './components/tabs/CreditSettingsTab';
 import CreditCalculatorTab from './components/tabs/CreditCalculatorTab';
 
-// นำเข้า Hooks จัดการข้อมูลส่วนกลาง
+// นำเข้า Hooks & Cache จัดการข้อมูลส่วนกลาง
 import useLedgerStats from './hooks/useLedgerStats';
 import useSystemHealth from './hooks/useSystemHealth';
+import { creditCacheManager } from '../../../firebase/credit/creditCacheManager';
 
 export default function CreditDashboard() {
   const navigate = useNavigate();
@@ -29,11 +40,6 @@ export default function CreditDashboard() {
   const { stats: ledgerStats, isLoading: isStatsLoading, refetch: refetchStats } = useLedgerStats();
   const { healthStatus, isCheckingHealth, healthLogs, checkHealth, addLog } = useSystemHealth();
 
-  // ตรวจสอบระบบอัตโนมัติเมื่อเปิดหน้า Dashboard
-  useEffect(() => {
-    checkHealth();
-  }, [checkHealth]);
-
   // 🚀 ฟังก์ชันศูนย์กลางในการรับรู้เมื่อมีการทำธุรกรรมใน Tab ต่างๆ
   const handleSubmitTransaction = async (transactionCallback, successMessage = 'ทำรายการสำเร็จ') => {
     setIsSubmitting(true);
@@ -42,17 +48,20 @@ export default function CreditDashboard() {
         await transactionCallback();
       }
       
+      // ล้างแคชที่เกี่ยวข้องทั้งหมดเพื่อให้หน้าจออัปเดตข้อมูลสดใหม่
+      creditCacheManager.invalidateAll();
+
       // แจ้งเตือนความสำเร็จ
       setNotification({ type: 'success', msg: successMessage });
-      addLog(`Transaction completed: ${successMessage}`, 'success');
+      addLog(`การประมวลผลรายการสำเร็จ: ${successMessage}`, 'success');
       
       // 🔄 บังคับอัปเดตสถิติ Ledger กองกลางทันที
-      if (refetchStats) refetchStats();
+      if (refetchStats) refetchStats(true);
       
     } catch (error) {
       console.error("Dashboard Transaction Error:", error);
       setNotification({ type: 'error', msg: error.message || 'เกิดข้อผิดพลาดในการทำรายการ' });
-      addLog(`Transaction failed: ${error.message}`, 'error');
+      addLog(`การประมวลผลรายการล้มเหลว: ${error.message}`, 'error');
     } finally {
       setIsSubmitting(false);
       // เคลียร์การแจ้งเตือนอัตโนมัติ
@@ -61,70 +70,135 @@ export default function CreditDashboard() {
   };
 
   return (
-    // 🛠️ แก้ไข: เพิ่ม h-full และ flex-col ให้เต็มจอพอดี ไม่ดันทะลุ
-    <div className="h-full flex flex-col max-w-7xl mx-auto space-y-6 pb-6 pt-4 animate-in fade-in duration-500">
+    <div className="h-full flex flex-col max-w-7xl mx-auto space-y-4 pb-6 pt-1 animate-in fade-in duration-500">
       
-      {/* Back Button */}
-      <button 
-        onClick={() => navigate('/managers')}
-        className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-xs active:scale-95 w-fit"
-      >
-        <ArrowLeft size={18} /> ย้อนกลับ (Settings)
-      </button>
-
       {/* ==========================================
           1. Header Section (Enterprise Premium Theme)
       ========================================== */}
-      <div className="shrink-0 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-slate-700/50">
+      <div className="shrink-0 bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden text-white">
         {/* Abstract Background Effects */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none transition-all duration-700"></div>
-        <div className="absolute bottom-0 left-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl translate-y-1/3 pointer-events-none transition-all duration-700"></div>
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl translate-y-1/3 pointer-events-none"></div>
         
-        <div className="relative z-10">
-          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-white to-slate-300 flex items-center gap-3 tracking-wide drop-shadow-xs">
-            <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30 shadow-inner">
-              <ShieldCheck className="w-6 h-6 text-indigo-400" />
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          
+          {/* Left Column: Back button + Title */}
+          <div className="lg:col-span-3 flex flex-col items-start justify-start space-y-2.5">
+            <button
+              onClick={() => navigate('/managers')}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-extrabold text-indigo-200 bg-indigo-950/90 border border-indigo-500/40 rounded-lg hover:bg-indigo-600 hover:text-white hover:border-indigo-400 transition-all shadow-xs active:scale-95 cursor-pointer tracking-wide"
+            >
+              <ArrowLeft size={13} strokeWidth={2.5} />
+              <span>ย้อนกลับ (Settings)</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30 text-indigo-400 shadow-inner shrink-0">
+                <ShieldCheck className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div>
+                <h1 className="text-lg font-black text-white tracking-wide leading-tight">
+                  Credit Core Engine
+                </h1>
+                <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                  <Server className="w-3 h-3 text-slate-500 shrink-0" />
+                  <span>ระบบการเงินกองกลาง</span>
+                </p>
+              </div>
             </div>
-            Credit Core Engine
-          </h1>
-          <p className="text-sm text-slate-400 mt-2 flex items-center gap-2 font-medium tracking-wide">
-            <Server className="w-4 h-4 text-slate-500" /> ศูนย์ปฏิบัติการและควบคุมระบบการเงินกองกลาง (System Ledger)
-          </p>
-        </div>
-
-        <div className="relative z-10 flex items-center gap-3">
-          <div className={`px-4 py-2.5 rounded-xl border backdrop-blur-md flex items-center gap-2 font-bold text-xs uppercase tracking-wider shadow-lg transition-all duration-300 ${
-            healthStatus === 'healthy' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/5' :
-            healthStatus === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-amber-500/5' :
-            'bg-rose-500/10 border-rose-500/30 text-rose-400 shadow-rose-500/5'
-          }`}>
-            <Activity className={`w-4 h-4 ${healthStatus === 'healthy' ? 'animate-pulse' : ''}`} />
-            {healthStatus === 'healthy' ? 'System Optimal' : healthStatus === 'warning' ? 'Warning' : 'Critical'}
           </div>
+
+          {/* Middle Column: Integrated EVENT LOGS */}
+          <div className="lg:col-span-6 bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 shadow-inner">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 mb-1 px-1">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-200">
+                  บันทึกเหตุการณ์ระบบ (EVENT LOGS)
+                </span>
+              </div>
+              <button
+                onClick={checkHealth}
+                disabled={isCheckingHealth}
+                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 disabled:text-slate-600 transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <RefreshCw size={10} className={isCheckingHealth ? 'animate-spin text-indigo-400' : ''} />
+                {isCheckingHealth ? 'กำลังตรวจสอบ...' : 'รีเฟรช'}
+              </button>
+            </div>
+            <div className="h-[48px] overflow-y-auto font-mono text-[11px] space-y-1 pr-1 scrollbar-thin">
+              {healthLogs.length === 0 ? (
+                <div className="text-slate-500 italic">ยังไม่มีบันทึกเหตุการณ์ในขณะนี้...</div>
+              ) : (
+                healthLogs.slice(0, 10).map((log, idx) => (
+                  <div key={idx} className="flex items-start gap-2 leading-tight">
+                    <span className="text-slate-400 text-[10px] shrink-0 font-semibold">[{log.time}]</span>
+                    <span className={`break-all ${
+                      log.type === 'error' ? 'text-rose-400 font-bold' :
+                      log.type === 'warning' ? 'text-amber-300 font-semibold' :
+                      log.type === 'success' ? 'text-emerald-300 font-medium' :
+                      'text-slate-200'
+                    }`}>
+                      {log.msg}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Status & Security Framework Badges */}
+          <div className="lg:col-span-3 flex flex-col justify-between gap-2">
+            <div className={`px-3 py-1.5 rounded-xl border flex items-center justify-between font-bold text-xs shadow-xs ${
+              healthStatus === 'healthy' ? 'bg-emerald-950/70 border-emerald-500/40 text-emerald-300' :
+              healthStatus === 'warning' ? 'bg-amber-950/70 border-amber-500/40 text-amber-300' :
+              'bg-rose-950/70 border-rose-500/40 text-rose-300'
+            }`}>
+              <div className="flex items-center gap-1.5">
+                <Activity className={`w-3.5 h-3.5 ${healthStatus === 'healthy' ? 'animate-pulse text-emerald-400' : ''}`} />
+                <span>{healthStatus === 'healthy' ? 'SYSTEM OPTIMAL' : healthStatus === 'warning' ? 'WARNING' : 'CRITICAL'}</span>
+              </div>
+              <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-900/60 px-1.5 py-0.5 rounded border border-emerald-700/50">
+                Active
+              </span>
+            </div>
+
+            <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-1.5 flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-950/60 px-2 py-1 rounded-lg border border-emerald-800/60 shrink-0" title="Atomic Operations: ทุกคำสั่งประมวลผลแบบรวบยอด">
+                <Zap size={11} className="text-emerald-400" />
+                <span>Atomic TXN</span>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-blue-300 bg-blue-950/60 px-2 py-1 rounded-lg border border-blue-800/60 shrink-0" title="Multi-Layer Sync: ปรับสมดุล Real-Time ข้ามอุปกรณ์">
+                <Layers size={11} className="text-blue-400" />
+                <span>Multi-Sync</span>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-300 bg-indigo-950/60 px-2 py-1 rounded-lg border border-indigo-800/60 shrink-0" title="Immutable Audit Trail: บันทึกประวัติถาวร">
+                <Lock size={11} className="text-indigo-400" />
+                <span>Audit Log</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
       {/* ==========================================
-          2. Ledger Statistics (ตัวเลขกองกลาง)
+          2. Ledger Statistics (ตัวเลขกองกลาง 4 ใบ)
       ========================================== */}
       <div className="shrink-0 relative z-20">
         <LedgerStatsCards stats={ledgerStats} isLoading={isStatsLoading} />
       </div>
 
       {/* ==========================================
-          3. Main Dashboard Content (Grid Layout)
+          3. Main Dashboard Content (Full Width 12-col)
       ========================================== */}
-      {/* 🛠️ แก้ไข: ใส่ flex-1 min-h-0 เพื่อบังคับให้ Scroll อยู่ภายในกล่อง Grid */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-6">
-        
-        {/* Left Column: Operations & Tabs (8 cols) */}
-        {/* 🛠️ แก้ไข: ใส่ h-full และ flex-col ให้ตู้ฝั่งซ้าย */}
-        <div className="xl:col-span-8 flex flex-col bg-white rounded-2xl shadow-md border border-slate-200/80 overflow-hidden h-full">
+      <div className="flex-1 min-h-0">
+        <div className="flex flex-col bg-white rounded-2xl shadow-md border border-slate-200/80 overflow-hidden h-full">
           
           <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
           
-          {/* 🛠️ แก้ไข: เปลี่ยน p-6 เป็นกล่องที่รองรับ overflow-y-auto เพื่อให้ตารางหรือเนื้อหาข้างในเลื่อนได้เอง */}
           <div className="p-0 sm:p-6 bg-slate-50/50 flex-1 relative overflow-y-auto scroll-smooth">
             
             {/* Global Notification Toast */}
@@ -139,7 +213,7 @@ export default function CreditDashboard() {
               </div>
             )}
 
-            {/* Tab Contents - ใส่ div ครอบเพิ่ม padding ให้มือถือถ้าตั้ง p-0 ด้านบน */}
+            {/* Tab Contents */}
             <div className={`p-4 sm:p-0 transition-all duration-300 h-full ${isSubmitting ? 'opacity-40 scale-[0.99] pointer-events-none' : 'opacity-100 scale-100'}`}>
               {activeTab === 'adjust' && (
                 <CreditAdjustTab 
@@ -153,7 +227,7 @@ export default function CreditDashboard() {
               {activeTab === 'calculator' && <CreditCalculatorTab />}
             </div>
 
-            {/* Loading Overlay during submit - Enterprise Style */}
+            {/* Loading Overlay during submit */}
             {isSubmitting && (
               <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/40 backdrop-blur-xs rounded-b-2xl">
                 <div className="flex flex-col items-center gap-4 bg-white/90 p-8 rounded-3xl shadow-2xl border border-slate-100/50 backdrop-blur-md">
@@ -167,20 +241,8 @@ export default function CreditDashboard() {
             )}
           </div>
         </div>
-
-        {/* Right Column: System Health & Security (4 cols) */}
-        {/* 🛠️ แก้ไข: ใส่ sticky เพื่อให้เลื่อนตามหน้าจอเมื่อพื้นที่ข้างในยาวเกิน */}
-        <div className="xl:col-span-4 flex flex-col gap-6 sticky top-6 h-fit">
-          <SystemHealthPanel 
-            healthStatus={healthStatus}
-            isCheckingHealth={isCheckingHealth}
-            healthLogs={healthLogs}
-            onRefresh={checkHealth}
-          />
-          <SecurityFrameworkInfo />
-        </div>
-
       </div>
+
     </div>
   );
 }

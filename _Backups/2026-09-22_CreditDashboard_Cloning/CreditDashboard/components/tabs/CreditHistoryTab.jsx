@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Download, Loader2, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Download, Loader2 } from 'lucide-react';
 import { creditHistoryService } from '../../../../../firebase/creditHistoryService';
-import { formatDate } from 'dh-shared/src/utils/formatters/dateFormatter';
 
 export default function CreditHistoryTab() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,43 +9,37 @@ export default function CreditHistoryTab() {
   const [isLoading, setIsLoading] = useState(true);
 
   // ==========================================================
-  // ดึงข้อมูลประวัติการทำรายการ (Cached Audit Trail)
+  // ดึงข้อมูลประวัติการทำรายการ (Audit Trail) แบบ Real-time
   // ==========================================================
-  const fetchTransactions = useCallback(async (force = false) => {
-    setIsLoading(true);
-    try {
-      const data = await creditHistoryService.getCachedCreditTransactions({
-        limitCount: 100,
-        forceRefresh: force
-      });
+  useEffect(() => {
+    const unsubscribe = creditHistoryService.subscribeToCreditTransactions((data, err) => {
+      if (err) {
+        setIsLoading(false);
+        return;
+      }
       setTransactions(data);
-    } catch (err) {
-      console.error('Failed to load audit trail:', err);
-    } finally {
       setIsLoading(false);
-    }
+    }, 100);
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    fetchTransactions(false);
-  }, [fetchTransactions]);
-
-  const isPositiveType = (type) => ['add', 'earn', 'deposit', 'refund'].includes((type || '').toLowerCase());
+  // ฟังก์ชันจัดรูปแบบเวลาสำหรับตาราง ERP (DD/MM/YYYY HH:mm)
+  const formatDateTime = (isoString) => {
+    const date = new Date(isoString);
+    return new Intl.DateTimeFormat('th-TH', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }).format(date);
+  };
 
   // ลอจิกการกรองข้อมูล
   const filteredTransactions = transactions.filter(tx => {
-    const q = searchTerm.toLowerCase();
-    const matchSearch = (tx.partnerId || tx.uid || '').toLowerCase().includes(q) || 
-                        (tx.partnerName || tx.customerName || '').toLowerCase().includes(q) ||
-                        (tx.id || tx.transactionId || '').toLowerCase().includes(q) ||
-                        (tx.remark || tx.note || '').toLowerCase().includes(q);
-    
-    let matchType = true;
-    if (filterType === 'positive' || filterType === 'add') {
-      matchType = isPositiveType(tx.type);
-    } else if (filterType === 'negative' || filterType === 'deduct') {
-      matchType = !isPositiveType(tx.type);
-    }
+    const searchString = searchTerm.toLowerCase();
+    const matchSearch = (tx.partnerId || '').toLowerCase().includes(searchString) || 
+                        (tx.partnerName || '').toLowerCase().includes(searchString) ||
+                        (tx.id || '').toLowerCase().includes(searchString);
+    const matchType = filterType === 'all' || tx.type === filterType;
     return matchSearch && matchType;
   });
 
@@ -57,7 +50,7 @@ export default function CreditHistoryTab() {
       <div className="p-3 border-b border-slate-300 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Transaction Log</h3>
-          <p className="text-[11px] text-slate-500">Cached immutable audit trail (Last 100 records)</p>
+          <p className="text-[11px] text-slate-500">Real-time immutable audit trail (Last 100 records)</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -77,44 +70,12 @@ export default function CreditHistoryTab() {
 
           {/* Filter Types */}
           <div className="flex bg-white border border-slate-300 rounded-xs p-0.5">
-            <button 
-              onClick={() => setFilterType('all')} 
-              className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${
-                filterType === 'all' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              All
-            </button>
-            <button 
-              onClick={() => setFilterType('positive')} 
-              className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${
-                filterType === 'positive' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Added (+)
-            </button>
-            <button 
-              onClick={() => setFilterType('negative')} 
-              className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${
-                filterType === 'negative' ? 'bg-rose-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Deducted (-)
-            </button>
+            <button onClick={() => setFilterType('all')} className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${filterType === 'all' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>All</button>
+            <button onClick={() => setFilterType('add')} className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${filterType === 'add' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Added</button>
+            <button onClick={() => setFilterType('deduct')} className={`px-3 py-1 text-xs font-bold rounded-xs transition-none ${filterType === 'deduct' ? 'bg-red-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Deducted</button>
           </div>
 
-          {/* Refresh Button */}
-          <button 
-            onClick={() => fetchTransactions(true)}
-            disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xs transition-none disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Refresh Audit Trail"
-          >
-            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-            Refresh
-          </button>
-
-          {/* CSV Export */}
+          {/* Mock Export Button */}
           <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xs transition-none ml-auto md:ml-0">
             <Download size={14} />
             CSV
@@ -156,7 +117,7 @@ export default function CreditHistoryTab() {
                 <tr key={tx.id} className="hover:bg-slate-50 transition-none">
                   {/* Date Time */}
                   <td className="px-4 py-2.5 font-mono text-slate-500 whitespace-nowrap">
-                    {formatDate(tx.timestamp)}
+                    {formatDateTime(tx.timestamp)}
                   </td>
                   
                   {/* TX Ref */}
@@ -166,24 +127,22 @@ export default function CreditHistoryTab() {
                   
                   {/* Target Account */}
                   <td className="px-4 py-2.5">
-                    <div className="font-bold text-slate-800">
-                      {tx.partnerName || tx.customerName || (tx.uid ? `พาร์ทเนอร์ (${tx.uid.substring(0, 8)})` : 'System')}
-                    </div>
-                    <div className="font-mono text-slate-500 text-[10px]">{tx.partnerId || tx.uid || '-'}</div>
+                    <div className="font-bold text-slate-800">{tx.partnerName || 'Unknown'}</div>
+                    <div className="font-mono text-slate-500 text-[10px]">{tx.partnerId}</div>
                   </td>
                   
                   {/* Type */}
                   <td className="px-4 py-2.5">
                     <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded-xs border
-                      ${isPositiveType(tx.type) ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}
+                      ${tx.type === 'add' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-red-50 text-red-700 border-red-200'}`}
                     >
-                      {(tx.type || 'UNKNOWN').toUpperCase()}
+                      {tx.type === 'add' ? 'ADD' : 'DEDUCT'}
                     </span>
                   </td>
                   
                   {/* Amount */}
-                  <td className={`px-4 py-2.5 text-right font-bold whitespace-nowrap ${isPositiveType(tx.type) ? 'text-emerald-700' : 'text-rose-700'}`}>
-                    {isPositiveType(tx.type) ? '+' : '-'} {Number(Math.abs(tx.amount || 0)).toLocaleString('th-TH')}
+                  <td className={`px-4 py-2.5 text-right font-bold whitespace-nowrap ${tx.type === 'add' ? 'text-blue-700' : 'text-red-700'}`}>
+                    {tx.type === 'add' ? '+' : '-'} {Number(tx.amount || 0).toLocaleString('th-TH')}
                   </td>
                   
                   {/* Balance After */}
@@ -193,12 +152,12 @@ export default function CreditHistoryTab() {
                   
                   {/* Operator */}
                   <td className="px-4 py-2.5 text-[11px] text-slate-600">
-                    {tx.operatorUid || tx.recordedBy || 'System'}
+                    {tx.operatorUid || 'System'}
                   </td>
                   
                   {/* Remark */}
-                  <td className="px-4 py-2.5 text-[11px] text-slate-500 truncate max-w-[150px]" title={tx.remark || tx.note}>
-                    {tx.remark || tx.note || '-'}
+                  <td className="px-4 py-2.5 text-[11px] text-slate-500 truncate max-w-[150px]" title={tx.remark}>
+                    {tx.remark || '-'}
                   </td>
                 </tr>
               ))

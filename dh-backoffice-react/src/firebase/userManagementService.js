@@ -3,6 +3,7 @@ import { limit, collection, doc, getDoc, updateDoc, deleteDoc, serverTimestamp }
 import { historyService } from './historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import { creditCacheManager, CREDIT_CACHE_KEYS, CREDIT_CACHE_TTL } from './credit/creditCacheManager';
 
 
 
@@ -235,8 +236,13 @@ export const updateUserPreferences = async (uid, preferences) => {
 
 // The remaining file ends here. Extracted functions removed.
 
-export const getPartnersWithCredits = async () => {
+export const getPartnersWithCredits = async (forceRefresh = false) => {
     try {
+        if (!forceRefresh) {
+            const cached = creditCacheManager.get(CREDIT_CACHE_KEYS.PARTNER_CREDITS, CREDIT_CACHE_TTL.PARTNER_CREDITS);
+            if (cached) return cached;
+        }
+
         const { query, where, or, getDocs } = await import('firebase/firestore');
         const usersRef = collection(db, getCollectionPath('users'));
         
@@ -265,6 +271,7 @@ export const getPartnersWithCredits = async () => {
         });
 
         data.sort((a, b) => b.balance - a.balance);
+        creditCacheManager.set(CREDIT_CACHE_KEYS.PARTNER_CREDITS, data);
         return data;
     } catch (error) {
         console.error("🔥 [UserManagementService] getPartnersWithCredits Error:", error);

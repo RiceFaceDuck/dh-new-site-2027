@@ -82,38 +82,17 @@ export default function CreditSettingsForm({
 
                   <div>
                     <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                      Ad Impression Cost & Rate (การหักแต้มโฆษณา)
+                      Ad Impression Cost (Points)
                     </label>
-                    <p className="text-xs text-slate-500 mb-2">กำหนดจำนวนครั้งการแสดงโฆษณา และจำนวนแต้มที่หักออก</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">จำนวนครั้ง (Count)</label>
-                        <div className="relative">
-                          <input 
-                            type="text" 
-                            value={settings.adImpressionCount?.toLocaleString('th-TH') || '100'} 
-                            onChange={(e) => handleChange(e, 'adImpressionCount')} 
-                            className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-300 rounded-xs text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-hidden transition-none text-right font-mono" 
-                          />
-                          <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">ครั้ง</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">แต้มที่หัก (Points)</label>
-                        <div className="relative">
-                          <input 
-                            type="text" 
-                            value={settings.adImpressionCost?.toLocaleString('th-TH') || '5'} 
-                            onChange={(e) => handleChange(e, 'adImpressionCost')} 
-                            className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-300 rounded-xs text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-hidden transition-none text-right font-mono" 
-                          />
-                          <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">PT</span>
-                        </div>
-                      </div>
+                    <p className="text-xs text-slate-500 mb-2">แต้มที่หัก ต่อการแสดงโฆษณา 100 ครั้ง</p>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={settings.adImpressionCost?.toLocaleString('th-TH') || '5'}
+                        onChange={(e) => handleChange(e, 'adImpressionCost')}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xs text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-hidden transition-none text-right font-mono"
+                      />
                     </div>
-                    <p className="text-[11px] text-indigo-600 font-semibold mt-2 bg-indigo-50/70 p-2 rounded-xs border border-indigo-100">
-                      💡 สรุป: หัก {settings.adImpressionCost || 5} Point ทุกๆ การแสดงโฆษณา {settings.adImpressionCount || 100} ครั้ง
-                    </p>
                   </div>
 
                   <hr className="border-slate-200" />
@@ -146,23 +125,6 @@ export default function CreditSettingsForm({
                         value={settings.partnerRankingCost?.toLocaleString('th-TH') || '50'}
                         onChange={(e) => handleChange(e, 'partnerRankingCost')}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xs text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-hidden transition-none text-right font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <hr className="border-slate-200" />
-
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                      รางวัลเพิ่มความรู้ (Credit Point Reward)
-                    </label>
-                    <p className="text-xs text-slate-500 mb-2">กำหนดคะแนนเครดิตที่จะได้รับเมื่อลูกค้าระบุรุ่นหรือพาร์ทที่รองรับ แล้วผู้จัดการกดอนุมัติ</p>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        value={settings.compatibleCreditReward?.toLocaleString('th-TH') || '2'} 
-                        onChange={(e) => handleChange(e, 'compatibleCreditReward')} 
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xs text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-hidden transition-none text-right font-mono" 
                       />
                     </div>
                   </div>

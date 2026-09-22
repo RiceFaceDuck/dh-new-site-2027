@@ -1,37 +1,8 @@
 import { collection, query, orderBy, limit, getDocs, doc, runTransaction, serverTimestamp, increment, where, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
-import { creditCacheManager, CREDIT_CACHE_KEYS, CREDIT_CACHE_TTL } from './credit/creditCacheManager';
 
 export const creditHistoryService = {
-  getCachedCreditTransactions: async ({ limitCount = 100, forceRefresh = false } = {}) => {
-    if (!forceRefresh) {
-      const cached = creditCacheManager.get(CREDIT_CACHE_KEYS.TRANSACTION_HISTORY, CREDIT_CACHE_TTL.TRANSACTION_HISTORY);
-      if (cached) return cached;
-    }
-    try {
-      const q = query(
-        collection(db, getCollectionPath('credit_transactions')),
-        orderBy('timestamp', 'desc'),
-        limit(limitCount)
-      );
-      const snapshot = await getDocs(q);
-      const list = snapshot.docs.map(docSnap => {
-        const d = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...d,
-          timestamp: d.timestamp?.toDate ? d.timestamp.toDate().toISOString() : (d.timestamp || new Date().toISOString())
-        };
-      });
-      creditCacheManager.set(CREDIT_CACHE_KEYS.TRANSACTION_HISTORY, list);
-      return list;
-    } catch (error) {
-      console.error("🔥 System Error [getCachedCreditTransactions]:", error);
-      throw error;
-    }
-  },
-
   getPointsHistory: async (userId, limitCount = 30) => {
     if (!userId) return [];
     try {

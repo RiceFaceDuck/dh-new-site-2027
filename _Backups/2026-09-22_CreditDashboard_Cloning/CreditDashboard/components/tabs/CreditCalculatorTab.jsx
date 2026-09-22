@@ -7,7 +7,6 @@ export default function CreditCalculatorTab() {
   const [config, setConfig] = useState({
     pointsEarningRate: 100,
     adImpressionCost: 5,
-    adImpressionCount: 100,
     partnerRankingCost: 50
   });
 
@@ -26,7 +25,6 @@ export default function CreditCalculatorTab() {
           setConfig({
             pointsEarningRate: fetchedConfig.pointsEarningRate || 100,
             adImpressionCost: fetchedConfig.adImpressionCost || 5,
-            adImpressionCount: fetchedConfig.adImpressionCount || 100,
             partnerRankingCost: fetchedConfig.partnerRankingCost || 50
           });
         }
@@ -44,8 +42,7 @@ export default function CreditCalculatorTab() {
 
   // Calculations
   const monthlyPointsMinted = Math.floor(simulation.monthlySalesVolume / config.pointsEarningRate);
-  const impressionDivisor = config.adImpressionCount > 0 ? config.adImpressionCount : 100;
-  const dailyPointsFromAds = Math.floor((simulation.dailyAdImpressions / impressionDivisor) * config.adImpressionCost);
+  const dailyPointsFromAds = Math.floor((simulation.dailyAdImpressions / 100) * config.adImpressionCost);
   const dailyPointsFromRanking = simulation.activeAdPartners * config.partnerRankingCost;
   const monthlyPointsBurned = (dailyPointsFromAds + dailyPointsFromRanking) * 30;
 
@@ -127,7 +124,7 @@ export default function CreditCalculatorTab() {
               </div>
               <div className="flex justify-between text-xs items-center">
                 <span className="text-slate-400">Ad Impression Cost:</span>
-                <span className="font-mono font-bold">{config.adImpressionCost} PT / {config.adImpressionCount || 100} Views</span>
+                <span className="font-mono font-bold">{config.adImpressionCost} PT / 100 Views</span>
               </div>
               <div className="flex justify-between text-xs items-center">
                 <span className="text-slate-400">Partner Ranking Cost:</span>

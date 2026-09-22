@@ -1,4 +1,4 @@
-import { doc, getDoc, getDocs, runTransaction, collection, serverTimestamp, query, where, documentId, limit } from 'firebase/firestore';
+import { doc, getDocs, runTransaction, collection, serverTimestamp, query, where, documentId, limit } from 'firebase/firestore';
 import { db } from '../config';
 import { historyService } from '../historyService';
 import { formatCredit, calculateEarnedPoints } from './creditFormatService';
@@ -7,119 +7,29 @@ import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-const uidCache = new Map();
-const UID_CACHE_TTL = 5 * 60 * 1000;
-
 /**
- * ✨ Smart UID Resolver (รองรับ รหัสสั้น 8 ตัว, Account ID, เบอร์โทร, customerCode, Email)
+ * ✨ Smart UID Resolver (รองรับ รหัสสั้น 8 ตัว, เบอร์โทร, customerCode)
  */
 export const resolveSmartUid = async (inputUid) => {
-  if (!inputUid) return inputUid;
-  const cleanInput = String(inputUid).trim();
-  if (!cleanInput) return cleanInput;
-
-  const cached = uidCache.get(cleanInput);
-  if (cached && (Date.now() - cached.timestamp < UID_CACHE_TTL)) {
-    return cached.uid;
-  }
-
+  const cleanInput = inputUid.trim();
   let resolvedUid = cleanInput;
   const usersColPath = getUsersPath();
   const usersRefColl = collection(db, usersColPath);
-
-  if (cleanInput.length >= 20) {
-    try {
-      const directDoc = await getDoc(doc(db, usersColPath, cleanInput));
-      if (directDoc.exists()) {
-        uidCache.set(cleanInput, { uid: cleanInput, timestamp: Date.now() });
-        return cleanInput;
-      }
-    } catch (e) {}
-  }
-
-  const upper = cleanInput.toUpperCase();
-  const lower = cleanInput.toLowerCase();
-
-  // 1. Account ID
-  let snap = await getDocs(query(usersRefColl, where('accountId', '==', upper), limit(1)));
-  if (!snap.empty) resolvedUid = snap.docs[0].id;
-
-  if (resolvedUid === cleanInput && upper !== cleanInput) {
-    snap = await getDocs(query(usersRefColl, where('accountId', '==', cleanInput), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
-  }
-
-  // 2. Customer Code
-  if (resolvedUid === cleanInput) {
-    snap = await getDocs(query(usersRefColl, where('customerCode', '==', upper), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
-  }
-  if (resolvedUid === cleanInput && upper !== cleanInput) {
-    snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
-  }
-
-  // 3. Phone / PhoneNumber
-  if (resolvedUid === cleanInput) {
+  
+  if (cleanInput.length < 20) {
+    let snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput), limit(1)));
+    if (!snap.empty) return snap.docs[0].id;
+    
+    snap = await getDocs(query(usersRefColl, where('customerCode', '==', cleanInput.toUpperCase()), limit(1)));
+    if (!snap.empty) return snap.docs[0].id;
+    
     snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
-  }
-  if (resolvedUid === cleanInput) {
-    snap = await getDocs(query(usersRefColl, where('phoneNumber', '==', cleanInput), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
-  }
-
-  // 4. Email
-  if (resolvedUid === cleanInput && cleanInput.includes('@')) {
-    snap = await getDocs(query(usersRefColl, where('email', '==', lower), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
-  }
-
-  // 5. Document ID prefix search
-  if (resolvedUid === cleanInput && cleanInput.length >= 6) {
+    if (!snap.empty) return snap.docs[0].id;
+    
     snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
+    if (!snap.empty) return snap.docs[0].id;
   }
-
-  uidCache.set(cleanInput, { uid: resolvedUid, timestamp: Date.now() });
   return resolvedUid;
-};
-
-/**
- * ⚡ Resolve Smart User Info for Operations Tab
- */
-export const resolveSmartUserInfo = async (input) => {
-  if (!input) return null;
-  const clean = String(input).trim();
-  if (!clean) return null;
-
-  const uid = await resolveSmartUid(clean);
-  if (!uid) return null;
-
-  try {
-    const usersPath = getUsersPath();
-    const userDoc = await getDoc(doc(db, usersPath, uid));
-    if (!userDoc.exists()) return null;
-
-    const d = userDoc.data();
-    const displayName = getCustomerDisplayName(d, d).accountName ||
-      (d.firstName ? `${d.firstName} ${d.lastName || ''}`.trim() : null) ||
-      d.displayName || d.storeName || d.email || 'Unknown User';
-
-    return {
-      uid: userDoc.id,
-      accountId: d.accountId || userDoc.id.substring(0, 8).toUpperCase(),
-      displayName,
-      email: d.email || '-',
-      phone: d.phone || d.phoneNumber || '-',
-      creditPoints: Number(d.creditPoints || 0),
-      walletBalance: Number(d.walletBalance || 0),
-      role: d.role || 'user'
-    };
-  } catch (e) {
-    console.error('🔥 Error resolving user info:', e);
-    return null;
-  }
 };
 
 /**
