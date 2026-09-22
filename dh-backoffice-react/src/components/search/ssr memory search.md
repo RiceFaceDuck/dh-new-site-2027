@@ -33,6 +33,8 @@
     - Billing order lookup must use `where('itemSkus', 'array-contains', sku)` (limit 20) instead of unbounded global scans.
     - Always cache SKU history in IndexedDB with a 10-minute TTL to prevent rapid repeated read costs on the same item.
     - Do not auto-fetch full product history upon SKU selection; keep it strictly on-demand.
+    - Port availability checks on Windows must use Node fetch rather than PowerShell Invoke-WebRequest to avoid false negatives.
+    - Orders and claims history queries require authenticated staff context (e.g. ai.manager) to satisfy Firestore Security Rules.
   </pitfalls_and_lessons>
 
   <watchlist>
