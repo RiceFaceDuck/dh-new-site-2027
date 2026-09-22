@@ -1,49 +1,14 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, limit, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, limit, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../../../firebase/config';
 import { userService } from '../../../../firebase/userService';
 import { getCollectionPath, getUsersPath, getUserSubcollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-// ⚡ Cache & Overwrite Store (Module-level cache with 5-minute TTL)
-const CACHE_TTL_MS = 5 * 60 * 1000;
-let dashboardMemoryCache = {
-    stats: null,
-    walletHoldersCount: 0,
-    defaultUsers: [],
-    timestamp: 0
-};
-
-export function invalidateWalletCache() {
-    dashboardMemoryCache = {
-        stats: null,
-        walletHoldersCount: 0,
-        defaultUsers: [],
-        timestamp: 0
-    };
-}
-
-export function updateCachedUserBalance(userId, newBalance) {
-    if (dashboardMemoryCache.defaultUsers && dashboardMemoryCache.defaultUsers.length > 0) {
-        let diff = 0;
-        dashboardMemoryCache.defaultUsers = dashboardMemoryCache.defaultUsers.map(u => {
-            if (u.id === userId) {
-                diff = newBalance - (u.walletBalance || 0);
-                return { ...u, walletBalance: newBalance };
-            }
-            return u;
-        });
-        if (dashboardMemoryCache.stats && diff !== 0) {
-            dashboardMemoryCache.stats = {
-                ...dashboardMemoryCache.stats,
-                totalBalance: Math.max(0, (dashboardMemoryCache.stats.totalBalance || 0) + diff)
-            };
-        }
-    }
-}
-
 export function useWalletManagement(navigate) {
     // Dashboard Stats
+    const [globalLedger, setGlobalLedger] = useState(null);
     const [walletHoldersCount, setWalletHoldersCount] = useState(0);
+    const [globalHistory, setGlobalHistory] = useState([]);
     const [stats, setStats] = useState({ totalBalance: 0, pendingAmount: 0 });
     const [isDashboardLoading, setIsDashboardLoading] = useState(true);
 
@@ -65,7 +30,7 @@ export function useWalletManagement(navigate) {
     const [pointTransactions, setPointTransactions] = useState([]);
     const [isLoadingTx, setIsLoadingTx] = useState(false);
 
-    // Initial Dashboard Load with Cache & Overwrite
+    // Initial Dashboard Load
     useEffect(() => {
         const initDashboard = async () => {
             if (!auth.currentUser) { navigate('/'); return; }
@@ -75,50 +40,32 @@ export function useWalletManagement(navigate) {
                     navigate('/'); return;
                 }
 
-                // ⚡ Check Warm Cache First (Saves ~350 reads on menu switch)
-                const isCacheValid = dashboardMemoryCache.stats && (Date.now() - dashboardMemoryCache.timestamp < CACHE_TTL_MS);
-                if (isCacheValid) {
-                    setStats(prev => ({ ...prev, totalBalance: dashboardMemoryCache.stats.totalBalance }));
-                    setWalletHoldersCount(dashboardMemoryCache.walletHoldersCount);
-                    setDefaultUsers(dashboardMemoryCache.defaultUsers);
-                    setIsDashboardLoading(false);
-                    return;
-                }
+                const settingsSnap = await getDoc(doc(db, getCollectionPath('settings'), 'credit_config'));
+                if (settingsSnap.exists()) setGlobalLedger(settingsSnap.data().ledger);
 
-                // ⚡ Cold Query: Consolidated Single Query (Eliminated redundant qActiveUsers & unused qHist)
                 const usersRef = collection(db, getUsersPath());
-                const qHasBalance = query(usersRef, where('walletBalance', '>', 0), limit(100));
+                const qHasBalance = query(usersRef, where('walletBalance', '>', 0), limit(300));
+                let totalBal = 0; let count = 0;
                 try {
                     const snap = await getDocs(qHasBalance);
-                    let totalBal = 0;
-                    let count = 0;
-                    const usersList = [];
-                    snap.forEach(d => {
-                        const data = d.data();
-                        const bal = Number(data.walletBalance || 0);
-                        totalBal += bal;
-                        count++;
-                        usersList.push({ id: d.id, ...data });
-                    });
-
-                    // In-memory sort to get top users without an extra network query
-                    usersList.sort((a, b) => (b.walletBalance || 0) - (a.walletBalance || 0));
-                    const topUsers = usersList.slice(0, 20);
-
+                    snap.forEach(d => { totalBal += Number(d.data().walletBalance || 0); count++; });
                     setStats(prev => ({ ...prev, totalBalance: totalBal }));
                     setWalletHoldersCount(count);
-                    setDefaultUsers(topUsers);
+                } catch(e) { console.log("Missing index for walletBalance"); }
 
-                    // Populate Memory Cache
-                    dashboardMemoryCache = {
-                        stats: { totalBalance: totalBal },
-                        walletHoldersCount: count,
-                        defaultUsers: topUsers,
-                        timestamp: Date.now()
-                    };
-                } catch(e) {
-                    console.log("Error querying wallet balances:", e);
-                }
+                const qActiveUsers = query(usersRef, where('walletBalance', '>', 0), limit(20));
+                try {
+                    const activeSnap = await getDocs(qActiveUsers);
+                    const aUsers = activeSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    aUsers.sort((a,b) => (b.walletBalance || 0) - (a.walletBalance || 0));
+                    setDefaultUsers(aUsers);
+                } catch(e) { console.log("Missing index for active users"); }
+
+                const qHist = query(collection(db, getCollectionPath('credit_transactions')), orderBy('timestamp', 'desc'), limit(30));
+                try {
+                    const histSnap = await getDocs(qHist);
+                    setGlobalHistory(histSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                } catch(e) { console.log("Missing index for history"); }
 
             } catch (error) {
                 console.error("Dashboard Init Error:", error);
@@ -129,7 +76,7 @@ export function useWalletManagement(navigate) {
         initDashboard();
     }, [navigate]);
 
-    // Sub to Pending Withdrawals (Real-time listener)
+    // Sub to Pending Withdrawals
     useEffect(() => {
         const q = query(
             collection(db, getCollectionPath('todos')),
@@ -171,7 +118,7 @@ export function useWalletManagement(navigate) {
     };
 
     const handleSearch = async (e) => {
-        if (e) e.preventDefault();
+        if(e) e.preventDefault();
         if (!searchTerm.trim()) {
             setHasSearched(false); setSearchResults([]); return;
         }

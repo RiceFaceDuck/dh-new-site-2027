@@ -78,9 +78,11 @@ async function runVerification() {
   console.log('--- 1. Live Dev Server Endpoint Checks ---');
   await probeUrl('/');
   await probeUrl('/managers/refund');
+  await probeUrl('/managers/wallet');
 
   console.log('\n--- 2. Module Transformation Checks ---');
   const refundCode = await probeViteModule('/src/pages/managers/RefundManagement.jsx');
+  await probeViteModule('/src/pages/managers/WalletManagement.jsx');
   await probeViteModule('/src/pages/managers/wallet/WalletDashboardStats.jsx');
   await probeViteModule('/src/pages/managers/wallet/PendingWithdrawals.jsx');
   await probeViteModule('/src/pages/managers/wallet/CustomerSearchList.jsx');

@@ -1,7 +1,7 @@
 <grimoire>
 <flow_and_entry>
-- Entry: `pages/managers/RefundManagement.jsx` (Route: `/managers/refund`) & `pages/managers/WalletManagement.jsx`.
-- Controller: `pages/managers/wallet/hooks/useWalletManagement.js` bridges UI to Firebase.
+- Entry: `pages/managers/RefundManagement.jsx` (Route: `/managers/refund`) & `pages/managers/WalletManagement.jsx` (clean alias re-export).
+- Controller: `pages/managers/wallet/hooks/useWalletManagement.js` with Cache & Overwrite (5-min TTL).
 - Services: `todoService.processWalletWithdrawal` (approvals) and `creditCoreService.adjustUserWallet` (adjustments).
 </flow_and_entry>
 
@@ -28,6 +28,6 @@
 <pitfalls_and_lessons>
 - ⚠️ Specific Ad-hoc Cloning Context: Local machine files lagged behind production; ad-hoc cloning restored parity to allow localhost:3168 to run with real Firestore data.
 - ⚠️ Agnostic Grimoire Rule: Grimoires must document core architectural truth and domain models without coupling instructions to hosting, preventing future confusion when hosting needs updates.
-- ⚠️ Watchlist Note (Firestore Cost): `useWalletManagement` currently reads up to 300 user docs with `walletBalance > 0` for dashboard totals; migrate to Firestore Count/Sum aggregation or counter docs in future optimizations.
+- ⚠️ Watchlist Resolved (Firestore Cost & Duplication): Consolidated dual queries to single query and added 5-minute Memory Cache & Overwrite in `useWalletManagement.js`, reducing repeat reads to 0. Deduplicated `WalletManagement.jsx` via clean re-export.
 </pitfalls_and_lessons>
 </grimoire>
