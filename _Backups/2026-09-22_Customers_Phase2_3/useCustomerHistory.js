@@ -18,10 +18,6 @@ const normalizeName = (nameStr) => {
   return String(nameStr || '').trim().toLowerCase().replace(/\s+/g, '');
 };
 
-// ⚡ In-memory Cache for Customer History (TTL: 5 minutes)
-const historyCache = new Map();
-const HISTORY_CACHE_TTL_MS = 5 * 60 * 1000;
-
 // 🛡️ Strict Customer ID & Account Relationship Matching Engine
 const isOrderMatchForCustomer = (orderData, orderDocId, customerObj) => {
   if (!orderData || !customerObj) return false;
@@ -86,28 +82,13 @@ export const useCustomerHistory = () => {
       return;
     }
 
-    const custObj = typeof customerParam === 'object' && customerParam !== null ? customerParam : { id: customerParam };
-    const custPhone = normalizePhone(custObj.phone || custObj.phoneNumber || custObj.contactPhone);
-    const cacheKey = custObj.uid || custObj.id || custObj.accountId || custPhone;
-
-    // ⚡ 1. ตรวจสอบ Cache ใน Memory ก่อน เพื่อป้องกันการอ่าน Firestore ซ้ำซ้อน (0 Quota)
-    if (cacheKey && historyCache.has(cacheKey)) {
-      const cached = historyCache.get(cacheKey);
-      if (Date.now() - cached.timestamp < HISTORY_CACHE_TTL_MS) {
-        setCustomerHistory({ 
-          orders: cached.orders, 
-          claims: cached.claims, 
-          loading: false 
-        });
-        return;
-      }
-    }
-
     setCustomerHistory(prev => ({ ...prev, loading: true }));
 
     try {
       const ordersRef = collection(db, getCollectionPath('orders'));
       const claimsRef = collection(db, getCollectionPath('claims'));
+
+      const custObj = typeof customerParam === 'object' && customerParam !== null ? customerParam : { id: customerParam };
 
       const idSet = new Set();
       if (custObj.id) idSet.add(custObj.id);
@@ -116,6 +97,7 @@ export const useCustomerHistory = () => {
       if (custObj.customerCode) idSet.add(custObj.customerCode);
 
       const idList = Array.from(idSet).filter(Boolean);
+      const custPhone = normalizePhone(custObj.phone || custObj.phoneNumber || custObj.contactPhone);
 
       const orderQueries = [];
       if (idList.length > 0) {
@@ -131,7 +113,8 @@ export const useCustomerHistory = () => {
         orderQueries.push(getDocs(query(ordersRef, where('customerInfo.phone', '==', custPhone), limit(100))));
       }
 
-      // 🛡️ Note: ตัด fallback query(ordersRef, limit(300)) ทิ้งเพื่อกำจัด Firestore Quota Leak 300 doc ต่อคลิก 100%
+      // Safe fallback query for recent 300 orders
+      orderQueries.push(getDocs(query(ordersRef, limit(300))));
 
       const claimQueries = [];
       if (idList.length > 0) {
@@ -181,15 +164,6 @@ export const useCustomerHistory = () => {
       });
 
       const claimsData = Array.from(uniqueClaims.values());
-
-      // 💾 บันทึกผลลัพธ์ลง In-memory Cache สำหรับ 5 นาทีถัดไป
-      if (cacheKey) {
-        historyCache.set(cacheKey, {
-          timestamp: Date.now(),
-          orders: ordersData,
-          claims: claimsData
-        });
-      }
 
       setCustomerHistory({ 
         orders: ordersData, 

@@ -38,7 +38,7 @@ export default function CustomerSyncModal({ isOpen, onClose, customer, onSyncCom
     }
   };
 
-  const displayName = (typeof getCustomerDisplayName === 'function' ? getCustomerDisplayName(customer, customer) : null) || customer?.accountName || customer?.displayName || customer?.storeName || 'ไม่ระบุชื่อ';
+  const displayName = getCustomerDisplayName(customer, customer).accountName || 'ไม่ระบุชื่อ';
 
   return createPortal(
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-100 flex items-center justify-center p-4">

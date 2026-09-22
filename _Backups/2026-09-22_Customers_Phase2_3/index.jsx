@@ -6,7 +6,6 @@ import CustomerHeader from './components/layout/CustomerHeader';
 import CustomerTable from './components/layout/CustomerTable';
 import DetailPanel from './components/details/DetailPanel';
 import CustomerModal from './components/forms/CustomerModal';
-import CustomerDuplicateComparisonModal from './components/forms/CustomerDuplicateComparisonModal';
 
 export default function Customers() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -82,17 +81,6 @@ export default function Customers() {
         setFormData={state.isEditMode ? actions.setEditFormData : actions.setNewCustomer}
         onSubmit={state.isEditMode ? actions.saveCustomerEdit : actions.handleCreateCustomer}
         isSubmitting={state.isSubmitting || state.isSavingEdit}
-      />
-
-      {/* 4. ส่วน Modal ตรวจสอบรายชื่อซ้ำซ้อน (Duplicate Comparison Guard) */}
-      <CustomerDuplicateComparisonModal 
-        isOpen={state.isDuplicateModalOpen}
-        onClose={() => actions.setIsDuplicateModalOpen(false)}
-        newCustomerData={state.pendingNewCustPayload}
-        duplicateCandidates={state.duplicateCandidates}
-        onSelectExisting={actions.handleSelectExistingCustomer}
-        onOverwriteExisting={actions.handleOverwriteExistingCustomer}
-        onForceCreateNew={actions.handleForceCreateNewCustomer}
       />
 
       <GuideModal 

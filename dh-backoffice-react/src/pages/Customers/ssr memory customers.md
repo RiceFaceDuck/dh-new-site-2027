@@ -1,39 +1,42 @@
 <ssr_memory>
   <flow_and_entry>
     <entry_file>src/pages/Customers/index.jsx</entry_file>
-    <sub_components>components/layout/CustomerTable.jsx, components/layout/CustomerRow.jsx, components/details/DetailPanel.jsx, components/forms/CustomerModal.jsx</sub_components>
-    <data_flow>useCustomers -> CustomerTable (8-col list) -> DetailPanel (dark slate header, tabs: overview/marketing/history) -> CustomerModal (edit/add customer profile)</data_flow>
+    <sub_components>components/layout/CustomerTable.jsx, components/details/DetailPanel.jsx, components/forms/CustomerModal.jsx, components/forms/CustomerDuplicateComparisonModal.jsx</sub_components>
+    <data_flow>useCustomers -> customerCacheService (chunk cache + 30D delta) -> CustomerTable (9-col list) -> DetailPanel (history with 5-min cache) -> DuplicateModal (pre-create match)</data_flow>
   </flow_and_entry>
 
   <core_schema>
     <fields>
       - id / uid: Firestore user document ID
-      - accountId: 8-char uppercase alphanumeric account identifier (primary search & link key)
+      - accountId: 8-char uppercase alphanumeric account identifier (primary search & link key, MUST PRESERVE)
+      - customerCode: Customer legacy code (MUST PRESERVE in directory chunk cache)
       - storeName / displayName / accountName: display profile name
-      - phone / phoneNumber: customer primary contact number (PII protected)
-      - walletBalance / dhWallet: DH outstanding credit/wallet balance (currency: $)
+      - phone / phoneNumber: customer primary contact number (normalized Thai digits)
+      - walletBalance / dhWallet: DH outstanding credit/wallet balance (currency: ฿)
       - totalAccumulatedPoints / creditPoints: customer reward loyalty points
-      - lastOrderDate: timestamp for last completed order date badge
-      - address: structured { addressLine, subDistrict, district, province, zipCode, googleMapsUrl }
+      - lastOrderDate: timestamp for last completed order date badge (synced via customers_active_30d)
+      - sales30Days / orderCount30Days: dynamic 30D activity delta
+      - address: structured { addressLine, subDistrict, district, province, zipCode }
     </fields>
   </core_schema>
 
   <business_rules>
-    <rule id="1">Table layout maintains 9 balanced columns: CUSTOMER ID, PROFILE, PHONE, LOGISTIC, ROLE/TIER, DH ค้างยอด, POINTS, บิลล่าสุด, 30D PAID OUT using symmetrical grid formula [130px_minmax(180px,1.5fr)_110px_110px_90px_100px_90px_100px_110px] with gap-4.</rule>
-    <rule id="2">DetailPanel header must render dark slate midnight theme (bg-slate-900) containing account badges, wallet display with refund button, and points display.</rule>
-    <rule id="3">Order history displays 3 summary metric boxes (Total Spent, Total Bills, Total Claims/Returns) and detailed bill breakdown with return/claim badges.</rule>
+    <rule id="1">Table layout maintains 9 balanced columns: CUSTOMER ID (130px), PROFILE (minmax(180px,1.5fr)), PHONE (110px), LOGISTIC (110px), ROLE/TIER (90px), DH ค้างยอด (100px), POINTS (90px), บิลล่าสุด (100px), 30D PAID OUT (110px) with gap-4.</rule>
+    <rule id="2">Duplicate Guard: Pre-flight check on Phone (80 pts), Store/Account Name (60 pts), Line ID (40 pts) before user creation with merge/overwrite options.</rule>
+    <rule id="3">Quota Zero-Leak: History uses targeted indexed queries (uid, accountId, phone) + 5-min in-memory cache; unbounded root orders scans are strictly banned.</rule>
     <rule id="4">Zero code mutation to business logic, Cloud Functions, background triggers, or data calculation scripts during UI/UX refinements.</rule>
   </business_rules>
 
   <cross_impact>
-    <impact target="billing_pos">Changes to customer schema or accountId linkage directly affect POS customer lookup and checkout receipt printing.</impact>
-    <impact target="claims_returns">Customer order history links to past orders and claims collections for warranty validation.</impact>
-    <impact target="customer_portal">Account sync ties backoffice records to customer storefront login profiles via email key.</impact>
+    <impact target="billing_pos">POS customer lookup and receipt printing directly rely on customerCacheService accountId & phone index.</impact>
+    <impact target="claims_returns">Customer order history links to past orders and claims collections for warranty validation without quota waste.</impact>
+    <impact target="customer_portal">Account sync ties backoffice records to customer storefront login profiles via email/phone key.</impact>
   </cross_impact>
 
   <pitfalls_and_lessons>
-    <caution>Always adhere to the symmetrical 110-110, 90-100, 90-100, 110 column rhythm with gap-4 for table balance.</caution>
-    <caution>Always mask PII (phone/email) by default or provide toggleable eye button as shown in live production layout.</caution>
+    <caution>Never use unbounded `limit(300)` root collection query as fallback; it burns 300 document reads per customer click.</caution>
+    <caution>`getCustomerDisplayName` utility returns a string, NOT an object. Never access `.accountName` on its return value.</caution>
+    <caution>Always preserve `accountId` and `customerCode` during chunk normalization; stripping them breaks Account ID exact search.</caution>
     <caution>Absolute deployment ban: Never run firebase deploy, functions deploy, or git push to remote servers.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>

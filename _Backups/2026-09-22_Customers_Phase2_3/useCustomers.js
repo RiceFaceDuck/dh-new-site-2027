@@ -4,7 +4,6 @@ import { useCustomerFilters } from './useCustomerFilters';
 import { useCustomerActions } from './useCustomerActions';
 import { useCustomerHistory } from './useCustomerHistory';
 import { fetchOrderStatsForPage } from '../services/customerOrderStatsService';
-import { searchCustomersFromDB } from '../services/customerSearchService';
 
 /**
  * Main Hook (Facade) สำหรับระบบ Customers
@@ -54,36 +53,6 @@ export const useCustomers = () => {
 
     return () => { isSubscribed = false; };
   }, [filterHook.state.currentPage, filterHook.state.paginatedCustomers.map(c => c.uid || c.id).join(','), loading, enrichCustomersWithOrderStats]);
-
-  // ==========================================
-  // Orchestration: ค้นหาข้อมูลเชิงลึกจาก Database (เมื่อพิมพ์คำค้นหา >= 2 ตัวอักษร)
-  // ==========================================
-  useEffect(() => {
-    const term = filterHook.state.searchTerm?.trim();
-    if (!term || term.length < 2) return;
-
-    let isSubscribed = true;
-    const debounceTimer = setTimeout(async () => {
-      try {
-        const dbResults = await searchCustomersFromDB(term);
-        if (isSubscribed && dbResults && dbResults.length > 0) {
-          setCustomers(prev => {
-            const existingIds = new Set((prev || []).map(c => c.uid || c.id));
-            const toAdd = dbResults.filter(c => !existingIds.has(c.uid || c.id));
-            if (toAdd.length === 0) return prev;
-            return [...prev, ...toAdd];
-          });
-        }
-      } catch (err) {
-        console.error("Failed to search customers from DB:", err);
-      }
-    }, 400);
-
-    return () => {
-      isSubscribed = false;
-      clearTimeout(debounceTimer);
-    };
-  }, [filterHook.state.searchTerm, setCustomers]);
 
   // จัดการเมื่อคลิกเลือกบรรทัดลูกค้า
   const handleSelectCustomer = (customer) => {

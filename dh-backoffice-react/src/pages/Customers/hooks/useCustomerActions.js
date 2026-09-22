@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { auth } from '../../../firebase/config';
 import { userService } from '../../../firebase/userService';
 import { todoService } from '../../../firebase/todoService';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import { checkPotentialDuplicates } from '../components/forms/CustomerDuplicateComparisonModal';
 
 /**
  * Hook สำหรับจัดการ Action ต่างๆ เช่น เพิ่ม, แก้ไข, ลบ ลูกค้า และเปลี่ยน Rank
@@ -17,7 +18,6 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   const managerRoles = ['Admin', 'Manager', 'Owner', 'manager', 'owner', 'admin', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'];
 
   useEffect(() => {
-    // โหลด Role ของ User ที่กำลังใช้งานเพื่อใช้คุมสิทธิ์
     if (auth.currentUser) {
       userService.getUserProfile(auth.currentUser.uid).then(profile => {
         if (profile && profile.role) setCurrentUserRole(profile.role);
@@ -26,7 +26,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   }, []);
 
   // ==========================================
-  // 2. Add Customer Form States
+  // 2. Add Customer Form & Duplicate Guard States
   // ==========================================
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
@@ -35,10 +35,15 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 🛡️ Duplicate Detection States
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [duplicateCandidates, setDuplicateCandidates] = useState([]);
+  const [pendingNewCustPayload, setPendingNewCustPayload] = useState(null);
+
   // ==========================================
   // 3. Edit & Rank States
   // ==========================================
-  const [selectedCustomer, setSelectedCustomer] = useState(null); // ตัวแปรกลางที่ต้อง sync กับตารางและประวัติ
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -48,10 +53,10 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   // 4. Action Functions (Mutations)
   // ==========================================
 
-  // สร้างลูกค้าใหม่
+  // สร้างลูกค้าใหม่ พร้อมระบบตรวจสอบข้อมูลซ้ำซ้อน
   const handleCreateCustomer = async (e) => {
-    e.preventDefault();
-    if (!newCustomer.accountName.trim()) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!newCustomer.accountName?.trim()) {
       alert("กรุณากรอกชื่อร้าน/ชื่อบริษัท");
       return;
     }
@@ -62,19 +67,87 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
         ...newCustomer,
         customerCode: newCustomer.customerCode?.trim() || ''
       };
-      
+
+      // 🔍 ตรวจจับรายชื่อที่อาจซ้ำซ้อนในฐานข้อมูลก่อน
+      const duplicates = await checkPotentialDuplicates(payload);
+      if (duplicates && duplicates.length > 0) {
+        setDuplicateCandidates(duplicates);
+        setPendingNewCustPayload(payload);
+        setIsDuplicateModalOpen(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       await userService.createManualCustomer(payload);
-      
+      toast.success('✅ บันทึกรายชื่อลูกค้าใหม่ลงฐานข้อมูลเรียบร้อยแล้ว');
+
       setIsAddModalOpen(false);
       setNewCustomer({ 
         customerCode: '', accountName: '', contactName: '', phone: '', email: '', address: '', 
         logisticProvider: '', logisticNote: '', rank: 'Customer', accountRank: '' 
       });
-      
-      // สั่งให้ useCustomerData ดึงข้อมูลใหม่เพื่อสะท้อนความเปลี่ยนแปลง
-      fetchCustomers(false); 
+
+      fetchCustomers(false);
     } catch (error) {
       console.error("Create customer error:", error);
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 🟢 กรณีตรวจพบข้อมูลซ้ำ: ผู้ใช้เลือก "ใช้งานข้อมูลนี้" (Select Existing)
+  const handleSelectExistingCustomer = (existingCustomer) => {
+    setSelectedCustomer(existingCustomer);
+    setIsDuplicateModalOpen(false);
+    setIsAddModalOpen(false);
+  };
+
+  // 🟣 กรณีตรวจพบข้อมูลซ้ำ: ผู้ใช้เลือก "เขียนทับลงการ์ดนี้" (Overwrite Existing)
+  const handleOverwriteExistingCustomer = async (existingCustomer, newCustomerData) => {
+    setIsSubmitting(true);
+    try {
+      const targetId = existingCustomer.uid || existingCustomer.id;
+      await userService.updateCustomerProfile(targetId, newCustomerData);
+
+      const updated = { ...existingCustomer, ...newCustomerData };
+      setSelectedCustomer(updated);
+
+      const updatedList = customers.map(c => (c.id === targetId || c.uid === targetId) ? updated : c);
+      setCustomers(updatedList);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+
+      toast.success('✅ รวมและเขียนทับข้อมูลลูกค้าเดิมเรียบร้อยแล้ว');
+      setIsDuplicateModalOpen(false);
+      setIsAddModalOpen(false);
+      fetchCustomers(false);
+    } catch (error) {
+      console.error("Overwrite customer error:", error);
+      alert("เกิดข้อผิดพลาดในการรวมข้อมูลลูกค้า");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 🟡 กรณีตรวจพบข้อมูลซ้ำ: ผู้ใช้ยืนยัน "สร้างเป็นรายชื่อใหม่" (Force Create)
+  const handleForceCreateNewCustomer = async () => {
+    if (!pendingNewCustPayload) return;
+    setIsSubmitting(true);
+    try {
+      await userService.createManualCustomer(pendingNewCustPayload);
+      toast.success('✅ บันทึกรายชื่อลูกค้าใหม่ลงฐานข้อมูลเรียบร้อยแล้ว');
+
+      setIsAddModalOpen(false);
+      setIsDuplicateModalOpen(false);
+      setPendingNewCustPayload(null);
+      setNewCustomer({ 
+        customerCode: '', accountName: '', contactName: '', phone: '', email: '', address: '', 
+        logisticProvider: '', logisticNote: '', rank: 'Customer', accountRank: '' 
+      });
+
+      fetchCustomers(false);
+    } catch (error) {
+      console.error("Force create customer error:", error);
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     } finally {
       setIsSubmitting(false);
@@ -102,10 +175,10 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
     setIsEditMode(true);
   };
 
-  // บันทึกการแก้ไข (sync ข้อมูลลง Cache ทันทีโดยไม่ต้องดึงใหม่ทั้งหมด)
+  // บันทึกการแก้ไข
   const saveCustomerEdit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!editFormData.accountName.trim()) {
+    if (!editFormData.accountName?.trim()) {
       alert("กรุณากรอกชื่อร้าน/ชื่อบริษัท");
       return;
     }
@@ -117,21 +190,20 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       const payloadToUpdate = { ...editFormData };
       
       if (payloadToUpdate.rank) {
-        payloadToUpdate.role = payloadToUpdate.rank; // sync rank กับ role 
+        payloadToUpdate.role = payloadToUpdate.rank;
       }
 
       await userService.updateCustomerProfile(targetId, payloadToUpdate);
       
-      // Update UI ทันที
       const updatedCustomer = { ...selectedCustomer, ...payloadToUpdate };
-      setSelectedCustomer(updatedCustomer); // update panel 
+      setSelectedCustomer(updatedCustomer);
       
-      // Sync ไปยัง State หลักใน useCustomerData และ Cache
-      const updateList = (list) => list.map(c => c.id === targetId ? updatedCustomer : c);
+      const updateList = (list) => list.map(c => (c.id === targetId || c.uid === targetId) ? updatedCustomer : c);
       const newCustomersList = updateList(customers);
       setCustomers(newCustomersList);
       localStorage.setItem(CACHE_KEY, JSON.stringify(newCustomersList));
       
+      toast.success('✅ บันทึกการแก้ไขข้อมูลลูกค้าเรียบร้อยแล้ว');
       setIsEditMode(false);
     } catch (error) {
       console.error("Save edit error:", error);
@@ -153,11 +225,11 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       const updatedCustomer = { ...selectedCustomer, rank: newRank, role: newRank };
       setSelectedCustomer(updatedCustomer);
       
-      const updateList = (list) => list.map(c => c.id === targetId ? updatedCustomer : c);
+      const updateList = (list) => list.map(c => (c.id === targetId || c.uid === targetId) ? updatedCustomer : c);
       const newCustomersList = updateList(customers);
       setCustomers(newCustomersList);
       localStorage.setItem(CACHE_KEY, JSON.stringify(newCustomersList));
-
+      toast.success(`✅ เปลี่ยนระดับบัญชีเป็น ${newRank} เรียบร้อยแล้ว`);
     } catch (error) {
       console.error("Quick rank change error:", error);
       alert("เกิดข้อผิดพลาดในการเปลี่ยนระดับบัญชี");
@@ -170,7 +242,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   const handleDeleteCustomer = async () => {
     if (!selectedCustomer) return;
     const targetId = selectedCustomer.uid || selectedCustomer.id;
-    const customerName = getCustomerDisplayName(selectedCustomer, selectedCustomer).id;
+    const customerName = getCustomerDisplayName(selectedCustomer, 'ลูกค้า');
     const isManager = managerRoles.includes(currentUserRole);
 
     if (isManager) {
@@ -178,17 +250,16 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
         try {
           await userService.deleteCustomer(targetId, customerName);
           
-          setSelectedCustomer(null); // ปิดหน้า panel
+          setSelectedCustomer(null);
 
-          // Sync ลบออกจาก state หลักและ cache
-          const newCustomersList = customers.filter(c => c.id !== targetId);
+          const newCustomersList = customers.filter(c => c.id !== targetId && c.uid !== targetId);
           setCustomers(newCustomersList);
           localStorage.setItem(CACHE_KEY, JSON.stringify(newCustomersList));
           
-          alert('ลบข้อมูลลูกค้าเรียบร้อยแล้ว');
+          toast.success('ลบข้อมูลลูกค้าเรียบร้อยแล้ว');
         } catch (error) {
           console.error("Delete customer error:", error);
-          alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+          alert(error.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
         }
       }
     } else {
@@ -204,7 +275,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
     }
   };
 
-  // ลบข้อมูลอดีต (Migration) - ล้างฟิลด์ customerCode
+  // ล้างฟิลด์ customerCode เก่า (Migration)
   const handleRunMigration = async () => {
     const isManager = managerRoles.includes(currentUserRole);
     if (!isManager) {
@@ -212,7 +283,6 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       return;
     }
 
-    // 1. Dry Run (จำลองผลลัพธ์)
     const usersToMigrate = customers.filter(c => c.customerCode !== undefined && c.customerCode !== null);
     
     if (usersToMigrate.length === 0) {
@@ -227,6 +297,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       try {
         const { updateDoc, doc, deleteField } = await import('firebase/firestore');
         const { db } = await import('../../../firebase/config');
+        const { getCollectionPath } = await import('dh-shared');
         
         let success = 0;
         for (const u of usersToMigrate) {
@@ -234,7 +305,6 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
             const userRef = doc(db, getCollectionPath('users'), u.id || u.uid);
             await updateDoc(userRef, {
                customerCode: deleteField(),
-               // บังคับแปลงเป็น 8 หลักมาตรฐานจาก UID ถ้ารหัสเดิมเป็นรูปแบบอื่น
                accountId: (u.accountId && u.accountId.length === 8 && !u.accountId.startsWith('CUST')) 
                  ? u.accountId 
                  : (u.id || u.uid).substring(0, 8).toUpperCase()
@@ -245,7 +315,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
           }
         }
         alert(`✅ การกวาดล้างเสร็จสมบูรณ์!\nปรับปรุงข้อมูลสำเร็จ ${success}/${usersToMigrate.length} รายการ`);
-        fetchCustomers(true); // โหลดข้อมูลใหม่ทั้งหมด
+        fetchCustomers(true);
       } catch (error) {
         console.error("Migration error:", error);
         alert("เกิดข้อผิดพลาดในการกวาดล้างข้อมูล");
@@ -266,7 +336,10 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       isEditMode,
       editFormData,
       isSavingEdit,
-      isQuickSaving
+      isQuickSaving,
+      isDuplicateModalOpen,
+      duplicateCandidates,
+      pendingNewCustPayload
     },
     actions: {
       setIsAddModalOpen,
@@ -279,7 +352,11 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       saveCustomerEdit,
       handleQuickRankChange,
       handleDeleteCustomer,
-      handleRunMigration
+      handleRunMigration,
+      setIsDuplicateModalOpen,
+      handleSelectExistingCustomer,
+      handleOverwriteExistingCustomer,
+      handleForceCreateNewCustomer
     }
   };
 };
