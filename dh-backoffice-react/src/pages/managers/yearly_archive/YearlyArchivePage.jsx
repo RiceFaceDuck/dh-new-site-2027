@@ -4,7 +4,7 @@ import {
   ArrowLeft, Archive, Calendar, Calculator, Lock, CheckCircle2, 
   AlertTriangle, Download, FileSpreadsheet, FileJson, Clock, User, 
   HelpCircle, RefreshCw, ShoppingBag, Box, Users, Wrench, ShieldCheck,
-  ChevronRight
+  ChevronRight, Info
 } from 'lucide-react';
 import { 
   collection, doc, getDocs, setDoc, query, where, orderBy, limit, startAfter, Timestamp, serverTimestamp 
