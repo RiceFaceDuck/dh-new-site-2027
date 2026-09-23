@@ -22,7 +22,7 @@ const permissionList = [
 
 export default function RbacForm({ initialSettings, onSave }) {
   const [formData, setFormData] = useState({});
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
   const [lastSavedTime, setLastSavedTime] = useState(null);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function RbacForm({ initialSettings, onSave }) {
 
   const handleRoleToggle = async (permKey, roleId) => {
     const currentRoles = formData[permKey] || [];
-    let updatedRoles = [];
+    let updatedRoles;
     if (currentRoles.includes(roleId)) {
       updatedRoles = currentRoles.filter(r => r !== roleId);
     } else {
@@ -41,12 +41,14 @@ export default function RbacForm({ initialSettings, onSave }) {
     }
     const updated = { ...formData, [permKey]: updatedRoles };
     setFormData(updated);
-    setIsSaving(true);
+    setSaveStatus('saving');
     const ok = await onSave(updated);
     if (ok) {
       setLastSavedTime(new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setSaveStatus('saved');
+    } else {
+      setSaveStatus('error');
     }
-    setIsSaving(false);
   };
 
   return (
@@ -57,10 +59,15 @@ export default function RbacForm({ initialSettings, onSave }) {
           <span>ระบบบันทึกอัตโนมัติ (คลิกที่ช่องเพื่อสลับสิทธิ์)</span>
         </div>
         <div>
-          {isSaving ? (
+          {saveStatus === 'saving' ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-md animate-pulse shadow-2xs">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
               กำลังบันทึกข้อมูล...
+            </span>
+          ) : saveStatus === 'error' ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-md shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง
             </span>
           ) : lastSavedTime ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md shadow-2xs">

@@ -48,12 +48,12 @@ export const useRbacSettings = () => {
       setSettings(newSettings);
       
       // Log to Google Drive Audit
-      historyService.addLog({
-        module: 'SECURITY',
-        action: 'UPDATE_RBAC',
-        target: { id: 'rbac_permissions' },
-        details: { legacy_details: 'อัปเดตการจัดการสิทธิ์พนักงาน (RBAC Settings)' }
-      });
+      historyService.addLog(
+        'SECURITY',
+        'UPDATE_RBAC',
+        'rbac_permissions',
+        'อัปเดตการจัดการสิทธิ์พนักงาน (RBAC Settings)'
+      );
       
       toast.success('บันทึกการตั้งค่าสิทธิ์สำเร็จ');
       return true;

@@ -72,7 +72,9 @@ export const useRbac = (profile, user) => {
         inMemoryRbacCache = parsed;
         return parsed;
       }
-    } catch {}
+    } catch (_err) {
+      /* ignore cache read error */
+    }
     return DEFAULT_RBAC_PERMISSIONS;
   });
   const [rbacLoading, setRbacLoading] = useState(!inMemoryRbacCache);
@@ -87,7 +89,9 @@ export const useRbac = (profile, user) => {
           inMemoryRbacCache = data;
           try {
             sessionStorage.setItem(RBAC_CACHE_KEY, JSON.stringify(data));
-          } catch {}
+          } catch (_err) {
+            /* ignore storage quota error */
+          }
           setPermissions(data);
         } else {
           inMemoryRbacCache = DEFAULT_RBAC_PERMISSIONS;
@@ -116,7 +120,9 @@ export const useRbac = (profile, user) => {
 
   const hasPermission = useCallback((permissionKey) => {
     if (isOwnerOrSuperAdmin) return true;
-    const allowedRoles = (permissions?.[permissionKey] || DEFAULT_RBAC_PERMISSIONS[permissionKey] || []).map(r => String(r).toLowerCase().trim());
+    const raw = permissions?.[permissionKey];
+    const roleList = Array.isArray(raw) ? raw : (DEFAULT_RBAC_PERMISSIONS[permissionKey] || []);
+    const allowedRoles = roleList.map(r => String(r).toLowerCase().trim());
     return userRoles.some(r => allowedRoles.includes(r));
   }, [permissions, userRoles, isOwnerOrSuperAdmin]);
 
