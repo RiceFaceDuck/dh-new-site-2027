@@ -1,13 +1,11 @@
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, addDoc, limit } from 'firebase/firestore';
+// Backup of warrantyService.js before quota alignment
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from './config.js';
 import { historyService } from './historyService.js';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils.js';
 
 const SETTINGS_DOC = 'warranty';
 
-/**
- * 🏷️ แปลงชื่อหมวดหมู่ให้เป็น Canonical Standard Name เพื่อแก้ปัญหาชื่อซ้ำ/คำคล้าย/ตัวพิมพ์เล็ก-ใหญ่
- */
 export function normalizeCategoryName(catName) {
   if (!catName || typeof catName !== 'string') return 'General';
   const clean = catName.trim();
@@ -23,24 +21,20 @@ export function normalizeCategoryName(catName) {
   return clean;
 }
 
-// 💡 ค่าเริ่มต้น หากเพิ่งรันระบบครั้งแรก
 const DEFAULT_WARRANTY = {
   categories: {
     'Panel': { claimDays: 180, returnDays: 7 },
     'Keyboard': { claimDays: 90, returnDays: 7 },
     'Battery': { claimDays: 180, returnDays: 7 },
     'Adapter': { claimDays: 180, returnDays: 7 },
-    'General': { claimDays: 30, returnDays: 7 } // หมวดหมู่อื่นๆ
+    'General': { claimDays: 30, returnDays: 7 }
   },
-  skus: {} // เก็บ SKU พิเศษ เช่น "SKU-999": { claimDays: 365, returnDays: 15 }
+  skus: {}
 };
 
 let cachedWarrantyConfig = null;
 
 export const warrantyService = {
-  // ==========================================
-  // 📥 ดึงข้อมูลกติกาประกัน + ตรวจสอบหมวดสินค้าที่มีจริงใน DB (พร้อม Deduplication)
-  // ==========================================
   getWarrantySettings: async (forceRefresh = false) => {
     if (!forceRefresh && cachedWarrantyConfig) {
       return cachedWarrantyConfig;
@@ -59,7 +53,6 @@ export const warrantyService = {
         savedSkus = data.skus || {};
       }
 
-      // 🔍 1. ตั้งต้นด้วย DEFAULT_WARRANTY (ผ่าน Normalization)
       const mergedCategories = {};
 
       Object.entries(DEFAULT_WARRANTY.categories).forEach(([catKey, val]) => {
@@ -67,7 +60,6 @@ export const warrantyService = {
         mergedCategories[normKey] = { ...val, isUnconfigured: false };
       });
 
-      // 🔍 2. รวมกับข้อมูลที่เคยบันทึกไว้ใน Firestore
       Object.entries(savedCategories).forEach(([catKey, val]) => {
         const normKey = normalizeCategoryName(catKey);
         mergedCategories[normKey] = {
@@ -77,7 +69,6 @@ export const warrantyService = {
         };
       });
 
-      // 🔍 3. ตรวจสอบหมวดสินค้าที่มีจริงใน /settings/product_categories
       try {
         const catSettingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
         const catSnap = await getDoc(catSettingsRef);
@@ -108,9 +99,6 @@ export const warrantyService = {
     }
   },
 
-  // ==========================================
-  // 🔔 ตรวจสอบหมวดสินค้าใหม่ และสร้าง To-Do ผู้จัดการ หากยังไม่เคยตั้งค่า
-  // ==========================================
   checkAndTriggerWarrantyTaskForNewCategory: async (categoryName) => {
     if (!categoryName || typeof categoryName !== 'string') return;
     const normKey = normalizeCategoryName(categoryName);
@@ -119,18 +107,15 @@ export const warrantyService = {
       const currentSettings = await warrantyService.getWarrantySettings(true);
       const existingCatData = currentSettings.categories[normKey];
 
-      // หากหมวดหมู่นี้ถูกตั้งค่าเรียบร้อยแล้ว ไม่ต้องสร้างงาน
       if (existingCatData && !existingCatData.isUnconfigured) {
         return;
       }
 
-      // เช็คว่ามีงาน To-Do ผู้จัดการเรื่องประกันของหมวดนี้ค้างอยู่แล้วหรือไม่
       const todosRef = collection(db, getCollectionPath('todos'));
       const q = query(
         todosRef,
         where('type', '==', 'WARRANTY_SETUP'),
-        where('status', 'in', ['todo', 'pending', 'in_progress']),
-        limit(10)
+        where('status', 'in', ['todo', 'pending', 'in_progress'])
       );
       const snap = await getDocs(q);
       const alreadyHasTask = snap.docs.some(d => {
@@ -157,14 +142,10 @@ export const warrantyService = {
     }
   },
 
-  // ==========================================
-  // 📤 บันทึกข้อมูลกติกาประกัน + เคลียร์ To-Do ผู้จัดการที่เกี่ยวข้อง
-  // ==========================================
   updateWarrantySettings: async (newData, managerUid) => {
     try {
       const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC);
       
-      // ทำความสะอาดและสกัดหมวดหมู่เป็น Canonical Keys เพื่อล้างหมวดซ้ำเดิม
       const cleanCategories = {};
       if (newData.categories) {
         Object.entries(newData.categories).forEach(([k, v]) => {
@@ -183,17 +164,14 @@ export const warrantyService = {
 
       await setDoc(docRef, payloadToSave);
       
-      // Update cache
       cachedWarrantyConfig = { categories: cleanCategories, skus: newData.skus || {} };
       
-      // 🚀 เคลียร์งาน To-Do ผู้จัดการที่เกี่ยวข้องกับการตั้งค่าประกันหมวดหมู่
       try {
         const todosRef = collection(db, getCollectionPath('todos'));
         const q = query(
           todosRef,
           where('type', '==', 'WARRANTY_SETUP'),
-          where('status', 'in', ['todo', 'pending', 'in_progress']),
-          limit(100)
+          where('status', 'in', ['todo', 'pending', 'in_progress'])
         );
         const snap = await getDocs(q);
         const updatePromises = snap.docs.map(docSnap => {
@@ -214,7 +192,6 @@ export const warrantyService = {
         console.warn("⚠️ Warning auto-completing warranty todo tasks:", todoErr);
       }
 
-      // บันทึก History ของผู้จัดการ
       await historyService.addLog('Manager', 'UpdateWarranty', 'System', 'อัปเดตตั้งค่าระยะเวลาประกันสินค้าและเคลียร์งาน To-Do', managerUid);
       
       return true;

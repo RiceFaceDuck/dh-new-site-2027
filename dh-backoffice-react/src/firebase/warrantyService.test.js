@@ -1,58 +1,48 @@
-import { test, describe, mock } from 'node:test';
-import assert from 'node:assert';
+import { describe, test, it, expect, vi, beforeEach } from 'vitest';
 
-// 1. Setup mocks for local modules
-mock.module('./config.js', {
-  namedExports: {
-    db: { name: 'mock-db' }
-  }
-});
-
-mock.module('./historyService.js', {
-  namedExports: {
-    historyService: {
-      addLog: async () => {}
-    }
-  }
-});
-
-mock.module('dh-shared/src/firebase/pathUtils.js', {
-  namedExports: {
-    getCollectionPath: (path) => path
-  }
-});
-
-// We use a shared object for mutable state in mocks
+// Shared state for Firestore mock implementation
 const state = {
-    getDocImpl: async () => ({ exists: () => false })
+  getDocImpl: vi.fn(async () => ({ exists: () => false }))
 };
 
-// Mock firebase/firestore with a redirect to our mutable state
-mock.module('firebase/firestore', {
-  namedExports: {
-    doc: (db, coll, id) => ({ db, coll, id }),
-    getDoc: async (docRef) => state.getDocImpl(docRef),
-    setDoc: async () => {},
-    serverTimestamp: () => 'mock-timestamp',
-    collection: () => ({}),
-    getDocs: async () => ({ docs: [] }),
-    query: () => ({}),
-    where: () => ({}),
-    updateDoc: async () => {},
-    addDoc: async () => ({ id: 'mock-todo-id' })
-  }
-});
+// 1. Setup mocks for local modules
+vi.mock('./config.js', () => ({
+  db: { name: 'mock-db' }
+}));
 
-// DELAY THE IMPORT of the module under test
-let warrantyService;
+vi.mock('./historyService.js', () => ({
+  historyService: {
+    addLog: vi.fn(async () => {})
+  }
+}));
+
+vi.mock('dh-shared/src/firebase/pathUtils.js', () => ({
+  getCollectionPath: (path) => path
+}));
+
+// Mock firebase/firestore with mutable state
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn((db, coll, id) => ({ db, coll, id })),
+  getDoc: vi.fn(async (docRef) => state.getDocImpl(docRef)),
+  setDoc: vi.fn(async () => {}),
+  serverTimestamp: vi.fn(() => 'mock-timestamp'),
+  collection: vi.fn(() => ({})),
+  getDocs: vi.fn(async () => ({ docs: [] })),
+  query: vi.fn(() => ({})),
+  where: vi.fn(() => ({})),
+  limit: vi.fn(() => ({})),
+  updateDoc: vi.fn(async () => {}),
+  addDoc: vi.fn(async () => ({ id: 'mock-todo-id' }))
+}));
+
+import { warrantyService, normalizeCategoryName } from './warrantyService.js';
 
 describe('warrantyService.getWarrantySettings', () => {
-  test('returns merged data when document exists', async (t) => {
-    if (!warrantyService) {
-        const module = await import('./warrantyService.js');
-        warrantyService = module.warrantyService;
-    }
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
+  it('returns merged data when document exists', async () => {
     const mockData = {
       categories: {
         'Panel': { claimDays: 365, returnDays: 14 },
@@ -63,68 +53,56 @@ describe('warrantyService.getWarrantySettings', () => {
       }
     };
 
-    state.getDocImpl = async () => ({
+    state.getDocImpl = vi.fn(async () => ({
       exists: () => true,
       data: () => mockData
-    });
+    }));
 
-    const result = await warrantyService.getWarrantySettings();
+    const result = await warrantyService.getWarrantySettings(true);
 
-    assert.strictEqual(result.categories['Panel'].claimDays, 365);
-    assert.strictEqual(result.categories['Panel'].returnDays, 14);
-    assert.strictEqual(result.categories['Keyboard'].claimDays, 90); // From DEFAULT_WARRANTY
-    assert.strictEqual(result.categories['NewCategory'].claimDays, 30);
-    assert.strictEqual(result.skus['SKU-1'].claimDays, 100);
+    expect(result.categories['Panel'].claimDays).toBe(365);
+    expect(result.categories['Panel'].returnDays).toBe(14);
+    expect(result.categories['Keyboard'].claimDays).toBe(90); // From DEFAULT_WARRANTY
+    expect(result.categories['NewCategory'].claimDays).toBe(30);
+    expect(result.skus['SKU-1'].claimDays).toBe(100);
   });
 
-  test('returns DEFAULT_WARRANTY when document does not exist', async (t) => {
-    if (!warrantyService) {
-        const module = await import('./warrantyService.js');
-        warrantyService = module.warrantyService;
-    }
-
-    state.getDocImpl = async () => ({
+  it('returns DEFAULT_WARRANTY when document does not exist', async () => {
+    state.getDocImpl = vi.fn(async () => ({
       exists: () => false
+    }));
+
+    const result = await warrantyService.getWarrantySettings(true);
+
+    expect(result.categories['Panel'].claimDays).toBe(180); // Default
+    expect(result.skus).toEqual({});
+  });
+
+  it('returns DEFAULT_WARRANTY on error', async () => {
+    state.getDocImpl = vi.fn(async () => {
+      throw new Error('Firestore Error');
     });
 
-    const result = await warrantyService.getWarrantySettings(true);
-
-    assert.strictEqual(result.categories['Panel'].claimDays, 180); // Default
-    assert.deepStrictEqual(result.skus, {});
-  });
-
-  test('returns DEFAULT_WARRANTY on error', async (t) => {
-    if (!warrantyService) {
-        const module = await import('./warrantyService.js');
-        warrantyService = module.warrantyService;
-    }
-
-    state.getDocImpl = async () => {
-      throw new Error('Firestore Error');
-    };
-
-    // Suppress console.error for clean test output
-    const consoleSpy = mock.method(console, 'error', () => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const result = await warrantyService.getWarrantySettings(true);
 
-    assert.strictEqual(result.categories['Panel'].claimDays, 180); // Default
-    assert.strictEqual(consoleSpy.mock.callCount(), 1);
+    expect(result.categories['Panel'].claimDays).toBe(180); // Default
+    expect(consoleSpy).toHaveBeenCalled();
     
-    consoleSpy.mock.restore();
+    consoleSpy.mockRestore();
   });
 
-  test('normalizes synonyms and casing correctly', async (t) => {
-    const { normalizeCategoryName } = await import('./warrantyService.js');
-    assert.strictEqual(normalizeCategoryName('screen'), 'Panel');
-    assert.strictEqual(normalizeCategoryName('Screen'), 'Panel');
-    assert.strictEqual(normalizeCategoryName('PANEL'), 'Panel');
-    assert.strictEqual(normalizeCategoryName('other'), 'General');
-    assert.strictEqual(normalizeCategoryName('OTHER'), 'General');
-    assert.strictEqual(normalizeCategoryName('charger'), 'Adapter');
-    assert.strictEqual(normalizeCategoryName('คีย์บอร์ด'), 'Keyboard');
-    assert.strictEqual(normalizeCategoryName('แบตเตอรี่'), 'Battery');
-    assert.strictEqual(normalizeCategoryName('ram'), 'ram');
-    assert.strictEqual(normalizeCategoryName('SSD'), 'SSD');
+  it('normalizes synonyms and casing correctly', () => {
+    expect(normalizeCategoryName('screen')).toBe('Panel');
+    expect(normalizeCategoryName('Screen')).toBe('Panel');
+    expect(normalizeCategoryName('PANEL')).toBe('Panel');
+    expect(normalizeCategoryName('other')).toBe('General');
+    expect(normalizeCategoryName('OTHER')).toBe('General');
+    expect(normalizeCategoryName('charger')).toBe('Adapter');
+    expect(normalizeCategoryName('คีย์บอร์ด')).toBe('Keyboard');
+    expect(normalizeCategoryName('แบตเตอรี่')).toBe('Battery');
+    expect(normalizeCategoryName('ram')).toBe('ram');
+    expect(normalizeCategoryName('SSD')).toBe('SSD');
   });
 });
