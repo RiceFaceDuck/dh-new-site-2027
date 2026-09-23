@@ -1,13 +1,15 @@
 import React from 'react';
-import { LayoutPanelTop, Loader2 } from 'lucide-react';
+import { LayoutPanelTop, Loader2, HelpCircle } from 'lucide-react';
 import GlobalSettingsHeader from '../../components/managers/GlobalSettingsHeader';
 import SaveConfirmationModal from '../../components/managers/SaveConfirmationModal';
 import { useFooterSettings } from './hooks/useFooterSettings';
 import ColorThemeSection from './components/footer/ColorThemeSection';
 import ContactInfoSection from './components/footer/ContactInfoSection';
+import TrustBadgesSection from './components/footer/TrustBadgesSection';
+import SocialMediaHubSection from './components/footer/SocialMediaHubSection';
 import LinkZoneSection from './components/footer/LinkZoneSection';
+import LiveStorefrontPreview from './components/footer/LiveStorefrontPreview';
 import GuideModal from '../../components/common/GuideModal';
-import { HelpCircle } from 'lucide-react';
 
 export default function GlobalFooterSettings() {
     const {
@@ -20,7 +22,13 @@ export default function GlobalFooterSettings() {
         handlePreSave,
         handleSave,
         handleColorChange,
+        handleApplyColorPreset,
         handleCompanyChange,
+        handleBusinessHoursChange,
+        handleSocialChange,
+        handleSocialEnabled,
+        handleTrustBadgeToggle,
+        handleTrustBadgesEnabled,
         updateLink,
         addLink,
         removeLink
@@ -31,8 +39,8 @@ export default function GlobalFooterSettings() {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                <Loader2 size={32} className="animate-spin mb-3" />
-                <span className="font-bold text-sm">กำลังโหลดข้อมูลระบบส่วนกลาง...</span>
+                <Loader2 size={32} className="animate-spin mb-3 text-sky-500" />
+                <span className="font-bold text-sm text-slate-600">กำลังโหลดข้อมูลระบบส่วนกลาง...</span>
             </div>
         );
     }
@@ -49,7 +57,7 @@ export default function GlobalFooterSettings() {
 
             <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden relative flex flex-col min-h-[60vh]">
                 <GlobalSettingsHeader 
-                    title="พื้นที่ส่วนล่าง (Footer)" 
+                    title="พื้นที่ส่วนล่าง (Footer Settings)" 
                     icon={LayoutPanelTop}
                     onSave={handlePreSave}
                     isSaving={isSaving}
@@ -61,7 +69,7 @@ export default function GlobalFooterSettings() {
                             <div className="flex gap-4">
                                 <LayoutPanelTop size={24} className="shrink-0 text-indigo-500 mt-0.5"/>
                                 <p className="text-sm font-bold leading-relaxed">
-                                    ปรับแต่งพื้นที่ส่วนล่าง (Footer) ของหน้าบ้าน รวมถึงสี, ข้อมูลติดต่อ, และเมนูลิงก์ต่างๆ ข้อมูลนี้จะถูกดึงไปแสดงผลบนหน้าบ้าน
+                                    ปรับแต่งพื้นที่ส่วนล่าง (Footer) ของหน้าบ้าน รวมถึงสี, ข้อมูลติดต่อ, ตราความเชื่อมั่น และเมนูลิงก์ต่างๆ ข้อมูลนี้จะถูกดึงไปแสดงผลบนหน้าบ้าน
                                 </p>
                             </div>
                             <button onClick={() => setIsGuideOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-white hover:bg-blue-50 rounded-lg transition-colors border border-indigo-200 shadow-xs dh-active-press shrink-0">
@@ -69,11 +77,35 @@ export default function GlobalFooterSettings() {
                             </button>
                         </div>
 
+                        {/* Row 1: Color Palette */}
+                        <ColorThemeSection 
+                            footerConfig={footerConfig} 
+                            handleColorChange={handleColorChange} 
+                            handleApplyColorPreset={handleApplyColorPreset} 
+                        />
+
+                        {/* Row 2: Brand Info & Business Hours */}
+                        <ContactInfoSection 
+                            footerConfig={footerConfig} 
+                            handleCompanyChange={handleCompanyChange} 
+                            handleBusinessHoursChange={handleBusinessHoursChange} 
+                        />
+
+                        {/* Row 3: Trust Badges & Social Media Hub */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <ColorThemeSection footerConfig={footerConfig} handleColorChange={handleColorChange} />
-                            <ContactInfoSection footerConfig={footerConfig} handleCompanyChange={handleCompanyChange} />
+                            <TrustBadgesSection 
+                                footerConfig={footerConfig} 
+                                handleTrustBadgeToggle={handleTrustBadgeToggle} 
+                                handleTrustBadgesEnabled={handleTrustBadgesEnabled} 
+                            />
+                            <SocialMediaHubSection 
+                                footerConfig={footerConfig} 
+                                handleSocialChange={handleSocialChange} 
+                                handleSocialEnabled={handleSocialEnabled} 
+                            />
                         </div>
 
+                        {/* Row 4: Link Zones */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <LinkZoneSection 
                                 title="หมวดหมู่สินค้า (Quick Links)" 
@@ -92,6 +124,9 @@ export default function GlobalFooterSettings() {
                                 removeLink={removeLink} 
                             />
                         </div>
+
+                        {/* Row 5: Live Storefront Preview */}
+                        <LiveStorefrontPreview footerConfig={footerConfig} />
                     </div>
                 </div>
             </div>
@@ -99,21 +134,23 @@ export default function GlobalFooterSettings() {
             <GuideModal 
                 isOpen={isGuideOpen}
                 onClose={() => setIsGuideOpen(false)}
-                title="คู่มือ: ตั้งค่า Footer หน้าบ้าน"
+                title="คู่มือ: ตั้งค่าพื้นที่ส่วนล่าง (Footer Settings)"
                 icon={LayoutPanelTop}
                 config={{
-                    description: "ระบบสำหรับแก้ไขข้อมูลส่วนล่าง (Footer) ของเว็บไซต์หน้าร้าน (Storefront) ได้ด้วยตนเอง ไม่ต้องพึ่งนักพัฒนา",
+                    description: "ส่วนท้ายของเว็บไซต์เป็นจุดสำคัญในการสร้างความเชื่อมั่น ให้ข้อมูลติดต่อ และนำทางลูกค้าไปยังหมวดหมู่หลัก",
                     howTo: [
-                        "<strong>ตั้งค่าสี (Color Theme):</strong> เลือกสีพื้นหลังและสีตัวอักษรของ Footer รองรับการใส่รหัสสี HEX (เช่น #FFFFFF)",
-                        "<strong>ข้อมูลติดต่อ (Contact Info):</strong> ระบุชื่อบริษัท ที่อยู่ และเบอร์โทรศัพท์ เพื่อสร้างความน่าเชื่อถือให้กับลูกค้า",
-                        "<strong>เมนูลิงก์ (Quick Links & Support):</strong> คุณสามารถเพิ่ม แก้ไข ลบ เมนูลัด เช่น นโยบายความเป็นส่วนตัว ลิงก์ติดตามพัสดุ",
-                        "<strong>การบันทึก:</strong> หลังจากแก้ไขเสร็จ ให้กด <code>บันทึกการเปลี่ยนแปลง</code> ที่มุมขวาบน ระบบจะให้ยืนยันอีกครั้ง"
+                        "<strong>ธีมสี:</strong> เลือกโทนสีสำเร็จรูปที่เหมาะกับสไตล์ร้าน หรือระบุคลาสแบบเจาะจง",
+                        "<strong>ข้อมูลแบรนด์ & เวลาทำการ:</strong> ใส่รายละเอียดที่อยู่ เบอร์โทร Line ID และเวลาเปิด-ปิดร้าน",
+                        "<strong>ตราความเชื่อมั่น (Trust Badges):</strong> เปิด/ปิด ตราสัญลักษณ์ความน่าเชื่อถือ เช่น B2B Partner หรือ DBD Registered",
+                        "<strong>Social Media Hub:</strong> ใส่ลิงก์สำหรับติดตามร้านบนแพลตฟอร์มต่างๆ",
+                        "<strong>ลิงก์หมวดหมู่ & ศูนย์ช่วยเหลือ:</strong> เพิ่มหรือแก้ไขลิงก์นำทางด่วน",
+                        "<strong>Live Preview:</strong> เลื่อนลงด้านล่างสุดเพื่อดูตัวอย่าง Footer จริงที่จะแสดงบนหน้าบ้าน"
                     ],
                     tips: [
-                        "ควรใช้สีที่มีความแตกต่างกันระหว่างพื้นหลัง (Background) และตัวอักษร (Text) เพื่อให้อ่านง่าย (High Contrast)",
-                        "สามารถจัดเรียงลิงก์ได้ตามต้องการ เพื่อให้ลูกค้าเข้าถึงหน้าสำคัญๆ ได้ง่ายที่สุด"
+                        "ตรวจสอบข้อมูลติดต่อให้ถูกต้องเสมอ โดยเฉพาะ Line ID และเบอร์โทร เพื่อไม่ให้เสียโอกาสทางการค้า",
+                        "ใช้ Live Preview ด้านล่างช่วยตรวจเช็คความสวยงามก่อนกดบันทึกข้อมูลจริง"
                     ],
-                    expectedResults: "การเปลี่ยนแปลงจะถูกอัปเดตไปที่เว็บไซต์หน้าร้านทันทีหลังจากบันทึก หากไม่เห็นการเปลี่ยนแปลงให้ลองรีเฟรชหน้าเว็บไซต์ (Ctrl + F5)"
+                    expectedResults: "การเปลี่ยนแปลงทั้งหมดจะถูกนำไปอัปเดตลงระบบหน้าบ้านทันที"
                 }}
             />
         </div>

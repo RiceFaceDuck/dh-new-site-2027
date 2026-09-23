@@ -46,9 +46,20 @@ export default function FreebieTable({
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-pink-600 font-bold bg-pink-50 px-2.5 py-1 rounded-md border border-pink-100 whitespace-nowrap">
-                                                {item.itemName} (x{item.qty})
-                                            </span>
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-pink-600 font-bold bg-pink-50 px-2.5 py-1 rounded-md border border-pink-100 whitespace-nowrap">
+                                                    {item.itemName} (x{item.qty})
+                                                </span>
+                                                {item.distributionMode === 'per_item' ? (
+                                                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 whitespace-nowrap" title="แจกตามจำนวนชิ้นสินค้าที่ซื้อ (คูณตามจำนวน)">
+                                                        🔢 ต่อชิ้น
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap" title="แจกคงที่ต่อบิล">
+                                                        📦 ต่อบิล
+                                                    </span>
+                                                )}
+                                            </div>
                                             {item.maxPerBill > 1 && (
                                                 <div className="text-[10px] text-gray-500 mt-1 pl-1">สูงสุด {item.maxPerBill} / บิล</div>
                                             )}

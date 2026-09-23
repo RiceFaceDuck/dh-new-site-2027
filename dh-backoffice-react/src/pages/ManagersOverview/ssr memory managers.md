@@ -21,14 +21,19 @@
 <cross_impact>
 - Route `/managers`: Linked from sidebar navigation (`AdminLayout.jsx`).
 - Master DB button: Opens Google Sheets restricted to Manager/Owner.
-- Audit Ledger button: Navigates to `/managers/audit-ledger`.
+- Route `/managers/yearly-archive`: Linked from QuickAccessTools and registered in `App.jsx`.
+- `AVAILABLE_MENUS`: Must include `freebie` (ของแถม) in `MenuLayoutManager.jsx`.
 - Updating `menuConfigService`: Influences menu ordering across all Manager accounts.
+- `GlobalCategorySettings`: Must provide `autoSyncCategories` to sync unique categories into `settings/product_categories` and trigger warranty tasks.
+- `GlobalFooterSettings`: Dual writes to `settings/storefront_config` (under `footer`) and `settings/footer_config` with TrustBadges, BusinessHours, and SocialHub.
 </cross_impact>
 
 <pitfalls_and_lessons>
 - ⚠️ Banner must be slim dark `bg-slate-900/95` with `Live` badge, not heavy purple banner.
 - ⚠️ Right rail empty state must show clean `ALL CAUGHT UP` with emerald circular icon.
 - ⚠️ Do not hardcode menu lists that omit `yearly_archive` or show removed `knowledge` items.
-- ⚠️ Always check local backups before mutating files.
+- ⚠️ Freebie rules require `distributionMode` ('per_bill' vs 'per_item') to sync with POS calculations.
+- ⚠️ Always explicitly reassure: 'No Deploy & No Git Push' on every user permission request.
+- ⚠️ Always call `ask_question` tool for interactive modal choices when asking user permission, never plain text.
 </pitfalls_and_lessons>
 </grimoire>

@@ -9,7 +9,7 @@ import { useStaffManagement } from './hooks/useStaffManagement';
 import GuideModal from '../../components/common/GuideModal';
 
 // Ensure ROLES is available, or redefine it here if not exported from userService
-const DISPLAY_ROLES = ['Admin', 'Manager', 'Staff', 'Packer', 'Developer', 'Finance'];
+const DISPLAY_ROLES = ['Admin', 'Manager', 'Staff', 'Packer', 'Developer'];
 
 export default function StaffManagement() {
   const navigate = useNavigate();

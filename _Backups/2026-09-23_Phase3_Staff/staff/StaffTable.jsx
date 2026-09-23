@@ -1,7 +1,7 @@
 import { Users, Mail, ShieldAlert, ShieldCheck, Eye, Edit, UserX, UserCheck, Trash2 } from 'lucide-react';
 import { SUPER_ADMINS } from '../../../../firebase/userService';
 
-const ROLES = ['Admin', 'Manager', 'Staff', 'Packer', 'Developer', 'Finance'];
+const ROLES = ['Admin', 'Manager', 'Staff', 'Packer', 'Developer'];
 
 export default function StaffTable({ 
   loading, 

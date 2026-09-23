@@ -9,7 +9,8 @@ import {
   serverTimestamp,
   where,
   limit,
-  getDoc
+  getDoc,
+  setDoc
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -348,6 +349,62 @@ export const categoryService = {
     } catch (error) {
       console.error('Error in toggleCategoryStatus:', error);
       throw error;
+    }
+  },
+
+  /**
+   * H. ดึงรายชื่อหมวดหมู่ที่ไม่ซ้ำจาก settings, homepage_categories, และ products
+   */
+  fetchUniqueCategories: async () => {
+    const uniqueSet = new Set();
+    try {
+      const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
+      const settingsSnap = await getDoc(settingsRef);
+      if (settingsSnap.exists() && Array.isArray(settingsSnap.data().categories)) {
+        settingsSnap.data().categories.forEach(item => {
+          if (item && typeof item === 'string' && item.trim()) uniqueSet.add(item.trim());
+        });
+      }
+
+      const homeSnap = await getDocs(query(collection(db, getCollectionPath('homepage_categories')), limit(100)));
+      homeSnap.forEach(docSnap => {
+        const d = docSnap.data();
+        if (d.name && d.name.trim()) uniqueSet.add(d.name.trim());
+        if (d.type && d.type.trim()) uniqueSet.add(d.type.trim());
+      });
+
+      const prodSnap = await getDocs(query(collection(db, getCollectionPath('products')), limit(100)));
+      prodSnap.forEach(docSnap => {
+        const d = docSnap.data();
+        if (d.category && d.category.trim()) uniqueSet.add(d.category.trim());
+      });
+    } catch (err) {
+      console.warn('⚠️ [Category Fetcher Warning]:', err);
+    }
+    return Array.from(uniqueSet).filter(Boolean);
+  },
+
+  /**
+   * I. ซิงค์หมวดหมู่สินค้าอัตโนมัติ (Auto-Synced)
+   */
+  autoSyncCategories: async () => {
+    try {
+      const categories = await categoryService.fetchUniqueCategories();
+      if (!categories || categories.length === 0) return [];
+
+      const settingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
+      await setDoc(settingsRef, {
+        categories,
+        lastAutoSyncedAt: new Date().toISOString()
+      }, { merge: true });
+
+      const tasks = categories.map(cat => warrantyService.checkAndTriggerWarrantyTaskForNewCategory(cat).catch(() => {}));
+      await Promise.allSettled(tasks);
+      console.info('⚡ [Auto-Sync] ซิงค์หมวดหมู่สินค้าอัตโนมัติสำเร็จแล้ว:', categories.length, 'หมวดหมู่');
+      return categories;
+    } catch (err) {
+      console.warn('⚠️ [Auto-Sync Warning] ไม่สามารถซิงค์หมวดหมู่อัตโนมัติ:', err);
+      throw err;
     }
   }
 };

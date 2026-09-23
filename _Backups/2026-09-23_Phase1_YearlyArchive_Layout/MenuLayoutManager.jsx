@@ -43,7 +43,6 @@ export const AVAILABLE_MENUS = {
   security: { title: "Security & Block", subtitle: "ตั้งค่าการบล็อกและแบน", iconName: "ShieldBan", colorTheme: "red", isComingSoon: true },
   maintenance: { title: "ปิดปรับปรุง", subtitle: "เปิดโหมดซ่อมบำรุงเว็บไซต์", iconName: "HardHat", colorTheme: "orange", isComingSoon: true },
   promotions: { title: "โปรโมชั่น", subtitle: "ตั้งค่าส่วนลดและช่วงเวลา", iconName: "Tags", colorTheme: "fuchsia" },
-  freebie: { title: "ของแถม", subtitle: "จัดการรายการสินค้าสมนาคุณ", iconName: "Gift", colorTheme: "pink" },
   refund: { title: "Wallet & คืนเงิน", subtitle: "ศูนย์รวมพิจารณาคำขอถอนเงินและค้างยอด", iconName: "Wallet", colorTheme: "emerald" },
   shipping: { title: "จัดการค่าจัดส่ง", subtitle: "ตั้งค่าและเงื่อนไขค่าจัดส่ง", iconName: "Truck", colorTheme: "blue" },
   core_settings: { title: "System Core Settings", subtitle: "ตั้งค่าระบบหลักและคอขวด", iconName: "Settings", colorTheme: "slate" },

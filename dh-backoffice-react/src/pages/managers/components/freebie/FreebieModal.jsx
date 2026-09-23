@@ -58,11 +58,47 @@ export default function FreebieModal({
                                 <div>
                                     <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">ให้กี่ชิ้น? <span className="text-rose-500">*</span></label>
                                     <input type="number" required min="1" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="w-full p-2.5 rounded-lg border border-gray-300 focus:border-pink-500 outline-hidden text-sm font-bold bg-white text-center"/>
+                                    <span className="text-[10px] text-gray-500 mt-0.5 block text-center">{formData.distributionMode === 'per_item' ? '(ต่อ 1 ชิ้นสินค้า)' : '(รวมต่อ 1 บิล)'}</span>
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">สูงสุดต่อบิล</label>
                                     <input type="number" min="1" value={formData.maxPerBill} onChange={e => setFormData({...formData, maxPerBill: e.target.value})} className="w-full p-2.5 rounded-lg border border-gray-300 focus:border-pink-500 outline-hidden text-sm font-bold bg-white text-center"/>
+                                    <span className="text-[10px] text-gray-500 mt-0.5 block text-center">(ลิมิตสูงสุด/บิล)</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-gray-600 uppercase mb-1.5 block">รูปแบบการคำนวณของแถม <span className="text-rose-500">*</span></label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${formData.distributionMode === 'per_item' ? 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' : 'bg-pink-50/70 border-pink-300 text-pink-900'}`}>
+                                    <input 
+                                        type="radio" 
+                                        name="distributionMode" 
+                                        value="per_bill" 
+                                        checked={formData.distributionMode !== 'per_item'} 
+                                        onChange={e => setFormData({ ...formData, distributionMode: e.target.value })} 
+                                        className="mt-0.5 accent-pink-600"
+                                    />
+                                    <div>
+                                        <div className="text-xs font-bold">📦 แจกคงที่ต่อบิล (Per Bill)</div>
+                                        <div className="text-[10px] opacity-75 mt-0.5">แจกจำนวนตามที่ระบุ 1 ชุดต่อบิล เมื่อตรงเงื่อนไข (ไม่คูณเพิ่มตามจำนวนที่ซื้อ)</div>
+                                    </div>
+                                </label>
+                                <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${formData.distributionMode === 'per_item' ? 'bg-pink-50/70 border-pink-300 text-pink-900' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                                    <input 
+                                        type="radio" 
+                                        name="distributionMode" 
+                                        value="per_item" 
+                                        checked={formData.distributionMode === 'per_item'} 
+                                        onChange={e => setFormData({ ...formData, distributionMode: e.target.value })} 
+                                        className="mt-0.5 accent-pink-600"
+                                    />
+                                    <div>
+                                        <div className="text-xs font-bold">🔢 แจกตามจำนวนสินค้า (Per Item)</div>
+                                        <div className="text-[10px] opacity-75 mt-0.5">คูณจำนวนของแถมเพิ่มตามชิ้นสินค้าที่ซื้อ (เช่น ซื้อ 1 แถม 1, ซื้อ 5 แถม 5)</div>
+                                    </div>
+                                </label>
                             </div>
                         </div>
 

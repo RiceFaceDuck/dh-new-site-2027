@@ -1,8 +1,9 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const FOOTER_DOC = 'footer_config';
+const STOREFRONT_DOC = 'storefront_config';
 
 export const DEFAULT_FOOTER_CONFIG = {
   colors: {
@@ -17,6 +18,35 @@ export const DEFAULT_FOOTER_CONFIG = {
     lineId: '@dhnotebook',
     lineAddFriendUrl: 'https://line.me/ti/p/~@dhnotebook',
     phone: '02-xxx-xxxx'
+  },
+  socialHub: {
+    enabled: true,
+    facebook: 'https://facebook.com/dhnotebook',
+    tiktok: 'https://tiktok.com/@dhnotebook',
+    line: 'https://line.me/ti/p/~@dhnotebook',
+    youtube: 'https://youtube.com/@dhnotebook',
+    instagram: 'https://instagram.com/dhnotebook'
+  },
+  trustBadges: {
+    enabled: true,
+    badges: [
+      { id: 'b2bPartner', label: 'VERIFIED B2B PARTNER', icon: 'ShieldCheck', active: true, description: 'พันธมิตรช่างซ่อมและร้านค้าทั่วประเทศ' },
+      { id: 'dbdRegistered', label: 'DBD REGISTERED', icon: 'Award', active: true, description: 'จดทะเบียนพาณิชย์อิเล็กทรอนิกส์ถูกต้อง' },
+      { id: 'genuineWarranty', label: 'รับประกันของแท้ 100%', icon: 'CheckCircle2', active: true, description: 'มั่นใจในคุณภาพสินค้าทุกชิ้น' },
+      { id: 'expressDelivery', label: 'จัดส่งด่วน 24 ชม.', icon: 'Truck', active: true, description: 'จัดส่งรวดเร็วทั่วไทย ถึงมือทันใจ' }
+    ]
+  },
+  businessHours: {
+    openHours: '10:00',
+    closeHours: '19:30',
+    days: 'เปิดบริการทุกวัน (จันทร์ - อาทิตย์)',
+    note: 'ศูนย์บริการเซียร์รังสิตเปิดทำการตามเวลาห้างสรรพสินค้า',
+    emergencyCare: {
+      available: true,
+      phone: '081-xxx-xxxx',
+      label: 'สายด่วนช่าง 24 ชม.',
+      note: 'ปรึกษาปัญหาฮาร์ดแวร์เร่งด่วนนอกเวลาทำการ'
+    }
   },
   quickLinks: [
     { id: 'q1', label: 'อะไหล่ภายใน', url: '#' },
@@ -35,11 +65,18 @@ export const DEFAULT_FOOTER_CONFIG = {
 export const footerSettingsService = {
   getFooterConfig: async () => {
     try {
-      const docRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        return { ...DEFAULT_FOOTER_CONFIG, ...snap.data() };
+      const storefrontRef = doc(db, getCollectionPath('settings'), STOREFRONT_DOC);
+      const storefrontSnap = await getDoc(storefrontRef);
+      if (storefrontSnap.exists() && storefrontSnap.data()?.footer) {
+        return { ...DEFAULT_FOOTER_CONFIG, ...storefrontSnap.data().footer };
       }
+
+      const footerRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
+      const footerSnap = await getDoc(footerRef);
+      if (footerSnap.exists()) {
+        return { ...DEFAULT_FOOTER_CONFIG, ...footerSnap.data() };
+      }
+
       return DEFAULT_FOOTER_CONFIG;
     } catch (error) {
       console.error("🔥 Error fetching footer config:", error);
@@ -49,12 +86,21 @@ export const footerSettingsService = {
 
   updateFooterConfig: async (configData) => {
     try {
-      const docRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
-      await setDoc(docRef, {
+      const batch = writeBatch(db);
+      const storefrontRef = doc(db, getCollectionPath('settings'), STOREFRONT_DOC);
+      batch.set(storefrontRef, {
+        footer: configData,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      const footerRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
+      batch.set(footerRef, {
         ...configData,
         updatedAt: serverTimestamp()
       }, { merge: true });
-      return { success: true, message: 'บันทึกการตั้งค่า Footer สำเร็จ' };
+
+      await batch.commit();
+      return { success: true, message: 'บันทึกการตั้งค่า Footer สำเร็จ', data: configData };
     } catch (error) {
       console.error("🔥 Error updating footer config:", error);
       throw error;

@@ -1,18 +1,15 @@
 import { useState } from 'react';
-import { LayoutTemplate, ArrowLeft, Layers, Sparkles, Users, CheckCircle2 } from 'lucide-react';
+import { LayoutTemplate, ArrowLeft, Layers, Sparkles, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import CategoryManager from '../../components/managers/category/CategoryManager';
 import FeaturedSettings from '../../components/managers/featured/FeaturedSettings';
 import SquadHighlightSettings from '../../components/managers/squad/SquadHighlightSettings';
 import GuideModal from '../../components/common/GuideModal';
-import { categoryService } from '../../firebase/categoryService';
 
 export default function GlobalCategorySettings() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('categories');
     const [isGuideOpen, setIsGuideOpen] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
 
     return (
         <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 h-[calc(100vh-4rem)] flex flex-col">
@@ -38,28 +35,25 @@ export default function GlobalCategorySettings() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 bg-emerald-100/70 border border-emerald-200/80 px-3 py-1.5 rounded-xl shadow-xs shrink-0">
-                            <CheckCircle2 size={16} className="text-emerald-600 animate-pulse" />
-                            <span className="text-xs font-bold text-emerald-800">ซิงค์หมวดหมู่อัตโนมัติ (Auto-Synced)</span>
-                            <button
-                                onClick={async () => {
+                        <button
+                            onClick={async () => {
+                                if(window.confirm('คุณต้องการอัปเดตข้อมูลหมวดหมู่สินค้าทั้งหมดใช่หรือไม่? (อาจใช้เวลาสักครู่)')) {
                                     try {
-                                        setIsSyncing(true);
-                                        const res = await categoryService.autoSyncCategories();
-                                        toast.success(`⚡ ระบบซิงค์หมวดหมู่อัตโนมัติสำเร็จ! (${res?.length || 0} หมวดหมู่)`);
-                                    } catch (err) {
-                                        toast.error(`เกิดข้อผิดพลาดในการซิงค์: ${err.message}`);
-                                    } finally {
-                                        setIsSyncing(false);
+                                        if (window.runCategoryMigration) {
+                                            await window.runCategoryMigration();
+                                            alert('อัปเดตข้อมูลหมวดหมู่สำเร็จแล้ว! ลูกค้าสามารถดูสินค้าได้ตามปกติครับ');
+                                        } else {
+                                            alert('ไม่พบฟังก์ชัน Migration โปรดรีเฟรชหน้าเว็บหนึ่งครั้ง');
+                                        }
+                                    } catch(e) {
+                                        alert('เกิดข้อผิดพลาด: ' + e.message);
                                     }
-                                }}
-                                disabled={isSyncing}
-                                className="ml-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 underline transition-colors disabled:opacity-50"
-                                title="คลิกเพื่อซิงค์ทันที"
-                            >
-                                {isSyncing ? 'กำลังซิงค์...' : 'ซิงค์ทันที'}
-                            </button>
-                        </div>
+                                }
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-xl transition-colors border border-amber-200 shadow-xs shrink-0"
+                        >
+                            <Layers size={16} /> ซ่อมแซมหมวดหมู่สินค้า (Migration)
+                        </button>
                         <button 
                             onClick={() => setIsGuideOpen(true)} 
                             className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-100/50 hover:bg-emerald-200/50 rounded-xl transition-colors border border-emerald-200 shadow-xs dh-active-press shrink-0"

@@ -54,7 +54,6 @@ const RoleTierSettings = lazy(() => import('./pages/managers/RoleTierSettings/Ro
 const SystemCoreSettings = lazy(() => import('./pages/managers/settings/core/SystemCoreSettings'))
 const DataRepairPage = lazy(() => import('./pages/managers/settings/data_repair/DataRepairPage'))
 const AuditLedger = lazy(() => import('./pages/managers/AuditLedger'))
-const YearlyArchivePage = lazy(() => import('./pages/managers/yearly_archive/YearlyArchivePage'))
 const GenerateSyncLayout = lazy(() => import('./pages/GenerateSync/GenerateSyncLayout'))
 const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
 const GenerateSyncDetails = lazy(() => import('./pages/GenerateSync/GenerateSyncDetails'))
@@ -219,7 +218,6 @@ function AppContent() {
             <Route path="managers/core-settings" element={<SystemCoreSettings />} />
             <Route path="managers/data-repair" element={<DataRepairPage />} />
             <Route path="managers/audit-ledger" element={<AuditLedger />} />
-            <Route path="managers/yearly-archive" element={<YearlyArchivePage />} />
           </Route>
           
           <Route path="history" element={<HistoryPage />}/>
