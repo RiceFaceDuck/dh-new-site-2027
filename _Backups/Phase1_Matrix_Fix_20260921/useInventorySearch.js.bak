@@ -1,0 +1,322 @@
+import { useState, useEffect, useMemo } from 'react';
+import { gasStockService } from '../../../firebase/gasStockService';
+
+import { safeJsonParse } from 'dh-shared';
+const CACHE_KEY = 'inventory_full_cache';
+const CACHE_EXPIRY_KEY = 'inventory_full_cache_expiry';
+const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours in ms
+
+export default function useInventorySearch(products, searchTerm, filterCategory, sortConfig, salesPeriod) {
+  const [allProductsCache, setAllProductsCache] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      const expiry = sessionStorage.getItem(CACHE_EXPIRY_KEY);
+      if (cached && expiry && new Date().getTime() < Number(expiry)) {
+        return safeJsonParse(cached);
+      }
+    } catch (e) {
+      console.warn('Failed to parse cache', e);
+    }
+    return null;
+  });
+  
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
+
+  // โหลดข้อมูลทั้งหมดเมื่อมีการค้นหา หมวดหมู่ หรือจัดเรียง
+  const isGlobalActionActive = searchTerm || filterCategory !== 'All' || sortConfig?.key;
+
+  useEffect(() => {
+    if (!allProductsCache && !isFetchingAll) {
+      const fetchAll = async () => {
+        setIsFetchingAll(true);
+        try {
+          // ดึงข้อมูล Backup แบบประหยัดโควต้า Firebase จาก GAS (Google Sheet)
+          const data = await gasStockService.fetchBackupInventory();
+          
+          setAllProductsCache(data);
+          
+          // เก็บลง sessionStorage
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            sessionStorage.setItem(CACHE_EXPIRY_KEY, String(new Date().getTime() + CACHE_TTL));
+          } catch (storageError) {
+            console.warn("Could not save to sessionStorage (might be full)", storageError);
+          }
+          
+        } catch (error) {
+          console.error("Error fetching backup inventory from GAS:", error);
+        } finally {
+          setIsFetchingAll(false);
+        }
+      };
+      fetchAll();
+    }
+  }, [allProductsCache, isFetchingAll]);
+
+  // ใช้ cache ถ้ามี แต่ต้อง 'ผสาน' กับข้อมูล products เดิมจาก Firebase
+  // อย่างถูกต้อง: ต้องเอา live products เป็นตัวตั้ง แล้วค่อยเติมสินค้าจาก cache ที่ไม่อยู่ใน live
+  const rawSourceProducts = useMemo(() => {
+    if (!allProductsCache) return products;
+    
+    const liveSkus = new Set(products.map(p => p.sku));
+    const cacheMap = new Map(allProductsCache.map(cp => [cp.sku, cp]));
+    
+    // 1. Live products (ผสานข้อมูลจาก cache เข้าไป)
+    const merged = products.map(liveProduct => {
+      const cacheProduct = cacheMap.get(liveProduct.sku);
+      return cacheProduct ? { ...cacheProduct, ...liveProduct } : liveProduct;
+    });
+    
+    // 2. เติมสินค้าจาก Cache ที่ยังโหลดมาไม่ถึงใน Live (Pagination fallback)
+    allProductsCache.forEach(cp => {
+      if (!liveSkus.has(cp.sku)) {
+        merged.push(cp);
+      }
+    });
+    
+    return merged;
+  }, [allProductsCache, products]);
+
+  const [statsMap, setStatsMap] = useState({});
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadStats = async () => {
+      if (rawSourceProducts && rawSourceProducts.length > 0) {
+        try {
+          const { inventoryStatsService } = await import('../../../firebase/inventory/inventoryStatsService');
+          const res = await inventoryStatsService.fetchProductStats(rawSourceProducts, salesPeriod);
+          if (isMounted) {
+            setStatsMap(res);
+          }
+        } catch (e) {
+          console.error("Failed to load 30D stats:", e);
+        }
+      }
+    };
+    loadStats();
+    return () => { isMounted = false; };
+  }, [rawSourceProducts.length, salesPeriod]);
+
+  const sourceProducts = useMemo(() => {
+    return rawSourceProducts.map(p => {
+      const st = statsMap[p.sku] || {};
+      const resolveMetric = (statVal, fieldName, historyObj) => {
+        if (statVal != null && !isNaN(Number(statVal))) return Number(statVal);
+        const histVal = historyObj?.[salesPeriod];
+        if (histVal != null && !isNaN(Number(histVal))) return Number(histVal);
+        const flatVal = p[`${fieldName}.${salesPeriod}`];
+        if (flatVal != null && !isNaN(Number(flatVal))) return Number(flatVal);
+        const baseKey = fieldName.replace('History', '');
+        const fallback = p[`${baseKey}${salesPeriod}D`] ?? p[`${baseKey}30D`] ?? (fieldName === 'claimHistory' ? (p[`claims${salesPeriod}D`] ?? p.claims30D) : null);
+        if (fallback != null && !isNaN(Number(fallback))) return Number(fallback);
+        if (fieldName === 'salesHistory' && salesPeriod === '30') {
+          const sold = p.stats?.sold;
+          if (sold != null && !isNaN(Number(sold))) return Number(sold);
+        }
+        return 0;
+      };
+
+      return {
+        ...p,
+        stockInHistory: { ...p.stockInHistory, [salesPeriod]: resolveMetric(st.stockIn, 'stockInHistory', p.stockInHistory) },
+        salesHistory: { ...p.salesHistory, [salesPeriod]: resolveMetric(st.sales, 'salesHistory', p.salesHistory) },
+        claimHistory: { ...p.claimHistory, [salesPeriod]: resolveMetric(st.claim, 'claimHistory', p.claimHistory) },
+        adjustmentHistory: { ...p.adjustmentHistory, [salesPeriod]: resolveMetric(st.adjustment, 'adjustmentHistory', p.adjustmentHistory) }
+      };
+    });
+  }, [rawSourceProducts, statsMap, salesPeriod]);
+
+  // 🚀 เพิ่ม Fallback Search ถ้าระบุ SKU ตรงๆ แล้วหาในแคชไม่เจอ
+  const [fallbackProduct, setFallbackProduct] = useState(null);
+
+  useEffect(() => {
+    const fetchFallback = async () => {
+      const safeTerm = typeof searchTerm === 'string' ? searchTerm.trim() : (searchTerm != null ? String(searchTerm).trim() : '');
+      if (safeTerm && !isFetchingAll) {
+        const term = safeTerm.toLowerCase();
+        const foundInCache = sourceProducts.some(p => {
+          const s = p.sku ? String(p.sku).toLowerCase() : '';
+          return s === term || s.includes(term);
+        });
+        if (!foundInCache) {
+          try {
+            // ดึงจาก inventoryQueryService (ต้อง import ก่อน)
+            const { inventoryQueryService } = await import('../../../firebase/inventory/inventoryQueryService');
+            const fbMatch = await inventoryQueryService.getProductBySku(safeTerm.toUpperCase());
+            if (fbMatch) {
+              setFallbackProduct(fbMatch);
+            } else {
+              setFallbackProduct(null);
+            }
+          } catch (e) {
+            setFallbackProduct(null);
+          }
+        } else {
+          setFallbackProduct(null);
+        }
+      } else {
+        setFallbackProduct(null);
+      }
+    };
+    fetchFallback();
+  }, [searchTerm, sourceProducts, isFetchingAll]);
+
+  let processedProducts = sourceProducts.filter(p => {
+    const term = (typeof searchTerm === 'string' ? searchTerm : (searchTerm != null ? String(searchTerm) : '')).trim().toLowerCase();
+    const matchesSearch = !term || (() => {
+      const sku = p.sku ? String(p.sku).toLowerCase() : '';
+      const name = p.name ? String(p.name).toLowerCase() : '';
+      const cat = p.category ? String(p.category).toLowerCase() : '';
+      const brand = p.brand ? String(p.brand).toLowerCase() : '';
+      const model = p.model ? String(p.model).toLowerCase() : '';
+      let tagMatch = false;
+      if (p.tags) {
+        if (Array.isArray(p.tags)) {
+          tagMatch = p.tags.some(t => t && String(t).toLowerCase().includes(term));
+        } else if (typeof p.tags === 'string') {
+          tagMatch = p.tags.toLowerCase().includes(term);
+        }
+      }
+      return sku.includes(term) || name.includes(term) || cat.includes(term) || brand.includes(term) || model.includes(term) || tagMatch;
+    })();
+
+    const targetCat = (filterCategory || '').trim().toLowerCase();
+    const matchesCategory = !filterCategory || filterCategory === 'All' || 
+      (p.category && String(p.category).trim().toLowerCase() === targetCat) || 
+      (p.type && String(p.type).trim().toLowerCase() === targetCat) ||
+      p.category === filterCategory || p.type === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  if (fallbackProduct && !processedProducts.some(p => p.sku === fallbackProduct.sku)) {
+    processedProducts = [fallbackProduct, ...processedProducts];
+  }
+
+  // 🚀 เพิ่มระบบจัดเรียง (Sorting)
+  if (sortConfig?.key) {
+    processedProducts = [...processedProducts].sort((a, b) => {
+      let valA, valB;
+      
+      switch (sortConfig.key) {
+        case 'Price':
+          valA = Number(a.Price ?? a.price ?? a.wholesalePrice ?? 0);
+          valB = Number(b.Price ?? b.price ?? b.wholesalePrice ?? 0);
+          break;
+        case 'retailPrice':
+          valA = Number(a.retailPrice || 0);
+          valB = Number(b.retailPrice || 0);
+          break;
+        case 'stock':
+          valA = Number(a.stockQuantity || 0);
+          valB = Number(b.stockQuantity || 0);
+          break;
+        case 'sales':
+          valA = Number(a.salesHistory?.[salesPeriod] || 0);
+          valB = Number(b.salesHistory?.[salesPeriod] || 0);
+          break;
+        case 'stockIn':
+          valA = Number(a.stockInHistory?.[salesPeriod] || 0);
+          valB = Number(b.stockInHistory?.[salesPeriod] || 0);
+          break;
+        case 'claim':
+          valA = Number(a.claimHistory?.[salesPeriod] || 0);
+          valB = Number(b.claimHistory?.[salesPeriod] || 0);
+          break;
+        case 'adjustment':
+          valA = Number(a.adjustmentHistory?.[salesPeriod] || 0);
+          valB = Number(b.adjustmentHistory?.[salesPeriod] || 0);
+          break;
+        case 'category':
+          valA = String(a.category || '');
+          valB = String(b.category || '');
+          return sortConfig.direction === 'asc' 
+            ? valA.localeCompare(valB, 'th') 
+            : valB.localeCompare(valA, 'th');
+        default:
+          valA = 0;
+          valB = 0;
+      }
+
+      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // 📄 Pagination System (21, 50, 100, 250 items per page)
+  const [itemsPerPage, setItemsPerPage] = useState(21);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // รีเซ็ตกลับไปหน้า 1 เมื่อเงื่อนไขการค้นหา/ตัวกรอง/การจัดเรียง/จำนวนรายการต่อหน้าเปลี่ยน
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, sortConfig?.key, sortConfig?.direction, itemsPerPage]);
+
+  const totalItems = processedProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage) || 1);
+  
+  // Clamped effective page to protect rendering slices and display bounds
+  const safeCurrentPage = totalItems === 0 ? 1 : Math.min(Math.max(1, currentPage), totalPages);
+
+  // ปรับ currentPage หากเกินจำนวนหน้าทั้งหมดที่มี
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (currentPage < 1) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const startIndex = totalItems === 0 ? 0 : (safeCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  
+  // ตัดข้อมูลเฉพาะหน้าที่เลือก
+  const paginatedProducts = processedProducts.slice(startIndex, endIndex);
+
+  const handleSetCurrentPage = (pageOrFn) => {
+    setCurrentPage(prev => {
+      const target = typeof pageOrFn === 'function' ? pageOrFn(prev) : pageOrFn;
+      const num = Number(target);
+      if (isNaN(num) || num < 1) return 1;
+      if (num > totalPages) return totalPages;
+      return num;
+    });
+  };
+
+  const updateCache = (productData, isEdit) => {
+    if (allProductsCache) {
+      const newCache = isEdit 
+        ? allProductsCache.map(p => p.sku === productData.sku ? productData : p)
+        : [productData, ...allProductsCache];
+        
+      setAllProductsCache(newCache);
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+      } catch (e) {
+         // ignore
+      }
+    }
+  };
+
+  const clearCache = () => {
+    setAllProductsCache(null);
+    sessionStorage.removeItem(CACHE_KEY);
+    sessionStorage.removeItem(CACHE_EXPIRY_KEY);
+  };
+
+  return {
+    filteredProducts: paginatedProducts,
+    isSearching: isFetchingAll,
+    totalItems,
+    currentPage: safeCurrentPage,
+    setCurrentPage: handleSetCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    updateCache,
+    clearCache
+  };
+}

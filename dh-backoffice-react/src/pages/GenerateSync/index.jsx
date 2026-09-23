@@ -23,6 +23,7 @@ export default function GenerateSync() {
     fetchChanges,
     handleManualReset,
     latestSnapshot,
+    latestFullExport,
     fetchLatestSnapshot
   } = useGenerateSync();
 
@@ -34,17 +35,13 @@ export default function GenerateSync() {
         onOpenGuide={() => setShowGuide(true)}
       />
 
-      {/* Auto Sync & Status Bar */}
+      {/* Status Bar */}
       <GenerateSyncStatusBar
         isFlushing={isFlushing}
         pendingCount={pendingCount}
         lastSyncTime={lastSyncTime}
         isCalculating={isCalculating}
         fetchChanges={fetchChanges}
-        autoSyncEnabled={autoSyncEnabled}
-        updateAutoSync={updateAutoSync}
-        syncInterval={syncInterval}
-        updateSyncInterval={updateSyncInterval}
       />
 
       {/* Content */}
@@ -54,10 +51,10 @@ export default function GenerateSync() {
             {/* Left Column: Actions */}
             <div className="flex flex-col gap-4">
               <GenerateActions 
-                  changes={changes} 
+                  changes={latestFullExport?.changes || changes} 
                   isCalculating={isCalculating} 
                   onManualReset={handleManualReset}
-                  latestSnapshot={latestSnapshot}
+                  latestSnapshot={latestFullExport || latestSnapshot}
               />
               <UploadTransactions 
                   onUploadComplete={fetchChanges} 
@@ -69,20 +66,20 @@ export default function GenerateSync() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-200 p-5 relative overflow-hidden flex flex-col min-h-[500px]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
               
-              {changes ? (
+              {isCalculating ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full z-10 relative">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-4"></div>
+                      <p className="text-sm font-medium">กำลังเปรียบเทียบข้อมูลล่าสุด...</p>
+                  </div>
+              ) : (
                   <ChangeSummaryPanel 
-                      changes={changes} 
+                      changes={changes || { increased: [], decreased: [], priceChanged: [], otherChanged: [] }} 
                       latestSnapshot={latestSnapshot}
                       onManualReset={handleManualReset} 
                       onSnapshotSaved={fetchLatestSnapshot}
                       isCalculating={isCalculating}
                   />
-              ) : isCalculating ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full z-10 relative">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-4"></div>
-                      <p className="text-sm font-medium">กำลังเปรียบเทียบข้อมูลล่าสุด...</p>
-                  </div>
-              ) : null}
+              )}
             </div>
 
         </div>

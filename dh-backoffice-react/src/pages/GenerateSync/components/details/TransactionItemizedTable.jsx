@@ -32,14 +32,20 @@ export default function TransactionItemizedTable({ filteredTransactions, onNavig
                     <td className="py-1 px-2.5 text-center font-bold text-slate-400 text-[11px] align-middle">{idx + 1}</td>
                     <td className="py-1 px-2.5 text-slate-600 dark:text-slate-300 font-mono text-[11px] align-middle">{tx.timestamp}</td>
                     <td className="py-1 px-2.5 align-middle">
-                      <button
-                        onClick={() => onNavigateToTransaction(tx.eventCategory, tx.txId)}
-                        className="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:hover:bg-indigo-900 dark:text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800 text-[11px] font-mono font-bold transition-all cursor-pointer group/tx hover:shadow-2xs"
-                        title={`คลิกเพื่อเปิดดูรายการ ${tx.txId}`}
-                      >
-                        <span>{tx.txId}</span>
-                        <ExternalLink size={10} className="opacity-60 group-hover/tx:opacity-100 group-hover/tx:translate-x-0.5 transition-all" />
-                      </button>
+                      {tx.hasRealDocument ? (
+                        <button
+                          onClick={() => onNavigateToTransaction(tx.eventCategory, tx.txId)}
+                          className="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:hover:bg-indigo-900 dark:text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800 text-[11px] font-mono font-bold transition-all cursor-pointer group/tx hover:shadow-2xs"
+                          title={`คลิกเพื่อเปิดดูรายการ ${tx.txId}`}
+                        >
+                          <span>{tx.txId}</span>
+                          <ExternalLink size={10} className="opacity-60 group-hover/tx:opacity-100 group-hover/tx:translate-x-0.5 transition-all" />
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600 text-[10px] font-medium" title="ไม่มีเอกสารอ้างอิง (การตรวจนับหรือปรับยอดสต็อก)">
+                          {tx.txId}
+                        </span>
+                      )}
                     </td>
                     <td className="py-1 px-2.5 align-middle">
                       <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block truncate max-w-[150px]" title={tx.customerName}>

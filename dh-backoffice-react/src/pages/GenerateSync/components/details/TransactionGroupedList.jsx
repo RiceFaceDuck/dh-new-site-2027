@@ -22,17 +22,26 @@ export default function TransactionGroupedList({ groupedByBill, expandedBills, o
           <div key={group.txId} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-2xs hover:border-indigo-300 dark:hover:border-indigo-700 transition-all overflow-hidden">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-3.5 py-2.5 gap-2 text-xs">
               <div className="flex items-center gap-2.5 min-w-0 shrink-0">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNavigateToTransaction(group.eventCategory, group.txId);
-                  }}
-                  className="font-mono font-black text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900 dark:hover:text-indigo-100 px-2.5 py-1 rounded-md border border-indigo-200 dark:border-indigo-800 shrink-0 flex items-center gap-1 transition-all cursor-pointer group/tx hover:shadow-2xs"
-                  title={`คลิกเพื่อเปิดดูรายการ ${group.txId}`}
-                >
-                  <span>{group.txId}</span>
-                  <ExternalLink size={11} className="opacity-60 group-hover/tx:opacity-100 group-hover/tx:translate-x-0.5 transition-all" />
-                </button>
+                {firstItem.hasRealDocument ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigateToTransaction(group.eventCategory, group.txId);
+                    }}
+                    className="font-mono font-black text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900 dark:hover:text-indigo-100 px-2.5 py-1 rounded-md border border-indigo-200 dark:border-indigo-800 shrink-0 flex items-center gap-1 transition-all cursor-pointer group/tx hover:shadow-2xs"
+                    title={`คลิกเพื่อเปิดดูรายการ ${group.txId}`}
+                  >
+                    <span>{group.txId}</span>
+                    <ExternalLink size={11} className="opacity-60 group-hover/tx:opacity-100 group-hover/tx:translate-x-0.5 transition-all" />
+                  </button>
+                ) : (
+                  <span 
+                    className="font-mono text-xs bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 shrink-0 font-medium"
+                    title="ไม่มีเอกสารอ้างอิง (การตรวจนับหรือปรับยอดสต็อก)"
+                  >
+                    {group.txId}
+                  </span>
+                )}
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border shrink-0 ${group.eventBadgeClass}`}>
                   {Icon && <Icon size={12} />}
                   {group.eventLabel}

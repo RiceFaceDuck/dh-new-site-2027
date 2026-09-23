@@ -39,14 +39,15 @@ export default function GenerateSyncDetails() {
   const handleNavigateToTransaction = (eventCategory, txId) => {
     if (!txId) return;
     const cleanId = String(txId).trim();
+    if (cleanId.includes('ไม่มีเอกสาร') || cleanId === '-' || cleanId.includes('ปรับโครงสร้าง') || cleanId.includes('อัปเดตข้อมูล')) return;
 
-    if (eventCategory === 'sale' || cleanId.startsWith('BILL-') || cleanId.startsWith('ORD-') || cleanId.startsWith('BS-') || cleanId.startsWith('DH-')) {
+    if (eventCategory === 'sale' || cleanId.startsWith('BILL-') || cleanId.startsWith('ORD-') || cleanId.startsWith('DH-') || cleanId.startsWith('INV-')) {
       navigate(`/billing?search=${encodeURIComponent(cleanId)}`);
-    } else if (eventCategory === 'claim' || cleanId.startsWith('CLM-') || cleanId.startsWith('TIC-')) {
+    } else if (eventCategory === 'claim' || cleanId.startsWith('CLM-') || cleanId.startsWith('TIC-') || cleanId.startsWith('RTN-') || cleanId.startsWith('EXC-')) {
       navigate(`/claims?search=${encodeURIComponent(cleanId)}`);
-    } else if (eventCategory === 'adjust' || cleanId.startsWith('STK-')) {
+    } else if (eventCategory === 'adjust') {
       navigate(`/managers/inventory-adjustment`);
-    } else if (eventCategory === 'price' || cleanId.startsWith('PRC-')) {
+    } else if (eventCategory === 'price') {
       navigate(`/managers/pricing`);
     } else {
       navigate(`/billing?search=${encodeURIComponent(cleanId)}`);

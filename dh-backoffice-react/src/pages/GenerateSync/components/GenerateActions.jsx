@@ -9,12 +9,38 @@ import GuidePanel from '../../../components/common/GuidePanel';
 export default function GenerateActions({ changes, isCalculating, onManualReset, latestSnapshot }) {
   const [showSettings, setShowSettings] = useState(false);
 
-  // ถ้ารายการทั้งหมดเป็น 0 แปลว่าไม่มีข้อมูลค้าง และถูกบันทึก/ส่งออกหมดแล้ว
-  const isUpToDate = changes &&
+  const isUpToDate = Boolean(
+    changes &&
     changes.increased?.length === 0 &&
     changes.decreased?.length === 0 &&
     changes.priceChanged?.length === 0 &&
-    (!changes.otherChanged || changes.otherChanged?.length === 0);
+    (!changes.otherChanged || changes.otherChanged?.length === 0)
+  );
+
+  const hasSnapshot = Boolean(latestSnapshot && latestSnapshot.transactionId);
+  const hasPendingActivity = Boolean(
+    (Array.isArray(changes?.decreased) && changes.decreased.length > 0) ||
+    (Array.isArray(changes?.increased) && changes.increased.length > 0) ||
+    (Array.isArray(changes?.priceChanged) && changes.priceChanged.length > 0) ||
+    (Array.isArray(changes?.otherChanged) && changes.otherChanged.length > 0)
+  );
+
+  const isAllSku = Boolean(latestSnapshot?.isAllSkuMode);
+
+  let badgeText = '';
+  let badgeClass = '';
+  if (hasSnapshot) {
+    if (isAllSku) {
+      badgeText = `[ALL SKU ทั้งหมด] เตรียมข้อมูลส่งออก พร้อมแล้ว (อ้างอิง: ${latestSnapshot.transactionId})`;
+      badgeClass = 'bg-indigo-50 border border-indigo-200 text-indigo-700';
+    } else if (hasPendingActivity) {
+      badgeText = `(รอบตรวจนับประจำวัน [DET] บันทึกเดิม (มียอดสต็อกใหม่อยู่ระหว่างดำเนินการ อ้างอิง: ${latestSnapshot.transactionId})`;
+      badgeClass = 'bg-amber-50 border border-amber-200 text-amber-700';
+    } else {
+      badgeText = `[รอบตรวจจับประจำวัน DET] เตรียมข้อมูลส่งออก พร้อมแล้ว (อ้างอิง: ${latestSnapshot.transactionId})`;
+      badgeClass = 'bg-emerald-50 border border-emerald-200 text-emerald-700';
+    }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-200 w-full relative overflow-hidden group">
@@ -40,9 +66,13 @@ export default function GenerateActions({ changes, isCalculating, onManualReset,
             อัปเดตสต็อก Big Seller
         </h3>
         
-        {isUpToDate ? (
+        {hasSnapshot ? (
+            <div data-testid="snapshot-badge" className={`flex items-center gap-1.5 px-3 py-1 mb-6 ${badgeClass} text-xs font-bold rounded-full shadow-xs animate-in zoom-in duration-300`}>
+                <CheckCircle size={14} /> {badgeText}
+            </div>
+        ) : isUpToDate ? (
             <div className="flex items-center gap-1.5 px-3 py-1 mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-full shadow-xs animate-in zoom-in duration-300">
-                <CheckCircle size={14} /> เตรียมข้อมูลส่งออก พร้อมแล้ว {latestSnapshot ? `(อ้างอิง: ${latestSnapshot.transactionId})` : ''}
+                <CheckCircle size={14} /> เตรียมข้อมูลส่งออก พร้อมแล้ว
             </div>
         ) : (
             <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6 max-w-sm">
@@ -60,11 +90,11 @@ export default function GenerateActions({ changes, isCalculating, onManualReset,
           
           <div className="flex flex-col gap-4">
             <SkuMerchantExport 
-              changes={isUpToDate && latestSnapshot ? latestSnapshot.changes : changes} 
+              changes={isAllSku ? latestSnapshot.changes : (isUpToDate && latestSnapshot ? latestSnapshot.changes : changes)} 
               isCalculating={isCalculating} 
             />
             <InventoryCountExport 
-              changes={isUpToDate && latestSnapshot ? latestSnapshot.changes : changes} 
+              changes={isAllSku ? latestSnapshot.changes : (isUpToDate && latestSnapshot ? latestSnapshot.changes : changes)} 
               isCalculating={isCalculating} 
               onManualReset={onManualReset} 
             />
@@ -80,7 +110,7 @@ export default function GenerateActions({ changes, isCalculating, onManualReset,
           </div>
           
           <ShopeeTemplateUpload 
-            currentInventory={changes?.currentInventory} 
+            currentInventory={isAllSku ? latestSnapshot.currentInventory : changes?.currentInventory} 
             isCalculating={isCalculating} 
           />
         </div>

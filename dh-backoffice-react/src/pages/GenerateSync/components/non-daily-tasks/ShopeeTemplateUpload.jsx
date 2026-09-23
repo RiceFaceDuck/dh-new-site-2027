@@ -77,7 +77,7 @@ export default function ShopeeTemplateUpload({ currentInventory, isCalculating }
     <div className="w-full flex flex-col gap-2">
       <div className="flex items-center gap-2 mb-1 pl-1 text-slate-700 font-bold">
         <Database size={16} className="text-blue-500" />
-        <span className="text-sm">นำเข้า templat (แก้ราคา/สต็อก)</span>
+        <span className="text-sm">นำเข้า template (แก้ราคา/สต็อก)</span>
       </div>
       
       <div 
@@ -150,7 +150,7 @@ export default function ShopeeTemplateUpload({ currentInventory, isCalculating }
       </div>
       
       <p className="text-[11px] text-slate-400 pl-2 leading-relaxed mt-1">
-        * ระบบจะเติมสต็อกและราคาให้ใหม่ แล้วเด้งไฟล์ที่มีโครงสร้างเดิมกลับมา (Item_ID และช่องผสานเซลล์ไม่หายแน่นอน)
+        * ระบบจะดึงยอดสต็อกและราคาให้ใหม่ แล้วแต่งไฟล์ที่มีโครงสร้างเดิมกลับมา (Item_ID และช่องผสานจะไม่หายแน่นอน)
       </p>
     </div>
   );

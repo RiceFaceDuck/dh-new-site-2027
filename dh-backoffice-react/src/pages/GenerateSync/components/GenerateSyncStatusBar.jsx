@@ -5,11 +5,7 @@ export default function GenerateSyncStatusBar({
   pendingCount,
   lastSyncTime,
   isCalculating,
-  fetchChanges,
-  autoSyncEnabled,
-  updateAutoSync,
-  syncInterval,
-  updateSyncInterval
+  fetchChanges
 }) {
   return (
     <div className="w-full px-4 sm:px-6 pt-6 pb-2 flex flex-wrap items-center justify-between gap-4">
@@ -36,38 +32,6 @@ export default function GenerateSyncStatusBar({
          >
            <RefreshCw size={16} className={isCalculating ? 'animate-spin' : ''} />
          </button>
-      </div>
-
-      {/* Auto Sync Settings */}
-      <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl shadow-xs border border-slate-200">
-         <label className="flex items-center gap-2 cursor-pointer">
-           <div className="relative">
-             <input type="checkbox" className="sr-only" checked={autoSyncEnabled} onChange={(e) => {
-               updateAutoSync(e.target.checked);
-             }} />
-             <div className={`block w-10 h-6 rounded-full transition-colors ${autoSyncEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-             <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${autoSyncEnabled ? 'transform translate-x-4' : ''}`}></div>
-           </div>
-           <span className="text-sm font-bold text-slate-700 select-none">Auto Refresh</span>
-         </label>
-
-         {autoSyncEnabled && (
-           <div className="flex items-center border-l border-slate-200 pl-3">
-             <select 
-               value={syncInterval} 
-               onChange={(e) => {
-                 updateSyncInterval(Number(e.target.value));
-               }}
-               className="text-sm border border-slate-200 bg-slate-50 rounded-lg px-2 py-1 text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-hidden cursor-pointer font-bold"
-             >
-               <option value={1}>ทุก 1 นาที</option>
-               <option value={5}>ทุก 5 นาที</option>
-               <option value={15}>ทุก 15 นาที</option>
-               <option value={30}>ทุก 30 นาที</option>
-               <option value={60}>ทุก 1 ชั่วโมง</option>
-             </select>
-           </div>
-         )}
       </div>
     </div>
   );

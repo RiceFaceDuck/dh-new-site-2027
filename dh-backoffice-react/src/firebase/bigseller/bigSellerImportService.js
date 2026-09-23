@@ -24,6 +24,93 @@ class BigSellerImportService {
   }
 
   /**
+   * สแกนหา Header แบบไดนามิกสูงสุด 25 แถวแรก
+   * เพื่อรองรับทั้งไฟล์เทมเพลต Shopee/BigSeller แบบแถวเดียวและแบบหลายแถว (Multi-row header)
+   */
+  detectHeaderLayout(ws, range, maxRows = 25) {
+    const endRow = Math.min(range.e.r, maxRows - 1);
+    let bestHeaderRow = -1;
+    let maxMatches = 0;
+    let detectedCols = { skuCol: -1, stockCol: -1, priceCol: -1 };
+
+    const skuKeywords = ['เลข sku', 'รหัส sku', 'sku', 'parent sku', 'variation sku', 'model sku', 'item sku'];
+    const priceKeywords = ['ราคา', 'ราคาสินค้า', 'price', 'unit price', 'selling price', 'retail price', 'ราคาขาย'];
+    const stockKeywords = ['จำนวนสต็อก', 'สต็อก', 'คลัง', 'จำนวนคลัง', 'stock', 'inventory', 'quantity', 'qty'];
+
+    // 1. Scan candidate rows
+    for (let r = range.s.r; r <= endRow; ++r) {
+      let matches = 0;
+      let tempCols = { skuCol: -1, stockCol: -1, priceCol: -1 };
+
+      for (let c = range.s.c; c <= range.e.c; ++c) {
+        const cellAddr = XLSX.utils.encode_cell({ c, r });
+        const cell = ws[cellAddr];
+        if (!cell || cell.v === undefined || cell.v === null) continue;
+
+        const val = String(cell.v).trim().toLowerCase();
+        if (!val) continue;
+
+        if (tempCols.skuCol === -1 && skuKeywords.some(kw => val.includes(kw))) {
+          tempCols.skuCol = c;
+          matches++;
+        } else if (tempCols.priceCol === -1 && priceKeywords.some(kw => val.includes(kw))) {
+          tempCols.priceCol = c;
+          matches++;
+        } else if (tempCols.stockCol === -1 && stockKeywords.some(kw => val.includes(kw))) {
+          tempCols.stockCol = c;
+          matches++;
+        }
+      }
+
+      if (matches > maxMatches) {
+        maxMatches = matches;
+        bestHeaderRow = r;
+        detectedCols = { ...tempCols };
+      }
+    }
+
+    // 2. Scan neighbor rows if multi-tier header
+    if (bestHeaderRow !== -1 && (detectedCols.skuCol === -1 || detectedCols.priceCol === -1 || detectedCols.stockCol === -1)) {
+      const neighborRows = [bestHeaderRow - 1, bestHeaderRow + 1].filter(r => r >= range.s.r && r <= endRow);
+      for (const nr of neighborRows) {
+        for (let c = range.s.c; c <= range.e.c; ++c) {
+          const cellAddr = XLSX.utils.encode_cell({ c, r: nr });
+          const cell = ws[cellAddr];
+          if (!cell || cell.v === undefined || cell.v === null) continue;
+
+          const val = String(cell.v).trim().toLowerCase();
+          if (!val) continue;
+
+          if (detectedCols.skuCol === -1 && skuKeywords.some(kw => val.includes(kw))) {
+            detectedCols.skuCol = c;
+          }
+          if (detectedCols.priceCol === -1 && priceKeywords.some(kw => val.includes(kw))) {
+            detectedCols.priceCol = c;
+          }
+          if (detectedCols.stockCol === -1 && stockKeywords.some(kw => val.includes(kw))) {
+            detectedCols.stockCol = c;
+          }
+        }
+      }
+    }
+
+    // Safe fallback to standard Shopee indices: Col F (5) = SKU, Col G (6) = Stock, Col H (7) = Price
+    const finalHeaderRow = bestHeaderRow >= 0 ? bestHeaderRow : 1;
+    const skuCol = detectedCols.skuCol >= 0 ? detectedCols.skuCol : 5;
+    const stockCol = detectedCols.stockCol >= 0 ? detectedCols.stockCol : 6;
+    const priceCol = detectedCols.priceCol >= 0 ? detectedCols.priceCol : 7;
+    const dataStartRow = finalHeaderRow + 1;
+
+    return {
+      headerRow: finalHeaderRow,
+      dataStartRow,
+      skuCol,
+      stockCol,
+      priceCol
+    };
+  }
+
+  /**
    * รับไฟล์ Template จาก Shopee/BigSeller มาอ่าน,
    * เติมข้อมูล สต็อก/ราคา โดยไม่แตะต้อง Item_ID และการผสานเซลล์ (Merged Cells),
    * แล้วส่งออกกลับเป็นไฟล์ .xlsx ทันที
@@ -39,7 +126,9 @@ class BigSellerImportService {
 
       const inventoryMap = new Map();
       currentInventory.forEach(item => {
-        if (item.sku) inventoryMap.set(String(item.sku).trim(), item);
+        if (item.sku) {
+          inventoryMap.set(String(item.sku).trim().toUpperCase(), item);
+        }
       });
 
       const reader = new FileReader();
@@ -63,29 +152,34 @@ class BigSellerImportService {
 
           let updatedCount = 0;
           const range = XLSX.utils.decode_range(ws['!ref']);
+          const layout = this.detectHeaderLayout(ws, range, 25);
           
-          // วนลูปเพื่อเช็คทีละแถว เริ่มจากแถว 2 (Index 1) ข้าม Header
-          for (let R = 1; R <= range.e.r; ++R) {
-            // Shopee Template: SKU อยู่ที่คอลัมน์ F (Index 5)
-            const skuCellAddress = XLSX.utils.encode_cell({ c: 5, r: R });
+          // วนลูปเพื่อเช็คทีละแถว เริ่มต้นจาก dataStartRow ที่ตรวจพบ
+          for (let R = layout.dataStartRow; R <= range.e.r; ++R) {
+            const skuCellAddress = XLSX.utils.encode_cell({ c: layout.skuCol, r: R });
             const skuCell = ws[skuCellAddress];
             
-            if (!skuCell || !skuCell.v) continue; // ข้ามแถวที่ไม่มี SKU
+            if (!skuCell || skuCell.v === undefined || skuCell.v === null) continue; // ข้ามแถวที่ไม่มี SKU
             
-            const skuStr = String(skuCell.v).trim();
+            const skuStr = String(skuCell.v).trim().toUpperCase();
+            if (!skuStr) continue;
+
             const inventoryItem = inventoryMap.get(skuStr);
             
             if (inventoryItem) {
-              // อัปเดตสต็อก ที่คอลัมน์ G (Index 6)
-              const stockCellAddress = XLSX.utils.encode_cell({ c: 6, r: R });
+              // อัปเดตสต็อก ที่คอลัมน์สต็อกที่ตรวจพบ
+              const stockCellAddress = XLSX.utils.encode_cell({ c: layout.stockCol, r: R });
               if (!ws[stockCellAddress]) ws[stockCellAddress] = { t: 'n' };
-              ws[stockCellAddress].v = Number(inventoryItem.stockQuantity) || 0;
+              const rawStock = Number(inventoryItem.stockQuantity ?? inventoryItem.qty ?? 0);
+              ws[stockCellAddress].v = isNaN(rawStock) ? 0 : Math.max(0, Math.floor(rawStock));
               ws[stockCellAddress].t = 'n'; // ตั้งชนิดเป็นตัวเลข
 
-              // อัปเดตราคา ที่คอลัมน์ H (Index 7)
-              const priceCellAddress = XLSX.utils.encode_cell({ c: 7, r: R });
+              // อัปเดตราคา พร้อมปัดเศษสตางค์ 2 ตำแหน่ง
+              const priceCellAddress = XLSX.utils.encode_cell({ c: layout.priceCol, r: R });
               if (!ws[priceCellAddress]) ws[priceCellAddress] = { t: 'n' };
-              ws[priceCellAddress].v = Number(inventoryItem.Price) || 0;
+              const rawPrice = Number(inventoryItem.Price ?? inventoryItem.price ?? inventoryItem.wholesalePrice ?? 0);
+              const roundedPrice = isNaN(rawPrice) ? 0 : Math.round(rawPrice * 100) / 100;
+              ws[priceCellAddress].v = roundedPrice;
               ws[priceCellAddress].t = 'n';
               
               updatedCount++;

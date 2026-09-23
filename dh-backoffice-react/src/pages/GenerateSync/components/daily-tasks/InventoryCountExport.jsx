@@ -64,7 +64,14 @@ export default function InventoryCountExport({ changes, isCalculating, onManualR
            <CheckSquare size={16} />}
         </div>
         <div className="flex-1 text-left flex flex-col">
-          <span>โหลด ผลลัพธ์การนับ</span>
+          <div className="flex items-center gap-2">
+            <span>โหลด ผลลัพธ์การนับ</span>
+            {changes?.isAllSkuMode && (
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                ALL SKU ({changes.itemCount})
+              </span>
+            )}
+          </div>
           {status !== 'idle' && (
             <span className={`text-xs mt-0.5 ${status === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
               {message}

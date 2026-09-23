@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Lock } from 'lucide-react';
+import { ShieldCheck, Lock, CheckCircle } from 'lucide-react';
 
 // 📦 นำเข้า Components ดั้งเดิม
 import QuickAccessTools from './QuickAccessTools';
@@ -68,45 +68,60 @@ export default function ManagersOverview() {
   };
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+    <div className="w-full max-w-[1800px] mx-auto p-3 sm:p-4 lg:p-5 h-[calc(100vh-16px)] flex flex-col overflow-hidden space-y-3">
       
-      {/* --- Header --- */}
-      <div className="bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 rounded-2xl shadow-[0_8px_30px_-5px_rgba(79,70,229,0.6)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden transition-all duration-300 border-2 border-indigo-400/30">
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-[80px] opacity-20 animate-pulse pointer-events-none"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
-            <ShieldCheck className="w-8 h-8 text-blue-200" />
-            แผงควบคุมการทำงาน DH NOTEBOOK
-          </h1>
-          <p className="text-blue-100 mt-2 font-medium text-sm flex items-center gap-2">
-            จัดการและอนุมัติรายการสำคัญ, ตรวจสอบสถิติองค์กร
-          </p>
-        </div>
-        <div className="flex items-center gap-3 relative z-10">
-          <button 
-             onClick={handleOpenMasterSheet}
-             title="เปิดฐานข้อมูล Google Sheet"
-             className="bg-white/10 hover:bg-white/20 backdrop-blur-xs px-4 py-2 rounded-full border border-white/20 transition-all flex items-center gap-2 cursor-pointer shadow-xs"
-          >
-             <Lock className="w-4 h-4 text-white" />
-             <span className="text-xs font-bold text-white tracking-wider hidden sm:inline-block">Master DB</span>
-          </button>
-          
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-2 rounded-full border border-white/20 shadow-xs">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
-            </span>
-            <span className="text-xs font-bold text-white tracking-wider">System Live</span>
+      {/* --- Header (Dark Slim Banner ตรงกับ Production) --- */}
+      <div className="shrink-0">
+        <div className="bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-xl text-white rounded-xl p-3 sm:px-4 sm:py-3 border border-indigo-500/30 shadow-md relative overflow-hidden transition-all duration-300">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 relative z-10">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                <ShieldCheck className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
+                    แผงควบคุม DH NOTEBOOK
+                  </h1>
+                  <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-300 tracking-wider">Live</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+              <button 
+                onClick={handleOpenMasterSheet}
+                title="เปิดฐานข้อมูล Google Sheet"
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline-block">Master DB</span>
+              </button>
+              
+              <button 
+                onClick={() => navigate('/managers/audit-ledger')}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg border border-indigo-400/30 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <CheckCircle className="w-3.5 h-3.5 text-indigo-200" />
+                <span>Audit Ledger</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* --- 🗂️ Grid Layout: ซ้ายเครื่องมือ (2/3) ขวา To-do (1/3) --- */}
-      <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+      {/* --- 🗂️ Grid Layout: ซ้ายเครื่องมือ (2/3) ขวา To-do (1/3) พอดีกับความสูงหน้าจอ --- */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 items-stretch overflow-hidden">
         
         {/* 👈 ฝั่งซ้าย: เมนูเครื่องมือด่วน (Scrollable) */}
-        <div className="w-full lg:w-2/3 xl:w-3/4 space-y-6 overflow-y-auto max-h-[80vh] custom-scrollbar pr-2 pb-8">
+        <div className="w-full lg:w-7/12 xl:w-2/3 h-full overflow-y-auto custom-scrollbar pr-2 pb-4 space-y-4">
           <QuickAccessTools 
             onNavigatePricing={() => navigate('/managers/pricing')}
             onNavigateStaff={() => navigate('/managers/staff')}
@@ -124,8 +139,8 @@ export default function ManagersOverview() {
           />
         </div>
 
-        {/* 👉 ฝั่งขวา: งานที่ต้องอนุมัติ & สถิติ (ปรับเป็น 1/4 ของจอใหญ่) */}
-        <div className="w-full lg:w-1/3 xl:w-1/4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-xl shadow-2xl shadow-indigo-500/20 border-2 border-slate-200 dark:border-slate-700 flex flex-col relative overflow-hidden min-h-[400px]">
+        {/* 👉 ฝั่งขวา: งานที่ต้องอนุมัติ & สถิติ (พอดีกับความสูงหน้าจอ) */}
+        <div className="w-full lg:w-5/12 xl:w-1/3 h-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 flex flex-col relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/5 rounded-full blur-3xl pointer-events-none"></div>
           
           <ManagerTaskSection />

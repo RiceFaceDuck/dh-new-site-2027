@@ -4,7 +4,7 @@ import {
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
   Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutGrid, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan,
-  Truck
+  Truck, Archive
 } from 'lucide-react';
 import { menuConfigService } from '../../firebase/menuConfigService';
 
@@ -14,7 +14,7 @@ const iconMap = {
   Megaphone, Search, Code, ShieldCheck, AlertTriangle, 
   ArrowRightLeft, HardHat, Code2, ShieldBan, CreditCard, CloudUpload,
   Box, LayoutTemplate, LinkIcon, ImageIcon, LayoutPanelTop, BookOpen, Tags, Gift, RefreshCcw, Wallet, Scan,
-  Truck
+  Truck, Archive
 };
 
 /**
@@ -98,7 +98,7 @@ const QuickAccessTools = ({
   useEffect(() => {
     const fetchLayout = async () => {
       setIsLoading(true);
-      const data = await menuConfigService.getMenuLayout();
+      const data = await menuConfigService.getMenuLayout(!!refreshTrigger);
       setLayout(data);
       setIsLoading(false);
     };
@@ -130,13 +130,13 @@ const QuickAccessTools = ({
       case 'warranty': return () => navigate('/managers/warranty');
       case 'ads_config': return () => navigate('/managers/ads-config');
       case 'theme': return () => navigate('/managers/theme');
-      case 'knowledge': return () => navigate('/managers/knowledge');
       case 'footer': return () => navigate('/managers/footer-settings');
       case 'privacy': return () => navigate('/managers/privacy-cookies');
       case 'redirect': return () => navigate('/managers/redirect');
       case 'scanner': return onOpenScannerModal;
       case 'data_repair': return () => navigate('/managers/data-repair');
       case 'warranty_checker': return () => setIsWarrantyModalOpen(true);
+      case 'yearly_archive': return () => navigate('/managers/yearly-archive');
       default: return undefined;
     }
   };

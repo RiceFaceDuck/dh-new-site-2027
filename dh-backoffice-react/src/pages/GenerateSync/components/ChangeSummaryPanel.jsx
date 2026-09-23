@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, DollarSign, RefreshCw, Info, Save, FileText, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
 import { syncSnapshotService } from '../../../firebase/bigseller/syncSnapshotService';
+import { bigSellerFullCatalogExportService } from '../../../firebase/bigseller';
+import { setLatestFullExport } from '../hooks/useGenerateSync';
 import { useAuth } from '../../../contexts/AuthContext';
+import PrepareFullCatalogAction from './PrepareFullCatalogAction';
 
 export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualReset, onSnapshotSaved, isCalculating }) {
   const [viewMode, setViewMode] = useState('live'); // 'live' or 'saved'
@@ -13,9 +16,10 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
   const [savedTxId, setSavedTxId] = useState(null);
 
   // Determine which data to display
-  const displayChanges = viewMode === 'saved' && latestSnapshot?.changes ? latestSnapshot.changes : changes;
+  const safeChanges = changes || { increased: [], decreased: [], priceChanged: [], otherChanged: [] };
+  const displayChanges = viewMode === 'saved' && latestSnapshot?.changes ? latestSnapshot.changes : safeChanges;
   
-  if (isCalculating) {
+  if (isCalculating && viewMode !== 'saved') {
     return (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full w-full bg-white dark:bg-slate-800 rounded-2xl relative z-10 min-h-[400px]">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-4"></div>
@@ -23,8 +27,6 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
         </div>
     );
   }
-
-  if (!displayChanges) return null;
 
   const { increased = [], decreased = [], priceChanged = [], otherChanged = [], lastResetDate } = displayChanges;
 
@@ -80,6 +82,14 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
     document.body.appendChild(link); 
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handlePrepareFullCatalog = async ({ onProgress } = {}) => {
+    const result = await bigSellerFullCatalogExportService.prepareFullCatalogDataset({ onProgress });
+    if (result && result.fullExportData) {
+      setLatestFullExport(result.fullExportData);
+    }
+    return result;
   };
 
   const isSavedView = viewMode === 'saved';
@@ -255,7 +265,7 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
             ) : savedTxId ? (
                <><CheckCircle size={16} /> บันทึกแล้ว ({savedTxId})</>
             ) : (
-               <><Save size={16} /> บันทึกการดักจับ (สร้าง TX)</>
+               <><Save size={16} /> บันทึกการตัดนับ (สร้าง TX)</>
             )}
           </button>
         )}
@@ -269,6 +279,14 @@ export default function ChangeSummaryPanel({ changes, latestSnapshot, onManualRe
           {isSavedView ? `ดาวน์โหลด CSV (${latestSnapshot?.transactionId})` : 'ดาวน์โหลด (.csv)'}
         </button>
       </div>
+
+      {!isSavedView && (
+        <PrepareFullCatalogAction 
+          isCalculating={isCalculating} 
+          skuCount={changes?.currentInventory?.length || 2412} 
+          onPrepare={handlePrepareFullCatalog}
+        />
+      )}
     </div>
   );
 }

@@ -54,6 +54,7 @@ const RoleTierSettings = lazy(() => import('./pages/managers/RoleTierSettings/Ro
 const SystemCoreSettings = lazy(() => import('./pages/managers/settings/core/SystemCoreSettings'))
 const DataRepairPage = lazy(() => import('./pages/managers/settings/data_repair/DataRepairPage'))
 const AuditLedger = lazy(() => import('./pages/managers/AuditLedger'))
+const GenerateSyncLayout = lazy(() => import('./pages/GenerateSync/GenerateSyncLayout'))
 const GenerateSync = lazy(() => import('./pages/GenerateSync/index.jsx'))
 const GenerateSyncDetails = lazy(() => import('./pages/GenerateSync/GenerateSyncDetails'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
@@ -212,6 +213,7 @@ function AppContent() {
             <Route path="managers/redirect" element={<RedirectURLsSettings />} />
             <Route path="managers/rbac" element={<RbacSettings />} />
             <Route path="managers/role-tier-settings" element={<RoleTierSettings />} />
+            <Route path="managers/role-tier" element={<RoleTierSettings />} />
             
             <Route path="managers/core-settings" element={<SystemCoreSettings />} />
             <Route path="managers/data-repair" element={<DataRepairPage />} />
@@ -221,9 +223,11 @@ function AppContent() {
           <Route path="history" element={<HistoryPage />}/>
           <Route path="gallery" element={<GalleryMain />}/>
           <Route path="inventory" element={<Inventory/>}/>
-          <Route path="generate" element={<GenerateSync />}/>
-          <Route path="generate/details" element={<GenerateSyncDetails />} />
-          <Route path="generate/details/:referenceId" element={<GenerateSyncDetails />}/>
+          <Route path="generate" element={<GenerateSyncLayout />}>
+            <Route index element={<GenerateSync />} />
+            <Route path="details" element={<GenerateSyncDetails />} />
+            <Route path="details/:referenceId" element={<GenerateSyncDetails />}/>
+          </Route>
           
           <Route path="customers" element={<Customers />}/>
           <Route path="emails" element={<EmailMain />}/>

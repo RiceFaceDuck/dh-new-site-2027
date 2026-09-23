@@ -55,7 +55,14 @@ export default function SkuMerchantExport({ changes, isCalculating }) {
            <List size={16} />}
         </div>
         <div className="flex-1 text-left flex flex-col">
-          <span>โหลด SKU ที่มีความเคลื่อนไหว</span>
+          <div className="flex items-center gap-2">
+            <span>โหลด SKU ที่มีความเคลื่อนไหว</span>
+            {changes?.isAllSkuMode && (
+              <span className="bg-indigo-100 text-indigo-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                ALL SKU ({changes.itemCount})
+              </span>
+            )}
+          </div>
           {status !== 'idle' && (
             <span className={`text-xs mt-0.5 ${status === 'error' ? 'text-red-500' : 'text-indigo-500'}`}>
               {message}

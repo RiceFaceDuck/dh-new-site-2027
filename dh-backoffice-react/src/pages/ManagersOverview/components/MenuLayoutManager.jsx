@@ -25,7 +25,6 @@ export const AVAILABLE_MENUS = {
   warranty: { title: "กติกาการรับประกัน", subtitle: "ข้อกำหนดและระยะเวลาประกัน", iconName: "ShieldCheck", colorTheme: "amber" },
   ads_config: { title: "ตั้งค่าพื้นที่โฆษณา", subtitle: "ตำแหน่งป้ายแบนเนอร์", iconName: "Megaphone", colorTheme: "indigo" },
   theme: { title: "ธีมและพื้นหลัง", subtitle: "รูปแบบสีและภาพแบ็คกราวนด์", iconName: "ImageIcon", colorTheme: "fuchsia" },
-  knowledge: { title: "ระบบความรู้เพิ่มเติม", subtitle: "คลังบทความและคู่มือ", iconName: "BookOpen", colorTheme: "blue" },
   footer: { title: "ตั้งค่าพื้นที่ส่วนล่าง", subtitle: "แก้ไขข้อมูลติดต่อส่วนท้ายเว็บ", iconName: "LayoutPanelTop", colorTheme: "indigo" },
   pricing: { title: "นโยบายราคาปลีก", subtitle: "กำหนดสูตรคำนวณราคาขาย", iconName: "Calculator", colorTheme: "emerald" },
   history: { title: "ประวัติระบบ", subtitle: "ตรวจสอบบันทึกการทำงาน", iconName: "History", colorTheme: "purple" },
@@ -44,12 +43,12 @@ export const AVAILABLE_MENUS = {
   security: { title: "Security & Block", subtitle: "ตั้งค่าการบล็อกและแบน", iconName: "ShieldBan", colorTheme: "red", isComingSoon: true },
   maintenance: { title: "ปิดปรับปรุง", subtitle: "เปิดโหมดซ่อมบำรุงเว็บไซต์", iconName: "HardHat", colorTheme: "orange", isComingSoon: true },
   promotions: { title: "โปรโมชั่น", subtitle: "ตั้งค่าส่วนลดและช่วงเวลา", iconName: "Tags", colorTheme: "fuchsia" },
-  freebie: { title: "ของแถม", subtitle: "จัดการรายการสินค้าสมนาคุณ", iconName: "Gift", colorTheme: "pink" },
-  refund: { title: "จัดการรับเรื่องคืนเงิน", subtitle: "พิจารณาคำขอคืนเงินลูกค้า", iconName: "Wallet", colorTheme: "emerald" },
+  refund: { title: "Wallet & คืนเงิน", subtitle: "ศูนย์รวมพิจารณาคำขอถอนเงินและค้างยอด", iconName: "Wallet", colorTheme: "emerald" },
   shipping: { title: "จัดการค่าจัดส่ง", subtitle: "ตั้งค่าและเงื่อนไขค่าจัดส่ง", iconName: "Truck", colorTheme: "blue" },
   core_settings: { title: "System Core Settings", subtitle: "ตั้งค่าระบบหลักและคอขวด", iconName: "Settings", colorTheme: "slate" },
   data_repair: { title: "Data Repair System", subtitle: "ซ่อมแซมบิลที่มีปัญหา", iconName: "ShieldCheck", colorTheme: "red" },
   warranty_checker: { title: "เช็คประกัน/เคลม", subtitle: "เครื่องมือเช็คอายุประกันด่วน", iconName: "ShieldCheck", colorTheme: "orange" },
+  yearly_archive: { title: "ตัดยอดปิดรอบปี", subtitle: "Yearly Archive & Checksum", iconName: "Archive", colorTheme: "purple" },
 };
 
 // --- Component หลักของ Layout Manager ---
