@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../firebase/config';
 import { userService, SUPER_ADMINS } from '../firebase/userService';
 import { gasHistoryService } from '../firebase/gasHistoryService';
 import { VALID_STAFF_ROLES } from '../firebase/userStaffService';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const AuthStateContext = createContext();
 export const AuthDispatchContext = createContext();
@@ -16,6 +18,122 @@ export const useAuth = () => {
 
 export const useAuthState = () => useContext(AuthStateContext);
 export const useAuthDispatch = () => useContext(AuthDispatchContext);
+
+// 🛡️ RBAC Safe Defaults & In-Memory / Session Storage Cache (Zero Quota Read on Warm Cache)
+const DEFAULT_RBAC_PERMISSIONS = {
+  canEditProduct: ['owner', 'admin', 'manager', 'staff'],
+  canDeleteOrder: ['owner', 'admin'],
+  canEditProductPrice: ['owner', 'admin', 'manager'],
+  canApproveRefund: ['owner', 'admin', 'manager'],
+  canViewReports: ['owner', 'admin', 'manager'],
+  canManageUsers: ['owner', 'admin'],
+  canBypassBufferStock: ['owner', 'admin', 'manager']
+};
+
+const RBAC_CACHE_KEY = 'dh_rbac_permissions_cache';
+let inMemoryRbacCache = null;
+
+const resolveUserRoles = (profile, user) => {
+  const roles = new Set();
+  const email = (user?.email || profile?.email || '').toLowerCase().trim();
+  if (SUPER_ADMINS.includes(email)) {
+    roles.add('owner');
+    roles.add('admin');
+  }
+  const roleStrings = [];
+  if (profile?.role) roleStrings.push(String(profile.role));
+  if (Array.isArray(profile?.roles)) profile.roles.forEach(r => roleStrings.push(String(r)));
+  if (profile?.userType) roleStrings.push(String(profile.userType));
+
+  roleStrings.forEach(r => {
+    const lower = r.toLowerCase().trim();
+    if (lower.includes('owner') || lower.includes('เจ้าของ') || lower.includes('vp 1') || lower.includes('ประธาน')) roles.add('owner');
+    if (lower.includes('admin') || lower.includes('แอดมิน') || lower.includes('ผู้ดูแลระบบ')) roles.add('admin');
+    if (lower.includes('manager') || lower.includes('ผู้จัดการ')) roles.add('manager');
+    if (lower.includes('packer') || lower.includes('แพ็ค') || lower.includes('แพก')) roles.add('packer');
+    if (lower.includes('finance') || lower.includes('บัญชี') || lower.includes('การเงิน')) roles.add('finance');
+    if (lower.includes('developer') || lower.includes('นักพัฒนา') || lower.includes('ไอที') || lower === 'it') roles.add('developer');
+    if (lower.includes('staff') || lower.includes('พนักงาน')) roles.add('staff');
+  });
+
+  if (roles.size === 0 && (profile || user)) {
+    roles.add('staff');
+  }
+  return Array.from(roles);
+};
+
+export const useRbac = (profile, user) => {
+  const [permissions, setPermissions] = useState(() => {
+    if (inMemoryRbacCache) return inMemoryRbacCache;
+    try {
+      const cached = sessionStorage.getItem(RBAC_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        inMemoryRbacCache = parsed;
+        return parsed;
+      }
+    } catch {}
+    return DEFAULT_RBAC_PERMISSIONS;
+  });
+  const [rbacLoading, setRbacLoading] = useState(!inMemoryRbacCache);
+
+  useEffect(() => {
+    let isMounted = true;
+    const docRef = doc(db, getCollectionPath('settings'), 'rbac_permissions');
+    const unsub = onSnapshot(docRef, snap => {
+      if (isMounted) {
+        if (snap.exists()) {
+          const data = snap.data();
+          inMemoryRbacCache = data;
+          try {
+            sessionStorage.setItem(RBAC_CACHE_KEY, JSON.stringify(data));
+          } catch {}
+          setPermissions(data);
+        } else {
+          inMemoryRbacCache = DEFAULT_RBAC_PERMISSIONS;
+          setPermissions(DEFAULT_RBAC_PERMISSIONS);
+        }
+        setRbacLoading(false);
+      }
+    }, err => {
+      console.warn('⚠️ [RBAC] Failed to load rbac_permissions, fallback to safe defaults:', err);
+      if (isMounted) {
+        setPermissions(DEFAULT_RBAC_PERMISSIONS);
+        setRbacLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+      unsub();
+    };
+  }, []);
+
+  const userRoles = useMemo(() => resolveUserRoles(profile, user), [profile, user]);
+  const isOwnerOrSuperAdmin = useMemo(() => {
+    const email = (user?.email || profile?.email || '').toLowerCase().trim();
+    return SUPER_ADMINS.includes(email) || userRoles.includes('owner');
+  }, [userRoles, user, profile]);
+
+  const hasPermission = useCallback((permissionKey) => {
+    if (isOwnerOrSuperAdmin) return true;
+    const allowedRoles = (permissions?.[permissionKey] || DEFAULT_RBAC_PERMISSIONS[permissionKey] || []).map(r => String(r).toLowerCase().trim());
+    return userRoles.some(r => allowedRoles.includes(r));
+  }, [permissions, userRoles, isOwnerOrSuperAdmin]);
+
+  return {
+    hasPermission,
+    userRoles,
+    isOwnerOrSuperAdmin,
+    rbacLoading,
+    canEditProduct: hasPermission('canEditProduct'),
+    canEditProductPrice: hasPermission('canEditProductPrice'),
+    canDeleteOrder: hasPermission('canDeleteOrder'),
+    canApproveRefund: hasPermission('canApproveRefund'),
+    canViewReports: hasPermission('canViewReports'),
+    canManageUsers: hasPermission('canManageUsers'),
+    canBypassBufferStock: hasPermission('canBypassBufferStock')
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -253,6 +371,8 @@ export const AuthProvider = ({ children }) => {
     return r === 'manager' || r.includes('owner') || r.includes('vp 1') || r === 'ผู้จัดการ' || r === 'เจ้าของ' || SUPER_ADMINS.includes(email);
   }, [profile, user]);
 
+  const rbac = useRbac(profile, user);
+
   const stateValue = useMemo(() => ({
     user,
     profile,
@@ -262,8 +382,17 @@ export const AuthProvider = ({ children }) => {
     isProfileSetupRequired,
     accessDenied,
     denyReason,
-    isManagerOrOwner
-  }), [user, profile, loading, isCheckingAuth, isPendingApproval, isProfileSetupRequired, accessDenied, denyReason, isManagerOrOwner]);
+    isManagerOrOwner,
+    rbac,
+    hasPermission: rbac.hasPermission,
+    canEditProduct: rbac.canEditProduct,
+    canEditProductPrice: rbac.canEditProductPrice,
+    canDeleteOrder: rbac.canDeleteOrder,
+    canApproveRefund: rbac.canApproveRefund,
+    canViewReports: rbac.canViewReports,
+    canManageUsers: rbac.canManageUsers,
+    canBypassBufferStock: rbac.canBypassBufferStock
+  }), [user, profile, loading, isCheckingAuth, isPendingApproval, isProfileSetupRequired, accessDenied, denyReason, isManagerOrOwner, rbac]);
 
   const dispatchValue = useMemo(() => ({
     logout,

@@ -19,6 +19,7 @@ export const useRbacSettings = () => {
       } else {
         // Default Settings
         const defaultSettings = {
+          canEditProduct: ['owner', 'admin', 'manager', 'staff'],
           canDeleteOrder: ['owner', 'admin'],
           canEditProductPrice: ['owner', 'admin', 'manager'],
           canApproveRefund: ['owner', 'admin', 'manager'],

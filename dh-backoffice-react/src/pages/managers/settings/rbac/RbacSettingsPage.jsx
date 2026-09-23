@@ -12,7 +12,7 @@ export default function RbacSettingsPage() {
 
   return (
     <div className="flex-1 bg-dh-bg p-4 sm:p-6 overflow-auto">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-4">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-xl font-bold text-dh-main">การจัดการสิทธิ์พนักงาน (RBAC Settings)</h1>
