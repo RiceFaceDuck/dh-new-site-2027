@@ -11,6 +11,8 @@
     1. Order (`orders/{orderId}`): `orderId` ('DH-YY-XXXX'), `orderStatus` ('draft'|'paid'|'completed'|'void'), `paymentMethod` ('Cash'|'Transfer'|'Credit'), `netTotal`, `customer` ({ id, name, phone, taxId }), `items` (Array<{ sku, name, price, qty, discount }>), bank slip fields (`transactionRef`, `slipUrl`, `slipStoragePath`).
     2. Receipt Counter (`counters/receipt_sequence_global`): `currentNumber`, `prefix` ('DH'), `year` (26).
     3. Loyalty Config (`settings/credit_config`): `pointsEarningRate`, `skuBonusRules`, `tiers`.
+    4. Smart Customer 2-Step Schema: `parseCustomerAddress` (`dh-shared`), `QuickAddCustomerModal`, and `CustomerDuplicateComparisonModal` (`checkPotentialDuplicates`).
+    5. Legal In-App Schema: `VatInfoModal` (Sec 86/4, 79(1), P.86) and `ShippingInfoModal` (P.120, Sec 77/2, 82/3).
   </core_schema>
 
   <business_rules>
@@ -26,6 +28,7 @@
     2. Customer Wallet & Points: Wallet balance deductions and credit accrual update `customers/{id}` ledger.
     3. Cloud Functions: Writes to `orders/{orderId}` trigger background notifications and receipt PDF generation.
     4. Recent Orders Catalog: Updates `catalogs/recent_orders` to keep dashboard warm (0 reads).
+    5. Shared Utils: `dh-shared/src/utils/thaiAddressParser.js` consumed across backoffice and customer management.
   </cross_impact>
 
   <pitfalls_and_lessons>
@@ -34,5 +37,7 @@
     3. ⚠️ Server Parity on Shipping VAT: POS UI (`usePosPayment.js`) and backend (`billingTransactionService.js`) must align `vatOnShipping` logic to avoid price discrepancy rejections.
     4. ⚠️ High Read on Direct Query: Querying `collection('orders')` causes 50 reads; always use `orderCacheService` (`catalogs/recent_orders`) for 0-read warm dashboard.
     5. ⚠️ Zebra Striping & Virtual Scrolling: Do not rely on `even:bg-black/5` on light surfaces (imperceptible 0.4% delta). Calculate parity via `data-item-index` for stable `bg-white` vs `bg-[#F4F6F9]` enterprise contrast.
+    6. ⚠️ Address Regex Parsing: When cleaning address labels, match both newline and inline prefixes `(?:\s+|^|\n)(?:ที่อยู่|ที่อยู่จัดส่ง)\s*:?` to avoid mangling customer names when addresses are pasted on single line.
+    7. ⚠️ Navigation & Global Event Handlers: Handle `dh_open_new_bill` and `dh_resume_draft` CustomEvents in `BillingMain.jsx` and guard tab creation with `isNewBillHandledRef` to prevent tab duplication loops.
   </pitfalls_and_lessons>
 </grimoire>

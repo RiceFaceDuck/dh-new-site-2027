@@ -9,6 +9,8 @@ import PosHeader from './pos/layout/PosHeader';
 import GuideModal from '../common/GuideModal';
 import PromoModal from './pos/layout/PromoModal';
 import PosFreebieModal from './pos/modals/PosFreebieModal';
+import VatInfoModal from './pos/modals/VatInfoModal';
+import ShippingInfoModal from './pos/modals/ShippingInfoModal';
 import { toast } from 'react-hot-toast';
 import usePosState from './pos/hooks/usePosState';
 import { usePosActions, sanitizeNum } from './pos/hooks/usePosActions';
@@ -45,7 +47,10 @@ const convertToThaiBahtText = (number) => {
 
 const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, slate: {} };
 
-export default function PosSystem({ products = [], customers = [], onSwitchView, initialDraft, resumeTabId }) {
+export default function PosSystem({ 
+    products = [], customers = [], onSwitchView, initialDraft, resumeTabId, 
+    isNewBillRequest, onNewBillHandled 
+}) {
     const posState = usePosState(products, customers, initialDraft);
     const {
         cartTabs: safeCartTabs, setCartTabs,
@@ -70,6 +75,8 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
     const [isPaymentPanelCollapsed, setIsPaymentPanelCollapsed] = useState(false);
     const [isPaymentPanelLocked, setIsPaymentPanelLocked] = useState(true);
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+    const [isVatModalOpen, setIsVatModalOpen] = useState(false);
+    const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
     const [shippingRules, setShippingRules] = useState([]);
 
     // ⚡ Session & Memory Caching for Shipping Rules (Eliminates redundant Firestore reads on mount)
@@ -118,11 +125,39 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
         fetchShippingRules();
     }, []);
 
+    const lastResumeIdRef = useRef(null);
     useEffect(() => {
-        if (resumeTabId && safeCartTabs.some(t => t.id === resumeTabId)) {
+        if (resumeTabId && lastResumeIdRef.current !== resumeTabId && safeCartTabs.some(t => t.id === resumeTabId)) {
             setActiveTabId(resumeTabId);
+            lastResumeIdRef.current = resumeTabId;
         }
     }, [resumeTabId, safeCartTabs, setActiveTabId]);
+
+    const isNewBillHandledRef = useRef(false);
+    useEffect(() => {
+        if (isNewBillRequest && !isNewBillHandledRef.current) {
+            isNewBillHandledRef.current = true;
+            setCartTabs(tabs => {
+                const emptyIdx = tabs.findIndex(tab => 
+                    (!tab.items || tab.items.length === 0) && 
+                    !tab.customer && !tab.walkInName && !tab.docId && 
+                    (!tab.orderId || String(tab.orderId).startsWith('DH-TEMP-'))
+                );
+                if (emptyIdx !== -1) {
+                    setActiveTabId(tabs[emptyIdx].id);
+                    return tabs;
+                }
+                const newTab = createNewTab();
+                setActiveTabId(newTab.id);
+                return [...tabs, newTab];
+            });
+            if (typeof onNewBillHandled === 'function') {
+                onNewBillHandled();
+            }
+        } else if (!isNewBillRequest) {
+            isNewBillHandledRef.current = false;
+        }
+    }, [isNewBillRequest, setActiveTabId, setCartTabs, createNewTab, onNewBillHandled]);
 
     const activeProducts = ((posState.products && posState.products.length > 0) ? posState.products : products) || [];
 
@@ -195,7 +230,7 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                     <div className="flex-1 flex flex-col overflow-hidden" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
                         <CartPanel searchRef={searchRef} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDropdown={showDropdown} setShowDropdown={setShowDropdown} handleSearchKeyDown={handleSearchKeyDown} clearCart={actions.clearCart} activeTab={activeTab} searchResults={searchResults} addItemToCart={actions.addItemToCart} actionBoxItem={actionBoxItem} setActionBoxItem={setActionBoxItem} updateItemAction={actions.updateItemAction} removeItem={actions.removeItem} eligibleFreebies={eligibleFreebies} noteColorMap={noteColorMap} isProcessing={isProcessing} isCacheLoading={posState.isCacheLoading} />
                     </div>
-                    <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} />
+                    <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} onOpenVatModal={() => setIsVatModalOpen(true)} onOpenShippingModal={() => setIsShippingModalOpen(true)} />
                 </div>
                 <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
                     <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} setIsFreebieModalOpen={posState.setIsFreebieModalOpen} handleRemovePromotion={actions.handleRemovePromotion} handleRemoveFreebie={actions.handleRemoveFreebie} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} />
@@ -256,6 +291,16 @@ export default function PosSystem({ products = [], customers = [], onSwitchView,
                     }}
                 />
             )}
+
+            <VatInfoModal 
+                isOpen={isVatModalOpen} 
+                onClose={() => setIsVatModalOpen(false)} 
+            />
+
+            <ShippingInfoModal 
+                isOpen={isShippingModalOpen} 
+                onClose={() => setIsShippingModalOpen(false)} 
+            />
         </div>
     );
 }

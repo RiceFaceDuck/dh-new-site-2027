@@ -123,10 +123,12 @@ try {
     );
 
     // 1.8: Customer directory pre-aggregated chunk check (1 Read vs 300 Reads)
+    const customerCacheServiceSrc = fs.readFileSync(path.resolve(MGMT_DIR, 'dh-backoffice-react/src/pages/Customers/services/customerCacheService.js'), 'utf-8');
     assert(
-        useCustomerDataSrc.includes('customers_directory') &&
-        useCustomerDataSrc.includes('limit(300)'),
-        'useCustomerData.js: Slashes cold-start reads by checking catalogs/customers_directory (1 Read)'
+        useCustomerDataSrc.includes('customerCacheService') &&
+        customerCacheServiceSrc.includes('customers_directory') &&
+        customerCacheServiceSrc.includes('limit(300)'),
+        'useCustomerData.js: Slashes cold-start reads by checking catalogs/customers_directory via customerCacheService (1 Read)'
     );
 
     // 1.9: Promotions & Freebies session and in-memory TTL caching

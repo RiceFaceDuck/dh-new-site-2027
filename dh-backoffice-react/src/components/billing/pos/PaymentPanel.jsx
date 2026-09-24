@@ -8,7 +8,8 @@ export default function PaymentPanel({
     itemSubTotal, manualDiscount, promoDiscount, otherFeeAmount, shippingFee, vatOnShipping, vatAmount, vatType, walletUsed, remainingToPay, earnedPoints,
     activeTab, updateActiveTab, changeAmount, handleFileUpload, setPreviewSlip, handleCheckout, isProcessing, hasOutOfStock, setShowPreview, convertToThaiBahtText,
     isUploadingSlip,
-    isCollapsed, setIsCollapsed, isLocked, setIsLocked
+    isCollapsed, setIsCollapsed, isLocked, setIsLocked,
+    onOpenVatModal, onOpenShippingModal
 }) {
     // ✨ PERFORMANCE: Local State รับค่าระหว่างพิมพ์
     const [localCash, setLocalCash] = useState(activeTab.cashReceived || '');
@@ -142,6 +143,7 @@ export default function PaymentPanel({
                     otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatAmount={vatAmount} 
                     walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} 
                     activeTab={activeTab} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} 
+                    onOpenVatModal={onOpenVatModal} onOpenShippingModal={onOpenShippingModal}
                 />
                 
                 <div className="w-full lg:w-[60%] p-4 flex flex-col justify-between bg-[#F8FAFC] relative">
