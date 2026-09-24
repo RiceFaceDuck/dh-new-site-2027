@@ -1,6 +1,7 @@
 import { collection, onSnapshot, query, orderBy, limit, getDocs, where, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { readCachedOrders } from './orderCacheService';
 
 const getOrdersColRef = () => collection(db, getCollectionPath('orders'));
 
@@ -99,11 +100,17 @@ export const billingQueryService = {
         ];
       }
 
-      // If no exact match found from specific index queries, perform deep text search across 300 recent orders
+      // If no exact match found from specific index queries, perform deep text search across cached orders or recent 50 orders
       if (results.length === 0) {
-        const recentQuery = query(colRef, orderBy('createdAt', 'desc'), limit(300));
-        const recentSnap = await getDocs(recentQuery);
-        const allRecent = recentSnap.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; });
+        let allRecent = [];
+        const { orders: cached } = readCachedOrders();
+        if (Array.isArray(cached) && cached.length > 0) {
+          allRecent = cached;
+        } else {
+          const recentQuery = query(colRef, orderBy('createdAt', 'desc'), limit(50));
+          const recentSnap = await getDocs(recentQuery);
+          allRecent = recentSnap.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; });
+        }
         
         results = allRecent.filter(o => {
           const inOrderId = String(o.orderId || '').toLowerCase().includes(termLower);

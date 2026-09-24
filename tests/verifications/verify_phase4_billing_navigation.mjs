@@ -21,7 +21,9 @@ function assert(condition, message) {
 
 console.log('🧪 Starting Verification Suite: Phase 4 BillingMain Navigation & Event Handlers');
 
-const rootDir = path.resolve('Management System/dh-backoffice-react/src');
+const rootDir = fs.existsSync(path.resolve('Management System/dh-backoffice-react/src'))
+    ? path.resolve('Management System/dh-backoffice-react/src')
+    : path.resolve('dh-backoffice-react/src');
 
 // 1. Check BillingMain.jsx Navigation & Event Listeners
 console.log('\n--- Suite 1: BillingMain Navigation & Global Events ---');

@@ -21,7 +21,9 @@ function assert(condition, message) {
 
 console.log('🧪 Starting Verification Suite: Phase 2 Legal In-App Modals');
 
-const rootDir = path.resolve('Management System/dh-backoffice-react/src');
+const rootDir = fs.existsSync(path.resolve('Management System/dh-backoffice-react/src'))
+    ? path.resolve('Management System/dh-backoffice-react/src')
+    : path.resolve('dh-backoffice-react/src');
 
 // 1. Check VatInfoModal.jsx
 console.log('\n--- Suite 1: VatInfoModal Integrity ---');

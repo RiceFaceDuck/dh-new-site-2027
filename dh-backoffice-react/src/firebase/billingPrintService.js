@@ -1,7 +1,8 @@
 import { doc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'orders';
+const COLLECTION_NAME = getCollectionPath('orders');
 
 export const billingPrintService = {
   updatePrintCount: async (docId, currentCount) => {

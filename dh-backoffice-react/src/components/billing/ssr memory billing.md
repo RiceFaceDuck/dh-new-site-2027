@@ -42,5 +42,6 @@
     8. ⚠️ Signature Asymmetrical UI Corners: POS Settings panel uses DH signature tech-tab aesthetic where corners are exclusively rounded on top-right (`rounded-none rounded-tr-md` or `rounded-tr-xl`) while other 3 corners remain sharp square. Do not replace with symmetric `rounded-md`/`rounded-lg`.
     9. ⚠️ Split-Line SKU Aggregation: In `billingTransactionService.js` and `billingStatusTransaction.js`, cart lines must be aggregated by SKU via `Map<sku, totalQty>` before querying and updating `products`. Otherwise, multiple lines of the same SKU trigger duplicate Firestore writes that overwrite previous deductions and corrupt inventory.
     10. ⚠️ Deduplicated Catalog Sync: `orderSyncService.js` protects Firestore read quota using `inFlightSyncPromise` and a 600ms throttle window, preventing concurrent checkout hooks from triggering duplicate 50-read queries.
+    11. ⚠️ Deep Search Quota Fallback: Direct searches in `billingQueryService.js` must query in-memory `readCachedOrders()` first (0 reads) before hitting Firestore, and cap direct fallback query limit to 50 (instead of 300) to protect read quotas.
   </pitfalls_and_lessons>
 </grimoire>

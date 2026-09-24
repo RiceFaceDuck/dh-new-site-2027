@@ -21,7 +21,9 @@ function assert(condition, message) {
 
 console.log('🧪 Starting Verification Suite: Phase 3 Smart Quick Paste 2-Step Customer Modal');
 
-const rootDir = path.resolve('Management System/dh-backoffice-react/src');
+const rootDir = fs.existsSync(path.resolve('Management System/dh-backoffice-react/src'))
+    ? path.resolve('Management System/dh-backoffice-react/src')
+    : path.resolve('dh-backoffice-react/src');
 
 // 1. Check QuickAddCustomerModal.jsx
 console.log('\n--- Suite 1: QuickAddCustomerModal 2-Step Architecture ---');
