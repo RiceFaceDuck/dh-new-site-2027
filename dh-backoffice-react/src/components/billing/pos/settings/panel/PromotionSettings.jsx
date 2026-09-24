@@ -16,7 +16,7 @@ export default function PromotionSettings({
                         type="button"
                         disabled={isProcessing} 
                         onClick={() => setIsPromoModalOpen(true)} 
-                        className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-[10px] font-black px-2.5 py-1 rounded-md transition-all shadow-xs active:scale-95 cursor-pointer"
+                        className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-[10px] font-black px-2.5 py-1 rounded-none rounded-tr-sm transition-all shadow-xs active:scale-95 cursor-pointer"
                     >
                         เลือกโปร
                     </button>
@@ -24,7 +24,7 @@ export default function PromotionSettings({
                         type="button"
                         disabled={isProcessing} 
                         onClick={() => setIsFreebieModalOpen && setIsFreebieModalOpen(true)} 
-                        className="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black px-2.5 py-1 rounded-md transition-all shadow-xs active:scale-95 cursor-pointer"
+                        className="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black px-2.5 py-1 rounded-none rounded-tr-sm transition-all shadow-xs active:scale-95 cursor-pointer"
                     >
                         เลือกของแถม
                     </button>
@@ -32,7 +32,7 @@ export default function PromotionSettings({
             </div>
             
             <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2.5 text-[11px] font-extrabold text-slate-800 bg-slate-50 hover:bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:border-fuchsia-400 transition-all shadow-2xs">
+                <label className="flex items-center gap-2.5 text-[11px] font-extrabold text-slate-800 bg-slate-50 hover:bg-white p-2.5 rounded-none rounded-tr-md border border-slate-200 cursor-pointer hover:border-fuchsia-400 transition-all shadow-2xs">
                     <input 
                         disabled={isProcessing} 
                         type="checkbox" 
@@ -55,7 +55,7 @@ export default function PromotionSettings({
                     รับโปรโมชันคุ้มสุดอัตโนมัติ
                 </label>
 
-                <label className="flex items-center gap-2.5 text-[11px] font-extrabold text-slate-800 bg-slate-50 hover:bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:border-rose-400 transition-all shadow-2xs">
+                <label className="flex items-center gap-2.5 text-[11px] font-extrabold text-slate-800 bg-slate-50 hover:bg-white p-2.5 rounded-none rounded-tr-md border border-slate-200 cursor-pointer hover:border-rose-400 transition-all shadow-2xs">
                     <input 
                         disabled={isProcessing} 
                         type="checkbox" 

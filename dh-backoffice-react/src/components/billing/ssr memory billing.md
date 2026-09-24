@@ -39,5 +39,6 @@
     5. ⚠️ Zebra Striping & Virtual Scrolling: Do not rely on `even:bg-black/5` on light surfaces (imperceptible 0.4% delta). Calculate parity via `data-item-index` for stable `bg-white` vs `bg-[#F4F6F9]` enterprise contrast.
     6. ⚠️ Address Regex Parsing: When cleaning address labels, match both newline and inline prefixes `(?:\s+|^|\n)(?:ที่อยู่|ที่อยู่จัดส่ง)\s*:?` to avoid mangling customer names when addresses are pasted on single line.
     7. ⚠️ Navigation & Global Event Handlers: Handle `dh_open_new_bill` and `dh_resume_draft` CustomEvents in `BillingMain.jsx` and guard tab creation with `isNewBillHandledRef` to prevent tab duplication loops.
+    8. ⚠️ Signature Asymmetrical UI Corners: POS Settings panel uses DH signature tech-tab aesthetic where corners are exclusively rounded on top-right (`rounded-none rounded-tr-md` or `rounded-tr-xl`) while other 3 corners remain sharp square. Do not replace with symmetric `rounded-md`/`rounded-lg`.
   </pitfalls_and_lessons>
 </grimoire>

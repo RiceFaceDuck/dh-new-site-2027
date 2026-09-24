@@ -29,12 +29,12 @@ export default function DiscountSettings({
                     <label className={labelClass || "text-xs font-bold text-white/90 mb-1 flex items-center gap-1.5 uppercase tracking-wider"}>
                         <Tag size={12} className="text-rose-500"/> ลดท้ายบิล
                     </label>
-                    <div className="inline-flex rounded-md p-0.5 bg-slate-200/80 border border-slate-300 text-[10px] font-black">
+                    <div className="inline-flex rounded-none rounded-tr-md p-0.5 bg-slate-200/80 border border-slate-300 text-[10px] font-black">
                         <button
                             type="button"
                             disabled={isProcessing}
                             onClick={() => updateActiveTab({ overallDiscountType: 'BAHT' })}
-                            className={`px-1.5 py-0.5 rounded-xs transition-all cursor-pointer ${!isPercent ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900 font-bold'}`}
+                            className={`px-1.5 py-0.5 rounded-none rounded-tr-xs transition-all cursor-pointer ${!isPercent ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900 font-bold'}`}
                         >
                             ฿
                         </button>
@@ -42,7 +42,7 @@ export default function DiscountSettings({
                             type="button"
                             disabled={isProcessing}
                             onClick={() => updateActiveTab({ overallDiscountType: 'PERCENT' })}
-                            className={`px-1.5 py-0.5 rounded-xs transition-all cursor-pointer ${isPercent ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900 font-bold'}`}
+                            className={`px-1.5 py-0.5 rounded-none rounded-tr-xs transition-all cursor-pointer ${isPercent ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900 font-bold'}`}
                         >
                             %
                         </button>
@@ -60,7 +60,7 @@ export default function DiscountSettings({
                         onChange={(e) => setLocalDiscount(e.target.value)} 
                         onBlur={() => updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0, overallDiscountType: discountType })} 
                         onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0, overallDiscountType: discountType }); }} 
-                        className="w-full h-full bg-white border border-gray-300 rounded-md px-3 text-right text-xs font-black text-rose-600 outline-hidden focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500/20 shadow-xs placeholder-gray-400" 
+                        className="w-full h-full bg-white border border-gray-300 rounded-none rounded-tr-md px-3 text-right text-xs font-black text-rose-600 outline-hidden focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500/20 shadow-xs placeholder-gray-400" 
                     />
                 </div>
 
@@ -79,7 +79,7 @@ export default function DiscountSettings({
                     </label>
                 </div>
 
-                <div className="h-9 flex bg-white rounded-md border border-gray-300 overflow-hidden shadow-xs focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-500/20 transition-all">
+                <div className="h-9 flex bg-white rounded-none rounded-tr-md border border-gray-300 overflow-hidden shadow-xs focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-500/20 transition-all">
                     <input 
                         disabled={isProcessing} 
                         type="text" 

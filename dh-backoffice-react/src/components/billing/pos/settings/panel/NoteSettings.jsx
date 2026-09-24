@@ -14,7 +14,7 @@ export default function NoteSettings({
                 value={localBillNote} 
                 onChange={(e) => setLocalBillNote(e.target.value)} 
                 onBlur={() => updateActiveTab({ billNote: localBillNote })} 
-                className="w-full bg-slate-50 hover:bg-white border border-slate-300 rounded-lg p-2.5 text-xs font-semibold text-slate-800 outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder-slate-400 shadow-2xs resize-none h-20 custom-scrollbar" 
+                className="w-full bg-slate-50 hover:bg-white border border-slate-300 rounded-none rounded-tr-md p-2.5 text-xs font-semibold text-slate-800 outline-hidden focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder-slate-400 shadow-2xs resize-none h-20 custom-scrollbar" 
             />
         </div>
     );

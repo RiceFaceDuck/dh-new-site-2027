@@ -127,7 +127,7 @@ export default function CustomerSection({
                                 setQuickAddInitialText(localSearchText);
                                 setIsQuickAddModalOpen(true);
                             }} 
-                            className="text-[10px] flex items-center gap-1 text-slate-900 font-black uppercase bg-yellow-400 hover:bg-yellow-500 active:scale-95 border border-yellow-500/40 px-2 py-1 rounded-sm shadow-xs transition-all cursor-pointer group"
+                            className="text-[10px] flex items-center gap-1 text-slate-900 font-black uppercase bg-yellow-400 hover:bg-yellow-500 active:scale-95 border border-yellow-500/40 px-2 py-1 rounded-none rounded-tr-sm shadow-xs transition-all cursor-pointer group"
                             title="เปิดระบบจัดสรรข้อมูลลูกค้าอัตโนมัติ (Smart Quick Paste)"
                         >
                             <UserPlus size={11} className="group-hover:scale-110 transition-transform" />
@@ -141,7 +141,7 @@ export default function CustomerSection({
                             updateActiveTab({ walkInName: randomName, hidePhone: false, walkInPhone: '' });
                             setLocalSearchText(randomName);
                             setShowWalkInPhoneInput(false);
-                        }} className="text-[10px] flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors font-bold uppercase bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded-sm shadow-xs group" title="เสกชื่อลูกค้า Walk-in อัตโนมัติ">
+                        }} className="text-[10px] flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors font-bold uppercase bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded-none rounded-tr-sm shadow-xs group" title="เสกชื่อลูกค้า Walk-in อัตโนมัติ">
                             <Wand2 size={10} className="group-hover:rotate-12 transition-transform"/> Auto-Fill
                         </button>
                     )}
