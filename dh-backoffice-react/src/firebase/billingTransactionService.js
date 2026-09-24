@@ -17,15 +17,26 @@ const POINTS_RATE = 100;
 // ==========================================
 async function fetchDependencies(transaction, orderData, statusLower) {
   const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
-  const productRefs = [];
+  const aggregatedProductMap = new Map();
   
   for (const item of (orderData.items || [])) {
     const itemIdentifier = item.id || item.sku; 
     if (itemIdentifier) {
-      productRefs.push({ ref: doc(db, getCollectionPath('products'), itemIdentifier), item });
+      const qty = Math.max(1, Number(item.qty || 1));
+      if (aggregatedProductMap.has(itemIdentifier)) {
+        aggregatedProductMap.get(itemIdentifier).totalQty += qty;
+      } else {
+        aggregatedProductMap.set(itemIdentifier, {
+          ref: doc(db, getCollectionPath('products'), itemIdentifier),
+          itemIdentifier,
+          totalQty: qty,
+          item
+        });
+      }
     }
   }
 
+  const productRefs = Array.from(aggregatedProductMap.values());
   const productSnaps = await Promise.all(productRefs.map(p => transaction.get(p.ref)));
   const settingsSnap = await transaction.get(doc(db, getCollectionPath('settings'), 'inventory'));
   
@@ -82,15 +93,16 @@ function validateStock(productSnaps, productRefs, defaultBuffer, actorName, stat
   productSnaps.forEach((snap, index) => {
     if (snap.exists()) {
       const currentStock = snap.data().stockQuantity || 0;
-      const requiredQty = productRefs[index].item.qty;
+      const requiredQty = productRefs[index].totalQty || productRefs[index].item?.qty || 1;
       const isPosOrder = (actorName === 'POS' || actorName === 'POS_OFFLINE_SYNC');
       const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : defaultBuffer;
       const checkLimit = isPosOrder ? 0 : itemBuffer;
 
       if ((currentStock - requiredQty) < checkLimit && statusLower === 'paid') {
+        const skuLabel = snap.data().sku || productRefs[index].itemIdentifier;
         throw new Error(isPosOrder 
-          ? `สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น)`
-          : `สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
+          ? `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`
+          : `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น, คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`);
       }
       updates.push({ ref: productRefs[index].ref, newQty: currentStock - requiredQty, soldInc: requiredQty, originalSnap: snap });
     }
@@ -117,7 +129,7 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
 
   const shippingCost = Number(orderData.summary?.shippingFee ?? orderData.shippingFee ?? 0);
   const rawVatType = (orderData.summary?.vatType || orderData.vatType || '').toLowerCase();
-  const isVatOnShipping = orderData.vatOnShipping !== false && orderData.summary?.vatOnShipping !== false;
+  const isVatOnShipping = Boolean(orderData.vatOnShipping ?? orderData.summary?.vatOnShipping ?? false);
   const isExcludedVat = rawVatType === 'excluded';
 
   // When vatOnShipping is false and vatType is 'excluded', shippingCost must NOT be part of the taxable base

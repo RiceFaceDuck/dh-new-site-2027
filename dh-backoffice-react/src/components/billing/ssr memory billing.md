@@ -26,7 +26,7 @@
   <cross_impact>
     1. Inventory Module: Atomic stock decrements on checkout touch `products` collection directly.
     2. Customer Wallet & Points: Wallet balance deductions and credit accrual update `customers/{id}` ledger.
-    3. Cloud Functions: Writes to `orders/{orderId}` trigger background notifications and receipt PDF generation.
+    3. Cloud Functions: No background triggers on orders in functions/index.js (receipt PDFs handled via client-side iframe print).
     4. Recent Orders Catalog: Updates `catalogs/recent_orders` to keep dashboard warm (0 reads).
     5. Shared Utils: `dh-shared/src/utils/thaiAddressParser.js` consumed across backoffice and customer management.
   </cross_impact>
@@ -34,11 +34,12 @@
   <pitfalls_and_lessons>
     1. ⚠️ Cold-Start Catalog Hydration: `products` prop must fallback to `[]` when `posState.products` hydrates to prevent TypeError on `.find()`.
     2. ⚠️ Unbounded Customer Scanning: Do not call `useCustomerData()` at `BillingMain.jsx` root; keep isolated in `PosViewWrapper` to prevent read storm.
-    3. ⚠️ Server Parity on Shipping VAT: POS UI (`usePosPayment.js`) and backend (`billingTransactionService.js`) must align `vatOnShipping` logic to avoid price discrepancy rejections.
+    3. ⚠️ Server Parity on Shipping VAT: POS UI (`usePosPayment.js`) and backend (`billingTransactionService.js`) must align `vatOnShipping` logic using `Boolean(...)` defaulting to false to avoid price discrepancy rejections.
     4. ⚠️ High Read on Direct Query: Querying `collection('orders')` causes 50 reads; always use `orderCacheService` (`catalogs/recent_orders`) for 0-read warm dashboard.
     5. ⚠️ Zebra Striping & Virtual Scrolling: Do not rely on `even:bg-black/5` on light surfaces (imperceptible 0.4% delta). Calculate parity via `data-item-index` for stable `bg-white` vs `bg-[#F4F6F9]` enterprise contrast.
     6. ⚠️ Address Regex Parsing: When cleaning address labels, match both newline and inline prefixes `(?:\s+|^|\n)(?:ที่อยู่|ที่อยู่จัดส่ง)\s*:?` to avoid mangling customer names when addresses are pasted on single line.
     7. ⚠️ Navigation & Global Event Handlers: Handle `dh_open_new_bill` and `dh_resume_draft` CustomEvents in `BillingMain.jsx` and guard tab creation with `isNewBillHandledRef` to prevent tab duplication loops.
     8. ⚠️ Signature Asymmetrical UI Corners: POS Settings panel uses DH signature tech-tab aesthetic where corners are exclusively rounded on top-right (`rounded-none rounded-tr-md` or `rounded-tr-xl`) while other 3 corners remain sharp square. Do not replace with symmetric `rounded-md`/`rounded-lg`.
+    9. ⚠️ Split-Line SKU Aggregation: In `billingTransactionService.js` and `billingStatusTransaction.js`, cart lines must be aggregated by SKU via `Map<sku, totalQty>` before querying and updating `products`. Otherwise, multiple lines of the same SKU trigger duplicate Firestore writes that overwrite previous deductions and corrupt inventory.
   </pitfalls_and_lessons>
 </grimoire>

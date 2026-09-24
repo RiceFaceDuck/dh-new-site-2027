@@ -55,12 +55,25 @@ export const billingStatusTransaction = {
           let inventorySettingsSnap = null;
           
           if (isCancelling || isConfirmingPayment) {
+              const aggregatedProductMap = new Map();
               for (const item of (orderData.items || [])) {
                   const itemIdentifier = item.id || item.sku;
                   if (item.isFreebie || !itemIdentifier) continue;
-                  const pRef = doc(db, getCollectionPath('products'), itemIdentifier);
-                  productRefs.push({ ref: pRef, qty: item.qty });
-                  productSnaps.push(await transaction.get(pRef));
+                  const qty = Math.max(1, Number(item.qty || 1));
+                  if (aggregatedProductMap.has(itemIdentifier)) {
+                      aggregatedProductMap.get(itemIdentifier).qty += qty;
+                  } else {
+                      aggregatedProductMap.set(itemIdentifier, {
+                          ref: doc(db, getCollectionPath('products'), itemIdentifier),
+                          itemIdentifier,
+                          qty
+                      });
+                  }
+              }
+
+              for (const prod of aggregatedProductMap.values()) {
+                  productRefs.push(prod);
+                  productSnaps.push(await transaction.get(prod.ref));
               }
 
               const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;

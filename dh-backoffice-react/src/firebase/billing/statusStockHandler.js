@@ -9,13 +9,14 @@ export const handleStockDeduction = (transaction, db, productRefs, productSnaps,
     productSnaps.forEach((pSnap, index) => {
         if (pSnap.exists()) {
             const currentStock = pSnap.data().stockQuantity || 0;
-            const requiredQty = productRefs[index].qty;
+            const requiredQty = productRefs[index].qty || productRefs[index].totalQty || 1;
             const itemBuffer = pSnap.data().bufferStock !== undefined 
                 ? pSnap.data().bufferStock 
                 : defaultBuffer;
 
             if ((currentStock - requiredQty) < itemBuffer) {
-                throw new Error(`สินค้า ${pSnap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
+                const skuLabel = pSnap.data().sku || productRefs[index].itemIdentifier || 'Unknown';
+                throw new Error(`สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
             }
             
             const newStock = currentStock - requiredQty;
@@ -33,7 +34,7 @@ export const handleStockReturn = (transaction, db, productRefs, productSnaps) =>
     productSnaps.forEach((pSnap, index) => {
         if (pSnap.exists()) {
             const currentStock = pSnap.data().stockQuantity || 0;
-            const qtyToReturn = productRefs[index].qty;
+            const qtyToReturn = productRefs[index].qty || productRefs[index].totalQty || 1;
             const newStock = currentStock + qtyToReturn;
             
             transaction.update(productRefs[index].ref, { 
