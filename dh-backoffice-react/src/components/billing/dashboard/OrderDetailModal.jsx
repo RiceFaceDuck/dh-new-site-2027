@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Receipt, Copy, Clock, MapPin, Phone, User, CalendarDays, Loader2, CheckCircle, Package } from 'lucide-react';
 import OrderSummary from './OrderSummary';
 import OrderActions from './OrderActions';
+import OrderHistoryTab from './OrderHistoryTab';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
 import { auth } from '../../../firebase/config';
 
@@ -270,12 +271,8 @@ export default function OrderDetailModal(props) {
                     )}
 
                     {activeTab === 'history' && (
-                        <div className="max-w-3xl mx-auto bg-(--dh-bg-surface) rounded-xs p-6 border border-(--dh-border) text-center text-(--dh-text-muted) shadow-xs">
-                            <div className="w-16 h-16 bg-(--dh-bg-base) rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner border border-(--dh-border)">
-                                <Clock size={24} className="opacity-50" />
-                            </div>
-                            <h2 className="text-base font-black text-(--dh-text-main) mb-1.5">ประวัติการอัปเดตบิล</h2>
-                            <p className="text-xs font-bold">อยู่ระหว่างการพัฒนา UI ย่อย (สามารถดูข้อมูลประวัติได้ในเวอร์ชั่นเต็ม)</p>
+                        <div className="w-full h-full flex flex-col overflow-hidden">
+                            <OrderHistoryTab selectedOrder={selectedOrder} />
                         </div>
                     )}
                 </div>

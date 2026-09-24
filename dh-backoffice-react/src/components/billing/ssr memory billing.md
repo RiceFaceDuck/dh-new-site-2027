@@ -43,5 +43,6 @@
     9. ⚠️ Split-Line SKU Aggregation: In `billingTransactionService.js` and `billingStatusTransaction.js`, cart lines must be aggregated by SKU via `Map<sku, totalQty>` before querying and updating `products`. Otherwise, multiple lines of the same SKU trigger duplicate Firestore writes that overwrite previous deductions and corrupt inventory.
     10. ⚠️ Deduplicated Catalog Sync: `orderSyncService.js` protects Firestore read quota using `inFlightSyncPromise` and a 600ms throttle window, preventing concurrent checkout hooks from triggering duplicate 50-read queries.
     11. ⚠️ Deep Search Quota Fallback: Direct searches in `billingQueryService.js` must query in-memory `readCachedOrders()` first (0 reads) before hitting Firestore, and cap direct fallback query limit to 50 (instead of 300) to protect read quotas.
+    12. ⚠️ On-Demand Order History: `OrderDetailModal.jsx` loads order timeline on-demand in `OrderHistoryTab.jsx` combining synthesized intrinsic lifecycle events and Firestore `history_logs`, avoiding redundant full-collection listeners.
   </pitfalls_and_lessons>
 </grimoire>
