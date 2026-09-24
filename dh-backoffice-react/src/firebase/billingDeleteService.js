@@ -3,6 +3,7 @@ import { db } from './config';
 import { gasHistoryService } from './gasHistoryService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { syncRecentOrdersCatalog } from './orderSyncService';
 
 const COLLECTION_NAME = getCollectionPath('orders');
 
@@ -98,6 +99,9 @@ export const billingDeleteService = {
           details: { legacy_details: `ลบบิลถาวรออกจากระบบ (รหัสอ้างอิง: ${orderData.orderId || orderId})` },
           actorOverride: { uid: actorUid || 'system', name: 'Unknown', email: 'N/A' }
       });
+
+      // ⚡ Refresh catalogs/recent_orders so deleted bill is removed from dashboard immediately
+      syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Delete sync error:", e));
 
       return true;
     })(), "เกิดข้อผิดพลาดในการลบบิล");

@@ -3,20 +3,34 @@ import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { writeCachedOrders } from './orderCacheService';
 
+let inFlightSyncPromise = null;
+let lastSyncTimestamp = 0;
+const SYNC_THROTTLE_MS = 600; // Deduplicate calls within 600ms window
+
 /**
  * 🚀 Sync and Bundle the latest 50 Orders into `catalogs/recent_orders`
  * Reduces reads for all dashboard views to 1 Read!
  */
 export const syncRecentOrdersCatalog = async () => {
-  try {
-    const ordersCol = collection(db, getCollectionPath('orders'));
-    const q = query(ordersCol, orderBy('createdAt', 'desc'), limit(50));
-    const snapshot = await getDocs(q);
+  if (inFlightSyncPromise) {
+    return inFlightSyncPromise;
+  }
 
-    if (snapshot.empty) {
-      console.log("No orders found to bundle into recent_orders catalog.");
-      return { success: true, count: 0 };
-    }
+  const now = Date.now();
+  if (now - lastSyncTimestamp < SYNC_THROTTLE_MS) {
+    return { success: true, count: 50, throttled: true };
+  }
+
+  inFlightSyncPromise = (async () => {
+    try {
+      const ordersCol = collection(db, getCollectionPath('orders'));
+      const q = query(ordersCol, orderBy('createdAt', 'desc'), limit(50));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        console.log("No orders found to bundle into recent_orders catalog.");
+        return { success: true, count: 0 };
+      }
 
     const bundledOrders = snapshot.docs.map(docSnap => {
       const d = docSnap.data();
@@ -101,9 +115,15 @@ export const syncRecentOrdersCatalog = async () => {
     writeCachedOrders(bundledOrders, { version, updatedAt: version });
 
     console.log(`[✓] Successfully bundled ${bundledOrders.length} orders into catalogs/recent_orders (Version: ${version})`);
+    lastSyncTimestamp = Date.now();
     return { success: true, count: bundledOrders.length, version };
   } catch (err) {
     console.error("❌ Error in syncRecentOrdersCatalog:", err);
     throw err;
+  } finally {
+    inFlightSyncPromise = null;
   }
+  })();
+
+  return inFlightSyncPromise;
 };

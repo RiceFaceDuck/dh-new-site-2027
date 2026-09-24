@@ -283,35 +283,6 @@ export const billingStatusTransaction = {
       if (normalizedNewStatus === 'paid') logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
 
       await historyService.addLog('Billing', 'Update', orderId, logMessage, actorUid);
-      
-      // 🎯 Auto-Create Refund To-do if there is manual cash/PromptPay refund
-      if (normalizedNewStatus === 'cancelled' && result.manualRefundAmount > 0 && result.normalizedCurrentStatus === 'paid') {
-          try {
-              const { doc: firestoreDoc, collection: firestoreCollection, setDoc, serverTimestamp: fbServerTimestamp } = await import('firebase/firestore');
-              const refundTodoRef = firestoreDoc(firestoreCollection(db, getCollectionPath('todos')));
-              await setDoc(refundTodoRef, {
-                  id: refundTodoRef.id,
-                  type: 'REFUND_MANUAL',
-                  status: 'pending_manager',
-                  title: `รอโอนเงินคืนลูกค้า (ยกเลิกบิล ${orderId})`,
-                  description: `บิล ${orderId} ถูกยกเลิก แต่มีการจ่ายผ่านเงินสด/โอนเงิน โปรดโอนเงินคืนลูกค้าจำนวน ฿${result.manualRefundAmount.toLocaleString()} และแนบสลิป`,
-                  referenceId: orderId,
-                  customerUid: result.customerUid,
-                  customerName: result.customerName,
-                  payload: {
-                      orderId: orderId,
-                      refundAmount: result.manualRefundAmount,
-                      walletRefunded: result.walletUsed
-                  },
-                  priority: 'high',
-                  createdAt: fbServerTimestamp(),
-                  updatedAt: fbServerTimestamp()
-              });
-              console.log(`✅ Created manual refund To-do for ${orderId} (${result.manualRefundAmount} THB)`);
-          } catch (refundErr) {
-              console.error("🔥 Error creating refund to-do:", refundErr);
-          }
-      }
 
       // ⚡ Background Cache Sync: Refresh catalogs/recent_orders without blocking UI
       syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
