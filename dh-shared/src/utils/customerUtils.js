@@ -20,3 +20,5 @@ export const getCustomerDisplayName = (customer, fallback = 'ลูกค้า�
            customer.email || 
            fallback;
 };
+
+export { parseCustomerAddress, parseThaiAddress } from './thaiAddressParser.js';
