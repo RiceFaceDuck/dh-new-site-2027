@@ -24,8 +24,13 @@
   </cross_impact>
 
   <pitfalls_and_lessons>
-    <caution>Do NOT query the old 'todos' collection; the active claims system uses the 'claims' collection with 33+ real items.</caution>
-    <caution>Batch preload customer profiles to avoid N+1 Firestore quota over-consumption when browsing table rows.</caution>
+    <caution>Do NOT query the old 'todos' collection; both UI and backend services (claimRequest, claimAction, returnAction, cancelAction) are unified under the 'claims' collection.</caution>
+    <caution>claimManagerService MUST explicitly map EXCHANGE_APPROVAL alongside CLAIM_APPROVAL to prevent 'Unknown task type' crashes.</caution>
+    <caution>Swap SKU Cancel Rule: cancelActionService MUST restore sellable stock to payload.swapSku, cancel linked newOrderId, and reverse wallet netDifference.</caution>
+    <caution>Refund Bound Rule: returnActionService MUST cap refunds by effective item price and order finalTotal to prevent over-refunds.</caution>
+    <caution>Transaction Rule: All Firestore transactions in claim services MUST execute all reads before any writes.</caution>
+    <caution>Quota Preload Rule: ClaimDetailModal MUST forward customerProfile into CustomerInfo as preloadedProfile to prevent duplicate single-doc reads per modal opening.</caution>
+    <caution>Plan & Gatekeeper Rule: Never mutate code based on casual conversational remarks without logging to watchlist, formulating an Implementation Plan, and obtaining explicit user approval first.</caution>
     <caution>Strict Deployment Ban: Never deploy to server or git push; all changes are local-only.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>

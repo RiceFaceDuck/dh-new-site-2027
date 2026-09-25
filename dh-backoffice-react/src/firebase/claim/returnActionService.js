@@ -4,7 +4,7 @@ import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const TODOS_COLLECTION = getCollectionPath('todos');
+const CLAIMS_COLLECTION = getCollectionPath('claims');
 
 export const returnActionService = {
   approveRequest: async (task, adminUid, adminName) => {
@@ -20,7 +20,7 @@ export const returnActionService = {
           updates['payload.trackingNo'] = payload.trackingNo;
       }
 
-      await updateDoc(doc(db, TODOS_COLLECTION, todoId), updates);
+      await updateDoc(doc(db, CLAIMS_COLLECTION, todoId), updates);
 
       // ... (rest unchanged)
       return true;
@@ -34,7 +34,7 @@ export const returnActionService = {
     try {
       const { payload, id: todoId } = task;
       
-      await updateDoc(doc(db, TODOS_COLLECTION, todoId), {
+      await updateDoc(doc(db, CLAIMS_COLLECTION, todoId), {
         status: 'processing',
         updatedAt: serverTimestamp()
       });
@@ -52,19 +52,15 @@ export const returnActionService = {
       const { payload, id: todoId } = task;
       const qty = Number(payload.qty || 1);
 
-      // 1. คืนเงินให้ลูกค้า (ถ้าไม่ใช่ลูกค้าทั่วไป)
-      let refundAmount = (payload.purchasePrice || 0) * qty;
-      const penalty = Number(payload.freebiePenaltyAmount) || 0;
-      if (penalty > 0) {
-        refundAmount = Math.max(0, refundAmount - penalty);
-      }
-
       let finalNewStock = 0;
       let productData = null;
+      let calculatedRefundAmount = 0;
+      let finalPenalty = 0;
 
       await runTransaction(db, async (transaction) => {
-        // 0. ดึงและตรวจสอบสถานะ To-do ก่อนเพื่อป้องกันการรันรายการซ้ำซ้อน (Idempotency check)
-        const taskRef = doc(db, TODOS_COLLECTION, todoId);
+        // --- 1. READ OPERATIONS (All reads must be executed before writes) ---
+        // 0. ดึงและตรวจสอบสถานะ Claim Task
+        const taskRef = doc(db, CLAIMS_COLLECTION, todoId);
         const taskSnap = await transaction.get(taskRef);
         if (taskSnap.exists()) {
           const taskData = taskSnap.data();
@@ -73,28 +69,84 @@ export const returnActionService = {
           }
         }
 
-        // 2. เพิ่มสต๊อกกลับเข้าคลัง
+        // 1. ดึงข้อมูลสต๊อกสินค้า
         const pRef = doc(db, getCollectionPath('products'), payload.sku);
         const pSnap = await transaction.get(pRef);
         if (!pSnap.exists()) {
           throw new Error(`ไม่พบสินค้า SKU: ${payload.sku} ในระบบ`);
         }
-
         productData = pSnap.data();
         const currentStock = Number(productData.stockQuantity || 0);
         finalNewStock = currentStock + qty;
 
+        // 2. ดึงข้อมูล Order เดิมเพื่อตรวจสอบราคาซื้อจริงและเพดานเงินคืน
+        let orderRef = null;
+        let orderSnap = null;
+        let unitPrice = Number(payload.purchasePrice || 0);
+        let maxRefundable = Infinity;
+
+        if (payload.orderDocId) {
+          orderRef = doc(db, getCollectionPath('orders'), payload.orderDocId);
+          orderSnap = await transaction.get(orderRef);
+          if (orderSnap.exists()) {
+            const orderData = orderSnap.data();
+            // ตรวจสอบราคาจริงของสินค้านั้นหลังหักส่วนลดรายการ/โปรโมชั่น
+            const matchedItem = (orderData.items || []).find(it => it.sku === payload.sku);
+            if (matchedItem) {
+              const itemEffectivePrice = Number(matchedItem.priceAfterDiscount ?? matchedItem.effectivePrice ?? matchedItem.priceAtPurchase ?? matchedItem.price ?? unitPrice);
+              if (itemEffectivePrice > 0) {
+                unitPrice = itemEffectivePrice;
+              }
+            }
+
+            // คำนวณเพดานยอดเงินคืนสูงสุด ไม่เกินยอดบิลจริง และหักยอดที่เคยคืนไปแล้ว
+            const orderFinalTotal = Number(orderData.finalTotal ?? orderData.totals?.finalTotal ?? 0);
+            const pastReturns = (orderData.refundsAndClaims || []).filter(rc => rc.type === 'Return');
+            const totalPastRefunded = pastReturns.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+            maxRefundable = Math.max(0, orderFinalTotal - totalPastRefunded);
+          }
+        }
+
+        // คำนวณยอดเงินคืนสุทธิที่จำกัดเพดาน
+        let refundAmount = unitPrice * qty;
+        finalPenalty = Number(payload.freebiePenaltyAmount) || 0;
+        if (finalPenalty > 0) {
+          refundAmount = Math.max(0, refundAmount - finalPenalty);
+        }
+        if (Number.isFinite(maxRefundable)) {
+          refundAmount = Math.min(refundAmount, maxRefundable);
+        }
+        calculatedRefundAmount = refundAmount;
+
+        // 3. อ่านข้อมูลสำหรับดึงแต้มสะสมคืน (Clawback Points) ล่วงหน้า
+        const hasCustomer = payload.customerUid && payload.customerUid !== 'Walk-in' && payload.customerUid !== 'WALK-IN';
+        const clawbackPoints = (hasCustomer && refundAmount > 0) ? Math.floor(refundAmount / 100) : 0;
+        let creditPreloadSnaps = null;
+        if (clawbackPoints > 0) {
+          const { getCreditPreloadRefs } = await import('../credit/creditActionService');
+          const creditRefs = getCreditPreloadRefs(payload.customerUid, 'clawback', `RTN_${payload.returnId}`);
+          const [txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
+            transaction.get(creditRefs.txRef),
+            transaction.get(creditRefs.settingsRef),
+            transaction.get(creditRefs.userRef),
+            transaction.get(creditRefs.walletRef),
+            transaction.get(creditRefs.activePartnerRef)
+          ]);
+          creditPreloadSnaps = { txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap };
+        }
+
+        // --- 2. WRITE OPERATIONS ---
+        // 1. เพิ่มสต๊อกกลับเข้าคลัง
         transaction.update(pRef, { stockQuantity: finalNewStock });
 
-        // 3. อัปเดตสถานะ To-do เป็น completed
-        transaction.update(doc(db, TODOS_COLLECTION, todoId), {
+        // 2. อัปเดตสถานะใบส่งคืนสินค้า
+        transaction.update(taskRef, {
           status: 'completed',
           updatedAt: serverTimestamp()
         });
 
-        // 4. บันทึกประวัติบิล
-        if (payload.orderDocId) {
-          const orderRef = doc(db, getCollectionPath('orders'), payload.orderDocId);
+        // 3. บันทึกประวัติลงใน Order เดิม
+        if (orderRef && orderSnap?.exists()) {
           transaction.update(orderRef, {
             refundsAndClaims: arrayUnion({
               type: 'Return',
@@ -107,30 +159,11 @@ export const returnActionService = {
           });
         }
 
-        // 5. บันทึกกระเป๋าเงิน (Wallet) และดึงแต้มคืน ภายใต้ Transaction เดียวกัน เพื่อความปลอดภัย
-        if (payload.customerUid && payload.customerUid !== 'Walk-in' && refundAmount > 0) {
+        // 4. บันทึกกระเป๋าเงิน (Wallet) และดึงแต้มคืน
+        if (hasCustomer && refundAmount > 0) {
           const userRef = doc(db, getCollectionPath('users'), payload.customerUid);
-          
-          // 5.1 🌟 อ่านข้อมูลสำหรับดึงแต้มสะสมคืน (Clawback Points) ตามสัดส่วนเงินที่คืนให้ลูกค้า
-          const clawbackPoints = Math.floor(refundAmount / 100);
-          let creditPreloadSnaps = null;
-          
-          if (clawbackPoints > 0) {
-            const { getCreditPreloadRefs } = await import('../credit/creditActionService');
-            const creditRefs = getCreditPreloadRefs(payload.customerUid, 'clawback', `RTN_${payload.returnId}`);
-            
-            // อ่านข้อมูลก่อนทำการเขียน (Firestore Rules: READS must happen before WRITES)
-            const [txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
-              transaction.get(creditRefs.txRef),
-              transaction.get(creditRefs.settingsRef),
-              transaction.get(creditRefs.userRef),
-              transaction.get(creditRefs.walletRef),
-              transaction.get(creditRefs.activePartnerRef)
-            ]);
-            creditPreloadSnaps = { txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap };
-          }
 
-          // 5.2 หักแต้มสะสม (Clawback)
+          // 4.1 หักแต้มสะสม (Clawback)
           if (clawbackPoints > 0 && creditPreloadSnaps) {
             const { adjustUserCreditWithTransaction } = await import('../credit/creditActionService');
             await adjustUserCreditWithTransaction(
@@ -145,7 +178,7 @@ export const returnActionService = {
             );
           }
 
-          // 5.3 คืนเงินเข้า Wallet Cash (ใช้อัปเดตแบบอิสระ)
+          // 4.2 คืนเงินเข้า Wallet Cash
           transaction.update(userRef, {
             walletBalance: increment(refundAmount),
             updatedAt: serverTimestamp()
@@ -180,8 +213,8 @@ export const returnActionService = {
         action: 'Completed',
         target: { id: payload.returnId, type: 'Task' },
         details: {
-          legacy_details: `คืนสินค้าสำเร็จ ${payload.sku} จำนวน ${qty} ชิ้น (คืนเงิน ฿${refundAmount})${penalty > 0 ? ` [หักค่าปรับของแถม: ฿${penalty}]` : ''}`,
-          financials: { refundAmount, freebiePenalty: penalty }
+          legacy_details: `คืนสินค้าสำเร็จ ${payload.sku} จำนวน ${qty} ชิ้น (คืนเงิน ฿${calculatedRefundAmount})${finalPenalty > 0 ? ` [หักค่าปรับของแถม: ฿${finalPenalty}]` : ''}`,
+          financials: { refundAmount: calculatedRefundAmount, freebiePenalty: finalPenalty }
         },
         actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
       });
@@ -212,7 +245,7 @@ export const returnActionService = {
 
   rejectRequest: async (task, reason, adminUid, adminName) => {
     try {
-      await updateDoc(doc(db, TODOS_COLLECTION, task.id), {
+      await updateDoc(doc(db, CLAIMS_COLLECTION, task.id), {
         status: 'rejected',
         handledBy: adminUid,
         rejectReason: reason,

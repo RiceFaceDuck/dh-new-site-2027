@@ -37,16 +37,16 @@ export default function ClaimTable({
     <div className="flex-1 overflow-hidden h-full w-full flex flex-col justify-between rounded-b-xl">
       {/* Single Table Container */}
       <div className="flex-1 overflow-auto w-full custom-scrollbar">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse table-fixed">
           <thead className="sticky top-0 bg-dh-surface/95 backdrop-blur-md border-b border-dh-border shadow-xs z-10">
             <tr>
-              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[120px]">วันที่/เวลา ยื่น</th>
-              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[135px]">Ref / Type</th>
-              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[170px]">Customer / Order</th>
-              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[110px]">วันที่สั่งซื้อ</th>
-              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[150px]">Warranty</th>
-              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left">Product & Reason</th>
-              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-center w-[140px]">Status</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[10%] whitespace-nowrap">วันที่ยื่น</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[12%] whitespace-nowrap">Ref / Type</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[22%] whitespace-nowrap">Customer / Order</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[10%] whitespace-nowrap">วันที่ซื้อ</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[12%] whitespace-nowrap">Warranty</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-left w-[24%] whitespace-nowrap">Product & Reason</th>
+              <th className="px-3 py-3 text-[11px] font-black text-dh-muted uppercase tracking-wider text-center w-[10%] whitespace-nowrap">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-dh-border bg-dh-surface">

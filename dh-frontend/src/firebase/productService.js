@@ -292,7 +292,8 @@ export const productService = {
       await this.getGlobalBuffer();
       const { collection, query, where, limit, startAfter, getDocs } = await import('firebase/firestore');
       const productsRef = collection(db, getCollectionPath('products'));
-      const lowerCaseType = category.trim().toLowerCase();
+      const cleanCategory = (category || '').trim();
+      const lowerCaseType = cleanCategory.toLowerCase();
       
       let q;
       if (!lastVisible) {
@@ -302,9 +303,18 @@ export const productService = {
       }
 
       const snapshot = await getDocs(q);
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      let docs = snapshot.docs.map(doc => this.normalizeProductData({ id: doc.id, ...doc.data() }));
       const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
       
+      // 🛡️ Resilient Fallback: If no products found via category_lower on first page, fallback to match exact category field
+      if (docs.length === 0 && !lastVisible && cleanCategory) {
+        const fallbackQ = query(productsRef, where("category", "==", cleanCategory), limit(limitCount));
+        const fallbackSnap = await getDocs(fallbackQ);
+        if (!fallbackSnap.empty) {
+          docs = fallbackSnap.docs.map(doc => this.normalizeProductData({ id: doc.id, ...doc.data() }));
+        }
+      }
+
       return { docs, lastDoc };
     } catch (error) {
       console.error("Error fetching products by category:", error);

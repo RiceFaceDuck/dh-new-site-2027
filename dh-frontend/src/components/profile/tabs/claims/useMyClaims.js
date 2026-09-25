@@ -14,9 +14,16 @@ export function useMyClaims() {
     }
 
     const q = query(
-      collection(db, getCollectionPath('todos')),
+      collection(db, getCollectionPath('claims')),
       where('createdByUid', '==', auth.currentUser.uid),
-      where('type', 'in', ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL']),
+      where('type', 'in', [
+        'CLAIM_APPROVAL',
+        'EXCHANGE_APPROVAL',
+        'RETURN_APPROVAL',
+        'CANCEL_CLAIM_APPROVAL',
+        'CANCEL_EXCHANGE_APPROVAL',
+        'CANCEL_RETURN_APPROVAL'
+      ]),
       orderBy('createdAt', 'desc'),
       limit(50)
     );

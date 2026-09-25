@@ -1,9 +1,12 @@
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from './config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CONFIG_DOC_ID = 'featured_config';
 const CONFIG_COLLECTION = 'settings';
 const PRODUCTS_COLLECTION = 'products';
+const CATALOGS_COLLECTION = 'catalogs';
+const SHOWCASE_DOC_ID = 'home_showcase';
 
 // Cache mechanism to save Firebase reads (5 minutes)
 let cache = {
@@ -18,7 +21,7 @@ export const featuredQueryService = {
    */
   async getConfig() {
     try {
-      const docRef = doc(db, CONFIG_COLLECTION, CONFIG_DOC_ID);
+      const docRef = doc(db, getCollectionPath(CONFIG_COLLECTION), CONFIG_DOC_ID);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         return docSnap.data();
@@ -31,7 +34,7 @@ export const featuredQueryService = {
   },
 
   /**
-   * Fetch truly randomized active products using randomSeed
+   * Fetch truly randomized active products using catalogs/home_showcase with direct fallback
    * @param {number} limitCount 
    */
   async getRandomFeaturedProducts(limitCount = 8) {
@@ -42,11 +45,47 @@ export const featuredQueryService = {
         return [...cache.data].sort(() => 0.5 - Math.random()).slice(0, limitCount);
       }
 
-      const productsRef = collection(db, PRODUCTS_COLLECTION);
-      const randomSeed = Math.random();
-      const fetchPoolSize = limitCount * 3; // Fetch extra to filter out inactive ones in memory
+      // 🛡️ TIER 1: Low-Quota Shield (1 Read from catalogs/home_showcase)
+      try {
+        const showcaseRef = doc(db, getCollectionPath(CATALOGS_COLLECTION), SHOWCASE_DOC_ID);
+        const showcaseSnap = await getDoc(showcaseRef);
+        if (showcaseSnap.exists()) {
+          const data = showcaseSnap.data();
+          if (data && Array.isArray(data.items) && data.items.length > 0) {
+            const mappedShowcase = data.items.map(p => {
+              const qty = Number(p.stockQuantity ?? p.stock ?? p.qty ?? 0);
+              return {
+                id: p.sku,
+                sku: p.sku,
+                name: p.name,
+                price: Number(p.retailPrice ?? p.price ?? 0),
+                retailPrice: Number(p.retailPrice ?? p.price ?? 0),
+                stockQuantity: qty,
+                stock: qty, // Explicit numeric stock
+                imageUrl: p.imageUrl || null,
+                category: p.category || '',
+                brand: p.brand || 'OEM',
+                isActive: true,
+                hasStock: qty > 0,
+                inStock: qty > 0
+              };
+            });
 
-      // 🚀 Latency & UX Optimization: Execute q1 and q2 queries in parallel via Promise.all
+            // 🎲 สุ่มแบบธรรมชาติจากทั้ง 60 ชิ้น (มีทั้งตัวมีของและของหมดปนกันตามจริง)
+            cache.data = mappedShowcase;
+            cache.lastFetch = now;
+            return [...mappedShowcase].sort(() => 0.5 - Math.random()).slice(0, limitCount);
+          }
+        }
+      } catch (errShowcase) {
+        console.warn("⚠️ Showcase chunk read failed, falling back to direct query:", errShowcase);
+      }
+
+      // 🛡️ TIER 2: Direct products fallback
+      const productsRef = collection(db, getCollectionPath(PRODUCTS_COLLECTION));
+      const randomSeed = Math.random();
+      const fetchPoolSize = limitCount * 3;
+
       const q1 = query(
         productsRef,
         where('randomSeed', '>=', randomSeed),
@@ -69,20 +108,21 @@ export const featuredQueryService = {
 
       // Filter active products in memory and slice to the requested limit
       const activeProducts = products.filter(p => p.isActive !== false);
-      const finalProducts = activeProducts.slice(0, limitCount);
+      const inStockProducts = activeProducts.filter(p => Number(p.stockQuantity ?? 0) > 0);
+      const pool = inStockProducts.length >= limitCount ? inStockProducts : activeProducts;
 
       // Save to cache before shuffling
-      cache.data = activeProducts;
+      cache.data = pool;
       cache.lastFetch = now;
 
       // Shuffle the results slightly for better perceived randomness
-      return finalProducts.sort(() => 0.5 - Math.random());
+      return [...pool].sort(() => 0.5 - Math.random()).slice(0, limitCount);
       
     } catch (error) {
       console.error("Error fetching random products:", error);
       // Fallback
       const fallbackQuery = query(
-        collection(db, PRODUCTS_COLLECTION),
+        collection(db, getCollectionPath(PRODUCTS_COLLECTION)),
         limit(limitCount * 2)
       );
       const fallbackSnap = await getDocs(fallbackQuery);

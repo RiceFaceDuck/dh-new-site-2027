@@ -2,7 +2,6 @@
 import React, { useState, useMemo } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { ChevronRight, Cpu, ShieldAlert } from 'lucide-react';
-import { getAuth } from 'firebase/auth';
 import { useCartDispatch } from '../context/CartProvider';
 import { useToast } from '../context/ToastContext';
 
@@ -59,12 +58,23 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       const rawPrice = getVal(product, ['retailprice', 'regularprice', 'ราคาปลีก', 'price', 'saleprice', 'ราคา', 'sellprice']);
       const price = (rawPrice !== null && rawPrice !== undefined) ? Number(String(rawPrice).replace(/[^0-9.-]+/g,"")) : 0;
       
-      const rawStock = getVal(product, ['stock', 'quantity', 'qty', 'amount', 'คงเหลือ', 'สต๊อก', 'inventory', 'instock', 'available', 'จำนวน', 'จำนวนสินค้า', 'stockquantity']);
+      // 📦 การแปลงค่าสต็อกอย่างแม่นยำ: จัดลำดับฟิลด์ตัวเลขก่อน และดักจับค่า boolean ไม่ให้กลายเป็น 0
+      const rawStock = getVal(product, ['stock', 'stockquantity', 'quantity', 'qty', 'amount', 'คงเหลือ', 'สต๊อก', 'inventory', 'available', 'จำนวน', 'จำนวนสินค้า', 'instock', 'instock_status']);
       let stock = 0;
-      if (typeof rawStock === 'object' && rawStock !== null) {
-        stock = rawStock.quantity || 0;
-      } else {
-        stock = (rawStock !== null && rawStock !== undefined) ? Number(String(rawStock).replace(/[^0-9.-]+/g,"")) : 0;
+      if (typeof rawStock === 'boolean') {
+        stock = rawStock ? 1 : 0;
+      } else if (typeof rawStock === 'object' && rawStock !== null) {
+        stock = rawStock.quantity ?? rawStock.stock ?? rawStock.amount ?? 0;
+      } else if (rawStock !== null && rawStock !== undefined && rawStock !== '') {
+        const cleanStr = String(rawStock).replace(/[^0-9.-]+/g,"");
+        if (cleanStr !== '') {
+          const parsed = Number(cleanStr);
+          stock = isNaN(parsed) ? 0 : parsed;
+        } else if (product.inStock === true || product.instock === true || product.in_stock === true) {
+          stock = 1;
+        }
+      } else if (product.inStock === true || product.instock === true || product.in_stock === true) {
+        stock = 1;
       }
       
       const name = getVal(product, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
@@ -77,18 +87,11 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
 
   const handleAddToCart = React.useCallback(async (e, product) => {
     e.stopPropagation(); 
-    
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (!user) {
-      showToast("กรุณาเข้าสู่ระบบก่อนหยิบสินค้าใส่ตะกร้า", "error");
-      return;
-    }
 
     try {
-      // ⚡ Optimistic UI: หยิบใส่ตะกร้าและแสดงผลสำเร็จทันที 0 วินาที (ไม่ติด State Loading ให้กระพริบ)
-      addToCart(product, 1); // ไม่ต้อง await เพราะ Context ทำงานใน Memory ทันที
+      // ⚡ Optimistic UI: หยิบใส่ตะกร้าและแสดงผลสำเร็จทันที (รองรับทั้ง Guest และสมาชิก)
+      addToCart(product, 1);
+      showToast("เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!", "success");
       
       setAddingState(prev => ({ ...prev, [product.id]: 'success' }));
       setTimeout(() => {
@@ -100,6 +103,44 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       setAddingState(prev => ({ ...prev, [product.id]: null }));
     }
   }, [addToCart, showToast]);
+
+  const gridComponents = useMemo(() => {
+    const ForwardedList = React.forwardRef(({ style, children, ...props }, ref) => (
+      <div
+        ref={ref}
+        {...props}
+        style={{ ...style, width: '100%' }}
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 px-1"
+      >
+        {children}
+      </div>
+    ));
+    ForwardedList.displayName = 'VirtuosoProductGridList';
+
+    return {
+      List: ForwardedList,
+      Item: ({ children, ...props }) => (
+        <div {...props} className="col-span-1 h-full animate-in fade-in duration-300">
+          {children}
+        </div>
+      )
+    };
+  }, []);
+
+  const renderItem = React.useCallback((index, item) => {
+    if (item.isSponsoredAd) {
+      return <ProductAdCard ad={item} />;
+    }
+    const hasStock = item.stock > 0;
+    return (
+      <ProductCard 
+        product={item} 
+        hasStock={hasStock} 
+        addingState={addingState[item.id]} 
+        onAddToCart={handleAddToCart} 
+      />
+    );
+  }, [addingState, handleAddToCart]);
 
   const SkeletonCard = () => (
     <div className="rounded-md border border-slate-200 bg-slate-100 p-2 md:p-3 flex flex-col h-full shadow-xs animate-pulse">
@@ -140,41 +181,6 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       </div>
     );
   }
-
-
-
-  const gridComponents = useMemo(() => ({
-    List: React.forwardRef(({ style, children, ...props }, ref) => (
-      <div
-        ref={ref}
-        {...props}
-        style={{ ...style, width: '100%' }}
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 px-1"
-      >
-        {children}
-      </div>
-    )),
-    Item: ({ children, ...props }) => (
-      <div {...props} className="col-span-1 h-full animate-in fade-in duration-300">
-        {children}
-      </div>
-    )
-  }), []);
-
-  const renderItem = React.useCallback((index, item) => {
-    if (item.isSponsoredAd) {
-      return <ProductAdCard ad={item} />;
-    }
-    const hasStock = item.stock > 0;
-    return (
-      <ProductCard 
-        product={item} 
-        hasStock={hasStock} 
-        addingState={addingState[item.id]} 
-        onAddToCart={handleAddToCart} 
-      />
-    );
-  }, [addingState, handleAddToCart]);
 
   return (
     <div className="mb-12 md:mb-20">

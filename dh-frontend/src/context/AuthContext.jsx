@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { userDocumentSubscriptionManager } from '../firebase/user/userDocumentSubscriptionManager';
@@ -93,13 +93,37 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const stateValue = useMemo(() => ({
-    user,
-    currentUser: user,
-    profile,
-    loading,
-    isAuthenticated: !!user
-  }), [user, profile, loading]);
+  const stateValue = useMemo(() => {
+    if (!user) {
+      return {
+        user: null,
+        currentUser: null,
+        profile: null,
+        loading,
+        isAuthenticated: false
+      };
+    }
+
+    const mergedUser = {
+      uid: user.uid,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      isAnonymous: user.isAnonymous,
+      phoneNumber: user.phoneNumber,
+      photoURL: profile?.photoURL || profile?.avatarUrl || user.photoURL || null,
+      displayName: profile?.displayName || profile?.name || profile?.accountName || user.displayName || user.email?.split('@')[0] || 'ผู้ใช้งาน',
+      ...profile,
+      ...user
+    };
+
+    return {
+      user,
+      currentUser: mergedUser,
+      profile,
+      loading,
+      isAuthenticated: true
+    };
+  }, [user, profile, loading]);
 
   const dispatchValue = useMemo(() => ({
     logout

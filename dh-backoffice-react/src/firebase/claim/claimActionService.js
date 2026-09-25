@@ -4,7 +4,7 @@ import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const TODOS_COLLECTION = getCollectionPath('todos');
+const CLAIMS_COLLECTION = getCollectionPath('claims');
 
 export const claimActionService = {
   approveRequest: async (task, adminUid, adminName) => {
@@ -20,7 +20,7 @@ export const claimActionService = {
           updates['payload.trackingNo'] = payload.trackingNo;
       }
 
-      await updateDoc(doc(db, TODOS_COLLECTION, todoId), updates);
+      await updateDoc(doc(db, CLAIMS_COLLECTION, todoId), updates);
 
       gasHistoryService.log({
         level: 'INFO',
@@ -46,7 +46,7 @@ export const claimActionService = {
       const qty = Number(payload.qty || 1);
       
       await runTransaction(db, async (transaction) => {
-        const todoRef = doc(db, TODOS_COLLECTION, todoId);
+        const todoRef = doc(db, CLAIMS_COLLECTION, todoId);
         const todoSnap = await transaction.get(todoRef);
         
         if (!todoSnap.exists()) throw new Error("ไม่พบรายการคำขอ (Todo not found)");
@@ -84,7 +84,7 @@ export const claimActionService = {
     try {
       const { payload, id: todoId } = task;
       const qty = Number(payload.qty || 1);
-      const isSwapSku = payload.isSwapSku || false;
+      const isSwapSku = payload.isSwapSku || task.type === 'EXCHANGE_APPROVAL' || !!payload.swapSku;
 
       const updateData = {
         status: 'completed',
@@ -107,8 +107,9 @@ export const claimActionService = {
       const netDifference = chargeAmount - refundAmount; // ส่วนต่างที่เกิดขึ้น
 
       await runTransaction(db, async (transaction) => {
+        // --- 1. READ OPERATIONS (Must be done before writes) ---
         // 0. ดึงและตรวจสอบสถานะ To-do ก่อนเพื่อป้องกันการรันรายการซ้ำซ้อน (Idempotency check)
-        const taskRef = doc(db, TODOS_COLLECTION, todoId);
+        const taskRef = doc(db, CLAIMS_COLLECTION, todoId);
         const taskSnap = await transaction.get(taskRef);
         if (taskSnap.exists()) {
           const taskData = taskSnap.data();
@@ -134,18 +135,40 @@ export const claimActionService = {
 
         finalNewStock = currentStock - qty;
 
-        // หักสต๊อกดีของเป้าหมาย
+        // 2. ดึงข้อมูลกระเป๋าเงินลูกค้า (User Wallet)
+        const customerUid = payload.customerUid;
+        const hasValidCustomer = customerUid && customerUid !== 'Walk-in' && customerUid !== 'WALK-IN';
+        let userRef = null;
+        let userSnap = null;
+        if (hasValidCustomer) {
+          userRef = doc(db, getCollectionPath('users'), customerUid);
+          userSnap = await transaction.get(userRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const currentWallet = Number(userData.walletBalance || 0);
+            if (netDifference > 0 && currentWallet < netDifference) {
+              throw new Error(`ลูกค้ามียอดเงินใน Wallet ไม่เพียงพอสำหรับชำระส่วนต่าง (ยอดคงเหลือ ${currentWallet} บาท, ต้องการชำระเพิ่ม ${netDifference} บาท) กรุณาให้ลูกค้าเติมเงินก่อนทำรายการ`);
+            }
+          }
+        }
+
+        // 3. ดึง Counter สำหรับเลข Order ใหม่ (ถ้า Swap SKU)
+        let counterRef = null;
+        let counterSnap = null;
+        const yearStr = new Date().getFullYear().toString();
+        if (isSwapSku) {
+          counterRef = doc(db, getCollectionPath('counters'), `receipt_sequence_global`);
+          counterSnap = await transaction.get(counterRef);
+        }
+
+        // --- 2. WRITE OPERATIONS ---
+        // 1. หักสต๊อกดีของเป้าหมาย
         transaction.update(pRef, { 
           stockQuantity: finalNewStock,
           'stats.sold': increment(qty)
         });
 
-        // [REMOVED] การหัก defectQuantity ถูกนำออก เนื่องจากของเสียยังคงอยู่ในระบบจนกว่าจะเคลมกับ Supplier สำเร็จ
-
-        // 2. อัปเดตสถานะใบเคลม To-do
-        transaction.update(doc(db, TODOS_COLLECTION, todoId), updateData);
-
-        // 3. บันทึกข้อมูลและรหัสเคลมลงในประวัติของบิลเดิม
+        // 2. บันทึกข้อมูลและรหัสเคลมลงในประวัติของบิลเดิม
         if (payload.orderDocId) {
           const orderRef = doc(db, getCollectionPath('orders'), payload.orderDocId);
           transaction.update(orderRef, {
@@ -161,62 +184,42 @@ export const claimActionService = {
           });
         }
 
-        // 4. บัญชีและการเงิน (คืนของเก่าเข้า Wallet + หักของใหม่จาก Wallet)
-        const customerUid = payload.customerUid;
-        if (customerUid && customerUid !== 'Walk-in' && customerUid !== 'WALK-IN') {
-          const userRef = doc(db, getCollectionPath('users'), customerUid);
-          const userSnap = await transaction.get(userRef);
+        // 3. บัญชีและการเงิน (คืนของเก่าเข้า Wallet + หักของใหม่จาก Wallet)
+        if (hasValidCustomer && userRef && userSnap?.exists()) {
+          transaction.update(userRef, {
+            walletBalance: increment(-netDifference),
+            updatedAt: serverTimestamp()
+          });
 
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
-            const currentWallet = Number(userData.walletBalance || 0);
+          // บันทึกธุรกรรม Wallet 2 รายการ
+          // 3.1 คืนของเก่า (REFUND)
+          const walletRefundRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
+          transaction.set(walletRefundRef, {
+            transactionId: `TXW_CLM_REF_${payload.claimId}`,
+            type: 'REFUND',
+            amount: refundAmount,
+            status: 'SUCCESS',
+            note: `คืนเงินสินค้าเดิมจากใบเคลมสลับรุ่น (${payload.claimId}) SKU: ${payload.sku}`,
+            operatorUid: adminUid || 'System',
+            timestamp: serverTimestamp()
+          });
 
-            if (netDifference > 0 && currentWallet < netDifference) {
-              throw new Error(`ลูกค้ามียอดเงินใน Wallet ไม่เพียงพอสำหรับชำระส่วนต่าง (ยอดคงเหลือ ${currentWallet} บาท, ต้องการชำระเพิ่ม ${netDifference} บาท) กรุณาให้ลูกค้าเติมเงินก่อนทำรายการ`);
-            }
-
-            // คำนวณ Wallet ใหม่: คืนเงินค่าของเก่า และหักเงินค่าของใหม่
-            // Wallet = Wallet + refundAmount - chargeAmount (ซึ่งก็คือ Wallet - netDifference)
-            transaction.update(userRef, {
-              walletBalance: increment(-netDifference),
-              updatedAt: serverTimestamp()
-            });
-
-            // บันทึกธุรกรรม Wallet 2 รายการ
-            // 4.1 คืนของเก่า (REFUND)
-            const walletRefundRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
-            transaction.set(walletRefundRef, {
-              transactionId: `TXW_CLM_REF_${payload.claimId}`,
-              type: 'REFUND',
-              amount: refundAmount,
-              status: 'SUCCESS',
-              note: `คืนเงินสินค้าเดิมจากใบเคลมสลับรุ่น (${payload.claimId}) SKU: ${payload.sku}`,
-              operatorUid: adminUid || 'System',
-              timestamp: serverTimestamp()
-            });
-
-            // 4.2 หักของใหม่ (SPEND)
-            const walletSpendRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
-            transaction.set(walletSpendRef, {
-              transactionId: `TXW_CLM_SPD_${payload.claimId}`,
-              type: 'SPEND',
-              amount: chargeAmount,
-              status: 'SUCCESS',
-              note: `ชำระค่าสินค้าตัวใหม่ที่เคลมเปลี่ยนรุ่น (${payload.claimId}) SKU: ${payload.swapSku}`,
-              operatorUid: adminUid || 'System',
-              timestamp: serverTimestamp()
-            });
-          }
+          // 3.2 หักของใหม่ (SPEND)
+          const walletSpendRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
+          transaction.set(walletSpendRef, {
+            transactionId: `TXW_CLM_SPD_${payload.claimId}`,
+            type: 'SPEND',
+            amount: chargeAmount,
+            status: 'SUCCESS',
+            note: `ชำระค่าสินค้าตัวใหม่ที่เคลมเปลี่ยนรุ่น (${payload.claimId}) SKU: ${payload.swapSku}`,
+            operatorUid: adminUid || 'System',
+            timestamp: serverTimestamp()
+          });
         }
 
-        // 5. สร้างใบเสร็จการขาย Order ใหม่รันเลขต่อเนื่อง (เฉพาะกรณี Swap SKU)
-        if (isSwapSku) {
-          const terminalId = 'C1'; // C1 for Claim System
-          const yearStr = new Date().getFullYear().toString();
-          const counterRef = doc(db, getCollectionPath('counters'), `receipt_sequence_global`);
-          const counterSnap = await transaction.get(counterRef);
-
-          const currentSeq = (counterSnap.exists() ? counterSnap.data()[yearStr] || 0 : 0) + 1;
+        // 4. สร้างใบเสร็จการขาย Order ใหม่รันเลขต่อเนื่อง (เฉพาะกรณี Swap SKU)
+        if (isSwapSku && counterRef) {
+          const currentSeq = (counterSnap?.exists() ? counterSnap.data()[yearStr] || 0 : 0) + 1;
           const paddedSeq = String(currentSeq).padStart(4, '0');
           newOrderId = `DH-${yearStr.slice(2)}-${paddedSeq}`;
 
@@ -227,7 +230,6 @@ export const claimActionService = {
           }, { merge: true });
 
           // คำนวณวันหมดอายุประกันของตัวใหม่
-          // default: ประกันคงเหลือเดิม หรือขยายวันเพิ่ม
           let newWarrantyExpiry = null;
           if (payload.newWarrantyDays !== null) {
             const expDate = new Date();
@@ -236,8 +238,6 @@ export const claimActionService = {
           }
 
           const newOrderRef = doc(db, getCollectionPath('orders'), newOrderId);
-          
-          // บันทึก Order ใหม่
           transaction.set(newOrderRef, {
             id: newOrderId,
             orderId: newOrderId,
@@ -279,6 +279,13 @@ export const claimActionService = {
             creatorName: adminName
           });
         }
+
+        // 5. อัปเดตสถานะใบเคลม (พร้อมผูก newOrderId ถ้ามี)
+        const finalClaimUpdate = {
+          ...updateData,
+          ...(newOrderId ? { 'payload.newOrderId': newOrderId } : {})
+        };
+        transaction.update(taskRef, finalClaimUpdate);
       });
 
       // 6. ซิงก์สต๊อกไป GAS ด้วยสต๊อกคงเหลือจริงที่คำนวณสำเร็จ
@@ -355,7 +362,7 @@ export const claimActionService = {
   rejectRequest: async (task, reason, adminUid, adminName) => {
     try {
       await runTransaction(db, async (transaction) => {
-        const todoRef = doc(db, TODOS_COLLECTION, task.id);
+        const todoRef = doc(db, CLAIMS_COLLECTION, task.id);
         const todoSnap = await transaction.get(todoRef);
         
         if (!todoSnap.exists()) throw new Error("ไม่พบรายการคำขอ (Todo not found)");

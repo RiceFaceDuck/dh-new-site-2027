@@ -12,7 +12,7 @@ export const claimManagerService = {
     if (task.type === 'RETURN_APPROVAL') {
       return await returnActionService.approveRequest(task, adminUid, adminName);
     }
-    if (task.type === 'CLAIM_APPROVAL') {
+    if (task.type === 'CLAIM_APPROVAL' || task.type === 'EXCHANGE_APPROVAL') {
       return await claimActionService.approveRequest(task, adminUid, adminName);
     }
     throw new Error('Unknown task type for approval');
@@ -22,7 +22,7 @@ export const claimManagerService = {
     if (task.type === 'RETURN_APPROVAL') {
         return await returnActionService.markArrived(task, adminUid, adminName);
     }
-    if (task.type === 'CLAIM_APPROVAL') {
+    if (task.type === 'CLAIM_APPROVAL' || task.type === 'EXCHANGE_APPROVAL') {
         return await claimActionService.markArrived(task, adminUid, adminName);
     }
     throw new Error('Unknown task type for marking arrived');
@@ -32,7 +32,7 @@ export const claimManagerService = {
     if (task.type === 'RETURN_APPROVAL') {
         return await returnActionService.completeRequest(task, adminUid, adminName);
     }
-    if (task.type === 'CLAIM_APPROVAL') {
+    if (task.type === 'CLAIM_APPROVAL' || task.type === 'EXCHANGE_APPROVAL') {
         return await claimActionService.completeRequest(task, adminUid, adminName);
     }
     throw new Error('Unknown task type for completion');
@@ -45,7 +45,7 @@ export const claimManagerService = {
     if (task.type === 'RETURN_APPROVAL') {
       return await returnActionService.rejectRequest(task, reason, adminUid, adminName);
     }
-    if (task.type === 'CLAIM_APPROVAL') {
+    if (task.type === 'CLAIM_APPROVAL' || task.type === 'EXCHANGE_APPROVAL') {
       return await claimActionService.rejectRequest(task, reason, adminUid, adminName);
     }
     throw new Error('Unknown task type for rejection');

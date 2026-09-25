@@ -29,17 +29,32 @@ export const categorySyncService = {
         }
       };
 
-      // 1. Update product_settings global list
-      const settingsRef = doc(db, getCollectionPath('product_settings'), 'categories');
-      const settingsSnap = await getDoc(settingsRef);
-      if (settingsSnap.exists()) {
-        const data = settingsSnap.data();
+      // 1. Update settings/product_categories global list (Official Schema Tier 3)
+      const officialSettingsRef = doc(db, getCollectionPath('settings'), 'product_categories');
+      const officialSettingsSnap = await getDoc(officialSettingsRef);
+      if (officialSettingsSnap.exists()) {
+        const data = officialSettingsSnap.data();
         if (data.categories && Array.isArray(data.categories)) {
           const newCategories = data.categories.map(c => 
             (c.toLowerCase() === oldType.toLowerCase() || c === oldName) ? (newType || newName) : c
           );
           const uniqueCategories = [...new Set(newCategories)];
-          batch.update(settingsRef, { categories: uniqueCategories });
+          batch.update(officialSettingsRef, { categories: uniqueCategories });
+          batchCount++;
+        }
+      }
+
+      // Legacy fallback: Update product_settings/categories if present
+      const legacySettingsRef = doc(db, getCollectionPath('product_settings'), 'categories');
+      const legacySettingsSnap = await getDoc(legacySettingsRef);
+      if (legacySettingsSnap.exists()) {
+        const data = legacySettingsSnap.data();
+        if (data.categories && Array.isArray(data.categories)) {
+          const newCategories = data.categories.map(c => 
+            (c.toLowerCase() === oldType.toLowerCase() || c === oldName) ? (newType || newName) : c
+          );
+          const uniqueCategories = [...new Set(newCategories)];
+          batch.update(legacySettingsRef, { categories: uniqueCategories });
           batchCount++;
         }
       }
@@ -53,41 +68,56 @@ export const categorySyncService = {
       });
       await commitBatchIfNeeded();
 
-      // 3. Update products (Match by category_lower) with startAfter pagination loop
+      // 3. Update products (Match by category_lower and legacy category field)
       const productsRef = collection(db, getCollectionPath('products'));
-      let lastDoc = null;
-      let hasMore = true;
+      const oldTypeClean = (oldType || '').trim();
+      const oldTypeLower = oldTypeClean.toLowerCase();
+      const oldNameClean = (oldName || '').trim();
+      const updatedDocIds = new Set();
 
-      while (hasMore) {
-        let qConstraints = [
-          where('category_lower', '==', oldType.trim().toLowerCase()),
-          limit(500)
-        ];
-        if (lastDoc) {
-          qConstraints.push(startAfter(lastDoc));
-        }
+      const syncProductsByField = async (fieldName, fieldValue) => {
+        if (!fieldValue) return;
+        let lastDoc = null;
+        let hasMore = true;
 
-        const productsSnap = await getDocs(query(productsRef, ...qConstraints));
-        if (productsSnap.empty) {
-          hasMore = false;
-          break;
-        }
+        while (hasMore) {
+          let qConstraints = [
+            where(fieldName, '==', fieldValue),
+            limit(500)
+          ];
+          if (lastDoc) {
+            qConstraints.push(startAfter(lastDoc));
+          }
 
-        for (const d of productsSnap.docs) {
-          batch.update(d.ref, { 
-            category: newType || newName,
-            category_lower: (newType || newName).trim().toLowerCase()
-          });
-          batchCount++;
-          totalUpdated++;
-          await commitBatchIfNeeded();
-        }
+          const productsSnap = await getDocs(query(productsRef, ...qConstraints));
+          if (productsSnap.empty) {
+            hasMore = false;
+            break;
+          }
 
-        lastDoc = productsSnap.docs[productsSnap.docs.length - 1];
-        if (productsSnap.docs.length < 500) {
-          hasMore = false;
+          for (const d of productsSnap.docs) {
+            if (!updatedDocIds.has(d.id)) {
+              updatedDocIds.add(d.id);
+              batch.update(d.ref, { 
+                category: newType || newName,
+                category_lower: (newType || newName).trim().toLowerCase()
+              });
+              batchCount++;
+              totalUpdated++;
+              await commitBatchIfNeeded();
+            }
+          }
+
+          lastDoc = productsSnap.docs[productsSnap.docs.length - 1];
+          if (productsSnap.docs.length < 500) {
+            hasMore = false;
+          }
         }
-      }
+      };
+
+      if (oldTypeLower) await syncProductsByField('category_lower', oldTypeLower);
+      if (oldTypeClean && oldTypeClean !== oldTypeLower) await syncProductsByField('category', oldTypeClean);
+      if (oldNameClean && oldNameClean !== oldTypeClean) await syncProductsByField('category', oldNameClean);
 
       // Commit any remaining operations
       if (batchCount > 0) {

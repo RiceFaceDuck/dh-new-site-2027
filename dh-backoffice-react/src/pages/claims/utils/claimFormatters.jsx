@@ -73,6 +73,7 @@ export const getStatusDisplay = (req) => {
     );
   }
   switch(req.status) {
+    case 'pending':
     case 'pending_manager':
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-black bg-rose-100 text-rose-900 border border-rose-400 dark:bg-rose-500/20 dark:border-rose-500/40 dark:text-rose-300 whitespace-nowrap shadow-2xs">
@@ -88,6 +89,7 @@ export const getStatusDisplay = (req) => {
         </span>
       );
     }
+    case 'arrived':
     case 'processing':
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-black bg-sky-100 text-sky-900 border border-sky-400 dark:bg-sky-500/20 dark:border-sky-500/40 dark:text-sky-300 whitespace-nowrap shadow-2xs">

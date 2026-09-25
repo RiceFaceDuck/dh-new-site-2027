@@ -128,6 +128,12 @@ export function useExcelImport(onSuccess) {
       mapped.randomSeed = Math.random();
     }
 
+    // 🚀 Ensure category_lower is always generated for frontend category matching
+    const finalCategory = mapped.category || existing?.category || (isNew ? 'Other' : '');
+    if (finalCategory) {
+      mapped.category_lower = finalCategory.trim().toLowerCase();
+    }
+
     return mapped;
   };
 

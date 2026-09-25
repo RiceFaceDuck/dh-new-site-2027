@@ -1,0 +1,142 @@
+import { useMemo, useCallback } from 'react';
+import { calculateVat } from 'dh-shared';
+const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
+
+export function usePosPayment({ activeTab, activePromotions, activeFreebies, currentCustomerType }) {
+    const itemSubTotal = activeTab?.items?.reduce((sum, item) => sum + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty))), 0) || 0;
+    const itemTotalQty = activeTab?.items?.reduce((sum, item) => sum + Math.max(1, sanitizeNum(item.qty)), 0) || 0;
+    
+    const discountType = activeTab?.overallDiscountType || 'BAHT';
+    const rawDiscount = activeTab ? sanitizeNum(activeTab.overallDiscount) : 0;
+    const manualDiscount = discountType === 'PERCENT'
+        ? Math.round(itemSubTotal * (rawDiscount / 100))
+        : rawDiscount;
+    const shippingFee = activeTab ? sanitizeNum(activeTab.shippingFee) : 0;
+    const otherFeeAmount = activeTab ? sanitizeNum(activeTab.otherFeeAmount) : 0;
+
+    const items = activeTab?.items;
+    const getEligibleTotals = useCallback((skus, types) => {
+        const hasSkus = skus && skus.length > 0;
+        const hasTypes = types && types.length > 0;
+
+        if (!hasSkus && !hasTypes) return { subtotal: itemSubTotal, qty: itemTotalQty };
+
+        let eligibleSubtotal = 0;
+        let eligibleQty = 0;
+        items?.forEach(item => {
+            let isEligible = false;
+            const itemSku = String(item.sku || '').toUpperCase();
+            const itemType = String(item.type || item.category || '').toUpperCase();
+
+            if (hasSkus && skus.some(s => String(s).toUpperCase() === itemSku)) isEligible = true;
+            if (hasTypes && types.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
+
+            if (isEligible) {
+                eligibleSubtotal += ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty)));
+                eligibleQty += Math.max(1, sanitizeNum(item.qty));
+            }
+        });
+        return { subtotal: eligibleSubtotal, qty: eligibleQty };
+    }, [itemSubTotal, itemTotalQty, items]);
+
+    const autoFreebieEnabled = activeTab?.autoFreebieEnabled !== false;
+    const disabledFreebieIds = activeTab?.disabledFreebieIds || [];
+    const manualFreebieIds = activeTab?.manualFreebieIds || [];
+
+    const eligibleFreebies = useMemo(() => {
+        return activeFreebies.filter(f => {
+            if (autoFreebieEnabled) {
+                if (disabledFreebieIds.includes(f.id)) return false;
+                const { subtotal, qty } = getEligibleTotals(f.applicableSkus, f.applicableTypes);
+                if (subtotal <= 0) return false;
+                if (f.minSpend && subtotal < f.minSpend) return false;
+                if (f.minQty && qty < f.minQty) return false;
+                if (f.startDate && new Date(f.startDate) > new Date()) return false;
+                if (f.endDate && new Date(f.endDate) < new Date()) return false;
+                if (f.quotaLimit && (f.quotaUsed || 0) >= f.quotaLimit) return false;
+                if (f.customerType && f.customerType !== 'ALL' && f.customerType !== currentCustomerType) return false;
+                return true;
+            } else {
+                return manualFreebieIds.includes(f.id);
+            }
+        });
+    }, [activeFreebies, autoFreebieEnabled, disabledFreebieIds, manualFreebieIds, currentCustomerType, getEligibleTotals]);
+
+    const validPromotions = useMemo(() => {
+        return activePromotions.filter(p => {
+            const { subtotal, qty } = getEligibleTotals(p.applicableSkus, p.applicableTypes);
+            if (p.minSpend > 0 && subtotal < p.minSpend) return false;
+            if (p.minQty > 0 && qty < p.minQty) return false;
+            if (p.startDate && new Date(p.startDate) > new Date()) return false;
+            if (p.endDate && new Date(p.endDate) < new Date()) return false;
+            if (p.quotaLimit && (p.quotaUsed || 0) >= p.quotaLimit) return false;
+            if (p.customerType && p.customerType !== 'ALL' && p.customerType !== currentCustomerType) return false;
+            return true;
+        });
+    }, [activePromotions, currentCustomerType, getEligibleTotals]);
+
+    let autoPromoDiscount = 0;
+    let autoPromoDetails = null;
+    
+    if (activeTab?.autoPromoEnabled && validPromotions.length > 0) {
+        let bestDiscount = 0;
+        let bestPromo = null;
+        validPromotions.forEach(promo => {
+            const { subtotal } = getEligibleTotals(promo.applicableSkus, promo.applicableTypes);
+            let calculated = promo.type === 'PERCENTAGE' ? subtotal * (promo.value / 100) : promo.value;
+            if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
+                calculated = Math.min(calculated, promo.maxDiscount);
+            }
+            if (calculated > bestDiscount) {
+                bestDiscount = calculated;
+                bestPromo = promo;
+            }
+        });
+        autoPromoDiscount = Math.floor(bestDiscount);
+        autoPromoDetails = bestPromo;
+    }
+
+    const promoDiscount = activeTab?.autoPromoEnabled ? autoPromoDiscount : (activeTab?.appliedPromoId ? sanitizeNum(activeTab?.promoDiscount) : 0);
+    const appliedPromoDetails = activeTab?.autoPromoEnabled ? autoPromoDetails : (activeTab?.appliedPromoId ? activeTab?.appliedPromoDetails : null);
+    const totalDiscount = manualDiscount + promoDiscount;
+    
+    // 🧮 Clean Separation of Calculations (VAT 7% & Shipping Correction)
+    const baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
+    const isVatOnShipping = Boolean(activeTab?.vatOnShipping);
+    const taxableAmount = baseTotal + (isVatOnShipping ? shippingFee : 0);
+    const vatType = activeTab?.vatType || 'exempt';
+
+    let vatAmount = 0;
+    let netTotal = 0;
+
+    if (vatType === 'included') {
+        // VAT 7% extracted: (taxableAmount * 7 / 107). Net total is baseTotal + shippingFee. Zero double-counting of shipping!
+        vatAmount = Math.round((taxableAmount * 7 / 107) * 100) / 100;
+        netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
+    } else if (vatType === 'excluded') {
+        // VAT 7% added: (taxableAmount * 0.07). Net total is baseTotal + shippingFee + vatAmount. Zero dropping of shipping fee!
+        vatAmount = Math.round((taxableAmount * 0.07) * 100) / 100;
+        netTotal = Math.round((baseTotal + shippingFee + vatAmount) * 100) / 100;
+    } else {
+        // 'exempt' or 'none': VAT is 0. Net total is baseTotal + shippingFee.
+        vatAmount = 0;
+        netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
+    }
+
+    let walletUsed = sanitizeNum(activeTab?.walletUsed);
+    if (activeTab?.useWallet && activeTab?.customer) {
+        walletUsed = Math.min(sanitizeNum(activeTab.customer.walletBalance), netTotal);
+    }
+    
+    const remainingToPay = Math.max(0, Math.round((netTotal - walletUsed) * 100) / 100);
+    const earnedPoints = activeTab?.customer ? Math.floor(remainingToPay / 100) : 0;
+    const changeAmount = (activeTab?.paymentMethod === 'Cash' && activeTab?.cashReceived) 
+        ? Math.round((sanitizeNum(activeTab.cashReceived) - remainingToPay) * 100) / 100 : 0;
+
+    return {
+        itemSubTotal, manualDiscount, promoDiscount, totalDiscount,
+        shippingFee, otherFeeAmount, vatAmount, netTotal,
+        walletUsed, remainingToPay, earnedPoints, changeAmount, 
+        eligibleFreebies, appliedPromoDetails, validPromotions
+    };
+}

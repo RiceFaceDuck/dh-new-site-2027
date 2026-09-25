@@ -17,13 +17,16 @@ export default function ClaimDetailModal({
   setSelectedRequest, 
   handlePrint, 
   handleQuickCopy, 
-  copiedText
+  copiedText,
+  customerProfile = null,
+  warrantyConfig: initialWarrantyConfig = null,
+  getStatusDisplay
 }) {
   const [trackingNo, setTrackingNo] = useState('');
   const [userProfile, setUserProfile] = useState(null);
   const [isClosing, setIsClosing] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
-  const [warrantyConfig, setWarrantyConfig] = useState(null);
+  const [warrantyConfig, setWarrantyConfig] = useState(initialWarrantyConfig);
 
   // Freebie penalty states
   const [freebieReturned, setFreebieReturned] = useState(true);
@@ -35,12 +38,16 @@ export default function ClaimDetailModal({
       setFreebieReturned(true);
       setFreebiePenaltyAmount(0);
       
-      // Load warranty settings
-      import('../../../../firebase/warrantyService').then(({ warrantyService }) => {
-        warrantyService.getWarrantySettings().then(setWarrantyConfig).catch(console.error);
-      }).catch(console.error);
+      // Load warranty settings if not preloaded
+      if (initialWarrantyConfig) {
+        setWarrantyConfig(initialWarrantyConfig);
+      } else {
+        import('../../../../firebase/warrantyService').then(({ warrantyService }) => {
+          warrantyService.getWarrantySettings().then(setWarrantyConfig).catch(console.error);
+        }).catch(console.error);
+      }
     }
-  }, [selectedRequest]);
+  }, [selectedRequest, initialWarrantyConfig]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -266,12 +273,18 @@ export default function ClaimDetailModal({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative bg-linear-to-b from-transparent to-dh-surface/30">
-          <ClaimStepper status={selectedRequest.status} isCancel={selectedRequest.type.startsWith('CANCEL_')} />
+          <ClaimStepper 
+            status={selectedRequest.status} 
+            isCancel={selectedRequest.type?.startsWith('CANCEL_')} 
+            type={selectedRequest.type}
+            isSwapSku={!!selectedRequest.payload?.isSwapSku}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10 mt-4">
             <CustomerInfo 
               selectedRequest={selectedRequest}
               copiedText={copiedText}
               handleQuickCopy={handleQuickCopy}
+              preloadedProfile={customerProfile}
             />
             <ProductInfo 
               selectedRequest={selectedRequest}

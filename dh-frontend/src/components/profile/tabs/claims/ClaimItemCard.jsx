@@ -3,6 +3,7 @@ import { Wrench, ArrowLeftRight, Package, CheckCircle, Clock, XCircle, Send } fr
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { useToast } from '../../../../context/ToastContext';
 
 
 const getClaimStatusDisplay = (status, type) => {
@@ -23,8 +24,9 @@ const getClaimStatusDisplay = (status, type) => {
 };
 
 const ClaimItemCard = ({ claim }) => {
+  const { showToast } = useToast();
   const { payload, type, status, createdAt } = claim;
-  const isClaim = type.includes('CLAIM');
+  const isClaim = type?.includes('CLAIM');
   const statusInfo = getClaimStatusDisplay(status, type);
   const StatusIcon = statusInfo.icon;
   
@@ -35,7 +37,7 @@ const ClaimItemCard = ({ claim }) => {
     if (!trackingNo.trim()) return showToast('กรุณาระบุเลขพัสดุ', 'error');
     setIsUpdatingTracking(true);
     try {
-      const docRef = doc(db, getCollectionPath('todos'), claim.id);
+      const docRef = doc(db, getCollectionPath('claims'), claim.id);
       await updateDoc(docRef, {
         'payload.trackingNo': trackingNo.trim(),
         updatedAt: serverTimestamp()
@@ -91,7 +93,7 @@ const ClaimItemCard = ({ claim }) => {
         </div>
       </div>
 
-      {status === 'waiting_item' && !type.startsWith('CANCEL_') && (
+      {status === 'waiting_item' && !type?.startsWith('CANCEL_') && (
         <div className={`border rounded-lg p-4 animate-in fade-in ${payload?.trackingNo ? 'bg-green-50 border-green-100' : 'bg-indigo-50 border-indigo-100'}`}>
           <p className={`text-sm font-bold mb-2 flex items-center gap-1.5 ${payload?.trackingNo ? 'text-green-800' : 'text-indigo-800'}`}>
             {payload?.trackingNo ? <CheckCircle size={16} /> : <Package size={16} />} 

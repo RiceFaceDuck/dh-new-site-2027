@@ -3,7 +3,7 @@ import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const TODOS_COLLECTION = 'todos';
+const CLAIMS_COLLECTION = getCollectionPath('claims');
 
 const getItemCategory = (item) => {
   let cat = item.category || item.category1 || item.type || '';
@@ -26,9 +26,9 @@ export const claimRequestService = {
     try {
       // 🛡️ Security Check: ป้องกันการแจ้งเคลมซ้ำซ้อนสำหรับสินค้านี้ในบิลนี้
       const q = query(
-        collection(db, TODOS_COLLECTION),
+        collection(db, CLAIMS_COLLECTION),
         where("referenceId", "==", bill.orderId || '-'),
-        where("type", "==", "CLAIM_APPROVAL"),
+        where("type", "in", ["CLAIM_APPROVAL", "EXCHANGE_APPROVAL"]),
         limit(10)
       );
       const snapshot = await getDocs(q);
@@ -57,7 +57,9 @@ export const claimRequestService = {
            currentSeq = (data[yearMonth] || 0) + 1;
         }
 
-        const generatedId = `CLM-${yearMonth}-${shardId}-${String(currentSeq).padStart(4, '0')}`;
+        const isSwap = !!claimForm.isSwapSku;
+        const prefix = isSwap ? 'EXC' : 'CLM';
+        const generatedId = `${prefix}-${yearMonth}-${shardId}-${String(currentSeq).padStart(4, '0')}`;
 
         transaction.set(counterRef, {
            [yearMonth]: currentSeq,
@@ -66,6 +68,7 @@ export const claimRequestService = {
 
         const payload = {
           claimId: generatedId, 
+          exchangeId: isSwap ? generatedId : null,
           orderId: bill.orderId || '',
           orderDocId: bill.id || '', 
           customerUid: bill.customer?.uid || 'Walk-in', 
@@ -79,13 +82,13 @@ export const claimRequestService = {
           trackingNo: claimForm.tracking || '',
           qty: claimForm.qty || 1, 
           status: claimForm.currentStatus || 'pending_manager', 
-          actionType: claimForm.actionType || 'เคลม/ซ่อม', 
+          actionType: claimForm.actionType || (isSwap ? 'เคลมเปลี่ยนรุ่น' : 'เคลม/ซ่อม'), 
           inspectorName: claimForm.inspectorName || null,
           images: claimForm.images || [], 
           
           // ✅ [SECURITY FIX] เพิ่มข้อมูลสำหรับการเคลมเปลี่ยนรุ่น (Swap SKU)
           originalPricePerUnit: item.pricePerUnit || item.price || 0,
-          isSwapSku: claimForm.isSwapSku || false,
+          isSwapSku: isSwap,
           swapSku: claimForm.swapSku || null,
           swapProductName: claimForm.swapProductName || null,
           swapPricePerUnit: claimForm.swapPricePerUnit || 0,
@@ -97,12 +100,15 @@ export const claimRequestService = {
           requestedByName: userName || ''
         };
 
-        const newTodoRef = doc(collection(db, TODOS_COLLECTION));
+        const newClaimRef = doc(collection(db, CLAIMS_COLLECTION));
         
-        transaction.set(newTodoRef, {
-          type: "CLAIM_APPROVAL",
-          title: `ขออนุมัติเคลม: ${item.name || 'Unknown'} (${generatedId})`,
-          description: `บิลอ้างอิง: ${bill.orderId || '-'}\nอาการเสีย: ${claimForm.reasonCode || '-'}\nรายละเอียด: ${claimForm.details || '-'}\nการกระทำ: ${claimForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
+        transaction.set(newClaimRef, {
+          customerUid: bill.customer?.uid || 'Walk-in',
+          type: isSwap ? "EXCHANGE_APPROVAL" : "CLAIM_APPROVAL",
+          title: isSwap 
+            ? `ขออนุมัติเปลี่ยนสินค้า: ${item.name || 'Unknown'} ➔ ${claimForm.swapProductName || claimForm.swapSku || ''} (${generatedId})`
+            : `ขออนุมัติเคลม: ${item.name || 'Unknown'} (${generatedId})`,
+          description: `บิลอ้างอิง: ${bill.orderId || '-'}\nอาการเสีย: ${claimForm.reasonCode || '-'}\nรายละเอียด: ${claimForm.details || '-'}\nการกระทำ: ${payload.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
           priority: "High", 
           status: "pending_manager",
           referenceType: "Order", 
@@ -138,7 +144,7 @@ export const claimRequestService = {
     try {
       // 🛡️ Security Check: ป้องกันการแจ้งคืนซ้ำซ้อนสำหรับสินค้านี้ในบิลนี้
       const q = query(
-        collection(db, TODOS_COLLECTION),
+        collection(db, CLAIMS_COLLECTION),
         where("referenceId", "==", bill.orderId || '-'),
         where("type", "==", "RETURN_APPROVAL"),
         limit(10)
@@ -199,9 +205,10 @@ export const claimRequestService = {
           requestedByName: userName || ''
         };
 
-        const newTodoRef = doc(collection(db, TODOS_COLLECTION));
+        const newClaimRef = doc(collection(db, CLAIMS_COLLECTION));
         
-        transaction.set(newTodoRef, {
+        transaction.set(newClaimRef, {
+          customerUid: bill.customer?.uid || 'Walk-in',
           type: "RETURN_APPROVAL",
           title: `ขออนุมัติคืนสินค้า: ${item.sku || 'Unknown'} (ยอด ฿${((payload.purchasePrice || 0) * (payload.qty || 1)).toLocaleString()})`,
           description: `บิลอ้างอิง: ${bill.orderId || '-'}\nเหตุผลการคืน: ${returnForm.reasonCode || '-'}\nรายละเอียด: ${returnForm.details || '-'}\nการกระทำ: ${returnForm.actionType || '-'}\nจำนวน: ${payload.qty} ชิ้น`,
@@ -238,14 +245,18 @@ export const claimRequestService = {
   // ==========================================
   requestCancelTodo: async (task, reason, userUid, userName) => {
     try {
-      const docRef = doc(db, TODOS_COLLECTION, task.id);
+      const docRef = doc(db, CLAIMS_COLLECTION, task.id);
       
-      const newType = task.type === 'CLAIM_APPROVAL' ? 'CANCEL_CLAIM_APPROVAL' : 'CANCEL_RETURN_APPROVAL';
-      const refId = task.payload.returnId || task.payload.claimId;
+      const newType = task.type === 'CLAIM_APPROVAL' 
+        ? 'CANCEL_CLAIM_APPROVAL' 
+        : (task.type === 'EXCHANGE_APPROVAL' ? 'CANCEL_EXCHANGE_APPROVAL' : 'CANCEL_RETURN_APPROVAL');
+      const refId = task.payload.returnId || task.payload.claimId || task.payload.exchangeId;
 
       const newTitle = task.type === 'CLAIM_APPROVAL' 
         ? `ขอยกเลิกใบเคลม: ${task.payload.productName} (${refId})`
-        : `ขอยกเลิกใบคืนสินค้า: ${task.payload.productName} (${refId})`;
+        : (task.type === 'EXCHANGE_APPROVAL'
+          ? `ขอยกเลิกใบเปลี่ยนสินค้า: ${task.payload.productName} (${refId})`
+          : `ขอยกเลิกใบคืนสินค้า: ${task.payload.productName} (${refId})`);
 
       await updateDoc(docRef, {
         originalTitle: task.title, 
