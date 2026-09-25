@@ -35,4 +35,7 @@ PROJECT_SETTINGS.md
 # Agent Brains & Scratch (Do Not Push Subagent Temp)
 .agents/
 
+# Safety Backups
+_Backups/
+
 

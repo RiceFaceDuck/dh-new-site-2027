@@ -51,6 +51,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
   const { walletBalance, pendingWithdrawal, loading: walletLoading } = useWalletBalance(user?.uid);
 
   const [copied, setCopied] = React.useState(false);
+  const [avatarError, setAvatarError] = React.useState(false);
   const accountId = user?.accountId || user?.uid?.substring(0,8)?.toUpperCase() || 'SYS-ADMIN';
 
   const handleCopyId = () => {
@@ -75,8 +76,15 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
             
             {/* Avatar Icon */}
             <div className="w-20 h-20 rounded-2xl bg-slate-800/80 border border-slate-700/50 p-1 flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-105 backdrop-blur-xs">
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-contain rounded-xl"  loading="lazy" />
+                {user?.photoURL && !avatarError ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt="Profile" 
+                    className="w-full h-full object-contain rounded-xl"  
+                    loading="lazy" 
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarError(true)}
+                  />
                 ) : (
                   <Store size={36} className="text-indigo-400" />
                 )}

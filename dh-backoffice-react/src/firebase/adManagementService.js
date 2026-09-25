@@ -68,39 +68,11 @@ export const adManagementService = {
    */
   getAdsByUserId: async (uid) => {
     try {
-      const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
-      const snapshots = await Promise.all(adCols.map(col => {
-        const q = query(collection(db, getCollectionPath(col)), where('ownerId', '==', uid), limit(500));
-        return getDocs(q);
-      }));
-
-      const adsMap = new Map();
-
-      snapshots.forEach(snap => {
-        snap.forEach(docSnap => {
-          const data = { id: docSnap.id, ...docSnap.data() };
-          if (!adsMap.has(docSnap.id)) {
-            adsMap.set(docSnap.id, data);
-          } else {
-            const existing = adsMap.get(docSnap.id);
-            const existingViews = Number(existing.stats?.views || existing.impressions || 0);
-            const existingClicks = Number(existing.stats?.clicks || existing.clicks || 0);
-            const newViews = Number(data.stats?.views || data.impressions || 0);
-            const newClicks = Number(data.stats?.clicks || data.clicks || 0);
-
-            adsMap.set(docSnap.id, {
-              ...existing,
-              ...data,
-              stats: {
-                views: Math.max(existingViews, newViews),
-                clicks: Math.max(existingClicks, newClicks)
-              }
-            });
-          }
-        });
-      });
-
-      const adsList = Array.from(adsMap.values());
+      // 🚀 SSOT Optimization: ดึงจาก partner_ads เป็นหลัก
+      const q = query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', uid), limit(500));
+      const snap = await getDocs(q);
+      
+      const adsList = snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
       return adsList.sort((a, b) => {
         const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
         const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
@@ -117,23 +89,16 @@ export const adManagementService = {
    */
   getStoreProfile: async (uid) => {
     try {
+      // 🚀 SSOT: อ่านจาก users/{uid}/storeProfile/main เป็นหลัก
       const storeRef = doc(db, getCollectionPath('users'), uid, 'storeProfile', 'main');
-      const rootStoreRef = doc(db, getCollectionPath('users'), uid, 'storeProfile', 'main');
-      
-      const [storeSnap, rootSnap] = await Promise.all([
-        getDoc(storeRef),
-        getDoc(rootStoreRef)
-      ]);
-      
-      let mergedData = {};
-      if (rootSnap.exists()) mergedData = { ...mergedData, ...rootSnap.data() };
-      if (storeSnap.exists()) {
-        const artifactsData = storeSnap.data();
-        if (artifactsData.storeName || !mergedData.storeName) {
-           mergedData = { ...mergedData, ...artifactsData };
-        }
-      }
-      return Object.keys(mergedData).length > 0 ? mergedData : null;
+      const storeSnap = await getDoc(storeRef);
+      if (storeSnap.exists()) return storeSnap.data();
+
+      // 🛡️ Fallback: ดึงจาก artifacts หากยังไม่มีใน users
+      const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
+      const legacyStoreRef = doc(db, 'artifacts', appId, 'users', uid, 'storeProfile', 'main');
+      const legacySnap = await getDoc(legacyStoreRef);
+      return legacySnap.exists() ? legacySnap.data() : null;
     } catch (error) {
       console.error(`❌ Error fetching store profile for [${uid}]:`, error);
       return null;

@@ -38,28 +38,22 @@ export const useStoreProfileData = (user) => {
       return;
     }
     try {
-      const storeRef = doc(db, 'artifacts', appId, 'users', user.uid, 'storeProfile', 'main');
+      // 🚀 SSOT: อ่านจาก users/{uid}/storeProfile/main เป็นหลัก
       const rootStoreRef = doc(db, getCollectionPath('users'), user.uid, 'storeProfile', 'main');
-
-      const [storeSnap, rootSnap] = await Promise.all([
-        getDoc(storeRef),
-        getDoc(rootStoreRef)
-      ]);
-
-      let mergedData = { ...DEFAULT_STORE_DATA };
+      const rootSnap = await getDoc(rootStoreRef);
 
       if (rootSnap.exists()) {
-        mergedData = { ...mergedData, ...rootSnap.data() };
-      }
-
-      if (storeSnap.exists()) {
-        const artifactsData = storeSnap.data();
-        if (artifactsData.storeName || !mergedData.storeName) {
-          mergedData = { ...mergedData, ...artifactsData };
+        setStoreData({ ...DEFAULT_STORE_DATA, ...rootSnap.data() });
+      } else {
+        // 🛡️ Fallback: ดึงข้อมูลเดิมจาก artifacts ให้ลูกค้า/พาร์ทเนอร์ทันที ข้อมูลไม่หายแน่นอน 100%
+        const legacyStoreRef = doc(db, 'artifacts', appId, 'users', user.uid, 'storeProfile', 'main');
+        const legacySnap = await getDoc(legacyStoreRef);
+        if (legacySnap.exists()) {
+          setStoreData({ ...DEFAULT_STORE_DATA, ...legacySnap.data() });
+        } else {
+          setStoreData(DEFAULT_STORE_DATA);
         }
       }
-
-      setStoreData(mergedData);
     } catch (error) {
       console.error('Error fetching store data:', error);
     } finally {

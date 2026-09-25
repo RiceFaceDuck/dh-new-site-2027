@@ -1,15 +1,11 @@
-/* eslint-disable */
 import { db } from './config';
 import { 
   collection, doc, getDocs, getDoc, query, where, 
-  serverTimestamp, runTransaction, increment,
-  writeBatch, limit 
+  serverTimestamp, writeBatch, limit, updateDoc 
 } from 'firebase/firestore';
 
 import { trackAdView, trackAdClick, logImpression, logClick } from './marketingAnalyticsService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
-
-const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
 
 // 🚀 HOTFIX: แยก Cache ตามประเภทโฆษณาเพื่อป้องกันการจำค่าทับซ้อนกัน
 let activeAdsCache = { data: {}, lastFetch: {} };
@@ -43,18 +39,15 @@ export const marketingService = {
     }
     
     try {
-      // 🚀 HOTFIX: ชี้เป้าคิวรี่ไปที่ Collection ที่ถูกต้อง เพื่อให้ตรงกับสถานะที่ถูกอัปเดตจากระบบ Backoffice
-      let collectionName = 'partner_ads';
-      if (adType === 'PRODUCT_LINK') collectionName = 'user_sku_ads';
-      if (adType === 'BILLBOARD') collectionName = 'billboard_ads';
-
+      // 🚀 SSOT Optimization: ใช้ partner_ads เป็น Single Source of Truth รวมทุกประเภทโฆษณา
+      const collectionName = 'partner_ads';
       const adsRef = collection(db, getCollectionPath(collectionName));
-      const q = query(adsRef, where('status', '==', 'active'), where('type', '==', adType), limit(100));
+      const q = query(adsRef, where('status', 'in', ['active', 'ACTIVE']), where('type', '==', adType), limit(100));
       const snapshot = await getDocs(q);
       
       const adsList = snapshot.docs.map(doc => ({ 
         id: doc.id, 
-        _collection: collectionName, // แนบ collection กลับไปให้ trackView หักเครดิตถูกตาราง
+        _collection: collectionName,
         ...doc.data() 
       }));
 
@@ -89,16 +82,13 @@ export const marketingService = {
       };
 
       let legacyTaskType = 'AD_APPROVAL';
-      let oldCollectionName = 'partner_ads';
       let taskTitle = `ตรวจสอบโฆษณา: ${adData.title || 'นามบัตร'}`;
 
       if (adType === 'PRODUCT_LINK') {
           legacyTaskType = 'USER_SKU_APPROVAL';
-          oldCollectionName = 'user_sku_ads';
           taskTitle = `ตรวจสอบสินค้าโปรโมท: ${adData.title}`;
       } else if (adType === 'BILLBOARD') {
           legacyTaskType = 'BILLBOARD_APPROVAL';
-          oldCollectionName = 'billboard_ads';
           taskTitle = `ตรวจสอบแผ่นป้ายโฆษณา: ${adData.title}`;
       }
 
@@ -121,10 +111,8 @@ export const marketingService = {
         createdBy: userId
       };
 
+      // 🚀 SSOT: บันทึกเข้า partner_ads คอลเลกชันเดียวเป็น Single Source of Truth
       batch.set(doc(db, getCollectionPath('partner_ads'), adId), adPayload);
-      if (oldCollectionName !== 'partner_ads') {
-         batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload);
-      }
 
       batch.set(doc(db, getCollectionPath('todos'), taskId), todoPayload); 
 
@@ -168,16 +156,13 @@ export const marketingService = {
       };
 
       let legacyTaskType = 'AD_APPROVAL';
-      let oldCollectionName = 'partner_ads';
       let taskTitle = `[แก้ไข] ตรวจสอบโฆษณา: ${adData.title || 'นามบัตร'}`;
 
       if (adType === 'PRODUCT_LINK') {
           legacyTaskType = 'USER_SKU_APPROVAL';
-          oldCollectionName = 'user_sku_ads';
           taskTitle = `[แก้ไข] ตรวจสอบสินค้า: ${adData.title}`;
       } else if (adType === 'BILLBOARD') {
           legacyTaskType = 'BILLBOARD_APPROVAL';
-          oldCollectionName = 'billboard_ads';
           taskTitle = `[แก้ไข] ตรวจสอบแผ่นป้าย: ${adData.title}`;
       }
 
@@ -200,10 +185,8 @@ export const marketingService = {
         createdBy: userId
       };
 
+      // 🚀 SSOT: อัปเดตที่ partner_ads คอลเลกชันเดียวเป็น Single Source of Truth
       batch.set(doc(db, getCollectionPath('partner_ads'), adId), adPayload, { merge: true });
-      if (oldCollectionName !== 'partner_ads') {
-         batch.set(doc(db, getCollectionPath(oldCollectionName), adId), adPayload, { merge: true });
-      }
 
       batch.set(doc(db, getCollectionPath('todos'), taskId), todoPayload, { merge: true }); 
 
@@ -239,24 +222,21 @@ export const marketingService = {
     }
 
     try {
-      const p1 = getDocs(query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', userId), limit(50)));
-      const p2 = getDocs(query(collection(db, getCollectionPath('user_sku_ads')), where('ownerId', '==', userId), limit(50)));
-      const p3 = getDocs(query(collection(db, getCollectionPath('billboard_ads')), where('ownerId', '==', userId), limit(50)));
-
-      const [s1, s2, s3] = await Promise.all([p1, p2, p3]);
+      // 🚀 SSOT & Quota Shield: ยิงคิวรี่ตรงที่ partner_ads คอลเลกชันเดียว ลดโควต้าอ่านลง 66%
+      const q = query(
+        collection(db, getCollectionPath('partner_ads')), 
+        where('ownerId', '==', userId), 
+        limit(100)
+      );
+      const snapshot = await getDocs(q);
       
-      const adsList = [
-        ...s1.docs.map(d => ({ id: d.id, ...d.data() })),
-        ...s2.docs.map(d => ({ id: d.id, type: 'PRODUCT_LINK', ...d.data() })),
-        ...s3.docs.map(d => ({ id: d.id, type: 'BILLBOARD', ...d.data() }))
-      ];
-
-      const uniqueAds = Array.from(new Map(adsList.map(item => [item.id, item])).values());
-      uniqueAds.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      const uniqueAds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      uniqueAds.sort((a, b) => (b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0)) - (a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0)));
+      
       userAdsCache.set(userId, { data: uniqueAds, timestamp: Date.now() });
       return uniqueAds;
     } catch (error) {
-      console.error("🔥 Error:", error);
+      console.error("🔥 Error fetching user partner ads:", error);
       return [];
     }
   },
@@ -274,32 +254,22 @@ export const marketingService = {
         updatedAt: serverTimestamp()
       };
 
-      const resolveCollection = (type) => {
-        if (!type) return null;
-        const t = String(type).toLowerCase();
-        if (t.includes('partner') || t === 'partner_ads') return 'partner_ads';
-        if (t.includes('billboard') || t === 'billboard_ads') return 'billboard_ads';
-        if (t.includes('sku') || t === 'user_sku_ads') return 'user_sku_ads';
-        return null;
-      };
+      // 🚀 SSOT: ตรวจสอบและอัปเดตที่ partner_ads เป็นหลัก (1 Read)
+      const primaryRef = doc(db, getCollectionPath('partner_ads'), adId);
+      const primarySnap = await getDoc(primaryRef);
 
-      const targetCol = resolveCollection(adType);
-      const adCols = targetCol ? [targetCol] : ['partner_ads', 'billboard_ads', 'user_sku_ads'];
-      const batch = writeBatch(db);
-
-      // 🚀 Quota Optimization: ดึงเฉพาะคอลเลกชันเป้าหมายเมื่อทราบ adType ประหยัด Reads จาก 3 เหลือ 1 Read
-      const snaps = await Promise.all(adCols.map(col => getDoc(doc(db, getCollectionPath(col), adId))));
-      
-      let updatedCount = 0;
-      snaps.forEach(snap => {
-        if (snap.exists()) {
-          batch.update(snap.ref, updatePayload);
-          updatedCount++;
+      if (primarySnap.exists()) {
+        await updateDoc(primaryRef, updatePayload);
+      } else {
+        // Fallback สำหรับโฆษณารุ่นเก่าที่ยังตกค้างใน legacy collections
+        const legacyCols = ['billboard_ads', 'user_sku_ads'];
+        for (const col of legacyCols) {
+          const snap = await getDoc(doc(db, getCollectionPath(col), adId));
+          if (snap.exists()) {
+            await updateDoc(snap.ref, updatePayload);
+            break;
+          }
         }
-      });
-
-      if (updatedCount > 0) {
-        await batch.commit();
       }
 
       activeAdsCache.lastFetch = {}; // ล้าง cache
@@ -313,35 +283,36 @@ export const marketingService = {
   resubmitPartnerAd: async (userId, adId, adType) => {
     if (!userId || !adId) return false;
     try {
-      const batch = writeBatch(db);
       const updatePayload = {
         status: 'PENDING',
         updatedAt: serverTimestamp(),
         resubmittedAt: serverTimestamp()
       };
 
-      const resolveCollection = (type) => {
-        if (!type) return null;
-        const t = String(type).toLowerCase();
-        if (t.includes('partner') || t === 'partner_ads') return 'partner_ads';
-        if (t.includes('billboard') || t === 'billboard_ads') return 'billboard_ads';
-        if (t.includes('sku') || t === 'user_sku_ads') return 'user_sku_ads';
-        return null;
-      };
-
-      const targetCol = resolveCollection(adType);
-      const adCols = targetCol ? [targetCol] : ['partner_ads', 'billboard_ads', 'user_sku_ads'];
-      const snaps = await Promise.all(adCols.map(col => getDoc(doc(db, getCollectionPath(col), adId))));
-      
       let adData = {};
-      snaps.forEach(snap => {
-        if (snap.exists()) {
-          batch.update(snap.ref, updatePayload);
-          adData = { ...snap.data() };
-        }
-      });
+      const primaryRef = doc(db, getCollectionPath('partner_ads'), adId);
+      const primarySnap = await getDoc(primaryRef);
 
-      // ดันคำร้องใหม่ไปยัง central_todos เพื่อให้ผู้จัดการเห็นอยู่ด้านบนสุด
+      if (primarySnap.exists()) {
+        adData = primarySnap.data();
+      } else {
+        // Fallback สำหรับคอลเลกชันเก่า
+        const legacyCols = ['billboard_ads', 'user_sku_ads'];
+        for (const col of legacyCols) {
+          const snap = await getDoc(doc(db, getCollectionPath(col), adId));
+          if (snap.exists()) {
+            adData = snap.data();
+            break;
+          }
+        }
+      }
+
+      const batch = writeBatch(db);
+      if (primarySnap.exists()) {
+        batch.update(primaryRef, updatePayload);
+      }
+
+      // ดันคำร้องใหม่ไปยัง todos เพื่อให้ผู้จัดการเห็นอยู่ด้านบนสุด
       const taskId = `TODO-RESUBMIT-${adId}`;
       const legacyTaskType = adType === 'BILLBOARD' ? 'APPROVE_BILLBOARD_AD' : 'APPROVE_PARTNER_AD';
       const todoPayload = {

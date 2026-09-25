@@ -9,24 +9,24 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 export const pauseUserAdsOnOutOfCredit = async (partnerId) => {
   if (!partnerId) return;
   try {
-    const adCols = ['partner_ads', 'billboard_ads', 'user_sku_ads'];
+    // 🚀 SSOT Optimization: อัปเดต partner_ads คอลเลกชันเดียว ลดโควต้าอ่านเขียนลง 66%
     const batch = writeBatch(db);
     let hasUpdates = false;
 
-    const snapshots = await Promise.all(adCols.map(col => {
-      const q = query(collection(db, getCollectionPath(col)), where('ownerId', '==', partnerId), where('status', '==', 'active'));
-      return getDocs(q);
-    }));
+    const q = query(
+      collection(db, getCollectionPath('partner_ads')), 
+      where('ownerId', '==', partnerId), 
+      where('status', 'in', ['active', 'ACTIVE', 'APPROVED'])
+    );
+    const snapshot = await getDocs(q);
 
-    snapshots.forEach(snap => {
-      snap.forEach(docSnap => {
-        batch.update(docSnap.ref, {
-          status: 'OUT_OF_CREDIT',
-          isActive: false,
-          updatedAt: serverTimestamp()
-        });
-        hasUpdates = true;
+    snapshot.forEach(docSnap => {
+      batch.update(docSnap.ref, {
+        status: 'OUT_OF_CREDIT',
+        isActive: false,
+        updatedAt: serverTimestamp()
       });
+      hasUpdates = true;
     });
 
     if (hasUpdates) {

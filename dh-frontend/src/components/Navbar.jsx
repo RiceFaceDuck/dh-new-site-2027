@@ -10,6 +10,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [navAvatarError, setNavAvatarError] = useState(false);
 
   // 🌟 Custom Hooks สกัด Logic ออกจาก Component UI
   const {
@@ -133,8 +134,15 @@ const Navbar = () => {
                     }`}
                   >
                     <div className="relative">
-                      {currentUser.photoURL ? (
-                        <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full object-contain border border-slate-200" loading="lazy" />
+                      {currentUser.photoURL && !navAvatarError ? (
+                        <img 
+                          src={currentUser.photoURL} 
+                          alt="Profile" 
+                          className="w-8 h-8 rounded-full object-contain border border-slate-200" 
+                          loading="lazy" 
+                          referrerPolicy="no-referrer"
+                          onError={() => setNavAvatarError(true)}
+                        />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-linear-to-br from-brand-light to-white text-brand flex items-center justify-center font-bold text-sm border border-brand-light">
                           {getInitial(currentUser.email)}

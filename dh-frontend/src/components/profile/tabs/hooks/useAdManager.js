@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
-import { storageService } from '../../../../firebase/storageService';
+import { driveService } from '../../../../firebase/driveService';
 import { marketingService, toggleAdStatus } from '../../../../firebase/marketingService';
 import { useUserCredit } from '../../../../firebase/creditService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -107,9 +107,9 @@ export const useAdManager = (user) => {
 
     setUploadingImage(true);
     try {
-      const url = await storageService.uploadAdImage(file, user?.uid, formData.type);
+      const url = await driveService.uploadAdImage(file, formData.type);
       setFormData({ ...formData, imageUrl: url });
-      showToast("อัปโหลดและบีบอัดรูปภาพโฆษณาเรียบร้อย", 'success');
+      showToast("อัปโหลดรูปภาพโฆษณาเรียบร้อย", 'success');
     } catch (error) {
       console.error("🔥 Error:", error);
       showToast(error?.message || "เกิดข้อผิดพลาดในการอัปโหลดรูป", 'error');
@@ -197,8 +197,7 @@ export const useAdManager = (user) => {
       const batch = writeBatch(db);
       
       batch.delete(doc(db, getCollectionPath('partner_ads'), adId));
-      batch.delete(doc(db, getCollectionPath('user_sku_ads'), adId));
-      batch.delete(doc(db, getCollectionPath('billboard_ads'), adId));
+      batch.delete(doc(db, getCollectionPath('todos'), `TODO-${adId}`));
       
       await batch.commit();
       showToast("ลบแคมเปญโฆษณาเรียบร้อยแล้ว", 'info');

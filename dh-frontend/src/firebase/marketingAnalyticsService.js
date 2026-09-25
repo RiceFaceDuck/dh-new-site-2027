@@ -50,14 +50,6 @@ export const flushAdStatsBatch = async () => {
             if (stats.views > 0) updateData['stats.views'] = increment(stats.views);
             if (stats.clicks > 0) updateData['stats.clicks'] = increment(stats.clicks);
 
-            // 🛑 เช็คว่า "งบประมาณชนเพดาน" หรือยัง? (ถ้าชนเพดาน ให้หยุดโฆษณาทันที)
-            if (adData.creditLimit !== -1 && adData.creditLimit > 0) {
-               const currentViews = adData.stats?.views || 0;
-               if ((currentViews + stats.views) >= adData.creditLimit) {
-                  updateData['status'] = 'COMPLETED'; // ตัดจบแคมเปญ
-               }
-            }
-
             // 💰 ดึง Credit Config เพื่อคำนวณหักเงิน
             const config = await getCreditSettings();
             const adImpressionCost = config?.adImpressionCost || 5; 
@@ -84,8 +76,20 @@ export const flushAdStatsBatch = async () => {
               }
             }
 
+            // 🛑 [THE FIX Checksum]: อัปเดตยอดแต้มที่ใช้จริง (spentBudget) และเช็คเพดานงบแต้มอย่างถูกต้อง
+            const currentSpent = Number(adData.spentBudget || 0);
+            const newSpent = currentSpent + costToDeduct;
+            updateData['spentBudget'] = newSpent;
+
+            if (adData.creditLimit !== -1 && adData.creditLimit > 0) {
+               if (newSpent >= adData.creditLimit) {
+                  updateData['status'] = 'COMPLETED'; // ตัดจบแคมเปญเมื่อแต้มที่ใช้ถึงเพดาน
+                  updateData['isActive'] = false;
+               }
+            }
+
             batch.update(adRef, updateData);
-            // 🚀 Dual-Write Sync: อัปเดตข้อมูลกลับมายัง partner_ads เสมอ เพื่อให้หน้า Ad Manager และ Backoffice แสดงสถิติตรงกัน
+            // 🚀 Dual-Write Sync: ซิงค์กลับ partner_ads เฉพาะกรณีที่เป็น legacy collection
             if (collectionName !== 'partner_ads') {
                const masterRef = doc(db, getCollectionPath('partner_ads'), adId);
                batch.update(masterRef, updateData);
@@ -147,12 +151,12 @@ export const trackAdClick = async (collectionName, adId) => {
 
 export const logImpression = async (adId) => {
   if (!adId) return;
-  const col = String(adId).includes('SKU') ? 'user_sku_ads' : (String(adId).includes('BB') ? 'billboard_ads' : 'partner_ads');
-  return trackAdView(col, adId);
+  // 🚀 SSOT: ชี้เป้า partner_ads เป็น Single Source of Truth
+  return trackAdView('partner_ads', adId);
 };
 
 export const logClick = async (adId) => {
   if (!adId) return;
-  const col = String(adId).includes('SKU') ? 'user_sku_ads' : (String(adId).includes('BB') ? 'billboard_ads' : 'partner_ads');
-  return trackAdClick(col, adId);
+  // 🚀 SSOT: ชี้เป้า partner_ads เป็น Single Source of Truth
+  return trackAdClick('partner_ads', adId);
 };

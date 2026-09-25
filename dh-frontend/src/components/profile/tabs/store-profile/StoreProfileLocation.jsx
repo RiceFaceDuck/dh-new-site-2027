@@ -3,33 +3,70 @@ import { MapPin, Search, CheckCircle2, Loader2, Info } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 
 
+// 🛡️ In-memory geocode cache to avoid rate-limiting (403 Forbidden) on Nominatim
+const geocodeCache = new Map();
+
 const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, locationLoading }) => {
   const { showToast } = useToast();
   const [resolvingName, setResolvingName] = useState(false);
   const [resolvedName, setResolvedName] = useState('');
 
-  const reverseGeocode = async (lat, lng) => {
-    try {
-      setResolvingName(true);
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-      const data = await res.json();
-      if (data && data.display_name) {
-        setResolvedName(data.display_name);
-      } else {
-        setResolvedName('ไม่ทราบชื่อสถานที่แน่ชัด');
-      }
-    } catch (error) {
-      console.error(error);
-      setResolvedName('ไม่สามารถดึงชื่อสถานที่ได้');
-    } finally {
-      setResolvingName(false);
-    }
-  };
-
   useEffect(() => {
-    if (storeData.latitude && storeData.longitude) {
-      reverseGeocode(storeData.latitude, storeData.longitude);
+    const lat = Number(storeData.latitude);
+    const lng = Number(storeData.longitude);
+
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      setResolvedName('');
+      return;
     }
+
+    const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    if (geocodeCache.has(cacheKey)) {
+      setResolvedName(geocodeCache.get(cacheKey));
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      try {
+        setResolvingName(true);
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+          {
+            signal: controller.signal,
+            headers: {
+              'Accept': 'application/json',
+              'Accept-Language': 'th,en;q=0.9'
+            }
+          }
+        );
+
+        if (!res.ok) {
+          if (res.status === 403) {
+            console.warn("Nominatim rate limit reached (403)");
+          }
+          setResolvedName('พิกัดถูกต้อง (ไม่สามารถดึงชื่อสถานที่ได้)');
+          return;
+        }
+
+        const data = await res.json();
+        const displayName = data?.display_name || 'พิกัดร้านค้าที่เลือกไว้';
+        geocodeCache.set(cacheKey, displayName);
+        setResolvedName(displayName);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error("Reverse geocoding error:", error);
+          setResolvedName('พิกัดถูกต้อง (ไม่สามารถดึงชื่อสถานที่ได้)');
+        }
+      } finally {
+        setResolvingName(false);
+      }
+    }, 600); // 600ms debounce to strictly respect OpenStreetMap usage policy
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [storeData.latitude, storeData.longitude]);
 
 

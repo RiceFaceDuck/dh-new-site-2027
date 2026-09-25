@@ -641,10 +641,21 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['status', 'isActive']) || request.resource.data.status in ['pending', 'PENDING'])
       );
       allow update: if isStaff() || (
-        isAuthenticated() && resource.data.ownerId == request.auth.uid &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy'
-        ])
+        isAuthenticated() && resource.data.ownerId == request.auth.uid && (
+          // กรณีที่ 1: พาร์ทเนอร์กด พักแคมเปญ (paused) หรือ เปิดใช้งานต่อ (active) สำหรับโฆษณาที่เคยอนุมัติแล้วเท่านั้น
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isActive', 'updatedAt']) &&
+            resource.data.status in ['active', 'paused', 'ACTIVE', 'PAUSED'] &&
+            request.resource.data.status in ['active', 'paused', 'ACTIVE', 'PAUSED'] &&
+            request.resource.data.isActive == (request.resource.data.status in ['active', 'ACTIVE'])
+          ) ||
+          // กรณีที่ 2: พาร์ทเนอร์แก้ไขเนื้อหาโฆษณา (ส่งตรวจใหม่) ห้ามแตะต้องฟิลด์การเงินและสถิติ
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget'
+            ])
+          )
+        )
       );
       allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
     }
@@ -655,10 +666,21 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['status', 'isActive']) || request.resource.data.status in ['pending', 'PENDING'])
       );
       allow update: if isStaff() || (
-        isAuthenticated() && resource.data.ownerId == request.auth.uid &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy'
-        ])
+        isAuthenticated() && resource.data.ownerId == request.auth.uid && (
+          // กรณีที่ 1: พาร์ทเนอร์กด พักแคมเปญ (paused) หรือ เปิดใช้งานต่อ (active) สำหรับโฆษณาที่เคยอนุมัติแล้วเท่านั้น
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isActive', 'updatedAt']) &&
+            resource.data.status in ['active', 'paused', 'ACTIVE', 'PAUSED'] &&
+            request.resource.data.status in ['active', 'paused', 'ACTIVE', 'PAUSED'] &&
+            request.resource.data.isActive == (request.resource.data.status in ['active', 'ACTIVE'])
+          ) ||
+          // กรณีที่ 2: พาร์ทเนอร์แก้ไขเนื้อหาโฆษณา (ส่งตรวจใหม่) ห้ามแตะต้องฟิลด์การเงินและสถิติ
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget'
+            ])
+          )
+        )
       );
       allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
     }
@@ -669,10 +691,21 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['status', 'isActive']) || request.resource.data.status in ['pending', 'PENDING'])
       );
       allow update: if isStaff() || (
-        isAuthenticated() && resource.data.ownerId == request.auth.uid &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy'
-        ])
+        isAuthenticated() && resource.data.ownerId == request.auth.uid && (
+          // กรณีที่ 1: พาร์ทเนอร์กด พักแคมเปญ (paused) หรือ เปิดใช้งานต่อ (active) สำหรับโฆษณาที่เคยอนุมัติแล้วเท่านั้น
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isActive', 'updatedAt']) &&
+            resource.data.status in ['active', 'paused', 'ACTIVE', 'PAUSED'] &&
+            request.resource.data.status in ['active', 'paused', 'ACTIVE', 'PAUSED'] &&
+            request.resource.data.isActive == (request.resource.data.status in ['active', 'ACTIVE'])
+          ) ||
+          // กรณีที่ 2: พาร์ทเนอร์แก้ไขเนื้อหาโฆษณา (ส่งตรวจใหม่) ห้ามแตะต้องฟิลด์การเงินและสถิติ
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'status', 'isActive', 'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget'
+            ])
+          )
+        )
       );
       allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
     }
