@@ -81,8 +81,8 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
       setStoreData(prev => ({ ...prev, latitude: lat, longitude: lng }));
     };
 
-    // 1. หาพิกัดแบบตรงๆ (13.956, 100.567)
-    let match = text.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    // 1. หาพิกัดแบบตรงๆ (13.956, 100.567 หรือ 13.956 100.567 หรือ 13.956+100.567)
+    let match = text.match(/(-?\d+\.\d+)(?:\s*,\s*|\s+|\+)(-?\d+\.\d+)/);
     if (match) return updateLocation(parseFloat(match[1]), parseFloat(match[2]));
 
     // 2. หาพิกัดจากลิงก์ยาว (@13.956,100.567) หรือข้อความยาวๆ ที่มีพิกัดซ่อนอยู่

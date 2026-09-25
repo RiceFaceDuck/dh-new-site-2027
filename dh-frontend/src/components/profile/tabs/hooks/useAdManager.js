@@ -192,12 +192,21 @@ export const useAdManager = (user) => {
   };
 
   const handleDeleteAd = async (adId) => {
+    if (!adId) return;
+    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบแคมเปญโฆษณานี้?')) return;
     try {
       const { writeBatch } = await import('firebase/firestore');
       const batch = writeBatch(db);
       
       batch.delete(doc(db, getCollectionPath('partner_ads'), adId));
+      batch.delete(doc(db, getCollectionPath('billboard_ads'), adId));
+      batch.delete(doc(db, getCollectionPath('user_sku_ads'), adId));
       batch.delete(doc(db, getCollectionPath('todos'), `TODO-${adId}`));
+      batch.delete(doc(db, getCollectionPath('todos'), `TODO-RESUBMIT-${adId}`));
+
+      if (user?.uid && (adId === `AD-CARD-${user.uid}` || (businessCardAd && businessCardAd.id === adId))) {
+        batch.delete(doc(db, getCollectionPath('ActivePartners'), user.uid));
+      }
       
       await batch.commit();
       showToast("ลบแคมเปญโฆษณาเรียบร้อยแล้ว", 'info');

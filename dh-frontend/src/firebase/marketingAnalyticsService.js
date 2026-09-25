@@ -92,7 +92,7 @@ export const flushAdStatsBatch = async () => {
             // 🚀 Dual-Write Sync: ซิงค์กลับ partner_ads เฉพาะกรณีที่เป็น legacy collection
             if (collectionName !== 'partner_ads') {
                const masterRef = doc(db, getCollectionPath('partner_ads'), adId);
-               batch.update(masterRef, updateData);
+               batch.set(masterRef, updateData, { merge: true });
             }
             hasUpdates = true;
 

@@ -499,7 +499,10 @@ service cloud.firestore {
     match /system_logs/{logId} {
       allow read: if isManagerOrAdmin();
       allow write: if isManagerOrAdmin();
-      allow create: if isAuthenticated() && request.resource.data.get('category', '') in ['client_error', 'client_warning', 'telemetry'];
+      allow create: if isAuthenticated() && (
+        request.resource.data.get('category', '') in ['client_error', 'client_warning', 'telemetry', 'ERROR', 'error', 'Marketing', 'marketing'] ||
+        request.resource.data.get('module', '') in ['Marketing', 'marketing']
+      );
     }
     
     // 🛡️ Admin Audits & Idempotency Locks
@@ -578,6 +581,10 @@ service cloud.firestore {
     match /artifacts/{appId}/system_logs/{logId} {
       allow read: if isManagerOrAdmin();
       allow write: if isManagerOrAdmin();
+      allow create: if isAuthenticated() && (
+        request.resource.data.get('category', '') in ['client_error', 'client_warning', 'telemetry', 'ERROR', 'error', 'Marketing', 'marketing'] ||
+        request.resource.data.get('module', '') in ['Marketing', 'marketing']
+      );
     }
 
     match /artifacts/{appId}/attendance_logs/{logId} {
@@ -660,7 +667,7 @@ service cloud.firestore {
           )
         )
       );
-      allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow delete: if isStaff() || (isAuthenticated() && (resource == null || resource.data.ownerId == request.auth.uid));
     }
     match /billboard_ads/{adId} {
       allow read: if true;
@@ -688,7 +695,7 @@ service cloud.firestore {
           )
         )
       );
-      allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow delete: if isStaff() || (isAuthenticated() && (resource == null || resource.data.ownerId == request.auth.uid));
     }
     match /user_sku_ads/{adId} {
       allow read: if true;
@@ -716,7 +723,7 @@ service cloud.firestore {
           )
         )
       );
-      allow delete: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow delete: if isStaff() || (isAuthenticated() && (resource == null || resource.data.ownerId == request.auth.uid));
     }
     
     // 6. การตั้งค่าระบบ (Settings) และข้อมูลพื้นฐาน

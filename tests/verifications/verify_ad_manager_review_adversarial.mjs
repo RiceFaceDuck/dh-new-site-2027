@@ -105,6 +105,76 @@ runTest("6. Navbar and ProfileSidebar reset avatarError on photoURL change", () 
   assert(sideContent.includes("setAvatarError(false);"), "ProfileSidebar must reset avatarError on photoURL change");
 });
 
+// 7. Verify system_logs permission security and telemetry category inclusion
+runTest("7. system_logs rules allow telemetry/marketing logs and marketingService writes category", () => {
+  const rulesPath = path.resolve('firestore.rules');
+  const rules = fs.readFileSync(rulesPath, 'utf8').replace(/\r\n/g, '\n');
+  const servicePath = path.resolve('dh-frontend/src/firebase/marketingService.js');
+  const serviceContent = fs.readFileSync(servicePath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(rules.includes("request.resource.data.get('category', '') in ['client_error', 'client_warning', 'telemetry', 'ERROR', 'error', 'Marketing', 'marketing']"),
+    "firestore.rules must allow telemetry/marketing category in system_logs");
+  assert(serviceContent.includes("category: 'telemetry',\n        module: 'Marketing',\n        action: 'SubmitAd',"),
+    "submitPartnerAd must explicitly include category: telemetry");
+  assert(serviceContent.includes("category: 'telemetry',\n        module: 'Marketing',\n        action: 'UpdateAdRequest',"),
+    "updatePartnerAd must explicitly include category: telemetry");
+});
+
+// 8. Verify deleteAd method implementation in adManagementService
+runTest("8. adManagementService implements deleteAd with multi-collection and ActivePartners cleanup", () => {
+  const servicePath = path.resolve('dh-backoffice-react/src/firebase/adManagementService.js');
+  const content = fs.readFileSync(servicePath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(content.includes("deleteAd: async (adId) => {"), "adManagementService must implement deleteAd");
+  assert(content.includes("batch.delete(partnerAdRef);"), "deleteAd must delete from partner_ads");
+  assert(content.includes("batch.delete(activePartnerRef);"), "deleteAd must clean up ActivePartners for business cards");
+});
+
+// 9. Verify marketingAnalyticsService resilient set with merge on masterRef sync
+runTest("9. marketingAnalyticsService uses batch.set with merge: true for safe legacy sync", () => {
+  const servicePath = path.resolve('dh-frontend/src/firebase/marketingAnalyticsService.js');
+  const content = fs.readFileSync(servicePath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(content.includes("batch.set(masterRef, updateData, { merge: true });"),
+    "marketingAnalyticsService must use set with merge: true to avoid crashes on unmigrated ads");
+  assert(!content.includes("batch.update(masterRef, updateData);"),
+    "batch.update(masterRef) must be replaced with set merge");
+});
+
+// 10. Verify useAdManager handleDeleteAd confirmation and multi-collection cleanup
+runTest("10. useAdManager handleDeleteAd prompts confirmation and cleans up legacy collections", () => {
+  const hookPath = path.resolve('dh-frontend/src/components/profile/tabs/hooks/useAdManager.js');
+  const content = fs.readFileSync(hookPath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(content.includes("window.confirm('คุณแน่ใจหรือไม่ที่จะลบแคมเปญโฆษณานี้?')"),
+    "handleDeleteAd must prompt user confirmation");
+  assert(content.includes("batch.delete(doc(db, getCollectionPath('billboard_ads'), adId));"),
+    "handleDeleteAd must clean up billboard_ads");
+  assert(content.includes("batch.delete(doc(db, getCollectionPath('user_sku_ads'), adId));"),
+    "handleDeleteAd must clean up user_sku_ads");
+  assert(content.includes("batch.delete(doc(db, getCollectionPath('ActivePartners'), user.uid));"),
+    "handleDeleteAd must clean up ActivePartners when business card is deleted");
+});
+
+// 11. Verify StoreProfileLocation parses coordinates with comma, space, and plus delimiters
+runTest("11. StoreProfileLocation parses coordinates with comma, space, or plus delimiters", () => {
+  const locationPath = path.resolve('dh-frontend/src/components/profile/tabs/store-profile/StoreProfileLocation.jsx');
+  const content = fs.readFileSync(locationPath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(content.includes("match(/(-?\\d+\\.\\d+)(?:\\s*,\\s*|\\s+|\\+)(-?\\d+\\.\\d+)/)"),
+    "StoreProfileLocation must parse coordinates with comma, space, or plus delimiters");
+
+  // Verify behavior against sample coordinates
+  const regex = /(-?\d+\.\d+)(?:\s*,\s*|\s+|\+)(-?\d+\.\d+)/;
+  const match1 = "13.956, 100.567".match(regex);
+  const match2 = "13.956 100.567".match(regex);
+  const match3 = "13.956+100.567".match(regex);
+
+  assert(match1 && match1[1] === "13.956" && match1[2] === "100.567", "Comma match failed");
+  assert(match2 && match2[1] === "13.956" && match2[2] === "100.567", "Space match failed");
+  assert(match3 && match3[1] === "13.956" && match3[2] === "100.567", "Plus match failed");
+});
+
 console.log(`\n========================================`);
 console.log(`📊 Adversarial Results: ${passed} Passed, ${failed} Failed`);
 console.log(`========================================\n`);

@@ -36,6 +36,9 @@
 - ⚠️ Nominatim 403 Rate Limit (FIXED Watchlist): Applied in-memory `geocodeCache`, 600ms debounce, and AbortController to reverse geocoding.
 - ⚠️ Rules Re-inspection Barrier (FIXED Review 1): Allowed ad owners to submit for re-inspection (`status: pending`, `isActive: false`) while keeping stats protected.
 - ⚠️ Backoffice SSOT Resolution (FIXED Review 1): `adManagementService` now checks `partner_ads` first before legacy collections for approve/reject/pause.
-- ⚠️ Exotic Coordinates Parsing (FIXED Review 1): Supported `!3d!4d` Google Maps pins and URL parameter formats in `StoreProfileLocation`.
+- ⚠️ Exotic Coordinates Parsing (FIXED Review 1 & 2): Supported `!3d!4d`, URL parameters, comma, space, and plus delimiters in `StoreProfileLocation`.
+- ⚠️ System Logs Permission (FIXED Review 2): Allowed marketing telemetry in `system_logs` to prevent ad creation/edit batch rejections.
+- ⚠️ Backoffice DeleteAd Crash (FIXED Review 2): Implemented `deleteAd` on `adManagementService` with ActivePartners cleanup.
+- ⚠️ Resilient Master Sync (FIXED Review 2): Used `batch.set(..., { merge: true })` in `marketingAnalyticsService` to protect unmigrated ads.
 </pitfalls_and_lessons>
 </ssr_memory>

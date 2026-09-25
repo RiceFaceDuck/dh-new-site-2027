@@ -332,7 +332,49 @@ export const adManagementService = {
   },
 
   /**
-   * 5. [NEW] ฟังก์ชันสำหรับ Dashboard: นับจำนวนคำขอที่รออนุมัติ
+   * 5. ลบโฆษณาถาวร (Delete Ad) โดยผู้ดูแลระบบ / ผู้จัดการ
+   */
+  deleteAd: async (adId) => {
+    try {
+      if (!adId) throw new Error("ไม่พบรหัสโฆษณา");
+      const batch = writeBatch(db);
+
+      const partnerAdRef = doc(db, getCollectionPath('partner_ads'), adId);
+      const partnerSnap = await getDoc(partnerAdRef);
+
+      const specificCol = getSpecificAdsCollectionPath(adId);
+      const legacyRef = specificCol !== 'partner_ads' ? doc(db, getCollectionPath(specificCol), adId) : null;
+      const legacySnap = legacyRef ? await getDoc(legacyRef) : null;
+
+      const adData = partnerSnap.exists() ? partnerSnap.data() : (legacySnap?.exists() ? legacySnap.data() : null);
+
+      if (partnerSnap.exists()) {
+        batch.delete(partnerAdRef);
+      }
+      if (legacySnap && legacySnap.exists()) {
+        batch.delete(legacyRef);
+      }
+
+      if (adData && adData.type === 'BUSINESS_CARD' && adData.ownerId) {
+        const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), adData.ownerId);
+        batch.delete(activePartnerRef);
+      }
+
+      const todoRef = doc(getTodosCollection(), `TODO-${adId}`);
+      const todoResubmitRef = doc(getTodosCollection(), `TODO-RESUBMIT-${adId}`);
+      batch.delete(todoRef);
+      batch.delete(todoResubmitRef);
+
+      await batch.commit();
+      return { success: true, message: 'ลบโฆษณาเรียบร้อยแล้ว' };
+    } catch (error) {
+      console.error("❌ Error deleting ad:", error);
+      return { success: false, message: error.message || 'เกิดข้อผิดพลาดในการลบโฆษณา' };
+    }
+  },
+
+  /**
+   * 6. [NEW] ฟังก์ชันสำหรับ Dashboard: นับจำนวนคำขอที่รออนุมัติ
    */
   getPendingCount: async () => {
     try {

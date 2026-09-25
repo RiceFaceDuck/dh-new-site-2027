@@ -119,6 +119,7 @@ export const marketingService = {
       // 🚀 History Log: บันทึกการส่งคำร้องเข้า Central To-Do
       const logId = `submit_ad_${adId}_${Date.now()}`;
       batch.set(doc(db, getCollectionPath('system_logs'), logId), {
+        category: 'telemetry',
         module: 'Marketing',
         action: 'SubmitAd',
         targetId: adId,
@@ -194,6 +195,7 @@ export const marketingService = {
       // 🚀 History Log: บันทึกการขอแก้ไขคำร้องโฆษณา
       const logId = `update_ad_${adId}_${Date.now()}`;
       batch.set(doc(db, getCollectionPath('system_logs'), logId), {
+        category: 'telemetry',
         module: 'Marketing',
         action: 'UpdateAdRequest',
         targetId: adId,
