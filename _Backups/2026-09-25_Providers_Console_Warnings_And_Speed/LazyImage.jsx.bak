@@ -102,11 +102,6 @@ const LazyImage = ({
       {/* Actual Image */}
       {isIntersecting && currentSrc && (
         <img 
-          ref={(node) => {
-            if (node && node.complete && node.naturalWidth > 0 && !isLoaded) {
-              setIsLoaded(true);
-            }
-          }}
           src={currentSrc}
           alt={alt || ''}
           className={`w-full h-full transition-all duration-300 ${imgObjectFit} ${isLoaded ? 'opacity-100 blur-none scale-100' : 'opacity-0 blur-xs scale-105'} ${imgClassName} ${hasError ? 'p-2 opacity-50' : ''}`}
@@ -114,6 +109,7 @@ const LazyImage = ({
           onError={handleImgError}
           referrerPolicy="no-referrer"
           {...rest}
+          loading="lazy" 
         />
       )}
     </div>

@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80" />
     <title>DH Notebook - ศูนย์รวมอะไหล่โน๊ตบุ๊คคุณภาพเยี่ยม</title>
     <meta name="description" content="DH Notebook แหล่งรวมอะไหล่โน๊ตบุ๊ค แบตเตอรี่ สายชาร์จ คีย์บอร์ด และอื่นๆ อีกมากมาย สินค้าคุณภาพ จัดส่งรวดเร็วทั่วประเทศ" />
     <meta name="keywords" content="อะไหล่โน๊ตบุ๊ค, แบตเตอรี่, สายชาร์จ, คีย์บอร์ดโน๊ตบุ๊ค, ซ่อมโน๊ตบุ๊ค, DH Notebook" />

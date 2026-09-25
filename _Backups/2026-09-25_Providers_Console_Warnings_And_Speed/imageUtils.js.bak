@@ -7,21 +7,21 @@
  * @param {string} url The original image URL
  * @returns {string} The formatted URL that can be directly used in an img src
  */
-export const getRenderableImageUrl = (url, width = 600) => {
+export const getRenderableImageUrl = (url) => {
   if (!url) return '';
   const trimmed = String(url).trim();
   if (!trimmed) return '';
 
   if (trimmed.includes('drive.google.com') || trimmed.includes('googleusercontent.com')) {
+    if (trimmed.includes('googleusercontent.com') && trimmed.includes('=w')) {
+      return trimmed;
+    }
     const match = trimmed.match(/id=([a-zA-Z0-9_-]{15,})/) ||
                   trimmed.match(/\/d\/([a-zA-Z0-9_-]{15,})/) ||
                   trimmed.match(/([a-zA-Z0-9_-]{25,})/);
     if (match) {
       const driveId = match[1] || match[0];
-      return `https://lh3.googleusercontent.com/d/${driveId}=w${width}`;
-    }
-    if (trimmed.includes('googleusercontent.com') && trimmed.includes('=w')) {
-      return trimmed.replace(/=w\d+/, `=w${width}`);
+      return `https://lh3.googleusercontent.com/d/${driveId}=w1000`;
     }
   }
   return trimmed;

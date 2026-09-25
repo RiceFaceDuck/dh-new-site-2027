@@ -8,68 +8,50 @@ const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'defaul
 const CACHE_KEY = `active_partners_cache_v4_${appId}`;
 const CACHE_TTL_MINUTES = 15; // เก็บแคชไว้ 15 นาที เพื่อประหยัด Firebase Reads
 
-let inFlightFetchPromise = null;
-
 /**
  * 📦 ดึงข้อมูลพาร์ทเนอร์ที่เปิดรับการสนับสนุนทั้งหมด
- * (ระบบจะเช็คแคชใน localStorage ก่อนเพื่อประหยัด Reads/Writes)
+ * (ระบบจะเช็คแคชใน sessionStorage ก่อนเพื่อประหยัด Reads/Writes)
  */
 export const fetchAllActivePartners = async (forceRefresh = false) => {
-  if (!forceRefresh && inFlightFetchPromise) {
-    return inFlightFetchPromise;
-  }
-
-  const fetchPromise = (async () => {
-    try {
-      // 1. ตรวจสอบ Cache ก่อน
-      if (!forceRefresh) {
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        if (cachedData) {
-          const parsed = safeJsonParse(cachedData);
-          if (parsed && parsed.data && parsed.timestamp) {
-            const { data, timestamp } = parsed;
-            const now = new Date().getTime();
-            // ถ้าแคชยังไม่หมดอายุ (น้อยกว่า CACHE_TTL_MINUTES)
-            if (now - timestamp < CACHE_TTL_MINUTES * 60 * 1000) {
-              console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์จาก Cache (ประหยัด Reads)");
-              return data;
-            }
-          }
+  try {
+    // 1. ตรวจสอบ Cache ก่อน
+    if (!forceRefresh) {
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const { data, timestamp } = safeJsonParse(cachedData);
+        const now = new Date().getTime();
+        // ถ้าแคชยังไม่หมดอายุ (น้อยกว่า CACHE_TTL_MINUTES)
+        if (now - timestamp < CACHE_TTL_MINUTES * 60 * 1000) {
+          console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์จาก Cache (ประหยัด Reads)");
+          console.table(data.map(p => ({ id: p.id, name: p.storeName, lat: p.latitude, lng: p.longitude })));
+          return data;
         }
       }
-
-      // 2. ถ้าแคชหมดอายุ หรือบังคับ Refresh ค่อยไปดึงจาก Firebase
-      console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์ใหม่จาก Firebase...");
-      const partnersRef = collection(db, getCollectionPath('ActivePartners'));
-      const q = query(partnersRef, limit(500));
-      const snapshot = await getDocs(q);
-      
-      const partners = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      // 3. เซฟลง Cache เพื่อใช้ในครั้งต่อไป
-      const cachePayload = {
-        data: partners,
-        timestamp: new Date().getTime()
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
-
-      return partners;
-    } catch (error) {
-      console.error("❌ [LocationService] เกิดข้อผิดพลาดในการดึงข้อมูลพาร์ทเนอร์:", error);
-      return [];
-    } finally {
-      inFlightFetchPromise = null;
     }
-  })();
 
-  if (!forceRefresh) {
-    inFlightFetchPromise = fetchPromise;
+    // 2. ถ้าแคชหมดอายุ หรือบังคับ Refresh ค่อยไปดึงจาก Firebase
+    console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์ใหม่จาก Firebase...");
+    const partnersRef = collection(db, getCollectionPath('ActivePartners'));
+    const q = query(partnersRef, limit(500));
+    const snapshot = await getDocs(q);
+    
+    const partners = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // 3. เซฟลง Cache เพื่อใช้ในครั้งต่อไป
+    const cachePayload = {
+      data: partners,
+      timestamp: new Date().getTime()
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+
+    return partners;
+  } catch (error) {
+    console.error("❌ [LocationService] เกิดข้อผิดพลาดในการดึงข้อมูลพาร์ทเนอร์:", error);
+    return [];
   }
-
-  return fetchPromise;
 };
 
 /**

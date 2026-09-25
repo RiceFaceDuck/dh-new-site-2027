@@ -8,7 +8,7 @@ import { getRenderableImageUrl } from '../../../utils/imageUtils';
 const PartnerCard = ({ partner }) => {
   // Use storeProfile data if available, fallback to partner root level data
   const rawAvatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || partner.photoURL || partner.profileImage || partner.profilePicture || partner.logo || partner.photo || null;
-  const avatar = getRenderableImageUrl(rawAvatar, 400);
+  const avatar = getRenderableImageUrl(rawAvatar);
   const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
   const role = partner.services || partner.role || 'ช่างซ่อมคอมพิวเตอร์';
 

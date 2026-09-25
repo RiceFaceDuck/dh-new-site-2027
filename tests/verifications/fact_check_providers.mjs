@@ -38,6 +38,8 @@ async function inspect() {
 
   } catch (err) {
     console.error("Fact-check error:", err);
+  } finally {
+    process.exit(0);
   }
 }
 

@@ -34,5 +34,8 @@
     - ⚠️ Field Inconsistency: Google Maps URL naming discrepancy. [RESOLVED Phase 3] Standardized fallback chain across `googleMapLink`, `mapsUrl`, and `googleMapsUrl` with auto-URL formatting.
     - ⚠️ Cache Mismatch: `storeProfileSubmitService` cleared `v3` instead of `v4`. [RESOLVED Phase 3] Synced invalidation to `v4`.
     - ⚠️ Profile Truncation: `adManagementService.approveAd` dropped fields. [RESOLVED Phase 3] Full sync + user points hydration into `ActivePartners`.
+    - ⚠️ Thumbnail Heavy Stall & Double Lazy: `imageUtils` defaulted to `=w1000` on 155px cards, stalling Google CDN, while `loading="lazy"` duplicated `IntersectionObserver`. [RESOLVED] Scaled to `=w400`, removed native lazy tag, added cache ref check.
+    - ⚠️ Mount Read Duplication: Concurrent calls on mount fired 2x Firebase reads. [RESOLVED] Added `inFlightFetchPromise` lock in `partnerLocationService.js`.
+    - ⚠️ Lingering Background Task: Firebase SDK holds event loop open if `process.exit(0)` is omitted in test scripts, causing UI spinner to hang. [RESOLVED] Enforce `process.exit(0)` in all verification scripts and kill tasks immediately.
   </pitfalls_and_lessons>
 </ssr_memory>
