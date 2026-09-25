@@ -222,6 +222,9 @@ export const useAdManager = (user) => {
 
     // 🚀 Instant Toggle (0ms Optimistic UI update across both tabs)
     setAds(prevAds => prevAds.map(item => item.id === ad.id ? { ...item, status: nextStatus, isActive: !isCurrentlyActive } : item));
+    if (businessCardAd && businessCardAd.id === ad.id) {
+      setBusinessCardAd(prev => ({ ...prev, status: nextStatus, isActive: !isCurrentlyActive }));
+    }
 
     try {
       await toggleAdStatus(ad.id, ad.status, ad.type);
@@ -231,6 +234,9 @@ export const useAdManager = (user) => {
       console.error("🔥 Error toggling status:", err);
       // Rollback state on error
       setAds(prevAds => prevAds.map(item => item.id === ad.id ? { ...item, status: ad.status } : item));
+      if (businessCardAd && businessCardAd.id === ad.id) {
+        setBusinessCardAd(prev => ({ ...prev, status: ad.status, isActive: ad.isActive }));
+      }
       showToast("เกิดข้อผิดพลาดในการเปลี่ยนสถานะโฆษณา", 'error');
     }
   };

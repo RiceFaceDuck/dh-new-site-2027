@@ -89,6 +89,16 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
     match = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
     if (match) return updateLocation(parseFloat(match[1]), parseFloat(match[2]));
 
+    // 3. หาพิกัดจาก URL ปักหมุด Google Maps แบบ !3d...!4d...
+    match = text.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (match) return updateLocation(parseFloat(match[1]), parseFloat(match[2]));
+
+    // 4. หาพิกัดจาก Query Parameter (เช่น ?lat=13.956&lng=100.567)
+    match = text.match(/[?&]lat=(-?\d+\.\d+)[^&\s]*[?&]l(?:ng|on)=(-?\d+\.\d+)/i);
+    if (match) return updateLocation(parseFloat(match[1]), parseFloat(match[2]));
+    match = text.match(/[?&]l(?:ng|on)=(-?\d+\.\d+)[^&\s]*[?&]lat=(-?\d+\.\d+)/i);
+    if (match) return updateLocation(parseFloat(match[2]), parseFloat(match[1]));
+
     showToast('ไม่พบตัวเลขพิกัดในข้อความ กรุณาคัดลอกเฉพาะ "ตัวเลขพิกัด" (เช่น 13.956842, 100.567251) จาก Google Maps มาวางครับ', 'error');
   };
 

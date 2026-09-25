@@ -34,5 +34,8 @@
 - ⚠️ Store Profile Fallback (FIXED): Always maintain fallback read from `artifacts` when `users/{uid}/storeProfile/main` does not yet exist to prevent existing user data disappearing.
 - ⚠️ Avatar CDN Block (FIXED): Set `referrerPolicy="no-referrer"` and `onError` on Google photo avatars to prevent 403 blocks on localhost.
 - ⚠️ Nominatim 403 Rate Limit (FIXED Watchlist): Applied in-memory `geocodeCache`, 600ms debounce, and AbortController to reverse geocoding.
+- ⚠️ Rules Re-inspection Barrier (FIXED Review 1): Allowed ad owners to submit for re-inspection (`status: pending`, `isActive: false`) while keeping stats protected.
+- ⚠️ Backoffice SSOT Resolution (FIXED Review 1): `adManagementService` now checks `partner_ads` first before legacy collections for approve/reject/pause.
+- ⚠️ Exotic Coordinates Parsing (FIXED Review 1): Supported `!3d!4d` Google Maps pins and URL parameter formats in `StoreProfileLocation`.
 </pitfalls_and_lessons>
 </ssr_memory>

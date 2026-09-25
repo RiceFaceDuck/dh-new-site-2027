@@ -110,13 +110,19 @@ export const adManagementService = {
    */
   approveAd: async (adId, taskId) => {
     try {
-      const specificCol = getSpecificAdsCollectionPath(adId);
-      const adRef = doc(collection(db, getCollectionPath(specificCol)), adId);
-      
-      const adSnap = await getDoc(adRef);
-      if (!adSnap.exists()) throw new Error("ไม่พบข้อมูลโฆษณา");
-      const adData = adSnap.data();
+      // 🚀 SSOT Resilient Resolution: ตรวจสอบ partner_ads เป็นหลัก และ fallback หา legacy collection
+      const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
+      const partnerSnap = await getDoc(partnerAdRef);
 
+      const specificCol = getSpecificAdsCollectionPath(adId);
+      const legacyRef = specificCol !== 'partner_ads' ? doc(collection(db, getCollectionPath(specificCol)), adId) : null;
+      const legacySnap = legacyRef ? await getDoc(legacyRef) : null;
+
+      if (!partnerSnap.exists() && (!legacySnap || !legacySnap.exists())) {
+        throw new Error("ไม่พบข้อมูลโฆษณา");
+      }
+
+      const adData = partnerSnap.exists() ? partnerSnap.data() : legacySnap.data();
       const batch = writeBatch(db);
       
       const updatePayload = {
@@ -125,11 +131,11 @@ export const adManagementService = {
         updatedAt: serverTimestamp()
       };
       
-      batch.update(adRef, updatePayload);
-
-      if (specificCol !== 'partner_ads') {
-        const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
+      if (partnerSnap.exists()) {
         batch.update(partnerAdRef, updatePayload);
+      }
+      if (legacySnap && legacySnap.exists()) {
+        batch.update(legacyRef, updatePayload);
       }
 
       // 🌟 THE FIX [Data Relationship]: Sync full store profile to ActivePartners upon approval
@@ -200,12 +206,19 @@ export const adManagementService = {
    */
   rejectAd: async (adId, taskId, reason = 'ผิดเงื่อนไขการให้บริการของ DH Notebook') => {
     try {
-      const specificCol = getSpecificAdsCollectionPath(adId);
-      const adRef = doc(collection(db, getCollectionPath(specificCol)), adId);
-      
-      const adSnap = await getDoc(adRef);
-      const adData = adSnap.exists() ? adSnap.data() : null;
+      // 🚀 SSOT Resilient Resolution: ตรวจสอบ partner_ads เป็นหลัก และ fallback หา legacy collection
+      const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
+      const partnerSnap = await getDoc(partnerAdRef);
 
+      const specificCol = getSpecificAdsCollectionPath(adId);
+      const legacyRef = specificCol !== 'partner_ads' ? doc(collection(db, getCollectionPath(specificCol)), adId) : null;
+      const legacySnap = legacyRef ? await getDoc(legacyRef) : null;
+
+      if (!partnerSnap.exists() && (!legacySnap || !legacySnap.exists())) {
+        throw new Error("ไม่พบข้อมูลโฆษณา");
+      }
+
+      const adData = partnerSnap.exists() ? partnerSnap.data() : legacySnap.data();
       const batch = writeBatch(db);
       
       const updatePayload = {
@@ -215,11 +228,11 @@ export const adManagementService = {
         updatedAt: serverTimestamp()
       };
       
-      batch.update(adRef, updatePayload);
-
-      if (specificCol !== 'partner_ads') {
-        const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
+      if (partnerSnap.exists()) {
         batch.update(partnerAdRef, updatePayload);
+      }
+      if (legacySnap && legacySnap.exists()) {
+        batch.update(legacyRef, updatePayload);
       }
 
       // 🌟 THE FIX [Data Relationship]: Restore from ActivePartners if rejected
@@ -274,11 +287,19 @@ export const adManagementService = {
    */
   pauseAd: async (adId) => {
     try {
+      // 🚀 SSOT Resilient Resolution: ตรวจสอบ partner_ads เป็นหลัก และ fallback หา legacy collection
+      const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
+      const partnerSnap = await getDoc(partnerAdRef);
+
       const specificCol = getSpecificAdsCollectionPath(adId);
-      const adRef = doc(collection(db, getCollectionPath(specificCol)), adId);
-      
-      const adSnap = await getDoc(adRef);
-      
+      const legacyRef = specificCol !== 'partner_ads' ? doc(collection(db, getCollectionPath(specificCol)), adId) : null;
+      const legacySnap = legacyRef ? await getDoc(legacyRef) : null;
+
+      if (!partnerSnap.exists() && (!legacySnap || !legacySnap.exists())) {
+        throw new Error("ไม่พบข้อมูลโฆษณา");
+      }
+
+      const adData = partnerSnap.exists() ? partnerSnap.data() : legacySnap.data();
       const updatePayload = {
         status: 'paused',
         isActive: false, // ปิดสวิตช์การแสดงผล
@@ -288,20 +309,17 @@ export const adManagementService = {
       
       const batch = writeBatch(db);
       
-      batch.update(adRef, updatePayload);
-
-      if (specificCol !== 'partner_ads') {
-        const partnerAdRef = doc(collection(db, getCollectionPath('partner_ads')), adId);
+      if (partnerSnap.exists()) {
         batch.update(partnerAdRef, updatePayload);
+      }
+      if (legacySnap && legacySnap.exists()) {
+        batch.update(legacyRef, updatePayload);
       }
 
       // 🌟 THE FIX [Data Relationship]: Remove from ActivePartners if paused
-      if (adSnap.exists()) {
-        const adData = adSnap.data();
-        if (adData.type === 'BUSINESS_CARD' && adData.ownerId) {
-           const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), adData.ownerId);
-           batch.delete(activePartnerRef);
-        }
+      if (adData && adData.type === 'BUSINESS_CARD' && adData.ownerId) {
+         const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), adData.ownerId);
+         batch.delete(activePartnerRef);
       }
 
       await batch.commit();

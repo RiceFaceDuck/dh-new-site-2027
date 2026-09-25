@@ -54,6 +54,10 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
   const [avatarError, setAvatarError] = React.useState(false);
   const accountId = user?.accountId || user?.uid?.substring(0,8)?.toUpperCase() || 'SYS-ADMIN';
 
+  React.useEffect(() => {
+    setAvatarError(false);
+  }, [user?.photoURL]);
+
   const handleCopyId = () => {
     navigator.clipboard.writeText(accountId);
     setCopied(true);

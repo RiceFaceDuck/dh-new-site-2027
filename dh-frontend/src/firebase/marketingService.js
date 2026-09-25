@@ -1,7 +1,7 @@
 import { db } from './config';
 import { 
   collection, doc, getDocs, getDoc, query, where, 
-  serverTimestamp, writeBatch, limit, updateDoc 
+  serverTimestamp, writeBatch, limit, updateDoc, deleteDoc 
 } from 'firebase/firestore';
 
 import { trackAdView, trackAdClick, logImpression, logClick } from './marketingAnalyticsService';
@@ -151,6 +151,7 @@ export const marketingService = {
         type: adType, 
         ownerId: userId,
         status: 'pending', 
+        isActive: false,
         creditLimit: creditLimitVal, 
         updatedAt: serverTimestamp()
       };
@@ -257,6 +258,7 @@ export const marketingService = {
       // 🚀 SSOT: ตรวจสอบและอัปเดตที่ partner_ads เป็นหลัก (1 Read)
       const primaryRef = doc(db, getCollectionPath('partner_ads'), adId);
       const primarySnap = await getDoc(primaryRef);
+      let adDocData = primarySnap.exists() ? primarySnap.data() : null;
 
       if (primarySnap.exists()) {
         await updateDoc(primaryRef, updatePayload);
@@ -266,9 +268,19 @@ export const marketingService = {
         for (const col of legacyCols) {
           const snap = await getDoc(doc(db, getCollectionPath(col), adId));
           if (snap.exists()) {
+            adDocData = snap.data();
             await updateDoc(snap.ref, updatePayload);
             break;
           }
+        }
+      }
+
+      // ถ้าเป็นการพักโฆษณานามบัตร (BUSINESS_CARD) ให้ลบออกจาก ActivePartners เพื่อไม่ให้แสดงบนเรดาร์
+      if (newStatus === 'paused' && adDocData && adDocData.type === 'BUSINESS_CARD' && adDocData.ownerId) {
+        try {
+          await deleteDoc(doc(db, getCollectionPath('ActivePartners'), adDocData.ownerId));
+        } catch (e) {
+          console.warn("ActivePartners sync on pause warning:", e);
         }
       }
 
@@ -284,17 +296,20 @@ export const marketingService = {
     if (!userId || !adId) return false;
     try {
       const updatePayload = {
-        status: 'PENDING',
+        status: 'pending',
+        isActive: false,
         updatedAt: serverTimestamp(),
         resubmittedAt: serverTimestamp()
       };
 
       let adData = {};
+      let targetRef = null;
       const primaryRef = doc(db, getCollectionPath('partner_ads'), adId);
       const primarySnap = await getDoc(primaryRef);
 
       if (primarySnap.exists()) {
         adData = primarySnap.data();
+        targetRef = primaryRef;
       } else {
         // Fallback สำหรับคอลเลกชันเก่า
         const legacyCols = ['billboard_ads', 'user_sku_ads'];
@@ -302,14 +317,15 @@ export const marketingService = {
           const snap = await getDoc(doc(db, getCollectionPath(col), adId));
           if (snap.exists()) {
             adData = snap.data();
+            targetRef = snap.ref;
             break;
           }
         }
       }
 
       const batch = writeBatch(db);
-      if (primarySnap.exists()) {
-        batch.update(primaryRef, updatePayload);
+      if (targetRef) {
+        batch.update(targetRef, updatePayload);
       }
 
       // ดันคำร้องใหม่ไปยัง todos เพื่อให้ผู้จัดการเห็นอยู่ด้านบนสุด

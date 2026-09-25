@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Search, ShoppingCart, User, LogOut, Wallet, LayoutDashboard, ChevronDown, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
@@ -22,6 +22,10 @@ const Navbar = () => {
     handleLogout,
     getInitial,
   } = useNavbarAuth();
+
+  useEffect(() => {
+    setNavAvatarError(false);
+  }, [currentUser?.photoURL]);
 
   // ปิด Dropdown เมื่อ Scroll ลง
   const handleScrollDown = useCallback(() => {
