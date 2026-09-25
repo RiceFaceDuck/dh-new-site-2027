@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Megaphone, X, ArrowRight } from 'lucide-react';
-import { fetchAllActivePartners } from '../../firebase/partnerLocationService';
+import { partnerService } from '../../firebase/partnerService';
 
 const TopPartnerBanner = () => {
   const [partner, setPartner] = useState(null);
@@ -10,7 +10,8 @@ const TopPartnerBanner = () => {
     let isMounted = true;
     const fetchPartner = async () => {
       try {
-        const activePartners = await fetchAllActivePartners();
+        // 🚀 เรียกใช้ผ่าน partnerService object ที่เรา export มาแล้ว
+        const activePartners = await partnerService.getActivePartners();
         if (isMounted && activePartners && activePartners.length > 0) {
            const randomIndex = Math.floor(Math.random() * activePartners.length);
            setPartner(activePartners[randomIndex]);
@@ -25,11 +26,6 @@ const TopPartnerBanner = () => {
 
   if (!partner || !isVisible) return null;
 
-  const rawMapUrl = partner.googleMapsUrl || partner.googleMapLink || partner.mapsUrl || '';
-  const mapUrl = rawMapUrl && !rawMapUrl.startsWith('http') 
-    ? `https://www.google.com/maps?q=${encodeURIComponent(rawMapUrl)}`
-    : rawMapUrl;
-
   return (
     <div className="bg-linear-to-r from-[#0870B8] to-cyan-600 text-white relative z-60 animate-in slide-in-from-top-full duration-500">
       <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -43,9 +39,9 @@ const TopPartnerBanner = () => {
           </p>
         </div>
         <div className="flex items-center gap-4 shrink-0 ml-4">
-           {mapUrl && (
+           {partner.googleMapsUrl && (
              <button 
-               onClick={() => window.open(mapUrl, '_blank')}
+               onClick={() => window.open(partner.googleMapsUrl, '_blank')}
                className="text-[10px] sm:text-xs font-bold bg-white text-[#0870B8] px-3 py-1 rounded-full hover:bg-slate-100 transition-colors flex items-center gap-1 shadow-xs whitespace-nowrap"
              >
                ดูแผนที่ <ArrowRight size={12} />

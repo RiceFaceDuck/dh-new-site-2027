@@ -15,10 +15,6 @@ const appId = typeof window !== "undefined" && typeof window.__app_id !== "undef
 let activeAdsCache = { data: {}, lastFetch: {} };
 const CACHE_LIFETIME = 5 * 60 * 1000; 
 
-// 🛡️ Quota Shield: แคชโฆษณาตามรายผู้ใช้เพื่อป้องกันการยิง 3 Collection ซ้ำซ้อน
-const userAdsCache = new Map();
-const USER_ADS_CACHE_TTL = 3 * 60 * 1000; 
-
 export const marketingService = {
   
   detectPlatform: (url) => {
@@ -229,15 +225,7 @@ export const marketingService = {
     }
   },
 
-  getUserPartnerAds: async (userId, forceRefresh = false) => {
-    if (!userId) return [];
-    if (!forceRefresh && userAdsCache.has(userId)) {
-      const cached = userAdsCache.get(userId);
-      if (Date.now() - cached.timestamp < USER_ADS_CACHE_TTL) {
-        return cached.data;
-      }
-    }
-
+  getUserPartnerAds: async (userId) => {
     try {
       const p1 = getDocs(query(collection(db, getCollectionPath('partner_ads')), where('ownerId', '==', userId), limit(50)));
       const p2 = getDocs(query(collection(db, getCollectionPath('user_sku_ads')), where('ownerId', '==', userId), limit(50)));
@@ -253,10 +241,10 @@ export const marketingService = {
 
       const uniqueAds = Array.from(new Map(adsList.map(item => [item.id, item])).values());
       uniqueAds.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      userAdsCache.set(userId, { data: uniqueAds, timestamp: Date.now() });
       return uniqueAds;
     } catch (error) {
-      console.error("🔥 Error:", error);
+    console.error("🔥 Error:", error);
+
       return [];
     }
   },

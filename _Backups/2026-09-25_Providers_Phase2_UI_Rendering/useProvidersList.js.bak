@@ -79,10 +79,8 @@ export const useProvidersList = () => {
       result = result.map(p => {
         let distanceKm = null;
         let formattedDistance = null;
-        const lat = Number(p.latitude ?? p.lat);
-        const lng = Number(p.longitude ?? p.lng);
-        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-          distanceKm = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
+        if (p.latitude && p.longitude) {
+          distanceKm = calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude);
           formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${distanceKm.toFixed(1)} กม.`;
         }
         return { ...p, distanceKm, formattedDistance };
@@ -91,13 +89,8 @@ export const useProvidersList = () => {
 
     // Sort
     if (userLocation) {
-      // Sort by distance (nearest first, 0m handled properly with points as tie-breaker)
-      result.sort((a, b) => {
-        const distA = typeof a.distanceKm === 'number' ? a.distanceKm : Infinity;
-        const distB = typeof b.distanceKm === 'number' ? b.distanceKm : Infinity;
-        if (distA !== distB) return distA - distB;
-        return (b.points || 0) - (a.points || 0);
-      });
+      // Sort by distance (nearest first)
+      result.sort((a, b) => (a.distanceKm || Infinity) - (b.distanceKm || Infinity));
     } else {
       // Sort by points (highest first)
       result.sort((a, b) => (b.points || 0) - (a.points || 0));

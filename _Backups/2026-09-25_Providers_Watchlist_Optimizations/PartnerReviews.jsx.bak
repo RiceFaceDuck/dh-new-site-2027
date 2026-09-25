@@ -1,27 +1,112 @@
-import React from 'react';
-import { formatDate } from 'dh-shared';
-import { usePartnerReviews } from '../hooks/usePartnerReviews';
+import { useState, useEffect } from 'react';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, doc, limit } from 'firebase/firestore';
+import { db } from '../../../firebase/config';
+import { getCollectionPath, formatDate } from 'dh-shared';
+import { useToast } from '../../../context/ToastContext';
+
+
+
+// 🔐 App ID logic matching the rest of the app
+const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
 const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
-  const {
-    reviews,
-    newReview,
-    setNewReview,
-    rating,
-    setRating,
-    hoverRating,
-    setHoverRating,
-    isSubmitting,
-    replyText,
-    setReplyText,
-    replyingTo,
-    setReplyingTo,
-    isOwner,
-    avgRating,
-    handleSubmitReview,
-    handleToggleHeart,
-    handleSubmitReply
-  } = usePartnerReviews(partnerId, ownerId, currentUser);
+  const { showToast } = useToast();
+  const [reviews, setReviews] = useState([]);
+  const [newReview, setNewReview] = useState('');
+  const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [replyText, setReplyText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+
+  const isOwner = currentUser && (currentUser.uid === ownerId || currentUser.uid === partnerId);
+
+  useEffect(() => {
+    if (!partnerId) return;
+
+    const reviewsRef = collection(db, getCollectionPath('partner_reviews'), partnerId, 'comments');
+    const q = query(reviewsRef, orderBy('createdAt', 'desc'), limit(15));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedReviews = [];
+      snapshot.forEach((doc) => {
+        fetchedReviews.push({ id: doc.id, ...doc.data() });
+      });
+      setReviews(fetchedReviews);
+    });
+
+    return () => unsubscribe();
+  }, [partnerId]);
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!currentUser) return showToast('กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น', 'error');
+    if (!newReview.trim()) return showToast('กรุณาระบุความคิดเห็น', 'error');
+
+    try {
+      setIsSubmitting(true);
+      const reviewsRef = collection(db, getCollectionPath('partner_reviews'), partnerId, 'comments');
+      
+      await addDoc(reviewsRef, {
+        userId: currentUser.uid,
+        userName: currentUser.displayName || 'ผู้ใช้งาน',
+        userPhoto: currentUser.photoURL || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop',
+        rating: rating,
+        comment: newReview.trim(),
+        createdAt: serverTimestamp(),
+        ownerLiked: false,
+        ownerReply: null
+      });
+
+      setNewReview('');
+      setRating(5);
+    } catch (error) {
+      console.error('Error adding review:', error);
+      showToast('เกิดข้อผิดพลาดในการส่งรีวิว', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleHeart = async (reviewId, currentStatus) => {
+    if (!isOwner) return;
+    try {
+      const reviewRef = doc(db, getCollectionPath('partner_reviews'), partnerId, 'comments', reviewId);
+      await updateDoc(reviewRef, {
+        ownerLiked: !currentStatus
+      });
+    } catch (error) {
+      console.error('Error toggling heart:', error);
+    }
+  };
+
+  const handleSubmitReply = async (reviewId) => {
+    if (!isOwner) return;
+    if (!replyText.trim()) return;
+
+    try {
+      const reviewRef = doc(db, getCollectionPath('partner_reviews'), partnerId, 'comments', reviewId);
+      await updateDoc(reviewRef, {
+        ownerReply: {
+          text: replyText.trim(),
+          createdAt: new Date().toISOString()
+        }
+      });
+      setReplyingTo(null);
+      setReplyText('');
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      showToast('เกิดข้อผิดพลาดในการตอบกลับ', 'error');
+    }
+  };
+
+
+
+  // Calculate average rating
+  const avgRating = reviews.length > 0 
+    ? (reviews.reduce((acc, curr) => acc + (curr.rating || 0), 0) / reviews.length).toFixed(1)
+    : 0;
 
   return (
     <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8 mt-8">

@@ -9,9 +9,29 @@
  */
 export const getRenderableImageUrl = (url) => {
   if (!url) return '';
-  const match = String(url).match(/[-\w]{25,}/);
-  if (String(url).includes('drive.google.com') && match) {
-    return `https://lh3.googleusercontent.com/d/${match[0]}`;
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+
+  if (trimmed.includes('drive.google.com') || trimmed.includes('googleusercontent.com')) {
+    if (trimmed.includes('googleusercontent.com') && trimmed.includes('=w')) {
+      return trimmed;
+    }
+    const match = trimmed.match(/id=([a-zA-Z0-9_-]{15,})/) ||
+                  trimmed.match(/\/d\/([a-zA-Z0-9_-]{15,})/) ||
+                  trimmed.match(/([a-zA-Z0-9_-]{25,})/);
+    if (match) {
+      const driveId = match[1] || match[0];
+      return `https://lh3.googleusercontent.com/d/${driveId}=w1000`;
+    }
   }
-  return url;
+  return trimmed;
 };
+
+export const extractDriveId = (url) => {
+  if (!url) return null;
+  const str = String(url);
+  if (!str.includes('drive.google') && !str.includes('googleusercontent')) return null;
+  const match = str.match(/id=([a-zA-Z0-9_-]{15,})/) || str.match(/\/d\/([a-zA-Z0-9_-]{15,})/);
+  return match ? match[1] : null;
+};
+

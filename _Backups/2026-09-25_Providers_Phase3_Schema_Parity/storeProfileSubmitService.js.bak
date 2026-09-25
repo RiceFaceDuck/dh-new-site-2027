@@ -114,7 +114,6 @@ export const storeProfileSubmitService = {
       await batch.commit();
       
       // ล้างแคชเพื่อให้ระบบโหลดใหม่ (ใช้ localStorage เพื่อให้มีผลทุกแท็บ)
-      localStorage.removeItem(`active_partners_cache_v4_${appId}`);
       localStorage.removeItem(`active_partners_cache_v3_${appId}`);
       
       return finalStoreData;

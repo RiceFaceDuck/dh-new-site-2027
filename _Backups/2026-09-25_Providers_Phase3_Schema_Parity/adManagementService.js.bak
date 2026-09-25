@@ -167,24 +167,10 @@ export const adManagementService = {
         batch.update(partnerAdRef, updatePayload);
       }
 
-      // 🌟 THE FIX [Data Relationship]: Sync full store profile to ActivePartners upon approval
+      // 🌟 THE FIX [Data Relationship]: Sync to ActivePartners only upon approval
       if (adData.type === 'BUSINESS_CARD') {
          const partnerId = adData.ownerId;
          const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
-
-         // Fetch user points from users/{partnerId}
-         let points = 0;
-         try {
-           const userRef = doc(db, getCollectionPath('users'), partnerId);
-           const userSnap = await getDoc(userRef);
-           if (userSnap.exists()) {
-             const uData = userSnap.data();
-             points = Number(uData.creditPoints || uData.points || 0);
-           }
-         } catch (e) {
-           console.warn("Could not fetch user points for partner sync:", e);
-         }
-
          batch.set(activePartnerRef, {
             partnerId: partnerId,
             storeName: adData.partnerName || adData.title || '',
@@ -196,18 +182,6 @@ export const adManagementService = {
             latitude: Number(adData.latitude || 0),
             longitude: Number(adData.longitude || 0),
             storeImage: adData.imageUrl || '',
-            address: adData.address || '',
-            landmarks: adData.landmarks || '',
-            richDescription: adData.richDescription || '',
-            galleryImages: Array.isArray(adData.galleryImages) ? adData.galleryImages : [],
-            openHours: adData.openHours || '',
-            websiteUrl: adData.websiteUrl || '',
-            youtubeUrl: adData.youtubeUrl || '',
-            tiktokUrl: adData.tiktokUrl || '',
-            shopeeUrl: adData.shopeeUrl || '',
-            lazadaUrl: adData.lazadaUrl || '',
-            points: points,
-            isActive: true,
             updatedAt: serverTimestamp()
          }, { merge: true });
       }
