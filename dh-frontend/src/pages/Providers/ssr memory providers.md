@@ -36,6 +36,6 @@
     - ⚠️ Profile Truncation: `adManagementService.approveAd` dropped fields. [RESOLVED Phase 3] Full sync + user points hydration into `ActivePartners`.
     - ⚠️ Thumbnail Heavy Stall & Double Lazy: `imageUtils` defaulted to `=w1000` on 155px cards, stalling Google CDN, while `loading="lazy"` duplicated `IntersectionObserver`. [RESOLVED] Scaled to `=w400`, removed native lazy tag, added cache ref check.
     - ⚠️ Mount Read Duplication: Concurrent calls on mount fired 2x Firebase reads. [RESOLVED] Added `inFlightFetchPromise` lock in `partnerLocationService.js`.
-    - ⚠️ Lingering Background Task: Firebase SDK holds event loop open if `process.exit(0)` is omitted in test scripts, causing UI spinner to hang. [RESOLVED] Enforce `process.exit(0)` in all verification scripts and kill tasks immediately.
+    - ⚠️ Image Aspect Ratio Squish: `LazyImage` wrapper div intercepted `object-*` while inner `img` received none, defaulting to `object-fit: fill`. [RESOLVED] Extracted `object-*` directly onto `img` and set `object-cover` on `PartnerCard.jsx`.
   </pitfalls_and_lessons>
 </ssr_memory>

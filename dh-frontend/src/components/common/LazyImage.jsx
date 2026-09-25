@@ -90,7 +90,13 @@ const LazyImage = ({
     if (onLoad) onLoad(e);
   };
 
-  const imgObjectFit = (className + ' ' + imgClassName).includes('object-') ? '' : 'object-contain';
+  // Extract object-fit class from imgClassName or className, defaulting to object-contain
+  const extractObjectFit = (classes) => {
+    const match = (classes || '').match(/\bobject-(contain|cover|fill|none|scale-down)\b/);
+    return match ? match[0] : '';
+  };
+
+  const imgObjectFit = extractObjectFit(imgClassName) || extractObjectFit(className) || 'object-contain';
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
