@@ -225,9 +225,11 @@ service cloud.firestore {
 
     // 2.0 แคตตาล็อกและสารบัญค้นหา (Catalogs & Search Index)
     match /catalogs/{docId} {
-      // 🛡️ Public Catalog Artifacts: อนุญาตให้อ่านเฉพาะแคชสาธารณะสำหรับหน้าร้านลูกค้า
-      // เอกสารภายใน, ราคาทุน และ search_index (search_index_p*) สงวนสิทธิ์เฉพาะ isStaff()
+      // 🛡️ Public Catalog Artifacts: อนุญาตให้อ่านเฉพาะแคชสาธารณะที่ระบุไว้ใน Whitelist
+      // เอกสารภายในและข้อมูลลูกค้า (customers_*, sync_pending_changes, inventory_summary_*, inventory_stats_snapshot) สงวนสิทธิ์เฉพาะ isStaff()
       allow read: if (
+        docId == 'search_index' ||
+        docId.matches('^search_index_p[0-9]+$') ||
         docId.matches('^cat_.*') ||
         docId == 'home_chunk' ||
         docId == 'home_showcase' ||
@@ -692,7 +694,6 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isManagerOrAdmin() || (isStaff() && (
         docId == 'bigseller_templates' ||
-        docId == 'inventory_meta' ||
         (docId == 'credit_config' && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'adClickCost', 'adImpressionCost', 'adImpressionCount', 'adMinBudget', 'rules'
         ]))

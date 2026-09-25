@@ -1,7 +1,6 @@
-import { memo } from 'react';
 import { Search as SearchIcon, PlusCircle, X, RefreshCw, FilterX, HelpCircle, Keyboard } from 'lucide-react';
 
-function SearchHeader({
+export default function SearchHeader({
   search1, setSearch1, search2, setSearch2, search3, setSearch3,
   stockFilter, setStockFilter,
   loading, resetSearch, forceSync, searchInputRef, openReportModal, openGuideModal
@@ -108,5 +107,3 @@ function SearchHeader({
     </div>
   );
 }
-
-export default memo(SearchHeader);

@@ -165,29 +165,25 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
       return mergedProducts;
     }
 
-    const term1 = (debouncedSearch1 || '').trim().toLowerCase();
-    const term2 = (debouncedSearch2 || '').trim().toLowerCase();
-    const term3 = (debouncedSearch3 || '').trim().toLowerCase();
-
-    const safeArrayMatch = (arr, term) =>
-      Array.isArray(arr) && arr.some((val) => typeof val === 'string' && val.toLowerCase().includes(term));
+    const term1 = debouncedSearch1.toLowerCase();
+    const term2 = debouncedSearch2.toLowerCase();
+    const term3 = debouncedSearch3.toLowerCase();
 
     const checkMatch = (product, term) => {
       if (!term) return true;
       return (
-        (product.name && typeof product.name === 'string' && product.name.toLowerCase().includes(term)) ||
-        (product.sku && typeof product.sku === 'string' && product.sku.toLowerCase().includes(term)) ||
-        (product.barcode && String(product.barcode).toLowerCase().includes(term)) ||
-        (product.brand && typeof product.brand === 'string' && product.brand.toLowerCase().includes(term)) ||
-        (product.category && typeof product.category === 'string' && product.category.toLowerCase().includes(term)) ||
-        (product.warehouseLocation && typeof product.warehouseLocation === 'string' && product.warehouseLocation.toLowerCase().includes(term)) ||
-        (product.shortDescription && typeof product.shortDescription === 'string' && product.shortDescription.toLowerCase().includes(term)) ||
-        (product.description && typeof product.description === 'string' && product.description.toLowerCase().includes(term)) ||
-        (product.sellingModel && typeof product.sellingModel === 'string' && product.sellingModel.toLowerCase().includes(term)) ||
-        safeArrayMatch(product.compatibleModels, term) ||
-        safeArrayMatch(product.compatiblePartNumbers, term) ||
-        safeArrayMatch(product.substituteSkus, term) ||
-        safeArrayMatch(product.tags, term)
+        (product.name && product.name.toLowerCase().includes(term)) ||
+        (product.sku && product.sku.toLowerCase().includes(term)) ||
+        (product.brand && product.brand.toLowerCase().includes(term)) ||
+        (product.category && product.category.toLowerCase().includes(term)) ||
+        (product.warehouseLocation && product.warehouseLocation.toLowerCase().includes(term)) ||
+        (product.shortDescription && product.shortDescription.toLowerCase().includes(term)) ||
+        (product.description && product.description.toLowerCase().includes(term)) ||
+        (product.sellingModel && product.sellingModel.toLowerCase().includes(term)) ||
+        (product.compatibleModels && product.compatibleModels?.some((m) => m.toLowerCase().includes(term))) ||
+        (product.compatiblePartNumbers && product.compatiblePartNumbers?.some((pn) => pn.toLowerCase().includes(term))) ||
+        (product.substituteSkus && product.substituteSkus?.some((sub) => sub.toLowerCase().includes(term))) ||
+        (product.tags && product.tags?.some((t) => t.toLowerCase().includes(term)))
       );
     };
 

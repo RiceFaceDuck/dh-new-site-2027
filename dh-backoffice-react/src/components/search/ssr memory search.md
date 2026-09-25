@@ -35,10 +35,16 @@
     - Do not auto-fetch full product history upon SKU selection; keep it strictly on-demand.
     - Port availability checks on Windows must use Node fetch rather than PowerShell Invoke-WebRequest to avoid false negatives.
     - Orders and claims history queries require authenticated staff context (e.g. ai.manager) to satisfy Firestore Security Rules.
+    - Note submit callbacks must forward localLog to handleAddNoteSuccess to avoid inserting undefined into historyLogs.
+    - Search token matching on arrays (compatibleModels, tags) must use safeArrayMatch to guard against non-string catalog values.
+    - SKU live fetch in useProductSearch must use sequence lock (liveFetchSeq) to prevent stale overwrites and race conditions during rapid keyboard navigation.
+    - Alternate search_catalog_chunk_* fallback removed from inventorySyncMetaService to strictly guarantee <= 8 cold-start reads.
+    - Product list selection highlight must match strictly on product.sku to avoid double selection visual glitches.
+    - Main search presentation panels (Header, List, Detail, History) are wrapped in React.memo with log sorting memoized to avoid keystroke re-renders.
   </pitfalls_and_lessons>
 
   <watchlist>
     1. SRP Split: HistoryLogPanel.jsx (20KB) bundles UI, notes input, pinning, and date formatting; useProductSearch.js bundles shortcuts, navigation, and modal states.
-    2. Quota Optimization: useProductSearch.js:121 unthrottled live fetch on item select triggers reads during rapid arrow scrolling. Recommend Cache-First guard. (Est: 15-20m, Risk 3-5%).
+    2. God Service Split: inventorySyncMetaService.js (36KB) bundles IDB, dual hash checksums, and sync listeners.
   </watchlist>
 </grimoire>

@@ -1,9 +1,8 @@
-import { memo } from 'react';
 import { Search as SearchIcon, Copy, Settings, Check } from 'lucide-react';
 import ProductDetailHeader from './detail/ProductDetailHeader';
 import ProductDetailAttributes from './detail/ProductDetailAttributes';
 
-function ProductDetailPanel({
+export default function ProductDetailPanel({
   selectedProduct, highlightData, copySuccess, handleCopyChat, 
   showSuffixSettings, setShowSuffixSettings, chatSuffix, handleSaveSuffix,
   setIsImageModalOpen, getStockStatus, 
@@ -93,5 +92,3 @@ function ProductDetailPanel({
     </div>
   );
 }
-
-export default memo(ProductDetailPanel);

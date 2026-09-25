@@ -461,6 +461,24 @@ export async function fetchBundledCatalogChunks() {
         }
       });
 
+      // Alternate naming fallback if search_index_p* returned empty
+      if (allItems.length === 0 && chunkCount > 0) {
+        const altPromises = [];
+        for (let i = 0; i < chunkCount; i++) {
+          const altRef = doc(db, getCollectionPath('catalogs'), `search_catalog_chunk_${i}`);
+          altPromises.push(getDoc(altRef).catch(() => null));
+        }
+        const altSnaps = await Promise.all(altPromises);
+        altSnaps.forEach(snap => {
+          if (snap && snap.exists()) {
+            const cData = snap.data();
+            const items = cData.items || cData.products || [];
+            if (Array.isArray(items)) {
+              allItems.push(...items);
+            }
+          }
+        });
+      }
 
       if (allItems.length > 0) {
         return {

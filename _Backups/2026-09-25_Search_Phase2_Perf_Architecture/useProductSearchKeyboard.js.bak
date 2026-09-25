@@ -39,23 +39,25 @@ export function useProductSearchKeyboard(
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        if (filteredProducts.length === 0) return;
-        const nextIndex = Math.min(selectedIndex + 1, filteredProducts.length - 1);
-        setSelectedIndex(nextIndex);
-        if (filteredProducts[nextIndex]) {
-          handleSelectProduct(filteredProducts[nextIndex], nextIndex);
-        }
-        if (nextIndex >= filteredProducts.length - 3 && hasMore && loadMore) {
-          loadMore();
-        }
+        setSelectedIndex(prev => {
+          const nextIndex = Math.min(prev + 1, filteredProducts.length - 1);
+          if (filteredProducts[nextIndex]) {
+            handleSelectProduct(filteredProducts[nextIndex], nextIndex);
+          }
+          if (nextIndex >= filteredProducts.length - 3 && hasMore && loadMore) {
+            loadMore();
+          }
+          return nextIndex;
+        });
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        if (filteredProducts.length === 0) return;
-        const nextIndex = Math.max(selectedIndex - 1, 0);
-        setSelectedIndex(nextIndex);
-        if (filteredProducts[nextIndex]) {
-          handleSelectProduct(filteredProducts[nextIndex], nextIndex);
-        }
+        setSelectedIndex(prev => {
+          const nextIndex = Math.max(prev - 1, 0);
+          if (filteredProducts[nextIndex]) {
+            handleSelectProduct(filteredProducts[nextIndex], nextIndex);
+          }
+          return nextIndex;
+        });
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (filteredProducts[selectedIndex]) {

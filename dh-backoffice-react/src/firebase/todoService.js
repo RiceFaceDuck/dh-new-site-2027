@@ -36,6 +36,7 @@ export const todoService = {
   clearMockWithdrawals: todoWalletService.clearMockWithdrawals,
   createStaffApprovalTask: todoStaffService.createStaffApprovalTask,
   requestProductDeletion: todoInventoryService.requestProductDeletion,
+  requestKnowledgeApproval: todoInventoryService.requestKnowledgeApproval,
 
   // Helper Function
   isManagerTask: (taskType) => {

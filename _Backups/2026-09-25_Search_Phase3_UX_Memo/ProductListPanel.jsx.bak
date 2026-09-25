@@ -1,7 +1,7 @@
-import { useRef, useEffect, memo } from 'react';
-import { PackageX, Search as SearchIcon, Inbox, PlusCircle, Loader2 } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { PackageX, Search as SearchIcon, Inbox, PlusCircle, Loader2, Camera } from 'lucide-react';
 
-function ProductListPanel({
+export default function ProductListPanel({
   filteredProducts = [],
   totalFilteredCount = 0,
   hasMore = false,
@@ -55,8 +55,8 @@ function ProductListPanel({
           <>
             {filteredProducts.map((product, index) => {
               const stockStat = getStockStatus(product.stockQuantity, product.bufferStock);
-              // Highlight strictly on selectedProduct SKU, or fallback to selectedIndex
-              const isSelected = selectedProduct ? (selectedProduct.sku === product.sku) : (selectedIndex === index);
+              // Highlight if clicked (selectedProduct) OR if navigated via keyboard (selectedIndex)
+              const isSelected = (selectedProduct?.id === product.id) || (selectedIndex === index);
               
               const isOutOfStock = product.stockQuantity <= 0;
               const isLowStock = !isOutOfStock && product.stockQuantity <= (product.bufferStock || 2);
@@ -172,5 +172,3 @@ function ProductListPanel({
     </div>
   );
 }
-
-export default memo(ProductListPanel);

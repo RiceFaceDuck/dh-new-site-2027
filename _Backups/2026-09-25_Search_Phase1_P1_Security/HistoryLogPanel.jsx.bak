@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect } from 'react';
 import { History, Maximize2, Trash2, Send, Pin, PinOff } from 'lucide-react';
 
 import { safeJsonParse } from 'dh-shared';
@@ -23,9 +23,7 @@ const formatDetailText = (rawDetails, actionText) => {
         if (parsed && typeof parsed === 'object') {
           target = parsed;
         }
-      } catch {
-        // Ignore JSON parse errors for non-JSON strings
-      }
+      } catch (e) {}
     } else {
       return target;
     }
@@ -70,9 +68,7 @@ const LogItem = ({ log, dateStr, timeStr, actionMethod, actor, isPinned, onToggl
       if (typeof parsed === 'object' && parsed !== null) {
         rawDetails = parsed;
       }
-      } catch {
-        // Ignore JSON parse errors for non-JSON strings
-      }
+    } catch(e) {}
   }
   
   if (typeof rawDetails === 'object' && rawDetails !== null) {
@@ -168,35 +164,33 @@ const LogItem = ({ log, dateStr, timeStr, actionMethod, actor, isPinned, onToggl
   );
 };
 
-function HistoryLogPanel({ 
+export default function HistoryLogPanel({ 
   selectedProduct, setIsHistoryModalOpen, loadingHistory, historyLogs,
   isHistoryLoaded = false, handleLoadHistory = () => {},
   newComment, setNewComment, handleAddComment, isSubmittingComment, handleAddNoteSuccess, handleTogglePinComment, handleDeleteNote
 }) {
   const [visibleLimit, setVisibleLimit] = useState(21);
-  const pinnedComments = useMemo(() => selectedProduct?.pinnedComments || [], [selectedProduct?.pinnedComments]);
-  const deletedNotes = useMemo(() => selectedProduct?.deletedNotes || [], [selectedProduct?.deletedNotes]);
+  const pinnedComments = selectedProduct?.pinnedComments || [];
+  const deletedNotes = selectedProduct?.deletedNotes || [];
   
   useEffect(() => {
     setVisibleLimit(21);
   }, [selectedProduct?.sku]);
 
-  // กรองประวัติและจัดเรียงโดยใช้ useMemo เพื่อป้องกันการคำนวณซ้ำซ้อนตอนพิมพ์ค้นหา
-  const { mainLogs } = useMemo(() => {
-    const validLogs = (historyLogs || []).filter(log => log && log.id && !deletedNotes.includes(log.id));
-    const getTime = (t) => {
-      if (!t) return 0;
-      if (typeof t.toMillis === 'function') return t.toMillis();
-      if (t.seconds) return t.seconds * 1000;
-      if (typeof t === 'string' || typeof t === 'number') return new Date(t).getTime();
-      return 0;
-    };
-    const sorted = [...validLogs]
-      .filter(log => !pinnedComments.some(c => c.id === log.id))
-      .sort((a, b) => getTime(b.timestamp) - getTime(a.timestamp));
-
-    return { mainLogs: sorted };
-  }, [historyLogs, deletedNotes, pinnedComments]);
+  // กรองประวัติที่ถูกผู้ใช้กด "ลบ" (ซ่อน) ออกไป
+  const displayLogs = historyLogs.filter(log => !deletedNotes.includes(log.id));
+  const mainLogs = [...displayLogs]
+    .filter(log => !pinnedComments.some(c => c.id === log.id))
+    .sort((a, b) => {
+      const getTime = (t) => {
+        if (!t) return 0;
+        if (typeof t.toMillis === 'function') return t.toMillis();
+        if (t.seconds) return t.seconds * 1000;
+        if (typeof t === 'string' || typeof t === 'number') return new Date(t).getTime();
+        return 0;
+      };
+      return getTime(b.timestamp) - getTime(a.timestamp);
+    });
 
   const visibleLogs = mainLogs.slice(0, visibleLimit);
   const hasMoreLogs = mainLogs.length > visibleLimit;
@@ -351,16 +345,16 @@ function HistoryLogPanel({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) { 
                       e.preventDefault(); 
-                      handleAddComment((localLog) => {
-                        handleAddNoteSuccess && handleAddNoteSuccess(localLog);
+                      handleAddComment(() => {
+                        handleAddNoteSuccess && handleAddNoteSuccess();
                         if (!isHistoryLoaded) handleLoadHistory();
                       }); 
                     }
                   }}
                 />
                 <button
-                  onClick={() => handleAddComment((localLog) => {
-                    handleAddNoteSuccess && handleAddNoteSuccess(localLog);
+                  onClick={() => handleAddComment(() => {
+                    handleAddNoteSuccess && handleAddNoteSuccess();
                     if (!isHistoryLoaded) handleLoadHistory();
                   })}
                   disabled={!newComment.trim() || isSubmittingComment}
@@ -386,5 +380,3 @@ function HistoryLogPanel({
     </div>
   );
 }
-
-export default memo(HistoryLogPanel);

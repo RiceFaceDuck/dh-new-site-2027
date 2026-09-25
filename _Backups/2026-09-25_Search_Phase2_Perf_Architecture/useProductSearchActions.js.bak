@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { auth } from '../../firebase/config';
+import { auth, db } from '../../firebase/config';
 import { inventoryService } from '../../firebase/inventoryService';
 import { userService } from '../../firebase/userService';
-import { todoService } from '../../firebase/todoService';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export function useProductSearchActions(selectedProduct, searchInputs) {
   const [chatSuffix, setChatSuffix] = useState('ครับ');
@@ -73,14 +74,25 @@ export function useProductSearchActions(selectedProduct, searchInputs) {
           }
         }
 
-        await todoService.requestKnowledgeApproval({
-          selectedProduct,
-          knowledgeType: type,
-          typeLabel,
-          proposedValue: value.trim(),
-          requestedBy: currentUser?.uid || 'system',
-          requestedByName: userName,
-          role: 'Staff'
+        await addDoc(collection(db, getCollectionPath('todos')), {
+          type: 'KNOWLEDGE_APPROVAL',
+          title: `ขอเพิ่มข้อมูล ${typeLabel} สำหรับ ${selectedProduct.sku}`,
+          description: `พนักงานเสนอเพิ่มข้อมูล:\nSKU: ${selectedProduct.sku}\nข้อมูลที่เสนอ: ${value.trim()}`,
+          priority: "Medium",
+          status: "pending_manager",
+          referenceType: "Product",
+          referenceId: selectedProduct.sku,
+          payload: {
+            sku: selectedProduct.sku,
+            productName: selectedProduct.name,
+            knowledgeType: type,
+            proposedValue: value.trim()
+          },
+          createdByUid: currentUser?.uid || 'system',
+          createdByName: userName, 
+          handledBy: null, 
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
         alert('ส่งคำร้องเพิ่มข้อมูลสำเร็จ รอผู้จัดการตรวจสอบครับ 🚀');
       } catch (error) {

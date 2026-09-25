@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import useDebounce from '../../hooks/useDebounce';
 import { inventoryQueryService } from '../../firebase/inventory/inventoryQueryService';
 
@@ -60,21 +60,6 @@ export function useProductSearch() {
     setHistoryLogs(prev => [newLog, ...prev]);
   };
 
-  // Sync selectedProduct with filtered results when search/filter changes (UI-04)
-  useEffect(() => {
-    if (!selectedProduct) return;
-    const exists = filteredProducts.some(p => p.sku === selectedProduct.sku);
-    if (!exists) {
-      if (filteredProducts.length > 0) {
-        setSelectedProduct(filteredProducts[0]);
-        setSelectedIndex(0);
-      } else {
-        setSelectedProduct(null);
-        setSelectedIndex(0);
-      }
-    }
-  }, [filteredProducts, selectedProduct]);
-
   // 4. Logic for Actions (Report, Knowledge, Copy)
   const searchInputs = useMemo(() => ({ search1, search2, search3 }), [search1, search2, search3]);
   const actionHooks = useProductSearchActions(selectedProduct, searchInputs);
@@ -113,9 +98,7 @@ export function useProductSearch() {
     return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
-  const liveFetchSeq = useRef(0);
-
-  const handleSelectProduct = useCallback(async (product, index) => {
+  const handleSelectProduct = async (product, index) => {
     if (!product) return;
     setSelectedProduct(product);
 
@@ -133,22 +116,21 @@ export function useProductSearch() {
     setNewComment('');
     setShowCommentInput(false);
     
-    if (product.substituteSkus && product.substituteSkus.length > 0) {
-      const subs = mergedProducts.filter(p => product.substituteSkus.includes(p.sku));
-      setSubstitutes(subs);
-    }
-
-    // ✨ Sequence Lock + Stale Protection for Live Fetch
-    const currentSeq = ++liveFetchSeq.current;
+    // ✨ Live Fetch
     try {
       const liveProduct = await inventoryQueryService.getProductBySku(product.sku);
-      if (liveProduct && currentSeq === liveFetchSeq.current) {
-        setSelectedProduct(prev => (prev?.sku === product.sku ? { ...prev, ...liveProduct } : prev));
+      if (liveProduct) {
+        setSelectedProduct(liveProduct);
       }
     } catch (e) {
       console.warn('Live fetch failed', e);
     }
-  }, [filteredProducts, mergedProducts, actionHooks, setNewComment, setShowCommentInput]);
+    
+    if (product.substituteSkus && product.substituteSkus.length > 0) {
+      const subs = mergedProducts.filter(p => product.substituteSkus.includes(p.sku));
+      setSubstitutes(subs);
+    }
+  };
 
   useProductSearchKeyboard(filteredProducts, selectedIndex, setSelectedIndex, handleSelectProduct, modalsState, loadMore, hasMore);
 
