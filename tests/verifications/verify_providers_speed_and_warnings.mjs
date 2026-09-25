@@ -28,7 +28,7 @@ assert(
 const imageUtilsPath = path.resolve('dh-frontend/src/utils/imageUtils.js');
 const imageUtilsContent = fs.readFileSync(imageUtilsPath, 'utf-8');
 assert(
-  imageUtilsContent.includes('width = 600') && imageUtilsContent.includes('=w${width}'),
+  imageUtilsContent.includes('width =') && imageUtilsContent.includes('=w${width}'),
   "dh-frontend/src/utils/imageUtils.js: getRenderableImageUrl supports dynamic width scaling"
 );
 

@@ -7,7 +7,7 @@
  * @param {string} url The original image URL
  * @returns {string} The formatted URL that can be directly used in an img src
  */
-export const getRenderableImageUrl = (url, width = 600) => {
+export const getRenderableImageUrl = (url, width = 1000) => {
   if (!url) return '';
   const trimmed = String(url).trim();
   if (!trimmed) return '';

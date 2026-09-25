@@ -1,4 +1,3 @@
-import React from 'react';
 import { formatDate } from 'dh-shared';
 import { usePartnerReviews } from '../hooks/usePartnerReviews';
 
