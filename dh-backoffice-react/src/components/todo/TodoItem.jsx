@@ -31,7 +31,10 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
       case 'RETURN_APPROVAL': return <AlertCircle size={20} className="text-rose-500" />;
       case 'AD_APPROVAL': 
       case 'USER_SKU_APPROVAL':
-      case 'BILLBOARD_APPROVAL': return <Megaphone size={20} className="text-indigo-500" />; 
+      case 'BILLBOARD_APPROVAL':
+      case 'APPROVE_PARTNER_AD':
+      case 'APPROVE_BILLBOARD_AD':
+      case 'BUSINESS_CARD_AD_APPROVAL': return <Megaphone size={20} className="text-indigo-500" />; 
       default: return <Info size={20} className="text-slate-400" />;
     }
   };
@@ -82,7 +85,7 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
   };
 
   const type = todo.type?.toUpperCase() || todo.taskType?.toUpperCase();
-  const isAdTask = ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type);
+  const isAdTask = ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(type);
   const isStaffApprovalTask = type === 'STAFF_APPROVAL';
   const isLeaveApprovalTask = type === 'LEAVE_APPROVAL';
   const isKnowledgeTask = type === 'PRODUCT_KNOWLEDGE_APPROVAL';

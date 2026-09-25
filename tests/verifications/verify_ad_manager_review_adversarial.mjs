@@ -175,6 +175,63 @@ runTest("11. StoreProfileLocation parses coordinates with comma, space, or plus 
   assert(match3 && match3[1] === "13.956" && match3[2] === "100.567", "Plus match failed");
 });
 
+// 12. Verify firestore.rules allows ad approval todo updates and protects ownerId
+runTest("12. firestore.rules allows ad approval todo updates in pending status and protects ad ownerId", () => {
+  const rulesPath = path.resolve('firestore.rules');
+  const rules = fs.readFileSync(rulesPath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(rules.includes("resource.data.get('type', '') in ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL']"),
+    "firestore.rules must allow updating ad approval todos for resubmission/edit");
+  assert(rules.includes("request.resource.data.get('status', 'pending') in ['pending', 'PENDING', 'todo']"),
+    "firestore.rules must constrain todo update status to pending/todo");
+  assert(rules.includes("'spentBudget', 'ownerId'"),
+    "firestore.rules must protect ownerId from tampering during ad updates");
+});
+
+// 13. Verify resubmitPartnerAd creates canonical task types
+runTest("13. resubmitPartnerAd creates canonical task types matching backoffice schema", () => {
+  const servicePath = path.resolve('dh-frontend/src/firebase/marketingService.js');
+  const content = fs.readFileSync(servicePath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(content.includes("let legacyTaskType = 'AD_APPROVAL';"),
+    "resubmitPartnerAd must default to AD_APPROVAL");
+  assert(content.includes("if (adType === 'PRODUCT_LINK') {\n        legacyTaskType = 'USER_SKU_APPROVAL';"),
+    "resubmitPartnerAd must map PRODUCT_LINK to USER_SKU_APPROVAL");
+  assert(content.includes("} else if (adType === 'BILLBOARD') {\n        legacyTaskType = 'BILLBOARD_APPROVAL';"),
+    "resubmitPartnerAd must map BILLBOARD to BILLBOARD_APPROVAL");
+});
+
+// 14. Verify userAdsCache invalidation and safe createdAt sorting in marketingService
+runTest("14. marketingService invalidates userAdsCache on mutations and sorts createdAt safely", () => {
+  const servicePath = path.resolve('dh-frontend/src/firebase/marketingService.js');
+  const content = fs.readFileSync(servicePath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(content.includes("userAdsCache.delete(userId);"),
+    "marketingService must invalidate userAdsCache on ad submit/update/resubmit");
+  assert(content.includes("userAdsCache.clear();"),
+    "marketingService must clear userAdsCache on ad toggle");
+  assert(content.includes("a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0)"),
+    "getActivePartnerAds must safely handle string/Date createdAt without throwing TypeError");
+});
+
+// 15. Verify Backoffice components and services support all ad task type aliases
+runTest("15. Backoffice services and components support all ad task type aliases", () => {
+  const managerActionPath = path.resolve('dh-backoffice-react/src/firebase/managerActionService.js');
+  const managerTodoPath = path.resolve('dh-backoffice-react/src/firebase/managerTodoService.js');
+  const todoItemPath = path.resolve('dh-backoffice-react/src/components/todo/TodoItem.jsx');
+
+  const actionContent = fs.readFileSync(managerActionPath, 'utf8').replace(/\r\n/g, '\n');
+  const todoServiceContent = fs.readFileSync(managerTodoPath, 'utf8').replace(/\r\n/g, '\n');
+  const itemContent = fs.readFileSync(todoItemPath, 'utf8').replace(/\r\n/g, '\n');
+
+  assert(actionContent.includes("['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL']"),
+    "managerActionService must recognize all ad approval task aliases");
+  assert(todoServiceContent.includes("'APPROVE_PARTNER_AD'"),
+    "managerTodoService must include APPROVE_PARTNER_AD in MANAGER_TASK_TYPES");
+  assert(itemContent.includes("case 'APPROVE_PARTNER_AD':"),
+    "TodoItem.jsx must recognize APPROVE_PARTNER_AD in getIconForType");
+});
+
 console.log(`\n========================================`);
 console.log(`📊 Adversarial Results: ${passed} Passed, ${failed} Failed`);
 console.log(`========================================\n`);

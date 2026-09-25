@@ -19,6 +19,9 @@ export const MANAGER_TASK_TYPES = [
   'AD_APPROVAL',         // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า
   'USER_SKU_APPROVAL',   // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า (Legacy)
   'BILLBOARD_APPROVAL',  // งานตรวจสอบ/อนุมัติ ฝากแผ่นป้ายโฆษณา
+  'APPROVE_PARTNER_AD',  // งานตรวจสอบ/อนุมัติ โฆษณาพาร์ทเนอร์
+  'APPROVE_BILLBOARD_AD',// งานตรวจสอบ/อนุมัติ แผ่นป้ายโฆษณา
+  'BUSINESS_CARD_AD_APPROVAL', // งานตรวจสอบ/อนุมัติ นามบัตรพาร์ทเนอร์
   'PARTNER_APPROVAL',    // งานตรวจสอบ/อนุมัติ Partner รับการสนับสนุน
   'ACCOUNT_APPROVAL',    // งานตรวจสอบ Account สมัครใหม่
   'WALLET_WITHDRAWAL',   // งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า

@@ -40,5 +40,8 @@
 - ⚠️ System Logs Permission (FIXED Review 2): Allowed marketing telemetry in `system_logs` to prevent ad creation/edit batch rejections.
 - ⚠️ Backoffice DeleteAd Crash (FIXED Review 2): Implemented `deleteAd` on `adManagementService` with ActivePartners cleanup.
 - ⚠️ Resilient Master Sync (FIXED Review 2): Used `batch.set(..., { merge: true })` in `marketingAnalyticsService` to protect unmigrated ads.
+- ⚠️ Todo Update Lockout (FIXED Review 3): Allowed ad approval todos to update content on re-submission while locking status to pending.
+- ⚠️ Backoffice Ad Types Parity (FIXED Review 3): Synced `resubmitPartnerAd` task types with backoffice `MANAGER_TASK_TYPES`, `TodoItem`, and `managerActionService`.
+- ⚠️ User Ads Cache Invalidation (FIXED Review 3): Invalidate `userAdsCache` across all ad mutation flows and sort createdAt safely.
 </pitfalls_and_lessons>
 </ssr_memory>

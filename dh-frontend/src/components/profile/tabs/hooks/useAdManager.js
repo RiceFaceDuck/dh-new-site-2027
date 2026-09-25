@@ -78,13 +78,13 @@ export const useAdManager = (user) => {
     return () => unsubscribe();
   }, [user?.uid]);
 
-  const fetchMyAds = async () => {
+  const fetchMyAds = async (forceRefresh = false) => {
     if (!user) {
       setLoading(false);
       return;
     }
     try {
-      const myAds = await marketingService.getUserPartnerAds(user.uid);
+      const myAds = await marketingService.getUserPartnerAds(user.uid, forceRefresh);
       setAds(myAds);
       const cardAd = myAds.find(ad => ad.type === 'BUSINESS_CARD');
       setBusinessCardAd(cardAd || null);
@@ -182,7 +182,7 @@ export const useAdManager = (user) => {
       }
 
       handleCloseForm();
-      fetchMyAds();
+      fetchMyAds(true);
     } catch (error) {
       console.error("🔥 Error submitting ad:", error);
       showToast(error?.message || "เกิดข้อผิดพลาดในการบันทึกโฆษณา", 'error');
@@ -210,7 +210,7 @@ export const useAdManager = (user) => {
       
       await batch.commit();
       showToast("ลบแคมเปญโฆษณาเรียบร้อยแล้ว", 'info');
-      fetchMyAds();
+      fetchMyAds(true);
     } catch (error) {
       console.error("🔥 Delete error:", error);
       showToast("เกิดข้อผิดพลาดในการลบโฆษณา", 'error');
@@ -238,7 +238,7 @@ export const useAdManager = (user) => {
     try {
       await toggleAdStatus(ad.id, ad.status, ad.type);
       showToast(`${actionText} เรียบร้อยแล้ว`, 'info');
-      fetchMyAds();
+      fetchMyAds(true);
     } catch (err) {
       console.error("🔥 Error toggling status:", err);
       // Rollback state on error
@@ -256,7 +256,7 @@ export const useAdManager = (user) => {
       const { resubmitPartnerAd } = await import('../../../../firebase/marketingService');
       await resubmitPartnerAd(user.uid, ad.id, ad.type);
       showToast("ส่งคำร้องขออนุมัติโฆษณาอีกครั้งสำเร็จ! ระบบส่งเรื่องขึ้นด้านบนสุดของหลังบ้านแล้ว", 'success');
-      fetchMyAds();
+      fetchMyAds(true);
     } catch (err) {
       console.error("🔥 Error resubmitting ad:", err);
       showToast("เกิดข้อผิดพลาดในการส่งคำร้องอีกครั้ง", 'error');

@@ -410,7 +410,13 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid ||
         request.resource.data.partnerId == request.auth.uid
       ) && (
-        // 🚀 THE FIX: ห้ามแก้สถานะ, จำนวนเงิน, และเนื้อหางานหลังสร้างเสร็จ
+        // 🚀 THE FIX: กรณีคำร้องโฆษณา/นามบัตร พาร์ทเนอร์แก้ไขรายละเอียดเพื่อส่งตรวจใหม่ได้ โดยสถานะต้องคงเป็น pending
+        (
+          resource.data.get('type', '') in ['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'] &&
+          request.resource.data.get('status', 'pending') in ['pending', 'PENDING', 'todo'] &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['amount', 'completedAt', 'type', 'taskType'])
+        ) ||
+        // กรณีงานทั่วไป: ห้ามแก้สถานะ, จำนวนเงิน, และเนื้อหางานหลังสร้างเสร็จ
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'type', 'amount', 'completedAt', 'title', 'description', 'taskType'])
       ));
       allow delete: if isStaff() || (isAuthenticated() && (
@@ -659,7 +665,7 @@ service cloud.firestore {
           // กรณีที่ 2: พาร์ทเนอร์แก้ไขเนื้อหาโฆษณา หรือส่งตรวจใหม่ (pending) ห้ามแตะต้องฟิลด์การเงินและสถิติ
           (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget'
+              'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget', 'ownerId'
             ]) && (
               !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'isActive']) ||
               (request.resource.data.status in ['pending', 'PENDING'] && request.resource.data.isActive == false)
@@ -687,7 +693,7 @@ service cloud.firestore {
           // กรณีที่ 2: พาร์ทเนอร์แก้ไขเนื้อหาโฆษณา หรือส่งตรวจใหม่ (pending) ห้ามแตะต้องฟิลด์การเงินและสถิติ
           (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget'
+              'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget', 'ownerId'
             ]) && (
               !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'isActive']) ||
               (request.resource.data.status in ['pending', 'PENDING'] && request.resource.data.isActive == false)
@@ -715,7 +721,7 @@ service cloud.firestore {
           // กรณีที่ 2: พาร์ทเนอร์แก้ไขเนื้อหาโฆษณา หรือส่งตรวจใหม่ (pending) ห้ามแตะต้องฟิลด์การเงินและสถิติ
           (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget'
+              'impressions', 'clicks', 'totalSpent', 'remainingBudget', 'approvedAt', 'approvedBy', 'stats', 'spentBudget', 'ownerId'
             ]) && (
               !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'isActive']) ||
               (request.resource.data.status in ['pending', 'PENDING'] && request.resource.data.isActive == false)

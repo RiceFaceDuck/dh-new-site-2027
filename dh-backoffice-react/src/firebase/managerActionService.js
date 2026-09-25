@@ -40,7 +40,7 @@ export const managerActionService = {
     }
 
     // 3. AD_APPROVAL (Partner, User SKU, Billboard)
-    if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type)) {
+    if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(type)) {
       const adId = originalTask.targetSkuId || originalTask.payload?.adId || originalTask.adPayload?.id || originalTask.id;
       
       const result = await adManagementService.approveAd(adId, taskId);
@@ -98,7 +98,7 @@ export const managerActionService = {
 
   handleRejection: async (taskId, type, payload, originalTask, adminId, reason) => {
     // 1. AD_APPROVAL
-    if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL'].includes(type)) {
+    if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(type)) {
       const adId = originalTask.targetSkuId || originalTask.payload?.adId || originalTask.adPayload?.id || originalTask.id;
       const result = await adManagementService.rejectAd(adId, taskId, reason);
       if (!result.success) throw new Error(result.message);

@@ -118,7 +118,7 @@ export default function Todo() {
   };
 
   const filteredTodos = activeTodos.filter(todo => {
-    const managerTypes = ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL', 'AD_APPROVAL'];
+    const managerTypes = ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL', 'AD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'];
     if (managerTypes.includes(todo.type)) return false;
 
     if (filterType === 'ALL') return true;

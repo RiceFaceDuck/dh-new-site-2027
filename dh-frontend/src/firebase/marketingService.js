@@ -51,7 +51,11 @@ export const marketingService = {
         ...doc.data() 
       }));
 
-      adsList.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      adsList.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
+        return timeB - timeA;
+      });
       const limitedAds = adsList.slice(0, 30); // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
 
       activeAdsCache.data[adType] = limitedAds;
@@ -133,6 +137,7 @@ export const marketingService = {
       console.log(`✅ [Marketing] ${adType} Ad submitted perfectly matching Manager's schema!`);
       // เคลียร์แคชเพื่อให้โหลดข้อมูลใหม่รอบถัดไป
       activeAdsCache.lastFetch[adType] = 0; 
+      userAdsCache.delete(userId);
       return true;
     } catch (error) {
       console.error(`🔥 [Marketing] ${adType} submit failed:`, error.message);
@@ -208,6 +213,7 @@ export const marketingService = {
 
       console.log(`✅ [Marketing] ${adType} Ad updated perfectly!`);
       activeAdsCache.lastFetch[adType] = 0; 
+      userAdsCache.delete(userId);
       return true;
     } catch (error) {
       console.error(`🔥 [Marketing] ${adType} update failed:`, error.message);
@@ -287,6 +293,7 @@ export const marketingService = {
       }
 
       activeAdsCache.lastFetch = {}; // ล้าง cache
+      userAdsCache.clear();
       return { success: true, newStatus };
     } catch (err) {
       console.error("🔥 Error toggling ad status:", err);
@@ -332,7 +339,12 @@ export const marketingService = {
 
       // ดันคำร้องใหม่ไปยัง todos เพื่อให้ผู้จัดการเห็นอยู่ด้านบนสุด
       const taskId = `TODO-RESUBMIT-${adId}`;
-      const legacyTaskType = adType === 'BILLBOARD' ? 'APPROVE_BILLBOARD_AD' : 'APPROVE_PARTNER_AD';
+      let legacyTaskType = 'AD_APPROVAL';
+      if (adType === 'PRODUCT_LINK') {
+        legacyTaskType = 'USER_SKU_APPROVAL';
+      } else if (adType === 'BILLBOARD') {
+        legacyTaskType = 'BILLBOARD_APPROVAL';
+      }
       const todoPayload = {
         taskId: taskId,
         type: legacyTaskType,
@@ -354,6 +366,7 @@ export const marketingService = {
 
       await batch.commit();
       activeAdsCache.lastFetch = {};
+      userAdsCache.delete(userId);
       return { success: true };
     } catch (err) {
       console.error("🔥 Error resubmitting ad:", err);
