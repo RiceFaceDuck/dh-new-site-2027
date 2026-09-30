@@ -10,17 +10,8 @@ export default function PointDisplay({ customerId, customer, className = '', liv
   const { creditPoints, loading } = useCustomerFinancials(targetId);
 
   let points = live 
-    ? (loading ? (customer?.creditPoints ?? customer?.totalAccumulatedPoints ?? 0) : (creditPoints ?? 0))
-    : Number(customer?.creditPoints ?? customer?.totalAccumulatedPoints ?? customer?.points ?? 0);
-
-  // Bonus calculation from 30D sales if available
-  const sales30Days = Number(customer?.sales30Days || customer?.stats?.sales30Days || customer?.totalSpent || 0);
-  if (sales30Days > 100) {
-    const calcPoints = Math.floor(sales30Days / 100);
-    if (calcPoints > points) {
-      points = calcPoints;
-    }
-  }
+    ? (loading ? (customer?.totalAccumulatedPoints ?? customer?.creditPoints ?? 0) : (creditPoints ?? 0))
+    : Number(customer?.totalAccumulatedPoints ?? customer?.creditPoints ?? customer?.points ?? 0);
 
   if (live && loading && targetId && creditPoints === undefined) {
     return (

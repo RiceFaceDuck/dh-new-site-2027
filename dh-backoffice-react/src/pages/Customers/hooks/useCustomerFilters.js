@@ -17,7 +17,31 @@ export const useCustomerFilters = (customers) => {
     if (quickFilter === 'has_wallet') result = result.filter(c => (c.walletBalance || 0) > 0);
     else if (quickFilter === 'is_partner') result = result.filter(c => (c.role || '').toLowerCase().includes('partner') || (c.rank || '').toLowerCase().includes('partner'));
     else if (quickFilter === 'has_tax') result = result.filter(c => c.hasTaxInfo === true);
-    else if (quickFilter === 'has_points') result = result.filter(c => (c.creditPoints || 0) > 0);
+    else if (quickFilter === 'has_points') result = result.filter(c => (c.creditPoints || 0) > 0 || (c.totalAccumulatedPoints || 0) > 0);
+
+    // 📅 กรองด้วยช่วงเวลา (Date Filter)
+    if (dateFilter && dateFilter !== 'all') {
+      const now = Date.now();
+      const cutoff30d = now - 30 * 24 * 60 * 60 * 1000;
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      result = result.filter(item => {
+        const orderDate = item.lastOrderDate || item.createdAt;
+        if (!orderDate) return false;
+        const itemTimestamp = typeof orderDate === 'number' 
+          ? orderDate 
+          : (orderDate.toDate ? orderDate.toDate().getTime() : new Date(orderDate).getTime());
+        if (isNaN(itemTimestamp)) return false;
+
+        if (dateFilter === '30days') return itemTimestamp >= cutoff30d;
+        if (dateFilter === 'thisMonth') {
+          const d = new Date(itemTimestamp);
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        }
+        return true;
+      });
+    }
 
     // 🔍 กรองด้วย Text Search
     if (searchTerm.trim()) {
@@ -47,7 +71,7 @@ export const useCustomerFilters = (customers) => {
     });
 
     return result;
-  }, [searchTerm, quickFilter, customers]);
+  }, [searchTerm, quickFilter, dateFilter, customers]);
 
   // คำนวณจำนวนหน้าทั้งหมด (Total Pages)
   const totalPages = useMemo(() => {
@@ -88,13 +112,24 @@ export const useCustomerFilters = (customers) => {
 
   const filterDataByDate = (dataArray, dateFilterType) => {
     if (!dataArray || dateFilterType === 'all') return dataArray || [];
-    const now = new Date();
+    const now = Date.now();
+    const cutoff30d = now - 30 * 24 * 60 * 60 * 1000;
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
     return dataArray.filter(item => {
       const orderDate = item.lastOrderDate || item.createdAt;
       if (!orderDate) return false;
-      const itemDate = typeof orderDate === 'number' ? new Date(orderDate) : (orderDate.toDate ? orderDate.toDate() : new Date(orderDate));
-      if (dateFilterType === '30days') return itemDate >= new Date(now.setDate(now.getDate() - 30));
-      if (dateFilterType === 'thisMonth') return itemDate.getMonth() === new Date().getMonth() && itemDate.getFullYear() === new Date().getFullYear();
+      const itemTimestamp = typeof orderDate === 'number' 
+        ? orderDate 
+        : (orderDate.toDate ? orderDate.toDate().getTime() : new Date(orderDate).getTime());
+      if (isNaN(itemTimestamp)) return false;
+
+      if (dateFilterType === '30days') return itemTimestamp >= cutoff30d;
+      if (dateFilterType === 'thisMonth') {
+        const d = new Date(itemTimestamp);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      }
       return true;
     });
   };

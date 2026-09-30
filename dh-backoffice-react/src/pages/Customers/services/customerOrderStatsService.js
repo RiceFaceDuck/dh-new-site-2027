@@ -54,14 +54,14 @@ export const isOrderPaid = (orderData) => {
   const paymentStatusLower = (orderData.paymentStatus || '').toLowerCase().trim();
 
   // 1. Explicitly cancelled, void, draft, deleted, rejected, or unpaid
-  if (['cancelled', 'void', 'deleted', 'draft', 'rejected', 'เธขเธเน€เธฅเธดเธ'].includes(statusLower)) return false;
-  if (['unpaid', 'failed', 'pending', 'draft', 'waiting_payment', 'waiting_verification', 'เธฃเธญเธเธณเธฃเธฐ', 'เธฃเธญเธ•เธฃเธงเธเธชเธญเธ', 'เธขเธเน€เธฅเธดเธ'].includes(paymentStatusLower)) return false;
-  if (['pending', 'draft', 'waiting_payment', 'waiting_verification', 'เธฃเธญเธเธณเธฃเธฐ', 'เธฃเธญเธ•เธฃเธงเธเธชเธญเธ'].includes(statusLower)) return false;
+  if (['cancelled', 'void', 'deleted', 'draft', 'rejected', 'ยกเลิก'].includes(statusLower)) return false;
+  if (['unpaid', 'failed', 'pending', 'draft', 'waiting_payment', 'waiting_verification', 'รอชำระ', 'รอตรวจสอบ', 'ยกเลิก'].includes(paymentStatusLower)) return false;
+  if (['pending', 'draft', 'waiting_payment', 'waiting_verification', 'รอชำระ', 'รอตรวจสอบ'].includes(statusLower)) return false;
 
   // 2. Explicitly paid flags
   if (orderData.isPaid === true) return true;
-  if (['paid', 'completed', 'verified', 'success', 'เธเธณเธฃเธฐเนเธฅเนเธง'].includes(paymentStatusLower)) return true;
-  if (['paid', 'completed', 'success', 'approved', 'delivered', 'shipped', 'เธเธเธ•เธด', 'เธญเธเธธเธกเธฑเธ•เธดเนเธฅเนเธง'].includes(statusLower)) return true;
+  if (['paid', 'completed', 'verified', 'success', 'ชำระแล้ว'].includes(paymentStatusLower)) return true;
+  if (['paid', 'completed', 'success', 'approved', 'delivered', 'shipped', 'ปกติ', 'อนุมัติแล้ว'].includes(statusLower)) return true;
 
   return false;
 };

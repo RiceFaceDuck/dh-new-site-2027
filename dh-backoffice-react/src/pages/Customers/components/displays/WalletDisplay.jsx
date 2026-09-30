@@ -23,7 +23,7 @@ export default function WalletDisplay({ customerId, customer, className = '', sh
   }
 
   const formatted = balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const symbol = showSymbol ? '$' : '';
+  const symbol = showSymbol ? '฿' : '';
 
   return (
     <span 

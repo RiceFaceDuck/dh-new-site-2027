@@ -13,8 +13,8 @@ export default function Customers() {
   // เรียกใช้สมองกลหลัก (Facade Hook)
   const { state, actions, utils } = useCustomers();
 
-  // กรองข้อมูลด้วยวันที่ก่อนส่งให้ตาราง
-  const displayCustomers = utils.filterDataByDate(state.filteredCustomers, state.dateFilter);
+  // ข้อมูลที่ผ่านการกรองทุกมิติ (Text, Smart Filter, Date Filter)
+  const displayCustomers = state.filteredCustomers;
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
