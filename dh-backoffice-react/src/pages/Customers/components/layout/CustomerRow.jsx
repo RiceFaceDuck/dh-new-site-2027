@@ -152,7 +152,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
 
         {/* 6. DH ค้างยอด */}
         <div className="text-right min-w-0">
-          <WalletDisplay customerId={customerId} customer={customer} />
+          <WalletDisplay customerId={customerId} customer={customer} showSymbol={false} />
         </div>
 
         {/* 7. Points */}
@@ -182,7 +182,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
                   ? 'text-emerald-600 font-black' 
                   : 'text-indigo-600 font-bold'
               }`}>
-                ฿{sales30Days.toLocaleString('th-TH', {minimumFractionDigits: 2})}
+                {sales30Days.toLocaleString('th-TH', {minimumFractionDigits: 2})}
               </span>
               {orderCount30Days > 0 && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80 shrink-0">

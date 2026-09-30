@@ -102,7 +102,7 @@ export const resolveSmartUserInfo = async (input) => {
     if (!userDoc.exists()) return null;
 
     const d = userDoc.data();
-    const displayName = getCustomerDisplayName(d, d).accountName ||
+    const displayName = getCustomerDisplayName(d, '') ||
       (d.firstName ? `${d.firstName} ${d.lastName || ''}`.trim() : null) ||
       d.displayName || d.storeName || d.email || 'Unknown User';
 
@@ -270,7 +270,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     const userData = userSnap.data();
     const userEmail = userData.email || 'Migrated User';
-    const resolvedName = getCustomerDisplayName(userData, userData).accountName || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
+    const resolvedName = getCustomerDisplayName(userData, '') || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
 
     const transactionId = txRef.id;
     const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'add' : 'deduct';
@@ -467,7 +467,7 @@ export const adjustUserWalletWithTransaction = async (transaction, uid, amount, 
 
     const userData = userSnap.data();
     const userEmail = userData.email || 'Migrated User';
-    const resolvedName = getCustomerDisplayName(userData, userData).accountName || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
+    const resolvedName = getCustomerDisplayName(userData, '') || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
 
     // บันทึกธุรกรรมลงใน wallet_transactions
     // REFUND = ปรับยอดเพิ่ม (มีผลบวก), SPEND = ปรับยอดลด (มีผลลบ)

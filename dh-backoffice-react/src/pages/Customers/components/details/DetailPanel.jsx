@@ -187,7 +187,7 @@ export default function DetailPanel({
           <div className="bg-slate-800/60 rounded-lg p-2.5 flex flex-col justify-between border border-slate-700/50">
             <span className="text-[11px] font-semibold text-slate-400 tracking-wide">DH ค้างยอด</span>
             <div className="flex items-center justify-between mt-1 gap-2">
-              <WalletDisplay customerId={customer.id} customer={customer} live={true} className="text-lg font-bold font-mono text-rose-400" />
+              <WalletDisplay customerId={customer.id} customer={customer} live={true} showSymbol={true} className="text-lg font-bold font-mono text-rose-400" />
               <button 
                 onClick={() => setIsRefundModalOpen(true)}
                 className="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-semibold border border-rose-500/30 transition-all shrink-0 active:scale-95"

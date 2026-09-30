@@ -109,8 +109,20 @@ export const flushAdStatsBatch = async () => {
       console.log("✅ [Marketing] Ads stats flushed & credits deducted perfectly.");
     }
   } catch (error) {
+    const errMsg = String(error?.code || error?.message || '').toLowerCase();
+    const isPermissionError = errMsg.includes('permission') || errMsg.includes('unauthorized') || errMsg.includes('forbidden');
+
+    if (isPermissionError) {
+      console.warn("🛡️ [Marketing] Anonymous client not authorized for direct ad stats writes. Discarding buffer to prevent infinite loop retry.");
+      if (flushInterval) {
+        clearInterval(flushInterval);
+        flushInterval = null;
+      }
+      return;
+    }
+
     console.error("🔥 [Marketing] Error flushing ad stats:", error);
-    // คืนค่าเข้า Buffer หากพัง
+    // คืนค่าเข้า Buffer หากพังจาก network ชั่วคราว
     for (const col in statsToProcess) {
       if (!adStatsBuffer[col]) adStatsBuffer[col] = {};
       for (const id in statsToProcess[col]) {

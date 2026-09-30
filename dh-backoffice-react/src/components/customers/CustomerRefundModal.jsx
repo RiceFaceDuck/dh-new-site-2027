@@ -1,6 +1,7 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Banknote, CreditCard, Upload, FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { executeCustomerRefund } from '../../firebase/customerRefundService';
+import { slipStorageService } from '../../firebase/slipStorageService';
 
 export default function CustomerRefundModal({
     isOpen,
@@ -14,6 +15,7 @@ export default function CustomerRefundModal({
     const [slipFile, setSlipFile] = useState(null);
     const [slipPreview, setSlipPreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
 
     if (!isOpen || !customer) return null;
@@ -44,32 +46,45 @@ export default function CustomerRefundModal({
         const cleanAmountStr = String(amount || '').replace(/,/g, '').trim();
         const numAmount = Number(cleanAmountStr);
         if (isNaN(numAmount) || numAmount <= 0) {
-            setErrorMsg('เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธณเธเธงเธเน€เธเธดเธเนเธซเนเธ–เธนเธเธ•เนเธญเธ (เธกเธฒเธเธเธงเนเธฒ 0)');
+            setErrorMsg('กรุณากรอกจำนวนเงินให้ถูกต้อง (มากกว่า 0)');
             return;
         }
 
         if (numAmount > totalRefundable) {
-            setErrorMsg(`เธเธณเธเธงเธเน€เธเธดเธเน€เธเธดเธเธขเธญเธ”เธเนเธฒเธเธเธเน€เธซเธฅเธทเธญ (เธชเธนเธเธชเธธเธ” เธฟ${totalRefundable.toLocaleString('th-TH')})`);
+            setErrorMsg(`จำนวนเงินเกินยอดค้างคงเหลือ (สูงสุด ฿${totalRefundable.toLocaleString('th-TH')})`);
             return;
         }
 
         setIsSubmitting(true);
+        setUploadStatus('');
 
         try {
+            let uploadedSlipUrl = null;
+            if (refundMethod === 'BANK_TRANSFER' && slipFile) {
+                setUploadStatus('กำลังอัปโหลดสลิป...');
+                uploadedSlipUrl = await slipStorageService.uploadSlip(
+                    slipFile,
+                    `REFUND_${customer.uid || customer.id}`,
+                    (progress, status) => setUploadStatus(status)
+                );
+            }
+
+            setUploadStatus('กำลังบันทึกรายการ...');
             await executeCustomerRefund({
                 customerId: customer.uid || customer.id,
                 amount: numAmount,
                 refundMethod: refundMethod,
-                slipUrl: slipPreview || null,
+                slipUrl: uploadedSlipUrl || null,
                 note: note,
             });
 
             if (onSuccess) onSuccess();
             onClose();
         } catch (err) {
-            setErrorMsg(err.message || 'เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”เนเธเธเธฒเธฃเธ—เธณเธฃเธฒเธขเธเธฒเธฃ');
+            setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการทำรายการ');
         } finally {
             setIsSubmitting(false);
+            setUploadStatus('');
         }
     };
 
@@ -81,16 +96,16 @@ export default function CustomerRefundModal({
                     <button
                         onClick={onClose}
                         disabled={isSubmitting}
-                        className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-full transition-colors"
+                        className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-full transition-colors cursor-pointer"
                     >
                         <X className="w-4 h-4" />
                     </button>
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         <Banknote className="w-6 h-6" />
-                        เธ—เธณเธฃเธฒเธขเธเธฒเธฃเนเธญเธเน€เธเธดเธเธเธทเธ / เธเนเธฒเธขเน€เธเธดเธเธชเธ”
+                        ทำรายการโอนเงินคืน / จ่ายเงินสด
                     </h2>
                     <p className="text-white/80 text-xs mt-1 truncate pr-8">
-                        เธฅเธนเธเธเนเธฒ: <span className="font-bold text-white">{customer.displayName || customer.accountName || customer.name || 'N/A'}</span>
+                        ลูกค้า: <span className="font-bold text-white">{customer.displayName || customer.accountName || customer.name || 'N/A'}</span>
                     </p>
                 </div>
 
@@ -105,55 +120,55 @@ export default function CustomerRefundModal({
                             </div>
                         )}
 
-                        {/* เธขเธญเธ”เน€เธเธดเธเธเธเน€เธซเธฅเธทเธญ */}
+                        {/* ยอดเงินคงเหลือ */}
                         <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4 flex justify-between items-center">
                             <div>
-                                <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-700">เธขเธญเธ” DH เธเนเธฒเธเธเธณเธฃเธฐเธ—เธฑเนเธเธซเธกเธ”</p>
-                                <p className="text-xs text-emerald-600 mt-0.5">เน€เธเธดเธเนเธเธเธฃเธฐเน€เธเนเธฒ + เธขเธญเธ”เธฃเธญเธ–เธญเธ</p>
+                                <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-700">ยอด DH ค้างชำระทั้งหมด</p>
+                                <p className="text-xs text-emerald-600 mt-0.5">เงินในกระเป๋า + ยอดรอถอน</p>
                             </div>
                             <p className="text-xl font-black font-mono text-emerald-700">
-                                เธฟ{totalRefundable.toLocaleString('th-TH')}
+                                ฿{totalRefundable.toLocaleString('th-TH')}
                             </p>
                         </div>
 
-                        {/* เธเนเธญเธเน€เธฅเธทเธญเธเธเธฃเธฐเน€เธ เธ—เธเธฒเธฃเธเธทเธเน€เธเธดเธ */}
+                        {/* ช่องเลือกประเภทการคืนเงิน */}
                         <div>
                             <label className="text-xs font-black text-slate-700 mb-1.5 block">
-                                เธเธฃเธฐเน€เธ เธ—เธเธฒเธฃเธ—เธณเธฃเธฒเธขเธเธฒเธฃ <span className="text-rose-500">*</span>
+                                ประเภทการทำรายการ <span className="text-rose-500">*</span>
                             </label>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setRefundMethod('BANK_TRANSFER')}
-                                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                                         refundMethod === 'BANK_TRANSFER'
                                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20'
                                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                     }`}
                                 >
-                                    <CreditCard size={15} /> เนเธญเธเธเนเธฒเธเธเธเธฒเธเธฒเธฃ
+                                    <CreditCard size={15} /> โอนผ่านธนาคาร
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setRefundMethod('CASH')}
-                                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                                         refundMethod === 'CASH'
                                             ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20'
                                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                     }`}
                                 >
-                                    <Banknote size={15} /> เธเนเธฒเธขเน€เธเธดเธเธชเธ”
+                                    <Banknote size={15} /> จ่ายเงินสด
                                 </button>
                             </div>
                         </div>
 
-                        {/* เธเธณเธเธงเธเน€เธเธดเธ */}
+                        {/* จำนวนเงิน */}
                         <div>
                             <label className="text-xs font-black text-slate-700 mb-1.5 block">
-                                เธเธณเธเธงเธเน€เธเธดเธเธ—เธตเนเธเธทเธ (เธเธฒเธ—) <span className="text-rose-500">*</span>
+                                จำนวนเงินที่คืน (บาท) <span className="text-rose-500">*</span>
                             </label>
                             <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">เธฟ</span>
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">฿</span>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -169,19 +184,19 @@ export default function CustomerRefundModal({
                                 <button
                                     type="button"
                                     onClick={() => setAmount(totalRefundable.toString())}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold rounded-lg transition-colors"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
                                 >
-                                    เธ—เธฑเนเธเธซเธกเธ”
+                                    ทั้งหมด
                                 </button>
                             </div>
                         </div>
 
-                        {/* เนเธเธเธชเธฅเธดเธเนเธญเธเน€เธเธดเธ (เน€เธเธเธฒเธฐ BANK_TRANSFER) */}
+                        {/* แนบสลิปโอนเงิน (เฉพาะ BANK_TRANSFER) */}
                         {refundMethod === 'BANK_TRANSFER' && (
                             <div>
-                                <label className="text-xs font-black text-slate-700 mb-1.5 block flex items-center justify-between">
-                                    <span>เนเธเธเธชเธฅเธดเธเนเธญเธเน€เธเธดเธ (Slip)</span>
-                                    <span className="text-[10px] text-slate-400 font-normal">เธฃเธนเธเธ เธฒเธ JPG, PNG</span>
+                                <label className="text-xs font-black text-slate-700 mb-1.5 flex items-center justify-between">
+                                    <span>แนบสลิปโอนเงิน (Slip)</span>
+                                    <span className="text-[10px] text-slate-400 font-normal">รูปภาพ JPG, PNG, WEBP</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -195,23 +210,23 @@ export default function CustomerRefundModal({
                                     <div className="mt-2 relative rounded-xl border border-slate-200 overflow-hidden max-h-32 flex justify-center bg-slate-900">
                                         <img src={slipPreview} alt="Slip Preview" className="h-32 object-contain" />
                                         <span className="absolute bottom-1 right-2 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded-md font-bold">
-                                            โ“ เนเธเธเนเธฅเนเธง
+                                            ✓ แนบแล้ว
                                         </span>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* เธซเธกเธฒเธขเน€เธซเธ•เธธ / เธเธฑเธเธ—เธถเธเธขเนเธญ */}
+                        {/* หมายเหตุ / บันทึกย่อ */}
                         <div>
-                            <label className="text-xs font-black text-slate-700 mb-1.5 block">เธซเธกเธฒเธขเน€เธซเธ•เธธ / เธเธฑเธเธ—เธถเธเธขเนเธญ</label>
+                            <label className="text-xs font-black text-slate-700 mb-1.5 block">หมายเหตุ / บันทึกย่อ</label>
                             <div className="relative">
                                 <FileText size={16} className="absolute left-3 top-3 text-slate-400" />
                                 <textarea
                                     rows={2}
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    placeholder={refundMethod === 'BANK_TRANSFER' ? 'เน€เธเนเธ เนเธญเธเน€เธเนเธฒเธเธฑเธเธเธต เธเธชเธดเธเธฃเนเธ—เธข เน€เธฅเธเธ—เธตเน...' : 'เน€เธเนเธ เธเนเธฒเธขเน€เธเธดเธเธชเธ”เนเธซเนเธฅเธนเธเธเนเธฒเธซเธเนเธฒเธฃเนเธฒเธเนเธ”เธข...'}
+                                    placeholder={refundMethod === 'BANK_TRANSFER' ? 'เช่น โอนเข้าบัญชี กสิกรไทย เลขที่...' : 'เช่น จ่ายเงินสดให้ลูกค้าหน้าร้านโดย...'}
                                     className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs text-slate-800 outline-hidden focus:border-emerald-500 focus:bg-white transition-all min-h-[60px]"
                                 />
                             </div>
@@ -225,24 +240,24 @@ export default function CustomerRefundModal({
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-4 py-2 bg-white text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors text-xs border border-slate-200 shadow-xs"
+                            className="px-4 py-2 bg-white text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors text-xs border border-slate-200 shadow-xs cursor-pointer"
                         >
-                            เธขเธเน€เธฅเธดเธ
+                            ยกเลิก
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-5 py-2 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-md text-xs active:scale-95 disabled:opacity-50 disabled:pointer-events-none bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20"
+                            className="px-5 py-2 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-md text-xs active:scale-95 disabled:opacity-50 disabled:pointer-events-none bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 cursor-pointer"
                         >
                             {isSubmitting ? (
                                 <>
                                     <Loader2 size={15} className="animate-spin" />
-                                    เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ...
+                                    {uploadStatus || 'กำลังบันทึก...'}
                                 </>
                             ) : (
                                 <>
                                     <CheckCircle size={15} />
-                                    เธขเธทเธเธขเธฑเธเนเธญเธเน€เธเธดเธเธเธทเธ
+                                    ยืนยันโอนเงินคืน
                                 </>
                             )}
                         </button>

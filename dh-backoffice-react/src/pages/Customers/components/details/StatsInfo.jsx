@@ -12,7 +12,7 @@ export default function StatsInfo({ customer, formatCurrency }) {
             <TrendingUp size={12}/> DH ค้างยอด
           </p>
           <div className="text-lg font-black font-mono text-emerald-600">
-            <WalletDisplay customerId={customer.id} />
+            <WalletDisplay customerId={customer.id} showSymbol={true} />
           </div>
         </div>
 

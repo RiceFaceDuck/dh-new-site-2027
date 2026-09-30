@@ -1,9 +1,16 @@
-import { storage, auth, functions } from './config';
+import app, { storage, auth } from './config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { compressImageWithCanvas, readFileAsBase64 } from 'dh-shared/src/utils/imageProcessingUtils.js';
-import { parseSlipText } from 'dh-shared/src/utils/slipOcrParser.js';
-import { resilientFetch, AppLogger } from 'dh-shared';
+import { resilientFetch } from 'dh-shared/src/utils/httpResilienceClient.js';
+
+const functions = typeof window !== 'undefined' ? getFunctions(app) : null;
+
+const AppLogger = {
+  info: (tag, msg, ...args) => console.log(`[${tag}] ${msg}`, ...args),
+  warn: (tag, msg, ...args) => console.warn(`[${tag}] ${msg}`, ...args),
+  error: (tag, msg, ...args) => console.error(`[${tag}] ${msg}`, ...args),
+};
 
 // GAS Endpoint for async Drive backup
 const DRIVE_SLIP_BACKUP_URL = "https://script.google.com/macros/s/AKfycbwccHnMx5LQ6zUUh8rQ8AUbs983rpA-2mTPccyF9qwWov_M94zfKwW81YcJykj8NNTj/exec";
@@ -155,8 +162,7 @@ export const slipStorageService = {
       await worker.terminate();
 
       if (combinedText.trim()) {
-        const parsed = parseSlipText(combinedText);
-        return parsed;
+        return { rawTextPreview: combinedText.substring(0, 300) };
       }
       return null;
     } catch (err) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { todoService } from '../firebase/todoService';
-import { managerTodoService } from '../firebase/managerTodoService';
+import { managerTodoService, CLAIM_TASK_TYPES } from '../firebase/managerTodoService';
 import { userService } from '../firebase/userService';
 import { useGmail } from '../pages/emails/hooks/useGmail';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
@@ -59,10 +59,12 @@ export default function AdminLayout() {
     if (typeof managerTodoService.subscribeManagerApprovals === 'function') {
       unsubscribeManagerTodo = managerTodoService.subscribeManagerApprovals((managerTodos) => {
         setManagerApprovalCount(managerTodos.length);
-        const claims = managerTodos.filter(todo => 
-          (todo.type === 'CLAIM_APPROVAL' || todo.type === 'RETURN_APPROVAL' || todo.type === 'CANCEL_CLAIM_APPROVAL' || todo.type === 'CANCEL_RETURN_APPROVAL') &&
-          ['pending_manager', 'waiting_item', 'processing'].includes(todo.status)
-        );
+        const claims = managerTodos.filter(todo => {
+          const typeToCheck = todo.type || todo.taskType;
+          const isClaim = CLAIM_TASK_TYPES ? CLAIM_TASK_TYPES.includes(typeToCheck) : 
+            ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'EXCHANGE_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'CANCEL_EXCHANGE_APPROVAL'].includes(typeToCheck);
+          return isClaim && ['pending_manager', 'waiting_item', 'processing'].includes(todo.status);
+        });
         setPendingClaimCount(claims.length);
       });
     }

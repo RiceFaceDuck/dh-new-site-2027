@@ -147,15 +147,33 @@ const rebuildAllChunksLogic = async (db) => {
       const data = docSnap.data();
       const role = String(data.role || 'Customer').toLowerCase();
       if (['customer', 'member', 'partner', 'vip'].includes(role) || !data.role) {
+        const resolvedName = data.displayName || data.storeName || data.name || data.accountName || 'ลูกค้าทั่วไป';
+        const resolvedPhone = data.phone || data.phoneNumber || '-';
+        const resolvedAccountId = data.accountId || data.customerCode || docSnap.id.substring(0, 8).toUpperCase();
         customerList.push({
           uid: docSnap.id,
-          name: data.displayName || data.storeName || data.name || 'ลูกค้าทั่วไป',
-          phone: data.phone || data.phoneNumber || '-',
+          id: docSnap.id,
+          name: resolvedName,
+          storeName: data.storeName || resolvedName,
+          displayName: data.displayName || resolvedName,
+          accountName: data.accountName || resolvedName,
+          phone: resolvedPhone,
+          phoneNumber: resolvedPhone,
           role: data.role || 'Customer',
+          rank: data.rank || data.role || 'Customer',
+          accountId: resolvedAccountId,
+          customerCode: data.customerCode || resolvedAccountId,
           walletBalance: Number(data.walletBalance || data.creditBalance || 0),
-          points: Number(data.points || data.rewardPoints || 0),
+          points: Number(data.totalAccumulatedPoints || data.points || data.rewardPoints || 0),
+          totalAccumulatedPoints: Number(data.totalAccumulatedPoints || data.points || 0),
+          creditPoints: Number(data.creditPoints || 0),
           lastOrderDate: data.lastOrderDate || null,
-          sales30Days: Number(data.sales30Days || data.totalSpent30D || 0)
+          sales30Days: Number(data.sales30Days || data.totalSpent30D || 0),
+          orderCount30Days: Number(data.orderCount30Days || 0),
+          address: data.address || null,
+          taxId: data.taxId || null,
+          isActive: data.isActive !== false,
+          status: data.status || 'active'
         });
       }
     });

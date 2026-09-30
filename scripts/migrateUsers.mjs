@@ -1,3 +1,10 @@
+/**
+ * ⛔ QUARANTINED SCRIPT - DO NOT EXECUTE DIRECTLY
+ * This script is legacy and locked to protect production user data.
+ */
+console.error("⛔ [QUARANTINE] This legacy migration script is archived and locked. Exiting to protect user data.");
+process.exit(1);
+
 import https from 'https';
 
 const projectId = 'dh-notebook-69f3b';

@@ -31,8 +31,8 @@
 <pitfalls_and_lessons>
 - ⚠️ Banner must be slim dark `bg-slate-900/95` with `Live` badge, not heavy purple banner.
 - ⚠️ Right rail empty state must show clean `ALL CAUGHT UP` with emerald circular icon.
-- ⚠️ Do not hardcode menu lists that omit `yearly_archive` or show removed `knowledge` items.
-- ⚠️ Freebie rules require `distributionMode` ('per_bill' vs 'per_item') to sync with POS calculations.
+- ⚠️ Manager approvals listener MUST merge `claims` and `todos` real-time to maintain 100% data parity.
+- ⚠️ `managerActionService` must delegate claim/return/exchange actions directly to `claimManagerService` facade.
 - ⚠️ Always explicitly reassure: 'No Deploy & No Git Push' on every user permission request.
 - ⚠️ Always call `ask_question` tool for interactive modal choices when asking user permission, never plain text.
 </pitfalls_and_lessons>

@@ -1,7 +1,6 @@
- 
 import { db } from './config';
 import { 
-  collection, query, where, doc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, limit, orderBy
+  collection, query, where, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, onSnapshot, limit, orderBy
 } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -14,8 +13,10 @@ export const MANAGER_TASK_TYPES = [
   'wholesale_request',
   'CLAIM_APPROVAL',
   'RETURN_APPROVAL',
+  'EXCHANGE_APPROVAL',
   'CANCEL_CLAIM_APPROVAL',
   'CANCEL_RETURN_APPROVAL',
+  'CANCEL_EXCHANGE_APPROVAL',
   'AD_APPROVAL',         // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า
   'USER_SKU_APPROVAL',   // งานตรวจสอบ/อนุมัติ ฝากโฆษณาสินค้า (Legacy)
   'BILLBOARD_APPROVAL',  // งานตรวจสอบ/อนุมัติ ฝากแผ่นป้ายโฆษณา
@@ -27,48 +28,110 @@ export const MANAGER_TASK_TYPES = [
   'WALLET_WITHDRAWAL',   // งานตรวจสอบ/อนุมัติ โอนเงินค้างระบบคืนให้ลูกค้า
   'STAFF_APPROVAL',      // งานตรวจสอบ/อนุมัติ พนักงานใหม่เข้าทำงาน
   'PRODUCT_DELETE_APPROVAL', // ขออนุมัติการลบสินค้า
+  'CUSTOMER_DELETE_APPROVAL', // ขออนุมัติการลบลูกค้า
   'BILL_CANCEL_APPROVAL',    // ขออนุมัติการยกเลิกบิล
   'PRODUCT_KNOWLEDGE_APPROVAL', // ขออนุมัติเพิ่มข้อมูลรุ่น/พาร์ทที่รองรับ
   'WARRANTY_SETUP'           // งานตั้งค่าระยะเวลารับประกันสำหรับหมวดสินค้าใหม่
 ];
 
+// ----------------------------------------------------------------------
+// 🏷️ กลุ่มงาน Claim/Return/Exchange (Single Source of Truth: 'claims' collection)
+// ----------------------------------------------------------------------
+export const CLAIM_TASK_TYPES = [
+  'CLAIM_APPROVAL',
+  'RETURN_APPROVAL',
+  'EXCHANGE_APPROVAL',
+  'CANCEL_CLAIM_APPROVAL',
+  'CANCEL_RETURN_APPROVAL',
+  'CANCEL_EXCHANGE_APPROVAL'
+];
+
 export const managerTodoService = {
   // ----------------------------------------------------------------------
-  // 📡 1. ดึงข้อมูลงานของผู้จัดการแบบ Real-time (แยกจากงานทั่วไป)
+  // 📡 1. ดึงข้อมูลงานของผู้จัดการแบบ Real-time (ผสาน 'todos' และ 'claims')
   // ----------------------------------------------------------------------
   subscribeManagerApprovals: (callback) => {
-    // ดึงงานที่ยังไม่เสร็จ (todo หรือ pending) จาก Collection หลัก
+    // 1. ดึงงานทั่วไปที่ไม่ใช่ Claim จาก 'todos'
     const todosRef = collection(db, getCollectionPath('todos'));
-    const q = query(
+    const qTodos = query(
       todosRef,
       where('status', 'in', ['todo', 'pending', 'pending_manager', 'waiting_item', 'processing']),
       orderBy('createdAt', 'desc'),
-      limit(2000) // 🚀 [Optimization] เพิ่ม Limit เป็น 2000 เพื่อป้องกันงานข้ามประเภทดันตกขอบ
+      limit(2000)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      // 🚀 THE FIX: คัดกรองเฉพาะงานของผู้จัดการในระดับ Client 
-      // (เพื่อหลีกเลี่ยงข้อจำกัด 'in' Query ที่รับได้แค่ 10 เงื่อนไขของ Firestore)
-      const managerTodos = allTodos.filter(todo => {
+    // 2. ดึงงาน Claim/Return/Exchange/Cancel จาก 'claims' (Single Source of Truth)
+    const claimsRef = collection(db, getCollectionPath('claims'));
+    const qClaims = query(
+      claimsRef,
+      where('status', 'in', ['pending_manager', 'waiting_item', 'processing']),
+      orderBy('createdAt', 'desc'),
+      limit(500)
+    );
+
+    let currentTodos = [];
+    let currentClaims = [];
+
+    const getDocTime = (docItem) => {
+      if (!docItem?.createdAt) return 0;
+      if (typeof docItem.createdAt.toMillis === 'function') return docItem.createdAt.toMillis();
+      if (typeof docItem.createdAt.toDate === 'function') return docItem.createdAt.toDate().getTime();
+      if (docItem.createdAt instanceof Date) return docItem.createdAt.getTime();
+      return new Date(docItem.createdAt).getTime() || 0;
+    };
+
+    const emitMerged = () => {
+      // Deduplicate by doc ID: authoritative 'claims' records take precedence over shadow 'todos'
+      const taskMap = new Map();
+
+      // Filter todos for non-claim manager task types
+      currentTodos.forEach(todo => {
         const typeToCheck = todo.type || todo.taskType;
-        return MANAGER_TASK_TYPES.includes(typeToCheck);
+        if (MANAGER_TASK_TYPES.includes(typeToCheck) && !CLAIM_TASK_TYPES.includes(typeToCheck)) {
+          taskMap.set(todo.id, todo);
+        }
       });
 
-      callback(managerTodos);
+      // Add claim tasks from 'claims' collection
+      currentClaims.forEach(claim => {
+        const typeToCheck = claim.type || claim.taskType;
+        if (!typeToCheck || CLAIM_TASK_TYPES.includes(typeToCheck)) {
+          taskMap.set(claim.id, claim);
+        }
+      });
+
+      const merged = Array.from(taskMap.values());
+      merged.sort((a, b) => getDocTime(b) - getDocTime(a));
+      callback(merged);
+    };
+
+    const unsubscribeTodos = onSnapshot(qTodos, (snapshot) => {
+      currentTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      emitMerged();
     }, (error) => {
-      console.error("🔥 Error subscribing to manager tasks:", error);
+      console.error("🔥 Error subscribing to manager todos:", error);
       callback([], error);
     });
 
-    return unsubscribe;
+    const unsubscribeClaims = onSnapshot(qClaims, (snapshot) => {
+      currentClaims = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      emitMerged();
+    }, (error) => {
+      console.error("🔥 Error subscribing to manager claims:", error);
+      callback([], error);
+    });
+
+    return () => {
+      if (typeof unsubscribeTodos === 'function') unsubscribeTodos();
+      if (typeof unsubscribeClaims === 'function') unsubscribeClaims();
+    };
   },
 
   // ----------------------------------------------------------------------
-  // 📝 2. อัปเดตสถานะงาน / ยกเลิกงาน (แก้บั๊คที่นี่)
+  // 📝 2. อัปเดตสถานะงาน / ยกเลิกงาน
+  // ตรวจสอบว่าเป็น Claim task หรืออยู่ใน 'claims' collection หรือไม่
   // ----------------------------------------------------------------------
-  updateTaskStatus: async (taskId, newStatus, payload = {}) => {
+  updateTaskStatus: async (taskId, newStatus, payload = {}, taskType = null) => {
     try {
       if (!taskId) throw new Error("ไม่พบรหัสงาน (Task ID)");
       
@@ -76,7 +139,45 @@ export const managerTodoService = {
       const cleanPayload = Object.fromEntries(
         Object.entries(payload).filter(([_, v]) => v !== undefined)
       );
-      
+
+      const typeToCheck = taskType || payload.type || payload.taskType;
+      const isClaimTask = typeToCheck && CLAIM_TASK_TYPES.includes(typeToCheck);
+
+      // ตรวจสอบว่ามีเอกสารอยู่ใน 'claims' หรือไม่
+      let existsInClaims = false;
+      const claimRef = doc(db, getCollectionPath('claims'), taskId);
+      if (isClaimTask) {
+        existsInClaims = true;
+      } else {
+        try {
+          const claimSnap = await getDoc(claimRef);
+          existsInClaims = claimSnap.exists();
+        } catch (_) {}
+      }
+
+      if (existsInClaims) {
+        await updateDoc(claimRef, { 
+          ...cleanPayload, 
+          status: newStatus, 
+          updatedAt: serverTimestamp() 
+        });
+
+        // ซิงก์เงาใน 'todos' ด้วยหากมีเอกสารเดิมหลงเหลืออยู่
+        try {
+          const todoRef = doc(db, getCollectionPath('todos'), taskId);
+          const todoSnap = await getDoc(todoRef);
+          if (todoSnap.exists()) {
+            await updateDoc(todoRef, {
+              ...cleanPayload,
+              status: newStatus,
+              updatedAt: serverTimestamp()
+            });
+          }
+        } catch (_) {}
+        return true;
+      }
+
+      // กรณีงานทั่วไป อัปเดตใน 'todos'
       const taskRef = doc(db, getCollectionPath('todos'), taskId);
       await updateDoc(taskRef, { 
         ...cleanPayload, 
@@ -91,14 +192,27 @@ export const managerTodoService = {
   },
 
   // ----------------------------------------------------------------------
-  // 🗑️ 3. ลบงานของผู้จัดการ (แก้บั๊คที่นี่)
+  // 🗑️ 3. ลบงานของผู้จัดการ
   // ----------------------------------------------------------------------
   deleteManagerTask: async (taskId) => {
     try {
       if (!taskId) throw new Error("ไม่พบรหัสงาน (Task ID) ที่ต้องการลบ");
 
-      const taskRef = doc(db, getCollectionPath('todos'), taskId);
-      await deleteDoc(taskRef);
+      // ลบจาก 'claims' หากมีอยู่
+      try {
+        const claimRef = doc(db, getCollectionPath('claims'), taskId);
+        const claimSnap = await getDoc(claimRef);
+        if (claimSnap.exists()) {
+          await deleteDoc(claimRef);
+        }
+      } catch (_) {}
+
+      // ลบจาก 'todos'
+      try {
+        const taskRef = doc(db, getCollectionPath('todos'), taskId);
+        await deleteDoc(taskRef);
+      } catch (_) {}
+
       return true;
     } catch (error) {
       console.error(`🔥 Error deleting task [${taskId}]:`, error);

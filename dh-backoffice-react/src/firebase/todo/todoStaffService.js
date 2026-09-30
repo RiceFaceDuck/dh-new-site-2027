@@ -38,5 +38,42 @@ export const todoStaffService = {
           console.error("❌ [TodoService] Create Staff Task Error:", error);
           throw error;
       }
+  },
+
+  // ============================================================================
+  // 🗑️ CUSTOMER DELETION APPROVAL TASK (คำขอลบลูกค้าจากพนักงานส่งถึงผู้จัดการ)
+  // ============================================================================
+  requestCustomerDeletion: async (customerData, requestedBy) => {
+      try {
+          const customerId = customerData?.uid || customerData?.id || 'Unknown';
+          const customerName = customerData?.accountName || customerData?.storeName || customerData?.displayName || customerData?.name || 'ลูกค้า';
+          const accountId = customerData?.accountId || customerData?.customerCode || '';
+
+          const todoPayload = {
+              type: 'CUSTOMER_DELETE_APPROVAL',
+              taskType: 'CUSTOMER_DELETE_APPROVAL',
+              status: 'pending',
+              title: `ขออนุมัติลบลูกค้า: ${customerName} (${accountId || customerId})`,
+              description: `พนักงานขอลบลูกค้า "${customerName}" (ID: ${accountId || customerId}) ออกจากฐานข้อมูลระบบ`,
+              priority: 'High',
+              targetUid: customerId,
+              requestedBy: requestedBy || 'Unknown User',
+              payload: {
+                  customerId,
+                  accountId,
+                  name: customerName,
+                  phone: customerData?.phone || customerData?.phoneNumber || '-'
+              },
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+          };
+
+          const docRef = await addDoc(collection(db, getCollectionPath('todos')), todoPayload);
+          console.log(`✅ [TodoService] Customer Deletion Task Created ID: ${docRef.id}`);
+          return { success: true, taskId: docRef.id };
+      } catch (error) {
+          console.error("❌ [TodoService] Request Customer Deletion Error:", error);
+          throw error;
+      }
   }
 };

@@ -24,7 +24,9 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
       case 'FOLLOW_UP': return <MessageSquare size={20} className="text-teal-500" />;
       case 'INVENTORY': return <Truck size={20} className="text-purple-500" />;
       case 'CLAIM_APPROVAL': 
+      case 'EXCHANGE_APPROVAL':
       case 'CANCEL_CLAIM_APPROVAL':
+      case 'CANCEL_EXCHANGE_APPROVAL':
       case 'CANCEL_RETURN_APPROVAL':
       case 'PRODUCT_DELETE_APPROVAL':
       case 'BILL_CANCEL_APPROVAL':
@@ -39,9 +41,11 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
     }
   };
 
-
-
   const getStatusBadge = (status) => {
+    const isCancelRequest = todo.type?.startsWith('CANCEL_');
+    if (isCancelRequest && (status === 'pending_manager' || status === 'pending')) {
+      return <span className="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-xs font-bold border border-rose-200">🚨 รออนุมัติยกเลิก</span>;
+    }
     switch (status) {
       case 'todo': return <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-xs font-bold border border-slate-200">รอเริ่มงาน</span>;
       case 'in_progress': return <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse border border-blue-200">⏳ กำลังดำเนินการ</span>;

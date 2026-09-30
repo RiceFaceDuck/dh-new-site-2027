@@ -21,7 +21,7 @@
   </core_schema>
 
   <business_rules>
-    <rule id="1">Table layout maintains 9 balanced columns: CUSTOMER ID (130px), PROFILE (minmax(180px,1.5fr)), PHONE (110px), LOGISTIC (110px), ROLE/TIER (90px), DH ค้างยอด (100px), POINTS (90px), บิลล่าสุด (100px), 30D PAID OUT (110px) with gap-4.</rule>
+    <rule id="1">Table layout maintains 9 balanced columns: CUSTOMER ID (130px), PROFILE (minmax(180px,1.5fr)), PHONE (110px), LOGISTIC (110px), ROLE/TIER (90px), DH ค้างยอด (100px), POINTS (90px), บิลล่าสุด (100px), 30D PAID OUT (110px) with gap-4. In table rows, financial columns omit currency symbols (no '฿') for clean numeric readability, while DetailPanel retains standard monetary symbol.</rule>
     <rule id="2">Duplicate Guard: Pre-flight check on Phone (80 pts), Store/Account Name (60 pts), Line ID (40 pts) before user creation with merge/overwrite options.</rule>
     <rule id="3">Quota Zero-Leak: History uses targeted indexed queries (customerUid, accountId, phone) + 5-min in-memory cache; unbounded root orders scans are strictly banned.</rule>
     <rule id="4">Zero code mutation to business logic, Cloud Functions, background triggers, or data calculation scripts during UI/UX refinements.</rule>

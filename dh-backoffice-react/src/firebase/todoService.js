@@ -35,6 +35,7 @@ export const todoService = {
   createMockWithdrawal: todoWalletService.createMockWithdrawal,
   clearMockWithdrawals: todoWalletService.clearMockWithdrawals,
   createStaffApprovalTask: todoStaffService.createStaffApprovalTask,
+  requestCustomerDeletion: todoStaffService.requestCustomerDeletion,
   requestProductDeletion: todoInventoryService.requestProductDeletion,
   requestKnowledgeApproval: todoInventoryService.requestKnowledgeApproval,
 

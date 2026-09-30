@@ -144,7 +144,10 @@ export default function ManagerTaskSection() {
     });
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, taskType) => {
+    if (taskType?.startsWith('CANCEL_') && (status === 'pending_manager' || status === 'pending')) {
+      return <span className="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-md text-[9px] font-bold border border-rose-200">🚨 รออนุมัติยกเลิก</span>;
+    }
     switch (status) {
       case 'todo': return <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md text-[9px] font-bold border border-slate-200">WAITING</span>;
       case 'in_progress': 
@@ -251,7 +254,7 @@ export default function ManagerTaskSection() {
             isManagerTab: true,
             urgencyLevel,
             handleAction,
-            getStatusBadge,
+            getStatusBadge: (status) => getStatusBadge(status, task.type || task.taskType),
             formatDate,
             handleRejectClick: () => createRejectHandler(task)(),
             getIconForType

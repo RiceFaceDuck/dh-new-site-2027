@@ -61,7 +61,8 @@ service cloud.firestore {
           !request.resource.data.keys().hasAny(['walletBalance', 'creditPoints', 'totalAccumulatedPoints']) ||
           (
             request.resource.data.get('walletBalance', 0) == 0 &&
-            request.resource.data.get('creditPoints', 0) == 0
+            request.resource.data.get('creditPoints', 0) == 0 &&
+            request.resource.data.get('totalAccumulatedPoints', 0) == 0
           )
         ) &&
         (
@@ -78,7 +79,8 @@ service cloud.firestore {
         isStaff() &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'role', 'isStaff', 'uid', 'email', 'rank', 'accountId', 'customerCode', 'roles', 'userType',
-          'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'pendingWithdrawal'
+          'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'pendingWithdrawal',
+          'status', 'isActive', 'isApproved'
         ]))
       ) || (
         isAuthenticated() && request.auth.uid == userId &&
@@ -160,13 +162,14 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
       allow create: if isStaff() || (
         isAuthenticated() && request.auth.uid == userId &&
-        !request.resource.data.keys().hasAny(['role', 'isStaff', 'roles', 'userType', 'walletBalance', 'creditPoints', 'isApproved'])
+        !request.resource.data.keys().hasAny(['role', 'isStaff', 'roles', 'userType', 'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'isApproved'])
       );
       allow update: if isManagerOrAdmin() || (
         isStaff() &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'role', 'isStaff', 'uid', 'email', 'rank', 'accountId', 'customerCode', 'roles', 'userType',
-          'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'pendingWithdrawal'
+          'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'pendingWithdrawal',
+          'status', 'isActive', 'isApproved'
         ]))
       ) || (
         isAuthenticated() && request.auth.uid == userId &&

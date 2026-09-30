@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, getDocs, collection, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, query, where, orderBy, limit, Timestamp, runTransaction } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { getCollectionPath, safeJsonParse } from 'dh-shared';
 
@@ -416,74 +416,79 @@ export const syncCustomerToDirectoryChunk = async (customer, action = 'upsert') 
 
   try {
     const dirRef = doc(db, getCollectionPath('catalogs'), 'customers_directory');
-    const dirSnap = await getDoc(dirRef);
-    let items = [];
 
-    if (dirSnap.exists()) {
-      const data = dirSnap.data();
-      items = Array.isArray(data.customers) ? [...data.customers] : [];
-    }
+    const updatedItems = await runTransaction(db, async (transaction) => {
+      const dirSnap = await transaction.get(dirRef);
+      let items = [];
 
-    if (action === 'delete') {
-      items = items.filter(c => c.id !== targetId && c.uid !== targetId);
-    } else {
-      const resolvedName = customer.storeName || customer.accountName || customer.displayName || customer.name || 'ลูกค้าทั่วไป';
-      const resolvedPhone = customer.phone && customer.phone !== '-' ? customer.phone : (customer.phoneNumber && customer.phoneNumber !== '-' ? customer.phoneNumber : '-');
-      const resolvedAccountId = customer.accountId || customer.customerCode || (targetId ? targetId.substring(0, 8).toUpperCase() : '');
-
-      const newEntry = {
-        uid: targetId,
-        id: targetId,
-        name: resolvedName,
-        storeName: customer.storeName || resolvedName,
-        displayName: customer.displayName || resolvedName,
-        accountName: customer.accountName || resolvedName,
-        phone: resolvedPhone,
-        phoneNumber: resolvedPhone,
-        logisticProvider: customer.logisticProvider || customer.preferredCourier || '',
-        preferredCourier: customer.preferredCourier || customer.logisticProvider || '',
-        logisticNote: customer.logisticNote || '',
-        role: customer.role || customer.rank || 'Customer',
-        rank: customer.rank || customer.role || 'Customer',
-        accountId: resolvedAccountId,
-        customerCode: customer.customerCode || resolvedAccountId,
-        walletBalance: Number(customer.walletBalance || 0),
-        creditPoints: Number(customer.creditPoints || 0),
-        hasTaxInfo: Boolean(customer.hasTaxInfo || customer.taxId),
-        address: customer.address || null,
-        legacyAddress: customer.legacyAddress || null,
-        shippingAddress: customer.shippingAddress || null,
-        taxId: customer.taxId || null,
-        shippingNotes: customer.shippingNotes || '',
-        contactName: customer.contactName || '',
-        lastOrderDate: Number(customer.lastOrderDate || 0),
-        sales30Days: Number(customer.sales30Days || 0),
-        orderCount30Days: Number(customer.orderCount30Days || 0),
-        isActive: customer.isActive !== false,
-        status: customer.status || 'active'
-      };
-
-      const existingIndex = items.findIndex(c =>
-        (targetId && (c.id === targetId || c.uid === targetId)) ||
-        (newEntry.phone && newEntry.phone !== '-' && c.phone === newEntry.phone)
-      );
-
-      if (existingIndex >= 0) {
-        items[existingIndex] = { ...items[existingIndex], ...newEntry };
-      } else {
-        items.unshift(newEntry);
+      if (dirSnap.exists()) {
+        const data = dirSnap.data();
+        items = Array.isArray(data.customers) ? [...data.customers] : [];
       }
-    }
 
-    await setDoc(dirRef, {
-      chunkId: 'customers_directory',
-      totalCustomers: items.length,
-      generatedAt: Timestamp.now(),
-      customers: items
-    }, { merge: true });
+      if (action === 'delete') {
+        items = items.filter(c => c.id !== targetId && c.uid !== targetId);
+      } else {
+        const resolvedName = customer.storeName || customer.accountName || customer.displayName || customer.name || 'ลูกค้าทั่วไป';
+        const resolvedPhone = customer.phone && customer.phone !== '-' ? customer.phone : (customer.phoneNumber && customer.phoneNumber !== '-' ? customer.phoneNumber : '-');
+        const resolvedAccountId = customer.accountId || customer.customerCode || (targetId ? targetId.substring(0, 8).toUpperCase() : '');
 
-    writeCachedCustomers(items);
-    console.log(`✅ [Auto-Sync] Synchronized customer (${action}) to directory chunk. Total: ${items.length}`);
+        const newEntry = {
+          uid: targetId,
+          id: targetId,
+          name: resolvedName,
+          storeName: customer.storeName || resolvedName,
+          displayName: customer.displayName || resolvedName,
+          accountName: customer.accountName || resolvedName,
+          phone: resolvedPhone,
+          phoneNumber: resolvedPhone,
+          logisticProvider: customer.logisticProvider || customer.preferredCourier || '',
+          preferredCourier: customer.preferredCourier || customer.logisticProvider || '',
+          logisticNote: customer.logisticNote || '',
+          role: customer.role || customer.rank || 'Customer',
+          rank: customer.rank || customer.role || 'Customer',
+          accountId: resolvedAccountId,
+          customerCode: customer.customerCode || resolvedAccountId,
+          walletBalance: Number(customer.walletBalance || 0),
+          creditPoints: Number(customer.creditPoints || 0),
+          hasTaxInfo: Boolean(customer.hasTaxInfo || customer.taxId),
+          address: customer.address || null,
+          legacyAddress: customer.legacyAddress || null,
+          shippingAddress: customer.shippingAddress || null,
+          taxId: customer.taxId || null,
+          shippingNotes: customer.shippingNotes || '',
+          contactName: customer.contactName || '',
+          lastOrderDate: Number(customer.lastOrderDate || 0),
+          sales30Days: Number(customer.sales30Days || 0),
+          orderCount30Days: Number(customer.orderCount30Days || 0),
+          isActive: customer.isActive !== false,
+          status: customer.status || 'active'
+        };
+
+        const existingIndex = items.findIndex(c =>
+          (targetId && (c.id === targetId || c.uid === targetId)) ||
+          (newEntry.phone && newEntry.phone !== '-' && c.phone === newEntry.phone)
+        );
+
+        if (existingIndex >= 0) {
+          items[existingIndex] = { ...items[existingIndex], ...newEntry };
+        } else {
+          items.unshift(newEntry);
+        }
+      }
+
+      transaction.set(dirRef, {
+        chunkId: 'customers_directory',
+        totalCustomers: items.length,
+        generatedAt: Timestamp.now(),
+        customers: items
+      }, { merge: true });
+
+      return items;
+    });
+
+    writeCachedCustomers(updatedItems);
+    console.log(`✅ [Auto-Sync] Synchronized customer (${action}) to directory chunk with transaction. Total: ${updatedItems.length}`);
   } catch (err) {
     console.warn(`⚠️ [Auto-Sync] Failed to sync customer to directory chunk:`, err.message);
   }

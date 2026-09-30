@@ -5,15 +5,28 @@ import { claimActionService } from './claimActionService';
 // Facade for backward compatibility and easy imports
 export const claimManagerService = {
   
-  approveRequest: async (task, adminUid, adminName) => {
-    if (task.type.startsWith('CANCEL_')) {
-      return await cancelActionService.approveCancel(task, adminUid, adminName);
+  approveRequest: async (task, ...args) => {
+    let adminUid = args[0];
+    let adminName = args[1];
+    let payload = null;
+
+    // Support polymorphic signature: (task, roleOrType, adminId, adminName, payload)
+    if (args[0] === 'cancel' || args[0] === 'manager') {
+      adminUid = args[1];
+      adminName = args[2];
+      payload = args[3];
     }
-    if (task.type === 'RETURN_APPROVAL') {
-      return await returnActionService.approveRequest(task, adminUid, adminName);
+
+    const taskObj = payload ? { ...task, payload: { ...(task.payload || {}), ...payload } } : task;
+
+    if (taskObj.type.startsWith('CANCEL_')) {
+      return await cancelActionService.approveCancel(taskObj, adminUid, adminName);
     }
-    if (task.type === 'CLAIM_APPROVAL' || task.type === 'EXCHANGE_APPROVAL') {
-      return await claimActionService.approveRequest(task, adminUid, adminName);
+    if (taskObj.type === 'RETURN_APPROVAL') {
+      return await returnActionService.approveRequest(taskObj, adminUid, adminName);
+    }
+    if (taskObj.type === 'CLAIM_APPROVAL' || taskObj.type === 'EXCHANGE_APPROVAL') {
+      return await claimActionService.approveRequest(taskObj, adminUid, adminName);
     }
     throw new Error('Unknown task type for approval');
   },
@@ -38,7 +51,18 @@ export const claimManagerService = {
     throw new Error('Unknown task type for completion');
   },
 
-  rejectRequest: async (task, reason, adminUid, adminName) => {
+  rejectRequest: async (task, ...args) => {
+    let reason = args[0];
+    let adminUid = args[1];
+    let adminName = args[2];
+
+    // Support polymorphic signature: (task, roleOrType, reason, adminId, adminName)
+    if (args[0] === 'cancel' || args[0] === 'manager') {
+      reason = args[1];
+      adminUid = args[2];
+      adminName = args[3];
+    }
+
     if (task.type.startsWith('CANCEL_')) {
       return await cancelActionService.rejectCancel(task, reason, adminUid, adminName);
     }

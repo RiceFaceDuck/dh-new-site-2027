@@ -29,6 +29,15 @@ export const executeCustomerRefund = async ({
     const currentAdminUid = adminInfo?.uid || auth.currentUser?.uid || 'Manager';
     const currentAdminName = adminInfo?.displayName || adminInfo?.name || auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Manager';
 
+    // 🛡️ ป้องกัน Base64 Data URL ขนาดใหญ่หลุดเข้ามาใน Firestore transaction
+    let sanitizedSlipUrl = slipUrl || null;
+    if (sanitizedSlipUrl && typeof sanitizedSlipUrl === 'string') {
+        if (sanitizedSlipUrl.startsWith('data:image/') || sanitizedSlipUrl.length > 2000) {
+            console.warn("⚠️ [CustomerRefundService] Rejected raw Base64 data URL in Firestore transaction to prevent document size overflow.");
+            sanitizedSlipUrl = null;
+        }
+    }
+
     try {
         const result = await runTransaction(db, async (transaction) => {
             const userRef = doc(db, getUsersPath(), customerId);
@@ -86,7 +95,7 @@ export const executeCustomerRefund = async ({
                 amount: safeAmount,
                 balanceAfter: newWalletBalance,
                 status: 'SUCCESS',
-                slipUrl: slipUrl || null,
+                slipUrl: sanitizedSlipUrl,
                 note: note || (refundMethod === 'CASH' ? 'คืนเงินสดเรียบร้อยแล้ว' : 'โอนเงินคืนสำเร็จเรียบร้อย'),
                 operatorUid: currentAdminUid,
                 operatorName: currentAdminName,
@@ -101,7 +110,7 @@ export const executeCustomerRefund = async ({
                 targetName: userData.displayName || userData.accountName || 'Customer',
                 amount: safeAmount,
                 refundMethod: refundMethod,
-                slipUrl: slipUrl || null,
+                slipUrl: sanitizedSlipUrl,
                 note: note,
                 performedBy: currentAdminUid,
                 performedByName: currentAdminName,
@@ -115,7 +124,7 @@ export const executeCustomerRefund = async ({
                 customerId: customerId,
                 amount: safeAmount,
                 refundMethod: refundMethod,
-                slipUrl: slipUrl || null,
+                slipUrl: sanitizedSlipUrl,
                 createdBy: currentAdminUid,
                 createdAt: serverTimestamp()
             });
@@ -138,7 +147,7 @@ export const executeCustomerRefund = async ({
             details: {
                 amount: safeAmount,
                 refundMethod: refundMethod,
-                slipUrl: slipUrl || 'N/A',
+                slipUrl: sanitizedSlipUrl || 'N/A',
                 note: note || 'N/A',
                 txId: result.txId
             },

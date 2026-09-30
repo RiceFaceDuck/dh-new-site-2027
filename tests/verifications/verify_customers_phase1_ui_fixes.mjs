@@ -18,10 +18,15 @@ function assert(condition, message) {
   }
 }
 
-// 1. WalletDisplay currency symbol
+// 1. WalletDisplay currency symbol & table clean display
 const walletFile = fs.readFileSync('dh-backoffice-react/src/pages/Customers/components/displays/WalletDisplay.jsx', 'utf8');
 assert(walletFile.includes("const symbol = showSymbol ? '฿' : '';"), "WalletDisplay renders Thai Baht symbol ('฿') instead of ('$')");
 assert(!walletFile.includes("const symbol = showSymbol ? '$' : '';"), "WalletDisplay no longer contains Dollar symbol ('$')");
+assert(walletFile.includes("showSymbol = false"), "WalletDisplay defaults to showSymbol = false for clean table rendering");
+
+const rowFile = fs.readFileSync('dh-backoffice-react/src/pages/Customers/components/layout/CustomerRow.jsx', 'utf8');
+assert(!rowFile.includes("฿{sales30Days"), "CustomerRow eliminates ฿ symbol from 30D PAID OUT column");
+assert(rowFile.includes("<WalletDisplay customerId={customerId} customer={customer} showSymbol={false} />"), "CustomerRow explicitly disables currency symbol for DH ค้างยอด column");
 
 // 2. PointDisplay canonical points
 const pointFile = fs.readFileSync('dh-backoffice-react/src/pages/Customers/components/displays/PointDisplay.jsx', 'utf8');

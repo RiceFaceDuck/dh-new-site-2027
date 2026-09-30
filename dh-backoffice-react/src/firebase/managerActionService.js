@@ -1,6 +1,8 @@
 import { adManagementService } from './adManagementService';
 import { historyService } from './historyService';
 import { auth } from './config';
+import { claimManagerService } from './claim/claimManagerService';
+import { CLAIM_TASK_TYPES } from './managerTodoService';
 
 // ----------------------------------------------------------------------
 // 📦 Manager Action Service
@@ -10,6 +12,25 @@ import { auth } from './config';
 export const managerActionService = {
 
   handleApproval: async (taskId, type, payload, originalTask, adminId) => {
+    // 0. CLAIM / RETURN / EXCHANGE / CANCEL APPROVALS (Clean Architecture Unified Facade)
+    if (CLAIM_TASK_TYPES.includes(type)) {
+      const adminName = auth.currentUser?.displayName || 'Manager';
+      const isCancel = type.startsWith('CANCEL_');
+      const roleOrType = isCancel ? 'cancel' : 'manager';
+      const task = originalTask || { id: taskId, type, payload };
+
+      await claimManagerService.approveRequest(task, roleOrType, adminId, adminName, payload);
+
+      const actionName = isCancel ? 'ApproveCancelClaim' : 'ApproveClaim';
+      const detailMsg = isCancel 
+        ? `อนุมัติการยกเลิกคำขอ: ${type} (${task.title || taskId})`
+        : `อนุมัติคำขอ: ${type} (${task.title || taskId})`;
+      await historyService.addLog('ManagerAction', actionName, taskId, detailMsg, adminId || auth.currentUser?.uid);
+
+      const targetStatus = isCancel ? 'cancelled' : 'waiting_item';
+      return { success: true, newStatus: targetStatus, status: targetStatus };
+    }
+
     // 1. STAFF_APPROVAL
     if (type === 'STAFF_APPROVAL') {
       const { auth: dynamicAuth } = await import('./config');
@@ -97,6 +118,25 @@ export const managerActionService = {
   },
 
   handleRejection: async (taskId, type, payload, originalTask, adminId, reason) => {
+    // 0. CLAIM / RETURN / EXCHANGE / CANCEL REJECTIONS (Clean Architecture Unified Facade)
+    if (CLAIM_TASK_TYPES.includes(type)) {
+      const adminName = auth.currentUser?.displayName || 'Manager';
+      const isCancel = type.startsWith('CANCEL_');
+      const roleOrType = isCancel ? 'cancel' : 'manager';
+      const task = originalTask || { id: taskId, type, payload };
+
+      await claimManagerService.rejectRequest(task, roleOrType, reason, adminId, adminName);
+
+      const actionName = isCancel ? 'RejectCancelClaim' : 'RejectClaim';
+      const detailMsg = isCancel
+        ? `ปฏิเสธการขอยกเลิก: ${type} เหตุผล: ${reason || 'ไม่มีระบุ'}`
+        : `ปฏิเสธคำขอ: ${type} เหตุผล: ${reason || 'ไม่มีระบุ'}`;
+      await historyService.addLog('ManagerAction', actionName, taskId, detailMsg, auth.currentUser?.uid);
+
+      const targetStatus = isCancel ? (originalTask?.originalStatus || 'processing') : 'rejected';
+      return { success: true, newStatus: targetStatus, status: targetStatus };
+    }
+
     // 1. AD_APPROVAL
     if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(type)) {
       const adId = originalTask.targetSkuId || originalTask.payload?.adId || originalTask.adPayload?.id || originalTask.id;

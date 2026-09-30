@@ -36,7 +36,7 @@ const isOrderMatchForCustomer = (orderData, orderDocId, customerObj) => {
   const orderCust = orderData.customer || {};
   const orderCustInfo = orderData.customerInfo || {};
 
-  const orderUid = orderCust.uid || orderData.userId || orderCustInfo.uid || orderData.customerId;
+  const orderUid = orderCust.uid || orderData.userId || orderCustInfo.uid || orderData.customerId || orderData.customerUid;
   const orderId = orderCust.id || orderCustInfo.id;
   const orderAccountId = orderCust.accountId || orderCustInfo.accountId;
   const orderCode = orderCust.customerCode || orderCustInfo.customerCode;
@@ -135,6 +135,7 @@ export const useCustomerHistory = () => {
 
       const claimQueries = [];
       if (idList.length > 0) {
+        claimQueries.push(getDocs(query(claimsRef, where('customerUid', 'in', idList), limit(300))));
         claimQueries.push(getDocs(query(claimsRef, where('uid', 'in', idList), limit(300))));
         claimQueries.push(getDocs(query(claimsRef, where('customerId', 'in', idList), limit(300))));
       }

@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
  * Component สำหรับแสดงผลยอด "DH ค้างยอด" (Wallet Balance)
  * สามารถนำไปวางใน Table Row หรือ Detail Panel ได้ทันที
  */
-export default function WalletDisplay({ customerId, customer, className = '', showSymbol = true, live = false }) {
+export default function WalletDisplay({ customerId, customer, className = '', showSymbol = false, live = false }) {
   const targetId = live ? (customerId || customer?.id || customer?.uid) : null;
   const { walletBalance, loading } = useCustomerFinancials(targetId);
 
