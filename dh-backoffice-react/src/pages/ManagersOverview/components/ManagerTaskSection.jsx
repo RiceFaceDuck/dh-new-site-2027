@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   AlertCircle, CheckCircle2, ClipboardCheck, Info, HelpCircle, 
-  UserPlus, Calendar, Package, Truck, MessageSquare, Megaphone 
+  UserPlus, Calendar, Package, Truck, MessageSquare, Megaphone, ShieldCheck 
 } from 'lucide-react';
 import { useManagerTodo } from '../../todo/hooks/useManagerTodo';
 import { managerActionService } from '../../../firebase/managerActionService';
@@ -146,16 +146,45 @@ export default function ManagerTaskSection() {
 
   const getStatusBadge = (status, taskType) => {
     if (taskType?.startsWith('CANCEL_') && (status === 'pending_manager' || status === 'pending')) {
-      return <span className="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-md text-[9px] font-bold border border-rose-200">🚨 รออนุมัติยกเลิก</span>;
+      return (
+        <span className="bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 shadow-2xs">
+          🚨 รออนุมัติยกเลิก
+        </span>
+      );
     }
     switch (status) {
-      case 'todo': return <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md text-[9px] font-bold border border-slate-200">WAITING</span>;
+      case 'todo': 
+        return (
+          <span className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-slate-200 dark:border-slate-600 shadow-2xs">
+            รอเริ่มงาน
+          </span>
+        );
       case 'in_progress': 
-      case 'processing': return <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md text-[9px] font-bold animate-pulse border border-blue-200">⏳ กำลังดำเนินการ</span>;
-      case 'waiting_item': return <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-md text-[9px] font-bold border border-purple-200">📦 รอพัสดุมาถึง</span>;
+      case 'processing': 
+        return (
+          <span className="bg-slate-100/90 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 shadow-2xs">
+            ⏳ กำลังดำเนินการ
+          </span>
+        );
+      case 'waiting_item': 
+        return (
+          <span className="bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 shadow-2xs">
+            📦 รอพัสดุมาถึง
+          </span>
+        );
       case 'pending_manager': 
-      case 'pending': return <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md text-[9px] font-bold border border-amber-200">👑 รอผู้จัดการอนุมัติ</span>;
-      default: return <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase">{status}</span>;
+      case 'pending': 
+        return (
+          <span className="bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 shadow-2xs">
+            👑 รอผู้จัดการอนุมัติ
+          </span>
+        );
+      default: 
+        return (
+          <span className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-[11px] font-semibold shadow-2xs">
+            {status}
+          </span>
+        );
     }
   };
 
@@ -222,7 +251,7 @@ export default function ManagerTaskSection() {
       <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-            <ClipboardCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             การอนุมัติของผู้จัดการ
           </h2>
           <button 

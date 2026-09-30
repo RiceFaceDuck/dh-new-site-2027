@@ -33,6 +33,7 @@
 - ⚠️ Right rail empty state must show clean `ALL CAUGHT UP` with emerald circular icon.
 - ⚠️ Manager approvals listener MUST merge `claims` and `todos` real-time to maintain 100% data parity.
 - ⚠️ `managerActionService` must delegate claim/return/exchange actions directly to `claimManagerService` facade.
+- ⚠️ UI Cards redesign (`GenericTodoCard.jsx` `isManagerTab`): 2-column structured data grid, pill status tags, left border accent. Branch `backup-manager-rail-ui` preserved for instant rollback.
 - ⚠️ Always explicitly reassure: 'No Deploy & No Git Push' on every user permission request.
 - ⚠️ Always call `ask_question` tool for interactive modal choices when asking user permission, never plain text.
 </pitfalls_and_lessons>
