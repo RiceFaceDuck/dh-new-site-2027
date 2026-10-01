@@ -43,3 +43,77 @@ export const calculateVat = (rawAmount, vatType = 'ไม่มี VAT') => {
         finalTotal: Math.round(finalTotal * 100) / 100
     };
 };
+
+/**
+ * Detailed VAT calculation supporting product net, shipping fee, vatType, vatOnShipping, vatRate.
+ */
+export const calculateDetailedVat = ({
+    productNet = 0,
+    shippingFee = 0,
+    vatType = 'exempt',
+    vatOnShipping = false,
+    vatRate = 7
+} = {}) => {
+    const pNet = Math.max(0, Number(productNet) || 0);
+    const sFee = Math.max(0, Number(shippingFee) || 0);
+    const rate = Math.max(0, Number(vatRate) ?? 7);
+    const rateFactor = rate / 100;
+    const round2 = (val) => Math.round(Number(val || 0) * 100) / 100;
+
+    const normalizedVatType = (vatType === 'included' || vatType === 'รวม VAT')
+        ? 'included'
+        : (vatType === 'excluded' || vatType === 'แยก VAT')
+            ? 'excluded'
+            : 'exempt';
+
+    let productBase = 0;
+    let productVat = 0;
+    let productTotal = pNet;
+
+    if (normalizedVatType === 'included') {
+        if (rateFactor > 0) {
+            productBase = round2(pNet / (1 + rateFactor));
+            productVat = round2(pNet - productBase);
+        } else {
+            productBase = pNet;
+            productVat = 0;
+        }
+        productTotal = pNet;
+    } else if (normalizedVatType === 'excluded') {
+        productBase = pNet;
+        productVat = round2(pNet * rateFactor);
+        productTotal = round2(productBase + productVat);
+    } else {
+        productBase = pNet;
+        productVat = 0;
+        productTotal = pNet;
+    }
+
+    let shippingBase = sFee;
+    let shippingVat = 0;
+    let shippingTotal = sFee;
+
+    if (normalizedVatType !== 'exempt' && vatOnShipping && rateFactor > 0) {
+        shippingVat = round2(sFee * rateFactor);
+        shippingTotal = round2(shippingBase + shippingVat);
+    }
+
+    const amountBeforeVat = round2(productBase + shippingBase);
+    const vatAmount = round2(productVat + shippingVat);
+    const netTotal = round2(productTotal + shippingTotal);
+
+    return {
+        vatRate: rate,
+        vatType: normalizedVatType,
+        productBase,
+        productVat,
+        productTotal,
+        shippingBase,
+        shippingVat,
+        shippingTotal,
+        amountBeforeVat,
+        vatAmount,
+        netTotal
+    };
+};
+

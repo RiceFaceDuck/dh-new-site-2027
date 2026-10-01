@@ -10,6 +10,11 @@ export default function ReceiptHeader({
     fulfillmentType, 
     data 
 }) {
+    const rawVatType = data?.vatType || orderData?.vatType || customer?.vatType || '';
+    const isTaxInvoice = rawVatType === 'included' || rawVatType === 'excluded' || !!(data?.isTaxInvoice || orderData?.isTaxInvoice || customer?.taxInvoiceNeeded || customer?.taxId);
+    const trackingNumber = data?.trackingNumber || data?.trackingNo || data?.shippingTracking || data?.shippingDetails?.trackingNumber || orderData?.trackingNumber || orderData?.trackingNo || orderData?.shippingTracking || orderData?.shippingDetails?.trackingNumber;
+    const courierName = data?.courier || data?.shippingMethod || orderData?.courier || orderData?.shippingMethod;
+
     return (
         <>
             {/* Header: Ultra-Compact */}
@@ -33,14 +38,47 @@ export default function ReceiptHeader({
                     <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">ผู้รับสินค้า (Customer)</p>
                     <p className="font-black text-[12px] truncate">{displayName}</p>
                     <p className="font-bold text-blue-700 flex items-center gap-1 mt-0.5"><Phone size={10}/> {displayPhone}</p>
-                    {format === 'full' && customer?.address && <p className="text-[9px] text-gray-600 leading-[1.1] mt-0.5 line-clamp-2">{customer.address}</p>}
+                    {format === 'full' && (() => {
+                        const addr = customer?.address || customer?.fullAddress || data?.customerAddress || data?.shippingAddress || data?.address || orderData?.customerAddress || orderData?.shippingAddress || orderData?.address;
+                        if (!addr) return null;
+                        let text = '';
+                        if (typeof addr === 'string') {
+                            text = addr;
+                        } else if (typeof addr === 'object') {
+                            text = addr.fullAddress || [
+                                addr.addressLine || addr.address,
+                                addr.subDistrict ? `ต.${addr.subDistrict}` : '',
+                                addr.district ? `อ.${addr.district}` : '',
+                                addr.province ? `จ.${addr.province}` : '',
+                                addr.postalCode || addr.zipCode
+                            ].filter(Boolean).join(' ');
+                        }
+                        return text ? <p className="text-[9px] text-gray-600 leading-[1.1] mt-0.5 line-clamp-2">{text}</p> : null;
+                    })()}
                 </div>
                 <div className="text-right border-l pl-3 border-gray-300">
                     <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">ข้อมูลออเดอร์ (Order)</p>
                     <p className="font-bold flex items-center justify-end gap-1"><Calendar size={10}/> {orderData?.createdAt?.toDate ? orderData.createdAt.toDate().toLocaleDateString('th-TH') : new Date().toLocaleDateString('th-TH')}</p>
-                    <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 bg-white border border-gray-300 rounded-sm font-bold text-[9px] uppercase">
-                        {fulfillmentType === 'Delivery' ? <><Truck size={10}/> {data.courier || 'Delivery'}</> : <><Store size={10}/> {fulfillmentType === 'ZeerBranch' ? 'ZEER' : 'หน้าร้าน'}</>}
+                    <div className="mt-1 flex items-center justify-end gap-1.5 flex-wrap">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white border border-gray-300 rounded-sm font-bold text-[9px] uppercase">
+                            {fulfillmentType === 'Delivery' ? (
+                                <><Truck size={10}/> {courierName || 'Delivery'}</>
+                            ) : (
+                                <><Store size={10}/> {fulfillmentType === 'ZeerBranch' ? 'ZEER' : 'หน้าร้าน'}</>
+                            )}
+                        </div>
+                        {isTaxInvoice && (
+                            <span className="px-1.5 py-0.5 bg-purple-700 text-white font-black text-[9px] rounded-sm uppercase tracking-tight">
+                                📄 TAX ใบกำกับภาษี
+                            </span>
+                        )}
                     </div>
+                    {trackingNumber && (
+                        <div className="mt-1 flex items-center justify-end text-[9px] font-bold text-gray-700">
+                            <span className="text-gray-500 mr-1">เลขพัสดุ:</span>
+                            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-300 tracking-wider font-black text-gray-900">{trackingNumber}</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </>

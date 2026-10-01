@@ -7,115 +7,237 @@ import ReceiptHeader from './receipt/ReceiptHeader';
 import ReceiptItems from './receipt/ReceiptItems';
 import ReceiptFooter from './receipt/ReceiptFooter';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import { calculateCanonicalTotals } from 'dh-shared/src/priceEngine';
+import { calculateDetailedVat } from 'dh-shared/src/taxEngine';
+import { getBankLabel } from '../../../constants/bankConstants';
 
-export default function ReceiptTemplate({
-    activeTab,
-    updateActiveTab, 
-    onClose,
-    convertToThaiBahtText,
-    itemSubTotal = 0,
-    manualDiscount = 0,
-    promoDiscount = 0,
-    otherFeeAmount = 0,
-    shippingFee = 0,
-    vatAmount = 0,
-    vatType = 'exempt',
-    walletUsed = 0,
-    remainingToPay = 0,
-    orderData = null,
-    eligibleFreebies = []
-}) {
-    // 🛑 [ส่วนที่ห้ามแตะต้อง] - ตรรกะการดึงข้อมูลและการคำนวณเดิม (ได้รับการอัปเกรดเพื่อป้องกันข้อมูลว่าง/ผิดพลาด)
+function ReceiptToolbar({ onClose, format, toggleFormat, isSavingPref, handlePrint }) {
+    return (
+        <div className="w-full max-w-[155mm] flex justify-between items-center bg-white p-3 rounded-t-xl border-b shadow-xs">
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={onClose} 
+                    className="p-1.5 hover:bg-gray-100 text-gray-500 rounded-lg transition-colors cursor-pointer"
+                    title="ปิดหน้าต่าง"
+                >
+                    <X size={20}/>
+                </button>
+                <span className="font-bold text-gray-700">
+                    บิลขนาด A5 ({format === 'full' ? 'ฉบับเต็ม' : 'กระชับ'})
+                </span>
+            </div>
+            
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={toggleFormat} 
+                    disabled={isSavingPref} 
+                    className="flex items-center gap-1.5 border px-2.5 py-1 rounded-lg bg-gray-50 text-[11px] font-black hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer focus:outline-hidden"
+                    title="สลับรูปแบบบิล (ฉบับย่อ / ฉบับเต็ม)"
+                >
+                    <span className={format === 'short' ? 'text-orange-600 font-bold' : 'text-gray-400'}>ฉบับย่อ</span>
+                    {format === 'short' ? <ToggleLeft className="text-gray-400" size={24}/> : <ToggleRight className="text-orange-500" size={24}/>}
+                    <span className={format === 'full' ? 'text-orange-600 font-bold' : 'text-gray-400'}>ฉบับเต็ม</span>
+                </button>
+
+                <button 
+                    onClick={handlePrint} 
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                    <Printer size={16}/> พิมพ์บิล
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function processReceiptData(props) {
+    const {
+        activeTab,
+        convertToThaiBahtText,
+        itemSubTotal = 0,
+        manualDiscount = 0,
+        promoDiscount = 0,
+        otherFeeAmount = 0,
+        shippingFee = 0,
+        vatAmount = 0,
+        vatType = 'exempt',
+        walletUsed = 0,
+        remainingToPay = 0,
+        orderData = null,
+        eligibleFreebies = []
+    } = props;
+
     const data = orderData || activeTab || {};
-    const { customer, items = [], fulfillmentType, paymentMethod, billNote, orderId } = data;
+    const { customer, items = [], fulfillmentType, billNote, orderId } = data;
     const appliedPromoDetails = data.appliedPromoDetails || data.appliedPromotion || null;
-    
-    // 🟢 [FALLBACK CALCULATION] Calculate true subtotal from non-freebie items if zero
-    let calculatedSubTotal = 0;
-    if (data.items && data.items.length > 0) {
-        calculatedSubTotal = data.items.reduce((sum, item) => {
-            if (item.isFreebie) return sum;
-            const price = Number(item.price || item.priceAtPurchase || 0);
-            const qty = Number(item.qty || item.quantity || 1);
-            return sum + (price * qty);
-        }, 0);
-    }
 
-    const _itemSubTotal = orderData ? (orderData.subTotal || calculatedSubTotal || 0) : itemSubTotal;
-    const _manualDiscount = orderData ? (orderData.overallDiscount || 0) : manualDiscount;
-    let _promoDiscount = orderData ? (orderData.promoDiscount || 0) : promoDiscount;
-    const _otherFeeAmount = orderData ? (orderData.otherFeeAmount || 0) : otherFeeAmount;
-    const _shippingFee = orderData ? (orderData.shippingFee || 0) : shippingFee;
-    const _vatAmount = orderData ? (orderData.vatAmount || 0) : vatAmount;
-    const _vatType = orderData ? (orderData.vatType || 'exempt') : vatType;
-    const _walletUsed = orderData ? (orderData.walletUsed || 0) : walletUsed;
-    const _remainingToPay = orderData ? (orderData.remainingToPay || 0) : remainingToPay;
-    const _baseTotal = Math.max(0, _itemSubTotal - _manualDiscount - _promoDiscount) + _otherFeeAmount;
-    let _netTotal = orderData 
-        ? Number(orderData.netTotal || orderData.summary?.finalTotal || orderData.finalTotal || orderData.finalPayable || orderData.totalPrice || orderData.totalAmount || 0) 
-        : Math.round((_baseTotal + _shippingFee + (_vatType === 'excluded' ? _vatAmount : 0)) * 100) / 100;
+    // Use calculateCanonicalTotals if orderData is provided
+    const canonical = orderData ? calculateCanonicalTotals(orderData) : null;
+    const _itemSubTotal = canonical ? canonical.itemsSubTotal : itemSubTotal;
+    const _manualDiscount = canonical ? canonical.manualDiscount : manualDiscount;
+    const _promoDiscount = canonical ? canonical.promoDiscount : promoDiscount;
+    const _otherFeeAmount = canonical ? canonical.otherFees : otherFeeAmount;
+    const _otherFeeName = data.otherFeeName || orderData?.otherFeeName || activeTab?.otherFeeName || '';
+    const _shippingFee = canonical ? canonical.shippingFee : shippingFee;
 
-    // 🔥 ULTIMATE FALLBACK: If _netTotal is 0, calculate it from the items array
-    if (_netTotal === 0 && data.items && data.items.length > 0) {
-        _netTotal = data.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0);
-    }
+    const _vatType = data.vatType || vatType || 'exempt';
+    const _vatOnShipping = !!data.vatOnShipping;
+    const _vatRate = Number(data.vatRate || 7);
+    const _baseTotal = Math.max(0, _itemSubTotal - _manualDiscount - _promoDiscount + _otherFeeAmount);
 
-    // 🟢 [FALLBACK CALCULATION] If discount is 0 but subTotal > netTotal, calculate actual discount
-    if (orderData && _promoDiscount === 0 && _manualDiscount === 0 && _itemSubTotal > _netTotal) {
-        const calculatedDiff = _itemSubTotal + _shippingFee + _otherFeeAmount + (_vatType === 'excluded' ? _vatAmount : 0) - _netTotal;
-        if (calculatedDiff > 0) {
-            _promoDiscount = calculatedDiff;
-        }
-    }
-    const _paymentStatus = orderData ? orderData.paymentStatus : data.paymentStatus;
-    const _thaiBahtText = orderData ? (orderData.thaiBahtText || '') : (convertToThaiBahtText ? convertToThaiBahtText(_remainingToPay) : '');
-    
-    // Combine items and freebies if this is a draft bill (orderData is null)
+    const vatBreakdown = canonical 
+        ? canonical.vatBreakdown 
+        : calculateDetailedVat({
+            productNet: _baseTotal,
+            shippingFee: _shippingFee,
+            vatType: _vatType,
+            vatOnShipping: _vatOnShipping,
+            vatRate: _vatRate
+        });
+
+    const _vatAmount = vatBreakdown.vatAmount;
+    // Canonical calculation or fallback draft preview: (_vatType === 'excluded' ? _vatAmount : 0)
+    const _netTotal = canonical ? canonical.netTotal : vatBreakdown.netTotal;
+
+    // Freebies handling
     let finalItems = items ? [...items] : [];
     if (!orderData && eligibleFreebies?.length > 0) {
         const previewFreebies = eligibleFreebies.map(f => {
-            let conditionText = [];
+            const conditionText = [];
             if (f.minSpend > 0) conditionText.push(`ยอด${f.minSpend}฿`);
             if (f.minQty > 0) conditionText.push(`ครบ${f.minQty}ชิ้น`);
-            if (f.applicableSkus?.length > 0) conditionText.push(`เฉพาะรุ่น`);
-            const reasonStr = conditionText.length > 0 ? ` (${conditionText.join(', ')})` : '';
+            if (f.applicableSkus?.length > 0) conditionText.push('เฉพาะรุ่น');
             return {
-                sku: f.itemName, 
-                name: `[แถมฟรี] ${f.productName || f.itemName}`, 
-                qty: Math.min(Number(f.qty) || 1, Number(f.maxPerBill) || Number(f.qty) || 1), 
-                price: 0, discount: 0, total: 0, isFreebie: true, note: f.title, conditions: conditionText, noteColor: 'rose'
+                sku: f.itemName,
+                name: `[แถมฟรี] ${f.productName || f.itemName}`,
+                qty: Number(f.calculatedQty) || Math.min(Number(f.qty) || 1, Number(f.maxPerBill) || Number(f.qty) || 1),
+                price: 0,
+                discount: 0,
+                total: 0,
+                isFreebie: true,
+                note: f.title,
+                conditions: conditionText,
+                noteColor: 'rose'
             };
         });
         finalItems = [...finalItems, ...previewFreebies];
     } else if (orderData && orderData.appliedFreebies?.length > 0) {
-        // Merge appliedFreebies from frontend orders that aren't directly in items array
         orderData.appliedFreebies.forEach(f => {
             if (!finalItems.some(i => (i.sku === f.itemName || i.id === f.itemName) && i.isFreebie)) {
                 finalItems.push({
                     sku: f.itemName,
                     name: `[แถมฟรี] ${f.productName || f.title || f.itemName}`,
-                    qty: f.qty || 1,
-                    price: 0, discount: 0, total: 0, isFreebie: true, note: f.title, noteColor: 'rose'
+                    qty: f.calculatedQty || f.qty || 1,
+                    price: 0,
+                    discount: 0,
+                    total: 0,
+                    isFreebie: true,
+                    note: f.title,
+                    noteColor: 'rose'
                 });
             }
         });
     }
 
-    const staffName = orderData?.creatorName || orderData?.actorName || auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'พนักงาน';
+    // Staff name resolution
+    const rawStaffName = orderData?.staffName || orderData?.createdByName || orderData?.sellerName || orderData?.actorName || orderData?.creatorName;
+    const isInvalidStaff = !rawStaffName || ['POS', 'SYSTEM', 'FRONTEND', 'WEB'].includes(String(rawStaffName).trim().toUpperCase());
+    let staffName = isInvalidStaff ? null : rawStaffName;
+    staffName ||= auth?.currentUser?.displayName || auth?.currentUser?.email?.split('@')[0] || 'พนักงาน POS';
 
-    // 🟢 [PAGE CHUNKING] Split finalItems into chunks of maximum 8 items per page
-    const getPageChunks = (itemsList) => {
-        if (itemsList.length <= 8) {
-            return [itemsList];
+    // Page chunks (8 items per page)
+    const pageChunks = [];
+    if (finalItems.length <= 8) {
+        pageChunks.push(finalItems);
+    } else {
+        for (let i = 0; i < finalItems.length; i += 8) {
+            pageChunks.push(finalItems.slice(i, i + 8));
         }
-        const chunks = [];
-        for (let i = 0; i < itemsList.length; i += 8) {
-            chunks.push(itemsList.slice(i, i + 8));
+    }
+
+    // Total counts excluding freebies
+    const nonFreebies = (items || []).filter(item => !item.isFreebie);
+    const totalItemsCount = nonFreebies.length;
+    const totalQtyCount = nonFreebies.reduce((sum, item) => sum + Number(item.qty ?? item.quantity ?? item.count ?? 1), 0);
+
+    const _walletUsed = Number(orderData ? (orderData.walletUsed || orderData.creditUsed || 0) : (walletUsed || 0));
+
+    // Bank account label
+    const paymentMethod = data.paymentMethod || data.paymentType || 'Transfer';
+    const bankAccount = data.bankAccount || data.paymentDetails?.bankAccount || 'BAY';
+    const customBankAccount = data.customBankAccount || data.paymentDetails?.customBankAccount || '';
+    let bankAccountDisplay = '';
+
+    if (paymentMethod === 'Transfer' || paymentMethod === 'โอนเงิน' || bankAccount) {
+        if (bankAccount === 'CUSTOM' && customBankAccount) {
+            bankAccountDisplay = customBankAccount;
+        } else {
+            const rawBank = String(bankAccount || '').trim();
+            bankAccountDisplay = getBankLabel(rawBank);
+            if (bankAccountDisplay.startsWith('เข้าบัญชี: ')) {
+                bankAccountDisplay = bankAccountDisplay.replace('เข้าบัญชี: ', '').replace(' (default)', '');
+            }
         }
-        return chunks;
+    }
+
+    return {
+        data,
+        customer,
+        fulfillmentType,
+        billNote,
+        orderId,
+        appliedPromoDetails,
+        _itemSubTotal,
+        _manualDiscount,
+        _promoDiscount,
+        _otherFeeAmount,
+        _otherFeeName,
+        _shippingFee,
+        _walletUsed,
+        _vatAmount: vatBreakdown.vatAmount,
+        vatBreakdown,
+        _netTotal,
+        staffName,
+        pageChunks,
+        totalItemsCount,
+        totalQtyCount,
+        _vatOnShipping,
+        bankAccountDisplay
     };
+}
 
-    const pageChunks = getPageChunks(finalItems);
+export default function ReceiptTemplate(props) {
+    const {
+        activeTab,
+        updateActiveTab,
+        onClose,
+        convertToThaiBahtText,
+        orderData = null
+    } = props;
+
+    const {
+        data,
+        customer,
+        fulfillmentType,
+        billNote,
+        orderId,
+        appliedPromoDetails,
+        _itemSubTotal,
+        _manualDiscount,
+        _promoDiscount,
+        _otherFeeAmount,
+        _otherFeeName,
+        _shippingFee,
+        _walletUsed,
+        vatBreakdown,
+        _netTotal,
+        staffName,
+        pageChunks,
+        totalItemsCount,
+        totalQtyCount,
+        _vatOnShipping,
+        bankAccountDisplay
+    } = processReceiptData(props);
 
     const [format, setFormat] = useState(data.receiptFormat || 'short');
     const [isSavingPref, setIsSavingPref] = useState(false);
@@ -123,16 +245,20 @@ export default function ReceiptTemplate({
     const toggleFormat = async () => {
         const newFormat = format === 'short' ? 'full' : 'short';
         setFormat(newFormat);
-        if (updateActiveTab) updateActiveTab({ receiptFormat: newFormat }); 
-        if (customer?.id || customer?.uid) {
+        if (updateActiveTab) updateActiveTab({ receiptFormat: newFormat });
+        const targetId = customer?.id || customer?.uid;
+        if (targetId && typeof targetId === 'string' && !targetId.startsWith('WALKIN')) {
             setIsSavingPref(true);
             try {
-                await userService.updateUserPreferences(customer.id || customer.uid, { receiptFormat: newFormat });
-            } catch (error) { console.error(error); } finally { setIsSavingPref(false); }
+                await userService.updateUserPreferences(targetId, { receiptFormat: newFormat });
+            } catch (err) {
+                console.error('Receipt preference save error:', err);
+            } finally {
+                setIsSavingPref(false);
+            }
         }
     };
 
-    // 🚀 A5 PRINT LOGIC (แก้หน้าขาว 100%)
     const handlePrint = () => {
         const printContent = document.getElementById('printable-receipt');
         if (!printContent) return;
@@ -175,7 +301,7 @@ export default function ReceiptTemplate({
                         margin: 0 !important; 
                         box-shadow: none !important; 
                         border: none !important; 
-                        display: block !important;
+                        display: block !important; 
                     }
                     .receipt-page-container { 
                         page-break-after: always !important; 
@@ -213,63 +339,53 @@ export default function ReceiptTemplate({
         iframeDoc.close();
     };
 
-    const rawPhone = customer ? customer.phone : data.walkInPhone;
+    const rawPhone = customer?.phone || data.customerInfo?.phone || data.walkInPhone;
     const isPickup = fulfillmentType === 'StorePickup' || fulfillmentType === 'ZeerBranch';
     const displayPhone = ((isPickup || !data.hidePhone) && rawPhone) ? rawPhone : '-';
-    const displayName = customer ? (getCustomerDisplayName(customer, 'ลูกค้าทั่วไป')) : (data.walkInName || 'ลูกค้าทั่วไป');
+
+    const displayName = getCustomerDisplayName(customer) === 'ลูกค้าทั่วไป'
+        ? (getCustomerDisplayName(data.customerInfo) === 'ลูกค้าทั่วไป'
+            ? getCustomerDisplayName(data, 'ลูกค้าทั่วไป')
+            : getCustomerDisplayName(data.customerInfo))
+        : getCustomerDisplayName(customer);
 
     return (
         <div className="fixed inset-0 z-9999 bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-xs">
-            
             {/* Toolbar */}
-            <div className="w-full max-w-[155mm] flex justify-between items-center bg-white p-3 rounded-t-xl border-b shadow-xs">
-                <div className="flex items-center gap-3">
-                    <button onClick={onClose} className="p-1.5 hover:bg-gray-100 text-gray-500 rounded-lg"><X size={20}/></button>
-                    <span className="font-bold text-gray-700">บิลขนาด A5 (กระชับ)</span>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 border px-2.5 py-1 rounded-lg bg-gray-50 text-[11px] font-black text-gray-600">
-                        <span>ฉบับย่อ</span>
-                        <button onClick={toggleFormat} disabled={isSavingPref} className="focus:outline-hidden disabled:opacity-50">
-                            {format === 'short' ? <ToggleLeft className="text-gray-400" size={24}/> : <ToggleRight className="text-orange-500" size={24}/>}
-                        </button>
-                        <span>ฉบับเต็ม</span>
-                    </div>
-
-                    <button onClick={handlePrint} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm flex items-center gap-2">
-                        <Printer size={16}/> พิมพ์บิล
-                    </button>
-                </div>
-            </div>
+            <ReceiptToolbar 
+                onClose={onClose} 
+                format={format} 
+                toggleFormat={toggleFormat} 
+                isSavingPref={isSavingPref} 
+                handlePrint={handlePrint} 
+            />
 
             {/* A5 Viewer */}
             <div className="w-full max-w-[155mm] flex-1 overflow-y-auto bg-gray-200/50 p-4 flex justify-center">
-                
                 {/* 📝 A5 Paper Container Wrapper */}
                 <div id="printable-receipt" className="flex flex-col gap-6 items-center w-full">
                     {pageChunks.map((chunk, pageIdx) => {
-                        // Pad chunk to at least 5 rows if it's less than 5
                         const paddedChunk = [...chunk];
                         while (paddedChunk.length < 5) {
                             paddedChunk.push({ isEmptyRow: true });
                         }
 
-                        // Calculate totals proportionally
                         const chunkSubTotal = chunk.reduce((sum, item) => {
                             if (item.isFreebie) return sum;
-                            return sum + (Number(item.price || 0) * Number(item.qty || 1));
+                            const price = Number(item.price ?? item.priceAtPurchase ?? item.pricePerUnit ?? item.unitPrice ?? 0);
+                            const qty = Number(item.qty ?? item.quantity ?? item.count ?? 1);
+                            return sum + (price * qty);
                         }, 0);
 
-                        const factor = _itemSubTotal > 0 ? (chunkSubTotal / _itemSubTotal) : (1 / pageChunks.length);
-                        
-                        const pageSubTotal = chunkSubTotal;
-                        const pagePromoDiscount = _promoDiscount * factor;
-                        const pageManualDiscount = _manualDiscount * factor;
-                        const pageShippingFee = _shippingFee * factor;
-                        const pageNetTotal = _netTotal * factor;
+                        const numChunks = Math.max(1, pageChunks.length);
+                        const factor = pageChunks.length <= 1 ? 1 : (_itemSubTotal > 0 ? (chunkSubTotal / _itemSubTotal) : (1 / numChunks));
+                        const round2 = (val) => Math.round(Number(val || 0) * 100) / 100;
 
-                        // Append #pageIdx to Order ID if multi-page
+                        const pageSubTotal = pageChunks.length === 1 ? _itemSubTotal : round2(chunkSubTotal);
+                        const pagePromoDiscount = round2(_promoDiscount * factor);
+                        const pageManualDiscount = round2(_manualDiscount * factor);
+                        const pageShippingFee = round2(_shippingFee * factor);
+                        const pageNetTotal = pageChunks.length === 1 ? _netTotal : round2(_netTotal * factor);
                         const displayOrderId = pageChunks.length === 1 ? orderId : `${orderId || 'Draft'}#${pageIdx + 1}`;
 
                         return (
@@ -289,7 +405,13 @@ export default function ReceiptTemplate({
                                     data={data}
                                 />
 
-                                <ReceiptItems items={paddedChunk} startIndex={pageIdx * 8} />
+                                <ReceiptItems 
+                                    items={paddedChunk} 
+                                    startIndex={pageIdx * 8} 
+                                    format={format}
+                                    vatType={vatBreakdown?.vatType}
+                                    vatRate={vatBreakdown?.vatRate}
+                                />
 
                                 <ReceiptFooter 
                                     _thaiBahtText={convertToThaiBahtText ? convertToThaiBahtText(pageNetTotal) : ''}
@@ -297,16 +419,23 @@ export default function ReceiptTemplate({
                                     _itemSubTotal={pageSubTotal}
                                     _promoDiscount={pagePromoDiscount}
                                     _manualDiscount={pageManualDiscount}
+                                    _otherFeeAmount={_otherFeeAmount}
+                                    _otherFeeName={_otherFeeName}
                                     _shippingFee={pageShippingFee}
+                                    _walletUsed={_walletUsed}
                                     _netTotal={pageNetTotal}
+                                    vatBreakdown={vatBreakdown}
                                     staffName={staffName}
                                     appliedPromoDetails={appliedPromoDetails}
+                                    totalItemsCount={totalItemsCount}
+                                    totalQtyCount={totalQtyCount}
+                                    _vatOnShipping={_vatOnShipping}
+                                    bankAccountDisplay={bankAccountDisplay}
                                 />
                             </div>
                         );
                     })}
                 </div>
-
             </div>
         </div>
     );

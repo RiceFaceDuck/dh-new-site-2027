@@ -44,5 +44,6 @@
     10. ⚠️ Deduplicated Catalog Sync: `orderSyncService.js` protects Firestore read quota using `inFlightSyncPromise` and a 600ms throttle window, preventing concurrent checkout hooks from triggering duplicate 50-read queries.
     11. ⚠️ Deep Search Quota Fallback: Direct searches in `billingQueryService.js` must query in-memory `readCachedOrders()` first (0 reads) before hitting Firestore, and cap direct fallback query limit to 50 (instead of 300) to protect read quotas.
     12. ⚠️ On-Demand Order History: `OrderDetailModal.jsx` loads order timeline on-demand in `OrderHistoryTab.jsx` combining synthesized intrinsic lifecycle events and Firestore `history_logs`, avoiding redundant full-collection listeners.
+    13. ⚠️ A5 Receipt Print Parity: `ReceiptTemplate.jsx` must adhere strictly to production layout: 8-row financial breakdown with VAT breakdown, fixed 68px SKU column in `ReceiptItems.jsx`, strikethrough original prices, proportional multi-page pagination (8 items/page), bank account mapping (`bankConstants.js`), and tax invoice/courier badges in `ReceiptHeader.jsx`.
   </pitfalls_and_lessons>
 </grimoire>
