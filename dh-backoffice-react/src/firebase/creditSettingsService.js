@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
 
 export const creditSettingsService = {
   getCreditSettings: async () => {
@@ -9,7 +10,7 @@ export const creditSettingsService = {
       const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
       const docSnap = await getDoc(docRef);
       
-      if (docSnap.exists()) return docSnap.data();
+      if (docSnap.exists()) return unwrapCreditConfig(docSnap.data());
       
       const defaultSettings = {
         ledger: { systemPoolMax: 1000000, totalAllocated: 0, lastAuditTime: serverTimestamp(), status: 'SECURE' },

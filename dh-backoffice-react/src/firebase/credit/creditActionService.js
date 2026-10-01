@@ -4,6 +4,7 @@ import { historyService } from '../historyService';
 import { formatCredit, calculateEarnedPoints } from './creditFormatService';
 import { getCollectionPath, getUsersPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -346,7 +347,7 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       
       const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
       const settingsSnap = await transaction.get(settingsRef);
-      const creditConfig = settingsSnap.exists() ? settingsSnap.data() : null;
+      const creditConfig = settingsSnap.exists() ? unwrapCreditConfig(settingsSnap.data()) : null;
       
       const userRef = doc(db, getCollectionPath('users'), userId);
       const userSnap = await transaction.get(userRef);
@@ -394,7 +395,7 @@ export const handlePaymentCompletion = async (orderId, userId) => {
 export const clawbackPoints = async (uid, points, referenceId, actorUid) => {
   if (!points || points <= 0) return true; 
   try {
-    await adjustUserCredit(uid, points, 'deduct', `ดึงแต้มคืนจากบิลยกเลิก: ${referenceId}`, actorUid || 'System_Clawback', `CB_${referenceId}`);
+    await adjustUserCredit(uid, points, 'clawback', `ดึงแต้มคืนจากบิลยกเลิก: ${referenceId}`, actorUid || 'System_Clawback', `CB_${referenceId}`);
     if (historyService && historyService.addLog) {
        await historyService.addLog('CyberAuditCore', 'PointClawback', referenceId, `ริบแต้มคืน ${formatCredit(points)} แต้ม จากบิลที่ยกเลิก`, actorUid);
     }

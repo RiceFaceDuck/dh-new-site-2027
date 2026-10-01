@@ -11,6 +11,7 @@
     1. Parsed Customer Address: `accountName`, `contactName`, `phone`, `formattedPhone`, `email`, `lineId`, `facebook`, `addressLine`, `subDistrict`, `district`, `province`, `postalCode`, `preferredCourier`, `shippingNotes`, `rawText`.
     2. Vat Calculation Result: `finalTotal`, `amountBeforeVat`, `vatAmount`, `rate`.
     3. Price / Fraud Schema: `basePrice`, `discount`, `netPrice`, `fraudFlags`.
+    4. Credit Config Schema: `unwrapCreditConfig` parses nested `{ config: { pointsEarningRate, skuBonusRules } }` with legacy flat fallback.
   </core_schema>
 
   <business_rules>
@@ -30,5 +31,6 @@
     1. ⚠️ Address Normalization: Thai phone numbers prefixed with `+66` or `66` must normalize to leading `0` with 9-10 digits.
     2. ⚠️ Fallback Naming: If parsed customer name matches 'ลูกค้าทั่วไป' or empty, fallback to leading name tokens or 'ลูกค้าใหม่'.
     3. ⚠️ Courier Extraction: Normalize common shorthand such as 'ปณ' to 'ไปรษณีย์ไทย'.
+    4. ⚠️ Credit Config Unwrapping: `settings/credit_config` nests parameters inside `.config`; always use `unwrapCreditConfig` so custom earning rates and SKU bonuses are not dropped.
   </pitfalls_and_lessons>
 </grimoire>

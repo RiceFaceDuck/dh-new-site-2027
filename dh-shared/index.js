@@ -10,3 +10,4 @@ export { parseFirebaseError } from './src/utils/firebaseErrorHandler.js';
 export * from './src/utils/staffUtils.js';
 export * from './src/utils/customerUtils.js';
 export * from './src/utils/thaiAddressParser.js';
+export * from './src/utils/creditUtils.js';

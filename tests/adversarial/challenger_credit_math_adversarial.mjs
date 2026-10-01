@@ -279,12 +279,13 @@ assert(pointsWithoutUnwrap === 5,
 assert(pointsWithUnwrap === 60,
   'Unwrap Helper correctly resolves nested config values (earns 60 pts)');
 
-// Verify that creditActionService.js line 349 fails to unwrap
+// Verify that creditActionService.js line 349 unwraps with unwrapCreditConfig
 const backofficeHandlePaymentCode = backofficeCode.slice(backofficeCode.indexOf('handlePaymentCompletion'));
 const unwrapUsedInHandlePayment = backofficeHandlePaymentCode.includes('unwrapConfig') || 
+                                  backofficeHandlePaymentCode.includes('unwrapCreditConfig') ||
                                   backofficeHandlePaymentCode.includes('creditConfig?.config');
-assert(unwrapUsedInHandlePayment === false,
-  'Empirical Code Fact: handlePaymentCompletion does NOT unwrap settingsSnap.data().config before calling calculateEarnedPoints');
+assert(unwrapUsedInHandlePayment === true,
+  'handlePaymentCompletion unwraps settingsSnap.data() with unwrapCreditConfig before calling calculateEarnedPoints (Fixed)');
 
 // =============================================================================
 // TEST 9: Property Access Bug on Customer Display Name in userManagementService.js

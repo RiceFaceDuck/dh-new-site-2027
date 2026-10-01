@@ -2,6 +2,7 @@ import { collection, doc, getDoc, runTransaction, serverTimestamp } from 'fireba
 import { db } from '../config';
 import { getUsersPath, invalidateCreditHistoryCache } from './creditConfig';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
 import { getUserTier } from './creditFormatService';
 
 export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null) => {
@@ -100,7 +101,7 @@ export const getCreditSettings = async () => {
   try {
     const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) return docSnap.data();
+    if (docSnap.exists()) return unwrapCreditConfig(docSnap.data());
     return null;
   } catch (error) {
     console.error("🔥 System Error [getCreditSettings]:", error);
@@ -108,8 +109,9 @@ export const getCreditSettings = async () => {
   }
 };
 
-export const calculateEarnedPoints = (amount, config, items = [], userTotalAccumulatedPoints = 0) => {
-  if (!amount || amount <= 0 || !config) return 0;
+export const calculateEarnedPoints = (amount, rawConfig, items = [], userTotalAccumulatedPoints = 0) => {
+  if (!amount || amount <= 0 || !rawConfig) return 0;
+  const config = unwrapCreditConfig(rawConfig) || rawConfig;
   const earningRate = config.earningRate || config.pointsEarningRate || 100;
   let basePoints = Math.floor(amount / earningRate);
   const userTier = getUserTier(userTotalAccumulatedPoints);
@@ -161,7 +163,9 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       if (pendingPoints <= 0 || orderData.pointsAwarded) return;
 
       const currentPoints = userDoc.data().creditPoints || 0;
+      const currentAccumulated = userDoc.data().totalAccumulatedPoints || currentPoints;
       const newBalance = currentPoints + pendingPoints;
+      const newAccumulated = currentAccumulated + pendingPoints;
 
       transaction.update(orderRef, {
         pointsAwarded: true,
@@ -170,6 +174,7 @@ export const handlePaymentCompletion = async (orderId, userId) => {
 
       transaction.update(userRef, {
         creditPoints: newBalance,
+        totalAccumulatedPoints: newAccumulated,
         updatedAt: serverTimestamp()
       });
 

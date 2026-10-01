@@ -331,10 +331,11 @@ service cloud.firestore {
     }
 
     match /credit_transactions/{txId} {
-      // ลูกค้าดูประวัติกระเป๋าเงินตัวเองได้
+      // ลูกค้าดูประวัติเครดิตตัวเองได้ หรือพนักงานดูได้ทั้งหมด
       allow read: if isStaff() || (isAuthenticated() && resource.data.uid == request.auth.uid);
-      // เฉพาะระบบและพนักงานเขียนได้
-      allow write: if isStaff();
+      // 🔒 Immutability Guard: อนุญาตเฉพาะสร้างรายการใหม่ (Append-Only) ห้ามแก้ไขหรือลบประวัติการเงิน
+      allow create: if isStaff() || (isAuthenticated() && request.resource.data.uid == request.auth.uid);
+      allow update, delete: if false;
     }
 
     // 3.1 ธุรกรรมสต๊อกและประวัติการเคลื่อนไหวสินค้ากลาง (Canonical Transactions Ledger)
@@ -748,13 +749,20 @@ service cloud.firestore {
       allow write: if isManagerOrAdmin();
     }
     match /settings/{docId} {
-      allow read: if true;
+      // อนุญาตให้อ่าน settings ทั่วไปได้ แต่จำกัดสิทธิ์อ่าน credit_config เฉพาะผู้ใช้งานที่ล็อกอินแล้ว
+      allow read: if docId != 'credit_config' || isAuthenticated();
       allow write: if isManagerOrAdmin() || (isStaff() && (
         docId == 'bigseller_templates' ||
         docId == 'inventory_meta' ||
-        (docId == 'credit_config' && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'adClickCost', 'adImpressionCost', 'adImpressionCount', 'adMinBudget', 'rules'
-        ]))
+        (docId == 'credit_config' && 
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'adClickCost', 'adImpressionCost', 'adImpressionCount', 'adMinBudget', 'rules'
+          ]) &&
+          (!request.resource.data.keys().hasAll(['config']) || 
+           !request.resource.data.config.diff(resource.data.config).affectedKeys().hasAny([
+            'adClickCost', 'adImpressionCost', 'adImpressionCount', 'adMinBudget', 'rules'
+          ]))
+        )
       ));
     }
     

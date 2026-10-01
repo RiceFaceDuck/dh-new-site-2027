@@ -90,10 +90,13 @@ export const cancelActionService = {
            newOrderSnap = await transaction.get(newOrderRef);
         }
 
-        // 5. User Wallet
+        // 5. User Wallet & Points Reversal
         const hasCustomer = payload.customerUid && payload.customerUid !== 'Walk-in' && payload.customerUid !== 'WALK-IN';
         let userRef = null;
         let userSnap = null;
+        let creditPreloadSnaps = null;
+        const pointsToRestore = (isCompleted && hasCustomer && isCancelReturn && refundAmountReturn > 0) ? Math.floor(refundAmountReturn / 100) : 0;
+
         if (isCompleted && hasCustomer) {
            userRef = doc(db, getCollectionPath('users'), payload.customerUid);
            userSnap = await transaction.get(userRef);
@@ -111,6 +114,19 @@ export const cancelActionService = {
                        throw new Error(`ไม่สามารถยกเลิกใบสลับรุ่นนี้ได้ เนื่องจากลูกค้าได้นำเงินส่วนต่างที่คืนไป (Wallet) จำนวน ${refundToClawback} บาท ไปใช้แล้ว (ยอดคงเหลือ ${currentWallet} บาท) กรุณาทวงเงินลูกค้านอกระบบ`);
                    }
                }
+           }
+
+           if (pointsToRestore > 0) {
+             const { getCreditPreloadRefs } = await import('../credit/creditActionService');
+             const creditRefs = getCreditPreloadRefs(payload.customerUid, 'deposit', `CB_RTN_${payload.returnId || Date.now()}`);
+             const [txSnap, settingsSnap, userSnapCredit, walletSnap, activePartnerSnap] = await Promise.all([
+               transaction.get(creditRefs.txRef),
+               transaction.get(creditRefs.settingsRef),
+               transaction.get(creditRefs.userRef),
+               transaction.get(creditRefs.walletRef),
+               transaction.get(creditRefs.activePartnerRef)
+             ]);
+             creditPreloadSnaps = { txSnap, settingsSnap, userSnap: userSnapCredit, walletSnap, activePartnerSnap };
            }
         }
 
@@ -204,6 +220,21 @@ export const cancelActionService = {
                  operatorUid: adminUid || 'System',
                  timestamp: serverTimestamp()
                });
+
+               // คืนแต้มสะสมที่เคยถูกริบไปตอนคืนสินค้า (Clawback Reversal)
+               if (pointsToRestore > 0 && creditPreloadSnaps) {
+                 const { adjustUserCreditWithTransaction } = await import('../credit/creditActionService');
+                 await adjustUserCreditWithTransaction(
+                   transaction,
+                   payload.customerUid,
+                   pointsToRestore,
+                   'deposit',
+                   `คืนแต้มสะสมเนื่องจากยกเลิกการคืนสินค้า (รหัสส่งคืน ${payload.returnId || '-'}, สินค้า ${payload.sku || '-'})`,
+                   adminUid || 'System',
+                   `CB_RTN_${payload.returnId || Date.now()}`,
+                   creditPreloadSnaps
+                 );
+               }
            } else if (isSwapSku) {
                if (netDifference > 0) {
                    // ลูกค้าเคยจ่ายส่วนต่างเพิ่ม -> คืนเงินส่วนต่างเข้ากระเป๋า
