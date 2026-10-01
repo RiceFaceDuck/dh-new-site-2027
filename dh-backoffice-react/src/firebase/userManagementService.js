@@ -236,20 +236,32 @@ export const updateUserPreferences = async (uid, preferences) => {
 
 // The remaining file ends here. Extracted functions removed.
 
-export const getPartnersWithCredits = async (forceRefresh = false) => {
+export const getPartnersWithCredits = async (options = false) => {
+    const isForce = typeof options === 'boolean' ? options : !!options?.forceRefresh;
+    const pageSize = (typeof options === 'object' && options?.pageSize) ? options.pageSize : 50;
+    const cursor = (typeof options === 'object' && options?.cursor) ? options.cursor : null;
+
     try {
-        if (!forceRefresh) {
+        if (!isForce && !cursor) {
             const cached = creditCacheManager.get(CREDIT_CACHE_KEYS.PARTNER_CREDITS, CREDIT_CACHE_TTL.PARTNER_CREDITS);
             if (cached) return cached;
         }
 
-        const { query, where, or, getDocs } = await import('firebase/firestore');
+        const { query, where, or, getDocs, startAfter, limit } = await import('firebase/firestore');
         const usersRef = collection(db, getCollectionPath('users'));
         
-        const q = query(usersRef, or(
-            where('creditPoints', '>', 0),
-            where('role', '==', 'partner')
-        ), limit(300));
+        let q;
+        if (cursor) {
+            q = query(usersRef, or(
+                where('creditPoints', '>', 0),
+                where('role', '==', 'partner')
+            ), startAfter(cursor), limit(pageSize));
+        } else {
+            q = query(usersRef, or(
+                where('creditPoints', '>', 0),
+                where('role', '==', 'partner')
+            ), limit(pageSize));
+        }
         
         const snap = await getDocs(q);
         const data = [];
@@ -271,7 +283,12 @@ export const getPartnersWithCredits = async (forceRefresh = false) => {
         });
 
         data.sort((a, b) => b.balance - a.balance);
-        creditCacheManager.set(CREDIT_CACHE_KEYS.PARTNER_CREDITS, data);
+        data.lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+        data.hasMore = snap.docs.length >= pageSize;
+
+        if (!cursor) {
+            creditCacheManager.set(CREDIT_CACHE_KEYS.PARTNER_CREDITS, data);
+        }
         return data;
     } catch (error) {
         console.error("🔥 [UserManagementService] getPartnersWithCredits Error:", error);

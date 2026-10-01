@@ -39,5 +39,6 @@
 - ⚠️ Ad Settlement Deduction (Phase 1): Deductions must target `users.creditPoints` directly; `heldCreditPoints` is uninitialized.
 - ⚠️ 100x Point Inflation Fix (Phase 1): `walletFunctions.js` previously saved unpaid THB cash directly to `pendingCredits`; fixed to convert 100 THB = 1 Pt with `statusWalletHandler` zero-trust guard.
 - ⚠️ Ledger Parity (Phase 1): `ga4AdSyncCron` & frontend order awards must sync `settings/credit_config.ledger.totalAllocated` in 1:1 parity with `users.creditPoints`.
+- ⚠️ Cursor Pagination (Watchlist): PartnerCredits & CreditHistory use 50-doc batching with Firestore `startAfter(cursor)` and attach `lastDoc`/`hasMore` to preserve array method compatibility while slashing initial reads by 6x and 2x.
 </pitfalls_and_lessons>
 </grimoire>

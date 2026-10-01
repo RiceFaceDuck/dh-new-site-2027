@@ -8,24 +8,47 @@ export default function CreditHistoryTab() {
   const [filterType, setFilterType] = useState('all');
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // ==========================================================
-  // ดึงข้อมูลประวัติการทำรายการ (Cached Audit Trail)
+  // ดึงข้อมูลประวัติการทำรายการ (Cursor-Paginated Audit Trail)
   // ==========================================================
   const fetchTransactions = useCallback(async (force = false) => {
     setIsLoading(true);
     try {
       const data = await creditHistoryService.getCachedCreditTransactions({
-        limitCount: 100,
+        limitCount: 50,
         forceRefresh: force
       });
       setTransactions(data);
+      setLastDoc(data.lastDoc || null);
+      setHasMore(!!data.hasMore);
     } catch (err) {
       console.error('Failed to load audit trail:', err);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const loadMoreTransactions = async () => {
+    if (!lastDoc || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const nextData = await creditHistoryService.getCachedCreditTransactions({
+        limitCount: 50,
+        cursor: lastDoc
+      });
+      setTransactions(prev => [...prev, ...nextData]);
+      setLastDoc(nextData.lastDoc || null);
+      setHasMore(!!nextData.hasMore);
+    } catch (err) {
+      console.error('Failed to load more audit records:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     fetchTransactions(false);
@@ -207,9 +230,24 @@ export default function CreditHistoryTab() {
         </table>
       </div>
 
+      {/* 🚀 Pagination Controls */}
+      {hasMore && (
+        <div className="p-2.5 border-t border-slate-300 bg-slate-50 text-center">
+          <button
+            type="button"
+            onClick={loadMoreTransactions}
+            disabled={isLoadingMore}
+            className="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50 inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            {isLoadingMore ? <Loader2 size={13} className="animate-spin text-blue-600" /> : null}
+            {isLoadingMore ? 'กำลังโหลดประวัติ...' : 'โหลดประวัติเพิ่มเติม (Load Next 50)'}
+          </button>
+        </div>
+      )}
+
       {/* Footer Info */}
-      <div className="p-2 border-t border-slate-300 bg-slate-50 text-[10px] text-slate-400 font-mono text-right uppercase">
-        End of Records // Showing max 100 recent transactions
+      <div className="p-2 border-t border-slate-300 bg-slate-50 text-[10px] text-slate-500 font-mono text-right uppercase">
+        Showing {filteredTransactions.length} of {transactions.length} loaded records {hasMore ? '(More available)' : '// End of Records'}
       </div>
     </div>
   );

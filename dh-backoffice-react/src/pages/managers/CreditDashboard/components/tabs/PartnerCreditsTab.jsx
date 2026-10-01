@@ -10,21 +10,41 @@ export default function PartnerCreditsTab() {
   const [partners, setPartners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // ==========================================================
-  // 🚀 ดึงข้อมูลบัญชีที่มียอดเครดิต (Optimized Cached Query)
+  // 🚀 ดึงข้อมูลบัญชีที่มียอดเครดิต (Cursor-Paginated Query)
   // ==========================================================
   const fetchPartners = useCallback(async (force = false) => {
     setIsLoading(true);
     try {
-      const data = await getPartnersWithCredits(force);
+      const data = await getPartnersWithCredits({ forceRefresh: force, pageSize: 50 });
       setPartners(data);
+      setLastDoc(data.lastDoc || null);
+      setHasMore(!!data.hasMore);
     } catch (error) {
       console.error("🔥 DH-Core System Error [Fetch Partners]:", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const loadMorePartners = async () => {
+    if (!lastDoc || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const nextData = await getPartnersWithCredits({ cursor: lastDoc, pageSize: 50 });
+      setPartners(prev => [...prev, ...nextData]);
+      setLastDoc(nextData.lastDoc || null);
+      setHasMore(!!nextData.hasMore);
+    } catch (error) {
+      console.error("🔥 Error loading more partners:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     fetchPartners(false);
@@ -210,6 +230,21 @@ export default function PartnerCreditsTab() {
           </tbody>
         </table>
       </div>
+
+      {/* 🚀 Pagination Controls */}
+      {hasMore && (
+        <div className="p-2.5 border-t border-slate-200 bg-slate-50 text-center">
+          <button
+            type="button"
+            onClick={loadMorePartners}
+            disabled={isLoadingMore}
+            className="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50 inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            {isLoadingMore ? <Loader2 size={13} className="animate-spin text-blue-600" /> : null}
+            {isLoadingMore ? 'กำลังโหลดข้อมูล...' : 'โหลดข้อมูลเพิ่มเติม (Load Next 50)'}
+          </button>
+        </div>
+      )}
 
       {/* 🚀 Smart Footer: สรุปผลรวม Data Aggregation */}
       <div className="p-3 border-t border-slate-200 bg-white flex items-center justify-between text-xs text-slate-500 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
