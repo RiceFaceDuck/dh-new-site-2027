@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, limit, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, orderBy, onSnapshot, getAggregateFromServer, sum, count } from 'firebase/firestore';
 import { db, auth } from '../../../../firebase/config';
 import { userService } from '../../../../firebase/userService';
 import { getCollectionPath, getUsersPath, getUserSubcollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -85,35 +85,41 @@ export function useWalletManagement(navigate) {
                     return;
                 }
 
-                // ⚡ Cold Query: Consolidated Single Query (Eliminated redundant qActiveUsers & unused qHist)
+                // ⚡ Cold Query: High-Performance Aggregation (1 Read) + Limited Sample Query (20 Reads)
                 const usersRef = collection(db, getUsersPath());
-                const qHasBalance = query(usersRef, where('walletBalance', '>', 0), limit(100));
+                const qHasBalance = query(usersRef, where('walletBalance', '>', 0));
                 try {
-                    const snap = await getDocs(qHasBalance);
-                    let totalBal = 0;
-                    let count = 0;
+                    // 1. Zero-Quota / 1-Read Aggregation: Exact system-wide totals and counts
+                    const [aggregateSnap, topDocsSnap] = await Promise.all([
+                        getAggregateFromServer(qHasBalance, {
+                            totalWallet: sum('walletBalance'),
+                            walletHolders: count()
+                        }),
+                        // 2. Fetch only initial 20 users for table display (saved 80 reads)
+                        getDocs(query(qHasBalance, limit(20)))
+                    ]);
+
+                    const aggData = aggregateSnap.data();
+                    const totalBal = Number(aggData?.totalWallet || 0);
+                    const totalHolders = Number(aggData?.walletHolders || 0);
+
                     const usersList = [];
-                    snap.forEach(d => {
-                        const data = d.data();
-                        const bal = Number(data.walletBalance || 0);
-                        totalBal += bal;
-                        count++;
-                        usersList.push({ id: d.id, ...data });
+                    topDocsSnap.forEach(d => {
+                        usersList.push({ id: d.id, ...d.data() });
                     });
 
-                    // In-memory sort to get top users without an extra network query
+                    // In-memory sort by balance descending for top users
                     usersList.sort((a, b) => (b.walletBalance || 0) - (a.walletBalance || 0));
-                    const topUsers = usersList.slice(0, 20);
 
                     setStats(prev => ({ ...prev, totalBalance: totalBal }));
-                    setWalletHoldersCount(count);
-                    setDefaultUsers(topUsers);
+                    setWalletHoldersCount(totalHolders);
+                    setDefaultUsers(usersList);
 
                     // Populate Memory Cache
                     dashboardMemoryCache = {
                         stats: { totalBalance: totalBal },
-                        walletHoldersCount: count,
-                        defaultUsers: topUsers,
+                        walletHoldersCount: totalHolders,
+                        defaultUsers: usersList,
                         timestamp: Date.now()
                     };
                 } catch(e) {

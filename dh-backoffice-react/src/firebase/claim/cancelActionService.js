@@ -204,17 +204,24 @@ export const cancelActionService = {
 
         // 4. จัดการกระเป๋าเงิน (User Wallet)
         if (isCompleted && userRef && userSnap?.exists()) {
+           const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+
            if (isCancelReturn && refundAmountReturn > 0) {
+               const balanceAfter = Math.max(0, Math.round((currentWallet - refundAmountReturn) * 100) / 100);
+               const txId = `TXW_CB_RTN_${payload.returnId || Date.now()}`;
+
                transaction.update(userRef, {
-                 walletBalance: increment(-refundAmountReturn),
+                 walletBalance: balanceAfter,
+                 lastWalletTxId: txId,
                  updatedAt: serverTimestamp()
                });
 
-               const walletTxRef = doc(collection(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions'));
+               const walletTxRef = doc(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions', txId);
                transaction.set(walletTxRef, {
-                 transactionId: `TXW_CB_RTN_${payload.returnId || Date.now()}`,
+                 transactionId: txId,
                  type: 'SPEND',
                  amount: refundAmountReturn,
+                 balanceAfter: balanceAfter,
                  status: 'SUCCESS',
                  note: `ดึงยอดเงินคืนเนื่องจากผู้จัดการยกเลิกการคืนสินค้า${penalty > 0 ? ' (หักลบค่าปรับของแถม)' : ''}`,
                  operatorUid: adminUid || 'System',
@@ -238,16 +245,21 @@ export const cancelActionService = {
            } else if (isSwapSku) {
                if (netDifference > 0) {
                    // ลูกค้าเคยจ่ายส่วนต่างเพิ่ม -> คืนเงินส่วนต่างเข้ากระเป๋า
+                   const balanceAfter = Math.round((currentWallet + netDifference) * 100) / 100;
+                   const txId = `TXW_REF_SWAP_${payload.claimId || payload.exchangeId || Date.now()}`;
+
                    transaction.update(userRef, {
-                     walletBalance: increment(netDifference),
+                     walletBalance: balanceAfter,
+                     lastWalletTxId: txId,
                      updatedAt: serverTimestamp()
                    });
 
-                   const walletTxRef = doc(collection(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions'));
+                   const walletTxRef = doc(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions', txId);
                    transaction.set(walletTxRef, {
-                     transactionId: `TXW_REF_SWAP_${payload.claimId || Date.now()}`,
+                     transactionId: txId,
                      type: 'REFUND',
                      amount: netDifference,
+                     balanceAfter: balanceAfter,
                      status: 'SUCCESS',
                      note: `คืนเงินส่วนต่างจากการยกเลิกการเคลมเปลี่ยนรุ่น (${payload.claimId || payload.exchangeId || '-'})`,
                      operatorUid: adminUid || 'System',
@@ -256,16 +268,21 @@ export const cancelActionService = {
                } else if (netDifference < 0) {
                    // ลูกค้าเคยได้รับเงินทอนคืน -> ดึงเงินส่วนต่างกลับคืน
                    const refundToClawback = Math.abs(netDifference);
+                   const balanceAfter = Math.max(0, Math.round((currentWallet - refundToClawback) * 100) / 100);
+                   const txId = `TXW_CB_SWAP_${payload.claimId || payload.exchangeId || Date.now()}`;
+
                    transaction.update(userRef, {
-                     walletBalance: increment(-refundToClawback),
+                     walletBalance: balanceAfter,
+                     lastWalletTxId: txId,
                      updatedAt: serverTimestamp()
                    });
 
-                   const walletTxRef = doc(collection(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions'));
+                   const walletTxRef = doc(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions', txId);
                    transaction.set(walletTxRef, {
-                     transactionId: `TXW_CB_SWAP_${payload.claimId || Date.now()}`,
+                     transactionId: txId,
                      type: 'SPEND',
                      amount: refundToClawback,
+                     balanceAfter: balanceAfter,
                      status: 'SUCCESS',
                      note: `ดึงยอดเงินส่วนต่างคืนเนื่องจากยกเลิกการเคลมเปลี่ยนรุ่น (${payload.claimId || payload.exchangeId || '-'})`,
                      operatorUid: adminUid || 'System',

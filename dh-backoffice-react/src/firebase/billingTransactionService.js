@@ -329,10 +329,25 @@ export const billingTransactionService = {
           if (customerUid && customerUid !== 'WALK-IN' && userSnap?.exists()) {
             const userRef = doc(db, getCollectionPath('users'), customerUid);
             if (walletToUse > 0) {
-              transaction.update(userRef, { walletBalance: increment(-walletToUse), updatedAt: serverTimestamp() });
-              transaction.set(doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions')), {
-                transactionId: `TXW_POS_${finalOrderId}`, type: 'SPEND_POS', amount: walletToUse, status: 'SUCCESS',
-                note: 'หักจาก DH ค้างยอดสำหรับชำระค่าสินค้า', operatorUid: actorUid || 'System', timestamp: serverTimestamp()
+              const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+              const balanceAfter = Math.max(0, Math.round((currentWallet - walletToUse) * 100) / 100);
+              const txId = `TXW_POS_${finalOrderId}`;
+              const walletTxRef = doc(db, getCollectionPath('users'), customerUid, 'wallet_transactions', txId);
+
+              transaction.update(userRef, { 
+                walletBalance: balanceAfter, 
+                lastWalletTxId: txId,
+                updatedAt: serverTimestamp() 
+              });
+              transaction.set(walletTxRef, {
+                transactionId: txId, 
+                type: 'SPEND', 
+                amount: walletToUse, 
+                balanceAfter: balanceAfter,
+                status: 'SUCCESS',
+                note: `หักจาก DH ค้างยอดสำหรับชำระค่าสินค้า (บิล ${finalOrderId})`, 
+                operatorUid: actorUid || 'System', 
+                timestamp: serverTimestamp()
               });
             }
             if (earnedPoints > 0) {

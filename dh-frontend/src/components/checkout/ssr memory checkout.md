@@ -1,0 +1,33 @@
+<grimoire>
+<flow_and_entry>
+- Entry: `dh-frontend/src/pages/Checkout.jsx` (Route: `/checkout`).
+- Hook: `components/checkout/hooks/useCheckoutLogic.js` bridges Cart context, Auth, Wallet, and Submission.
+- Service: `firebase/checkoutService.js` -> `checkoutSubmitService.js` handles atomic order creation and wallet ledger writes.
+</flow_and_entry>
+
+<core_schema>
+- `users/{uid}`: { walletBalance: number, creditPoints: number, lastWalletTxId: string }
+- `users/{uid}/wallet_transactions/{txId}`: { transactionId: string, type: 'SPEND', amount: number, balanceAfter: number, status: 'SUCCESS', timestamp: serverTimestamp }
+- `orders/{orderId}`: { paymentMethod: string, walletUsed: number, grandTotal: number, customer: object }
+- Local Checkout State: { customerData, taxData, paymentMethod, shippingCost, appliedPromotions, discountAmount, useWallet, wholesaleReason }
+</core_schema>
+
+<business_rules>
+- Domain Separation: `walletBalance` is cash liability (1 THB = 1 THB) used as discount via `useWallet`, while `creditPoints` is loyalty rewards points. Never mix them.
+- Firestore Security Strictness: Client wallet deductions must specify `type: 'SPEND'`, matching `transactionId` doc ID, `balanceAfter`, and update `lastWalletTxId` on user doc atomically.
+- Deployment Lockdown: Absolute deployment ban. All testing and runs remain purely local.
+- Zero Ghost Transactions: Ledger doc ID must be deterministic (`TXW-${orderRef.id}`) to guarantee transaction idempotency.
+</business_rules>
+
+<cross_impact>
+- Backoffice Wallet Dashboard: Customer deductions immediately reduce global liability and reflect on manager dashboards.
+- Firestore Security Rules: Non-compliance with required fields (`balanceAfter`, `type == 'SPEND'`) results in `permission-denied` at checkout.
+- Order Summary & POS: `useWallet` directly offsets payable grand total before slip payment verification.
+</cross_impact>
+
+<pitfalls_and_lessons>
+- ⚠️ Terminology Confusion: Formerly aliased `walletBalance` as `creditBalance` in `useCheckoutLogic.js` causing confusion with reward points; resolved with clean `walletBalance`/`useWalletToggle` and backward-compatible aliases.
+- ⚠️ Rules Violation Bug: Storefront previously created random transaction doc ID and omitted `balanceAfter`, triggering permission-denied in client SDK; resolved in `checkoutSubmitService.js`.
+- ⚠️ Backward Compatibility: `CreditToggleBox.jsx` and `index.js` preserve legacy prop and component aliases (`CreditToggleBox` / `WalletToggleBox`) to protect existing UI callers.
+</pitfalls_and_lessons>
+</grimoire>

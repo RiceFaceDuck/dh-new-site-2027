@@ -1,5 +1,5 @@
 import { db, auth } from './config';
-import { doc, collection, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, collection, runTransaction, serverTimestamp, increment, getDocs, query, where, limit } from 'firebase/firestore';
 import { getCollectionPath, getUsersPath, getUserSubcollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { gasHistoryService } from './gasHistoryService';
 
@@ -38,6 +38,28 @@ export const executeCustomerRefund = async ({
         }
     }
 
+    // 🔍 Pre-fetch any pending withdrawal todos for this customer to sync their lifecycle atomically
+    let matchingTasks = [];
+    try {
+        const pendingTodosSnap = await getDocs(
+            query(
+                collection(db, getCollectionPath('todos')),
+                where('taskType', '==', 'WALLET_WITHDRAWAL'),
+                where('status', 'in', ['PENDING', 'pending', 'todo']),
+                limit(100)
+            )
+        );
+        matchingTasks = pendingTodosSnap.docs.filter(docSnap => {
+            const data = docSnap.data();
+            return data.customer?.uid === customerId ||
+                   data.customerUid === customerId ||
+                   data.userId === customerId ||
+                   data.createdBy === customerId;
+        });
+    } catch (queryErr) {
+        console.warn("⚠️ [CustomerRefundService] Failed to pre-fetch todos tasks:", queryErr);
+    }
+
     try {
         const result = await runTransaction(db, async (transaction) => {
             const userRef = doc(db, getUsersPath(), customerId);
@@ -45,6 +67,16 @@ export const executeCustomerRefund = async ({
 
             if (!userSnap.exists()) {
                 throw new Error("ไม่พบบัญชีลูกค้ารายนี้ในระบบ");
+            }
+
+            // 0. Pre-read matching todo tasks before performing writes
+            const taskSnaps = [];
+            for (const taskDoc of matchingTasks) {
+                const taskRef = doc(db, getCollectionPath('todos'), taskDoc.id);
+                const taskSnap = await transaction.get(taskRef);
+                if (taskSnap.exists()) {
+                    taskSnaps.push({ ref: taskRef, snap: taskSnap });
+                }
             }
 
             const userData = userSnap.data();
@@ -70,7 +102,9 @@ export const executeCustomerRefund = async ({
             }
 
             let newWalletBalance = currentWallet;
+            const txId = `TXW-RFD-${customerId.slice(0, 6)}-${Date.now()}`;
             const updateData = {
+                lastWalletTxId: txId,
                 updatedAt: serverTimestamp()
             };
             if (pendingDeduct > 0) {
@@ -84,10 +118,39 @@ export const executeCustomerRefund = async ({
             // 1. อัปเดตยอดเงินคงเหลือของลูกค้า
             transaction.update(userRef, updateData);
 
-            const txId = `REFUND-${Date.now()}`;
+            // 1.5 ซิงก์สถานะ To-do task (ถ้ามี pendingDeduct และมี task ที่ตรงกัน)
+            if (pendingDeduct > 0 && taskSnaps.length > 0) {
+                let remainingPendingToClear = pendingDeduct;
+                for (const { ref: taskRef, snap: taskSnap } of taskSnaps) {
+                    if (remainingPendingToClear <= 0) break;
+                    const taskData = taskSnap.data();
+                    if (['pending', 'PENDING', 'todo'].includes(taskData.status)) {
+                        const taskAmount = Number(taskData.withdrawalDetails?.amount || 0);
+                        if (remainingPendingToClear >= taskAmount) {
+                            transaction.update(taskRef, {
+                                status: 'completed',
+                                completedAt: serverTimestamp(),
+                                actionBy: currentAdminName,
+                                adminNote: note ? `จ่ายเงินคืนลูกค้าหน้าร้านเรียบร้อยแล้ว (${note})` : 'จ่ายเงินคืนลูกค้าหน้าร้านเรียบร้อยแล้ว (Customer Drawer Refund)',
+                                'withdrawalDetails.refundMethod': refundMethod,
+                                'withdrawalDetails.slipUrl': sanitizedSlipUrl,
+                                'withdrawalDetails.completedVia': 'CUSTOMER_DRAWER_REFUND'
+                            });
+                            remainingPendingToClear -= taskAmount;
+                        } else {
+                            transaction.update(taskRef, {
+                                'withdrawalDetails.amount': Math.round((taskAmount - remainingPendingToClear) * 100) / 100,
+                                adminNote: `ตัดจ่ายบางส่วน ฿${remainingPendingToClear} ทางหน้าร้าน (คงเหลือ ฿${Math.round((taskAmount - remainingPendingToClear) * 100) / 100})`,
+                                updatedAt: serverTimestamp()
+                            });
+                            remainingPendingToClear = 0;
+                        }
+                    }
+                }
+            }
 
             // 2. บันทึกลง Statement ของลูกค้า (users/{uid}/wallet_transactions)
-            const userTxRef = doc(collection(db, getUserSubcollectionPath(customerId, 'wallet_transactions')));
+            const userTxRef = doc(db, getUsersPath(), customerId, 'wallet_transactions', txId);
             transaction.set(userTxRef, {
                 transactionId: txId,
                 type: 'WITHDRAWAL_COMPLETED',

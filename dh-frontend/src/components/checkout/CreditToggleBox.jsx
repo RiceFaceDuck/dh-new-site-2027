@@ -1,15 +1,25 @@
-import { Award, CheckCircle2, Info } from 'lucide-react';
+import { Wallet, CheckCircle2, Info } from 'lucide-react';
 import { formatCredit } from '../../firebase/creditService';
 
 export default function CreditToggleBox({
   user,
+  walletLoading,
+  walletBalance,
+  useWalletToggle,
+  setUseWalletToggle,
+  useWallet,
+  // 🛡️ Backward compatibility props
   creditLoading,
   creditBalance,
   useCreditToggle,
-  setUseCreditToggle,
-  useWallet
+  setUseCreditToggle
 }) {
-  if (!user || creditLoading || creditBalance <= 0) return null;
+  const isLoading = walletLoading ?? creditLoading;
+  const balance = Number(walletBalance ?? creditBalance ?? 0);
+  const isEnabled = Boolean(useWalletToggle ?? useCreditToggle);
+  const handleToggle = setUseWalletToggle || setUseCreditToggle;
+
+  if (!user || isLoading || balance <= 0) return null;
 
   return (
     <div className="bg-linear-to-br from-indigo-50 to-white rounded-xl p-5 border border-indigo-100 shadow-xs animate-fade-in relative overflow-hidden transition-all duration-300 mb-6">
@@ -17,8 +27,8 @@ export default function CreditToggleBox({
       
       <div className="flex justify-between items-center relative z-10">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-xs transition-colors ${useCreditToggle ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}>
-            <Award className="w-5 h-5" />
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-xs transition-colors ${isEnabled ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}>
+            <Wallet className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
@@ -31,7 +41,7 @@ export default function CreditToggleBox({
                 </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">มียอดคงเหลือ: <span className="text-indigo-600 font-bold">฿{formatCredit(creditBalance)}</span></p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5">มียอดคงเหลือ: <span className="text-indigo-600 font-bold">฿{formatCredit(balance)}</span></p>
           </div>
         </div>
         
@@ -40,15 +50,15 @@ export default function CreditToggleBox({
           <input 
             type="checkbox" 
             className="sr-only peer" 
-            checked={useCreditToggle} 
-            onChange={(e) => setUseCreditToggle(e.target.checked)} 
+            checked={isEnabled} 
+            onChange={(e) => handleToggle?.(e.target.checked)} 
           />
           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
         </label>
       </div>
 
       {/* ข้อความยืนยันเมื่อเปิดใช้งาน */}
-      {useCreditToggle && useWallet > 0 && (
+      {isEnabled && useWallet > 0 && (
         <div className="mt-4 text-xs text-indigo-700 bg-indigo-50 p-2.5 rounded-lg flex items-center gap-2 font-medium animate-fade-in border border-indigo-100">
           <CheckCircle2 className="w-4 h-4 shrink-0" /> 
           ใช้ยอดเงินในระบบ <strong>฿{formatCredit(useWallet)}</strong> ในออเดอร์นี้

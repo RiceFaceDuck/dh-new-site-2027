@@ -25,10 +25,10 @@ const Checkout = () => {
     user,
     cartItems,
     totals,
-    creditBalance,
-    creditLoading,
-    useCreditToggle,
-    setUseCreditToggle,
+    walletBalance,
+    walletLoading,
+    useWalletToggle,
+    setUseWalletToggle,
     checkoutState,
     handleUpdateCheckoutState,
     slipUrl,
@@ -235,13 +235,13 @@ const Checkout = () => {
           <div className="lg:col-span-4">
             <div className="sticky top-6">
               
-              {/* 💎 [NEW] Gimmick: กล่องเปิด-ปิด การใช้ DH Point แบบ Premium */}
+              {/* 💰 กล่องเปิด-ปิด การใช้ DH Wallet ยอดเงินค้างในระบบ */}
               <CreditToggleBox 
                 user={user}
-                creditLoading={creditLoading}
-                creditBalance={creditBalance}
-                useCreditToggle={useCreditToggle}
-                setUseCreditToggle={setUseCreditToggle}
+                walletLoading={walletLoading}
+                walletBalance={walletBalance}
+                useWalletToggle={useWalletToggle}
+                setUseWalletToggle={setUseWalletToggle}
                 useWallet={checkoutState.useWallet}
               />
 

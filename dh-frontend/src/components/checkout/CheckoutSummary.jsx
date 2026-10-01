@@ -60,9 +60,9 @@ const CheckoutSummary = ({
 
   const totalPromoDiscount = appliedPromotions.reduce((sum, promo) => sum + (promo.discountValue || 0), 0);
   const totalDiscount = totalPromoDiscount + extraDiscountAmount;
-  const totalCreditDiscount = usedWallet;
+  const totalWalletDiscount = usedWallet;
 
-  const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost + insuranceCost - totalCreditDiscount);
+  const calculatedNetTotal = Math.max(0, (subtotal - totalDiscount) + shippingCost + insuranceCost - totalWalletDiscount);
 
   return (
     <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">

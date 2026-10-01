@@ -218,38 +218,37 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       });
     });
 
+    const currentWalletBalance = Number(userData.walletBalance || 0);
+    const balanceAfter = Math.round((currentWalletBalance - useWallet) * 100) / 100;
+    const txId = `TXW-${orderRef.id}`;
+
+    const userUpdatePayload = {
+      'stats.lastOrderDate': serverTimestamp(),
+      'stats.lastPurchaseDate': serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    if (saveProfile && checkoutState?.customerData) {
+      userUpdatePayload.shippingAddress = checkoutState.customerData;
+    }
+
     if (useWallet > 0) {
-      const walletTxRef = doc(collection(db, getCollectionPath('users'), user.uid, 'wallet_transactions'));
-      
-      // ✅ [SECURITY] Deduct strictly from walletBalance, NEVER from creditPoints
-      transaction.update(userRef, {
-        walletBalance: increment(-useWallet),
-        lastWalletTxId: walletTxRef.id,
-        updatedAt: serverTimestamp()
-      });
-      
+      userUpdatePayload.walletBalance = balanceAfter;
+      userUpdatePayload.lastWalletTxId = txId;
+
+      const walletTxRef = doc(db, getCollectionPath('users'), user.uid, 'wallet_transactions', txId);
       transaction.set(walletTxRef, {
-        transactionId: `TXW-${orderRef.id}`,
+        transactionId: txId,
         type: 'SPEND',
         amount: useWallet,
+        balanceAfter: balanceAfter,
         status: 'SUCCESS',
         note: `ใช้ยอดค้างในระบบสำหรับออเดอร์ ${orderRef.id}`,
         timestamp: serverTimestamp()
       });
     }
-    
-    if (saveProfile && checkoutState?.customerData) {
-      transaction.update(userRef, { 
-        shippingAddress: checkoutState.customerData,
-        'stats.lastOrderDate': serverTimestamp(),
-        'stats.lastPurchaseDate': serverTimestamp()
-      });
-    } else {
-      transaction.update(userRef, { 
-        'stats.lastOrderDate': serverTimestamp(),
-        'stats.lastPurchaseDate': serverTimestamp()
-      });
-    }
+
+    transaction.update(userRef, userUpdatePayload);
 
     // Delegate Todo creation to SRP Service
     const payableAmount = Math.max(0, finalNetTotal - useWallet);

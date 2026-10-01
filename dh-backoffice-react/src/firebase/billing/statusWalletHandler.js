@@ -39,18 +39,24 @@ export const handleWalletRefundAndClawback = async (
 
         if (refundAmount > 0) {
             // ✅ [SECURITY FIX] Refund to walletBalance (Cash) instead of creditPoints (Points)
+            const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+            const balanceAfter = Math.round((currentWallet + refundAmount) * 100) / 100;
+            const txId = `TXW_REF_${orderId}`;
+
             transaction.update(userRef, {
-                walletBalance: increment(refundAmount),
+                walletBalance: balanceAfter,
+                lastWalletTxId: txId,
                 updatedAt: serverTimestamp()
             });
 
-            const walletTxRef = doc(collection(db, getCollectionPath('users'), userSnap.id, 'wallet_transactions'));
+            const walletTxRef = doc(db, getCollectionPath('users'), userSnap.id, 'wallet_transactions', txId);
             transaction.set(walletTxRef, {
-                transactionId: `TXW_REF_${orderId}`,
+                transactionId: txId,
                 type: 'REFUND',
                 amount: refundAmount,
+                balanceAfter: balanceAfter,
                 status: 'SUCCESS',
-                note: 'คืนเงินเข้ากระเป๋าอัตโนมัติ (ยกเลิกบิล)',
+                note: `คืนเงินเข้ากระเป๋าอัตโนมัติ (ยกเลิกบิล ${orderId})`,
                 operatorUid: actualActorUid || 'System',
                 timestamp: serverTimestamp()
             });

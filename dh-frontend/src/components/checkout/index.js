@@ -6,4 +6,5 @@ export { default as CheckoutSummary } from './CheckoutSummary';
 export { default as CheckoutSuccess } from './CheckoutSuccess';
 export { default as WholesaleRequestModal } from './WholesaleRequestModal';
 export { default as CreditToggleBox } from './CreditToggleBox';
+export { default as WalletToggleBox } from './CreditToggleBox';
 export { default as TrustBadges } from './TrustBadges';

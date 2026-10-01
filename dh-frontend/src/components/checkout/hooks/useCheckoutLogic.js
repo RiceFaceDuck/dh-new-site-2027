@@ -13,8 +13,8 @@ export function useCheckoutLogic() {
   const { cartItems, totals, clearCart, checkoutState: contextCheckoutState } = useCart();
   const [user, setUser] = useState(null);
 
-  const { walletBalance: creditBalance, loading: creditLoading } = useWalletBalance(user?.uid);
-  const [useCreditToggle, setUseCreditToggle] = useState(false);
+  const { walletBalance, loading: walletLoading } = useWalletBalance(user?.uid);
+  const [useWalletToggle, setUseWalletToggle] = useState(false);
 
   const [checkoutState, setCheckoutState] = useState({
     customerData: null,
@@ -83,7 +83,7 @@ export function useCheckoutLogic() {
   }, [errorMessage]);
 
   useEffect(() => {
-    if (useCreditToggle && creditBalance > 0) {
+    if (useWalletToggle && walletBalance > 0) {
       const totalPromoDiscount = checkoutState.appliedPromotions?.reduce((sum, p) => sum + (p.discountValue || 0), 0) || 0;
       
       const currentNetBeforeCredit = 
@@ -92,13 +92,13 @@ export function useCheckoutLogic() {
         (checkoutState.discountAmount || 0) -
         totalPromoDiscount;
 
-      const maxApplicableWallet = Math.min(creditBalance, Math.max(0, currentNetBeforeCredit));
+      const maxApplicableWallet = Math.min(walletBalance, Math.max(0, currentNetBeforeCredit));
       
       setCheckoutState(prev => ({ ...prev, useWallet: maxApplicableWallet }));
     } else {
       setCheckoutState(prev => ({ ...prev, useWallet: 0 }));
     }
-  }, [useCreditToggle, creditBalance, totals, checkoutState.shippingCost, checkoutState.discountAmount, checkoutState.appliedPromotions]);
+  }, [useWalletToggle, walletBalance, totals, checkoutState.shippingCost, checkoutState.discountAmount, checkoutState.appliedPromotions]);
 
   const validateOrder = () => {
     const data = checkoutState.customerData;
@@ -189,10 +189,15 @@ export function useCheckoutLogic() {
     user,
     cartItems,
     totals,
-    creditBalance,
-    creditLoading,
-    useCreditToggle,
-    setUseCreditToggle,
+    walletBalance,
+    walletLoading,
+    useWalletToggle,
+    setUseWalletToggle,
+    // 🛡️ Backward compatibility aliases
+    creditBalance: walletBalance,
+    creditLoading: walletLoading,
+    useCreditToggle: useWalletToggle,
+    setUseCreditToggle: setUseWalletToggle,
     checkoutState,
     handleUpdateCheckoutState,
     slipUrl,

@@ -135,6 +135,12 @@ export const returnActionService = {
           creditPreloadSnaps = { txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap };
         }
 
+        const userRef = (hasCustomer && refundAmount > 0) ? doc(db, getCollectionPath('users'), payload.customerUid) : null;
+        let returnUserSnap = creditPreloadSnaps?.userSnap || null;
+        if (userRef && !returnUserSnap) {
+          returnUserSnap = await transaction.get(userRef);
+        }
+
         // --- 2. WRITE OPERATIONS ---
         // 1. เพิ่มสต๊อกกลับเข้าคลัง
         transaction.update(pRef, { stockQuantity: finalNewStock });
@@ -160,9 +166,7 @@ export const returnActionService = {
         }
 
         // 4. บันทึกกระเป๋าเงิน (Wallet) และดึงแต้มคืน
-        if (hasCustomer && refundAmount > 0) {
-          const userRef = doc(db, getCollectionPath('users'), payload.customerUid);
-
+        if (hasCustomer && refundAmount > 0 && userRef) {
           // 4.1 หักแต้มสะสม (Clawback)
           if (clawbackPoints > 0 && creditPreloadSnaps) {
             const { adjustUserCreditWithTransaction } = await import('../credit/creditActionService');
@@ -179,16 +183,22 @@ export const returnActionService = {
           }
 
           // 4.2 คืนเงินเข้า Wallet Cash
+          const currentWallet = Number(returnUserSnap?.data()?.walletBalance || 0);
+          const balanceAfter = Math.round((currentWallet + refundAmount) * 100) / 100;
+          const txId = `TXW_REF_${payload.returnId}`;
+
           transaction.update(userRef, {
-            walletBalance: increment(refundAmount),
+            walletBalance: balanceAfter,
+            lastWalletTxId: txId,
             updatedAt: serverTimestamp()
           });
 
-          const walletTxRef = doc(collection(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions'));
+          const walletTxRef = doc(db, getCollectionPath('users'), payload.customerUid, 'wallet_transactions', txId);
           transaction.set(walletTxRef, {
-            transactionId: `TXW_REF_${payload.returnId}`,
+            transactionId: txId,
             type: 'REFUND',
             amount: refundAmount,
+            balanceAfter: balanceAfter,
             status: 'SUCCESS',
             note: `คืนเงินเข้ากระเป๋า (รับคืนสินค้า ${payload.sku})`,
             operatorUid: adminUid || 'System',
