@@ -30,5 +30,7 @@
 - ⚠️ Discrepancy Math: Mistaking `systemPoolMax - totalUserCredits` as discrepancy causes a catastrophic false 9.9M red alarm.
 - ⚠️ Realtime Snapshot Leaks: Do not use `onSnapshot` for heavy transaction history; use cached pagination + manual refresh button.
 - ⚠️ Smart UID Resolution: Must support 8-char short ID, phone number, and customerCode before querying full UID.
+- ⚠️ Config Unwrapping: `settings/credit_config` stores values inside `.config`; consumers must use unwrap helper to avoid default fallbacks.
+- ⚠️ Ad Settlement Deduction: Deductions must target `users.creditPoints` directly; `heldCreditPoints` is uninitialized.
 </pitfalls_and_lessons>
 </grimoire>
