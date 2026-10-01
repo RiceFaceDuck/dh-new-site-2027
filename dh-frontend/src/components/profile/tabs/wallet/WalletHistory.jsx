@@ -79,7 +79,7 @@ const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
                     )}
                     <div className="text-right shrink-0">
                       <p className={`text-base font-black font-mono ${isWithdraw ? 'text-amber-600' : isEarn ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {isWithdraw ? '-' : (isEarn ? '+' : '-')}฿ {formatCredit(amount)}
+                        {isWithdraw ? '-' : (isEarn ? '+' : '-')}{isCredit ? `${formatCredit(amount)} Pts` : `฿ ${formatCredit(amount)}`}
                       </p>
                       {log.status && (
                         <p className={`text-[10px] font-bold mt-0.5 uppercase tracking-wider flex items-center justify-end gap-1 ${

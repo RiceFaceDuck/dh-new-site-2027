@@ -27,7 +27,7 @@ export default function LedgerStatsCards({
             <div className="h-6 w-24 bg-slate-200 animate-pulse"></div>
           ) : (
             <div className="flex items-baseline justify-between">
-              <h2 className="text-xl font-bold text-slate-800">฿ {formatNumber(stats.totalUserCredits)}</h2>
+              <h2 className="text-xl font-bold text-slate-800">{formatNumber(stats.totalUserCredits)} Pts</h2>
               <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
                 {formatNumber(stats.totalPartnersWithCredit)} Active
@@ -45,7 +45,7 @@ export default function LedgerStatsCards({
           {isLoading ? (
             <div className="h-6 w-24 bg-slate-200 animate-pulse"></div>
           ) : (
-            <h2 className="text-xl font-bold text-emerald-600">฿ {formatNumber(stats.remainingPool)}</h2>
+            <h2 className="text-xl font-bold text-emerald-600">{formatNumber(stats.remainingPool)} Pts</h2>
           )}
         </div>
         <p className="text-[11px] text-slate-400 mt-2 font-medium">งบกองกลางคงเหลือพร้อมแจก</p>
@@ -58,7 +58,7 @@ export default function LedgerStatsCards({
           {isLoading ? (
             <div className="h-6 w-24 bg-slate-200 animate-pulse"></div>
           ) : (
-            <h2 className="text-xl font-bold text-slate-800">฿ {formatNumber(stats.systemPoolMax)}</h2>
+            <h2 className="text-xl font-bold text-slate-800">{formatNumber(stats.systemPoolMax)} Pts</h2>
           )}
         </div>
         <p className="text-[11px] text-slate-400 mt-2 font-medium">เพดานความปลอดภัยกองกลาง</p>
@@ -74,7 +74,7 @@ export default function LedgerStatsCards({
             <div className="h-6 w-24 bg-slate-200 animate-pulse"></div>
           ) : (
             <h2 className={`text-xl font-bold ${isDiscrepancyWarning ? 'text-red-600' : 'text-emerald-600'}`}>
-              {stats.discrepancy === 0 ? 'ตรงกัน (Match)' : `฿ ${formatNumber(stats.discrepancy)}`}
+              {stats.discrepancy === 0 ? 'ตรงกัน (Match)' : `${formatNumber(stats.discrepancy)} Pts`}
             </h2>
           )}
         </div>

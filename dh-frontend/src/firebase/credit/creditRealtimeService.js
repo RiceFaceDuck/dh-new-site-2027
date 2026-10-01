@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../config';
-import { getUsersPath } from './creditConfig';
 import { getUserTier } from './creditFormatService';
+import { userDocumentSubscriptionManager } from '../user/userDocumentSubscriptionManager';
 
 export const listenToUserCredit = (userId, callback) => {
   if (!userId) {
@@ -10,38 +8,21 @@ export const listenToUserCredit = (userId, callback) => {
     return () => {};
   }
 
-  const usersPath = getUsersPath();
-  const profileRef = doc(db, usersPath, userId);
-
-  let state = {
-    balance: 0,
-    totalAccumulated: 0,
-    pendingCredits: 0
-  };
-
-  const notifyUI = () => {
-    callback({
-      balance: state.balance,
-      tier: getUserTier(state.totalAccumulated),
-      totalAccumulated: state.totalAccumulated,
-      pendingCredits: state.pendingCredits
-    });
-  };
-
-  const unsubProfile = onSnapshot(profileRef, (snap) => {
-    if (snap.exists()) {
-      const data = snap.data();
-      state.balance = Number(data.creditPoints || 0);
-      state.totalAccumulated = Number(data.totalAccumulatedPoints || data.creditPoints || 0);
-      state.pendingCredits = Number(data.pendingCredits) || 0;
-      
-      notifyUI();
+  return userDocumentSubscriptionManager.subscribe(userId, (data) => {
+    if (data) {
+      const balance = Number(data.creditPoints || 0);
+      const totalAccumulated = Number(data.totalAccumulatedPoints || data.creditPoints || 0);
+      const pendingCredits = Number(data.pendingCredits || 0);
+      callback({
+        balance,
+        tier: getUserTier(totalAccumulated),
+        totalAccumulated,
+        pendingCredits
+      });
+    } else {
+      callback({ balance: 0, tier: getUserTier(0), totalAccumulated: 0, pendingCredits: 0 });
     }
   });
-
-  return () => {
-    unsubProfile();
-  };
 };
 
 export const useUserCredit = (userId) => {

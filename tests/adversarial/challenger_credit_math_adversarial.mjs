@@ -296,9 +296,8 @@ const userServicePath = path.join(REPO_ROOT, 'dh-backoffice-react/src/firebase/u
 const userServiceCode = fs.readFileSync(userServicePath, 'utf8');
 
 const hasAccountNameBugInUserService = userServiceCode.includes('getCustomerDisplayName(d, d).accountName');
-assert(hasAccountNameBugInUserService === true,
-  'Property Access Bug Verified: userManagementService.js:263 attempts to access .accountName on string returned by getCustomerDisplayName(d, d)',
-  'This causes getCustomerDisplayName to always evaluate to undefined on line 263');
+assert(hasAccountNameBugInUserService === false,
+  'userManagementService.js uses getCustomerDisplayName(d, d) directly without broken .accountName property access (Fixed)');
 
 // =============================================================================
 // TEST 10: Formatting Divergence between Backoffice and Frontend

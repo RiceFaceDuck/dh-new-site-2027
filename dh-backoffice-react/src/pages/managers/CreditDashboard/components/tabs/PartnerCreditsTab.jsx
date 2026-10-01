@@ -221,7 +221,7 @@ export default function PartnerCreditsTab() {
           <span>Total Visible Liability:</span>
           <div className="px-3 py-1 bg-slate-100 rounded-lg border border-slate-200">
             <strong className="text-slate-800 font-mono text-sm tracking-tight">
-              ฿ {totalDisplayedCredit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {totalDisplayedCredit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Pts
             </strong>
           </div>
         </div>

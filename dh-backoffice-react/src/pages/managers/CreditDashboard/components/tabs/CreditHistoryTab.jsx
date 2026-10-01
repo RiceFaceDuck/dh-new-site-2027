@@ -131,7 +131,7 @@ export default function CreditHistoryTab() {
               <th className="px-4 py-2 font-bold whitespace-nowrap">TX Reference</th>
               <th className="px-4 py-2 font-bold">Target Account</th>
               <th className="px-4 py-2 font-bold whitespace-nowrap">Type</th>
-              <th className="px-4 py-2 font-bold text-right whitespace-nowrap">Amount (THB)</th>
+              <th className="px-4 py-2 font-bold text-right whitespace-nowrap">Amount (Pts)</th>
               <th className="px-4 py-2 font-bold text-right whitespace-nowrap">Balance After</th>
               <th className="px-4 py-2 font-bold">Operator</th>
               <th className="px-4 py-2 font-bold">Remark</th>

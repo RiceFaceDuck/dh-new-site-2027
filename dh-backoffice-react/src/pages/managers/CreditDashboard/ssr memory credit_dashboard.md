@@ -30,6 +30,9 @@
 - ⚠️ Discrepancy Math: Mistaking `systemPoolMax - totalUserCredits` as discrepancy causes a catastrophic false 9.9M red alarm.
 - ⚠️ Realtime Snapshot Leaks: Do not use `onSnapshot` for heavy transaction history; use cached pagination + manual refresh button.
 - ⚠️ Smart UID Resolution: Must support 8-char short ID, phone number, and customerCode before querying full UID.
+- ⚠️ Currency Symbol (Phase 3): Replaced confusing ฿ prefix with Pts across dashboard cards, tables, and storefront wallet history.
+- ⚠️ Multiplexed Listeners (Phase 3): Removed eager top-level listeners in creditFormatService and routed listenToUserCredit through userDocumentSubscriptionManager.
+- ⚠️ Safe Remaining Pool (Phase 3): Factored user liabilities into remaining pool calculation and queried creditPoints != 0 to net negative balances.
 - ⚠️ Config Unwrapping (Phase 2): Standardized with `unwrapCreditConfig` in `dh-shared` across Backoffice and Frontend consumers.
 - ⚠️ Return Reversal & Clawback (Phase 2): `cancelActionService` restores clawed-back loyalty points inside transaction; `clawbackPoints` passes type `'clawback'` to allow safe clamping without throwing.
 - ⚠️ Rules Hardening (Phase 2): `credit_transactions` is append-only (immutable); `settings/credit_config` read requires auth and nested `.config` map writes are guarded.

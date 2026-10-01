@@ -76,7 +76,7 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
         }
         return res;
       },
-      `ทำรายการ ${actionType === 'add' ? 'เพิ่ม' : 'หัก'}เครดิต ${numAmount.toLocaleString('th-TH')} บาท สำเร็จ`
+      `ทำรายการ ${actionType === 'add' ? 'เพิ่ม' : 'หัก'}เครดิต ${numAmount.toLocaleString('th-TH')} แต้ม (Pts) สำเร็จ`
     );
   };
 

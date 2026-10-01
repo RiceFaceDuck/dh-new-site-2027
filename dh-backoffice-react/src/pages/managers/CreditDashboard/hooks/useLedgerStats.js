@@ -26,7 +26,7 @@ export default function useLedgerStats() {
   const fetchRealUserStats = async () => {
     try {
       const usersRef = collection(db, getCollectionPath('users'));
-      const q = query(usersRef, where('creditPoints', '>', 0));
+      const q = query(usersRef, where('creditPoints', '!=', 0));
       const aggSnap = await getAggregateFromServer(q, {
         totalCredit: sum('creditPoints'),
         activeCount: count()
@@ -72,9 +72,11 @@ export default function useLedgerStats() {
       // 2. ดึงยอดภาระหนี้สินจริงที่ผู้ใช้ถือครอง
       const userStats = await fetchRealUserStats();
 
-      // 3. คำนวณความสอดคล้องทางบัญชี (Discrepancy & Remaining Pool)
-      const discrepancy = Math.round(Math.abs(totalAllocated - userStats.totalCredit));
-      const remainingPool = Math.max(0, systemPoolMax - totalAllocated);
+      // 3. คำนวณความสอดคล้องทางบัญชี (Discrepancy & Safe Remaining Pool)
+      const signedDiscrepancy = Math.round(totalAllocated - userStats.totalCredit);
+      const discrepancy = Math.abs(signedDiscrepancy);
+      const trueEffectiveLiability = Math.max(totalAllocated, userStats.totalCredit);
+      const remainingPool = Math.max(0, systemPoolMax - trueEffectiveLiability);
 
       const computedStats = {
         totalUserCredits: userStats.totalCredit,
@@ -82,6 +84,7 @@ export default function useLedgerStats() {
         systemPoolMax: systemPoolMax,
         remainingPool: remainingPool,
         discrepancy: discrepancy,
+        signedDiscrepancy: signedDiscrepancy,
         totalPartnersWithCredit: userStats.activeCount,
         ledgerStatus: status,
         lastUpdated: new Date()

@@ -260,7 +260,7 @@ export const getPartnersWithCredits = async (forceRefresh = false) => {
             if (d.role === 'partner' || balance > 0) {
                 data.push({
                     id: doc.id,
-                    name: getCustomerDisplayName(d, d).accountName || (d.firstName ? `${d.firstName} ${d.lastName || ''}`.trim() : null) || (d.email ? d.email.split('@')[0] : null) || d.phone || d.phoneNumber || 'Unknown Account',
+                    name: getCustomerDisplayName(d, d) || (d.firstName ? `${d.firstName} ${d.lastName || ''}`.trim() : null) || (d.email ? d.email.split('@')[0] : null) || d.phone || d.phoneNumber || 'Unknown Account',
                     phone: d.phone || '-',
                     email: d.email || '-',
                     role: d.role || 'user',

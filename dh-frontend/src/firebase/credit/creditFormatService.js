@@ -32,7 +32,8 @@ export const stopRoleTierConfigListener = () => {
   isSubscribed = false;
 };
 
-initRoleTierConfigListener();
+// Note: Explicit listener initialization on demand rather than top-level import execution
+export const startRoleTierConfigListener = initRoleTierConfigListener;
 
 export const getUserTier = (points = 0, customTiers = null) => {
   const activeTiers = customTiers || cachedTiers;
