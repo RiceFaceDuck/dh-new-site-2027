@@ -5,6 +5,7 @@ import { usePromotions } from '../../hooks/usePromotions';
 import { db, auth } from '../../firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { trackPromotionSelect } from '../../firebase/promotionAnalyticsService';
 
 // 🚀 Quota Optimization: Shared Singleton Listener to prevent re-subscribing on remount
 let cachedUserData = null;
@@ -126,6 +127,9 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     const currentDiscount = checkoutState?.discountAmount || 0;
 
     if (currentDiscount !== bestDiscount || currentPromoTitle !== newPromoTitle) {
+      if (bestPromo && newPromoTitle !== currentPromoTitle) {
+        trackPromotionSelect(bestPromo);
+      }
       updateCheckoutConfig({
         discountAmount: bestDiscount,
         discountCode: newPromoTitle,

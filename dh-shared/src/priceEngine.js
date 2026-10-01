@@ -38,8 +38,9 @@ export const calculatePromotionDiscount = (subtotal, items, promotion) => {
     let applicableSubtotal = subtotal;
     if (promotion.applicableSkus && promotion.applicableSkus.length > 0) {
         applicableSubtotal = items.reduce((sum, item) => {
-            const itemSku = item.id || item.sku;
-            if (promotion.applicableSkus.includes(itemSku)) {
+            const itemSku = String(item.id || item.sku || '').trim().toUpperCase();
+            const isMatch = promotion.applicableSkus.some(s => String(s).trim().toUpperCase() === itemSku);
+            if (isMatch) {
                 return sum + calculateItemTotal(item);
             }
             return sum;
@@ -49,13 +50,14 @@ export const calculatePromotionDiscount = (subtotal, items, promotion) => {
     if (applicableSubtotal <= 0) return 0;
 
     let discount = 0;
-    if (promotion.type === 'PERCENTAGE') {
+    const promoType = String(promotion.type || '').toUpperCase();
+    if (promoType === 'PERCENTAGE') {
         discount = applicableSubtotal * (safeNum(promotion.value) / 100);
         if (promotion.maxDiscount && discount > promotion.maxDiscount) {
             discount = promotion.maxDiscount;
         }
-    } else if (promotion.type === 'FIXED') {
-        discount = safeNum(promotion.value);
+    } else if (promoType === 'FIXED' || promoType === 'FIXED_AMOUNT') {
+        discount = Math.min(safeNum(promotion.value), applicableSubtotal);
     }
 
     return Math.round(discount * 100) / 100;

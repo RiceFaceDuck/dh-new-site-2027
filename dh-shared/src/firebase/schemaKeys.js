@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Centralized Firestore Schema Dictionary for DH Notebook monorepo.
  * Eliminates hardcoded collection strings and prevents typos across environments.
  */
@@ -29,7 +29,9 @@ export const COLLECTIONS = {
   WALLET_REQUESTS: 'wallet_requests',
   ORDER_REQUESTS: 'order_requests',
   YEARLY_ARCHIVES: 'yearly_archives',
-  PARTNER_REVIEWS: 'partner_reviews'
+  PARTNER_REVIEWS: 'partner_reviews',
+  PROMOTIONS: 'promotions',
+  FREEBIES: 'freebies'
 };
 
 export const COLLECTION_GROUPS = {

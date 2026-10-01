@@ -632,21 +632,23 @@ service cloud.firestore {
     }
     match /promotions/{promoId} {
       allow read: if true;
-      allow create, delete: if isStaff();
-      allow update: if isStaff() || (
+      allow create, delete: if isManagerOrAdmin();
+      allow update: if isManagerOrAdmin() || isStaff() || (
         isAuthenticated() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quotaUsed']) &&
-        request.resource.data.get('quotaUsed', 0) == resource.data.get('quotaUsed', 0) + 1
+        request.resource.data.get('quotaUsed', 0) == resource.data.get('quotaUsed', 0) + 1 &&
+        (!('quotaLimit' in resource.data) || resource.data.quotaLimit == null || resource.data.quotaLimit == 0 || request.resource.data.get('quotaUsed', 0) <= resource.data.quotaLimit)
       );
     }
     match /freebies/{freebieId} {
       allow read: if true;
-      allow create, delete: if isStaff();
-      allow update: if isStaff() || (
+      allow create, delete: if isManagerOrAdmin();
+      allow update: if isManagerOrAdmin() || isStaff() || (
         isAuthenticated() && 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quotaUsed']) &&
         request.resource.data.get('quotaUsed', 0) >= resource.data.get('quotaUsed', 0) + 1 &&
-        request.resource.data.get('quotaUsed', 0) <= resource.data.get('quotaUsed', 0) + 10
+        request.resource.data.get('quotaUsed', 0) <= resource.data.get('quotaUsed', 0) + 10 &&
+        (!('quotaLimit' in resource.data) || resource.data.quotaLimit == null || resource.data.quotaLimit == 0 || request.resource.data.get('quotaUsed', 0) <= resource.data.quotaLimit)
       );
     }
     

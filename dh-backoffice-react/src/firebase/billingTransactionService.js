@@ -55,10 +55,11 @@ async function fetchDependencies(transaction, orderData, statusLower) {
   if (statusLower === 'paid' || statusLower === 'approved') {
     counterSnap = await transaction.get(counterRef);
 
-    if (orderData.appliedPromotions && Array.isArray(orderData.appliedPromotions)) {
-      for (const promo of orderData.appliedPromotions) {
-          if (promo.id) promoFreebieSnaps.push({ type: 'promo', ref: doc(db, getCollectionPath('promotions'), promo.id), snap: await transaction.get(doc(db, getCollectionPath('promotions'), promo.id)) });
-      }
+    const promosList = Array.isArray(orderData.appliedPromotions) 
+      ? orderData.appliedPromotions 
+      : (orderData.appliedPromotion && orderData.appliedPromotion.id ? [orderData.appliedPromotion] : []);
+    for (const promo of promosList) {
+      if (promo.id) promoFreebieSnaps.push({ type: 'promo', ref: doc(db, getCollectionPath('promotions'), promo.id), snap: await transaction.get(doc(db, getCollectionPath('promotions'), promo.id)) });
     }
     if (orderData.appliedFreebies && Array.isArray(orderData.appliedFreebies)) {
       for (const freebie of orderData.appliedFreebies) {

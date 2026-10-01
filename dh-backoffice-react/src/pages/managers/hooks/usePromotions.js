@@ -108,7 +108,7 @@ export function usePromotions() {
         await promotionService.updatePromotion(formData.id, payload, auth.currentUser, logMsg);
         alert('แก้ไขโปรโมชันสำเร็จ');
       } else {
-        await promotionService.createPromotion(payload, auth.currentUser);
+        await promotionService.createPromotion({ ...payload, quotaUsed: 0 }, auth.currentUser);
         alert('สร้างโปรโมชันใหม่สำเร็จ แจ้งเตือนพนักงานทุกคนแล้ว!');
       }
       setIsModalOpen(false);

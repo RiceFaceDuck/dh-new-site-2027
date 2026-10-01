@@ -59,13 +59,13 @@ export default function PromotionTable({ promotions, loading, handleToggleActive
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center text-xs">
-                                            <div className="font-bold text-gray-600 mb-1">
-                                                {promo.minSpend > 0 ? `ซื้อครบ ${(promo.minSpend).toLocaleString()} ฿` : 'แจกทุกบิล'}
+                                            <div className="font-bold text-gray-700 mb-1">
+                                                {promo.minSpend > 0 ? `ซื้อครบ ${(promo.minSpend).toLocaleString()} ฿` : 'ไม่มีขั้นต่ำ'}
                                             </div>
                                             <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                                                {promo.customerType === 'RETAIL' ? 'ปลีก' : 
-                                                 promo.customerType === 'WHOLESALE' ? 'ส่ง' : 
-                                                 promo.customerType === 'VIP' ? 'VIP' : 'ทุกคน'}
+                                                {promo.customerType === 'RETAIL' ? 'ลูกค้าปลีก' : 
+                                                 promo.customerType === 'WHOLESALE' ? 'ลูกค้าส่ง' : 
+                                                 promo.customerType === 'VIP' ? 'ลูกค้า VIP' : 'ลูกค้าทุกคน'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center font-medium">
@@ -86,9 +86,9 @@ export default function PromotionTable({ promotions, loading, handleToggleActive
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => handleOpenModal(promo)} className="p-2 text-gray-400 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 size={16}/></button>
-                                                <button onClick={() => handleDelete(promo.id, promo.title)} className="p-2 text-gray-400 hover:text-rose-600 bg-gray-50 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button onClick={() => handleOpenModal(promo)} title="แก้ไขโปรโมชัน" className="p-2 text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg transition-colors dh-active-press"><Edit2 size={15}/></button>
+                                                <button onClick={() => handleDelete(promo.id, promo.title)} title="ลบโปรโมชัน" className="p-2 text-slate-500 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-300 rounded-lg transition-colors dh-active-press"><Trash2 size={15}/></button>
                                             </div>
                                         </td>
                                     </tr>

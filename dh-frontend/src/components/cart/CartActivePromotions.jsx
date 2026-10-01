@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Tag, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { usePromotions } from '../../hooks/usePromotions';
+import { trackPromotionView } from '../../firebase/promotionAnalyticsService';
 
 const CartActivePromotions = ({ cartItems, subTotal, user, onPromotionsEvaluated, hidden = false }) => {
   const [bestPromoId, setBestPromoId] = useState(null);
   const { promotions, isLoading, evaluatePromotion } = usePromotions();
+
+  useEffect(() => {
+    if (!isLoading && promotions.length > 0) {
+      trackPromotionView(promotions);
+    }
+  }, [isLoading, promotions]);
 
   useEffect(() => {
     if (!isLoading && onPromotionsEvaluated) {

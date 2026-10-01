@@ -3,27 +3,78 @@ import { db } from './config';
 import { historyService } from './historyService';
 import { todoService } from './todoService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { inventorySyncMetaService } from './inventory/inventorySyncMetaService';
 
 const COLLECTION_NAME = getCollectionPath('promotions');
 
-// Helper for validating SKUs (max 30 per 'in' query)
-const validateSkus = async (skusArray) => {
+// Helper for validating SKUs (IndexedDB 0-Read first, with Firestore chunked query fallback)
+export const validateSkus = async (skusArray) => {
   if (!Array.isArray(skusArray) || skusArray.length === 0) return { validSkus: [], removedSkus: [] };
   
+  // 1. Try zero-read cache from inventorySyncMetaService (Tier 1 memory / Tier 2 IndexedDB)
+  try {
+    const catalogResult = await inventorySyncMetaService.getOrFetchCatalog({ forceRefresh: false });
+    const catalog = catalogResult?.catalog || catalogResult?.products || [];
+    
+    if (Array.isArray(catalog) && catalog.length > 0) {
+      // Build a map of uppercase SKU -> canonical SKU
+      const catalogSkuMap = new Map();
+      for (const item of catalog) {
+        const rawSku = item?.sku || item?.id;
+        if (rawSku) {
+          const trimmed = String(rawSku).trim();
+          catalogSkuMap.set(trimmed.toUpperCase(), trimmed);
+        }
+      }
+      
+      const validSkus = [];
+      const removedSkus = [];
+      const seenValid = new Set();
+      
+      for (const rawInputSku of skusArray) {
+        if (!rawInputSku) continue;
+        const trimmedInput = String(rawInputSku).trim();
+        const upperInput = trimmedInput.toUpperCase();
+        
+        if (catalogSkuMap.has(upperInput)) {
+          const canonicalSku = catalogSkuMap.get(upperInput);
+          if (!seenValid.has(canonicalSku)) {
+            seenValid.add(canonicalSku);
+            validSkus.push(canonicalSku);
+          }
+        } else {
+          removedSkus.push(trimmedInput);
+        }
+      }
+      
+      return { validSkus, removedSkus };
+    }
+  } catch (err) {
+    console.warn('⚠️ [promotionService] Catalog cache validation failed, falling back to Firestore query:', err);
+  }
+
+  // 2. Fallback: Firestore chunk query (max 30 per 'in' query)
   const validSkus = new Set();
   for (let i = 0; i < skusArray.length; i += 30) {
-    const chunk = skusArray.slice(i, i + 30);
+    const chunk = skusArray.slice(i, i + 30).map(s => String(s || '').trim()).filter(Boolean);
+    if (chunk.length === 0) continue;
     const q = query(collection(db, getCollectionPath('products')), where('sku', 'in', chunk), limit(300));
     const snapshot = await getDocs(q);
-    snapshot.forEach(doc => validSkus.add(doc.data().sku));
+    snapshot.forEach(doc => {
+      const dataSku = doc.data()?.sku;
+      if (dataSku) validSkus.add(String(dataSku).trim());
+    });
   }
   
   const validSkusArray = Array.from(validSkus);
-  const removedSkus = skusArray.filter(sku => !validSkus.has(sku));
+  const removedSkus = skusArray
+    .map(s => String(s || '').trim())
+    .filter(sku => sku && !validSkus.has(sku));
   return { validSkus: validSkusArray, removedSkus };
 };
 
 export const promotionService = {
+  validateSkus,
   // 📥 ดึงโปรโมชันทั้งหมด (สำหรับหน้าจัดการของผู้จัดการ)
   getAllPromotions: async () => {
     try {
@@ -93,9 +144,18 @@ export const promotionService = {
       await todoService.createManualTask({
         type: 'promotion_alert',
         title: `📣 แจ้งโปรโมชันใหม่: ${promoData.title}`,
-        description: `มีโปรโมชันใหม่ถูกเพิ่มเข้าระบบ\nเงื่อนไข: ${promoData.description}\nสามารถเรียกใช้งานได้ที่หน้า เปิดบิล (POS)`,
+        description: `มีโปรโมชันใหม่ถูกเพิ่มเข้าระบบ\nเงื่อนไข: ${promoData.description || 'ไม่มีรายละเอียดเพิ่มเติม'}\nสามารถเรียกใช้งานได้ที่หน้า เปิดบิล (POS)`,
         priority: 'Medium',
-        assignedTo: 'all'
+        assignedTo: 'all',
+        payload: {
+          id: docRef.id,
+          name: promoData.title,
+          title: promoData.title,
+          type: promoData.type,
+          value: promoData.value,
+          minSpend: promoData.minSpend || 0,
+          endDate: promoData.endDate || null
+        }
       }, user);
 
       return docRef.id;

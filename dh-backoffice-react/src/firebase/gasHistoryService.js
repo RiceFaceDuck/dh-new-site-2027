@@ -1,6 +1,6 @@
 import { auth, db } from './config.js';
 import { addDoc, collection, getDocs, query, where, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { getCollectionPath } from 'dh-shared';
 
 // The Google Apps Script Web App URL deployed by the user
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwdYyuYHv2BqJqx0ksRZyB8iAWLKO2y465Tbio03CTazBMBXh-KrRqaAEAGKtyUnBa4kg/exec';

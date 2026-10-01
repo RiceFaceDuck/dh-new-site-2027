@@ -181,7 +181,15 @@ export const usePosActions = ({
     };
 
     const handleApplyPromotion = (promo, isAuto = false) => {
-        if (promo.minSpend > 0 && itemSubTotal < promo.minSpend) return;
+        if (!promo) return;
+        if (promo.minSpend > 0 && itemSubTotal < promo.minSpend) {
+            toast.error(`ยอดซื้อไม่ถึงขั้นต่ำ ${promo.minSpend.toLocaleString()} ฿`);
+            return;
+        }
+        if (promo.quotaLimit && (promo.quotaUsed || 0) >= promo.quotaLimit) {
+            toast.error(`สิทธิ์โปรโมชัน "${promo.title}" เต็มแล้ว`);
+            return;
+        }
         updateActiveTab({ promoDiscount: applyPromotionLogic(promo, itemSubTotal, activeTab.items), appliedPromoId: promo.id, appliedPromoDetails: { ...promo }, autoPromoEnabled: isAuto ? true : false });
         setIsPromoModalOpen(false);
     };
@@ -366,7 +374,9 @@ export const usePosActions = ({
                 subTotal: sanitizeNum(itemSubTotal), overallDiscount: manualDiscount, promoDiscount: promoDiscount, discountTotal: sanitizeNum(activeTab.items.reduce((sum, item) => sum + (sanitizeNum(item.discount) * Math.max(1, sanitizeNum(item.qty))), 0) + totalDiscount),
                 shippingFee: shippingFee, otherFeeName: activeTab.otherFeeName || '', otherFeeAmount: otherFeeAmount, vatAmount: sanitizeNum(vatAmount), netTotal: sanitizeNum(netTotal), walletUsed: walletUsed,
                 earnedPoints: status === 'Paid' ? earnedPoints : 0, remainingToPay: sanitizeNum(remainingToPay), cashReceived: activeTab.paymentMethod === 'Cash' ? sanitizeNum(activeTab.cashReceived) : null,
-                changeAmount: sanitizeNum(changeAmount) > 0 ? sanitizeNum(changeAmount) : 0, appliedPromotion: activeTab.appliedPromoDetails || null,
+                changeAmount: sanitizeNum(changeAmount) > 0 ? sanitizeNum(changeAmount) : 0, 
+                appliedPromotion: activeTab.appliedPromoDetails || null,
+                appliedPromotions: activeTab.appliedPromoDetails ? [activeTab.appliedPromoDetails] : [],
                 appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, conditionText: (f.minSpend > 0 ? `ยอด${f.minSpend}฿ ` : '') + (f.minQty > 0 ? `ครบ${f.minQty}ชิ้น ` : '') + (f.applicableSkus?.length > 0 ? `เฉพาะรุ่น` : ''), itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
                 thaiBahtText: convertToThaiBahtText(remainingToPay) || '', billNote: finalNote, sellerUid: auth.currentUser?.uid || 'System',
                 customer: activeTab.customer ? { uid: activeTab.customer.uid || '', accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: activeTab.customer.address || '', hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },

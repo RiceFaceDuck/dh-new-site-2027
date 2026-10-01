@@ -46,6 +46,21 @@ describe('Price Engine', () => {
             expect(calculatePromotionDiscount(subtotal, items, promo)).toBe(30);
         });
 
+        it('should calculate FIXED_AMOUNT discount correctly', () => {
+            const promo = { type: 'FIXED_AMOUNT', value: 30 };
+            expect(calculatePromotionDiscount(subtotal, items, promo)).toBe(30);
+        });
+
+        it('should clamp FIXED_AMOUNT to applicableSubtotal', () => {
+            const promo = { type: 'FIXED_AMOUNT', value: 500 };
+            expect(calculatePromotionDiscount(subtotal, items, promo)).toBe(200);
+        });
+
+        it('should match applicableSkus case-insensitively', () => {
+            const promo = { type: 'PERCENTAGE', value: 10, applicableSkus: ['sku1'] };
+            expect(calculatePromotionDiscount(subtotal, items, promo)).toBe(20);
+        });
+
         it('should return 0 if minSpend is not met', () => {
             const promo = { type: 'FIXED', value: 30, minSpend: 500 };
             expect(calculatePromotionDiscount(subtotal, items, promo)).toBe(0);
