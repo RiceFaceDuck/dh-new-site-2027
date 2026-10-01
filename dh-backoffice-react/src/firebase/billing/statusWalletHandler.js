@@ -87,29 +87,31 @@ export const handlePointsEarned = async (
     creditPreloadSnaps = null
 ) => {
     try {
-        // 1. ดึงแต้มจากระบบตะกร้าออนไลน์ก่อน ถ้ามีการคำนวณไว้
-        let earnedPoints = Number(orderData.pendingCredits || 0);
+        const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+        const amountForPoints = Math.max(0, totalSaleAmount - walletUsed);
 
-        // 2. ถ้าไม่มี ค่อยคำนวณเอง (กรณีมาจาก POS / Backoffice สร้างบิลเอง)
-        if (earnedPoints <= 0) {
-            const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
-            const amountForPoints = totalSaleAmount - walletUsed;
-            
-            if (amountForPoints > 0) {
-                const settingsSnap = creditPreloadSnaps?.settingsSnap;
-                if (settingsSnap && settingsSnap.exists()) {
-                    const settingsData = settingsSnap.data() || {};
-                    const creditConfig = settingsData.config || settingsData.creditConfig || settingsData;
-                    const userData = userSnap.data() || {};
-                    const userTotalAccumulatedPoints = userData.totalAccumulatedPoints || 0;
-                    
-                    // คำนวณแต้มด้วย Tier Multiplier อย่างถูกต้อง
-                    earnedPoints = calculateEarnedPoints(amountForPoints, creditConfig, orderData.items || [], userTotalAccumulatedPoints);
-                } else {
-                    // Fallback แบบเดิม
-                    const POINTS_RATE = 100;
-                    earnedPoints = Math.floor(amountForPoints / POINTS_RATE);
-                }
+        // 1. ดึงแต้มจากระบบตะกร้าออนไลน์ก่อน ถ้ามีการคำนวณไว้ (และต้องไม่เกินยอดเงินสดที่จ่าย เพื่อกันบั๊กเสกแต้ม)
+        let earnedPoints = Number(orderData.pendingCredits || 0);
+        if (earnedPoints >= amountForPoints && amountForPoints > 0) {
+            // 🛡️ Zero-Trust Guard: ยอดแต้มเท่ากับหรือมากกว่ายอดเงินสด แสดงว่าบันทึกเป็นยอดเงินสด ให้คำนวณแต้มใหม่ทันที
+            earnedPoints = 0;
+        }
+
+        // 2. ถ้าไม่มี ค่อยคำนวณเอง (กรณีมาจาก POS / Backoffice สร้างบิลเอง หรือเคลียร์บั๊กแต้ม)
+        if (earnedPoints <= 0 && amountForPoints > 0) {
+            const settingsSnap = creditPreloadSnaps?.settingsSnap;
+            if (settingsSnap && settingsSnap.exists()) {
+                const settingsData = settingsSnap.data() || {};
+                const creditConfig = settingsData.config || settingsData.creditConfig || settingsData;
+                const userData = userSnap.data() || {};
+                const userTotalAccumulatedPoints = userData.totalAccumulatedPoints || 0;
+                
+                // คำนวณแต้มด้วย Tier Multiplier อย่างถูกต้อง
+                earnedPoints = calculateEarnedPoints(amountForPoints, creditConfig, orderData.items || [], userTotalAccumulatedPoints);
+            } else {
+                // Fallback แบบเดิม
+                const POINTS_RATE = 100;
+                earnedPoints = Math.floor(amountForPoints / POINTS_RATE);
             }
         }
         

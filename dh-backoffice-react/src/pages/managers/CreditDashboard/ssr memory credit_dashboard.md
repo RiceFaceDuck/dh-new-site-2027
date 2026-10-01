@@ -31,6 +31,8 @@
 - ⚠️ Realtime Snapshot Leaks: Do not use `onSnapshot` for heavy transaction history; use cached pagination + manual refresh button.
 - ⚠️ Smart UID Resolution: Must support 8-char short ID, phone number, and customerCode before querying full UID.
 - ⚠️ Config Unwrapping: `settings/credit_config` stores values inside `.config`; consumers must use unwrap helper to avoid default fallbacks.
-- ⚠️ Ad Settlement Deduction: Deductions must target `users.creditPoints` directly; `heldCreditPoints` is uninitialized.
+- ⚠️ Ad Settlement Deduction (Phase 1): Deductions must target `users.creditPoints` directly; `heldCreditPoints` is uninitialized.
+- ⚠️ 100x Point Inflation Fix (Phase 1): `walletFunctions.js` previously saved unpaid THB cash directly to `pendingCredits`; fixed to convert 100 THB = 1 Pt with `statusWalletHandler` zero-trust guard.
+- ⚠️ Ledger Parity (Phase 1): `ga4AdSyncCron` & frontend order awards must sync `settings/credit_config.ledger.totalAllocated` in 1:1 parity with `users.creditPoints`.
 </pitfalls_and_lessons>
 </grimoire>

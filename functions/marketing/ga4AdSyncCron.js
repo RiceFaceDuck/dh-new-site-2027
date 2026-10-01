@@ -28,7 +28,8 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
   try {
     // 1. ดึงการตั้งค่าราคาค่าโฆษณาจาก settings/credit_config
     const configSnap = await db.collection("settings").doc("credit_config").get();
-    const configData = configSnap.exists ? configSnap.data() : {};
+    const rawData = configSnap.exists ? configSnap.data() : {};
+    const configData = rawData.config || rawData.creditConfig || rawData || {};
     const costPerClick = Number(configData.adClickCost || 5);
     const costPerImpressionBatch = Number(configData.adImpressionCost || 5); // ต่อ 100 views
     const impressionBatchSize = Number(configData.adImpressionCount || 100);
@@ -133,13 +134,14 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
           transaction.set(skuRef, adUpdate, { merge: true });
         }
 
-        // ตัดยอดจาก heldCreditPoints ของผู้ใช้ (หากมีการ Hold ไว้) หรือ creditPoints
+        // ตัดยอดจาก creditPoints ของผู้ใช้ และซิงค์ totalAllocated ใน ledger
         if (totalDeduct > 0 && userSnap.exists) {
-          const currentHeld = Number(userData.heldCreditPoints || 0);
-          const newHeld = Math.max(0, currentHeld - totalDeduct);
+          const currentPoints = Number(userData.creditPoints || 0);
+          const safeDeduct = Math.min(currentPoints, Math.round(totalDeduct));
+          const newPoints = Math.max(0, currentPoints - safeDeduct);
           
           transaction.update(userRef, {
-            heldCreditPoints: newHeld,
+            creditPoints: newPoints,
             updatedAt: FieldValue.serverTimestamp()
           });
 
@@ -148,7 +150,6 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
             const sData = settingsSnap.data();
             const ledger = sData.ledger || { systemPoolMax: 10000000, totalAllocated: 0, status: 'SECURE' };
             const currentAllocated = Number(ledger.totalAllocated || 0);
-            const safeDeduct = Math.round(totalDeduct);
             const newAllocated = Math.max(0, currentAllocated - safeDeduct);
 
             transaction.set(settingsRef, {

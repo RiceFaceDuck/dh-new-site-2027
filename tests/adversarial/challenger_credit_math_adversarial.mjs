@@ -190,14 +190,13 @@ const frontendUpdatesLedger = frontendCode.includes('newTotalAllocated') ||
 assert(backofficeUpdatesLedger === true,
   'Backoffice creditActionService updates settings/credit_config.ledger.totalAllocated inside transaction');
 
-assert(frontendUpdatesLedger === false,
-  'Architectural Defect: Frontend creditActionService NEVER updates settings/credit_config.ledger.totalAllocated',
-  'Frontend orders award/deduct points from users without touching ledger.totalAllocated, guaranteeing drift');
+assert(frontendUpdatesLedger === true,
+  'Frontend creditActionService updates settings/credit_config.ledger.totalAllocated inside transaction (Parity Maintained)');
 
 // =============================================================================
-// TEST 6: Code Inspection: Cloud Function ga4AdSyncCron Ledger De-synchronization
+// TEST 6: Code Inspection: Cloud Function ga4AdSyncCron Ledger Synchronization
 // =============================================================================
-console.log('\n--- 6. Checking Cloud Function ga4AdSyncCron Ledger De-synchronization ---');
+console.log('\n--- 6. Checking Cloud Function ga4AdSyncCron Ledger Synchronization ---');
 
 const ga4CronPath = path.join(REPO_ROOT, 'functions/marketing/ga4AdSyncCron.js');
 const ga4Code = fs.readFileSync(ga4CronPath, 'utf8');
@@ -209,9 +208,8 @@ const ga4TargetsCreditPoints = ga4Code.includes('creditPoints:');
 assert(ga4DecrementsTotalAllocated === true,
   'ga4AdSyncCron decrements settings/credit_config.ledger.totalAllocated');
 
-assert(ga4TargetsHeldCreditPoints === true && !ga4Code.includes('creditPoints: newBalance'),
-  'Schema & Accounting Mismatch: ga4AdSyncCron deducts heldCreditPoints on userDoc while decrementing totalAllocated',
-  'Since users.creditPoints is not deducted, totalUserCredits remains unchanged while totalAllocated decreases, injecting discrepancy');
+assert(ga4TargetsCreditPoints === true && !ga4TargetsHeldCreditPoints,
+  'ga4AdSyncCron targets users.creditPoints and synchronizes ledger.totalAllocated (Fixed)');
 
 // =============================================================================
 // TEST 7: Single-Document Transaction Hotspot Analysis

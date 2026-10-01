@@ -155,9 +155,13 @@ exports.processWalletPayment = onCall({ region: "asia-southeast1" }, async (requ
         timestamp: FieldValue.serverTimestamp()
       });
 
+      const remainingPayable = Math.max(0, Math.round((trueNetTotal - useWallet) * 100) / 100);
+      const remainingPoints = Math.floor(remainingPayable / 100);
+
       transaction.update(orderRef, {
         walletUsed: useWallet,
-        pendingCredits: Math.max(0, trueNetTotal - useWallet),
+        pendingCredits: remainingPoints,
+        remainingPayable: remainingPayable,
         updatedAt: FieldValue.serverTimestamp()
       });
     });

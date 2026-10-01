@@ -24,12 +24,19 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     }
 
     const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
+    const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
     
-    const [userSnap, activePartnerSnap] = await Promise.all([
+    const [userSnap, activePartnerSnap, settingsSnap] = await Promise.all([
       transaction.get(userRef),
-      transaction.get(activePartnerRef)
+      transaction.get(activePartnerRef),
+      transaction.get(settingsRef)
     ]);
     if (!userSnap.exists()) throw new Error("ไม่พบบัญชีผู้ใช้งาน");
+
+    const settingsData = settingsSnap.exists() ? settingsSnap.data() : null;
+    const ledger = settingsData?.ledger || { systemPoolMax: 10000000, totalAllocated: 0, status: 'SECURE' };
+    const currentAllocated = Number(ledger.totalAllocated) || 0;
+    let newTotalAllocated = currentAllocated;
 
     let currentWallet = Number(userSnap.data().creditPoints || 0);
     const safeCurrentWallet = Math.round(currentWallet * 100) / 100;
@@ -39,11 +46,13 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     if (type === 'deposit' || type === 'add' || type === 'earn') {
       newWalletBalance += safeAmount;
       totalAccumulated += safeAmount;
+      newTotalAllocated += safeAmount;
     } else if (type === 'deduct' || type === 'spend') {
       if (safeCurrentWallet < safeAmount) {
         throw new Error(`ยอดเครดิตของผู้ใช้งานมีไม่เพียงพอ`);
       }
       newWalletBalance -= safeAmount;
+      newTotalAllocated = Math.max(0, newTotalAllocated - safeAmount);
     }
 
     newWalletBalance = Math.round(newWalletBalance * 100) / 100;
@@ -53,6 +62,15 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       totalAccumulatedPoints: totalAccumulated,
       updatedAt: serverTimestamp()
     });
+
+    transaction.set(settingsRef, {
+      ledger: {
+        ...ledger,
+        totalAllocated: newTotalAllocated,
+        lastAuditTime: serverTimestamp()
+      },
+      updatedAt: serverTimestamp()
+    }, { merge: true });
 
     if (activePartnerSnap.exists()) {
       transaction.set(activePartnerRef, { points: newWalletBalance, updatedAt: serverTimestamp() }, { merge: true });
@@ -127,9 +145,12 @@ export const handlePaymentCompletion = async (orderId, userId) => {
       const usersPath = getUsersPath();
       const userRef = doc(db, usersPath, userId);
       
-      const [orderDoc, userDoc] = await Promise.all([
+      const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
+      
+      const [orderDoc, userDoc, settingsSnap] = await Promise.all([
         transaction.get(orderRef),
-        transaction.get(userRef)
+        transaction.get(userRef),
+        transaction.get(settingsRef)
       ]);
 
       if (!orderDoc.exists() || !userDoc.exists()) return;
@@ -151,6 +172,20 @@ export const handlePaymentCompletion = async (orderId, userId) => {
         creditPoints: newBalance,
         updatedAt: serverTimestamp()
       });
+
+      if (settingsSnap.exists()) {
+        const sData = settingsSnap.data();
+        const ledger = sData.ledger || { systemPoolMax: 10000000, totalAllocated: 0, status: 'SECURE' };
+        const currentAllocated = Number(ledger.totalAllocated || 0);
+        transaction.set(settingsRef, {
+          ledger: {
+            ...ledger,
+            totalAllocated: currentAllocated + pendingPoints,
+            lastAuditTime: serverTimestamp()
+          },
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
       const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
       transaction.set(txRef, {
         transactionId: `EARN-${Date.now()}`,
