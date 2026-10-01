@@ -35,5 +35,6 @@
     - ⚠️ Stock Parser Collision: `ProductList.jsx` previously matched `inStock: true` before `stockQuantity`, turning boolean into 0 and falsely showing 100% OUT OF STOCK. [RESOLVED] Fixed key priority and explicit stock mapping with natural random shuffle.
     - ⚠️ Promotion Hook Contract Loss: `usePromotions.js` stub lacked `evaluatePromotion`, `evaluateFreebie`, and `freebies`, crashing Cart with TypeError. [RESOLVED] Fully restored evaluation engine with pure calculation helpers and unified contract.
     - ⚠️ Navbar Unmounted AuthProvider: `App.jsx` missed `<AuthProvider>`, causing `useAuth()` in Navbar to return empty state and permanently show 'เข้าสู่ระบบ'. [RESOLVED] Mounted AuthProvider at root with robust merged user/profile.
+    - ⚠️ Navbar & Profile Auth Desync & Null Spread Overwrite: Navbar lacked loading check, causing flash of 'เข้าสู่ระบบ' during cold-start. In addition, AuthContext spread `...user` after profile, overwriting profile name/photo with null. Profile.jsx also bypassed AuthContext. [RESOLVED] Fixed spread priority in AuthContext, added loading skeleton in Navbar, exported loading in useNavbarAuth, and unified Profile.jsx with `useAuth()`.
   </pitfalls_and_lessons>
 </ssr_memory>

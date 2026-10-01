@@ -15,6 +15,7 @@ const Navbar = () => {
   // 🌟 Custom Hooks สกัด Logic ออกจาก Component UI
   const {
     currentUser,
+    loading,
     isDropdownOpen,
     setIsDropdownOpen,
     isLoggingOut,
@@ -114,17 +115,22 @@ const Navbar = () => {
 
             {/* 🌟 User Profile / Auth Area 🌟 */}
             <div className="relative" ref={dropdownRef}>
-              {!currentUser ? (
-                // 🔴 ยังไม่ล็อกอิน: แสดงปุ่มเข้าสู่ระบบ
-                <button 
-                  onClick={() => navigate('/profile')}
-                  onMouseEnter={() => import('../pages/Profile')}
-                  className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-xl transition-all shadow-xs hover:shadow-sm active:scale-95"
-                >
-                  <User size={18} />
-                  <span className="hidden sm:inline">เข้าสู่ระบบ</span>
-                </button>
+              {loading ? (
+                // 🌀 กำลังตรวจสอบสถานะ: แสดง Skeleton สวยงาม ป้องกัน Flash เข้าสู่ระบบ
+                <div className="w-20 sm:w-28 h-8 sm:h-9 bg-white/10 rounded-xl animate-pulse border border-white/10" />
               ) : (
+                <>
+                  {!currentUser ? (
+                    // 🔴 ยังไม่ล็อกอิน: แสดงปุ่มเข้าสู่ระบบ
+                    <button 
+                      onClick={() => navigate('/profile')}
+                      onMouseEnter={() => import('../pages/Profile')}
+                      className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-xl transition-all shadow-xs hover:shadow-sm active:scale-95"
+                    >
+                      <User size={18} />
+                      <span className="hidden sm:inline">เข้าสู่ระบบ</span>
+                    </button>
+                  ) : (
                 // 🟢 ล็อกอินแล้ว: แสดง Avatar และ Dropdown
                 <>
                   <button 
@@ -209,6 +215,8 @@ const Navbar = () => {
                   )}
                 </>
               )}
+            </>
+          )}
             </div>
 
           </div>

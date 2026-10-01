@@ -105,15 +105,15 @@ export const AuthProvider = ({ children }) => {
     }
 
     const mergedUser = {
+      ...user,
+      ...profile,
       uid: user.uid,
-      email: user.email,
+      email: user.email || profile?.email,
       emailVerified: user.emailVerified,
       isAnonymous: user.isAnonymous,
-      phoneNumber: user.phoneNumber,
+      phoneNumber: profile?.phoneNumber || profile?.phone || user.phoneNumber || '',
       photoURL: profile?.photoURL || profile?.avatarUrl || user.photoURL || null,
       displayName: profile?.displayName || profile?.name || profile?.accountName || user.displayName || user.email?.split('@')[0] || 'ผู้ใช้งาน',
-      ...profile,
-      ...user
     };
 
     return {

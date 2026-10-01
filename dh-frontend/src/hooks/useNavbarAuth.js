@@ -1,9 +1,10 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export function useNavbarAuth() {
   const { currentUser, logout } = useAuth();
+  const { loading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
@@ -49,6 +50,7 @@ export function useNavbarAuth() {
 
   return {
     currentUser,
+    loading,
     isDropdownOpen,
     setIsDropdownOpen,
     isLoggingOut,

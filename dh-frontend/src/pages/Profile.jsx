@@ -15,8 +15,10 @@ import TabClaims from '../components/profile/tabs/TabClaims';
 import TabPrivacy from '../components/profile/tabs/TabPrivacy';
 import AuthForm from '../components/profile/AuthForm';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
+  const { currentUser: authUser, loading: authLoading, logout: authLogout } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -75,15 +77,22 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      if (authLogout) {
+        await authLogout();
+      } else {
+        await signOut(auth);
+      }
       navigate('/');
     } catch (error) {
       console.error('🔥 Error signing out:', error);
     }
   };
 
+  const effectiveUser = user || authUser;
+  const isScreenLoading = loading && authLoading && !effectiveUser;
+
   // 🌀 Loading State
-  if (loading) {
+  if (isScreenLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -110,7 +119,7 @@ const Profile = () => {
   }
 
   // 🔒 Not Logged In State
-  if (!user) {
+  if (!effectiveUser) {
     return (
       <div className="max-w-md mx-auto mt-10 animate-in fade-in zoom-in-95 duration-500">
         <AuthForm onLogin={() => setLoading(true)} />
@@ -122,24 +131,24 @@ const Profile = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <TabOverview user={user} />;
+        return <TabOverview user={effectiveUser} />;
       case 'wallet':
-        return <TabWallet user={user} type="wallet" />;
+        return <TabWallet user={effectiveUser} type="wallet" />;
       case 'credit':
-        return <TabWallet user={user} type="credit" />;
+        return <TabWallet user={effectiveUser} type="credit" />;
       case 'ads':
         // 🚀 เรียกใช้ Unified Ad Manager แทนที่ระบบ My SKU เก่าทั้งหมด
-        return <TabAdManager user={user} />;
+        return <TabAdManager user={effectiveUser} />;
       case 'history':
-        return <TabHistory user={user} />;
+        return <TabHistory user={effectiveUser} />;
       case 'claims':
-        return <TabClaims user={user} />;
+        return <TabClaims user={effectiveUser} />;
       case 'favorites':
-        return <TabFavorites user={user} />;
+        return <TabFavorites user={effectiveUser} />;
       case 'privacy':
-        return <TabPrivacy user={user} />;
+        return <TabPrivacy user={effectiveUser} />;
       default:
-        return <TabOverview user={user} />;
+        return <TabOverview user={effectiveUser} />;
     }
   };
 
@@ -150,7 +159,7 @@ const Profile = () => {
         {/* 📚 Sidebar Navigation */}
         <div className="w-full lg:w-1/4">
           <ProfileSidebar 
-            user={user} 
+            user={effectiveUser} 
             activeTab={activeTab} 
             setActiveTab={handleTabChange} 
             handleLogout={handleLogout}

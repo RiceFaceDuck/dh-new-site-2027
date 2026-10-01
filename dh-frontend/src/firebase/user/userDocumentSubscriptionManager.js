@@ -69,28 +69,36 @@ export const userDocumentSubscriptionManager = {
       callbacks.add(callback);
       const userRef = doc(db, getCollectionPath('users'), uid);
       sub = {
-        unsub: onSnapshot(
-          userRef,
-          (snapshot) => {
-            const data = snapshot.exists() ? snapshot.data() : null;
-            if (data) userProfileCache.setProfile(uid, data);
-            sub.lastData = data;
-            callbacks.forEach((cb) => {
-              try {
-                cb(data);
-              } catch (err) {
-                console.error('Error in subscriber callback:', err);
-              }
-            });
-          },
-          (err) => {
-            console.error('🔥 [userDocumentSubscriptionManager] Listener error:', err);
-          }
-        ),
         callbacks,
-        lastData: userProfileCache.getProfile(uid) || null
+        lastData: userProfileCache.getProfile(uid) || null,
+        unsub: () => {}
       };
       subscriptionMap.set(uid, sub);
+      sub.unsub = onSnapshot(
+        userRef,
+        (snapshot) => {
+          const data = snapshot.exists() ? snapshot.data() : null;
+          if (data) userProfileCache.setProfile(uid, data);
+          sub.lastData = data;
+          callbacks.forEach((cb) => {
+            try {
+              cb(data);
+            } catch (err) {
+              console.error('Error in subscriber callback:', err);
+            }
+          });
+        },
+        (err) => {
+          console.error('🔥 [userDocumentSubscriptionManager] Listener error:', err);
+          callbacks.forEach((cb) => {
+            try {
+              cb(null);
+            } catch (errCb) {
+              console.error('Error in subscriber error fallback:', errCb);
+            }
+          });
+        }
+      );
     }
 
     return () => {
