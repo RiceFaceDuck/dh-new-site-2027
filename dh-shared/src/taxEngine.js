@@ -93,9 +93,30 @@ export const calculateDetailedVat = ({
     let shippingVat = 0;
     let shippingTotal = sFee;
 
-    if (normalizedVatType !== 'exempt' && vatOnShipping && rateFactor > 0) {
-        shippingVat = round2(sFee * rateFactor);
-        shippingTotal = round2(shippingBase + shippingVat);
+    if (normalizedVatType === 'included') {
+        if (vatOnShipping && rateFactor > 0) {
+            shippingBase = round2(sFee / (1 + rateFactor));
+            shippingVat = round2(sFee - shippingBase);
+            shippingTotal = sFee;
+        } else {
+            shippingBase = sFee;
+            shippingVat = 0;
+            shippingTotal = sFee;
+        }
+    } else if (normalizedVatType === 'excluded') {
+        if (vatOnShipping && rateFactor > 0) {
+            shippingBase = sFee;
+            shippingVat = round2(sFee * rateFactor);
+            shippingTotal = round2(sFee + shippingVat);
+        } else {
+            shippingBase = sFee;
+            shippingVat = 0;
+            shippingTotal = sFee;
+        }
+    } else {
+        shippingBase = sFee;
+        shippingVat = 0;
+        shippingTotal = sFee;
     }
 
     const amountBeforeVat = round2(productBase + shippingBase);
@@ -106,6 +127,7 @@ export const calculateDetailedVat = ({
         vatRate: rate,
         vatType: normalizedVatType,
         productBase,
+        productNetExVat: productBase,
         productVat,
         productTotal,
         shippingBase,
