@@ -1,39 +1,78 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from './config';
-import { historyService } from './historyService';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { db, auth } from './config.js';
+import { historyService } from './historyService.js';
+import { getCollectionPath } from 'dh-shared';
 
 const HERO_DOC = 'hero_config'; // 🖼️ อ้างอิงเอกสารสำหรับป้ายโฆษณาหน้าแรก
 
-// 💡 Default Hero Banner Config
+// 💡 Default Hero Banner Config (Official DH Notebook Schema & Copy)
 export const DEFAULT_HERO_CONFIG = {
   isActive: true,
-  title: '<span class="text-yellow-400">TEQFIX:</span> YOUR CERTIFIED PARTNER <br class="hidden md:block" /> FOR ELECTRONIC REPAIRS & <br class="hidden md:block" /> GENUINE SPARES.',
+  badge: { text: '', isActive: false, color: '#facc15' },
+  title: '<span style="color: #facc15" class="font-black">DH:</span> จำหน่ายอะไหล่โน๊ตบุ๊คทุกชนิด <br class="hidden md:block" /> ราคาส่งสำหรับช่าง & <br class="hidden md:block" /> SPARES.',
   titleSegments: [
-    { text: 'TEQFIX: ', isHighlight: true, breakDesktop: false, breakAll: false },
-    { text: 'YOUR CERTIFIED PARTNER ', isHighlight: false, breakDesktop: true, breakAll: false },
-    { text: 'FOR ELECTRONIC REPAIRS & ', isHighlight: false, breakDesktop: true, breakAll: false },
-    { text: 'GENUINE SPARES.', isHighlight: false, breakDesktop: false, breakAll: false }
+    { text: 'DH: ', color: '#facc15', isHighlight: true, isBold: true, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false },
+    { text: 'จำหน่ายอะไหล่โน๊ตบุ๊คทุกชนิด ', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: true, breakAll: false },
+    { text: 'ราคาส่งสำหรับช่าง & ', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: true, breakAll: false },
+    { text: 'SPARES.', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }
   ],
+  subtitle: { text: '', isActive: false },
   imageUrl: 'https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80',
+  imageLayout: 'split',
+  bannerHeight: 'standard',
+  textAlignment: 'left',
   primaryButton: {
     label: 'BOOK A SQUAD',
     link: '/squad',
-    isActive: true
+    isActive: true,
+    variant: 'solid'
   },
   secondaryButton: {
     label: 'SHOP SPARES',
     link: '/category/all',
-    isActive: true
+    isActive: true,
+    variant: 'solid'
   },
   overlay: {
+    enabled: true,
     color: '#1f2937',
-    opacity: 90
+    opacity: 90,
+    direction: 'to-r'
   }
 };
 
+/**
+ * Compile title segments into standardized HTML string
+ */
+export const compileHeroTitle = (segments = []) => {
+  if (!Array.isArray(segments) || segments.length === 0) return '';
+  return segments.map(seg => {
+    let text = seg.text || '';
+    const classes = [];
+    if (seg.isBold) classes.push('font-black');
+    if (seg.isItalic) classes.push('italic');
+    if (seg.isUnderline) classes.push('underline');
+    if (seg.isStrikethrough) classes.push('line-through');
+
+    const color = seg.color || (seg.isHighlight ? '#facc15' : '');
+    const classStr = classes.length > 0 ? ` class="${classes.join(' ')}"` : '';
+    const styleStr = color ? ` style="color: ${color}"` : '';
+
+    if (classStr || styleStr) {
+      text = `<span${classStr}${styleStr}>${text}</span>`;
+    }
+
+    if (seg.breakAll) {
+      text += `<br />`;
+    } else if (seg.breakDesktop) {
+      text += `<br class="hidden md:block" />`;
+    }
+    return text;
+  }).join(' ').replace(/\s+/g, ' ').trim();
+};
+
 // Helper to migrate legacy HTML title to Segments
-const parseHtmlToSegments = (html) => {
+export const parseHtmlToSegments = (html) => {
     if (!html) return [];
     try {
         const div = document.createElement('div');
@@ -42,15 +81,15 @@ const parseHtmlToSegments = (html) => {
         Array.from(div.childNodes).forEach(node => {
             if (node.nodeType === Node.TEXT_NODE) {
                 const text = node.textContent;
-                if (text) { // keep spaces
-                    segments.push({ text: text, isHighlight: false, breakDesktop: false, breakAll: false });
+                if (text) {
+                    segments.push({ text: text, color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false });
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 if (node.tagName.toLowerCase() === 'span') {
                     const classes = node.className || '';
                     segments.push({ 
                         text: node.textContent, 
-                        isHighlight: classes.includes('text-yellow-400'),
+                        isHighlight: classes.includes('text-yellow-400') || node.style.color === '#facc15',
                         isBold: classes.includes('font-black'),
                         isItalic: classes.includes('italic'),
                         isUnderline: classes.includes('underline'),
@@ -70,9 +109,9 @@ const parseHtmlToSegments = (html) => {
                 }
             }
         });
-        return segments.length > 0 ? segments : [{ text: html.replace(/<[^>]*>?/gm, ''), isHighlight: false, breakDesktop: false, breakAll: false }];
+        return segments.length > 0 ? segments : [{ text: html.replace(/<[^>]*>?/gm, ''), color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }];
     } catch (e) {
-        return [{ text: html.replace(/<[^>]*>?/gm, ''), isHighlight: false, breakDesktop: false, breakAll: false }];
+        return [{ text: html.replace(/<[^>]*>?/gm, ''), color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }];
     }
 };
 
@@ -90,8 +129,8 @@ export const heroConfigService = {
         const merged = { ...DEFAULT_HERO_CONFIG, ...data };
         
         // 🔄 Migration: จัดการกรณีที่ข้อมูล title กับ titleSegments ไม่ตรงกัน
-        const isDefaultSegments = merged.titleSegments && merged.titleSegments[0] && merged.titleSegments[0].text.includes('TEQFIX');
-        const isCustomTitle = data.title && !data.title.includes('TEQFIX');
+        const isDefaultSegments = merged.titleSegments && merged.titleSegments[0] && merged.titleSegments[0].text.includes('DH:');
+        const isCustomTitle = data.title && !data.title.includes('DH:');
 
         if ((data.title && !data.titleSegments) || (isCustomTitle && isDefaultSegments)) {
             merged.titleSegments = parseHtmlToSegments(data.title);
@@ -109,8 +148,15 @@ export const heroConfigService = {
   updateHeroConfig: async (heroConfig, changesDiff = []) => {
     try {
       const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
+      const cleanData = JSON.parse(JSON.stringify(heroConfig));
+      
+      // Auto compile title from titleSegments
+      if (cleanData.titleSegments && Array.isArray(cleanData.titleSegments) && cleanData.titleSegments.length > 0) {
+        cleanData.title = compileHeroTitle(cleanData.titleSegments);
+      }
+
       await setDoc(docRef, {
-        ...heroConfig,
+        ...cleanData,
         updatedAt: serverTimestamp()
       }, { merge: true });
       

@@ -1,11 +1,13 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from './config';
-import { historyService } from './historyService';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { db, auth } from './config.js';
+import { historyService } from './historyService.js';
+import { getCollectionPath } from 'dh-shared';
 
 const SETTINGS_DOC = 'platform_links';
 const MARKETING_DOC = 'marketing'; // 🎯 อ้างอิงเอกสารสำหรับการตั้งค่าการตลาดโฆษณา
 const THEME_DOC = 'storefrontTheme'; // 🎨 อ้างอิงเอกสารสำหรับการตั้งค่าธีมหน้าบ้าน
+
+const STOREFRONT_CONFIG_DOC = 'storefront_config'; // 🛍️ อ้างอิงเอกสารหลักสำหรับคอนฟิกหน้าบ้านรวม
 
 // 💡 Default Regex ในกรณีที่ยังไม่มีข้อมูลใน Database (ป้องกัน Error)
 export const DEFAULT_REGEX = {
@@ -122,6 +124,14 @@ export const settingsService = {
   
   getStorefrontTheme: async () => {
     try {
+      // 1. อ่านจาก storefront_config ก่อน (โครงสร้างใหม่)
+      const configDocRef = doc(db, getCollectionPath('settings'), STOREFRONT_CONFIG_DOC);
+      const configSnap = await getDoc(configDocRef);
+      if (configSnap.exists() && configSnap.data()?.theme) {
+        return { ...DEFAULT_THEME_CONFIG, ...configSnap.data().theme };
+      }
+
+      // 2. Fallback อ่านจาก storefrontTheme (โครงสร้างเดิม)
       const docRef = doc(db, getCollectionPath('settings'), THEME_DOC);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
@@ -136,11 +146,21 @@ export const settingsService = {
 
   updateStorefrontTheme: async (themeConfig) => {
     try {
-      const docRef = doc(db, getCollectionPath('settings'), THEME_DOC);
-      await setDoc(docRef, {
+      // 1. Dual-Write ไปยัง storefront_config.theme
+      const configDocRef = doc(db, getCollectionPath('settings'), STOREFRONT_CONFIG_DOC);
+      await setDoc(configDocRef, {
+        theme: themeConfig,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // 2. Dual-Write ไปยัง storefrontTheme (รักษาความเข้ากันได้ย้อนหลัง 100%)
+      const themeDocRef = doc(db, getCollectionPath('settings'), THEME_DOC);
+      await setDoc(themeDocRef, {
         ...themeConfig,
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      // 3. บันทึกประวัติการแก้ไขจุดเดียว (Single Source of Truth)
       await historyService.addLog('Settings', 'Update', THEME_DOC, 'อัปเดตการตั้งค่าธีมหน้าบ้าน', auth.currentUser?.uid);
       return { success: true, message: 'บันทึกการตั้งค่าธีมหน้าบ้านสำเร็จ' };
     } catch (error) {

@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
-import { auth } from '../../../../firebase/config';
 import { settingsService } from '../../../../firebase/settingsService';
-import { historyService } from '../../../../firebase/historyService';
 import GlobalSettingsHeader from '../../../../components/managers/GlobalSettingsHeader';
 import SaveConfirmationModal from '../../../../components/managers/SaveConfirmationModal';
 
@@ -67,19 +65,16 @@ export default function ThemeConfigTab() {
 
     const handleSave = async () => {
         setIsSaving(true);
-        const uid = auth.currentUser?.uid;
         try {
             const cleanTheme = {
                 themeId: themeConfig.themeId || 'theme-trusted-partner',
-                backgroundUrl: themeConfig.backgroundUrl.trim() || '/user-bg.jpg',
-                blurLevel: String(themeConfig.blurLevel),
-                opacityTop: Number(themeConfig.opacityTop),
-                opacityMid: Number(themeConfig.opacityMid),
-                opacityBottom: Number(themeConfig.opacityBottom),
+                backgroundUrl: (themeConfig.backgroundUrl?.trim() || '/user-bg.jpg'),
+                blurLevel: String(themeConfig.blurLevel || '16'),
+                opacityTop: Number(themeConfig.opacityTop) || 0,
+                opacityMid: Number(themeConfig.opacityMid) || 0,
+                opacityBottom: Number(themeConfig.opacityBottom) || 0,
             };
             await settingsService.updateStorefrontTheme(cleanTheme);
-            const diffMsg = changesDiff.map(c => `${c.label}: ${c.oldVal}->${c.newVal}`).join(', ');
-            await historyService.addLog('SystemConfig', 'Update', 'theme', `อัปเดตธีมหน้าบ้านสำเร็จ | ${diffMsg}`, uid);
             alert("✅ บันทึกธีมหน้าบ้านสำเร็จ (หน้าบ้านจะเปลี่ยนตามทันที)");
             setOriginalConfig({ ...cleanTheme });
             setIsModalOpen(false);
