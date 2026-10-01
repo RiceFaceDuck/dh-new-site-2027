@@ -7,27 +7,36 @@ const HERO_DOC = 'hero_config';
 
 export const DEFAULT_HERO_CONFIG = {
   isActive: true,
-  title: '<span class="text-yellow-400">TEQFIX:</span> YOUR CERTIFIED PARTNER <br class="hidden md:block" /> FOR ELECTRONIC REPAIRS & <br class="hidden md:block" /> GENUINE SPARES.',
+  badge: { text: '', isActive: false, color: '#facc15' },
+  title: '<span style="color: #facc15" class="font-black">DH:</span> จำหน่ายอะไหล่โน๊ตบุ๊คทุกชนิด <br class="hidden md:block" /> ราคาส่งสำหรับช่าง & <br class="hidden md:block" /> SPARES.',
   titleSegments: [
-    { text: 'TEQFIX: ', isHighlight: true, breakDesktop: false, breakAll: false },
-    { text: 'YOUR CERTIFIED PARTNER ', isHighlight: false, breakDesktop: true, breakAll: false },
-    { text: 'FOR ELECTRONIC REPAIRS & ', isHighlight: false, breakDesktop: true, breakAll: false },
-    { text: 'GENUINE SPARES.', isHighlight: false, breakDesktop: false, breakAll: false }
+    { text: 'DH: ', color: '#facc15', isHighlight: true, isBold: true, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false },
+    { text: 'จำหน่ายอะไหล่โน๊ตบุ๊คทุกชนิด ', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: true, breakAll: false },
+    { text: 'ราคาส่งสำหรับช่าง & ', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: true, breakAll: false },
+    { text: 'SPARES.', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }
   ],
+  subtitle: { text: '', isActive: false },
   imageUrl: 'https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80',
+  imageLayout: 'split',
+  bannerHeight: 'standard',
+  textAlignment: 'left',
   primaryButton: {
     label: 'BOOK A SQUAD',
     link: '/squad',
-    isActive: true
+    isActive: true,
+    variant: 'solid'
   },
   secondaryButton: {
     label: 'SHOP SPARES',
     link: '/category/all',
-    isActive: true
+    isActive: true,
+    variant: 'solid'
   },
   overlay: {
+    enabled: true,
     color: '#1f2937',
-    opacity: 90
+    opacity: 90,
+    direction: 'to-r'
   }
 };
 
