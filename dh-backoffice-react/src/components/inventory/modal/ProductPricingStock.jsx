@@ -73,9 +73,9 @@ export default function ProductPricingStock({
               <label className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <AlertTriangle size={12}/> บัฟเฟอร์พิเศษ (Override)
               </label>
-              <input type="number" min="0" value={form.bufferStock === null ? '' : form.bufferStock} 
+              <input type="number" min="0" value={form.bufferStock === null || form.bufferStock === undefined ? '' : form.bufferStock} 
                 onChange={e => setForm({...form, bufferStock: e.target.value})}
-                placeholder={`ปล่อยว่าง = ใช้ค่าพื้นฐาน (${globalBufferStock})`}
+                placeholder={`ปล่อยว่าง = ใช้ค่าพื้นฐาน (${globalBufferStock ?? 2})`}
                 className="w-full p-2.5 border border-orange-500/30 bg-orange-500/5 rounded-xl outline-hidden focus:border-orange-500 text-sm font-bold text-orange-600 dark:text-orange-400 placeholder:text-orange-500/50 transition-all shadow-inner" />
             </div>
           ) : (

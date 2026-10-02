@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { auth } from '../../../../../firebase/config';
 import { bufferService } from '../../../../../firebase/bufferService';
+import toast from 'react-hot-toast';
 
 export function useGlobalBufferSettings() {
     const [isLoading, setIsLoading] = useState(true);
@@ -20,9 +21,7 @@ export function useGlobalBufferSettings() {
                     setOriginalConfig(data);
                 }
             } catch (error) {
-    console.error("🔥 Error:", error);
-
-                // error handled in service
+                console.error("🔥 Error:", error);
             } finally {
                 setIsLoading(false);
             }
@@ -53,16 +52,15 @@ export function useGlobalBufferSettings() {
             
             const res = await bufferService.updateBufferConfig(buffer, diffMsg, uid);
             if (res.success) {
-                alert("✅ บันทึกบัฟเฟอร์สต็อกสำเร็จ");
+                toast.success("บันทึกบัฟเฟอร์สต็อกสำเร็จเรียบร้อย");
                 setOriginalConfig({ ...inventoryConfig, defaultBufferStock: buffer });
                 setIsModalOpen(false);
             } else {
                 throw new Error(res.message);
             }
         } catch (error) {
-    console.error("🔥 Error:", error);
-
-            alert(`❌ เกิดข้อผิดพลาด: ${error.message}`);
+            console.error("🔥 Error:", error);
+            toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
         } finally {
             setIsSaving(false);
         }

@@ -29,5 +29,6 @@
 - ⚠️ Terminology Confusion: Formerly aliased `walletBalance` as `creditBalance` in `useCheckoutLogic.js` causing confusion with reward points; resolved with clean `walletBalance`/`useWalletToggle` and backward-compatible aliases.
 - ⚠️ Rules Violation Bug: Storefront previously created random transaction doc ID and omitted `balanceAfter`, triggering permission-denied in client SDK; resolved in `checkoutSubmitService.js`.
 - ⚠️ Backward Compatibility: `CreditToggleBox.jsx` and `index.js` preserve legacy prop and component aliases (`CreditToggleBox` / `WalletToggleBox`) to protect existing UI callers.
+- ⚠️ Buffer Stock Resolution: Always use `resolveEffectiveBuffer(bufferStock, globalBuffer)` in `checkoutSubmitService.js`; never check `!== undefined` directly because `null !== undefined` evaluates to true in JS and clobbers global buffer.
 </pitfalls_and_lessons>
 </grimoire>

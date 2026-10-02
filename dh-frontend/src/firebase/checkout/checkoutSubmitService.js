@@ -3,7 +3,7 @@ import { doc, collection, runTransaction, serverTimestamp, increment } from 'fir
 import { getCreditSettings, calculateEarnedPoints } from '../credit/creditActionService';
 import { getUserTier } from '../credit/creditFormatService';
 import { appendPaymentVerificationTodo, appendTaxInvoiceTodo } from '../todo/todoActionService';
-import { calculateNetTotal, parseFirebaseError } from 'dh-shared';
+import { calculateNetTotal, parseFirebaseError, resolveEffectiveBuffer, isStockAvailableForSale } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
@@ -145,10 +145,10 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     productSnaps.forEach((snap, index) => {
       if (snap.exists()) {
         const currentStock = snap.data().stockQuantity || 0;
-        const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : globalBuffer;
+        const itemBuffer = resolveEffectiveBuffer(snap.data().bufferStock, globalBuffer);
         const requiredQty = productRefs[index].item.qty;
         
-        if ((currentStock - requiredQty) < itemBuffer) {
+        if (!isStockAvailableForSale(currentStock, itemBuffer, requiredQty)) {
           throw new Error(`สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
         }
         stockUpdates.push({ 

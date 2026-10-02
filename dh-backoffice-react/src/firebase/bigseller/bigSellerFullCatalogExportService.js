@@ -1,5 +1,6 @@
 import { inventorySyncMetaService } from '../inventory/inventorySyncMetaService.js';
 import { isTestProduct, parsePrice } from './bigSellerQueryService.js';
+import { resolveEffectiveBuffer, calculateAvailableStock } from 'dh-shared';
 
 class BigSellerFullCatalogExportService {
   constructor() {
@@ -45,18 +46,20 @@ class BigSellerFullCatalogExportService {
             const wp = parsePrice(item.wholesalePrice ?? item.price ?? item.Price);
             const price = wp > 0 ? wp : (rp > 0 ? rp : 0);
             const retail = rp > 0 ? rp : price;
+            const effectiveBuffer = resolveEffectiveBuffer(item.bufferStock, bufferStock);
+            const countStock = calculateAvailableStock(stock, effectiveBuffer);
             return {
               sku,
               name: item.name || '',
               stockQuantity: stock,
               currentStock: stock,
-              countStock: Math.max(0, stock - bufferStock),
+              countStock,
               retailPrice: retail,
               wholesalePrice: price,
               Price: price,
               price,
               warehouse: warehouseName,
-              bufferStock
+              bufferStock: effectiveBuffer
             };
           });
 

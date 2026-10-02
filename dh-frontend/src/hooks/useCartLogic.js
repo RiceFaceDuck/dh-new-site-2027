@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartProvider';
 import { useToast } from '../context/ToastContext';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { resolveEffectiveBuffer, isStockAvailableForSale } from 'dh-shared';
 
 const parseSafeNumber = (val) => {
   if (val === null || val === undefined) return 0;
@@ -76,8 +77,8 @@ export const useCartLogic = () => {
         return;
       }
       
-      const buffer = fresh.bufferStock || 0;
-      if ((fresh.stockQuantity - currentQty) < buffer) {
+      const buffer = resolveEffectiveBuffer(fresh.bufferStock, 2);
+      if (!isStockAvailableForSale(fresh.stockQuantity, buffer, currentQty)) {
         errors[id] = buffer > 0 ? `สินค้าหมดชั่วคราว (ติด Buffer)` : `สินค้าไม่เพียงพอ`;
         return;
       }
@@ -209,8 +210,8 @@ export const useCartLogic = () => {
           return;
         }
         
-        const buffer = fresh.bufferStock || 0;
-        if ((fresh.stockQuantity - currentQty) < buffer) {
+        const buffer = resolveEffectiveBuffer(fresh.bufferStock, 2);
+        if (!isStockAvailableForSale(fresh.stockQuantity, buffer, currentQty)) {
           errors[id] = buffer > 0 ? `สินค้าหมดชั่วคราว (ติด Buffer)` : `สินค้าไม่เพียงพอ`;
           hasError = true;
           return;

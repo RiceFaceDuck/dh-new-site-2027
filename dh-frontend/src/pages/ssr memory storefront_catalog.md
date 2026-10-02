@@ -36,5 +36,6 @@
     - ⚠️ Promotion Hook Contract Loss: `usePromotions.js` stub lacked `evaluatePromotion`, `evaluateFreebie`, and `freebies`, crashing Cart with TypeError. [RESOLVED] Fully restored evaluation engine with pure calculation helpers and unified contract.
     - ⚠️ Navbar Unmounted AuthProvider: `App.jsx` missed `<AuthProvider>`, causing `useAuth()` in Navbar to return empty state and permanently show 'เข้าสู่ระบบ'. [RESOLVED] Mounted AuthProvider at root with robust merged user/profile.
     - ⚠️ Navbar & Profile Auth Desync & Null Spread Overwrite: Navbar lacked loading check, causing flash of 'เข้าสู่ระบบ' during cold-start. In addition, AuthContext spread `...user` after profile, overwriting profile name/photo with null. Profile.jsx also bypassed AuthContext. [RESOLVED] Fixed spread priority in AuthContext, added loading skeleton in Navbar, exported loading in useNavbarAuth, and unified Profile.jsx with `useAuth()`.
+    - ⚠️ OutOfStock Buffer Guard: `isOutOfStock` must evaluate whether `availableStock <= 0` (`stockQuantity <= bufferStock`), not merely `stockQuantity <= 0`, ensuring customers cannot add unpurchasable buffer stock to cart.
   </pitfalls_and_lessons>
 </ssr_memory>

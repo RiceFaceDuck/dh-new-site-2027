@@ -180,7 +180,8 @@ export const billingStatusTransaction = {
           }
 
           if (isConfirmingPayment) {
-             handleStockDeduction(transaction, db, productRefs, productSnaps, inventorySettingsSnap);
+             const canBypassBuffer = Boolean(orderData?.canBypassBuffer || orderData?.canBypassBufferStock || orderData?.actorName === 'POS');
+             handleStockDeduction(transaction, db, productRefs, productSnaps, inventorySettingsSnap, canBypassBuffer);
 
              // 🎯 Deduct Promo/Freebie Quota on Approved/Paid (with Edge Case Lock)
              for (const item of promoFreebieSnaps) {

@@ -178,6 +178,8 @@ export const CANONICAL_DEFAULT_FOOTER_CONFIG = {
   supportLinks: [...CANONICAL_SUPPORT_LINKS]
 };
 
+export const getDefaultFooterConfig = () => JSON.parse(JSON.stringify(CANONICAL_DEFAULT_FOOTER_CONFIG));
+
 export const DEFAULT_FOOTER_CONFIG = {
   colors: { ...DEFAULT_FOOTER_COLORS },
   company: { ...DEFAULT_FOOTER_COMPANY },

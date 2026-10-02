@@ -47,10 +47,12 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
   const handleSubmit = (e) => {
     e.preventDefault();
     const dataToSave = { ...form };
-    if (dataToSave.bufferStock === '') {
+    const rawBuffer = dataToSave.bufferStock;
+    if (rawBuffer === '' || rawBuffer === null || rawBuffer === undefined) {
       dataToSave.bufferStock = null; 
     } else {
-      dataToSave.bufferStock = Number(dataToSave.bufferStock);
+      const num = Number(rawBuffer);
+      dataToSave.bufferStock = !Number.isNaN(num) ? Math.max(0, Math.floor(num)) : null;
     }
     
     // Create or update randomSeed for True Randomization query

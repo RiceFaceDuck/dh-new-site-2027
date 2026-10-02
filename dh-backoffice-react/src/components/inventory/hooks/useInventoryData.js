@@ -89,7 +89,7 @@ export default function useInventoryData(PAGE_LIMIT = 50) {
     categories: data?.categories || [],
     loading,
     loadingMore,
-    globalBufferStock: data?.globalBufferStock || 2,
+    globalBufferStock: data?.globalBufferStock ?? 2,
     hasMore: data?.hasMore || false,
     loadMore,
     fetchInitialProducts,

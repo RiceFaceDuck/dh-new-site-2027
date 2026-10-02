@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, AlertTriangle, Loader2 } from 'lucide-react';
+import { Box, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import GlobalSettingsHeader from '../../../../components/managers/GlobalSettingsHeader';
 import SaveConfirmationModal from '../../../../components/managers/SaveConfirmationModal';
 import GuideModal from '../../../../components/common/GuideModal';
@@ -29,6 +29,8 @@ export default function GlobalBufferSettings() {
         );
     }
 
+    const currentBufferVal = Number(inventoryConfig?.defaultBufferStock) || 0;
+
     return (
         <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500">
             <SaveConfirmationModal 
@@ -51,7 +53,7 @@ export default function GlobalBufferSettings() {
                     </div>
                     <button 
                         onClick={() => setIsGuideOpen(true)} 
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors border border-rose-200 shadow-xs dh-active-press"
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors border border-rose-200 shadow-xs dh-active-press cursor-pointer"
                     >
                         <Box size={16} /> คู่มือการใช้งาน
                     </button>
@@ -81,6 +83,41 @@ export default function GlobalBufferSettings() {
                                 />
                             </div>
                         </div>
+
+                        {/* 🌟 Live Impact Preview Card */}
+                        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+                                <span className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                                    <Sparkles size={14} className="text-amber-500" />
+                                    ผลลัพธ์จำลองแบบเรียลไทม์ (Live Impact Preview)
+                                </span>
+                                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                                    ค่าปัจจุบัน: {currentBufferVal} ชิ้น
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs">
+                                    <span className="text-[10px] font-bold text-slate-600 block uppercase mb-1">หน้าร้านออนไลน์</span>
+                                    <p className="text-xs font-semibold text-slate-700 leading-tight">
+                                        สต็อกเหลือน้อยกว่าหรือเท่ากับ <strong className="text-rose-600 font-black">{currentBufferVal}</strong> ชิ้น จะขึ้น <span className="text-rose-600 font-bold">"สินค้าหมด"</span> และปิดปุ่มสั่งซื้อทันที
+                                    </p>
+                                </div>
+                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs">
+                                    <span className="text-[10px] font-bold text-slate-600 block uppercase mb-1">ลำดับชั้นความสำคัญ</span>
+                                    <p className="text-xs font-semibold text-slate-700 leading-tight">
+                                        หากสินค้าใดมี <strong className="text-orange-500 font-black">บัฟเฟอร์เฉพาะ SKU</strong> ระบบจะใช้ค่านั้นก่อนเสมอ (ปล่อยว่างจึงใช้ค่านี้)
+                                    </p>
+                                </div>
+                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs">
+                                    <span className="text-[10px] font-bold text-slate-600 block uppercase mb-1">งานเคลม / ข้ามสิทธิ์</span>
+                                    <p className="text-xs font-semibold text-slate-700 leading-tight">
+                                        งานเคลม (Claim) และพนักงานที่มีสิทธิ์ <strong className="text-emerald-600 font-black">Bypass</strong> ยังเบิกจ่ายสต็อกกันชนนี้ได้ตามปกติ
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>

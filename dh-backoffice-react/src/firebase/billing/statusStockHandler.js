@@ -1,22 +1,23 @@
 import { increment } from 'firebase/firestore';
 import { gasStockService } from '../gasStockService';
+import { resolveEffectiveBuffer, isStockAvailableForSale } from 'dh-shared';
 
-export const handleStockDeduction = (transaction, db, productRefs, productSnaps, inventorySettingsSnap) => {
+export const handleStockDeduction = (transaction, db, productRefs, productSnaps, inventorySettingsSnap, canBypass = false) => {
     const defaultBuffer = inventorySettingsSnap && inventorySettingsSnap.exists() 
-        ? inventorySettingsSnap.data().defaultBufferStock || 0 
-        : 0;
+        ? (inventorySettingsSnap.data().defaultBufferStock ?? 2) 
+        : 2;
         
     productSnaps.forEach((pSnap, index) => {
         if (pSnap.exists()) {
             const currentStock = pSnap.data().stockQuantity || 0;
             const requiredQty = productRefs[index].qty || productRefs[index].totalQty || 1;
-            const itemBuffer = pSnap.data().bufferStock !== undefined 
-                ? pSnap.data().bufferStock 
-                : defaultBuffer;
+            const itemBuffer = resolveEffectiveBuffer(pSnap.data().bufferStock, defaultBuffer);
 
-            if ((currentStock - requiredQty) < itemBuffer) {
+            if (!isStockAvailableForSale(currentStock, itemBuffer, requiredQty, canBypass)) {
                 const skuLabel = pSnap.data().sku || productRefs[index].itemIdentifier || 'Unknown';
-                throw new Error(`สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
+                throw new Error(canBypass
+                    ? `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`
+                    : `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น, คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`);
             }
             
             const newStock = currentStock - requiredQty;

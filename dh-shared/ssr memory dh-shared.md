@@ -12,6 +12,7 @@
     2. Vat Calculation Result: `finalTotal`, `amountBeforeVat`, `vatAmount`, `rate`.
     3. Price / Fraud Schema: `basePrice`, `discount`, `netPrice`, `fraudFlags`.
     4. Credit Config Schema: `unwrapCreditConfig` parses nested `{ config: { pointsEarningRate, skuBonusRules } }` with legacy flat fallback.
+    5. Stock Buffer Schema: `resolveEffectiveBuffer(skuBuffer, globalBuffer)` resolves priority: SKU override (including 0) -> Global buffer (including 0) -> default fallback (2).
   </core_schema>
 
   <business_rules>
@@ -32,5 +33,7 @@
     2. ⚠️ Fallback Naming: If parsed customer name matches 'ลูกค้าทั่วไป' or empty, fallback to leading name tokens or 'ลูกค้าใหม่'.
     3. ⚠️ Courier Extraction: Normalize common shorthand such as 'ปณ' to 'ไปรษณีย์ไทย'.
     4. ⚠️ Credit Config Unwrapping: `settings/credit_config` nests parameters inside `.config`; always use `unwrapCreditConfig` so custom earning rates and SKU bonuses are not dropped.
+    5. ⚠️ Buffer String Coercion: In JS, `Number('   ') === 0`. Always check `.trim() === ''` before numeric conversion to avoid treating empty whitespace as 0.
+    6. ⚠️ Nullish Coalescing for Buffer: Never use `|| 2` on buffer fields as it forces legitimate `0` buffer to `2`. Always use `?? 2`.
   </pitfalls_and_lessons>
 </grimoire>

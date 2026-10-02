@@ -7,6 +7,7 @@ import { getCreditPreloadRefs, adjustUserCreditWithTransaction } from './credit/
 import { calculateEarnedPoints, getUserTier } from './credit/creditFormatService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { resolveEffectiveBuffer } from 'dh-shared';
 import { syncRecentOrdersCatalog } from './orderSyncService';
 
 const COLLECTION_NAME = getCollectionPath('orders');
@@ -89,19 +90,20 @@ async function fetchCreditPreloads(transaction, customerUid, finalOrderId, statu
 // ==========================================
 // 🛡️ Helper: Validations & Calculations
 // ==========================================
-function validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower) {
+function validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower, canBypass = false) {
   const updates = [];
   productSnaps.forEach((snap, index) => {
     if (snap.exists()) {
       const currentStock = snap.data().stockQuantity || 0;
       const requiredQty = productRefs[index].totalQty || productRefs[index].item?.qty || 1;
       const isPosOrder = (actorName === 'POS' || actorName === 'POS_OFFLINE_SYNC');
-      const itemBuffer = snap.data().bufferStock !== undefined ? snap.data().bufferStock : defaultBuffer;
-      const checkLimit = isPosOrder ? 0 : itemBuffer;
+      const bypassAllowed = isPosOrder || Boolean(canBypass);
+      const itemBuffer = resolveEffectiveBuffer(snap.data().bufferStock, defaultBuffer);
+      const checkLimit = bypassAllowed ? 0 : itemBuffer;
 
       if ((currentStock - requiredQty) < checkLimit && statusLower === 'paid') {
         const skuLabel = snap.data().sku || productRefs[index].itemIdentifier;
-        throw new Error(isPosOrder 
+        throw new Error(bypassAllowed 
           ? `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`
           : `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น, คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`);
       }
@@ -238,8 +240,9 @@ export const billingTransactionService = {
           const creditPreloadSnaps = await fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower);
           
           // 3. Validate & Calculate Logic
-          const defaultBuffer = settingsSnap.exists() ? settingsSnap.data().defaultBufferStock || 0 : 0;
-          const updates = validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower);
+          const defaultBuffer = settingsSnap.exists() ? (settingsSnap.data().defaultBufferStock ?? 2) : 2;
+          const canBypassBuffer = Boolean(orderData?.canBypassBuffer || orderData?.canBypassBufferStock);
+          const updates = validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower, canBypassBuffer);
           const { finalSecureNetTotal, verifiedItems } = await calculateSecureTotal(orderData, productSnaps, statusLower);
           const { walletToUse, earnedPoints } = calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps);
 

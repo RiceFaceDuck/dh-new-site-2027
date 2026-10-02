@@ -6,7 +6,13 @@ import { footerClientService } from '../../firebase/footerClientService';
 import { useCartDispatch } from '../../context/CartProvider';
 import { useToast } from '../../context/ToastContext';
 
-import { safeJsonParse } from 'dh-shared';
+import { 
+  safeJsonParse, 
+  resolveEffectiveBuffer, 
+  calculateAvailableStock, 
+  isProductOutOfStock, 
+  isProductLowStock 
+} from 'dh-shared';
 export const useProductDetail = (id, initialData = null) => {
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -107,14 +113,18 @@ export const useProductDetail = (id, initialData = null) => {
     );
     
     if (matched) {
+      const variantBuffer = resolveEffectiveBuffer(matched.bufferStock, product.bufferStock);
+      const variantAvailable = calculateAvailableStock(matched.stockQuantity, variantBuffer);
       return {
         ...product,
         id: matched.sku || product.id,
         price: matched.retailPrice || matched.price || product.price,
         salePrice: matched.salePrice || null,
         stockQuantity: matched.stockQuantity,
-        isOutOfStock: matched.stockQuantity <= 0,
-        isLowStock: matched.stockQuantity > 0 && matched.stockQuantity <= (product.bufferStock || 2),
+        bufferStock: variantBuffer,
+        availableStock: variantAvailable,
+        isOutOfStock: isProductOutOfStock(matched.stockQuantity, variantBuffer),
+        isLowStock: isProductLowStock(matched.stockQuantity, variantBuffer),
         variantAttributes: matched.attributes
       };
     }

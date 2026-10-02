@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { trackFooterClick } from '../../firebase/footerAnalyticsService';
 
 const FooterLinkZone = ({ title, links, markerColor }) => {
   // markerColor: e.g. "bg-cyber-blue shadow-[0_0_8px_rgba(14,165,233,0.5)]"
@@ -13,6 +14,7 @@ const FooterLinkZone = ({ title, links, markerColor }) => {
           <li key={index}>
             <a 
               href={item.url} 
+              onClick={() => trackFooterClick(title, item.label, item.url)}
               className="flex items-center text-slate-400 hover:text-white hover:translate-x-1.5 transition-all duration-300 group"
             >
               <ChevronRight size={14} className="mr-1.5 opacity-40 group-hover:opacity-100 group-hover:text-(--dh-accent) transition-all" />

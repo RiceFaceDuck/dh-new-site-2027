@@ -1,8 +1,9 @@
 import React from 'react';
+import { resolveEffectiveBuffer, calculateAvailableStock } from 'dh-shared';
 
 const ProductCard = ({ product, onClick }) => {
-  const bufferValue = product.bufferStock !== undefined ? product.bufferStock : 2;
-  const availableStock = Math.max(0, (product.stockQuantity || 0) - bufferValue);
+  const bufferValue = resolveEffectiveBuffer(product?.bufferStock, 2);
+  const availableStock = calculateAvailableStock(product?.stockQuantity, bufferValue);
   
   // พิจารณาสถานะสต็อก
   let stockStatus = 'in-stock'; // in-stock, low-stock, out-of-stock

@@ -1,6 +1,12 @@
 import { doc, getDoc, collection, query, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { 
+  resolveEffectiveBuffer, 
+  calculateAvailableStock, 
+  isProductOutOfStock, 
+  isProductLowStock 
+} from 'dh-shared';
 
 // 🚀 ULTRA SMART FIELD MAPPER (V2): ค้นหาและแปลงข้อมูลครอบจักรวาล
 const normalizeKey = (k) => String(k).replace(/[_\-\s]/g, '').toLowerCase();
@@ -223,12 +229,13 @@ export const productService = {
     // Stock
     const stockQuantity = getVal(raw, ['stockQuantity', 'stock', 'quantity', 'qty']) || 0;
     
-    // Use bufferStock from product if exists, else fallback to Global Buffer (or 2)
+    // Resolve bufferStock using centralized engine
     const rawBuffer = getVal(raw, ['bufferStock', 'buffer', 'minstock']);
-    const bufferStock = rawBuffer !== null ? rawBuffer : (cachedGlobalBuffer ?? 2);
+    const bufferStock = resolveEffectiveBuffer(rawBuffer, cachedGlobalBuffer);
+    const availableStock = calculateAvailableStock(stockQuantity, bufferStock);
     
-    const isOutOfStock = stockQuantity <= 0;
-    const isLowStock = stockQuantity > 0 && stockQuantity <= bufferStock;
+    const isOutOfStock = isProductOutOfStock(stockQuantity, bufferStock);
+    const isLowStock = isProductLowStock(stockQuantity, bufferStock);
 
     // Descriptions
     const shortDescription = getVal(raw, ['shortDescription', 'shortDesc']);
@@ -267,6 +274,7 @@ export const productService = {
       salePrice,
       stockQuantity,
       bufferStock,
+      availableStock,
       isOutOfStock,
       isLowStock,
       shortDescription,

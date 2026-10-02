@@ -1,4 +1,5 @@
 import { ShieldCheck, Award, CheckCircle2, Truck } from 'lucide-react';
+import { trackFooterClick } from '../../firebase/footerAnalyticsService';
 
 const BADGE_ICONS = {
   b2bPartner: ShieldCheck,
@@ -99,6 +100,7 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
                 href={socialHubConfig.facebook} 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                onClick={() => trackFooterClick('social_hub', 'facebook', socialHubConfig.facebook)}
                 className="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center hover:bg-blue-600/30 transition-colors" 
                 title="Facebook"
               >
@@ -110,6 +112,7 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
                 href={socialHubConfig.tiktok} 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                onClick={() => trackFooterClick('social_hub', 'tiktok', socialHubConfig.tiktok)}
                 className="w-8 h-8 rounded-lg bg-rose-600/20 text-rose-400 border border-rose-500/30 flex items-center justify-center hover:bg-rose-600/30 transition-colors" 
                 title="TikTok"
               >
@@ -121,6 +124,7 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
                 href={socialHubConfig.line} 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                onClick={() => trackFooterClick('social_hub', 'line', socialHubConfig.line)}
                 className="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center hover:bg-emerald-600/30 transition-colors" 
                 title="LINE OA"
               >
@@ -132,6 +136,7 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
                 href={socialHubConfig.youtube} 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                onClick={() => trackFooterClick('social_hub', 'youtube', socialHubConfig.youtube)}
                 className="w-8 h-8 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-600/30 transition-colors" 
                 title="YouTube"
               >
@@ -143,6 +148,7 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
                 href={socialHubConfig.instagram} 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                onClick={() => trackFooterClick('social_hub', 'instagram', socialHubConfig.instagram)}
                 className="w-8 h-8 rounded-lg bg-pink-600/20 text-pink-400 border border-pink-500/30 flex items-center justify-center hover:bg-pink-600/30 transition-colors" 
                 title="Instagram"
               >

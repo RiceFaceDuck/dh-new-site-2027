@@ -1,4 +1,5 @@
 import { MapPin, MessageCircle, Phone, Clock } from 'lucide-react';
+import { trackFooterClick } from '../../firebase/footerAnalyticsService';
 
 const FooterContact = ({ companyConfig, businessHoursConfig }) => {
   const lineUrl = companyConfig?.lineAddFriendUrl || 
@@ -24,6 +25,7 @@ const FooterContact = ({ companyConfig, businessHoursConfig }) => {
               href={lineUrl} 
               target="_blank" 
               rel="noopener noreferrer" 
+              onClick={() => trackFooterClick('contact', 'line', lineUrl)}
               className="flex items-center text-slate-400 group-hover:text-slate-200 transition-colors"
             >
               <MessageCircle size={18} className="mr-3 text-slate-400 group-hover:text-cyber-emerald shrink-0 transition-colors"/>
@@ -44,6 +46,7 @@ const FooterContact = ({ companyConfig, businessHoursConfig }) => {
           {phoneTel ? (
             <a 
               href={phoneTel} 
+              onClick={() => trackFooterClick('contact', 'phone', phoneTel)}
               className="flex items-center text-slate-400 group-hover:text-slate-200 transition-colors"
             >
               <Phone size={18} className="mr-3 text-slate-400 group-hover:text-cyber-blue shrink-0 transition-colors"/>
