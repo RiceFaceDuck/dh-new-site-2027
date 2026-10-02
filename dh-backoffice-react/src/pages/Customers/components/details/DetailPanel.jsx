@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Edit2, Trash2, Building2, User, Copy, Check, TrendingUp, Sparkles } from 'lucide-react';
+import { X, Edit2, Trash2, Building2, User, Copy, Check, TrendingUp, Sparkles, Shield } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 
@@ -155,14 +155,29 @@ export default function DetailPanel({
             {customer.customerType === 'individual' ? 'บุคคลธรรมดา' : 'นิติบุคคล / ร้านค้า'}
           </span>
 
-          {/* Badge Tier / Rank */}
-          <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0">
-            ⭐ {(() => {
-              const points = Number(customer.totalAccumulatedPoints || customer.creditPoints || customer.stats?.totalAccumulatedPoints || 0);
-              const tier = getUserTier(points);
-              return tier.name || customer.rank || customer.role || 'Member';
-            })()}
+          {/* 🛡️ Badge Role (สิทธิ์ราคา) */}
+          <span 
+            className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0 flex items-center gap-1"
+            title="สิทธิ์ราคาของลูกค้า"
+          >
+            <Shield size={11} className="text-indigo-400" />
+            <span>{customer.role || customer.rank || 'ทั่วไป'}</span>
           </span>
+
+          {/* 🏆 Badge Tier (ระดับแต้ม Gamification) */}
+          {(() => {
+            const points = Number(customer.totalAccumulatedPoints || customer.creditPoints || customer.stats?.totalAccumulatedPoints || 0);
+            const tier = getUserTier(points);
+            return (
+              <span 
+                className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0 flex items-center gap-1"
+                title={`ระดับแต้มสะสม: ${points.toLocaleString()} แต้ม`}
+              >
+                <span>{tier.icon || '🌟'}</span>
+                <span>{tier.name || 'Member'}</span>
+              </span>
+            );
+          })()}
 
           {/* ปุ่มโอนย้ายข้อมูล */}
           <button 

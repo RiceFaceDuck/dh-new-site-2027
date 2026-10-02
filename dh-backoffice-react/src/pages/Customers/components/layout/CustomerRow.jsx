@@ -23,16 +23,26 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
     return phone;
   };
 
-  const getRankBadge = (rank) => {
-    const r = rank?.toLowerCase() || 'customer';
-    if (r.includes('vip')) return { color: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200', icon: <Crown size={11} className="mr-1 text-fuchsia-600" />, label: 'VIP' };
-    if (r.includes('partner')) return { color: 'bg-slate-800 text-white border-slate-800', icon: <Star size={11} className="mr-1 text-amber-400" />, label: 'PARTNER' };
-    if (r.includes('wholesale') || r.includes('mechanic') || r.includes('ช่าง')) return { color: 'bg-sky-50 text-sky-700 border-sky-200', icon: <span className="mr-1 text-amber-500 text-[11px]">⚡</span>, label: 'ร้านช่าง' };
-    if (tier.name === 'Gold' || r.includes('gold')) return { color: 'bg-amber-50 text-amber-700 border-amber-200', icon: <span className="mr-1 text-amber-500 text-[11px]">👑</span>, label: 'GOLD' };
-    return { color: tier.bg + ' ' + tier.color + ' ' + tier.border, icon: <span className="mr-1 text-[10px]">{tier.icon}</span>, label: tier.name.toUpperCase() };
+  const getRoleBadge = (rankOrRole) => {
+    const r = (rankOrRole || 'Customer').toLowerCase();
+    if (r.includes('vip') || r.includes('enterprise')) {
+      return { color: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200', icon: <Crown size={10} className="mr-1 text-fuchsia-600 shrink-0" />, label: 'VIP' };
+    }
+    if (r.includes('partner')) {
+      return { color: 'bg-slate-800 text-white border-slate-800', icon: <Star size={10} className="mr-1 text-amber-400 shrink-0" />, label: 'PARTNER' };
+    }
+    if (r.includes('wholesale') || r.includes('mechanic') || r.includes('ช่าง')) {
+      return { color: 'bg-sky-50 text-sky-700 border-sky-200', icon: <span className="mr-1 text-amber-500 text-[10px]">⚡</span>, label: 'ร้านช่าง' };
+    }
+    return { color: 'bg-slate-100 text-slate-700 border-slate-200', icon: null, label: 'ทั่วไป' };
   };
 
-  const badge = getRankBadge(customer.rank || customer.role);
+  const roleBadge = getRoleBadge(customer.role || customer.rank);
+  const tierBadge = {
+    color: `${tier.bg} ${tier.color} ${tier.border}`,
+    icon: tier.icon,
+    label: tier.name.toUpperCase()
+  };
   // 🌟 ฟังก์ชันหาชื่อที่ถูกต้องที่สุดของลูกค้า
   const resolveDisplayName = (c) => {
     if (c.storeName) return c.storeName;
@@ -140,13 +150,21 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           {logisticText}
         </div>
 
-        {/* 5. ระดับบัญชี */}
-        <div className="flex justify-center min-w-0">
-          <div className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-widest border ${badge.color} truncate max-w-full shadow-xs`}>
-            {badge.icon}
-            <span className="truncate">
-              {badge.label}
-            </span>
+        {/* 5. ระดับบัญชี & แต้มสะสม (Role & Tier แยกกันชัดเจน) */}
+        <div className="flex flex-col items-center justify-center gap-1 min-w-0">
+          <div 
+            className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-bold tracking-tight border ${roleBadge.color} truncate max-w-full shadow-2xs`}
+            title={`สิทธิ์ราคา: ${roleBadge.label}`}
+          >
+            {roleBadge.icon}
+            <span className="truncate">{roleBadge.label}</span>
+          </div>
+          <div 
+            className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-black uppercase tracking-wider border ${tierBadge.color} truncate max-w-full shadow-2xs`}
+            title={`ระดับสมาชิก: ${tierBadge.label}`}
+          >
+            <span className="mr-0.5 text-[9px]">{tierBadge.icon}</span>
+            <span className="truncate">{tierBadge.label}</span>
           </div>
         </div>
 
