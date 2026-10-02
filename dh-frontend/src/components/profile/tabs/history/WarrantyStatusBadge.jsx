@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { warrantyClientService } from '../../../../firebase/warrantyClientService';
+import { calculateItemWarranty } from 'dh-shared/src/utils/warrantyUtils';
 import { ShieldCheck } from 'lucide-react';
 
 export default function WarrantyStatusBadge({ purchaseDateStr, sku, category }) {
@@ -11,43 +12,13 @@ export default function WarrantyStatusBadge({ purchaseDateStr, sku, category }) 
 
   if (!warrantyConfig || !purchaseDateStr) return null;
 
-  // 1. Calculate Warranty Period (Days)
-  let warrantyPeriodDays = 365; // Default fallback
-  if (warrantyConfig.skus?.[sku]) {
-    warrantyPeriodDays = warrantyConfig.skus[sku].claimDays || 365;
-  } else if (warrantyConfig.categories) {
-    let foundCat = 'General';
-    const skuUpper = sku?.toUpperCase() || '';
-    const categoryFromPayload = category?.toLowerCase() || '';
+  const wStatus = calculateItemWarranty({ sku, category }, purchaseDateStr, warrantyConfig);
+  if (!wStatus) return null;
 
-    for (const cat of Object.keys(warrantyConfig.categories)) {
-      const catLower = cat.toLowerCase();
-      if (categoryFromPayload === catLower) { foundCat = cat; break; }
-      if (catLower === 'adapter' && skuUpper.startsWith('AD')) { foundCat = cat; break; }
-      if (catLower === 'keyboard' && skuUpper.startsWith('KB')) { foundCat = cat; break; }
-      if (catLower === 'panel' && skuUpper.startsWith('PN')) { foundCat = cat; break; }
-      if (catLower === 'battery' && skuUpper.startsWith('BT')) { foundCat = cat; break; }
-      if (sku && sku.toLowerCase().includes(catLower)) { foundCat = cat; break; }
-    }
-    
-    if (warrantyConfig.categories[foundCat]) {
-      warrantyPeriodDays = warrantyConfig.categories[foundCat].claimDays || 30;
-    }
-  }
-
-  // 2. Calculate Used Days (Calendar days)
-  const pDate = new Date(purchaseDateStr);
-  if (isNaN(pDate)) return null;
-
-  const cDate = new Date();
-  const pDateOnly = new Date(pDate.getFullYear(), pDate.getMonth(), pDate.getDate());
-  const cDateOnly = new Date(cDate.getFullYear(), cDate.getMonth(), cDate.getDate());
-  const diffTime = cDateOnly - pDateOnly;
-  const usedDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
-  
-  const remainingDays = warrantyPeriodDays - usedDays;
-  const percentUsed = Math.min((usedDays / warrantyPeriodDays) * 100, 100);
-  const percentRemaining = 100 - percentUsed;
+  const warrantyPeriodDays = wStatus.claimDays;
+  const remainingDays = wStatus.remainingDays;
+  const percentUsed = wStatus.percentUsed;
+  const percentRemaining = wStatus.percentRemaining;
 
   // 3. Determine Mood & Tone
   let label = '';

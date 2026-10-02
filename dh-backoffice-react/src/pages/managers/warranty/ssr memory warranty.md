@@ -1,8 +1,8 @@
 <ssr_local_grimoire name="warranty">
   <flow_and_entry>
-    - Entry: GlobalWarrantySettings.jsx -> useWarrantyManager.js -> warrantyService.js
+    - Entry: GlobalWarrantySettings.jsx -> useWarrantyManager.js -> warrantyService.js -> dh-shared/warrantyUtils.js
     - Route: /managers/warranty wrapped by ManagerRoute in App.jsx
-    - Data Flow: Loads settings/warranty, cross-checks settings/product_categories, updates settings/warranty, and resolves todos.
+    - Data Flow: Loads settings/warranty, cross-checks settings/product_categories, updates settings/warranty, and resolves todos. Shared calculation centralized in dh-shared/warrantyUtils.js.
   </flow_and_entry>
 
   <core_schema>
@@ -27,8 +27,8 @@
   <pitfalls_and_lessons>
     - ⚠️ Expand normalizeCategoryName dictionary (Speaker, Fan, Cable, Hinge) to prevent duplicate cards (e.g. SPEAKER vs ลำโพง).
     - ⚠️ Consumer components must use normalized category resolution to prevent Thai categories dropping to 30-day default.
-    - ⚠️ Beware of double logging: useWarrantyManager.js and warrantyService.js both logged to historyService.
-    - ⚠️ autoSyncCategories concurrent trigger risks quota spikes and race conditions; use batch verification.
+    - ⚠️ Double logging resolved: useWarrantyManager.js delegates diff logging directly to warrantyService.updateWarrantySettings.
+    - ⚠️ Quota spike resolved: checkAndTriggerWarrantyTasksForBatch loads settings and todos once (2N+1 -> 2 reads).
     - ⚠️ Zero deployment rule enforced: all changes remain strictly local.
   </pitfalls_and_lessons>
 </ssr_local_grimoire>

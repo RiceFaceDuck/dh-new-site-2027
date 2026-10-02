@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, X, ShieldCheck, ShieldAlert, Loader2, Package, Calendar } from 'lucide-react';
 import { warrantyService } from '../../firebase/warrantyService';
-import { differenceInDays } from 'date-fns';
+import { calculateItemWarranty } from 'dh-shared/src/utils/warrantyUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 export default function WarrantyCheckModal({ isOpen, onClose }) {
@@ -50,32 +50,7 @@ export default function WarrantyCheckModal({ isOpen, onClose }) {
 
   const getWarrantyStatus = (item, orderDateStr) => {
     if (!warrantyConfig || !orderDateStr) return null;
-    
-    const purchaseDate = new Date(orderDateStr);
-    const passedDays = differenceInDays(new Date(), purchaseDate);
-    
-    let claimDays = 30; // Default General
-    let categoryKey = 'General';
-    
-    const itemCat = item.category || item.category1 || '';
-    if (itemCat) {
-       for (const key of Object.keys(warrantyConfig.categories || {})) {
-           if (itemCat.toLowerCase().includes(key.toLowerCase())) {
-               claimDays = warrantyConfig.categories[key].claimDays;
-               categoryKey = key;
-               break;
-           }
-       }
-    }
-
-    if (warrantyConfig.skus?.[item.sku]) {
-        claimDays = warrantyConfig.skus[item.sku].claimDays;
-    }
-
-    const remainingDays = claimDays - passedDays;
-    const isExpired = remainingDays < 0;
-
-    return { claimDays, passedDays, remainingDays, isExpired, categoryKey };
+    return calculateItemWarranty(item, orderDateStr, warrantyConfig);
   };
 
   return (

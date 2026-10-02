@@ -5,43 +5,8 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils.js';
 
 const SETTINGS_DOC = 'warranty';
 
-/**
- * 🏷️ แปลงชื่อหมวดหมู่ให้เป็น Canonical Standard Name เพื่อแก้ปัญหาชื่อซ้ำ/คำคล้าย/ตัวพิมพ์เล็ก-ใหญ่
- */
-export function normalizeCategoryName(catName) {
-  if (!catName || typeof catName !== 'string') return 'General';
-  const clean = catName.trim();
-  const lower = clean.toLowerCase();
-  if (!clean) return 'General';
-
-  // 1. Core Hardware Types & Thai Synonyms
-  if (['panel', 'screen', 'display', 'หน้าจอ', 'จอคอม', 'จอ', 'แผงจอ', 'จอภาพ'].includes(lower)) return 'Panel';
-  if (['keyboard', 'คีย์บอร์ด', 'แป้นพิมพ์'].includes(lower)) return 'Keyboard';
-  if (['battery', 'แบตเตอรี่', 'แบต'].includes(lower)) return 'Battery';
-  if (['adapter', 'charger', 'อแดปเตอร์', 'อะแดปเตอร์', 'สายชาร์จ', 'หัวชาร์จ'].includes(lower)) return 'Adapter';
-  if (['speaker', 'speakers', 'ลำโพง', 'สปีกเกอร์'].includes(lower)) return 'Speaker';
-  if (['fan', 'พัดลม', 'พัดลมระบายความร้อน'].includes(lower)) return 'Fan';
-  if (['cooling', 'heatsink', 'heat pipe', 'ชุดระบายความร้อน', 'ฮีตซิงค์', 'ซิงค์'].includes(lower)) return 'Cooling';
-  if (['cable', 'flex cable', 'สายไฟ', 'สายแพ', 'สายสัญญาณ', 'สายต่อ'].includes(lower)) return 'Cable';
-  if (['hinge', 'บานพับ', 'ข้อพับ'].includes(lower)) return 'Hinge';
-  if (['switching', 'power supply', 'สวิตชิ่ง', 'พาวเวอร์ซัพพลาย'].includes(lower)) return 'Switching';
-  
-  // 2. Acronyms & Components
-  if (['ram', 'memory', 'แรม'].includes(lower)) return 'RAM';
-  if (['ssd', 'hdd', 'harddisk', 'hard disk', 'เอสเอสดี', 'ฮาร์ดดิสก์'].includes(lower)) return 'SSD';
-  if (['mainboard', 'motherboard', 'เมนบอร์ด', 'มาเธอร์บอร์ด'].includes(lower)) return 'Mainboard';
-  if (['cpu', 'processor', 'ซีพียู'].includes(lower)) return 'CPU';
-  if (['case', 'housing', 'top case', 'bottom case', 'เคส', 'ฝาหลัง', 'บอดี้'].includes(lower)) return 'Case';
-
-  if (['general', 'other', 'misc', 'miscellaneous', 'อื่นๆ', 'ทั่วไป'].includes(lower)) return 'General';
-
-  // 3. Fallback for unlisted names: Canonical TitleCase formatting for Latin words
-  if (/^[a-zA-Z]/.test(clean)) {
-    return clean.charAt(0).toUpperCase() + clean.slice(1);
-  }
-
-  return clean;
-}
+import { normalizeCategoryName } from 'dh-shared/src/utils/warrantyUtils.js';
+export { normalizeCategoryName };
 
 // 💡 ค่าเริ่มต้น หากเพิ่งรันระบบครั้งแรก
 const DEFAULT_WARRANTY = {
@@ -144,58 +109,85 @@ export const warrantyService = {
   },
 
   // ==========================================
-  // 🔔 ตรวจสอบหมวดสินค้าใหม่ และสร้าง To-Do ผู้จัดการ หากยังไม่เคยตั้งค่า
+  // 🔔 ตรวจสอบหมวดสินค้าใหม่ (แบบ Batch ประหยัด Reads ป้องกัน Quota Spike)
   // ==========================================
-  checkAndTriggerWarrantyTaskForNewCategory: async (categoryName) => {
-    if (!categoryName || typeof categoryName !== 'string') return;
-    const normKey = normalizeCategoryName(categoryName);
+  checkAndTriggerWarrantyTasksForBatch: async (categoryNames) => {
+    if (!Array.isArray(categoryNames) || categoryNames.length === 0) return;
 
     try {
+      // 1. โหลดการตั้งค่าปัจจุบันเพียงครั้งเดียว (ประหยัด Reads)
       const currentSettings = await warrantyService.getWarrantySettings(true);
-      const existingCatData = currentSettings.categories[normKey];
+      const configuredCategories = currentSettings.categories || {};
 
-      // หากหมวดหมู่นี้ถูกตั้งค่าเรียบร้อยแล้ว ไม่ต้องสร้างงาน
-      if (existingCatData && !existingCatData.isUnconfigured) {
-        return;
+      // สกัดเฉพาะหมวดหมู่ที่ยังไม่ได้ตั้งค่า
+      const unconfiguredNormKeys = new Set();
+      categoryNames.forEach(rawName => {
+        if (!rawName || typeof rawName !== 'string') return;
+        const normKey = normalizeCategoryName(rawName);
+        const existingData = configuredCategories[normKey];
+        if (!existingData || existingData.isUnconfigured) {
+          unconfiguredNormKeys.add(normKey);
+        }
+      });
+
+      if (unconfiguredNormKeys.size === 0) {
+        return; // ทุกหมวดหมู่ได้รับการตั้งค่าเรียบร้อยแล้ว
       }
 
-      // เช็คว่ามีงาน To-Do ผู้จัดการเรื่องประกันของหมวดนี้ค้างอยู่แล้วหรือไม่
+      // 2. ดึงรายการ To-Do ที่ค้างอยู่เพียงครั้งเดียว (1 Query)
       const todosRef = collection(db, getCollectionPath('todos'));
       const q = query(
         todosRef,
         where('type', '==', 'WARRANTY_SETUP'),
         where('status', 'in', ['todo', 'pending', 'in_progress']),
-        limit(10)
+        limit(100)
       );
       const snap = await getDocs(q);
-      const alreadyHasTask = snap.docs.some(d => {
-        const cat = d.data().categoryName;
-        return cat && normalizeCategoryName(cat) === normKey;
-      });
+      const existingTaskCategories = new Set(
+        snap.docs
+          .map(d => d.data().categoryName)
+          .filter(Boolean)
+          .map(c => normalizeCategoryName(c))
+      );
 
-      if (!alreadyHasTask) {
-        await addDoc(todosRef, {
-          taskType: 'WARRANTY_SETUP',
-          type: 'WARRANTY_SETUP',
-          title: `ตั้งค่าระยะเวลารับประกันหมวดใหม่: ${normKey}`,
-          description: `พบสินค้าประเภทใหม่ (${normKey}) ในระบบ กรุณาเข้าไปตั้งค่าวันรับประกันเคลมและคืนเงิน`,
-          categoryName: normKey,
-          status: 'todo',
-          priority: 'High',
-          createdAt: serverTimestamp(),
-          targetUrl: '/managers/warranty'
-        });
-        console.log(`🔔 [WarrantyService] สร้างงาน To-Do ผู้จัดการให้ตั้งค่าประกันหมวด "${normKey}" สำเร็จ`);
+      // 3. สร้างงานเฉพาะหมวดที่ยังไม่มี To-Do
+      const creationPromises = [];
+      for (const normKey of unconfiguredNormKeys) {
+        if (!existingTaskCategories.has(normKey)) {
+          existingTaskCategories.add(normKey); // ป้องกัน duplicate ในรอบเดียวกัน
+          creationPromises.push(
+            addDoc(todosRef, {
+              taskType: 'WARRANTY_SETUP',
+              type: 'WARRANTY_SETUP',
+              title: `ตั้งค่าระยะเวลารับประกันหมวดใหม่: ${normKey}`,
+              description: `พบสินค้าประเภทใหม่ (${normKey}) ในระบบ กรุณาเข้าไปตั้งค่าวันรับประกันเคลมและคืนเงิน`,
+              categoryName: normKey,
+              status: 'todo',
+              priority: 'High',
+              createdAt: serverTimestamp(),
+              targetUrl: '/managers/warranty'
+            }).then(() => {
+              console.log(`🔔 [WarrantyService] สร้างงาน To-Do ผู้จัดการให้ตั้งค่าประกันหมวด "${normKey}" สำเร็จ`);
+            })
+          );
+        }
       }
+
+      await Promise.allSettled(creationPromises);
     } catch (err) {
-      console.error("🔥 Error triggering warranty task for category:", err);
+      console.error("🔥 Error triggering warranty tasks batch:", err);
     }
+  },
+
+  checkAndTriggerWarrantyTaskForNewCategory: async (categoryName) => {
+    if (!categoryName || typeof categoryName !== 'string') return;
+    await warrantyService.checkAndTriggerWarrantyTasksForBatch([categoryName]);
   },
 
   // ==========================================
   // 📤 บันทึกข้อมูลกติกาประกัน + เคลียร์ To-Do ผู้จัดการที่เกี่ยวข้อง
   // ==========================================
-  updateWarrantySettings: async (newData, managerUid) => {
+  updateWarrantySettings: async (newData, managerUid, diffSummary = '') => {
     try {
       const docRef = doc(db, getCollectionPath('settings'), SETTINGS_DOC);
       
@@ -249,8 +241,9 @@ export const warrantyService = {
         console.warn("⚠️ Warning auto-completing warranty todo tasks:", todoErr);
       }
 
-      // บันทึก History ของผู้จัดการ
-      await historyService.addLog('Manager', 'UpdateWarranty', 'System', 'อัปเดตตั้งค่าระยะเวลาประกันสินค้าและเคลียร์งาน To-Do', managerUid);
+      // บันทึก History ของผู้จัดการ (จุดเดียว Single Source of Truth)
+      const logDetails = diffSummary ? `อัปเดตกติกาประกัน | ${diffSummary}` : 'อัปเดตตั้งค่าระยะเวลาประกันสินค้าและเคลียร์งาน To-Do';
+      await historyService.addLog('SystemConfig', 'Update', 'warranty', logDetails, managerUid);
       
       return true;
     } catch (error) {

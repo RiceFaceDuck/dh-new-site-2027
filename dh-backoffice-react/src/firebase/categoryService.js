@@ -398,8 +398,12 @@ export const categoryService = {
         lastAutoSyncedAt: new Date().toISOString()
       }, { merge: true });
 
-      const tasks = categories.map(cat => warrantyService.checkAndTriggerWarrantyTaskForNewCategory(cat).catch(() => {}));
-      await Promise.allSettled(tasks);
+      if (warrantyService?.checkAndTriggerWarrantyTasksForBatch) {
+        await warrantyService.checkAndTriggerWarrantyTasksForBatch(categories);
+      } else {
+        const tasks = categories.map(cat => warrantyService.checkAndTriggerWarrantyTaskForNewCategory(cat).catch(() => {}));
+        await Promise.allSettled(tasks);
+      }
       console.info('⚡ [Auto-Sync] ซิงค์หมวดหมู่สินค้าอัตโนมัติสำเร็จแล้ว:', categories.length, 'หมวดหมู่');
       return categories;
     } catch (err) {

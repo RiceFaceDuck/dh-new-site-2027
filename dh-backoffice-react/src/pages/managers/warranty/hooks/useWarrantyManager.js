@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { auth } from '../../../../firebase/config';
-import { historyService } from '../../../../firebase/historyService';
 import { warrantyService, normalizeCategoryName } from '../../../../firebase/warrantyService';
 
 export function useWarrantyManager() {
@@ -103,9 +102,8 @@ export function useWarrantyManager() {
         setIsSaving(true);
         const uid = auth.currentUser?.uid;
         try {
-            await warrantyService.updateWarrantySettings(warrantyConfig, uid);
             const diffMsg = changesDiff.map(c => `${c.label}: ${c.oldVal}->${c.newVal}`).join(', ');
-            await historyService.addLog('SystemConfig', 'Update', 'warranty', `อัปเดตกติกาประกัน | ${diffMsg}`, uid);
+            await warrantyService.updateWarrantySettings(warrantyConfig, uid, diffMsg);
             alert("✅ บันทึกกติกาประกันพื้นฐานสำเร็จ และปรับสถานะงาน To-Do เป็น completed เรียบร้อยแล้ว");
             
             // Reload settings to sync clean status

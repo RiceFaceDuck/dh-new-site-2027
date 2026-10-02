@@ -118,27 +118,12 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 }
 
                 // คำนวณประกันคงเหลือเดิม (Default)
-                const orderDate = selectedOrder.createdAt?.toDate ? selectedOrder.createdAt.toDate() : new Date(selectedOrder.createdAt);
-                const passedDays = Math.max(0, Math.floor((new Date() - orderDate) / (1000 * 60 * 60 * 24)));
-                
                 const { warrantyService } = await import('../../../../firebase/warrantyService');
+                const { calculateItemWarranty } = await import('dh-shared/src/utils/warrantyUtils');
                 const warrantyConfig = await warrantyService.getWarrantySettings();
                 
-                let originalClaimDays = 30;
-                const itemCat = item.category || item.category1 || '';
-                if (itemCat) {
-                    for (const key of Object.keys(warrantyConfig.categories || {})) {
-                        if (itemCat.toLowerCase().includes(key.toLowerCase())) {
-                            originalClaimDays = warrantyConfig.categories[key].claimDays;
-                            break;
-                        }
-                    }
-                }
-                if (warrantyConfig.skus?.[item.sku]) {
-                    originalClaimDays = warrantyConfig.skus[item.sku].claimDays;
-                }
-
-                const remainingDays = Math.max(0, originalClaimDays - passedDays);
+                const wStatus = calculateItemWarranty(item, selectedOrder.createdAt, warrantyConfig);
+                const remainingDays = Math.max(0, wStatus?.remainingDays ?? 0);
                 setNewWarrantyDays(remainingDays);
             }
         } catch (err) {

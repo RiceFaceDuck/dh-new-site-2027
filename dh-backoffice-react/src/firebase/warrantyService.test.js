@@ -150,4 +150,54 @@ describe('warrantyService.getWarrantySettings', () => {
     expect(result.categories['SPEAKER']).toBeUndefined();
     expect(result.categories['ลำโพง']).toBeUndefined();
   });
+
+  it('triggers batch warranty tasks only for unconfigured categories', async () => {
+    const { addDoc } = await import('firebase/firestore');
+    
+    // Setup existing config where Panel & Keyboard exist, but Fan is new
+    state.getDocImpl = vi.fn(async () => ({
+      exists: () => true,
+      data: () => ({
+        categories: {
+          'Panel': { claimDays: 180, returnDays: 7 }
+        },
+        skus: {}
+      })
+    }));
+
+    await warrantyService.checkAndTriggerWarrantyTasksForBatch(['Panel', 'หน้าจอ', 'Fan', 'พัดลม']);
+
+    // Fan and พัดลม both normalize to 'Fan', so exactly 1 task for 'Fan' should be created
+    expect(addDoc).toHaveBeenCalledTimes(1);
+    expect(addDoc).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: 'WARRANTY_SETUP',
+        categoryName: 'Fan'
+      })
+    );
+  });
+
+  it('saves settings and logs single history record with diff summary', async () => {
+    const { historyService } = await import('./historyService.js');
+    const { setDoc } = await import('firebase/firestore');
+
+    const newData = {
+      categories: {
+        'Speaker': { claimDays: 14, returnDays: 7 }
+      }
+    };
+
+    await warrantyService.updateWarrantySettings(newData, 'manager-123', '[Speaker] เคลมซ่อม 7->14');
+
+    expect(setDoc).toHaveBeenCalled();
+    expect(historyService.addLog).toHaveBeenCalledTimes(1);
+    expect(historyService.addLog).toHaveBeenCalledWith(
+      'SystemConfig',
+      'Update',
+      'warranty',
+      expect.stringContaining('[Speaker] เคลมซ่อม 7->14'),
+      'manager-123'
+    );
+  });
 });
