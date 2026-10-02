@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Building2, Hash, Wand2, CheckCircle2, X, Loader2, AlertCircle, RefreshCw, Crown } from 'lucide-react';
+import { settingsService } from '../../../../../firebase/settingsService';
 
 export default function MainInfoSection({
     formData,
@@ -13,6 +15,21 @@ export default function MainInfoSection({
     setFormData,
     handleSyncAccount
 }) {
+    const [dynamicRoles, setDynamicRoles] = useState([]);
+
+    useEffect(() => {
+        let isMounted = true;
+        settingsService.getRoleTierConfig().then(cfg => {
+            if (isMounted && cfg?.roles?.length > 0) {
+                setDynamicRoles(cfg.roles);
+            }
+        });
+        return () => { isMounted = false; };
+    }, []);
+
+    const currentRoleVal = formData.rank || formData.role || 'Customer';
+    const isLegacyRole = dynamicRoles.length > 0 && !dynamicRoles.some(r => r.name === currentRoleVal || r.id === currentRoleVal);
+
     return (
         <div>
             <h3 className="text-sm font-bold text-dh-accent mb-3 flex items-center gap-2 border-b border-dh-border pb-2">
@@ -111,17 +128,32 @@ export default function MainInfoSection({
                     </label>
                     <select
                         className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface font-bold text-dh-main"
-                        value={formData.rank || formData.role || 'Customer'}
+                        value={currentRoleVal}
                         onChange={e => {
                             const val = e.target.value;
                             handleChange('rank', val);
                             handleChange('role', val);
                         }}
                     >
-                        <option value="Customer">Member / Customer (ลูกค้าทั่วไป)</option>
-                        <option value="Wholesale">Wholesale / Mechanic (ช่างซ่อม / ราคาส่ง)</option>
-                        <option value="Partner">Partner / VIP (ร้านค้าพันธมิตร)</option>
-                        <option value="Enterprise">Enterprise (คู่ค้าองค์กร)</option>
+                        {dynamicRoles.length > 0 ? (
+                            <>
+                                {dynamicRoles.map(role => (
+                                    <option key={role.id} value={role.name || role.id}>
+                                        {role.name} ({role.defaultPriceTier === 'wholesale' ? 'ราคาส่ง' : role.defaultPriceTier === 'partner' ? 'ราคาพาร์ทเนอร์' : role.defaultPriceTier === 'enterprise' ? 'ราคาองค์กร' : 'ราคาปลีก'})
+                                    </option>
+                                ))}
+                                {isLegacyRole && (
+                                    <option value={currentRoleVal}>{currentRoleVal} (สิทธิ์เดิม)</option>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <option value="Customer">Member / Customer (ลูกค้าทั่วไป)</option>
+                                <option value="Wholesale">Wholesale / Mechanic (ช่างซ่อม / ราคาส่ง)</option>
+                                <option value="Partner">Partner / VIP (ร้านค้าพันธมิตร)</option>
+                                <option value="Enterprise">Enterprise (คู่ค้าองค์กร)</option>
+                            </>
+                        )}
                     </select>
                 </div>
             </div>

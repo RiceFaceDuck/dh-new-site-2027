@@ -128,8 +128,10 @@ export const usePosActions = ({
                 console.error("Failed to parse customer preference", e);
             }
             const pref = { ...(cust.preferences || {}), ...mem };
+            const roleStr = String(cust.role || cust.rank || '').toLowerCase();
+            const isRoleWholesale = roleStr.includes('wholesale') || roleStr.includes('ช่าง') || roleStr.includes('partner') || roleStr.includes('enterprise') || roleStr.includes('ใหญ่');
             const isCompany = cust.accountName?.includes('บริษัท');
-            const targetMode = pref.priceMode || pref.defaultPriceTier || (isCompany ? 'wholesale' : 'retail');
+            const targetMode = pref.priceMode || pref.defaultPriceTier || (isRoleWholesale || isCompany ? 'wholesale' : 'retail');
             const targetVat = pref.vatType || pref.defaultVatMode || (isCompany ? 'included' : 'exempt');
             const targetFulfillment = pref.fulfillmentType || (cust.logisticProvider ? 'Delivery' : 'StorePickup');
             const targetCourier = pref.courier || pref.defaultCourier || (cust.logisticProvider || 'KEX');

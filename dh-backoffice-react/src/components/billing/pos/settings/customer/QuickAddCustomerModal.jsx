@@ -8,6 +8,7 @@ import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/
 import { db } from '../../../../../firebase/config';
 import { getCollectionPath, parseCustomerAddress } from 'dh-shared';
 import { userService } from '../../../../../firebase/userService';
+import { settingsService } from '../../../../../firebase/settingsService';
 import CustomerDuplicateComparisonModal, { checkPotentialDuplicates } from '../../../../../pages/Customers/components/forms/CustomerDuplicateComparisonModal';
 
 /**
@@ -89,10 +90,9 @@ const quickCustomerService = {
 
     fetchRoleTierConfig: async () => {
         try {
-            const ref = doc(db, getCollectionPath('settings'), 'role_tier_config');
-            const snap = await getDoc(ref);
-            if (snap.exists() && snap.data()?.roles?.length > 0) {
-                return snap.data().roles;
+            const config = await settingsService.getRoleTierConfig();
+            if (config && config.roles?.length > 0) {
+                return config.roles;
             }
         } catch (e) {
             console.warn('[QuickAddCustomerModal] Could not fetch role_tier_config:', e);
