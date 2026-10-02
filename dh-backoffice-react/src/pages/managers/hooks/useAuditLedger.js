@@ -10,8 +10,20 @@ let lastDirectoryFetchTime = 0;
 const DIRECTORY_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 let cachedLedgerTransactions = null;
+let cachedLedgerStats = null;
 let lastLedgerFetchTime = 0;
 const LEDGER_CACHE_TTL = 60 * 1000; // 1 minute fresh cache
+
+const defaultStats = {
+    walletInflow: 0,
+    walletOutflow: 0,
+    netWallet: 0,
+    creditInflow: 0,
+    creditOutflow: 0,
+    netCredit: 0,
+    totalTransactions: 0,
+    anomalyCount: 0
+};
 
 const getCustomerNameMap = async () => {
     const now = Date.now();
@@ -40,6 +52,7 @@ const getCustomerNameMap = async () => {
 
 export const useAuditLedger = () => {
     const [transactions, setTransactions] = useState(cachedLedgerTransactions || []);
+    const [stats, setStats] = useState(cachedLedgerStats || defaultStats);
     const [isLoading, setIsLoading] = useState(!cachedLedgerTransactions);
     const [error, setError] = useState(null);
 
@@ -47,6 +60,7 @@ export const useAuditLedger = () => {
         const now = Date.now();
         if (!forceRefresh && cachedLedgerTransactions && (now - lastLedgerFetchTime < LEDGER_CACHE_TTL)) {
             setTransactions(cachedLedgerTransactions);
+            if (cachedLedgerStats) setStats(cachedLedgerStats);
             setIsLoading(false);
             return;
         }
@@ -66,13 +80,28 @@ export const useAuditLedger = () => {
                 const rawType = (data.type || '').toLowerCase();
                 // 🟢 Credit INFLOW (earn): add, deposit, earn, topup, reversal
                 const isEarn = rawType === 'add' || rawType === 'deposit' || rawType === 'earn' || rawType === 'topup' || rawType === 'reversal';
+                const amount = Math.abs(Number(data.amount || 0));
+                const balanceBefore = data.balanceBefore !== undefined && data.balanceBefore !== null ? Number(data.balanceBefore) : null;
+                const balanceAfter = data.balanceAfter !== undefined && data.balanceAfter !== null ? Number(data.balanceAfter) : null;
+
+                // 🛡️ Record-level Checksum verification
+                let checksumMismatch = false;
+                if (balanceBefore !== null && balanceAfter !== null) {
+                    const expected = isEarn ? (balanceBefore + amount) : (balanceBefore - amount);
+                    if (Math.abs(expected - balanceAfter) > 0.05) {
+                        checksumMismatch = true;
+                    }
+                }
+
                 combinedTx.push({
                     id: docSnap.id,
                     source: 'credit',
                     type: isEarn ? 'earn' : 'spend', // normalize
                     rawType: data.type,
-                    amount: Math.abs(Number(data.amount || 0)),
-                    balanceAfter: data.balanceAfter !== undefined && data.balanceAfter !== null ? Number(data.balanceAfter) : null,
+                    amount,
+                    balanceBefore,
+                    balanceAfter,
+                    checksumMismatch,
                     referenceId: data.referenceId || data.transactionId,
                     note: data.note || data.remark,
                     actor: data.operatorUid || data.recordedBy || 'System',
@@ -98,14 +127,28 @@ export const useAuditLedger = () => {
                     // 🟢 Wallet INFLOW (earn): refund, deposit, topup, withdrawal_rejected, reversal
                     // 🔴 Wallet OUTFLOW (spend): spend, withdrawal, withdrawal_request, withdrawal_completed, payment
                     const isEarn = rawType === 'refund' || rawType === 'deposit' || rawType === 'topup' || rawType === 'withdrawal_rejected' || rawType === 'reversal';
+                    const amount = Math.abs(Number(data.amount || 0));
+                    const balanceBefore = data.balanceBefore !== undefined && data.balanceBefore !== null ? Number(data.balanceBefore) : null;
+                    const balanceAfter = data.balanceAfter !== undefined && data.balanceAfter !== null ? Number(data.balanceAfter) : null;
+
+                    // 🛡️ Record-level Checksum verification
+                    let checksumMismatch = false;
+                    if (balanceBefore !== null && balanceAfter !== null) {
+                        const expected = isEarn ? (balanceBefore + amount) : (balanceBefore - amount);
+                        if (Math.abs(expected - balanceAfter) > 0.05) {
+                            checksumMismatch = true;
+                        }
+                    }
 
                     combinedTx.push({
                         id: docSnap.id,
                         source: 'wallet',
                         type: isEarn ? 'earn' : 'spend',
                         rawType: data.type,
-                        amount: Math.abs(Number(data.amount || 0)),
-                        balanceAfter: data.balanceAfter !== undefined && data.balanceAfter !== null ? Number(data.balanceAfter) : null,
+                        amount,
+                        balanceBefore,
+                        balanceAfter,
+                        checksumMismatch,
                         referenceId: data.transactionId,
                         note: data.note,
                         actor: data.operatorUid || 'System',
@@ -137,9 +180,43 @@ export const useAuditLedger = () => {
                 return tx;
             });
 
+            // 🛡️ Compute Checksum Totals & Health Metrics
+            let walletInflow = 0;
+            let walletOutflow = 0;
+            let creditInflow = 0;
+            let creditOutflow = 0;
+            let anomalyCount = 0;
+
+            combinedTx.forEach(tx => {
+                if (tx.source === 'wallet') {
+                    if (tx.type === 'earn') walletInflow += tx.amount;
+                    else walletOutflow += tx.amount;
+                } else {
+                    if (tx.type === 'earn') creditInflow += tx.amount;
+                    else creditOutflow += tx.amount;
+                }
+
+                if (tx.checksumMismatch || (tx.balanceAfter !== null && tx.balanceAfter < 0)) {
+                    anomalyCount++;
+                }
+            });
+
+            const computedStats = {
+                walletInflow,
+                walletOutflow,
+                netWallet: walletInflow - walletOutflow,
+                creditInflow,
+                creditOutflow,
+                netCredit: creditInflow - creditOutflow,
+                totalTransactions: combinedTx.length,
+                anomalyCount
+            };
+
             cachedLedgerTransactions = combinedTx;
+            cachedLedgerStats = computedStats;
             lastLedgerFetchTime = Date.now();
             setTransactions(combinedTx);
+            setStats(computedStats);
         } catch (err) {
             console.error("Error fetching ledger", err);
             setError(err.message);
@@ -154,6 +231,7 @@ export const useAuditLedger = () => {
 
     return { 
         transactions, 
+        stats,
         isLoading, 
         error, 
         refreshLedger: () => fetchAuditLedger(true) 
