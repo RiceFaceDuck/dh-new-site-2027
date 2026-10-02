@@ -20,6 +20,7 @@
 
 <cross_impact>
 - Route `/managers`: Linked from sidebar navigation (`AdminLayout.jsx`).
+- Audit Ledger entry: Removed from Sidebar navItems (`Sidebar.jsx`), remains accessible via `/managers` header button and direct URL.
 - Master DB button: Opens Google Sheets restricted to Manager/Owner.
 - Route `/managers/yearly-archive`: Linked from QuickAccessTools and registered in `App.jsx`.
 - `AVAILABLE_MENUS`: Must include `freebie` (ของแถม) in `MenuLayoutManager.jsx`.
@@ -34,6 +35,8 @@
 - ⚠️ Manager approvals listener MUST merge `claims` and `todos` real-time to maintain 100% data parity.
 - ⚠️ `managerActionService` must delegate claim/return/exchange actions directly to `claimManagerService` facade.
 - ⚠️ UI Cards redesign (`GenericTodoCard.jsx` `isManagerTab`): 2-column structured data grid, pill status tags, left border accent. Branch `backup-manager-rail-ui` preserved for instant rollback.
+- ⚠️ Audit Ledger AutoSizer v2 Bug: `react-virtualized-auto-sizer` v2.x requires `renderProp` instead of children. Container must have `relative w-full h-full` with fallback dimensions.
+- ⚠️ Audit Ledger Type Normalization: Must map `deposit`/`add`/`earn`/`topup`/`refund`/`reversal` to `earn` (green +), and `spend`/`withdrawal`/`deduct` to `spend` (red -).
 - ⚠️ Always explicitly reassure: 'No Deploy & No Git Push' on every user permission request.
 - ⚠️ Always call `ask_question` tool for interactive modal choices when asking user permission, never plain text.
 </pitfalls_and_lessons>

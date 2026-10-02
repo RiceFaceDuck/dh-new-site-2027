@@ -49,13 +49,6 @@ export default function Sidebar({
       icon: Lock, 
       badge: hasManagerAccess && managerApprovalCount > 0 ? managerApprovalCount : null,
       requiresManager: true
-    },
-    { 
-      path: '/managers/audit-ledger', 
-      label: 'Audit Ledger', 
-      labelThai: 'บัญชีแยกประเภท', 
-      icon: History, 
-      requiresManager: true
     }
   ];
 

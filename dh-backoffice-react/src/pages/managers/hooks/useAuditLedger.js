@@ -24,16 +24,20 @@ export const useAuditLedger = () => {
                 
                 creditSnap.forEach(docSnap => {
                     const data = docSnap.data();
+                    const rawType = (data.type || '').toLowerCase();
+                    // 🟢 Credit INFLOW (earn): add, deposit, earn, topup, reversal
+                    const isEarn = rawType === 'add' || rawType === 'deposit' || rawType === 'earn' || rawType === 'topup' || rawType === 'reversal';
                     combinedTx.push({
                         id: docSnap.id,
                         source: 'credit',
-                        type: data.type === 'add' ? 'earn' : 'spend', // normalize
-                        amount: data.amount,
-                        balanceAfter: data.balanceAfter,
+                        type: isEarn ? 'earn' : 'spend', // normalize
+                        rawType: data.type,
+                        amount: Math.abs(Number(data.amount || 0)),
+                        balanceAfter: data.balanceAfter !== undefined && data.balanceAfter !== null ? Number(data.balanceAfter) : null,
                         referenceId: data.referenceId || data.transactionId,
                         note: data.note || data.remark,
-                        actor: data.operatorUid || data.recordedBy,
-                        timestamp: data.timestamp?.toDate() || new Date(),
+                        actor: data.operatorUid || data.recordedBy || 'System',
+                        timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : (data.timestamp ? new Date(data.timestamp) : new Date()),
                         customerUid: data.uid,
                         customerName: data.partnerName || 'Unknown'
                     });
@@ -45,30 +49,35 @@ export const useAuditLedger = () => {
                     const walletQ = query(collectionGroup(db, COLLECTION_GROUPS.WALLET_TRANSACTIONS), orderBy('timestamp', 'desc'), limit(100));
                     const walletSnap = await getDocs(walletQ);
 
-                    
                     walletSnap.forEach(docSnap => {
                         const data = docSnap.data();
                         // Get UID from path: users/{uid}/wallet_transactions/{txId}
                         const pathSegments = docSnap.ref.path.split('/');
                         const customerUid = pathSegments[pathSegments.length - 3];
                         
+                        const rawType = (data.type || '').toLowerCase();
+                        // 🟢 Wallet INFLOW (earn): refund, deposit, topup, withdrawal_rejected, reversal
+                        // 🔴 Wallet OUTFLOW (spend): spend, withdrawal, withdrawal_request, withdrawal_completed, payment
+                        const isEarn = rawType === 'refund' || rawType === 'deposit' || rawType === 'topup' || rawType === 'withdrawal_rejected' || rawType === 'reversal';
+
                         combinedTx.push({
                             id: docSnap.id,
                             source: 'wallet',
-                            type: data.type?.toLowerCase() === 'refund' || data.type?.toLowerCase() === 'deposit' ? 'earn' : 'spend',
-                            amount: data.amount,
-                            balanceAfter: data.balanceAfter || null,
+                            type: isEarn ? 'earn' : 'spend',
+                            rawType: data.type,
+                            amount: Math.abs(Number(data.amount || 0)),
+                            balanceAfter: data.balanceAfter !== undefined && data.balanceAfter !== null ? Number(data.balanceAfter) : null,
                             referenceId: data.transactionId,
                             note: data.note,
                             actor: data.operatorUid || 'System',
-                            timestamp: data.timestamp?.toDate() || new Date(),
+                            timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : (data.timestamp ? new Date(data.timestamp) : new Date()),
                             customerUid: customerUid,
                             customerName: 'Loading...' // Will fetch below if needed, or omit to save reads
                         });
                     });
                 } catch (idxError) {
                     console.error("Index missing for collectionGroup wallet_transactions", idxError);
-                    setError("ระบบกำลังรอการสร้าง Index สำหรับดึงประวัติ Wallet (สามารถคลิกลิงก์ใน Console เพื่อสร้างได้)");
+                    setError("ระบบกำลังรอการสร้าง Index หรือมีข้อผิดพลาดในการดึงประวัติ Wallet: " + idxError.message);
                 }
 
                 // Sort combined
