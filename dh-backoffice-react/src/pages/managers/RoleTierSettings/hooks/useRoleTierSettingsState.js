@@ -4,6 +4,91 @@ import { db } from '../../../../firebase/config';
 import toast from 'react-hot-toast';
 import { historyService } from '../../../../firebase/historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { settingsService } from '../../../../firebase/settingsService';
+import { setCachedTiers } from '../../../../firebase/credit/creditFormatService';
+
+/**
+ * 🛡️ Validation Schema & Integrity Rules for Role & Tier Configuration
+ */
+export const validateRoleTierConfig = (config) => {
+  if (!config || typeof config !== 'object') {
+    return { isValid: false, message: 'ข้อมูลการตั้งค่าไม่ถูกต้อง' };
+  }
+
+  // 1. Roles validation
+  if (!Array.isArray(config.roles) || config.roles.length === 0) {
+    return { isValid: false, message: 'ต้องมี Role อย่างน้อย 1 รายการ' };
+  }
+
+  const roleLevels = new Set();
+  const roleIds = new Set();
+  const validPriceTiers = ['retail', 'wholesale', 'partner', 'enterprise'];
+
+  for (let i = 0; i < config.roles.length; i++) {
+    const role = config.roles[i];
+    if (!role.name || !role.name.trim()) {
+      return { isValid: false, message: `Role ลำดับที่ ${i + 1} ต้องมีชื่อระบุ` };
+    }
+    if (!role.id || !role.id.trim()) {
+      return { isValid: false, message: `Role "${role.name}" ต้องมีรหัส ID` };
+    }
+    if (roleIds.has(role.id)) {
+      return { isValid: false, message: `พบ Role ID ซ้ำกัน: "${role.id}"` };
+    }
+    roleIds.add(role.id);
+
+    const level = Number(role.level);
+    if (!Number.isInteger(level) || level <= 0) {
+      return { isValid: false, message: `Role "${role.name}" มีระดับ Level ไม่ถูกต้อง (ต้องเป็นเลขจำนวนเต็มบวก)` };
+    }
+    if (roleLevels.has(level)) {
+      return { isValid: false, message: `พบระดับ Level ซ้ำกัน: Level ${level}` };
+    }
+    roleLevels.add(level);
+
+    if (role.defaultPriceTier && !validPriceTiers.includes(role.defaultPriceTier)) {
+      return { isValid: false, message: `Role "${role.name}" มีระดับราคาไม่ถูกต้อง (${role.defaultPriceTier})` };
+    }
+  }
+
+  // 2. Tiers validation
+  if (!Array.isArray(config.tiers) || config.tiers.length === 0) {
+    return { isValid: false, message: 'ต้องมี Tier อย่างน้อย 1 รายการ' };
+  }
+
+  const tierIds = new Set();
+  let prevPoints = -1;
+
+  for (let i = 0; i < config.tiers.length; i++) {
+    const tier = config.tiers[i];
+    if (!tier.name || !tier.name.trim()) {
+      return { isValid: false, message: `Tier ลำดับที่ ${i + 1} ต้องมีชื่อระบุ` };
+    }
+    if (!tier.id || !tier.id.trim()) {
+      return { isValid: false, message: `Tier "${tier.name}" ต้องมีรหัส ID` };
+    }
+    if (tierIds.has(tier.id)) {
+      return { isValid: false, message: `พบ Tier ID ซ้ำกัน: "${tier.id}"` };
+    }
+    tierIds.add(tier.id);
+
+    const points = Number(tier.minPoints);
+    if (isNaN(points) || points < 0) {
+      return { isValid: false, message: `Tier "${tier.name}" แต้มสะสมขั้นต่ำต้องไม่ติดลบ` };
+    }
+    if (points <= prevPoints && i > 0) {
+      return { isValid: false, message: `แต้มสะสมขั้นต่ำของ Tier "${tier.name}" (${points}) ต้องมากกว่าระดับก่อนหน้า (${prevPoints})` };
+    }
+    prevPoints = points;
+
+    const multiplier = Number(tier.multiplier);
+    if (isNaN(multiplier) || multiplier < 1.0) {
+      return { isValid: false, message: `Tier "${tier.name}" ต้องมีตัวคูณแต้ม (Multiplier) ตั้งแต่ 1.0 ขึ้นไป` };
+    }
+  }
+
+  return { isValid: true };
+};
 
 export const DEFAULT_ROLE_TIER_SETTINGS = {
   roles: [
@@ -53,10 +138,25 @@ export const useRoleTierSettingsState = () => {
   }, [fetchSettings]);
 
   const saveSettings = async (newSettings) => {
+    // 🛡️ Data Integrity Check before writing to Firestore
+    const validation = validateRoleTierConfig(newSettings);
+    if (!validation.isValid) {
+      toast.error(validation.message);
+      return false;
+    }
+
     try {
       const docRef = doc(db, getCollectionPath('settings'), 'role_tier_config');
       await setDoc(docRef, { ...newSettings, updatedAt: serverTimestamp() }, { merge: true });
       setSettings(newSettings);
+
+      // Invalidate and sync memory caches immediately
+      if (settingsService.clearRoleTierCache) {
+        settingsService.clearRoleTierCache();
+      }
+      if (Array.isArray(newSettings.tiers)) {
+        setCachedTiers(newSettings.tiers);
+      }
 
       historyService.addLog({
         module: 'SECURITY',

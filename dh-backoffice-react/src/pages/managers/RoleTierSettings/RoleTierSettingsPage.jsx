@@ -148,6 +148,11 @@ function RoleTierForm({ initialSettings, onSave }) {
 
   const handleRemoveRole = (idx) => {
     if (formData.roles.length <= 1) return;
+    const targetRole = formData.roles[idx];
+    if (['member', 'wholesale'].includes(targetRole?.id)) {
+      const confirmed = window.confirm(`⚠️ คำเตือน: Role "${targetRole?.name}" เป็น Role พื้นฐานสำคัญของระบบ (ใช้กำหนดราคาเริ่มต้นใน POS/CRM)\n\nคุณแน่ใจหรือไม่ว่าต้องการลบ Role นี้?`);
+      if (!confirmed) return;
+    }
     const filtered = formData.roles.filter((_, i) => i !== idx).map((r, i) => ({ ...r, level: i + 1 }));
     setFormData((prev) => ({ ...prev, roles: filtered }));
   };
@@ -172,6 +177,11 @@ function RoleTierForm({ initialSettings, onSave }) {
 
   const handleRemoveTier = (idx) => {
     if (formData.tiers.length <= 1) return;
+    const targetTier = formData.tiers[idx];
+    if (targetTier?.id === 'member' || targetTier?.minPoints === 0) {
+      const confirmed = window.confirm(`⚠️ คำเตือน: Tier "${targetTier?.name}" เป็นระดับแต้มเริ่มต้นของระบบ (0 แต้ม)\n\nคุณแน่ใจหรือไม่ว่าต้องการลบ Tier นี้?`);
+      if (!confirmed) return;
+    }
     const filtered = formData.tiers.filter((_, i) => i !== idx);
     setFormData((prev) => ({ ...prev, tiers: filtered }));
   };

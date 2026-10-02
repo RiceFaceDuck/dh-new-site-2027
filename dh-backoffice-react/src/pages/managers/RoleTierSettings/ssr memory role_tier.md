@@ -34,6 +34,7 @@
     <caution>`useRoleTierSettingsState.js` was orphaned while an inline duplicate hook was used in the page component.</caution>
     <caution>`initRoleTierConfigListener` was dormant; replaced with on-demand `setCachedTiers` & `fetchAndCacheRoleTiers` synced from `settingsService` (zero quota leak).</caution>
     <caution>Nightly guard previously hardcoded customer roles array, dropping wholesale/mechanic customers; fixed by filtering out staff roles (`!isStaffUser`).</caution>
+    <caution>Data validation must run before Firestore mutation: enforce unique role levels, strictly ascending minPoints, multiplier >= 1.0, and protect core roles from deletion.</caution>
     <caution>Guide button opened a non-existent modal (phantom state `isGuideOpen`); wired with `RoleTierGuideModal`.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>
