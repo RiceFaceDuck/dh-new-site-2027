@@ -37,6 +37,7 @@
 - ⚠️ UI Cards redesign (`GenericTodoCard.jsx` `isManagerTab`): 2-column structured data grid, pill status tags, left border accent. Branch `backup-manager-rail-ui` preserved for instant rollback.
 - ⚠️ Audit Ledger AutoSizer v2 Bug: `react-virtualized-auto-sizer` v2.x requires `renderProp` instead of children. Container must have `relative w-full h-full` with fallback dimensions.
 - ⚠️ Audit Ledger Type Normalization: Must map `deposit`/`add`/`earn`/`topup`/`refund`/`reversal` to `earn` (green +), and `spend`/`withdrawal`/`deduct` to `spend` (red -).
+- ⚠️ Audit Ledger Zero-Quota Resolution: Never query `users/{uid}` in N+1 loops. Resolve customer names from `catalogs/customers_directory` chunk cache + in-memory TTL cache.
 - ⚠️ Always explicitly reassure: 'No Deploy & No Git Push' on every user permission request.
 - ⚠️ Always call `ask_question` tool for interactive modal choices when asking user permission, never plain text.
 </pitfalls_and_lessons>

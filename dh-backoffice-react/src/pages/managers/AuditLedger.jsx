@@ -1,11 +1,11 @@
-import { BookOpen, AlertTriangle, Wallet, Coins, Clock, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { BookOpen, AlertTriangle, Wallet, Coins, Clock, ArrowDownRight, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { FixedSizeList as List } from 'react-window';
 import { AutoSizer } from 'react-virtualized-auto-sizer';
 import GuidePanel from '../../components/common/GuidePanel';
 import { useAuditLedger } from './hooks/useAuditLedger';
 
 export default function AuditLedger() {
-    const { transactions, isLoading, error } = useAuditLedger();
+    const { transactions, isLoading, error, refreshLedger } = useAuditLedger();
 
     return (
         <div className="p-6 max-w-7xl mx-auto min-h-screen">
@@ -16,7 +16,17 @@ export default function AuditLedger() {
                         <BookOpen size={24} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Audit Ledger</h1>
+                        <div className="flex items-center gap-2.5">
+                            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Audit Ledger</h1>
+                            <button
+                                onClick={refreshLedger}
+                                disabled={isLoading}
+                                title="รีเฟรชข้อมูลล่าสุด"
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                                <RefreshCw size={16} className={isLoading ? "animate-spin text-indigo-600" : ""} />
+                            </button>
+                        </div>
                         <p className="text-slate-500 font-medium mt-1">สมุดบัญชีแยกประเภท: ตรวจสอบการไหลของแต้มและเงิน (System-wide)</p>
                     </div>
                 </div>
