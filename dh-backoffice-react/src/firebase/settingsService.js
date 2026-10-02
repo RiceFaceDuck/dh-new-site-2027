@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from './config.js';
 import { historyService } from './historyService.js';
 import { getCollectionPath } from 'dh-shared';
+import { setCachedTiers } from './credit/creditFormatService.js';
 
 const SETTINGS_DOC = 'platform_links';
 const MARKETING_DOC = 'marketing'; // 🎯 อ้างอิงเอกสารสำหรับการตั้งค่าการตลาดโฆษณา
@@ -208,6 +209,9 @@ export const settingsService = {
         cachedRoleTierConfig = { ...DEFAULT_ROLE_TIER_SETTINGS, ...snap.data() };
       } else {
         cachedRoleTierConfig = DEFAULT_ROLE_TIER_SETTINGS;
+      }
+      if (cachedRoleTierConfig?.tiers) {
+        setCachedTiers(cachedRoleTierConfig.tiers);
       }
       lastRoleTierFetch = now;
       return cachedRoleTierConfig;

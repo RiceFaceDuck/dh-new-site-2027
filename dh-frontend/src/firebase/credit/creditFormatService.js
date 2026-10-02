@@ -1,4 +1,4 @@
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -6,6 +6,28 @@ let cachedTiers = null;
 let isSubscribed = false;
 
 let unsubscribe = null;
+
+export const setCachedTiers = (tiers) => {
+  if (Array.isArray(tiers) && tiers.length > 0) {
+    cachedTiers = tiers;
+  }
+};
+
+export const getCachedTiers = () => cachedTiers;
+
+export const fetchAndCacheRoleTiers = async () => {
+  if (cachedTiers) return cachedTiers;
+  try {
+    const docRef = doc(db, getCollectionPath('settings'), 'role_tier_config');
+    const snap = await getDoc(docRef);
+    if (snap.exists() && snap.data()?.tiers) {
+      cachedTiers = snap.data().tiers;
+    }
+  } catch (err) {
+    console.warn("Could not fetch and cache role tiers in frontend:", err);
+  }
+  return cachedTiers;
+};
 
 export const initRoleTierConfigListener = () => {
   if (isSubscribed) return;

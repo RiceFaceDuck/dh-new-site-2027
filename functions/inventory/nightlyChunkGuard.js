@@ -144,9 +144,11 @@ const rebuildAllChunksLogic = async (db) => {
     const customerList = [];
 
     usersSnap.forEach(docSnap => {
-      const data = docSnap.data();
-      const role = String(data.role || 'Customer').toLowerCase();
-      if (['customer', 'member', 'partner', 'vip'].includes(role) || !data.role) {
+      const roleLower = String(data.role || 'Customer').toLowerCase();
+      const staffRoles = ['admin', 'manager', 'owner', 'staff', 'packer', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน', 'พนักงานทั่วไป', 'พนักงานแพ็ค', 'บัญชี'];
+      const isStaffUser = staffRoles.includes(roleLower) || staffRoles.includes(data.role);
+
+      if (!isStaffUser && data.status !== 'deleted' && data.isActive !== false) {
         const resolvedName = data.displayName || data.storeName || data.name || data.accountName || 'ลูกค้าทั่วไป';
         const resolvedPhone = data.phone || data.phoneNumber || '-';
         const resolvedAccountId = data.accountId || data.customerCode || docSnap.id.substring(0, 8).toUpperCase();

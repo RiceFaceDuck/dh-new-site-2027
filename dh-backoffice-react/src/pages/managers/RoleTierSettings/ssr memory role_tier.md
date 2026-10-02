@@ -32,7 +32,8 @@
   <pitfalls_and_lessons>
     <caution>Legacy file extraction corrupted Thai strings in RoleTierSettingsPage.jsx to ANSI mojibake. Must restore UTF-8 text cleanly.</caution>
     <caution>`useRoleTierSettingsState.js` was orphaned while an inline duplicate hook was used in the page component.</caution>
-    <caution>`initRoleTierConfigListener` was never called in the app, leaving `cachedTiers` permanently null and forcing hardcoded tier fallbacks.</caution>
-    <caution>Guide button opened a non-existent modal (phantom state `isGuideOpen`).</caution>
+    <caution>`initRoleTierConfigListener` was dormant; replaced with on-demand `setCachedTiers` & `fetchAndCacheRoleTiers` synced from `settingsService` (zero quota leak).</caution>
+    <caution>Nightly guard previously hardcoded customer roles array, dropping wholesale/mechanic customers; fixed by filtering out staff roles (`!isStaffUser`).</caution>
+    <caution>Guide button opened a non-existent modal (phantom state `isGuideOpen`); wired with `RoleTierGuideModal`.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>
