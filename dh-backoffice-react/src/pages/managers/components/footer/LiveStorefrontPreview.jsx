@@ -1,4 +1,3 @@
-import React from 'react';
 import { Eye, ChevronRight, MapPin, MessageCircle, Phone, Clock } from 'lucide-react';
 
 const BADGE_IMAGES = {
@@ -68,7 +67,7 @@ export default function LiveStorefrontPreview({ footerConfig }) {
             <div className="bg-slate-900 px-5 py-3 border-b border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 text-white text-xs font-bold">
                     <Eye size={16} className="text-sky-400" />
-                    <span>ภาพจำลองการแสดงผลหน้าบ้านจริง (Live Storefront Preview)</span>
+                    <span>ภาพจำลองการแสดงผลหน้าร้านจริง (Live Storefront Preview)</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">

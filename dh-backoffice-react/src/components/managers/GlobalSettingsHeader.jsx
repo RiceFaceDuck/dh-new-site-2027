@@ -7,7 +7,8 @@ export default function GlobalSettingsHeader({
     icon: Icon = ShieldAlert,
     onSave, 
     isSaving,
-    showSaveButton = true
+    showSaveButton = true,
+    titleExtra = null
 }) {
     const navigate = useNavigate();
 
@@ -22,10 +23,13 @@ export default function GlobalSettingsHeader({
                     <ArrowLeft size={18} strokeWidth={2.5} />
                 </button>
                 <div>
-                    <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                        <Icon size={24} className="text-blue-600" />
-                        {title}
-                    </h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                            <Icon size={24} className="text-blue-600" />
+                            {title}
+                        </h2>
+                        {titleExtra}
+                    </div>
                     <p className="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
                         {subtitle}
                     </p>
