@@ -25,8 +25,10 @@
   </cross_impact>
 
   <pitfalls_and_lessons>
-    - ⚠️ ALWAYS apply query limits (limit(10) on triggers, limit(100) on completions) to avoid Firestore quota exhaustion.
-    - ⚠️ Category normalization (normalizeCategoryName) is strictly required to prevent duplicate casing or Thai/English synonyms.
+    - ⚠️ Expand normalizeCategoryName dictionary (Speaker, Fan, Cable, Hinge) to prevent duplicate cards (e.g. SPEAKER vs ลำโพง).
+    - ⚠️ Consumer components must use normalized category resolution to prevent Thai categories dropping to 30-day default.
+    - ⚠️ Beware of double logging: useWarrantyManager.js and warrantyService.js both logged to historyService.
+    - ⚠️ autoSyncCategories concurrent trigger risks quota spikes and race conditions; use batch verification.
     - ⚠️ Zero deployment rule enforced: all changes remain strictly local.
   </pitfalls_and_lessons>
 </ssr_local_grimoire>

@@ -97,12 +97,57 @@ describe('warrantyService.getWarrantySettings', () => {
     expect(normalizeCategoryName('screen')).toBe('Panel');
     expect(normalizeCategoryName('Screen')).toBe('Panel');
     expect(normalizeCategoryName('PANEL')).toBe('Panel');
+    expect(normalizeCategoryName('หน้าจอ')).toBe('Panel');
     expect(normalizeCategoryName('other')).toBe('General');
     expect(normalizeCategoryName('OTHER')).toBe('General');
     expect(normalizeCategoryName('charger')).toBe('Adapter');
     expect(normalizeCategoryName('คีย์บอร์ด')).toBe('Keyboard');
     expect(normalizeCategoryName('แบตเตอรี่')).toBe('Battery');
-    expect(normalizeCategoryName('ram')).toBe('ram');
+    expect(normalizeCategoryName('speaker')).toBe('Speaker');
+    expect(normalizeCategoryName('SPEAKER')).toBe('Speaker');
+    expect(normalizeCategoryName('ลำโพง')).toBe('Speaker');
+    expect(normalizeCategoryName('fan')).toBe('Fan');
+    expect(normalizeCategoryName('พัดลม')).toBe('Fan');
+    expect(normalizeCategoryName('cable')).toBe('Cable');
+    expect(normalizeCategoryName('สายไฟ')).toBe('Cable');
+    expect(normalizeCategoryName('สายแพ')).toBe('Cable');
+    expect(normalizeCategoryName('hinge')).toBe('Hinge');
+    expect(normalizeCategoryName('บานพับ')).toBe('Hinge');
+    expect(normalizeCategoryName('cooling')).toBe('Cooling');
+    expect(normalizeCategoryName('ฮีตซิงค์')).toBe('Cooling');
+    expect(normalizeCategoryName('switching')).toBe('Switching');
+    expect(normalizeCategoryName('สวิตชิ่ง')).toBe('Switching');
+    expect(normalizeCategoryName('ram')).toBe('RAM');
+    expect(normalizeCategoryName('แรม')).toBe('RAM');
     expect(normalizeCategoryName('SSD')).toBe('SSD');
+    expect(normalizeCategoryName('เอสเอสดี')).toBe('SSD');
+    expect(normalizeCategoryName('mainboard')).toBe('Mainboard');
+    expect(normalizeCategoryName('เมนบอร์ด')).toBe('Mainboard');
+    expect(normalizeCategoryName('cpu')).toBe('CPU');
+    expect(normalizeCategoryName('ซีพียู')).toBe('CPU');
+  });
+
+  it('deduplicates and merges synonyms correctly without overwriting customized values', async () => {
+    const mockData = {
+      categories: {
+        'SPEAKER': { claimDays: 7, returnDays: 7 },
+        'ลำโพง': { claimDays: 30, returnDays: 7 } // Default synonym duplicate
+      },
+      skus: {}
+    };
+
+    state.getDocImpl = vi.fn(async () => ({
+      exists: () => true,
+      data: () => mockData
+    }));
+
+    const result = await warrantyService.getWarrantySettings(true);
+
+    // Both should merge into 'Speaker' with the custom 7 days, NOT 30 days
+    expect(result.categories['Speaker']).toBeDefined();
+    expect(result.categories['Speaker'].claimDays).toBe(7);
+    expect(result.categories['Speaker'].returnDays).toBe(7);
+    expect(result.categories['SPEAKER']).toBeUndefined();
+    expect(result.categories['ลำโพง']).toBeUndefined();
   });
 });

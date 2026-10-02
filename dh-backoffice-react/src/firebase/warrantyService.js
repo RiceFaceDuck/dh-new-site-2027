@@ -14,11 +14,31 @@ export function normalizeCategoryName(catName) {
   const lower = clean.toLowerCase();
   if (!clean) return 'General';
 
-  if (['panel', 'screen', 'display', 'หน้าจอ', 'จอคอม', 'จอ'].includes(lower)) return 'Panel';
-  if (['keyboard', 'คีย์บอร์ด'].includes(lower)) return 'Keyboard';
+  // 1. Core Hardware Types & Thai Synonyms
+  if (['panel', 'screen', 'display', 'หน้าจอ', 'จอคอม', 'จอ', 'แผงจอ', 'จอภาพ'].includes(lower)) return 'Panel';
+  if (['keyboard', 'คีย์บอร์ด', 'แป้นพิมพ์'].includes(lower)) return 'Keyboard';
   if (['battery', 'แบตเตอรี่', 'แบต'].includes(lower)) return 'Battery';
-  if (['adapter', 'charger', 'อแดปเตอร์', 'อะแดปเตอร์', 'สายชาร์จ'].includes(lower)) return 'Adapter';
+  if (['adapter', 'charger', 'อแดปเตอร์', 'อะแดปเตอร์', 'สายชาร์จ', 'หัวชาร์จ'].includes(lower)) return 'Adapter';
+  if (['speaker', 'speakers', 'ลำโพง', 'สปีกเกอร์'].includes(lower)) return 'Speaker';
+  if (['fan', 'พัดลม', 'พัดลมระบายความร้อน'].includes(lower)) return 'Fan';
+  if (['cooling', 'heatsink', 'heat pipe', 'ชุดระบายความร้อน', 'ฮีตซิงค์', 'ซิงค์'].includes(lower)) return 'Cooling';
+  if (['cable', 'flex cable', 'สายไฟ', 'สายแพ', 'สายสัญญาณ', 'สายต่อ'].includes(lower)) return 'Cable';
+  if (['hinge', 'บานพับ', 'ข้อพับ'].includes(lower)) return 'Hinge';
+  if (['switching', 'power supply', 'สวิตชิ่ง', 'พาวเวอร์ซัพพลาย'].includes(lower)) return 'Switching';
+  
+  // 2. Acronyms & Components
+  if (['ram', 'memory', 'แรม'].includes(lower)) return 'RAM';
+  if (['ssd', 'hdd', 'harddisk', 'hard disk', 'เอสเอสดี', 'ฮาร์ดดิสก์'].includes(lower)) return 'SSD';
+  if (['mainboard', 'motherboard', 'เมนบอร์ด', 'มาเธอร์บอร์ด'].includes(lower)) return 'Mainboard';
+  if (['cpu', 'processor', 'ซีพียู'].includes(lower)) return 'CPU';
+  if (['case', 'housing', 'top case', 'bottom case', 'เคส', 'ฝาหลัง', 'บอดี้'].includes(lower)) return 'Case';
+
   if (['general', 'other', 'misc', 'miscellaneous', 'อื่นๆ', 'ทั่วไป'].includes(lower)) return 'General';
+
+  // 3. Fallback for unlisted names: Canonical TitleCase formatting for Latin words
+  if (/^[a-zA-Z]/.test(clean)) {
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
 
   return clean;
 }
@@ -67,14 +87,29 @@ export const warrantyService = {
         mergedCategories[normKey] = { ...val, isUnconfigured: false };
       });
 
-      // 🔍 2. รวมกับข้อมูลที่เคยบันทึกไว้ใน Firestore
+      // 🔍 2. รวมกับข้อมูลที่เคยบันทึกไว้ใน Firestore (พร้อม Deduplication & Smart Merging)
       Object.entries(savedCategories).forEach(([catKey, val]) => {
         const normKey = normalizeCategoryName(catKey);
-        mergedCategories[normKey] = {
-          claimDays: val.claimDays ?? 30,
-          returnDays: val.returnDays ?? 7,
-          isUnconfigured: false
-        };
+        const existing = mergedCategories[normKey];
+        const claimDays = val.claimDays ?? 30;
+        const returnDays = val.returnDays ?? 7;
+
+        if (!existing || existing.isUnconfigured) {
+          mergedCategories[normKey] = {
+            claimDays,
+            returnDays,
+            isUnconfigured: false
+          };
+        } else {
+          // หากมีค่าอยู่แล้ว และรายการนี้ได้รับการตั้งค่าพิเศษ (ไม่ใช่ default 30/7) ให้อัปเดต
+          if (claimDays !== 30 || returnDays !== 7) {
+            mergedCategories[normKey] = {
+              claimDays,
+              returnDays,
+              isUnconfigured: false
+            };
+          }
+        }
       });
 
       // 🔍 3. ตรวจสอบหมวดสินค้าที่มีจริงใน /settings/product_categories
