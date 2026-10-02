@@ -1,50 +1,24 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './config';
-
 import { safeJsonParse } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { CANONICAL_DEFAULT_FOOTER_CONFIG } from 'dh-shared';
+
 const FOOTER_DOC = 'footer_config';
+const STOREFRONT_DOC = 'storefront_config';
 const CACHE_KEY = 'dh_footer_config_cache';
 const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 ชั่วโมง
 
-const DEFAULT_FOOTER_CONFIG = {
-  colors: {
-    bgDark: 'slate-900',
-    textMuted: 'slate-400',
-    primaryAccent: 'cyber-blue'
-  },
-  company: {
-    logoUrl: '/logo.png',
-    description: 'ผู้นำเข้าและจัดจำหน่ายอะไหล่โน๊ตบุ๊คครบวงจร พร้อมเครือข่ายช่างพันธมิตรทั่วประเทศ ที่พร้อมให้บริการคุณด้วยระบบปฏิบัติการอัจฉริยะ',
-    address: 'ศูนย์การค้าเซียร์รังสิต ชั้น 3 ห้อง xxx ถ.พหลโยธิน จ.ปทุมธานี 12130',
-    lineId: '@dhnotebook',
-    lineAddFriendUrl: 'https://line.me/ti/p/~@dhnotebook',
-    phone: '02-xxx-xxxx'
-  },
-  quickLinks: [
-    { id: 'q1', label: 'อะไหล่ภายใน', url: '/categories/inside' },
-    { id: 'q2', label: 'อุปกรณ์ภายนอก', url: '/categories/outside' },
-    { id: 'q3', label: 'เครื่องมือช่าง', url: '/categories/tools' },
-    { id: 'q4', label: 'โปรโมชั่นพาร์ทเนอร์', url: '/promotions' }
-  ],
-  supportLinks: [
-    { id: 's1', label: 'คู่มือการใช้งานระบบ', url: '/help/manual' },
-    { id: 's2', label: 'เงื่อนไขการรับประกัน (Claim)', url: '/help/warranty' },
-    { id: 's3', label: 'สมัครตัวแทนจำหน่าย', url: '/register/partner' },
-    { id: 's4', label: 'ติดตามสถานะคำสั่งซื้อ', url: '/tracking' }
-  ]
-};
-
 export const footerClientService = {
   getFooterConfig: async () => {
-    // 1. ลองอ่านจาก Session Storage ก่อน (ช่วยประหยัด Read มหาศาล)
+    // 1. อ่านจาก Session Storage ก่อน เพื่อประหยัด Quota Read
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
         const parsedCache = safeJsonParse(cached);
-        const isExpired = Date.now() - parsedCache.timestamp > CACHE_EXPIRY_MS;
+        const isExpired = Date.now() - parsedCache?.timestamp > CACHE_EXPIRY_MS;
         
-        if (!isExpired) {
+        if (!isExpired && parsedCache?.data) {
           return parsedCache.data;
         }
       }
@@ -52,14 +26,26 @@ export const footerClientService = {
       console.warn("Failed to read footer cache:", e);
     }
 
-    // 2. ถ้าไม่มี Cache หรือ Cache หมดอายุ ให้ดึงจาก Firebase
+    // 2. ถ้าไม่มี Cache หรือ Cache หมดอายุ ให้ดึงจาก Firestore (Dual-Source Parity)
     try {
-      const docRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
-      const snap = await getDoc(docRef);
-      let configData = DEFAULT_FOOTER_CONFIG;
-      
-      if (snap.exists()) {
-        configData = { ...DEFAULT_FOOTER_CONFIG, ...snap.data() };
+      let configData = null;
+
+      // อ่านจาก storefront_config.footer ก่อนเพื่อให้ได้ข้อมูลล่าสุดตรงกับระบบรวมศูนย์
+      const storefrontRef = doc(db, getCollectionPath('settings'), STOREFRONT_DOC);
+      const storefrontSnap = await getDoc(storefrontRef);
+      if (storefrontSnap.exists() && storefrontSnap.data()?.footer) {
+        configData = { ...CANONICAL_DEFAULT_FOOTER_CONFIG, ...storefrontSnap.data().footer };
+      } else {
+        // Fallback ไปยัง footer_config doc
+        const footerRef = doc(db, getCollectionPath('settings'), FOOTER_DOC);
+        const footerSnap = await getDoc(footerRef);
+        if (footerSnap.exists()) {
+          configData = { ...CANONICAL_DEFAULT_FOOTER_CONFIG, ...footerSnap.data() };
+        }
+      }
+
+      if (!configData) {
+        configData = CANONICAL_DEFAULT_FOOTER_CONFIG;
       }
 
       // 3. เซฟลง Cache เพื่อใช้ในครั้งต่อไป
@@ -75,7 +61,7 @@ export const footerClientService = {
       return configData;
     } catch (error) {
       console.error("🔥 Error fetching footer config:", error);
-      return DEFAULT_FOOTER_CONFIG;
+      return CANONICAL_DEFAULT_FOOTER_CONFIG;
     }
   }
 };
