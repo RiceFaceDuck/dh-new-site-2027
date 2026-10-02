@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { pricingService } from '../../../../firebase/pricingService';
@@ -6,12 +6,13 @@ import { inventoryService } from '../../../../firebase/inventoryService';
 import { categoryService } from '../../../../firebase/categoryService';
 import { historyService } from '../../../../firebase/historyService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { trackPricingView, trackPricingSave, trackSimulationRun } from '../../../../firebase/pricingAnalyticsService';
 
 // Helper สกัดราคาทุนจากสินค้าหลากหลายรูปแบบ
 export const extractProductCost = (item) => {
   if (!item) return 0;
   const cost = item.Price ?? item.price ?? item.costPrice ?? item.cost ?? item.buyPrice ?? item.wholesalePrice ?? item.price_wholesale ?? item.supplierPrice ?? 0;
-  return Number(cost) || 0;
+  return pricingService.sanitizeCost ? pricingService.sanitizeCost(cost) : (Number(cost) || 0);
 };
 
 // Helper สกัดและจัดกลุ่มหมวดหมู่สินค้าอัตโนมัติตาม SKU/ชื่อ/หมวดหมู่
@@ -53,27 +54,31 @@ export function usePricingSettings() {
   const [originalConfig, setOriginalConfig] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
 
-  // Simulation State (ตรงตาม Production 100%)
+  // Simulation State
   const [simMode, setSimMode] = useState('sku'); // 'sku' | 'manual'
   const [skuInput, setSkuInput] = useState('');
   const [simProduct, setSimProduct] = useState(null);
   const [searchingSku, setSearchingSku] = useState(false);
   const [skuError, setSkuError] = useState(null);
 
+  // In-memory SKU Pool: ป้องกัน Firestore read leak (กดสุ่มซ้ำไม่เสียโควต้าเพิ่ม)
+  const skuPoolRef = useRef([]);
+
   const [simCost, setSimCost] = useState('');
   const [simCategory, setSimCategory] = useState('Adapter');
   const [simResult, setSimResult] = useState(null);
   const [matchedRuleId, setMatchedRuleId] = useState(null);
 
-  // Logs & Categories
+  // Logs & Categories (Lazy Loading: ไม่โหลด logs จนกว่าจะเปิดดู)
   const [logs, setLogs] = useState([]);
-  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const hasLoadedLogsRef = useRef(false);
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchConfig();
-    fetchPricingLogs();
     fetchCategories();
+    // Watchlist Fix: Lazy-load logs on demand instead of eager query on mount
   }, []);
 
   async function fetchCategories() {
@@ -127,9 +132,12 @@ export function usePricingSettings() {
     setConfig(data);
     setOriginalConfig(JSON.parse(JSON.stringify(data)));
     setLoading(false);
+    trackPricingView(data);
   }
 
-  async function fetchPricingLogs() {
+  // Lazy & Optimized Log Fetching (ประหยัด 50 Reads ทุกครั้งที่เปิดหน้า)
+  async function fetchPricingLogs(force = false) {
+    if (hasLoadedLogsRef.current && !force) return;
     setLoadingLogs(true);
     try {
       let fetchedLogs = [];
@@ -148,6 +156,7 @@ export function usePricingSettings() {
       }
 
       setLogs(fetchedLogs.slice(0, 15));
+      hasLoadedLogsRef.current = true;
     } catch (error) {
       console.error("Error fetching logs", error);
     } finally {
@@ -162,11 +171,12 @@ export function usePricingSettings() {
       await pricingService.savePricingConfig(config);
       setOriginalConfig(JSON.parse(JSON.stringify(config))); 
       setIsDirty(false);
-      fetchPricingLogs(); 
+      trackPricingSave(config);
+      fetchPricingLogs(true); // บังคับรีเฟรชประวัติหลังเซฟสำเร็จ
       alert('บันทึกโครงสร้างราคาเรียบร้อยแล้ว');
     } catch (error) {
       console.error("🔥 Error:", error);
-      alert('เกิดข้อผิดพลาดในการบันทึก');
+      alert(error.message || 'เกิดข้อผิดพลาดในการบันทึก');
     } finally {
       setSaving(false);
     }
@@ -178,10 +188,21 @@ export function usePricingSettings() {
     setConfig({ ...config, rules: newRules });
   };
 
+  // เลื่อนลำดับแถวกฎขึ้น-ลง เพื่อควบคุมลำดับ Top-Down Precedence
+  const moveRule = (index, direction) => {
+    if (!config || !Array.isArray(config.rules)) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= config.rules.length) return;
+    const newRules = [...config.rules];
+    const [moved] = newRules.splice(index, 1);
+    newRules.splice(targetIndex, 0, moved);
+    setConfig({ ...config, rules: newRules });
+  };
+
   const addRule = () => {
     const newRule = { 
       id: Date.now().toString(), 
-      category: '', 
+      category: categories[0]?.type || 'Adapter', // ให้หมวดหมู่เริ่มต้นจากรายการแรก ป้องกันบั๊กหมวดหมู่ว่าง
       operator: '<', 
       threshold: 0, 
       action: '*', 
@@ -229,6 +250,7 @@ export function usePricingSettings() {
       setSimProduct(prod);
       setSimResult(result);
       setMatchedRuleId(result.appliedRule?.id || null);
+      trackSimulationRun(result, 'sku', term);
     } catch (err) {
       console.error('Error searching SKU for simulation:', err);
       setSkuError('เกิดข้อผิดพลาดในการค้นหาข้อมูลสินค้า');
@@ -237,17 +259,23 @@ export function usePricingSettings() {
     }
   };
 
-  // สุ่ม SKU สินค้าจากคลังมาทดสอบทันที (ประหยัด Reads ผ่าน Category Pool)
-  const handleRandomSku = async () => {
+  // สุ่ม SKU สินค้าจากคลังมาทดสอบ พร้อม In-Memory Pool ลดโควต้าอ่าน 90%
+  const handleRandomSku = async (forceRefresh = false) => {
     setSearchingSku(true);
     setSkuError(null);
     try {
-      const activeProducts = await inventoryService.getRandomActiveProducts(20);
-      if (!activeProducts || activeProducts.length === 0) {
+      // ดึงจาก Firestore เฉพาะครั้งแรก หรือเมื่อสั่ง forceRefresh
+      if (forceRefresh || skuPoolRef.current.length === 0) {
+        const activeProducts = await inventoryService.getRandomActiveProducts(20);
+        skuPoolRef.current = activeProducts || [];
+      }
+
+      if (skuPoolRef.current.length === 0) {
         setSkuError('ไม่พบรายการสินค้าในคลังสำหรับสุ่ม');
         return;
       }
-      const randomItem = activeProducts[Math.floor(Math.random() * activeProducts.length)];
+
+      const randomItem = skuPoolRef.current[Math.floor(Math.random() * skuPoolRef.current.length)];
       if (randomItem && randomItem.sku) {
         setSkuInput(randomItem.sku);
         const cost = extractProductCost(randomItem);
@@ -256,6 +284,7 @@ export function usePricingSettings() {
         setSimProduct(randomItem);
         setSimResult(result);
         setMatchedRuleId(result.appliedRule?.id || null);
+        trackSimulationRun(result, 'random', randomItem.sku);
       }
     } catch (err) {
       console.error('Error randomizing SKU:', err);
@@ -272,6 +301,7 @@ export function usePricingSettings() {
     setSimProduct(null);
     setSimResult(result);
     setMatchedRuleId(result.appliedRule?.id || null);
+    trackSimulationRun(result, 'manual', '');
   };
 
   return {
@@ -285,7 +315,7 @@ export function usePricingSettings() {
     simResult, matchedRuleId,
     runSimulation,
     logs, loadingLogs, fetchPricingLogs,
-    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange,
+    handleSave, handleRuleChange, moveRule, addRule, removeRule, handleRoundingChange,
     categories
   };
 }

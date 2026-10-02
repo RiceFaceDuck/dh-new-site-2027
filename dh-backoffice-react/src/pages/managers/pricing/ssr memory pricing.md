@@ -26,8 +26,11 @@
 
 <pitfalls_and_lessons>
 - ⚠️ DO NOT auto-sort `config.rules` on load or during save; doing so corrupts deliberate top-down rule ordering.
-- ⚠️ Ensure `SmartRoundingPolicy` remains full horizontal bar on the left column, not right rail.
-- ⚠️ Simulation dual modes (SKU vs Manual) must handle missing products gracefully without crashing.
+- ⚠️ Always sanitize comma in cost: `parseFloat("1,500") === 1` causes catastrophic price drops (loss of 1,410+ THB).
+- ⚠️ Beware empty category: a rule with empty category must NEVER act as an 'all' wildcard hijacking other categories.
+- ⚠️ Keep `normalizeCategory` centralized in `pricingService.js` (or `dh-shared`) to prevent desync.
+- ⚠️ Preserve custom retail prices in product form; `isAutoCalc` should not silently wipe manual prices.
+- ⚠️ Read quota: pool random SKU queries (20 items in memory) instead of querying per click.
 - ⚠️ Always preserve local backup before mutating pricing logic.
 </pitfalls_and_lessons>
 </grimoire>

@@ -1,29 +1,13 @@
 import { useMemo, useRef, useEffect } from 'react';
-import { Settings, Plus, Trash2, AlertTriangle, Sparkles } from 'lucide-react';
-
-// Helper ตรวจสอบและแปลงหมวดหมู่
-const normalizeCategory = (name) => {
-  if (!name || typeof name !== 'string') return 'General';
-  const clean = name.trim();
-  const lower = clean.toLowerCase();
-  if (!clean) return 'General';
-  if (['panel', 'screen', 'display', 'หน้าจอ', 'จอคอม', 'จอ'].some(e => lower === e || lower.includes(e))) return 'Panel';
-  if (['keyboard', 'คีย์บอร์ด'].some(e => lower === e || lower.includes(e))) return 'Keyboard';
-  if (['battery', 'แบตเตอรี่', 'แบต'].some(e => lower === e || lower.includes(e))) return 'Battery';
-  if (['adapter', 'charger', 'อแดปเตอร์', 'อะแดปเตอร์', 'สายชาร์จ'].some(e => lower === e || lower.includes(e))) return 'Adapter';
-  if (['speaker', 'ลำโพง', 'built in audio', 'audio', 'sound'].some(e => lower === e || lower.includes(e))) return 'Speaker';
-  if (['cooling fan', 'fan', 'พัดลม'].some(e => lower === e || lower.includes(e))) return 'FAN';
-  if (['cooling', 'ชุดระบายความร้อน', 'heatsink', 'ฮีตซิงค์'].some(e => lower === e || lower.includes(e))) return 'Cooling';
-  if (['cable', 'สายไฟ', 'สายแพ', 'สายสัญญาณ'].some(e => lower === e || lower.includes(e))) return 'Cable';
-  if (['hinge', 'บานพับ'].some(e => lower === e || lower.includes(e))) return 'Hinge';
-  return clean;
-};
+import { Settings, Plus, Trash2, AlertTriangle, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
+import { normalizeCategory } from 'dh-shared/src/utils/pricingEngine';
 
 export default function PricingRulesTable({ 
   config, 
   addRule, 
   removeRule, 
-  handleRuleChange, 
+  handleRuleChange,
+  moveRule,
   categories = [],
   matchedRuleId = null 
 }) {
@@ -89,16 +73,18 @@ export default function PricingRulesTable({
       
       {/* Rules Table */}
       <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative">
-        <table className="w-full text-left text-sm min-w-[700px] border-collapse">
+        <table className="w-full text-left text-sm min-w-[760px] border-collapse">
           <thead className="bg-(--dh-bg-surface) text-[10px] font-black text-(--dh-text-muted) uppercase tracking-widest sticky top-0 z-10 border-b-2 border-(--dh-border) shadow-xs">
             <tr>
-              <th className="px-4 py-3 w-40">หมวดหมู่</th>
+              <th className="px-2 py-3 text-center w-12">ลำดับ</th>
+              <th className="px-2 py-3 text-center w-16">สลับ</th>
+              <th className="px-3 py-3 w-44">หมวดหมู่</th>
               <th className="px-3 py-3 text-center w-24">สัญลักษณ์</th>
-              <th className="px-3 py-3 w-32">ราคาทุน</th>
-              <th className="px-3 py-3 text-center w-24">การกระทำ</th>
-              <th className="px-3 py-3 w-28">จำนวน</th>
-              <th className="px-3 py-3 text-center w-24">สถานะ</th>
-              <th className="px-4 py-3 text-right w-16">ลบ</th>
+              <th className="px-3 py-3 w-28">ราคาทุน</th>
+              <th className="px-3 py-3 text-center w-20">การกระทำ</th>
+              <th className="px-3 py-3 w-24">จำนวน</th>
+              <th className="px-3 py-3 text-center w-20">สถานะ</th>
+              <th className="px-4 py-3 text-right w-14">ลบ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-(--dh-border)">
@@ -114,7 +100,36 @@ export default function PricingRulesTable({
                       : 'hover:bg-(--dh-bg-base)'
                   }`}
                 >
-                  <td className="px-4 py-2.5 relative">
+                  {/* ลำดับ Top-Down */}
+                  <td className="px-2 py-2.5 text-center font-mono font-black text-xs text-(--dh-text-muted)">
+                    #{index + 1}
+                  </td>
+
+                  {/* ปุ่ม Move Up / Down */}
+                  <td className="px-2 py-2.5 text-center">
+                    <div className="flex items-center justify-center gap-0.5">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => moveRule && moveRule(index, 'up')}
+                        title="เลื่อนขึ้น (เพิ่มลำดับความสำคัญ Top-Down)"
+                        className="p-1 rounded-md text-(--dh-text-muted) hover:text-indigo-600 hover:bg-indigo-500/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer"
+                      >
+                        <ChevronUp size={14} strokeWidth={2.5} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === config.rules.length - 1}
+                        onClick={() => moveRule && moveRule(index, 'down')}
+                        title="เลื่อนลง (ลดลำดับความสำคัญ)"
+                        className="p-1 rounded-md text-(--dh-text-muted) hover:text-indigo-600 hover:bg-indigo-500/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer"
+                      >
+                        <ChevronDown size={14} strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  </td>
+
+                  <td className="px-3 py-2.5 relative">
                     {!isMatched && (
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-(--dh-accent) opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     )}
@@ -217,7 +232,7 @@ export default function PricingRulesTable({
       {/* Top-Down Note */}
       <div className="p-3 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-bold border-t border-(--dh-border) flex items-start gap-2 shrink-0">
         <AlertTriangle size={14} className="shrink-0 mt-0.5 opacity-80"/>
-        <p>ระบบจะทำงานแบบ Top-Down ตามลำดับหมวดหมู่ (หากหมวดหมู่เดียวกันมีเงื่อนไขแคบกว่า แนะนำให้ลาก/พิมพ์ไว้ด้านบน)</p>
+        <p>ระบบจะทำงานแบบ Top-Down ตามลำดับในตารางนี้ (แถวบนจะถูกพิจารณาก่อนเสมอ สามารถใช้ปุ่มลูกศรเพื่อสลับลำดับได้)</p>
       </div>
 
     </div>

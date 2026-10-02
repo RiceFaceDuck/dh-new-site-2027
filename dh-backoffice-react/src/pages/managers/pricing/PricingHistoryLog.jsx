@@ -23,6 +23,14 @@ export default function PricingHistoryLog({ logs = [], loadingLogs = false, fetc
     }
   };
 
+  const handleToggle = () => {
+    const nextState = !collapsed;
+    setCollapsed(nextState);
+    if (!nextState && fetchPricingLogs) {
+      fetchPricingLogs();
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -33,7 +41,7 @@ export default function PricingHistoryLog({ logs = [], loadingLogs = false, fetc
     >
       {/* Header Bar */}
       <div
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={handleToggle}
         className="p-3 border-b border-slate-700/50 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between shrink-0 shadow-sm cursor-pointer select-none"
       >
         <div className="flex items-center gap-2">
@@ -71,7 +79,7 @@ export default function PricingHistoryLog({ logs = [], loadingLogs = false, fetc
           {/* ปุ่มรีเฟรช */}
           <button
             type="button"
-            onClick={fetchPricingLogs}
+            onClick={() => fetchPricingLogs && fetchPricingLogs(true)}
             title="รีเฟรชประวัติ"
             className="text-slate-300 hover:text-white p-1 rounded-md bg-white/10 hover:bg-white/20 border border-white/10 transition-all cursor-pointer"
           >
@@ -81,7 +89,7 @@ export default function PricingHistoryLog({ logs = [], loadingLogs = false, fetc
           {/* ปุ่มขยาย / หุบ */}
           <button
             type="button"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={handleToggle}
             title={collapsed ? 'ขยายดูประวัติ' : 'หุบลงชิดด้านล่าง'}
             className="text-slate-300 hover:text-white p-1 rounded-md bg-white/10 hover:bg-white/20 border border-white/10 transition-all cursor-pointer flex items-center gap-1"
           >

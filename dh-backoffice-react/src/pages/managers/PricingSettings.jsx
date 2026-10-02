@@ -23,7 +23,7 @@ export default function PricingSettings() {
     simResult, matchedRuleId,
     runSimulation,
     logs, loadingLogs, fetchPricingLogs,
-    handleSave, handleRuleChange, addRule, removeRule, handleRoundingChange,
+    handleSave, handleRuleChange, moveRule, addRule, removeRule, handleRoundingChange,
     categories
   } = usePricingSettings();
 
@@ -103,6 +103,7 @@ export default function PricingSettings() {
             addRule={addRule}
             removeRule={removeRule}
             handleRuleChange={handleRuleChange}
+            moveRule={moveRule}
             categories={categories}
             matchedRuleId={matchedRuleId}
           />

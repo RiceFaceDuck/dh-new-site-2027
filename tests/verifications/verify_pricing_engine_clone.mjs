@@ -41,34 +41,13 @@ async function asyncTest(name, fn) {
 // -------------------------------------------------------------
 console.log('\n--- SECTION 1: Pure Pricing Logic & Psychological Rounding ---');
 
-// Reconstruct the exact engine functions for isolated testing
-const normalizeCategory = (name) => {
-  if (!name || typeof name !== 'string') return 'General';
-  const clean = name.trim();
-  const lower = clean.toLowerCase();
-  if (!clean) return 'General';
-  if (['panel', 'screen', 'display', 'หน้าจอ', 'จอคอม', 'จอ'].some(e => lower === e || lower.includes(e))) return 'Panel';
-  if (['keyboard', 'คีย์บอร์ด'].some(e => lower === e || lower.includes(e))) return 'Keyboard';
-  if (['battery', 'แบตเตอรี่', 'แบต'].some(e => lower === e || lower.includes(e))) return 'Battery';
-  if (['adapter', 'charger', 'อแดปเตอร์', 'อะแดปเตอร์', 'สายชาร์จ'].some(e => lower === e || lower.includes(e))) return 'Adapter';
-  if (['speaker', 'ลำโพง', 'built in audio', 'audio', 'sound'].some(e => lower === e || lower.includes(e))) return 'Speaker';
-  if (['cooling fan', 'fan', 'พัดลม'].some(e => lower === e || lower.includes(e))) return 'FAN';
-  if (['cooling', 'ชุดระบายความร้อน', 'heatsink', 'ฮีตซิงค์'].some(e => lower === e || lower.includes(e))) return 'Cooling';
-  if (['cable', 'สายไฟ', 'สายแพ', 'สายสัญญาณ'].some(e => lower === e || lower.includes(e))) return 'Cable';
-  if (['hinge', 'บานพับ'].some(e => lower === e || lower.includes(e))) return 'Hinge';
-  return clean;
-};
-
-const calculateNextEnding = (price, targetStr) => {
-  if (!targetStr && targetStr !== '0') return null;
-  const targetNum = parseInt(targetStr, 10);
-  if (isNaN(targetNum)) return null;
-  const mod = Math.pow(10, targetStr.length);
-  const baseFloor = price - (price % mod);
-  let candidate = baseFloor + targetNum;
-  if (candidate < price) candidate += mod;
-  return candidate;
-};
+// Imported directly from SSOT (dh-shared/src/utils/pricingEngine.js)
+import { 
+  calculateRetailPrice, 
+  normalizeCategory, 
+  calculateNextEnding, 
+  sanitizeCost 
+} from '../../dh-shared/src/utils/pricingEngine.js';
 
 const testConfig = {
   rounding: { type: 'custom', primaryTarget: '90', enableFallback: true, fallbackTarget: '9' },
@@ -84,81 +63,6 @@ const testConfig = {
     { id: '9', category: 'Keyboard', operator: '<', threshold: 200, action: '*', value: 1.5, isActive: true }
   ]
 };
-
-function calculateRetailPrice(cost, category, config) {
-  const numCost = parseFloat(cost);
-  if (isNaN(numCost) || numCost <= 0) {
-    return { cost: 0, calculatedPrice: 0, rawPrice: 0, appliedRule: null, appliedRoundingType: 'ไม่มีข้อมูลทุน', margin: 0, marginPercent: 0 };
-  }
-  let baseRetail = numCost;
-  let matchedRule = null;
-  const rules = config?.rules || testConfig.rules;
-  const lowerCategory = (category || '').trim().toLowerCase();
-  const normalizedCat = normalizeCategory(category);
-
-  const matchingRules = rules.filter(r => {
-    if (!r.isActive) return false;
-    const rCat = (r.category || '').trim().toLowerCase();
-    return !!(
-      rCat === 'all' || rCat === '' || rCat === 'ทั้งหมด' ||
-      normalizeCategory(r.category) === normalizedCat ||
-      rCat === lowerCategory ||
-      (lowerCategory && lowerCategory !== 'other' && (rCat.includes(lowerCategory) || lowerCategory.includes(rCat)))
-    );
-  });
-
-  for (const rule of matchingRules) {
-    let isMatch;
-    const th = parseFloat(rule.threshold);
-    switch (rule.operator) {
-      case '<': isMatch = numCost < th; break;
-      case '<=': isMatch = numCost <= th; break;
-      case '>': isMatch = numCost > th; break;
-      case '>=': isMatch = numCost >= th; break;
-      case 'all': isMatch = true; break;
-      default: isMatch = false;
-    }
-    if (isMatch) { matchedRule = rule; break; }
-  }
-
-  if (matchedRule) {
-    const val = parseFloat(matchedRule.value);
-    if (matchedRule.action === '*') baseRetail = numCost * (isNaN(val) ? 1 : val);
-    else if (matchedRule.action === '/') baseRetail = !isNaN(val) && val > 0 ? numCost / val : numCost;
-  }
-
-  let finalPrice = Math.ceil(baseRetail);
-  const rounding = config?.rounding || testConfig.rounding;
-  let appliedRounding = 'ไม่มีการปัดเศษ (ตรงตัว)';
-
-  if (rounding.type === 'custom') {
-    const primaryTargetStr = rounding.primaryTarget?.toString().trim();
-    const fallbackTargetStr = rounding.fallbackTarget?.toString().trim();
-    let primaryResult = null;
-    if (primaryTargetStr !== '' && !isNaN(parseInt(primaryTargetStr, 10))) {
-      primaryResult = calculateNextEnding(finalPrice, primaryTargetStr);
-    }
-    if (primaryResult !== null) {
-      finalPrice = primaryResult;
-      appliedRounding = `ลงท้ายด้วย ${primaryTargetStr}`;
-    } else if (rounding.enableFallback && fallbackTargetStr !== '' && !isNaN(parseInt(fallbackTargetStr, 10))) {
-      const fallbackResult = calculateNextEnding(finalPrice, fallbackTargetStr);
-      if (fallbackResult !== null) {
-        finalPrice = fallbackResult;
-        appliedRounding = `ลงท้ายด้วย ${fallbackTargetStr} (เงื่อนไขสำรอง)`;
-      }
-    }
-  }
-
-  if (finalPrice <= numCost) {
-    finalPrice = numCost + 100;
-    appliedRounding = 'ปัดขึ้นฉุกเฉิน (ป้องกันขาดทุน)';
-  }
-
-  const margin = finalPrice - numCost;
-  const marginPercent = finalPrice > 0 ? (margin / finalPrice) * 100 : 0;
-  return { cost: numCost, calculatedPrice: finalPrice, rawPrice: baseRetail, appliedRule: matchedRule, appliedRoundingType: appliedRounding, margin, marginPercent };
-}
 
 test('1.1 Panel cost 1000 <= 1100 applies / 0.65 and ends with 90', () => {
   const res = calculateRetailPrice(1000, 'Panel', testConfig);
@@ -203,6 +107,28 @@ test('1.5 Edge cases: 0 cost, null, NaN return safe null state without exception
 
   const resNaN = calculateRetailPrice('abc', 'Panel', testConfig);
   assert.strictEqual(resNaN.calculatedPrice, 0);
+});
+
+test('1.6 Comma sanitization: "1,500" correctly parses as 1500 instead of 1', () => {
+  const resComma = calculateRetailPrice('1,500', 'Panel', testConfig);
+  assert.strictEqual(resComma.cost, 1500);
+  // 1500 / 0.68 = 2205.88 -> ceil 2206 -> next ending 90 is 2290
+  assert.strictEqual(resComma.calculatedPrice, 2290);
+  assert.strictEqual(resComma.appliedRule.id, '2');
+});
+
+test('1.7 Empty category wildcard rejection: empty category rule must not hijack other categories', () => {
+  const emptyCatConfig = {
+    rounding: { type: 'custom', primaryTarget: '90' },
+    rules: [
+      { id: 'buggy_empty', category: '', operator: 'all', threshold: 0, action: '*', value: 0.1, isActive: true },
+      ...testConfig.rules
+    ]
+  };
+  const res = calculateRetailPrice(1000, 'Panel', emptyCatConfig);
+  // Must NOT match buggy_empty, must match Panel rule '1'
+  assert.strictEqual(res.appliedRule.id, '1');
+  assert.strictEqual(res.calculatedPrice, 1590);
 });
 
 // -------------------------------------------------------------
@@ -323,6 +249,28 @@ await asyncTest('4.1 Dev server http://localhost:3168/managers/pricing serves HT
   });
 });
 
+// -------------------------------------------------------------
+// SECTION 5: GA4 Telemetry & Optimistic Concurrency Guard
+// -------------------------------------------------------------
+console.log('\n--- SECTION 5: Telemetry & Optimistic Concurrency ---');
+
+test('5.1 pricingAnalyticsService exports standard non-blocking tracking functions', () => {
+  const telemetryPath = path.join(baseDir, 'src/firebase/pricingAnalyticsService.js');
+  assert(fs.existsSync(telemetryPath), 'pricingAnalyticsService.js must exist');
+  const content = fs.readFileSync(telemetryPath, 'utf8');
+  assert(content.includes('trackPricingView'), 'Must export trackPricingView');
+  assert(content.includes('trackPricingSave'), 'Must export trackPricingSave');
+  assert(content.includes('trackSimulationRun'), 'Must export trackSimulationRun');
+});
+
+test('5.2 pricingService enforces optimistic concurrency version guard', () => {
+  const servicePath = path.join(baseDir, 'src/firebase/pricingService.js');
+  const content = fs.readFileSync(servicePath, 'utf8');
+  assert(content.includes('serverVersion > clientVersion'), 'Must check version mismatch');
+  assert(content.includes('version: nextVersion'), 'Must increment version on save');
+});
+
 console.log('\n========================================================');
 console.log(`🎉 ALL ${passedTests} OF ${totalTests} VERIFICATION TESTS PASSED SUCCESSFULLY!`);
 console.log('========================================================\n');
+

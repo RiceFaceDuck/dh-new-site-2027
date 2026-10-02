@@ -1,78 +1,32 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from './config';
 import { historyService } from './historyService';
+import { 
+  defaultPricingConfig, 
+  normalizeCategory, 
+  calculateNextEnding, 
+  calculateRetailPrice,
+  sanitizeCost 
+} from 'dh-shared/src/utils/pricingEngine';
+
+export { 
+  defaultPricingConfig, 
+  normalizeCategory, 
+  calculateNextEnding, 
+  calculateRetailPrice,
+  sanitizeCost 
+};
 
 const SETTINGS_DOC_ID = 'pricing';
 const COLLECTION_NAME = 'settings';
 
-// ข้อมูลเริ่มต้นแบบใหม่ รองรับการตั้งค่าปัดเศษแบบอิสระ และเงื่อนไขสำรอง
-const defaultPricingConfig = {
-  rounding: {
-    type: 'custom', // 'custom' หรือ 'none'
-    primaryTarget: '90', // ค่าที่ต้องการให้ลงท้าย เช่น 90
-    enableFallback: true, // เปิดใช้เงื่อนไข 2
-    fallbackTarget: '9' // ค่าสำรอง หากเงื่อนไขแรกผิดพลาด/ไม่ได้กำหนด
-  },
-  rules: [
-    { id: '1', category: 'Panel', operator: '<=', threshold: 1100, action: '/', value: 0.65, isActive: true },
-    { id: '2', category: 'Panel', operator: '<=', threshold: 2000, action: '/', value: 0.68, isActive: true },
-    { id: '3', category: 'Panel', operator: '<=', threshold: 2800, action: '/', value: 0.70, isActive: true },
-    { id: '4', category: 'Panel', operator: '<=', threshold: 3500, action: '/', value: 0.75, isActive: true },
-    { id: '5', category: 'Panel', operator: '>', threshold: 3500, action: '/', value: 0.78, isActive: true },
-    
-    { id: '6', category: 'Adapter', operator: 'all', threshold: 0, action: '*', value: 1.3, isActive: true },
-    
-    { id: '7', category: 'Cooling Fan', operator: '<', threshold: 160, action: '/', value: 0.60, isActive: true },
-    { id: '8', category: 'Cooling Fan', operator: '>=', threshold: 160, action: '/', value: 0.70, isActive: true },
-    
-    { id: '9', category: 'Keyboard', operator: '<', threshold: 200, action: '*', value: 1.50, isActive: true },
-    { id: '10', category: 'Keyboard', operator: '<', threshold: 250, action: '*', value: 1.35, isActive: true },
-    { id: '11', category: 'Keyboard', operator: '>=', threshold: 250, action: '*', value: 1.25, isActive: true },
-    
-    { id: '12', category: 'Cable', operator: '<', threshold: 160, action: '/', value: 0.60, isActive: true },
-    { id: '13', category: 'Cable', operator: '>=', threshold: 160, action: '/', value: 0.70, isActive: true },
-    
-    { id: '14', category: 'Hinge', operator: '<', threshold: 160, action: '/', value: 0.60, isActive: true },
-    { id: '15', category: 'Hinge', operator: '>=', threshold: 160, action: '/', value: 0.80, isActive: true },
-  ],
-  updatedAt: serverTimestamp()
-};
-
-// ระบบแปลงชื่อหมวดหมู่ให้แมตช์ได้แม่นยำ (Normalized Category Matching)
-const normalizeCategory = (name) => {
-  if (!name || typeof name !== 'string') return 'General';
-  const clean = name.trim();
-  const lower = clean.toLowerCase();
-  if (!clean) return 'General';
-  if (['panel', 'screen', 'display', 'หน้าจอ', 'จอคอม', 'จอ'].some(e => lower === e || lower.includes(e))) return 'Panel';
-  if (['keyboard', 'คีย์บอร์ด'].some(e => lower === e || lower.includes(e))) return 'Keyboard';
-  if (['battery', 'แบตเตอรี่', 'แบต'].some(e => lower === e || lower.includes(e))) return 'Battery';
-  if (['adapter', 'charger', 'อแดปเตอร์', 'อะแดปเตอร์', 'สายชาร์จ'].some(e => lower === e || lower.includes(e))) return 'Adapter';
-  if (['speaker', 'ลำโพง', 'built in audio', 'audio', 'sound'].some(e => lower === e || lower.includes(e))) return 'Speaker';
-  if (['cooling fan', 'fan', 'พัดลม'].some(e => lower === e || lower.includes(e))) return 'FAN';
-  if (['cooling', 'ชุดระบายความร้อน', 'heatsink', 'ฮีตซิงค์'].some(e => lower === e || lower.includes(e))) return 'Cooling';
-  if (['cable', 'สายไฟ', 'สายแพ', 'สายสัญญาณ'].some(e => lower === e || lower.includes(e))) return 'Cable';
-  if (['hinge', 'บานพับ'].some(e => lower === e || lower.includes(e))) return 'Hinge';
-  return clean;
-};
-
-// ฟังก์ชันคณิตศาสตร์ หาตัวเลขที่ลงท้ายด้วยเป้าหมาย และต้องมากกว่าหรือเท่ากับราคาตั้งต้น
-const calculateNextEnding = (price, targetStr) => {
-  if (!targetStr && targetStr !== '0') return null;
-  const targetNum = parseInt(targetStr, 10);
-  if (isNaN(targetNum)) return null;
-
-  const mod = Math.pow(10, targetStr.length);
-  const baseFloor = price - (price % mod);
-  let candidate = baseFloor + targetNum;
-
-  if (candidate < price) {
-      candidate += mod;
-  }
-  return candidate;
-};
-
 export const pricingService = {
+  defaultPricingConfig,
+  normalizeCategory,
+  calculateNextEnding,
+  calculateRetailPrice,
+  sanitizeCost,
+
   // ดึงข้อมูลการตั้งค่า (ประหยัด Reads: ใช้แค่ 1 Document)
   getPricingConfig: async () => {
     try {
@@ -94,12 +48,51 @@ export const pricingService = {
     }
   },
 
-  // บันทึกข้อมูลและลง Log ประวัติการทำงาน
+  // บันทึกข้อมูลและลง Log ประวัติการทำงาน พร้อม Data Sanitization และ Audit Metadata
   savePricingConfig: async (newConfig) => {
     try {
+      if (!newConfig || !Array.isArray(newConfig.rules)) {
+        throw new Error('โครงสร้างกฎราคาไม่ถูกต้อง');
+      }
+
+      // ป้องกัน Empty Category Wildcard: ห้ามเซฟกฎที่ไม่มีหมวดหมู่
+      const hasEmptyCategory = newConfig.rules.some(r => !r.category || !r.category.trim());
+      if (hasEmptyCategory) {
+        throw new Error('พบเงื่อนไขราคาที่ยังไม่ได้เลือกหมวดหมู่ โปรดระบุหมวดหมู่ให้ครบถ้วนก่อนบันทึก');
+      }
+
+      // Sanitization ข้อมูลตัวเลขใน Rules
+      const sanitizedRules = newConfig.rules.map(r => ({
+        ...r,
+        category: (r.category || '').trim(),
+        threshold: Math.max(0, Number(r.threshold) || 0),
+        value: Number(r.value) || 0,
+        action: r.action === '/' ? '/' : '*',
+        operator: ['<', '<=', '>', '>=', 'all'].includes(r.operator) ? r.operator : '<=',
+        isActive: Boolean(r.isActive)
+      }));
+
       const docRef = doc(db, COLLECTION_NAME, SETTINGS_DOC_ID);
+      
+      // Optimistic Concurrency Guard: ป้องกันแอดมินเซฟทับซ้อน
+      const currentSnap = await getDoc(docRef);
+      if (currentSnap.exists()) {
+        const serverData = currentSnap.data();
+        const serverVersion = Number(serverData.version) || 0;
+        const clientVersion = Number(newConfig.version) || 0;
+        if (clientVersion > 0 && serverVersion > clientVersion) {
+          throw new Error(`ตรวจพบการเปลี่ยนแปลงโครงสร้างราคาโดยผู้อื่น (เวอร์ชันเซิร์ฟเวอร์: v${serverVersion} | เครื่องนี้: v${clientVersion}) โปรดรีเฟรชหน้าจอเพื่อดึงข้อมูลล่าสุดก่อนบันทึก`);
+        }
+      }
+
+      const nextVersion = (Number(newConfig.version) || 0) + 1;
+
       await setDoc(docRef, {
         ...newConfig,
+        rules: sanitizedRules,
+        version: nextVersion,
+        updatedBy: auth.currentUser?.uid || 'system',
+        updatedByEmail: auth.currentUser?.email || '',
         updatedAt: serverTimestamp()
       });
       
@@ -119,114 +112,5 @@ export const pricingService = {
       console.error("Error saving pricing config:", error);
       throw error;
     }
-  },
-
-  // Core Engine: คำนวณราคาปลีกสุทธิ (เคารพลำดับ Top-Down ตามจริง)
-  calculateRetailPrice: (cost, category, config) => {
-    const numCost = parseFloat(cost);
-    if (isNaN(numCost) || numCost <= 0) {
-      return {
-        cost: 0,
-        calculatedPrice: 0,
-        rawPrice: 0,
-        appliedRule: null,
-        appliedRoundingType: 'ไม่มีข้อมูลทุน',
-        margin: 0,
-        marginPercent: 0
-      };
-    }
-
-    let baseRetail = numCost;
-    let matchedRule = null;
-    const rules = config?.rules || defaultPricingConfig.rules;
-    const lowerCategory = (category || '').trim().toLowerCase();
-    const normalizedCat = normalizeCategory(category);
-
-    // กรองเงื่อนไขที่ตรงกับหมวดหมู่ โดยคงลำดับเดิมไว้ (Top-Down Order)
-    const matchingRules = rules.filter(r => {
-      if (!r.isActive) return false;
-      const rCat = (r.category || '').trim().toLowerCase();
-      return !!(
-        rCat === 'all' ||
-        rCat === '' ||
-        rCat === 'ทั้งหมด' ||
-        normalizeCategory(r.category) === normalizedCat ||
-        rCat === lowerCategory ||
-        (lowerCategory && lowerCategory !== 'other' && (rCat.includes(lowerCategory) || lowerCategory.includes(rCat)))
-      );
-    });
-
-    for (const rule of matchingRules) {
-      let isMatch;
-      const th = parseFloat(rule.threshold);
-      
-      switch (rule.operator) {
-        case '<': isMatch = numCost < th; break;
-        case '<=': isMatch = numCost <= th; break;
-        case '>': isMatch = numCost > th; break;
-        case '>=': isMatch = numCost >= th; break;
-        case 'all': isMatch = true; break;
-        default: isMatch = false;
-      }
-
-      if (isMatch) {
-        matchedRule = rule;
-        break; 
-      }
-    }
-
-    if (matchedRule) {
-      const val = parseFloat(matchedRule.value);
-      if (matchedRule.action === '*') {
-        baseRetail = numCost * (isNaN(val) ? 1 : val);
-      } else if (matchedRule.action === '/') {
-        baseRetail = !isNaN(val) && val > 0 ? numCost / val : numCost;
-      }
-    }
-
-    // ระบบปัดเศษ (Smart Psychological Pricing)
-    let finalPrice = Math.ceil(baseRetail); 
-    const rounding = config?.rounding || defaultPricingConfig.rounding;
-    let appliedRounding = 'ไม่มีการปัดเศษ (ตรงตัว)';
-
-    if (rounding.type === 'custom') {
-      const primaryTargetStr = rounding.primaryTarget?.toString().trim();
-      const fallbackTargetStr = rounding.fallbackTarget?.toString().trim();
-      let primaryResult = null;
-
-      if (primaryTargetStr !== '' && !isNaN(parseInt(primaryTargetStr, 10))) {
-        primaryResult = calculateNextEnding(finalPrice, primaryTargetStr);
-      }
-
-      if (primaryResult !== null) {
-        finalPrice = primaryResult;
-        appliedRounding = `ลงท้ายด้วย ${primaryTargetStr}`;
-      } else if (rounding.enableFallback && fallbackTargetStr !== '' && !isNaN(parseInt(fallbackTargetStr, 10))) {
-        const fallbackResult = calculateNextEnding(finalPrice, fallbackTargetStr);
-        if (fallbackResult !== null) {
-          finalPrice = fallbackResult;
-          appliedRounding = `ลงท้ายด้วย ${fallbackTargetStr} (เงื่อนไขสำรอง)`;
-        }
-      }
-    }
-
-    // Protection: ป้องกันกรณีปัดเศษแล้วขาดทุนหรือเท่าทุน
-    if (finalPrice <= numCost) {
-      finalPrice = numCost + 100;
-      appliedRounding = 'ปัดขึ้นฉุกเฉิน (ป้องกันขาดทุน)';
-    }
-
-    const margin = finalPrice - numCost;
-    const marginPercent = finalPrice > 0 ? (margin / finalPrice) * 100 : 0;
-
-    return {
-      cost: numCost,
-      calculatedPrice: finalPrice,
-      rawPrice: baseRetail,
-      appliedRule: matchedRule,
-      appliedRoundingType: appliedRounding,
-      margin: margin,
-      marginPercent: marginPercent
-    };
   }
 };
