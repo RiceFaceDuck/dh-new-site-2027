@@ -25,7 +25,11 @@ export default function WarrantyStatusBadge({ purchaseDateStr, sku, category }) 
   let color = '';
   let textColor = '';
 
-  if (remainingDays < 0) {
+  if (warrantyPeriodDays === 0) {
+    label = 'ไม่มีรับประกัน';
+    color = 'bg-slate-300';
+    textColor = 'text-slate-400';
+  } else if (remainingDays < 0) {
     label = `หมดประกัน`;
     color = 'bg-slate-300';
     textColor = 'text-slate-400';

@@ -29,6 +29,11 @@ export function useWarrantyManager() {
         fetchData();
     }, []);
 
+    const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: '', targetId: '' });
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState('categories'); // 'categories' | 'skus'
+    const [filterOnlyNew, setFilterOnlyNew] = useState(false);
+
     const addCategory = (catName) => {
         if (!catName || !catName.trim()) return;
         const normName = normalizeCategoryName(catName);
@@ -47,34 +52,88 @@ export function useWarrantyManager() {
         });
     };
 
-    const removeCategory = (catName) => {
-        if (!window.confirm(`คุณแน่ใจหรือไม่ที่จะลบการ์ดประกันหมวด "${catName}"?`)) return;
+    const requestDeleteCategory = (catName) => {
+        setDeleteModal({ isOpen: true, type: 'category', targetId: catName });
+    };
+
+    const confirmDeleteCategory = () => {
+        const catName = deleteModal.targetId;
+        if (!catName) return;
         setWarrantyConfig(prev => {
             const nextCats = { ...prev.categories };
             delete nextCats[catName];
             return { ...prev, categories: nextCats };
         });
+        setDeleteModal({ isOpen: false, type: '', targetId: '' });
     };
 
     const updateCategory = (catName, field, value) => {
+        const safeNum = Math.max(0, parseInt(value, 10) || 0);
         setWarrantyConfig(prev => ({
             ...prev,
             categories: {
                 ...prev.categories,
                 [catName]: {
                     ...prev.categories[catName],
-                    [field]: Number(value),
+                    [field]: safeNum,
                     isUnconfigured: false
                 }
             }
         }));
     };
 
+    // --- SKU Overrides Handlers ---
+    const addSkuOverride = (rawSku, claimDays = 365, returnDays = 14) => {
+        const sku = (rawSku || '').trim().toUpperCase();
+        if (!sku) return;
+        const safeClaim = (claimDays !== undefined && claimDays !== null && claimDays !== '') ? Math.max(0, Number(claimDays)) : 365;
+        const safeReturn = (returnDays !== undefined && returnDays !== null && returnDays !== '') ? Math.max(0, Number(returnDays)) : 14;
+        setWarrantyConfig(prev => ({
+            ...prev,
+            skus: {
+                ...(prev.skus || {}),
+                [sku]: { 
+                    claimDays: isNaN(safeClaim) ? 365 : safeClaim, 
+                    returnDays: isNaN(safeReturn) ? 14 : safeReturn 
+                }
+            }
+        }));
+    };
+
+    const updateSkuOverride = (sku, field, value) => {
+        const safeNum = Math.max(0, parseInt(value, 10) || 0);
+        setWarrantyConfig(prev => ({
+            ...prev,
+            skus: {
+                ...(prev.skus || {}),
+                [sku]: {
+                    ...(prev.skus?.[sku] || {}),
+                    [field]: safeNum
+                }
+            }
+        }));
+    };
+
+    const requestDeleteSku = (sku) => {
+        setDeleteModal({ isOpen: true, type: 'sku', targetId: sku });
+    };
+
+    const confirmDeleteSku = () => {
+        const sku = deleteModal.targetId;
+        if (!sku) return;
+        setWarrantyConfig(prev => {
+            const nextSkus = { ...(prev.skus || {}) };
+            delete nextSkus[sku];
+            return { ...prev, skus: nextSkus };
+        });
+        setDeleteModal({ isOpen: false, type: '', targetId: '' });
+    };
+
     const handlePreSave = () => {
         const changes = [];
         if (originalConfig) {
-            Object.entries(warrantyConfig.categories).forEach(([catName, data]) => {
-                const origData = originalConfig.categories[catName];
+            Object.entries(warrantyConfig.categories || {}).forEach(([catName, data]) => {
+                const origData = originalConfig.categories?.[catName];
                 if (!origData || origData.isUnconfigured) {
                     changes.push({ label: `[เพิ่มหมวดใหม่: ${catName}]`, oldVal: 'ยังไม่ได้ตั้งค่า', newVal: `เคลม ${data.claimDays} วัน / คืนเงิน ${data.returnDays} วัน` });
                 } else {
@@ -88,9 +147,25 @@ export function useWarrantyManager() {
             });
 
             // ตรวจหาหมวดที่ถูกลบออก
-            Object.keys(originalConfig.categories).forEach(origCat => {
-                if (!warrantyConfig.categories[origCat]) {
+            Object.keys(originalConfig.categories || {}).forEach(origCat => {
+                if (!warrantyConfig.categories?.[origCat]) {
                     changes.push({ label: `[ลบหมวด: ${origCat}]`, oldVal: 'มีในระบบ', newVal: 'ถูกลบออก' });
+                }
+            });
+
+            // ตรวจหาการเปลี่ยนแปลง SKU Overrides
+            Object.entries(warrantyConfig.skus || {}).forEach(([sku, data]) => {
+                const orig = originalConfig.skus?.[sku];
+                if (!orig) {
+                    changes.push({ label: `[เพิ่ม SKU พิเศษ: ${sku}]`, oldVal: 'ไม่มี', newVal: `เคลม ${data.claimDays} วัน / คืน ${data.returnDays} วัน` });
+                } else if (orig.claimDays !== data.claimDays || orig.returnDays !== data.returnDays) {
+                    changes.push({ label: `[SKU: ${sku}]`, oldVal: `เคลม ${orig.claimDays}/คืน ${orig.returnDays}`, newVal: `เคลม ${data.claimDays}/คืน ${data.returnDays}` });
+                }
+            });
+
+            Object.keys(originalConfig.skus || {}).forEach(origSku => {
+                if (!warrantyConfig.skus?.[origSku]) {
+                    changes.push({ label: `[ลบ SKU พิเศษ: ${origSku}]`, oldVal: 'มีในระบบ', newVal: 'ถูกลบออก' });
                 }
             });
         }
@@ -119,7 +194,7 @@ export function useWarrantyManager() {
         }
     };
 
-    const unconfiguredCount = Object.values(warrantyConfig.categories).filter(c => c.isUnconfigured).length;
+    const unconfiguredCount = Object.values(warrantyConfig?.categories || {}).filter(c => c?.isUnconfigured).length;
 
     return {
         isLoading,
@@ -130,7 +205,21 @@ export function useWarrantyManager() {
         unconfiguredCount,
         updateCategory,
         addCategory,
-        removeCategory,
+        removeCategory: requestDeleteCategory,
+        requestDeleteCategory,
+        confirmDeleteCategory,
+        addSkuOverride,
+        updateSkuOverride,
+        requestDeleteSku,
+        confirmDeleteSku,
+        deleteModal,
+        setDeleteModal,
+        searchTerm,
+        setSearchTerm,
+        activeTab,
+        setActiveTab,
+        filterOnlyNew,
+        setFilterOnlyNew,
         handlePreSave,
         handleSave
     };

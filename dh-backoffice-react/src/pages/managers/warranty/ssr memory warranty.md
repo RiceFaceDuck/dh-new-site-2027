@@ -26,8 +26,10 @@
 
   <pitfalls_and_lessons>
     - ⚠️ Expand normalizeCategoryName dictionary (Speaker, Fan, Cable, Hinge) to prevent duplicate cards (e.g. SPEAKER vs ลำโพง).
-    - ⚠️ Consumer components must use normalized category resolution to prevent Thai categories dropping to 30-day default.
-    - ⚠️ Double logging resolved: useWarrantyManager.js delegates diff logging directly to warrantyService.updateWarrantySettings.
+    - ⚠️ Consumer components must use calculateItemWarranty in dh-shared to prevent Thai categories dropping to 30-day default.
+    - ⚠️ Date math coercion: Always Number(claimDays) before Date.setDate() to prevent string concatenation advancing dates by months.
+    - ⚠️ Substring matching: Check string non-empty before lowerKey.includes() so empty categories cleanly fallback to General.
+    - ⚠️ SKU 0-day override: Avoid `val || 365` coercion; check `val !== undefined` to allow 0-day (no warranty) SKUs.
     - ⚠️ Quota spike resolved: checkAndTriggerWarrantyTasksForBatch loads settings and todos once (2N+1 -> 2 reads).
     - ⚠️ Zero deployment rule enforced: all changes remain strictly local.
   </pitfalls_and_lessons>

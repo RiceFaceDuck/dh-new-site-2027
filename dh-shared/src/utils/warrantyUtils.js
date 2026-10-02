@@ -117,8 +117,8 @@ export function calculateItemWarranty(item, orderDate, warrantyConfig, reference
   const itemSku = (item.sku || '').trim();
   if (itemSku && skus[itemSku]) {
     const skuConfig = skus[itemSku];
-    claimDays = skuConfig.claimDays ?? claimDays;
-    returnDays = skuConfig.returnDays ?? returnDays;
+    claimDays = Number(skuConfig.claimDays ?? claimDays);
+    returnDays = Number(skuConfig.returnDays ?? returnDays);
     isSkuOverride = true;
     categoryKey = 'SKU_OVERRIDE';
   } else {
@@ -134,53 +134,55 @@ export function calculateItemWarranty(item, orderDate, warrantyConfig, reference
     const normCat = normalizeCategoryName(rawCat);
 
     // 5.1 ตรวจหาใน Categories แบบตรงเป๊ะ (Normalized Key)
-    if (categories[normCat]) {
-      claimDays = categories[normCat].claimDays ?? claimDays;
-      returnDays = categories[normCat].returnDays ?? returnDays;
+    if (normCat && categories[normCat]) {
+      claimDays = Number(categories[normCat].claimDays ?? claimDays);
+      returnDays = Number(categories[normCat].returnDays ?? returnDays);
       categoryKey = normCat;
     } else {
-      // 5.2 Substring match fallback ในกรณีที่มีชื่อหมวดหมู่ผสม
+      // 5.2 Substring match fallback ในกรณีที่มีชื่อหมวดหมู่ผสม (ต้องไม่ใช่สตริงว่าง)
       let matchedKey = null;
-      const lowerRaw = rawCat.toLowerCase();
-      const lowerNorm = normCat.toLowerCase();
+      const lowerRaw = (rawCat || '').trim().toLowerCase();
+      const lowerNorm = (normCat || '').trim().toLowerCase();
 
-      for (const [key, config] of Object.entries(categories)) {
-        const lowerKey = key.toLowerCase();
-        if (
-          lowerRaw.includes(lowerKey) || 
-          lowerKey.includes(lowerRaw) ||
-          lowerNorm.includes(lowerKey) ||
-          lowerKey.includes(lowerNorm)
-        ) {
-          matchedKey = key;
-          claimDays = config.claimDays ?? claimDays;
-          returnDays = config.returnDays ?? returnDays;
-          categoryKey = key;
-          break;
+      if (lowerRaw.length > 0 || lowerNorm.length > 0) {
+        for (const [key, config] of Object.entries(categories)) {
+          const lowerKey = key.toLowerCase();
+          if (
+            (lowerRaw && (lowerRaw.includes(lowerKey) || lowerKey.includes(lowerRaw))) ||
+            (lowerNorm && (lowerNorm.includes(lowerKey) || lowerKey.includes(lowerNorm)))
+          ) {
+            matchedKey = key;
+            claimDays = Number(config.claimDays ?? claimDays);
+            returnDays = Number(config.returnDays ?? returnDays);
+            categoryKey = key;
+            break;
+          }
         }
       }
 
       if (!matchedKey && categories['General']) {
-        claimDays = categories['General'].claimDays ?? claimDays;
-        returnDays = categories['General'].returnDays ?? returnDays;
+        claimDays = Number(categories['General'].claimDays ?? claimDays);
+        returnDays = Number(categories['General'].returnDays ?? returnDays);
         categoryKey = 'General';
       }
     }
   }
 
   // 6. คำนวณวันคงเหลือ และสถานะหมดอายุ
-  const remainingDays = claimDays - passedDays;
+  const safeClaimDays = Number(claimDays);
+  const safeReturnDays = Number(returnDays);
+  const remainingDays = safeClaimDays - passedDays;
   const isExpired = remainingDays < 0;
-  const percentUsed = Math.min(100, Math.max(0, Math.round((passedDays / Math.max(claimDays, 1)) * 100)));
+  const percentUsed = Math.min(100, Math.max(0, Math.round((passedDays / Math.max(safeClaimDays, 1)) * 100)));
   const percentRemaining = Math.max(0, 100 - percentUsed);
 
   // คำนวณวันหมดอายุประกัน (Expiry Date)
   const expiryDate = new Date(purchaseDate);
-  expiryDate.setDate(expiryDate.getDate() + claimDays);
+  expiryDate.setDate(expiryDate.getDate() + safeClaimDays);
 
   return {
-    claimDays,
-    returnDays,
+    claimDays: safeClaimDays,
+    returnDays: safeReturnDays,
     passedDays,
     remainingDays,
     isExpired,

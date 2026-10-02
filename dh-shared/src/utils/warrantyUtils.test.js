@@ -145,5 +145,49 @@ describe('dh-shared/warrantyUtils', () => {
       expect(result.categoryKey).toBe('General');
       expect(result.remainingDays).toBe(0);
     });
+
+    it('falls back to General when category is empty string and does NOT substring match Panel', () => {
+      const item = { category: '', sku: 'NON_EXISTENT_PREFIX_123' };
+      const orderDate = new Date('2026-09-02T12:00:00Z');
+
+      const result = calculateItemWarranty(item, orderDate, mockConfig, refDate);
+      expect(result.categoryKey).toBe('General');
+      expect(result.claimDays).toBe(30);
+    });
+
+    it('calculates expiryDate mathematically without string concatenation when claimDays is string', () => {
+      const stringConfig = {
+        categories: {
+          StringCat: { claimDays: '30', returnDays: '7' }
+        }
+      };
+      const item = { category: 'StringCat' };
+      const orderDate = new Date('2026-10-01T00:00:00.000Z');
+
+      const result = calculateItemWarranty(item, orderDate, stringConfig, refDate);
+      expect(typeof result.claimDays).toBe('number');
+      expect(result.claimDays).toBe(30);
+      
+      const expectedExpiry = new Date(orderDate);
+      expectedExpiry.setDate(expectedExpiry.getDate() + 30);
+      expect(result.expiryDate.getTime()).toBe(expectedExpiry.getTime());
+    });
+
+    it('handles 0-day warranty items accurately', () => {
+      const zeroConfig = {
+        skus: {
+          'NO-WARRANTY-SKU': { claimDays: 0, returnDays: 0 }
+        }
+      };
+      const item = { sku: 'NO-WARRANTY-SKU' };
+      const orderDate = new Date('2026-10-02T00:00:00.000Z');
+
+      const result = calculateItemWarranty(item, orderDate, zeroConfig, refDate);
+      expect(result.claimDays).toBe(0);
+      expect(result.returnDays).toBe(0);
+      expect(result.isSkuOverride).toBe(true);
+      expect(result.isExpired).toBe(false);
+      expect(result.remainingDays).toBe(0);
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { describe, test, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Shared state for Firestore mock implementation
 const state = {

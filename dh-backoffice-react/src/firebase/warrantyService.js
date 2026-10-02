@@ -63,15 +63,17 @@ export const warrantyService = {
           mergedCategories[normKey] = {
             claimDays,
             returnDays,
-            isUnconfigured: false
+            isUnconfigured: false,
+            isFromSaved: true
           };
         } else {
-          // หากมีค่าอยู่แล้ว และรายการนี้ได้รับการตั้งค่าพิเศษ (ไม่ใช่ default 30/7) ให้อัปเดต
-          if (claimDays !== 30 || returnDays !== 7) {
+          // หากมีค่าที่บันทึกไว้ใน Firestore ให้แทนที่ค่าจาก defaultSettings เสมอ (หรือหากซ้ำกันเอง ให้เลือกตัวที่มีการปรับแต่งพิเศษ)
+          if (!existing.isFromSaved || (claimDays !== 30 || returnDays !== 7)) {
             mergedCategories[normKey] = {
               claimDays,
               returnDays,
-              isUnconfigured: false
+              isUnconfigured: false,
+              isFromSaved: true
             };
           }
         }
@@ -96,6 +98,11 @@ export const warrantyService = {
       } catch (err) {
         console.warn("⚠️ Warning fetching product_categories for warranty sync:", err);
       }
+
+      // ทำความสะอาด internal flag ก่อน cache และ return
+      Object.values(mergedCategories).forEach(cat => {
+        delete cat.isFromSaved;
+      });
 
       cachedWarrantyConfig = {
         categories: mergedCategories,
@@ -196,7 +203,9 @@ export const warrantyService = {
       if (newData.categories) {
         Object.entries(newData.categories).forEach(([k, v]) => {
           const normKey = normalizeCategoryName(k);
-          const { isUnconfigured, ...rest } = v;
+          const rest = { ...v };
+          delete rest.isUnconfigured;
+          delete rest.isFromSaved;
           cleanCategories[normKey] = rest;
         });
       }

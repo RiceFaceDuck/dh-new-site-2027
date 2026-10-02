@@ -41,7 +41,10 @@ export default function WarrantyCategoryCard({ catName, data, updateCategory, re
                     <div className="relative">
                         <input 
                             type="number" min="0" value={data.claimDays ?? 30}
-                            onChange={(e) => updateCategory(catName, 'claimDays', e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0);
+                                updateCategory(catName, 'claimDays', val === '' ? 0 : val);
+                            }}
                             className="w-full p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-black text-slate-700 outline-hidden focus:border-amber-500 focus:bg-white transition-all text-center"
                         />
                     </div>
@@ -53,11 +56,25 @@ export default function WarrantyCategoryCard({ catName, data, updateCategory, re
                     <div className="relative">
                         <input 
                             type="number" min="0" value={data.returnDays ?? 7}
-                            onChange={(e) => updateCategory(catName, 'returnDays', e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value, 10) || 0);
+                                updateCategory(catName, 'returnDays', val === '' ? 0 : val);
+                            }}
                             className="w-full p-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-black text-slate-700 outline-hidden focus:border-blue-500 focus:bg-white transition-all text-center"
                         />
                     </div>
                 </div>
+
+                {data.returnDays > data.claimDays && (
+                    <div className="col-span-2 text-[10px] text-rose-500 font-bold bg-rose-50 border border-rose-200 rounded-lg p-1.5 text-center">
+                        ⚠️ วันคืนเงิน ({data.returnDays} วัน) นานกว่าวันเคลม ({data.claimDays} วัน)
+                    </div>
+                )}
+                {data.claimDays === 0 && (
+                    <div className="col-span-2 text-[10px] text-amber-600 font-bold bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-center">
+                        ⚠️ ตั้งค่าเคลมซ่อมเป็น 0 วัน (ไม่มีประกันเคลม)
+                    </div>
+                )}
             </div>
         </div>
     );
