@@ -144,7 +144,7 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto w-full animate-fade-in pb-20 md:pb-10">
+    <div className="max-w-7xl mx-auto w-full animate-fade-in pb-36 lg:pb-10">
       <Helmet>
         <title>{product?.name || 'รายละเอียดสินค้า'} | DH Notebook</title>
         <meta name="description" content={product?.shortDescription || product?.name || 'รายละเอียดอะไหล่โน๊ตบุ๊คคุณภาพ'} />
@@ -261,8 +261,8 @@ const ProductDetail = () => {
         />
       </div>
 
-      {/* 📱 Mobile Sticky Action Bar (Floats on mobile screens) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 flex items-center justify-between gap-3 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      {/* 📱 Mobile Sticky Action Bar (Floats above BottomNav on mobile screens) */}
+      <div className="fixed bottom-[60px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 flex items-center justify-between gap-3 lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex-1 min-w-0">
           <div className="text-xs text-slate-500 truncate font-medium">{product.name}</div>
           <div className="flex items-baseline gap-1.5">

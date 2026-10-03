@@ -2,6 +2,7 @@
  * verify_product_detail_full_system.mjs
  * Comprehensive Forensic & Functional Verification for Product Detail Subsystem
  * Covers: Phase 1 (Security/Critical), Phase 2 (Quota/SRP), Phase 3 (Telemetry/SEO), Phase 4 (UX/Polish)
+ * And Stage Final Review Adversarial Hardening Fixes
  */
 
 import fs from 'fs';
@@ -32,7 +33,7 @@ console.log('================================================================\n'
 // -----------------------------------------------------------------------------
 // CHECK 1: Phase 1.2 Cloud Function Nightly Chunk Guard Fix
 // -----------------------------------------------------------------------------
-console.log('[1/7] Checking Cloud Functions (nightlyChunkGuard.js)...');
+console.log('[1/8] Checking Cloud Functions (nightlyChunkGuard.js)...');
 const guardPath = path.join(rootDir, 'functions/inventory/nightlyChunkGuard.js');
 const guardCode = fs.readFileSync(guardPath, 'utf8');
 assert(
@@ -43,7 +44,7 @@ assert(
 // -----------------------------------------------------------------------------
 // CHECK 2: Phase 1.3 Wholesale Price Shield & Props Sanitization
 // -----------------------------------------------------------------------------
-console.log('\n[2/7] Checking Wholesale Price Shield & Props Sanitization...');
+console.log('\n[2/8] Checking Wholesale Price Shield & Props Sanitization...');
 const productServicePath = path.join(rootDir, 'dh-frontend/src/firebase/productService.js');
 const productServiceCode = fs.readFileSync(productServicePath, 'utf8');
 assert(
@@ -62,12 +63,16 @@ assert(
 // -----------------------------------------------------------------------------
 // CHECK 3: Phase 1.1 Variant Order & Stock Deduction Chain
 // -----------------------------------------------------------------------------
-console.log('\n[3/7] Checking Variant Order & Stock Deduction Chain...');
+console.log('\n[3/8] Checking Variant Order & Stock Deduction Chain...');
 const cartProviderPath = path.join(rootDir, 'dh-frontend/src/context/CartProvider.jsx');
 const cartProviderCode = fs.readFileSync(cartProviderPath, 'utf8');
 assert(
   cartProviderCode.includes('parentId: item.parentId') && cartProviderCode.includes('variantAttributes: item.variantAttributes'),
   'CartProvider.jsx preserves parentId and variantAttributes in local and DB cart items'
+);
+assert(
+  cartProviderCode.includes('effectivePrice = (item.salePrice && item.salePrice > 0) ? item.salePrice : (item.price || 0)'),
+  'CartProvider.jsx calculates subtotal honoring promotional salePrice'
 );
 
 const cartLogicPath = path.join(rootDir, 'dh-frontend/src/hooks/useCartLogic.js');
@@ -83,11 +88,15 @@ assert(
   checkoutSubmitCode.includes('updatedVariants[vIdx].stockQuantity = vStock - requiredQty') && checkoutSubmitCode.includes('updatePayload.variants = updatedVariants'),
   'checkoutSubmitService.js atomically deducts variant stock inside variants array'
 );
+assert(
+  checkoutSubmitCode.includes('dbProduct.salePrice') && checkoutSubmitCode.includes('matchedVariant.salePrice'),
+  'checkoutSubmitService.js rehydrates promotional salePrice from real database'
+);
 
 // -----------------------------------------------------------------------------
 // CHECK 4: Phase 1.4 & 2.1 Security Rules Integrity
 // -----------------------------------------------------------------------------
-console.log('\n[4/7] Checking Firestore Security Rules...');
+console.log('\n[4/8] Checking Firestore Security Rules...');
 const rulesPath = path.join(rootDir, 'firestore.rules');
 const rulesCode = fs.readFileSync(rulesPath, 'utf8');
 
@@ -100,11 +109,15 @@ assert(
   rulesCode.includes("PRODUCT_KNOWLEDGE_APPROVAL") && rulesCode.includes('request.resource.data.payload.creditReward <= 2'),
   'firestore.rules permits authenticated users to submit PRODUCT_KNOWLEDGE_APPROVAL with creditReward <= 2'
 );
+assert(
+  rulesCode.includes("'variants'") && rulesCode.includes('affectedKeys().hasOnly'),
+  'firestore.rules whitelists "variants" in affectedKeys for customer stock deduction'
+);
 
 // -----------------------------------------------------------------------------
 // CHECK 5: Phase 2 Quota Shields & Clean Architecture
 // -----------------------------------------------------------------------------
-console.log('\n[5/7] Checking Quota Shielding & SRP Boundaries...');
+console.log('\n[5/8] Checking Quota Shielding & SRP Boundaries...');
 const detailPath = path.join(rootDir, 'dh-frontend/src/pages/ProductDetail.jsx');
 const detailCode = fs.readFileSync(detailPath, 'utf8');
 
@@ -131,7 +144,7 @@ assert(
 // -----------------------------------------------------------------------------
 // CHECK 6: Phase 3 Telemetry, Buy Now & SEO Schema
 // -----------------------------------------------------------------------------
-console.log('\n[6/7] Checking Telemetry, Buy Now & SEO Schemas...');
+console.log('\n[6/8] Checking Telemetry, Buy Now & SEO Schemas...');
 const analyticsPath = path.join(rootDir, 'dh-frontend/src/firebase/productAnalyticsService.js');
 assert(fs.existsSync(analyticsPath), 'productAnalyticsService.js exists');
 
@@ -154,7 +167,7 @@ assert(
 // -----------------------------------------------------------------------------
 // CHECK 7: Phase 4 UX Polish & Specs Regex
 // -----------------------------------------------------------------------------
-console.log('\n[7/7] Checking UX Polish & Technical Specs Regex...');
+console.log('\n[7/8] Checking UX Polish & Technical Specs Regex...');
 assert(
   !pricingSectionCode.includes('onCopy={handleCopy}'),
   'ProductPricingSection.jsx does NOT hijack clipboard with onCopy promo text'
@@ -172,8 +185,44 @@ assert(
 );
 
 assert(
-  detailCode.includes('Mobile Sticky Action Bar') && detailCode.includes('fixed bottom-0'),
-  'ProductDetail.jsx includes floating Mobile Sticky Action Bar for seamless mobile conversion'
+  detailCode.includes('Mobile Sticky Action Bar') && detailCode.includes('bottom-[60px]'),
+  'ProductDetail.jsx floats Mobile Sticky Action Bar at bottom-[60px] above BottomNav'
+);
+
+// -----------------------------------------------------------------------------
+// CHECK 8: Stage Final Adversarial Hardening Verifications
+// -----------------------------------------------------------------------------
+console.log('\n[8/8] Checking Adversarial Hardening & Hook Resilience...');
+const nearestHookPath = path.join(rootDir, 'dh-frontend/src/components/partner/hooks/useNearestPartner.js');
+const nearestHookCode = fs.readFileSync(nearestHookPath, 'utf8');
+assert(
+  nearestHookCode.includes('getUserLocationRef') && nearestHookCode.includes('getUserLocationRef.current()'),
+  'useNearestPartner.js uses stable ref for geolocation to prevent infinite re-render loop'
+);
+
+const partnerBoxPath = path.join(rootDir, 'dh-frontend/src/components/partner/PartnerSupportBox.jsx');
+const partnerBoxCode = fs.readFileSync(partnerBoxPath, 'utf8');
+assert(
+  partnerBoxCode.includes('Array.isArray(servicesText)'),
+  'PartnerSupportBox.jsx safely parses servicesText whether string or array'
+);
+assert(
+  partnerBoxCode.includes('if (partner.phone)'),
+  'PartnerSupportBox.jsx guards phone contact click against tel:undefined'
+);
+
+const reviewsHookPath = path.join(rootDir, 'dh-frontend/src/pages/hooks/useProductReviews.js');
+const reviewsHookCode = fs.readFileSync(reviewsHookPath, 'utf8');
+assert(
+  reviewsHookCode.includes('if (!isMountedRef.current) return;') && reviewsHookCode.includes('if (!currentUser)'),
+  'useProductReviews.js guards unmounted state updates and checks currentUser before liking'
+);
+
+const communityPath = path.join(rootDir, 'dh-frontend/src/components/product/ProductCommunitySection.jsx');
+const communityCode = fs.readFileSync(communityPath, 'utf8');
+assert(
+  communityCode.includes('Number(averageRating || 0).toFixed(1)'),
+  'ProductCommunitySection.jsx safely formats averageRating without throwing TypeError'
 );
 
 // -----------------------------------------------------------------------------

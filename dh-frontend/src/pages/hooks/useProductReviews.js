@@ -15,6 +15,14 @@ export const useProductReviews = (productId) => {
   const [hoverRating, setHoverRating] = useState(0);
   const reviewTextRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const { showToast } = useToast();
   const auth = getAuth();
@@ -37,6 +45,7 @@ export const useProductReviews = (productId) => {
         isInitial ? null : lastDoc
       );
       
+      if (!isMountedRef.current) return;
       if (isInitial) {
         setComments(result.reviews);
       } else {
@@ -46,6 +55,7 @@ export const useProductReviews = (productId) => {
       setLastDoc(result.lastDoc);
       setHasMore(result.hasMore);
     } catch (error) {
+      if (!isMountedRef.current) return;
       console.error("Error loading reviews:", error);
       if (error.message && error.message.toLowerCase().includes('index')) {
         showToast("ไม่สามารถโหลดรีวิวได้: ขาด Index ใน Firestore (ดู Link ใน Console)", "error");
@@ -55,7 +65,9 @@ export const useProductReviews = (productId) => {
         showToast("ไม่สามารถโหลดรีวิวได้: " + (error.message || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ"), "error");
       }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [productId, loading, lastDoc, showToast]);
 
@@ -103,6 +115,10 @@ export const useProductReviews = (productId) => {
   };
 
   const handleLike = async (commentId, currentLikes, hasLikedLocal) => {
+    if (!currentUser) {
+      showToast("กรุณาเข้าสู่ระบบก่อนกดถูกใจรีวิวครับ", "info");
+      return;
+    }
     if (hasLikedLocal) return; // Prevent spam clicking temporarily
 
     // Optimistic UI update

@@ -249,7 +249,7 @@ service cloud.firestore {
       allow write: if isStaff();
       // 🚀 THE FIX (Inventory DoS & Review IDOR Hardened): แยกส่วนตรวจสอบ Review และ Stock ให้รัดกุม
       allow update: if isStaff() || (isAuthenticated() && 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewCount', 'averageRating', 'stockQuantity', 'stats', 'lastOrderId', 'updatedAt']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewCount', 'averageRating', 'stockQuantity', 'variants', 'stats', 'lastOrderId', 'updatedAt']) &&
         (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['reviewCount', 'averageRating']) ||
           (

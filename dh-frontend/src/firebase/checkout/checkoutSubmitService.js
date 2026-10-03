@@ -128,6 +128,9 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       if (!dbProduct) throw new Error(`ไม่พบสินค้า ${item.name} ในระบบ`);
       
       let resolvedPrice = dbProduct.retailPrice || dbProduct.Price || item.retailPrice || 0;
+      if (dbProduct.salePrice && Number(dbProduct.salePrice) > 0 && Number(dbProduct.salePrice) < resolvedPrice) {
+        resolvedPrice = Number(dbProduct.salePrice);
+      }
       if (Array.isArray(dbProduct.variants)) {
         const matchedVariant = dbProduct.variants.find(v => 
           (item.id && (v.sku === item.id || v.id === item.id)) ||
@@ -136,10 +139,13 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
            JSON.stringify(v.attributes) === JSON.stringify(item.variantAttributes))
         );
         if (matchedVariant) {
-          resolvedPrice = matchedVariant.retailPrice || matchedVariant.price || resolvedPrice;
+          const varBasePrice = matchedVariant.retailPrice || matchedVariant.price || resolvedPrice;
+          resolvedPrice = (matchedVariant.salePrice && Number(matchedVariant.salePrice) > 0 && Number(matchedVariant.salePrice) < varBasePrice)
+            ? Number(matchedVariant.salePrice)
+            : varBasePrice;
         }
       }
-      return { ...item, retailPrice: resolvedPrice };
+      return { ...item, retailPrice: resolvedPrice, price: resolvedPrice };
     });
 
     const calculatedPrices = calculateNetTotal({

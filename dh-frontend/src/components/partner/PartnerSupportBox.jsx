@@ -10,7 +10,12 @@ import { useNearestPartner } from './hooks/useNearestPartner';
 const PartnerServiceBadges = ({ servicesText }) => {
   const { showToast } = useToast();
   if (!servicesText) return null;
-  const servicesList = servicesText.split(',').map(s => s.trim()).filter(Boolean);
+  const servicesList = Array.isArray(servicesText)
+    ? servicesText.map(s => String(s).trim()).filter(Boolean)
+    : typeof servicesText === 'string'
+      ? servicesText.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+  if (servicesList.length === 0) return null;
   
   return (
     <div className="flex flex-wrap gap-1 mt-1">
@@ -46,7 +51,11 @@ const PartnerSupportBox = () => {
 
   const handleContactClick = () => {
     if (!partner) return;
-    window.location.href = `tel:${partner.phone}`;
+    if (partner.phone) {
+      window.location.href = `tel:${partner.phone}`;
+    } else {
+      showToast('ร้านค้านี้ยังไม่ได้ระบุเบอร์โทรศัพท์ติดต่อ', 'info');
+    }
   };
 
   if (loading) return <SkeletonLoader />;
@@ -107,7 +116,7 @@ const PartnerSupportBox = () => {
 
             <div className="flex items-center gap-2 shrink-0">
               <button 
-                onClick={() => partner.lineUrl ? window.open(partner.lineUrl, '_blank') : showToast('คุณยังไม่ได้เพิ่มลิงก์ LINE ในหน้าตั้งค่าร้านค้าครับ', 'error')} 
+                onClick={() => partner.lineUrl ? window.open(partner.lineUrl, '_blank') : showToast('ร้านค้านี้ยังไม่ได้ระบุลิงก์ LINE ติดต่อ', 'info')} 
                 className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.lineUrl ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.lineUrl ? "ติดต่อผ่าน LINE" : "ยังไม่มีข้อมูล LINE"}
               >
@@ -117,7 +126,7 @@ const PartnerSupportBox = () => {
               </button>
 
               <button 
-                onClick={() => partner.messengerUrl ? window.open(partner.messengerUrl, '_blank') : showToast('คุณยังไม่ได้เพิ่มลิงก์ Messenger ในหน้าตั้งค่าร้านค้าครับ', 'error')} 
+                onClick={() => partner.messengerUrl ? window.open(partner.messengerUrl, '_blank') : showToast('ร้านค้านี้ยังไม่ได้ระบุลิงก์ Messenger ติดต่อ', 'info')} 
                 className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.messengerUrl ? 'bg-[#0084FF] hover:bg-[#0073e6]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.messengerUrl ? "ติดต่อผ่าน Messenger" : "ยังไม่มีข้อมูล Messenger"}
               >

@@ -49,7 +49,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
               <StarDisplay val={Math.round(averageRating)} />
-              <p className="text-xs font-bold text-slate-700">{averageRating.toFixed(1)} <span className="text-slate-400 font-normal">/ 5.0</span></p>
+              <p className="text-xs font-bold text-slate-700">{Number(averageRating || 0).toFixed(1)} <span className="text-slate-400 font-normal">/ 5.0</span></p>
             </div>
           </div>
         </div>

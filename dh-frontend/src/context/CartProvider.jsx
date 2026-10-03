@@ -91,7 +91,8 @@ export const CartProvider = ({ children }) => {
       try {
         const totalSummary = items.reduce(
           (acc, item) => {
-            acc.total += (item.price || 0) * (item.qty || item.quantity || 0);
+            const effectivePrice = (item.salePrice && item.salePrice > 0) ? item.salePrice : (item.price || 0);
+            acc.total += effectivePrice * (item.qty || item.quantity || 0);
             acc.totalQty += (item.qty || item.quantity || 0);
             return acc;
           },
@@ -312,7 +313,10 @@ export const CartProvider = ({ children }) => {
 
   // Calculations
   const cartTotalQty = useMemo(() => cartItems.reduce((acc, item) => acc + (item.qty || item.quantity || 0), 0), [cartItems]);
-  const subtotal = useMemo(() => cartItems.reduce((acc, item) => acc + ((item.price || 0) * (item.qty || item.quantity || 0)), 0), [cartItems]);
+  const subtotal = useMemo(() => cartItems.reduce((acc, item) => {
+    const effectivePrice = (item.salePrice && item.salePrice > 0) ? item.salePrice : (item.price || 0);
+    return acc + (effectivePrice * (item.qty || item.quantity || 0));
+  }, 0), [cartItems]);
   const totalDiscount = (checkoutState.discountAmount || 0) + (checkoutState.useWallet || 0);
   const grandTotal = checkoutState.isWholesaleRequest ? 0 : Math.max(0, subtotal + (checkoutState.shippingCost || 0) - totalDiscount);
 

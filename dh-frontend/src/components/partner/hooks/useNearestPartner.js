@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { findNearestPartner, getFallbackPartner } from '../../../firebase/partnerLocationService';
 import { useGeolocation } from '../../../hooks/useGeolocation';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,6 +12,11 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export const useNearestPartner = () => {
   const { getUserCurrentLocation } = useGeolocation();
+  const getUserLocationRef = useRef(getUserCurrentLocation);
+  useEffect(() => {
+    getUserLocationRef.current = getUserCurrentLocation;
+  });
+
   const [partner, setPartner] = useState(() => {
     if (cachedNearestPartner && (Date.now() - cachedNearestTimestamp < CACHE_TTL_MS)) {
       return cachedNearestPartner;
@@ -36,7 +41,7 @@ export const useNearestPartner = () => {
         let nearest = null;
         
         try {
-          const location = await getUserCurrentLocation();
+          const location = await getUserLocationRef.current();
           nearest = await findNearestPartner(location.latitude, location.longitude, 30);
         } catch {
           console.warn("📍 [Location] Permission denied or unavailable. Using fallback partner...");
@@ -88,7 +93,7 @@ export const useNearestPartner = () => {
     return () => {
       isMounted = false;
     };
-  }, [getUserCurrentLocation]);
+  }, []);
 
   return { partner, loading, error };
 };

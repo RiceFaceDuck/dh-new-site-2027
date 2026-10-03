@@ -91,11 +91,11 @@ export default function ProductPricingSection({
       <div className="mb-6 flex items-end gap-3">
         {salePrice ? (
           <>
-            <span className="text-3xl md:text-4xl font-bold text-cyber-emerald">฿{salePrice.toLocaleString()}</span>
-            <span className="text-lg text-slate-400 line-through mb-1">฿{price.toLocaleString()}</span>
+            <span className="text-3xl md:text-4xl font-bold text-cyber-emerald">฿{Number(salePrice || 0).toLocaleString()}</span>
+            <span className="text-lg text-slate-400 line-through mb-1">฿{Number(price || 0).toLocaleString()}</span>
           </>
         ) : (
-          <span className="text-3xl md:text-4xl font-bold text-slate-800">฿{price.toLocaleString()}</span>
+          <span className="text-3xl md:text-4xl font-bold text-slate-800">฿{Number(price || 0).toLocaleString()}</span>
         )}
       </div>
       
