@@ -37,7 +37,9 @@ import {
 // 🛡️ Super Admins & Valid Roles 
 export const SUPER_ADMINS = [
     'zhoulinjuan1@gmail.com', // 👑 Owner
-    'dh1notebook@gmail.com'   // 💼 VP 1
+    'dh1notebook@gmail.com',  // 💼 VP 1
+    'dh2notebook@gmail.com',  // 💼 Owner / Admin
+    'bentshan@gmail.com'      // 🛡️ System Admin / Developer
 ];
 
 export const ROLES = {

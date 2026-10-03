@@ -41,5 +41,6 @@
   <lessons_learned>
     1. ⚠️ Inactivity Logout Race Condition: Calling `signOut(auth)` without unhooking the `listenToUserRole` snapshot listener caused Firestore to reject unauthenticated queries with `Missing or insufficient permissions`. The listener error handler mistakenly revived the user into `accessDenied = true` with `denyReason = 'error'`, presenting a scary "ไม่พบข้อมูลสิทธิ์" screen to staff after 12 hours of inactivity.
     2. ⚠️ Fixed by: Unsubscribing listeners synchronously prior to `signOut`, performing a clean `window.location.reload()` on inactivity timeouts, and providing an auto-reload recovery loop in `GatekeeperUI.jsx`.
+    3. ⚠️ Super Admin Priority & Role Parameter Guard: In login flows, evaluate `isOwner` before `pending_approval` to prevent admin lockout, synchronize `SUPER_ADMINS` (4 emails), and allow `updateUserRole` to accept both 2 and 3 parameter calls safely.
   </lessons_learned>
 </grimoire>

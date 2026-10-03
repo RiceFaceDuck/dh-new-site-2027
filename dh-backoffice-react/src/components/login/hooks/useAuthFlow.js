@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { signInWithPopup, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../../../firebase/config';
-import { userService } from '../../../firebase/userService';
+import { userService, SUPER_ADMINS } from '../../../firebase/userService';
 import { todoService } from '../../../firebase/todoService';
 import { gasHistoryService } from '../../../firebase/gasHistoryService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -34,8 +34,19 @@ export const useAuthFlow = () => {
             setStatusText('กำลังตรวจสอบข้อมูลในระบบ...');
             const profile = await userService.syncUserProfile(user);
 
-            // 🛑 ตรวจสอบว่าพนักงานรายนี้รออนุมัติอยู่หรือไม่?
-            if (profile?.role === 'pending_approval' || profile?.role === 'pending') {
+            // 🛡️ 1. ตรวจสอบกลุ่มเจ้าของร้าน / ผู้ดูแลสูงสุดก่อนเสมอ (ป้องกัน Owner ติดสถานะ Pending)
+            const userEmail = (user.email || '').toLowerCase().trim();
+            const isOwner = SUPER_ADMINS.map(e => e.toLowerCase().trim()).includes(userEmail);
+
+            if (isOwner) {
+                setStatusText('กำลังเปิดสิทธิ์ระดับผู้ดูแลสูงสุด (Owner)...');
+                try {
+                    await userService.updateUserRole(user.uid, 'owner');
+                    const userRef = doc(db, getCollectionPath('users'), user.uid);
+                    await updateDoc(userRef, { isStaff: true, isActive: true, role: 'owner', roles: ['Owner'] });
+                } catch (e) { console.error("Force owner role failed", e); }
+            } else if (profile?.role === 'pending_approval' || profile?.role === 'pending') {
+                // 🛑 ตรวจสอบว่าพนักงานรายนี้รออนุมัติอยู่หรือไม่?
                 await signOut(auth); // เตะออกเพื่อความปลอดภัย
                 setStatusData({
                     type: 'pending',
@@ -45,23 +56,6 @@ export const useAuthFlow = () => {
                 setViewMode('status');
                 setLoading(false);
                 return;
-            }
-
-            // 🛡️ ตรวจสอบกลุ่มเจ้าของร้าน
-            const userEmail = (user.email || '').toLowerCase();
-            const isOwner = [
-                'dh1notebook@gmail.com', 
-                'dh2notebook@gmail.com', 
-                'zhoulinjuan1@gmail.com'
-            ].includes(userEmail);
-
-            if (isOwner) {
-                setStatusText('กำลังเปิดสิทธิ์ระดับผู้ดูแลสูงสุด (Owner)...');
-                try {
-                    await userService.updateUserRole(user.uid, 'owner');
-                    const userRef = doc(db, getCollectionPath('users'), user.uid);
-                    await updateDoc(userRef, { isStaff: true, isActive: true, role: 'owner', roles: ['Owner'] });
-                } catch (e) { console.error("Force owner role failed", e); }
             } else if (!profile?.isStaff && !['admin', 'manager', 'staff', 'packer'].includes(profile?.role)) {
                 // กรณีมีบัญชีแต่ไม่มีสิทธิ์เป็นพนักงาน
                 await signOut(auth);
@@ -123,7 +117,18 @@ export const useAuthFlow = () => {
             setStatusText('กำลังตรวจสอบข้อมูลในระบบ...');
             const profile = await userService.syncUserProfile(user);
 
-            if (profile?.role === 'pending_approval' || profile?.role === 'pending') {
+            // 🛡️ 1. ตรวจสอบกลุ่มเจ้าของร้าน / ผู้ดูแลสูงสุดก่อนเสมอ (ป้องกัน Owner ติดสถานะ Pending)
+            const userEmail = (user.email || '').toLowerCase().trim();
+            const isOwner = SUPER_ADMINS.map(e => e.toLowerCase().trim()).includes(userEmail);
+
+            if (isOwner) {
+                setStatusText('กำลังเปิดสิทธิ์ระดับผู้ดูแลสูงสุด (Owner)...');
+                try {
+                    await userService.updateUserRole(user.uid, 'owner');
+                    const userRef = doc(db, getCollectionPath('users'), user.uid);
+                    await updateDoc(userRef, { isStaff: true, isActive: true, role: 'owner', roles: ['Owner'] });
+                } catch (e) { console.error("Force owner role failed", e); }
+            } else if (profile?.role === 'pending_approval' || profile?.role === 'pending') {
                 await signOut(auth);
                 setStatusData({
                     type: 'pending',
@@ -133,22 +138,6 @@ export const useAuthFlow = () => {
                 setViewMode('status');
                 setLoading(false);
                 return;
-            }
-
-            const userEmail = (user.email || '').toLowerCase();
-            const isOwner = [
-                'dh1notebook@gmail.com', 
-                'dh2notebook@gmail.com', 
-                'zhoulinjuan1@gmail.com'
-            ].includes(userEmail);
-
-            if (isOwner) {
-                setStatusText('กำลังเปิดสิทธิ์ระดับผู้ดูแลสูงสุด (Owner)...');
-                try {
-                    await userService.updateUserRole(user.uid, 'owner');
-                    const userRef = doc(db, getCollectionPath('users'), user.uid);
-                    await updateDoc(userRef, { isStaff: true, isActive: true, role: 'owner', roles: ['Owner'] });
-                } catch (e) { console.error("Force owner role failed", e); }
             } else if (!profile?.isStaff && !['admin', 'manager', 'staff', 'packer'].includes(profile?.role)) {
                 await signOut(auth);
                 setStatusData({

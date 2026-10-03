@@ -25,8 +25,28 @@ export const updateUserProfile = async (uid, data) => {
     }
 };
 
-export const updateUserRole = async (adminId, targetUid, newRole) => {
+export const updateUserRole = async (arg1, arg2, arg3) => {
     try {
+        let adminId;
+        let targetUid;
+        let newRole;
+
+        if (arg3 !== undefined) {
+            // 3 arguments signature: (adminId, targetUid, newRole)
+            adminId = arg1;
+            targetUid = arg2;
+            newRole = arg3;
+        } else {
+            // 2 arguments signature: (targetUid, newRole)
+            targetUid = arg1;
+            newRole = arg2;
+            adminId = auth.currentUser?.uid || null;
+        }
+
+        if (!targetUid || typeof targetUid !== 'string' || !newRole) {
+            throw new Error(`Invalid arguments to updateUserRole: targetUid=${targetUid}, newRole=${newRole}`);
+        }
+
         const userRef = getUserDocRef(targetUid);
         await updateDoc(userRef, { 
             role: newRole,

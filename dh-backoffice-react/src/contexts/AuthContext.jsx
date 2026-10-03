@@ -373,14 +373,22 @@ export const AuthProvider = ({ children }) => {
   const isManagerOrOwner = useCallback(() => {
     if (!profile) return false;
     const r = (profile.role || '').toLowerCase();
-    const email = (user?.email || '').toLowerCase();
-    return r === 'manager' || r.includes('owner') || r.includes('vp 1') || r === 'ผู้จัดการ' || r === 'เจ้าของ' || SUPER_ADMINS.includes(email);
+    const email = (user?.email || '').toLowerCase().trim();
+    const rolesArray = Array.isArray(profile.roles) ? profile.roles.map(x => String(x).toLowerCase()) : [];
+
+    const isMatchedRole = 
+      r === 'manager' || r.includes('owner') || r.includes('admin') || r.includes('vp 1') || 
+      r.includes('ผู้จัดการ') || r.includes('เจ้าของ') || r.includes('แอดมิน') ||
+      rolesArray.some(x => x.includes('manager') || x.includes('owner') || x.includes('admin') || x.includes('ผู้จัดการ') || x.includes('เจ้าของ') || x.includes('แอดมิน'));
+
+    return isMatchedRole || SUPER_ADMINS.map(e => e.toLowerCase().trim()).includes(email);
   }, [profile, user]);
 
   const rbac = useRbac(profile, user);
 
   const stateValue = useMemo(() => ({
     user,
+    currentUser: user,
     profile,
     loading,
     isCheckingAuth,
