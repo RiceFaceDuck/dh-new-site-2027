@@ -9,29 +9,29 @@ class GasHistoryService {
   constructor() {
     this.queue = [];
     this.isFlushing = false;
-    this.flushInterval = null;
-    this.MAX_QUEUE_SIZE = 15; // Flush immediately if queue reaches this size
-    this.FLUSH_INTERVAL_MS = 5000; // Otherwise, flush every 5 seconds
+    this.debounceTimer = null;
+    this.MAX_QUEUE_SIZE = 15;
     this.globalProfile = null; // Store user profile from AuthContext
-    
-    this._startQueueTimer();
-    this._registerUnloadEvents();
   }
 
   setProfile(profile) {
     this.globalProfile = profile;
   }
 
-  _startQueueTimer() {
-    if (this.flushInterval) clearInterval(this.flushInterval);
-    this.flushInterval = setInterval(() => {
-      this._flush();
-    }, this.FLUSH_INTERVAL_MS);
+  _canFlush() {
+    const role = (this.globalProfile?.role || '').toLowerCase();
+    const isManagerRole = role === 'manager' || role.includes('owner') || role.includes('admin') || role.includes('ผู้จัดการ') || role.includes('เจ้าของ') || role.includes('แอดมิน');
+    const email = (auth.currentUser?.email || this.globalProfile?.email || '').toLowerCase().trim();
+    const isSuperAdmin = ['zhoulinjuan1@gmail.com', 'dh1notebook@gmail.com', 'dh2notebook@gmail.com', 'bentshan@gmail.com'].includes(email);
+    return isManagerRole || isSuperAdmin;
   }
 
-  _registerUnloadEvents() {
-    // Unload events are no longer needed for data preservation since we use the Firestore Outbox Pattern.
-    // Data is safely stored in 'gas_outbox' immediately upon calling log().
+  _debouncedFlush() {
+    if (!this._canFlush()) return;
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => {
+      this._flush();
+    }, 3000);
   }
 
   /**
@@ -99,6 +99,8 @@ class GasHistoryService {
         status: 'pending',
         creatorUid: actor.uid || 'anonymous',
         createdAt: serverTimestamp()
+      }).then(() => {
+        this._debouncedFlush();
       }).catch(err => console.error("Failed to enqueue gas history to outbox:", err));
     } catch (err) {
       console.error("Failed to construct history log", err);
@@ -106,7 +108,7 @@ class GasHistoryService {
   }
 
   async _flush() {
-    if (this.isFlushing) return;
+    if (this.isFlushing || !this._canFlush()) return;
     this.isFlushing = true;
 
     try {

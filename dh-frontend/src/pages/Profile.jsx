@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { getAuth, signOut } from 'firebase/auth';
 
 // 📦 นำเข้า Components
 import ProfileSidebar from '../components/profile/ProfileSidebar';
@@ -14,46 +12,15 @@ import TabFavorites from '../components/profile/tabs/TabFavorites';
 import TabClaims from '../components/profile/tabs/TabClaims';
 import TabPrivacy from '../components/profile/tabs/TabPrivacy';
 import AuthForm from '../components/profile/AuthForm';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
-  const { currentUser: authUser, loading: authLoading, logout: authLogout } = useAuth();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { currentUser: effectiveUser, loading: authLoading, logout: authLogout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   
   const navigate = useNavigate();
   const location = useLocation();
   const auth = getAuth();
-  
-  // 🛡️ ป้องกัน AppID ไม่พร้อมใช้งาน
-  const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
-
-  // 1. ตรวจสอบการ Login และดึงข้อมูลผู้ใช้
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          const userRef = doc(db, getCollectionPath('users'), currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            setUser({ ...currentUser, ...userSnap.data() });
-          } else {
-            setUser(currentUser);
-          }
-        } catch (error) {
-          console.error("🔥 Error fetching user data:", error);
-          setUser(currentUser);
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [auth, appId]);
 
   // 2. 🧠 Smart URL Routing
   useEffect(() => {
@@ -88,8 +55,7 @@ const Profile = () => {
     }
   };
 
-  const effectiveUser = user || authUser;
-  const isScreenLoading = loading && authLoading && !effectiveUser;
+  const isScreenLoading = authLoading && !effectiveUser;
 
   // 🌀 Loading State
   if (isScreenLoading) {
@@ -122,7 +88,7 @@ const Profile = () => {
   if (!effectiveUser) {
     return (
       <div className="max-w-md mx-auto mt-10 animate-in fade-in zoom-in-95 duration-500">
-        <AuthForm onLogin={() => setLoading(true)} />
+        <AuthForm />
       </div>
     );
   }

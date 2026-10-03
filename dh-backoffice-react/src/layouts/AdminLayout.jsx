@@ -47,6 +47,8 @@ export default function AdminLayout() {
 
   // --- โหลดข้อมูลแจ้งเตือน (Todo / Pending Staff) ---
   useEffect(() => {
+    if (isCheckingAuth || accessDenied) return;
+
     let unsubscribeGeneralTodo = null;
     let unsubscribeManagerTodo = null;
 
@@ -83,7 +85,7 @@ export default function AdminLayout() {
       if (unsubscribeGeneralTodo) unsubscribeGeneralTodo();
       if (unsubscribeManagerTodo) unsubscribeManagerTodo();
     };
-  }, []);
+  }, [isCheckingAuth, accessDenied]);
 
   if (isCheckingAuth) {
     return <GatekeeperChecking />;
