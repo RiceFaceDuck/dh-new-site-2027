@@ -9,15 +9,20 @@ export const todoStaffService = {
   createStaffApprovalTask: async (staffData) => {
       try {
           // จัดรูปแบบข้อมูลเพื่อให้แสดงผลบนแผง To-do ได้อย่างหรูหราและอ่านง่าย
+          const fullName = `${staffData.firstName} ${staffData.lastName}`.trim();
           const todoPayload = {
               type: 'STAFF_APPROVAL',
+              taskType: 'STAFF_APPROVAL',
               status: 'pending',
-              title: `🌟 คำร้องขออนุมัติพนักงานใหม่: ${staffData.firstName} ${staffData.lastName}`,
+              title: `🌟 คำร้องขออนุมัติพนักงานใหม่: ${fullName}`,
               description: `พนักงานขอเข้าทำงานในตำแหน่ง "${staffData.position}" | วันเริ่มงาน: ${staffData.startDate || 'ยังไม่ระบุ'} | อายุ: ${staffData.age || 'ไม่ระบุ'} ปี`,
               priority: 'High', // ตั้งเป็น High เพื่อให้ผู้จัดการสังเกตเห็นทันที
               targetUid: staffData.uid,
               targetEmail: staffData.email,
+              createdByUid: staffData.uid,
+              userId: staffData.uid,
               metadata: {
+                  name: fullName,
                   firstName: staffData.firstName,
                   lastName: staffData.lastName,
                   nickname: staffData.nickname,

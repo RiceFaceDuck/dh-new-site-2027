@@ -79,7 +79,7 @@ service cloud.firestore {
         isStaff() &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'role', 'isStaff', 'uid', 'email', 'rank', 'accountId', 'customerCode', 'roles', 'userType',
-          'walletBalance', 'creditPoints', 'totalAccumulatedPoints', 'pendingWithdrawal',
+          'walletBalance', 'pendingWithdrawal',
           'status', 'isActive', 'isApproved'
         ]))
       ) || (
@@ -98,8 +98,8 @@ service cloud.firestore {
           ) ||
           (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'role', 'isStaff', 'uid', 'email', 'creditPoints', 'totalAccumulatedPoints', 
-              'rank', 'accountId', 'customerCode', 'isActive', 'status', 'roles', 'userType'
+              'role', 'isStaff', 'isApproved', 'uid', 'email', 'creditPoints', 'totalAccumulatedPoints', 
+              'rank', 'accountId', 'customerCode', 'isActive', 'status', 'roles', 'userType', 'permissions'
             ]) &&
             (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats']) || (
               request.resource.data.get('stats', {}).diff(resource.data.get('stats', {})).affectedKeys().hasOnly(['lastOrderDate', 'lastPurchaseDate', 'lastCheckoutAttempt'])
@@ -370,6 +370,7 @@ service cloud.firestore {
         request.resource.data.createdByUid == request.auth.uid || 
         request.resource.data.createdBy == request.auth.uid ||
         request.resource.data.userId == request.auth.uid ||
+        request.resource.data.targetUid == request.auth.uid ||
         request.resource.data.partnerId == request.auth.uid
       ) && (
         // 🚀 THE FIX: บังคับสถานะ Todo ให้เป็น pending หรือ todo เท่านั้น ป้องกันแฮกสร้างงานที่ผ่านการอนุมัติแล้ว

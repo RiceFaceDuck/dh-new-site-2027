@@ -32,11 +32,15 @@ export default function ProfileSetup({ user, onComplete }) {
         role: isOwner ? form.role : 'pending_approval',
         requestedRole: form.role,
         photoURL: user.photoURL || '',
-        userType: 'staff',
         isApproved: isOwner,
         isActive: isOwner,
         isStaff: isOwner
       };
+
+      if (isOwner) {
+        profileData.userType = 'staff';
+        profileData.roles = ['Owner'];
+      }
       
       // บันทึกลงฐานข้อมูล Firestore
       await userService.createUserProfile(user.uid, profileData);
