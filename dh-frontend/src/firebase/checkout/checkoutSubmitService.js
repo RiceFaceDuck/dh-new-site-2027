@@ -46,15 +46,18 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     const globalBuffer = inventorySettingsSnap.exists() ? (inventorySettingsSnap.data().defaultBufferStock ?? 2) : 2;
 
     // [SECURITY & CONCURRENCY] Read all products to check stock and real prices
-    const productRefs = [];
-    const productSnaps = [];
+    // Support variant products by mapping to parentId if present
+    const productDocMap = new Map();
     for (const item of cartItems) {
-      const itemIdentifier = item.id || item.sku;
-      if (!itemIdentifier) continue;
+      const targetDocId = item.parentId || item.id || item.sku;
+      if (!targetDocId) continue;
       
-      const pRef = doc(db, getCollectionPath('products'), itemIdentifier);
-      productRefs.push({ ref: pRef, item: item });
-      productSnaps.push(await transaction.get(pRef));
+      if (!productDocMap.has(targetDocId)) {
+        const pRef = doc(db, getCollectionPath('products'), targetDocId);
+        const pSnap = await transaction.get(pRef);
+        productDocMap.set(targetDocId, { ref: pRef, snap: pSnap, items: [] });
+      }
+      productDocMap.get(targetDocId).items.push(item);
     }
 
     // [SECURITY] Read Promotions to validate in real-time
@@ -116,12 +119,27 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     });
 
     // [SECURITY] Calculate exact net total using dh-shared PriceEngine
-    // Re-hydrate cart items with REAL DB prices
+    // Re-hydrate cart items with REAL DB prices (supporting both main products and variants)
     const verifiedItems = cartItems.map((item) => {
       if (item.isFreebie) return item;
-      const dbProduct = productSnaps.find(snap => snap.id === (item.id || item.sku))?.data();
+      const targetDocId = item.parentId || item.id || item.sku;
+      const entry = productDocMap.get(targetDocId);
+      const dbProduct = entry?.snap?.exists() ? entry.snap.data() : null;
       if (!dbProduct) throw new Error(`ไม่พบสินค้า ${item.name} ในระบบ`);
-      return { ...item, retailPrice: dbProduct.retailPrice || dbProduct.Price || item.retailPrice };
+      
+      let resolvedPrice = dbProduct.retailPrice || dbProduct.Price || item.retailPrice || 0;
+      if (Array.isArray(dbProduct.variants)) {
+        const matchedVariant = dbProduct.variants.find(v => 
+          (item.id && (v.sku === item.id || v.id === item.id)) ||
+          (item.sku && (v.sku === item.sku || v.id === item.sku)) ||
+          (item.variantAttributes && v.attributes && 
+           JSON.stringify(v.attributes) === JSON.stringify(item.variantAttributes))
+        );
+        if (matchedVariant) {
+          resolvedPrice = matchedVariant.retailPrice || matchedVariant.price || resolvedPrice;
+        }
+      }
+      return { ...item, retailPrice: resolvedPrice };
     });
 
     const calculatedPrices = calculateNetTotal({
@@ -140,24 +158,64 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       console.warn("Price mismatch detected. Falling back to secure server-side price.", finalNetTotal, totals?.netTotal);
     }
 
-    // [CONCURRENCY] Check Stock limits
+    // [CONCURRENCY] Check Stock limits for each unique product doc
     const stockUpdates = [];
-    productSnaps.forEach((snap, index) => {
-      if (snap.exists()) {
-        const currentStock = snap.data().stockQuantity || 0;
-        const itemBuffer = resolveEffectiveBuffer(snap.data().bufferStock, globalBuffer);
-        const requiredQty = productRefs[index].item.qty;
-        
-        if (!isStockAvailableForSale(currentStock, itemBuffer, requiredQty)) {
-          throw new Error(`สินค้า ${snap.data().sku} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
-        }
-        stockUpdates.push({ 
-          ref: productRefs[index].ref, 
-          newQty: currentStock - requiredQty, 
-          soldInc: requiredQty 
-        });
+    for (const [targetDocId, entry] of productDocMap.entries()) {
+      if (!entry.snap.exists()) {
+        throw new Error(`ไม่พบข้อมูลสต็อกสินค้า ID: ${targetDocId}`);
       }
-    });
+      
+      const pData = entry.snap.data();
+      let currentParentStock = pData.stockQuantity || 0;
+      let totalSoldInc = 0;
+      let updatedVariants = Array.isArray(pData.variants) ? pData.variants.map(v => ({ ...v })) : null;
+      let hasVariantStockDeduction = false;
+
+      for (const item of entry.items) {
+        const requiredQty = item.qty || item.quantity || 1;
+        totalSoldInc += requiredQty;
+
+        // If this item is a variant, check and deduct variant stock inside child variants array
+        if (updatedVariants) {
+          const vIdx = updatedVariants.findIndex(v => 
+            (item.id && (v.sku === item.id || v.id === item.id)) ||
+            (item.sku && (v.sku === item.sku || v.id === item.sku)) ||
+            (item.variantAttributes && v.attributes && 
+             JSON.stringify(v.attributes) === JSON.stringify(item.variantAttributes))
+          );
+          if (vIdx !== -1) {
+            const v = updatedVariants[vIdx];
+            const vStock = v.stockQuantity || 0;
+            const vBuffer = resolveEffectiveBuffer(v.bufferStock, resolveEffectiveBuffer(pData.bufferStock, globalBuffer));
+            if (!isStockAvailableForSale(vStock, vBuffer, requiredQty)) {
+              throw new Error(`ตัวเลือกสินค้า ${v.sku || item.name} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${vBuffer} ชิ้น)`);
+            }
+            updatedVariants[vIdx].stockQuantity = vStock - requiredQty;
+            hasVariantStockDeduction = true;
+          }
+        }
+
+        // Also check parent stock
+        const itemBuffer = resolveEffectiveBuffer(pData.bufferStock, globalBuffer);
+        if (!isStockAvailableForSale(currentParentStock, itemBuffer, requiredQty)) {
+          throw new Error(`สินค้า ${pData.sku || pData.name} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น)`);
+        }
+        currentParentStock -= requiredQty;
+      }
+
+      const updatePayload = {
+        stockQuantity: currentParentStock,
+        'stats.sold': increment(totalSoldInc || 0),
+        lastOrderId: orderRef.id
+      };
+      if (hasVariantStockDeduction && updatedVariants) {
+        updatePayload.variants = updatedVariants;
+      }
+      stockUpdates.push({
+        ref: entry.ref,
+        payload: updatePayload
+      });
+    }
 
     // 3. Writes
     const appliedPromos = checkoutState?.appliedPromotions?.map(p => `✅ ${p.name || 'โปรโมชั่น'}`) || [];
@@ -209,13 +267,9 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     transaction.set(orderRef, orderData);
 
-    // Apply Stock Deductions
+    // Apply Stock Deductions (including variant array updates if applicable)
     stockUpdates.forEach(u => {
-      transaction.update(u.ref, { 
-        stockQuantity: u.newQty, 
-        'stats.sold': increment(u.soldInc || 0),
-        lastOrderId: orderRef.id
-      });
+      transaction.update(u.ref, u.payload);
     });
 
     const currentWalletBalance = Number(userData.walletBalance || 0);

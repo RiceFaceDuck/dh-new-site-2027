@@ -276,18 +276,6 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isStaff();
     }
-    // 2.1 รีวิวสินค้า (Product Reviews)
-    match /product_reviews/{reviewId} {
-      allow read: if true; // ทุกคนอ่านรีวิวได้
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid; // ต้องล็อกอินถึงจะเขียนรีวิวได้
-      allow update: if isStaff() || (
-        isAuthenticated() && (
-          (resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId'])) ||
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'helpful', 'likeCount', 'likesCount'])
-        )
-      );
-      allow delete: if isManagerOrAdmin(); // เฉพาะผู้ดูแลลบได้
-    }
 
     // 🛡️ POS Order Idempotency Lock Collection
     match /order_requests/{reqKey} {
@@ -376,19 +364,27 @@ service cloud.firestore {
         // 🚀 THE FIX: บังคับสถานะ Todo ให้เป็น pending หรือ todo เท่านั้น ป้องกันแฮกสร้างงานที่ผ่านการอนุมัติแล้ว
         request.resource.data.status in ['todo', 'pending', 'pending_manager', 'waiting_item', 'PENDING']
       ) && (
-        // 🛡️ ป้องกันแฮกเกอร์แอบสร้างงานสงวนสิทธิ์ของพนักงาน/ผู้จัดการ (อนุญาตเฉพาะ STAFF_APPROVAL สำหรับสมัครพนักงานใหม่)
-        !(request.resource.data.get('taskType', '') in [
-          'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
-          'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 
-          'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
-          'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
-        ]) &&
-        !(request.resource.data.get('type', '') in [
-          'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
-          'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 
-          'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
-          'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
-        ])
+        // 🛡️ ป้องกันแฮกเกอร์แอบสร้างงานสงวนสิทธิ์ของพนักงาน/ผู้จัดการ (อนุญาตเฉพาะ STAFF_APPROVAL หรือ PRODUCT_KNOWLEDGE_APPROVAL ที่มีแต้มรางวัล <= 2)
+        (
+          !(request.resource.data.get('taskType', '') in [
+            'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
+            'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 
+            'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
+            'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
+          ]) &&
+          !(request.resource.data.get('type', '') in [
+            'CLAIM_APPROVAL', 'EXCHANGE_APPROVAL', 'RETURN_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 
+            'CANCEL_EXCHANGE_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 
+            'PARTNER_APPROVAL', 'PRODUCT_KNOWLEDGE_APPROVAL', 'BILL_CANCEL_APPROVAL',
+            'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
+          ])
+        ) || (
+          (request.resource.data.get('taskType', '') == 'PRODUCT_KNOWLEDGE_APPROVAL' ||
+           request.resource.data.get('type', '') == 'PRODUCT_KNOWLEDGE_APPROVAL') &&
+          (!('payload' in request.resource.data) ||
+           !('creditReward' in request.resource.data.payload) ||
+           request.resource.data.payload.creditReward <= 2)
+        )
       ));
       allow update: if isManagerOrAdmin() || (isStaff() && (
         !(resource.data.get('taskType', '') in [
@@ -802,9 +798,9 @@ service cloud.firestore {
         request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
         request.resource.data.text is string &&
         request.resource.data.text.size() <= 2000;
-      // อนุญาตให้อัปเดต likes (หรือเจ้าของแก้ไข หรือ Staff)
+      // อนุญาตให้อัปเดต likes/helpful (หรือเจ้าของแก้ไข หรือ Staff)
       allow update: if isAuthenticated() && (
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'helpful', 'likeCount', 'likesCount'])) ||
         (resource.data.userId == request.auth.uid) ||
         isStaff()
       );

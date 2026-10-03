@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function ManagerRoute() {
   const { isManagerOrOwner, loading } = useAuth();
@@ -8,7 +9,7 @@ export default function ManagerRoute() {
 
   useEffect(() => {
     if (!loading && !isManagerOrOwner()) {
-      alert("คุณไม่มีอำนาจเข้าใช้งาน\nกรุณาติดต่อผู้จัดการ");
+      toast.error("คุณไม่มีอำนาจเข้าใช้งาน กรุณาติดต่อผู้จัดการ", { id: 'unauthorized-manager-route' });
     }
   }, [loading, isManagerOrOwner]);
 

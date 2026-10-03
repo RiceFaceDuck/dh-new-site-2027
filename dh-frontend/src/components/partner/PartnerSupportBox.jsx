@@ -1,13 +1,7 @@
-import { useState, useEffect } from 'react';
 import { ShieldCheck, Phone, CheckCircle2, MapPin, Award } from 'lucide-react';
-import { findNearestPartner, getFallbackPartner } from '../../firebase/partnerLocationService';
-import { useGeolocation } from '../../hooks/useGeolocation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../firebase/config';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import LazyImage from '../common/LazyImage';
 import { useToast } from '../../context/ToastContext';
-
+import { useNearestPartner } from './hooks/useNearestPartner';
 
 // ==========================================
 // 🧩 Sub-Components (SRP)
@@ -48,61 +42,7 @@ const SkeletonLoader = () => (
 // ==========================================
 
 const PartnerSupportBox = () => {
-  const { getUserCurrentLocation } = useGeolocation();
-  const [partner, setPartner] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchPartner = async () => {
-      try {
-        setLoading(true);
-        let nearest = null;
-        
-        try {
-          const location = await getUserCurrentLocation();
-          nearest = await findNearestPartner(location.latitude, location.longitude, 30);
-        } catch (locationErr) {
-          console.warn("📍 [Location] Permission denied or unavailable. Using fallback partner...");
-          nearest = await getFallbackPartner();
-        }
-
-        if (!nearest) {
-          console.warn("📍 [Location] No partner within 30km. Using fallback partner...");
-          nearest = await getFallbackPartner();
-        }
-        
-        if (nearest) {
-          // 🚀 [THE FIX] ดึงรูปภาพจาก partner_ads (เหมือนหน้าสินค้า/โฮมเพจ) เพื่อให้รองรับร้านค้าเก่าที่เซฟข้อมูลไว้ก่อนอัปเดตระบบ
-          try {
-            const adId = `AD-CARD-${nearest.partnerId || nearest.id}`;
-            const adRef = doc(db, getCollectionPath('partner_ads'), adId);
-            const adSnap = await getDoc(adRef);
-            
-            if (adSnap.exists()) {
-              const adData = adSnap.data();
-              if (adData.imageUrl) nearest.fallbackAdImage = adData.imageUrl;
-              if (!nearest.lineUrl && adData.lineUrl) nearest.lineUrl = adData.lineUrl;
-              if (!nearest.messengerUrl && adData.messengerUrl) nearest.messengerUrl = adData.messengerUrl;
-            }
-          } catch (imgError) {
-            console.error("Failed to fetch fallback ad image:", imgError);
-          }
-
-          setPartner(nearest);
-        } else {
-          setError("No partners available"); 
-        }
-      } catch (err) {
-        console.error("Partner Box - System Error:", err);
-        setError("Error loading partner");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPartner();
-  }, []);
+  const { partner, loading, error } = useNearestPartner();
 
   const handleContactClick = () => {
     if (!partner) return;

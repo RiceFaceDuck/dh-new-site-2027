@@ -24,7 +24,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-export default function AuthForm() {
+export default function AuthForm({ onSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
   const [error, setError] = useState('');
@@ -88,6 +88,7 @@ export default function AuthForm() {
       } else {
         await registerWithEmail(formData.email, formData.password, formData.name);
       }
+      if (onSuccess) onSuccess();
     } catch (err) {
       console.error(err);
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
@@ -109,6 +110,7 @@ export default function AuthForm() {
     setError('');
     try {
       await loginWithGoogle();
+      if (onSuccess) onSuccess();
     } catch (err) {
       console.error(err);
       if (err.code !== 'auth/popup-closed-by-user') {

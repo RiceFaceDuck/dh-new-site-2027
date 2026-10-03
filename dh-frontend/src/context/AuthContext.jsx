@@ -87,6 +87,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     try {
       localStorage.removeItem(ACTIVITY_KEY);
+      window.dispatchEvent(new Event('dh_auth_logout'));
       await firebaseSignOut(auth);
     } catch (e) {
       console.error('Logout error:', e);

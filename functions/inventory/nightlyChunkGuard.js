@@ -144,6 +144,7 @@ const rebuildAllChunksLogic = async (db) => {
     const customerList = [];
 
     usersSnap.forEach(docSnap => {
+      const data = docSnap.data() || {};
       const roleLower = String(data.role || 'Customer').toLowerCase();
       const staffRoles = ['admin', 'manager', 'owner', 'staff', 'packer', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน', 'พนักงานทั่วไป', 'พนักงานแพ็ค', 'บัญชี'];
       const isStaffUser = staffRoles.includes(roleLower) || staffRoles.includes(data.role);

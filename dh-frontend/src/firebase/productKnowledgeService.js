@@ -2,20 +2,33 @@ import { db } from './config';
 import { collection, addDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
+// 🚀 Memory Cache for Knowledge Credit Config (10 Min TTL)
+let cachedKnowledgeCredit = null;
+let cachedKnowledgeCreditTimestamp = 0;
+const KNOWLEDGE_CACHE_TTL = 10 * 60 * 1000;
+
 export const productKnowledgeService = {
   /**
-   * ดึงค่าการตั้งค่าเครดิตสำหรับระบบความรู้จากฐานข้อมูล
+   * ดึงค่าการตั้งค่าเครดิตสำหรับระบบความรู้จากฐานข้อมูล (มีแคช 10 นาที)
    * ถ้ายังไม่มี จะคืนค่าเริ่มต้นที่ 2 เครดิต
    */
   getKnowledgeCreditConfig: async () => {
+    if (cachedKnowledgeCredit !== null && (Date.now() - cachedKnowledgeCreditTimestamp < KNOWLEDGE_CACHE_TTL)) {
+      return cachedKnowledgeCredit;
+    }
+
     try {
       const configRef = doc(db, getCollectionPath('settings'), 'knowledge_config');
       const docSnap = await getDoc(configRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        return data.compatibleCreditReward || 2;
+        cachedKnowledgeCredit = data.compatibleCreditReward || 2;
+        cachedKnowledgeCreditTimestamp = Date.now();
+        return cachedKnowledgeCredit;
       }
-      return 2; // ค่าเริ่มต้น
+      cachedKnowledgeCredit = 2; // ค่าเริ่มต้น
+      cachedKnowledgeCreditTimestamp = Date.now();
+      return 2;
     } catch (error) {
       console.error("Error fetching knowledge credit config:", error);
       return 2; // กรณี error คืนค่า 2 ไปก่อน

@@ -97,14 +97,29 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
   }
 };
 
+// 🚀 Memory Cache for Credit Config (10 Min TTL)
+let cachedCreditConfig = null;
+let cachedCreditConfigTimestamp = 0;
+const CREDIT_CONFIG_TTL = 10 * 60 * 1000;
+
 export const getCreditSettings = async () => {
+  if (cachedCreditConfig && (Date.now() - cachedCreditConfigTimestamp < CREDIT_CONFIG_TTL)) {
+    return cachedCreditConfig;
+  }
+
   try {
     const docRef = doc(db, getCollectionPath('settings'), 'credit_config');
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) return unwrapCreditConfig(docSnap.data());
+    if (docSnap.exists()) {
+      cachedCreditConfig = unwrapCreditConfig(docSnap.data());
+      cachedCreditConfigTimestamp = Date.now();
+      return cachedCreditConfig;
+    }
     return null;
   } catch (error) {
-    console.error("🔥 System Error [getCreditSettings]:", error);
+    if (error?.code !== 'permission-denied') {
+      console.error("🔥 System Error [getCreditSettings]:", error);
+    }
     return null;
   }
 };

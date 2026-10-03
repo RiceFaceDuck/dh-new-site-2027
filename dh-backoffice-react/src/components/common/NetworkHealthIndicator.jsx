@@ -73,7 +73,7 @@ export default function NetworkHealthIndicator({ compact = false }) {
       ) : (
         <span className="flex items-center gap-1.5">
           <WifiOff className="w-3.5 h-3.5" />
-          <span className="font-semibold">เธชเธฑเธเธเธฒเธ“เธเธฒเธ”เธซเธฒเธข</span>
+          <span className="font-semibold">สัญญาณขาดหาย</span>
         </span>
       )}
     </div>

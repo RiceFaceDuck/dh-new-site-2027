@@ -251,7 +251,8 @@ export const AuthProvider = ({ children }) => {
              // Access denied (Blocked or unknown non-staff)
              setIsCheckingAuth(false);
              setAccessDenied(true);
-             setDenyReason(isSuspended ? 'blocked' : 'pending');
+             const isPending = roleData?.role === 'pending_approval' || roleData?.role === 'pending';
+             setDenyReason(isSuspended ? 'blocked' : (isPending ? 'pending' : 'unauthorized'));
           }
 
           setUser(currentUser);
@@ -360,6 +361,17 @@ export const AuthProvider = ({ children }) => {
         });
       }
       localStorage.removeItem('dh_last_activity');
+      try {
+        const sessionKeysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && key.startsWith('dh_')) {
+            sessionKeysToRemove.push(key);
+          }
+        }
+        sessionKeysToRemove.forEach(k => sessionStorage.removeItem(k));
+      } catch (_e) {}
+      inMemoryRbacCache = null;
       if (unsubscribeRoleRef.current) {
         unsubscribeRoleRef.current();
         unsubscribeRoleRef.current = null;

@@ -214,16 +214,14 @@ export const productService = {
     const category = getVal(raw, ['category', 'type', 'group']);
     
     // Pricing
-    // retailPrice is the website selling price. wholesalePrice is cost (DO NOT SHOW TO CUSTOMERS).
+    // retailPrice is the customer selling price. NEVER fallback to wholesalePrice/cost.
     const retailPrice = getVal(raw, ['retailPrice']);
-    const wholesalePrice = getVal(raw, ['price', 'baseprice', 'cost']);
     const discountPrice = getVal(raw, ['salePrice', 'discountPrice', 'specialPrice']);
 
-    // The main price shown to the customer should be the retailPrice.
-    // If retailPrice is missing, fallback to wholesalePrice (but ideally it should exist).
-    const price = retailPrice || wholesalePrice || 0;
+    // If retailPrice is missing or <= 0, price is 0 and product is marked unpurchasable.
+    const price = typeof retailPrice === 'number' && retailPrice > 0 ? retailPrice : 0;
     
-    // salePrice is only shown if there's an actual discount price that is lower than the regular price.
+    // salePrice is only shown if there's an actual discount price lower than the regular price.
     let salePrice = discountPrice && discountPrice < price ? discountPrice : undefined;
 
     // Stock
@@ -234,7 +232,8 @@ export const productService = {
     const bufferStock = resolveEffectiveBuffer(rawBuffer, cachedGlobalBuffer);
     const availableStock = calculateAvailableStock(stockQuantity, bufferStock);
     
-    const isOutOfStock = isProductOutOfStock(stockQuantity, bufferStock);
+    // Out of stock if stock is depleted/buffered OR if no valid retail price is configured
+    const isOutOfStock = price <= 0 || isProductOutOfStock(stockQuantity, bufferStock);
     const isLowStock = isProductLowStock(stockQuantity, bufferStock);
 
     // Descriptions
@@ -248,7 +247,10 @@ export const productService = {
 
     // Media
     let rawImg = getVal(raw, ['imageurl', 'image', 'picture', 'photo', 'img', 'images', 'cover']);
-    const imageUrl = Array.isArray(rawImg) ? rawImg[0] : rawImg;
+    const images = Array.isArray(rawImg) ? rawImg : (rawImg ? [rawImg] : []);
+    const imageUrl = images.length > 0 ? images[0] : null;
+    const hiddenImagesKey = Object.keys(raw || {}).find(k => k.toLowerCase() === 'hiddenimages');
+    const hiddenImages = hiddenImagesKey ? (raw[hiddenImagesKey] || []) : [];
     const youtubeUrl = getVal(raw, ['youtubeUrl', 'videoUrl', 'youtube', 'video']);
     const videoId = this.extractYouTubeId(youtubeUrl);
 
@@ -283,6 +285,8 @@ export const productService = {
       compatiblePartNumbers,
       specs,
       imageUrl,
+      images,
+      hiddenImages,
       youtubeUrl,
       videoId,
       shopeeUrl,
@@ -290,8 +294,7 @@ export const productService = {
       reviewCount,
       averageRating,
       variantOptions,
-      variants,
-      _raw: raw // Keep raw data just in case
+      variants
     };
   },
 

@@ -1,18 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { productReviewService } from '../../firebase/productReviewService';
-import { useToast } from '../../context/ToastContext';
-import { 
-  Star, 
-  MessageCircle, 
-  Heart, 
-  Share2, 
-  Loader2, 
-  Send, 
-  ThumbsUp, 
-  MoreHorizontal, 
-  Sparkles 
-} from 'lucide-react';
+import { Star, MessageCircle, Heart, Share2, Loader2, Send, ThumbsUp, MoreHorizontal, Sparkles } from 'lucide-react';
+import { useProductReviews } from '../../pages/hooks/useProductReviews';
 
 // Helper component for Star Rating (Display)
 const StarDisplay = ({ val }) => {
@@ -30,124 +17,21 @@ const StarDisplay = ({ val }) => {
 };
 
 export default function ProductCommunitySection({ productId, reviewCount = 0, averageRating = 0 }) {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [lastDoc, setLastDoc] = useState(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(false);
-  
-  // Form State
-  const [rating, setRating] = useState(5);
-  const [hoverRating, setHoverRating] = useState(0);
-  const reviewTextRef = useRef(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const { showToast } = useToast();
-  const auth = getAuth();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, [auth]);
-
-  const loadComments = async (isInitial = false) => {
-    if (!productId || (loading && !isInitial)) return;
-    
-    try {
-      setLoading(true);
-      const result = await productReviewService.getReviews(
-        productId, 
-        5, 
-        isInitial ? null : lastDoc
-      );
-      
-      if (isInitial) {
-        setComments(result.reviews);
-      } else {
-        setComments(prev => [...prev, ...result.reviews]);
-      }
-      
-      setLastDoc(result.lastDoc);
-      setHasMore(result.hasMore);
-    } catch (error) {
-      console.error("Error loading reviews:", error);
-      if (error.message && error.message.toLowerCase().includes('index')) {
-        showToast("ไม่สามารถโหลดรีวิวได้: ขาด Index ใน Firestore (ดู Link ใน Console)", "error");
-      } else if (error.message && error.message.toLowerCase().includes('permission')) {
-        showToast("ไม่สามารถโหลดรีวิวได้: ไม่มีสิทธิ์การเข้าถึง (Permission Denied)", "error");
-      } else {
-        showToast("ไม่สามารถโหลดรีวิวได้: " + (error.message || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ"), "error");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (productId) {
-      loadComments(true);
-    }
-      }, [productId]);
-
-  const handleSubmit = async () => {
-    if (!currentUser) {
-      showToast("กรุณาเข้าสู่ระบบก่อนเขียนรีวิว", "warning");
-      return;
-    }
-    
-    const reviewText = reviewTextRef.current?.value || '';
-    if (!reviewText.trim()) {
-      showToast("กรุณาเขียนความคิดเห็น", "warning");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      
-      const newReview = {
-        rating,
-        text: reviewText.trim()
-      };
-      
-      await productReviewService.addReview(productId, newReview, currentUser);
-      
-      showToast("ขอบคุณสำหรับรีวิวของคุณ!", "success");
-      if (reviewTextRef.current) reviewTextRef.current.value = '';
-      setRating(5);
-      
-      // Reload comments to show the new one
-      loadComments(true);
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      showToast("เกิดข้อผิดพลาดในการส่งรีวิว กรุณาลองใหม่", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleLike = async (commentId, currentLikes, hasLikedLocal) => {
-    if (hasLikedLocal) return; // Prevent spam clicking temporarily
-
-    // Optimistic UI update
-    setComments(prev => prev.map(c => 
-      c.id === commentId ? { ...c, likes: (currentLikes || 0) + 1, hasLikedLocal: true } : c
-    ));
-    
-    try {
-      await productReviewService.likeReview(commentId);
-    } catch (error) {
-      console.error("🔥 Error:", error);
-      showToast(error?.message || "เกิดข้อผิดพลาด", 'error');
-
-      // Revert on error
-      setComments(prev => prev.map(c => 
-        c.id === commentId ? { ...c, likes: currentLikes, hasLikedLocal: false } : c
-      ));
-      showToast("ไม่สามารถกดถูกใจได้", "error");
-    }
-  };
+  const {
+    currentUser,
+    comments,
+    hasMore,
+    loading,
+    rating,
+    setRating,
+    hoverRating,
+    setHoverRating,
+    reviewTextRef,
+    submitting,
+    loadMore,
+    handleSubmit,
+    handleLike
+  } = useProductReviews(productId);
 
   return (
     <div className="bg-slate-50/30 p-6 md:p-8 flex flex-col h-full border-t border-slate-200 mt-0 shadow-inner">
@@ -312,7 +196,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
       {/* Footer Action */}
       {hasMore && (
         <button 
-          onClick={() => loadComments(false)}
+          onClick={loadMore}
           disabled={loading}
           className="w-full mt-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-cyber-blue hover:bg-blue-50 transition-colors disabled:opacity-50"
         >

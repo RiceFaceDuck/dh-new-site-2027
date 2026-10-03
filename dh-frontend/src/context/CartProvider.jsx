@@ -102,6 +102,9 @@ export const CartProvider = ({ children }) => {
         const dbItems = items.map(item => ({
           id: item.id,
           sku: item.sku || '-',
+          parentId: item.parentId || null,
+          variantAttributes: item.variantAttributes || null,
+          salePrice: item.salePrice || null,
           name: item.name || '',
           price: item.price || 0,
           image: item.image || item.images?.[0] || item.imageUrl || '',
@@ -236,9 +239,12 @@ export const CartProvider = ({ children }) => {
       } else {
         const itemToAdd = {
           id: product.id,
-          sku: product.sku || '-',
+          sku: product.sku || product.id || '-',
+          parentId: product.parentId || null,
+          variantAttributes: product.variantAttributes || null,
           name: product.name,
-          price: product.retailPrice || product.price || 0,
+          price: product.price || product.retailPrice || 0,
+          salePrice: product.salePrice || null,
           image: product.image || product.images?.[0] || product.imageUrl || '',
           category: product.category || product.type || '',
           type: product.type || product.category || '',

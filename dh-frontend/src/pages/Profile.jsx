@@ -37,6 +37,20 @@ const Profile = () => {
     }
   }, [location, navigate]);
 
+  // 3. 🔄 Smart Redirect to returnUrl if logged in
+  useEffect(() => {
+    if (effectiveUser && !authLoading) {
+      const queryParams = new URLSearchParams(location.search);
+      const returnUrl = location.state?.returnUrl || queryParams.get('returnUrl');
+      if (returnUrl && returnUrl !== '/profile') {
+        navigate(returnUrl, { replace: true });
+      } else if (queryParams.get('tab') === 'login') {
+        setActiveTab('overview');
+        navigate('/profile', { replace: true });
+      }
+    }
+  }, [effectiveUser, authLoading, location, navigate]);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     navigate(`/profile?tab=${tab}`, { replace: true });

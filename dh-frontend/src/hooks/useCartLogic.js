@@ -93,7 +93,14 @@ export const useCartLogic = () => {
   const fetchAndValidate = useCallback(async (uncachedItems) => {
     setIsValidatingCart(true);
     try {
-      const idsToFetch = uncachedItems.map(item => (item.id && item.id !== '-') ? item.id : item.sku).filter(Boolean);
+      // 🚀 Collect both item ID/SKU and parentId (for variant products)
+      const idsToFetch = [
+        ...new Set(
+          uncachedItems
+            .flatMap(item => [item.parentId, (item.id && item.id !== '-') ? item.id : item.sku])
+            .filter(Boolean)
+        )
+      ];
       const freshProductsList = await productService.getProductsByIds(idsToFetch);
       
       const newCache = { ...productCache };
@@ -101,11 +108,54 @@ export const useCartLogic = () => {
       freshProductsList.forEach(p => {
         freshMap[p.id] = p;
         if (p.sku) freshMap[p.sku] = p;
+
+        // 🚀 Index all variants embedded in the parent product document
+        if (Array.isArray(p.variants)) {
+          p.variants.forEach(v => {
+            const vSku = v.sku || v.id;
+            const variantBuffer = resolveEffectiveBuffer(v.bufferStock, p.bufferStock);
+            const variantData = {
+              ...v,
+              id: vSku || p.id,
+              sku: vSku || p.id,
+              parentId: p.id,
+              name: `${p.name} (${v.name || Object.values(v.attributes || {}).join(' / ') || vSku})`,
+              price: v.retailPrice || v.price || p.price,
+              stockQuantity: v.stockQuantity,
+              bufferStock: variantBuffer
+            };
+            if (vSku) freshMap[vSku] = variantData;
+          });
+        }
       });
 
       uncachedItems.forEach(item => {
         const id = (item.id && item.id !== '-') ? item.id : item.sku;
-        newCache[id] = freshMap[id] || { notFound: true };
+        // Try direct ID match, or match from parent product's variants
+        let resolved = freshMap[id];
+        if (!resolved && item.parentId && freshMap[item.parentId]) {
+          const parent = freshMap[item.parentId];
+          if (Array.isArray(parent.variants)) {
+            const matchedV = parent.variants.find(v => 
+              (v.sku && (v.sku === item.id || v.sku === item.sku)) ||
+              (item.variantAttributes && v.attributes && 
+               JSON.stringify(v.attributes) === JSON.stringify(item.variantAttributes))
+            );
+            if (matchedV) {
+              const vBuffer = resolveEffectiveBuffer(matchedV.bufferStock, parent.bufferStock);
+              resolved = {
+                ...matchedV,
+                id: matchedV.sku || id,
+                sku: matchedV.sku || id,
+                parentId: parent.id,
+                price: matchedV.retailPrice || matchedV.price || parent.price,
+                stockQuantity: matchedV.stockQuantity,
+                bufferStock: vBuffer
+              };
+            }
+          }
+        }
+        newCache[id] = resolved || { notFound: true };
       });
       
       setProductCache(newCache);
