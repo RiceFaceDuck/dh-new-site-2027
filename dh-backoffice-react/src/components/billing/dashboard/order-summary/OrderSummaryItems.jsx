@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ClaimActionForm from './ClaimActionForm';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import AfterSalesServiceBottomPanel from './AfterSalesServiceBottomPanel';
+import { useOrderClaims } from '../../hooks/useOrderClaims';
+import { ChevronDown, ChevronUp, Wrench, RefreshCw, ArrowLeftRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
 
@@ -44,8 +46,23 @@ const FreebieName = ({ item }) => {
     );
 };
 
+const getClaimStatusThai = (status) => {
+    switch (status) {
+        case 'pending_manager': return 'รอรับเรื่อง';
+        case 'waiting_item': return 'นำส่งตรวจสอบ';
+        case 'processing': return 'กำลังตรวจสอบ';
+        case 'approved': return 'อนุมัติแล้ว';
+        case 'completed': return 'เสร็จสิ้น';
+        case 'rejected': return 'ไม่อนุมัติ';
+        case 'cancelled': return 'ยกเลิก';
+        default: return status || 'รอดำเนินการ';
+    }
+};
+
 export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
     const [expandedRowIdx, setExpandedRowIdx] = useState(null);
+    const orderId = selectedOrder?.orderId || selectedOrder?.id;
+    const { activeClaims } = useOrderClaims(orderId);
 
     if (!selectedOrder?.items?.length) {
         return (
@@ -123,21 +140,84 @@ export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
                                                 {isFreebie && (
                                                     <span className="bg-emerald-500/10 text-emerald-600 px-1 py-0.5 rounded-sm text-[8px] font-black border border-emerald-500/20 shrink-0">ของแถม</span>
                                                 )}
-                                                {/* Tags for previous actions */}
+                                                {/* 1. Active In-Progress Claims / Exchanges / Returns for this SKU (กรองเฉพาะที่รอดำเนินการจริง) */}
+                                                {(() => {
+                                                    const CLOSED_STATUSES = ['completed', 'rejected', 'cancelled'];
+                                                    const matchingClaims = (activeClaims || []).filter(c => {
+                                                        const isCurrentSku = c.payload?.sku ? c.payload.sku === item.sku : (selectedOrder.items || []).length === 1;
+                                                        const isPending = !CLOSED_STATUSES.includes((c.status || '').toLowerCase());
+                                                        return isCurrentSku && isPending;
+                                                    });
+
+                                                    return matchingClaims.map((claim, cIdx) => {
+                                                        const claimCode = String(claim.payload?.exchangeId || claim.payload?.returnId || claim.payload?.claimId || claim.id || '').toUpperCase();
+                                                        const isSwap = claim.type === 'EXCHANGE_APPROVAL' || !!claim.payload?.isSwapSku || claimCode.startsWith('EXC-');
+                                                        const isReturn = claim.type === 'RETURN_APPROVAL' || claimCode.startsWith('RTN-');
+                                                        const statusLabel = getClaimStatusThai(claim.status);
+                                                        const claimQty = claim.payload?.qty || claim.payload?.quantity || 1;
+                                                        const tooltip = `รายการรอดำเนินการ: ${isSwap ? 'เปลี่ยน' : isReturn ? 'คืน' : 'เคลม'}${claimCode ? ` (${claimCode})` : ''}\nสถานะ: ${statusLabel}\nจำนวน: ${claimQty} ชิ้น`;
+
+                                                        if (isSwap) {
+                                                            return (
+                                                                <span 
+                                                                    key={`active-swap-${cIdx}`}
+                                                                    title={tooltip}
+                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-sky-500/10 text-sky-600 text-[9px] font-black border border-sky-500/30 shadow-2xs shrink-0 cursor-help"
+                                                                >
+                                                                    <RefreshCw size={9} className="text-sky-600" />
+                                                                    <span>เปลี่ยน ({statusLabel}) x{claimQty}</span>
+                                                                </span>
+                                                            );
+                                                        }
+
+                                                        if (isReturn) {
+                                                            return (
+                                                                <span 
+                                                                    key={`active-return-${cIdx}`}
+                                                                    title={tooltip}
+                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-600 text-[9px] font-black border border-purple-500/30 shadow-2xs shrink-0 cursor-help"
+                                                                >
+                                                                    <ArrowLeftRight size={9} />
+                                                                    <span>คืน ({statusLabel})</span>
+                                                                </span>
+                                                            );
+                                                        }
+
+                                                        return (
+                                                            <span 
+                                                                key={`active-claim-${cIdx}`}
+                                                                title={tooltip}
+                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-600 text-[9px] font-black border border-orange-500/30 shadow-2xs shrink-0 cursor-help"
+                                                            >
+                                                                <Wrench size={9} />
+                                                                <span>เคลม ({statusLabel})</span>
+                                                            </span>
+                                                        );
+                                                    });
+                                                })()}
+
+                                                {/* 2. Historic Past Actions (refundsAndClaims) - ป้ายประวัติเก่านิ่งๆ ไม่กระพริบ */}
                                                 {(() => {
                                                     const pastActions = selectedOrder.refundsAndClaims?.filter(rc => rc.sku === item.sku) || [];
                                                     return pastActions.map((action, aIdx) => {
-                                                        const isClaim = action.type === 'Claim';
-                                                        const isReturn = action.type === 'Return';
-                                                        const isExchange = action.type === 'Exchange';
+                                                        const actionId = String(action.returnId || action.claimId || action.exchangeId || action.id || '').toUpperCase();
+                                                        const type = (action.type || action.actionType || '').toLowerCase();
+                                                        
+                                                        const isExchange = type.includes('exchange') || type.includes('swap') || type.includes('เปลี่ยน') || actionId.startsWith('EXC-');
+                                                        const isReturn = type.includes('return') || type.includes('refund') || type.includes('คืน') || actionId.startsWith('RTN-');
+                                                        const isClaim = (type.includes('claim') || type === 'repair' || type.includes('เคลม') || actionId.startsWith('CLM-')) && !isExchange && !isReturn;
+                                                        
+                                                        const actionDate = action.date || action.approvedAt || action.createdAt ? new Date(action.date || action.approvedAt || action.createdAt).toLocaleDateString('th-TH') : '';
+                                                        const tooltip = `ประวัติรายการ: ${isExchange ? 'เปลี่ยน' : isReturn ? 'คืน' : isClaim ? 'เคลม' : 'ทำรายการ'}${actionId ? ` (${actionId})` : ''}${actionDate ? `\nวันที่: ${actionDate}` : ''}\nจำนวน: ${action.qty || 1} ชิ้น`;
+
                                                         return (
-                                                            <span key={aIdx} className={`px-1.5 py-0.5 rounded text-[9px] font-black border shrink-0 ${
+                                                            <span key={aIdx} title={tooltip} className={`px-1.5 py-0.5 rounded-sm text-[9px] font-black border shrink-0 cursor-help ${
+                                                                isExchange ? 'bg-sky-500/10 text-sky-600 border-sky-500/20' : 
+                                                                isReturn ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' : 
                                                                 isClaim ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' : 
-                                                                isReturn ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' :
-                                                                isExchange ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
-                                                                'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                                                'bg-slate-500/10 text-slate-600 border-slate-500/20'
                                                             }`}>
-                                                                เคย{isClaim ? 'เคลม' : isReturn ? 'คืน' : isExchange ? 'เปลี่ยน' : 'ทำรายการ'} x{action.qty || 1}
+                                                                เคย{isExchange ? 'เปลี่ยน' : isReturn ? 'คืน' : isClaim ? 'เคลม' : 'ทำรายการ'} x{action.qty || 1}
                                                             </span>
                                                         );
                                                     });
@@ -189,6 +269,9 @@ export default function OrderSummaryItems({ selectedOrder, isClaimable }) {
                     </motion.tbody>
                 </table>
             </div>
+
+            {/* 🔵 โซนบริการหลังการขายแถวด้านล่าง (ย่อ-ขยายได้ และแยกแถวตามแต่ละเคส) */}
+            <AfterSalesServiceBottomPanel orderId={orderId} claims={activeClaims} />
         </div>
     );
 }

@@ -141,14 +141,41 @@ export const returnActionService = {
           returnUserSnap = await transaction.get(userRef);
         }
 
+        const isGood = payload.itemCondition === 'good';
+        const isItemArrived = taskSnap.data()?.status === 'processing';
+        const currentDefect = Number(productData.defectQuantity || 0);
+
+        finalNewStock = isGood ? currentStock + qty : currentStock;
+        let finalNewDefect = currentDefect;
+        if (isGood) {
+          if (isItemArrived) {
+            finalNewDefect = Math.max(0, currentDefect - qty);
+          }
+        } else {
+          if (!isItemArrived) {
+            finalNewDefect = currentDefect + qty;
+          }
+        }
+
+        const actionTag = isGood ? 'RETURN_RESTOCK_GOOD' : 'RETURN_DEFECT';
+
         // --- 2. WRITE OPERATIONS ---
-        // 1. เพิ่มสต๊อกกลับเข้าคลัง
-        transaction.update(pRef, { stockQuantity: finalNewStock });
+        // 1. ปรับสต็อกสินค้าตามสภาพจริง
+        transaction.update(pRef, { 
+          stockQuantity: finalNewStock,
+          defectQuantity: finalNewDefect
+        });
 
         // 2. อัปเดตสถานะใบส่งคืนสินค้า
         transaction.update(taskRef, {
           status: 'completed',
-          updatedAt: serverTimestamp()
+          handledBy: adminUid || 'SYSTEM',
+          handledByName: adminName || 'Manager',
+          completedAt: serverTimestamp(),
+          completedAtIso: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
+          'payload.itemCondition': payload.itemCondition || 'defective',
+          'tags.action': actionTag
         });
 
         // 3. บันทึกประวัติลงใน Order เดิม
@@ -205,10 +232,62 @@ export const returnActionService = {
             timestamp: serverTimestamp()
           });
         }
+
+        // 5. บันทึก Transaction บัญชีคลัง (Ledger Transactions)
+        const transRef = doc(collection(db, getCollectionPath('transactions')));
+        transaction.set(transRef, {
+          id: transRef.id,
+          refId: payload.returnId || todoId,
+          sku: payload.sku,
+          quantityDelta: isGood ? qty : 0,
+          defectDelta: isGood ? (isItemArrived ? -qty : 0) : (isItemArrived ? 0 : qty),
+          financialDelta: {
+            netTotal: -refundAmount,
+            walletDelta: refundAmount,
+            creditPointsDelta: 0
+          },
+          tags: {
+            category: 'RETURN',
+            action: actionTag,
+            channel: 'BACKOFFICE_POS',
+            sku: payload.sku,
+            refId: payload.returnId || todoId
+          },
+          createdAt: serverTimestamp(),
+          createdAtIso: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
+          createdBy: adminUid || 'SYSTEM',
+          createdByName: adminName || 'Manager',
+          reason: isGood ? 'Return good condition item restocked to inventory' : 'Return defective item quarantined',
+          note: isGood 
+            ? `รับคืนสินค้าสภาพดี ${payload.sku} จำนวน ${qty} ชิ้น เข้าสต็อกขาย (คืนเงิน ฿${refundAmount})` 
+            : `รับคืนสินค้าชำรุด ${payload.sku} จำนวน ${qty} ชิ้น เข้าคลังชำรุด ไม่เพิ่มสต็อกขาย (คืนเงิน ฿${refundAmount})`
+        });
+
+        // 6. บันทึก Stock Receipts สำหรับของดี
+        if (isGood) {
+          const receiptRef = doc(collection(db, getCollectionPath('stock_receipts')));
+          transaction.set(receiptRef, {
+            sku: payload.sku,
+            quantity: qty,
+            source: 'return_good_item',
+            reference: payload.returnId || todoId,
+            createdBy: adminUid || 'Admin',
+            createdByName: adminName || 'Admin',
+            tags: {
+              category: 'RETURN',
+              action: 'RETURN_RESTOCK_GOOD',
+              channel: 'BACKOFFICE_POS',
+              sku: payload.sku,
+              refId: payload.returnId || todoId
+            },
+            createdAt: serverTimestamp()
+          });
+        }
       });
 
-      // 6. ซิงก์สต๊อกไป GAS ด้วยสต๊อกคงเหลือจริงที่คำนวณสำเร็จ
-      if (productData) {
+      // 7. ซิงก์สต๊อกไป GAS เฉพาะเมื่อเป็นของดี (เพราะสต็อกขายเปลี่ยน)
+      if (productData && payload.itemCondition === 'good') {
         gasStockService.queueUpdate({
             ...productData,
             sku: payload.sku,
@@ -217,19 +296,24 @@ export const returnActionService = {
         await gasStockService.forceSync();
       }
 
+      const isGoodCondition = payload.itemCondition === 'good';
+      const conditionLabel = isGoodCondition ? 'ของดี (ขายต่อได้)' : 'ของเสีย (ชำรุด)';
+      const stockImpactLabel = isGoodCondition ? `[เพิ่มสต๊อกขายปกติ +${qty}]` : `[คงอยู่ในคลังสินค้าชำรุด]`;
+
       gasHistoryService.log({
         level: 'INFO',
         module: 'Return',
         action: 'Completed',
         target: { id: payload.returnId, type: 'Task' },
         details: {
-          legacy_details: `คืนสินค้าสำเร็จ ${payload.sku} จำนวน ${qty} ชิ้น (คืนเงิน ฿${calculatedRefundAmount})${finalPenalty > 0 ? ` [หักค่าปรับของแถม: ฿${finalPenalty}]` : ''}`,
-          financials: { refundAmount: calculatedRefundAmount, freebiePenalty: finalPenalty }
+          legacy_details: `คืนสินค้าสำเร็จ (${conditionLabel}) ${payload.sku} จำนวน ${qty} ชิ้น (คืนเงิน ฿${calculatedRefundAmount}) ${stockImpactLabel}${finalPenalty > 0 ? ` [หักค่าปรับของแถม: ฿${finalPenalty}]` : ''}`,
+          financials: { refundAmount: calculatedRefundAmount, freebiePenalty: finalPenalty },
+          itemCondition: payload.itemCondition || 'defective'
         },
         actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
       });
 
-      // ✨ บันทึกประวัติย่อยระดับ SKU สำหรับการรับของดีกลับเข้าสต๊อก
+      // ✨ บันทึกประวัติย่อยระดับ SKU
       setTimeout(() => {
         gasHistoryService.log({
           level: 'INFO',
@@ -237,10 +321,12 @@ export const returnActionService = {
           action: 'SKU_RETURN',
           target: { id: payload.sku, type: 'Product' },
           details: {
-            type: 'รับคืน',
-            qtyChange: qty,
+            type: isGoodCondition ? 'รับคืนของดี' : 'รับคืนของเสีย',
+            qtyChange: isGoodCondition ? qty : 0,
             reference: payload.returnId,
-            legacy_details: `รับคืนสินค้ากลับเข้าสต๊อก (${payload.returnId})`
+            legacy_details: isGoodCondition 
+              ? `รับคืนสินค้าดีกลับเข้าสต็อกขายปกติ +${qty} ชิ้น (${payload.returnId})` 
+              : `รับคืนสินค้าเสียเข้าคลังชำรุด ไม่เพิ่มสต็อกขาย (${payload.returnId})`
           },
           actorOverride: { uid: adminUid, name: adminName || 'Manager' }
         });

@@ -1,49 +1,31 @@
 import OrderSummaryItems from './order-summary/OrderSummaryItems';
 import OrderSummaryTotals from './order-summary/OrderSummaryTotals';
+import { calculateOrderCanonicalTotals } from 'dh-shared/src/priceEngine';
 
 export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, orderStat }) {
     if (!selectedOrder) return null;
 
-    let netTotal = Number(selectedOrder.netTotal || selectedOrder.totals?.netTotal || selectedOrder.summary?.finalTotal || selectedOrder.finalTotal || selectedOrder.finalPayable || selectedOrder.totalPrice || selectedOrder.totalAmount || 0);
-    
-    // 🔥 ULTIMATE FALLBACK: If netTotal is 0, calculate it from the items array
-    if (netTotal === 0 && selectedOrder.items && selectedOrder.items.length > 0) {
-        netTotal = selectedOrder.items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0);
-    }
+    // 🟢 Use Canonical Totals Engine (Satang Precision SSOT)
+    const canonical = calculateOrderCanonicalTotals(selectedOrder);
 
-    // 🟢 [FALLBACK CALCULATION] Calculate true subtotal before discount from non-freebie items
-    let calculatedSubTotal = 0;
-    if (selectedOrder.items && selectedOrder.items.length > 0) {
-        calculatedSubTotal = selectedOrder.items.reduce((sum, item) => {
-            if (item.isFreebie) return sum;
-            const price = Number(item.price || item.priceAtPurchase || 0);
-            const qty = Number(item.qty || item.quantity || 1);
-            return sum + (price * qty);
-        }, 0);
-    }
-
-    const subTotal = Number(selectedOrder.subTotal || selectedOrder.summary?.itemSubTotal || selectedOrder.itemTotal || selectedOrder.totals?.subtotal || calculatedSubTotal || netTotal);
-    
-    let discount = Number(selectedOrder.overallDiscount || selectedOrder.promoDiscount || selectedOrder.discountAmount || selectedOrder.summary?.discountTotal || selectedOrder.calculationLog?.discountAmount || selectedOrder.totals?.discount || 0);
-    
-    // 🟢 [FALLBACK CALCULATION] If discount is 0 but subTotal > netTotal, calculate actual discount
-    if (discount === 0 && subTotal > netTotal) {
-        const shipping = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.summary?.shippingFee || selectedOrder.totals?.shipping || 0);
-        const vat = Number(selectedOrder.vat || selectedOrder.vatAmount || selectedOrder.taxAmount || selectedOrder.summary?.vat || 0);
-        const otherFees = Number(selectedOrder.otherFees || selectedOrder.extraFee || selectedOrder.summary?.otherFees || 0);
-        const calculatedDiff = subTotal + shipping + otherFees + vat - netTotal;
-        if (calculatedDiff > 0) {
-            discount = calculatedDiff;
-        }
-    }
-
-    const shipping = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.summary?.shippingFee || selectedOrder.totals?.shipping || 0);
+    const subTotal = canonical.itemsSubTotal;
+    let discount = canonical.totalDiscount;
+    const shipping = canonical.shippingFee;
+    const otherFeeAmount = canonical.otherFees;
+    const otherFeeName = selectedOrder.otherFeeName || selectedOrder.summary?.otherFeeName || '';
+    const vat = canonical.vatAmount;
+    const paymentFee = Number(selectedOrder.paymentFee || selectedOrder.chargeAmount || selectedOrder.feeAmount || selectedOrder.summary?.paymentFee || 0);
     const walletUsed = Number(selectedOrder.walletUsed || selectedOrder.walletUsedAmount || selectedOrder.summary?.walletUsed || selectedOrder.calculationLog?.usedWallet || 0);
     const pointsUsed = Number(selectedOrder.pointsUsed || selectedOrder.summary?.pointsUsed || selectedOrder.pointsDiscount || selectedOrder.calculationLog?.pointsUsed || 0);
-    const vat = Number(selectedOrder.vat || selectedOrder.vatAmount || selectedOrder.taxAmount || selectedOrder.summary?.vat || 0);
-    const paymentFee = Number(selectedOrder.paymentFee || selectedOrder.chargeAmount || selectedOrder.feeAmount || selectedOrder.summary?.paymentFee || 0);
-    const otherFeeAmount = Number(selectedOrder.otherFeeAmount || selectedOrder.summary?.otherFeeAmount || selectedOrder.otherFees || selectedOrder.extraFee || selectedOrder.summary?.otherFees || 0);
-    const otherFeeName = selectedOrder.otherFeeName || selectedOrder.summary?.otherFeeName || '';
+    const netTotal = canonical.netTotal;
+
+    // 🟢 [FALLBACK CALCULATION] If discount is 0 but subTotal > netTotal, calculate actual discount
+    if (discount === 0 && subTotal > netTotal) {
+        const calculatedDiff = subTotal + shipping + otherFeeAmount + vat - netTotal;
+        if (calculatedDiff > 0) {
+            discount = Math.round(calculatedDiff * 100) / 100;
+        }
+    }
 
     // Check if bill is claimable
     const pStat = (paymentStat || '').toLowerCase();

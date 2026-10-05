@@ -19,6 +19,24 @@ export const claimActionService = {
       if (payload.trackingNo) {
           updates['payload.trackingNo'] = payload.trackingNo;
       }
+      if (payload.differencePayment) {
+          updates['payload.differencePayment'] = payload.differencePayment;
+      }
+      if (payload.isDifferencePaid !== undefined) {
+          updates['payload.isDifferencePaid'] = payload.isDifferencePaid;
+      }
+      if (payload.differenceSlipUrl) {
+          updates['payload.differenceSlipUrl'] = payload.differenceSlipUrl;
+      }
+      if (payload.differenceWalletAmount !== undefined) {
+          updates['payload.differenceWalletAmount'] = payload.differenceWalletAmount;
+      }
+      if (payload.differenceDirectAmount !== undefined) {
+          updates['payload.differenceDirectAmount'] = payload.differenceDirectAmount;
+      }
+      if (payload.differencePaidAt) {
+          updates['payload.differencePaidAt'] = payload.differencePaidAt;
+      }
 
       await updateDoc(doc(db, CLAIMS_COLLECTION, todoId), updates);
 
@@ -135,6 +153,17 @@ export const claimActionService = {
 
         finalNewStock = currentStock - qty;
 
+        // ดึงข้อมูลสินค้าเดิม (Original SKU) สำหรับจัดการสภาพสินค้าที่ส่งคืน
+        const origSku = payload.sku;
+        const isSameSku = targetSku === origSku;
+        const origRef = isSameSku ? pRef : doc(db, getCollectionPath('products'), origSku);
+        const origSnap = isSameSku ? pSnap : await transaction.get(origRef);
+        const origData = origSnap?.exists() ? origSnap.data() : productData;
+
+        const itemCondition = payload.itemCondition || 'defective';
+        const isGoodCondition = itemCondition === 'good';
+        const wasItemArrived = taskSnap.data()?.status === 'processing';
+
         // 2. ดึงข้อมูลกระเป๋าเงินลูกค้า (User Wallet)
         const customerUid = payload.customerUid;
         const hasValidCustomer = customerUid && customerUid !== 'Walk-in' && customerUid !== 'WALK-IN';
@@ -162,11 +191,61 @@ export const claimActionService = {
         }
 
         // --- 2. WRITE OPERATIONS ---
-        // 1. หักสต๊อกดีของเป้าหมาย
-        transaction.update(pRef, { 
-          stockQuantity: finalNewStock,
-          'stats.sold': increment(qty)
-        });
+        // 1. จัดการสต็อกสินค้า (Stock Movements)
+        const origStock = Number(origData.stockQuantity || 0);
+        const origDefect = Number(origData.defectQuantity || 0);
+
+        if (isSameSku) {
+          // เคลมรุ่นเดิม: เบิกของใหม่ (-qty)
+          let finalTargetStock = finalNewStock;
+          let finalTargetDefect = origDefect;
+
+          if (isGoodCondition) {
+            // ของเดิมสภาพดี นำกลับมาขายต่อได้ (+qty) ทำให้สต็อกขายสุทธิเท่าเดิม
+            finalTargetStock = currentStock;
+            if (wasItemArrived) {
+              finalTargetDefect = Math.max(0, origDefect - qty);
+            }
+          } else {
+            // ของเดิมชำรุด
+            if (!wasItemArrived) {
+              finalTargetDefect = origDefect + qty;
+            }
+          }
+
+          transaction.update(pRef, {
+            stockQuantity: finalTargetStock,
+            defectQuantity: finalTargetDefect,
+            'stats.sold': increment(qty)
+          });
+          finalNewStock = finalTargetStock;
+        } else {
+          // สลับรุ่น: ตัดสต็อกตัวใหม่ (targetSku)
+          transaction.update(pRef, { 
+            stockQuantity: finalNewStock,
+            'stats.sold': increment(qty)
+          });
+
+          // ปรับสต็อกตัวเดิม (origSku)
+          let finalOrigStock = origStock;
+          let finalOrigDefect = origDefect;
+
+          if (isGoodCondition) {
+            finalOrigStock = origStock + qty;
+            if (wasItemArrived) {
+              finalOrigDefect = Math.max(0, origDefect - qty);
+            }
+          } else {
+            if (!wasItemArrived) {
+              finalOrigDefect = origDefect + qty;
+            }
+          }
+
+          transaction.update(origRef, {
+            stockQuantity: finalOrigStock,
+            defectQuantity: finalOrigDefect
+          });
+        }
 
         // 2. บันทึกข้อมูลและรหัสเคลมลงในประวัติของบิลเดิม
         if (payload.orderDocId) {
@@ -280,9 +359,19 @@ export const claimActionService = {
           });
         }
 
+        const actionTag = isSwapSku 
+          ? (isGoodCondition ? 'EXCHANGE_RESTOCK_GOOD' : 'EXCHANGE_DEFECT') 
+          : (isGoodCondition ? 'CLAIM_RESTOCK_GOOD' : 'CLAIM_DEFECT');
+
         // 5. อัปเดตสถานะใบเคลม (พร้อมผูก newOrderId ถ้ามี)
         const finalClaimUpdate = {
           ...updateData,
+          handledBy: adminUid || 'SYSTEM',
+          handledByName: adminName || 'Manager',
+          completedAt: serverTimestamp(),
+          completedAtIso: new Date().toISOString(),
+          'payload.itemCondition': itemCondition,
+          'tags.action': actionTag,
           ...(newOrderId ? { 'payload.newOrderId': newOrderId } : {})
         };
         transaction.update(taskRef, finalClaimUpdate);

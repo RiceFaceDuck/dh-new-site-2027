@@ -5,12 +5,13 @@ import { auth } from '../../../firebase/config';
 export function useClaimMutations(selectedRequest, setSelectedRequest, userProfile, handleClose) {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const executeAction = async (actionFn, successMsg) => {
+  const executeAction = async (actionFn) => {
     setIsProcessing(true);
     try {
       await actionFn();
-      // Use a custom event or a nice toast if available, otherwise fallback
-      // For now, we will return success to the caller to handle UI
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('claim_badge_refresh'));
+      }
       return true;
     } catch (error) {
       console.error(error);
@@ -29,22 +30,38 @@ export function useClaimMutations(selectedRequest, setSelectedRequest, userProfi
     );
     if (success) {
         alert('ส่งคำร้องขอยกเลิกไปยังผู้จัดการสำเร็จ\n\nสถานะจะเปลี่ยนเป็น "ยกเลิกสมบูรณ์" เมื่อผู้จัดการอนุมัติ (ระบบจะดึงสต๊อกกลับคืนให้อัตโนมัติ)');
+        if (setSelectedRequest) setSelectedRequest(null);
         handleClose();
     }
   };
 
-  const handleApprove = async (trackingNo) => {
-    // Note: The warning for missing trackingNo is already handled by PremiumDialog in ClaimDetailModal.
+  const handleApprove = async (trackingNo, paymentData = null) => {
+    const updatedPayload = {
+      ...selectedRequest.payload,
+      trackingNo
+    };
+    if (paymentData) {
+      updatedPayload.differencePayment = paymentData;
+      updatedPayload.isDifferencePaid = !!(paymentData.isDirectPaid || paymentData.useWallet);
+      updatedPayload.differenceSlipUrl = paymentData.slipUrl || null;
+      updatedPayload.differenceWalletAmount = paymentData.walletAmount || 0;
+      updatedPayload.differenceDirectAmount = paymentData.directAmount || 0;
+      updatedPayload.differencePaidAt = paymentData.confirmedAt || new Date().toISOString();
+    }
     const taskToApprove = {
       ...selectedRequest,
-      payload: { ...selectedRequest.payload, trackingNo }
+      payload: updatedPayload
     };
     const userName = userProfile?.firstName || 'Manager';
     
     const success = await executeAction(
       () => claimService.approveRequest(taskToApprove, auth.currentUser.uid, userName)
     );
-    if (success) handleClose();
+    if (success) {
+      if (setSelectedRequest) setSelectedRequest(null);
+      handleClose();
+    }
+    return success;
   };
 
   const handleMarkArrived = async () => {
@@ -52,7 +69,11 @@ export function useClaimMutations(selectedRequest, setSelectedRequest, userProfi
     const success = await executeAction(
       () => claimService.markArrived(selectedRequest, auth.currentUser.uid, userName)
     );
-    if (success) handleClose();
+    if (success) {
+      if (setSelectedRequest) setSelectedRequest(null);
+      handleClose();
+    }
+    return success;
   };
 
   const handleComplete = async (options = {}) => {
@@ -64,7 +85,11 @@ export function useClaimMutations(selectedRequest, setSelectedRequest, userProfi
     const success = await executeAction(
       () => claimService.completeRequest(taskToComplete, auth.currentUser.uid, userName)
     );
-    if (success) handleClose();
+    if (success) {
+      if (setSelectedRequest) setSelectedRequest(null);
+      handleClose();
+    }
+    return success;
   };
 
   const handleReject = async (reason) => {

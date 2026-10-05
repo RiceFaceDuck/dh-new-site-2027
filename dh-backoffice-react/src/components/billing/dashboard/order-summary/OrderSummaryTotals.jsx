@@ -69,7 +69,7 @@ export default function OrderSummaryTotals({
                             <span>-฿{formatCurrency(walletUsed)}</span>
                         </div>
                     )}
-                    {(pointsUsed > 0 || walletUsed === 0) && (
+                    {pointsUsed > 0 && (
                         <div className="flex justify-between text-[11px] text-purple-500 font-bold items-center">
                             <span className="flex items-center gap-1" title="ยอดส่วนลดจากการใช้คะแนนสะสม"><Wallet size={12}/> ใช้ พ้อยท์ ชำระ</span>
                             <span>-฿{formatCurrency(pointsUsed)}</span>
@@ -101,20 +101,20 @@ export default function OrderSummaryTotals({
                             <Ban size={12}/> บิลยกเลิก (VOIDED)
                         </div>
                     ) : orderStat === 'completed' ? (
-                        <div className="text-center text-blue-600 font-black text-[11px] border border-blue-500/30 bg-blue-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
-                            เสร็จสิ้น
+                        <div className="text-center text-blue-700 font-black text-[11px] border border-blue-500/30 bg-blue-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
+                            ส่งออก 🚚
                         </div>
                     ) : orderStat === 'approved' ? (
-                        <div className="text-center text-emerald-600 font-black text-[11px] border border-emerald-500/30 bg-emerald-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
-                            อนุมัติ / หักสต็อกแล้ว
+                        <div className="text-center text-indigo-700 font-black text-[11px] border border-indigo-500/30 bg-indigo-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
+                            print แล้ว 🖨️ / หักสต๊อคแล้ว 📤
                         </div>
                     ) : paymentStat === 'paid' || orderStat === 'paid' ? (
-                        <div className="text-center text-teal-600 font-black text-[11px] border border-teal-500/30 bg-teal-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
-                            โอนแล้ว / หักสต็อกแล้ว
+                        <div className="text-center text-teal-700 font-black text-[11px] border border-teal-500/30 bg-teal-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
+                            โอนแล้ว ✅ / หักสต๊อคแล้ว 📤
                         </div>
                     ) : (
-                        <div className="text-center text-orange-600 font-black text-[11px] border border-orange-500/30 bg-orange-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
-                            รอการชำระเงิน
+                        <div className="text-center text-amber-700 font-black text-[11px] border border-amber-500/30 bg-amber-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
+                            รอดำเนินการ
                         </div>
                     )}
                 </div>

@@ -27,7 +27,9 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
     const navigate = useNavigate();
     const pastActions = selectedOrder.refundsAndClaims?.filter(rc => rc.sku === item.sku) || [];
     const usedQty = pastActions.reduce((sum, action) => sum + (Number(action.qty) || 1), 0);
-    const maxQty = Math.max(1, (item.qty || item.quantity || 1) - usedQty);
+    const totalItemQty = Number(item.qty || item.quantity || 1);
+    const availableQty = totalItemQty - usedQty;
+    const maxQty = Math.max(1, availableQty);
     
     const [step, setStep] = useState('action'); // 'action' | 'qty' | 'swap_search' | 'warranty_config' | 'reason'
     const [selectedAction, setSelectedAction] = useState(null);
@@ -45,10 +47,25 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
     const [freebiesStatus, setFreebiesStatus] = useState('no_freebies');
     const [freebiesWarning, setFreebiesWarning] = useState('');
 
+    // 🛑 Over-claim Guard: ป้องกันการทำรายการซ้ำหากเคลม/คืนครบตามจำนวนที่ซื้อแล้ว
+    if (availableQty <= 0) {
+        return (
+            <div className="flex items-center justify-between py-2 px-3 bg-red-50/80 border-t border-dashed border-red-500/30 w-full animate-in fade-in">
+                <span className="text-[11px] font-bold text-red-600">
+                    ⚠️ สินค้ารายการนี้ทำรายการเคลม/คืนครบตามจำนวนแล้ว ({usedQty}/{totalItemQty} ชิ้น)
+                </span>
+                <button onClick={onCancel} className="text-(--dh-text-muted) hover:text-red-500 p-1 cursor-pointer">
+                    <X size={14} />
+                </button>
+            </div>
+        );
+    }
+
     const handleActionClick = (actionStr) => {
         if (actionStr !== 'เคลม' && actionStr !== 'คืน' && actionStr !== 'เปลี่ยน') return;
+        if (availableQty <= 0) return;
         setSelectedAction(actionStr);
-        if (maxQty > 1) {
+        if (availableQty > 1) {
             setStep('qty');
         } else {
             if (actionStr === 'เปลี่ยน') {
@@ -203,6 +220,14 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 await claimService.requestClaim(selectedOrder, item, claimForm, userUid, userName);
             }
             toast.success(isReturn ? 'สร้างคำร้องขอคืนเงินเรียบร้อยแล้ว' : isSwap ? 'สร้างคำร้องขอเปลี่ยนสินค้าเรียบร้อยแล้ว' : 'สร้างคำร้องขอเคลมสินค้าเรียบร้อยแล้ว');
+            
+            // 🔄 แจ้งเตือน Badge ทันทีข้ามหน้าจอ
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('claim_badge_refresh', { 
+                    detail: { orderId: selectedOrder.orderId, sku: item.sku } 
+                }));
+            }
+
             navigate('/claims');
         } catch (error) {
             console.error("Error processing request:", error);

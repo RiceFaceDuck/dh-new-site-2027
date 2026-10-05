@@ -37,8 +37,8 @@ export default function ProductInfo({
       {isSwapSku ? (
         <div className="bg-linear-to-r from-blue-50/50 to-transparent dark:from-blue-900/10 p-4 rounded-xl border border-blue-200/50 dark:border-blue-900/30 mb-4 flex flex-col gap-3">
           <div className="flex items-center gap-2 border-b border-blue-100 dark:border-blue-950 pb-1.5">
-            <RefreshCw size={13} className="text-blue-500 animate-spin" style={{ animationDuration: '6s' }} />
-            <span className="text-[11px] font-black text-blue-700 dark:text-blue-400">คำร้องขอเคลมเปลี่ยนรุ่นอื่น (Swap SKU)</span>
+            <RefreshCw size={13} className="text-blue-500" />
+            <span className="text-[11px] font-black text-blue-700 dark:text-blue-400">คำร้องขอเปลี่ยนสินค้าต่างรุ่น (Swap SKU)</span>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between gap-4">

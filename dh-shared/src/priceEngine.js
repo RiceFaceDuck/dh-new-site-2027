@@ -174,3 +174,5 @@ export const calculateCanonicalTotals = (order) => {
     };
 };
 
+export const calculateOrderCanonicalTotals = calculateCanonicalTotals;
+

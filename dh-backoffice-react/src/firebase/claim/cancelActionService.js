@@ -132,25 +132,33 @@ export const cancelActionService = {
 
         // --- WRITE OPERATIONS ---
 
-        // 1. จัดการสต๊อกของเสีย (Defect Stock)
-        if (!isCancelReturn && hasArrived && pSnap?.exists()) {
-           const currentDefect = productData.defectQuantity || 0;
+        const isGood = payload.itemCondition === 'good';
+
+        // 1. จัดการสต๊อกของเสีย (Defect Stock) กรณีเคลมที่ยังไม่เสร็จสิ้นแต่อยู่ระหว่างตรวจสอบ
+        if (!isCancelReturn && !isCompleted && hasArrived && pSnap?.exists()) {
+           const currentDefect = Number(productData.defectQuantity || 0);
            transaction.update(pRef, { defectQuantity: Math.max(0, currentDefect - qty) });
         }
 
-        // 2. จัดการสต๊อกของดี (Sellable Stock) หากรายการ completed ไปแล้ว
+        // 2. จัดการสต๊อกของดีและของเสีย หากรายการ completed ไปแล้ว
         if (isCompleted) {
            if (isCancelReturn && pSnap?.exists()) {
-               // ยกเลิกการคืนสินค้า: ดึงสต๊อกของเดิมกลับ (-qty)
-               const currentStock = Number(productData.stockQuantity || 0);
-               if (currentStock < qty) {
-                   throw new Error(`สินค้า ${productData.sku} สต็อกคงเหลือไม่เพียงพอสำหรับยกเลิกการคืนสินค้า (คงเหลือ ${currentStock} ชิ้น, ต้องการหักคืน ${qty} ชิ้น)`);
+               if (isGood) {
+                 // ยกเลิกการคืนสินค้าสภาพดี: ดึงสต๊อกขายกลับ (-qty)
+                 const currentStock = Number(productData.stockQuantity || 0);
+                 if (currentStock < qty) {
+                     throw new Error(`สินค้า ${productData.sku} สต็อกคงเหลือไม่เพียงพอสำหรับยกเลิกการคืนสินค้า (คงเหลือ ${currentStock} ชิ้น, ต้องการหักคืน ${qty} ชิ้น)`);
+                 }
+                 finalNewStock = currentStock - qty;
+                 transaction.update(pRef, { stockQuantity: finalNewStock });
+                 syncSku = payload.sku;
+                 syncProductData = productData;
+                 syncStock = finalNewStock;
+               } else {
+                 // ยกเลิกการคืนสินค้าชำรุด: ดึงออกจากคลังชำรุด (-qty)
+                 const currentDefect = Number(productData.defectQuantity || 0);
+                 transaction.update(pRef, { defectQuantity: Math.max(0, currentDefect - qty) });
                }
-               finalNewStock = currentStock - qty;
-               transaction.update(pRef, { stockQuantity: finalNewStock });
-               syncSku = payload.sku;
-               syncProductData = productData;
-               syncStock = finalNewStock;
            } else if (isSwapSku && swapSnap?.exists()) {
                // ยกเลิกการสลับรุ่น: คืนสต๊อกของตัวใหม่ที่ตัดไป (swapSku) กลับเข้าคลัง (+qty)
                const currentSwapStock = Number(swapProductData.stockQuantity || 0);
@@ -162,14 +170,41 @@ export const cancelActionService = {
                syncSku = payload.swapSku;
                syncProductData = swapProductData;
                syncStock = finalNewStock;
+
+               // คืนสภาพสินค้าเดิม (payload.sku)
+               if (pSnap?.exists()) {
+                 if (isGood) {
+                   const curOrigStock = Number(productData.stockQuantity || 0);
+                   transaction.update(pRef, { stockQuantity: Math.max(0, curOrigStock - qty) });
+                 } else {
+                   const curOrigDefect = Number(productData.defectQuantity || 0);
+                   transaction.update(pRef, { defectQuantity: Math.max(0, curOrigDefect - qty) });
+                 }
+               }
            } else if (!isSwapSku && pSnap?.exists()) {
-               // ยกเลิกการเคลมปกติ: เอาสต๊อกที่เบิกให้ลูกค้าไปแล้ว (+qty) คืนกลับมา
+               // ยกเลิกการเคลมปกติ: 
+               // ตัวใหม่ที่เบิกไป คืนสต็อก (+qty)
+               // ตัวเดิม: ถ้าของดี ดึงสต็อกขายคืน (-qty) net = 0, ถ้าของเสีย ดึงออกจาก defect (-qty)
                const currentStock = Number(productData.stockQuantity || 0);
-               finalNewStock = currentStock + qty;
-               transaction.update(pRef, { 
-                   stockQuantity: finalNewStock,
-                   'stats.sold': increment(-qty)
-               });
+               const currentDefect = Number(productData.defectQuantity || 0);
+               
+               if (isGood) {
+                 // ของดี: net สต็อกขายเท่าเดิม
+                 finalNewStock = currentStock;
+                 transaction.update(pRef, { 
+                     stockQuantity: finalNewStock,
+                     defectQuantity: currentDefect,
+                     'stats.sold': increment(-qty)
+                 });
+               } else {
+                 // ของเสีย: คืนสต็อกขายตัวใหม่ (+qty), ดึงของเดิมออกจาก defect (-qty)
+                 finalNewStock = currentStock + qty;
+                 transaction.update(pRef, { 
+                     stockQuantity: finalNewStock,
+                     defectQuantity: Math.max(0, currentDefect - qty),
+                     'stats.sold': increment(-qty)
+                 });
+               }
                syncSku = payload.sku;
                syncProductData = productData;
                syncStock = finalNewStock;

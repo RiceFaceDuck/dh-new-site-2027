@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { Wrench, ArrowLeftRight, Undo2, Printer, X } from 'lucide-react';
-import { auth } from '../../../../firebase/config';
-import { userService } from '../../../../firebase/userService';
-import { useClaimMutations } from '../../hooks/useClaimMutations';
+import { useClaimDetailController } from '../../hooks/useClaimDetailController';
 
 import CustomerInfo from './CustomerInfo';
 import ProductInfo from './ProductInfo';
 import ImageGallery from './ImageGallery';
 import ModalFooter from './ModalFooter';
 import ClaimStepper from './ClaimStepper';
+import ApproveModal from './ApproveModal';
 import PremiumDialog from '../../../../components/common/PremiumDialog';
 import GuidePanel from '../../../../components/common/GuidePanel';
 
@@ -18,166 +17,39 @@ export default function ClaimDetailModal({
   handlePrint, 
   handleQuickCopy, 
   copiedText,
-  customerProfile = null,
+  customerProfile: preloadedCustomerProfile = null,
   warrantyConfig: initialWarrantyConfig = null,
   getStatusDisplay
 }) {
-  const [trackingNo, setTrackingNo] = useState('');
-  const [userProfile, setUserProfile] = useState(null);
-  const [isClosing, setIsClosing] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
-  const [warrantyConfig, setWarrantyConfig] = useState(initialWarrantyConfig);
-
-  // Freebie penalty states
-  const [freebieReturned, setFreebieReturned] = useState(true);
-  const [freebiePenaltyAmount, setFreebiePenaltyAmount] = useState(0);
-
-  useEffect(() => {
-    if (selectedRequest) {
-      setTrackingNo(selectedRequest.payload?.trackingNo || '');
-      setFreebieReturned(true);
-      setFreebiePenaltyAmount(0);
-      
-      // Load warranty settings if not preloaded
-      if (initialWarrantyConfig) {
-        setWarrantyConfig(initialWarrantyConfig);
-      } else {
-        import('../../../../firebase/warrantyService').then(({ warrantyService }) => {
-          warrantyService.getWarrantySettings().then(setWarrantyConfig).catch(console.error);
-        }).catch(console.error);
-      }
-    }
-  }, [selectedRequest, initialWarrantyConfig]);
-
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setSelectedRequest(null);
-      setIsClosing(false);
-    }, 200);
-  };
-
   const {
+    trackingNo,
+    setTrackingNo,
+    isClosing,
+    dialogConfig,
+    warrantyConfig,
+    freebieReturned,
+    setFreebieReturned,
+    freebiePenaltyAmount,
+    setFreebiePenaltyAmount,
+    handleClose,
+    isManager,
     isProcessing,
-    handleRequestCancel,
-    handleApprove,
-    handleMarkArrived,
-    handleComplete,
-    handleReject
-  } = useClaimMutations(selectedRequest, setSelectedRequest, userProfile, handleClose);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (auth.currentUser) {
-        const profile = await userService.getUserProfile(auth.currentUser.uid);
-        setUserProfile(profile);
-      }
-    };
-    fetchProfile();
-  }, []);
-
-  const isManager = userProfile && ['Manager', 'Owner', 'manager', 'owner', 'admin', 'Admin', 'ผู้จัดการ', 'เจ้าของ', 'แอดมิน'].includes(userProfile.role);
-
-  const confirmAction = (config) => {
-    setDialogConfig({
-      ...config,
-      isOpen: true,
-      onCancel: () => setDialogConfig({ isOpen: false }),
-      onConfirm: async (val) => {
-        setDialogConfig({ isOpen: false });
-        if (config.actionFn) {
-          await config.actionFn(val);
-        }
-      }
-    });
-  };
-
-  const onAskCancel = () => {
-    confirmAction({
-      title: 'ยกเลิกคำร้อง',
-      message: 'กรุณาระบุเหตุผลที่ต้องการยกเลิกคำร้องนี้',
-      type: 'warning',
-      requireInput: true,
-      inputPlaceholder: 'เหตุผลการยกเลิก...',
-      actionFn: handleRequestCancel
-    });
-  };
-
-  const onAskApprove = () => {
-    const isReturn = selectedRequest.type === 'RETURN_APPROVAL';
-    if (isReturn && !trackingNo) {
-        confirmAction({
-            title: 'แจ้งเตือน',
-            message: 'คุณยังไม่ได้ระบุเลขพัสดุสำหรับคืนสินค้า (กรอกเลขพัสดุด้านล่าง หรือหากไม่มีให้เว้นว่างเพื่อข้าม)',
-            type: 'warning',
-            requireInput: true,
-            allowEmptyInput: true,
-            inputPlaceholder: 'ระบุเลขพัสดุคืนสินค้า (ถ้ามี)...',
-            actionFn: (inputTracking) => {
-              const finalTracking = typeof inputTracking === 'string' && inputTracking.trim() ? inputTracking.trim() : trackingNo;
-              if (typeof inputTracking === 'string' && inputTracking.trim()) {
-                setTrackingNo(inputTracking.trim());
-              }
-              return handleApprove(finalTracking);
-            }
-        });
-        return;
-    }
-    confirmAction({
-      title: 'อนุมัติคำร้อง',
-      message: 'คุณต้องการอนุมัติคำร้องนี้ใช่หรือไม่? ระบบจะเปลี่ยนสถานะเป็น "รอรับของ"',
-      type: 'prompt',
-      actionFn: () => handleApprove(trackingNo)
-    });
-  };
-
-  const onAskMarkArrived = () => {
-    confirmAction({
-      title: 'รับสินค้าเรียบร้อย',
-      message: 'ยืนยันการรับสินค้าจากลูกค้า ระบบจะเปลี่ยนสถานะเป็น "กำลังตรวจสอบ"',
-      type: 'prompt',
-      actionFn: handleMarkArrived
-    });
-  };
-
-  const onAskComplete = () => {
-    const isReturn = selectedRequest.type === 'RETURN_APPROVAL';
-    
-    // Check if freebies were returned
-    if (isReturn && selectedRequest.payload?.hasFreebies && !freebieReturned && freebiePenaltyAmount <= 0) {
-      alert('กรุณาระบุจำนวนเงินค่าปรับของแถม หรือกดยืนยันว่าได้รับของแถมคืนแล้ว');
-      return;
-    }
-
-    if (isReturn) {
-      confirmAction({
-        title: 'เสร็จสิ้นกระบวนการ (คืนเงิน)',
-        message: 'ระบบจะทำการ "คืนเงิน" และ "เพิ่มสต๊อก" ทันที ยืนยันใช่หรือไม่?',
-        type: 'success',
-        actionFn: () => handleComplete({ freebieReturned, freebiePenaltyAmount })
-      });
-    } else {
-      confirmAction({
-        title: 'เสร็จสิ้นกระบวนการ (ส่งเปลี่ยนสินค้า)',
-        message: 'ระบบจะทำการ "ตัดสต๊อกสินค้าใหม่" เพื่อมอบให้ลูกค้า กรุณาระบุเลขพัสดุสำหรับส่งของเปลี่ยน (ถ้ามี)',
-        type: 'success',
-        requireInput: true,
-        inputPlaceholder: 'เลขพัสดุ...',
-        actionFn: (returnTrackingNo) => handleComplete({ returnTrackingNo: returnTrackingNo || 'รับที่ร้าน' })
-      });
-    }
-  };
-
-  const onAskReject = () => {
-    confirmAction({
-      title: 'ไม่อนุมัติคำร้อง',
-      message: 'กรุณาระบุเหตุผลที่ไม่อนุมัติ',
-      type: 'warning',
-      requireInput: true,
-      inputPlaceholder: 'เหตุผล...',
-      actionFn: handleReject
-    });
-  };
+    onAskCancel,
+    onAskApprove,
+    onAskMarkArrived,
+    onAskComplete,
+    onAskReject,
+    isApproveModalOpen,
+    setIsApproveModalOpen,
+    customerProfile,
+    handleConfirmApprove
+  } = useClaimDetailController(
+    selectedRequest, 
+    setSelectedRequest, 
+    handlePrint, 
+    preloadedCustomerProfile, 
+    initialWarrantyConfig
+  );
 
   if (!selectedRequest) return null;
 
@@ -220,7 +92,7 @@ export default function ClaimDetailModal({
       description: 'ระบบช่วยสลับสินค้าเป็นรุ่นอื่น พร้อมคิดราคาของใหม่และคืนเงินของเก่าเข้า Wallet อัตโนมัติ',
       howTo: [
         '1. ตรวจสอบรายละเอียดและเงื่อนไขการเปลี่ยนสินค้าที่แสดงผลบนหน้าจอ',
-        "2. ผู้จัดการกด 'อนุมัติคำร้อง' (Approve) ➡️ หน้าร้านกด 'รับสินค้าเรียบร้อย' (Mark Arrived) สต๊อกของเสียเดิมจะเพิ่มเข้าคลังชำรุด",
+        "2. ผู้จัดการกด 'อนุมัติคำร้อง' (Approve) ➡️ ตรวจสอบส่วนต่างและบันทึกการชำระเงิน ➡️ หน้าร้านกด 'รับสินค้าเรียบร้อย' (Mark Arrived)",
         "3. กด 'เสร็จสิ้นกระบวนการ' (Complete) ➡️ เลือกว่าของเดิมสภาพดีหรือเสีย ➡️ ระบบจะคืนเงินตัวเดิมเข้า Wallet, หักเงินค่าตัวใหม่จาก Wallet, ตัดสต๊อกตัวใหม่ออก และสร้างบิลใบเสร็จการขายใหม่อัตโนมัติ"
       ],
       tips: [
@@ -239,7 +111,7 @@ export default function ClaimDetailModal({
         "3. กด 'เสร็จสิ้นกระบวนการ' (Complete) ➡️ เลือกสภาพสินค้า (ของดีจะเพิ่มเข้าสต๊อกขายปกติ / ของเสียจะเข้าคลังชำรุด) ➡️ ระบบจะโอนเงินคืนเข้า Wallet ของลูกค้าอัตโนมัติ"
       ],
       tips: [
-        "หากสินค้าสภาพปกติขายต่อได้ ให้เลือก '🟢 สินค้าดี' เพื่อเพิ่มยอดสต๊อกขายปกติ (+1 stockQuantity)",
+        "หากสินค้าสภาพปกติขายต่อได้ ให้เลือก '🟢 สินค้าดี' เพื่อเพิ่มยอดสต๊อกขายปกติ (+1 stockQuantity) และย้ายออกจากคลังชำรุด",
         "หากสินค้าเสียหาย ให้เลือก '🔴 สินค้าเสีย' ระบบจะไม่เพิ่มสต๊อกขาย แต่จะคงไว้ในคลังชำรุด"
       ],
       expectedResult: 'ลูกค้าจะได้รับเงินคืนเข้ากระเป๋า Wallet ทันที และสต๊อกสินค้าจะถูกแยกประเภทเข้าคลังขายหรือคลังชำรุดตามสภาพจริง'
@@ -261,13 +133,25 @@ export default function ClaimDetailModal({
                 {modalTitle}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-mono font-bold text-dh-muted bg-dh-base px-2 py-0.5 rounded-sm border border-dh-border shadow-inner">Ref: {refId}</span>
+                <span className="text-[10px] font-mono font-bold text-dh-muted bg-dh-base px-2 py-0.5 rounded-sm border border-dh-border shadow-inner">
+                  Ref: {refId}
+                </span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handlePrint} className="p-2.5 bg-dh-surface hover:bg-dh-base border border-dh-border text-dh-main rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 group cursor-pointer"><Printer className="w-4 h-4 group-hover:text-dh-accent transition-colors" /></button>
-            <button onClick={handleClose} className="p-2.5 text-dh-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all active:scale-95 group border border-transparent hover:border-red-100 dark:hover:border-red-900/30 cursor-pointer"><X className="w-5 h-5 group-hover:rotate-90 transition-transform" /></button>
+            <button 
+              onClick={handlePrint} 
+              className="p-2.5 bg-dh-surface hover:bg-dh-base border border-dh-border text-dh-main rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 group cursor-pointer"
+            >
+              <Printer className="w-4 h-4 group-hover:text-dh-accent transition-colors" />
+            </button>
+            <button 
+              onClick={handleClose} 
+              className="p-2.5 text-dh-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all active:scale-95 group border border-transparent hover:border-red-100 dark:hover:border-red-900/30 cursor-pointer"
+            >
+              <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            </button>
           </div>
         </div>
 
@@ -279,12 +163,14 @@ export default function ClaimDetailModal({
             type={selectedRequest.type}
             isSwapSku={!!selectedRequest.payload?.isSwapSku}
           />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10 mt-4">
             <CustomerInfo 
               selectedRequest={selectedRequest}
               copiedText={copiedText}
               handleQuickCopy={handleQuickCopy}
               preloadedProfile={customerProfile}
+              getStatusDisplay={getStatusDisplay}
             />
             <ProductInfo 
               selectedRequest={selectedRequest}
@@ -301,7 +187,7 @@ export default function ClaimDetailModal({
             />
           </div>
           
-          <ImageGallery images={selectedRequest.payload.images} />
+          <ImageGallery images={selectedRequest.payload?.images || []} />
           
           {/* GuidePanel In-App Documentation */}
           <div className="mt-6 border-t border-dh-border pt-4">
@@ -315,6 +201,7 @@ export default function ClaimDetailModal({
           </div>
         </div>
 
+        {/* Modal Footer */}
         <ModalFooter 
           selectedRequest={selectedRequest}
           isManager={isManager}
@@ -328,7 +215,18 @@ export default function ClaimDetailModal({
         />
 
       </div>
+
+      {/* Approve Modal with Price Difference Payment & Drive Slip */}
+      <ApproveModal
+        isOpen={isApproveModalOpen}
+        onClose={() => setIsApproveModalOpen(false)}
+        onConfirm={handleConfirmApprove}
+        selectedRequest={selectedRequest}
+        customerProfile={customerProfile}
+        initialTrackingNo={trackingNo}
+      />
       
+      {/* Completion & Prompt Dialog */}
       <PremiumDialog {...dialogConfig} />
     </div>
   );

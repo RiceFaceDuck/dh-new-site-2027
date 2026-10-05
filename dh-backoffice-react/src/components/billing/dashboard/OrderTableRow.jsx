@@ -30,24 +30,29 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
         ...(Array.isArray(order.afterSales) ? order.afterSales : [])
     ];
 
-    const claimQty = allRC
-        .filter(rc => {
-            const type = (rc.type || rc.actionType || '').toLowerCase();
-            return type.includes('claim') || type === 'repair';
-        })
-        .reduce((sum, rc) => sum + Number(rc.qty || rc.quantity || 1), 0);
-
     const exchangeQty = allRC
         .filter(rc => {
             const type = (rc.type || rc.actionType || '').toLowerCase();
-            return type.includes('exchange') || type.includes('swap');
+            const id = String(rc.id || rc.exchangeId || rc.claimId || '').toUpperCase();
+            return type.includes('exchange') || type.includes('swap') || type.includes('เปลี่ยน') || id.startsWith('EXC-');
         })
         .reduce((sum, rc) => sum + Number(rc.qty || rc.quantity || 1), 0);
 
     const returnQty = allRC
         .filter(rc => {
             const type = (rc.type || rc.actionType || '').toLowerCase();
-            return type.includes('return') || type.includes('refund');
+            const id = String(rc.id || rc.returnId || rc.claimId || '').toUpperCase();
+            return type.includes('return') || type.includes('refund') || type.includes('คืน') || id.startsWith('RTN-');
+        })
+        .reduce((sum, rc) => sum + Number(rc.qty || rc.quantity || 1), 0);
+
+    const claimQty = allRC
+        .filter(rc => {
+            const type = (rc.type || rc.actionType || '').toLowerCase();
+            const id = String(rc.id || rc.claimId || '').toUpperCase();
+            const isExchange = type.includes('exchange') || type.includes('swap') || type.includes('เปลี่ยน') || id.startsWith('EXC-');
+            const isReturn = type.includes('return') || type.includes('refund') || type.includes('คืน') || id.startsWith('RTN-');
+            return !isExchange && !isReturn && (type.includes('claim') || type === 'repair' || type.includes('เคลม') || id.startsWith('CLM-'));
         })
         .reduce((sum, rc) => sum + Number(rc.qty || rc.quantity || 1), 0);
 

@@ -1,36 +1,35 @@
 <ssr_memory>
   <flow_and_entry>
     <entry_file>dh-backoffice-react/src/pages/claims/ClaimMain.jsx</entry_file>
-    <data_flow>Firestore `claims` collection -> useClaimData hook (with batch user profile preloader) -> ClaimHeader + ClaimStatsRow + ClaimTable -> ClaimDetailModal + ClaimPrintView</data_flow>
+    <data_flow>Firestore `claims` -> useClaimData -> ClaimHeader/Stats/Table -> ClaimDetailModal (delegated to useClaimDetailData + useClaimDetailController) -> ApproveModal / PremiumDialog</data_flow>
   </flow_and_entry>
 
   <core_schema>
-    <collection>claims (Root Collection, replaces legacy 'todos')</collection>
-    <types>CLAIM_APPROVAL (CLM), EXCHANGE_APPROVAL (EXC / SWAP_SKU), RETURN_APPROVAL (RTN), CANCEL_*</types>
-    <key_fields>payload.claimId, payload.exchangeId, payload.returnId, payload.orderId, payload.customerUid, payload.sku, payload.qty, payload.purchaseDate, payload.symptomCode, payload.returnReason, status, createdAt</key_fields>
+    <collection>claims (Root Collection)</collection>
+    <types>CLAIM_APPROVAL (CLM), EXCHANGE_APPROVAL (EXC), RETURN_APPROVAL (RTN), CANCEL_*</types>
+    <key_fields>payload.claimId, payload.exchangeId, payload.returnId, payload.orderId, payload.customerUid, payload.sku, payload.swapSku, payload.itemCondition ('good'|'defective'), payload.differencePayment, status, inboundTrackingNumber, createdAt</key_fields>
   </core_schema>
 
   <business_rules>
-    <rule>Strict Separation: Always distinguish between Claim (CLM / เคลมสินค้า - orange), Exchange (EXC / เปลี่ยนสินค้า - sky), and Return (RTN / คืนเงิน/คืนสินค้า - purple).</rule>
-    <rule>Warranty Calculation: Calculate calendar days elapsed from purchaseDate to current date. Under warranty shows '🟢 เหลือ [N] วัน', expired shows 'หมดอายุแล้ว'.</rule>
-    <rule>Status Flow: pending_manager (รอรับเรื่อง) -> waiting_item (รอรับของ) -> processing (กำลังตรวจ) -> completed/approved (เสร็จสิ้น).</rule>
-    <rule>Presentation Focus: Never touch mutation triggers, Cloud Functions, or backend script logic in UI-only tasks.</rule>
+    <rule>Tri-Division Rule: แยก 3 โดเมนเด็ดขาด เคลม (CLM / orange), เปลี่ยน (EXC / sky), คืน (RTN / purple) ห้ามใช้คำว่า 'เคลมเปลี่ยน' เด็ดขาด</rule>
+    <rule>Condition-Based Stock Math: ใน return/claim action ตรวจสอบ itemCondition เสมอ ถ้า 'defective' ห้ามเพิ่ม stockQuantity (+0) แต่คงใน defectQuantity; ถ้า 'good' ย้ายจาก defectQuantity (-qty) เข้า stockQuantity (+qty)</rule>
+    <rule>Exchange Difference Payment: หากเปลี่ยนสินค้ารุ่นแพงกว่า ต้องจัดการ differencePayment (Wallet หรือ Direct Payment พร้อมแนบสลิป Drive) ก่อน approve</rule>
+    <rule>Warranty Rule: คำนวณวันปฏิทินจาก purchaseDate ถึงปัจจุบัน เกินกำหนดแสดง 'หมดอายุแล้ว' ภายในกำหนดแสดง '🟢 เหลือ [N] วัน'</rule>
+    <rule>Calm UI & Clean Architecture: หน้าต่าง Modal เป็น Pure UI ดึง state และ live stock จาก useClaimDetailController ป้ายสถานะที่เสร็จแล้วต้องนิ่ง ไม่กระพริบ</rule>
   </business_rules>
 
   <cross_impact>
-    <module name="Billing">Referenced by orderId for warranty verification and return/refund tracking.</module>
-    <module name="Customer Directory">Profiles fetched via customerUid to display customerName, customerCode, and phone.</module>
-    <module name="Inventory">Defect stock (+1 defect) on item arrival and new stock (-1 stock) on claim completion.</module>
+    <module name="Billing">อ้างอิง orderId ตรวจสอบประกัน ออกใบกำกับ และผูกโยงยอดคืนเงิน</module>
+    <module name="Customer Directory">Preload customerProfile เข้า Modal ป้องกัน duplicate read โควต้า Firestore</module>
+    <module name="Inventory">กระทบ stockQuantity และ defectQuantity แบบเรียลไทม์ตาม itemCondition</module>
+    <module name="Google Drive">อัปโหลดสลิปเงินส่วนต่างเข้า Google Drive ผ่าน driveService</module>
   </cross_impact>
 
   <pitfalls_and_lessons>
-    <caution>Do NOT query the old 'todos' collection; both UI and backend services (claimRequest, claimAction, returnAction, cancelAction) are unified under the 'claims' collection.</caution>
-    <caution>claimManagerService MUST explicitly map EXCHANGE_APPROVAL alongside CLAIM_APPROVAL to prevent 'Unknown task type' crashes.</caution>
-    <caution>Swap SKU Cancel Rule: cancelActionService MUST restore sellable stock to payload.swapSku, cancel linked newOrderId, and reverse wallet netDifference.</caution>
-    <caution>Refund Bound Rule: returnActionService MUST cap refunds by effective item price and order finalTotal to prevent over-refunds.</caution>
-    <caution>Transaction Rule: All Firestore transactions in claim services MUST execute all reads before any writes.</caution>
-    <caution>Quota Preload Rule: ClaimDetailModal MUST forward customerProfile into CustomerInfo as preloadedProfile to prevent duplicate single-doc reads per modal opening.</caution>
-    <caution>Plan & Gatekeeper Rule: Never mutate code based on casual conversational remarks without logging to watchlist, formulating an Implementation Plan, and obtaining explicit user approval first.</caution>
-    <caution>Strict Deployment Ban: Never deploy to server or git push; all changes are local-only.</caution>
+    <caution>Stock Math Defect Leak: ห้ามเพิ่ม stockQuantity ให้สินค้าชำรุดเด็ดขาด ต้องแยก condition 'good' vs 'defective' เสมอ</caution>
+    <caution>Rollback Integrity: ใน cancelActionService ต้องเช็ค condition เดิมก่อน Rollback สต็อกเพื่อป้องกันยอดคลาดเคลื่อน</caution>
+    <caution>Vite JSX Rule: ไฟล์ Hook หรือ Component ที่มี JSX syntax ต้องใช้นามสกุล .jsx เท่านั้น (.js จะติด Rolldown build error)</caution>
+    <caution>Import Depth: จาก src/pages/claims/hooks/ ไป src/firebase/ ต้องถอย 3 ชั้น (../../../firebase/)</caution>
+    <caution>Absolute Deployment Ban: ห้าม deploy หรือ git push ขึ้นเซิฟเวอร์เด็ดขาด บันทึกงานเฉพาะ Git Commit ภายในเครื่องเท่านั้น</caution>
   </pitfalls_and_lessons>
 </ssr_memory>
