@@ -88,10 +88,10 @@ export default function Sidebar({
             return (
               <div key={`cat-${index}`} className="px-3 pt-3 pb-1 first:pt-1 group/cat cursor-default">
                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover/cat:hidden">
-                  {item.category}
+                  {item.categoryThai}
                 </p>
                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden group-hover/cat:block">
-                  {item.categoryThai}
+                  {item.category}
                 </p>
               </div>
             );
@@ -129,10 +129,10 @@ export default function Sidebar({
                   strokeWidth={isActive ? 2.5 : 2} 
                 />
                 <span className="block group-hover:hidden truncate whitespace-nowrap">
-                  {item.label} {isLocked && ' (Locked)'}
+                  {item.labelThai} {isLocked && ' (ล็อค)'}
                 </span>
                 <span className="hidden group-hover:block truncate whitespace-nowrap">
-                  {item.labelThai} {isLocked && ' (ล็อค)'}
+                  {item.label} {isLocked && ' (Locked)'}
                 </span>
               </div>
 

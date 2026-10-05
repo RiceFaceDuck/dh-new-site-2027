@@ -32,5 +32,6 @@
     <pitfall>Passing an object as the 3rd argument to resilientFetch caused i &lt; NaN to be false, throwing undefined and locking the indicator to 120ms.</pitfall>
     <lesson>Always wrap manager-level Firestore listeners with hasManagerAccess check in layout shells.</lesson>
     <lesson>Cap badge numbers at 99+ to prevent text overflowing and layout shifts on high-volume alerts.</lesson>
+    <lesson>Sidebar nav labels and categories must display Thai by default, switching to English only on hover.</lesson>
   </pitfalls_and_lessons>
 </ssr_memory>
