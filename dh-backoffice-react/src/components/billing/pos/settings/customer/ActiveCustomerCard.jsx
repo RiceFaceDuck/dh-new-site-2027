@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { MapPin, Wallet, Sparkles, X } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
-import { getUserProfile } from '../../../../firebase/userProfileService';
+import { getUserProfile } from '../../../../../firebase/userProfileService';
 
 /**
  * Helper to safely extract full address text from customer object
