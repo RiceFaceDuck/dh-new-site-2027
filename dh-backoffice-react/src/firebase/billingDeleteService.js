@@ -17,8 +17,8 @@ export const billingDeleteService = {
       const orderData = docSnap.data();
       const stat = (orderData.orderStatus || orderData.status || '').toLowerCase();
 
-      if (stat === 'paid' || stat === 'approved' || stat === 'completed') {
-         throw new Error("ไม่อนุญาตให้ลบทิ้งบิลที่ชำระเงินหรือดำเนินการเสร็จสิ้นแล้ว");
+      if (stat === 'paid' || stat === 'approved' || stat === 'completed' || stat === 'cancelled' || stat === 'void') {
+         throw new Error("ไม่อนุญาตให้ลบทิ้งบิลที่มีประวัติทางบัญชีแล้ว (อนุญาตให้ลบได้เฉพาะฉบับร่าง Draft เท่านั้น)");
       }
 
       const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);

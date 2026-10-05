@@ -4,6 +4,7 @@ import { claimService } from '../../../../firebase/claimService';
 import { userService } from '../../../../firebase/userService';
 import { auth } from '../../../../firebase/config';
 import { Wrench, ArrowLeftRight, RefreshCw, Check, X, Loader2, Search, Shield } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const REASON_OPTIONS = [
     "(E) สินค้า ไม่ตรงปก / ผิดสเป็ค / การผลิตผิดพลาด",
@@ -167,7 +168,7 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
 
             const isReturn = selectedAction === 'คืน';
             const isSwap = selectedAction === 'เปลี่ยน';
-            const prefix = isReturn ? 'RTN' : 'CLM';
+            const prefix = isReturn ? 'RTN' : (isSwap ? 'EXC' : 'CLM');
             const transactionId = `${prefix}-${Date.now().toString().slice(-6)}`;
             
             const isWholesale = selectedOrder.priceMode === 'wholesale';
@@ -179,10 +180,10 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
                 transactionId,
                 warrantyDate: selectedOrder.createdAt?.toDate ? selectedOrder.createdAt.toDate().toISOString() : null,
                 reasonCode: selectedReason,
-                details: isSwap ? `เคลมเปลี่ยนสินค้าเป็นรุ่น: ${swapProduct?.name} (${swapProduct?.sku})` : "",
+                details: isSwap ? `เปลี่ยนสินค้าเป็นรุ่น: ${swapProduct?.name} (${swapProduct?.sku})` : "",
                 qty: qty,
                 currentStatus: 'pending_manager',
-                actionType: isReturn ? 'คืนเงิน/คืนสินค้า' : (isSwap ? 'เคลมเปลี่ยนรุ่น' : 'เคลม/ซ่อม'),
+                actionType: isReturn ? 'คืนเงิน/คืนสินค้า' : (isSwap ? 'เปลี่ยนสินค้า (EXC)' : 'เคลม/ซ่อม'),
                 inspectorName: null,
                 images: [],
 
@@ -201,10 +202,11 @@ export default function ClaimActionForm({ item, selectedOrder, onCancel }) {
             } else {
                 await claimService.requestClaim(selectedOrder, item, claimForm, userUid, userName);
             }
+            toast.success(isReturn ? 'สร้างคำร้องขอคืนเงินเรียบร้อยแล้ว' : isSwap ? 'สร้างคำร้องขอเปลี่ยนสินค้าเรียบร้อยแล้ว' : 'สร้างคำร้องขอเคลมสินค้าเรียบร้อยแล้ว');
             navigate('/claims');
         } catch (error) {
             console.error("Error processing request:", error);
-            alert("เกิดข้อผิดพลาดในการสร้างคำร้อง: " + error.message);
+            toast.error("เกิดข้อผิดพลาดในการสร้างคำร้อง: " + error.message);
             setIsSubmitting(false);
         }
     };

@@ -39,6 +39,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
 
     const shipping = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.summary?.shippingFee || selectedOrder.totals?.shipping || 0);
     const walletUsed = Number(selectedOrder.walletUsed || selectedOrder.walletUsedAmount || selectedOrder.summary?.walletUsed || selectedOrder.calculationLog?.usedWallet || 0);
+    const pointsUsed = Number(selectedOrder.pointsUsed || selectedOrder.summary?.pointsUsed || selectedOrder.pointsDiscount || selectedOrder.calculationLog?.pointsUsed || 0);
     const vat = Number(selectedOrder.vat || selectedOrder.vatAmount || selectedOrder.taxAmount || selectedOrder.summary?.vat || 0);
     const paymentFee = Number(selectedOrder.paymentFee || selectedOrder.chargeAmount || selectedOrder.feeAmount || selectedOrder.summary?.paymentFee || 0);
     const otherFeeAmount = Number(selectedOrder.otherFeeAmount || selectedOrder.summary?.otherFeeAmount || selectedOrder.otherFees || selectedOrder.extraFee || selectedOrder.summary?.otherFees || 0);
@@ -84,6 +85,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
                 otherFeeName={otherFeeName}
                 vat={vat}
                 walletUsed={walletUsed}
+                pointsUsed={pointsUsed}
                 netTotal={netTotal}
                 isCancelled={isCancelled}
                 paymentStat={pStat}

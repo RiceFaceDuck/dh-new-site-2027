@@ -350,18 +350,26 @@ export default function ReceiptTemplate(props) {
         : getCustomerDisplayName(customer);
 
     return (
-        <div className="fixed inset-0 z-9999 bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-xs">
+        <div 
+            onClick={onClose} 
+            className="fixed inset-0 z-9999 bg-black/60 flex flex-col items-center justify-center p-4 backdrop-blur-xs cursor-pointer"
+        >
             {/* Toolbar */}
-            <ReceiptToolbar 
-                onClose={onClose} 
-                format={format} 
-                toggleFormat={toggleFormat} 
-                isSavingPref={isSavingPref} 
-                handlePrint={handlePrint} 
-            />
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[155mm] cursor-default">
+                <ReceiptToolbar 
+                    onClose={onClose} 
+                    format={format} 
+                    toggleFormat={toggleFormat} 
+                    isSavingPref={isSavingPref} 
+                    handlePrint={handlePrint} 
+                />
+            </div>
 
             {/* A5 Viewer */}
-            <div className="w-full max-w-[155mm] flex-1 overflow-y-auto bg-gray-200/50 p-4 flex justify-center">
+            <div 
+                onClick={(e) => e.stopPropagation()} 
+                className="w-full max-w-[155mm] flex-1 overflow-y-auto bg-gray-200/50 p-4 flex justify-center cursor-default"
+            >
                 {/* 📝 A5 Paper Container Wrapper */}
                 <div id="printable-receipt" className="flex flex-col gap-6 items-center w-full">
                     {pageChunks.map((chunk, pageIdx) => {

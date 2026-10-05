@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Ban, Trash2, Eye, History, FileEdit, Printer, X, Loader2 } from 'lucide-react';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
 import { auth } from '../../../firebase/config';
+import { useAuth } from '../../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function OrderActions({ 
@@ -16,6 +17,7 @@ export default function OrderActions({
     onResumeDraft,
     fraudResult
 }) {
+    const { canDeleteOrder } = useAuth();
     const orderStat = (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase();
     const paymentStat = (selectedOrder.paymentStatus || '').toLowerCase();
     const isApprovedOrCompleted = orderStat === 'approved' || orderStat === 'completed';
@@ -35,10 +37,10 @@ export default function OrderActions({
                 toast.success('ยืนยันบิลและหักสต็อกสำเร็จ!');
             } catch (error) {
                 toast.error(`เกิดข้อผิดพลาดในการยืนยันบิล: ${error.message}`);
-                setIsProcessing(false);
                 return;
+            } finally {
+                setIsProcessing(false);
             }
-            setIsProcessing(false);
         }
         
         setShowPrintPreview(true);
@@ -102,11 +104,11 @@ export default function OrderActions({
                         </button>
                     )}
 
-                    {(isCancelled || orderStat === 'draft' || orderStat === 'pending') && (
+                    {canDeleteOrder && (orderStat === 'draft' || orderStat === 'pending') && (
                         <button 
                             onClick={() => handleDeleteOrder(selectedOrder)}
                             className="flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-xs transition-all text-xs sm:text-sm text-rose-600 hover:text-white hover:bg-rose-600 active:scale-95"
-                            title="ลบบิลออกจากฐานข้อมูลอย่างถาวร"
+                            title="ลบบิลออกจากฐานข้อมูลอย่างถาวร (เฉพาะฉบับร่าง)"
                         >
                             <Trash2 size={15} strokeWidth={2.5}/> 
                             <span className="hidden lg:inline">ลบถาวร!</span>

@@ -41,9 +41,10 @@ export default function OrderDetailModal(props) {
             toast.success('แจ้งจัดส่งสำเร็จ!');
             handleCloseModal(); // ปิด Modal หลังจากอัปเดตสำเร็จ
         } catch (error) {
-            toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
+            console.error("Failed to mark order as shipped:", error);
+        } finally {
+            setIsUpdatingShipping(false);
         }
-        setIsUpdatingShipping(false);
     };
 
     const handleMarkAsCompleted = async () => {
@@ -53,9 +54,10 @@ export default function OrderDetailModal(props) {
             toast.success('ส่งมอบสินค้าให้ลูกค้าเรียบร้อย!');
             handleCloseModal();
         } catch (error) {
-            toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
+            console.error("Failed to mark order as completed:", error);
+        } finally {
+            setIsUpdatingShipping(false);
         }
-        setIsUpdatingShipping(false);
     };
 
     const handleCopyId = (e, text) => {
@@ -77,21 +79,31 @@ export default function OrderDetailModal(props) {
     
     // Formatting date safely
     let formattedDate = 'N/A';
-    if (selectedOrder.createdAt) {
-        if (typeof selectedOrder.createdAt.toDate === 'function') {
-            formattedDate = selectedOrder.createdAt.toDate().toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' });
-        } else if (selectedOrder.createdAt.seconds) {
-            formattedDate = new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' });
+    const dateSource = selectedOrder.createdAt || selectedOrder.updatedAt || selectedOrder.date;
+    if (dateSource) {
+        if (typeof dateSource.toDate === 'function') {
+            formattedDate = dateSource.toDate().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+        } else if (dateSource.seconds) {
+            formattedDate = new Date(dateSource.seconds * 1000).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
         } else {
-            formattedDate = new Date(selectedOrder.createdAt).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' });
+            const d = new Date(dateSource);
+            if (!isNaN(d.getTime())) {
+                formattedDate = d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+            }
         }
     }
 
 
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-100 flex items-center justify-center p-2 sm:p-4">
-            <div className="bg-(--dh-bg-base) w-full max-w-5xl h-[90vh] md:h-[85vh] rounded-xs shadow-2xl overflow-hidden flex flex-col relative text-(--dh-text-main) border border-(--dh-border) animate-in fade-in zoom-in-95 duration-200">
+        <div 
+            onClick={handleCloseModal} 
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-100 flex items-center justify-center p-2 sm:p-4 cursor-pointer"
+        >
+            <div 
+                onClick={(e) => e.stopPropagation()} 
+                className="bg-(--dh-bg-base) w-full max-w-5xl h-[90vh] md:h-[85vh] rounded-xs shadow-2xl overflow-hidden flex flex-col relative text-(--dh-text-main) border border-(--dh-border) animate-in fade-in zoom-in-95 duration-200 cursor-default"
+            >
                 
                 <OrderActions {...props} />
                 
@@ -122,7 +134,7 @@ export default function OrderDetailModal(props) {
                                     </div>
                                     <div className="flex justify-between items-center text-xs border-t border-(--dh-border) pt-2 mt-auto">
                                         <div className="flex items-center gap-1 text-(--dh-text-muted) font-bold">
-                                            <CalendarDays size={12}/> {formattedDate.split(' ')[0]}
+                                            <CalendarDays size={12}/> {formattedDate}
                                         </div>
                                         {isCancelled ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-black">ยกเลิกแล้ว</span>

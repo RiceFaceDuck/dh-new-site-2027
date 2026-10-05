@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Search, Receipt, Undo2, 
   CheckSquare, History, Image as ImageIcon, 
   Boxes, Users, LogOut, Sun, Moon,
-  UserCog, Mail, Calendar, Lock, RefreshCw
+  UserCog, Mail, Calendar, Lock, RefreshCw, Plus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import NetworkHealthIndicator from '../../components/common/NetworkHealthIndicator';
@@ -20,9 +20,19 @@ export default function Sidebar({
   toggleDarkMode 
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, profile, logout, isManagerOrOwner } = useAuth();
   const hasManagerAccess = isManagerOrOwner();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const handleCreateNewBill = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent('dh_open_new_bill'));
+    if (location.pathname !== '/billing') {
+      navigate('/billing', { state: { newBill: true } });
+    }
+  };
 
   const navItems = [
     { category: 'Main Menu', categoryThai: 'ส่วนงานหลัก' },
@@ -125,15 +135,33 @@ export default function Sidebar({
                   {item.labelThai} {isLocked && ' (ล็อค)'}
                 </span>
               </div>
-              {item.badge > 0 && !isLocked && (
-                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-xs ${
-                  isActive 
-                    ? 'bg-white/20 text-white' 
-                    : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'
-                }`}>
-                  {item.badge}
-                </span>
-              )}
+
+              <div className="flex items-center gap-1.5">
+                {item.path === '/billing' && (
+                  <button
+                    type="button"
+                    title="สร้างบิลใหม่ (POS)"
+                    onClick={handleCreateNewBill}
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${
+                      isActive
+                        ? 'bg-blue-500 hover:bg-blue-400 text-white shadow-xs border border-blue-400/40'
+                        : 'bg-slate-100 hover:bg-blue-600 text-slate-500 hover:text-white dark:bg-slate-700/60 dark:text-slate-300 dark:hover:bg-blue-600 dark:hover:text-white border border-slate-200/80 dark:border-slate-700'
+                    }`}
+                  >
+                    <Plus size={14} strokeWidth={3} />
+                  </button>
+                )}
+
+                {item.badge > 0 && !isLocked && (
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-xs ${
+                    isActive 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </div>
             </Link>
           );
         })}
