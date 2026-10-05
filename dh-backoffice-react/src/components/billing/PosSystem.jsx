@@ -127,9 +127,12 @@ export default function PosSystem({
 
     const lastResumeIdRef = useRef(null);
     useEffect(() => {
-        if (resumeTabId && lastResumeIdRef.current !== resumeTabId && safeCartTabs.some(t => t.id === resumeTabId)) {
-            setActiveTabId(resumeTabId);
-            lastResumeIdRef.current = resumeTabId;
+        if (resumeTabId && lastResumeIdRef.current !== resumeTabId) {
+            const matchedTab = safeCartTabs.find(t => t.id === resumeTabId || t.orderId === resumeTabId || t.docId === resumeTabId);
+            if (matchedTab) {
+                setActiveTabId(matchedTab.id);
+                lastResumeIdRef.current = resumeTabId;
+            }
         }
     }, [resumeTabId, safeCartTabs, setActiveTabId]);
 

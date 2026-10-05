@@ -16,7 +16,10 @@
       - totalAccumulatedPoints / creditPoints: customer reward loyalty points (SSOT in database)
       - lastOrderDate: timestamp for last completed order date badge (synced via customers_active_30d)
       - sales30Days / orderCount30Days: dynamic 30D activity delta
-      - address: structured { addressLine, subDistrict, district, province, zipCode }
+      - contactName / firstName: recipient and primary contact person
+      - address: structured { addressLine, subDistrict, district, province, zipCode, postalCode }
+      - logisticProvider / preferredCourier: customer logistics courier preference
+      - logisticNote / shippingNotes: customer delivery instructions
     </fields>
   </core_schema>
 
@@ -40,6 +43,10 @@
     <caution>`getCustomerDisplayName` utility returns a string, NOT an object. Never access `.accountName` on its return value.</caution>
     <caution>Always preserve `accountId` and `customerCode` during chunk normalization; stripping them breaks Account ID exact search.</caution>
     <caution>Date filtering must use immutable timestamp math (Date.now() - delta); never call `now.setDate()` inside array iterations.</caution>
-    <caution>Absolute deployment ban: Never run firebase deploy, functions deploy, or git push to remote servers.</caution>
+    <caution>Dual-Key Customer Synchronization: Forms must bind and sync both `zipCode`/`postalCode`, `logisticProvider`/`preferredCourier`, and `contactName`/`firstName` so customers created in POS Billing do not lose shipping and contact data in Customer Management.</caution>
+    <caution>Smart Real-time Paste: CustomerModal supports parsing pasted unformatted address blocks (Shop + Contact Person + Phone + Address + Courier) directly into form state with dual-key parity.</caution>
+    <caution>Catalog Chunk Address Void & Pre-Edit Guard: Directory chunk (catalogs/customers_directory) lacks addresses. DetailPanel and ActiveCustomerCard must run on-demand hydration via getUserProfile(uid), and startEditCustomer must fetch full profile before opening edit form to prevent wiping existing customer addresses in Firestore.</caution>
+    <caution>Directory Chunk Mutation Wire: Any mutation in customerAdminService (createManualCustomer, updateCustomerProfile, deleteCustomer) must trigger non-blocking syncCustomerToDirectoryChunk to keep catalogs/customers_directory and local storage cache updated across all stations atomically.</caution>
+    <caution>Bounded Delta Fetch Flow: In useCustomerData, directory chunk is fetched only on cold start or manual refresh. Subsequent mounts read local cache (0 Read) and perform bounded delta query on updatedAt > lastSync - buffer (0-3 Reads), avoiding unconditional return and full collection rescans.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>

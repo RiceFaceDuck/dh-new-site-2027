@@ -15,8 +15,11 @@ export default function ContactInfoSection({ formData, handleChange }) {
                             type="text" 
                             placeholder="ชื่อผู้ติดต่อหลัก" 
                             className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
-                            value={formData.contactName || ''} 
-                            onChange={e => handleChange('contactName', e.target.value)}
+                            value={formData.contactName || formData.firstName || ''} 
+                            onChange={e => {
+                                handleChange('contactName', e.target.value);
+                                handleChange('firstName', e.target.value);
+                            }}
                         />
                     </div>
                     <div className="space-y-1.5">
@@ -70,8 +73,11 @@ export default function ContactInfoSection({ formData, handleChange }) {
                             type="text" 
                             placeholder="ลิงก์ Facebook Page" 
                             className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
-                            value={formData.facebookUrl || ''} 
-                            onChange={e => handleChange('facebookUrl', e.target.value)}
+                            value={formData.facebookUrl || formData.facebook || ''} 
+                            onChange={e => {
+                                handleChange('facebookUrl', e.target.value);
+                                handleChange('facebook', e.target.value);
+                            }}
                         />
                     </div>
                     <div className="space-y-1.5">

@@ -7,8 +7,7 @@ import { computeCustomerChanges } from '../utils/customerDiffUtils';
 import { cascadeDisableCustomer, cleanupOrphanedTodos, cascadeDeleteCustomer } from './customer/customerCascadeService';
 import { getCollectionPath, formatCurrency } from 'dh-shared';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
-
-
+import { syncCustomerToDirectoryChunk } from '../pages/Customers/services/customerCacheService';
 
 const getUserDocRef = (uid) => doc(db, getCollectionPath('users'), uid);
 
@@ -19,9 +18,20 @@ export const createManualCustomer = async (data) => {
         // 1. สร้าง Document ใหม่เพื่อให้ Firestore สุ่ม ID ให้ก่อน
         const docRef = doc(usersRef);
 
-        // ถ้าระบุรหัสมาเอง (customerCode/accountId) ให้ใช้ค่านั้น ถ้าไม่ระบุ ให้สร้างมาตรฐาน 8 หลักจาก UID
         const accountId = data.accountId || data.customerCode || docRef.id.substring(0, 8).toUpperCase();
         const resolvedName = data.accountName || data.displayName || data.name || 'ลูกค้าใหม่';
+        const resolvedContact = data.contactName || data.firstName || resolvedName;
+
+        // Ensure address object has dual-key postalCode and zipCode
+        let normalizedAddress = data.address;
+        if (normalizedAddress && typeof normalizedAddress === 'object') {
+            const zip = normalizedAddress.zipCode || normalizedAddress.postalCode || '';
+            normalizedAddress = {
+                ...normalizedAddress,
+                zipCode: zip,
+                postalCode: zip
+            };
+        }
 
         await setDoc(docRef, {
             ...data,
@@ -33,6 +43,15 @@ export const createManualCustomer = async (data) => {
             accountName: resolvedName,
             displayName: resolvedName,
             storeName: resolvedName,
+            contactName: resolvedContact,
+            firstName: resolvedContact,
+            ...(normalizedAddress ? { address: normalizedAddress } : {}),
+            logisticProvider: data.logisticProvider || data.preferredCourier || '',
+            preferredCourier: data.preferredCourier || data.logisticProvider || '',
+            logisticNote: data.logisticNote || data.shippingNotes || '',
+            shippingNotes: data.shippingNotes || data.logisticNote || '',
+            facebook: data.facebook || data.facebookUrl || '',
+            facebookUrl: data.facebookUrl || data.facebook || '',
             isManualCustomer: true,
             role: data.rank || data.role || 'Customer',
             rank: data.rank || data.role || 'Customer',
@@ -52,6 +71,36 @@ export const createManualCustomer = async (data) => {
         // 3. บันทึก History Log ตามกฎของระบบ Backoffice
         const customerName = getCustomerDisplayName(data, resolvedName);
         await historyService.addLog('Customer', 'Create', docRef.id, `เพิ่มรายชื่อลูกค้าใหม่: ${customerName} (Account ID: ${accountId})`, auth.currentUser?.uid);
+
+        // 4. Non-blocking sync to catalogs/customers_directory chunk
+        try {
+            await syncCustomerToDirectoryChunk({
+                ...data,
+                id: docRef.id,
+                uid: docRef.id,
+                accountId,
+                customerCode: accountId,
+                name: resolvedName,
+                accountName: resolvedName,
+                displayName: resolvedName,
+                storeName: resolvedName,
+                contactName: resolvedContact,
+                firstName: resolvedContact,
+                address: normalizedAddress,
+                logisticProvider: data.logisticProvider || data.preferredCourier || '',
+                preferredCourier: data.preferredCourier || data.logisticProvider || '',
+                logisticNote: data.logisticNote || data.shippingNotes || '',
+                shippingNotes: data.shippingNotes || data.logisticNote || '',
+                facebook: data.facebook || data.facebookUrl || '',
+                facebookUrl: data.facebookUrl || data.facebook || '',
+                role: data.rank || data.role || 'Customer',
+                rank: data.rank || data.role || 'Customer',
+                status: 'active',
+                isActive: true
+            }, 'upsert');
+        } catch (syncErr) {
+            console.warn("⚠️ [CustomerAdminService] Non-blocking directory chunk sync error on create:", syncErr);
+        }
 
         console.log(`✅ [CustomerAdminService] Created manual customer with ID: ${docRef.id} and Account ID: ${accountId}`);
         return docRef.id;
@@ -107,6 +156,18 @@ export const updateCustomerProfile = async (uid, data) => {
             await cleanupOrphanedTodos(uid, auth.currentUser?.uid);
         }
 
+        // 5. Non-blocking sync to catalogs/customers_directory chunk
+        try {
+            await syncCustomerToDirectoryChunk({
+                ...oldData,
+                ...data,
+                id: uid,
+                uid: uid
+            }, 'upsert');
+        } catch (syncErr) {
+            console.warn("⚠️ [CustomerAdminService] Non-blocking directory chunk sync error on update:", syncErr);
+        }
+
         return { success: true };
     } catch (error) {
         console.error("❌ [CustomerAdminService] Update Customer Profile Error:", error);
@@ -142,6 +203,16 @@ export const deleteCustomer = async (targetUid, customerName) => {
 
         // 🔒 Strict Data Relations: Cascade Disable Partner, Map Pin (ActivePartners), and Ads if deleted
         await cascadeDeleteCustomer(targetUid, auth.currentUser?.uid);
+
+        // 🗑️ Non-blocking sync to catalogs/customers_directory chunk
+        try {
+            await syncCustomerToDirectoryChunk({
+                id: targetUid,
+                uid: targetUid
+            }, 'delete');
+        } catch (syncErr) {
+            console.warn("⚠️ [CustomerAdminService] Non-blocking directory chunk sync error on delete:", syncErr);
+        }
 
         console.log(`✅ [CustomerAdminService] Deleted customer ${customerName} (${targetUid})`);
         return { success: true };

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
     X, Sparkles, User, Phone, MapPin, Save, ArrowRight, ArrowLeft, 
-    Check, CheckCircle2, Shield, AlertCircle, Loader2, Mail, Users 
+    Check, CheckCircle2, Shield, AlertCircle, Loader2, Mail, Users,
+    Truck, UserCheck, MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
@@ -16,26 +17,34 @@ import CustomerDuplicateComparisonModal, { checkPotentialDuplicates } from '../.
  */
 const quickCustomerService = {
     buildCustomerPayload: (parsedData, selectedRole) => {
+        const zip = (parsedData.postalCode || parsedData.zipCode || '').trim();
         const fullAddress = [
             parsedData.addressLine,
             parsedData.subDistrict ? `ต.${parsedData.subDistrict}` : '',
             parsedData.district ? `อ.${parsedData.district}` : '',
             parsedData.province ? `จ.${parsedData.province}` : '',
-            parsedData.postalCode
+            zip
         ].filter(Boolean).join(' ');
 
         const name = (parsedData.accountName || '').trim();
+        const contact = (parsedData.contactName || '').trim();
+        const courier = (parsedData.preferredCourier || parsedData.logisticProvider || '').trim();
+        const notes = (parsedData.shippingNotes || parsedData.logisticNote || '').trim();
+        const fb = (parsedData.facebookUrl || parsedData.facebook || '').trim();
+
         return {
             accountName: name,
             displayName: name,
             storeName: name,
             name: name,
-            firstName: parsedData.contactName || name,
+            contactName: contact || name,
+            firstName: contact || name,
             phone: parsedData.phone || '',
             phoneNumber: parsedData.phone || '',
             email: parsedData.email || '',
             lineId: parsedData.lineId || '',
-            facebook: parsedData.facebook || '',
+            facebook: fb,
+            facebookUrl: fb,
             role: selectedRole,
             rank: selectedRole,
             address: {
@@ -43,12 +52,15 @@ const quickCustomerService = {
                 subDistrict: parsedData.subDistrict || '',
                 district: parsedData.district || '',
                 province: parsedData.province || '',
-                postalCode: parsedData.postalCode || '',
+                postalCode: zip,
+                zipCode: zip,
                 fullAddress: fullAddress
             },
             legacyAddress: fullAddress,
-            preferredCourier: parsedData.preferredCourier || '',
-            shippingNotes: parsedData.shippingNotes || '',
+            preferredCourier: courier,
+            logisticProvider: courier,
+            shippingNotes: notes,
+            logisticNote: notes,
             customerType: 'ทั่วไป',
             source: 'POS Quick Smart Add'
         };
@@ -190,7 +202,7 @@ function QuickAddStep1({
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                        <div className="space-y-1 md:col-span-2">
+                        <div className="space-y-1">
                             <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
                                 <User size={12} className="text-indigo-500" />
                                 ชื่อลูกค้า / ชื่อร้านค้า <span className="text-rose-500">*</span>
@@ -201,6 +213,20 @@ function QuickAddStep1({
                                 onChange={e => handleFieldChange('accountName', e.target.value)} 
                                 placeholder="ระบุชื่อลูกค้า หรือ ชื่อร้าน" 
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                <UserCheck size={12} className="text-blue-500" />
+                                ชื่อผู้รับ / ผู้ติดต่อ (Contact Person)
+                            </label>
+                            <input 
+                                type="text" 
+                                value={parsedData.contactName || ''} 
+                                onChange={e => handleFieldChange('contactName', e.target.value)} 
+                                placeholder="ระบุชื่อผู้รับ หรือ ผู้ติดต่อ (ถ้ามี)" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 bg-white focus:ring-1 focus:ring-blue-500 outline-hidden" 
                             />
                         </div>
 
@@ -229,6 +255,34 @@ function QuickAddStep1({
                                 onChange={e => handleFieldChange('postalCode', e.target.value)} 
                                 placeholder="50200" 
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                <Mail size={12} className="text-violet-500" />
+                                อีเมล (Email)
+                            </label>
+                            <input 
+                                type="email" 
+                                value={parsedData.email || ''} 
+                                onChange={e => handleFieldChange('email', e.target.value)} 
+                                placeholder="example@mail.com" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 bg-white focus:ring-1 focus:ring-violet-500 outline-hidden" 
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                <MessageSquare size={12} className="text-emerald-500" />
+                                Line ID
+                            </label>
+                            <input 
+                                type="text" 
+                                value={parsedData.lineId || ''} 
+                                onChange={e => handleFieldChange('lineId', e.target.value)} 
+                                placeholder="@lineid หรือ id" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 bg-white focus:ring-1 focus:ring-emerald-500 outline-hidden" 
                             />
                         </div>
 
@@ -276,6 +330,34 @@ function QuickAddStep1({
                                 onChange={e => handleFieldChange('province', e.target.value)} 
                                 placeholder="เชียงใหม่" 
                                 className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white" 
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                <Truck size={12} className="text-amber-500" />
+                                ขนส่งที่ต้องการ (Courier)
+                            </label>
+                            <input 
+                                type="text" 
+                                value={parsedData.preferredCourier || parsedData.logisticProvider || ''} 
+                                onChange={e => handleFieldChange('preferredCourier', e.target.value)} 
+                                placeholder="เช่น Flash, Kerry, ไปรษณีย์ไทย" 
+                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white focus:ring-1 focus:ring-amber-500 outline-hidden" 
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                <Shield size={12} className="text-slate-400" />
+                                หมายเหตุจัดส่ง (Shipping Notes)
+                            </label>
+                            <input 
+                                type="text" 
+                                value={parsedData.shippingNotes || parsedData.logisticNote || ''} 
+                                onChange={e => handleFieldChange('shippingNotes', e.target.value)} 
+                                placeholder="เช่น โทรแจ้งก่อนส่ง, ฝากป้อมยาม" 
+                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white focus:ring-1 focus:ring-slate-400 outline-hidden" 
                             />
                         </div>
                     </div>
@@ -599,7 +681,20 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
     };
 
     const handleFieldChange = (field, value) => {
-        setParsedData(prev => ({ ...prev, [field]: value }));
+        setParsedData(prev => {
+            const next = { ...prev, [field]: value };
+            if (field === 'postalCode') next.zipCode = value;
+            if (field === 'zipCode') next.postalCode = value;
+            if (field === 'preferredCourier') next.logisticProvider = value;
+            if (field === 'logisticProvider') next.preferredCourier = value;
+            if (field === 'shippingNotes') next.logisticNote = value;
+            if (field === 'logisticNote') next.shippingNotes = value;
+            if (field === 'facebook') next.facebookUrl = value;
+            if (field === 'facebookUrl') next.facebook = value;
+            if (field === 'contactName') next.firstName = value;
+            if (field === 'firstName') next.contactName = value;
+            return next;
+        });
     };
 
     // Step 1: Save to DB with Duplicate Check

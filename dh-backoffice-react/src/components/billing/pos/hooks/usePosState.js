@@ -88,6 +88,7 @@ export default function usePosState(products, customers, initialDraft) {
     useEffect(() => {
         const uid = auth?.currentUser?.uid || 'guest';
         localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(cartTabs));
+        window.dispatchEvent(new CustomEvent('dh_cart_updated'));
     }, [cartTabs]);
 
     useEffect(() => {

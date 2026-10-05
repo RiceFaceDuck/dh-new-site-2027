@@ -72,44 +72,48 @@ export const useCustomerData = () => {
       let cachedUsers = [];
       let lastSync = 0;
 
-      // 1. อ่านแคชจาก SessionStorage / LocalStorage ก่อนเพื่อแสดงผลแบบ Instant
-      if (useCache) {
-        const cached = await readCachedCustomers();
-        cachedUsers = cached.cachedUsers;
-        lastSync = cached.lastSync;
+      // 1. อ่านแคชจาก SessionStorage / LocalStorage ก่อนเพื่อแสดงผลแบบ Instant (0 Read)
+      const cached = await readCachedCustomers();
+      cachedUsers = cached?.cachedUsers || [];
+      lastSync = cached?.lastSync || 0;
 
-        if (cachedUsers && cachedUsers.length > 0) {
-          setCustomers(filterAndSortCustomers(cachedUsers));
+      if (useCache && cachedUsers.length > 0) {
+        setCustomers(filterAndSortCustomers(cachedUsers));
+        setLoading(false);
+      }
+
+      let currentUsers = cachedUsers;
+
+      // 2. Cold Start: ถ้าไม่มีแคชในเครื่อง หรือผู้ใช้สั่งรีเฟรช ให้ดึงจาก catalogs/customers_directory (1 Read ครบ 100% รายการ)
+      if (currentUsers.length === 0 || !useCache) {
+        const directoryUsers = await fetchCustomerDirectoryChunk();
+        if (directoryUsers && directoryUsers.length > 0) {
+          currentUsers = directoryUsers;
+          const sorted = filterAndSortCustomers(directoryUsers);
+          setCustomers(sorted);
+          writeCachedCustomers(sorted);
+          lastSync = Date.now();
           setLoading(false);
         }
       }
 
-      // 2. ดึงจากสารบัญลูกค้า catalogs/customers_directory (1 Read ใน Cold Start ครบ 100% ฟิลด์)
-      const directoryUsers = await fetchCustomerDirectoryChunk();
-      if (directoryUsers && directoryUsers.length > 0 && useCache) {
-        const sorted = filterAndSortCustomers(directoryUsers);
-        setCustomers(sorted);
-        writeCachedCustomers(sorted);
-        setLoading(false);
-        setIsRefreshing(false);
-        validateAndRefreshActiveStats(false);
-        return;
-      }
-
-      // 3. กรณีแคชหมดอายุหรือไม่พบ Directory -> ดึง Bounded Delta Fetch จาก users collection
-      const { updatedUsers, hasChanges } = await fetchCustomersFromFirestore(
-        lastSync,
-        cachedUsers.length > 0 ? cachedUsers : (directoryUsers || [])
-      );
-
-      if (hasChanges && updatedUsers && updatedUsers.length > 0) {
-        const sorted = filterAndSortCustomers(updatedUsers);
-        setCustomers(sorted);
-        writeCachedCustomers(sorted);
-      } else if (directoryUsers && directoryUsers.length > 0) {
-        const sorted = filterAndSortCustomers(directoryUsers);
-        setCustomers(sorted);
-        writeCachedCustomers(sorted);
+      // 3. Bounded Delta Fetch: ตรวจสอบข้อมูลที่มีการเปลี่ยนแปลงล่าสุดจาก users collection
+      // ถ้า lastSync > 0 จะคิวรีเฉพาะ updatedAt > lastSync - buffer (0-3 Reads)
+      if (currentUsers.length > 0 && lastSync > 0) {
+        const { updatedUsers, hasChanges } = await fetchCustomersFromFirestore(lastSync, currentUsers);
+        if (hasChanges && updatedUsers && updatedUsers.length > 0) {
+          const sorted = filterAndSortCustomers(updatedUsers);
+          setCustomers(sorted);
+          writeCachedCustomers(sorted);
+        }
+      } else if (currentUsers.length === 0) {
+        // Fallback กรณีไม่มีทั้งแคชและ directory chunk
+        const { updatedUsers } = await fetchCustomersFromFirestore(0, []);
+        if (updatedUsers && updatedUsers.length > 0) {
+          const sorted = filterAndSortCustomers(updatedUsers);
+          setCustomers(sorted);
+          writeCachedCustomers(sorted);
+        }
       }
 
       validateAndRefreshActiveStats(!useCache);

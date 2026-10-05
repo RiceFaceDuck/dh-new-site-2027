@@ -8,7 +8,7 @@
   </flow_and_entry>
 
   <core_schema>
-    1. Parsed Customer Address: `accountName`, `contactName`, `phone`, `formattedPhone`, `email`, `lineId`, `facebook`, `addressLine`, `subDistrict`, `district`, `province`, `postalCode`, `preferredCourier`, `shippingNotes`, `rawText`.
+    1. Parsed Customer Address: `accountName`, `contactName`, `storeName`, `phone`, `formattedPhone`, `email`, `lineId`, `facebook`, `facebookUrl`, `addressLine`, `subDistrict`, `district`, `province`, `postalCode`, `zipCode`, `preferredCourier`, `logisticProvider`, `shippingNotes`, `logisticNote`, `rawText`.
     2. Vat Calculation Result: `finalTotal`, `amountBeforeVat`, `vatAmount`, `rate`.
     3. Price / Fraud Schema: `basePrice`, `discount`, `netPrice`, `fraudFlags`.
     4. Credit Config Schema: `unwrapCreditConfig` parses nested `{ config: { pointsEarningRate, skuBonusRules } }` with legacy flat fallback.
@@ -35,5 +35,6 @@
     4. ⚠️ Credit Config Unwrapping: `settings/credit_config` nests parameters inside `.config`; always use `unwrapCreditConfig` so custom earning rates and SKU bonuses are not dropped.
     5. ⚠️ Buffer String Coercion: In JS, `Number('   ') === 0`. Always check `.trim() === ''` before numeric conversion to avoid treating empty whitespace as 0.
     6. ⚠️ Nullish Coalescing for Buffer: Never use `|| 2` on buffer fields as it forces legitimate `0` buffer to `2`. Always use `?? 2`.
+    7. ⚠️ Dual-Key Schema & Shop/Person Separation: `parseCustomerAddress` cleanly isolates Store name from Contact/Recipient Person (business prefixes vs person honorifics), extracts them cleanly from `addressLine`, and emits dual-key fields (`postalCode`/`zipCode`, `preferredCourier`/`logisticProvider`, `shippingNotes`/`logisticNote`, `facebook`/`facebookUrl`) to preserve cross-module integrity.
   </pitfalls_and_lessons>
 </grimoire>

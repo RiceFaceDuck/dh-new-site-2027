@@ -112,6 +112,30 @@ export default function CustomerSection({
 
     const isSearchHighlight = !activeTab.customer && !activeTab.walkInName;
 
+    if (activeTab.customer) {
+        return (
+            <div className="transition-colors duration-200">
+                <ActiveCustomerCard 
+                    activeTab={activeTab}
+                    updateActiveTab={updateActiveTab}
+                    isEditingCustomerPhone={isEditingCustomerPhone}
+                    setIsEditingCustomerPhone={setIsEditingCustomerPhone}
+                    tempCustomerPhone={tempCustomerPhone}
+                    setTempCustomerPhone={setTempCustomerPhone}
+                    formatPhoneNumber={formatPhoneNumber}
+                    isProcessing={isProcessing}
+                    netTotal={netTotal}
+                    onDeselectCustomer={() => {
+                        handleSelectCustomer('');
+                        setLocalSearchText('');
+                        setCustomerSearchText('');
+                        updateActiveTab({ customer: null, walletUsed: 0, useWallet: false });
+                    }}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="p-4 border-b border-(--dh-border) last:border-0 transition-colors duration-300">
             <div className="flex items-center justify-between mb-3">
@@ -179,18 +203,6 @@ export default function CustomerSection({
                 handlePhoneChange={handlePhoneChange}
                 handleSaveNewCustomer={handleSaveNewCustomer}
                 isSavingCustomer={isSavingCustomer}
-            />
-
-            <ActiveCustomerCard 
-                activeTab={activeTab}
-                updateActiveTab={updateActiveTab}
-                isEditingCustomerPhone={isEditingCustomerPhone}
-                setIsEditingCustomerPhone={setIsEditingCustomerPhone}
-                tempCustomerPhone={tempCustomerPhone}
-                setTempCustomerPhone={setTempCustomerPhone}
-                formatPhoneNumber={formatPhoneNumber}
-                isProcessing={isProcessing}
-                netTotal={netTotal}
             />
 
             {/* 🌟 Smart Quick Add Customer Modal */}

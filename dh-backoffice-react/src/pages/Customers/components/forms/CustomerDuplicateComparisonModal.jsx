@@ -114,6 +114,29 @@ export const checkPotentialDuplicates = async (newCustomerData, currentEditingUi
       });
     }
 
+    // 4. Email match
+    const email = (newCustomerData.email || '').trim().toLowerCase();
+    if (email && email.includes('@')) {
+      const qEmail = query(usersRef, where('email', '==', email), limit(5));
+      const snap = await getDocs(qEmail);
+      snap.forEach(docSnap => {
+        if (currentEditingUid && docSnap.id === currentEditingUid) return;
+        const data = docSnap.data();
+        const uid = docSnap.id;
+
+        if (!candidateMap.has(uid)) {
+          candidateMap.set(uid, {
+            customer: { id: uid, uid, ...data },
+            reasons: new Set(),
+            score: 0
+          });
+        }
+        const item = candidateMap.get(uid);
+        item.reasons.add('✉️ อีเมลตรงกัน');
+        item.score += 70;
+      });
+    }
+
     const candidateList = Array.from(candidateMap.values())
       .map(entry => ({
         customer: entry.customer,

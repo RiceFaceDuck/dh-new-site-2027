@@ -154,23 +154,40 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
     }
   };
 
-  // เตรียมข้อมูลสำหรับฟอร์มแก้ไข
-  const startEditCustomer = (customer) => {
+  // เตรียมข้อมูลสำหรับฟอร์มแก้ไข (พร้อมระบบป้องกันข้อมูลสูญหาย Data Overwrite Guard)
+  const startEditCustomer = async (customer) => {
     if (!customer) return;
+    const targetId = customer.id || customer.uid || '';
+
+    // 🛡️ Data Overwrite Guard: หากในแคชไม่มีที่อยู่ ให้ไปดึงโปรไฟล์ตัวเต็มจาก users/{uid} ก่อนเปิดฟอร์ม
+    let fullProfile = customer;
+    if (targetId && !customer.address && !customer.legacyAddress && !customer.shippingAddress) {
+      try {
+        const fetched = await userService.getUserProfile(targetId);
+        if (fetched) {
+          fullProfile = { ...customer, ...fetched };
+        }
+      } catch (err) {
+        console.warn('[useCustomerActions] Pre-edit fetch profile warning:', err);
+      }
+    }
+
     setEditFormData({
-      id: customer.id || customer.uid || '',
-      originalAccountId: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
-      customerCode: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
-      accountId: customer.accountId || customer.customerCode || customer.id?.substring(0,8)?.toUpperCase() || '',
-      accountName: getCustomerDisplayName(customer, ''),
-      contactName: customer.contactName || customer.firstName || '',
-      phone: customer.phone || customer.phoneNumber || '',
-      email: customer.email || '',
-      address: customer.address || '',
-      logisticProvider: customer.logisticProvider || '',
-      logisticNote: customer.logisticNote || '',
-      rank: customer.rank || customer.role || 'Customer',
-      accountRank: customer.accountRank || '' 
+      id: targetId,
+      originalAccountId: fullProfile.accountId || fullProfile.customerCode || targetId.substring(0,8).toUpperCase(),
+      customerCode: fullProfile.accountId || fullProfile.customerCode || targetId.substring(0,8).toUpperCase(),
+      accountId: fullProfile.accountId || fullProfile.customerCode || targetId.substring(0,8).toUpperCase(),
+      accountName: getCustomerDisplayName(fullProfile, ''),
+      contactName: fullProfile.contactName || fullProfile.firstName || '',
+      phone: fullProfile.phone || fullProfile.phoneNumber || '',
+      email: fullProfile.email || '',
+      address: fullProfile.address || fullProfile.legacyAddress || fullProfile.shippingAddress || '',
+      logisticProvider: fullProfile.logisticProvider || fullProfile.preferredCourier || '',
+      logisticNote: fullProfile.logisticNote || fullProfile.shippingNotes || '',
+      preferredCourier: fullProfile.preferredCourier || fullProfile.logisticProvider || '',
+      shippingNotes: fullProfile.shippingNotes || fullProfile.logisticNote || '',
+      rank: fullProfile.rank || fullProfile.role || 'Customer',
+      accountRank: fullProfile.accountRank || '' 
     });
     setIsEditMode(true);
   };

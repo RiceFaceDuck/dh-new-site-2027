@@ -85,8 +85,11 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                                 type="text" 
                                 placeholder="ระบุรหัสไปรษณีย์" 
                                 className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
-                                value={address.zipCode || ''} 
-                                onChange={e => handleChange('address.zipCode', e.target.value)}
+                                value={address.zipCode || address.postalCode || ''} 
+                                onChange={e => {
+                                    handleChange('address.zipCode', e.target.value);
+                                    handleChange('address.postalCode', e.target.value);
+                                }}
                             />
                         </div>
                         <div className="space-y-1.5 md:col-span-2">
@@ -115,8 +118,11 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             type="text" 
                             placeholder="เช่น Flash, Kerry, J&T, ไปรษณีย์ไทย" 
                             className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main"
-                            value={formData.logisticProvider || ''} 
-                            onChange={e => handleChange('logisticProvider', e.target.value)}
+                            value={formData.logisticProvider || formData.preferredCourier || ''} 
+                            onChange={e => {
+                                handleChange('logisticProvider', e.target.value);
+                                handleChange('preferredCourier', e.target.value);
+                            }}
                         />
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
@@ -125,8 +131,11 @@ export default function ShippingInfoSection({ formData, handleChange }) {
                             rows={2}
                             placeholder="เช่น ฝากไว้ที่ป้อมยาม, ห้ามโยนของ" 
                             className="w-full px-3 py-2.5 border border-dh-border rounded-lg focus:ring-1 focus:ring-dh-accent focus:border-dh-accent outline-hidden text-sm bg-dh-base focus:bg-dh-surface transition-all text-dh-main resize-none"
-                            value={formData.logisticNote || ''} 
-                            onChange={e => handleChange('logisticNote', e.target.value)}
+                            value={formData.logisticNote || formData.shippingNotes || ''} 
+                            onChange={e => {
+                                handleChange('logisticNote', e.target.value);
+                                handleChange('shippingNotes', e.target.value);
+                            }}
                         />
                     </div>
                 </div>

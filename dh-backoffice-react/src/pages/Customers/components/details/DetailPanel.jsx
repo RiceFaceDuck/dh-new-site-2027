@@ -15,6 +15,7 @@ import PointDisplay from '../displays/PointDisplay';
 import { getCollectionPath, formatDate, formatCurrency } from 'dh-shared';
 
 import { getUserTier } from '../../../../firebase/credit/creditFormatService';
+import { getUserProfile } from '../../../../firebase/userProfileService';
 
 export default function DetailPanel({
   customer,
@@ -38,6 +39,43 @@ export default function DetailPanel({
 
   // State สำหรับจัดการ Tabs
   const [activeTab, setActiveTab] = useState('overview');
+
+  // ⚡ Enriched customer state for on-demand address & profile hydration
+  const [enrichedCustomer, setEnrichedCustomer] = useState(customer);
+
+  useEffect(() => {
+    setEnrichedCustomer(customer);
+  }, [customer?.id, customer?.uid]);
+
+  const activeCustomer = enrichedCustomer || customer;
+
+  // ⚡ On-Demand Profile Hydration (ดึงที่อยู่จริงจาก users/{uid} เมื่อแคตตาล็อกไม่มีที่อยู่)
+  useEffect(() => {
+    const custId = customer?.id || customer?.uid;
+    const hasAddr = Boolean(customer?.address || customer?.legacyAddress || customer?.shippingAddress);
+    if (!custId || hasAddr) return;
+
+    let isMounted = true;
+    getUserProfile(custId).then(profile => {
+      if (isMounted && profile && (profile.address || profile.legacyAddress || profile.shippingAddress || profile.taxId || profile.contactName)) {
+        setEnrichedCustomer(prev => {
+          if (!prev || (prev.id !== custId && prev.uid !== custId)) return prev;
+          return {
+            ...prev,
+            ...profile,
+            address: profile.address || prev.address,
+            legacyAddress: profile.legacyAddress || prev.legacyAddress,
+            shippingAddress: profile.shippingAddress || prev.shippingAddress,
+            taxId: profile.taxId || prev.taxId,
+            contactName: profile.contactName || prev.contactName,
+            firstName: profile.firstName || prev.firstName
+          };
+        });
+      }
+    }).catch(err => console.warn('[DetailPanel] On-demand profile hydration warning:', err));
+
+    return () => { isMounted = false; };
+  }, [customer?.id, customer?.uid]);
 
   // รีเซ็ตแท็บเมื่อเปลี่ยนลูกค้า
   useEffect(() => {
@@ -69,16 +107,25 @@ export default function DetailPanel({
 
   if (!customer) return null;
 
-
-
-  // 🏡 Smart Address Decoder (แปลง Object เป็น String)
+  // 🏡 Smart Address Decoder (แปลง Object เป็น String ครอบคลุมทุกฟิลด์)
   const getFormattedAddress = () => {
-    const addr = customer.address || customer.defaultDeliveryNote;
+    const addr = activeCustomer?.address || activeCustomer?.legacyAddress || activeCustomer?.shippingAddress || activeCustomer?.defaultDeliveryNote;
     if (!addr) return 'ไม่ได้ระบุข้อมูลที่อยู่';
-    if (typeof addr === 'string') return addr;
-    
-    const parts = [addr.addressLine, addr.subDistrict, addr.district, addr.province, addr.zipCode].filter(Boolean);
-    return parts.length > 0 ? parts.join(' ') : 'ไม่ได้ระบุข้อมูลที่อยู่';
+    if (typeof addr === 'string') return addr.trim();
+    if (typeof addr === 'object') {
+      if (addr.fullAddress && typeof addr.fullAddress === 'string') {
+        return addr.fullAddress.trim();
+      }
+      const parts = [
+        addr.addressLine || addr.address,
+        addr.subDistrict ? (addr.subDistrict.startsWith('ต.') || addr.subDistrict.startsWith('แขวง') ? addr.subDistrict : `ต.${addr.subDistrict}`) : (addr.subdistrict ? `ต.${addr.subdistrict}` : ''),
+        addr.district ? (addr.district.startsWith('อ.') || addr.district.startsWith('เขต') ? addr.district : `อ.${addr.district}`) : (addr.amphur ? `อ.${addr.amphur}` : ''),
+        addr.province ? (addr.province.startsWith('จ.') ? addr.province : `จ.${addr.province}`) : (addr.changwat ? `จ.${addr.changwat}` : ''),
+        addr.zipCode || addr.postalCode || addr.postcode || addr.zipcode
+      ].filter(Boolean);
+      return parts.length > 0 ? parts.join(' ').trim() : 'ไม่ได้ระบุข้อมูลที่อยู่';
+    }
+    return 'ไม่ได้ระบุข้อมูลที่อยู่';
   };
 
   // 📋 ฟังก์ชันคัดลอกข้อความ
@@ -90,7 +137,7 @@ export default function DetailPanel({
   };
 
   // 🌟 Standardize Account ID (เพื่อให้หน้าตารางและหน้าต่างรายละเอียดตรงกัน 100%)
-  const displayAccountId = customer.accountId || customer.customerCode || customer.id.substring(0,8).toUpperCase();
+  const displayAccountId = activeCustomer.accountId || activeCustomer.customerCode || (activeCustomer.id || activeCustomer.uid || '').substring(0,8).toUpperCase();
 
   // 🌟 ฟังก์ชันหาชื่อที่ถูกต้องที่สุดของลูกค้า (ให้ตรงกับตาราง CustomerRow)
   const resolveDisplayName = (c) => {
@@ -103,7 +150,7 @@ export default function DetailPanel({
     return 'ไม่มีชื่อร้าน/ผู้ใช้';
   };
 
-  const displayName = resolveDisplayName(customer);
+  const displayName = resolveDisplayName(activeCustomer);
 
   return (
     <div className="flex flex-col h-full bg-white border-l border-slate-200 shadow-2xl">
@@ -115,7 +162,7 @@ export default function DetailPanel({
           </h2>
           <div className="flex items-center gap-1 shrink-0">
             <button 
-              onClick={() => onEdit(customer)} 
+              onClick={() => onEdit(activeCustomer)} 
               className="p-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition-colors border border-slate-700/60 active:scale-95" 
               title="แก้ไขข้อมูล"
             >
@@ -148,11 +195,11 @@ export default function DetailPanel({
 
           {/* Badge บุคคล / นิติบุคคล */}
           <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border shrink-0 ${
-            customer.customerType === 'individual' 
+            activeCustomer.customerType === 'individual' 
               ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' 
               : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
           }`}>
-            {customer.customerType === 'individual' ? 'บุคคลธรรมดา' : 'นิติบุคคล / ร้านค้า'}
+            {activeCustomer.customerType === 'individual' ? 'บุคคลธรรมดา' : 'นิติบุคคล / ร้านค้า'}
           </span>
 
           {/* 🛡️ Badge Role (สิทธิ์ราคา) */}
@@ -161,12 +208,12 @@ export default function DetailPanel({
             title="สิทธิ์ราคาของลูกค้า"
           >
             <Shield size={11} className="text-indigo-400" />
-            <span>{customer.role || customer.rank || 'ทั่วไป'}</span>
+            <span>{activeCustomer.role || activeCustomer.rank || 'ทั่วไป'}</span>
           </span>
 
           {/* 🏆 Badge Tier (ระดับแต้ม Gamification) */}
           {(() => {
-            const points = Number(customer.totalAccumulatedPoints || customer.creditPoints || customer.stats?.totalAccumulatedPoints || 0);
+            const points = Number(activeCustomer.totalAccumulatedPoints || activeCustomer.creditPoints || activeCustomer.stats?.totalAccumulatedPoints || 0);
             const tier = getUserTier(points);
             return (
               <span 
@@ -252,13 +299,13 @@ export default function DetailPanel({
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <ContactInfo 
-                customer={customer} 
+                customer={activeCustomer} 
                 handleCopy={handleCopy}
                 copiedField={copiedField}
               />
               
               <ShippingInfo 
-                customer={customer}
+                customer={activeCustomer}
                 getFormattedAddress={getFormattedAddress} 
                 handleCopy={handleCopy} 
                 copiedField={copiedField} 
@@ -274,7 +321,7 @@ export default function DetailPanel({
           )}
 
           {activeTab === 'marketing' && (
-            <MarketingInfo customer={customer} />
+            <MarketingInfo customer={activeCustomer} />
           )}
 
           {activeTab === 'history' && (
@@ -299,7 +346,7 @@ export default function DetailPanel({
           <Trash2 size={16} /> ลบลูกค้า
         </button>
         <button 
-          onClick={() => onEdit(customer)} 
+          onClick={() => onEdit(activeCustomer)} 
           className="px-4 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 font-bold rounded-xl text-xs flex items-center gap-2 transition-colors flex-1 justify-center shadow-md shadow-indigo-600/20 active:scale-95"
         >
           <Edit2 size={16} /> แก้ไขข้อมูล
@@ -309,7 +356,7 @@ export default function DetailPanel({
       <CustomerSyncModal 
         isOpen={isSyncModalOpen}
         onClose={() => setIsSyncModalOpen(false)}
-        customer={customer}
+        customer={activeCustomer}
         onSyncComplete={() => {
           setIsSyncModalOpen(false);
           onClose(); // Close DetailPanel to force a refresh of the list
@@ -319,7 +366,7 @@ export default function DetailPanel({
       <CustomerRefundModal 
         isOpen={isRefundModalOpen}
         onClose={() => setIsRefundModalOpen(false)}
-        customer={customer}
+        customer={activeCustomer}
         onSuccess={() => {
           setIsRefundModalOpen(false);
           onClose(); // ปิดแล้วรีเฟรชหน้าจอ

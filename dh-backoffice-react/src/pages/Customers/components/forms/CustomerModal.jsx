@@ -1,8 +1,9 @@
 import { toast } from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { 
-  X, UserPlus, Save, Loader2
+  X, UserPlus, Save, Loader2, Sparkles
 } from 'lucide-react';
+import { parseCustomerAddress } from 'dh-shared';
 import { generateAccountId, checkAccountIdExists } from '../../../../firebase/customer/accountIdService';
 import { syncCustomerAccount } from '../../../../firebase/customerAdminService';
 import MainInfoSection from './sections/MainInfoSection';
@@ -23,6 +24,46 @@ export default function CustomerModal({
   const [idSuccess, setIdSuccess] = useState(false);
   const [duplicateIdToSync, setDuplicateIdToSync] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [rawInputText, setRawInputText] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      setRawInputText('');
+    }
+  }, [isOpen]);
+
+  const handlePasteTextChange = (text) => {
+    setRawInputText(text);
+    if (!text.trim()) return;
+
+    const parsed = parseCustomerAddress(text);
+    setFormData(prev => ({
+      ...prev,
+      accountName: parsed.accountName || prev.accountName,
+      storeName: parsed.storeName || parsed.accountName || prev.storeName,
+      contactName: parsed.contactName || prev.contactName,
+      firstName: parsed.contactName || prev.firstName,
+      phone: parsed.phone || prev.phone,
+      phoneNumber: parsed.phone || prev.phoneNumber,
+      email: parsed.email || prev.email,
+      lineId: parsed.lineId || prev.lineId,
+      facebookUrl: parsed.facebookUrl || prev.facebookUrl,
+      facebook: parsed.facebook || prev.facebook,
+      logisticProvider: parsed.logisticProvider || prev.logisticProvider,
+      preferredCourier: parsed.preferredCourier || prev.preferredCourier,
+      logisticNote: parsed.logisticNote || prev.logisticNote,
+      shippingNotes: parsed.shippingNotes || prev.shippingNotes,
+      address: {
+        ...(typeof prev.address === 'object' ? prev.address : {}),
+        addressLine: parsed.addressLine || (typeof prev.address === 'object' ? prev.address?.addressLine : '') || '',
+        subDistrict: parsed.subDistrict || (typeof prev.address === 'object' ? prev.address?.subDistrict : '') || '',
+        district: parsed.district || (typeof prev.address === 'object' ? prev.address?.district : '') || '',
+        province: parsed.province || (typeof prev.address === 'object' ? prev.address?.province : '') || '',
+        zipCode: parsed.zipCode || (typeof prev.address === 'object' ? prev.address?.zipCode : '') || '',
+        postalCode: parsed.postalCode || (typeof prev.address === 'object' ? prev.address?.postalCode : '') || ''
+      }
+    }));
+  };
 
   // ตรวจสอบเมื่อพิมพ์ ID ใหม่ (Debounce เล็กน้อย)
   useEffect(() => {
@@ -150,6 +191,29 @@ export default function CustomerModal({
         {/* Body (Form) */}
         <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 scrollbar-thin">
           <div className="space-y-6">
+
+            {/* 🌟 Smart Quick Paste / Real-time Parser Section */}
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-amber-500 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-amber-500" />
+                  วางข้อมูลลูกค้าชุดเดียวที่นี่ (ก๊อปปี้จาก Chat / Line / FB)
+                </label>
+                <span className="text-[10px] text-amber-500 bg-amber-500/20 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">
+                  Smart Real-time Parser
+                </span>
+              </div>
+              <textarea 
+                rows={2} 
+                value={rawInputText} 
+                onChange={e => handlePasteTextChange(e.target.value)} 
+                placeholder="ตัวอย่าง: ร้านดีไอวาย คอมพิวเตอร์ คุณ ภวัต บุญมา 065-4428822 91/364 ม.2 พฤกษา14บี ต.บางคูรัด อ.บางบัวทอง จ.นนทบุรี 11110" 
+                className="w-full p-2.5 border border-amber-500/40 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 rounded-lg text-xs bg-dh-surface text-dh-main placeholder:text-dh-muted outline-hidden transition-all resize-none font-sans" 
+              />
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium">
+                ⚡ ระบบจะจำแนกชื่อร้าน, ชื่อผู้ติดต่อ, เบอร์โทรศัพท์, และที่อยู่อัตโนมัติลงในแบบฟอร์มด้านล่างทันที
+              </p>
+            </div>
             
             {/* ส่วนที่ 1: ข้อมูลหลัก */}
             <MainInfoSection

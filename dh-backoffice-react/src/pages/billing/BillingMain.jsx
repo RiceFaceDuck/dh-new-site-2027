@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import BillingDashboard from '../../components/billing/BillingDashboard';
 import PosSystem from '../../components/billing/PosSystem';
 import { useCustomerData } from '../Customers/hooks/useCustomerData';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Scoped subcomponent to prevent customer directory reads on Order List Dashboard
 const PosViewWrapper = ({ onSwitchView, initialDraft, resumeTabId, isNewBillRequest, onNewBillHandled }) => {
@@ -33,6 +33,7 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   const [isNewBillRequest, setIsNewBillRequest] = useState(false);
   
   const location = useLocation();
+  const navigate = useNavigate();
   const resumeTabId = location.state?.resumeTabId;
   const initialDraft = location.state?.initialDraft;
   const newBill = location.state?.newBill;
@@ -78,7 +79,12 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   if (viewMode === 'pos') {
     return (
       <PosViewWrapper 
-        onSwitchView={() => { setDraftOrder(null); setIsNewBillRequest(false); setViewMode('dashboard'); }}
+        onSwitchView={() => { 
+          setDraftOrder(null); 
+          setIsNewBillRequest(false); 
+          setViewMode('dashboard'); 
+          navigate(location.pathname, { replace: true, state: {} });
+        }}
         initialDraft={draftOrder}
         resumeTabId={resumeTabId}
         isNewBillRequest={isNewBillRequest}
