@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { todoService } from '../firebase/todoService';
 import { managerTodoService, CLAIM_TASK_TYPES } from '../firebase/managerTodoService';
-import { userService } from '../firebase/userService';
 import { useGmail } from '../pages/emails/hooks/useGmail';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 
@@ -16,19 +15,25 @@ export default function AdminLayout() {
     isCheckingAuth, 
     accessDenied, 
     denyReason, 
-    logout 
+    logout,
+    isManagerOrOwner 
   } = useAuth();
+  
+  const hasManagerAccess = typeof isManagerOrOwner === 'function' ? isManagerOrOwner() : false;
   
   useGlobalShortcuts();
 
   const [todoCount, setTodoCount] = useState(0); 
-  const [pendingStaffCount, setPendingStaffCount] = useState(0);
   const [pendingClaimCount, setPendingClaimCount] = useState(0);
   const [managerApprovalCount, setManagerApprovalCount] = useState(0);
   const { unreadCount } = useGmail();
   
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('dh_theme_mode');
+      if (savedTheme) {
+        return savedTheme === 'dark';
+      }
       return document.documentElement.classList.contains('dark') || 
              window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
@@ -38,8 +43,10 @@ export default function AdminLayout() {
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('dh_theme_mode', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('dh_theme_mode', 'light');
     }
   }, [isDark]);
 
@@ -58,7 +65,7 @@ export default function AdminLayout() {
       });
     }
 
-    if (typeof managerTodoService.subscribeManagerApprovals === 'function') {
+    if (hasManagerAccess && typeof managerTodoService.subscribeManagerApprovals === 'function') {
       unsubscribeManagerTodo = managerTodoService.subscribeManagerApprovals((managerTodos) => {
         setManagerApprovalCount(managerTodos.length);
         const claims = managerTodos.filter(todo => {
@@ -71,21 +78,11 @@ export default function AdminLayout() {
       });
     }
 
-    const fetchPendingStaffCount = async () => {
-        try {
-            const pendingStaff = await userService.getPendingStaff();
-            setPendingStaffCount(pendingStaff.length);
-        } catch (err) {
-            console.error("Error fetching pending staff count", err);
-        }
-    };
-    fetchPendingStaffCount();
-
     return () => {
       if (unsubscribeGeneralTodo) unsubscribeGeneralTodo();
       if (unsubscribeManagerTodo) unsubscribeManagerTodo();
     };
-  }, [isCheckingAuth, accessDenied]);
+  }, [isCheckingAuth, accessDenied, hasManagerAccess]);
 
   if (isCheckingAuth) {
     return <GatekeeperChecking />;
@@ -102,7 +99,6 @@ export default function AdminLayout() {
       <Sidebar 
         todoCount={todoCount}
         unreadCount={unreadCount}
-        pendingStaffCount={pendingStaffCount}
         pendingClaimCount={pendingClaimCount}
         managerApprovalCount={managerApprovalCount}
         isDark={isDark}

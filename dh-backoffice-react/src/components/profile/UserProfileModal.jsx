@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User, Phone, Shield, Save, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { userService } from '../../firebase/userService';
 
@@ -57,15 +57,15 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
       };
 
       await userService.updateUserProfile(user.uid, updateData);
-      setSuccessMsg('เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเธชเนเธงเธเธ•เธฑเธงเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
+      setSuccessMsg('บันทึกข้อมูลส่วนตัวเรียบร้อยแล้ว');
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         setSuccessMsg('');
         onClose();
       }, 1200);
     } catch (err) {
-      console.error("โ [UserProfileModal] Update Error:", err);
-      setErrorMsg('เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”เนเธเธเธฒเธฃเธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅ เธเธฃเธธเธ“เธฒเธฅเธญเธเนเธซเธกเนเธญเธตเธเธเธฃเธฑเนเธ');
+      console.error("❌ [UserProfileModal] Update Error:", err);
+      setErrorMsg('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
               </div>
             )}
             <div>
-              <h3 className="text-lg font-black tracking-tight">เธ•เธฑเนเธเธเนเธฒเธเนเธญเธกเธนเธฅเธชเนเธงเธเธ•เธฑเธง</h3>
+              <h3 className="text-lg font-black tracking-tight">ตั้งค่าข้อมูลส่วนตัว</h3>
               <p className="text-xs text-blue-100 font-medium">{user?.email}</p>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
           <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-200/60 dark:border-slate-600">
             <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-xs font-bold">
               <Shield size={16} className="text-blue-600 dark:text-blue-400" />
-              <span>เธ•เธณเนเธซเธเนเธเธซเธเนเธฒเธ—เธตเน (Role)</span>
+              <span>ตำแหน่งหน้าที่ (Role)</span>
             </div>
             <span className="px-2.5 py-1 text-xs font-black rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
               {profile?.role || 'Staff'}
@@ -130,33 +130,33 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">เธเธทเนเธญเธเธฃเธดเธ *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ชื่อจริง *</label>
               <input 
                 type="text" 
                 name="firstName" 
                 required 
                 value={form.firstName} 
                 onChange={handleChange} 
-                placeholder="เน€เธเนเธ เธชเธกเธเธฒเธข" 
+                placeholder="เช่น สมชาย" 
                 className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden transition-all" 
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">เธเธฒเธกเธชเธเธธเธฅ *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">นามสกุล *</label>
               <input 
                 type="text" 
                 name="lastName" 
                 required 
                 value={form.lastName} 
                 onChange={handleChange} 
-                placeholder="เน€เธเนเธ เธฃเธฑเธเธ”เธต" 
+                placeholder="เช่น รักดี" 
                 className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden transition-all" 
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">เธเธทเนเธญเน€เธฅเนเธ *</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ชื่อเล่น *</label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
@@ -165,14 +165,14 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
                 required 
                 value={form.nickname} 
                 onChange={handleChange} 
-                placeholder="เน€เธเนเธ เธเธญเธข, เธเธฑเธ—" 
+                placeholder="เช่น บอย, นัท" 
                 className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden transition-all" 
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">เบอร์โทรศัพท์</label>
             <div className="relative">
               <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
@@ -180,7 +180,7 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
                 name="phone" 
                 value={form.phone} 
                 onChange={handleChange} 
-                placeholder="เน€เธเนเธ 0812345678" 
+                placeholder="เช่น 0812345678" 
                 className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden transition-all" 
               />
             </div>
@@ -192,7 +192,7 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
               onClick={onClose} 
               className="flex-1 py-2.5 px-4 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all"
             >
-              เธขเธเน€เธฅเธดเธ
+              ยกเลิก
             </button>
             <button 
               type="submit" 
@@ -204,7 +204,7 @@ export default function UserProfileModal({ isOpen, onClose, user, profile }) {
               ) : (
                 <>
                   <Save size={18} />
-                  <span>เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅ</span>
+                  <span>บันทึกข้อมูล</span>
                 </>
               )}
             </button>

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Wifi, WifiOff, Activity } from 'lucide-react';
 import { resilientFetch } from 'dh-shared/src/utils/httpResilienceClient';
 
@@ -13,16 +13,25 @@ export default function NetworkHealthIndicator({ compact = false }) {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Micro-ping simulation for latency check with 3000ms AbortController timeout
+    // Micro-ping latency check with 3000ms AbortController timeout
     const interval = setInterval(() => {
       if (navigator.onLine) {
         const start = performance.now();
-        resilientFetch('/shopee.svg?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' }, { timeoutMs: 3000, maxRetries: 0 })
-          .then(() => {
-            const end = performance.now();
-            setLatency(Math.round(end - start));
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+        resilientFetch('/favicon.ico?t=' + Date.now(), { method: 'HEAD', cache: 'no-store', signal: controller.signal }, 1)
+          .then((res) => {
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const end = performance.now();
+              setLatency(Math.max(1, Math.round(end - start)));
+            } else {
+              setLatency(120);
+            }
           })
           .catch(() => {
+            clearTimeout(timeoutId);
             setLatency(120);
           });
       }

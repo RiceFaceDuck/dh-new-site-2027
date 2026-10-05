@@ -9,13 +9,13 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import NetworkHealthIndicator from '../../components/common/NetworkHealthIndicator';
 import UserProfileModal from '../../components/profile/UserProfileModal';
+import toast from 'react-hot-toast';
 
 export default function Sidebar({ 
   todoCount, 
   unreadCount, 
-  pendingStaffCount, 
-  pendingClaimCount,
-  managerApprovalCount,
+  pendingClaimCount, 
+  managerApprovalCount, 
   isDark, 
   toggleDarkMode 
 }) {
@@ -24,6 +24,7 @@ export default function Sidebar({
   const { user, profile, logout, isManagerOrOwner } = useAuth();
   const hasManagerAccess = isManagerOrOwner();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleCreateNewBill = (e) => {
     e.preventDefault();
@@ -65,7 +66,7 @@ export default function Sidebar({
   const handleManagerClick = (e, requiresManager) => {
     if (requiresManager && !hasManagerAccess) {
       e.preventDefault();
-      alert("คุณไม่มีอำนาจเข้าใช้งาน\nกรุณาติดต่อผู้จัดการ");
+      toast.error("คุณไม่มีอำนาจเข้าใช้งาน กรุณาติดต่อผู้จัดการ");
     }
   };
 
@@ -97,9 +98,8 @@ export default function Sidebar({
           }
 
           const Icon = item.icon;
-          const isActive = item.path === '/managers' 
-            ? location.pathname === '/managers' 
-            : location.pathname.startsWith(item.path);
+          const isActive = location.pathname === item.path || 
+            (item.path !== '/' && location.pathname.startsWith(`${item.path}/`));
 
           const isLocked = item.requiresManager && !hasManagerAccess;
 
@@ -116,27 +116,27 @@ export default function Sidebar({
                     : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10'
               }`}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <Icon 
                   size={17} 
                   className={
                     isLocked 
-                      ? 'text-slate-400 dark:text-slate-600'
+                      ? 'text-slate-400 dark:text-slate-600 shrink-0'
                       : isActive 
-                        ? 'text-white' 
-                        : 'text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400 transition-colors'
+                        ? 'text-white shrink-0' 
+                        : 'text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400 transition-colors shrink-0'
                   } 
                   strokeWidth={isActive ? 2.5 : 2} 
                 />
-                <span className="block group-hover:hidden">
+                <span className="block group-hover:hidden truncate whitespace-nowrap">
                   {item.label} {isLocked && ' (Locked)'}
                 </span>
-                <span className="hidden group-hover:block">
+                <span className="hidden group-hover:block truncate whitespace-nowrap">
                   {item.labelThai} {isLocked && ' (ล็อค)'}
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {item.path === '/billing' && (
                   <button
                     type="button"
@@ -158,7 +158,7 @@ export default function Sidebar({
                       ? 'bg-white/20 text-white' 
                       : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'
                   }`}>
-                    {item.badge}
+                    {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </div>
@@ -216,22 +216,42 @@ export default function Sidebar({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
-          <button 
-            onClick={logout}
-            className="flex-1 group flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-all outline-hidden border border-slate-200 dark:border-slate-700 shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
-          >
-            <LogOut size={15} className="transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
-            <span>เลิกงาน</span>
-          </button>
-          <button 
-            onClick={toggleDarkMode}
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all outline-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
-            title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
-          >
-            {isDark ? <Sun size={17} strokeWidth={2.5} /> : <Moon size={17} strokeWidth={2.5} />}
-          </button>
-        </div>
+        {showLogoutConfirm ? (
+          <div className="flex items-center gap-1.5 p-1.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-xl text-xs">
+            <span className="text-[11px] font-bold text-red-600 dark:text-red-400 flex-1 pl-1">ยืนยันเลิกงาน?</span>
+            <button
+              type="button"
+              onClick={logout}
+              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-[11px] shadow-xs active:scale-95 transition-all"
+            >
+              ยืนยัน
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(false)}
+              className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-bold text-[11px] transition-all"
+            >
+              ยกเลิก
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex-1 group flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-all outline-hidden border border-slate-200 dark:border-slate-700 shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
+            >
+              <LogOut size={15} className="transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
+              <span>เลิกงาน</span>
+            </button>
+            <button 
+              onClick={toggleDarkMode}
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all outline-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
+              title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
+            >
+              {isDark ? <Sun size={17} strokeWidth={2.5} /> : <Moon size={17} strokeWidth={2.5} />}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* User Profile Modal */}
