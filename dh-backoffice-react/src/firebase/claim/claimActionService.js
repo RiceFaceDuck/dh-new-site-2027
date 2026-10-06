@@ -290,7 +290,7 @@ export const claimActionService = {
             type: 'SPEND',
             amount: chargeAmount,
             status: 'SUCCESS',
-            note: `ชำระค่าสินค้าตัวใหม่ที่เคลมเปลี่ยนรุ่น (${payload.claimId}) SKU: ${payload.swapSku}`,
+            note: `ชำระค่าสินค้าตัวใหม่ที่เปลี่ยนรุ่น (${payload.claimId}) SKU: ${payload.swapSku}`,
             operatorUid: adminUid || 'System',
             timestamp: serverTimestamp()
           });
@@ -351,7 +351,7 @@ export const claimActionService = {
             status: 'paid',
             paymentMethod: 'Wallet',
             isStockDeducted: true,
-            note: `บิลสำหรับการเคลมเปลี่ยนรุ่นสินค้า (อ้างอิงบิลเดิม: ${payload.orderId}, ใบเคลม: ${payload.claimId})`,
+            note: `บิลสำหรับการเปลี่ยนสินค้า (EXC) (อ้างอิงบิลเดิม: ${payload.orderId}, ใบเคลม: ${payload.claimId})`,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             createdBy: adminUid,
@@ -395,8 +395,8 @@ export const claimActionService = {
         target: { id: payload.claimId, type: 'Task' },
         details: {
           legacy_details: isSwapSku 
-            ? `เคลมเปลี่ยนรุ่นสินค้าสำเร็จ จาก ${payload.sku} ➔ ${payload.swapSku} จำนวน ${qty} ชิ้น (สร้างบิลเลขที่ ${newOrderId})`
-            : `เคลมเปลี่ยนสินค้าสำเร็จ ${payload.sku} จำนวน ${qty} ชิ้น (เบิกสต๊อกของใหม่)`,
+            ? `เปลี่ยนรุ่นสินค้าสำเร็จ จาก ${payload.sku} ➔ ${payload.swapSku} จำนวน ${qty} ชิ้น (สร้างบิลเลขที่ ${newOrderId})`
+            : `เปลี่ยนสินค้าสำเร็จ (EXC) ${payload.sku} จำนวน ${qty} ชิ้น (เบิกสต๊อกของใหม่)`,
           newOrderId: newOrderId || null,
           isSwapSku,
           netDifference
@@ -404,7 +404,7 @@ export const claimActionService = {
         actorOverride: { uid: adminUid, name: adminName || 'Manager', email: 'N/A' }
       });
 
-      // ✨ บันทึกประวัติย่อยระดับ SKU สำหรับการดึงสต๊อกใหม่ไปเคลม
+      // ✨ บันทึกประวัติย่อยระดับ SKU สำหรับการดึงสต๊อกใหม่ไปเปลี่ยน
       setTimeout(() => {
         // 7.1 บันทึกประวัติสินค้าใหม่ที่ถูกเบิก
         gasHistoryService.log({
@@ -417,8 +417,8 @@ export const claimActionService = {
             qtyChange: -qty,
             reference: payload.claimId,
             legacy_details: isSwapSku
-              ? `เบิกสินค้าตัวใหม่เคลมเปลี่ยนรุ่น (${payload.claimId}) สลับจากรุ่นเดิม ${payload.sku}`
-              : `ตัดสต๊อกเพื่อเคลมเปลี่ยนสินค้า (${payload.claimId})`
+              ? `เบิกสินค้าตัวใหม่เปลี่ยนรุ่น (${payload.claimId}) สลับจากรุ่นเดิม ${payload.sku}`
+              : `ตัดสต๊อกเพื่อเปลี่ยนสินค้า (EXC) (${payload.claimId})`
           },
           actorOverride: { uid: adminUid, name: adminName || 'Manager' }
         });
@@ -434,7 +434,7 @@ export const claimActionService = {
               type: 'คืนของเสีย',
               qtyChange: qty,
               reference: payload.claimId,
-              legacy_details: `รับของเสียเข้าคลังจากการเคลมเปลี่ยนรุ่น (${payload.claimId}) สลับไปรุ่นใหม่ ${payload.swapSku}`
+              legacy_details: `รับของเสียเข้าคลังจากการเปลี่ยนรุ่น (${payload.claimId}) สลับไปรุ่นใหม่ ${payload.swapSku}`
             },
             actorOverride: { uid: adminUid, name: adminName || 'Manager' }
           });

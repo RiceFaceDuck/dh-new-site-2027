@@ -1,6 +1,20 @@
 {
   "indexes": [
     {
+      "collectionGroup": "history_logs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "targetId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "product_reviews",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

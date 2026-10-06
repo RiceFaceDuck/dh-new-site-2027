@@ -8,12 +8,16 @@ export default function ReceiptHeader({
     format, 
     orderData, 
     fulfillmentType, 
-    data 
+    data,
+    pageIndex = 1,
+    totalPages = 1
 }) {
     const rawVatType = data?.vatType || orderData?.vatType || customer?.vatType || '';
     const isTaxInvoice = rawVatType === 'included' || rawVatType === 'excluded' || !!(data?.isTaxInvoice || orderData?.isTaxInvoice || customer?.taxInvoiceNeeded || customer?.taxId);
     const trackingNumber = data?.trackingNumber || data?.trackingNo || data?.shippingTracking || data?.shippingDetails?.trackingNumber || orderData?.trackingNumber || orderData?.trackingNo || orderData?.shippingTracking || orderData?.shippingDetails?.trackingNumber;
     const courierName = data?.courier || data?.shippingMethod || orderData?.courier || orderData?.shippingMethod;
+    const customerTaxId = customer?.taxId || data?.taxId || orderData?.customer?.taxId || orderData?.taxId || '';
+    const customerBranch = customer?.branch || data?.branch || orderData?.customer?.branch || '';
 
     return (
         <>
@@ -23,12 +27,24 @@ export default function ReceiptHeader({
                     <img src="/dh-logo.png" alt="Logo" className="h-7 w-auto object-contain" onError={(e)=>e.target.style.display='none'} loading="lazy" />
                     <div>
                         <h1 className="font-black text-sm leading-none">บริษัท ดีเอช โน๊ตบุ๊ค จำกัด</h1>
-                        <p className="text-[9px] text-gray-600 font-medium">dhnotebook.com | Line: @dhnotebook | 087-5153122</p>
+                        <p className="text-[9px] text-gray-600 font-medium">
+                            {isTaxInvoice && <span className="font-bold text-slate-800">เลขประจำตัวผู้เสียภาษี: 0105558000000 (สำนักงานใหญ่) | </span>}
+                            dhnotebook.com | Line: @dhnotebook | 087-5153122
+                        </p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <h2 className="font-black text-xs uppercase tracking-tighter bg-black text-white px-2 py-0.5 rounded-sm">ใบเสร็จรับเงิน</h2>
-                    <p className="font-black text-[10px] mt-1">{orderId || 'DRAFT'}</p>
+                    <h2 className="font-black text-xs uppercase tracking-tighter bg-black text-white px-2 py-0.5 rounded-sm">
+                        {isTaxInvoice ? 'ใบเสร็จรับเงิน / ใบกำกับภาษี' : 'ใบเสร็จรับเงิน'}
+                    </h2>
+                    <p className="font-black text-[10px] mt-1">
+                        {orderId || 'DRAFT'}
+                        {totalPages > 1 && (
+                            <span className="text-[9px] font-normal text-gray-500 ml-1">
+                                (แผ่นที่ {pageIndex}/{totalPages})
+                            </span>
+                        )}
+                    </p>
                 </div>
             </div>
 
@@ -38,6 +54,11 @@ export default function ReceiptHeader({
                     <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">ผู้รับสินค้า (Customer)</p>
                     <p className="font-black text-[12px] truncate">{displayName}</p>
                     <p className="font-bold text-blue-700 flex items-center gap-1 mt-0.5"><Phone size={10}/> {displayPhone}</p>
+                    {customerTaxId && (
+                        <p className="text-[9px] text-slate-700 font-bold mt-0.5">
+                            TAX ID: <span className="font-mono">{customerTaxId}</span> {customerBranch ? `(${customerBranch})` : ''}
+                        </p>
+                    )}
                     {format === 'full' && (() => {
                         const addr = customer?.address || customer?.fullAddress || data?.customerAddress || data?.shippingAddress || data?.address || orderData?.customerAddress || orderData?.shippingAddress || orderData?.address;
                         if (!addr) return null;

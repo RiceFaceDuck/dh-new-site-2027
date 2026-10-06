@@ -79,9 +79,17 @@ service cloud.firestore {
         isStaff() &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'role', 'isStaff', 'uid', 'email', 'rank', 'accountId', 'customerCode', 'roles', 'userType',
-          'walletBalance', 'pendingWithdrawal',
+          'pendingWithdrawal',
           'status', 'isActive', 'isApproved'
-        ]))
+        ])) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'lastWalletTxId']) ||
+          (
+            request.resource.data.get('walletBalance', 0) < resource.data.get('walletBalance', 0) &&
+            request.resource.data.get('walletBalance', 0) >= 0 &&
+            existsAfter(/databases/$(database)/documents/users/$(userId)/wallet_transactions/$(request.resource.data.lastWalletTxId))
+          )
+        )
       ) || (
         isAuthenticated() && request.auth.uid == userId &&
         (
@@ -315,7 +323,7 @@ service cloud.firestore {
           )
         )
       );
-      allow delete: if isStaff();
+      allow delete: if isManagerOrAdmin() && resource.data.get('status', resource.data.get('orderStatus', '')) in ['draft', 'pending', 'Draft', 'Pending'];
     }
 
     match /credit_transactions/{txId} {

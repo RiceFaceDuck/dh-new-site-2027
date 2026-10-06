@@ -121,7 +121,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                             <div className="flex items-center gap-3 relative z-10">
                                 {isSelectorMode ? (
                                     <div className="relative p-2 bg-rose-500/20 text-rose-300 rounded-lg border border-rose-500/30 shadow-inner flex items-center justify-center shrink-0">
-                                        <AlertTriangle size={18} strokeWidth={2.5} className="relative z-10 animate-bounce" />
+                                        <AlertTriangle size={18} strokeWidth={2.5} className="relative z-10" />
                                     </div>
                                 ) : (
                                     <div className="w-9 h-9 bg-white/10 backdrop-blur-xs rounded-lg flex items-center justify-center text-white border border-white/20 shrink-0 shadow-xs hidden md:flex">

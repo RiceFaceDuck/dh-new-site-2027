@@ -385,16 +385,7 @@ export default function ReceiptTemplate(props) {
                             return sum + (price * qty);
                         }, 0);
 
-                        const numChunks = Math.max(1, pageChunks.length);
-                        const factor = pageChunks.length <= 1 ? 1 : (_itemSubTotal > 0 ? (chunkSubTotal / _itemSubTotal) : (1 / numChunks));
-                        const round2 = (val) => Math.round(Number(val || 0) * 100) / 100;
-
-                        const pageSubTotal = pageChunks.length === 1 ? _itemSubTotal : round2(chunkSubTotal);
-                        const pagePromoDiscount = round2(_promoDiscount * factor);
-                        const pageManualDiscount = round2(_manualDiscount * factor);
-                        const pageShippingFee = round2(_shippingFee * factor);
-                        const pageNetTotal = pageChunks.length === 1 ? _netTotal : round2(_netTotal * factor);
-                        const displayOrderId = pageChunks.length === 1 ? orderId : `${orderId || 'Draft'}#${pageIdx + 1}`;
+                        const isLastPage = pageIdx === pageChunks.length - 1;
 
                         return (
                             <div 
@@ -403,7 +394,7 @@ export default function ReceiptTemplate(props) {
                                 style={{ width: '148mm', minHeight: '210mm', fontSize: '11px', boxSizing: 'border-box' }}
                             >
                                 <ReceiptHeader 
-                                    orderId={displayOrderId}
+                                    orderId={orderId || 'Draft'}
                                     displayName={displayName}
                                     displayPhone={displayPhone}
                                     customer={customer}
@@ -411,6 +402,8 @@ export default function ReceiptTemplate(props) {
                                     orderData={orderData}
                                     fulfillmentType={fulfillmentType}
                                     data={data}
+                                    pageIndex={pageIdx + 1}
+                                    totalPages={pageChunks.length}
                                 />
 
                                 <ReceiptItems 
@@ -422,16 +415,16 @@ export default function ReceiptTemplate(props) {
                                 />
 
                                 <ReceiptFooter 
-                                    _thaiBahtText={convertToThaiBahtText ? convertToThaiBahtText(pageNetTotal) : ''}
-                                    billNote={pageIdx === pageChunks.length - 1 ? billNote : 'อ่านต่อแผ่นถัดไป'}
-                                    _itemSubTotal={pageSubTotal}
-                                    _promoDiscount={pagePromoDiscount}
-                                    _manualDiscount={pageManualDiscount}
+                                    _thaiBahtText={convertToThaiBahtText ? convertToThaiBahtText(_netTotal) : ''}
+                                    billNote={isLastPage ? billNote : (pageChunks.length > 1 ? 'อ่านต่อแผ่นถัดไป...' : billNote)}
+                                    _itemSubTotal={_itemSubTotal}
+                                    _promoDiscount={_promoDiscount}
+                                    _manualDiscount={_manualDiscount}
                                     _otherFeeAmount={_otherFeeAmount}
                                     _otherFeeName={_otherFeeName}
-                                    _shippingFee={pageShippingFee}
+                                    _shippingFee={_shippingFee}
                                     _walletUsed={_walletUsed}
-                                    _netTotal={pageNetTotal}
+                                    _netTotal={_netTotal}
                                     vatBreakdown={vatBreakdown}
                                     staffName={staffName}
                                     appliedPromoDetails={appliedPromoDetails}

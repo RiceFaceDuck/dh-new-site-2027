@@ -82,11 +82,11 @@ export const claimRequestService = {
           trackingNo: claimForm.tracking || '',
           qty: claimForm.qty || 1, 
           status: claimForm.currentStatus || 'pending_manager', 
-          actionType: claimForm.actionType || (isSwap ? 'เคลมเปลี่ยนรุ่น' : 'เคลม/ซ่อม'), 
+          actionType: claimForm.actionType || (isSwap ? 'เปลี่ยนสินค้า (EXC)' : 'เคลม/ซ่อม'), 
           inspectorName: claimForm.inspectorName || null,
           images: claimForm.images || [], 
           
-          // ✅ [SECURITY FIX] เพิ่มข้อมูลสำหรับการเคลมเปลี่ยนรุ่น (Swap SKU)
+          // ✅ [SECURITY FIX] เพิ่มข้อมูลสำหรับการเปลี่ยนสินค้า (Swap SKU)
           originalPricePerUnit: item.pricePerUnit || item.price || 0,
           isSwapSku: isSwap,
           swapSku: claimForm.swapSku || null,

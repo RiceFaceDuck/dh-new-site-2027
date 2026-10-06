@@ -4,7 +4,8 @@ export const usePosShortcuts = ({
     safeCartTabs,
     searchRef,
     activeTabId,
-    handleFileUpload
+    handleFileUpload,
+    createNewTab
 }) => {
     useEffect(() => {
         const handleBeforeUnload = (e) => { 
@@ -22,11 +23,16 @@ export const usePosShortcuts = ({
             if (e.key === 'F3') { 
                 e.preventDefault(); 
                 searchRef.current?.querySelector('input')?.focus(); 
-            } 
+            } else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+                e.preventDefault();
+                if (typeof createNewTab === 'function') {
+                    createNewTab();
+                }
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [searchRef]);
+    }, [searchRef, createNewTab]);
 
     useEffect(() => {
         const handleGlobalPaste = (e) => {

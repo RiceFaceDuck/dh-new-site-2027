@@ -135,20 +135,25 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   const isVatOnShipping = Boolean(orderData.vatOnShipping ?? orderData.summary?.vatOnShipping ?? false);
   const isExcludedVat = rawVatType === 'excluded';
 
-  // When vatOnShipping is false and vatType is 'excluded', shippingCost must NOT be part of the taxable base
-  const taxableShippingCost = (!isVatOnShipping && isExcludedVat) ? 0 : shippingCost;
+  // When vatOnShipping is false, shippingCost must NOT be part of the taxable base
+  const taxableShippingCost = (!isVatOnShipping) ? 0 : shippingCost;
+
+  const itemDiscounts = (verifiedItems || []).reduce((sum, item) => sum + (Number(item.discount || 0) * Math.max(1, Number(item.qty || 1))), 0);
+  const manualBillDiscount = Number(orderData.summary?.manualDiscount ?? orderData.overallDiscount ?? 0);
+  const promoList = Array.isArray(orderData.appliedPromotions) ? orderData.appliedPromotions : (orderData.appliedPromotion ? [orderData.appliedPromotion] : []);
+  const hasDynamicPromos = promoList.length > 0;
+
+  // 🛡️ Double-Discount Prevention: If dynamic promotions are passed, calculateNetTotal recalculates totalPromoDiscount.
+  // Therefore, discountAmount passed into calculateNetTotal must NOT include promotional discount.
+  const discountToPass = hasDynamicPromos 
+    ? (itemDiscounts + manualBillDiscount)
+    : Number(orderData.summary?.manualDiscount ?? orderData.summary?.discount ?? orderData.discountTotal ?? (itemDiscounts + manualBillDiscount + Number(orderData.promoDiscount || 0)));
 
   const calculatedPrices = calculateNetTotal({
     items: verifiedItems,
     shippingCost: taxableShippingCost,
     otherFeeAmount: Number(orderData.summary?.otherFeeAmount ?? orderData.otherFeeAmount ?? 0),
-    discountAmount: Number(
-      orderData.summary?.manualDiscount ?? 
-      orderData.summary?.promoDiscount ?? 
-      orderData.summary?.discount ?? 
-      orderData.discountTotal ?? 
-      (Number(orderData.overallDiscount || 0) + Number(orderData.promoDiscount || 0))
-    ),
+    discountAmount: discountToPass,
     promotions: orderData.appliedPromotions || []
   });
 
@@ -319,7 +324,7 @@ export const billingTransactionService = {
             isStockDeducted: (statusLower === 'paid' || statusLower === 'approved'), updatedAt: serverTimestamp(), 
             createdBy: actorUid, creatorName: actorName, finalTotal: finalSecureNetTotal, netTotal: finalSecureNetTotal,
             ...(earnedPoints > 0 ? { pointsAwarded: true, pendingCredits: 0 } : {}),
-            ...(orderData.id ? {} : { createdAt: serverTimestamp() })
+            createdAt: orderData.createdAt || serverTimestamp()
           }, { merge: true });
 
           if (statusLower === 'paid') {
@@ -332,17 +337,21 @@ export const billingTransactionService = {
 
           if (customerUid && customerUid !== 'WALK-IN' && userSnap?.exists()) {
             const userRef = doc(db, getCollectionPath('users'), customerUid);
+            const customerUpdates = {
+              lastOrderDate: serverTimestamp(),
+              lastOrderId: finalOrderId,
+              updatedAt: serverTimestamp()
+            };
+
             if (walletToUse > 0) {
               const currentWallet = Number(userSnap.data()?.walletBalance || 0);
               const balanceAfter = Math.max(0, Math.round((currentWallet - walletToUse) * 100) / 100);
               const txId = `TXW_POS_${finalOrderId}`;
               const walletTxRef = doc(db, getCollectionPath('users'), customerUid, 'wallet_transactions', txId);
 
-              transaction.update(userRef, { 
-                walletBalance: balanceAfter, 
-                lastWalletTxId: txId,
-                updatedAt: serverTimestamp() 
-              });
+              customerUpdates.walletBalance = balanceAfter;
+              customerUpdates.lastWalletTxId = txId;
+
               transaction.set(walletTxRef, {
                 transactionId: txId, 
                 type: 'SPEND', 
@@ -354,6 +363,9 @@ export const billingTransactionService = {
                 timestamp: serverTimestamp()
               });
             }
+
+            transaction.update(userRef, customerUpdates);
+
             if (earnedPoints > 0) {
               await adjustUserCreditWithTransaction(transaction, customerUid, earnedPoints, 'earn', 'ได้รับจากการซื้อสินค้า', actorUid, `TXP_${finalOrderId}`, creditPreloadSnaps);
             }

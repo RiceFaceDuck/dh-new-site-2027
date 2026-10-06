@@ -163,7 +163,7 @@ export const billingStatusTransaction = {
             updatedAt: serverTimestamp() 
           };
 
-          const needsNewOrderId = !currentOrderId.startsWith('DH-');
+          const needsNewOrderId = !/^DH-\d{2}-\d+/.test(currentOrderId);
 
           if (needsNewOrderId && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed')) {
              const terminalId = 'O1'; // Default fallback 

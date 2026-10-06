@@ -231,7 +231,7 @@ export const cancelActionService = {
                transaction.update(newOrderRef, {
                    status: 'cancelled',
                    orderStatus: 'cancelled',
-                   cancelReason: `ยกเลิกการเคลมเปลี่ยนรุ่นสินค้า (${payload.claimId || payload.exchangeId || '-'})`,
+                   cancelReason: `ยกเลิกการเปลี่ยนสินค้า (EXC) (${payload.claimId || payload.exchangeId || '-'})`,
                    updatedAt: serverTimestamp()
                });
            }
@@ -296,7 +296,7 @@ export const cancelActionService = {
                      amount: netDifference,
                      balanceAfter: balanceAfter,
                      status: 'SUCCESS',
-                     note: `คืนเงินส่วนต่างจากการยกเลิกการเคลมเปลี่ยนรุ่น (${payload.claimId || payload.exchangeId || '-'})`,
+                     note: `คืนเงินส่วนต่างจากการยกเลิกการเปลี่ยนสินค้า (EXC) (${payload.claimId || payload.exchangeId || '-'})`,
                      operatorUid: adminUid || 'System',
                      timestamp: serverTimestamp()
                    });
@@ -319,7 +319,7 @@ export const cancelActionService = {
                      amount: refundToClawback,
                      balanceAfter: balanceAfter,
                      status: 'SUCCESS',
-                     note: `ดึงยอดเงินส่วนต่างคืนเนื่องจากยกเลิกการเคลมเปลี่ยนรุ่น (${payload.claimId || payload.exchangeId || '-'})`,
+                     note: `ดึงยอดเงินส่วนต่างคืนเนื่องจากยกเลิกการเปลี่ยนสินค้า (EXC) (${payload.claimId || payload.exchangeId || '-'})`,
                      operatorUid: adminUid || 'System',
                      timestamp: serverTimestamp()
                    });

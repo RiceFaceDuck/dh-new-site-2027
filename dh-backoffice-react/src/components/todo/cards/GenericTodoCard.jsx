@@ -31,7 +31,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
     return {
       bill: bill || '-',
       symptom: symptom || 'สาเหตุอื่นๆ',
-      action: action || (todo.type?.includes('RETURN') ? 'คืนเงิน/คืนสินค้า' : 'เคลมเปลี่ยนตัวใหม่')
+      action: action || (todo.type?.includes('RETURN') ? 'คืนเงิน/คืนสินค้า' : 'เปลี่ยนสินค้าตัวใหม่ (EXC)')
     };
   };
 

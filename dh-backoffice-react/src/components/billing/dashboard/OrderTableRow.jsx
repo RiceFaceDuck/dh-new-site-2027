@@ -160,7 +160,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         </span>
                     )}
                     {hasPendingClaim && claimQty === 0 && (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 text-[10px] font-black border border-orange-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="มีรายการขอเคลมสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 text-[10px] font-black border border-orange-500/20 shadow-xs transition-transform hover:scale-105" title="มีรายการขอเคลมสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
                             เคลม (รอ)
                         </span>
                     )}
@@ -170,7 +170,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         </span>
                     )}
                     {hasPendingExchange && exchangeQty === 0 && (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-sky-500/10 text-sky-600 text-[10px] font-black border border-sky-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="มีรายการขอเปลี่ยนสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-sky-500/10 text-sky-600 text-[10px] font-black border border-sky-500/20 shadow-xs transition-transform hover:scale-105" title="มีรายการขอเปลี่ยนสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
                             เปลี่ยน (รอ)
                         </span>
                     )}
@@ -180,7 +180,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         </span>
                     )}
                     {hasPendingReturn && returnQty === 0 && (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-500 text-[10px] font-black border border-purple-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="มีรายการขอคืนสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-500 text-[10px] font-black border border-purple-500/20 shadow-xs transition-transform hover:scale-105" title="มีรายการขอคืนสินค้าอยู่ระหว่างดำเนินการ (รออนุมัติ)">
                             คืน (รอ)
                         </span>
                     )}
@@ -195,7 +195,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         </span>
                     )}
                     {taxStatus === 'pending' && (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-teal-500/10 text-teal-600 text-[10px] font-black border border-teal-500/20 shadow-xs transition-transform hover:scale-105 animate-pulse" title="รอออกใบกำกับภาษี">
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-teal-500/10 text-teal-600 text-[10px] font-black border border-teal-500/20 shadow-xs transition-transform hover:scale-105" title="รอออกใบกำกับภาษี">
                             ภาษี (รอ)
                         </span>
                     )}

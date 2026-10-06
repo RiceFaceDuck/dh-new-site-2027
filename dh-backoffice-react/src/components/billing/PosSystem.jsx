@@ -169,7 +169,7 @@ export default function PosSystem({
     });
 
     usePosShortcuts({
-        safeCartTabs, searchRef, activeTabId, handleFileUpload: actions.handleFileUpload
+        safeCartTabs, searchRef, activeTabId, handleFileUpload: actions.handleFileUpload, createNewTab
     });
 
     const handleInteractWithOtherPanels = () => {
@@ -228,14 +228,14 @@ export default function PosSystem({
                 closeTab={closeTab}
             />
 
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-(--dh-bg-base) p-2 gap-2">
-                <div className="w-full flex-1 flex flex-col h-full bg-(--dh-bg-surface) rounded-lg border border-gray-200 z-10 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+            <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden bg-(--dh-bg-base) p-2 gap-2">
+                <div className="w-full flex-1 flex flex-col h-full min-h-[520px] lg:min-h-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 z-10 relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
                     <div className="flex-1 flex flex-col overflow-hidden" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
                         <CartPanel searchRef={searchRef} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDropdown={showDropdown} setShowDropdown={setShowDropdown} handleSearchKeyDown={handleSearchKeyDown} clearCart={actions.clearCart} activeTab={activeTab} searchResults={searchResults} addItemToCart={actions.addItemToCart} actionBoxItem={actionBoxItem} setActionBoxItem={setActionBoxItem} updateItemAction={actions.updateItemAction} removeItem={actions.removeItem} eligibleFreebies={eligibleFreebies} noteColorMap={noteColorMap} isProcessing={isProcessing} isCacheLoading={posState.isCacheLoading} />
                     </div>
                     <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} onOpenVatModal={() => setIsVatModalOpen(true)} onOpenShippingModal={() => setIsShippingModalOpen(true)} />
                 </div>
-                <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
+                <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-lg border border-gray-200 h-auto lg:h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
                     <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} setIsFreebieModalOpen={posState.setIsFreebieModalOpen} handleRemovePromotion={actions.handleRemovePromotion} handleRemoveFreebie={actions.handleRemoveFreebie} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} />
                 </div>
             </div>

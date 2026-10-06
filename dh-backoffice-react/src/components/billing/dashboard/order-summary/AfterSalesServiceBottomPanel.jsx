@@ -70,10 +70,9 @@ export default function AfterSalesServiceBottomPanel({ orderId, claims = [] }) {
                 className="px-3 py-2 flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-sky-100/50 dark:hover:bg-sky-900/30 transition-colors"
             >
                 <div className="flex items-center gap-2">
-                    {/* Animated Radar Pulse */}
-                    <span className="flex h-2.5 w-2.5 relative shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
+                    {/* Static Calm Indicator */}
+                    <span className="flex h-2 w-2 relative shrink-0">
+                        <span className="inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
                     </span>
                     <h4 className="font-black text-xs text-sky-900 dark:text-sky-200 tracking-tight flex items-center gap-1.5">
                         บริการหลังการขาย

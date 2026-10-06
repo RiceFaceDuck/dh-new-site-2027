@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { MapPin, Wallet, Sparkles, X } from 'lucide-react';
+import { MapPin, Wallet, Sparkles, X, Phone, ShieldCheck, Check } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 import { getUserProfile } from '../../../../../firebase/userProfileService';
 
@@ -30,6 +30,11 @@ const getDisplayAddress = (customer) => {
 export default function ActiveCustomerCard({
     activeTab,
     updateActiveTab,
+    isEditingCustomerPhone,
+    setIsEditingCustomerPhone,
+    tempCustomerPhone,
+    setTempCustomerPhone,
+    formatPhoneNumber,
     isProcessing,
     netTotal,
     onDeselectCustomer,
@@ -95,13 +100,22 @@ export default function ActiveCustomerCard({
     const walletBal = Number(activeTab.customer.walletBalance ?? activeTab.customer.dhWallet ?? 0);
     const pointsBal = Number(activeTab.customer.creditPoints ?? activeTab.customer.totalAccumulatedPoints ?? activeTab.customer.points ?? 0);
 
+    const custPhone = activeTab.customer?.phone || activeTab.customer?.phoneNumber || '';
+
     return (
         <div className="bg-white rounded-xl p-3 shadow-xs border border-slate-200/80 animate-in fade-in duration-150">
             {/* 1. Customer Name Row (First Element - 1:1 Production Parity) */}
             <div className="flex items-center justify-between gap-1 mb-2">
-                <h3 className="font-bold text-[13px] text-slate-800 leading-snug truncate" title={displayName}>
-                    {displayName}
-                </h3>
+                <div className="flex items-center gap-1.5 min-w-0">
+                    <h3 className="font-bold text-[13px] text-slate-800 leading-snug truncate" title={displayName}>
+                        {displayName}
+                    </h3>
+                    {custPhone && (
+                        <span className="text-[10px] text-blue-600 font-mono font-bold shrink-0 bg-blue-50 border border-blue-200/60 px-1.5 py-0.2 rounded-xs">
+                            {custPhone}
+                        </span>
+                    )}
+                </div>
                 {handleDeselect && (
                     <button 
                         type="button" 
@@ -113,6 +127,108 @@ export default function ActiveCustomerCard({
                     </button>
                 )}
             </div>
+
+            {/* 1.1 Phone Input / Right Reservation (Only shown if phone missing or editing) */}
+            {!custPhone && !activeTab.hidePhone && !isEditingCustomerPhone && (
+                <div className="bg-amber-50/90 border border-amber-200 rounded-lg p-2 mb-2 flex items-center justify-between text-[11px] animate-in fade-in">
+                    <span className="text-amber-800 font-bold flex items-center gap-1.5">
+                        <Phone size={11} className="text-amber-600" /> ระบุเบอร์ หรือสงวนสิทธิ์
+                    </span>
+                    <div className="flex gap-1">
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                if (setTempCustomerPhone) setTempCustomerPhone('');
+                                if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(true);
+                            }} 
+                            className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-colors shadow-xs"
+                        >
+                            ใส่เบอร์
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => updateActiveTab({ hidePhone: true })} 
+                            className="px-2 py-0.5 bg-white border border-slate-300 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors"
+                        >
+                            สงวนสิทธิ์
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {!custPhone && activeTab.hidePhone && !isEditingCustomerPhone && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 mb-2 flex items-center justify-between text-[11px] animate-in fade-in">
+                    <span className="text-slate-600 font-bold flex items-center gap-1.5">
+                        <ShieldCheck size={12} className="text-emerald-600" /> สงวนสิทธิ์เบอร์โทร
+                    </span>
+                    <button 
+                        type="button" 
+                        onClick={() => {
+                            updateActiveTab({ hidePhone: false });
+                            if (setTempCustomerPhone) setTempCustomerPhone('');
+                            if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(true);
+                        }} 
+                        className="text-[10px] text-blue-600 font-bold underline hover:text-blue-800"
+                    >
+                        ใส่เบอร์
+                    </button>
+                </div>
+            )}
+
+            {isEditingCustomerPhone && (
+                <div className="bg-blue-50/60 border border-blue-200 rounded-lg p-2 mb-2 animate-in fade-in space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                        <Phone size={12} className="text-blue-600 shrink-0" />
+                        <input 
+                            type="text" 
+                            placeholder="(+66)XX-XXX-XXXX" 
+                            value={tempCustomerPhone || ''} 
+                            onChange={(e) => {
+                                const formatted = formatPhoneNumber ? formatPhoneNumber(e.target.value) : e.target.value;
+                                if (setTempCustomerPhone) setTempCustomerPhone(formatted);
+                            }}
+                            autoFocus
+                            className="w-full px-2 py-1 text-[11px] border border-blue-300 bg-white rounded-md font-mono font-bold outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 text-blue-900"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-1">
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                if (tempCustomerPhone && tempCustomerPhone.trim()) {
+                                    updateActiveTab({ 
+                                        customer: { ...activeTab.customer, phone: tempCustomerPhone.trim() },
+                                        hidePhone: false 
+                                    });
+                                    if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(false);
+                                }
+                            }}
+                            className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-1"
+                        >
+                            <Check size={10} /> บันทึกเบอร์
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                updateActiveTab({ hidePhone: true });
+                                if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(false);
+                            }} 
+                            className="px-2 py-0.5 bg-white border border-slate-300 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors"
+                        >
+                            สงวนสิทธิ์
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(false);
+                            }} 
+                            className="px-1.5 py-0.5 text-slate-400 hover:text-slate-600 text-[10px]"
+                        >
+                            ยกเลิก
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* 2. Inset Address Box with MapPin */}
             <div className="bg-slate-50 border border-slate-200/70 rounded-lg p-2.5 mb-2.5 flex items-start gap-1.5">
