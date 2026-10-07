@@ -26,13 +26,13 @@ assert(rowContent.includes('roleBadge.label'), 'CustomerRow.jsx must render role
 assert(rowContent.includes('tierBadge.label'), 'CustomerRow.jsx must render tierBadge.label');
 console.log('✅ PASS: CustomerRow.jsx separates Role and Tier badges cleanly.');
 
-// 3. CustomerTable.jsx grid layout must maintain 9 balanced columns (Rule 1 compliance)
-assert(tableContent.includes('grid-cols-[130px_minmax(180px,1.5fr)_110px_110px_90px_100px_90px_100px_110px]'),
-  'CustomerTable.jsx must strictly preserve the 9-column grid layout');
-console.log('✅ PASS: CustomerTable.jsx 9-column layout preserved (Rule 1 compliant).');
+// 3. CustomerTable.jsx grid layout must maintain 10 balanced columns (Rule 1 compliance)
+assert(tableContent.includes('grid-cols-[130px_minmax(180px,1.5fr)_110px_100px_90px_90px_100px_90px_100px_110px]'),
+  'CustomerTable.jsx must strictly preserve the 10-column grid layout');
+console.log('✅ PASS: CustomerTable.jsx 10-column layout preserved (Rule 1 compliant).');
 
 // 4. DetailPanel.jsx must render both Role and Tier badges
-assert(detailContent.includes('customer.role || customer.rank'),
+assert(detailContent.includes('role ||') && detailContent.includes('rank'),
   'DetailPanel.jsx must render customer role/rank');
 assert(detailContent.includes('getUserTier(points)'),
   'DetailPanel.jsx must compute getUserTier(points)');

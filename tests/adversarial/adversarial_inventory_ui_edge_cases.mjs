@@ -410,6 +410,76 @@ test('InventoryHeader uses RefreshCw in Sync button matching production bundle u
   assert(fileContent.includes('<RefreshCw size={14}'), 'Must render RefreshCw in Sync button');
 });
 
+// -------------------------------------------------------------
+// Test 9: Export Modal Category Object Resolution & Error Boundary
+// -------------------------------------------------------------
+console.log('\n--- 9. Export Category Object Resolution & Modal Error Boundary ---');
+
+test('ExportFiltersTab safely resolves Category Objects without passing raw Object to React child', () => {
+  const fileContent = fs.readFileSync(path.resolve(DH_BACKOFFICE_ROOT, 'src/components/inventory/export/ExportFiltersTab.jsx'), 'utf8');
+  assert(fileContent.includes("typeof cat === 'object'"), 'Must guard against cat being an object');
+  assert(fileContent.includes('{catName}'), 'Must render resolved catName string, not raw cat object');
+  assert(!fileContent.includes('key={cat}'), 'Must not use raw cat object as React key');
+
+  // Simulation test with actual Category Object structure from Firestore
+  const mockCategoryObj = {
+    id: 'cat_panel_01',
+    name: 'Panel',
+    order: 1,
+    imageUrl: 'https://storage/panel.webp',
+    updatedAt: { seconds: 123456 },
+    isActive: true,
+    status: 'active',
+    createdAt: { seconds: 123400 }
+  };
+  const catName = typeof mockCategoryObj === 'object' && mockCategoryObj !== null
+    ? (mockCategoryObj.name || mockCategoryObj.type || mockCategoryObj.id || '')
+    : String(mockCategoryObj || '');
+  assert.strictEqual(typeof catName, 'string');
+  assert.strictEqual(catName, 'Panel');
+  assert.notStrictEqual(catName, '[object Object]');
+});
+
+test('InventoryExportModal defensively normalizes category toggling', () => {
+  const fileContent = fs.readFileSync(path.resolve(DH_BACKOFFICE_ROOT, 'src/components/inventory/InventoryExportModal.jsx'), 'utf8');
+  assert(fileContent.includes("typeof cat === 'object'"), 'handleToggleCategory must defensively guard category objects');
+});
+
+test('InventoryMain wraps heavy modals with ModalErrorBoundary', () => {
+  const fileContent = fs.readFileSync(path.resolve(DH_BACKOFFICE_ROOT, 'src/pages/inventory/InventoryMain.jsx'), 'utf8');
+  assert(fileContent.includes('ModalErrorBoundary'), 'Must import ModalErrorBoundary');
+  assert(fileContent.includes('<ModalErrorBoundary modalName="ส่งออกข้อมูลสินค้า (Export)"'), 'Must wrap InventoryExportModal with ModalErrorBoundary');
+});
+
+test('ProductTableRow defensively guards against Category Objects to prevent table render crash', () => {
+  const fileContent = fs.readFileSync(path.resolve(DH_BACKOFFICE_ROOT, 'src/components/inventory/ProductTableRow.jsx'), 'utf8');
+  assert(fileContent.includes("typeof product.category === 'object'"), 'ProductTableRow must check typeof product.category');
+  assert(fileContent.includes('title={displayCategory}'), 'Must use displayCategory in title');
+
+  // Verify logic on mock object
+  const mockProd = { sku: 'TEST', category: { name: 'Battery', id: 'bat_01' } };
+  const displayCat = typeof mockProd.category === 'object' && mockProd.category !== null
+    ? (mockProd.category.name || mockProd.category.type || 'General')
+    : (mockProd.category || 'General');
+  assert.strictEqual(displayCat, 'Battery');
+});
+
+test('useInventoryController and useExcelImport use toast notifications without raw alert calls', () => {
+  const ctrlContent = fs.readFileSync(path.resolve(DH_BACKOFFICE_ROOT, 'src/pages/inventory/useInventoryController.js'), 'utf8');
+  assert(ctrlContent.includes("import toast from 'react-hot-toast'"), 'useInventoryController must import toast');
+  assert(!ctrlContent.includes('alert('), 'useInventoryController must not contain raw alert()');
+
+  const importContent = fs.readFileSync(path.resolve(DH_BACKOFFICE_ROOT, 'src/components/inventory/hooks/useExcelImport.js'), 'utf8');
+  assert(importContent.includes("import toast from 'react-hot-toast'"), 'useExcelImport must import toast');
+  assert(!importContent.includes('alert('), 'useExcelImport must not contain raw alert()');
+});
+
+test('useInventoryData utilizes catalogHydrationService to eliminate redundant 50 cold reads', () => {
+  const dataHookContent = fs.readFileSync(path.resolve(DH_BACKOFFICE_ROOT, 'src/components/inventory/hooks/useInventoryData.js'), 'utf8');
+  assert(dataHookContent.includes('catalogHydrationService'), 'useInventoryData must import catalogHydrationService');
+  assert(dataHookContent.includes('catalogHydrationService.hydrateCatalog()'), 'useInventoryData must hydrate catalog from 3-Tier cache');
+});
+
 console.log('\n==================================================================');
 console.log(`  Adversarial Test Summary: ${passed}/${total} assertions passed`);
 if (passed === total) {

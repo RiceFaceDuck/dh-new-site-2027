@@ -54,8 +54,10 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
   };
 
   const handleToggleCategory = (cat) => {
+    const catName = typeof cat === 'object' && cat !== null ? (cat.name || cat.type || cat.id || '') : String(cat || '');
+    if (!catName) return;
     setSelectedCategories(prev => 
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+      prev.includes(catName) ? prev.filter(c => c !== catName) : [...prev, catName]
     );
   };
 

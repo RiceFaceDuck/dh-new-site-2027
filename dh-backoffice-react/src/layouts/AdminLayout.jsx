@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { todoService } from '../firebase/todoService';
 import { managerTodoService, CLAIM_TASK_TYPES } from '../firebase/managerTodoService';
@@ -11,6 +11,8 @@ import { GatekeeperChecking, GatekeeperDenied } from './components/GatekeeperUI'
 import FloatingMiniCart from '../components/billing/FloatingMiniCart';
 
 export default function AdminLayout() {
+  const location = useLocation();
+  const [isPosOpen, setIsPosOpen] = useState(false);
   const { 
     isCheckingAuth, 
     accessDenied, 
@@ -52,6 +54,30 @@ export default function AdminLayout() {
 
   const toggleDarkMode = () => setIsDark(!isDark);
 
+  // --- Floating Mini Cart Visibility Toggle (Persisted in LocalStorage) ---
+  const [isFloatingCartVisible, setIsFloatingCartVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dh_floating_cart_visible');
+      return saved !== 'false';
+    }
+    return true;
+  });
+
+  const toggleFloatingCart = () => {
+    setIsFloatingCartVisible((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('dh_floating_cart_visible', String(next));
+        window.dispatchEvent(
+          new CustomEvent('dh_floating_cart_visibility_change', {
+            detail: { isVisible: next },
+          })
+        );
+      } catch (e) {}
+      return next;
+    });
+  };
+
   // --- โหลดข้อมูลแจ้งเตือน (Todo / Pending Staff) ---
   useEffect(() => {
     if (isCheckingAuth || accessDenied) return;
@@ -84,6 +110,13 @@ export default function AdminLayout() {
     };
   }, [isCheckingAuth, accessDenied, hasManagerAccess]);
 
+  // Reset isPosOpen when navigating away from /billing
+  useEffect(() => {
+    if (!location.pathname.includes('/billing')) {
+      setIsPosOpen(false);
+    }
+  }, [location.pathname]);
+
   if (isCheckingAuth) {
     return <GatekeeperChecking />;
   }
@@ -103,16 +136,18 @@ export default function AdminLayout() {
         managerApprovalCount={managerApprovalCount}
         isDark={isDark}
         toggleDarkMode={toggleDarkMode}
+        isFloatingCartVisible={isFloatingCartVisible}
+        toggleFloatingCart={toggleFloatingCart}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden bg-transparent transition-colors duration-200 relative scroll-smooth custom-scrollbar dh-glass">
         {/* Background Gradients for Depth */}
         <div className="absolute top-0 left-0 w-full h-[300px] bg-linear-to-b from-blue-50/30 to-transparent dark:from-blue-900/20 dark:to-transparent pointer-events-none -z-10"></div>
-        <Outlet />
+        <Outlet context={{ isPosOpen, setIsPosOpen }} />
       </main>
 
-      <FloatingMiniCart />
+      <FloatingMiniCart isPosOpen={isPosOpen} isVisible={isFloatingCartVisible} />
     </div>
   );
 }

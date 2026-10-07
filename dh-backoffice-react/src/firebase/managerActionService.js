@@ -112,6 +112,21 @@ export const managerActionService = {
       return { success: true, newStatus: 'completed' };
     }
 
+    // 6. CUSTOMER_DELETE_APPROVAL (CRIT-02: ดำเนินการลบข้อมูลลูกค้าจริง)
+    if (type === 'CUSTOMER_DELETE_APPROVAL') {
+      const { deleteCustomer } = await import('./customerAdminService');
+      const targetId = payload?.customerId || originalTask?.targetUid || originalTask?.payload?.customerId || originalTask?.targetId;
+      const customerName = payload?.name || originalTask?.payload?.name || originalTask?.title || 'ลูกค้า';
+
+      if (!targetId) {
+        throw new Error("ไม่พบรหัสลูกค้าที่ต้องการลบในคำขอ");
+      }
+
+      await deleteCustomer(targetId, customerName);
+      await historyService.addLog('ManagerAction', 'ApproveCustomerDelete', targetId, `อนุมัติการลบข้อมูลลูกค้า: ${customerName} (ID: ${targetId})`, auth.currentUser?.uid);
+      return { success: true, newStatus: 'completed' };
+    }
+
     // Default fallback
     await historyService.addLog('ManagerAction', 'ApproveTask', taskId, `อนุมัติคำขอ: ${type}`, auth.currentUser?.uid);
     return { success: true, newStatus: 'completed' };

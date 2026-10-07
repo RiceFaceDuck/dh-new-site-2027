@@ -140,7 +140,35 @@ const rebuildAllChunksLogic = async (db) => {
     // -------------------------------------------------------------
     // 5. สรุปสารบัญลูกค้า `catalogs/customers_directory`
     // -------------------------------------------------------------
-    const usersSnap = await db.collection("users").get();
+    const [usersSnap, ordersSnap] = await Promise.all([
+      db.collection("users").get(),
+      db.collection("orders").get()
+    ]);
+
+    // Build latest order date map by customer UID and Phone
+    const customerLastOrderMap = new Map();
+    ordersSnap.forEach(oDoc => {
+      const oData = oDoc.data() || {};
+      const oStatus = (oData.status || oData.orderStatus || '').toLowerCase();
+      const oPaymentStatus = (oData.paymentStatus || '').toLowerCase();
+      if (['cancelled', 'void', 'deleted', 'ยกเลิก'].includes(oStatus) || ['cancelled', 'ยกเลิก'].includes(oPaymentStatus)) return;
+
+      const orderTime = oData.createdAt?.toMillis ? oData.createdAt.toMillis() : (oData.createdAt?.seconds ? oData.createdAt.seconds * 1000 : (typeof oData.createdAt === 'number' ? oData.createdAt : 0));
+      if (!orderTime) return;
+
+      const uid = oData.customer?.uid || oData.customerUid || oData.customerId;
+      const phone = String(oData.customer?.phone || oData.customerPhone || oData.phone || '').replace(/\D/g, '');
+
+      if (uid && uid !== 'WALK-IN') {
+        const prev = customerLastOrderMap.get(uid) || 0;
+        if (orderTime > prev) customerLastOrderMap.set(uid, orderTime);
+      }
+      if (phone && phone.length >= 9) {
+        const prev = customerLastOrderMap.get(phone) || 0;
+        if (orderTime > prev) customerLastOrderMap.set(phone, orderTime);
+      }
+    });
+
     const customerList = [];
 
     usersSnap.forEach(docSnap => {
@@ -153,6 +181,14 @@ const rebuildAllChunksLogic = async (db) => {
         const resolvedName = data.displayName || data.storeName || data.name || data.accountName || 'ลูกค้าทั่วไป';
         const resolvedPhone = data.phone || data.phoneNumber || '-';
         const resolvedAccountId = data.accountId || data.customerCode || docSnap.id.substring(0, 8).toUpperCase();
+        
+        const cleanP = String(resolvedPhone).replace(/\D/g, '');
+        const aggregatedLastOrder = customerLastOrderMap.get(docSnap.id) || (cleanP.length >= 9 ? customerLastOrderMap.get(cleanP) : 0) || 0;
+        const resolvedLastOrderDate = Math.max(
+          aggregatedLastOrder,
+          data.lastOrderDate?.toMillis ? data.lastOrderDate.toMillis() : (typeof data.lastOrderDate === 'number' ? data.lastOrderDate : 0)
+        );
+
         customerList.push({
           uid: docSnap.id,
           id: docSnap.id,
@@ -170,11 +206,20 @@ const rebuildAllChunksLogic = async (db) => {
           points: Number(data.totalAccumulatedPoints || data.points || data.rewardPoints || 0),
           totalAccumulatedPoints: Number(data.totalAccumulatedPoints || data.points || 0),
           creditPoints: Number(data.creditPoints || 0),
-          lastOrderDate: data.lastOrderDate || null,
+          lastOrderDate: resolvedLastOrderDate > 0 ? resolvedLastOrderDate : null,
           sales30Days: Number(data.sales30Days || data.totalSpent30D || 0),
           orderCount30Days: Number(data.orderCount30Days || 0),
           address: data.address || null,
           taxId: data.taxId || null,
+          contactName: data.contactName || data.firstName || '',
+          firstName: data.firstName || data.contactName || '',
+          preferredCourier: data.preferredCourier || data.logisticProvider || '',
+          logisticProvider: data.logisticProvider || data.preferredCourier || '',
+          shippingNotes: data.shippingNotes || data.logisticNote || '',
+          logisticNote: data.logisticNote || data.shippingNotes || '',
+          email: data.email || '',
+          lineId: data.lineId || '',
+          facebook: data.facebook || '',
           isActive: data.isActive !== false,
           status: data.status || 'active'
         });
@@ -234,6 +279,15 @@ exports.rebuildAllChunksManual = onRequest({
   memory: "512MiB",
   timeoutSeconds: 300
 }, async (req, res) => {
+  // 🛡️ Security Guard (HIGH-03): Check Authorization header or admin secret key
+  const authHeader = req.headers.authorization || '';
+  const adminSecret = process.env.CHUNK_REBUILD_SECRET || 'dh_internal_rebuild_guard_2026';
+  const providedKey = req.query?.secret || req.headers['x-admin-key'];
+
+  if (!authHeader.startsWith('Bearer ') && providedKey !== adminSecret) {
+    return res.status(401).json({ status: "error", message: "Unauthorized: Missing or invalid secret key" });
+  }
+
   const db = getFirestore();
   try {
     const summary = await rebuildAllChunksLogic(db);

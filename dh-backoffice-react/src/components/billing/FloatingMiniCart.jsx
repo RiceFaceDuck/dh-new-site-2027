@@ -3,6 +3,7 @@ import { ShoppingCart, X, ChevronRight, Store, Trash2, Clock, User, ChevronLeft 
 import { auth } from '../../firebase/config';
 import { safeJsonParse } from 'dh-shared';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { staffPosDraftService, filterValidDraftTabs } from '../../firebase/staffPosDraftService';
 
 /**
  * 🧮 Pure Helper: คำนวณยอดเงินของดราฟต์ให้ตรงกับ POS 100% (Single Source of Truth)
@@ -107,13 +108,123 @@ const formatElapsedTime = (id, updatedAt) => {
   return `ค้างไว้ ${Math.floor(diffHours / 24)} วันที่แล้ว`;
 };
 
-export default function FloatingMiniCart() {
+export default function FloatingMiniCart({
+  isPosOpen: isPosOpenProp,
+  isVisible: isVisibleProp,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDocked, setIsDocked] = useState(false);
   const [drafts, setDrafts] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // --- Real-time Visibility State (Sidebar Toggle Button) ---
+  const [isVisibleState, setIsVisibleState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dh_floating_cart_visible');
+      return saved !== 'false';
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    const handleVisibilityChange = (e) => {
+      if (e.detail && typeof e.detail.isVisible === 'boolean') {
+        setIsVisibleState(e.detail.isVisible);
+      }
+    };
+    window.addEventListener(
+      'dh_floating_cart_visibility_change',
+      handleVisibilityChange
+    );
+    return () => {
+      window.removeEventListener(
+        'dh_floating_cart_visibility_change',
+        handleVisibilityChange
+      );
+    };
+  }, []);
+
+  const isVisible =
+    typeof isVisibleProp === 'boolean' ? isVisibleProp : isVisibleState;
+
+  // --- Multi-Tab Navigation & Scroll Handlers ---
+  const tabsContainerRef = useRef(null);
+
+  // Auto-scroll active tab into view whenever activeTabId changes
+  const scrollToActiveTab = useCallback((targetTabId) => {
+    if (!tabsContainerRef.current) return;
+    const tabEl = tabsContainerRef.current.querySelector(
+      `[data-tab-id="${targetTabId}"]`
+    );
+    if (tabEl) {
+      tabEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  }, []);
+
+  const handleNavigateTab = (direction) => {
+    if (!drafts || drafts.length <= 1) return;
+    const currentIdx = drafts.findIndex(
+      (d) => d.id === (activeTabId || drafts[0]?.id)
+    );
+    const safeIdx = currentIdx >= 0 ? currentIdx : 0;
+
+    if (direction === 'left') {
+      if (safeIdx > 0) {
+        const prevTab = drafts[safeIdx - 1];
+        setActiveTabId(prevTab.id);
+        scrollToActiveTab(prevTab.id);
+      }
+    } else if (direction === 'right') {
+      if (safeIdx < drafts.length - 1) {
+        const nextTab = drafts[safeIdx + 1];
+        setActiveTabId(nextTab.id);
+        scrollToActiveTab(nextTab.id);
+      }
+    }
+  };
+
+  const handleTabsWheel = (e) => {
+    if (tabsContainerRef.current && e.deltaY !== 0) {
+      e.preventDefault();
+      tabsContainerRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
+  // Auto-scroll to newly activated tab
+  useEffect(() => {
+    if (activeTabId) {
+      scrollToActiveTab(activeTabId);
+    }
+  }, [activeTabId, scrollToActiveTab]);
+
+  // --- Real-time POS Open State Synchronization ---
+  const [isPosOpenState, setIsPosOpenState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!window.__DH_IS_POS_OPEN__;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handlePosViewChange = (e) => {
+      if (e.detail && typeof e.detail.isPosOpen === 'boolean') {
+        setIsPosOpenState(e.detail.isPosOpen);
+      }
+    };
+    window.addEventListener('dh_pos_view_change', handlePosViewChange);
+    return () => {
+      window.removeEventListener('dh_pos_view_change', handlePosViewChange);
+    };
+  }, []);
+
+  const isPosActive =
+    typeof isPosOpenProp === 'boolean' ? isPosOpenProp : isPosOpenState;
 
   // --- Drag & Drop State with LocalStorage Persistence ---
   const [position, setPosition] = useState(() => {
@@ -233,13 +344,24 @@ export default function FloatingMiniCart() {
     setIsOpen((prev) => !prev);
   };
 
-  // --- Real-time LocalStorage Draft Loader with Deduplication ---
+  // --- Real-time LocalStorage Draft Loader with Deduplication & Cloud Hydration ---
   const prevRawSavedRef = useRef(null);
-  const loadDrafts = useCallback(() => {
+  const loadDrafts = useCallback(async () => {
     const uid = auth?.currentUser?.uid || 'guest';
-    const saved =
-      localStorage.getItem(`dh_pos_autosave_${uid}`) ||
-      localStorage.getItem('dh_pos_autosave');
+    let saved = localStorage.getItem(`dh_pos_autosave_${uid}`);
+
+    // If local has nothing and staff is logged in, pull from cloud (Cross-Device Sync)
+    if (!saved && uid !== 'guest') {
+      try {
+        const cloudTabs = await staffPosDraftService.getStaffCloudDrafts(uid);
+        if (cloudTabs && cloudTabs.length > 0) {
+          saved = JSON.stringify(cloudTabs);
+          localStorage.setItem(`dh_pos_autosave_${uid}`, saved);
+        }
+      } catch (err) {
+        console.warn('Failed to hydrate cloud drafts:', err);
+      }
+    }
 
     if (saved === prevRawSavedRef.current) {
       return; // 0 re-render when storage content hasn't changed!
@@ -249,29 +371,7 @@ export default function FloatingMiniCart() {
     if (saved) {
       const parsed = safeJsonParse(saved);
       if (Array.isArray(parsed)) {
-        // Filter out completed and void tabs
-        const validDrafts = parsed.filter((t) => {
-          const stat = (
-            t.orderStatus ||
-            t.status ||
-            t.paymentStatus ||
-            ''
-          ).toLowerCase();
-          const isFinished =
-            stat === 'approved' ||
-            stat === 'completed' ||
-            stat === 'paid' ||
-            stat === 'cancelled' ||
-            stat === 'void';
-          return (
-            !isFinished &&
-            (t.items?.length > 0 ||
-              t.customer ||
-              t.docId ||
-              (t.orderId && !t.orderId.startsWith('DH-TEMP-')))
-          );
-        });
-
+        const validDrafts = filterValidDraftTabs(parsed);
         setDrafts(validDrafts);
 
         if (validDrafts.length > 0) {
@@ -294,11 +394,7 @@ export default function FloatingMiniCart() {
 
     const handleStorage = (e) => {
       const uid = auth?.currentUser?.uid || 'guest';
-      if (
-        !e.key ||
-        e.key === `dh_pos_autosave_${uid}` ||
-        e.key === 'dh_pos_autosave'
-      ) {
+      if (!e.key || e.key === `dh_pos_autosave_${uid}`) {
         prevRawSavedRef.current = null;
         loadDrafts();
       }
@@ -317,7 +413,7 @@ export default function FloatingMiniCart() {
     window.addEventListener('dh_cart_updated', handleCustomUpdate);
     window.addEventListener('focus', handleFocus);
 
-    // Auth change listener for initial cold start
+    // Auth change listener for staff account switching & cold start
     const unsubAuth = auth?.onAuthStateChanged?.(() => {
       prevRawSavedRef.current = null;
       loadDrafts();
@@ -335,8 +431,13 @@ export default function FloatingMiniCart() {
     };
   }, [loadDrafts]);
 
-  // Hide the widget if on /billing and POS view is active
-  if (location.pathname.includes('/billing')) {
+  // 🛑 Hide widget if toggled off by user from Sidebar button
+  if (!isVisible) {
+    return null;
+  }
+
+  // 🛑 Hide widget ONLY if on /billing AND POS is active (creates new bill / cashier mode)
+  if (location.pathname.includes('/billing') && isPosActive) {
     return null;
   }
 
@@ -374,6 +475,9 @@ export default function FloatingMiniCart() {
         } else {
           localStorage.setItem(key, JSON.stringify(remaining));
         }
+        if (uid !== 'guest') {
+          staffPosDraftService.saveStaffCloudDraftsDebounced(uid, remaining, 0);
+        }
         prevRawSavedRef.current = null;
         window.dispatchEvent(new CustomEvent('dh_cart_updated'));
         loadDrafts();
@@ -405,6 +509,12 @@ export default function FloatingMiniCart() {
   // --- Smart Dynamic Card Placement (Prevents Off-Screen Clipping) ---
   const isNearTop = position.y < 460;
   const isNearLeft = position.x < 360;
+
+  // Clamped dynamic max-height to strictly prevent overflowing off the top/bottom of screen
+  const availableHeight = isNearTop
+    ? Math.max(300, (typeof window !== 'undefined' ? window.innerHeight : 800) - position.y - 75)
+    : Math.max(300, position.y - 15);
+  const cardMaxHeight = Math.min(620, availableHeight);
 
   const cardPlacementClasses = `
     absolute
@@ -444,26 +554,23 @@ export default function FloatingMiniCart() {
       {/* Pop-up Card */}
       {isOpen && activeDraft && (
         <div
-          className={`${cardPlacementClasses} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 fade-in duration-200 flex flex-col select-none`}
+          className={`${cardPlacementClasses} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 fade-in duration-200 flex flex-col`}
+          style={{ maxHeight: `${cardMaxHeight}px` }}
         >
-          {/* Header */}
-          <div className="bg-slate-900 dark:bg-slate-950 px-4 py-3 flex justify-between items-center text-white shrink-0 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[#D51C39]/20 flex items-center justify-center text-[#D51C39] border border-[#D51C39]/30">
-                <Store size={15} />
+          {/* 1. Header */}
+          <div className="bg-slate-900 dark:bg-slate-950 px-4 py-2.5 flex justify-between items-center text-white shrink-0 border-b border-white/10">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#D51C39]/20 flex items-center justify-center text-[#D51C39] border border-[#D51C39]/40 shrink-0 shadow-inner">
+                <Store size={16} />
               </div>
-              <div>
-                <h3 className="font-bold text-sm leading-none flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm text-slate-100 tracking-tight leading-none whitespace-nowrap">
                   งานค้าง POS
-                  <span className="text-[11px] font-extrabold bg-[#D51C39] text-white px-1.5 py-0.2 rounded-full">
-                    {drafts.length}
-                  </span>
                 </h3>
-                {activeDraft.orderId && (
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {activeDraft.orderId}
-                  </span>
-                )}
+                {/* 🏷️ ตัวเลขแจ้งเตือนจำนวนงานค้าง ขนาดสมดุลกลมกลืนกับหัวข้อ */}
+                <span className="text-xs font-bold text-white bg-[#D51C39] px-2 py-0.5 rounded-full leading-none font-mono shadow-xs border border-white/20 select-none tracking-tight">
+                  {drafts.length}
+                </span>
               </div>
             </div>
 
@@ -487,74 +594,154 @@ export default function FloatingMiniCart() {
             </div>
           </div>
 
-          {/* Customer & Hold Time Context Banner */}
-          <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200/70 dark:border-slate-800 flex items-center justify-between text-xs shrink-0">
-            <div className="flex items-center gap-1.5 overflow-hidden pr-2">
-              <User size={13} className="text-slate-400 shrink-0" />
-              <div className="overflow-hidden">
-                <p className="font-bold text-slate-800 dark:text-slate-100 truncate">
+          {/* 2. Multi-Tab Bar (Smart Compact Presentation + Ergonomic Nav Buttons) */}
+          {drafts.length > 1 && (() => {
+            const currentTabIdx = drafts.findIndex(
+              (d) => d.id === (activeTabId || drafts[0]?.id)
+            );
+            const safeIdx = currentTabIdx >= 0 ? currentTabIdx : 0;
+            const hasPrev = safeIdx > 0;
+            const hasNext = safeIdx < drafts.length - 1;
+            const getDraftName = (d) =>
+              d?.customer?.accountName ||
+              d?.customer?.displayName ||
+              d?.customer?.firstName ||
+              d?.walkInName ||
+              'ลูกค้าทั่วไป';
+            const prevDraftName = hasPrev ? getDraftName(drafts[safeIdx - 1]) : '';
+            const nextDraftName = hasNext ? getDraftName(drafts[safeIdx + 1]) : '';
+            const prevTabTitle = hasPrev
+              ? `สลับไปบิลก่อนหน้า: ${prevDraftName}`
+              : 'บิลแรกสุดแล้ว';
+            const nextTabTitle = hasNext
+              ? `สลับไปบิลถัดไป: ${nextDraftName}`
+              : 'บิลสุดท้ายแล้ว';
+
+            return (
+              <div className="relative border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-800/80 shrink-0 px-2.5 py-1.5 flex items-center gap-2 shadow-inner">
+                {/* ปุ่มเลื่อนซ้าย / บิลก่อนหน้า (ปุ่มใหญ่ กดง่าย ชัดเจน ไม่ต้องเล็ง) */}
+                <button
+                  type="button"
+                  disabled={!hasPrev}
+                  onClick={() => handleNavigateTab('left')}
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all select-none ${
+                    hasPrev
+                      ? 'bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-600 cursor-pointer active:scale-90 hover:shadow'
+                      : 'opacity-30 cursor-not-allowed bg-slate-200/50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-transparent'
+                  }`}
+                  title={prevTabTitle}
+                  aria-label={prevTabTitle}
+                >
+                  <ChevronLeft size={18} strokeWidth={2.5} />
+                </button>
+
+                {/* แถบแท็บแนวนอน */}
+                <div
+                  ref={tabsContainerRef}
+                  onWheel={handleTabsWheel}
+                  className="flex overflow-x-auto gap-1.5 py-0.5 scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth flex-1 items-center"
+                >
+                  {drafts.map((draft, idx) => {
+                    const isActive = activeTabId === draft.id;
+                    const cName =
+                      draft.customer?.accountName ||
+                      draft.customer?.displayName ||
+                      draft.customer?.firstName ||
+                      draft.walkInName ||
+                      '';
+                    const tabLabel = cName
+                      ? (cName.length > 12 ? cName.slice(0, 11) + '..' : cName)
+                      : 'ลูกค้าทั่วไป';
+
+                    return (
+                      <button
+                        key={draft.id}
+                        data-tab-id={draft.id}
+                        type="button"
+                        onClick={() => setActiveTabId(draft.id)}
+                        className={`h-7 px-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs ${
+                          isActive
+                            ? 'bg-[#D51C39] text-white border-[#D51C39] shadow-xs ring-1 ring-[#D51C39]/30'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                        title={cName ? `บิล: ${cName}` : 'บิลลูกค้าทั่วไป'}
+                      >
+                        <span>{tabLabel}</span>
+                        <span
+                          onClick={(e) => handleDeleteDraft(draft.id, e)}
+                          title="ลบบิลนี้"
+                          className="hover:opacity-80 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/20 transition-colors ml-0.5"
+                        >
+                          <X size={10} strokeWidth={3} />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* ปุ่มเลื่อนขวา / บิลถัดไป (ปุ่มใหญ่ กดง่าย ชัดเจน ไม่ต้องเล็ง) */}
+                <button
+                  type="button"
+                  disabled={!hasNext}
+                  onClick={() => handleNavigateTab('right')}
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all select-none ${
+                    hasNext
+                      ? 'bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-600 cursor-pointer active:scale-90 hover:shadow'
+                      : 'opacity-30 cursor-not-allowed bg-slate-200/50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-transparent'
+                  }`}
+                  title={nextTabTitle}
+                  aria-label={nextTabTitle}
+                >
+                  <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* 3. Customer Info & Context Card (ข้อมูลลูกค้าของบิลที่เลือก ชัดเจน ไม่ทับซ้อน) */}
+          <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200/70 dark:border-slate-800 flex flex-col gap-1.5 shrink-0">
+            {/* Row 1: Order Ref & Status Meta */}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-mono font-bold text-slate-600 dark:text-slate-300 bg-slate-200/70 dark:bg-slate-700/70 px-1.5 py-0.5 rounded text-[10px]">
+                {activeDraft.orderId || `บิลร่าง #${activeDraft.id}`}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                  {customerType}
+                </span>
+                {elapsedText && (
+                  <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                    <Clock size={10} /> {elapsedText}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Row 2: Customer Name & Phone */}
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300">
+                <User size={12} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate leading-tight" title={customerName}>
                   {customerName}
                 </p>
                 {customerPhone && (
-                  <p className="text-[10px] text-slate-500 font-mono leading-none">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono leading-none mt-0.5">
                     {customerPhone}
                   </p>
                 )}
               </div>
             </div>
-
-            <div className="flex flex-col items-end shrink-0">
-              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-                {customerType}
-              </span>
-              {elapsedText && (
-                <span className="text-[9px] text-slate-400 flex items-center gap-0.5 mt-0.5">
-                  <Clock size={9} /> {elapsedText}
-                </span>
-              )}
-            </div>
           </div>
 
-          {/* Multi-Tab Bar (แสดงเมื่อมีหลายบิล) */}
-          {drafts.length > 1 && (
-            <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-800 p-2 gap-1.5 shrink-0 bg-slate-100/60 dark:bg-slate-800/40 custom-scrollbar">
-              {drafts.map((draft, idx) => {
-                const cName =
-                  draft.customer?.accountName ||
-                  draft.customer?.displayName ||
-                  draft.customer?.firstName ||
-                  draft.walkInName ||
-                  `บิล #${idx + 1}`;
-                const isActive = activeTabId === draft.id;
-                return (
-                  <button
-                    key={draft.id}
-                    onClick={() => setActiveTabId(draft.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 cursor-pointer ${
-                      isActive
-                        ? 'bg-[#D51C39] text-white border-[#D51C39] shadow-xs'
-                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <span>{cName}</span>
-                    <span
-                      onClick={(e) => handleDeleteDraft(draft.id, e)}
-                      title="ลบบิลนี้"
-                      className="hover:opacity-75 p-0.5 rounded-full hover:bg-black/10"
-                    >
-                      <X size={11} />
-                    </span>
-                  </button>
-                );
-              })}
+          {/* 4. Cart Items List (Single-Row High-Density, Clear & Space-Saving) */}
+          <div className="px-3.5 py-2 flex-1 overflow-y-auto min-h-0 custom-scrollbar space-y-1">
+            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+              <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                รายการสินค้า ({activeDraft.items?.length || 0})
+              </h4>
             </div>
-          )}
-
-          {/* Cart Items List */}
-          <div className="p-4 flex-1 overflow-y-auto max-h-80 custom-scrollbar space-y-2">
-            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              รายการสินค้า ({activeDraft.items?.length || 0})
-            </h4>
 
             {!activeDraft.items || activeDraft.items.length === 0 ? (
               <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-xs italic">
@@ -572,38 +759,42 @@ export default function FloatingMiniCart() {
                 return (
                   <div
                     key={i}
-                    className="flex justify-between items-start text-xs border-b border-slate-100 dark:border-slate-800 pb-2 last:border-0"
+                    className="flex items-center justify-between gap-2 py-1 px-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-xs border-b border-slate-50 dark:border-slate-800/40 last:border-0"
                   >
-                    <div className="flex-1 pr-3 overflow-hidden">
+                    {/* จำนวนชิ้นเด่นชัด (x1) */}
+                    <span className="shrink-0 font-mono font-black text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-1.5 py-0.5 rounded border border-slate-200/80 dark:border-slate-700 min-w-[28px] text-center select-none shadow-2xs">
+                      {itemQty}x
+                    </span>
+
+                    {/* ชื่อสินค้าตรงกลาง (ตัดคำสวยงาม ไม่ล้น) */}
+                    <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-hidden">
                       <p
-                        className="font-bold text-slate-800 dark:text-slate-200 truncate"
+                        className="font-bold text-slate-800 dark:text-slate-200 truncate leading-tight text-xs"
                         title={item.name}
                       >
                         {item.name}
-                        {item.isFreebie && (
-                          <span className="ml-1 text-[10px] text-emerald-600 font-extrabold bg-emerald-50 dark:bg-emerald-950 px-1 py-0.2 rounded border border-emerald-200">
-                            ของแถม
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
-                        <span>{itemQty} x ฿{itemPrice.toLocaleString()}</span>
-                        {itemDiscount > 0 && (
-                          <span className="text-red-500 font-semibold">
-                            (ลด ฿{itemDiscount.toLocaleString()}/ชิ้น)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="text-right shrink-0 pt-0.5">
-                      <p className="font-bold text-slate-800 dark:text-slate-200">
-                        ฿{itemTotal.toLocaleString()}
                       </p>
                       {item.isFreebie && (
-                        <p className="text-[9px] line-through text-slate-400">
+                        <span className="shrink-0 text-[9px] text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950 px-1 rounded border border-emerald-200">
+                          แถม
+                        </span>
+                      )}
+                      {itemDiscount > 0 && (
+                        <span className="shrink-0 text-[9px] text-red-500 font-semibold font-mono bg-red-50 dark:bg-red-950 px-1 rounded">
+                          -฿{itemDiscount}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* ยอดเงินสุทธิต่อรายการ */}
+                    <div className="text-right shrink-0">
+                      <span className="font-bold font-mono text-xs text-slate-900 dark:text-slate-100">
+                        ฿{itemTotal.toLocaleString()}
+                      </span>
+                      {item.isFreebie && (
+                        <span className="block text-[9px] line-through text-slate-400 font-mono leading-none">
                           ฿{(itemPrice * itemQty).toLocaleString()}
-                        </p>
+                        </span>
                       )}
                     </div>
                   </div>

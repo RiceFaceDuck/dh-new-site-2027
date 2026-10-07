@@ -70,7 +70,7 @@ export default function CustomerHeader({
 
         {/* ปุ่ม Refresh ข้อมูล */}
         <button 
-          onClick={() => onRefresh(true)} 
+          onClick={() => onRefresh(false)} 
           disabled={isRefreshing}
           className="h-[36px] px-3 flex items-center justify-center gap-1.5 bg-white border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 text-slate-700 hover:text-indigo-600 rounded-md font-bold text-xs transition-colors shadow-xs shrink-0 disabled:opacity-50"
           title="รีเฟรชดึงข้อมูลล่าสุดจากฐานข้อมูล"

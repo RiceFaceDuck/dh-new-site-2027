@@ -110,10 +110,17 @@ export const createManualCustomer = async (data) => {
     }
 };
 
-export const updateCustomerProfile = async (uid, data) => {
+export const updateCustomerProfile = async (uid, data, options = {}) => {
     try {
         const userRef = getUserDocRef(uid);
         
+        let sanitizedData = { ...data };
+        if (options?.keepExistingFields) {
+            sanitizedData = Object.fromEntries(
+                Object.entries(sanitizedData).filter(([_, v]) => v !== '' && v !== undefined && v !== null)
+            );
+        }
+
         // 1. ดึงข้อมูลเก่า (Snapshot) มาเปรียบเทียบ
         const userSnap = await getDoc(userRef);
         let oldData = {};
@@ -122,11 +129,11 @@ export const updateCustomerProfile = async (uid, data) => {
         }
 
         // 2. เปรียบเทียบความเปลี่ยนแปลง (Diffing Engine)
-        const { changes, changeSummary } = computeCustomerChanges(oldData, data);
+        const { changes, changeSummary } = computeCustomerChanges(oldData, sanitizedData);
 
         // 3. อัปเดตข้อมูลลง Firestore
         await updateDoc(userRef, {
-            ...data,
+            ...sanitizedData,
             updatedAt: serverTimestamp()
         });
         

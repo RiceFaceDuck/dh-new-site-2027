@@ -32,6 +32,10 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }
       ? product.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
 
+  const displayCategory = typeof product.category === 'object' && product.category !== null
+    ? (product.category.name || product.category.type || 'General')
+    : (product.category || 'General');
+
   return (
     <>
       {/* 1. รูป (Image): Compact 32x32 thumbnail */}
@@ -90,9 +94,9 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }
       <td className="px-1 py-1.5 text-center align-middle whitespace-nowrap w-[84px] shrink-0">
         <span 
           className="text-[11px] font-bold text-dh-muted bg-dh-base px-2 py-0.5 rounded-md border border-dh-border shadow-2xs group-hover:bg-dh-surface transition-colors truncate max-w-[80px] inline-block"
-          title={product.category || 'General'}
+          title={displayCategory}
         >
-          {product.category || 'General'}
+          {displayCategory}
         </span>
       </td>
 

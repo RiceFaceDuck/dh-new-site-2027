@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import BillingDashboard from '../../components/billing/BillingDashboard';
 import PosSystem from '../../components/billing/PosSystem';
 import { useCustomerData } from '../Customers/hooks/useCustomerData';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 
 // Scoped subcomponent to prevent customer directory reads on Order List Dashboard
 const PosViewWrapper = ({ onSwitchView, initialDraft, resumeTabId, isNewBillRequest, onNewBillHandled }) => {
@@ -34,9 +34,31 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   
   const location = useLocation();
   const navigate = useNavigate();
+  const outletContext = useOutletContext();
   const resumeTabId = location.state?.resumeTabId;
   const initialDraft = location.state?.initialDraft;
   const newBill = location.state?.newBill;
+
+  // Sync POS view state to AdminLayout & FloatingMiniCart
+  useEffect(() => {
+    const isPos = viewMode === 'pos';
+    if (typeof window !== 'undefined') {
+      window.__DH_IS_POS_OPEN__ = isPos;
+      window.dispatchEvent(new CustomEvent('dh_pos_view_change', { detail: { isPosOpen: isPos } }));
+    }
+    if (outletContext?.setIsPosOpen) {
+      outletContext.setIsPosOpen(isPos);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.__DH_IS_POS_OPEN__ = false;
+        window.dispatchEvent(new CustomEvent('dh_pos_view_change', { detail: { isPosOpen: false } }));
+      }
+      if (outletContext?.setIsPosOpen) {
+        outletContext.setIsPosOpen(false);
+      }
+    };
+  }, [viewMode, outletContext]);
 
   // React to react-router location state
   useEffect(() => {

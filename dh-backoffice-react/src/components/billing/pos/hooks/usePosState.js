@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { promotionService } from '../../../../firebase/promotionService';
 import { freebieService } from '../../../../firebase/freebieService';
 import { inventoryQueryService } from '../../../../firebase/inventory/inventoryQueryService';
@@ -8,6 +8,7 @@ import { usePosCart } from './usePosCart';
 import { usePosCustomer } from './usePosCustomer';
 import { usePosPayment } from './usePosPayment';
 import { auth } from '../../../../firebase/config';
+import { staffPosDraftService, filterValidDraftTabs } from '../../../../firebase/staffPosDraftService';
 
 import { safeJsonParse } from 'dh-shared';
 
@@ -33,37 +34,15 @@ const createNewTab = () => {
     };
 };
 
-const loadSavedState = () => {
+const loadSavedState = (targetUid) => {
     try {
-        const uid = auth?.currentUser?.uid || 'guest';
+        const uid = targetUid || auth?.currentUser?.uid || 'guest';
         const saved = localStorage.getItem(`dh_pos_autosave_${uid}`);
         
-        const filterValidTabs = (tabs) => {
-            if (!Array.isArray(tabs)) return [];
-            return tabs.filter(t => {
-                const stat = (t.orderStatus || t.status || t.paymentStatus || '').toLowerCase();
-                return stat !== 'approved' && stat !== 'completed' && stat !== 'paid' && stat !== 'cancelled';
-            });
-        };
-
         if (saved) {
             const parsed = safeJsonParse(saved);
-            const valid = filterValidTabs(parsed);
+            const valid = filterValidDraftTabs(parsed);
             if (valid.length > 0) return valid;
-        } else {
-            // Auto-Migration: If no new staff-specific save exists, check for old global save
-            const oldSaved = localStorage.getItem('dh_pos_autosave');
-            if (oldSaved) {
-                const parsedOld = safeJsonParse(oldSaved);
-                const validOld = filterValidTabs(parsedOld);
-                if (validOld.length > 0) {
-                    // Save to new key to complete migration
-                    localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(validOld));
-                    // Clear old to avoid duplication for other users on same PC
-                    localStorage.removeItem('dh_pos_autosave');
-                    return validOld;
-                }
-            }
         }
     } catch (e) { console.error('Failed to load autosave', e); }
     return [createNewTab()];
@@ -85,10 +64,58 @@ export default function usePosState(products, customers, initialDraft) {
     const [isFreebieModalOpen, setIsFreebieModalOpen] = useState(false);
     const [activeFreebies, setActiveFreebies] = useState([]);
 
+    // 🔄 Switch Staff Account on Same PC & Cross-Device Cloud Hydration
+    const currentUidRef = useRef(auth?.currentUser?.uid || 'guest');
+    useEffect(() => {
+        const unsubAuth = auth?.onAuthStateChanged?.(async (user) => {
+            const newUid = user?.uid || 'guest';
+            if (newUid !== currentUidRef.current) {
+                currentUidRef.current = newUid;
+
+                // 1. Try local cache for this staff account first (Instant 0ms)
+                const localSaved = localStorage.getItem(`dh_pos_autosave_${newUid}`);
+                if (localSaved) {
+                    const parsed = safeJsonParse(localSaved);
+                    const valid = filterValidDraftTabs(parsed);
+                    if (valid.length > 0) {
+                        setCartTabs(valid);
+                        setActiveTabId(valid[0].id);
+                        return;
+                    }
+                }
+
+                // 2. Cross-Device Cloud Hydration: If opened on another PC, pull from Cloud
+                if (newUid !== 'guest') {
+                    const cloudTabs = await staffPosDraftService.getStaffCloudDrafts(newUid);
+                    if (cloudTabs.length > 0) {
+                        localStorage.setItem(`dh_pos_autosave_${newUid}`, JSON.stringify(cloudTabs));
+                        setCartTabs(cloudTabs);
+                        setActiveTabId(cloudTabs[0].id);
+                        window.dispatchEvent(new CustomEvent('dh_cart_updated'));
+                        return;
+                    }
+                }
+
+                // 3. Fallback to clean state for new user
+                const fresh = [createNewTab()];
+                setCartTabs(fresh);
+                setActiveTabId(fresh[0].id);
+            }
+        });
+
+        return () => {
+            unsubAuth?.();
+        };
+    }, []);
+
+    // 💾 Save to local cache immediately + Debounced Cloud Sync to Firestore
     useEffect(() => {
         const uid = auth?.currentUser?.uid || 'guest';
         localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(cartTabs));
         window.dispatchEvent(new CustomEvent('dh_cart_updated'));
+        if (uid !== 'guest') {
+            staffPosDraftService.saveStaffCloudDraftsDebounced(uid, cartTabs);
+        }
     }, [cartTabs]);
 
     useEffect(() => {

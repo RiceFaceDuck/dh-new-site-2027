@@ -23,6 +23,19 @@ export const normalizePhone = (phoneStr) => {
 };
 
 /**
+ * ⏱️ Robust timestamp parsing helper converting Timestamp, object, or string to epoch milliseconds
+ */
+export const parseTimestampNumber = (val) => {
+  if (!val) return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  if (typeof val?.toMillis === 'function') return val.toMillis();
+  if (typeof val?.toDate === 'function') return val.toDate().getTime();
+  if (val.seconds) return val.seconds * 1000;
+  const p = new Date(val).getTime();
+  return isNaN(p) ? 0 : p;
+};
+
+/**
  * 🛡️ Customer Order Matching Helper
  */
 export const isCustomerMatch = (orderData, orderId, customer) => {
@@ -218,7 +231,7 @@ export const fetchCustomerDirectoryChunk = async () => {
         taxId: item.taxId || null,
         shippingNotes: item.shippingNotes || '',
         contactName: item.contactName || '',
-        lastOrderDate: Number(item.lastOrderDate || 0),
+        lastOrderDate: parseTimestampNumber(item.lastOrderDate || item.stats?.lastOrderDate || 0),
         sales30Days: Number(item.sales30Days || 0),
         orderCount30Days: Number(item.orderCount30Days || 0),
         createdAt: item.createdAt?.toMillis ? item.createdAt.toMillis() : (typeof item.createdAt === 'number' ? item.createdAt : Date.now()),
@@ -284,7 +297,7 @@ export const fetchCustomersFromFirestore = async (lastSyncTime = 0, cachedUsers 
       walletBalance: Number(data.walletBalance || 0),
       creditPoints: Number(data.creditPoints || data.stats?.rewardPoints || 0),
       hasTaxInfo: Boolean(data.hasTaxInfo || data.taxId || data.taxInfo || data.taxAddress),
-      lastOrderDate: Number(data.lastOrderDate || data.stats?.lastOrderDate || data.stats?.lastPurchaseDate || 0),
+      lastOrderDate: parseTimestampNumber(data.lastOrderDate || data.stats?.lastOrderDate || data.stats?.lastPurchaseDate || 0),
       sales30Days: Number(data.sales30Days || data.stats?.sales30Days || data.stats?.monthlySales || 0),
       orderCount30Days: Number(data.orderCount30Days || 0),
       createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt,
@@ -360,11 +373,9 @@ export const applyActiveStatsDelta = (customersList, activeStatsMap) => {
     if (match) {
       let resolvedLastOrder = currentLastOrder;
       if (match.lastOrderDate) {
-        if (typeof match.lastOrderDate === 'number') resolvedLastOrder = match.lastOrderDate;
-        else if (typeof match.lastOrderDate?.toDate === 'function') resolvedLastOrder = match.lastOrderDate.toDate().getTime();
-        else {
-          const parsed = new Date(match.lastOrderDate).getTime();
-          if (!isNaN(parsed)) resolvedLastOrder = parsed;
+        const parsedMatchDate = parseTimestampNumber(match.lastOrderDate);
+        if (parsedMatchDate > 0) {
+          resolvedLastOrder = Math.max(currentLastOrder, parsedMatchDate);
         }
       }
 

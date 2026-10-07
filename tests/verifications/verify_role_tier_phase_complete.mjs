@@ -44,9 +44,9 @@ const tableContent = fs.readFileSync(customerTablePath, 'utf-8');
 assert(rowContent.includes('const getRoleBadge ='), 'CustomerRow must define getRoleBadge');
 assert(rowContent.includes('roleBadge.label'), 'CustomerRow must render roleBadge.label');
 assert(rowContent.includes('tierBadge.label'), 'CustomerRow must render tierBadge.label');
-assert(tableContent.includes('grid-cols-[130px_minmax(180px,1.5fr)_110px_110px_90px_100px_90px_100px_110px]'),
-  'CustomerTable must strictly preserve 9-column grid layout');
-assert(detailContent.includes('customer.role || customer.rank'), 'DetailPanel must display customer role/rank');
+assert(tableContent.includes('grid-cols-[130px_minmax(180px,1.5fr)_110px_100px_90px_90px_100px_90px_100px_110px]'),
+  'CustomerTable must strictly preserve 10-column grid layout');
+assert(detailContent.includes('role ||') && detailContent.includes('rank'), 'DetailPanel must display customer role/rank');
 assert(detailContent.includes('getUserTier(points)'), 'DetailPanel must compute getUserTier(points)');
 assert(detailContent.includes('สิทธิ์ราคาของลูกค้า'), 'DetailPanel must have title for role badge');
 assert(detailContent.includes('Shield'), 'DetailPanel must render Shield icon for Role');

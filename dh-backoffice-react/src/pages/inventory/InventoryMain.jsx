@@ -9,6 +9,7 @@ const ProductModal = lazy(() => import('../../components/inventory/ProductModal'
 const InventoryImportModal = lazy(() => import('../../components/inventory/InventoryImportModal'));
 const InventoryExportModal = lazy(() => import('../../components/inventory/InventoryExportModal'));
 const GuideModal = lazy(() => import('../../components/common/GuideModal'));
+import ModalErrorBoundary from '../../components/common/ModalErrorBoundary';
 
 export default function Inventory() {
   const {
@@ -223,62 +224,70 @@ export default function Inventory() {
 
       <Suspense fallback={null}>
         {isModalOpen && (
-          <ProductModal 
-            isOpen={isModalOpen} 
-            onClose={() => setIsModalOpen(false)} 
-            onSave={handleSaveProduct} 
-            productData={editingProduct} 
-            globalBufferStock={globalBufferStock}
-            categoriesData={categories}
-          />
+          <ModalErrorBoundary modalName="แก้ไข/เพิ่มสินค้า" onClose={() => setIsModalOpen(false)}>
+            <ProductModal 
+              isOpen={isModalOpen} 
+              onClose={() => setIsModalOpen(false)} 
+              onSave={handleSaveProduct} 
+              productData={editingProduct} 
+              globalBufferStock={globalBufferStock}
+              categoriesData={categories}
+            />
+          </ModalErrorBoundary>
         )}
 
         {isImportModalOpen && (
-          <InventoryImportModal 
-            isOpen={isImportModalOpen} 
-            onClose={() => setIsImportModalOpen(false)} 
-            onSuccess={handleImportSuccess}
-          />
+          <ModalErrorBoundary modalName="นำเข้าสินค้าด้วย Excel" onClose={() => setIsImportModalOpen(false)}>
+            <InventoryImportModal 
+              isOpen={isImportModalOpen} 
+              onClose={() => setIsImportModalOpen(false)} 
+              onSuccess={handleImportSuccess}
+            />
+          </ModalErrorBoundary>
         )}
 
         {isExportModalOpen && (
-          <InventoryExportModal 
-            isOpen={isExportModalOpen} 
-            onClose={() => setIsExportModalOpen(false)} 
-            availableCategories={categories}
-          />
+          <ModalErrorBoundary modalName="ส่งออกข้อมูลสินค้า (Export)" onClose={() => setIsExportModalOpen(false)}>
+            <InventoryExportModal 
+              isOpen={isExportModalOpen} 
+              onClose={() => setIsExportModalOpen(false)} 
+              availableCategories={categories}
+            />
+          </ModalErrorBoundary>
         )}
 
         {isGuideOpen && (
-          <GuideModal 
-            isOpen={isGuideOpen}
-            onClose={() => setIsGuideOpen(false)}
-            title="คู่มือการใช้งาน: ระบบคลังสินค้า (Inventory)"
-            config={{
-              description: "หน้านี้ใช้สำหรับจัดการสต๊อกสินค้า กำหนดราคาขาย ราคาต้นทุน และซิงค์ข้อมูลกับ Google Sheets เพื่อออกใบเสร็จแบบอัตโนมัติ",
-              howTo: [
-                "1. <b>ค้นหาสินค้า:</b> พิมพ์ SKU หรือชื่อรุ่นในช่องค้นหา ระบบจะค้นหาให้อัตโนมัติ (ไม่ต้องกด Enter)",
-                "2. <b>แก้ไขสต๊อก/ราคา:</b> กดปุ่ม ✏️ หลังชื่อสินค้า เพื่อแก้ไขข้อมูล ข้อมูลจะถูกอัปเดตแบบเรียลไทม์",
-                "3. <b>นำเข้า/ส่งออก (Import/Export):</b> ใช้ปุ่ม Import เพื่อนำเข้าสินค้าหลายรายการพร้อมกันจากไฟล์ Excel/CSV",
-                "4. <b>ระบบซิงค์อัตโนมัติ (Auto-Sync):</b> ข้อมูลสต๊อกและราคาจะถูกส่งไปอัปเดตที่ Google Sheets อัตโนมัติทุกครั้งที่มีการแก้ไขหรือเกิดยอดขายใหม่"
-              ],
-              tips: [
-                "คุณสามารถดู 'ยอดขาย 30 วัน' เพื่อประกอบการตัดสินใจเติมสต๊อกได้จากเมนู Dropdown ด้านบน",
-                "หากสินค้าใกล้หมด (ต่ำกว่า Buffer Stock ที่ตั้งไว้) จำนวนสต๊อกจะแสดงเป็นสีแดงเพื่อแจ้งเตือน"
-              ],
-              expectedResults: "การเพิ่มหรือแก้ไขสินค้าที่นี่ จะส่งผลกับหน้า POS ทันที แต่บน Google Sheets ต้องรอระบบซิงค์ (ประมาณ 10 วินาที)"
-            }}
-            extraFooter={
-              <button 
-                onClick={handleOpenMasterSheet}
-                title="เปิดฐานข้อมูล Google Sheet"
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm shadow-xs transition-colors dh-active-press"
-              >
-                <Lock size={16} className="text-amber-500" />
-                Master DB
-              </button>
-            }
-          />
+          <ModalErrorBoundary modalName="คู่มือการใช้งาน" onClose={() => setIsGuideOpen(false)}>
+            <GuideModal 
+              isOpen={isGuideOpen} 
+              onClose={() => setIsGuideOpen(false)} 
+              title="คู่มือการใช้งาน: ระบบคลังสินค้า (Inventory)"
+              config={{
+                description: "หน้านี้ใช้สำหรับจัดการสต๊อกสินค้า กำหนดราคาขาย ราคาต้นทุน และซิงค์ข้อมูลกับ Google Sheets เพื่อออกใบเสร็จแบบอัตโนมัติ",
+                howTo: [
+                  "1. <b>ค้นหาสินค้า:</b> พิมพ์ SKU หรือชื่อรุ่นในช่องค้นหา ระบบจะค้นหาให้อัตโนมัติ (ไม่ต้องกด Enter)",
+                  "2. <b>แก้ไขสต๊อก/ราคา:</b> กดปุ่ม ✏️ หลังชื่อสินค้า เพื่อแก้ไขข้อมูล ข้อมูลจะถูกอัปเดตแบบเรียลไทม์",
+                  "3. <b>นำเข้า/ส่งออก (Import/Export):</b> ใช้ปุ่ม Import เพื่อนำเข้าสินค้าหลายรายการพร้อมกันจากไฟล์ Excel/CSV",
+                  "4. <b>ระบบซิงค์อัตโนมัติ (Auto-Sync):</b> ข้อมูลสต๊อกและราคาจะถูกส่งไปอัปเดตที่ Google Sheets อัตโนมัติทุกครั้งที่มีการแก้ไขหรือเกิดยอดขายใหม่"
+                ],
+                tips: [
+                  "คุณสามารถดู 'ยอดขาย 30 วัน' เพื่อประกอบการตัดสินใจเติมสต๊อกได้จากเมนู Dropdown ด้านบน",
+                  "หากสินค้าใกล้หมด (ต่ำกว่า Buffer Stock ที่ตั้งไว้) จำนวนสต๊อกจะแสดงเป็นสีแดงเพื่อแจ้งเตือน"
+                ],
+                expectedResults: "การเพิ่มหรือแก้ไขสินค้าที่นี่ จะส่งผลกับหน้า POS ทันที แต่บน Google Sheets ต้องรอระบบซิงค์ (ประมาณ 10 วินาที)"
+              }}
+              extraFooter={
+                <button 
+                  onClick={handleOpenMasterSheet}
+                  title="เปิดฐานข้อมูล Google Sheet"
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm shadow-xs transition-colors dh-active-press"
+                >
+                  <Lock size={16} className="text-amber-500" />
+                  Master DB
+                </button>
+              }
+            />
+          </ModalErrorBoundary>
         )}
       </Suspense>
     </div>

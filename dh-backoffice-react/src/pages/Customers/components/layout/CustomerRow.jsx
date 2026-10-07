@@ -61,7 +61,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   const displayCode = customer.accountId || customer.customerCode || customer.id?.substring(0, 8)?.toUpperCase() || '-';
   
   const phoneText = formatPhone(customer.phone || customer.phoneNumber);
-  const logisticText = customer.logisticProvider || '-';
+  const logisticText = customer.logisticProvider || customer.preferredCourier || customer.courier || customer.shippingMethod || '-';
   const hasTax = Boolean(customer.hasTaxInfo);
   
   // รหัสลูกค้าสำหรับการดึงข้อมูล Real-time (Wallet & Points)
@@ -103,7 +103,7 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
     <div
       onClick={() => onSelect(customer)}
       className={`
-        relative group flex items-center px-4 py-2.5 border-b border-slate-200/60 cursor-pointer transition-colors duration-200
+        relative group flex items-center px-4 py-2 border-b border-slate-200/60 cursor-pointer transition-colors duration-200
         even:bg-slate-100/40 odd:bg-white hover:bg-indigo-50/60
         ${isSelected ? 'bg-indigo-50/90!' : ''}
       `}
@@ -150,20 +150,24 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           {logisticText}
         </div>
 
-        {/* 5. ระดับบัญชี & แต้มสะสม (Role & Tier แยกกันชัดเจน) */}
-        <div className="flex flex-col items-center justify-center gap-1 min-w-0">
+        {/* 5. สิทธิ์ราคา (Role) */}
+        <div className="flex items-center justify-center min-w-0">
           <div 
-            className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-bold tracking-tight border ${roleBadge.color} truncate max-w-full shadow-2xs`}
+            className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold tracking-tight border ${roleBadge.color} truncate shadow-2xs`}
             title={`สิทธิ์ราคา: ${roleBadge.label}`}
           >
             {roleBadge.icon}
             <span className="truncate">{roleBadge.label}</span>
           </div>
+        </div>
+
+        {/* 6. ระดับสมาชิก (Tier) */}
+        <div className="flex items-center justify-center min-w-0">
           <div 
-            className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-black uppercase tracking-wider border ${tierBadge.color} truncate max-w-full shadow-2xs`}
+            className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider border ${tierBadge.color} truncate shadow-2xs`}
             title={`ระดับสมาชิก: ${tierBadge.label}`}
           >
-            <span className="mr-0.5 text-[9px]">{tierBadge.icon}</span>
+            <span className="mr-0.5 text-[10px]">{tierBadge.icon}</span>
             <span className="truncate">{tierBadge.label}</span>
           </div>
         </div>

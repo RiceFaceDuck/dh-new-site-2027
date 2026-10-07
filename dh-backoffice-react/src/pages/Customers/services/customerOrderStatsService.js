@@ -1,4 +1,4 @@
-﻿import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { normalizePhone } from './customerMatchService';
@@ -87,11 +87,22 @@ export const fetchActiveCustomerStats = async (force = false) => {
       } catch (e) {}
     }
 
+    // 1.5 Fast-path guard: if already checked and missing recently within TTL, skip redundant Firestore read
+    if (!force && activeCatalogMemoryCache?.missing && (Date.now() - (activeCatalogMemoryCache.checkedAt || 0) < STATS_CACHE_TTL_MS)) {
+      return { hasChanges: false, customersMap: {}, version: 0 };
+    }
+
     // 2. Fetch single pre-aggregated catalog document (1 Read)
     const activeDocRef = doc(db, getCollectionPath('catalogs'), 'customers_active_30d');
     const docSnap = await getDoc(activeDocRef);
 
     if (!docSnap || !docSnap.exists || !docSnap.exists()) {
+      activeCatalogMemoryCache = {
+        missing: true,
+        checkedAt: Date.now(),
+        customers: {},
+        version: 0
+      };
       return { hasChanges: false, customersMap: {}, version: 0 };
     }
 

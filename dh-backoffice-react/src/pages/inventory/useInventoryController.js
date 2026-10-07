@@ -5,6 +5,7 @@ import useInventorySearch from '../../components/inventory/hooks/useInventorySea
 import useDebounce from '../../hooks/useDebounce';
 import { inventoryService } from '../../firebase/inventoryService';
 import { inventoryStatsService } from '../../firebase/inventory/inventoryStatsService';
+import toast from 'react-hot-toast';
 
 export default function useInventoryController() {
   const { isManagerOrOwner } = useAuth();
@@ -32,8 +33,10 @@ export default function useInventoryController() {
       setIsRecalculating(true);
       await inventoryStatsService.recalculateDailyStats();
       await fetchInitialProducts(); // Refresh UI after recalculate
+      toast.success("ซิงค์และคำนวณข้อมูลสถิติ 5 มิติสำเร็จ");
     } catch (error) {
       console.error("Error recalculating stats:", error);
+      toast.error(error?.message || "เกิดข้อผิดพลาดในการซิงค์ข้อมูลสถิติ");
     } finally {
       setIsRecalculating(false);
     }
@@ -43,7 +46,7 @@ export default function useInventoryController() {
     if (isManagerOrOwner) {
       window.open('https://docs.google.com/spreadsheets/d/1f3ZyfZM6nwE3OSNeseMqlqElDqv7Kxt_UL3H1IPTLos/edit?usp=sharing', '_blank');
     } else {
-      alert('คุณไม่สามารถใช้งานได้\nต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า หรือ ตำแหน่งที่อนุมัติ ให้ใช้งานได้');
+      toast.error('คุณไม่สามารถใช้งานได้ ต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า');
     }
   };
 
@@ -77,8 +80,10 @@ export default function useInventoryController() {
       const isEdit = !!editingProduct;
       if (isEdit) {
         await inventoryService.updateProduct(productData.sku, productData);
+        toast.success(`อัปเดตข้อมูล ${productData.sku} เรียบร้อยแล้ว`);
       } else {
         await inventoryService.addProduct(productData);
+        toast.success(`เพิ่มสินค้าใหม่ ${productData.sku} เรียบร้อยแล้ว`);
       }
       
       updateProductInState(productData, isEdit);
@@ -86,7 +91,7 @@ export default function useInventoryController() {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error saving product:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      toast.error(error?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 

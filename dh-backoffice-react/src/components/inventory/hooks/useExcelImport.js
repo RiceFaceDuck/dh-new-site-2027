@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { inventoryService } from '../../../firebase/inventoryService';
+import toast from 'react-hot-toast';
 
 export const EXPECTED_HEADERS = [
   'SKU', 'Name', 'Category', 'Brand', 'Unit', 'Price', 'RetailPrice', 
@@ -201,11 +202,11 @@ export function useExcelImport(onSuccess) {
           setParsedData(analyzedData);
           setProductsToImport(mappedItems.filter(p => p.sku && p.name));
         } else {
-          alert('ไม่พบข้อมูลในไฟล์');
+          toast.error('ไม่พบข้อมูลในไฟล์ Excel');
         }
       } catch (err) {
         console.error(err);
-        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบว่าเป็นไฟล์ Excel (.xlsx)');
+        toast.error('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบว่าเป็นไฟล์ Excel (.xlsx)');
       } finally {
         setIsProcessing(false);
       }
@@ -229,10 +230,11 @@ export function useExcelImport(onSuccess) {
     try {
       const result = await inventoryService.processBulkImport(productsToImport, conflictStrategy);
       setImportResult(result);
+      toast.success(`นำเข้าสินค้าสำเร็จ ${result.successCount || 0} รายการ`);
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
-      alert('เกิดข้อผิดพลาดขณะนำเข้าข้อมูล: ' + error.message);
+      toast.error('เกิดข้อผิดพลาดขณะนำเข้าข้อมูล: ' + (error?.message || ''));
     } finally {
       setIsProcessing(false);
     }

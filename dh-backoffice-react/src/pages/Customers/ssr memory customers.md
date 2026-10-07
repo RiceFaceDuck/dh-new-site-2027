@@ -14,7 +14,7 @@
       - phone / phoneNumber: customer primary contact number (normalized Thai digits)
       - walletBalance / dhWallet: DH outstanding credit/wallet balance (currency: ฿)
       - totalAccumulatedPoints / creditPoints: customer reward loyalty points (SSOT in database)
-      - lastOrderDate: timestamp for last completed order date badge (synced via customers_active_30d)
+      - lastOrderDate: timestamp for all-time last completed order date badge (independent from 30D sales)
       - sales30Days / orderCount30Days: dynamic 30D activity delta
       - contactName / firstName: recipient and primary contact person
       - address: structured { addressLine, subDistrict, district, province, zipCode, postalCode }
@@ -24,7 +24,7 @@
   </core_schema>
 
   <business_rules>
-    <rule id="1">Table layout maintains 9 balanced columns: CUSTOMER ID (130px), PROFILE (minmax(180px,1.5fr)), PHONE (110px), LOGISTIC (110px), ROLE/TIER (90px), DH ค้างยอด (100px), POINTS (90px), บิลล่าสุด (100px), 30D PAID OUT (110px) with gap-4. In table rows, financial columns omit currency symbols (no '฿') for clean numeric readability, while DetailPanel retains standard monetary symbol.</rule>
+    <rule id="1">Table layout maintains 10 balanced columns: CUSTOMER ID (130px), PROFILE (minmax(180px,1.5fr)), PHONE (110px), LOGISTIC (100px), ROLE (90px), TIER (90px), DH ค้างยอด (100px), POINTS (90px), บิลล่าสุด (100px), 30D PAID OUT (110px) with gap-4. Role (pricing privilege) and Tier (gamification status) are separated into dedicated columns for optimal visual hierarchy. In table rows, financial columns omit currency symbols (no '฿') for clean numeric readability, while DetailPanel retains standard monetary symbol.</rule>
     <rule id="2">Duplicate Guard: Pre-flight check on Phone (80 pts), Store/Account Name (60 pts), Line ID (40 pts) before user creation with merge/overwrite options.</rule>
     <rule id="3">Quota Zero-Leak: History uses targeted indexed queries (customerUid, accountId, phone) + 5-min in-memory cache; unbounded root orders scans are strictly banned.</rule>
     <rule id="4">Zero code mutation to business logic, Cloud Functions, background triggers, or data calculation scripts during UI/UX refinements.</rule>
@@ -48,5 +48,11 @@
     <caution>Catalog Chunk Address Void & Pre-Edit Guard: Directory chunk (catalogs/customers_directory) lacks addresses. DetailPanel and ActiveCustomerCard must run on-demand hydration via getUserProfile(uid), and startEditCustomer must fetch full profile before opening edit form to prevent wiping existing customer addresses in Firestore.</caution>
     <caution>Directory Chunk Mutation Wire: Any mutation in customerAdminService (createManualCustomer, updateCustomerProfile, deleteCustomer) must trigger non-blocking syncCustomerToDirectoryChunk to keep catalogs/customers_directory and local storage cache updated across all stations atomically.</caution>
     <caution>Bounded Delta Fetch Flow: In useCustomerData, directory chunk is fetched only on cold start or manual refresh. Subsequent mounts read local cache (0 Read) and perform bounded delta query on updatedAt > lastSync - buffer (0-3 Reads), avoiding unconditional return and full collection rescans.</caution>
+    <caution>Overwrite Empty String Guard: In handleOverwriteExistingCustomer and updateCustomerProfile, always sanitize payload to filter out empty string (""), null, and undefined to prevent silently wiping existing customer email, address, or phone.</caution>
+    <caution>Customer Delete Manager Wiring: managerActionService.handleApproval must explicitly wire CUSTOMER_DELETE_APPROVAL to call deleteCustomer(targetId, customerName) to prevent unexecuted deletion approvals.</caution>
+    <caution>LOGISTIC Field Fallback: CustomerRow must resolve courier preference using fallback chain (logisticProvider || preferredCourier || courier || shippingMethod || '-') to prevent blank dash (-) when POS stores courier under preferredCourier.</caution>
+    <caution>Manual Refresh Cache Bust: CustomerHeader refresh button must invoke onRefresh(false) so useCustomerData clears customer stats and directory caches for a fresh server sync.</caution>
+    <caution>Missing Catalog Cache Guard: customerOrderStatsService must cache missing state for catalogs/customers_active_30d within TTL to eliminate redundant ghost reads on every mount.</caution>
+    <caution>Last Order Date Independence: lastOrderDate represents customer all-time most recent order and must never be coupled to 30D Paid Out or active 30D catalog; applyActiveStatsDelta must only update sales30Days and orderCount30Days without clearing or downgrading lastOrderDate.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>

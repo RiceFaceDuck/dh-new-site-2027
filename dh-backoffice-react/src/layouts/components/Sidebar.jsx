@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Search, Receipt, Undo2, 
   CheckSquare, History, Image as ImageIcon, 
   Boxes, Users, LogOut, Sun, Moon,
-  UserCog, Mail, Calendar, Lock, RefreshCw, Plus
+  UserCog, Mail, Calendar, Lock, RefreshCw, Plus,
+  ShoppingCart
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import NetworkHealthIndicator from '../../components/common/NetworkHealthIndicator';
@@ -17,7 +18,9 @@ export default function Sidebar({
   pendingClaimCount, 
   managerApprovalCount, 
   isDark, 
-  toggleDarkMode 
+  toggleDarkMode,
+  isFloatingCartVisible = true,
+  toggleFloatingCart
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -235,17 +238,39 @@ export default function Sidebar({
             </button>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 items-center">
+            {/* 1. ปุ่มเลิกงาน (สั้นลงอย่างสมดุล พอดีกับ 3 ปุ่ม) */}
             <button 
               onClick={() => setShowLogoutConfirm(true)}
-              className="flex-1 group flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-all outline-hidden border border-slate-200 dark:border-slate-700 shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
+              className="flex-1 min-w-0 group flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-all outline-hidden border border-slate-200 dark:border-slate-700 shadow-2xs bg-white dark:bg-slate-800 active:scale-98 cursor-pointer"
+              title="ออกจากระบบ / เลิกงาน"
             >
-              <LogOut size={15} className="transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
-              <span>เลิกงาน</span>
+              <LogOut size={14} className="transition-transform group-hover:-translate-x-0.5 shrink-0" strokeWidth={2.5} />
+              <span className="truncate">เลิกงาน</span>
             </button>
+
+            {/* 2. ปุ่มเปิดปิด ตะกร้าลอย (อยู่ระหว่างปุ่มเลิกงานกับปุ่มโหมดมืด ขนาดและสัดส่วนพอดีกัน) */}
+            <button 
+              type="button"
+              onClick={toggleFloatingCart}
+              className={`p-2 rounded-xl transition-all outline-hidden border flex items-center justify-center shadow-2xs active:scale-95 cursor-pointer relative ${
+                isFloatingCartVisible
+                  ? 'text-[#D51C39] hover:bg-red-50 dark:hover:bg-red-950/30 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
+                  : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/50'
+              }`}
+              title={isFloatingCartVisible ? "คลิกเพื่อซ่อนตะกร้าลอย" : "คลิกเพื่อแสดงตะกร้าลอย"}
+              aria-label={isFloatingCartVisible ? "ซ่อนตะกร้าลอย" : "แสดงตะกร้าลอย"}
+            >
+              <ShoppingCart size={17} strokeWidth={2.2} />
+              {isFloatingCartVisible && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#D51C39] ring-1 ring-white dark:ring-slate-900"></span>
+              )}
+            </button>
+
+            {/* 3. ปุ่มเปลี่ยนโหมดมืด/สว่าง */}
             <button 
               onClick={toggleDarkMode}
-              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all outline-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs bg-white dark:bg-slate-800 active:scale-98"
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all outline-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs bg-white dark:bg-slate-800 active:scale-98 cursor-pointer"
               title={isDark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
             >
               {isDark ? <Sun size={17} strokeWidth={2.5} /> : <Moon size={17} strokeWidth={2.5} />}

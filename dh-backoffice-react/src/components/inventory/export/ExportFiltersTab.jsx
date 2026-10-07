@@ -15,16 +15,22 @@ export default function ExportFiltersTab({
         <h3 className="font-bold text-lg border-b border-dh-border pb-2 mb-4">คัดกรองตามหมวดหมู่</h3>
         <div className="grid grid-cols-2 gap-3">
           {availableCategories.map(cat => {
-            const isSelected = selectedCategories.includes(cat);
+            const catName = typeof cat === 'object' && cat !== null
+              ? (cat.name || cat.type || cat.id || '')
+              : String(cat || '');
+            const catKey = typeof cat === 'object' && cat !== null
+              ? (cat.id || cat.name || catName)
+              : catName;
+            const isSelected = selectedCategories.includes(catName);
             return (
               <div 
-                key={cat} onClick={() => handleToggleCategory(cat)}
+                key={catKey} onClick={() => handleToggleCategory(catName)}
                 className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${isSelected ? 'bg-dh-accent/10 border-dh-accent text-dh-accent' : 'bg-dh-surface border-dh-border text-dh-muted hover:border-dh-accent/50 hover:bg-dh-base'}`}
               >
                 {isSelected ? <CheckSquare size={18} /> : <Square size={18} className="opacity-50" />}
-                <span className="font-bold text-sm">{cat}</span>
+                <span className="font-bold text-sm">{catName}</span>
               </div>
-            )
+            );
           })}
           {availableCategories.length === 0 && <p className="text-sm text-dh-muted">ไม่พบข้อมูลหมวดหมู่ (โปรดรีเฟรชหน้าเว็บ)</p>}
         </div>
