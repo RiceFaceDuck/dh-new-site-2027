@@ -1,7 +1,7 @@
 import { db } from './config';
 import { 
   collection, doc, getDocs, getDoc, query, where, 
-  serverTimestamp, writeBatch, limit, updateDoc, deleteDoc 
+  serverTimestamp, writeBatch, limit, updateDoc, deleteDoc, setDoc 
 } from 'firebase/firestore';
 
 import { trackAdView, trackAdClick, logImpression, logClick } from './marketingAnalyticsService';
@@ -42,7 +42,8 @@ export const marketingService = {
       // 🚀 SSOT Optimization: ใช้ partner_ads เป็น Single Source of Truth รวมทุกประเภทโฆษณา
       const collectionName = 'partner_ads';
       const adsRef = collection(db, getCollectionPath(collectionName));
-      const q = query(adsRef, where('status', 'in', ['active', 'ACTIVE']), where('type', '==', adType), limit(100));
+      // 🛡️ Quota Shield: ดึงเท่าที่แสดงผลจริง 30 รายการ เพื่อประหยัดโควต้าอ่าน Firestore
+      const q = query(adsRef, where('status', 'in', ['active', 'ACTIVE']), where('type', '==', adType), limit(30));
       const snapshot = await getDocs(q);
       
       const adsList = snapshot.docs.map(doc => ({ 
@@ -56,7 +57,7 @@ export const marketingService = {
         const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
         return timeB - timeA;
       });
-      const limitedAds = adsList.slice(0, 30); // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
+      const limitedAds = adsList; // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
 
       activeAdsCache.data[adType] = limitedAds;
       activeAdsCache.lastFetch[adType] = now;
@@ -283,12 +284,59 @@ export const marketingService = {
         }
       }
 
-      // ถ้าเป็นการพักโฆษณานามบัตร (BUSINESS_CARD) ให้ลบออกจาก ActivePartners เพื่อไม่ให้แสดงบนเรดาร์
-      if (newStatus === 'paused' && adDocData && adDocData.type === 'BUSINESS_CARD' && adDocData.ownerId) {
+      // ซิงค์เรดาร์ร้านค้า (ActivePartners) สำหรับโฆษณานามบัตร (BUSINESS_CARD)
+      if (adDocData && adDocData.type === 'BUSINESS_CARD' && adDocData.ownerId) {
+        const partnerId = adDocData.ownerId;
+        const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
         try {
-          await deleteDoc(doc(db, getCollectionPath('ActivePartners'), adDocData.ownerId));
+          if (newStatus === 'paused') {
+            await deleteDoc(activePartnerRef);
+          } else if (newStatus === 'active') {
+            // ดึง storeProfile หรือใช้ข้อมูลใน adDocData กู้คืนลง ActivePartners
+            let storeData = null;
+            try {
+              const storeRef = doc(db, getCollectionPath('users'), partnerId, 'storeProfile', 'main');
+              const storeSnap = await getDoc(storeRef);
+              if (storeSnap.exists()) storeData = storeSnap.data();
+            } catch (e) {
+              console.warn("Could not fetch storeProfile for ActivePartners restore:", e);
+            }
+
+            const combinedStore = storeData || adDocData;
+            await setDoc(activePartnerRef, {
+              partnerId: partnerId,
+              storeName: combinedStore.storeName || combinedStore.partnerName || combinedStore.title || '',
+              services: combinedStore.services || combinedStore.description || '',
+              phone: combinedStore.phone || '',
+              messengerUrl: combinedStore.messengerUrl || '',
+              lineUrl: combinedStore.lineUrl || '',
+              googleMapLink: combinedStore.googleMapLink || '',
+              latitude: Number(combinedStore.latitude || 0),
+              longitude: Number(combinedStore.longitude || 0),
+              storeImage: combinedStore.storeImage || combinedStore.imageUrl || '',
+              address: combinedStore.address || '',
+              landmarks: combinedStore.landmarks || '',
+              richDescription: combinedStore.richDescription || '',
+              galleryImages: Array.isArray(combinedStore.galleryImages) ? combinedStore.galleryImages : [],
+              openHours: combinedStore.openHours || '',
+              websiteUrl: combinedStore.websiteUrl || '',
+              youtubeUrl: combinedStore.youtubeUrl || '',
+              tiktokUrl: combinedStore.tiktokUrl || '',
+              shopeeUrl: combinedStore.shopeeUrl || '',
+              lazadaUrl: combinedStore.lazadaUrl || '',
+              points: Number(combinedStore.points || combinedStore.creditPoints || 0),
+              isActive: true,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          }
+          // ล้าง localStorage active partners cache
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const appId = window.__app_id || 'default-app-id';
+            window.localStorage.removeItem(`active_partners_cache_v4_${appId}`);
+            window.localStorage.removeItem(`active_partners_cache_v3_${appId}`);
+          }
         } catch (e) {
-          console.warn("ActivePartners sync on pause warning:", e);
+          console.warn("ActivePartners sync on toggle warning:", e);
         }
       }
 

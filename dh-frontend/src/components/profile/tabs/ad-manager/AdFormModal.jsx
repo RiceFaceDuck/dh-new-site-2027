@@ -1,4 +1,3 @@
- 
 import { 
   Megaphone, X, Link as LinkIcon, UploadCloud, Loader2, CheckCircle2, 
   ShoppingBag, MonitorPlay, Sparkles,
@@ -6,6 +5,7 @@ import {
   Eye, ShieldAlert
 } from 'lucide-react';
 import AdPreviewCard from './AdPreviewCard';
+import LazyImage from '../../../common/LazyImage';
 
 const AdFormModal = ({
   formData, setFormData, storeData, handleSubmitAd, onCloseForm, handleLinkChange,
@@ -80,7 +80,15 @@ const AdFormModal = ({
                   <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">ราคาโปรโมชั่น (บาท)</label>
                   <div className="relative">
                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><Tag size={16}/></div>
-                     <input type="number" value={formData.price || ''} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 text-emerald-600 font-bold" />
+                     <input 
+                       type="number" 
+                       min="0"
+                       step="any"
+                       value={formData.price || ''} 
+                       onChange={(e) => setFormData({...formData, price: e.target.value})} 
+                       placeholder="0.00"
+                       className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 text-emerald-600 font-bold" 
+                     />
                   </div>
                 </div>
                 <div>
@@ -116,7 +124,7 @@ const AdFormModal = ({
                 <input 
                   type="text" 
                   value={formData.targetUrl || ''} onChange={handleLinkChange} required 
-                  placeholder={formData.type === 'BILLBOARD' ? "วางลิงก์วิดีโอ YouTube หรือเว็บร้านค้า" : "วางลิงก์ Shopee, Lazada ที่นี่..."}
+                  placeholder={formData.type === 'BILLBOARD' ? "เช่น https://www.youtube.com/... หรือเว็บร้าน" : "เช่น https://shopee.co.th/..."}
                   className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" 
                 />
               </div>
@@ -124,24 +132,30 @@ const AdFormModal = ({
 
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2 flex justify-between">
-                <span>อัปโหลดรูปภาพโฆษณา <span className="text-rose-500">*</span></span>
+                <span>อัปโหลดรูปภาพโฆษณา (JPG, PNG, WebP) <span className="text-rose-500">*</span></span>
               </label>
               
               {formData.imageUrl && !uploadingImage ? (
                 <div className="relative w-full h-44 bg-slate-100 rounded-2xl overflow-hidden group ring-2 ring-emerald-500 shadow-md">
-                  <img src={formData.imageUrl} alt="Uploaded preview" className="w-full h-full object-contain"  loading="lazy" />
-                  <label className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <LazyImage 
+                    src={formData.imageUrl} 
+                    alt="Uploaded preview" 
+                    className="w-full h-full" 
+                    imgClassName="object-contain" 
+                    fallbackSrc="/logo.png" 
+                  />
+                  <label className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs z-10">
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} className="hidden" />
                     <div className="text-white flex flex-col items-center"><UploadCloud size={28} className="mb-2"/> <span className="font-bold text-sm tracking-wide">เปลี่ยนรูปภาพใหม่</span></div>
                   </label>
                 </div>
               ) : (
                 <label className={`relative flex flex-col items-center w-full px-4 py-8 bg-white border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-300 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
-                  <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
                   {uploadingImage ? (
                     <div className="flex flex-col items-center text-indigo-600 font-bold"><Loader2 size={28} className="animate-spin mb-2"/> กำลังประมวลผลรูปภาพ...</div>
                   ) : (
-                    <div className="flex flex-col items-center text-slate-500"><div className="p-3 rounded-full mb-1 bg-slate-100 text-slate-400"><UploadCloud size={24} /></div><span className="font-bold text-sm">คลิกเพื่อเลือกไฟล์รูปภาพ</span></div>
+                    <div className="flex flex-col items-center text-slate-500"><div className="p-3 rounded-full mb-1 bg-slate-100 text-slate-400"><UploadCloud size={24} /></div><span className="font-bold text-sm">คลิกเพื่อเลือกไฟล์รูปภาพ (JPG, PNG, WebP)</span></div>
                   )}
                 </label>
               )}
@@ -168,6 +182,11 @@ const AdFormModal = ({
                       <button key={amt} type="button" onClick={() => addBudget(amt)} disabled={isUnlimited} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-[10px] font-bold rounded-lg border border-slate-600/50">+{amt}</button>
                     ))}
                   </div>
+                  {remainingCredit !== undefined && (
+                    <div className="mt-2.5 text-[11px] text-slate-400">
+                      คงเหลือหลังหักงบนี้: <span className={`font-bold ${!isUnlimited && remainingCredit < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{isUnlimited ? 'ไม่จำกัด' : `${Number(remainingCredit).toLocaleString()} Pts`}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-left sm:text-right bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/50 w-full sm:w-auto">
                   <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">คาดการณ์การมองเห็น</div>

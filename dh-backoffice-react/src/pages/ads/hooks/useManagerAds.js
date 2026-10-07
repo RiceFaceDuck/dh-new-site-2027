@@ -3,6 +3,7 @@ import { collection, doc, onSnapshot, serverTimestamp, writeBatch, query, orderB
 import { db } from '../../../firebase/config';
 import { auth } from '../../../firebase/config';
 import { historyService } from '../../../firebase/historyService';
+import { adManagementService } from '../../../firebase/adManagementService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const appId = typeof window !== "undefined" && window.__app_id ? window.__app_id : "default-app-id";
@@ -47,27 +48,39 @@ export function useManagerAds() {
   }, []);
 
   const handleAction = async (ad, action) => {
-    if (!window.confirm(`ยืนยันการ ${action === 'APPROVED' ? 'อนุมัติให้แสดงผล' : 'ปฏิเสธคำขอ'} โฆษณานี้?`)) return;
+    const isApprove = action === 'APPROVED';
+    const isReject = action === 'REJECTED';
+    const confirmPrompt = isApprove ? 'อนุมัติให้แสดงผล' : (isReject ? 'ปฏิเสธคำขอ' : 'เปลี่ยนสถานะเป็นรอตรวจสอบ');
+    if (!window.confirm(`ยืนยันการ ${confirmPrompt} โฆษณานี้?`)) return;
     
     setProcessingId(ad.id);
     try {
-      const batch = writeBatch(db);
-      const actionData = { status: action, updatedAt: serverTimestamp() };
-
-      batch.set(doc(db, getCollectionPath(ad._collection), ad.id), actionData, { merge: true });
-
       const taskId = `TODO-${ad.id}`;
-      batch.set(doc(db, getCollectionPath('todos'), taskId), actionData, { merge: true });
-
-      await batch.commit();
+      if (isApprove) {
+        const result = await adManagementService.approveAd(ad.id, taskId);
+        if (!result.success) throw new Error(result.message);
+      } else if (isReject) {
+        const result = await adManagementService.rejectAd(ad.id, taskId, 'ผู้จัดการปฏิเสธคำขอจากหน้าจัดการโฆษณา');
+        if (!result.success) throw new Error(result.message);
+      } else {
+        // กรณีดึงกลับไป PENDING หรือรอตรวจสอบ
+        const batch = writeBatch(db);
+        const actionData = { status: 'pending', isActive: false, updatedAt: serverTimestamp() };
+        batch.set(doc(db, getCollectionPath(ad._collection || 'partner_ads'), ad.id), actionData, { merge: true });
+        batch.set(doc(db, getCollectionPath('todos'), taskId), { status: 'pending', resolution: null, updatedAt: serverTimestamp() }, { merge: true });
+        if (ad.type === 'BUSINESS_CARD' && ad.ownerId) {
+          batch.delete(doc(db, getCollectionPath('ActivePartners'), ad.ownerId));
+        }
+        await batch.commit();
+      }
 
       // Log the manager action
       const title = ad.title || ad.productName || 'ไม่มีหัวข้อ';
       await historyService.addLog(
         'ManagerAds', 
-        action === 'APPROVED' ? 'ApproveAd' : (action === 'REJECTED' ? 'RejectAd' : 'RevertAd'), 
+        isApprove ? 'ApproveAd' : (isReject ? 'RejectAd' : 'RevertAd'), 
         ad.id, 
-        `${action === 'APPROVED' ? 'อนุมัติ' : (action === 'REJECTED' ? 'ปฏิเสธ' : 'เปลี่ยนสถานะเป็นรอตรวจสอบ')}โฆษณา: ${title}`, 
+        `${isApprove ? 'อนุมัติ' : (isReject ? 'ปฏิเสธ' : 'เปลี่ยนสถานะเป็นรอตรวจสอบ')}โฆษณา: ${title}`, 
         auth.currentUser?.uid
       );
     } catch (error) {

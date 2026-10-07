@@ -33,7 +33,6 @@ export const useAdManager = (user) => {
   
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingAdId, setEditingAdId] = useState(null);
-  const [adToDelete, setAdToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
     type: 'PRODUCT_LINK', title: '', description: '', imageUrl: '', targetUrl: '', platform: 'other', 
@@ -56,9 +55,7 @@ export const useAdManager = (user) => {
       return;
     }
 
-    fetchMyAds();
-
-    // ⚡ Real-Time Listener: ตรวจจับการอนุมัติโฆษณา/นามบัตรจากหลังบ้านทันทีแบบเสี้ยววินาที
+    // ⚡ Real-Time Listener & Quota Shield: ใช้ onSnapshot คอลเลกชันเดียวเป็น SSOT ลดโควต้าอ่านซ้ำซ้อน 50%
     const partnerAdsQuery = query(
       collection(db, getCollectionPath('partner_ads')),
       where('ownerId', '==', user.uid)
@@ -66,6 +63,11 @@ export const useAdManager = (user) => {
 
     const unsubscribe = onSnapshot(partnerAdsQuery, (snapshot) => {
       const liveAds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      liveAds.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
+        return timeB - timeA;
+      });
       setAds(liveAds);
       const cardAd = liveAds.find(a => a.type === 'BUSINESS_CARD');
       setBusinessCardAd(cardAd || null);
@@ -95,14 +97,30 @@ export const useAdManager = (user) => {
     }
   };
 
+  const sanitizeUrl = (url) => {
+    if (!url) return '';
+    const trimmed = String(url).trim();
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const handleLinkChange = (e) => {
-    const url = e.target.value;
-    setFormData({ ...formData, targetUrl: url, platform: marketingService.detectPlatform(url) });
+    const rawUrl = e.target.value;
+    setFormData({ ...formData, targetUrl: rawUrl, platform: marketingService.detectPlatform(rawUrl) });
   };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // 🛡️ MIME Type Security Guard: รับเฉพาะไฟล์ภาพที่ถูกต้อง
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    if (!validImageTypes.includes(file.type)) {
+      return showToast("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (JPG, PNG, WebP)", 'error');
+    }
+
     if (file.size > 10 * 1024 * 1024) return showToast("กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 10MB", 'error');
 
     setUploadingImage(true);
@@ -154,6 +172,20 @@ export const useAdManager = (user) => {
     if (!formData.title || !formData.targetUrl || !formData.imageUrl) {
       return showToast("กรุณากรอกข้อมูลและอัปโหลดรูปภาพให้ครบถ้วน", 'info');
     }
+
+    const cleanTargetUrl = sanitizeUrl(formData.targetUrl);
+    try {
+      const parsed = new URL(cleanTargetUrl);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return showToast("ลิงก์ปลายทางต้องขึ้นต้นด้วย http:// หรือ https://", 'error');
+      }
+    } catch {
+      return showToast("รูปแบบลิงก์ปลายทางไม่ถูกต้อง", 'error');
+    }
+
+    if (formData.type === 'PRODUCT_LINK' && formData.price !== '' && Number(formData.price) < 0) {
+      return showToast("ราคาสินค้าต้องไม่ติดลบ", 'error');
+    }
     
     const finalCreditLimit = isUnlimited ? -1 : (Number(creditLimit) || 0);
     if (!isUnlimited && finalCreditLimit < 10) return showToast("กรุณาตั้งค่างบโฆษณาขั้นต่ำ 10 แต้ม", 'error');
@@ -164,10 +196,10 @@ export const useAdManager = (user) => {
         title: formData.title,
         description: formData.description || '',
         imageUrl: formData.imageUrl,
-        targetUrl: formData.targetUrl, 
-        platform: formData.platform || 'other',
+        targetUrl: cleanTargetUrl, 
+        platform: formData.platform || marketingService.detectPlatform(cleanTargetUrl) || 'other',
         billboardRatio: formData.type === 'BILLBOARD' ? formData.billboardRatio : null,
-        price: formData.type === 'PRODUCT_LINK' ? formData.price : null,
+        price: formData.type === 'PRODUCT_LINK' ? (formData.price ? Math.max(0, Number(formData.price)) : null) : null,
         richDescription: formData.type === 'PRODUCT_LINK' ? (formData.richDescription || '') : null,
         partnerName: getCustomerDisplayName(storeData, 'พาร์ทเนอร์'),
         costPerImpression: COST_PER_IMPRESSION
@@ -214,8 +246,6 @@ export const useAdManager = (user) => {
     } catch (error) {
       console.error("🔥 Delete error:", error);
       showToast("เกิดข้อผิดพลาดในการลบโฆษณา", 'error');
-    } finally {
-      setAdToDelete(null);
     }
   };
 
@@ -276,8 +306,6 @@ export const useAdManager = (user) => {
     submittingAd,
     isEditMode,
     setIsEditMode,
-    adToDelete,
-    setAdToDelete,
     formData,
     setFormData,
     uploadingImage,

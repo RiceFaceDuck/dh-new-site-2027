@@ -47,37 +47,41 @@ export default function AdApprovalCard({ todo, isProcessing, isManagerTab, urgen
         )}
 
         {/* Ad Preview */}
-        {todo.adPayload && (
-          <div className="bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-3 rounded-xl flex gap-3 items-center transition-all hover:bg-indigo-50 group">
-            <div className="w-16 h-16 rounded-lg bg-white overflow-hidden shadow-xs shrink-0 border border-slate-200 flex items-center justify-center transition-transform group-hover:scale-105">
-              {todo.adPayload.imageUrl ? (
-                <img src={todo.adPayload.imageUrl} alt="Ad Preview" className="w-full h-full object-cover"  loading="lazy" />
-              ) : (
-                <ImageIcon size={24} className="text-slate-300" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-indigo-900 dark:text-indigo-300 truncate">
-                งบประมาณ: <span className="text-indigo-600 dark:text-indigo-400">{todo.adPayload.creditLimit || 0}</span> แต้ม
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] px-2 py-0.5 rounded-sm uppercase font-bold text-white bg-indigo-500 shrink-0 shadow-xs">
-                  {todo.adPayload.platform || 'OTHER'}
-                </span>
-                {todo.adPayload.targetUrl && (
-                  <a 
-                    href={todo.adPayload.targetUrl} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 truncate font-medium bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md"
-                  >
-                    <ExternalLink size={12} /> ตรวจสอบลิงก์โฆษณา
-                  </a>
+        {(() => {
+          const ad = todo.adPayload || todo.adDetails || todo.skuDetails;
+          if (!ad) return null;
+          return (
+            <div className="bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-3 rounded-xl flex gap-3 items-center transition-all hover:bg-indigo-50 group">
+              <div className="w-16 h-16 rounded-lg bg-white overflow-hidden shadow-xs shrink-0 border border-slate-200 flex items-center justify-center transition-transform group-hover:scale-105">
+                {ad.imageUrl ? (
+                  <img src={ad.imageUrl} alt="Ad Preview" className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <ImageIcon size={24} className="text-slate-300" />
                 )}
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-indigo-900 dark:text-indigo-300 truncate">
+                  งบประมาณ: <span className="text-indigo-600 dark:text-indigo-400">{ad.creditLimit || 0}</span> แต้ม
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] px-2 py-0.5 rounded-sm uppercase font-bold text-white bg-indigo-500 shrink-0 shadow-xs">
+                    {ad.platform || 'OTHER'}
+                  </span>
+                  {ad.targetUrl && (
+                    <a 
+                      href={ad.targetUrl} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 truncate font-medium bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md"
+                    >
+                      <ExternalLink size={12} /> ตรวจสอบลิงก์โฆษณา
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Footer Data Grid */}
         <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">

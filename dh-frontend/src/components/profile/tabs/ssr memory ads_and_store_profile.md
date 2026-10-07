@@ -43,5 +43,15 @@
 - ⚠️ Todo Update Lockout (FIXED Review 3): Allowed ad approval todos to update content on re-submission while locking status to pending.
 - ⚠️ Backoffice Ad Types Parity (FIXED Review 3): Synced `resubmitPartnerAd` task types with backoffice `MANAGER_TASK_TYPES`, `TodoItem`, and `managerActionService`.
 - ⚠️ User Ads Cache Invalidation (FIXED Review 3): Invalidate `userAdsCache` across all ad mutation flows and sort createdAt safely.
+- ⚠️ Broken Image CDN & Raw Img Failure (FIXED Phase 1): Purged raw `<img>` tags in `StoreProfileBasicInfo`, `AdListTable`, and `AdFormModal` in favor of `LazyImage` with multi-tier Google Drive resolving and local `/logo.png` fallback, eliminating broken `[ ] Store` and `[ ] Ad` placeholder boxes.
+- ⚠️ Calm UI Invariant Badge (FIXED Phase 2): Removed `animate-pulse` from the Pending status badge in `StoreProfileForm.jsx`, establishing quiet, non-distracting visual badges.
+- ⚠️ Quota Shield Listener Mount (FIXED Phase 3): Purged redundant `fetchMyAds()` concurrent execution with `onSnapshot` inside `useAdManager.js` mount effect, cutting initial read consumption by 50% while maintaining real-time updates.
+- ⚠️ Dual Approval Split-Brain (FIXED Phase 1): หน้า `/ads` ของผู้จัดการเดิมเขียนตรงลง Firestore ข้าม `ActivePartners` และใส่ `status: 'APPROVED'` -> ปรับปรุงให้เรียกใช้ `adManagementService.approveAd` และ `rejectAd` เป็นศูนย์กลางเดียวกัน
+- ⚠️ Radar Disappearance on Unpause (FIXED Phase 1): เดิมการ toggleAdStatus ลบหมุดออกจาก `ActivePartners` ตอน paused แต่ไม่คืนค่าตอน active -> ซิงค์คืนค่าลง `ActivePartners` และล้าง cache ท้องถิ่นอัตโนมัติ
+- ⚠️ Todo Schema Mismatch Blanking (FIXED Phase 1): ฟอร์มโปรไฟล์ร้านเซฟ `adDetails` แต่การ์ดอนุมัติอ่าน `adPayload` -> ปรับให้ส่งทั้งคู่ และเพิ่ม Fallback เช็ค `adPayload || adDetails || skuDetails` ใน `AdApprovalCard`
+- ⚠️ Relative URL 404 Resolution (FIXED Phase 2): ปลายทางไม่มี protocol ทำให้ตกเป็น relative path เช่น `/profile/shopee.co.th` -> สร้าง `sanitizeUrl` / `getSafeUrl` เติม `https://` อัตโนมัติและตรวจ URL protocol ก่อน submit
+- ⚠️ Unchecked File Upload & Negative Price (FIXED Phase 2): เดิมอนุญาตให้อัปโหลดไฟล์ใดก็ได้ไม่เกิน 10MB และไม่ได้บล็อกราคาติดลบ -> เพิ่ม MIME type guard (`image/jpeg,image/png,image/webp`) และ `min="0"` บน input/submit
+- ⚠️ Billing Transparency & Remaining Points (FIXED Phase 3): เดิม `spentBudget` ถูกบันทึกลง Firestore แต่ไม่แสดงบนหน้าจอ ทำให้พาร์ทเนอร์ไม่รู้ว่าใช้แต้มไปเท่าไร -> เพิ่มการแสดง `ใช้ไป / งบ (Pts)` ทั้งใน Mobile Card และ Desktop Table รวมถึงแสดงผลแต้มคงเหลือแบบไดนามิกใน `AdFormModal`
+- ⚠️ Read Quota Over-fetch (FIXED Phase 4): `getActiveAds` ใน `marketingService.js` เดิมดึง 100 docs แล้วมา slice 30 ในหน่วยความจำ -> ปรับ `limit(30)` ที่ query ตรง ลดโควต้าอ่าน 70% และลบ dead state `adToDelete` ออกจาก `useAdManager`
 </pitfalls_and_lessons>
 </ssr_memory>

@@ -53,7 +53,7 @@ export const storeProfileSubmitService = {
            ownerId: user.uid,
            title: finalStoreData.storeName,
            description: finalStoreData.description || finalStoreData.services || '',
-           imageUrl: finalStoreData.storeImage || 'https://placehold.co/400x400/e2e8f0/475569?text=Store',
+           imageUrl: finalStoreData.storeImage || '/logo.png',
            targetUrl: finalStoreData.websiteUrl || finalStoreData.messengerUrl || finalStoreData.lineUrl || finalStoreData.googleMapLink || '#',
            messengerUrl: finalStoreData.messengerUrl || '',
            lineUrl: finalStoreData.lineUrl || '',
@@ -96,6 +96,7 @@ export const storeProfileSubmitService = {
           partnerId: user.uid,
           customerName: finalStoreData.storeName,
           adDetails: adPayload,
+          adPayload: adPayload,
           requestedAt: serverTimestamp(),
           createdAt: serverTimestamp(),
           createdBy: user.uid
