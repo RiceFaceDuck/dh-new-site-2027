@@ -66,5 +66,8 @@
        วิธีแก้: ปรับคอนเทนเนอร์เป็น overflow-y-auto lg:overflow-hidden และ SettingsPanel เป็น h-auto lg:h-full [สถานะ: ส่งมอบแล้ว]
     10. ปัญหา: ก้อนแคตตาล็อก recent_orders กิน 50 Reads ทุกบิล
        วิธีแก้: จัดอยู่ใน Watchlist (Guardrail: working_well ให้คงสภาพเดิมไว้ ป้องกัน race condition ระหว่างแคชเชียร์) [สถานะ: บันทึกเฝ้าระวัง]
+    11. ปัญหา: งานค้าง POS (บิลร่าง/แท็บพักไว้) ไม่แสดงบนเว็บจริง (dhnotebook-work.web.app) ทั้งที่เป็นบัญชีพนักงานเดียวกัน
+       วิธีแก้: ปัญหาเกิดจากโค้ดใหม่ (FloatingMiniCart และ staffPosDraftService) ยังไม่ได้ถูก Build และ Deploy ขึ้น Hosting รวมทั้งเบราว์เซอร์แยก Local Storage คนละโดเมน เมื่อทำการ Build และ Deploy Hosting (`firebase deploy --only hosting:dhnotebook-work`) ทำให้เว็บจริงรันโค้ดชุดใหม่และซิงค์งานค้าง POS ข้ามเครื่องได้ถูกต้อง [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
+
