@@ -1,117 +1,64 @@
-import { useState, useEffect } from 'react';
-import { getFirestore, doc, updateDoc } from 'firebase/firestore';
-import { Heart, Info, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Store, ArrowRight, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 
-export default function SupportSettings({ user, initialData, onRefresh }) {
-  // ใช้ local state เพื่อความรวดเร็วในการแสดงผล (Optimistic UI)
-  const [isSupported, setIsSupported] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Sync ค่าจากฐานข้อมูลเมื่อโหลดครั้งแรก
-  useEffect(() => {
-    if (initialData) {
-      setIsSupported(!!initialData.isSupportEnabled);
-    }
-  }, [initialData]);
-
-  const handleToggle = async () => {
-    if (!user || isProcessing) return;
-
-    const newValue = !isSupported;
-    const oldValue = isSupported;
-
-    // 1. Update UI ทันทีเพื่อให้ผู้ใช้รู้สึกว่าระบบตอบสนองเร็ว
-    setIsSupported(newValue);
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      const db = getFirestore();
-      const userRef = doc(db, getCollectionPath('users'), user.uid);
-
-      // 2. ส่งข้อมูลไปที่ Firestore
-      await updateDoc(userRef, {
-        isSupportEnabled: newValue,
-        lastStatusUpdate: new Date().toISOString()
-      });
-
-      // 3. แจ้งหน้าหลักให้รีเฟรชข้อมูล (ถ้าจำเป็น)
-      if (onRefresh) onRefresh();
-
-    } catch (err) {
-      console.error("Error updating support status:", err);
-      // 4. หากเกิดข้อผิดพลาด ให้ Rollback กลับเป็นค่าเดิม
-      setIsSupported(oldValue);
-      setError("ไม่สามารถอัปเดตสถานะได้ กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+/**
+ * 🏬 PartnerHubCard (อัปเกรดจาก SupportSettings เดิม)
+ * เชื่อมโยงพาร์ทเนอร์เข้าสู่ศูนย์จัดการร้านค้าจริง (Ads & Marketing / Store Profile)
+ * ซึ่งเป็น Single Source of Truth (SSOT) ร่วมกับ ActivePartners และระบบเรดาร์
+ */
+export default function SupportSettings({ user, initialData }) {
+  const navigate = useNavigate();
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
+    <div className="bg-linear-to-br from-slate-900 to-indigo-950 rounded-2xl shadow-lg border border-slate-700/60 p-6 text-white relative overflow-hidden transition-all duration-300 hover:shadow-xl">
+      {/* Background Glow */}
+      <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+      <div className="relative z-10 space-y-4">
+        {/* Header */}
+        <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg transition-colors ${isSupported ? 'bg-pink-100 text-pink-600' : 'bg-gray-100 text-gray-400'}`}>
-              <Heart className={`w-5 h-5 ${isSupported ? 'fill-current' : ''}`} />
+            <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+              <Store className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-800">การรับการสนับสนุน</h3>
-              <p className="text-xs text-gray-500">เปิดโหมดรับงานและการสนับสนุนจากระบบ</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">ศูนย์บริการพาร์ทเนอร์และเรดาร์ร้านค้า</h3>
+                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-full flex items-center gap-1">
+                  <Sparkles size={10} /> PARTNER HUB
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                เปิดรับงานสนับสนุน ปักหมุดเรดาร์ และจัดการนามบัตรโฆษณาในระบบ DH Notebook
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* สวิตช์เปิด-ปิด (Custom Switch) */}
+        {/* Feature List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+          <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-xl p-3">
+            <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>แสดงร้านค้าบนเรดาร์ค้นหาใกล้เคียง (Providers Radar)</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-xl p-3">
+            <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span>รับงานตรวจเช็คและบริการหลังการขายจากลูกค้าโดยตรง</span>
+          </div>
+        </div>
+
+        {/* CTA Button */}
+        <div className="pt-2 flex justify-end">
           <button
-            onClick={handleToggle}
-            disabled={isProcessing}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-blue-100 focus:ring-offset-2 ${
-              isSupported ? 'bg-[#0870B8]' : 'bg-gray-200'
-            } ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+            type="button"
+            onClick={() => navigate('/profile?tab=ads')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
-            <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 ease-in-out ${
-                isSupported ? 'translate-x-6' : 'translate-x-1'
-              } flex items-center justify-center`}
-            >
-              {isProcessing && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
-            </span>
+            <span>จัดการร้านค้าและการสนับสนุน</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-
-        {/* ส่วนคำอธิบายเพิ่มเติม */}
-        <div className="bg-blue-50/50 rounded-xl p-4 flex gap-3">
-          <Info className="w-5 h-5 text-[#0870B8] shrink-0 mt-0.5" />
-          <div className="text-xs text-gray-600 leading-relaxed">
-            <p className="font-bold text-[#0870B8] mb-1">สิ่งที่จะเกิดขึ้นเมื่อเปิดการสนับสนุน:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>โปรไฟล์ของคุณจะปรากฏในรายชื่อพาร์ทเนอร์</li>
-              <li>ระบบจะส่งงานสนับสนุนเข้าสู่หน้า Dashboard ของคุณ</li>
-              <li>ผู้ใช้ทั่วไปสามารถติดต่อขอสนับสนุนผ่านช่องทาง Social ของคุณได้</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-xl text-xs flex items-center gap-2 animate-fade-in">
-            <AlertCircle className="w-4 h-4" />
-            <p className="font-medium">{error}</p>
-          </div>
-        )}
-
-        {/* Success Indicator (แสดงสั้นๆ เมื่อประมวลผลเสร็จและสำเร็จ) */}
-        {!isProcessing && !error && initialData && isSupported === !!initialData.isSupportEnabled && (
-          <div className="mt-4 flex justify-end">
-            <span className="text-[10px] text-emerald-500 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              สถานะปัจจุบันอัปเดตแล้ว
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );

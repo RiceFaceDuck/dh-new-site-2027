@@ -36,7 +36,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
 
   const { checkoutState, updateCheckoutConfig } = useCart();
   
-  const currentMethod = checkoutState?.shippingMethod;
+  const currentMethod = checkoutState?.shippingMethod || selectedMethod;
 
   // ⚡️ Smart Default: ถ้ายังไม่ได้เลือกวิธีจัดส่ง ให้ตั้งค่าเริ่มต้นเป็นตัวเลือกแรกที่มี
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
         shippingCost: shippingOptions[0].cost 
       });
       if (onUpdate) {
-        onUpdate(shippingOptions[0].cost);
+        onUpdate(shippingOptions[0]);
       }
     }
   }, [orderMode, currentMethod, updateCheckoutConfig, shippingOptions, onUpdate]);
@@ -56,7 +56,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
     if (orderMode === 'wholesale') {
       updateCheckoutConfig({ shippingMethod: 'wholesale_pending', shippingCost: 0 });
       if (onUpdate) {
-        onUpdate(0);
+        onUpdate({ id: 'wholesale_pending', cost: 0 });
       }
     }
   }, [orderMode, updateCheckoutConfig, onUpdate]);
@@ -67,7 +67,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
       shippingCost: option.cost 
     });
     if (onUpdate) {
-      onUpdate(option.cost);
+      onUpdate(option);
     }
   };
 

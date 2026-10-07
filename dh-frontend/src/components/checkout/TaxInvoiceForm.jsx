@@ -8,11 +8,11 @@ import { userService } from '../../firebase/userService';
 import TaxTypeSelector from './tax-invoice/TaxTypeSelector';
 import TaxFormFields from './tax-invoice/TaxFormFields';
 
-export default function TaxInvoiceForm() {
+export default function TaxInvoiceForm({ taxData, onUpdate }) {
   const { checkoutState, updateCheckoutConfig } = useCart();
   
-  const [requestTax, setRequestTax] = useState(checkoutState?.requestTax || false);
-  const [taxInfo, setTaxInfo] = useState(checkoutState?.taxInfo || {
+  const [requestTax, setRequestTax] = useState(Boolean(taxData || checkoutState?.requestTax));
+  const [taxInfo, setTaxInfo] = useState(taxData || checkoutState?.taxInfo || {
     type: 'company',
     name: '',
     taxId: '',
@@ -59,10 +59,18 @@ export default function TaxInvoiceForm() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      updateCheckoutConfig({ requestTax, taxInfo });
+      const payload = requestTax ? {
+        ...taxInfo,
+        companyName: taxInfo.name,
+        branch: taxInfo.isHeadOffice ? 'สำนักงานใหญ่' : (taxInfo.branchCode ? `สาขา ${taxInfo.branchCode}` : 'สาขา')
+      } : null;
+      updateCheckoutConfig({ requestTax, taxInfo: payload });
+      if (onUpdate) {
+        onUpdate(payload);
+      }
     }, 300);
     return () => clearTimeout(timer);
-  }, [requestTax, taxInfo, updateCheckoutConfig]);
+  }, [requestTax, taxInfo, updateCheckoutConfig, onUpdate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

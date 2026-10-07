@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { MessageCircle, Facebook, MessageSquare, Youtube, Globe, Save, CheckCircle2, AlertCircle, Loader2, Link2 } from 'lucide-react';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
@@ -54,7 +54,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
         youtubeUrl: formData.youtubeUrl,
         storeWebsite: formData.storeWebsite,
         otherSocial: formData.otherSocial,
-        lastUpdated: new Date().toISOString()
+        updatedAt: serverTimestamp()
       }, { merge: true });
 
       setStatus({ type: 'success', message: 'บันทึกช่องทางการติดต่อเรียบร้อยแล้ว' });
@@ -85,14 +85,14 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden transition-all duration-300 hover:shadow-lg">
       {/* Header */}
-      <div className="border-b border-gray-100 px-6 py-4 bg-gray-50/50 flex items-center justify-between">
+      <div className="border-b border-slate-200/80 px-6 py-4 bg-slate-50/90 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-green-100 p-2 rounded-lg text-green-600">
             <Link2 className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-bold text-gray-800">ช่องทางการติดต่อและโซเชียลมีเดีย</h3>
+          <h3 className="text-lg font-bold text-slate-800">ช่องทางการติดต่อและโซเชียลมีเดีย</h3>
         </div>
       </div>
 
@@ -102,7 +102,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
           
           {/* Line ID */}
           <div className="space-y-2">
-            <label htmlFor="lineId" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="lineId" className="block text-sm font-bold text-slate-700">
               Line ID
             </label>
             <div className="relative">
@@ -116,14 +116,14 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.lineId}
                 onChange={handleChange}
                 placeholder="ระบุ Line ID สำหรับติดต่อ"
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-100 focus:border-green-500 transition-colors text-sm text-gray-800"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
 
           {/* Facebook */}
           <div className="space-y-2">
-            <label htmlFor="facebookUrl" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="facebookUrl" className="block text-sm font-bold text-slate-700">
               Facebook (ลิงก์โปรไฟล์ หรือ เพจ)
             </label>
             <div className="relative">
@@ -137,14 +137,14 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.facebookUrl}
                 onChange={handleChange}
                 placeholder="https://facebook.com/..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors text-sm text-gray-800"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
 
           {/* Messenger */}
           <div className="space-y-2">
-            <label htmlFor="messengerUrl" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="messengerUrl" className="block text-sm font-bold text-slate-700">
               ลิงก์ Messenger (m.me/...)
             </label>
             <div className="relative">
@@ -158,14 +158,14 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.messengerUrl}
                 onChange={handleChange}
                 placeholder="https://m.me/..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors text-sm text-gray-800"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
 
           {/* YouTube */}
           <div className="space-y-2">
-            <label htmlFor="youtubeUrl" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="youtubeUrl" className="block text-sm font-bold text-slate-700">
               ช่อง YouTube
             </label>
             <div className="relative">
@@ -179,14 +179,14 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.youtubeUrl}
                 onChange={handleChange}
                 placeholder="https://youtube.com/@..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-colors text-sm text-gray-800"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
 
           {/* Website */}
           <div className="space-y-2">
-            <label htmlFor="storeWebsite" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="storeWebsite" className="block text-sm font-bold text-slate-700">
               เว็บไซต์ร้านค้า
             </label>
             <div className="relative">
@@ -200,14 +200,14 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.storeWebsite}
                 onChange={handleChange}
                 placeholder="https://www.yourstore.com"
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-100 focus:border-gray-500 transition-colors text-sm text-gray-800"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-gray-100 focus:border-gray-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
 
           {/* Other Social */}
           <div className="space-y-2">
-            <label htmlFor="otherSocial" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="otherSocial" className="block text-sm font-bold text-slate-700">
               ช่องทางอื่นๆ (เช่น Instagram, Tiktok, Shopee)
             </label>
             <div className="relative">
@@ -221,7 +221,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 onChange={handleChange}
                 rows={2}
                 placeholder="ระบุลิงก์หรือข้อมูลช่องทางอื่นๆ ที่ต้องการให้ลูกค้าทราบ..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-[#0870B8] transition-colors text-sm text-gray-800 resize-none"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-[#0870B8] transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs resize-none placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>

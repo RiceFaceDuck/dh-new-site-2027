@@ -49,14 +49,15 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
               console.warn('Could not fetch private tax info', e);
             }
 
-            if (data.address || data.defaultDeliveryNote || data.displayName || taxInfoName) {
+            const shipping = data.shippingAddress || {};
+            if (data.address || data.defaultDeliveryNote || data.displayName || taxInfoName || shipping.fullName || shipping.address) {
                setFormData(prev => ({
                  ...prev,
-                 fullName: taxInfoName || data.displayName || prev.fullName,
+                 fullName: shipping.fullName || taxInfoName || data.displayName || prev.fullName,
                  // ใช้ Smart Formatter เพื่อรองรับ Object Address แบบใหม่
-                 address: formatProfileAddress(data.address) || data.defaultDeliveryNote || prev.address,
-                 companyName: taxInfoName || prev.companyName,
-                 phone: data.phoneNumber || data.phone || prev.phone
+                 address: formatProfileAddress(shipping.address || data.address) || data.defaultDeliveryNote || prev.address,
+                 companyName: shipping.companyName || taxInfoName || prev.companyName,
+                 phone: shipping.phone || data.phoneNumber || data.phone || prev.phone
                }));
             }
           }

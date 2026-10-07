@@ -29,7 +29,7 @@ This board tracks ongoing tasks and future features, providing a high-level over
 - [ ] Frontend Analytics via GAS (Zero-Cost) -> Stealthily track page load speeds and Quota usage (Reads/Writes), saving data to Google Sheets via Apps Script for the backoffice Overview.
 - [ ] Upgrade Firebase to Blaze Plan (Pay as you go) to enable Storage and deploy `storage.rules`.
 - [ ] Deposit Invoice System -> Tracking and accounting for deposits.
-- [ ] Full Tax Invoice System -> Manage and upload tax invoices matching Order IDs, linking to the `issue_tax_invoice` task.
+- [ ] **Full Tax Invoice System (End-to-End Milestone)** -> Connect full lifecycle: Storefront checkout (`/checkout`) collects tax data -> triggers `issue_tax_invoice` Todo -> Backoffice (`TaxInvoiceCard.jsx`) uploads PDF via Drive -> Storefront Order History (`/profile`) provides instant "📄 ดาวน์โหลดใบกำกับภาษี (PDF)" button.
 - [ ] Supplier Dispatch System (Claims) -> Deduct `defectQuantity` when sending broken items to Supplier, and increment `stockQuantity` when receiving replacements.
 - [ ] Staff Mobile App -> All operational flows for staff inventory checks and packing.
 - [ ] Attendance Clock In/Out -> QR code scanning for staff shifts.

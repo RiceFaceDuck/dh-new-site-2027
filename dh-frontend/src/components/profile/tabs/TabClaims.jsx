@@ -17,21 +17,21 @@ const TabClaims = () => {
   });
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-4 sm:p-6 min-h-[500px] animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-100 pb-4">
+    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 p-4 sm:p-6 min-h-[500px] animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-200/80 pb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <Wrench className="w-6 h-6 text-orange-500" />
             เคลม และ คืนสินค้า
           </h2>
-          <p className="text-sm text-gray-500 mt-1">ติดตามสถานะการซ่อม เคลม และการคืนสินค้า</p>
+          <p className="text-sm text-slate-500 mt-1">ติดตามสถานะการซ่อม เคลม และการคืนสินค้า</p>
         </div>
         
-        <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-x-auto w-full sm:w-auto custom-scrollbar">
-          <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-colors ${filter === 'all' ? 'bg-white text-gray-900 shadow-xs border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>ทั้งหมด</button>
-          <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-colors ${filter === 'pending' ? 'bg-white text-gray-900 shadow-xs border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>รอรับเรื่อง / รอส่งของ</button>
-          <button onClick={() => setFilter('processing')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-colors ${filter === 'processing' ? 'bg-white text-gray-900 shadow-xs border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>กำลังตรวจสอบ</button>
-          <button onClick={() => setFilter('completed')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-colors ${filter === 'completed' ? 'bg-white text-gray-900 shadow-xs border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>เสร็จสิ้น</button>
+        <div className="flex bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/90 overflow-x-auto w-full sm:w-auto custom-scrollbar shadow-inner">
+          <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'all' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>ทั้งหมด</button>
+          <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'pending' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>รอรับเรื่อง / รอส่งของ</button>
+          <button onClick={() => setFilter('processing')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'processing' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>กำลังตรวจสอบ</button>
+          <button onClick={() => setFilter('completed')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'completed' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>เสร็จสิ้น</button>
         </div>
       </div>
 

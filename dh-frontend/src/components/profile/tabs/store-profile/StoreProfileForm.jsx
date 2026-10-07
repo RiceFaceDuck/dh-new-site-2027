@@ -37,7 +37,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
   const isCardLive = businessCardAd ? ['APPROVED', 'ACTIVE'].includes(String(businessCardAd.status).toUpperCase()) : storeData.isSupportActive;
 
   return (
-    <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-xs overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white border border-slate-200/90 rounded-3xl shadow-md overflow-hidden animate-in fade-in duration-300">
       
       <div className="bg-slate-900 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800">
         <div>
@@ -52,7 +52,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
               {businessCardAd?.status?.toUpperCase() === 'PAUSED' ? (
                 <span className="text-orange-400 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
               ) : isAdPending ? (
-                <span className="text-amber-400 animate-pulse font-bold">🟡 รอตรวจสอบ (Pending)</span>
+                <span className="text-amber-400 font-bold">🟡 รอตรวจสอบ (Pending)</span>
               ) : isCardLive ? (
                 <span className="text-emerald-400 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
               ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (

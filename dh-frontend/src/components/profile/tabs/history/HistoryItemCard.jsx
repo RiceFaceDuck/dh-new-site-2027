@@ -26,7 +26,7 @@ const HistoryItemCard = ({
     setTimeout(() => setCopyStatus(false), 2000);
   };
 
-  const statusObj = getStatusDisplay(order.status);
+  const statusObj = getStatusDisplay(order.status, order);
   const itemsList = order.items?.map(i => i.name).join(', ') || 'ไม่มีรายการสินค้า';
   
   const displayOrderId = order.orderId && order.orderId.startsWith('DH-') 
@@ -34,10 +34,10 @@ const HistoryItemCard = ({
     : `#${(order.orderId || order.id)?.slice(-8).toUpperCase()}`;
 
   return (
-    <div className={`bg-white border transition-all duration-300 rounded-xl p-4 sm:p-5 shadow-xs hover:shadow-md ${isExpanded ? 'border-indigo-300 ring-1 ring-indigo-100' : 'border-gray-200'}`}>
+    <div className={`bg-white border transition-all duration-300 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md ${isExpanded ? 'border-indigo-400 ring-2 ring-indigo-500/10' : 'border-slate-200/90 hover:border-slate-300'}`}>
       
       {/* Order Header Summary */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 pb-3 mb-3 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 pb-3 mb-3 border-b border-slate-200/80">
         <div>
           <h3 className="text-base font-bold text-gray-900">ออเดอร์ {displayOrderId}</h3>
           <p className="text-xs text-gray-500 mt-0.5">สั่งซื้อเมื่อ: {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : 'N/A'}</p>

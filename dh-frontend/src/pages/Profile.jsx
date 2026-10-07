@@ -85,7 +85,7 @@ const Profile = () => {
             <div className="bg-slate-200 h-10 rounded-xl w-full mt-8"></div>
           </div>
           {/* Main Content Skeleton */}
-          <div className="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-xs">
+          <div className="flex-1 bg-white border border-slate-200/90 rounded-3xl p-6 md:p-8 shadow-md">
             <div className="h-8 bg-slate-200 rounded-md w-1/3 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="h-24 bg-slate-200 rounded-2xl w-full"></div>

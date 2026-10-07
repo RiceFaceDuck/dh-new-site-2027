@@ -74,7 +74,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
 
   return (
     <div 
-      className={`bg-white rounded-xl border border-gray-200 shadow-xs hover:shadow-md transition-all group relative cursor-pointer ${viewMode === 'grid' ? 'p-3 flex flex-col h-full' : 'p-3 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/10' : ''}`} 
+      className={`bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all hover:border-slate-300 group relative cursor-pointer ${viewMode === 'grid' ? 'p-3.5 flex flex-col h-full' : 'p-3.5 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/20' : ''}`} 
       onClick={() => {
         if (viewMode === 'list') setIsExpanded(!isExpanded);
         else navigate(`/product/${product.id}`);

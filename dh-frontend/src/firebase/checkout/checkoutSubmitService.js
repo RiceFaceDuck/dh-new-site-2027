@@ -37,9 +37,6 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       // 1. Setup Reads (Must do all reads before writes in a transaction)
     const userDoc = await transaction.get(userRef);
     const userData = userDoc.exists() ? userDoc.data() : {};
-    
-    const systemPoolRef = doc(db, getCollectionPath('system_accounts'), 'DH_CREDIT_POOL');
-    const sysSnap = await transaction.get(systemPoolRef);
 
     const inventorySettingsRef = doc(db, getCollectionPath('settings'), 'inventory');
     const inventorySettingsSnap = await transaction.get(inventorySettingsRef);
@@ -233,10 +230,10 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       userId: user.uid,
       customer: {
         uid: user.uid,
-        accountName: getCustomerDisplayName(userData, getCustomerDisplayName(user, 'ไม่พบ field ในระบบ')),
-        firstName: userData.nickname || userData.firstName || '',
-        phone: userData.phone || user.phoneNumber || '',
-        address: userData.shippingAddress?.address || '',
+        accountName: checkoutState?.customerData?.fullName || getCustomerDisplayName(userData, getCustomerDisplayName(user, 'ไม่พบ field ในระบบ')),
+        firstName: checkoutState?.customerData?.fullName || userData.nickname || userData.firstName || '',
+        phone: checkoutState?.customerData?.phone || userData.phone || user.phoneNumber || '',
+        address: checkoutState?.customerData?.address || userData.shippingAddress?.address || '',
         role: userData.role || userData.rank || 'Customer',
         rank: userData.rank || userData.role || 'Customer',
         tier: getUserTier(Number(userData.totalAccumulatedPoints || userData.creditPoints || 0), creditConfig?.tiers)?.name || 'Member'

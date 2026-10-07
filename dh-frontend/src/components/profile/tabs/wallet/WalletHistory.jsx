@@ -5,8 +5,8 @@ import { formatCredit } from '../../../../firebase/creditService';
 const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
   const [activeSlipUrl, setActiveSlipUrl] = useState(null);
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
-      <div className="p-6 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden">
+      <div className="p-6 border-b border-slate-200/80 flex items-center gap-2 bg-slate-50/90">
         <History className="w-5 h-5 text-indigo-600" />
         <h3 className="font-bold text-slate-800">ประวัติการทำรายการล่าสุด (Recent Transactions)</h3>
       </div>

@@ -1,13 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { db } from '../firebase/config';
 import { productService } from '../firebase/productService';
 import { getCreditSettings, calculateEarnedPoints } from '../firebase/creditService';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartProvider';
 import { useToast } from '../context/ToastContext';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { resolveEffectiveBuffer, isStockAvailableForSale } from 'dh-shared';
 
 const parseSafeNumber = (val) => {
@@ -24,30 +21,12 @@ export const useCartLogic = () => {
   const [user, setUser] = useState(null);
   const [creditConfig, setCreditConfig] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
-  const [freebies, setFreebies] = useState([]);
-  const [isFetchingFreebies, setIsFetchingFreebies] = useState(true);
   const [itemErrors, setItemErrors] = useState({});
   const [isValidatingCart, setIsValidatingCart] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [productCache, setProductCache] = useState({});
 
-  const fetchFreebies = async () => {
-    try {
-      setIsFetchingFreebies(true);
-      const q = query(collection(db, getCollectionPath('freebies')), where('isActive', '==', true), limit(100));
-      const snapshot = await getDocs(q);
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      items.sort((a, b) => a.minSpend - b.minSpend);
-      setFreebies(items);
-    } catch (error) {
-      console.error("🔥 Error fetching freebies:", error);
-    } finally {
-      setIsFetchingFreebies(false);
-    }
-  };
-
   useEffect(() => {
-    fetchFreebies();
     const loadCreditSettings = async () => {
       try {
         const config = await getCreditSettings();
@@ -90,6 +69,66 @@ export const useCartLogic = () => {
     setItemErrors(errors);
   }, []);
 
+  // 🚀 Helper ฟังก์ชันกลาง: แปลงรายการสินค้าและแคช variants ให้เป็นโครงสร้างที่ค้นหาได้แบบสม่ำเสมอ
+  const resolveProductCacheFromList = (items, freshProductsList, existingCache = {}) => {
+    const newCache = { ...existingCache };
+    const freshMap = {};
+    freshProductsList.forEach(p => {
+      freshMap[p.id] = p;
+      if (p.sku) freshMap[p.sku] = p;
+
+      // 🚀 Index all variants embedded in the parent product document
+      if (Array.isArray(p.variants)) {
+        p.variants.forEach(v => {
+          const vSku = v.sku || v.id;
+          const variantBuffer = resolveEffectiveBuffer(v.bufferStock, p.bufferStock);
+          const variantData = {
+            ...v,
+            id: vSku || p.id,
+            sku: vSku || p.id,
+            parentId: p.id,
+            name: `${p.name} (${v.name || Object.values(v.attributes || {}).join(' / ') || vSku})`,
+            price: v.retailPrice || v.price || p.price,
+            stockQuantity: v.stockQuantity,
+            bufferStock: variantBuffer
+          };
+          if (vSku) freshMap[vSku] = variantData;
+        });
+      }
+    });
+
+    items.forEach(item => {
+      const id = (item.id && item.id !== '-') ? item.id : item.sku;
+      // Try direct ID match, or match from parent product's variants
+      let resolved = freshMap[id];
+      if (!resolved && item.parentId && freshMap[item.parentId]) {
+        const parent = freshMap[item.parentId];
+        if (Array.isArray(parent.variants)) {
+          const matchedV = parent.variants.find(v => 
+            (v.sku && (v.sku === item.id || v.sku === item.sku)) ||
+            (item.variantAttributes && v.attributes && 
+             JSON.stringify(v.attributes) === JSON.stringify(item.variantAttributes))
+          );
+          if (matchedV) {
+            const vBuffer = resolveEffectiveBuffer(matchedV.bufferStock, parent.bufferStock);
+            resolved = {
+              ...matchedV,
+              id: matchedV.sku || id,
+              sku: matchedV.sku || id,
+              parentId: parent.id,
+              price: matchedV.retailPrice || matchedV.price || parent.price,
+              stockQuantity: matchedV.stockQuantity,
+              bufferStock: vBuffer
+            };
+          }
+        }
+      }
+      newCache[id] = resolved || { notFound: true };
+    });
+
+    return newCache;
+  };
+
   const fetchAndValidate = useCallback(async (uncachedItems) => {
     setIsValidatingCart(true);
     try {
@@ -102,61 +141,7 @@ export const useCartLogic = () => {
         )
       ];
       const freshProductsList = await productService.getProductsByIds(idsToFetch);
-      
-      const newCache = { ...productCache };
-      const freshMap = {};
-      freshProductsList.forEach(p => {
-        freshMap[p.id] = p;
-        if (p.sku) freshMap[p.sku] = p;
-
-        // 🚀 Index all variants embedded in the parent product document
-        if (Array.isArray(p.variants)) {
-          p.variants.forEach(v => {
-            const vSku = v.sku || v.id;
-            const variantBuffer = resolveEffectiveBuffer(v.bufferStock, p.bufferStock);
-            const variantData = {
-              ...v,
-              id: vSku || p.id,
-              sku: vSku || p.id,
-              parentId: p.id,
-              name: `${p.name} (${v.name || Object.values(v.attributes || {}).join(' / ') || vSku})`,
-              price: v.retailPrice || v.price || p.price,
-              stockQuantity: v.stockQuantity,
-              bufferStock: variantBuffer
-            };
-            if (vSku) freshMap[vSku] = variantData;
-          });
-        }
-      });
-
-      uncachedItems.forEach(item => {
-        const id = (item.id && item.id !== '-') ? item.id : item.sku;
-        // Try direct ID match, or match from parent product's variants
-        let resolved = freshMap[id];
-        if (!resolved && item.parentId && freshMap[item.parentId]) {
-          const parent = freshMap[item.parentId];
-          if (Array.isArray(parent.variants)) {
-            const matchedV = parent.variants.find(v => 
-              (v.sku && (v.sku === item.id || v.sku === item.sku)) ||
-              (item.variantAttributes && v.attributes && 
-               JSON.stringify(v.attributes) === JSON.stringify(item.variantAttributes))
-            );
-            if (matchedV) {
-              const vBuffer = resolveEffectiveBuffer(matchedV.bufferStock, parent.bufferStock);
-              resolved = {
-                ...matchedV,
-                id: matchedV.sku || id,
-                sku: matchedV.sku || id,
-                parentId: parent.id,
-                price: matchedV.retailPrice || matchedV.price || parent.price,
-                stockQuantity: matchedV.stockQuantity,
-                bufferStock: vBuffer
-              };
-            }
-          }
-        }
-        newCache[id] = resolved || { notFound: true };
-      });
+      const newCache = resolveProductCacheFromList(uncachedItems, freshProductsList, productCache);
       
       setProductCache(newCache);
       runValidation(cartItems, newCache);
@@ -229,22 +214,17 @@ export const useCartLogic = () => {
   const handleProceedToCheckout = async () => {
     setIsValidatingCart(true);
     try {
-      const ids = cartItems.map(i => (i.id && i.id !== '-') ? i.id : i.sku).filter(Boolean);
-      const uniqueIds = [...new Set(ids)];
+      // 🚀 Collect both item ID/SKU and parentId (for variant products)
+      const idsToFetch = [
+        ...new Set(
+          cartItems
+            .flatMap(item => [item.parentId, (item.id && item.id !== '-') ? item.id : item.sku])
+            .filter(Boolean)
+        )
+      ];
       
-      const freshProductsList = await productService.getProductsByIds(uniqueIds);
-      
-      const newCache = { ...productCache };
-      const freshMap = {};
-      freshProductsList.forEach(p => {
-        freshMap[p.id] = p;
-        if (p.sku) freshMap[p.sku] = p;
-      });
-
-      uniqueIds.forEach(id => {
-        newCache[id] = freshMap[id] || { notFound: true };
-      });
-      
+      const freshProductsList = await productService.getProductsByIds(idsToFetch);
+      const newCache = resolveProductCacheFromList(cartItems, freshProductsList, productCache);
       setProductCache(newCache);
       
       let hasError = false;
@@ -317,8 +297,8 @@ export const useCartLogic = () => {
     earnedPoints,
     isInitialized,
     updatingId,
-    freebies,
-    isFetchingFreebies,
+    freebies: [],
+    isFetchingFreebies: false,
     itemErrors,
     isValidCart,
     isValidatingCart,

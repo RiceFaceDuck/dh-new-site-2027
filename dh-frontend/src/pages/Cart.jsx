@@ -22,8 +22,6 @@ const Cart = () => {
     earnedPoints,
     isInitialized,
     updatingId,
-    freebies,
-    isFetchingFreebies,
     itemErrors,
     isValidCart,
     isValidatingCart,
@@ -103,9 +101,7 @@ const Cart = () => {
 
           <div className="mt-4 mb-4">
             <CartFreebieProgress 
-              freebies={freebies} 
               subTotal={subTotal} 
-              isLoading={isFetchingFreebies} 
               cartItems={cartItems} 
               checkoutState={checkoutState}
               updateCheckoutConfig={updateCheckoutConfig}

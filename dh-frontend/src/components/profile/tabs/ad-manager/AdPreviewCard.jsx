@@ -1,7 +1,7 @@
- 
 import React from 'react';
 import { Eye, ExternalLink, Image as ImageIcon, CreditCard, ShoppingBag, MonitorPlay } from 'lucide-react';
 import ProductAdCard from '../../../ads/ProductAdCard';
+import LazyImage from '../../../common/LazyImage';
 
 const AdPreviewCard = ({ formData, storeData }) => {
 
@@ -56,7 +56,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
                 type: formData.type,
                 title: formData.title || (formData.type === 'BUSINESS_CARD' ? 'ชื่อธุรกิจ / หัวข้อโฆษณา' : 'ชื่อสินค้าจำลองที่น่าสนใจ'),
                 description: formData.description || 'คำอธิบายจุดเด่น หรือข้อความดึงดูดลูกค้า',
-                imageUrl: formData.imageUrl || `https://placehold.co/400x400/f8fafc/94a3b8?text=1:1+${formData.type === 'BUSINESS_CARD' ? 'Business+Card' : 'Product'}`,
+                imageUrl: formData.imageUrl || '/logo.png',
                 platform: formData.platform || 'other',
                 partnerName: storeData?.storeName || 'DH Partner',
                 targetUrl: '#',
@@ -75,7 +75,13 @@ const AdPreviewCard = ({ formData, storeData }) => {
             
             {formData.imageUrl ? (
               <>
-                <img src={formData.imageUrl} className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" alt="Billboard Preview"  loading="lazy" />
+                <LazyImage 
+                  src={formData.imageUrl} 
+                  alt="Billboard Preview" 
+                  className="w-full h-full" 
+                  imgClassName="object-contain transition-transform duration-700 group-hover:scale-105" 
+                  fallbackSrc="/logo.png" 
+                />
                 {/* Gradient Overlay for Text Visibility */}
                 <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-900/90 via-slate-900/40 to-transparent p-5 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                     <h3 className="text-white font-bold text-lg sm:text-xl line-clamp-1 drop-shadow-md">

@@ -52,8 +52,8 @@ const ClaimItemCard = ({ claim }) => {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs hover:shadow-md transition-shadow">
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4 border-b border-gray-100 pb-4">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all hover:border-slate-300">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4 border-b border-slate-200/80 pb-4">
         <div className="flex items-start gap-3">
           <div className={`p-2.5 rounded-xl shrink-0 ${isClaim ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>
             {isClaim ? <Wrench size={24} /> : <ArrowLeftRight size={24} />}
@@ -77,11 +77,11 @@ const ClaimItemCard = ({ claim }) => {
         </div>
       </div>
 
-      <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
+      <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-200/80">
         <p className="font-bold text-gray-800 text-sm mb-1 line-clamp-1">{payload?.productName}</p>
         <p className="text-xs text-gray-500 mb-3">SKU: {payload?.sku || '-'}</p>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-3 pt-3 border-t border-gray-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-3 pt-3 border-t border-slate-200">
           <div>
             <p className="text-gray-500 text-xs mb-0.5 uppercase tracking-wider">อาการ / เหตุผล</p>
             <p className="font-medium text-gray-800">{payload?.symptomCode || payload?.returnReason || '-'}</p>

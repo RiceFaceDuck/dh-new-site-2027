@@ -10,48 +10,83 @@ import {
 import { userService } from '../../../firebase/userService';
 import { useUserCredit, formatCredit } from '../../../firebase/creditService';
 import { useWalletBalance } from '../../../firebase/walletService';
+import { userDocumentSubscriptionManager, userProfileCache } from '../../../firebase/user/userDocumentSubscriptionManager';
 
 // นำเข้า Forms ย่อย
 import PersonalInfoForm from '../forms/PersonalInfoForm';
 import SocialLinksForm from '../forms/SocialLinksForm';
 import SupportSettings from '../forms/SupportSettings';
 
-export default function TabOverview() {
+// 🛡️ Helper แปลงชื่อ Role ให้ถูกต้องทุกระดับสิทธิ์
+const getRoleDisplayName = (data, authUser) => {
+  const rawRole = (data?.role || data?.userType || authUser?.role || '').toString().toLowerCase().trim();
+  
+  if (rawRole === 'admin' || rawRole === 'แอดมิน') return 'ผู้ดูแลระบบ (Admin)';
+  if (rawRole === 'owner' || rawRole === 'เจ้าของ') return 'เจ้าของระบบ (Owner)';
+  if (rawRole === 'manager' || rawRole === 'ผู้จัดการ' || rawRole.includes('vp')) return 'ผู้จัดการ (Manager)';
+  if (rawRole === 'ช่าง' || rawRole === 'technician') return 'ช่างเทคนิค (Technician)';
+  if (rawRole === 'packer' || rawRole === 'พนักงานแพ็ค') return 'เจ้าหน้าที่แพ็ค (Packer)';
+  if (rawRole === 'บัญชี' || rawRole === 'accountant') return 'เจ้าหน้าที่บัญชี (Accountant)';
+  if (rawRole === 'staff' || rawRole === 'พนักงานทั่วไป' || data?.isStaff || authUser?.isStaff) return 'เจ้าหน้าที่ (Staff)';
+  if (rawRole === 'partner' || rawRole === 'vip') return 'พาร์ทเนอร์ (Partner VIP)';
+  if (rawRole === 'wholesale' || rawRole === 'ร้านช่าง') return 'ร้านช่าง / ราคาส่ง (Wholesale)';
+  if (rawRole === 'enterprise') return 'คู่ค้าองค์กร (Enterprise)';
+  
+  return 'ผู้ใช้ทั่วไป (Member)';
+};
+
+export default function TabOverview({ user: propUser } = {}) {
   const auth = getAuth();
-  const user = auth.currentUser;
+  const user = propUser || auth.currentUser;
   const navigate = useNavigate();
   
-  const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState(() => {
+    if (user?.uid) {
+      return userProfileCache.getProfile(user.uid) || (propUser?.address ? propUser : null);
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(() => !profileData);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ⚡ ดึงข้อมูลยอดเงินแบบ Real-time จาก Custom Hooks (ไม่เปลือง Reads)
   const { balance: creditBalance, tier } = useUserCredit(user?.uid);
   const { walletBalance, pendingWithdrawal } = useWalletBalance(user?.uid);
 
-  // ⚡ ดึงข้อมูล Profile ผ่าน Smart Cache
-  const fetchProfile = useCallback(async (forceRefresh = false) => {
+  // ⚡ ซิงค์ข้อมูล Profile แบบ Real-time ผ่าน Subscription Manager (Zero Read Quota Leak)
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = userDocumentSubscriptionManager.subscribe(user.uid, (data) => {
+      if (data) {
+        setProfileData(data);
+      } else if (propUser) {
+        setProfileData(propUser);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [user?.uid, propUser]);
+
+  const handleRefresh = async () => {
     if (!user?.uid) return;
     setIsRefreshing(true);
     try {
-      // ใช้ getUserProfile ซึ่งมีระบบ Cache ในตัว ประหยัด Reads
-      const data = await userService.getUserProfile(user.uid, forceRefresh);
-      setProfileData(data || {});
+      const data = await userService.getUserProfile(user.uid, true);
+      if (data) setProfileData(data);
     } catch (error) {
-      console.error("Error fetching user profile:", error);
-      setProfileData({});
+      console.error("Error refreshing profile:", error);
     } finally {
       setIsRefreshing(false);
-      setLoading(false);
     }
-  }, [user]);
-
-  useEffect(() => {
-    fetchProfile(false);
-  }, [fetchProfile]);
-
-  const handleRefresh = () => {
-    fetchProfile(true); // บังคับโหลดใหม่ข้าม Cache
   };
 
   // 🛠 ฟังก์ชันตัวช่วยแปลงที่อยู่จาก Object (เวอร์ชันใหม่) เป็น String
@@ -134,7 +169,7 @@ export default function TabOverview() {
       {/* ==========================================
           Section 2: User Summary Info
       ========================================== */}
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden relative">
+      <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden relative">
         <button 
           onClick={handleRefresh}
           disabled={isRefreshing}
@@ -144,7 +179,7 @@ export default function TabOverview() {
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
 
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+        <div className="p-6 border-b border-slate-200/80 bg-slate-50/90">
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <UserCheck className="w-5 h-5 text-indigo-600" />
             ข้อมูลผู้ใช้งาน (Account Summary)
@@ -152,14 +187,14 @@ export default function TabOverview() {
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
+          <div className="flex items-start gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <Mail className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">อีเมลบัญชี</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">อีเมลบัญชี</p>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-800">{user?.email || '-'}</span>
+                <span className="text-sm font-semibold text-slate-800">{user?.email || '-'}</span>
                 {user?.emailVerified ? (
                   <BadgeCheck className="w-4 h-4 text-emerald-500" title="ยืนยันอีเมลแล้ว" />
                 ) : (
@@ -169,33 +204,33 @@ export default function TabOverview() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
+          <div className="flex items-start gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <Phone className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">เบอร์โทรศัพท์</p>
-              <span className="text-sm font-medium text-slate-800">{profileData?.phoneNumber || 'ยังไม่ได้ระบุ'}</span>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">เบอร์โทรศัพท์</p>
+              <span className="text-sm font-semibold text-slate-800">{profileData?.phoneNumber || 'ยังไม่ได้ระบุ'}</span>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 md:col-span-2">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
+          <div className="flex items-start gap-3.5 md:col-span-2">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <MapPin className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">ที่อยู่จัดส่งเริ่มต้น</p>
-              <span className="text-sm font-medium text-slate-800">{getFormattedAddress()}</span>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ที่อยู่จัดส่งเริ่มต้น</p>
+              <span className="text-sm font-semibold text-slate-800">{getFormattedAddress()}</span>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
+          <div className="flex items-start gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <Calendar className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">สมัครสมาชิกเมื่อ</p>
-              <span className="text-sm font-medium text-slate-800">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">สมัครสมาชิกเมื่อ</p>
+              <span className="text-sm font-semibold text-slate-800">
                 {user?.metadata?.creationTime 
                   ? new Date(user.metadata.creationTime).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) 
                   : '-'}
@@ -203,14 +238,14 @@ export default function TabOverview() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
+          <div className="flex items-start gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">ระดับสิทธิ์ (Role)</p>
-              <span className="text-sm font-medium text-slate-800">
-                {profileData?.role === 'partner' ? 'พาร์ทเนอร์ (Partner)' : 'ผู้ใช้ทั่วไป (Member)'}
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ระดับสิทธิ์ (Role)</p>
+              <span className="text-sm font-semibold text-slate-800">
+                {getRoleDisplayName(profileData, user)}
               </span>
             </div>
           </div>
@@ -220,10 +255,10 @@ export default function TabOverview() {
       {/* ==========================================
           Section 3: Forms 
       ========================================== */}
-      <PersonalInfoForm user={user} initialData={profileData} onRefresh={handleRefresh} />
-      <SocialLinksForm user={user} initialData={profileData} onRefresh={handleRefresh} />
-      {profileData?.role === 'partner' && (
-        <SupportSettings user={user} initialData={profileData} onRefresh={handleRefresh} />
+      <PersonalInfoForm user={user} initialData={profileData} />
+      <SocialLinksForm user={user} initialData={profileData} />
+      {(profileData?.role === 'partner' || user?.role === 'partner') && (
+        <SupportSettings user={user} initialData={profileData} />
       )}
 
     </div>

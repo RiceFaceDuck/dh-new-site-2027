@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 // ⚡ นำเข้า Service จัดการการเงินแบบ Real-time
 import { useUserCredit, formatCredit } from '../../firebase/creditService';
 import { useWalletBalance } from '../../firebase/walletService';
+import { useUserOrderCount } from '../../firebase/user/useUserOrderCount';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 /**
@@ -20,11 +21,11 @@ const MenuButton = ({ icon, label, active, onClick, badge, highlight }) => (
     onClick={onClick}
     className={`w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all border-l-[3px] rounded-r-xl mb-1 ${
       active 
-        ? 'bg-linear-to-r from-indigo-50 to-transparent text-indigo-700 border-indigo-600 shadow-[inset_4px_0_0_rgba(79,70,229,0.1)]' 
-        : 'bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-transparent hover:border-slate-300'
+        ? 'bg-linear-to-r from-indigo-50/90 to-indigo-50/20 text-indigo-700 border-indigo-600 shadow-[inset_4px_0_0_rgba(79,70,229,0.2)]' 
+        : 'bg-transparent text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 border-transparent hover:border-slate-300'
     }`}
   >
-    <div className={`flex items-center gap-3 ${active ? 'text-indigo-600' : 'text-slate-400'} ${highlight && !active ? 'text-amber-500' : ''}`}>
+    <div className={`flex items-center gap-3 ${active ? 'text-indigo-600' : 'text-slate-500'} ${highlight && !active ? 'text-amber-500' : ''}`}>
       {icon} 
       <span className="mt-0.5 tracking-wide flex items-center gap-2">
         {label}
@@ -38,7 +39,7 @@ const MenuButton = ({ icon, label, active, onClick, badge, highlight }) => (
           <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
         </span>
       )}
-      {active && <ChevronRight size={16} className="text-indigo-600" />}
+      {active && <ChevronRight size={16} className="text-indigo-600 stroke-[3]" />}
     </div>
   </button>
 );
@@ -49,6 +50,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
   // ⚡ ดึงข้อมูลเครดิตพอยต์ปัจจุบัน (และ Wallet) แบบ Real-time
   const { balance, tier, loading: creditLoading } = useUserCredit(user?.uid);
   const { walletBalance, pendingWithdrawal, loading: walletLoading } = useWalletBalance(user?.uid);
+  const { count: totalOrders, loading: ordersLoading } = useUserOrderCount(user);
 
   const [copied, setCopied] = React.useState(false);
   const [avatarError, setAvatarError] = React.useState(false);
@@ -59,9 +61,15 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
   }, [user?.photoURL]);
 
   const handleCopyId = () => {
-    navigator.clipboard.writeText(accountId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(accountId);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (err) {
+      console.warn('Clipboard write error:', err);
+    }
   };
 
   return (
@@ -156,9 +164,13 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
             {/* 📦 ออเดอร์ */}
             <div className="border-l border-slate-700/80 px-1 flex flex-col items-center justify-center transition-transform hover:scale-105">
               <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Orders</p>
-              <p className="text-xs font-bold text-white drop-shadow-xs">
-                {user?.stats?.totalOrders?.toLocaleString() || 0}
-              </p>
+              {ordersLoading ? (
+                <Loader2 size={12} className="animate-spin text-slate-400 mx-auto mt-1" />
+              ) : (
+                <p className="text-xs font-bold text-white drop-shadow-xs">
+                  {totalOrders.toLocaleString()}
+                </p>
+              )}
             </div>
 
           </div>
@@ -167,7 +179,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
       </div>
 
       {/* 2. Control Menu Navigation */}
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden flex flex-col">
         <MenuButton 
           icon={<Store size={18} strokeWidth={2.5} />} 
           label="Overview" 
@@ -220,11 +232,11 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
         />
 
         {/* Divider & Action Buttons */}
-        <div className="border-t border-slate-100 my-1 mx-4"></div>
+        <div className="border-t border-slate-200 my-1 mx-4"></div>
 
         <button 
           onClick={handleLogout} 
-          className="w-full flex items-center p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all bg-transparent text-slate-400 hover:bg-rose-50 hover:text-rose-600 group"
+          className="w-full flex items-center p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all bg-transparent text-slate-500 hover:bg-rose-50 hover:text-rose-600 group"
         >
           <div className="flex items-center gap-3">
             <LogOut size={18} strokeWidth={2.5} className="group-hover:-translate-x-1 transition-transform" /> 

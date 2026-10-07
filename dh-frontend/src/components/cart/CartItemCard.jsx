@@ -41,12 +41,15 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
       console.warn(`[History Log] Missing SKU for product ID: ${realId} - Name: ${name}`);
       setLocalError("ไม่พบรหัสสินค้า (SKU)");
       
-      // ยิง API ไปยังระบบหลังบ้านเพื่อบันทึก log แบบถาวร
-      import('../../firebase/config').then(({ db }) => {
+      // บันทึก log อย่างปลอดภัยโดยตรวจสอบสถานะ auth และระบุ category ให้สอดคล้องกับ Firestore Rules
+      import('../../firebase/config').then(({ auth, db }) => {
+        if (!auth?.currentUser) return; // ข้ามการเขียน log หากเป็น guest เพื่อไม่ให้ติด permission-denied
         import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => {
           import('dh-shared/src/firebase/pathUtils').then(({ getCollectionPath }) => {
             const logsRef = collection(db, getCollectionPath('system_logs'));
             addDoc(logsRef, {
+              category: 'client_warning',
+              module: 'Marketing',
               level: 'WARN',
               type: 'MISSING_SKU_IN_CART',
               message: `Missing SKU for product ID: ${realId} - Name: ${name}`,
@@ -56,10 +59,10 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
                 item: item
               },
               timestamp: serverTimestamp()
-            }).catch(err => console.error('Failed to log missing SKU', err));
-          }).catch(console.error);
-        }).catch(console.error);
-      }).catch(console.error);
+            }).catch(err => console.debug('Suppressed missing SKU log write:', err?.message));
+          }).catch(() => {});
+        }).catch(() => {});
+      }).catch(() => {});
     }
   }, [sku, realId, name, item]);
 

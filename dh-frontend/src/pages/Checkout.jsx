@@ -170,7 +170,7 @@ const Checkout = () => {
           <div className="lg:col-span-8">
             <AccordionSection 
               title="ที่อยู่จัดส่ง" 
-              summary={checkoutState.customerData ? `จัดส่งที่: ${checkoutState.customerData.name || 'ไม่ได้ระบุชื่อ'}` : ''}
+              summary={checkoutState.customerData ? `จัดส่งที่: ${checkoutState.customerData.fullName || checkoutState.customerData.name || 'ไม่ได้ระบุชื่อ'}` : ''}
               step={1} 
               activeStep={activeStep} 
               setActiveStep={setActiveStep}
@@ -186,26 +186,33 @@ const Checkout = () => {
             
             <AccordionSection 
               title="วิธีการจัดส่ง" 
-              summary={checkoutState.shippingCost !== null ? `ค่าจัดส่ง: ฿${checkoutState.shippingCost}` : ''}
+              summary={checkoutState.shippingCost !== null ? `${checkoutState.shippingMethod === 'pickup' ? 'รับที่สาขา' : 'จัดส่งพัสดุ'}: ฿${checkoutState.shippingCost}` : ''}
               step={2} 
               activeStep={activeStep} 
               setActiveStep={setActiveStep}
               isCompleted={checkoutState.shippingCost !== null}
             >
               <ShippingMethod 
-                selectedMethod={checkoutState.shippingCost}
-                onUpdate={(cost) => handleUpdateCheckoutState('shippingCost', cost)}
+                selectedMethod={checkoutState.shippingMethod}
+                onUpdate={(option) => {
+                  if (typeof option === 'object' && option !== null) {
+                    handleUpdateCheckoutState('shippingCost', option.cost);
+                    handleUpdateCheckoutState('shippingMethod', option.id);
+                  } else {
+                    handleUpdateCheckoutState('shippingCost', option);
+                  }
+                }}
                 availableRules={shippingOptions}
               />
             </AccordionSection>
             
             <AccordionSection 
               title="ใบกำกับภาษี (ถ้ามี)" 
-              summary={checkoutState.requestTax && checkoutState.taxData ? `ออกใบกำกับภาษีให้: ${checkoutState.taxData.companyName || ''}` : 'ไม่รับใบกำกับภาษี'}
+              summary={checkoutState.taxData ? `ออกใบกำกับภาษีให้: ${checkoutState.taxData.name || checkoutState.taxData.companyName || ''}` : 'ไม่รับใบกำกับภาษี'}
               step={3} 
               activeStep={activeStep} 
               setActiveStep={setActiveStep}
-              isCompleted={checkoutState.requestTax ? !!checkoutState.taxData : true}
+              isCompleted={true}
             >
               <TaxInvoiceForm 
                 taxData={checkoutState.taxData}

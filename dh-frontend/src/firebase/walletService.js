@@ -5,8 +5,8 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
-
 import { getUsersPath } from 'dh-shared/src/firebase/pathUtils';
+import { userDocumentSubscriptionManager } from './user/userDocumentSubscriptionManager';
 
 // ==========================================
 // 🧠 Smart Cache System (สำหรับประวัติ Wallet)
@@ -45,17 +45,10 @@ export const useWalletBalance = (uid) => {
       return;
     }
 
-    const usersPath = getUsersPath();
-    const userRef = doc(db, usersPath, uid);
-
-    const unsubscribe = onSnapshot(userRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
+    const unsubscribe = userDocumentSubscriptionManager.subscribe(uid, (data) => {
+      if (data) {
         setWalletData({
-          walletBalance: Number(
-            data.walletBalance ?? 
-            0
-          ),
+          walletBalance: Number(data.walletBalance ?? 0),
           pendingWithdrawal: Number(data.pendingWithdrawal || 0),
           loading: false,
           error: null
@@ -63,16 +56,12 @@ export const useWalletBalance = (uid) => {
       } else {
         setWalletData(prev => ({ ...prev, loading: false }));
       }
-    }, (error) => {
-      console.error("❌ [WalletService] Error listening to wallet:", error);
-      setWalletData(prev => ({ ...prev, loading: false, error }));
     });
 
     return () => {
       try {
         if (typeof unsubscribe === 'function') {
-          // Wrap in setTimeout to avoid Vite HMR race condition with Firestore internal async queue
-          setTimeout(() => unsubscribe(), 0);
+          unsubscribe();
         }
       } catch (err) {
         console.warn("⚠️ [WalletService] Error during unmount cleanup:", err);

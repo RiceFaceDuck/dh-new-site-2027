@@ -2,7 +2,7 @@ import { Map, Navigation, AlertCircle } from 'lucide-react';
 
 export default function MapEcosystemSection({ formData, handleChange, isValidMapUrl }) {
   return (
-    <div className="bg-emerald-50/50 border border-emerald-100/60 p-5 rounded-xl mt-6">
+    <div className="bg-emerald-50/70 border border-emerald-200/90 p-5 rounded-xl mt-6 shadow-xs">
       <label className="block text-sm font-bold text-emerald-800 mb-1 flex items-center gap-2">
         <Map className="w-4 h-4" /> พิกัดร้านค้า (Google Maps)
       </label>
@@ -17,10 +17,10 @@ export default function MapEcosystemSection({ formData, handleChange, isValidMap
           name="mapUrl"
           value={formData.mapUrl}
           onChange={handleChange}
-          className={`block w-full pl-11 pr-12 py-2.5 border rounded-xl transition-all focus:bg-white text-slate-800 ${
+          className={`block w-full pl-11 pr-12 py-2.5 border rounded-xl transition-all focus:bg-white text-slate-900 font-medium shadow-xs ${
             formData.mapUrl && !isValidMapUrl(formData.mapUrl) 
               ? 'border-rose-300 focus:ring-rose-500/20 bg-rose-50' 
-              : 'border-emerald-200/60 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white'
+              : 'border-emerald-300 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white'
           }`}
           placeholder="https://maps.app.goo.gl/..."
         />

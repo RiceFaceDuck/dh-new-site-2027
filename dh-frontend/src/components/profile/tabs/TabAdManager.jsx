@@ -66,13 +66,13 @@ const TabAdManager = ({ user }) => {
             <Sparkles size={14} className="text-amber-400" />ศูนย์รวมการโปรโมทร้านค้าและสินค้าแบบครบวงจร
           </p>
         </div>
-        <div className="flex bg-slate-100/80 p-1 rounded-xl shadow-inner border border-slate-200/50">
+        <div className="flex bg-slate-200/70 p-1.5 rounded-xl shadow-inner border border-slate-300/80">
           <button
             onClick={() => setActiveSubTab('store')}
             className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
               activeSubTab === 'store'
-                ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/90'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Store size={16} /> ข้อมูลร้านซ่อม
@@ -81,8 +81,8 @@ const TabAdManager = ({ user }) => {
             onClick={() => setActiveSubTab('ads')}
             className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
               activeSubTab === 'ads'
-                ? 'bg-white text-indigo-700 shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/90'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Activity size={16} /> โฆษณาสินค้า/แบนเนอร์ ({ads.length})

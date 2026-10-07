@@ -61,14 +61,16 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
 
   useEffect(() => {
     if (currentFreebie && currentFreebie.itemName) {
-      // currentFreebie.itemName stores the SKU of the freebie product
+      if (freebieProduct && (freebieProduct.id === currentFreebie.itemName || freebieProduct.sku === currentFreebie.itemName)) {
+        return; // Cache Guard: หลีกเลี่ยงการยิง Firestore ซ้ำเมื่อเป็นสินค้าของแถมเดิม
+      }
       productService.getProduct(currentFreebie.itemName)
         .then(product => {
           if (product) setFreebieProduct(product);
         })
         .catch(e => console.error("Error fetching freebie product", e));
     }
-  }, [currentFreebie]);
+  }, [currentFreebie?.id, currentFreebie?.itemName]);
 
   if (hidden) return null;
   if (isLoading) {

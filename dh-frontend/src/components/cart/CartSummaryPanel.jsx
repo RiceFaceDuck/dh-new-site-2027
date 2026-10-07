@@ -92,13 +92,13 @@ import { useNavigate } from 'react-router-dom';
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button 
-                onClick={() => window.open('https://line.me/R/ti/p/@your_line_id', '_blank')}
+                onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook', '_blank')}
                 className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#00B900] hover:bg-[#009900] text-white shadow-xs hover:shadow-md active:scale-95"
               >
                 <MessageCircle size={18} /> LINE
               </button>
               <button 
-                onClick={() => window.open('https://m.me/your_page_name', '_blank')}
+                onClick={() => window.open('https://m.me/dhnotebook', '_blank')}
                 className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#0084FF] hover:bg-[#0070D6] text-white shadow-xs hover:shadow-md active:scale-95"
               >
                 <MessageSquare size={18} /> Messenger

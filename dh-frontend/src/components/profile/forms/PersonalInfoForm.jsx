@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { 
   User, Save, CheckCircle2, AlertCircle, 
@@ -34,7 +34,7 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
     if (initialData || user) {
       setFormData({
         displayName: initialData?.displayName || user?.displayName || '',
-        phoneNumber: initialData?.phoneNumber || '',
+        phoneNumber: initialData?.phoneNumber || user?.phoneNumber || '',
         mapUrl: initialData?.ecosystem?.mapUrl || '',
         address: {
           addressLine: initialData?.address?.addressLine || '',
@@ -71,13 +71,13 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
 
   const isValidMapUrl = (url) => {
     if (!url) return true;
-    return /^(https?:\/\/)?(www\.)?(goo\.gl\/maps|maps\.app\.goo\.gl|google\.com\/maps).*$/.test(url);
+    return /^(https?:\/\/)?((www|maps)\.)?(goo\.gl\/maps|maps\.app\.goo\.gl|google\.com\/maps|google\.[a-z.]+\/maps|maps\.google\.[a-z.]+).*$/i.test(url.trim());
   };
 
   // 🧠 เช็คว่ามีการแก้ไขข้อมูลหรือไม่ (Deep Compare ประหยัด Firebase Writes)
   const hasChanges = () => {
     const initName = initialData?.displayName || user?.displayName || '';
-    const initPhone = initialData?.phoneNumber || '';
+    const initPhone = initialData?.phoneNumber || user?.phoneNumber || '';
     const initMap = initialData?.ecosystem?.mapUrl || '';
     const initAddr = initialData?.address || {};
     
@@ -116,7 +116,7 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
         ecosystem: {
           mapUrl: formData.mapUrl
         },
-        updatedAt: new Date()
+        updatedAt: serverTimestamp()
       }, { merge: true });
 
       // ซิงค์ชื่อใหม่เข้ากับระบบ Authentication กลางของ Firebase
@@ -138,8 +138,8 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
-      <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden">
+      <div className="p-6 border-b border-slate-200/80 bg-slate-50/90">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <User className="w-5 h-5 text-[#0870B8]" />
           ข้อมูลส่วนตัวพื้นฐาน

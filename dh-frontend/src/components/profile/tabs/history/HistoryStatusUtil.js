@@ -1,5 +1,8 @@
-export const getStatusDisplay = (status) => {
+export const getStatusDisplay = (status, order = {}) => {
     const normalizedStatus = (status || '').toLowerCase();
+    if (order?.isWholesale && (order?.wholesaleStatus === 'awaiting_wholesale_price' || normalizedStatus === 'pending')) {
+      return { text: '⏳ รอพิจารณาราคาส่ง', color: 'bg-purple-100 text-purple-700 border-purple-200' };
+    }
     switch (normalizedStatus) {
       case 'awaiting_wholesale_price':
         return { text: '⏳ รอพิจารณาราคาส่ง', color: 'bg-purple-100 text-purple-700 border-purple-200' };

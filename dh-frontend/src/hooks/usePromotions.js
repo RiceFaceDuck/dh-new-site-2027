@@ -117,7 +117,7 @@ export const evaluatePromotion = (promo, cartItems = [], subTotal = 0, customerT
       if (promo.maxDiscount && promo.maxDiscount > 0) {
         discount = Math.min(discount, promo.maxDiscount);
       }
-      discountValue = Math.floor(discount);
+      discountValue = Math.round(discount * 100) / 100;
     } else if (promo.type === 'FIXED_AMOUNT') {
       discountValue = Math.max(0, Math.min(Number(promo.value) || 0, eligibleSubtotal));
     }

@@ -52,6 +52,9 @@ export const cartService = {
         currentItems.push({
           id: productId,
           sku: product.sku || '-',
+          parentId: product.parentId || null,
+          variantAttributes: product.variantAttributes || null,
+          salePrice: product.salePrice || null,
           name: product.name,
           price: product.retailPrice || product.price || 0, // ใช้ราคาขายปลีกเป็นหลัก (เตรียมต่อยอดราคาส่ง B2B ในอนาคต)
           image: product.images?.[0] || product.image || product.imageUrl || '',
@@ -64,7 +67,8 @@ export const cartService = {
       // คำนวณยอดรวมใหม่ทั้งหมดในหน่วยความจำ ก่อนส่งขึ้น Cloud
       const totalSummary = currentItems.reduce(
         (acc, item) => {
-          acc.total += item.price * item.qty;
+          const effectivePrice = (item.salePrice && item.salePrice > 0) ? item.salePrice : (item.price || 0);
+          acc.total += effectivePrice * item.qty;
           acc.totalQty += item.qty;
           return acc;
         },
@@ -113,6 +117,9 @@ export const cartService = {
           currentItems.push({
             id: productId,
             sku: guestItem.sku || '-',
+            parentId: guestItem.parentId || null,
+            variantAttributes: guestItem.variantAttributes || null,
+            salePrice: guestItem.salePrice || null,
             name: guestItem.name,
             price: guestItem.retailPrice || guestItem.price || 0,
             image: guestItem.image || guestItem.images?.[0] || guestItem.imageUrl || '',
@@ -125,7 +132,8 @@ export const cartService = {
 
       const totalSummary = currentItems.reduce(
         (acc, item) => {
-          acc.total += item.price * item.qty;
+          const effectivePrice = (item.salePrice && item.salePrice > 0) ? item.salePrice : (item.price || 0);
+          acc.total += effectivePrice * item.qty;
           acc.totalQty += item.qty;
           return acc;
         },
@@ -162,7 +170,8 @@ export const cartService = {
 
       const totalSummary = currentItems.reduce(
         (acc, item) => {
-          acc.total += item.price * item.qty;
+          const effectivePrice = (item.salePrice && item.salePrice > 0) ? item.salePrice : (item.price || 0);
+          acc.total += effectivePrice * item.qty;
           acc.totalQty += item.qty;
           return acc;
         },
@@ -208,7 +217,8 @@ export const cartService = {
 
       const totalSummary = currentItems.reduce(
         (acc, item) => {
-          acc.total += item.price * item.qty;
+          const effectivePrice = (item.salePrice && item.salePrice > 0) ? item.salePrice : (item.price || 0);
+          acc.total += effectivePrice * item.qty;
           acc.totalQty += item.qty;
           return acc;
         },

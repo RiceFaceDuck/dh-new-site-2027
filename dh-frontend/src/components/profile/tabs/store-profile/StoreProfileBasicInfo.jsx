@@ -1,4 +1,5 @@
 import { Store, UploadCloud, Loader2, Clock, Image as ImageIcon } from 'lucide-react';
+import LazyImage from '../../../common/LazyImage';
 
 const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploadingStoreImage, handleStoreImageUpload, uploadingGallery, handleGalleryImageUpload, handleRemoveGalleryImage }) => {
   return (
@@ -10,7 +11,13 @@ const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploading
           <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">ภาพโปรไฟล์ร้าน / โลโก้</label>
           <div className="aspect-square w-full rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 relative overflow-hidden group hover:border-indigo-400 transition-colors">
             {storeData.storeImage ? (
-              <img src={storeData.storeImage} alt="Store" className="w-full h-full object-contain"  loading="lazy" />
+              <LazyImage 
+                src={storeData.storeImage} 
+                alt="Store" 
+                className="w-full h-full" 
+                imgClassName="object-contain" 
+                fallbackSrc="/logo.png"
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-slate-400"><Store size={32} className="mb-2 opacity-50"/><span className="text-[10px] uppercase font-bold">อัปโหลดรูปภาพ</span></div>
             )}
@@ -24,33 +31,33 @@ const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploading
         {/* Basic Info */}
         <div className="w-full md:w-2/3 space-y-4">
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">ชื่อร้าน / ชื่อกิจการ <span className="text-rose-500">*</span></label>
-            <input type="text" value={storeData.storeName} onChange={(e) => setStoreData({...storeData, storeName: e.target.value})} required placeholder="เช่น DH Computer Repair" className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
+            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">ชื่อร้าน / ชื่อกิจการ <span className="text-rose-500">*</span></label>
+            <input type="text" value={storeData.storeName} onChange={(e) => setStoreData({...storeData, storeName: e.target.value})} required placeholder="เช่น DH Computer Repair" className="w-full px-4 py-3 bg-slate-50/70 focus:bg-white border border-slate-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">คำอธิบายสั้นๆ (จุดเด่น)</label>
-            <input type="text" value={storeData.description} onChange={(e) => setStoreData({...storeData, description: e.target.value})} placeholder="เช่น ซ่อมด่วน รอรับได้เลย ประเมินอาการฟรี" className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
+            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">คำอธิบายสั้นๆ (จุดเด่น)</label>
+            <input type="text" value={storeData.description} onChange={(e) => setStoreData({...storeData, description: e.target.value})} placeholder="เช่น ซ่อมด่วน รอรับได้เลย ประเมินอาการฟรี" className="w-full px-4 py-3 bg-slate-50/70 focus:bg-white border border-slate-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400" />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">รูปแบบการให้บริการ (Services)</label>
-            <textarea value={storeData.services} onChange={(e) => setStoreData({...storeData, services: e.target.value})} placeholder="เช่น รับซ่อมมือถือ, รับซ่อมคอมพิวเตอร์, งานเดินสายต่างๆ, ให้บริการถึงบ้าน..." rows="2" className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl resize-none focus:border-indigo-500"></textarea>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">รูปแบบการให้บริการ (Services)</label>
+            <textarea value={storeData.services} onChange={(e) => setStoreData({...storeData, services: e.target.value})} placeholder="เช่น รับซ่อมมือถือ, รับซ่อมคอมพิวเตอร์, งานเดินสายต่างๆ, ให้บริการถึงบ้าน..." rows="2" className="w-full px-4 py-3 bg-slate-50/70 focus:bg-white border border-slate-300 rounded-xl resize-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"></textarea>
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1"><Clock size={12}/> เวลาเปิด-ปิดร้าน</label>
-            <input type="text" value={storeData.openHours} onChange={(e) => setStoreData({...storeData, openHours: e.target.value})} placeholder="เช่น จันทร์-ศุกร์ 09:00 - 18:00 น." className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
+            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1 flex items-center gap-1"><Clock size={12}/> เวลาเปิด-ปิดร้าน</label>
+            <input type="text" value={storeData.openHours} onChange={(e) => setStoreData({...storeData, openHours: e.target.value})} placeholder="เช่น จันทร์-ศุกร์ 09:00 - 18:00 น." className="w-full px-4 py-3 bg-slate-50/70 focus:bg-white border border-slate-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400" />
           </div>
         </div>
       </div>
       
       {/* Rich Description */}
       <div className="mt-6">
-        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">รายละเอียดร้านค้าแบบเต็ม (แสดงในหน้าร้าน)</label>
+        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">รายละเอียดร้านค้าแบบเต็ม (แสดงในหน้าร้าน)</label>
         <textarea 
           value={storeData.richDescription || ''} 
           onChange={(e) => setStoreData({...storeData, richDescription: e.target.value})} 
           placeholder="ประวัติร้าน, ความเชี่ยวชาญ, ทีมช่าง, เงื่อนไขการให้บริการ..." 
           rows="5" 
-          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl resize-none focus:border-indigo-500"
+          className="w-full px-4 py-3 bg-slate-50/70 focus:bg-white border border-slate-300 rounded-xl resize-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
         ></textarea>
       </div>
 
@@ -60,11 +67,17 @@ const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploading
         <div className="flex flex-wrap gap-4">
           {(storeData.galleryImages || []).map((imgUrl, idx) => (
             <div key={idx} className="relative w-24 h-24 rounded-xl border border-slate-200 overflow-hidden group">
-              <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-contain"  loading="lazy" />
+              <LazyImage 
+                src={imgUrl} 
+                alt={`Gallery ${idx}`} 
+                className="w-full h-full" 
+                imgClassName="object-contain" 
+                fallbackSrc="/logo.png"
+              />
               <button 
                 type="button"
                 onClick={() => handleRemoveGalleryImage(idx)}
-                className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
               >
                 X
               </button>
