@@ -301,10 +301,30 @@ export const productService = {
   async getProductsByCategory(category, lastVisible, limitCount = 40) {
     try {
       await this.getGlobalBuffer();
-      const { collection, query, where, limit, startAfter, getDocs } = await import('firebase/firestore');
-      const productsRef = collection(db, getCollectionPath('products'));
       const cleanCategory = (category || '').trim();
       const lowerCaseType = cleanCategory.toLowerCase();
+      
+      // 🛡️ TIER 1: Low-Quota Shield from catalogs/cat_* (1 Read for up to 50 items)
+      if (!lastVisible && lowerCaseType) {
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const catRef = doc(db, getCollectionPath('catalogs'), `cat_${lowerCaseType}`);
+          const catSnap = await getDoc(catRef);
+          if (catSnap.exists()) {
+            const catData = catSnap.data();
+            if (catData && Array.isArray(catData.items) && catData.items.length > 0) {
+              const docs = catData.items.map(p => this.normalizeProductData({ id: p.sku, ...p }));
+              return { docs, lastDoc: null, fromChunk: true };
+            }
+          }
+        } catch (chunkErr) {
+          console.warn("Category chunk read failed, falling back to direct query:", chunkErr);
+        }
+      }
+
+      // 🛡️ TIER 2: Direct products query fallback
+      const { collection, query, where, limit, startAfter, getDocs } = await import('firebase/firestore');
+      const productsRef = collection(db, getCollectionPath('products'));
       
       let q;
       if (!lastVisible) {

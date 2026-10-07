@@ -46,7 +46,7 @@ const CategoryPage = () => {
         }
       }
       
-      if (fetchedProducts.length < itemsPerPage) {
+      if (fetchedProducts.length < itemsPerPage || (isInitial && cachedResult?.fromChunk) || (!isInitial && result?.fromChunk)) {
         setHasMore(false);
       } else {
         setHasMore(true);
