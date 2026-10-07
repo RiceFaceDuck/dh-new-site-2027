@@ -1,4 +1,4 @@
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, limit } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { calculateDistance } from '../utils/geoUtils';
@@ -12,7 +12,10 @@ let inFlightFetchPromise = null;
 
 /**
  * 📦 ดึงข้อมูลพาร์ทเนอร์ที่เปิดรับการสนับสนุนทั้งหมด
- * (ระบบจะเช็คแคชใน localStorage ก่อนเพื่อประหยัด Reads/Writes)
+ * ระบบ 3-Tier Multi-Cache:
+ * - Tier 1: LocalStorage Cache (0 Reads, Instant)
+ * - Tier 2: Curated Starter Bundle `catalogs/active_partners_bundle` (1 Read รวมร้านช่างครบถ้วน)
+ * - Tier 3: Direct Collection Query (Fallback กรณีฉุกเฉิน)
  */
 export const fetchAllActivePartners = async (forceRefresh = false) => {
   if (!forceRefresh && inFlightFetchPromise) {
@@ -21,7 +24,7 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
 
   const fetchPromise = (async () => {
     try {
-      // 1. ตรวจสอบ Cache ก่อน
+      // 1. ตรวจสอบ Cache ก่อน (Tier 1: LocalStorage, 0 Reads)
       if (!forceRefresh) {
         const cachedData = localStorage.getItem(CACHE_KEY);
         if (cachedData) {
@@ -31,17 +34,38 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
             const now = new Date().getTime();
             // ถ้าแคชยังไม่หมดอายุ (น้อยกว่า CACHE_TTL_MINUTES)
             if (now - timestamp < CACHE_TTL_MINUTES * 60 * 1000) {
-              console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์จาก Cache (ประหยัด Reads)");
+              console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์จาก Cache (Tier 1 LocalStorage, 0 Reads)");
               return data;
             }
           }
         }
       }
 
-      // 2. ถ้าแคชหมดอายุ หรือบังคับ Refresh ค่อยไปดึงจาก Firebase
-      console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์ใหม่จาก Firebase...");
+      // 2. ดึงจาก Curated Starter Bundle (Tier 2: Single Document Read = 1 Read เท่านั้น)
+      console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์จาก Starter Bundle (Tier 2)...");
+      try {
+        const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
+        const bundleSnap = await getDoc(bundleRef);
+        if (bundleSnap.exists()) {
+          const bundleData = bundleSnap.data();
+          if (bundleData && Array.isArray(bundleData.items) && bundleData.items.length > 0) {
+            console.log(`📍 [LocationService] โหลดพาร์ทเนอร์สำเร็จจาก Starter Bundle (${bundleData.items.length} ร้าน, 1 Read)`);
+            const cachePayload = {
+              data: bundleData.items,
+              timestamp: new Date().getTime()
+            };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+            return bundleData.items;
+          }
+        }
+      } catch (bundleErr) {
+        console.warn("⚠️ [LocationService] ไม่สามารถดึง Starter Bundle ได้ กำลังใช้ Fallback Query:", bundleErr);
+      }
+
+      // 3. Fallback: ถ้าแคชหมดอายุและไม่มี Bundle ให้ดึงจาก Firebase ActivePartners (Tier 3)
+      console.log("📍 [LocationService] Fallback ดึงข้อมูลพาร์ทเนอร์จาก ActivePartners collection...");
       const partnersRef = collection(db, getCollectionPath('ActivePartners'));
-      const q = query(partnersRef, limit(500));
+      const q = query(partnersRef, limit(100));
       const snapshot = await getDocs(q);
       
       const partners = snapshot.docs.map(doc => ({
@@ -49,7 +73,7 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
         ...doc.data()
       }));
 
-      // 3. เซฟลง Cache เพื่อใช้ในครั้งต่อไป
+      // 4. เซฟลง Cache เพื่อใช้ในครั้งต่อไป
       const cachePayload = {
         data: partners,
         timestamp: new Date().getTime()

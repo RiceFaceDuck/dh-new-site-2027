@@ -246,7 +246,8 @@ service cloud.firestore {
         docId == 'categories_index' ||
         docId == 'ad_cards_bundle' ||
         docId == 'storefront_search_catalog' ||
-        docId.matches('^storefront_search_catalog.*')
+        docId.matches('^storefront_search_catalog.*') ||
+        docId == 'active_partners_bundle'
       ) || isStaff();
       allow write: if isStaff();
     }

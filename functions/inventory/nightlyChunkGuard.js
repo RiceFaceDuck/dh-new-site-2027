@@ -22,6 +22,7 @@ const rebuildAllChunksLogic = async (db) => {
     categoriesRebuilt: 0,
     customersIndexed: 0,
     storefrontSearchItems: 0,
+    activePartnersBundled: 0,
     durationMs: 0
   };
 
@@ -264,6 +265,79 @@ const rebuildAllChunksLogic = async (db) => {
 
     await db.collection("catalogs").doc("customers_directory").set(customersDirectoryPayload, { merge: true });
     results.customersIndexed = customerList.length;
+
+    // -------------------------------------------------------------
+    // 5.5. รวบก้อนพาร์ทเนอร์ร้านช่าง `catalogs/active_partners_bundle` (Smart Starter Bundle)
+    // -------------------------------------------------------------
+    const partnersSnap = await db.collection("ActivePartners").get();
+    const allActivePartners = [];
+
+    partnersSnap.forEach(pDoc => {
+      const p = pDoc.data() || {};
+      if (p.isActive !== false) {
+        allActivePartners.push({
+          id: pDoc.id,
+          partnerId: p.partnerId || pDoc.id,
+          storeName: p.storeName || p.partnerName || 'ร้านช่างพาร์ทเนอร์',
+          partnerName: p.partnerName || p.storeName || 'ร้านช่างพาร์ทเนอร์',
+          services: p.services || '',
+          phone: p.phone || '',
+          messengerUrl: p.messengerUrl || '',
+          lineUrl: p.lineUrl || '',
+          googleMapLink: p.googleMapLink || p.googleMapsUrl || '',
+          latitude: Number(p.latitude || 0),
+          longitude: Number(p.longitude || 0),
+          storeImage: p.storeImage || p.imageUrl || p.photoURL || '',
+          imageUrl: p.imageUrl || p.storeImage || p.photoURL || '',
+          address: p.address || '',
+          landmarks: p.landmarks || '',
+          openHours: p.openHours || '',
+          points: Number(p.points || 0),
+          viewsCount: Number(p.viewsCount || p.visitCount || 0),
+          isVerified: p.isVerified === true,
+          isActive: true
+        });
+      }
+    });
+
+    let bundlePartners = [];
+    if (allActivePartners.length <= 100) {
+      // ถ้าร้านมีไม่เกิน 100 ร้าน รวบทั้งหมดใส่ในก้อนเดียวเลย (ขนาดเพียง ~30-40KB)
+      bundlePartners = allActivePartners;
+    } else {
+      // หากมีร้านค้าจำนวนมากในอนาคต (เช่น 1,000 - 2,000 ร้าน) คัด Curated Starter Bundle:
+      // 1. ร้านคะแนนสูงสุด 5 อันดับแรก
+      const topRated = [...allActivePartners]
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 5);
+
+      // 2. ร้านที่มีการเข้าชมบ่อย/ยอดนิยม 5 อันดับแรก
+      const mostVisited = [...allActivePartners]
+        .sort((a, b) => b.viewsCount - a.viewsCount)
+        .slice(0, 5);
+
+      // 3. ร้านตัวแทนกระจายตามพิกัด/โซน (Sample Pool 20-30 ร้าน)
+      const partnerPool = allActivePartners.slice(0, 30);
+
+      // รวมและตัดตัวซ้ำ
+      const map = new Map();
+      [...topRated, ...mostVisited, ...partnerPool].forEach(p => {
+        if (!map.has(p.id)) map.set(p.id, p);
+      });
+      bundlePartners = Array.from(map.values());
+    }
+
+    const partnersBundlePayload = {
+      chunkId: 'active_partners_bundle',
+      type: 'ACTIVE_PARTNERS_BUNDLE',
+      totalActivePartners: allActivePartners.length,
+      bundledCount: bundlePartners.length,
+      generatedAt: FieldValue.serverTimestamp(),
+      items: bundlePartners
+    };
+
+    await db.collection("catalogs").doc("active_partners_bundle").set(partnersBundlePayload, { merge: true });
+    results.activePartnersBundled = bundlePartners.length;
 
     // -------------------------------------------------------------
     // 6. อัปเดตเวอร์ชัน Metadata กลาง (Broadcast Sync Signal)

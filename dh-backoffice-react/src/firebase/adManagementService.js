@@ -193,6 +193,55 @@ export const adManagementService = {
         });
       }
 
+      // 🌟 Event-Driven Starter Bundle Snapshot: อัปเดตร้านช่างใน catalogs/active_partners_bundle ทันที
+      if (adData.type === 'BUSINESS_CARD') {
+        const partnerId = adData.ownerId;
+        try {
+          const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
+          const bundleSnap = await getDoc(bundleRef);
+          if (bundleSnap.exists()) {
+            const bData = bundleSnap.data() || {};
+            let items = Array.isArray(bData.items) ? [...bData.items] : [];
+            const partnerItem = {
+              id: partnerId,
+              partnerId: partnerId,
+              storeName: adData.partnerName || adData.title || '',
+              partnerName: adData.partnerName || adData.title || '',
+              services: adData.services || adData.description || '',
+              phone: adData.phone || '',
+              messengerUrl: adData.messengerUrl || '',
+              lineUrl: adData.lineUrl || '',
+              googleMapLink: adData.googleMapLink || '',
+              latitude: Number(adData.latitude || 0),
+              longitude: Number(adData.longitude || 0),
+              storeImage: adData.imageUrl || '',
+              imageUrl: adData.imageUrl || '',
+              address: adData.address || '',
+              landmarks: adData.landmarks || '',
+              openHours: adData.openHours || '',
+              points: points,
+              viewsCount: 0,
+              isVerified: true,
+              isActive: true
+            };
+            const existingIdx = items.findIndex(i => (i.id === partnerId || i.partnerId === partnerId));
+            if (existingIdx >= 0) {
+              items[existingIdx] = { ...items[existingIdx], ...partnerItem };
+            } else {
+              items.unshift(partnerItem);
+            }
+            batch.set(bundleRef, {
+              items: items.slice(0, 100),
+              totalActivePartners: items.length,
+              bundledCount: items.slice(0, 100).length,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          }
+        } catch (e) {
+          console.warn("Could not sync partner into active_partners_bundle:", e);
+        }
+      }
+
       await batch.commit(); // สั่งรันทุกคำสั่งพร้อมกัน
       return { success: true, message: '✅ อนุมัติโฆษณาสำเร็จ โฆษณาพร้อมแสดงผลทันที' };
     } catch (error) {
