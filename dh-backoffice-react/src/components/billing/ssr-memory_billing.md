@@ -68,6 +68,10 @@
        วิธีแก้: จัดอยู่ใน Watchlist (Guardrail: working_well ให้คงสภาพเดิมไว้ ป้องกัน race condition ระหว่างแคชเชียร์) [สถานะ: บันทึกเฝ้าระวัง]
     11. ปัญหา: งานค้าง POS (บิลร่าง/แท็บพักไว้) ไม่แสดงบนเว็บจริง (dhnotebook-work.web.app) ทั้งที่เป็นบัญชีพนักงานเดียวกัน
        วิธีแก้: ปัญหาเกิดจากโค้ดใหม่ (FloatingMiniCart และ staffPosDraftService) ยังไม่ได้ถูก Build และ Deploy ขึ้น Hosting รวมทั้งเบราว์เซอร์แยก Local Storage คนละโดเมน เมื่อทำการ Build และ Deploy Hosting (`firebase deploy --only hosting:dhnotebook-work`) ทำให้เว็บจริงรันโค้ดชุดใหม่และซิงค์งานค้าง POS ข้ามเครื่องได้ถูกต้อง [สถานะ: ส่งมอบแล้ว]
+    12. ปัญหา: ปุ่มมุมขวาบนในหน้ารายการบิล (/billing) เปิดบิลใหม่ขึ้นมาทันทีโดยไม่ได้ตั้งใจ
+       วิธีแก้: เปลี่ยนปุ่มเป็น "จัดการบิล" สีเหลือง (Amber) และแก้ `onSwitchView` ใน `BillingMain.jsx` ให้ส่ง `setIsNewBillRequest(false)` เพื่อแค่สลับเข้าหน้า POS โดยไม่สร้างบิลใหม่ลอยๆ หากต้องการสร้างบิลใหม่ให้ทำจากปุ่มในหน้า POS หรือกดปุ่ม [+] ที่ Sidebar ตามความต้องการผู้ใช้งาน [สถานะ: ส่งมอบแล้ว]
+    13. ปัญหา: โมดอลเพิ่มลูกค้าใหม่ (QuickAddCustomerModal) โดนแถบบน (PosHeader) แทรกทับ และคลิกฉากหลังไม่ยอมปิด
+       วิธีแก้: ใช้ `createPortal(..., document.body)` ยกโมดอลขึ้น Root DOM ชั้นบนสุด ปรับ z-index เป็น z-[100] พร้อมใส่ `onClick={onClose}` ที่ Backdrop และ `onClick={(e) => e.stopPropagation()}` ที่ Card เพื่อให้คลิกพื้นที่ว่างปิดได้ทันที [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

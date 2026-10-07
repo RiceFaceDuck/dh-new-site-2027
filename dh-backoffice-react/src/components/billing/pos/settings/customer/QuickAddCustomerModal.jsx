@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
     X, Sparkles, User, Phone, MapPin, Save, ArrowRight, ArrowLeft, 
     Check, CheckCircle2, Shield, AlertCircle, Loader2, Mail, Users,
@@ -790,10 +791,16 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-                <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]">
+            <div 
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+                onClick={onClose}
+            >
+                <div 
+                    className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {/* Header */}
                     <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2.5">
@@ -859,6 +866,7 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
                 onOverwriteExisting={handleOverwriteExistingCustomer}
                 onForceCreateNew={handleForceCreateNewCustomer}
             />
-        </>
+        </>,
+        document.body
     );
 }

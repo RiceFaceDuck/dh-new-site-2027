@@ -118,7 +118,7 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
   return (
     <div className="h-full overflow-hidden w-full max-w-full mx-auto">
       <BillingDashboard 
-        onSwitchView={() => { setDraftOrder(null); setIsNewBillRequest(true); setViewMode('pos'); }} 
+        onSwitchView={() => { setDraftOrder(null); setIsNewBillRequest(false); setViewMode('pos'); }} 
         onResumeDraft={(draft) => { setDraftOrder(draft); setIsNewBillRequest(false); setViewMode('pos'); }}
         isSelectorMode={isSelectorMode}
         onCancelSelector={onCancelSelector}

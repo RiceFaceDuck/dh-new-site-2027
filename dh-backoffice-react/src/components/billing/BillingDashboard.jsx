@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react';
-import { Plus, AlertTriangle, ArrowLeft, HelpCircle } from 'lucide-react';
+import { Plus, AlertTriangle, ArrowLeft, HelpCircle, Receipt } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { billingService } from '../../firebase/billingService';
 import { auth } from '../../firebase/config';
@@ -157,9 +157,9 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                                     {onSwitchView && (
                                         <button 
                                             onClick={onSwitchView} 
-                                            className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-lg flex items-center gap-1.5 transition-all hover:shadow-[0_0_15px_rgba(6,182,212,0.5)] hover:-translate-y-0.5 active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
+                                            className="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-lg flex items-center gap-1.5 transition-all hover:shadow-[0_0_15px_rgba(251,191,36,0.45)] hover:-translate-y-0.5 active:scale-95 text-xs shrink-0 whitespace-nowrap cursor-pointer"
                                         >
-                                            <Plus size={16} strokeWidth={3} /> สร้างบิลใหม่
+                                            <Receipt size={16} strokeWidth={2.5} /> จัดการบิล
                                         </button>
                                     )}
                                 </div>
