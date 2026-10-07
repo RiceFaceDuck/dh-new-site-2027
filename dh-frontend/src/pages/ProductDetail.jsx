@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useProductDetail } from './hooks/useProductDetail';
 import { calculateEarnedPoints } from '../firebase/creditService';
 import { ChevronLeft, ShieldAlert, ShoppingCart, CheckCircle2, Zap } from 'lucide-react';
@@ -18,7 +18,7 @@ import {
 
 const ProductDetail = () => {
   const { id } = useParams();
-  
+  const location = useLocation();
   const navigate = useNavigate();
   
   const {
@@ -38,7 +38,7 @@ const ProductDetail = () => {
     currentProductInfo,
     handleAddToCart,
     handleBuyNow
-  } = useProductDetail(id);
+  } = useProductDetail(id, location.state?.product);
 
   if (loading) {
     return (

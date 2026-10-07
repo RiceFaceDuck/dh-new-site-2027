@@ -1,5 +1,6 @@
 import { Star, MessageCircle, Heart, Share2, Loader2, Send, ThumbsUp, MoreHorizontal, Sparkles } from 'lucide-react';
 import { useProductReviews } from '../../pages/hooks/useProductReviews';
+import useInView from '../../hooks/useInView';
 
 // Helper component for Star Rating (Display)
 const StarDisplay = ({ val }) => {
@@ -17,6 +18,7 @@ const StarDisplay = ({ val }) => {
 };
 
 export default function ProductCommunitySection({ productId, reviewCount = 0, averageRating = 0 }) {
+  const [inViewRef, inView] = useInView({ rootMargin: '200px 0px' });
   const {
     currentUser,
     comments,
@@ -31,10 +33,10 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
     loadMore,
     handleSubmit,
     handleLike
-  } = useProductReviews(productId);
+  } = useProductReviews(productId, reviewCount, inView);
 
   return (
-    <div className="bg-slate-50/30 p-6 md:p-8 flex flex-col h-full border-t border-slate-200 mt-0 shadow-inner">
+    <div ref={inViewRef} className="bg-slate-50/30 p-6 md:p-8 flex flex-col h-full border-t border-slate-200 mt-0 shadow-inner">
       
       {/* Header */}
       <div className="flex items-center justify-between mb-6">

@@ -3,7 +3,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { productReviewService } from '../../firebase/productReviewService';
 import { useToast } from '../../context/ToastContext';
 
-export const useProductReviews = (productId) => {
+export const useProductReviews = (productId, reviewCount = 0, inView = true) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [comments, setComments] = useState([]);
   const [lastDoc, setLastDoc] = useState(null);
@@ -37,6 +37,13 @@ export const useProductReviews = (productId) => {
   const loadComments = useCallback(async (isInitial = false) => {
     if (!productId || (loading && !isInitial)) return;
     
+    // 🛡️ Zero-Leak: ถ้าสินค้านี้ไม่มีรีวิวตั้งแต่ต้น ไม่ต้องยิง Firestore
+    if (reviewCount === 0) {
+      setComments([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const result = await productReviewService.getReviews(
@@ -69,13 +76,14 @@ export const useProductReviews = (productId) => {
         setLoading(false);
       }
     }
-  }, [productId, loading, lastDoc, showToast]);
+  }, [productId, loading, lastDoc, showToast, reviewCount]);
 
   useEffect(() => {
-    if (productId) {
+    // 🛡️ Viewport Lazy Fetch: ยิงโหลดเฉพาะเมื่อลูกค้าเลื่อนหน้าจอลงมาถึง และมีรีวิวจริง
+    if (productId && inView && reviewCount > 0) {
       loadComments(true);
     }
-  }, [productId]);
+  }, [productId, inView, reviewCount]);
 
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();

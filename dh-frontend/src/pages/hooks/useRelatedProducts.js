@@ -8,15 +8,15 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const relatedProductsCache = new Map();
 const CACHE_TTL = 10 * 60 * 1000;
 
-export const useRelatedProducts = (currentProductId, category) => {
+export const useRelatedProducts = (currentProductId, category, inView = true) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!category) {
-      setProducts([]);
-      setLoading(false);
+    // 🛡️ Viewport Lazy Fetch: ไม่โหลดถ้ายังไม่เลื่อนหน้าจอลงมาถึง
+    if (!category || !inView) {
+      if (!inView) setLoading(false);
       return;
     }
 
@@ -35,6 +35,32 @@ export const useRelatedProducts = (currentProductId, category) => {
     const fetchRelated = async () => {
       try {
         setLoading(true);
+
+        // 🛡️ TIER 1: Low-Quota Shield from catalogs/cat_* (1 Read)
+        const catKey = String(category || '').toLowerCase().trim();
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const catRef = doc(db, getCollectionPath('catalogs'), `cat_${catKey}`);
+          const catSnap = await getDoc(catRef);
+          if (catSnap.exists()) {
+            const catData = catSnap.data();
+            if (catData && Array.isArray(catData.items) && catData.items.length > 0) {
+              const mapped = catData.items.map(p => productService.normalizeProductData({ id: p.sku, ...p }));
+              relatedProductsCache.set(category, { data: mapped, timestamp: Date.now() });
+              if (isMounted) {
+                const related = mapped.filter(doc => doc.id !== currentProductId).slice(0, 4);
+                setProducts(related);
+                setError(null);
+                setLoading(false);
+              }
+              return;
+            }
+          }
+        } catch (catErr) {
+          console.warn("Category chunk read failed for related products, falling back:", catErr);
+        }
+
+        // 🛡️ TIER 2: Direct products fallback
         const q = query(
           collection(db, getCollectionPath('products')),
           where('category', '==', category),
