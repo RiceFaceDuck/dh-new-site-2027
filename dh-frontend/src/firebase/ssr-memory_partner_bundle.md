@@ -17,6 +17,11 @@
 - **Zero Raw Query for Initial Partners:** ห้ามยิง `query(ActivePartners, limit 500)` สดในหน้าแรกเด็ดขาด เพื่อป้องกันโควต้าระเบิดเมื่อขยายเป็น 1,000-2,000 ร้านค้า
 - **Curated Starter Invariant:** ก้อน Starter Bundle ต้องบรรจุร้านคะแนนสูง, ร้านยอดนิยม, และร้านตัวแทนครอบคลุม หรือทุกร้านหากมีจำนวน <= 100 ร้าน
 - **3-Tier Protection:** Tier 1 (LocalStorage 0 Read) -> Tier 2 (Starter Bundle 1 Read) -> Tier 3 (Fallback query)
+- **4-Zone Display Rules (Business Invariant):**
+  1. **หน้าแรก (Home):** ร้านใกล้เคียง 100% ตามระยะทางจริง (กม. น้อยไปมาก)
+  2. **หน้ารวมช่าง (Providers):** เรียงตามระยะทางจริง 9 ร้าน + แทรกร้านยอดนิยม 1 ร้านในทุก 10 ร้าน (อัตราส่วน 9:1 ร้านใกล้เคียงมีค่ากว่า)
+  3. **หน้าสินค้า ใต้ปุ่มใส่ตะกร้า (`PartnerSupportBox`):** ร้านใกล้เคียง 100% (Distance-First)
+  4. **หน้าสินค้า โซนสินค้าใกล้เคียง (`RelatedProducts`):** ร้านยอดนิยม (Top Popular / Rated Partner)
 </domain_rules>
 
 <core_schema>

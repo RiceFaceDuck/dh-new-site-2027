@@ -49,8 +49,22 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
         marketingService.getActivePartnerAds('PRODUCT_LINK')
       ]);
 
-      // 🔀 3. รวมโฆษณาทั้ง 2 ระบบ และสับเปลี่ยนแบบสุ่ม (Shuffle) เพื่อความยุติธรรม
-      const combinedAds = shuffleArray([...businessCards, ...productLinks]).slice(0, adLimit);
+      // 🌟 ร้านยอดนิยม: จัดลำดับนามบัตรร้านช่างตามคะแนนความนิยม (Points / Views สูงสุดขึ้นก่อน)
+      // เพื่อให้โซนสินค้าที่เกี่ยวข้องและกริดสินค้าแสดง "ร้านยอดนิยม" เป็นอันดับแรก
+      const sortedBusinessCards = [...businessCards].sort((a, b) => {
+        const scoreA = Number(a.points || a.creditPoints || a.viewsCount || 0);
+        const scoreB = Number(b.points || b.creditPoints || b.viewsCount || 0);
+        return scoreB - scoreA;
+      });
+
+      // 🔀 3. ให้ร้านยอดนิยมอันดับท็อปได้รับสิทธิ์แทรกในสล็อตแรกๆ ตามด้วยรายการสลับหมุนเวียน
+      const topBusinessCards = sortedBusinessCards.slice(0, 3);
+      const remainingBusinessCards = sortedBusinessCards.slice(3);
+      const combinedAds = [
+        ...topBusinessCards,
+        ...shuffleArray([...remainingBusinessCards, ...productLinks])
+      ].slice(0, adLimit);
+
       setAds(combinedAds);
 
     } catch (error) {

@@ -91,15 +91,49 @@ export const useProvidersList = () => {
 
     // Sort
     if (userLocation) {
-      // Sort by distance (nearest first, 0m handled properly with points as tie-breaker)
-      result.sort((a, b) => {
+      // 1. เรียงตามระยะทางจริง (Distance-First เป็นหลัก)
+      const sortedByDistance = [...result].sort((a, b) => {
         const distA = typeof a.distanceKm === 'number' ? a.distanceKm : Infinity;
         const distB = typeof b.distanceKm === 'number' ? b.distanceKm : Infinity;
         if (distA !== distB) return distA - distB;
         return (b.points || 0) - (a.points || 0);
       });
+
+      // 2. ค้นหาร้านยอดนิยมตามคะแนน (Popular Pool)
+      const topPopular = [...result].sort((a, b) => (b.points || 0) - (a.points || 0));
+
+      // 3. ผสมผสาน: ร้านใกล้เคียง 9 ร้าน + แทรกร้านยอดนิยม 1 ร้านในทุก 10 ร้าน
+      const blended = [];
+      const usedIds = new Set();
+      let popularIndex = 0;
+      let distIndex = 0;
+
+      while (distIndex < sortedByDistance.length) {
+        // เติมร้านใกล้เคียงเป็นหลัก
+        let countNearby = 0;
+        while (distIndex < sortedByDistance.length && countNearby < 9) {
+          const item = sortedByDistance[distIndex++];
+          if (!usedIds.has(item.id)) {
+            usedIds.add(item.id);
+            blended.push(item);
+            countNearby++;
+          }
+        }
+
+        // แทรกร้านยอดนิยม 1 ร้านในทุก 10 ร้าน (หากยังไม่เคยแสดง)
+        while (popularIndex < topPopular.length) {
+          const popItem = topPopular[popularIndex++];
+          if (!usedIds.has(popItem.id)) {
+            usedIds.add(popItem.id);
+            blended.push({ ...popItem, isTopRecommendation: true });
+            break;
+          }
+        }
+      }
+
+      result = blended;
     } else {
-      // Sort by points (highest first)
+      // Sort by points (highest first) กรณีลูกค้าไม่ได้อนุญาต GPS
       result.sort((a, b) => (b.points || 0) - (a.points || 0));
     }
 

@@ -97,43 +97,37 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
 };
 
 /**
- * 🎯 ค้นหาร้านพาร์ทเนอร์ที่อยู่ใกล้ลูกค้ามากที่สุด (Nearest Partner) - Weighted Algorithm
- * ประเมินจาก: ระยะทาง (Distance) และ คะแนนเครดิต (Points)
+ * 🎯 ค้นหาร้านพาร์ทเนอร์ที่อยู่ใกล้ลูกค้ามากที่สุด (Nearest Partner - Distance First 100%)
+ * สำหรับโซนใต้ปุ่มใส่ตะกร้า: ยึดระยะทางจริงใกล้ตัวลูกค้าที่สุดเป็นอันดับแรกก่อนสิ่งอื่นใด
  */
 export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) => {
   try {
     if (!userLat || !userLon) return null;
 
     const partners = await fetchAllActivePartners();
-    
     if (partners.length === 0) return null;
 
     let bestPartner = null;
-    let maxScore = -Infinity;
+    let minDistance = Infinity;
 
     partners.forEach(partner => {
-      if (!partner.latitude || !partner.longitude) return;
+      const lat = Number(partner.latitude ?? partner.lat);
+      const lng = Number(partner.longitude ?? partner.lng);
+      if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
-      const distance = calculateDistance(
-        userLat, 
-        userLon, 
-        partner.latitude, 
-        partner.longitude
-      );
+      const distance = calculateDistance(userLat, userLon, lat, lng);
 
       if (distance <= maxDistanceKm) {
-        const safeDistance = distance < 0.1 ? 0.1 : distance;
-        const creditPoints = partner.points || 1; 
-        
-        // 🌟 Weighted Search Algorithm
-        const score = creditPoints / safeDistance;
+        // ยึดระยะทางที่น้อยที่สุดก่อนสิ่งอื่นใด (Distance-First 100%)
+        const isCloser = distance < minDistance;
+        const isVirtuallySame = Math.abs(distance - minDistance) < 0.1;
+        const hasHigherPoints = (partner.points || 0) > (bestPartner?.points || 0);
 
-        if (score > maxScore) {
-          maxScore = score;
+        if (isCloser || (isVirtuallySame && hasHigherPoints)) {
+          minDistance = distance;
           bestPartner = { 
             ...partner, 
             distanceKm: distance,
-            score: score.toFixed(2),
             formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${distance.toFixed(1)} กม.`
           };
         }

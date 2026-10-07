@@ -37,11 +37,17 @@ export const useNearbyPartners = () => {
         return { ...partner, distanceKm, formattedDistance };
       });
 
-      // 3. Sort by distance or points
+      // 3. Sort by distance 100% (Nearest first - หน้าแรกใช้ร้านใกล้เคียง 100%)
       if (lat && lng) {
-        partnersWithDistance.sort((a, b) => (a.distanceKm || Infinity) - (b.distanceKm || Infinity));
+        partnersWithDistance.sort((a, b) => {
+          const distA = typeof a.distanceKm === 'number' ? a.distanceKm : Infinity;
+          const distB = typeof b.distanceKm === 'number' ? b.distanceKm : Infinity;
+          if (distA !== distB) return distA - distB;
+          return (b.points || 0) - (a.points || 0);
+        });
       } else {
-        partnersWithDistance.sort((a, b) => (b.points || 0) - (a.points || 0)); // Fallback sort by points
+        // Fallback: กรณีลูกค้าไม่ได้อนุญาต GPS ให้เรียงตามคะแนนความนิยม
+        partnersWithDistance.sort((a, b) => (b.points || 0) - (a.points || 0));
       }
 
       // 4. Limit based on config
