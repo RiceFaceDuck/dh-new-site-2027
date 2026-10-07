@@ -37,5 +37,6 @@
     - ⚠️ Telemetry & SEO Schema Blindspot: Product page lacked GA4 e-commerce events and rich snippets (SKU, MPN, seller, breadcrumbs). [RESOLVED] Connected productAnalyticsService and enriched JSON-LD with BreadcrumbList.
     - ⚠️ Invasive Clipboard Hijack & Mobile Scroll Barrier: onCopy overwrote user clipboard with promo ads, and mobile lacked sticky buy bar. [RESOLVED] Replaced onCopy with copy SKU button, fixed specs acronym regex, and added floating Mobile Sticky Action Bar.
     - ⚠️ Product Detail & Reviews Viewport Quota Leak: Opening product detail previously triggered eager queries for 5 reviews and 6 related products even if user never scrolled down. [RESOLVED] Implemented Viewport Lazy Fetching using `useInView` (Intersection Observer) + zero-leak guard when `reviewCount === 0` and Tier 1 category chunk mapping, saving up to 11-15 reads per product view (down to 1 read).
+    - ⚠️ Related Products Intersection Observer Unmount Loop: Prematurely setting loading=false when !inView caused RelatedProducts to early return null, unmounting the anchor div before observer could trigger, plus useEffect omitted inView dependency. [RESOLVED] Preserved DOM anchor div, configured 300px rootMargin preloading, and included inView in useEffect dependencies.
   </pitfalls_and_lessons>
 </ssr_memory>

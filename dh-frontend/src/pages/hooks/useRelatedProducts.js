@@ -8,15 +8,18 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 const relatedProductsCache = new Map();
 const CACHE_TTL = 10 * 60 * 1000;
 
-export const useRelatedProducts = (currentProductId, category, inView = true) => {
+export const useRelatedProducts = (currentProductId, category, inView = false) => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // 🛡️ Viewport Lazy Fetch: ไม่โหลดถ้ายังไม่เลื่อนหน้าจอลงมาถึง
+    // 🛡️ Viewport Lazy Fetch: ไม่โหลดถ้าไม่มีหมวดหมู่ หรือยังไม่เลื่อนหน้าจอลงมาถึง
     if (!category || !inView) {
-      if (!inView) setLoading(false);
+      if (!category) {
+        setProducts([]);
+        setLoading(false);
+      }
       return;
     }
 
@@ -96,7 +99,7 @@ export const useRelatedProducts = (currentProductId, category, inView = true) =>
     return () => {
       isMounted = false;
     };
-  }, [category, currentProductId]);
+  }, [category, currentProductId, inView]);
 
   return { products, loading, error };
 };
