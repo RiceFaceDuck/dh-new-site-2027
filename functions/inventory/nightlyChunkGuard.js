@@ -21,6 +21,7 @@ const rebuildAllChunksLogic = async (db) => {
     inventorySummaryItems: 0,
     categoriesRebuilt: 0,
     customersIndexed: 0,
+    storefrontSearchItems: 0,
     durationMs: 0
   };
 
@@ -136,6 +137,34 @@ const rebuildAllChunksLogic = async (db) => {
       }
     }
     results.categoriesRebuilt = catCount;
+
+    // -------------------------------------------------------------
+    // 4.5. สร้างก้อน `catalogs/storefront_search_catalog` สำหรับค้นหาหน้าร้าน (Zero-Leak Search Index)
+    // -------------------------------------------------------------
+    const searchItems = allProducts.map(p => ({
+      id: p.sku,
+      sku: p.sku,
+      name: p.name,
+      price: p.retailPrice || p.price,
+      retailPrice: p.retailPrice || p.price,
+      stockQuantity: p.stockQuantity,
+      brand: p.brand,
+      category: p.category,
+      imageUrl: p.images[0] || null,
+      inStock: p.inStock,
+      isActive: true
+    }));
+
+    const searchChunkPayload = {
+      chunkId: 'storefront_search_catalog',
+      type: 'STOREFRONT_SEARCH_CATALOG',
+      totalItems: searchItems.length,
+      generatedAt: FieldValue.serverTimestamp(),
+      items: searchItems
+    };
+
+    await db.collection("catalogs").doc("storefront_search_catalog").set(searchChunkPayload, { merge: true });
+    results.storefrontSearchItems = searchItems.length;
 
     // -------------------------------------------------------------
     // 5. สรุปสารบัญลูกค้า `catalogs/customers_directory`

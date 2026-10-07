@@ -3,10 +3,14 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore'; 
 import { db } from '../firebase/config';
 import ProductList from '../components/ProductList';
-// Removed memoryCache import since we are upgrading to sessionStorage
 import { Search, Sparkles, ChevronLeft } from 'lucide-react';
 
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { safeJsonParse } from 'dh-shared';
+
+const SEARCH_CACHE_KEY = 'dh_search_catalog_cache';
+const SEARCH_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 Hours
+
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
@@ -46,19 +50,63 @@ const SearchPage = () => {
     const fetchProductsForSearch = async () => {
       try {
         setLoading(true);
-        const cacheKey = `search_products_active_capped`;
 
-        const fetchAllActiveProducts = async () => {
-          const { limit } = await import('firebase/firestore');
-          const productsRef = collection(db, getCollectionPath('products'));
-          // 🚀 [Optimization] เพิ่มโควต้าเป็น 5,000 รายการเพื่อให้ค้นหาเจอครบ อาศัย In-Memory Cache (RAM)
-          const q = query(productsRef, where("isActive", "==", true), limit(5000));
-          const snapshot = await getDocs(q);
-          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        };
+        // 🛡️ TIER 1: Check Client-Side Storage Cache (0 Reads)
+        try {
+          const cached = localStorage.getItem(SEARCH_CACHE_KEY) || sessionStorage.getItem(SEARCH_CACHE_KEY);
+          if (cached) {
+            const parsed = safeJsonParse(cached);
+            if (parsed && Array.isArray(parsed.data) && (Date.now() - (parsed.timestamp || 0) < SEARCH_CACHE_TTL)) {
+              setProducts(parsed.data);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (cacheErr) {
+          console.warn("Storage cache read failed:", cacheErr);
+        }
 
-        const { memoryCache } = await import('../utils/memoryCache');
-        const fetchedProducts = await memoryCache.getOrFetch(cacheKey, fetchAllActiveProducts, 5 * 60 * 1000);
+        // 🛡️ TIER 2: Low-Quota Shield from catalogs/storefront_search_catalog (1 Read)
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const catalogRef = doc(db, getCollectionPath('catalogs'), 'storefront_search_catalog');
+          const catalogSnap = await getDoc(catalogRef);
+          
+          if (catalogSnap.exists()) {
+            const catalogData = catalogSnap.data();
+            if (catalogData && Array.isArray(catalogData.items) && catalogData.items.length > 0) {
+              setProducts(catalogData.items);
+              
+              // Save to Client Storage Cache for subsequent searches
+              try {
+                const payload = JSON.stringify({
+                  data: catalogData.items,
+                  timestamp: Date.now()
+                });
+                localStorage.setItem(SEARCH_CACHE_KEY, payload);
+              } catch (storageErr) {
+                // If localStorage is full, try sessionStorage
+                try {
+                  sessionStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify({
+                    data: catalogData.items,
+                    timestamp: Date.now()
+                  }));
+                } catch (sessErr) { /* ignore quota */ }
+              }
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (chunkErr) {
+          console.warn("Search catalog chunk read failed, falling back to direct query:", chunkErr);
+        }
+
+        // 🛡️ TIER 3: Fallback direct query (if chunk not yet generated)
+        const { limit } = await import('firebase/firestore');
+        const productsRef = collection(db, getCollectionPath('products'));
+        const q = query(productsRef, where("isActive", "==", true), limit(5000));
+        const snapshot = await getDocs(q);
+        const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
         setProducts(fetchedProducts || []);
       } catch (err) {

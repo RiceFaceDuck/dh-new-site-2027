@@ -244,7 +244,9 @@ service cloud.firestore {
         docId == 'home_showcase' ||
         docId.matches('^home_showcase_[0-9]+$') ||
         docId == 'categories_index' ||
-        docId == 'ad_cards_bundle'
+        docId == 'ad_cards_bundle' ||
+        docId == 'storefront_search_catalog' ||
+        docId.matches('^storefront_search_catalog.*')
       ) || isStaff();
       allow write: if isStaff();
     }
