@@ -36,5 +36,6 @@
     - ⚠️ Uncached Config & Ad Fetching: Every product view queried knowledge_config, credit_config, and partner_ads repeatedly. [RESOLVED] Added 5-10m in-memory caches and extracted dedicated hooks (useProductReviews, useNearestPartner, useRelatedProducts).
     - ⚠️ Telemetry & SEO Schema Blindspot: Product page lacked GA4 e-commerce events and rich snippets (SKU, MPN, seller, breadcrumbs). [RESOLVED] Connected productAnalyticsService and enriched JSON-LD with BreadcrumbList.
     - ⚠️ Invasive Clipboard Hijack & Mobile Scroll Barrier: onCopy overwrote user clipboard with promo ads, and mobile lacked sticky buy bar. [RESOLVED] Replaced onCopy with copy SKU button, fixed specs acronym regex, and added floating Mobile Sticky Action Bar.
+    - ⚠️ Product Detail & Reviews Viewport Quota Leak: Opening product detail previously triggered eager queries for 5 reviews and 6 related products even if user never scrolled down. [RESOLVED] Implemented Viewport Lazy Fetching using `useInView` (Intersection Observer) + zero-leak guard when `reviewCount === 0` and Tier 1 category chunk mapping, saving up to 11-15 reads per product view (down to 1 read).
   </pitfalls_and_lessons>
 </ssr_memory>
