@@ -319,7 +319,16 @@ export const productService = {
             const catData = catSnap.data();
             if (catData && Array.isArray(catData.items) && catData.items.length > 0) {
               const docs = catData.items.map(p => this.normalizeProductData({ id: p.sku, ...p }));
-              return { docs, lastDoc: null, fromChunk: true };
+              const lastSku = docs[docs.length - 1]?.id || null;
+              const totalItems = Number(catData.totalItems || docs.length);
+              const hasMore = totalItems > docs.length;
+              return { 
+                docs, 
+                lastDoc: lastSku, 
+                fromChunk: true,
+                totalItems,
+                hasMore
+              };
             }
           }
         } catch (chunkErr) {
@@ -328,14 +337,29 @@ export const productService = {
       }
 
       // 🛡️ TIER 2: Direct products query fallback
-      const { collection, query, where, limit, startAfter, getDocs } = await import('firebase/firestore');
+      const { collection, query, where, limit, startAfter, getDocs, doc, getDoc } = await import('firebase/firestore');
       const productsRef = collection(db, getCollectionPath('products'));
       
+      let cursor = lastVisible;
+      if (typeof cursor === 'string') {
+        try {
+          const docSnap = await getDoc(doc(db, getCollectionPath('products'), cursor));
+          if (docSnap.exists()) {
+            cursor = docSnap;
+          } else {
+            cursor = null;
+          }
+        } catch (cursorErr) {
+          console.warn("Failed to resolve string cursor to snapshot:", cursorErr);
+          cursor = null;
+        }
+      }
+
       let q;
-      if (!lastVisible) {
+      if (!cursor) {
         q = query(productsRef, where("category_lower", "==", lowerCaseType), limit(limitCount));
       } else {
-        q = query(productsRef, where("category_lower", "==", lowerCaseType), startAfter(lastVisible), limit(limitCount));
+        q = query(productsRef, where("category_lower", "==", lowerCaseType), startAfter(cursor), limit(limitCount));
       }
 
       const snapshot = await getDocs(q);

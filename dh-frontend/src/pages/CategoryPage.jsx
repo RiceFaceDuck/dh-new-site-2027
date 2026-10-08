@@ -27,7 +27,17 @@ const CategoryPage = () => {
       const { productService } = await import('../firebase/productService');
 
       let fetchedProducts = [];
+      let isFromChunk = false;
       const lowerCaseType = type.trim().toLowerCase();
+
+      // 🛡️ Sort in-stock products first for better customer shopping experience
+      const sortInStockFirst = (list) => {
+        return [...list].sort((a, b) => {
+          const aInStock = (a.availableStock > 0 || (!a.isOutOfStock && a.stockQuantity > 0)) ? 1 : 0;
+          const bInStock = (b.availableStock > 0 || (!b.isOutOfStock && b.stockQuantity > 0)) ? 1 : 0;
+          return bInStock - aInStock;
+        });
+      };
 
       if (isInitial) {
         const cacheKey = `category_${lowerCaseType}`;
@@ -36,30 +46,42 @@ const CategoryPage = () => {
         };
 
         const cachedResult = await memoryCache.getOrFetch(cacheKey, fetchFn, 3 * 60 * 1000);
-        fetchedProducts = cachedResult.docs;
-        if (cachedResult.lastDoc) setLastVisible(cachedResult.lastDoc);
+        fetchedProducts = cachedResult?.docs || [];
+        isFromChunk = Boolean(cachedResult?.fromChunk);
+        if (cachedResult?.lastDoc) setLastVisible(cachedResult.lastDoc);
+
+        // 🛡️ 2-Tier Pagination Shield: If chunk has more items than 50 (e.g. 722 items), allow infinite scroll
+        if (cachedResult?.hasMore !== undefined) {
+          setHasMore(Boolean(cachedResult.hasMore));
+        } else {
+          setHasMore(fetchedProducts.length >= itemsPerPage);
+        }
+
+        setProducts(sortInStockFirst(fetchedProducts));
       } else {
         const result = await productService.getProductsByCategory(lowerCaseType, lastVisible, itemsPerPage);
-        fetchedProducts = result.docs;
-        if (result.lastDoc) {
+        fetchedProducts = result?.docs || [];
+        isFromChunk = Boolean(result?.fromChunk);
+        if (result?.lastDoc) {
           setLastVisible(result.lastDoc);
         }
-      }
-      
-      if (fetchedProducts.length < itemsPerPage || (isInitial && cachedResult?.fromChunk) || (!isInitial && result?.fromChunk)) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+        
+        if (fetchedProducts.length < itemsPerPage) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
 
-      if (isInitial) {
-        setProducts(fetchedProducts);
-      } else {
-        setProducts(prev => [...prev, ...fetchedProducts]);
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newUnique = fetchedProducts.filter(p => !existingIds.has(p.id));
+          return [...prev, ...sortInStockFirst(newUnique)];
+        });
       }
 
     } catch (error) {
       console.error("Error loading products:", error);
+      setError(error.message || "เกิดข้อผิดพลาดในการโหลดสินค้า");
     } finally {
       if (!isInitial) setLoadingMore(false);
     }
@@ -125,14 +147,30 @@ const CategoryPage = () => {
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 md:pt-4 space-y-4 md:space-y-6">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
-          <div className="flex items-center gap-4">
-            <Link to="/categories" className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
-              <ArrowLeft size={20} />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-3 md:gap-4">
+            <Link 
+              to="/categories" 
+              className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl transition-all duration-200 text-slate-500 hover:text-slate-800 shadow-2xs group"
+              aria-label="กลับสู่หมวดหมู่ทั้งหมด"
+            >
+              <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
             </Link>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
-              หมวดหมู่สินค้า: <span className="text-dh-blue">{type}</span>
-            </h1>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  หมวดหมู่: <span className="text-brand">{categoryInfo?.name || type}</span>
+                </h1>
+                {products.length > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-brand border border-blue-100">
+                    {products.length} รายการ
+                  </span>
+                )}
+              </div>
+              <p className="text-xs md:text-sm text-slate-500 mt-0.5">
+                เลือกซื้ออะไหล่แท้และอะไหล่เทียบคุณภาพสูง จัดส่งรวดเร็วทั่วประเทศ
+              </p>
+            </div>
           </div>
         </div>
 
