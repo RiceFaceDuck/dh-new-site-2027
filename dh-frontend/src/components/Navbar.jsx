@@ -111,10 +111,10 @@ const Navbar = () => {
               )}
             </div>
 
-            <div className="h-6 w-px bg-white/20 hidden sm:block mx-1"></div>
+            <div className="h-6 w-px bg-white/20 hidden md:block mx-1"></div>
 
-            {/* 🌟 User Profile / Auth Area 🌟 */}
-            <div className="relative" ref={dropdownRef}>
+            {/* 🌟 User Profile / Auth Area (Desktop Only: md ขึ้นไป ส่วนมือถือใช้แถบเมนู BottomNav ด้านล่าง) 🌟 */}
+            <div className="relative hidden md:block" ref={dropdownRef}>
               {loading ? (
                 // 🌀 กำลังตรวจสอบสถานะ: แสดง Skeleton สวยงาม ป้องกัน Flash เข้าสู่ระบบ
                 <div className="w-20 sm:w-28 h-8 sm:h-9 bg-white/10 rounded-xl animate-pulse border border-white/10" />
@@ -128,7 +128,7 @@ const Navbar = () => {
                       className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-xl transition-all shadow-xs hover:shadow-sm active:scale-95"
                     >
                       <User size={18} />
-                      <span className="hidden sm:inline">เข้าสู่ระบบ</span>
+                      <span>เข้าสู่ระบบ</span>
                     </button>
                   ) : (
                 // 🟢 ล็อกอินแล้ว: แสดง Avatar และ Dropdown
@@ -160,13 +160,13 @@ const Navbar = () => {
                       )}
                     </div>
                     
-                    <div className="hidden lg:flex flex-col items-start">
+                    <div className="flex flex-col items-start">
                       <span className="text-xs font-bold text-white truncate max-w-[100px] leading-none mb-0.5">
                         {currentUser.displayName || 'พาร์ทเนอร์'}
                       </span>
                       <span className="text-[10px] text-brand-light font-medium leading-none">Online</span>
                     </div>
-                    <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 hidden sm:block ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {/* 🔽 Dropdown Menu */}
