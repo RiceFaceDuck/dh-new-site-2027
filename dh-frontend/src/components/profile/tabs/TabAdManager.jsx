@@ -57,35 +57,35 @@ const TabAdManager = ({ user }) => {
 
   return (
     <div className="space-y-6 animate-fade-in relative z-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200/60 pb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
         <div>
-          <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2 tracking-tight">
-            <Megaphone className="text-indigo-600 drop-shadow-xs" size={28} /> ศูนย์จัดการโฆษณาและร้านค้า
+          <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 tracking-tight">
+            <Megaphone className="text-indigo-400 drop-shadow-xs" size={26} /> ศูนย์จัดการโฆษณาและร้านค้า
           </h2>
-          <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
-            <Sparkles size={14} className="text-amber-400" />ศูนย์รวมการโปรโมทร้านค้าและสินค้าแบบครบวงจร
+          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 font-medium">
+            <Sparkles size={13} className="text-amber-400" />ศูนย์รวมการโปรโมทร้านค้าและสินค้าแบบครบวงจร
           </p>
         </div>
-        <div className="flex bg-slate-200/70 p-1.5 rounded-xl shadow-inner border border-slate-300/80">
+        <div className="flex bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/60">
           <button
             onClick={() => setActiveSubTab('store')}
-            className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
               activeSubTab === 'store'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/90'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-slate-700 text-white shadow-sm border border-slate-600/80'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Store size={16} /> ข้อมูลร้านซ่อม
+            <Store size={15} /> ข้อมูลร้านซ่อม
           </button>
           <button
             onClick={() => setActiveSubTab('ads')}
-            className={`px-5 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
               activeSubTab === 'ads'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/90'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-slate-700 text-white shadow-sm border border-slate-600/80'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Activity size={16} /> โฆษณาสินค้า/แบนเนอร์ ({ads.length})
+            <Activity size={15} /> โฆษณาสินค้า/แบนเนอร์ ({ads.length})
           </button>
         </div>
       </div>

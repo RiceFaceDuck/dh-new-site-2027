@@ -39,28 +39,28 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
   return (
     <div className="bg-white border border-slate-200/90 rounded-3xl shadow-md overflow-hidden animate-in fade-in duration-300">
       
-      <div className="bg-slate-900 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800">
+      <div className="bg-slate-100/90 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200/90">
         <div>
-          <h3 className="text-lg font-black text-white flex items-center gap-2"><Store className="text-indigo-400"/> ศูนย์ข้อมูลร้านค้า (Store Profile)</h3>
-          <p className="text-[11px] text-slate-400 mt-1">ข้อมูลในหน้านี้จะถูกนำไปใช้สร้าง <b>"โฆษณานามบัตร"</b> และแสดงผลบนแผนที่เรดาร์อัตโนมัติ</p>
+          <h3 className="text-lg font-black text-slate-900 flex items-center gap-2"><Store className="text-indigo-600"/> ศูนย์ข้อมูลร้านค้า (Store Profile)</h3>
+          <p className="text-[11px] text-slate-500 mt-1">ข้อมูลในหน้านี้จะถูกนำไปใช้สร้าง <b>"โฆษณานามบัตร"</b> และแสดงผลบนแผนที่เรดาร์อัตโนมัติ</p>
         </div>
         
-        <div className="bg-slate-800 p-3 rounded-2xl flex items-center gap-4 border border-slate-700">
+        <div className="bg-white p-3 rounded-2xl flex items-center gap-4 border border-slate-200 shadow-2xs">
           <div className="text-right">
-            <div className="text-xs font-bold text-white uppercase tracking-widest">นามบัตรโฆษณา</div>
+            <div className="text-xs font-bold text-slate-800 uppercase tracking-widest">นามบัตรโฆษณา</div>
             <div className="text-[10px]">
               {businessCardAd?.status?.toUpperCase() === 'PAUSED' ? (
-                <span className="text-orange-400 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
+                <span className="text-orange-600 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
               ) : isAdPending ? (
-                <span className="text-amber-400 font-bold">🟡 รอตรวจสอบ (Pending)</span>
+                <span className="text-amber-600 font-bold">🟡 รอตรวจสอบ (Pending)</span>
               ) : isCardLive ? (
-                <span className="text-emerald-400 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
+                <span className="text-emerald-600 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
               ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (
-                <span className="text-rose-400 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
+                <span className="text-rose-600 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
               ) : !storeData.isSupportActive ? (
-                <span className="text-slate-400">⚫ ปิดการแสดงผล</span>
+                <span className="text-slate-500">⚫ ปิดการแสดงผล</span>
               ) : (
-                <span className="text-amber-400">🟡 รอการบันทึก</span>
+                <span className="text-amber-600">🟡 รอการบันทึก</span>
               )}
             </div>
           </div>

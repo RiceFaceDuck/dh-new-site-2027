@@ -53,5 +53,6 @@
 - ⚠️ Unchecked File Upload & Negative Price (FIXED Phase 2): เดิมอนุญาตให้อัปโหลดไฟล์ใดก็ได้ไม่เกิน 10MB และไม่ได้บล็อกราคาติดลบ -> เพิ่ม MIME type guard (`image/jpeg,image/png,image/webp`) และ `min="0"` บน input/submit
 - ⚠️ Billing Transparency & Remaining Points (FIXED Phase 3): เดิม `spentBudget` ถูกบันทึกลง Firestore แต่ไม่แสดงบนหน้าจอ ทำให้พาร์ทเนอร์ไม่รู้ว่าใช้แต้มไปเท่าไร -> เพิ่มการแสดง `ใช้ไป / งบ (Pts)` ทั้งใน Mobile Card และ Desktop Table รวมถึงแสดงผลแต้มคงเหลือแบบไดนามิกใน `AdFormModal`
 - ⚠️ Read Quota Over-fetch (FIXED Phase 4): `getActiveAds` ใน `marketingService.js` เดิมดึง 100 docs แล้วมา slice 30 ในหน่วยความจำ -> ปรับ `limit(30)` ที่ query ตรง ลดโควต้าอ่าน 70% และลบ dead state `adToDelete` ออกจาก `useAdManager`
+- 🎨 UI Minimal Theme Harmony (FIXED): ปรับแถบ Header บนเป็น Deep Slate Navy (`bg-slate-900`) และกล่อง Ads/Store Banner ด้านล่างเป็น Ice Slate (`bg-slate-100/90`) มินิมอล อ่านง่าย ลดแสงสะท้อนและมลภาวะทางสายตา
 </pitfalls_and_lessons>
 </ssr_memory>
