@@ -133,7 +133,7 @@ function printDashboard() {
   }
 
   console.log(`${CYAN}======================================================================${RESET}`);
-  console.log(`${BOLD}${WHITE}  [★] กด [ENTER] ทันที  -->  🚀 FULL DEPLOY ปลอดภัย (3 เว็บไซต์ + กฎ Rules)${RESET}`);
+  console.log(`${BOLD}${WHITE}  [★] กด [ENTER] ทันที  -->  🚀 FULL DEPLOY ครบวงจร (Commit + Push + 3 เว็บ + Rules)${RESET}`);
   console.log(`${GRAY}  (ตัด functions และ indexes ออกจาก Full Deploy เพื่อความปลอดภัยสูงสุด)${RESET}`);
   console.log(`${GRAY}----------------------------------------------------------------------${RESET}`);
   console.log(`  ${BOLD}[1]${RESET} Deploy หน้าร้านหลัก (dh-frontend)`);
@@ -143,8 +143,9 @@ function printDashboard() {
   console.log(`  ${BOLD}[5]${RESET} Deploy กฎความปลอดภัย (Firestore & Storage Rules)`);
   console.log(`  ${BOLD}[6]${RESET} Deploy ดัชนีฐานข้อมูล (Firestore Indexes)`);
   console.log(`${GRAY}----------------------------------------------------------------------${RESET}`);
-  console.log(`  ${BOLD}[7]${RESET} ส่งโค้ดขึ้น GitHub (Git Push origin main)`);
-  console.log(`  ${BOLD}[8]${RESET} รันสคริปต์สำรองฐานข้อมูล Firestore (Database Backup)`);
+  console.log(`  ${BOLD}[7]${RESET} บันทึกการแก้ไขลงในเครื่อง (Git Commit)`);
+  console.log(`  ${BOLD}[8]${RESET} ส่งโค้ดขึ้น GitHub (Git Push origin main)`);
+  console.log(`  ${BOLD}[9]${RESET} สำรองฐานข้อมูล Firestore (ดาวน์โหลดข้อมูลจริงลงโฟลเดอร์ backups/ ในเครื่อง)`);
   console.log(`${GRAY}----------------------------------------------------------------------${RESET}`);
   console.log(`  ${BOLD}[0]${RESET} ยกเลิก / ออกจากโปรแกรม`);
   console.log(`${CYAN}======================================================================${RESET}`);
@@ -172,7 +173,7 @@ function ask(questionText) {
 async function main() {
   while (true) {
     printDashboard();
-    const choice = await ask(`\n${BOLD}👉 เลือกเมนู (กด [Enter] เพื่อ FULL DEPLOY หรือพิมพ์ 0-8): ${RESET}`);
+    const choice = await ask(`\n${BOLD}👉 เลือกเมนู (กด [Enter] เพื่อ FULL DEPLOY หรือพิมพ์ 0-9): ${RESET}`);
 
     if (choice === '0') {
       console.log(`\n${GREEN}ออกจากโปรแกรมเรียบร้อยครับ!${RESET}`);
@@ -180,29 +181,58 @@ async function main() {
     }
 
     // ====================================================================
-    // FULL DEPLOY (เฉพาะ 3 เว็บไซต์ + Rules - ไม่รวม Functions / Indexes)
+    // FULL DEPLOY (Commit + Push + 3 เว็บไซต์ + Rules - ไม่รวม Functions / Indexes)
     // ====================================================================
     if (choice === '' || choice.toLowerCase() === 'full') {
       console.log(`\n${YELLOW}${BOLD}======================================================================${RESET}`);
-      console.log(`${YELLOW}${BOLD} 🚀 ยืนยัน FULL DEPLOY ปลอดภัย (หน้าร้าน + หลังร้าน + พนักงาน + กฎ Rules)${RESET}`);
+      console.log(`${YELLOW}${BOLD} 🚀 ยืนยัน FULL DEPLOY (Commit + Push + เว็บไซต์ 3 ระบบ + กฎ Rules)${RESET}`);
       console.log(`${YELLOW}${BOLD}======================================================================${RESET}`);
-      const confirm = await ask(`คุณต้องการ Full Deploy เฉพาะเว็บไซต์และกฎความปลอดภัย ใช่หรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+      const confirm = await ask(`คุณต้องการ Full Deploy ใช่หรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() === 'n') {
         console.log(`\nยกเลิกการ Full Deploy กลับสู่เมนูหลัก...`);
         await ask(`กด Enter เพื่อดำเนินการต่อ...`);
         continue;
       }
 
-      // Step 1: Security Rules Only (No indexes)
-      console.log(`\n${CYAN}[1/4] Deploying Security Rules (Firestore & Storage)...${RESET}`);
+      const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+      // Step 1: Git Commit (ถ้ามีไฟล์ตกค้าง)
+      const st = getGitStatus();
+      if (st.total > 0) {
+        console.log(`\n${CYAN}[1/6] ตรวจพบไฟล์แก้ไขตกค้าง ${st.total} ไฟล์ กำลังบันทึก (Git Commit)...${RESET}`);
+        let commitMsg = await ask(`กรุณาระบุข้อความ Commit [กด Enter เพื่อใช้ "Deploy release: ${nowStr}"]: `);
+        if (!commitMsg) commitMsg = `Deploy release: ${nowStr}`;
+        runCmd('git add -A');
+        runCmd(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`);
+      } else {
+        console.log(`\n${GREEN}[1/6] 🟢 โค้ดในเครื่องสะอาดแล้ว (ไม่มีไฟล์ค้าง ข้ามขั้นตอน Commit)${RESET}`);
+      }
+
+      // Step 2: Git Push (ถ้ามี commits รอ push)
+      const unpushed = getUnpushedCommits();
+      if (unpushed > 0) {
+        console.log(`\n${CYAN}[2/6] ตรวจพบ ${unpushed} commits กำลังส่งขึ้น GitHub (Git Push origin main)...${RESET}`);
+        if (!runCmd('git push origin main')) {
+          const proceed = await ask(`\n${YELLOW}⚠️ Push ขึ้น GitHub ไม่สำเร็จ คุณต้องการ Deploy เว็บไซต์ต่อหรือไม่? [Y/N, ค่าเริ่มต้น Y]: ${RESET}`);
+          if (proceed.toLowerCase() === 'n') {
+            await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
+            continue;
+          }
+        }
+      } else {
+        console.log(`\n${GREEN}[2/6] 🟢 ซิงค์ตรงกับ GitHub แล้ว (ไม่มี commit ค้าง ข้ามขั้นตอน Push)${RESET}`);
+      }
+
+      // Step 3: Security Rules Only (No indexes)
+      console.log(`\n${CYAN}[3/6] Deploying Security Rules (Firestore & Storage)...${RESET}`);
       if (!runCmd('firebase deploy --only firestore:rules,storage')) {
         console.log(`\n${RED}❌ Deploy Rules ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
         await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
         continue;
       }
 
-      // Step 2: Staff App
-      console.log(`\n${CYAN}[2/4] Building & Deploying Staff App (dh-staff-app)...${RESET}`);
+      // Step 4: Staff App
+      console.log(`\n${CYAN}[4/6] Building & Deploying Staff App (dh-staff-app)...${RESET}`);
       if (!runCmd('npm run build', path.join(msRoot, 'dh-staff-app')) ||
           !runCmd('firebase deploy --only hosting:dh-notebook-69f3b')) {
         console.log(`\n${RED}❌ Staff App ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
@@ -210,8 +240,8 @@ async function main() {
         continue;
       }
 
-      // Step 3: Backoffice
-      console.log(`\n${CYAN}[3/4] Building & Deploying Backoffice (dh-backoffice-react)...${RESET}`);
+      // Step 5: Backoffice
+      console.log(`\n${CYAN}[5/6] Building & Deploying Backoffice (dh-backoffice-react)...${RESET}`);
       if (!runCmd('npm run build', path.join(msRoot, 'dh-backoffice-react')) ||
           !runCmd('firebase deploy --only hosting:dhnotebook-work')) {
         console.log(`\n${RED}❌ Backoffice ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
@@ -219,8 +249,8 @@ async function main() {
         continue;
       }
 
-      // Step 4: Frontend
-      console.log(`\n${CYAN}[4/4] Building & Deploying Frontend (dh-frontend)...${RESET}`);
+      // Step 6: Frontend
+      console.log(`\n${CYAN}[6/6] Building & Deploying Frontend (dh-frontend)...${RESET}`);
       if (!runCmd('npm run build', path.join(msRoot, 'dh-frontend')) ||
           !runCmd('firebase deploy --only hosting:dh-notebook-frontend')) {
         console.log(`\n${RED}❌ Frontend ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
@@ -299,18 +329,45 @@ async function main() {
       continue;
     }
 
-    // 7. Git Push
+    // 7. Git Commit
     if (choice === '7') {
-      console.log(`\n[*] กำลังส่งโค้ดขึ้น GitHub (origin main)...`);
+      const st = getGitStatus();
+      if (st.total === 0) {
+        console.log(`\n${GREEN}🟢 โค้ดในเครื่องสะอาดเรียบร้อย ไม่มีไฟล์ที่ถูกแก้ไขหรือรอ Commit ครับ${RESET}`);
+      } else {
+        console.log(`\n${CYAN}[*] ตรวจพบการแก้ไข ${st.total} ไฟล์${RESET}`);
+        const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        let commitMsg = await ask(`ระบุข้อความบันทึกงาน (Commit Message) [กด Enter เพื่อใช้ "Manual commit: ${nowStr}"]: `);
+        if (!commitMsg) commitMsg = `Manual commit: ${nowStr}`;
+        runCmd('git add -A');
+        runCmd(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`);
+      }
+      await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
+      continue;
+    }
+
+    // 8. Git Push
+    if (choice === '8') {
+      const unpushed = getUnpushedCommits();
+      console.log(`\n[*] สถานะ: มี ${unpushed} commits รอ Push`);
+      console.log(`[*] กำลังส่งโค้ดขึ้น GitHub (origin main)...`);
       runCmd('git push origin main');
       await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
       continue;
     }
 
-    // 8. DB Backup
-    if (choice === '8') {
-      console.log(`\n[*] กำลังรันสคริปต์สำรองฐานข้อมูล Firestore...`);
-      runCmd('node scripts/backupDatabase.mjs');
+    // 9. DB Backup
+    if (choice === '9') {
+      console.log(`\n${CYAN}======================================================================${RESET}`);
+      console.log(`  💾 สำรองฐานข้อมูล Firestore (Database Backup)`);
+      console.log(`  คำอธิบาย: ระบบจะดาวน์โหลดสำเนาตารางข้อมูลจริงจาก Firestore`);
+      console.log(`  (users, products, orders, claims, system_logs)`);
+      console.log(`  มาบันทึกเป็นไฟล์ .json เก็บไว้ในโฟลเดอร์ backups/ ของเครื่องคอมพิวเตอร์`);
+      console.log(`${CYAN}======================================================================${RESET}`);
+      const confirm = await ask(`ยืนยันการเริ่มดาวน์โหลดสำรองข้อมูล? [Y/N, ค่าเริ่มต้น Y]: `);
+      if (confirm.toLowerCase() !== 'n') {
+        runCmd('node scripts/backupDatabase.mjs');
+      }
       await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
       continue;
     }

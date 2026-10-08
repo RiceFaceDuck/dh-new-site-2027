@@ -51,8 +51,17 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false }
       if (item.isSponsoredAd) return item; // ถ้าเป็นโฆษณา ไม่ต้องทำอะไร
       
       const product = item;
-      const rawImage = getVal(product, ['imageurl', 'image', 'images', 'img', 'picture', 'photo', 'url', 'รูปภาพ']);
-      let imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? rawImage : '/logo.png');
+      // 🖼️ ให้ความสำคัญกับภาพปก (images[0]) ที่ตั้งค่าจากระบบหลังบ้านก่อนเสมอ
+      let rawImage = null;
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        rawImage = product.images[0];
+      } else if (product.imageUrl || product.image || product.img) {
+        rawImage = product.imageUrl || product.image || product.img;
+      } else {
+        rawImage = getVal(product, ['images', 'imageurl', 'picture', 'photo', 'url', 'รูปภาพ']);
+      }
+
+      let imageUrl = Array.isArray(rawImage) && rawImage.length > 0 ? rawImage[0] : (typeof rawImage === 'string' ? (rawImage.includes(',') ? rawImage.split(',')[0].trim() : rawImage) : '/logo.png');
       imageUrl = getRenderableImageUrl(imageUrl);
       
       const rawPrice = getVal(product, ['retailprice', 'regularprice', 'ราคาปลีก', 'price', 'saleprice', 'ราคา', 'sellprice']);

@@ -28,6 +28,17 @@ const Navbar = () => {
     setNavAvatarError(false);
   }, [currentUser?.photoURL]);
 
+  // 🔍 ซิงค์คำค้นหาใน Navbar กับ URL query เมื่ออยู่ที่หน้า /search
+  useEffect(() => {
+    if (location.pathname === '/search') {
+      const params = new URLSearchParams(location.search);
+      const q = params.get('q') || '';
+      setSearchQuery(q);
+    } else {
+      setSearchQuery('');
+    }
+  }, [location.pathname, location.search]);
+
   // ปิด Dropdown เมื่อ Scroll ลง
   const handleScrollDown = useCallback(() => {
     setIsDropdownOpen(false);
@@ -40,6 +51,8 @@ const Navbar = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else if (location.pathname === '/search') {
+      navigate('/search');
     }
   };
 

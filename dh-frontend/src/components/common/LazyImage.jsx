@@ -46,14 +46,20 @@ const LazyImage = ({
           observer.disconnect();
         }
       },
-      { rootMargin: '100px 0px' }
+      { rootMargin: '250px 0px' }
     );
 
     if (imgRef.current) {
       observer.observe(imgRef.current);
     }
 
+    // 🛡️ Safety Fallback: ถ้าอยู่ใน Virtualized Grid หรือ initial render นานเกิน 350ms ให้ปลดล็อคทันที ป้องกันกล่องสีเทาค้าง
+    const timer = setTimeout(() => {
+      setIsIntersecting(true);
+    }, 350);
+
     return () => {
+      clearTimeout(timer);
       observer.disconnect();
     };
   }, []);
@@ -113,6 +119,7 @@ const LazyImage = ({
               setIsLoaded(true);
             }
           }}
+          loading="lazy"
           src={currentSrc}
           alt={alt || ''}
           className={`w-full h-full transition-all duration-300 ${imgObjectFit} ${isLoaded ? 'opacity-100 blur-none scale-100' : 'opacity-0 blur-xs scale-105'} ${imgClassName} ${hasError ? 'p-2 opacity-50' : ''}`}
