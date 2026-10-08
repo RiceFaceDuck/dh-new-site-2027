@@ -174,7 +174,7 @@ const HeroSection = () => {
           )}
           {activeConfig.secondaryButton?.isActive && (
             <Link
-              to={activeConfig.secondaryButton.link || '/category/all'}
+              to={activeConfig.secondaryButton.link || '/categories'}
               className={`px-6 py-2.5 md:px-8 md:py-3 font-bold rounded-lg transition-colors text-xs md:text-sm uppercase tracking-wider shadow-xs ${
                 activeConfig.secondaryButton.variant === 'outline'
                   ? 'border-2 border-white text-white bg-transparent hover:bg-white hover:text-slate-900'

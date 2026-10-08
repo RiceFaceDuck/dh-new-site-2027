@@ -1,5 +1,5 @@
 import React, { Suspense, useLayoutEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home/Home';
 
@@ -68,6 +68,8 @@ function App() {
                 <Route element={<MainLayout />}>
                   <Route path="/" element={<Home />} />
                   <Route path="/categories" element={<CategoriesMain />} />
+                  {/* 🛡️ Smart Route Redirection: ป้องกัน Dead Route จากลิงก์เก่า /category/all ให้ส่งต่อไปยังศูนย์รวมหมวดหมู่อะไหล่ /categories */}
+                  <Route path="/category/all" element={<Navigate to="/categories" replace />} />
                   <Route path="/category/:type" element={<CategoryPage />} />
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/product/:id" element={<ProductDetail />} />

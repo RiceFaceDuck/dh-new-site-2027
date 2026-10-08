@@ -29,7 +29,7 @@ export const DEFAULT_HERO_CONFIG = {
   },
   secondaryButton: {
     label: 'SHOP SPARES',
-    link: '/category/all',
+    link: '/categories',
     isActive: true,
     variant: 'solid'
   },

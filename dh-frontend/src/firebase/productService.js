@@ -304,6 +304,11 @@ export const productService = {
       const cleanCategory = (category || '').trim();
       const lowerCaseType = cleanCategory.toLowerCase();
       
+      // 🛡️ Zero-Quota Guard: 'all' is an alias for the categories hub (/categories), not a single product category
+      if (!lowerCaseType || lowerCaseType === 'all') {
+        return { docs: [], lastDoc: null };
+      }
+
       // 🛡️ TIER 1: Low-Quota Shield from catalogs/cat_* (1 Read for up to 50 items)
       if (!lastVisible && lowerCaseType) {
         try {

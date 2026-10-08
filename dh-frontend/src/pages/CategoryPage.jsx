@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 
 import { categoryService } from '../firebase/categoryService';
 import ProductList from '../components/ProductList';
@@ -81,7 +81,7 @@ const CategoryPage = () => {
   useEffect(() => {
     let isMounted = true;
     const fetchInitialData = async () => {
-      if (!type) return;
+      if (!type || type.trim().toLowerCase() === 'all') return;
       
       try {
         setLoading(true);
@@ -111,7 +111,10 @@ const CategoryPage = () => {
     return () => { isMounted = false; };
   }, [type, loadProducts]);
 
-
+  // 🛡️ Route Alias & Parity Guard: If type is 'all', auto-redirect to canonical /categories hub
+  if (type && type.trim().toLowerCase() === 'all') {
+    return <Navigate to="/categories" replace />;
+  }
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">

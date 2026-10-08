@@ -1,4 +1,4 @@
-import { Home, Search, ShoppingCart, User } from 'lucide-react';
+import { Home, LayoutGrid, ShoppingCart, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../context/ToastContext';
@@ -11,12 +11,15 @@ const BottomNav = () => {
   // ฟังก์ชันเช็คว่าหน้าปัจจุบันตรงกับเมนูไหน
   const isActive = (path) => {
     if (path === '/' && location.pathname !== '/') return false;
+    if (path === '/categories') {
+      return location.pathname.startsWith('/categories') || location.pathname.startsWith('/category');
+    }
     return location.pathname.startsWith(path);
   };
 
   const navItems = [
     { path: '/', label: 'หน้าแรก', icon: Home },
-    { path: '/category/all', label: 'หมวดหมู่', icon: Search },
+    { path: '/categories', label: 'หมวดหมู่', icon: LayoutGrid },
     { path: '#', label: 'บริการ', icon: User, disabled: true },
     { path: '/cart', label: 'ตะกร้า', icon: ShoppingCart, badge: cartTotalQty },
     { path: '/profile', label: 'โปรไฟล์', icon: User },

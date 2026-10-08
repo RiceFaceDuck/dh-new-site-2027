@@ -39,5 +39,6 @@
     - ⚠️ OutOfStock Buffer Guard: `isOutOfStock` must evaluate whether `availableStock <= 0` (`stockQuantity <= bufferStock`), not merely `stockQuantity <= 0`, ensuring customers cannot add unpurchasable buffer stock to cart.
     - ⚠️ Search Quota Explosion (2,412 Reads Trap): `SearchPage.jsx` previously queried active products collection directly (`limit 5000`), consuming ~2,412 reads per search. [RESOLVED] Upgraded to Tier 1 Client Storage Cache (0 Reads) + Tier 2 `catalogs/storefront_search_catalog` chunk (1 Read) with direct query fallback, reducing search reads by 99.96%.
     - ⚠️ Category Page Chunk Parity: `CategoryPage.jsx` previously queried products collection directly (40 reads). [RESOLVED] Integrated Tier 1 `catalogs/cat_*` chunk check (1 read) with query fallback.
+    - ⚠️ Category All Dead Link & Mobile Navigation Mismatch: `BottomNav.jsx` and Hero buttons previously linked to non-existent `/category/all`, querying `category_lower == all` and returning false negative 0 products ("ไม่พบสินค้าในหมวดหมู่นี้"). [RESOLVED] Unified navigation to canonical `/categories` hub with `LayoutGrid` icon, added smart route redirect in `App.jsx` + defense-in-depth `Navigate` guard in `CategoryPage.jsx`, and shielded `productService` with zero-quota early return.
   </pitfalls_and_lessons>
 </ssr_memory>

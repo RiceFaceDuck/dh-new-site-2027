@@ -76,7 +76,7 @@ export const HeroConfigSchema = z.object({
   }),
   secondaryButton: HeroButtonSchema.default({
     label: 'SHOP SPARES',
-    link: '/category/all',
+    link: '/categories',
     isActive: true,
     variant: 'solid'
   }),

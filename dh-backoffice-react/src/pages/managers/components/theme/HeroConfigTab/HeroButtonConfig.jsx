@@ -1,7 +1,7 @@
 import { MousePointerClick, Link as LinkIcon } from 'lucide-react';
 
 const QUICK_LINKS = [
-  { label: 'สินค้าทั้งหมด', path: '/category/all' },
+  { label: 'หมวดหมู่อะไหล่ทั้งหมด', path: '/categories' },
   { label: 'ช่างบริการ (Squad)', path: '/squad' },
   { label: 'ค้นหาอะไหล่', path: '/search' },
   { label: 'ติดต่อร้าน', path: '/contact' }
@@ -9,7 +9,7 @@ const QUICK_LINKS = [
 
 export default function HeroButtonConfig({
   primaryButton = { label: 'BOOK A SQUAD', link: '/squad', isActive: true, variant: 'solid' },
-  secondaryButton = { label: 'SHOP SPARES', link: '/category/all', isActive: true, variant: 'solid' },
+  secondaryButton = { label: 'SHOP SPARES', link: '/categories', isActive: true, variant: 'solid' },
   onChange
 }) {
   const handlePrimaryChange = (changes) => {
@@ -164,7 +164,7 @@ export default function HeroButtonConfig({
               <input
                 type="text"
                 value={secondaryButton?.link || ''}
-                placeholder="เช่น /category/all หรือ https://..."
+                placeholder="เช่น /categories หรือ https://..."
                 onChange={(e) => handleSecondaryChange({ link: e.target.value })}
                 className="w-full p-2.5 pl-9 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-hidden focus:border-slate-500 focus:bg-white"
                 disabled={!secondaryButton?.isActive}
