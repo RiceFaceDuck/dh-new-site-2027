@@ -5,16 +5,24 @@ export const useCategories = () => {
   const { 
     data: categories = [], 
     isLoading: loading, 
-    error 
+    error,
+    refetch 
   } = useQuery({
     queryKey: ['categories', 'active'],
     queryFn: () => categoryService.getActiveCategories(),
-    staleTime: 5 * 60 * 1000, // 5 นาที 
-    cacheTime: 30 * 60 * 1000, // เก็บใน Memory 30 นาที
+    staleTime: 60 * 60 * 1000, // 1 ชั่วโมงใน RAM
+    cacheTime: 24 * 60 * 60 * 1000, // เก็บใน Memory 24 ชั่วโมง
   });
 
-  // แปลง error Object ของ React Query เป็น string message เพื่อให้ API เดิมยังคงใช้งานได้เหมือนเดิม
   const errorMessage = error ? "ไม่สามารถดึงข้อมูลหมวดหมู่ได้ในขณะนี้" : null;
 
-  return { categories, loading, error: errorMessage };
+  return { 
+    categories, 
+    loading, 
+    error: errorMessage,
+    refetch: () => {
+      categoryService.clearLocalCache();
+      return refetch();
+    }
+  };
 };

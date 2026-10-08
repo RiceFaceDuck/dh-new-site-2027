@@ -6,34 +6,38 @@ const CategoryCard = ({ category }) => {
   return (
     <Link
       to={`/category/${category.type}`}
-      className="group flex flex-row items-center p-3 md:p-4 bg-white border border-slate-200 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200 w-full"
-      style={{ borderRadius: '4px' }} // Formal, slight rounding
+      className="group relative flex flex-row items-center p-3.5 md:p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-brand/50 hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300 w-full overflow-hidden"
     >
+      {/* Ambient hover glow */}
+      <div className="absolute inset-0 bg-gradient-to-r from-brand/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
       <div 
-        className="shrink-0 w-14 h-14 md:w-16 md:h-16 bg-slate-50 flex items-center justify-center overflow-hidden border border-slate-100 p-2" 
-        style={{ borderRadius: '2px' }}
+        className="shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center overflow-hidden p-2 group-hover:bg-white group-hover:border-brand/30 transition-all duration-300 shadow-2xs relative z-10" 
       >
         {category.imageUrl ? (
           <LazyImage 
             src={category.imageUrl} 
             alt={category.name} 
-            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full bg-blue-50/50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-            <Package className="w-6 h-6 md:w-8 md:h-8 text-blue-300 group-hover:text-blue-500 group-hover:scale-105 transition-all duration-300" strokeWidth={1.5} />
+          <div className="w-full h-full bg-blue-50/70 rounded-lg flex items-center justify-center group-hover:bg-brand/10 transition-colors">
+            <Package className="w-6 h-6 md:w-8 md:h-8 text-blue-500 group-hover:text-brand group-hover:scale-110 transition-all duration-300" strokeWidth={1.75} />
           </div>
         )}
       </div>
       
-      <div className="ml-3 md:ml-4 grow flex justify-between items-center">
+      <div className="ml-3.5 md:ml-4 grow flex justify-between items-center relative z-10">
         <div>
-          <h3 className="text-slate-800 font-semibold text-sm md:text-base leading-tight group-hover:text-blue-700 transition-colors">
+          <h3 className="text-slate-900 font-bold text-sm md:text-base leading-snug group-hover:text-brand transition-colors">
             {category.name}
           </h3>
-          <p className="text-slate-500 text-[11px] md:text-xs mt-1">คลิกเพื่อดูอะไหล่</p>
+          <p className="text-slate-500 text-xs mt-0.5 flex items-center gap-1">คลิกเพื่อดูอะไหล่</p>
         </div>
-        <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors w-5 h-5 shrink-0" />
+        
+        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200/60 flex items-center justify-center group-hover:bg-brand group-hover:border-brand transition-all duration-300 shrink-0 ml-2 shadow-2xs">
+          <ChevronRight className="text-slate-400 group-hover:text-white transition-colors w-4 h-4 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+        </div>
       </div>
     </Link>
   );

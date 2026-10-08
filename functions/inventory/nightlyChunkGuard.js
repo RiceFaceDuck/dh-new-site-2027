@@ -116,13 +116,15 @@ const rebuildAllChunksLogic = async (db) => {
     let catCount = 0;
     for (const [catName, items] of categoryMap.entries()) {
       if (items.length >= 3) {
+        // 🛡️ Deterministic Sorting: จัดเรียงตาม SKU เพื่อให้ตรงกับ Pagination Cursor ใน Firestore Query
+        const sortedItems = [...items].sort((a, b) => a.sku.localeCompare(b.sku));
         const catChunk = {
           chunkId: `cat_${catName}`,
           category: catName,
           type: 'CATEGORY',
           totalItems: items.length,
           generatedAt: FieldValue.serverTimestamp(),
-          items: items.slice(0, 50).map(p => ({
+          items: sortedItems.slice(0, 50).map(p => ({
             sku: p.sku,
             name: p.name,
             price: p.price,
@@ -138,6 +140,55 @@ const rebuildAllChunksLogic = async (db) => {
       }
     }
     results.categoriesRebuilt = catCount;
+
+    // -------------------------------------------------------------
+    // 4.1. สร้างก้อน `catalogs/categories_index` สำหรับสารบัญหมวดหมู่หน้าร้าน (Zero-Leak Category Index)
+    // -------------------------------------------------------------
+    try {
+      const homeCatSnap = await db.collection("homepage_categories").get();
+      const categoriesList = [];
+      homeCatSnap.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data && data.isActive !== false && (data.status === 'active' || data.isActive === true)) {
+          let name = String(data.name || '').trim();
+          let type = String(data.type || data.name || '').trim();
+
+          // Normalization
+          if (name === 'ลำโพง' && (!type || type === 'undefined')) {
+            type = 'built in audio';
+          }
+          if (name.toLowerCase() === 'fan' || type.toLowerCase() === 'fan') {
+            type = 'cooling';
+          }
+
+          categoriesList.push({
+            id: docSnap.id,
+            name: name || type || 'General',
+            type: type || name,
+            imageUrl: data.imageUrl || null,
+            buttonShape: data.buttonShape || 'circle',
+            order: typeof data.order === 'number' ? data.order : 99
+          });
+        }
+      });
+
+      // Deduplicate by name
+      const uniqueCats = Array.from(new Map(categoriesList.map(item => [item.name.toLowerCase().trim(), item])).values());
+      uniqueCats.sort((a, b) => a.order - b.order);
+
+      const catIndexPayload = {
+        chunkId: 'categories_index',
+        type: 'CATEGORIES_INDEX',
+        totalItems: uniqueCats.length,
+        generatedAt: FieldValue.serverTimestamp(),
+        items: uniqueCats
+      };
+
+      await db.collection("catalogs").doc("categories_index").set(catIndexPayload, { merge: true });
+      results.categoriesIndexed = uniqueCats.length;
+    } catch (catIndexErr) {
+      console.warn("⚠️ [NightlyChunkGuard] Failed to rebuild categories_index:", catIndexErr);
+    }
 
     // -------------------------------------------------------------
     // 4.5. สร้างก้อน `catalogs/storefront_search_catalog` สำหรับค้นหาหน้าร้าน (Zero-Leak Search Index)

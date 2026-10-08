@@ -1,6 +1,7 @@
-import { doc, getDoc, collection, query, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, onSnapshot, limit, orderBy, documentId, startAfter } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { CATEGORY_ALIASES } from './categoryService';
 import { 
   resolveEffectiveBuffer, 
   calculateAvailableStock, 
@@ -305,15 +306,17 @@ export const productService = {
       const lowerCaseType = cleanCategory.toLowerCase();
       
       // 🛡️ Zero-Quota Guard: 'all' is an alias for the categories hub (/categories), not a single product category
-      if (!lowerCaseType || lowerCaseType === 'all') {
+      if (!lowerCaseType || lowerCaseType === 'all' || lowerCaseType === 'undefined' || lowerCaseType === 'null') {
         return { docs: [], lastDoc: null };
       }
 
+      // 🛡️ Alias Resolution: แปลง fan -> cooling, ลำโพง -> built in audio อัตโนมัติ
+      const targetCategory = CATEGORY_ALIASES[lowerCaseType] || lowerCaseType;
+
       // 🛡️ TIER 1: Low-Quota Shield from catalogs/cat_* (1 Read for up to 50 items)
-      if (!lastVisible && lowerCaseType) {
+      if (!lastVisible && targetCategory) {
         try {
-          const { doc, getDoc } = await import('firebase/firestore');
-          const catRef = doc(db, getCollectionPath('catalogs'), `cat_${lowerCaseType}`);
+          const catRef = doc(db, getCollectionPath('catalogs'), `cat_${targetCategory}`);
           const catSnap = await getDoc(catRef);
           if (catSnap.exists()) {
             const catData = catSnap.data();
@@ -336,46 +339,46 @@ export const productService = {
         }
       }
 
-      // 🛡️ TIER 2: Direct products query fallback
-      const { collection, query, where, limit, startAfter, getDocs, doc, getDoc } = await import('firebase/firestore');
+      // 🛡️ TIER 2: Direct products query fallback with zero-extra-read string cursor
       const productsRef = collection(db, getCollectionPath('products'));
       
-      let cursor = lastVisible;
-      if (typeof cursor === 'string') {
-        try {
-          const docSnap = await getDoc(doc(db, getCollectionPath('products'), cursor));
-          if (docSnap.exists()) {
-            cursor = docSnap;
-          } else {
-            cursor = null;
-          }
-        } catch (cursorErr) {
-          console.warn("Failed to resolve string cursor to snapshot:", cursorErr);
-          cursor = null;
-        }
-      }
-
       let q;
-      if (!cursor) {
-        q = query(productsRef, where("category_lower", "==", lowerCaseType), limit(limitCount));
+      if (!lastVisible) {
+        q = query(
+          productsRef, 
+          where("category_lower", "==", targetCategory), 
+          orderBy(documentId(), "asc"), 
+          limit(limitCount)
+        );
       } else {
-        q = query(productsRef, where("category_lower", "==", lowerCaseType), startAfter(cursor), limit(limitCount));
+        q = query(
+          productsRef, 
+          where("category_lower", "==", targetCategory), 
+          orderBy(documentId(), "asc"), 
+          startAfter(lastVisible), 
+          limit(limitCount)
+        );
       }
 
       const snapshot = await getDocs(q);
       let docs = snapshot.docs.map(doc => this.normalizeProductData({ id: doc.id, ...doc.data() }));
-      const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+      const lastDoc = docs.length > 0 ? docs[docs.length - 1].id : null;
       
-      // 🛡️ Resilient Fallback: If no products found via category_lower on first page, fallback to match exact category field
-      if (docs.length === 0 && !lastVisible && cleanCategory) {
-        const fallbackQ = query(productsRef, where("category", "==", cleanCategory), limit(limitCount));
+      // 🛡️ Resilient Fallback: If no products found via category_lower on first page, fallback to match exact cleanCategory
+      if (docs.length === 0 && !lastVisible && cleanCategory && cleanCategory.toLowerCase() !== targetCategory) {
+        const fallbackQ = query(
+          productsRef, 
+          where("category", "==", cleanCategory), 
+          orderBy(documentId(), "asc"), 
+          limit(limitCount)
+        );
         const fallbackSnap = await getDocs(fallbackQ);
         if (!fallbackSnap.empty) {
           docs = fallbackSnap.docs.map(doc => this.normalizeProductData({ id: doc.id, ...doc.data() }));
         }
       }
 
-      return { docs, lastDoc };
+      return { docs, lastDoc, fromChunk: false };
     } catch (error) {
       console.error("Error fetching products by category:", error);
       throw error;

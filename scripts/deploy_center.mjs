@@ -133,7 +133,8 @@ function printDashboard() {
   }
 
   console.log(`${CYAN}======================================================================${RESET}`);
-  console.log(`${BOLD}${WHITE}  [★] กด [ENTER] ทันที  -->  🚀 FULL DEPLOY เต็มระบบ (ครบทุกส่วนงาน)${RESET}`);
+  console.log(`${BOLD}${WHITE}  [★] กด [ENTER] ทันที  -->  🚀 FULL DEPLOY ปลอดภัย (3 เว็บไซต์ + กฎ Rules)${RESET}`);
+  console.log(`${GRAY}  (ตัด functions และ indexes ออกจาก Full Deploy เพื่อความปลอดภัยสูงสุด)${RESET}`);
   console.log(`${GRAY}----------------------------------------------------------------------${RESET}`);
   console.log(`  ${BOLD}[1]${RESET} Deploy หน้าร้านหลัก (dh-frontend)`);
   console.log(`  ${BOLD}[2]${RESET} Deploy หลังร้านแอดมิน (dh-backoffice-react)`);
@@ -178,33 +179,30 @@ async function main() {
       process.exit(0);
     }
 
+    // ====================================================================
+    // FULL DEPLOY (เฉพาะ 3 เว็บไซต์ + Rules - ไม่รวม Functions / Indexes)
+    // ====================================================================
     if (choice === '' || choice.toLowerCase() === 'full') {
-      // FULL DEPLOY
       console.log(`\n${YELLOW}${BOLD}======================================================================${RESET}`);
-      console.log(`${YELLOW}${BOLD} 🚀 ยืนยันการ FULL DEPLOY เต็มระบบ (ครบทุกส่วนงานตามลำดับความปลอดภัย)${RESET}`);
+      console.log(`${YELLOW}${BOLD} 🚀 ยืนยัน FULL DEPLOY ปลอดภัย (หน้าร้าน + หลังร้าน + พนักงาน + กฎ Rules)${RESET}`);
       console.log(`${YELLOW}${BOLD}======================================================================${RESET}`);
-      const confirm = await ask(`คุณต้องการ Full Deploy เต็มระบบ ใช่หรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+      const confirm = await ask(`คุณต้องการ Full Deploy เฉพาะเว็บไซต์และกฎความปลอดภัย ใช่หรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() === 'n') {
         console.log(`\nยกเลิกการ Full Deploy กลับสู่เมนูหลัก...`);
         await ask(`กด Enter เพื่อดำเนินการต่อ...`);
         continue;
       }
 
-      console.log(`\n${CYAN}[1/5] Deploying Rules & Indexes...${RESET}`);
-      if (!runCmd('firebase deploy --only firestore:rules,storage,firestore:indexes')) {
-        console.log(`\n${RED}❌ Deploy Rules & Indexes ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
+      // Step 1: Security Rules Only (No indexes)
+      console.log(`\n${CYAN}[1/4] Deploying Security Rules (Firestore & Storage)...${RESET}`);
+      if (!runCmd('firebase deploy --only firestore:rules,storage')) {
+        console.log(`\n${RED}❌ Deploy Rules ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
         await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
         continue;
       }
 
-      console.log(`\n${CYAN}[2/5] Deploying Functions...${RESET}`);
-      if (!runCmd('firebase deploy --only functions')) {
-        console.log(`\n${RED}❌ Deploy Functions ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
-        await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
-        continue;
-      }
-
-      console.log(`\n${CYAN}[3/5] Building & Deploying Staff App...${RESET}`);
+      // Step 2: Staff App
+      console.log(`\n${CYAN}[2/4] Building & Deploying Staff App (dh-staff-app)...${RESET}`);
       if (!runCmd('npm run build', path.join(msRoot, 'dh-staff-app')) ||
           !runCmd('firebase deploy --only hosting:dh-notebook-69f3b')) {
         console.log(`\n${RED}❌ Staff App ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
@@ -212,7 +210,8 @@ async function main() {
         continue;
       }
 
-      console.log(`\n${CYAN}[4/5] Building & Deploying Backoffice...${RESET}`);
+      // Step 3: Backoffice
+      console.log(`\n${CYAN}[3/4] Building & Deploying Backoffice (dh-backoffice-react)...${RESET}`);
       if (!runCmd('npm run build', path.join(msRoot, 'dh-backoffice-react')) ||
           !runCmd('firebase deploy --only hosting:dhnotebook-work')) {
         console.log(`\n${RED}❌ Backoffice ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
@@ -220,7 +219,8 @@ async function main() {
         continue;
       }
 
-      console.log(`\n${CYAN}[5/5] Building & Deploying Frontend...${RESET}`);
+      // Step 4: Frontend
+      console.log(`\n${CYAN}[4/4] Building & Deploying Frontend (dh-frontend)...${RESET}`);
       if (!runCmd('npm run build', path.join(msRoot, 'dh-frontend')) ||
           !runCmd('firebase deploy --only hosting:dh-notebook-frontend')) {
         console.log(`\n${RED}❌ Frontend ล้มเหลว! ยกเลิกการทำงาน${RESET}`);
@@ -228,11 +228,12 @@ async function main() {
         continue;
       }
 
-      console.log(`\n${GREEN}${BOLD}🎉 [SUCCESS] FULL DEPLOY ทุกระบบสำเร็จสมบูรณ์ 100%!${RESET}`);
+      console.log(`\n${GREEN}${BOLD}🎉 [SUCCESS] FULL DEPLOY ทุกเว็บไซต์และกฎ Rules สำเร็จสมบูรณ์ 100%!${RESET}`);
       await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
       continue;
     }
 
+    // 1. Frontend
     if (choice === '1') {
       const confirm = await ask(`\nยืนยันการ Deploy หน้าร้าน (Frontend)? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() !== 'n') {
@@ -244,6 +245,7 @@ async function main() {
       continue;
     }
 
+    // 2. Backoffice
     if (choice === '2') {
       const confirm = await ask(`\nยืนยันการ Deploy หลังร้าน (Backoffice)? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() !== 'n') {
@@ -255,6 +257,7 @@ async function main() {
       continue;
     }
 
+    // 3. Staff App
     if (choice === '3') {
       const confirm = await ask(`\nยืนยันการ Deploy แอปพนักงาน (Staff App)? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() !== 'n') {
@@ -266,6 +269,7 @@ async function main() {
       continue;
     }
 
+    // 4. Cloud Functions (แยกเดี่ยว)
     if (choice === '4') {
       const confirm = await ask(`\nยืนยันการ Deploy Cloud Functions? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() !== 'n') {
@@ -275,6 +279,7 @@ async function main() {
       continue;
     }
 
+    // 5. Rules
     if (choice === '5') {
       const confirm = await ask(`\nยืนยันการ Deploy กฎความปลอดภัย (Rules)? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() !== 'n') {
@@ -284,6 +289,7 @@ async function main() {
       continue;
     }
 
+    // 6. Indexes
     if (choice === '6') {
       const confirm = await ask(`\nยืนยันการ Deploy ดัชนีฐานข้อมูล (Indexes)? [Y/N, ค่าเริ่มต้น Y]: `);
       if (confirm.toLowerCase() !== 'n') {
@@ -293,6 +299,7 @@ async function main() {
       continue;
     }
 
+    // 7. Git Push
     if (choice === '7') {
       console.log(`\n[*] กำลังส่งโค้ดขึ้น GitHub (origin main)...`);
       runCmd('git push origin main');
@@ -300,6 +307,7 @@ async function main() {
       continue;
     }
 
+    // 8. DB Backup
     if (choice === '8') {
       console.log(`\n[*] กำลังรันสคริปต์สำรองฐานข้อมูล Firestore...`);
       runCmd('node scripts/backupDatabase.mjs');

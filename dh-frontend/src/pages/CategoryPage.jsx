@@ -112,11 +112,9 @@ const CategoryPage = () => {
         setHasMore(true);
         setLastVisible(null);
         
-        // 1. Fetch category info for UI
-        const activeCategories = await categoryService.getActiveCategories();
+        // 1. Fetch category info for UI with alias resolution (0 Reads from LocalStorage)
+        const currentCat = await categoryService.getCategoryByType(type);
         if (!isMounted) return;
-        
-        const currentCat = activeCategories.find(c => c.type === type);
         setCategoryInfo(currentCat || null);
 
         // 2. Fetch first batch of products (Server-side limit)

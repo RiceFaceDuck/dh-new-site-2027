@@ -12,39 +12,39 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-8 relative z-10 gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-            FEATURED SPARES
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+              FEATURED SPARES
+            </h2>
             {isSlowConnection && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] md:text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 animate-pulse">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] md:text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
                 LITE MODE
               </span>
             )}
-          </h2>
-          {isSlowConnection && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1">
-              เปิดใช้งานโหมดประหยัดข้อมูลเนื่องจากความเร็วอินเทอร์เน็ตต่ำ
-            </p>
-          )}
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-1">
+            {isSlowConnection ? 'เปิดใช้งานโหมดประหยัดข้อมูลเนื่องจากความเร็วอินเทอร์เน็ตต่ำ' : 'อะไหล่ยอดนิยมที่ช่างและร้านค้าเลือกใช้งานมากที่สุด'}
+          </p>
         </div>
         
         <Link 
           to="/categories"
           onMouseEnter={() => import('../../Categories/CategoriesMain')}
-          className="group flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-full shadow-xs hover:shadow-md border border-slate-200 dark:border-slate-700 transition-all duration-300"
+          className="group flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 hover:text-brand font-bold text-sm rounded-full shadow-xs hover:shadow-md border border-slate-200/90 hover:border-brand/40 transition-all duration-300 active:scale-95"
         >
           ดูทั้งหมด
-          <ArrowRight size={16} className="text-fuchsia-500 group-hover:translate-x-1 transition-transform" />
+          <ArrowRight size={16} className="text-brand group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
       
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
           {[...Array(skeletonCount)].map((_, i) => (
-            <div key={i} className="bg-slate-100 dark:bg-slate-800 rounded-xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 flex flex-col shadow-xs animate-pulse h-full">
-              <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700 rounded-xl mb-4"></div>
-              <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-sm w-3/4 mb-3"></div>
-              <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-sm w-1/2 mb-auto"></div>
-              <div className="h-10 bg-slate-100 dark:bg-slate-700 rounded-xl w-full mt-4"></div>
+            <div key={i} className="bg-white rounded-2xl p-2.5 md:p-3 border border-slate-200/80 flex flex-col shadow-xs animate-pulse h-full">
+              <div className="w-full aspect-square bg-slate-100 rounded-xl mb-4"></div>
+              <div className="h-4 bg-slate-100 rounded-sm w-3/4 mb-3"></div>
+              <div className="h-4 bg-slate-100 rounded-sm w-1/2 mb-auto"></div>
+              <div className="h-10 bg-slate-100 rounded-xl w-full mt-4"></div>
             </div>
           ))}
         </div>
@@ -59,9 +59,9 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
           <ProductList products={products} />
         </div>
       ) : (
-        <div className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 p-10 rounded-3xl text-center border-2 border-dashed border-slate-200 dark:border-slate-700 relative z-10 flex flex-col items-center justify-center">
-          <Sparkles size={40} className="mb-4 text-slate-300 dark:text-slate-600" />
-          <p className="text-lg font-black tracking-wide">ยังไม่มีสินค้าแนะนำในขณะนี้</p>
+        <div className="bg-white text-slate-500 p-10 rounded-3xl text-center border-2 border-dashed border-slate-200 relative z-10 flex flex-col items-center justify-center shadow-xs">
+          <Sparkles size={40} className="mb-4 text-slate-300" />
+          <p className="text-lg font-black tracking-wide text-slate-700">ยังไม่มีสินค้าแนะนำในขณะนี้</p>
           <p className="text-sm mt-1">แวะมาดูใหม่ในภายหลังนะ!</p>
         </div>
       )}
