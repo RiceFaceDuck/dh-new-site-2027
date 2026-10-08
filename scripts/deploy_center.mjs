@@ -73,17 +73,13 @@ function getFunctionsCount() {
   return 1;
 }
 
-function printDashboard() {
-  console.clear();
+function printStatusBlock(title = '📊 สรุปสถานะความพร้อม & รายการที่รอ Deploy (Pre-flight Status):') {
   const status = getGitStatus();
   const unpushed = getUnpushedCommits();
   const indexesCount = getIndexesCount();
   const funcCount = getFunctionsCount();
 
-  console.log(`${CYAN}======================================================================${RESET}`);
-  console.log(`${BOLD}${WHITE}              DH NOTEBOOK - MASTER DEPLOYMENT CENTER${RESET}`);
-  console.log(`${CYAN}======================================================================${RESET}`);
-  console.log(`${BOLD}  📊 สรุปสถานะความพร้อม & รายการที่รอ Deploy (Pre-flight Status):${RESET}`);
+  console.log(`${BOLD}  ${title}${RESET}`);
   console.log(`${GRAY}  ----------------------------------------------------------------------${RESET}`);
 
   // Git Status
@@ -131,7 +127,14 @@ function printDashboard() {
   } else {
     console.log(`  • Cloud Functions          : ${GREEN}🟢 พร้อมใช้งาน (${funcCount} Cloud Functions)${RESET}`);
   }
+}
 
+function printDashboard() {
+  console.clear();
+  console.log(`${CYAN}======================================================================${RESET}`);
+  console.log(`${BOLD}${WHITE}              DH NOTEBOOK - MASTER DEPLOYMENT CENTER${RESET}`);
+  console.log(`${CYAN}======================================================================${RESET}`);
+  printStatusBlock('📊 สรุปสถานะความพร้อม & รายการที่รอ Deploy (Pre-flight Status):');
   console.log(`${CYAN}======================================================================${RESET}`);
   console.log(`${BOLD}${WHITE}  [★] กด [ENTER] ทันที  -->  🚀 FULL DEPLOY ครบวงจร (Commit + Push + 3 เว็บ + Rules)${RESET}`);
   console.log(`${GRAY}  (ตัด functions และ indexes ออกจาก Full Deploy เพื่อความปลอดภัยสูงสุด)${RESET}`);
@@ -258,9 +261,13 @@ async function main() {
         continue;
       }
 
+      console.log(`\n${CYAN}======================================================================${RESET}`);
+      printStatusBlock('📊 สรุปผลสถานะล่าสุดหลัง Deploy เสร็จสิ้น (Post-flight Status):');
+      console.log(`${CYAN}======================================================================${RESET}`);
       console.log(`\n${GREEN}${BOLD}🎉 [SUCCESS] FULL DEPLOY ทุกเว็บไซต์และกฎ Rules สำเร็จสมบูรณ์ 100%!${RESET}`);
-      await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
-      continue;
+      await ask(`\n👉 กด Enter เพื่อออกจากโปรแกรม...`);
+      console.log(`\n${GREEN}ปิดโปรแกรมเรียบร้อย ขอบคุณครับ!${RESET}\n`);
+      process.exit(0);
     }
 
     // 1. Frontend

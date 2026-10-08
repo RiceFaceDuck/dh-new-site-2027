@@ -131,14 +131,14 @@ export const evaluatePromotion = (promo, cartItems = [], subTotal = 0, customerT
  */
 export const evaluateFreebie = (freebie, cartItems = [], subTotal = 0, customerType = 'RETAIL') => {
   if (!freebie || freebie.isActive === false || freebie.deletedAt) {
-    return { isApplicable: false };
+    return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
   }
 
   // 1. Check customer type
   if (freebie.customerType && String(freebie.customerType).trim().toUpperCase() !== 'ALL') {
     const userRole = String(customerType || 'RETAIL').trim().toUpperCase();
     if (String(freebie.customerType).trim().toUpperCase() !== userRole) {
-      return { isApplicable: false };
+      return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
     }
   }
 
@@ -146,17 +146,17 @@ export const evaluateFreebie = (freebie, cartItems = [], subTotal = 0, customerT
   const now = new Date();
   if (freebie.startDate) {
     const start = freebie.startDate.toDate ? freebie.startDate.toDate() : new Date(freebie.startDate);
-    if (now < start) return { isApplicable: false };
+    if (now < start) return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
   }
   if (freebie.endDate) {
     const end = freebie.endDate.toDate ? freebie.endDate.toDate() : new Date(freebie.endDate);
-    if (now > end) return { isApplicable: false };
+    if (now > end) return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
   }
 
   // 3. Check quota limit
   if (freebie.quotaLimit && freebie.quotaLimit > 0) {
     const used = freebie.quotaUsed || 0;
-    if (used >= freebie.quotaLimit) return { isApplicable: false };
+    if (used >= freebie.quotaLimit) return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
   }
 
   // 4. Calculate eligible totals
@@ -164,18 +164,42 @@ export const evaluateFreebie = (freebie, cartItems = [], subTotal = 0, customerT
 
   const hasSpecificRules = (freebie.applicableSkus?.length > 0) || (freebie.applicableTypes?.length > 0);
   if (hasSpecificRules && eligibleQty <= 0) {
-    return { isApplicable: false };
+    return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
   }
 
   if (freebie.minSpend && freebie.minSpend > 0 && eligibleSubtotal < freebie.minSpend) {
-    return { isApplicable: false };
+    return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
   }
 
   if (freebie.minQty && freebie.minQty > 0 && eligibleQty < freebie.minQty) {
-    return { isApplicable: false };
+    return { isApplicable: false, calculatedQty: 0, eligibleQty: 0, eligibleSubtotal: 0 };
   }
 
-  return { isApplicable: true };
+  // 5. Calculate quantity based on distributionMode
+  const baseQty = Number(freebie.qty) || 1;
+  const maxLimit = (freebie.maxPerBill && Number(freebie.maxPerBill) > 0) ? Number(freebie.maxPerBill) : Infinity;
+
+  let calculatedQty = baseQty;
+  if (freebie.distributionMode === 'per_item') {
+    calculatedQty = baseQty * Math.max(1, eligibleQty);
+  }
+  calculatedQty = Math.min(calculatedQty, maxLimit);
+
+  // Remaining quota clamp if limited
+  if (freebie.quotaLimit && freebie.quotaLimit > 0) {
+    const remainingQuota = Math.max(0, freebie.quotaLimit - (freebie.quotaUsed || 0));
+    calculatedQty = Math.min(calculatedQty, remainingQuota);
+    if (calculatedQty <= 0) {
+      return { isApplicable: false, calculatedQty: 0, eligibleQty, eligibleSubtotal };
+    }
+  }
+
+  return { 
+    isApplicable: true,
+    calculatedQty,
+    eligibleQty,
+    eligibleSubtotal
+  };
 };
 
 export function usePromotions() {

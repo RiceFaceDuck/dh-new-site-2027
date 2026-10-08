@@ -6,7 +6,7 @@
    - ตรวจจับ Git Commits รอขึ้น Cloud (นับจาก `git log origin/main..HEAD`)
    - ตรวจจับการแก้ไขตกค้างใน dh-frontend, dh-backoffice-react, dh-staff-app, Rules, Functions, Indexes (นับจาก `git status --porcelain`)
 3. ผู้ใช้งานเลือกการกระทำ:
-   - กด [Enter]: FULL DEPLOY ครบวงจร (Auto Git Commit -> Auto Git Push -> Deploy Rules -> Deploy 3 เว็บไซต์)
+   - กด [Enter]: FULL DEPLOY ครบวงจร (Auto Git Commit -> Auto Git Push -> Deploy Rules -> Deploy 3 เว็บไซต์) ➔ แสดงสรุปผลสถานะล่าสุดหลัง Deploy (Post-flight Status เขียว 100%) ➔ กด Enter เพื่อปิดโปรแกรมออกจาก Terminal ทันที
    - เมนู [1] - [6]: Deploy แยกแต่ละส่วน (Frontend, Backoffice, Staff App, Functions, Rules, Indexes)
    - เมนู [7]: บันทึกการแก้ไขลงในเครื่อง (Git Commit)
    - เมนู [8]: ส่งโค้ดขึ้น GitHub (Git Push origin main)

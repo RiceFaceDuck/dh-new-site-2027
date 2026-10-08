@@ -73,8 +73,8 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
     if (checkoutState?.qualifiedFreebies?.length > 0) {
       for (const freebie of checkoutState.qualifiedFreebies) {
         if (freebie.id) {
-          const freebieRef = doc(db, getCollectionPath('freebies'), freebie.id);
-          freebieSnaps.push({ snap: await transaction.get(freebieRef), name: freebie.name || 'ของแถม', requestedQty: freebie.qty || 1 });
+          const requestedQty = Number(freebie.calculatedQty || freebie.qty) || 1;
+          freebieSnaps.push({ snap: await transaction.get(freebieRef), name: freebie.name || freebie.title || 'ของแถม', requestedQty });
         }
       }
     }

@@ -89,9 +89,17 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     const subtotal = totals?.subtotal || 0;
 
     // Evaluate Freebies
-    const qualifiedFreebies = freebies.filter(f => {
-      const { isApplicable } = evaluateFreebie(f, cartItems, subtotal, customerType);
-      return isApplicable;
+    const qualifiedFreebies = [];
+    freebies.forEach(f => {
+      const evalRes = evaluateFreebie(f, cartItems, subtotal, customerType);
+      if (evalRes && evalRes.isApplicable) {
+        qualifiedFreebies.push({
+          ...f,
+          qty: evalRes.calculatedQty,
+          calculatedQty: evalRes.calculatedQty,
+          eligibleQty: evalRes.eligibleQty
+        });
+      }
     });
 
     // Evaluate Promotions
@@ -115,7 +123,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
 
   // Primitive hash for freebies to prevent JSON.stringify in dependencies
   const freebiesHash = useMemo(() => {
-    return validFreebies.map(f => `${f.id}:${f.qty}`).join(',');
+    return validFreebies.map(f => `${f.id}:${f.calculatedQty || f.qty}`).join(',');
   }, [validFreebies]);
 
   // 🛡 3. Sync Calculated Promotion to Checkout Context cleanly
@@ -125,8 +133,9 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
     const currentPromoTitle = checkoutState?.discountCode;
     const newPromoTitle = bestPromo ? bestPromo.title : null;
     const currentDiscount = checkoutState?.discountAmount || 0;
+    const currentFreebiesHash = (checkoutState?.qualifiedFreebies || []).map(f => `${f.id}:${f.calculatedQty || f.qty}`).join(',');
 
-    if (currentDiscount !== bestDiscount || currentPromoTitle !== newPromoTitle) {
+    if (currentDiscount !== bestDiscount || currentPromoTitle !== newPromoTitle || currentFreebiesHash !== freebiesHash) {
       if (bestPromo && newPromoTitle !== currentPromoTitle) {
         trackPromotionSelect(bestPromo);
       }
@@ -137,7 +146,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
         qualifiedFreebies: validFreebies
       });
     }
-  }, [bestDiscount, bestPromo, freebiesHash, isLoading, checkoutState?.discountAmount, checkoutState?.discountCode, validFreebies, updateCheckoutConfig]);
+  }, [bestDiscount, bestPromo, freebiesHash, isLoading, checkoutState?.discountAmount, checkoutState?.discountCode, checkoutState?.qualifiedFreebies, validFreebies, updateCheckoutConfig]);
 
   // 🛡 4. Sync Wallet Calculation to Checkout Context
   useEffect(() => {
@@ -203,7 +212,7 @@ export default function PrivilegeSelector({ orderMode = 'retail' }) {
                     <span className="text-sm font-bold text-pink-800">{f.itemName}</span>
                   </div>
                   <span className="text-xs font-bold text-pink-600 bg-pink-100 px-2 py-1 rounded-md">
-                    x{Math.min(f.qty, f.maxPerBill || f.qty)} ชิ้น
+                    x{f.calculatedQty || Math.min(f.qty, f.maxPerBill || f.qty)} ชิ้น
                   </span>
                 </div>
               ))}

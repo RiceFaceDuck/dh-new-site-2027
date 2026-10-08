@@ -121,7 +121,7 @@ export const useFreebies = () => {
       if (formData.id) {
         let logMsg = `แก้ไขกฎของแถม: ${formData.title}`;
         if (formData.quotaLimit) logMsg += ` (โควต้า ${formData.quotaLimit})`;
-        await freebieService.updateFreebie(formData.id, payload, auth.currentUser, logMsg);
+        await freebieService.updateFreebie(formData.id, { ...payload, deletedAt: null }, auth.currentUser, logMsg);
       } else {
         await freebieService.createFreebie(payload, auth.currentUser);
       }
@@ -137,9 +137,12 @@ export const useFreebies = () => {
   };
 
   const handleToggleActive = async (item) => {
-    const actionName = item.isActive ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน';
+    const nextActive = !item.isActive;
+    const actionName = nextActive ? 'เปิดการใช้งาน' : 'ปิดการใช้งาน';
     const logMsg = `${actionName}กฎของแถม: ${item.title}`;
-    await freebieService.updateFreebie(item.id, { isActive: !item.isActive }, auth.currentUser, logMsg);
+    const updates = { isActive: nextActive };
+    if (nextActive) updates.deletedAt = null;
+    await freebieService.updateFreebie(item.id, updates, auth.currentUser, logMsg);
     loadFreebies();
   };
 

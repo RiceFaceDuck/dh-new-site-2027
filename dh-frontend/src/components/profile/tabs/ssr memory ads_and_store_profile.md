@@ -54,5 +54,6 @@
 - ⚠️ Billing Transparency & Remaining Points (FIXED Phase 3): เดิม `spentBudget` ถูกบันทึกลง Firestore แต่ไม่แสดงบนหน้าจอ ทำให้พาร์ทเนอร์ไม่รู้ว่าใช้แต้มไปเท่าไร -> เพิ่มการแสดง `ใช้ไป / งบ (Pts)` ทั้งใน Mobile Card และ Desktop Table รวมถึงแสดงผลแต้มคงเหลือแบบไดนามิกใน `AdFormModal`
 - ⚠️ Read Quota Over-fetch (FIXED Phase 4): `getActiveAds` ใน `marketingService.js` เดิมดึง 100 docs แล้วมา slice 30 ในหน่วยความจำ -> ปรับ `limit(30)` ที่ query ตรง ลดโควต้าอ่าน 70% และลบ dead state `adToDelete` ออกจาก `useAdManager`
 - 🎨 UI Minimal Theme Harmony (FIXED): ปรับแถบ Header บนเป็น Deep Slate Navy (`bg-slate-900`) และกล่อง Ads/Store Banner ด้านล่างเป็น Ice Slate (`bg-slate-100/90`) มินิมอล อ่านง่าย ลดแสงสะท้อนและมลภาวะทางสายตา
+- 🛡️ Store Profile Audit & Approval Flow Verified (CONFIRMED): ตรวจสอบกระบวนการบันทึก Store Profile -> สร้าง TODO-AD-CARD -> ซิงค์ ActivePartners บน Backoffice ผ่านฉลาก 100% สถาปัตยกรรมแยกส่วน SRP สะอาด โควต้าอ่านเขียนต่ำ และ Rules แข็งแกร่ง
 </pitfalls_and_lessons>
 </ssr_memory>

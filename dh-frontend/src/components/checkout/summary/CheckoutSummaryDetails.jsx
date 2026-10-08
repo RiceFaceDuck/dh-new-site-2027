@@ -77,7 +77,7 @@ const CheckoutSummaryDetails = ({
           <div className="text-right flex flex-col items-end gap-1 min-w-0">
             {qualifiedFreebies.length > 0 ? (
               qualifiedFreebies.map((freebie, idx) => {
-                const qty = freebie.quantity || Math.min(freebie.qty, freebie.maxPerBill || freebie.qty) || 1;
+                const qty = freebie.calculatedQty || freebie.quantity || Math.min(freebie.qty, freebie.maxPerBill || freebie.qty) || 1;
                 return (
                   <span key={idx} className="text-emerald-600 font-medium flex items-center justify-end gap-1 max-w-[130px] sm:max-w-[180px]">
                     <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>

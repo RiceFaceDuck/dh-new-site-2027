@@ -6,7 +6,7 @@ import { usePromotions } from '../../hooks/usePromotions';
 const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: propIsLoading, cartItems, checkoutState, updateCheckoutConfig, hidden = false }) => {
   const [freebieProduct, setFreebieProduct] = useState(null);
   
-  const { freebies: hookFreebies, isLoading: hookIsLoading, getEligibleTotals } = usePromotions();
+  const { freebies: hookFreebies, isLoading: hookIsLoading, getEligibleTotals, evaluateFreebie } = usePromotions();
   
   const freebies = propFreebies || hookFreebies;
   const isLoading = propIsLoading || hookIsLoading;
@@ -19,6 +19,9 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
   }) : null; 
 
   const currentFreebie = !isLoading && freebies ? [...freebies].reverse().find(f => {
+    const evalRes = evaluateFreebie ? evaluateFreebie(f, cartItems, subTotal) : null;
+    if (evalRes) return evalRes.isApplicable;
+    
     const { subtotal, qty } = getEligibleTotals(f.applicableSkus, f.applicableTypes, cartItems, subTotal);
     const hasSkus = f.applicableSkus && f.applicableSkus.length > 0;
     const hasTypes = f.applicableTypes && f.applicableTypes.length > 0;
@@ -30,34 +33,39 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
     return true;
   }) : null;  
 
+  const currentFreebieEval = currentFreebie && evaluateFreebie ? evaluateFreebie(currentFreebie, cartItems, subTotal) : null;
+  const currentCalculatedQty = currentFreebieEval?.calculatedQty || Number(currentFreebie?.qty) || 1;
+
   useEffect(() => {
     if (!updateCheckoutConfig) return;
     
     // Evaluate if the current freebie is actually available (not out of stock, not exhausted quota)
-    const isOutOfStock = freebieProduct?.isOutOfStock || (freebieProduct && freebieProduct.stockQuantity < (currentFreebie?.qty || 1));
+    const isOutOfStock = freebieProduct?.isOutOfStock || (freebieProduct && freebieProduct.stockQuantity < currentCalculatedQty);
     const isQuotaExhausted = currentFreebie?.quotaLimit > 0 && currentFreebie?.quotaUsed >= currentFreebie?.quotaLimit;
     const isUnavailable = isOutOfStock || isQuotaExhausted;
 
     const currentQualified = checkoutState?.qualifiedFreebies || [];
     
-    // Create an enriched freebie object with the actual product name
+    // Create an enriched freebie object with the actual product name and calculated quantity
     const enrichedFreebie = currentFreebie ? {
       ...currentFreebie,
+      qty: currentCalculatedQty,
+      calculatedQty: currentCalculatedQty,
       productName: freebieProduct?.name || currentFreebie.title
     } : null;
 
     const newQualified = (enrichedFreebie && !isUnavailable) ? [enrichedFreebie] : [];
     
-    // We compare IDs and product names to avoid infinite loops from object reference changes
-    const currentIds = currentQualified.map(f => f.id).join(',');
-    const newIds = newQualified.map(f => f.id).join(',');
+    // We compare IDs, quantities, and product names to avoid infinite loops from object reference changes
+    const currentIds = currentQualified.map(f => `${f.id}:${f.calculatedQty || f.qty}`).join(',');
+    const newIds = newQualified.map(f => `${f.id}:${f.calculatedQty || f.qty}`).join(',');
     const currentProductName = currentQualified[0]?.productName;
     const newProductName = newQualified[0]?.productName;
     
     if (currentIds !== newIds || currentProductName !== newProductName) {
       updateCheckoutConfig({ qualifiedFreebies: newQualified });
     }
-  }, [currentFreebie, freebieProduct, checkoutState?.qualifiedFreebies, updateCheckoutConfig]);
+  }, [currentFreebie, currentCalculatedQty, freebieProduct, checkoutState?.qualifiedFreebies, updateCheckoutConfig]);
 
   useEffect(() => {
     if (currentFreebie && currentFreebie.itemName) {
@@ -174,7 +182,7 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
                   </p>
                   <span className={`w-1 h-1 rounded-full ${isUnavailable ? 'bg-gray-300' : 'bg-emerald-300/50'}`}></span>
                   <p className={`text-[10px] md:text-xs font-bold ${isUnavailable ? 'text-gray-200' : 'text-emerald-50'}`}>
-                    จำนวน: {currentFreebie.qty}
+                    จำนวน: {currentCalculatedQty}
                   </p>
                 </div>
               </div>

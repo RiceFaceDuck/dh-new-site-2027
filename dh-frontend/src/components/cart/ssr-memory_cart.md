@@ -55,5 +55,8 @@
   - *วิธีแก้:* ตัด query ซ้ำซ้อนออกจาก `useCartLogic.js` ให้ `CartFreebieProgress.jsx` รับข้อมูลผ่าน `usePromotions()` โดยตรง พร้อมเพิ่ม Cache Guard ป้องกันการ fetch รายละเอียดสินค้าของแถมซ้ำ
 - ⚠️ **Guest Checkout Unauthenticated Bypass & Silent Route Bounce:**
   - *ปัญหา:* ผู้ใช้ทั่วไปที่ยังไม่ได้ล็อกอินเมื่อกด "ดำเนินการสั่งซื้อ" ถูก navigate เข้า `/checkout` โดยตรงแล้วดีดไปหน้า `/profile` โดยไม่มีแจ้งเตือน หรือไม่มีการพากลับมาหน้าเดิมหลังล็อกอินเสร็จ
-  - *วิธีแก้:* ดักจับ `!user` ใน `Cart.jsx` ก่อนเริ่มคำสั่งสั่งซื้อ เปิด `LoginRequiredModal` ขึ้นกลางจอพร้อม Backdrop มืดเบลอ และส่งต่อไปยัง `/profile?tab=login&returnUrl=/cart` พร้อม `state: { returnUrl: '/cart' }` เพื่อให้ `Profile.jsx` วาร์ปกลับมาหน้า Purchase Order เดิมอัตโนมัติเมื่อล็อกอินเสร็จ
+- ⚠️ **Freebies Per-Item Calculation Discrepancy on Storefront:**
+  - *ปัญหา:* กฎของแถมในระบบรองรับ `distributionMode: 'per_item'` (คูณตามจำนวนชิ้นที่ซื้อ เช่น ซื้อจอ 2 จอ แถม 2 หลอด) แต่หน้าบ้านเดิม (`usePromotions.js`, `CartFreebieProgress.jsx`, `PrivilegeSelector.jsx`, `CheckoutSummaryDetails.jsx`) ดึงค่า `qty` ดิบๆ ซึ่งเป็น 1 ไปแสดงผลตรงๆ ทำให้หน้าเว็บและในออเดอร์โชว์ `x1` ชิ้นตลอด
+  - *วิธีแก้:* เพิ่มการคำนวณ `calculatedQty` ใน `evaluateFreebie` โดยคูณ `(qty || 1) * eligibleQty` เมื่อ `distributionMode === 'per_item'` และคุมเพดาน `maxPerBill` พร้อมส่ง `calculatedQty` ให้คอมโพเนนต์หน้า Cart, Checkout และ `checkoutSubmitService.js` บันทึกตามจำนวนจริง
 </pitfalls_and_solutions>
+

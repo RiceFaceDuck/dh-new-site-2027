@@ -90,6 +90,9 @@ export const freebieService = {
   updateFreebie: async (id, updates, user, actionName = 'แก้ไข') => {
     try {
       let finalUpdates = { ...updates };
+      if (updates.isActive === true) {
+        finalUpdates.deletedAt = null;
+      }
       if (updates.applicableSkus) {
         const { validSkus, removedSkus } = await validateSkus(updates.applicableSkus);
         finalUpdates.applicableSkus = validSkus;

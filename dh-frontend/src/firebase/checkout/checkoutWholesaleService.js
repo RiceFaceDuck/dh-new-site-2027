@@ -48,6 +48,8 @@ export const createWholesaleRequest = async (user, cartItems, checkoutState, tot
         discountAmount: checkoutState?.discountAmount || 0,
         usedWallet: checkoutState?.useWallet || 0,
       },
+      appliedPromotions: checkoutState?.appliedPromotions || [],
+      appliedFreebies: checkoutState?.qualifiedFreebies || [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
