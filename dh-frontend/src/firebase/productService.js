@@ -299,7 +299,7 @@ export const productService = {
     };
   },
 
-  async getProductsByCategory(category, lastVisible, limitCount = 40) {
+  async getProductsByCategory(category, lastVisible, limitCount = 50) {
     try {
       await this.getGlobalBuffer();
       const cleanCategory = (category || '').trim();
@@ -307,7 +307,7 @@ export const productService = {
       
       // 🛡️ Zero-Quota Guard: 'all' is an alias for the categories hub (/categories), not a single product category
       if (!lowerCaseType || lowerCaseType === 'all' || lowerCaseType === 'undefined' || lowerCaseType === 'null') {
-        return { docs: [], lastDoc: null };
+        return { docs: [], lastDoc: null, hasMore: false };
       }
 
       // 🛡️ Alias Resolution: แปลง fan -> cooling, ลำโพง -> built in audio อัตโนมัติ
@@ -378,7 +378,12 @@ export const productService = {
         }
       }
 
-      return { docs, lastDoc, fromChunk: false };
+      return { 
+        docs, 
+        lastDoc, 
+        fromChunk: false, 
+        hasMore: docs.length >= limitCount 
+      };
     } catch (error) {
       console.error("Error fetching products by category:", error);
       throw error;

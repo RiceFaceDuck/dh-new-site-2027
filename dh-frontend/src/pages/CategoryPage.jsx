@@ -1,124 +1,149 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link, Navigate, useSearchParams } from 'react-router-dom';
 
 import { categoryService } from '../firebase/categoryService';
 import ProductList from '../components/ProductList';
 import { memoryCache } from '../utils/memoryCache';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 const CategoryPage = () => {
   const { type } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawPage = parseInt(searchParams.get('page') || '1', 10);
+  const currentPage = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
   const [products, setProducts] = useState([]);
   const [categoryInfo, setCategoryInfo] = useState(null);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   
-  // Server-side Pagination state
-  const [lastVisible, setLastVisible] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const itemsPerPage = 40;
+  // 🛡️ Fixed 50 items per page as specified
+  const itemsPerPage = 50;
 
-  const loadProducts = useCallback(async (isInitial = false) => {
-    try {
-      if (!isInitial) setLoadingMore(true);
+  // In-memory page cache and cursor tracking for zero-quota re-visits
+  const pageCacheRef = useRef({});
+  const pageCursorsRef = useRef({ 1: null });
+  const totalCountRef = useRef(0);
 
-      const { productService } = await import('../firebase/productService');
+  // 🛡️ Sort in-stock products first for better customer shopping experience
+  const sortInStockFirst = useCallback((list) => {
+    return [...list].sort((a, b) => {
+      const aInStock = (a.availableStock > 0 || (!a.isOutOfStock && a.stockQuantity > 0)) ? 1 : 0;
+      const bInStock = (b.availableStock > 0 || (!b.isOutOfStock && b.stockQuantity > 0)) ? 1 : 0;
+      return bInStock - aInStock;
+    });
+  }, []);
 
-      let fetchedProducts = [];
-      let isFromChunk = false;
-      const lowerCaseType = type.trim().toLowerCase();
+  // Reset page cache when category type changes
+  useEffect(() => {
+    pageCacheRef.current = {};
+    pageCursorsRef.current = { 1: null };
+    totalCountRef.current = 0;
+    setTotalCount(0);
+  }, [type]);
 
-      // 🛡️ Sort in-stock products first for better customer shopping experience
-      const sortInStockFirst = (list) => {
-        return [...list].sort((a, b) => {
-          const aInStock = (a.availableStock > 0 || (!a.isOutOfStock && a.stockQuantity > 0)) ? 1 : 0;
-          const bInStock = (b.availableStock > 0 || (!b.isOutOfStock && b.stockQuantity > 0)) ? 1 : 0;
-          return bInStock - aInStock;
-        });
-      };
-
-      if (isInitial) {
-        const cacheKey = `category_${lowerCaseType}`;
-        const fetchFn = async () => {
-          return await productService.getProductsByCategory(lowerCaseType, null, itemsPerPage);
-        };
-
-        const cachedResult = await memoryCache.getOrFetch(cacheKey, fetchFn, 3 * 60 * 1000);
-        fetchedProducts = cachedResult?.docs || [];
-        isFromChunk = Boolean(cachedResult?.fromChunk);
-        if (cachedResult?.lastDoc) setLastVisible(cachedResult.lastDoc);
-
-        // 🛡️ 2-Tier Pagination Shield: If chunk has more items than 50 (e.g. 722 items), allow infinite scroll
-        if (cachedResult?.hasMore !== undefined) {
-          setHasMore(Boolean(cachedResult.hasMore));
-        } else {
-          setHasMore(fetchedProducts.length >= itemsPerPage);
-        }
-
-        setProducts(sortInStockFirst(fetchedProducts));
-      } else {
-        const result = await productService.getProductsByCategory(lowerCaseType, lastVisible, itemsPerPage);
-        fetchedProducts = result?.docs || [];
-        isFromChunk = Boolean(result?.fromChunk);
-        if (result?.lastDoc) {
-          setLastVisible(result.lastDoc);
-        }
-        
-        if (fetchedProducts.length < itemsPerPage) {
-          setHasMore(false);
-        } else {
-          setHasMore(true);
-        }
-
-        setProducts(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const newUnique = fetchedProducts.filter(p => !existingIds.has(p.id));
-          return [...prev, ...sortInStockFirst(newUnique)];
-        });
-      }
-
-    } catch (error) {
-      console.error("Error loading products:", error);
-      setError(error.message || "เกิดข้อผิดพลาดในการโหลดสินค้า");
-    } finally {
-      if (!isInitial) setLoadingMore(false);
-    }
-  }, [type, lastVisible]);
-
-  // Infinite Scroll setup
-  const observer = useRef();
-  const lastProductElementRef = useCallback(node => {
-    if (loading || loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadProducts(false);
-      }
-    }, { rootMargin: '400px' });
-    if (node) observer.current.observe(node);
-  }, [loading, loadingMore, hasMore, loadProducts]);
-
+  // Fetch page data with 2-Tier Caching & Cursor Pagination
   useEffect(() => {
     let isMounted = true;
-    const fetchInitialData = async () => {
+    const fetchPageData = async () => {
       if (!type || type.trim().toLowerCase() === 'all') return;
       
       try {
         setLoading(true);
         setError(null);
-        setProducts([]);
-        setHasMore(true);
-        setLastVisible(null);
-        
+
         // 1. Fetch category info for UI with alias resolution (0 Reads from LocalStorage)
         const currentCat = await categoryService.getCategoryByType(type);
         if (!isMounted) return;
         setCategoryInfo(currentCat || null);
 
-        // 2. Fetch first batch of products (Server-side limit)
-        await loadProducts(true);
+        // 2. Check in-memory page cache first (0ms, 0 Reads)
+        if (pageCacheRef.current[currentPage]) {
+          if (isMounted) {
+            setProducts(pageCacheRef.current[currentPage]);
+            if (totalCountRef.current > 0) {
+              setTotalCount(totalCountRef.current);
+            }
+            setLoading(false);
+          }
+          return;
+        }
+
+        const { productService } = await import('../firebase/productService');
+        const lowerCaseType = type.trim().toLowerCase();
+
+        // 3. For page 1, fetch Tier 1 Chunk / Query
+        if (currentPage === 1) {
+          const cacheKey = `category_${lowerCaseType}_p1`;
+          const fetchFn = async () => {
+            return await productService.getProductsByCategory(lowerCaseType, null, itemsPerPage);
+          };
+
+          const cachedResult = await memoryCache.getOrFetch(cacheKey, fetchFn, 3 * 60 * 1000);
+          const fetchedProducts = cachedResult?.docs || [];
+          const sorted = sortInStockFirst(fetchedProducts);
+          const count = cachedResult?.totalItems || (cachedResult?.hasMore ? fetchedProducts.length + 1 : fetchedProducts.length);
+          
+          pageCacheRef.current[1] = sorted;
+          if (cachedResult?.lastDoc) {
+            pageCursorsRef.current[2] = cachedResult.lastDoc;
+          }
+          totalCountRef.current = count;
+
+          if (isMounted) {
+            setProducts(sorted);
+            setTotalCount(count);
+          }
+        } else {
+          // For currentPage > 1:
+          let cursor = pageCursorsRef.current[currentPage];
+
+          // If cursor is not yet known (e.g. direct URL navigation to ?page=2 without loading page 1):
+          if (!cursor) {
+            const p1Result = await productService.getProductsByCategory(lowerCaseType, null, itemsPerPage);
+            const p1Docs = sortInStockFirst(p1Result?.docs || []);
+            pageCacheRef.current[1] = p1Docs;
+            if (p1Result?.lastDoc) {
+              pageCursorsRef.current[2] = p1Result.lastDoc;
+            }
+            if (p1Result?.totalItems) {
+              totalCountRef.current = p1Result.totalItems;
+              if (isMounted) setTotalCount(p1Result.totalItems);
+            }
+            cursor = pageCursorsRef.current[currentPage];
+          }
+
+          if (cursor) {
+            const cacheKey = `category_${lowerCaseType}_p${currentPage}`;
+            const fetchFn = async () => {
+              return await productService.getProductsByCategory(lowerCaseType, cursor, itemsPerPage);
+            };
+
+            const result = await memoryCache.getOrFetch(cacheKey, fetchFn, 3 * 60 * 1000);
+            const fetchedProducts = result?.docs || [];
+            const sorted = sortInStockFirst(fetchedProducts);
+            
+            pageCacheRef.current[currentPage] = sorted;
+            if (result?.lastDoc) {
+              pageCursorsRef.current[currentPage + 1] = result.lastDoc;
+            }
+
+            if (isMounted) {
+              setProducts(sorted);
+              if (result?.totalItems) {
+                totalCountRef.current = result.totalItems;
+                setTotalCount(result.totalItems);
+              }
+            }
+          } else {
+            // Fallback if cursor still couldn't be resolved: reset to page 1
+            if (isMounted) {
+              setSearchParams({});
+            }
+          }
+        }
       } catch (err) {
         console.error("Error fetching category data:", err);
         if (isMounted) setError(err.message);
@@ -127,14 +152,50 @@ const CategoryPage = () => {
       }
     };
 
-    fetchInitialData();
+    fetchPageData();
     return () => { isMounted = false; };
-  }, [type, loadProducts]);
+  }, [type, currentPage, sortInStockFirst, setSearchParams]);
+
+  // Page Change Handler with Smooth Scroll
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage === currentPage) return;
+    if (totalPages && newPage > totalPages) return;
+
+    if (newPage === 1) {
+      setSearchParams({});
+    } else {
+      setSearchParams({ page: newPage.toString() });
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // 🛡️ Route Alias & Parity Guard: If type is 'all', auto-redirect to canonical /categories hub
   if (type && type.trim().toLowerCase() === 'all') {
     return <Navigate to="/categories" replace />;
   }
+
+  // Calculate pagination boundaries
+  const effectiveTotalCount = totalCount || products.length;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotalCount / itemsPerPage));
+  const startItem = effectiveTotalCount > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const endItem = Math.min(currentPage * itemsPerPage, effectiveTotalCount);
+
+  // Helper to generate smart pagination list with ellipses
+  const getPageNumbers = (current, total) => {
+    if (total <= 5) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    const pages = [];
+    if (current <= 3) {
+      pages.push(1, 2, 3, 4, '...', total);
+    } else if (current >= total - 2) {
+      pages.push(1, '...', total - 3, total - 2, total - 1, total);
+    } else {
+      pages.push(1, '...', current - 1, current, current + 1, '...', total);
+    }
+    return pages;
+  };
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">
@@ -159,9 +220,9 @@ const CategoryPage = () => {
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
                   หมวดหมู่: <span className="text-brand">{categoryInfo?.name || type}</span>
                 </h1>
-                {products.length > 0 && (
+                {effectiveTotalCount > 0 && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-brand border border-blue-100">
-                    {products.length} รายการ
+                    {effectiveTotalCount} รายการ
                   </span>
                 )}
               </div>
@@ -185,17 +246,68 @@ const CategoryPage = () => {
             <>
               <ProductList products={products} />
               
-              {/* Infinite Scroll Trigger / Loader */}
-              {hasMore && (
-                <div ref={lastProductElementRef} className="mt-8 flex justify-center items-center py-6">
-                  {loadingMore ? (
-                    <div className="flex flex-col items-center text-slate-400">
-                      <Loader2 className="animate-spin w-8 h-8 mb-2" /> 
-                      <span className="text-sm">กำลังโหลดสินค้าเพิ่มเติม...</span>
+              {/* Pagination Controls (Calm UI) */}
+              {totalPages > 1 && (
+                <div className="mt-8 md:mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 border-t border-slate-100">
+                  <div className="text-xs sm:text-sm text-slate-500 font-medium order-2 sm:order-1 text-center sm:text-left">
+                    แสดงรายการที่ <span className="font-bold text-slate-800">{startItem} - {endItem}</span> จากทั้งหมด <span className="font-bold text-slate-800">{effectiveTotalCount}</span> รายการ
+                    <span className="ml-2 text-slate-400 font-normal">(หน้า {currentPage}/{totalPages})</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 sm:gap-2 order-1 sm:order-2">
+                    {/* Previous Page Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage <= 1 || loading}
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all duration-200 bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                      aria-label="หน้าก่อนหน้า"
+                    >
+                      <ChevronLeft size={16} />
+                      <span className="hidden xs:inline">ก่อนหน้า</span>
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {getPageNumbers(currentPage, totalPages).map((p, idx) => {
+                        if (p === '...') {
+                          return (
+                            <span key={`ellipsis-${idx}`} className="w-7 sm:w-8 text-center text-slate-400 font-bold text-xs select-none">
+                              ...
+                            </span>
+                          );
+                        }
+                        const pageNum = p;
+                        const isActive = pageNum === currentPage;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            disabled={loading}
+                            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-center ${
+                              isActive
+                                ? 'bg-brand text-white shadow-xs'
+                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                            }`}
+                            aria-label={`ไปที่หน้า ${pageNum}`}
+                            aria-current={isActive ? 'page' : undefined}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <div className="h-10"></div> // Spacer to ensure observer triggers smoothly
-                  )}
+
+                    {/* Next Page Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage >= totalPages || loading}
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all duration-200 bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                      aria-label="หน้าถัดไป"
+                    >
+                      <span className="hidden xs:inline">ถัดไป</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
                 </div>
               )}
             </>

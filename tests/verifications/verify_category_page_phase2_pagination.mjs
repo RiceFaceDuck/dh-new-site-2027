@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log("🧪 [Verification] Starting CategoryPage Phase 2 - 2-Tier Pagination & Stock Sorting Test...");
+console.log("🧪 [Verification] Starting CategoryPage 50 Items Pagination & Stock Sorting Test...");
 
 const categoryPagePath = path.resolve(__dirname, '../../dh-frontend/src/pages/CategoryPage.jsx');
 const productServicePath = path.resolve(__dirname, '../../dh-frontend/src/firebase/productService.js');
@@ -14,39 +14,61 @@ const pageContent = fs.readFileSync(categoryPagePath, 'utf8');
 const serviceContent = fs.readFileSync(productServicePath, 'utf8');
 
 // 1. Static Checks in productService.js
-console.log("🔍 Checking 2-Tier Cursor Support in productService.js...");
+console.log("🔍 Checking 50 items default in productService.js...");
+if (!serviceContent.includes('limitCount = 50')) {
+  console.error("❌ FAILED: Default limitCount should be 50 in productService.getProductsByCategory!");
+  process.exit(1);
+}
+
 if (!serviceContent.includes('const lastSku = docs[docs.length - 1]?.id || null;')) {
   console.error("❌ FAILED: lastSku extraction missing in productService.js chunk handling!");
   process.exit(1);
 }
 
-if (!serviceContent.includes('typeof cursor === \'string\'')) {
-  console.error("❌ FAILED: String cursor snapshot resolver missing in productService.js!");
+console.log("✅ Passed productService.js 50-item limit checks.");
+
+// 2. Static Checks in CategoryPage.jsx
+console.log("🔍 Checking 50-item Pagination and Sorting in CategoryPage.jsx...");
+if (!pageContent.includes('itemsPerPage = 50')) {
+  console.error("❌ FAILED: itemsPerPage = 50 missing in CategoryPage.jsx!");
   process.exit(1);
 }
 
-console.log("✅ Passed productService.js 2-Tier Cursor checks.");
+if (!pageContent.includes('handlePageChange')) {
+  console.error("❌ FAILED: handlePageChange handler missing in CategoryPage.jsx!");
+  process.exit(1);
+}
 
-// 2. Static Checks in CategoryPage.jsx
-console.log("🔍 Checking 2-Tier Pagination and Sorting in CategoryPage.jsx...");
 if (!pageContent.includes('sortInStockFirst')) {
   console.error("❌ FAILED: sortInStockFirst helper missing in CategoryPage.jsx!");
   process.exit(1);
 }
 
-if (!pageContent.includes('cachedResult?.hasMore !== undefined')) {
-  console.error("❌ FAILED: hasMore check from chunk missing in CategoryPage.jsx!");
+if (!pageContent.includes('pageCacheRef')) {
+  console.error("❌ FAILED: pageCacheRef for zero-quota page re-visits missing in CategoryPage.jsx!");
   process.exit(1);
 }
 
-if (!pageContent.includes('new Set(prev.map(p => p.id))')) {
-  console.error("❌ FAILED: Deduplication guard missing in infinite scroll handler!");
+if (!pageContent.includes('pageCursorsRef')) {
+  console.error("❌ FAILED: pageCursorsRef for sequential cursor tracking missing in CategoryPage.jsx!");
   process.exit(1);
 }
 
-console.log("✅ Passed CategoryPage.jsx 2-Tier Pagination and Sorting checks.");
+if (!pageContent.includes('getPageNumbers')) {
+  console.error("❌ FAILED: getPageNumbers helper for smart pagination buttons missing in CategoryPage.jsx!");
+  process.exit(1);
+}
 
-// 3. Logic Simulation for Sorting
+// 3. Calm UI & Infinite Scroll Removal Check
+console.log("🔍 Verifying Infinite Scroll removal & Calm UI...");
+if (pageContent.includes('IntersectionObserver')) {
+  console.error("❌ FAILED: IntersectionObserver infinite scroll should be removed in favor of pagination!");
+  process.exit(1);
+}
+
+console.log("✅ Passed CategoryPage.jsx 50-item Pagination checks.");
+
+// 4. Logic Simulation for Sorting
 console.log("🔍 Testing In-Stock Priority Sorting logic...");
 const sampleProducts = [
   { id: '1', name: 'No stock', stockQuantity: 0, availableStock: 0, isOutOfStock: true },
@@ -75,4 +97,4 @@ if (sorted[2].stockQuantity !== 0 || sorted[3].stockQuantity !== 0) {
 }
 
 console.log("✅ In-Stock Priority Sorting logic passed perfectly!");
-console.log("🎉 ALL PHASE 2 VERIFICATIONS PASSED SUCCESSFULLY!");
+console.log("🎉 ALL 50-ITEM PAGINATION VERIFICATIONS PASSED SUCCESSFULLY!");
