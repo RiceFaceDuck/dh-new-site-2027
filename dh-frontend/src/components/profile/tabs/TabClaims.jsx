@@ -17,21 +17,21 @@ const TabClaims = () => {
   });
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 p-4 sm:p-6 min-h-[500px] animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-200/80 pb-4">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Wrench className="w-6 h-6 text-orange-500" />
+          <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 tracking-tight">
+            <Wrench className="w-6 h-6 text-orange-400 drop-shadow-xs" />
             เคลม และ คืนสินค้า
           </h2>
-          <p className="text-sm text-slate-500 mt-1">ติดตามสถานะการซ่อม เคลม และการคืนสินค้า</p>
+          <p className="text-xs text-slate-400 mt-1 font-medium">ติดตามสถานะการซ่อม เคลม และการคืนสินค้า</p>
         </div>
         
-        <div className="flex bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/90 overflow-x-auto w-full sm:w-auto custom-scrollbar shadow-inner">
-          <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'all' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>ทั้งหมด</button>
-          <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'pending' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>รอรับเรื่อง / รอส่งของ</button>
-          <button onClick={() => setFilter('processing')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'processing' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>กำลังตรวจสอบ</button>
-          <button onClick={() => setFilter('completed')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filter === 'completed' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/90' : 'text-slate-600 hover:text-slate-900'}`}>เสร็จสิ้น</button>
+        <div className="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 shadow-inner overflow-x-auto w-full sm:w-auto custom-scrollbar gap-1.5">
+          <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${filter === 'all' ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95' : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'}`}>ทั้งหมด</button>
+          <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${filter === 'pending' ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95' : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'}`}>รอรับเรื่อง / รอส่งของ</button>
+          <button onClick={() => setFilter('processing')} className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${filter === 'processing' ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95' : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'}`}>กำลังตรวจสอบ</button>
+          <button onClick={() => setFilter('completed')} className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${filter === 'completed' ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95' : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'}`}>เสร็จสิ้น</button>
         </div>
       </div>
 

@@ -66,23 +66,23 @@ const TabAdManager = ({ user }) => {
             <Sparkles size={13} className="text-amber-400" />ศูนย์รวมการโปรโมทร้านค้าและสินค้าแบบครบวงจร
           </p>
         </div>
-        <div className="flex bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/60">
+        <div className="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 shadow-inner gap-1.5">
           <button
             onClick={() => setActiveSubTab('store')}
-            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all duration-200 cursor-pointer ${
               activeSubTab === 'store'
-                ? 'bg-slate-700 text-white shadow-sm border border-slate-600/80'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95'
+                : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'
             }`}
           >
             <Store size={15} /> ข้อมูลร้านซ่อม
           </button>
           <button
             onClick={() => setActiveSubTab('ads')}
-            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all duration-200 cursor-pointer ${
               activeSubTab === 'ads'
-                ? 'bg-slate-700 text-white shadow-sm border border-slate-600/80'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95'
+                : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'
             }`}
           >
             <Activity size={15} /> โฆษณาสินค้า/แบนเนอร์ ({ads.length})

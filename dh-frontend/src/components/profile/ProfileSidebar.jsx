@@ -240,7 +240,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
         >
           <div className="flex items-center gap-3">
             <LogOut size={18} strokeWidth={2.5} className="group-hover:-translate-x-1 transition-transform" /> 
-            <span className="mt-0.5">Terminate Session</span>
+            <span className="mt-0.5">Logout</span>
           </div>
         </button>
       </div>

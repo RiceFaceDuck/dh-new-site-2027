@@ -58,15 +58,15 @@ const TabHistory = () => {
   });
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 p-4 sm:p-6 min-h-[500px]">
+    <div className="space-y-6">
       {/* ส่วนหัว และตัวกรอง */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-200/80 pb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+          <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 tracking-tight">
+            <svg className="w-6 h-6 text-indigo-400 drop-shadow-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
             ประวัติคำสั่งซื้อ
           </h2>
-          <p className="text-sm text-slate-500 mt-1">ติดตามสถานะ และแจ้งชำระเงินคำสั่งซื้อของคุณ</p>
+          <p className="text-xs text-slate-400 mt-1 font-medium">ติดตามสถานะ และแจ้งชำระเงินคำสั่งซื้อของคุณ</p>
         </div>
         
         <HistoryFilterBar filter={filter} setFilter={setFilter} />
