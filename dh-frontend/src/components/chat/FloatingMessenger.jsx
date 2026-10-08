@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Headphones, Store } from 'lucide-react';
 import { findNearestPartner } from '../../firebase/partnerLocationService'; 
 import { useGeolocation } from '../../hooks/useGeolocation';
@@ -8,6 +9,8 @@ import MessengerRadar from './MessengerRadar';
 import MessengerResult from './MessengerResult';
 
 const FloatingMessenger = () => {
+  const location = useLocation();
+  const isProductDetail = location.pathname.startsWith('/product/');
   const { getUserCurrentLocation } = useGeolocation();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState('menu'); 
@@ -115,7 +118,7 @@ const FloatingMessenger = () => {
   };
 
   return (
-    <div className="fixed bottom-[85px] md:bottom-6 right-6 z-100 flex flex-col items-end pointer-events-none">
+    <div className={`fixed ${isProductDetail ? 'bottom-[135px]' : 'bottom-[85px]'} md:bottom-6 right-6 z-100 flex flex-col items-end pointer-events-none transition-all duration-300`}>
       
       <div className={`pointer-events-auto mb-4 w-[320px] sm:w-[360px] bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 translate-y-20'}`}>
         
