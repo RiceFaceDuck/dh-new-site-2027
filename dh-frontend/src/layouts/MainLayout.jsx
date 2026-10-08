@@ -66,9 +66,7 @@ const MainLayout = ({ children }) => {
       </div>
       
       {/* 4. Navigation: BottomNav สำหรับมือถือ (ยึดติดด้านล่างสุด) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-bottom-nav">
-        <BottomNav />
-      </div>
+      <BottomNav />
 
       {/* 5. Smart Interaction: อัปเกรดระบบแชทลอยตัวอัจฉริยะ (สลับ DH / Partner) 
           ตำแหน่งจะลอยอยู่เหนือ BottomNav ในมือถือ และลอยขวาล่างใน Desktop

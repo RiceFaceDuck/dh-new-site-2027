@@ -26,7 +26,7 @@ const BottomNav = () => {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md border-t border-slate-200/60 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] pb-safe">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-200 border-t border-slate-300 shadow-[0_-6px_20px_rgba(0,0,0,0.1)] pb-safe">
       <div className="flex justify-around items-center h-[60px] px-2">
         {navItems.map((item, index) => {
           const active = !item.disabled && isActive(item.path);
@@ -36,7 +36,7 @@ const BottomNav = () => {
             return (
               <div
                 key={`disabled-${index}`}
-                className="relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 text-slate-300 opacity-70 cursor-not-allowed"
+                className="relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 text-slate-400 opacity-60 cursor-not-allowed"
                 onClick={() => showToast('รอการพัฒนาในอนาคต', 'info')}
               >
                 <div className="relative mt-1">
@@ -54,7 +54,7 @@ const BottomNav = () => {
               key={item.path}
               to={item.path}
               className={`relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 ${
-                active ? 'text-brand' : 'text-slate-400 hover:text-slate-600'
+                active ? 'text-brand' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {/* เส้นขีดเรืองแสงด้านบนเมื่อ Active (Tech Aesthetic) */}
