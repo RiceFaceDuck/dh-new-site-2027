@@ -50,8 +50,8 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
     setStoreData({ ...storeData, galleryImages: currentGallery.filter((_, idx) => idx !== indexToRemove) });
   };
 
-  const handleToggleSupport = async () => {
-    const nextSupport = !storeData.isSupportActive;
+  const handleToggleSupport = async (explicitVal) => {
+    const nextSupport = typeof explicitVal === 'boolean' ? explicitVal : !storeData.isSupportActive;
     setStoreData(prev => ({ ...prev, isSupportActive: nextSupport }));
 
     if (businessCardAd && businessCardAd.id) {

@@ -38,8 +38,13 @@ export const storeProfileSubmitService = {
       const adRef = doc(db, getCollectionPath('partner_ads'), adId);
       const taskId = `TODO-${adId}`;
 
-      if (finalStoreData.isSupportActive) {
-        if (!finalStoreData.latitude || !finalStoreData.longitude) {
+      // 🎯 Fail-Safe: ตรวจสอบการเปิดรับงาน
+      // หากผู้ใช้เปิดรับงาน หรือมีพิกัด GPS พร้อมใช้งาน ให้ถือว่าต้องการส่งตรวจเพื่อแสดงผลบนนามบัตร/แผนที่
+      const hasCoordinates = Boolean(finalStoreData.latitude && finalStoreData.longitude);
+      const shouldSubmitAdApproval = Boolean(finalStoreData.isSupportActive || (businessCardAd && businessCardAd.status !== 'INACTIVE') || hasCoordinates);
+
+      if (shouldSubmitAdApproval) {
+        if (!hasCoordinates) {
            throw new Error("กรุณากดปุ่ม 'ดึงพิกัดปัจจุบัน' ก่อนเปิดรับการสนับสนุน");
         }
 

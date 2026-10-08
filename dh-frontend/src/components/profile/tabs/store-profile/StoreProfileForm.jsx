@@ -34,7 +34,10 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
     }
   };
 
-  const isCardLive = businessCardAd ? ['APPROVED', 'ACTIVE'].includes(String(businessCardAd.status).toUpperCase()) : storeData.isSupportActive;
+  // 🛡️ ซิงค์สถานะการเปิดรับงาน: หากการ์ดในระบบทำงานอยู่ หรือ storeData เปิดไว้ ให้ถือว่าเปิดรับงาน
+  const isCardLive = businessCardAd 
+    ? ['APPROVED', 'ACTIVE'].includes(String(businessCardAd.status).toUpperCase()) 
+    : Boolean(storeData.isSupportActive);
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-3xl shadow-md overflow-hidden animate-in fade-in duration-300">
@@ -57,7 +60,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
                 <span className="text-emerald-600 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
               ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (
                 <span className="text-rose-600 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
-              ) : !storeData.isSupportActive ? (
+              ) : !isCardLive ? (
                 <span className="text-slate-500">⚫ ปิดการแสดงผล</span>
               ) : (
                 <span className="text-amber-600">🟡 รอการบันทึก</span>
@@ -70,7 +73,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
               type="checkbox" 
               className="sr-only peer" 
               checked={isCardLive} 
-              onChange={handleToggleSupport} 
+              onChange={() => handleToggleSupport(!isCardLive)} 
               disabled={isAdPending} 
             />
             <div className="w-14 h-7 bg-slate-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
