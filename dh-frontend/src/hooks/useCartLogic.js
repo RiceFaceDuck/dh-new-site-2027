@@ -271,6 +271,11 @@ export const useCartLogic = () => {
         return;
       }
 
+      if (!user) {
+        navigate('/profile?tab=login&returnUrl=/cart', { state: { returnUrl: '/cart' } });
+        return;
+      }
+
       navigate('/checkout');
     } catch (e) {
       console.error("Checkout validation error", e);

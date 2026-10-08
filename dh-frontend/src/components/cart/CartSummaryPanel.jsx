@@ -1,4 +1,4 @@
-import { ArrowRight, ShieldCheck, MessageCircle, MessageSquare } from 'lucide-react';
+import { ArrowRight, ShieldCheck, MessageCircle, MessageSquare, ExternalLink, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
   const CartSummaryPanel = ({ 
@@ -136,6 +136,38 @@ import { useNavigate } from 'react-router-dom';
               <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
             )}
           </button>
+        )}
+
+        {/* ทางเลือกสั่งซื้อผ่านแชต & บริการช่าง สำหรับลูกค้าทั่วไป (ยังไม่ได้ล็อกอิน) */}
+        {!currentUser && cartData.totalQty > 0 && isValidCart && (
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2 animate-fade-in">
+            <p className="text-[11px] text-slate-400 font-medium text-center">
+              หรือ สั่งซื้อผ่านแชต (ไม่ต้องเข้าสู่ระบบ)
+            </p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook', '_blank', 'noopener,noreferrer')}
+                className="flex-1 py-2.5 px-3 rounded-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
+                <span>LINE Official</span>
+                <ExternalLink size={12} strokeWidth={2.5} />
+              </button>
+              <button 
+                onClick={() => window.open('https://m.me/dhnotebook', '_blank', 'noopener,noreferrer')}
+                className="flex-1 py-2.5 px-3 rounded-full bg-[#0084FF] hover:bg-[#0073e6] text-white font-bold text-xs flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
+                <span>Messenger</span>
+                <ExternalLink size={12} strokeWidth={2.5} />
+              </button>
+            </div>
+            <button
+              onClick={() => navigate('/providers')}
+              className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-1"
+            >
+              <Wrench size={13} className="text-brand" />
+              <span>ค้นหาบริการช่าง (SERVICE PROVIDERS)</span>
+            </button>
+          </div>
         )}
       </div>
     );

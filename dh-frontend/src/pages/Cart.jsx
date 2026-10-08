@@ -1,6 +1,8 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ChevronLeft } from 'lucide-react';
 import { useCartLogic } from '../hooks/useCartLogic';
+import { useAuth } from '../context/AuthContext';
 
 import CartEmptyState from '../components/cart/CartEmptyState';
 import CartFreebieProgress from '../components/cart/CartFreebieProgress';
@@ -9,11 +11,14 @@ import CartSummaryPanel from '../components/cart/CartSummaryPanel';
 import CartActivePromotions from '../components/cart/CartActivePromotions';
 import CartSkeleton from '../components/cart/CartSkeleton';
 import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
+import LoginRequiredModal from '../components/cart/LoginRequiredModal';
 
 const Cart = () => {
   const navigate = useNavigate();
+  const { currentUser, loading: authLoading } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const {
-    user,
+    user: logicUser,
     cartItems,
     totals,
     subTotal,
@@ -35,6 +40,38 @@ const Cart = () => {
     handlePromotionsEvaluated,
     handleProceedToCheckout
   } = useCartLogic();
+
+  const effectiveUser = currentUser || logicUser;
+
+  // 🔔 ซิงค์สถานะ Popup กับการล็อกอินอัตโนมัติ:
+  useEffect(() => {
+    // 1. กำลังเช็ค Auth จาก Firebase -> รอ ห้ามเพิ่งเด้ง
+    if (authLoading) return;
+
+    // 2. ถ้าล็อกอินแล้ว -> ปิด Popup ทันที 100%
+    if (effectiveUser) {
+      setIsLoginModalOpen(false);
+      return;
+    }
+
+    // 3. ถ้าโหลดข้อมูลเสร็จแล้ว และยังไม่ได้ล็อกอิน -> เด้ง Popup แจ้งเตือน
+    if (isInitialized && !effectiveUser) {
+      setIsLoginModalOpen(true);
+    }
+  }, [isInitialized, effectiveUser, authLoading]);
+
+  const handleCheckoutClick = () => {
+    if (!effectiveUser) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    handleProceedToCheckout();
+  };
+
+  const handleGoToLogin = () => {
+    setIsLoginModalOpen(false);
+    navigate('/profile?tab=login&returnUrl=/cart', { state: { returnUrl: '/cart' } });
+  };
 
   if (!isInitialized) {
     return <CartSkeleton />;
@@ -65,18 +102,6 @@ const Cart = () => {
           <ChevronLeft size={16} className="mr-1" /> เลือกซื้อสินค้าต่อ
         </button>
       </div>
-
-      {!user && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <h3 className="font-bold text-blue-800">คุณยังไม่ได้เข้าสู่ระบบ</h3>
-            <p className="text-sm text-blue-600">เข้าสู่ระบบตอนนี้เพื่อสะสมแต้มและรับสิทธิพิเศษมากมาย</p>
-          </div>
-          <Link to="/profile" className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
-            เข้าสู่ระบบ
-          </Link>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
@@ -112,19 +137,19 @@ const Cart = () => {
         <div className="lg:col-span-1">
           <CartSummaryPanel 
             cartData={cartData}
-            currentUser={user}
+            currentUser={effectiveUser}
             subTotal={subTotal}
             netTotal={netTotal}
             promoDiscount={promoDiscount}
             earnedPoints={earnedPoints}
             isValidCart={isValidCart}
             isValidating={isValidatingCart}
-            onCheckout={handleProceedToCheckout}
+            onCheckout={handleCheckoutClick}
             promotionsElement={
               <CartActivePromotions 
                 cartItems={cartItems} 
                 subTotal={subTotal} 
-                user={user} 
+                user={effectiveUser} 
                 onPromotionsEvaluated={handlePromotionsEvaluated} 
               />
             }
@@ -137,6 +162,12 @@ const Cart = () => {
         itemName={itemToDelete?.name}
         onClose={() => setItemToDelete(null)}
         onConfirm={() => handleRemoveItem(itemToDelete?.id)}
+      />
+
+      <LoginRequiredModal 
+        isOpen={isLoginModalOpen && !effectiveUser}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleGoToLogin}
       />
     </div>
   );
