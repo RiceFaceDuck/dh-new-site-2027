@@ -37,9 +37,9 @@ const SquadHighlight = () => {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-2 md:p-2.5 flex items-center space-x-3 md:space-x-4 h-full">
-              <div className="w-[120px] h-[120px] md:w-[155px] md:h-[155px] bg-slate-200 rounded-xl shrink-0"></div>
-              <div className="flex-1 flex flex-col justify-center py-1">
+            <div key={i} className="bg-white rounded-2xl shadow-md border border-slate-200 p-3 md:p-3.5 flex items-center space-x-3 md:space-x-4 h-full">
+              <div className="w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] bg-slate-200 rounded-xl shrink-0"></div>
+              <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
                 <div className="h-5 bg-slate-200 rounded-md w-3/4 mb-2"></div>
                 <div className="h-3 bg-slate-200 rounded-sm w-1/2 mb-3"></div>
                 <div className="h-6 bg-slate-200 rounded-full w-24 mb-3"></div>
