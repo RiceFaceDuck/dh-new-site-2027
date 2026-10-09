@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, CheckCircle2, ChevronDown, ChevronRight, AlertCircle, FileText, Package, Receipt, Truck, Info } from 'lucide-react';
+import { Loader2, CheckCircle2, ChevronDown, ChevronRight, AlertCircle, FileText, Package, Receipt, Truck, Info, Store } from 'lucide-react';
 import WholesaleCard from '../../../components/todo/WholesaleCard';
 import PaymentCard from '../../../components/todo/PaymentCard'; 
 import TaxInvoiceCard from '../../../components/todo/TaxInvoiceCard';
@@ -11,9 +11,17 @@ import { formatDate } from 'dh-shared';
 // -------------------------------------------------------------
 // Component: Compact Row (Google Drive Style)
 // -------------------------------------------------------------
-const CompactTodoRow = ({ todo, urgencyLevel, isProcessing, fullCard, formatDate }) => {
+const CompactTodoRow = ({ todo, urgencyLevel, isProcessing, fullCard, formatDate, onExpand }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
+  const handleToggle = () => {
+    const next = !isExpanded;
+    setIsExpanded(next);
+    if (next && onExpand) {
+      onExpand(todo.id);
+    }
+  };
+
   const getIcon = (type) => {
     const t = type?.toUpperCase() || '';
     if (t.includes('WHOLESALE')) return <Package className="w-4 h-4 text-orange-500" />;
@@ -21,6 +29,7 @@ const CompactTodoRow = ({ todo, urgencyLevel, isProcessing, fullCard, formatDate
     if (t.includes('TAX')) return <FileText className="w-4 h-4 text-teal-500" />;
     if (t.includes('CLAIM')) return <AlertCircle className="w-4 h-4 text-rose-500" />;
     if (t.includes('INVENTORY')) return <Truck className="w-4 h-4 text-purple-500" />;
+    if (t.includes('AD') || t.includes('PARTNER')) return <Store className="w-4 h-4 text-indigo-500" />;
     return <Info className="w-4 h-4 text-slate-500" />;
   };
 
@@ -30,6 +39,7 @@ const CompactTodoRow = ({ todo, urgencyLevel, isProcessing, fullCard, formatDate
     if (t === 'VERIFY_SLIP') return 'ตรวจสอบสลิป';
     if (t === 'ISSUE_TAX_INVOICE') return 'ใบกำกับภาษี';
     if (t.includes('CLAIM')) return 'เคลม/คืนสินค้า';
+    if (t.includes('AD') || t.includes('PARTNER')) return 'อนุมัติร้าน/โฆษณา';
     return todo.title || 'งานทั่วไป';
   };
 
@@ -45,7 +55,7 @@ const CompactTodoRow = ({ todo, urgencyLevel, isProcessing, fullCard, formatDate
     <div className={`border-b border-slate-200/60 last:border-0 transition-colors ${getRowAccent(urgencyLevel)} ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}>
       <div 
          className="flex items-center gap-3 p-3 sm:px-4 cursor-pointer select-none"
-         onClick={() => setIsExpanded(!isExpanded)}
+         onClick={handleToggle}
       >
          {/* Expand Toggle */}
          <div className="shrink-0 text-slate-400">
@@ -97,6 +107,7 @@ const TodoPageList = ({
   loading,
   displayTodos,
   searchQuery,
+  filterType,
   processingId,
   handleAction,
   fetchedPrices,
@@ -104,6 +115,26 @@ const TodoPageList = ({
   setWholesaleInputs,
   isLeftZone
 }) => {
+  const [readIds, setReadIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dh_todo_read_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markAsRead = (id) => {
+    if (!readIds.includes(id)) {
+      const next = [...readIds, id];
+      setReadIds(next);
+      try {
+        localStorage.setItem('dh_todo_read_ids', JSON.stringify(next));
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+  };
 
   const getUrgencyLevel = (createdAt) => {
     if (!createdAt) return 'low';
@@ -112,8 +143,6 @@ const TodoPageList = ({
     if (hours > 12) return 'medium';
     return 'low';
   };
-
-
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -129,11 +158,19 @@ const TodoPageList = ({
   const filteredTodos = displayTodos.filter(todo => {
      const urgency = getUrgencyLevel(todo.createdAt || todo.requestedAt);
      const isUrgent = urgency === 'high' || urgency === 'medium' || todo.priority === 'High';
-     
+     const isRead = readIds.includes(todo.id);
+
      if (isLeftZone === true) {
-       return !isUrgent; // โซนซ้าย: งานใหม่ที่ยังไม่ด่วน
+       // หากเลือกฟิลเตอร์เฉพาะเจาะจง หรือพิมพ์ค้นหา ให้โชว์ในกระดานฝั่งซ้ายทั้งหมด
+       if (filterType && filterType !== 'ALL') return true;
+       if (searchQuery && searchQuery.trim() !== '') return true;
+
+       // กระดานงานใหม่ (ฝั่งซ้าย):
+       // แสดงงานที่ยังไม่เคยกดเปิดอ่าน (!isRead) หรือ งานที่ยังไม่ด่วน (!isUrgent)
+       return !isRead || !isUrgent;
      } else if (isLeftZone === false) {
-       return isUrgent; // โซนขวา: งานด่วน หรือ ค้างนาน
+       // โซนขวา: งานสำคัญ & ค้างดำเนินการ (งานด่วน หรือ ค้างนาน)
+       return isUrgent;
      }
      return true; 
   });
@@ -205,6 +242,7 @@ const TodoPageList = ({
                 isProcessing={isProcessing} 
                 fullCard={cardContent} 
                 formatDate={formatDate}
+                onExpand={markAsRead}
               />
             );
           })}

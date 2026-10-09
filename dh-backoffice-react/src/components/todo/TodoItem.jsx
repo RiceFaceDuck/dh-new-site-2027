@@ -5,6 +5,7 @@ import { Info, AlertCircle, Calendar, Package, Truck, MessageSquare, Megaphone, 
 import { formatDate } from 'dh-shared';
 import StaffApprovalCard from './cards/StaffApprovalCard';
 import AdApprovalCard from './cards/AdApprovalCard';
+import StoreProfileApprovalCard from './cards/StoreProfileApprovalCard';
 import GenericTodoCard from './cards/GenericTodoCard';
 import LeaveApprovalCard from './cards/LeaveApprovalCard';
 import KnowledgeCard from './cards/KnowledgeCard';
@@ -102,7 +103,13 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
   if (isPromotionTask) {
     return (
       <>
-        <PromotionCard todo={todo} formatDate={formatDate} />
+        <PromotionCard 
+          todo={todo} 
+          formatDate={formatDate} 
+          handleAction={handleAction} 
+          isProcessing={isProcessing} 
+          handleRejectClick={handleRejectClick} 
+        />
         <PremiumDialog {...dialogConfig} />
       </>
     );
@@ -118,6 +125,23 @@ export default function TodoItem({ todo, isProcessing, isManagerTab, urgencyLeve
   }
 
   if (isAdTask) {
+    const adData = todo.adPayload || todo.adDetails || todo.payload?.adPayload || todo.payload?.adDetails;
+    const isStoreProfileTask = 
+      type === 'BUSINESS_CARD_AD_APPROVAL' ||
+      adData?.type === 'BUSINESS_CARD' ||
+      todo.targetSkuId?.startsWith('AD-CARD-') ||
+      todo.id?.includes('AD-CARD') ||
+      Boolean(adData?.phone || adData?.services || adData?.latitude);
+
+    if (isStoreProfileTask) {
+      return (
+        <>
+          <StoreProfileApprovalCard {...props} />
+          <PremiumDialog {...dialogConfig} />
+        </>
+      );
+    }
+
     return (
       <>
         <AdApprovalCard {...props} />

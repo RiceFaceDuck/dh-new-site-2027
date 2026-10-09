@@ -56,6 +56,12 @@ export default function Todo() {
           if (result.success && result.newStatus) {
             await updateTodoStatus(taskId, result.newStatus);
           }
+        } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(actionType)) {
+          const { managerActionService } = await import('../firebase/managerActionService');
+          const result = await managerActionService.handleApproval(taskId, actionType, payload, fullTask, auth.currentUser.uid);
+          if (result.success) {
+            toast.success("✅ อนุมัติข้อมูลร้านค้า/โฆษณาเรียบร้อยแล้ว");
+          }
         }
       } else if (action === 'reject') {
         if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {
@@ -63,6 +69,12 @@ export default function Todo() {
         } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
            if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
            await claimService.rejectRequest(fullTask, payload.reason || 'ปฏิเสธโดยแอดมิน', auth.currentUser.uid);
+        } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(actionType)) {
+           const { managerActionService } = await import('../firebase/managerActionService');
+           const result = await managerActionService.handleReject(taskId, actionType, payload, fullTask, payload.reason || 'ข้อมูลไม่ผ่านเกณฑ์', auth.currentUser.uid);
+           if (result.success) {
+             toast.success("ปฏิเสธคำขอเรียบร้อยแล้ว");
+           }
         } else {
            await todoService.rejectTask(taskId, payload.reason);
         }
@@ -118,7 +130,7 @@ export default function Todo() {
   };
 
   const filteredTodos = activeTodos.filter(todo => {
-    const managerTypes = ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL', 'AD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'];
+    const managerTypes = ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'];
     if (managerTypes.includes(todo.type)) return false;
 
     if (filterType === 'ALL') return true;
@@ -126,6 +138,7 @@ export default function Todo() {
     if (filterType === 'PAYMENT') return todo.type === 'verify_slip';
     if (filterType === 'CLAIM') return ['CLAIM_APPROVAL', 'RETURN_APPROVAL'].includes(todo.type) || todo.type?.startsWith('CANCEL_');
     if (filterType === 'WHOLESALE') return ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(todo.type);
+    if (filterType === 'STORE_ADS') return ['AD_APPROVAL', 'BUSINESS_CARD_AD_APPROVAL', 'APPROVE_PARTNER_AD'].includes(todo.type);
     if (filterType === 'MANUAL') return todo.type === 'MANUAL';
     
     return true;
@@ -178,6 +191,7 @@ export default function Todo() {
                 loading={loading}
                 displayTodos={displayTodos}
                 searchQuery={searchQuery}
+                filterType={filterType}
                 processingId={processingId}
                 handleAction={handleAction}
                 fetchedPrices={fetchedPrices}
@@ -203,6 +217,7 @@ export default function Todo() {
                 loading={loading}
                 displayTodos={displayTodos}
                 searchQuery={searchQuery}
+                filterType={filterType}
                 processingId={processingId}
                 handleAction={handleAction}
                 fetchedPrices={fetchedPrices}
