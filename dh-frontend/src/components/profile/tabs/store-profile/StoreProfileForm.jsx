@@ -8,7 +8,7 @@ import { useStoreProfile } from './hooks/useStoreProfile';
 import { useGeolocation } from '../../../../hooks/useGeolocation';
 import { useToast } from '../../../../context/ToastContext';
 
-const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd, fetchMyAds }) => {
+const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd, fetchMyAds, userCredit = 0 }) => {
   const { showToast } = useToast();
   const {
     savingStore,
@@ -39,6 +39,8 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
     ? ['APPROVED', 'ACTIVE'].includes(String(businessCardAd.status).toUpperCase()) 
     : Boolean(storeData.isSupportActive);
 
+  const hasNoCredit = Number(userCredit || 0) <= 0;
+
   return (
     <div className="bg-white border border-slate-200/90 rounded-3xl shadow-md overflow-hidden animate-in fade-in duration-300">
       
@@ -56,6 +58,8 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
                 <span className="text-orange-600 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
               ) : isAdPending ? (
                 <span className="text-amber-600 font-bold">🟡 รอตรวจสอบ (Pending)</span>
+              ) : isCardLive && hasNoCredit ? (
+                <span className="text-slate-500 font-bold">⚪ ไม่แสดง (No Credit)</span>
               ) : isCardLive ? (
                 <span className="text-emerald-600 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
               ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (

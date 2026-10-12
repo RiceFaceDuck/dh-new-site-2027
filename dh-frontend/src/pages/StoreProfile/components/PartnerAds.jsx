@@ -17,9 +17,19 @@ const PartnerAds = ({ partnerId }) => {
       try {
         setLoading(true);
         
-        // Use the same function that the dashboard uses to fetch all related ads across collections
-        const allAds = await getUserPartnerAds(partnerId);
-        
+        // 🛡️ ตรวจสอบ Credit Point ของร้านค้า หากเป็น 0 ไม่ต้องแสดงโฆษณาใดๆ
+        const { getDoc, doc } = await import('firebase/firestore');
+        const { db } = await import('../../../firebase/config');
+        const { getCollectionPath } = await import('dh-shared/src/firebase/pathUtils');
+        const userRef = doc(db, getCollectionPath('users'), partnerId);
+        const userSnap = await getDoc(userRef);
+        const partnerCredit = userSnap.exists() ? Number(userSnap.data().creditPoints || 0) : 0;
+
+        if (partnerCredit <= 0) {
+          setAds([]);
+          return;
+        }
+
         const activeAds = allAds.filter((adData) => {
           // Check for active status
           const isActive = ['active', 'ACTIVE', 'APPROVED'].includes(adData.status) || adData.isActive === true;

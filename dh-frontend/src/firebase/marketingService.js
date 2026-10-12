@@ -6,6 +6,7 @@ import {
 
 import { trackAdView, trackAdClick, logImpression, logClick } from './marketingAnalyticsService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { userProfileCache } from './user/userDocumentSubscriptionManager';
 
 // 🚀 HOTFIX: แยก Cache ตามประเภทโฆษณาเพื่อป้องกันการจำค่าทับซ้อนกัน
 let activeAdsCache = { data: {}, lastFetch: {} };
@@ -52,12 +53,48 @@ export const marketingService = {
         ...doc.data() 
       }));
 
-      adsList.sort((a, b) => {
+      // 🛡️ Credit Point Protection: ไม่เรียก/ไม่นำส่งโฆษณาจาก Account ที่ credit point เหลือ 0
+      const validAds = [];
+      for (const ad of adsList) {
+        if (!ad.ownerId) {
+          validAds.push(ad);
+          continue;
+        }
+
+        // ตรวจสอบจาก Cache ก่อน (0 Read Quota Shield)
+        const cachedUser = userProfileCache.getProfile(ad.ownerId);
+        if (cachedUser) {
+          if (Number(cachedUser.creditPoints || 0) <= 0) {
+            continue; // ข้าม ไม่แสดงโฆษณา
+          }
+          validAds.push(ad);
+          continue;
+        }
+
+        // ถ้าไม่มีในแคช ดึงตรวจตรงจาก Firestore
+        try {
+          const userRef = doc(db, getCollectionPath('users'), ad.ownerId);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            userProfileCache.setProfile(ad.ownerId, userData);
+            if (Number(userData.creditPoints || 0) <= 0) {
+              continue; // ข้าม ไม่แสดงโฆษณา
+            }
+          }
+        } catch (e) {
+          console.warn(`[MarketingService] Could not check credit for owner ${ad.ownerId}:`, e);
+        }
+
+        validAds.push(ad);
+      }
+
+      validAds.sort((a, b) => {
         const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
         const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
         return timeB - timeA;
       });
-      const limitedAds = adsList; // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
+      const limitedAds = validAds; // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
 
       activeAdsCache.data[adType] = limitedAds;
       activeAdsCache.lastFetch[adType] = now;

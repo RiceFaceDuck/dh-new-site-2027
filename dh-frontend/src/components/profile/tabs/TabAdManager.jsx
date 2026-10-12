@@ -98,6 +98,7 @@ const TabAdManager = ({ user }) => {
           appId={appId} 
           businessCardAd={businessCardAd} 
           fetchMyAds={fetchMyAds} 
+          userCredit={userCredit}
         />
       )}
 

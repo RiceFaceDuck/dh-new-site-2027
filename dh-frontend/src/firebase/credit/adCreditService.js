@@ -29,9 +29,14 @@ export const pauseUserAdsOnOutOfCredit = async (partnerId) => {
       hasUpdates = true;
     });
 
+    // 🗺️ ลบออกจาก ActivePartners ด้วย เพื่อความสะอาดสมบูรณ์ของเรดาร์หน้าร้าน
+    const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
+    batch.delete(activePartnerRef);
+    hasUpdates = true;
+
     if (hasUpdates) {
       await batch.commit();
-      console.log(`🛑 [adCreditService] Auto-suspended active ads for zero-credit partner: ${partnerId}`);
+      console.log(`🛑 [adCreditService] Auto-suspended active ads and cleared radar for zero-credit partner: ${partnerId}`);
     }
   } catch (err) {
     console.error("🔥 Error auto-pausing ads on zero credit:", err);
