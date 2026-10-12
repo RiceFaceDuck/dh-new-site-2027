@@ -51,12 +51,16 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
   const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
   const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
   const storeProfileRef = doc(db, usersPath, partnerId, 'storeProfile', 'main');
+  const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
 
   try {
     let isZeroCredit = false;
 
     await runTransaction(db, async (transaction) => {
-      const userDoc = await transaction.get(userRef);
+      const [userDoc, settingsDoc] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(settingsRef)
+      ]);
       if (!userDoc.exists()) return;
 
       const currentPoints = Number(userDoc.data().creditPoints) || 0;
@@ -75,6 +79,20 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
         creditPoints: newBalance,
         updatedAt: serverTimestamp()
       });
+
+      // 🛡️ Sync Ledger Parity: Synchronously decrement settings/credit_config.ledger.totalAllocated
+      const ledger = settingsDoc.exists() ? (settingsDoc.data()?.ledger || {}) : {};
+      const currentAllocated = Number(ledger.totalAllocated || 0);
+      const newAllocated = Math.max(0, currentAllocated - actualDeduct);
+
+      transaction.set(settingsRef, {
+        ledger: {
+          ...ledger,
+          totalAllocated: newAllocated,
+          lastAuditTime: serverTimestamp()
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true });
 
       if (newBalance <= 0) {
         transaction.delete(activePartnerRef);
@@ -127,14 +145,14 @@ export const checkAdCreditSufficiency = async (userId, requiredAmount) => {
 export const consumeAdCreditWithTransaction = async (transaction, userId, amount, referenceId = null, adTitle = null) => {
   const usersPath = getUsersPath();
   const userRef = doc(db, usersPath, userId);
-  
   const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
-
   const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), userId);
+  const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
 
-  const [userDoc, activePartnerSnap] = await Promise.all([
+  const [userDoc, activePartnerSnap, settingsDoc] = await Promise.all([
     transaction.get(userRef),
-    transaction.get(activePartnerRef)
+    transaction.get(activePartnerRef),
+    transaction.get(settingsRef)
   ]);
 
   if (!userDoc.exists()) {
@@ -154,6 +172,20 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     creditPoints: newBalance,
     updatedAt: serverTimestamp()
   });
+
+  // 🛡️ Sync Ledger Parity: Synchronously decrement settings/credit_config.ledger.totalAllocated
+  const ledger = settingsDoc.exists() ? (settingsDoc.data()?.ledger || {}) : {};
+  const currentAllocated = Number(ledger.totalAllocated || 0);
+  const newAllocated = Math.max(0, currentAllocated - amount);
+
+  transaction.set(settingsRef, {
+    ledger: {
+      ...ledger,
+      totalAllocated: newAllocated,
+      lastAuditTime: serverTimestamp()
+    },
+    updatedAt: serverTimestamp()
+  }, { merge: true });
 
   if (newBalance <= 0) {
     const storeProfileRef = doc(db, usersPath, userId, 'storeProfile', 'main');
