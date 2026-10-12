@@ -203,7 +203,7 @@ const ProductAdCard = ({ ad }) => {
           <LazyImage 
             src={safeImageUrl} 
             alt={ad.title || 'Advertisement'} 
-            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply relative z-10"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
           />
           
           {/* 🏷️ ป้าย Sponsored */}

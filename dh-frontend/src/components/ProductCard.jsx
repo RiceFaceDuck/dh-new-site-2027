@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ShoppingCart } from 'lucide-react';
 import LazyImage from './common/LazyImage';
 
 const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
@@ -10,9 +10,9 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
   return (
     <div 
       onClick={() => navigate(`/product/${id}`, { state: { product } })} 
-      className="group cursor-pointer bg-white p-2.5 md:p-3 rounded-md border border-slate-200 overflow-hidden flex flex-col hover:border-brand/40 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 relative animate-in fade-in"
+      className="group cursor-pointer p-1 md:p-1.5 flex flex-col hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 relative animate-in fade-in"
     >
-      <div className="relative aspect-square w-full bg-slate-50/80 rounded-sm flex items-center justify-center overflow-hidden mb-2.5 border border-slate-200">
+      <div className="relative aspect-square w-full rounded-sm flex items-center justify-center overflow-hidden mb-2.5">
         <div className="absolute inset-0 bg-linear-to-br from-brand-light/10 to-transparent opacity-60 pointer-events-none"></div>
         <LazyImage 
           src={imageUrl} 
@@ -29,33 +29,36 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
         </div>
       </div>
       
-      <div className="flex flex-col grow px-0.5">
+      <div className="flex flex-col grow px-0.5 text-center">
         <h3 className="text-sm md:text-base font-bold text-slate-900 line-clamp-1 group-hover:text-brand transition-colors leading-relaxed">
           {name}
         </h3>
         <div className="text-[10px] md:text-xs text-slate-500 line-clamp-1 mb-2">
           SKU: {sku}
         </div>
-        <div className="mt-auto flex flex-col pt-1">
-          <span className="text-base md:text-lg font-black text-slate-900 leading-none mb-3">
-            ฿{price ? price.toLocaleString() : '0'}
+        <div className="mt-auto flex flex-col items-center justify-center pt-1">
+          <span className="text-sm md:text-base font-normal text-red-600 leading-none mb-2">
+            {price ? price.toLocaleString() : '0'} THB
           </span>
           <button 
             onClick={(e) => onAddToCart(e, product)}
             disabled={!hasStock || addingState === 'success'}
-            className={`w-full py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-xs z-20 text-xs font-bold uppercase tracking-wider ${
+            className={`px-3.5 py-1.5 rounded-sm flex items-center justify-center gap-1.5 transition-all duration-300 shadow-xs z-20 text-xs font-bold ${
               addingState === 'success'
                 ? 'bg-emerald-500 text-white scale-95 shadow-sm'
                 : !hasStock 
                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-amber-400 text-slate-950 hover:bg-amber-500 hover:shadow-md active:scale-95'
+                  : 'bg-[#ffc107] hover:bg-[#ffb300] text-red-800 border border-amber-300 shadow-xs active:scale-95'
             }`}
             aria-label="Add to cart"
           >
             {addingState === 'success' ? (
-                <span className="flex items-center gap-1.5"><CheckCircle2 size={16} strokeWidth={2.5} /> ADDED</span>
+                <span className="flex items-center gap-1 text-white"><CheckCircle2 size={14} strokeWidth={2.5} /> เรียบร้อย</span>
             ) : (
-                "ADD TO CART"
+                <>
+                  <ShoppingCart size={14} strokeWidth={2.2} className="text-red-800 shrink-0" />
+                  <span className="text-red-800 font-bold tracking-tight">สั่งซื้อ</span>
+                </>
             )}
           </button>
         </div>
