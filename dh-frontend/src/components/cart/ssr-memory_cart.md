@@ -57,6 +57,8 @@
   - *ปัญหา:* ผู้ใช้ทั่วไปที่ยังไม่ได้ล็อกอินเมื่อกด "ดำเนินการสั่งซื้อ" ถูก navigate เข้า `/checkout` โดยตรงแล้วดีดไปหน้า `/profile` โดยไม่มีแจ้งเตือน หรือไม่มีการพากลับมาหน้าเดิมหลังล็อกอินเสร็จ
 - ⚠️ **Freebies Per-Item Calculation Discrepancy on Storefront:**
   - *ปัญหา:* กฎของแถมในระบบรองรับ `distributionMode: 'per_item'` (คูณตามจำนวนชิ้นที่ซื้อ เช่น ซื้อจอ 2 จอ แถม 2 หลอด) แต่หน้าบ้านเดิม (`usePromotions.js`, `CartFreebieProgress.jsx`, `PrivilegeSelector.jsx`, `CheckoutSummaryDetails.jsx`) ดึงค่า `qty` ดิบๆ ซึ่งเป็น 1 ไปแสดงผลตรงๆ ทำให้หน้าเว็บและในออเดอร์โชว์ `x1` ชิ้นตลอด
-  - *วิธีแก้:* เพิ่มการคำนวณ `calculatedQty` ใน `evaluateFreebie` โดยคูณ `(qty || 1) * eligibleQty` เมื่อ `distributionMode === 'per_item'` และคุมเพดาน `maxPerBill` พร้อมส่ง `calculatedQty` ให้คอมโพเนนต์หน้า Cart, Checkout และ `checkoutSubmitService.js` บันทึกตามจำนวนจริง
+- ⚠️ **Chat Ordering Buttons Disappearing on Login:**
+  - *ปัญหา:* `CartSummaryPanel.jsx` เดิมครอบปุ่มสั่งซื้อผ่าน LINE Official / Messenger และปุ่มบริการช่างด้วยเงื่อนไข `!currentUser` ทำให้เมื่อลูกค้าเข้าสู่ระบบแล้ว ปุ่มเหล่านี้จะหายไป
+  - *วิธีแก้:* เอาเงื่อนไข `!currentUser` ออก เพื่อให้แสดงค้างไว้เสมอทั้งกรณีล็อกอินและไม่ล็อกอิน โดยปรับข้อความหัวข้อตามสถานะผู้ใช้
 </pitfalls_and_solutions>
 

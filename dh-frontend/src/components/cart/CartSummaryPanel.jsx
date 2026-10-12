@@ -138,11 +138,11 @@ import { useNavigate } from 'react-router-dom';
           </button>
         )}
 
-        {/* ทางเลือกสั่งซื้อผ่านแชต & บริการช่าง สำหรับลูกค้าทั่วไป (ยังไม่ได้ล็อกอิน) */}
-        {!currentUser && cartData.totalQty > 0 && isValidCart && (
+        {/* ทางเลือกสั่งซื้อผ่านแชต & บริการช่าง (แสดงค้างไว้เสมอทั้งเข้าสู่ระบบและยังไม่เข้าสู่ระบบ) */}
+        {cartData.totalQty > 0 && isValidCart && (
           <div className="mt-4 pt-4 border-t border-slate-200 flex flex-col gap-2 animate-fade-in">
             <p className="text-[11px] text-slate-400 font-medium text-center">
-              หรือ สั่งซื้อผ่านแชต (ไม่ต้องเข้าสู่ระบบ)
+              {currentUser ? 'หรือ สั่งซื้อผ่านแชต' : 'หรือ สั่งซื้อผ่านแชต (ไม่ต้องเข้าสู่ระบบ)'}
             </p>
             <div className="flex gap-2">
               <button 
