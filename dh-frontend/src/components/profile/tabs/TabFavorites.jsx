@@ -90,7 +90,7 @@ const TabFavorites = () => {
     )}
 
     {favorites.length === 0 ? (
-      <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+      <div className="text-center py-12 bg-gray-50 rounded-md border border-dashed border-gray-200">
         <Heart size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-gray-500 font-semibold mb-2">ยังไม่มีสินค้าที่ถูกใจ</h3>
         <p className="text-gray-400 text-sm mb-4">ลองค้นหาสินค้าและกดหัวใจเพื่อบันทึกเก็บไว้ดูภายหลัง</p>

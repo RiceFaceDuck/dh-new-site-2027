@@ -20,7 +20,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
               name="displayName"
               value={formData.displayName}
               onChange={handleChange}
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#0870B8]/15 focus:border-[#0870B8] transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-[#0870B8]/15 focus:border-[#0870B8] transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               placeholder="ระบุชื่อที่ต้องการให้แสดง"
               required
             />
@@ -38,7 +38,7 @@ export default function ContactInfoSection({ formData, handleChange }) {
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#0870B8]/15 focus:border-[#0870B8] transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-[#0870B8]/15 focus:border-[#0870B8] transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               placeholder="08X-XXX-XXXX"
             />
           </div>

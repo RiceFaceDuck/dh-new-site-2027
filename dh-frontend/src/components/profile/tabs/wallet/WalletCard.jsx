@@ -3,7 +3,7 @@ import { formatCredit } from '../../../../firebase/creditService';
 
 const WalletCard = ({ walletBalance, pendingWithdrawal }) => {
   return (
-    <div className="bg-linear-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+    <div className="bg-linear-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-md p-8 text-white shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
       
@@ -23,7 +23,7 @@ const WalletCard = ({ walletBalance, pendingWithdrawal }) => {
 
         <div className="flex flex-col items-end gap-3 w-full md:w-auto">
           {pendingWithdrawal > 0 && (
-            <div className="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl flex items-center gap-3 animate-in fade-in">
+            <div className="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-md flex items-center gap-3 animate-in fade-in">
               <Clock className="w-4 h-4 text-amber-300" />
               <div className="text-right">
                 <p className="text-[10px] text-slate-300 uppercase tracking-wider">กำลังรอตรวจสอบและโอนคืน</p>

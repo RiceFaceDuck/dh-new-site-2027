@@ -69,7 +69,7 @@ const HeroSection = () => {
 
   return (
     <div
-      className={`relative w-full rounded-2xl overflow-hidden flex flex-col justify-center border border-slate-700 shadow-xl transition-opacity duration-500 ${heightClass} ${isLoading ? 'opacity-70' : 'opacity-100'}`}
+      className={`relative w-full rounded-md overflow-hidden flex flex-col justify-center border border-slate-700 shadow-xl transition-opacity duration-500 ${heightClass} ${isLoading ? 'opacity-70' : 'opacity-100'}`}
       style={{ backgroundColor: overlayColor }}
     >
       {/* Background Graphic */}

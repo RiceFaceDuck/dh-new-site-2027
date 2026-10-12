@@ -101,7 +101,7 @@ export default function TabOverview({ user: propUser } = {}) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-md border border-slate-200 shadow-xs">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
         <p className="text-sm font-medium text-slate-500">กำลังซิงค์ข้อมูลโปรไฟล์...</p>
       </div>
@@ -118,7 +118,7 @@ export default function TabOverview({ user: propUser } = {}) {
         {/* Wallet Card */}
         <div 
           onClick={() => navigate('/profile?tab=wallet')}
-          className="bg-linear-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-slate-700/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+          className="bg-linear-to-br from-slate-900 to-slate-800 rounded-md p-6 text-white shadow-lg relative overflow-hidden border border-slate-700/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
           title="คลิกเพื่อดูประวัติและทำรายการ"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/30 transition-colors"></div>
@@ -144,7 +144,7 @@ export default function TabOverview({ user: propUser } = {}) {
         {/* Credit Points Card */}
         <div 
           onClick={() => navigate('/profile?tab=credit')}
-          className="bg-linear-to-br from-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-indigo-900/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+          className="bg-linear-to-br from-indigo-950 to-slate-900 rounded-md p-6 text-white shadow-lg relative overflow-hidden border border-indigo-900/50 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
           title="คลิกเพื่อดูประวัติและทำรายการ"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-colors"></div>
@@ -169,7 +169,7 @@ export default function TabOverview({ user: propUser } = {}) {
       {/* ==========================================
           Section 2: User Summary Info
       ========================================== */}
-      <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden relative">
+      <div className="bg-white rounded-md shadow-md border border-slate-200/90 overflow-hidden relative">
         <button 
           onClick={handleRefresh}
           disabled={isRefreshing}
@@ -188,7 +188,7 @@ export default function TabOverview({ user: propUser } = {}) {
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="flex items-start gap-3.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
+            <div className="w-9 h-9 rounded-md bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <Mail className="w-4 h-4" />
             </div>
             <div>
@@ -205,7 +205,7 @@ export default function TabOverview({ user: propUser } = {}) {
           </div>
 
           <div className="flex items-start gap-3.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
+            <div className="w-9 h-9 rounded-md bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <Phone className="w-4 h-4" />
             </div>
             <div>
@@ -215,7 +215,7 @@ export default function TabOverview({ user: propUser } = {}) {
           </div>
 
           <div className="flex items-start gap-3.5 md:col-span-2">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
+            <div className="w-9 h-9 rounded-md bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <MapPin className="w-4 h-4" />
             </div>
             <div>
@@ -225,7 +225,7 @@ export default function TabOverview({ user: propUser } = {}) {
           </div>
 
           <div className="flex items-start gap-3.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
+            <div className="w-9 h-9 rounded-md bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <Calendar className="w-4 h-4" />
             </div>
             <div>
@@ -239,7 +239,7 @@ export default function TabOverview({ user: propUser } = {}) {
           </div>
 
           <div className="flex items-start gap-3.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
+            <div className="w-9 h-9 rounded-md bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 shadow-xs">
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div>

@@ -122,25 +122,25 @@ export default function AuthForm({ onSuccess }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300">
+    <div className="bg-white rounded-md shadow-xl border border-slate-200 p-8 w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300">
       
       {inAppBrowser && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center rounded-2xl">
-              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center rounded-md">
+              <div className="w-16 h-16 bg-red-100 rounded-md flex items-center justify-center mx-auto mb-6">
                   <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <h1 className="text-2xl font-bold mb-4 text-gray-800">ไม่สามารถล็อกอินในแอพนี้ได้</h1>
               <p className="text-gray-600 mb-6 leading-relaxed">
                   Google ไม่อนุญาตให้ล็อกอินผ่านหน้าต่างซ้อนของแอพ (เช่น LINE, Facebook) ด้วยเหตุผลด้านความปลอดภัย
               </p>
-              <div className="bg-blue-50 p-4 rounded-xl mb-6 text-sm text-blue-700 w-full text-left">
+              <div className="bg-blue-50 p-4 rounded-md mb-6 text-sm text-blue-700 w-full text-left">
                   <strong>วิธีแก้ไข:</strong><br />
                   กดปุ่ม <span className="inline-block px-2 py-0.5 bg-white rounded border border-blue-200 mx-1 shadow-xs">⋮</span> หรือ <span className="inline-block px-2 py-0.5 bg-white rounded border border-blue-200 mx-1 shadow-xs">⠇</span> ที่มุมขวาบน แล้วเลือก <strong>"เปิดในเบราว์เซอร์"</strong> (Open in Browser)
               </div>
               
               <button 
                   onClick={handleCopyUrl}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md font-medium transition-colors"
               >
                   {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
                   {copied ? 'คัดลอกลิงก์แล้ว! ไปวางใน Safari/Chrome' : 'คัดลอกลิงก์ไปเปิดในเบราว์เซอร์ปกติ'}
@@ -171,7 +171,7 @@ export default function AuthForm({ onSuccess }) {
           type="button"
           onClick={handleGoogleLogin}
           disabled={isLoadingEmail || isLoadingGoogle || (!isLogin && !isTermsAccepted)}
-          className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed group shadow-xs"
+          className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed group shadow-xs"
         >
           {isLoadingGoogle ? (
             <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
@@ -191,7 +191,7 @@ export default function AuthForm({ onSuccess }) {
 
         {/* Error Banner (Smooth Animation) */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-[pulse_0.5s_ease-in-out]">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start gap-3 animate-[pulse_0.5s_ease-in-out]">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <p className="text-sm text-red-700 font-medium leading-relaxed">{error}</p>
           </div>
@@ -212,7 +212,7 @@ export default function AuthForm({ onSuccess }) {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
+                  className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
                   placeholder="กรอกชื่อ-นามสกุล"
                   disabled={isLoadingEmail || isLoadingGoogle}
                 />
@@ -232,7 +232,7 @@ export default function AuthForm({ onSuccess }) {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
+                className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
                 placeholder="you@example.com"
                 required
                 disabled={isLoadingEmail || isLoadingGoogle}
@@ -252,7 +252,7 @@ export default function AuthForm({ onSuccess }) {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="block w-full pl-11 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
+                className="block w-full pl-11 pr-12 py-3 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
                 placeholder="••••••••"
                 required
                 disabled={isLoadingEmail || isLoadingGoogle}
@@ -294,7 +294,7 @@ export default function AuthForm({ onSuccess }) {
           <button
             type="submit"
             disabled={isLoadingEmail || isLoadingGoogle || !formData.email || !formData.password || (!isLogin && !isTermsAccepted)}
-            className="w-full mt-6 py-3.5 px-4 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+            className="w-full mt-6 py-3.5 px-4 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-md font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
           >
             {isLoadingEmail ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -320,7 +320,7 @@ export default function AuthForm({ onSuccess }) {
         </div>
 
         {/* Security Badge */}
-        <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center justify-center gap-2 text-xs text-gray-400">
+        <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col items-center justify-center gap-2 text-xs text-gray-400">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
             <span className="font-medium">ข้อมูลของคุณได้รับการปกป้อง 100%</span>

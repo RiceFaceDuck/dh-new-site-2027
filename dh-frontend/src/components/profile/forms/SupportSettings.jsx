@@ -11,7 +11,7 @@ export default function SupportSettings({ user, initialData }) {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-linear-to-br from-slate-900 to-indigo-950 rounded-2xl shadow-lg border border-slate-700/60 p-6 text-white relative overflow-hidden transition-all duration-300 hover:shadow-xl">
+    <div className="bg-linear-to-br from-slate-900 to-indigo-950 rounded-md shadow-lg border border-slate-700/60 p-6 text-white relative overflow-hidden transition-all duration-300 hover:shadow-xl">
       {/* Background Glow */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
@@ -19,7 +19,7 @@ export default function SupportSettings({ user, initialData }) {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <div className="p-2.5 rounded-md bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
               <Store className="w-5 h-5" />
             </div>
             <div>
@@ -38,11 +38,11 @@ export default function SupportSettings({ user, initialData }) {
 
         {/* Feature List */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-          <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-xl p-3">
+          <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-md p-3">
             <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>แสดงร้านค้าบนเรดาร์ค้นหาใกล้เคียง (Providers Radar)</span>
           </div>
-          <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-xl p-3">
+          <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-md p-3">
             <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
             <span>รับงานตรวจเช็คและบริการหลังการขายจากลูกค้าโดยตรง</span>
           </div>
@@ -53,7 +53,7 @@ export default function SupportSettings({ user, initialData }) {
           <button
             type="button"
             onClick={() => navigate('/profile?tab=ads')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-md transition-all duration-300 shadow-md hover:shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
             <span>จัดการร้านค้าและการสนับสนุน</span>
             <ArrowRight className="w-4 h-4" />

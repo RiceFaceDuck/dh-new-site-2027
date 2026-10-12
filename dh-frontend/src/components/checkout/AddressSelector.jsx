@@ -128,14 +128,14 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
   }, [formData, updateCheckoutConfig, onUpdate]);
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
+    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
       {/* Decorative background accent (Deep Luxury Style) */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-full -z-10 blur-2xl"></div>
       
       {/* หัวข้อ Component */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <div className={`p-2 rounded-xl ${orderMode === 'wholesale' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'}`}>
+          <div className={`p-2 rounded-md ${orderMode === 'wholesale' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'}`}>
             <MapPin className="w-5 h-5" />
           </div>
           {orderMode === 'wholesale' ? 'ข้อมูลร้านค้าและสถานที่จัดส่ง' : 'ข้อมูลผู้รับและที่อยู่จัดส่ง'}
@@ -163,7 +163,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
               value={formData.companyName}
               onChange={handleChange}
               placeholder="เช่น บริษัท DD Data IT จำกัด" 
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200 text-slate-800"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200 text-slate-800"
             />
           </div>
         )}
@@ -181,7 +181,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
               value={formData.fullName}
               onChange={handleChange}
               placeholder="เช่น สมชาย ใจดี" 
-              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:bg-white focus:ring-2 transition-all duration-200 text-slate-800 ${
+              className={`w-full px-4 py-3 bg-slate-50 border rounded-md focus:bg-white focus:ring-2 transition-all duration-200 text-slate-800 ${
                 errors.fullName
                   ? 'border-red-300 bg-red-50 focus:ring-red-500/20 focus:border-red-500'
                   : orderMode === 'wholesale' ? 'border-slate-200 focus:border-amber-500 focus:ring-amber-500/20' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'
@@ -205,7 +205,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
               value={formData.phone}
               onChange={handleChange}
               placeholder="08X-XXX-XXXX" 
-              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:ring-2 transition-all duration-200 text-slate-800 font-medium ${
+              className={`w-full px-4 py-3 bg-slate-50 border rounded-md focus:ring-2 transition-all duration-200 text-slate-800 font-medium ${
                 errors.phone 
                   ? 'border-red-300 bg-red-50 focus:ring-red-500/20 focus:border-red-500' 
                   : formData.phone.length > 0 && formData.phone.length < 12 
@@ -235,7 +235,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
             value={formData.address}
             onChange={handleChange}
             placeholder="บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" 
-            className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:bg-white focus:ring-2 transition-all duration-200 resize-none leading-relaxed text-slate-800 ${
+            className={`w-full px-4 py-3 bg-slate-50 border rounded-md focus:bg-white focus:ring-2 transition-all duration-200 resize-none leading-relaxed text-slate-800 ${
               errors.address
                 ? 'border-red-300 bg-red-50 focus:ring-red-500/20 focus:border-red-500'
                 : orderMode === 'wholesale' ? 'border-slate-200 focus:border-amber-500 focus:ring-amber-500/20' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'
@@ -251,7 +251,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
         </div>
 
         {/* Smart UX: Save to profile feature (Custom Checkbox) */}
-        <div className="pt-5 mt-2 border-t border-slate-100 flex items-center justify-between">
+        <div className="pt-5 mt-2 border-t border-slate-200 flex items-center justify-between">
           <label className="flex items-center gap-3 cursor-pointer group">
             <div className="relative flex items-center justify-center">
               <input 
@@ -272,7 +272,7 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
           </label>
 
           {/* Trust Element */}
-          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shadow-xs">
+          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs">
             <ShieldCheck className="w-4 h-4 text-indigo-500" />
             เข้ารหัสข้อมูลปลอดภัย 100%
           </div>

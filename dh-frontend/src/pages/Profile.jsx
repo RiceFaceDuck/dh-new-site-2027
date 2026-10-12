@@ -78,20 +78,20 @@ const Profile = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Skeleton */}
           <div className="w-full lg:w-64 shrink-0 flex flex-col gap-4">
-            <div className="bg-slate-200 h-32 rounded-2xl w-full"></div>
-            <div className="bg-slate-200 h-10 rounded-xl w-full"></div>
-            <div className="bg-slate-200 h-10 rounded-xl w-full"></div>
-            <div className="bg-slate-200 h-10 rounded-xl w-full"></div>
-            <div className="bg-slate-200 h-10 rounded-xl w-full mt-8"></div>
+            <div className="bg-slate-200 h-32 rounded-md w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-md w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-md w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-md w-full"></div>
+            <div className="bg-slate-200 h-10 rounded-md w-full mt-8"></div>
           </div>
           {/* Main Content Skeleton */}
-          <div className="flex-1 bg-white border border-slate-200/90 rounded-3xl p-6 md:p-8 shadow-md">
+          <div className="flex-1 bg-white border border-slate-200/90 rounded-md p-6 md:p-8 shadow-md">
             <div className="h-8 bg-slate-200 rounded-md w-1/3 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="h-24 bg-slate-200 rounded-2xl w-full"></div>
-              <div className="h-24 bg-slate-200 rounded-2xl w-full"></div>
+              <div className="h-24 bg-slate-200 rounded-md w-full"></div>
+              <div className="h-24 bg-slate-200 rounded-md w-full"></div>
             </div>
-            <div className="h-40 bg-slate-200 rounded-2xl w-full"></div>
+            <div className="h-40 bg-slate-200 rounded-md w-full"></div>
           </div>
         </div>
       </div>

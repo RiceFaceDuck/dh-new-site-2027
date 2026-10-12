@@ -138,7 +138,7 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden">
+    <div className="bg-white rounded-md shadow-md border border-slate-200/90 overflow-hidden">
       <div className="p-6 border-b border-slate-200/80 bg-slate-50/90">
         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <User className="w-5 h-5 text-[#0870B8]" />
@@ -166,7 +166,7 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
 
         {/* Status Messages */}
         {status.message && (
-          <div className={`p-4 rounded-xl flex items-center gap-3 text-sm animate-fade-in ${
+          <div className={`p-4 rounded-md flex items-center gap-3 text-sm animate-fade-in ${
             status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'
           }`}>
             {status.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
@@ -179,7 +179,7 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
           <button
             type="submit"
             disabled={isSaving || !hasChanges()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-black text-white font-medium rounded-xl transition-all duration-300 focus:ring-4 focus:ring-slate-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-black text-white font-medium rounded-md transition-all duration-300 focus:ring-4 focus:ring-slate-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95"
           >
             {isSaving ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> กำลังบันทึก...</>

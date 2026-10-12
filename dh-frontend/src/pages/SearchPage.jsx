@@ -153,14 +153,14 @@ const SearchPage = () => {
         {/* 🔍 แถบค้นหา + แท็กยอดนิยม (วางเคียงคู่กันทางขวา ไม่ต้องซ่อน) */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-4 w-full">
           {/* กล่องค้นหา (ฝั่งซ้าย) */}
-          <div className="w-full lg:w-[420px] shrink-0 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="w-full lg:w-[420px] shrink-0 bg-white p-2 rounded-md border border-slate-200/80 shadow-xs">
             <form onSubmit={handleLocalSearchSubmit} className="relative w-full group">
               <input 
                 type="text" 
                 value={typedQuery}
                 onChange={(e) => setTypedQuery(e.target.value)}
                 placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-3 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-5 py-3 rounded-md focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300"
               />
               <button type="submit" disabled={loading} aria-label="ค้นหาสินค้า" title="ค้นหาสินค้า" className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-white p-2 rounded-lg transition-colors shadow-xs active:scale-95 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-brand hover:bg-brand-dark'}`}>
                 <Search size={16} strokeWidth={2.5} />
@@ -179,7 +179,7 @@ const SearchPage = () => {
                 <Link 
                   key={tag}
                   to={`/search?q=${encodeURIComponent(tag)}`}
-                  className={`px-3 py-1.5 border font-medium rounded-full text-xs transition-all shadow-2xs active:scale-95 ${
+                  className={`px-3 py-1.5 border font-medium rounded-md text-xs transition-all shadow-2xs active:scale-95 ${
                     isActive 
                       ? 'bg-brand text-white border-brand shadow-xs font-bold' 
                       : 'bg-white border-slate-200 hover:border-brand-light hover:bg-brand-light/10 text-slate-700 hover:shadow-xs'
@@ -194,7 +194,7 @@ const SearchPage = () => {
 
         {/* Search Query Display & Notice Banner */}
         {queryParam && (
-          <div className="bg-brand-light/20 border border-brand-light/50 p-3 sm:p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+          <div className="bg-brand-light/20 border border-brand-light/50 p-3 sm:p-4 rounded-md flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-slate-600 font-medium text-sm">คำค้นหา:</span>
               <span className="text-brand font-bold text-base sm:text-lg px-3 py-0.5 bg-white rounded-lg shadow-2xs border border-brand-light/30">
@@ -237,15 +237,15 @@ const SearchPage = () => {
         {/* Results */}
         <div>
           {error ? (
-            <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-xs">
+            <div className="bg-red-50 text-red-500 p-6 rounded-md text-center border border-red-100 shadow-xs">
               <p className="font-semibold text-lg mb-1">เกิดข้อผิดพลาด</p>
               <p className="text-sm opacity-80">{error}</p>
             </div>
           ) : loading && filteredProducts.length === 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-5">
               {[...Array(10)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl p-3 border border-slate-100 shadow-xs flex flex-col">
-                  <div className="w-full aspect-square bg-slate-100 rounded-xl mb-3 flex items-center justify-center">
+                <div key={i} className="bg-white rounded-md p-3 border border-slate-200 shadow-xs flex flex-col">
+                  <div className="w-full aspect-square bg-slate-100 rounded-md mb-3 flex items-center justify-center">
                     <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-slate-400 animate-spin" />
                   </div>
                   <div className="h-4 bg-slate-100 rounded-md w-3/4 mb-2"></div>
@@ -260,7 +260,7 @@ const SearchPage = () => {
             </div>
           ) : queryParam ? (
             <div className="space-y-8 animate-fade-in">
-              <div className="text-center py-12 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs max-w-xl mx-auto">
+              <div className="text-center py-12 px-4 bg-white rounded-md border border-slate-200/80 shadow-xs max-w-xl mx-auto">
                 <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search size={28} />
                 </div>
@@ -316,8 +316,8 @@ const SearchPage = () => {
             </div>
           ) : (
             /* กรณีไม่ได้พิมพ์คำค้นหา (หน้าเปล่า) ให้แสดงหมวดหมู่แนะนำ */
-            <div className="text-center py-16 px-4 bg-white rounded-3xl border border-slate-200/80 shadow-xs max-w-2xl mx-auto my-6">
-              <div className="w-20 h-20 bg-brand-light/30 text-brand rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-2xs">
+            <div className="text-center py-16 px-4 bg-white rounded-md border border-slate-200/80 shadow-xs max-w-2xl mx-auto my-6">
+              <div className="w-20 h-20 bg-brand-light/30 text-brand rounded-md flex items-center justify-center mx-auto mb-5 shadow-2xs">
                 <Search size={36} />
               </div>
               <h2 className="text-2xl font-black text-slate-800 mb-2">
@@ -343,7 +343,7 @@ const SearchPage = () => {
                       setTypedQuery(item.query);
                       setSearchParams({ q: item.query });
                     }}
-                    className="p-3.5 rounded-xl border border-slate-200/70 hover:border-brand-light hover:bg-brand-light/10 transition-all text-left group cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                    className="p-3.5 rounded-md border border-slate-200/70 hover:border-brand-light hover:bg-brand-light/10 transition-all text-left group cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
                   >
                     <div className="font-bold text-sm text-slate-800 group-hover:text-brand flex items-center justify-between">
                       {item.name}

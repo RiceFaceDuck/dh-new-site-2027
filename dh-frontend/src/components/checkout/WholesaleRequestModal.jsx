@@ -58,11 +58,11 @@ const WholesaleRequestModal = ({ isOpen, onClose, onSubmit, companyName }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-white rounded-md shadow-2xl overflow-hidden"
           >
         
         {/* Header */}
-        <div className="bg-linear-to-r from-indigo-50 to-white px-6 py-5 border-b border-gray-100 flex items-center gap-3">
+        <div className="bg-linear-to-r from-indigo-50 to-white px-6 py-5 border-b border-slate-200 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
           </div>
@@ -92,7 +92,7 @@ const WholesaleRequestModal = ({ isOpen, onClose, onSubmit, companyName }) => {
               <textarea
                 id="wholesale-reason"
                 rows="4"
-                className={`w-full rounded-xl border ${error ? 'border-red-300 ring-1 ring-red-300 bg-red-50' : 'border-gray-300 bg-white'} px-4 py-3 text-sm text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none shadow-xs`}
+                className={`w-full rounded-md border ${error ? 'border-red-300 ring-1 ring-red-300 bg-red-50' : 'border-gray-300 bg-white'} px-4 py-3 text-sm text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none shadow-xs`}
                 placeholder="อธิบายเหตุผลสั้นๆ เช่น เปิดร้านซ่อมคอมพิวเตอร์, รับไปจำหน่ายต่อ, หรือสั่งใช้ในสำนักงาน..."
                 value={reason}
                 onChange={(e) => {
@@ -134,18 +134,18 @@ const WholesaleRequestModal = ({ isOpen, onClose, onSubmit, companyName }) => {
         </div>
 
         {/* Footer / Actions */}
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-100">
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-200">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 bg-gray-100 rounded-xl transition-colors"
+            className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-200 bg-gray-100 rounded-md transition-colors"
           >
             ยกเลิก
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs hover:shadow-md transition-all active:scale-95 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-xs hover:shadow-md transition-all active:scale-95 flex items-center gap-2"
           >
             ยืนยันส่งคำขอ
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>

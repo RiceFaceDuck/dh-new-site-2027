@@ -19,7 +19,7 @@ import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 const MenuButton = ({ icon, label, active, onClick, badge, highlight }) => (
   <button 
     onClick={onClick}
-    className={`w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all border-l-[3px] rounded-r-xl mb-1 ${
+    className={`w-full flex items-center justify-between p-3.5 md:p-4 text-xs font-bold uppercase tracking-widest transition-all border-l-[3px] rounded-r-md mb-1 ${
       active 
         ? 'bg-linear-to-r from-indigo-50/90 to-indigo-50/20 text-indigo-700 border-indigo-600 shadow-[inset_4px_0_0_rgba(79,70,229,0.2)]' 
         : 'bg-transparent text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 border-transparent hover:border-slate-300'
@@ -77,7 +77,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
       
       {/* 1. Partner ID Badge (Profile Card Summary) - ดีไซน์ Deep Luxury */}
       <div className="relative">
-        <div className="bg-slate-900 rounded-2xl shadow-xl border border-slate-700/50 p-5 text-center relative overflow-hidden group">
+        <div className="bg-slate-900 rounded-md shadow-xl border border-slate-700/50 p-5 text-center relative overflow-hidden group">
           
           {/* ✨ Background Premium Effects */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
@@ -87,12 +87,12 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
           <div className="relative z-10 flex flex-col items-center">
             
             {/* Avatar Icon */}
-            <div className="w-20 h-20 rounded-2xl bg-slate-800/80 border border-slate-700/50 p-1 flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-105 backdrop-blur-xs">
+            <div className="w-20 h-20 rounded-md bg-slate-800/80 border border-slate-700/50 p-1 flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-105 backdrop-blur-xs">
                 {user?.photoURL && !avatarError ? (
                   <img 
                     src={user.photoURL} 
                     alt="Profile" 
-                    className="w-full h-full object-contain rounded-xl"  
+                    className="w-full h-full object-contain rounded-md"  
                     loading="lazy" 
                     referrerPolicy="no-referrer"
                     onError={() => setAvatarError(true)}
@@ -179,7 +179,7 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
       </div>
 
       {/* 2. Control Menu Navigation */}
-      <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden flex flex-col">
+      <div className="bg-white rounded-md shadow-md border border-slate-200/90 overflow-hidden flex flex-col">
         <MenuButton 
           icon={<Store size={18} strokeWidth={2.5} />} 
           label="Overview" 

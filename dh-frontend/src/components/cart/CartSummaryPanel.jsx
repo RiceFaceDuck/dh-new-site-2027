@@ -16,8 +16,8 @@ import { useNavigate } from 'react-router-dom';
     const navigate = useNavigate();
   
     return (
-      <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 sticky top-24 transition-all duration-300 hover:shadow-md">
-        <h2 className="text-lg font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100">สรุปคำสั่งซื้อ</h2>
+      <div className="bg-white rounded-md shadow-xs border border-slate-200 p-6 sticky top-24 transition-all duration-300 hover:shadow-md">
+        <h2 className="text-lg font-bold text-gray-800 mb-6 pb-4 border-b border-slate-200">สรุปคำสั่งซื้อ</h2>
         
         <div className="space-y-4 mb-6 relative">
           <div className="flex justify-between text-sm text-gray-600">
@@ -26,7 +26,7 @@ import { useNavigate } from 'react-router-dom';
           </div>
           
           {promotionsElement && (
-            <div className="my-4 border-y border-dashed border-gray-100 py-4">
+            <div className="my-4 border-y border-dashed border-slate-200 py-4">
               {promotionsElement}
             </div>
           )}
@@ -77,7 +77,7 @@ import { useNavigate } from 'react-router-dom';
           <p className="text-[10px] text-gray-400 text-right mt-3">ราคานี้ยังไม่รวมค่าจัดส่งและส่วนลด (ถ้ามี)</p>
         </div>
   
-        <div className="bg-emerald-50/80 border border-emerald-100 rounded-xl p-3.5 mb-6 flex items-start gap-2.5 shadow-xs">
+        <div className="bg-emerald-50/80 border border-emerald-100 rounded-md p-3.5 mb-6 flex items-start gap-2.5 shadow-xs">
           <ShieldCheck size={18} className="text-emerald-600 shrink-0 mt-0.5" />
           <p className="text-[10px] text-emerald-800 leading-relaxed">
             <strong className="text-xs">รับประกันความปลอดภัย</strong><br/>
@@ -93,13 +93,13 @@ import { useNavigate } from 'react-router-dom';
             <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook', '_blank')}
-                className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#00B900] hover:bg-[#009900] text-white shadow-xs hover:shadow-md active:scale-95"
+                className="w-full font-bold py-3.5 rounded-md text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#00B900] hover:bg-[#009900] text-white shadow-xs hover:shadow-md active:scale-95"
               >
                 <MessageCircle size={18} /> LINE
               </button>
               <button 
                 onClick={() => window.open('https://m.me/dhnotebook', '_blank')}
-                className="w-full font-bold py-3.5 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#0084FF] hover:bg-[#0070D6] text-white shadow-xs hover:shadow-md active:scale-95"
+                className="w-full font-bold py-3.5 rounded-md text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#0084FF] hover:bg-[#0070D6] text-white shadow-xs hover:shadow-md active:scale-95"
               >
                 <MessageSquare size={18} /> Messenger
               </button>
@@ -114,7 +114,7 @@ import { useNavigate } from 'react-router-dom';
               }
             }}
             disabled={cartData.totalQty === 0 || isValidating}
-            className={`w-full font-bold py-4 rounded-xl text-sm transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden relative ${
+            className={`w-full font-bold py-4 rounded-md text-sm transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden relative ${
               (cartData.totalQty === 0 || isValidating)
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg active:scale-[0.98]'
@@ -140,7 +140,7 @@ import { useNavigate } from 'react-router-dom';
 
         {/* ทางเลือกสั่งซื้อผ่านแชต & บริการช่าง สำหรับลูกค้าทั่วไป (ยังไม่ได้ล็อกอิน) */}
         {!currentUser && cartData.totalQty > 0 && isValidCart && (
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2 animate-fade-in">
+          <div className="mt-4 pt-4 border-t border-slate-200 flex flex-col gap-2 animate-fade-in">
             <p className="text-[11px] text-slate-400 font-medium text-center">
               หรือ สั่งซื้อผ่านแชต (ไม่ต้องเข้าสู่ระบบ)
             </p>
@@ -162,7 +162,7 @@ import { useNavigate } from 'react-router-dom';
             </div>
             <button
               onClick={() => navigate('/providers')}
-              className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-1"
+              className="w-full py-2 px-3 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-1"
             >
               <Wrench size={13} className="text-brand" />
               <span>ค้นหาบริการช่าง (SERVICE PROVIDERS)</span>

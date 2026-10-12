@@ -18,7 +18,7 @@ const TabClaims = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-md p-5 shadow-sm">
         <div>
           <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 tracking-tight">
             <Wrench className="w-6 h-6 text-orange-400 drop-shadow-xs" />
@@ -27,7 +27,7 @@ const TabClaims = () => {
           <p className="text-xs text-slate-400 mt-1 font-medium">ติดตามสถานะการซ่อม เคลม และการคืนสินค้า</p>
         </div>
         
-        <div className="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 shadow-inner overflow-x-auto w-full sm:w-auto custom-scrollbar gap-1.5">
+        <div className="flex bg-slate-950/80 p-1.5 rounded-md border border-slate-700/80 shadow-inner overflow-x-auto w-full sm:w-auto custom-scrollbar gap-1.5">
           <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${filter === 'all' ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95' : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'}`}>ทั้งหมด</button>
           <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${filter === 'pending' ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95' : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'}`}>รอรับเรื่อง / รอส่งของ</button>
           <button onClick={() => setFilter('processing')} className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${filter === 'processing' ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95' : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'}`}>กำลังตรวจสอบ</button>
@@ -40,7 +40,7 @@ const TabClaims = () => {
           <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
         </div>
       ) : filteredClaims.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+        <div className="text-center py-20 bg-gray-50 rounded-md border border-dashed border-gray-200">
           <Wrench className="mx-auto h-12 w-12 text-gray-300" />
           <p className="mt-4 text-gray-500 font-medium">ไม่มีประวัติการเคลม/คืนสินค้าในหมวดหมู่นี้</p>
         </div>

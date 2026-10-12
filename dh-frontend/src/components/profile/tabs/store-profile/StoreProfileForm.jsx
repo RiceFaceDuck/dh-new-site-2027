@@ -42,7 +42,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
   const hasNoCredit = Number(userCredit || 0) <= 0;
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-3xl shadow-md overflow-hidden animate-in fade-in duration-300">
+    <div className="bg-white border border-slate-200/90 rounded-md shadow-md overflow-hidden animate-in fade-in duration-300">
       
       <div className="bg-slate-100/90 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200/90">
         <div>
@@ -50,7 +50,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           <p className="text-[11px] text-slate-500 mt-1">ข้อมูลในหน้านี้จะถูกนำไปใช้สร้าง <b>"โฆษณานามบัตร"</b> และแสดงผลบนแผนที่เรดาร์อัตโนมัติ</p>
         </div>
         
-        <div className="bg-white p-3 rounded-2xl flex items-center gap-4 border border-slate-200 shadow-2xs">
+        <div className="bg-white p-3 rounded-md flex items-center gap-4 border border-slate-200 shadow-2xs">
           <div className="text-right">
             <div className="text-xs font-bold text-slate-800 uppercase tracking-widest">นามบัตรโฆษณา</div>
             <div className="text-[10px]">
@@ -108,11 +108,11 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           handleGetLocation={handleGetLocation} 
         />
 
-        <div className="pt-6 border-t border-slate-100 flex justify-end">
+        <div className="pt-6 border-t border-slate-200 flex justify-end">
           <button
             type="submit"
             disabled={savingStore}
-            className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md shadow-lg hover:shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {savingStore ? (
               <>

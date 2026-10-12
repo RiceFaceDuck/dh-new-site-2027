@@ -3,7 +3,7 @@ import { User, Building2 } from 'lucide-react';
 export default function TaxTypeSelector({ type, onChange }) {
   return (
     <div className="flex flex-col sm:flex-row gap-4">
-      <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all duration-300 ${
+      <label className={`flex-1 flex items-center gap-3 p-4 border rounded-md cursor-pointer transition-all duration-300 ${
         type === 'personal' 
           ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700 shadow-[0_2px_10px_-3px_rgba(79,70,229,0.2)] ring-1 ring-indigo-600' 
           : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
@@ -22,7 +22,7 @@ export default function TaxTypeSelector({ type, onChange }) {
         </div>
       </label>
 
-      <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all duration-300 ${
+      <label className={`flex-1 flex items-center gap-3 p-4 border rounded-md cursor-pointer transition-all duration-300 ${
         type === 'company' 
           ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700 shadow-[0_2px_10px_-3px_rgba(79,70,229,0.2)] ring-1 ring-indigo-600' 
           : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'

@@ -104,26 +104,26 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
 
   return (
     <div>
-      <h4 className="font-black text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 mb-5 uppercase tracking-wide text-sm"><MapPin size={18} className="text-rose-500"/> ตำแหน่งที่ตั้งร้าน</h4>
+      <h4 className="font-black text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-3 mb-5 uppercase tracking-wide text-sm"><MapPin size={18} className="text-rose-500"/> ตำแหน่งที่ตั้งร้าน</h4>
       <div className="space-y-4">
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">ที่อยู่ร้านแบบละเอียด</label>
-          <textarea value={storeData.address || ''} onChange={(e) => setStoreData({...storeData, address: e.target.value})} placeholder="บ้านเลขที่, ซอย, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์" rows="2" className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl resize-none focus:border-indigo-500"></textarea>
+          <textarea value={storeData.address || ''} onChange={(e) => setStoreData({...storeData, address: e.target.value})} placeholder="บ้านเลขที่, ซอย, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์" rows="2" className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-md resize-none focus:border-indigo-500"></textarea>
         </div>
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">สถานที่สำคัญใกล้เคียง (จุดสังเกต)</label>
-          <input type="text" value={storeData.landmarks || ''} onChange={(e) => setStoreData({...storeData, landmarks: e.target.value})} placeholder="เช่น ตรงข้ามเซเว่น, ใกล้ตลาด..." className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
+          <input type="text" value={storeData.landmarks || ''} onChange={(e) => setStoreData({...storeData, landmarks: e.target.value})} placeholder="เช่น ตรงข้ามเซเว่น, ใกล้ตลาด..." className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-md focus:border-indigo-500" />
         </div>
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">วางพิกัด ด้วยตัวเอง</label>
           <div className="flex gap-2 mb-3">
-            <input type="text" value={storeData.googleMapLink || ''} onChange={(e) => setStoreData({...storeData, googleMapLink: e.target.value})} placeholder="ตัวเลขพิกัด (เช่น 13.956, 100.567)" className="flex-1 px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:border-indigo-500" />
-            <button type="button" onClick={handleParseCoordinates} className="px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl font-bold flex items-center gap-2 border border-indigo-200 transition-colors whitespace-nowrap">
+            <input type="text" value={storeData.googleMapLink || ''} onChange={(e) => setStoreData({...storeData, googleMapLink: e.target.value})} placeholder="ตัวเลขพิกัด (เช่น 13.956, 100.567)" className="flex-1 px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-md focus:border-indigo-500" />
+            <button type="button" onClick={handleParseCoordinates} className="px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-md font-bold flex items-center gap-2 border border-indigo-200 transition-colors whitespace-nowrap">
               <Search size={16}/> ตรวจสอบพิกัด
             </button>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-3 items-center bg-amber-50 p-4 rounded-xl border border-amber-200/60">
+          <div className="flex flex-col sm:flex-row gap-3 items-center bg-amber-50 p-4 rounded-md border border-amber-200/60">
             <div className="flex-1 w-full">
               <p className="text-[11px] font-bold text-amber-800 uppercase tracking-widest mb-1">ระบบเรดาร์ GPS</p>
               <p className="text-xs text-amber-700/80">ระบบจำเป็นต้องทราบพิกัดปัจจุบันของคุณ เพื่อให้ลูกค้าในพื้นที่ใกล้เคียงค้นหาร้านคุณเจอ</p>
@@ -139,7 +139,7 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
                 </div>
               ) : null}
             </div>
-            <button type="button" disabled={locationLoading} onClick={handleGetLocation} className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md transition-all whitespace-nowrap ${locationLoading ? 'bg-indigo-100 text-indigo-500 cursor-not-allowed shadow-inner' : (storeData.latitude ? 'bg-slate-800 hover:bg-slate-900 text-white' : 'bg-slate-800 hover:bg-slate-900 text-white')}`}>
+            <button type="button" disabled={locationLoading} onClick={handleGetLocation} className={`w-full sm:w-auto px-6 py-3 rounded-md font-bold flex items-center justify-center gap-2 shadow-md transition-all whitespace-nowrap ${locationLoading ? 'bg-indigo-100 text-indigo-500 cursor-not-allowed shadow-inner' : (storeData.latitude ? 'bg-slate-800 hover:bg-slate-900 text-white' : 'bg-slate-800 hover:bg-slate-900 text-white')}`}>
               {locationLoading ? (
                 <><Loader2 size={16} className="animate-spin" /> กำลังสแกนหาดาวเทียม...</>
               ) : (
@@ -148,7 +148,7 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
             </button>
           </div>
           
-          <div className="mt-6 p-5 bg-indigo-50/50 border border-indigo-100 rounded-xl text-slate-600">
+          <div className="mt-6 p-5 bg-indigo-50/50 border border-indigo-100 rounded-md text-slate-600">
             <h5 className="font-bold text-indigo-800 mb-3 flex items-center gap-2 text-sm"><Info size={16}/> คู่มือการตั้งค่าพิกัดร้าน (Guide)</h5>
             <div className="space-y-3 text-xs leading-relaxed">
               <p><strong>📖 ตำรา / คำอธิบาย:</strong> พิกัดตำแหน่งมีความสำคัญมาก เพื่อให้ระบบสามารถแนะนำร้านของคุณให้กับลูกค้าในพื้นที่ใกล้เคียงได้อย่างแม่นยำ</p>

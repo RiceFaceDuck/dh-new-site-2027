@@ -72,7 +72,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200 relative overflow-hidden transition-all duration-300 hover:shadow-md">
       {/* Decorative Background */}
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50/50 rounded-full blur-3xl -z-10"></div>
 
@@ -85,9 +85,9 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
 
       {orderMode === 'wholesale' ? (
         // 📦 UI สำหรับโหมดราคาส่ง
-        <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 animate-in fade-in slide-in-from-bottom-2">
+        <div className="bg-orange-50 border border-orange-100 rounded-md p-5 animate-in fade-in slide-in-from-bottom-2">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-xs text-orange-500 shrink-0">
+            <div className="p-3 bg-white rounded-md shadow-xs text-orange-500 shrink-0">
               <PackageSearch className="w-6 h-6" />
             </div>
             <div>
@@ -110,10 +110,10 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
                 key={option.id}
                 onClick={() => handleSelect(option)}
                 className={`
-                  relative flex flex-col p-4 rounded-2xl cursor-pointer transition-all duration-200 border-2
+                  relative flex flex-col p-4 rounded-md cursor-pointer transition-all duration-200 border-2
                   ${isSelected 
                     ? 'border-indigo-600 bg-indigo-50/30 shadow-xs transform -translate-y-0.5' 
-                    : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-gray-50'
+                    : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-gray-50'
                   }
                 `}
               >
@@ -124,14 +124,14 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
                   </div>
                 </div>
 
-                <div className={`p-2.5 w-fit rounded-xl mb-3 ${isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`p-2.5 w-fit rounded-md mb-3 ${isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 
                 <h3 className="font-bold text-gray-900 text-sm mb-1">{option.name}</h3>
                 <div className="text-xs text-gray-500 mb-3 flex-1">{option.description}</div>
                 
-                <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="mt-auto pt-3 border-t border-slate-200 flex items-center justify-between">
                   <span className="font-black text-indigo-600">
                     {option.cost === 0 ? 'ฟรี' : `฿${option.cost}`}
                   </span>

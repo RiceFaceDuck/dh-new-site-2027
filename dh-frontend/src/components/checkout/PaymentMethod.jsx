@@ -116,9 +116,9 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
   // 📦 โหมดขอราคาส่ง: ไม่ต้องแสดงฟอร์มชำระเงิน
   if (orderMode === 'wholesale') {
     return (
-      <div className="bg-orange-50 rounded-3xl p-6 border border-orange-100 animate-in fade-in duration-300">
+      <div className="bg-orange-50 rounded-md p-6 border border-orange-100 animate-in fade-in duration-300">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-white rounded-xl shadow-xs text-orange-500">
+          <div className="p-3 bg-white rounded-md shadow-xs text-orange-500">
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
@@ -135,7 +135,7 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
 
   // 🛒 โหมดสั่งซื้อปกติ
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200 transition-all duration-300 hover:shadow-md">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <CreditCard className="w-6 h-6 text-blue-600" />
@@ -145,9 +145,9 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
 
       <div className="space-y-6">
         {/* เลือกวิธีการชำระเงิน (ตอนนี้ล็อคไว้ที่โอนเงิน แต่ทำ UI เผื่ออนาคต) */}
-        <label className="relative flex items-center justify-between p-4 border-2 border-blue-600 bg-blue-50/30 rounded-2xl cursor-pointer">
+        <label className="relative flex items-center justify-between p-4 border-2 border-blue-600 bg-blue-50/30 rounded-md cursor-pointer">
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
+            <div className="p-2 bg-blue-100 text-blue-600 rounded-md">
               <ImageIcon className="w-5 h-5" />
             </div>
             <div>
@@ -161,7 +161,7 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
         </label>
 
         {/* บัตรแสดงข้อมูลบัญชีธนาคาร (Bank Account Card) */}
-        <div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-md p-6 text-white shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">
@@ -175,7 +175,7 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
               </div>
             </div>
 
-            <div className="flex items-end justify-between bg-black/20 p-3 rounded-xl backdrop-blur-xs border border-white/10">
+            <div className="flex items-end justify-between bg-black/20 p-3 rounded-md backdrop-blur-xs border border-white/10">
               <div>
                 <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-1">เลขที่บัญชี</p>
                 <p className="font-mono text-xl tracking-widest font-medium">123-4-56789-0</p>
@@ -221,7 +221,7 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
                 onChange={handleFileChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
-              <div className="w-full border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 transition-all rounded-2xl p-8 text-center flex flex-col items-center justify-center gap-2">
+              <div className="w-full border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 transition-all rounded-md p-8 text-center flex flex-col items-center justify-center gap-2">
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mb-2">
                   <Upload className="w-6 h-6" />
                 </div>
@@ -230,11 +230,11 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
               </div>
             </div>
           ) : (
-            <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-xs bg-gray-50 flex items-center justify-center p-2 group">
+            <div className="relative rounded-md overflow-hidden border-2 border-emerald-500 shadow-xs bg-gray-50 flex items-center justify-center p-2 group">
               <img 
                 src={previewUrl} 
                 alt="Slip Preview" 
-                className="max-h-64 object-contain rounded-xl"
+                className="max-h-64 object-contain rounded-md"
                loading="lazy" />
               {/* แถบแจ้งเตือนอัปโหลดสำเร็จ */}
               <div className="absolute top-4 left-4 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md">

@@ -83,7 +83,7 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
   if (hidden) return null;
   if (isLoading) {
     return (
-      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-5 mb-8 shadow-xs flex items-center justify-between animate-pulse">
+      <div className="bg-slate-50 border border-slate-200 rounded-md p-4 md:p-5 mb-8 shadow-xs flex items-center justify-between animate-pulse">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
           <div className="space-y-2">
@@ -101,7 +101,7 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
   return (
     <div className="w-full">
       {nextFreebie && (
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 md:p-5 mb-8 shadow-xs relative overflow-hidden transition-all duration-300 hover:shadow-md">
+        <div className="bg-emerald-50 border border-emerald-100 rounded-md p-4 md:p-5 mb-8 shadow-xs relative overflow-hidden transition-all duration-300 hover:shadow-md">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-200 opacity-20 rounded-full -translate-y-1/2 translate-x-1/4"></div>
           <div className="relative z-10 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
@@ -135,7 +135,7 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
           const statusText = isQuotaExhausted ? 'สิทธิ์ของแถมเต็มแล้ว' : (isOutOfStock ? 'ขออภัย ของแถมหมด' : 'ได้รับของแถมฟรี!');
 
           return (
-            <div className={`rounded-2xl shadow-lg border p-3 flex items-center gap-3 relative overflow-hidden mb-8 transition-transform duration-300 group cursor-default ${
+            <div className={`rounded-md shadow-lg border p-3 flex items-center gap-3 relative overflow-hidden mb-8 transition-transform duration-300 group cursor-default ${
               isUnavailable 
                 ? 'shadow-gray-500/10 border-gray-300 bg-linear-to-r from-gray-400 via-slate-400 to-gray-500 opacity-90' 
                 : 'shadow-emerald-500/20 border-emerald-400 bg-linear-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:scale-[1.01]'
@@ -154,7 +154,7 @@ const CartFreebieProgress = ({ freebies: propFreebies, subTotal, isLoading: prop
               )}
 
               {/* Product Image Thumbnail */}
-              <div className={`w-14 h-14 md:w-16 md:h-16 bg-white rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1.5 relative z-10 shadow-md ${isUnavailable ? 'opacity-70 grayscale' : ''}`}>
+              <div className={`w-14 h-14 md:w-16 md:h-16 bg-white rounded-md overflow-hidden shrink-0 flex items-center justify-center p-1.5 relative z-10 shadow-md ${isUnavailable ? 'opacity-70 grayscale' : ''}`}>
                 <img loading="lazy" 
                   src={freebieProduct?.imageUrl || '/logo.png'} 
                   alt={freebieProduct?.name || currentFreebie.itemName} 

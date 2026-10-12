@@ -22,7 +22,7 @@ export default function TaxFormFields({ taxInfo, handleChange }) {
           name="name"
           value={taxInfo.name}
           onChange={handleChange}
-          className="block w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800"
+          className="block w-full px-4 py-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800"
           placeholder={taxInfo.type === 'personal' ? 'เช่น นายสมชาย ใจดี' : 'เช่น บจก. ดีเอช โน้ตบุ๊ค (ไม่ต้องใส่คำว่า บริษัท)'}
         />
       </div>
@@ -42,7 +42,7 @@ export default function TaxFormFields({ taxInfo, handleChange }) {
             value={showTaxId ? taxInfo.taxId : getMaskedTaxId(taxInfo.taxId)}
             onChange={showTaxId ? handleChange : undefined}
             onClick={() => setShowTaxId(true)}
-            className={`block w-full pl-4 pr-12 py-3 border rounded-xl focus:ring-2 transition-all font-mono tracking-widest text-base ${
+            className={`block w-full pl-4 pr-12 py-3 border rounded-md focus:ring-2 transition-all font-mono tracking-widest text-base ${
               !showTaxId 
                 ? 'bg-slate-100 border-slate-200 cursor-pointer select-none text-slate-500' 
                 : taxInfo.taxId.length === 13
@@ -115,7 +115,7 @@ export default function TaxFormFields({ taxInfo, handleChange }) {
           value={taxInfo.address}
           onChange={handleChange}
           placeholder="บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" 
-          className="block w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800 resize-none leading-relaxed"
+          className="block w-full px-4 py-3 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800 resize-none leading-relaxed"
         />
       </div>
     </div>

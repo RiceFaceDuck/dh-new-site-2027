@@ -127,9 +127,9 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
   const displayError = localError;
 
   return (
-    <div id={`cart-item-${realId}`} className={`rounded-2xl shadow-xs border p-4 flex flex-col sm:flex-row gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md ${displayError ? 'border-red-400 bg-red-50/70 shadow-red-100/50' : 'bg-white border-gray-100'} ${isUpdating && localQty === originalQty ? 'opacity-70 pointer-events-none scale-[0.99]' : ''} ${shake ? 'animate-shake' : ''}`}>
+    <div id={`cart-item-${realId}`} className={`rounded-md shadow-xs border p-4 flex flex-col sm:flex-row gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-md ${displayError ? 'border-red-400 bg-red-50/70 shadow-red-100/50' : 'bg-white border-slate-200'} ${isUpdating && localQty === originalQty ? 'opacity-70 pointer-events-none scale-[0.99]' : ''} ${shake ? 'animate-shake' : ''}`}>
       
-      <div className={`w-full sm:w-28 h-28 bg-white rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-2 border relative group shadow-xs transition-colors ${displayError ? 'border-red-200' : 'border-gray-100'}`}>
+      <div className={`w-full sm:w-28 h-28 bg-white rounded-md overflow-hidden shrink-0 flex items-center justify-center p-2 border relative group shadow-xs transition-colors ${displayError ? 'border-red-200' : 'border-slate-200'}`}>
         <img loading="lazy" 
           src={imageUrl} 
           alt={name} 
@@ -139,7 +139,7 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
           onError={(e) => e.target.src='/logo.png'}
         />
         {/* Glow effect ข้างหลังรูปเวลา Error */}
-        {displayError && <div className="absolute inset-0 bg-red-500/5 animate-pulse mix-blend-multiply rounded-xl"></div>}
+        {displayError && <div className="absolute inset-0 bg-red-500/5 animate-pulse mix-blend-multiply rounded-md"></div>}
       </div>
 
       <div className="flex-1 flex flex-col justify-between">
@@ -181,7 +181,7 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
                 </div>
               )}
 
-              <div className={`flex items-center border rounded-xl overflow-hidden shadow-xs transition-colors duration-300 ${displayError ? 'bg-red-50 border-red-300 hover:border-red-400' : 'bg-white border-gray-200 hover:border-emerald-300'}`}>
+              <div className={`flex items-center border rounded-md overflow-hidden shadow-xs transition-colors duration-300 ${displayError ? 'bg-red-50 border-red-300 hover:border-red-400' : 'bg-white border-gray-200 hover:border-emerald-300'}`}>
                 <button 
                   onClick={() => handleQtyChange(-1)}
                   disabled={(isUpdating && localQty === originalQty) || localQty <= 1}

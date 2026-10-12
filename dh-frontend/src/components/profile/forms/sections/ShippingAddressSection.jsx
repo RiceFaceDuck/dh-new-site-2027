@@ -21,7 +21,7 @@ export default function ShippingAddressSection({ formData, handleChange }) {
               value={formData.address.addressLine}
               onChange={handleChange}
               rows="2"
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs resize-none placeholder:text-slate-400 hover:border-slate-400"
+              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs resize-none placeholder:text-slate-400 hover:border-slate-400"
               placeholder="เช่น 123/45 หมู่ 6 ซอยสุขุมวิท 1 ถ.สุขุมวิท อาคารเอ ชั้น 2..."
             ></textarea>
           </div>
@@ -39,7 +39,7 @@ export default function ShippingAddressSection({ formData, handleChange }) {
               name="address.subDistrict"
               value={formData.address.subDistrict}
               onChange={handleChange}
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               placeholder="ตำบล / แขวง"
             />
           </div>
@@ -57,7 +57,7 @@ export default function ShippingAddressSection({ formData, handleChange }) {
               name="address.district"
               value={formData.address.district}
               onChange={handleChange}
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               placeholder="อำเภอ / เขต"
             />
           </div>
@@ -75,7 +75,7 @@ export default function ShippingAddressSection({ formData, handleChange }) {
               name="address.province"
               value={formData.address.province}
               onChange={handleChange}
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               placeholder="จังหวัด"
             />
           </div>
@@ -94,7 +94,7 @@ export default function ShippingAddressSection({ formData, handleChange }) {
               value={formData.address.zipCode}
               onChange={handleChange}
               maxLength={5}
-              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-mono font-medium shadow-xs tracking-widest placeholder:text-slate-400 hover:border-slate-400"
+              className="block w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-emerald-500/15 focus:border-emerald-500 transition-all bg-slate-50/70 focus:bg-white text-slate-900 font-mono font-medium shadow-xs tracking-widest placeholder:text-slate-400 hover:border-slate-400"
               placeholder="10XXX"
             />
           </div>

@@ -25,11 +25,11 @@ const AdPreviewCard = ({ formData, storeData }) => {
   const typeConfig = getTypeConfig();
 
   return (
-    <div className="w-full bg-slate-50/50 backdrop-blur-md rounded-3xl border border-slate-200/80 p-6 sm:p-8 flex flex-col items-center justify-center sticky top-6 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+    <div className="w-full bg-slate-50/50 backdrop-blur-md rounded-md border border-slate-200/80 p-6 sm:p-8 flex flex-col items-center justify-center sticky top-6 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
       
       {/* 🔴 Live Indicator Badge */}
       <div className="flex items-center justify-between w-full max-w-sm mb-6">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-xs border border-slate-100">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-xs border border-slate-200">
            <span className="relative flex h-2.5 w-2.5">
              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
@@ -49,7 +49,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
             รูปแบบ 1: นามบัตร หรือ สินค้า (1:1 Grid)
             ========================================== */}
         {(formData.type === 'BUSINESS_CARD' || formData.type === 'PRODUCT_LINK') && (
-          <div className="w-full max-w-[280px] pointer-events-none transform origin-top shadow-xl rounded-2xl bg-white ring-1 ring-slate-900/5 transition-all hover:scale-[1.02] duration-300">
+          <div className="w-full max-w-[280px] pointer-events-none transform origin-top shadow-xl rounded-md bg-white ring-1 ring-slate-900/5 transition-all hover:scale-[1.02] duration-300">
             <ProductAdCard 
               ad={{
                 id: 'preview-mode',
@@ -71,7 +71,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
             รูปแบบ 2: แผ่นป้ายโฆษณา (Billboard Dynamic Ratio)
             ========================================== */}
         {formData.type === 'BILLBOARD' && (
-          <div className={`w-full ${formData.billboardRatio === '9:16' ? 'max-w-[280px]' : 'max-w-full'} pointer-events-none shadow-xl rounded-2xl bg-slate-100 ring-1 ring-slate-900/5 flex items-center justify-center relative group overflow-hidden transition-all duration-500 ${billboardAspectClass}`}>
+          <div className={`w-full ${formData.billboardRatio === '9:16' ? 'max-w-[280px]' : 'max-w-full'} pointer-events-none shadow-xl rounded-md bg-slate-100 ring-1 ring-slate-900/5 flex items-center justify-center relative group overflow-hidden transition-all duration-500 ${billboardAspectClass}`}>
             
             {formData.imageUrl ? (
               <>
@@ -95,7 +95,7 @@ const AdPreviewCard = ({ formData, storeData }) => {
             ) : (
               // Empty State for Billboard
               <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center">
-                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xs mb-3">
+                <div className="w-16 h-16 bg-white rounded-md flex items-center justify-center shadow-xs mb-3">
                   <ImageIcon size={32} className="text-slate-300"/>
                 </div>
                 <div className="text-xs font-bold uppercase tracking-widest text-slate-500">พื้นที่โฆษณา {formData.billboardRatio || '16:9'}</div>

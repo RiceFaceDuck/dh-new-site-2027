@@ -57,7 +57,7 @@ const TabAdManager = ({ user }) => {
 
   return (
     <div className="space-y-6 animate-fade-in relative z-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 rounded-md p-5 shadow-sm">
         <div>
           <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 tracking-tight">
             <Megaphone className="text-indigo-400 drop-shadow-xs" size={26} /> ศูนย์จัดการโฆษณาและร้านค้า
@@ -66,7 +66,7 @@ const TabAdManager = ({ user }) => {
             <Sparkles size={13} className="text-amber-400" />ศูนย์รวมการโปรโมทร้านค้าและสินค้าแบบครบวงจร
           </p>
         </div>
-        <div className="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 shadow-inner gap-1.5">
+        <div className="flex bg-slate-950/80 p-1.5 rounded-md border border-slate-700/80 shadow-inner gap-1.5">
           <button
             onClick={() => setActiveSubTab('store')}
             className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all duration-200 cursor-pointer ${

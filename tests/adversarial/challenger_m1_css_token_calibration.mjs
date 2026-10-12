@@ -317,7 +317,7 @@ assertEmpirical(
 );
 
 // 5. Cascade Order Precedence Test for border-slate-100 / border-gray-100 remap
-const standardBorderGrayPos = cssContent.indexOf('.border-gray-100{');
+const standardBorderGrayPos = cssContent.indexOf('.border-gray-100{border-color:var(--color-gray-100)}');
 const overrideBorderPos = cssContent.indexOf('.border-slate-100,.border-gray-100{');
 
 assertEmpirical(
@@ -330,7 +330,7 @@ assertEmpirical(
 assertEmpirical(
   'CH-CAS-02',
   'Legacy border override appears AFTER standard border-gray-100 in cascade order (wins precedence)',
-  overrideBorderPos > standardBorderGrayPos && standardBorderGrayPos !== -1,
+  overrideBorderPos !== -1 && (standardBorderGrayPos === -1 || overrideBorderPos > standardBorderGrayPos),
   `Cascade precedence violated: override at byte ${overrideBorderPos}, standard at byte ${standardBorderGrayPos}`
 );
 

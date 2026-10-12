@@ -15,7 +15,7 @@ const CheckoutSummaryActions = ({
 
   return (
     <>
-      <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
+      <div className="mb-6 bg-slate-50 border border-slate-200 rounded-md p-4">
         <label className="flex items-start gap-3 cursor-pointer">
           <div className="flex items-center h-5">
             <input 
@@ -39,7 +39,7 @@ const CheckoutSummaryActions = ({
           id="place-order-btn"
           onClick={handlePlaceOrderClick}
           disabled={!isTermsAccepted || isSubmitting}
-          className={`w-full py-4 px-4 rounded-xl text-white font-bold text-base transition-all duration-200 flex items-center justify-center gap-2
+          className={`w-full py-4 px-4 rounded-md text-white font-bold text-base transition-all duration-200 flex items-center justify-center gap-2
             ${isSubmitting || btnState === 'checking'
               ? 'bg-indigo-400 cursor-not-allowed' 
               : btnState === 'missing_slip'
@@ -72,7 +72,7 @@ const CheckoutSummaryActions = ({
         <button
           onClick={onRequestWholesale}
           disabled={!isTermsAccepted || isSubmitting}
-          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-sm transition-all duration-200 border-2
+          className={`w-full py-3.5 px-4 rounded-md font-semibold text-sm transition-all duration-200 border-2
             ${(!isTermsAccepted || isSubmitting)
               ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
               : 'border-gray-200 text-gray-700 bg-white hover:border-indigo-600 hover:text-indigo-600 active:scale-[0.98]'

@@ -74,7 +74,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
 
   return (
     <div 
-      className={`bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all hover:border-slate-300 group relative cursor-pointer ${viewMode === 'grid' ? 'p-3.5 flex flex-col h-full' : 'p-3.5 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/20' : ''}`} 
+      className={`bg-white rounded-md border border-slate-200/90 shadow-sm hover:shadow-md transition-all hover:border-slate-300 group relative cursor-pointer ${viewMode === 'grid' ? 'p-3.5 flex flex-col h-full' : 'p-3.5 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/20' : ''}`} 
       onClick={() => {
         if (viewMode === 'list') setIsExpanded(!isExpanded);
         else navigate(`/product/${product.id}`);
@@ -91,7 +91,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
 
       <button 
         onClick={(e) => { e.stopPropagation(); toggleFavorite(product); }}
-        className="absolute top-2 right-2 z-10 text-red-500 bg-white p-1.5 rounded-full shadow-xs border border-gray-100 hover:scale-110 transition-transform"
+        className="absolute top-2 right-2 z-10 text-red-500 bg-white p-1.5 rounded-full shadow-xs border border-slate-200 hover:scale-110 transition-transform"
       >
         <Heart size={16} className="fill-red-500" />
       </button>
@@ -201,7 +201,7 @@ const FavoriteItemCard = ({ product, viewMode, updateFavoriteDetails, toggleFavo
 
       {/* Expanded Note & Tags Section (Only in List View) */}
       {viewMode === 'list' && isExpanded && (
-        <div className="mt-3 pt-3 border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-3 pt-3 border-t border-slate-200 animate-in fade-in slide-in-from-top-2 duration-200" onClick={(e) => e.stopPropagation()}>
           <div className="p-3 bg-gray-50/80 rounded-lg flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1">

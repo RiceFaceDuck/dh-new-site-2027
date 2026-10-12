@@ -34,7 +34,7 @@ const HistoryItemCard = ({
     : `#${(order.orderId || order.id)?.slice(-8).toUpperCase()}`;
 
   return (
-    <div className={`bg-white border transition-all duration-300 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md ${isExpanded ? 'border-indigo-400 ring-2 ring-indigo-500/10' : 'border-slate-200/90 hover:border-slate-300'}`}>
+    <div className={`bg-white border transition-all duration-300 rounded-md p-4 sm:p-5 shadow-sm hover:shadow-md ${isExpanded ? 'border-indigo-400 ring-2 ring-indigo-500/10' : 'border-slate-200/90 hover:border-slate-300'}`}>
       
       {/* Order Header Summary */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-3 pb-3 mb-3 border-b border-slate-200/80">
@@ -99,11 +99,11 @@ const HistoryItemCard = ({
 
       {/* 📋 รายละเอียดออเดอร์ (Expandable Details) */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
+        <div className="mt-4 pt-4 border-t border-slate-200 animate-in fade-in slide-in-from-top-2">
           
           {/* 🚚 ระบบแสดงเลขพัสดุ (อัปเดตใหม่) */}
           {order.trackingNumber && (
-            <div className="mb-5 bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="mb-5 bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-md p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-100 rounded-lg text-green-600 shadow-inner">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
@@ -145,7 +145,7 @@ const HistoryItemCard = ({
               const orderDateStr = order.createdAt?.toDate ? order.createdAt.toDate().toISOString() : null;
 
               return (
-                <div key={idx} className="flex gap-3 text-sm bg-gray-50/70 p-3 rounded-xl border border-gray-100">
+                <div key={idx} className="flex gap-3 text-sm bg-gray-50/70 p-3 rounded-md border border-slate-200">
                   <div className="w-14 h-14 bg-white rounded-lg border border-gray-200 overflow-hidden shrink-0 shadow-xs">
                       {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain"  loading="lazy" /> : null}
                   </div>
@@ -165,7 +165,7 @@ const HistoryItemCard = ({
                     </div>
                     {/* Action Buttons for Claim/Return */}
                     {['shipped', 'completed'].includes(order.status) && (
-                      <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
                         <button onClick={(e) => { e.stopPropagation(); openServiceModal('claim', item, order); }} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded-sm text-[11px] font-bold flex items-center gap-1.5 transition-all border border-orange-200">
                           <Wrench size={12}/> แจ้งเคลม
                         </button>
@@ -181,7 +181,7 @@ const HistoryItemCard = ({
           </div>
 
           {/* Order Summary Breakdown */}
-          <div className="bg-indigo-50/50 rounded-xl p-5 text-sm space-y-2 border border-indigo-100 text-gray-700 shadow-inner">
+          <div className="bg-indigo-50/50 rounded-md p-5 text-sm space-y-2 border border-indigo-100 text-gray-700 shadow-inner">
               <div className="flex justify-between">
                 <span>ยอดรวมสินค้า</span>
                 <span className="font-semibold text-gray-900">฿{order.totals?.subtotal?.toLocaleString() || 0}</span>
@@ -252,7 +252,7 @@ const HistoryItemCard = ({
                 href={order.taxInvoiceUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-bold rounded-xl border border-teal-200 transition-colors shadow-xs active:scale-95"
+                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-bold rounded-md border border-teal-200 transition-colors shadow-xs active:scale-95"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 ดาวน์โหลดใบกำกับภาษี (PDF)
@@ -262,7 +262,7 @@ const HistoryItemCard = ({
 
           {/* ที่อยู่จัดส่ง / รับหน้าร้าน */}
           {order.shippingMethod === 'pickup' ? (
-            <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-green-50 p-4 rounded-xl border border-green-100">
+            <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-green-50 p-4 rounded-md border border-green-100">
               <div className="p-2 bg-white rounded-lg shadow-xs">
                   <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
               </div>
@@ -275,7 +275,7 @@ const HistoryItemCard = ({
               </div>
             </div>
           ) : order.shippingAddress ? (
-            <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div className="mt-5 text-sm text-gray-600 flex items-start gap-3 bg-gray-50 p-4 rounded-md border border-slate-200">
               <div className="p-2 bg-white rounded-lg shadow-xs">
                   <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
               </div>

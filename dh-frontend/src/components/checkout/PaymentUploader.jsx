@@ -15,13 +15,13 @@ export default function PaymentUploader({ onUpload }) {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 mt-6">
+    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200 mt-6">
       <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
         <UploadCloud className="w-5 h-5 text-blue-500" />
         แนบหลักฐานการโอนเงิน
       </h3>
       
-      <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-2xl p-6 cursor-pointer hover:bg-gray-50 transition-colors">
+      <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md p-6 cursor-pointer hover:bg-gray-50 transition-colors">
         {preview ? (
           <div className="relative">
             <img src={preview} alt="Slip preview" className="h-40 object-contain rounded-lg shadow-xs"  loading="lazy" />

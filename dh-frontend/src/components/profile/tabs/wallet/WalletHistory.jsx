@@ -5,7 +5,7 @@ import { formatCredit } from '../../../../firebase/creditService';
 const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
   const [activeSlipUrl, setActiveSlipUrl] = useState(null);
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden">
+    <div className="bg-white rounded-md shadow-md border border-slate-200/90 overflow-hidden">
       <div className="p-6 border-b border-slate-200/80 flex items-center gap-2 bg-slate-50/90">
         <History className="w-5 h-5 text-indigo-600" />
         <h3 className="font-bold text-slate-800">ประวัติการทำรายการล่าสุด (Recent Transactions)</h3>
@@ -19,7 +19,7 @@ const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
           </div>
         ) : historyLogs.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
               <History className="w-6 h-6 text-slate-300" />
             </div>
             <p className="text-slate-500 font-bold text-sm">ยังไม่มีประวัติการทำรายการ</p>
@@ -107,7 +107,7 @@ const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
       {/* Slip Preview Modal */}
       {activeSlipUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+          <div className="bg-white rounded-md shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
               <h4 className="font-bold text-sm flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-400" /> หลักฐานการโอนเงิน (Slip)
@@ -119,8 +119,8 @@ const WalletHistory = ({ historyLogs, loadingHistory, type }) => {
             <div className="p-4 bg-slate-950 flex justify-center items-center min-h-[300px]">
               <img src={activeSlipUrl} alt="สลิปโอนเงิน" className="max-h-[500px] w-auto object-contain rounded-lg shadow-md" />
             </div>
-            <div className="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setActiveSlipUrl(null)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition-colors">
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setActiveSlipUrl(null)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-md transition-colors">
                 ปิดหน้าต่าง
               </button>
             </div>

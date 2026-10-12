@@ -85,7 +85,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden transition-all duration-300 hover:shadow-lg">
+    <div className="bg-white rounded-md shadow-md border border-slate-200/90 overflow-hidden transition-all duration-300 hover:shadow-lg">
       {/* Header */}
       <div className="border-b border-slate-200/80 px-6 py-4 bg-slate-50/90 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -116,7 +116,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.lineId}
                 onChange={handleChange}
                 placeholder="ระบุ Line ID สำหรับติดต่อ"
-                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.facebookUrl}
                 onChange={handleChange}
                 placeholder="https://facebook.com/..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.messengerUrl}
                 onChange={handleChange}
                 placeholder="https://m.me/..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.youtubeUrl}
                 onChange={handleChange}
                 placeholder="https://youtube.com/@..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 value={formData.storeWebsite}
                 onChange={handleChange}
                 placeholder="https://www.yourstore.com"
-                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-gray-100 focus:border-gray-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-gray-100 focus:border-gray-500 transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
@@ -221,7 +221,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
                 onChange={handleChange}
                 rows={2}
                 placeholder="ระบุลิงก์หรือข้อมูลช่องทางอื่นๆ ที่ต้องการให้ลูกค้าทราบ..."
-                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-[#0870B8] transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs resize-none placeholder:text-slate-400 hover:border-slate-400"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md focus:ring-4 focus:ring-blue-100 focus:border-[#0870B8] transition-all bg-slate-50/70 focus:bg-white text-sm text-slate-900 font-medium shadow-xs resize-none placeholder:text-slate-400 hover:border-slate-400"
               />
             </div>
           </div>
@@ -230,7 +230,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
 
         {/* Status Messages */}
         {status.message && (
-          <div className={`p-4 rounded-xl flex items-center gap-3 text-sm animate-fade-in ${
+          <div className={`p-4 rounded-md flex items-center gap-3 text-sm animate-fade-in ${
             status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'
           }`}>
             {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -243,7 +243,7 @@ export default function SocialLinksForm({ user, initialData, onRefresh }) {
           <button
             type="submit"
             disabled={isSaving || !hasChanges()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-[#0870B8] hover:bg-[#065a96] text-white font-medium rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-100 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 bg-[#0870B8] hover:bg-[#065a96] text-white font-medium rounded-md transition-all duration-300 focus:ring-4 focus:ring-blue-100 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>

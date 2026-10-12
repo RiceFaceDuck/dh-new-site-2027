@@ -85,12 +85,12 @@ export default function TaxInvoiceForm({ taxData, onUpdate }) {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
+    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
       
-      <div className={`flex items-center justify-between transition-all duration-300 ${requestTax ? 'mb-6 pb-4 border-b border-slate-100' : ''}`}>
+      <div className={`flex items-center justify-between transition-all duration-300 ${requestTax ? 'mb-6 pb-4 border-b border-slate-200' : ''}`}>
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <div className={`p-2 rounded-xl transition-colors duration-300 ${requestTax ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+            <div className={`p-2 rounded-md transition-colors duration-300 ${requestTax ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
               <FileText className="w-5 h-5" />
             </div>
             ต้องการใบกำกับภาษีเต็มรูปแบบ
@@ -131,8 +131,8 @@ export default function TaxInvoiceForm({ taxData, onUpdate }) {
               
               <TaxFormFields taxInfo={taxInfo} handleChange={handleChange} />
 
-              <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shadow-xs">
+              <div className="pt-4 mt-2 border-t border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs">
                   <ShieldCheck className="w-4 h-4 text-indigo-500" />
                   ข้อมูลส่วนนี้จะถูกส่งเข้าระบบบัญชีโดยตรง
                 </div>

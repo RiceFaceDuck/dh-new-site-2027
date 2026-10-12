@@ -21,7 +21,7 @@ export default function ProfileTaxForm({ user }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-12 flex flex-col items-center justify-center min-h-[400px]">
+      <div className="bg-white rounded-md shadow-xs border border-slate-200/80 p-12 flex flex-col items-center justify-center min-h-[400px]">
         <div className="relative">
           <ShieldCheck className="w-10 h-10 text-indigo-200 absolute" />
           <Loader2 className="w-10 h-10 text-indigo-600 animate-spin relative" />
@@ -32,7 +32,7 @@ export default function ProfileTaxForm({ user }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
+    <div className="bg-white rounded-md shadow-xs border border-slate-200/80 overflow-hidden">
       {/* 🛡️ Header: Secure Zone */}
       <div className="p-6 border-b border-indigo-100 bg-linear-to-r from-indigo-50/50 to-white flex justify-between items-start">
         <div>
@@ -53,7 +53,7 @@ export default function ProfileTaxForm({ user }) {
         <div className="space-y-3">
           <label className="block text-sm font-bold text-slate-700">ประเภทผู้จดทะเบียน</label>
           <div className="flex flex-col sm:flex-row gap-4">
-            <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all duration-300 ${
+            <label className={`flex-1 flex items-center gap-3 p-4 border rounded-md cursor-pointer transition-all duration-300 ${
               formData.type === 'personal' 
                 ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700 shadow-[0_2px_10px_-3px_rgba(79,70,229,0.2)] ring-1 ring-indigo-600' 
                 : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300'
@@ -72,7 +72,7 @@ export default function ProfileTaxForm({ user }) {
               </div>
             </label>
 
-            <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all duration-300 ${
+            <label className={`flex-1 flex items-center gap-3 p-4 border rounded-md cursor-pointer transition-all duration-300 ${
               formData.type === 'company' 
                 ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700 shadow-[0_2px_10px_-3px_rgba(79,70,229,0.2)] ring-1 ring-indigo-600' 
                 : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300'
@@ -112,7 +112,7 @@ export default function ProfileTaxForm({ user }) {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800"
+                className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800"
                 placeholder={formData.type === 'personal' ? 'เช่น นายสมชาย ใจดี' : 'เช่น บจก. ดีเอช โน้ตบุ๊ค (ไม่ต้องใส่คำว่า บริษัท)'}
               />
             </div>
@@ -137,7 +137,7 @@ export default function ProfileTaxForm({ user }) {
                 value={showTaxId ? formData.taxId : getMaskedTaxId(formData.taxId)}
                 onChange={showTaxId ? handleChange : undefined}
                 onClick={() => setShowTaxId(true)}
-                className={`block w-full pl-11 pr-12 py-2.5 border rounded-xl focus:ring-2 transition-all font-mono tracking-widest text-base ${
+                className={`block w-full pl-11 pr-12 py-2.5 border rounded-md focus:ring-2 transition-all font-mono tracking-widest text-base ${
                   !showTaxId 
                     ? 'bg-slate-100 border-slate-200 cursor-pointer select-none text-slate-500' 
                     : formData.taxId.length === 13
@@ -214,7 +214,7 @@ export default function ProfileTaxForm({ user }) {
                 value={formData.address}
                 onChange={handleChange}
                 rows="2"
-                className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800 resize-none leading-relaxed"
+                className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50 focus:bg-white text-slate-800 resize-none leading-relaxed"
                 placeholder="บ้านเลขที่ หมู่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
               ></textarea>
             </div>
@@ -223,7 +223,7 @@ export default function ProfileTaxForm({ user }) {
 
         {/* Status Messages */}
         {status.message && (
-          <div className={`p-4 rounded-xl flex items-center gap-3 text-sm animate-fade-in ${
+          <div className={`p-4 rounded-md flex items-center gap-3 text-sm animate-fade-in ${
             status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'
           }`}>
             {status.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
@@ -232,11 +232,11 @@ export default function ProfileTaxForm({ user }) {
         )}
 
         {/* Form Actions */}
-        <div className="pt-5 border-t border-slate-100 flex justify-end">
+        <div className="pt-5 border-t border-slate-200 flex justify-end">
           <button
             type="submit"
             disabled={isSaving || !hasChanges()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all duration-300 focus:ring-4 focus:ring-indigo-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md transition-all duration-300 focus:ring-4 focus:ring-indigo-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95"
           >
             {isSaving ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> กำลังเข้ารหัสบันทึก...</>

@@ -11,7 +11,7 @@ const CheckoutSuccess = ({ isB2B, result }) => {
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-4">
-      <div className="bg-white rounded-md shadow-premium border border-gray-100 p-8 md:p-12 max-w-md w-full text-center animate-in zoom-in-95 duration-500 relative overflow-hidden">
+      <div className="bg-white rounded-md shadow-premium border border-slate-200 p-8 md:p-12 max-w-md w-full text-center animate-in zoom-in-95 duration-500 relative overflow-hidden">
         {/* แถบสีด้านบนแยกประเภท */}
         <div className={`absolute top-0 left-0 w-full h-1.5 ${isWholesale ? 'bg-indigo-600' : 'bg-[#0870B8]'}`}></div>
 
@@ -23,7 +23,7 @@ const CheckoutSuccess = ({ isB2B, result }) => {
           {isWholesale ? 'Request Sent!' : 'Success!'}
         </h2>
 
-        <div className={`${isWholesale ? 'bg-indigo-50/50' : 'bg-[#E6F0F9]/50'} rounded-md p-5 mb-8 border border-gray-100 text-left`}>
+        <div className={`${isWholesale ? 'bg-indigo-50/50' : 'bg-[#E6F0F9]/50'} rounded-md p-5 mb-8 border border-slate-200 text-left`}>
           <p className="text-gray-700 text-sm leading-relaxed">
             {isWholesale 
               ? 'คำขอราคาส่งของคุณถูกส่งเข้าระบบแล้ว พนักงานจะรีบดำเนินการตรวจสอบและประเมินราคาให้ท่านโดยเร็วที่สุด ท่านสามารถติดตามสถานะบิลได้ที่หน้าโปรไฟล์'

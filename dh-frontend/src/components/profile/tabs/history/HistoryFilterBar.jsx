@@ -1,7 +1,7 @@
 
 const HistoryFilterBar = ({ filter, setFilter }) => {
   return (
-    <div className="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 shadow-inner w-full sm:w-auto overflow-x-auto hide-scrollbar gap-1.5">
+    <div className="flex bg-slate-950/80 p-1.5 rounded-md border border-slate-700/80 shadow-inner w-full sm:w-auto overflow-x-auto hide-scrollbar gap-1.5">
       {[
         { key: 'all', label: 'ทั้งหมด' },
         { key: 'pending', label: 'รอชำระเงิน' },

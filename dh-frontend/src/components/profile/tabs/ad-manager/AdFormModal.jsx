@@ -16,9 +16,9 @@ const AdFormModal = ({
   const addBudget = (amount) => setCreditLimit(prev => (Number(prev) || 0) + amount);
 
   return (
-    <div className="bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-3xl p-6 lg:p-8 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
+    <div className="bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-md p-6 lg:p-8 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
       
-      <div className="flex items-start justify-between mb-8 pb-4 border-b border-slate-100 relative z-10">
+      <div className="flex items-start justify-between mb-8 pb-4 border-b border-slate-200 relative z-10">
         <div>
           <h3 className="font-black text-2xl text-slate-800 flex items-center gap-3 tracking-tight">
             <Megaphone className="text-indigo-600" size={28}/> {isEditMode ? 'แก้ไขแคมเปญโฆษณา' : 'สร้างแคมเปญโฆษณา'}
@@ -46,8 +46,8 @@ const AdFormModal = ({
                 <button
                   key={type.id} type="button" onClick={() => setFormData({...formData, type: type.id})}
                   disabled={isEditMode} 
-                  className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${
-                    formData.type === type.id ? `bg-${type.color}-50 border-${type.color}-500 text-${type.color}-700 scale-[1.02] shadow-xs` : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50'
+                  className={`relative flex flex-col items-center p-4 rounded-md border-2 transition-all ${
+                    formData.type === type.id ? `bg-${type.color}-50 border-${type.color}-500 text-${type.color}-700 scale-[1.02] shadow-xs` : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
                   } ${isEditMode && formData.type !== type.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {type.icon}
@@ -57,20 +57,20 @@ const AdFormModal = ({
             </div>
           </div>
 
-          <div className="space-y-5 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+          <div className="space-y-5 bg-slate-50/50 p-5 rounded-md border border-slate-200">
             
             {/* 🚀 [HOTFIX แก้บั๊ก]: ปลดล็อกช่องชื่อหัวข้อและคำอธิบาย ให้โชว์ในโหมด BILLBOARD ด้วย จะได้เซฟผ่าน! */}
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">
                 {formData.type === 'BILLBOARD' ? 'หัวข้อโฆษณา / แคมเปญแบนเนอร์' : 'ชื่อสินค้า'} <span className="text-rose-500">*</span>
               </label>
-              <input type="text" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} required placeholder={formData.type === 'BILLBOARD' ? 'เช่น โปรโมชั่นซ่อมลด 50% เดือนนี้' : 'เช่น หน้าจอ iPhone 13 แท้'} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" />
+              <input type="text" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} required placeholder={formData.type === 'BILLBOARD' ? 'เช่น โปรโมชั่นซ่อมลด 50% เดือนนี้' : 'เช่น หน้าจอ iPhone 13 แท้'} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-md focus:border-indigo-500" />
             </div>
 
             {formData.type === 'BILLBOARD' && (
               <div>
                 <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">คำอธิบายสั้นๆ (จุดเด่น หรือเงื่อนไข)</label>
-                <input type="text" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} maxLength={60} placeholder="เช่น ลดเฉพาะลูกค้าที่จองผ่านลิงก์นี้เท่านั้น" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" />
+                <input type="text" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} maxLength={60} placeholder="เช่น ลดเฉพาะลูกค้าที่จองผ่านลิงก์นี้เท่านั้น" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-md focus:border-indigo-500" />
               </div>
             )}
 
@@ -87,7 +87,7 @@ const AdFormModal = ({
                        value={formData.price || ''} 
                        onChange={(e) => setFormData({...formData, price: e.target.value})} 
                        placeholder="0.00"
-                       className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 text-emerald-600 font-bold" 
+                       className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-md focus:border-indigo-500 text-emerald-600 font-bold" 
                      />
                   </div>
                 </div>
@@ -98,7 +98,7 @@ const AdFormModal = ({
                     onChange={(e) => setFormData({...formData, richDescription: e.target.value})} 
                     rows={4} 
                     placeholder="บรรยายสรรพคุณ จุดเด่น และรายละเอียดสินค้าเพิ่มเติม เพื่อแสดงในหน้า Detail..." 
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 resize-none" 
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-md focus:border-indigo-500 resize-none" 
                   />
                 </div>
               </div>
@@ -109,7 +109,7 @@ const AdFormModal = ({
                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2.5">สัดส่วนภาพโฆษณา <span className="text-rose-500">*</span></label>
                  <div className="flex gap-3">
                     {[{ id: '16:9', label: 'แนวนอน', icon: <RectangleHorizontal size={20}/> }, { id: '1:1', label: 'จัตุรัส', icon: <Square size={20}/> }, { id: '9:16', label: 'แนวตั้ง', icon: <RectangleVertical size={20}/> }].map(ratio => (
-                      <button key={ratio.id} type="button" onClick={() => setFormData({...formData, billboardRatio: ratio.id})} className={`flex-1 py-3 flex flex-col items-center gap-1.5 rounded-xl border ${formData.billboardRatio === ratio.id ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-400'}`}>
+                      <button key={ratio.id} type="button" onClick={() => setFormData({...formData, billboardRatio: ratio.id})} className={`flex-1 py-3 flex flex-col items-center gap-1.5 rounded-md border ${formData.billboardRatio === ratio.id ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-400'}`}>
                         {ratio.icon} <span className="text-[10px] font-bold">{ratio.label}</span>
                       </button>
                     ))}
@@ -125,7 +125,7 @@ const AdFormModal = ({
                   type="text" 
                   value={formData.targetUrl || ''} onChange={handleLinkChange} required 
                   placeholder={formData.type === 'BILLBOARD' ? "เช่น https://www.youtube.com/... หรือเว็บร้าน" : "เช่น https://shopee.co.th/..."}
-                  className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-indigo-500" 
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-md focus:border-indigo-500" 
                 />
               </div>
             </div>
@@ -136,7 +136,7 @@ const AdFormModal = ({
               </label>
               
               {formData.imageUrl && !uploadingImage ? (
-                <div className="relative w-full h-44 bg-slate-100 rounded-2xl overflow-hidden group ring-2 ring-emerald-500 shadow-md">
+                <div className="relative w-full h-44 bg-slate-100 rounded-md overflow-hidden group ring-2 ring-emerald-500 shadow-md">
                   <LazyImage 
                     src={formData.imageUrl} 
                     alt="Uploaded preview" 
@@ -150,7 +150,7 @@ const AdFormModal = ({
                   </label>
                 </div>
               ) : (
-                <label className={`relative flex flex-col items-center w-full px-4 py-8 bg-white border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-300 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                <label className={`relative flex flex-col items-center w-full px-4 py-8 bg-white border-2 border-slate-200 border-dashed rounded-md cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-300 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
                   {uploadingImage ? (
                     <div className="flex flex-col items-center text-indigo-600 font-bold"><Loader2 size={28} className="animate-spin mb-2"/> กำลังประมวลผลรูปภาพ...</div>
@@ -162,7 +162,7 @@ const AdFormModal = ({
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-lg border border-slate-700">
+          <div className="bg-slate-800 rounded-md p-6 relative overflow-hidden shadow-lg border border-slate-700">
             <div className="flex items-center justify-between mb-4">
               <label className="text-[11px] font-bold text-slate-400 uppercase">กำหนดงบประมาณ (Credit Limit)</label>
               <label className="flex items-center gap-2 cursor-pointer bg-slate-700/50 px-3 py-1.5 rounded-full hover:bg-slate-600 transition-colors">
@@ -175,7 +175,7 @@ const AdFormModal = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
                 <div className="flex-1">
                   <div className="relative flex items-center">
-                    <input type="number" min="10" step="10" value={creditLimit === 0 ? '' : creditLimit} onChange={(e) => setCreditLimit(Number(e.target.value) || 0)} disabled={isUnlimited} className="w-full pl-4 pr-16 py-3 bg-slate-900 border border-slate-600 rounded-xl text-lg font-black text-white focus:border-indigo-400 outline-hidden" />
+                    <input type="number" min="10" step="10" value={creditLimit === 0 ? '' : creditLimit} onChange={(e) => setCreditLimit(Number(e.target.value) || 0)} disabled={isUnlimited} className="w-full pl-4 pr-16 py-3 bg-slate-900 border border-slate-600 rounded-md text-lg font-black text-white focus:border-indigo-400 outline-hidden" />
                   </div>
                   <div className="flex gap-2 mt-3">
                     {[100, 500, 1000].map(amt => (
@@ -188,7 +188,7 @@ const AdFormModal = ({
                     </div>
                   )}
                 </div>
-                <div className="text-left sm:text-right bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/50 w-full sm:w-auto">
+                <div className="text-left sm:text-right bg-slate-900/50 p-3.5 rounded-md border border-slate-700/50 w-full sm:w-auto">
                   <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">คาดการณ์การมองเห็น</div>
                   <div className="text-2xl font-black text-emerald-400 flex items-baseline gap-1">{isUnlimited ? '∞' : targetImpressions} <span className="text-[10px] text-slate-500">Views</span></div>
                 </div>
@@ -200,7 +200,7 @@ const AdFormModal = ({
             <button 
               type="submit" 
               disabled={submittingAd || (!isUnlimited && creditLimit < 10)} 
-              className={`w-full py-4.5 font-bold rounded-xl shadow-lg transition-all flex justify-center items-center gap-2.5 text-base sm:text-lg ${(!isUnlimited && creditLimit < 10) ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:-translate-y-0.5'}`}
+              className={`w-full py-4.5 font-bold rounded-md shadow-lg transition-all flex justify-center items-center gap-2.5 text-base sm:text-lg ${(!isUnlimited && creditLimit < 10) ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:-translate-y-0.5'}`}
             >
               {submittingAd ? <><Loader2 size={22} className="animate-spin"/> กำลังส่งข้อมูล...</> : <><CheckCircle2 size={22}/> {isEditMode ? 'ยืนยันการแก้ไขโฆษณา' : 'ยืนยันการฝากโฆษณา'}</>}
             </button>
@@ -211,7 +211,7 @@ const AdFormModal = ({
           </div>
         </form>
 
-        <div className="w-full lg:w-[45%] lg:pl-6 border-t lg:border-t-0 lg:border-l border-slate-100 pt-8 lg:pt-0">
+        <div className="w-full lg:w-[45%] lg:pl-6 border-t lg:border-t-0 lg:border-l border-slate-200 pt-8 lg:pt-0">
           <div className="sticky top-6">
             <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
               <Eye className="text-indigo-500" size={18}/> ตัวอย่างการแสดงผล (Live Preview)

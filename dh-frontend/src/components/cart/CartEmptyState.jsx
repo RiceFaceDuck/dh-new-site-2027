@@ -10,7 +10,7 @@ const CartEmptyState = () => {
       </div>
       <h2 className="text-2xl font-black text-gray-800 mb-3">ตะกร้าสินค้าว่างเปล่า</h2>
       <p className="text-sm text-gray-500 mb-8">คุณยังไม่มีสินค้าในตะกร้า ลองดูสินค้าที่น่าสนใจในร้านของเราสิ!</p>
-      <Link to="/" className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-xs hover:shadow-sm active:scale-95">
+      <Link to="/" className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-md transition-all shadow-xs hover:shadow-sm active:scale-95">
         <ChevronLeft size={18} /> เลือกซื้อสินค้าต่อ
       </Link>
     </div>

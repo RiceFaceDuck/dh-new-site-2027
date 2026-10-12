@@ -95,7 +95,7 @@ const CheckoutSummaryDetails = ({
 
       <div className="border-t-2 border-dashed border-gray-200 my-5"></div>
 
-      <div className="flex justify-between items-end mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+      <div className="flex justify-between items-end mb-6 bg-indigo-50 p-4 rounded-md border border-indigo-100">
         <span className="text-base font-bold text-indigo-950">ยอดชำระสุทธิ</span>
         <div className="text-right">
           <span className="text-3xl font-black text-indigo-700">฿{formatCredit(calculatedNetTotal)}</span>

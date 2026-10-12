@@ -37,7 +37,7 @@ const LoginRequiredModal = ({ isOpen, onClose, onLogin }) => {
       />
       
       {/* Modal Container กลางจอ */}
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative z-10 animate-in fade-in zoom-in-95 duration-200 border border-slate-100 my-auto">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative z-10 animate-in fade-in zoom-in-95 duration-200 border border-slate-200 my-auto">
         
         {/* ปุ่มกากบาทปิดมุมขวาบน */}
         <button 
@@ -52,7 +52,7 @@ const LoginRequiredModal = ({ isOpen, onClose, onLogin }) => {
         <div className="p-6 sm:p-7 flex flex-col items-center text-center">
           
           {/* Icon Badge */}
-          <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-indigo-500/10 via-brand/10 to-blue-500/20 text-brand flex items-center justify-center mb-4 border border-brand/20 shadow-inner">
+          <div className="w-14 h-14 rounded-md bg-linear-to-br from-indigo-500/10 via-brand/10 to-blue-500/20 text-brand flex items-center justify-center mb-4 border border-brand/20 shadow-inner">
             <LogIn size={28} strokeWidth={2.2} className="text-brand translate-x-0.5" />
           </div>
 
@@ -66,7 +66,7 @@ const LoginRequiredModal = ({ isOpen, onClose, onLogin }) => {
           </p>
 
           {/* สิทธิประโยชน์ที่ได้รับเมื่อล็อกอิน */}
-          <div className="w-full bg-slate-50 rounded-2xl p-3.5 mb-4 border border-slate-100 space-y-2 text-left">
+          <div className="w-full bg-slate-50 rounded-md p-3.5 mb-4 border border-slate-200 space-y-2 text-left">
             <div className="flex items-center gap-2.5 text-xs text-slate-600">
               <Gift size={15} className="text-brand-accent shrink-0" />
               <span>สะสมแต้มคะแนน DH Credit Point ทุกออเดอร์</span>
@@ -85,7 +85,7 @@ const LoginRequiredModal = ({ isOpen, onClose, onLogin }) => {
           <button 
             ref={loginButtonRef}
             onClick={onLogin}
-            className="w-full py-3.5 px-6 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold text-sm transition-all shadow-md hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3.5 px-6 rounded-md bg-brand hover:bg-brand-dark text-white font-bold text-sm transition-all shadow-md hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
           >
             <LogIn size={18} />
             เข้าสู่ระบบ (สั่งซื้อผ่านเว็บ)
@@ -124,7 +124,7 @@ const LoginRequiredModal = ({ isOpen, onClose, onLogin }) => {
               onClose();
               navigate('/providers');
             }}
-            className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-slate-200/80 transition-all active:scale-[0.99] cursor-pointer mb-2"
+            className="w-full py-2.5 px-4 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-slate-200/80 transition-all active:scale-[0.99] cursor-pointer mb-2"
           >
             <Wrench size={15} className="text-brand" />
             <span>ค้นหาบริการช่าง (SERVICE PROVIDERS)</span>
@@ -133,7 +133,7 @@ const LoginRequiredModal = ({ isOpen, onClose, onLogin }) => {
           {/* ปุ่มปิด: ดูรายการสินค้าในตะกร้าก่อน */}
           <button 
             onClick={onClose}
-            className="w-full py-2 rounded-xl text-slate-400 hover:text-slate-600 font-medium text-xs transition-colors cursor-pointer mt-1"
+            className="w-full py-2 rounded-md text-slate-400 hover:text-slate-600 font-medium text-xs transition-colors cursor-pointer mt-1"
           >
             ดูรายการสินค้าในตะกร้าก่อน
           </button>

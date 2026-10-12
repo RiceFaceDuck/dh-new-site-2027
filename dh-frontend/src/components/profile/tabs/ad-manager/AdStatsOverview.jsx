@@ -6,13 +6,13 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
   const formatNumber = (num) => new Intl.NumberFormat('th-TH').format(num || 0);
 
   return (
-    <div className="relative overflow-hidden bg-slate-100/90 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200/90 animate-in fade-in zoom-in-95 duration-500">
+    <div className="relative overflow-hidden bg-slate-100/90 rounded-md p-6 md:p-8 shadow-sm border border-slate-200/90 animate-in fade-in zoom-in-95 duration-500">
       
       {/* 💰 Credit & Wallet Section */}
       <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         
         <div className="flex items-center gap-5">
-          <div className="w-14 h-14 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-center shadow-xs relative">
+          <div className="w-14 h-14 bg-white border border-slate-200/80 rounded-md flex items-center justify-center shadow-xs relative">
             <Wallet size={28} className="text-indigo-600" />
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -54,7 +54,7 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
           {/* Action Button: Create Campaign */}
           <button 
             onClick={onOpenForm}
-            className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2.5 group whitespace-nowrap active:scale-95"
+            className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2.5 group whitespace-nowrap active:scale-95"
           >
             <Plus size={22} className="group-hover:rotate-90 transition-transform duration-300" /> 
             สร้างแคมเปญโฆษณา

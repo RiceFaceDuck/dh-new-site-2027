@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const AccordionSection = ({ title, summary, step, activeStep, setActiveStep, isCompleted, children }) => {
   const isOpen = activeStep === step;
   return (
-    <div className={`border rounded-xl mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'border-emerald-500 shadow-md' : 'border-gray-200 bg-white'}`}>
+    <div className={`border rounded-md mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'border-emerald-500 shadow-md' : 'border-gray-200 bg-white'}`}>
       <div 
         className={`p-4 flex items-center justify-between cursor-pointer select-none transition-colors ${isOpen ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-gray-50'}`}
         onClick={() => setActiveStep(isOpen ? null : step)}
@@ -34,7 +34,7 @@ const AccordionSection = ({ title, summary, step, activeStep, setActiveStep, isC
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden bg-white"
           >
-            <div className="p-4 md:p-6 border-t border-gray-100">
+            <div className="p-4 md:p-6 border-t border-slate-200">
               {children}
               
               <div className="mt-6 flex justify-end">

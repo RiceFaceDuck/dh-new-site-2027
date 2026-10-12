@@ -52,10 +52,10 @@ const ClaimItemCard = ({ claim }) => {
   };
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all hover:border-slate-300">
+    <div className="bg-white border border-slate-200/90 rounded-md p-5 shadow-sm hover:shadow-md transition-all hover:border-slate-300">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4 border-b border-slate-200/80 pb-4">
         <div className="flex items-start gap-3">
-          <div className={`p-2.5 rounded-xl shrink-0 ${isClaim ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>
+          <div className={`p-2.5 rounded-md shrink-0 ${isClaim ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>
             {isClaim ? <Wrench size={24} /> : <ArrowLeftRight size={24} />}
           </div>
           <div>
@@ -77,7 +77,7 @@ const ClaimItemCard = ({ claim }) => {
         </div>
       </div>
 
-      <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-200/80">
+      <div className="bg-slate-50 rounded-md p-4 mb-4 border border-slate-200/80">
         <p className="font-bold text-gray-800 text-sm mb-1 line-clamp-1">{payload?.productName}</p>
         <p className="text-xs text-gray-500 mb-3">SKU: {payload?.sku || '-'}</p>
         

@@ -20,7 +20,7 @@ const HistoryList = ({
 
   if (filteredOrders.length === 0) {
     return (
-      <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+      <div className="text-center py-20 bg-gray-50 rounded-md border border-dashed border-gray-200">
         <svg className="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
         <p className="mt-4 text-gray-500 font-medium">ไม่มีประวัติคำสั่งซื้อในหมวดหมู่นี้</p>
       </div>

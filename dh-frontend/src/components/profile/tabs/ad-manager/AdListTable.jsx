@@ -11,7 +11,7 @@ const getSafeUrl = (url) => {
 const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }) => {
   if (!ads || ads.length === 0) {
     return (
-      <div className="bg-slate-50 border border-slate-100 rounded-3xl p-12 text-center flex flex-col items-center justify-center h-64 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+      <div className="bg-slate-50 border border-slate-200 rounded-md p-12 text-center flex flex-col items-center justify-center h-64 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
         <Activity size={48} className="text-slate-300 mb-4" />
         <h3 className="text-lg font-bold text-slate-600 mb-1">ยังไม่มีประวัติการลงโฆษณา</h3>
         <p className="text-sm text-slate-400 max-w-md">เมื่อคุณสร้างแคมเปญโฆษณาสำเร็จ ประวัติและสถิติการมองเห็นจะแสดงผลที่นี่แบบ Real-time</p>
@@ -38,7 +38,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
   };
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white border border-slate-200/90 rounded-md shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="p-4 md:p-5 border-b border-slate-200/80 bg-slate-50/90 flex items-center justify-between">
         <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm md:text-base">
           <Activity className="text-indigo-600" size={18}/> ประวัติโฆษณาของคุณ (My Campaigns)
@@ -54,7 +54,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
           <div key={ad.id} className="p-4 space-y-3 hover:bg-slate-50/50 transition-colors">
             {/* Header: รูป + ชื่อ + สถานะ */}
             <div className="flex gap-3 items-start">
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center shadow-xs">
+              <div className="w-14 h-14 rounded-md overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center shadow-xs">
                 {ad.imageUrl ? (
                   <LazyImage 
                     src={ad.imageUrl} 
@@ -85,7 +85,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
             </div>
 
             {/* Stats Row: Views / Clicks / Limit */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center">
+            <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-md border border-slate-200 text-center">
               <div>
                 <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Views</span>
                 <span className="font-black text-slate-700 text-xs">{Number(ad.stats?.views || 0).toLocaleString()}</span>
@@ -159,7 +159,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
             {ads.map((ad) => (
               <tr key={ad.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="p-4">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 shadow-xs">
                     {ad.imageUrl ? (
                       <LazyImage 
                         src={ad.imageUrl} 
