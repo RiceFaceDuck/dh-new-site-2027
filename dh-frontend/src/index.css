@@ -7,61 +7,29 @@
   --color-brand-accent: var(--color-brand-accent);
   --color-brand-silver: #e0e0e0;
 
-  --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.07);
-  --shadow-premium-hover: 0 25px 60px rgba(0, 0, 0, 0.12);
-  --shadow-premium-inner: inset 0 2px 10px rgba(0, 0, 0, 0.05);
-  --shadow-glow-brand: 0 0 15px var(--color-brand);
-  --shadow-glow-accent: 0 0 15px var(--color-brand-accent);
+  /* =========================================
+     Retro/Classic Border Radius Calibration
+     Clamps rectangular box curvature to 0.375rem - 0.5rem (4px - 8px)
+  ========================================= */
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.5rem;
+  --radius-4xl: 0.5rem;
+  --radius: 0.375rem;
 
-  --animate-shimmer: shimmer 2s infinite linear;
-  --animate-shine: shine 3s linear infinite;
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-pulse-glow: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-  @keyframes shine {
-    0% {
-      background-position: 200% center;
-    }
-    100% {
-      background-position: -200% center;
-    }
-  }
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-5px);
-    }
-  }
-  @keyframes pulseGlow {
-    0%,
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1.02);
-    }
-  }
-}
-
-@theme {
-  --color-brand: var(--color-brand);
-  --color-brand-dark: var(--color-brand-dark);
-  --color-brand-light: var(--color-brand-light);
-  --color-brand-accent: var(--color-brand-accent);
-  --color-brand-silver: #e0e0e0;
+  /* =========================================
+     Tactile Structured Depth (Slate Shadows)
+  ========================================= */
+  --shadow-2xs: 0 1px rgb(15 23 42 / 0.06);
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.08), 0 1px 1px -1px rgb(15 23 42 / 0.06);
+  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.10), 0 1px 2px -1px rgb(15 23 42 / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.06);
+  --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.06);
 
   --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.07);
   --shadow-premium-hover: 0 25px 60px rgba(0, 0, 0, 0.12);
@@ -126,7 +94,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--color-slate-200, #e2e8f0);
   }
 }
 
@@ -134,14 +102,12 @@
    2. COMPONENTS (Premium Structured Depth)
 ========================================= */
 @utility card-premium {
-  /* Cards & Containers (ขอบมนนิดเดียว มิติลึก) */
-  @apply bg-white rounded-md border border-gray-100 transition-all duration-300 ease-out;
-  box-shadow: 0 20px 50px rgba(8, 112, 184, 0.07);
-
-  &:hover {
-    @apply -translate-y-1;
-    box-shadow: 0 25px 60px rgba(8, 112, 184, 0.15);
-  }
+  /* Cards & Containers (Classic Retro Structured Depth: border-slate-200) */
+  background: #ffffff;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.08);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @utility card-premium-inner {
   /* สำหรับพื้นหลัง Wallet / History (หลุมลึก) */
@@ -197,24 +163,6 @@
   animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
-}
-
 /* =========================================
    1. GLOBAL STYLES (Foundation)
 ========================================= */
@@ -243,6 +191,8 @@
   }
 
   body {
+    background: var(--color-slate-50, #f8fafc);
+    background-color: var(--color-slate-50);
     @apply text-gray-800 font-sans;
     transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
   }
@@ -268,6 +218,12 @@
    3. UTILITIES (Helpers & Tactics)
 ========================================= */
 @layer utilities {
+  /* Elevate faint legacy borders to perceptible retro/classic boundaries */
+  .border-slate-100,
+  .border-gray-100 {
+    border-color: var(--color-slate-200, #e2e8f0);
+  }
+
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     15% { transform: translateX(-8px); }

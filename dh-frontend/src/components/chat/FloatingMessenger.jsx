@@ -120,12 +120,12 @@ const FloatingMessenger = () => {
   return (
     <div className={`fixed ${isProductDetail ? 'bottom-[135px]' : 'bottom-[85px]'} md:bottom-6 right-6 z-100 flex flex-col items-end pointer-events-none transition-all duration-300`}>
       
-      <div className={`pointer-events-auto mb-4 w-[320px] sm:w-[360px] bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 translate-y-20'}`}>
+      <div className={`pointer-events-auto mb-4 w-[320px] sm:w-[360px] bg-white/95 backdrop-blur-2xl rounded-md shadow-xl border border-slate-200 overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 translate-y-20'}`}>
         
         <div className={`p-5 text-white flex justify-between items-center relative overflow-hidden transition-colors duration-500 ${mode === 'partner_context' || mode === 'result' ? 'bg-linear-to-r from-emerald-600 to-teal-500' : 'bg-linear-to-r from-indigo-600 to-[#0870B8]'}`}>
           <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl -translate-y-10 translate-x-10 pointer-events-none"></div>
           <div className="flex items-center gap-3 relative z-10">
-            <div className="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
+            <div className="w-11 h-11 bg-white/20 rounded-md flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
               {mode === 'partner_context' || mode === 'result' ? <Store size={22}/> : <Headphones size={22}/>}
             </div>
             <div>
@@ -152,7 +152,7 @@ const FloatingMessenger = () => {
       </div>
 
       <div className="relative flex items-center pointer-events-auto">
-        <div className={`absolute right-full mr-5 bg-slate-800 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 whitespace-nowrap flex items-center gap-2.5 transition-all duration-500 ${showTooltip && !isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
+        <div className={`absolute right-full mr-5 bg-slate-800 text-white px-4 py-3 rounded-md shadow-xl border border-slate-700 whitespace-nowrap flex items-center gap-2.5 transition-all duration-500 ${showTooltip && !isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
           <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span>
           <div><p className="text-xs font-bold tracking-wide">ต้องการความช่วยเหลือ?</p><p className="text-[9px] text-slate-400 mt-0.5">ติดต่อแอดมิน หรือ หาร้านซ่อมใกล้คุณ</p></div><div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-700 transform -rotate-45"></div>
         </div>

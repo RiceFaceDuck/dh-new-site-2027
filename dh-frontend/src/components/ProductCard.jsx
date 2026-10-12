@@ -10,9 +10,9 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
   return (
     <div 
       onClick={() => navigate(`/product/${id}`, { state: { product } })} 
-      className="group cursor-pointer bg-white p-2.5 md:p-3 rounded-2xl border border-slate-200/90 overflow-hidden flex flex-col hover:border-brand/40 shadow-xs hover:shadow-xl hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 relative animate-in fade-in"
+      className="group cursor-pointer bg-white p-2.5 md:p-3 rounded-md border border-slate-200 overflow-hidden flex flex-col hover:border-brand/40 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 relative animate-in fade-in"
     >
-      <div className="relative aspect-square w-full bg-slate-50/80 rounded-xl flex items-center justify-center overflow-hidden mb-2.5 border border-slate-100">
+      <div className="relative aspect-square w-full bg-slate-50/80 rounded-sm flex items-center justify-center overflow-hidden mb-2.5 border border-slate-200">
         <div className="absolute inset-0 bg-linear-to-br from-brand-light/10 to-transparent opacity-60 pointer-events-none"></div>
         <LazyImage 
           src={imageUrl} 
@@ -43,7 +43,7 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
           <button 
             onClick={(e) => onAddToCart(e, product)}
             disabled={!hasStock || addingState === 'success'}
-            className={`w-full py-2 rounded-xl flex items-center justify-center transition-all duration-300 shadow-xs z-20 text-xs font-bold uppercase tracking-wider ${
+            className={`w-full py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-xs z-20 text-xs font-bold uppercase tracking-wider ${
               addingState === 'success'
                 ? 'bg-emerald-500 text-white scale-95 shadow-sm'
                 : !hasStock 

@@ -61,7 +61,7 @@ const MainLayout = ({ children }) => {
       </main>
       
       {/* 3. Footer: ซ่อนในมือถือ (กันรก) และแสดงเฉพาะบน Desktop */}
-      <div className="hidden lg:block mt-auto border-t border-gray-100">
+      <div className="hidden lg:block mt-auto border-t border-slate-200">
         <Footer />
       </div>
       

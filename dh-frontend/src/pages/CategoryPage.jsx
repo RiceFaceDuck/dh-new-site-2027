@@ -210,7 +210,7 @@ const CategoryPage = () => {
           <div className="flex items-center gap-3 md:gap-4">
             <Link 
               to="/categories" 
-              className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl transition-all duration-200 text-slate-500 hover:text-slate-800 shadow-2xs group"
+              className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-all duration-200 text-slate-500 hover:text-slate-800 shadow-2xs group"
               aria-label="กลับสู่หมวดหมู่ทั้งหมด"
             >
               <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -221,7 +221,7 @@ const CategoryPage = () => {
                   หมวดหมู่: <span className="text-brand">{categoryInfo?.name || type}</span>
                 </h1>
                 {effectiveTotalCount > 0 && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-brand border border-blue-100">
+                  <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-blue-50 text-brand border border-blue-200">
                     {effectiveTotalCount} รายการ
                   </span>
                 )}
@@ -236,7 +236,7 @@ const CategoryPage = () => {
         {/* Product List */}
         <div>
           {error ? (
-            <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100 shadow-xs">
+            <div className="bg-red-50 text-red-500 p-6 rounded-md text-center border border-red-200 shadow-xs">
               <p className="font-semibold text-lg mb-1">พบข้อผิดพลาดในการโหลดข้อมูล</p>
               <p className="text-sm opacity-80">{error}</p>
             </div>
@@ -259,7 +259,7 @@ const CategoryPage = () => {
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage <= 1 || loading}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all duration-200 bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-xs sm:text-sm font-semibold border transition-all duration-200 bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
                       aria-label="หน้าก่อนหน้า"
                     >
                       <ChevronLeft size={16} />
@@ -283,7 +283,7 @@ const CategoryPage = () => {
                             key={pageNum}
                             onClick={() => handlePageChange(pageNum)}
                             disabled={loading}
-                            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-center ${
+                            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-center ${
                               isActive
                                 ? 'bg-brand text-white shadow-xs'
                                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
@@ -301,7 +301,7 @@ const CategoryPage = () => {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage >= totalPages || loading}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all duration-200 bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-xs sm:text-sm font-semibold border transition-all duration-200 bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
                       aria-label="หน้าถัดไป"
                     >
                       <span className="hidden xs:inline">ถัดไป</span>
@@ -312,7 +312,7 @@ const CategoryPage = () => {
               )}
             </>
           ) : (
-            <div className="bg-slate-50 text-slate-500 p-8 rounded-2xl text-center border border-slate-100 shadow-xs">
+            <div className="bg-slate-50 text-slate-500 p-8 rounded-md text-center border border-slate-200 shadow-xs">
               <p className="text-lg font-medium">ไม่พบสินค้าในหมวดหมู่นี้</p>
             </div>
           )}

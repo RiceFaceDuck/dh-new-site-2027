@@ -30,7 +30,7 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
         <Link 
           to="/categories"
           onMouseEnter={() => import('../../Categories/CategoriesMain')}
-          className="group flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 hover:text-brand font-bold text-sm rounded-full shadow-xs hover:shadow-md border border-slate-200/90 hover:border-brand/40 transition-all duration-300 active:scale-95"
+          className="group flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 hover:text-brand font-bold text-sm rounded-md shadow-xs hover:shadow-md border border-slate-300 hover:border-brand/40 transition-all duration-300 active:scale-95"
         >
           ดูทั้งหมด
           <ArrowRight size={16} className="text-brand group-hover:translate-x-1 transition-transform" />
@@ -40,16 +40,16 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
           {[...Array(skeletonCount)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl p-2.5 md:p-3 border border-slate-200/80 flex flex-col shadow-xs animate-pulse h-full">
-              <div className="w-full aspect-square bg-slate-100 rounded-xl mb-4"></div>
+            <div key={i} className="bg-white rounded-md p-2.5 md:p-3 border border-slate-200 flex flex-col shadow-xs animate-pulse h-full">
+              <div className="w-full aspect-square bg-slate-100 rounded-sm mb-4"></div>
               <div className="h-4 bg-slate-100 rounded-sm w-3/4 mb-3"></div>
               <div className="h-4 bg-slate-100 rounded-sm w-1/2 mb-auto"></div>
-              <div className="h-10 bg-slate-100 rounded-xl w-full mt-4"></div>
+              <div className="h-10 bg-slate-100 rounded-sm w-full mt-4"></div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="bg-red-50 text-red-500 p-8 rounded-2xl text-center border border-red-100 shadow-xs relative z-10 flex flex-col items-center justify-center">
+        <div className="bg-red-50 text-red-500 p-8 rounded-md text-center border border-red-200 shadow-xs relative z-10 flex flex-col items-center justify-center">
           <RefreshCw size={32} className="mb-3 text-red-400" />
           <p className="font-black text-lg mb-1">พบข้อผิดพลาดในการโหลดข้อมูล</p>
           <p className="text-sm font-medium opacity-80">{error}</p>
@@ -59,7 +59,7 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
           <ProductList products={products} />
         </div>
       ) : (
-        <div className="bg-white text-slate-500 p-10 rounded-3xl text-center border-2 border-dashed border-slate-200 relative z-10 flex flex-col items-center justify-center shadow-xs">
+        <div className="bg-white text-slate-500 p-10 rounded-md text-center border-2 border-dashed border-slate-300 relative z-10 flex flex-col items-center justify-center shadow-xs">
           <Sparkles size={40} className="mb-4 text-slate-300" />
           <p className="text-lg font-black tracking-wide text-slate-700">ยังไม่มีสินค้าแนะนำในขณะนี้</p>
           <p className="text-sm mt-1">แวะมาดูใหม่ในภายหลังนะ!</p>

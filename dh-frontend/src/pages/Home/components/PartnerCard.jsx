@@ -21,12 +21,12 @@ const PartnerCard = ({ partner }) => {
   };
 
   return (
-    <div className="group relative bg-white p-3 md:p-3.5 rounded-2xl flex items-center space-x-3 md:space-x-4 border border-slate-200 shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200">
+    <div className="group relative bg-white p-3 md:p-3.5 rounded-md flex items-center space-x-3 md:space-x-4 border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200">
       
       {/* Avatar Container */}
       <div className="relative shrink-0">
-        <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-xl blur-md group-hover:blur-lg transition-all"></div>
-        <LazyImage src={avatar} alt={name} className="relative w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] rounded-xl object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
+        <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-md blur-md group-hover:blur-lg transition-all"></div>
+        <LazyImage src={avatar} alt={name} className="relative w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] rounded-md object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
         
         {/* Pulsing Status Dot */}
         <div className="absolute bottom-1 right-1 flex h-4 w-4 z-20">
@@ -41,14 +41,14 @@ const PartnerCard = ({ partner }) => {
         
         {/* Distance Display */}
         {partner.formattedDistance ? (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-full w-fit max-w-full border border-indigo-100/50 shadow-xs">
+          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
             <span className="truncate">ห่างออกไป {partner.formattedDistance}</span>
           </div>
         ) : (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-slate-50 text-slate-500 px-2.5 py-1 rounded-full w-fit max-w-full border border-slate-200 shadow-xs">
+          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-slate-50 text-slate-500 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-slate-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
@@ -56,7 +56,7 @@ const PartnerCard = ({ partner }) => {
           </div>
         )}
         
-        <Link onClick={handleClick} to={`/store/${partner.id || partner.userId}`} className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-xl font-bold text-xs md:text-sm hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
+        <Link onClick={handleClick} to={`/store/${partner.id || partner.userId}`} className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-md font-bold text-xs md:text-sm hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
           <span>View Profile</span>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

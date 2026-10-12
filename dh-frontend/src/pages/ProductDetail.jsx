@@ -43,10 +43,10 @@ const ProductDetail = () => {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto w-full animate-fade-in pb-10 px-4 mt-6">
-        <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden flex flex-col md:flex-row">
+        <div className="bg-white rounded-md shadow-xs border border-slate-200 overflow-hidden flex flex-col md:flex-row">
           <div className="w-full md:w-1/2 p-6">
-            <div className="w-full aspect-square bg-slate-200 animate-pulse rounded-xl mb-4"></div>
-            <div className="w-full h-24 bg-slate-200 animate-pulse rounded-xl"></div>
+            <div className="w-full aspect-square bg-slate-200 animate-pulse rounded-sm mb-4"></div>
+            <div className="w-full h-24 bg-slate-200 animate-pulse rounded-sm"></div>
           </div>
           <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col gap-4">
             <div className="w-1/4 h-6 bg-slate-200 animate-pulse rounded-md mb-2"></div>
@@ -64,7 +64,7 @@ const ProductDetail = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-600 bg-slate-50 py-12 px-4 rounded-2xl mx-4 my-8 shadow-xs border border-slate-200">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-600 bg-slate-50 py-12 px-4 rounded-md mx-4 my-8 shadow-xs border border-slate-200">
         <ShieldAlert size={64} className="mb-4 text-slate-300" />
         <h2 className="text-2xl font-bold mb-2 text-slate-700">อ๊ะ! ไม่พบสินค้าที่คุณตามหา</h2>
         <p className="text-slate-500 mb-8 text-center max-w-md">
@@ -156,7 +156,7 @@ const ProductDetail = () => {
         </script>
       </Helmet>
       
-      <nav className="flex items-center flex-wrap text-sm font-medium text-slate-500 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100 w-fit">
+      <nav className="flex items-center flex-wrap text-sm font-medium text-slate-500 mb-6 bg-slate-50 p-3 rounded-md border border-slate-200 w-fit">
         <Link 
           to="/" 
           className="hover:text-brand transition-colors flex items-center gap-1"
@@ -180,7 +180,7 @@ const ProductDetail = () => {
         </span>
       </nav>
 
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-md shadow-xs border border-slate-200 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           <div className="flex flex-col bg-white">
             <ProductImageSection product={product} imageUrl={product.imageUrl} name={product.name} />
@@ -281,7 +281,7 @@ const ProductDetail = () => {
           <button
             onClick={handleAddToCart}
             disabled={currentProductInfo?.isOutOfStock || isAdding || addSuccess}
-            className={`h-10 px-3 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs ${
+            className={`h-10 px-3 rounded-md font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs ${
               currentProductInfo?.isOutOfStock
                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                 : addSuccess
@@ -302,7 +302,7 @@ const ProductDetail = () => {
             <button
               onClick={handleBuyNow}
               disabled={isAdding}
-              className="h-10 px-3.5 rounded-lg font-bold text-xs flex items-center gap-1 bg-brand text-white hover:bg-brand-dark transition-all shadow-xs cursor-pointer"
+              className="h-10 px-3.5 rounded-md font-bold text-xs flex items-center gap-1 bg-brand text-white hover:bg-brand-dark transition-all shadow-xs cursor-pointer"
             >
               <Zap size={14} className="fill-current" />
               ซื้อเลย

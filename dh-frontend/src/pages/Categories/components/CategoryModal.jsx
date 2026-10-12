@@ -51,11 +51,11 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-md bg-white rounded-md shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/70">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-md bg-blue-100/80 text-blue-600 flex items-center justify-center shrink-0">
               <LayoutGrid className="w-5 h-5" />
             </div>
             <div>
@@ -87,7 +87,7 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ค้นหาชื่อหมวดหมู่..."
-                className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-100/80 border border-slate-200/80 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
+                className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-100/80 border border-slate-300 rounded-md focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
               />
               {searchTerm && (
                 <button
@@ -114,9 +114,9 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                   key={cat.id || cat.type}
                   type="button"
                   onClick={() => handleSelect(cat.type)}
-                  className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200/80 bg-white hover:border-blue-300 hover:bg-blue-50/30 active:scale-95 transition-all text-center shadow-2xs group"
+                  className="flex flex-col items-center justify-center p-3 rounded-md border border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/30 active:scale-95 transition-all text-center shadow-2xs group"
                 >
-                  <div className="w-13 h-13 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center overflow-hidden p-2 group-hover:scale-105 transition-transform duration-200 mb-2">
+                  <div className="w-13 h-13 rounded-sm bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden p-2 group-hover:scale-105 transition-transform duration-200 mb-2">
                     {cat.imageUrl ? (
                       <LazyImage
                         src={cat.imageUrl}
