@@ -170,34 +170,54 @@ class GasStockService {
     this._notifyListeners();
 
     this.flushPromise = (async () => {
-      try {
-        const response = await fetch(GAS_STOCK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(batch)
-        });
+      const CHUNK_SIZE = 200;
+      let sentCount = 0;
+      const failedItems = [];
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const result = await response.json();
-        if (result.status === "error") {
-          throw new Error(result.message || "Unknown error from GAS");
+      try {
+        for (let i = 0; i < batch.length; i += CHUNK_SIZE) {
+          const chunk = batch.slice(i, i + CHUNK_SIZE);
+          try {
+            const response = await fetch(GAS_STOCK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(chunk)
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const result = await response.json();
+            if (result.status === "error") {
+              throw new Error(result.message || "Unknown error from GAS");
+            }
+            sentCount += chunk.length;
+          } catch (chunkErr) {
+            console.error(`🔥 Failed to flush chunk ${Math.floor(i / CHUNK_SIZE) + 1} to GAS:`, chunkErr);
+            failedItems.push(...batch.slice(i));
+            break;
+          }
         }
-        
-        gasHistoryService.log({
-          level: 'DEBUG',
-          module: 'GAS Sync',
-          action: 'FlushStock',
-          target: { id: 'SYSTEM', type: 'System' },
-          details: {
-            legacy_details: `ซิงค์สต๊อก ${batch.length} รายการไปยัง Sheet สำเร็จ`
-          },
-          actorOverride: { uid: 'System', name: 'System', email: 'N/A' }
-        });
-        
+
+        if (sentCount > 0) {
+          gasHistoryService.log({
+            level: 'DEBUG',
+            module: 'GAS Sync',
+            action: 'FlushStock',
+            target: { id: 'SYSTEM', type: 'System' },
+            details: {
+              legacy_details: `ซิงค์สต๊อก ${sentCount}/${batch.length} รายการไปยัง Sheet สำเร็จ`
+            },
+            actorOverride: { uid: 'System', name: 'System', email: 'N/A' }
+          });
+        }
+
+        if (failedItems.length > 0) {
+          // ถ้ามีก้อนที่พัง เอากลับเข้าคิวใหม่เฉพาะก้อนที่ยังส่งไม่สำเร็จ
+          this.queue = [...failedItems, ...this.queue];
+        }
       } catch (error) {
         console.error("🔥 Failed to flush stock to GAS:", error);
-        // ถ้าพัง เอากลับเข้าคิวใหม่
+        // ถ้าพังระดับ root เอากลับเข้าคิวใหม่
         this.queue = [...batch, ...this.queue];
       } finally {
         this.isFlushing = false;

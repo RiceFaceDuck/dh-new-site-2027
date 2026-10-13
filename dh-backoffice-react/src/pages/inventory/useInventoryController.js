@@ -5,6 +5,7 @@ import useInventorySearch from '../../components/inventory/hooks/useInventorySea
 import useDebounce from '../../hooks/useDebounce';
 import { inventoryService } from '../../firebase/inventoryService';
 import { inventoryStatsService } from '../../firebase/inventory/inventoryStatsService';
+import { INVENTORY_MASTER_SHEET_URL } from '../../constants/inventoryConstants';
 import toast from 'react-hot-toast';
 
 export default function useInventoryController() {
@@ -44,7 +45,7 @@ export default function useInventoryController() {
 
   const handleOpenMasterSheet = () => {
     if (isManagerOrOwner) {
-      window.open('https://docs.google.com/spreadsheets/d/1f3ZyfZM6nwE3OSNeseMqlqElDqv7Kxt_UL3H1IPTLos/edit?usp=sharing', '_blank');
+      window.open(INVENTORY_MASTER_SHEET_URL, '_blank');
     } else {
       toast.error('คุณไม่สามารถใช้งานได้ ต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า');
     }

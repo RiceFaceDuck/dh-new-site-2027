@@ -29,6 +29,18 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
   const isGlobalActionActive = searchTerm || filterCategory !== 'All' || sortConfig?.key;
 
   useEffect(() => {
+    // 🚀 Zero-Redundancy: หากมี products ส่งมาจาก useInventoryData ครบถ้วนแล้ว ให้ใช้เป็น baseline cache ได้ทันที
+    if (!allProductsCache && Array.isArray(products) && products.length > 50) {
+      setAllProductsCache(products);
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(products));
+        sessionStorage.setItem(CACHE_EXPIRY_KEY, String(new Date().getTime() + CACHE_TTL));
+      } catch (storageError) {
+        console.warn("Could not save to sessionStorage (might be full)", storageError);
+      }
+      return;
+    }
+
     if (!allProductsCache && !isFetchingAll) {
       const fetchAll = async () => {
         setIsFetchingAll(true);
@@ -54,7 +66,7 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
       };
       fetchAll();
     }
-  }, [allProductsCache, isFetchingAll]);
+  }, [allProductsCache, isFetchingAll, products]);
 
   // ใช้ cache ถ้ามี แต่ต้อง 'ผสาน' กับข้อมูล products เดิมจาก Firebase
   // อย่างถูกต้อง: ต้องเอา live products เป็นตัวตั้ง แล้วค่อยเติมสินค้าจาก cache ที่ไม่อยู่ใน live

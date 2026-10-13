@@ -55,4 +55,10 @@
 5. **คอลัมน์ AddStock กับ StockQuantity แสดงข้อมูลผลต่างซ้ำกันใน Preview:**
    - *สาเหตุ:* `ImportPreviewTable.jsx` ผูกเงื่อนไขรวมกัน
    - *วิธีแก้:* แยกให้ `AddStock` แสดงเฉพาะการรับของเข้า (`type === 'add'`) ส่วน `StockQuantity` แสดงเฉพาะการนับสต๊อก (`type === 'adjustment'`)
+6. **ปัญหา Google Sheets Sync ล้มเหลวตอนนำเข้าไฟล์ใหญ่:**
+   - *สาเหตุ:* `gasStockService._flush()` ยิงคำขอเดี่ยวไม่แบ่งก้อน ทำให้ชน timeout 30s หรือ payload limit ของ Google Apps Script
+   - *วิธีแก้:* แบ่งส่งก้อนละ 200 รายการ (`CHUNK_SIZE = 200`) สอดคล้องกับ `syncAllProducts` พร้อมระบบ Safe Chunk Recovery คืนเฉพาะก้อนที่ค้างส่ง
+7. **ปัญหา Double Hydration แคช 2 รอบตอนเปิดหน้าเว็บ:**
+   - *สาเหตุ:* `useInventorySearch` ยิง `hydrateCatalog()` ซ้ำรอบสองขณะที่ `useInventoryData` โหลดสินค้าครบแคตตาล็อกมาแล้ว
+   - *วิธีแก้:* นำ `products` ที่ส่งเข้ามาตั้งเป็น baseline cache ทันทีหากมีมากกว่า 50 รายการ ขจัด Promise และ JSON parse ซ้ำซ้อน
 </pitfalls_and_solutions>
