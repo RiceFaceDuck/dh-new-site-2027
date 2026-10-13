@@ -302,7 +302,23 @@ export const updateCatalogCacheWithProducts = async (updatedProducts = []) => {
     if (norm && norm.sku) {
       const upperSku = String(norm.sku).trim().toUpperCase();
       const existing = productMap.get(upperSku);
-      productMap.set(upperSku, existing ? { ...existing, ...norm } : norm);
+      if (existing) {
+        // 🛡️ Preserve existing media if updated object lacks them
+        const existingImages = Array.isArray(existing.images) && existing.images.length > 0 ? existing.images : [];
+        const normImages = Array.isArray(norm.images) && norm.images.length > 0 ? norm.images : [];
+        const finalImages = normImages.length > 0 ? normImages : existingImages;
+        const finalImage = norm.image || norm.imageUrl || existing.image || existing.imageUrl || (finalImages[0] || null);
+
+        productMap.set(upperSku, {
+          ...existing,
+          ...norm,
+          images: finalImages,
+          image: finalImage,
+          imageUrl: finalImage
+        });
+      } else {
+        productMap.set(upperSku, norm);
+      }
     }
   });
 

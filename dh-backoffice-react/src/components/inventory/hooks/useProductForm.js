@@ -4,6 +4,7 @@ import { userService } from '../../../firebase/userService';
 import { pricingService } from '../../../firebase/pricingService';
 import { settingsService } from '../../../firebase/settingsService';
 import { categoryService } from '../../../firebase/categoryService';
+import { inventoryService } from '../../../firebase/inventoryService';
 import { normalizeCategoryName } from '../../../firebase/warrantyService';
 import toast from 'react-hot-toast';
 
@@ -70,6 +71,23 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
       setUploadProgress(0);
       setActiveImageUrl(initData.images?.[0] || '');
       setLinkValidation({ shopee: null, lazada: null, tiktok: null, facebook: null });
+
+      // 🛡️ Self-Healing Image Recovery: If cached product lacked images, fetch live doc from Firestore
+      if (initData.sku && (!initData.images || initData.images.length === 0)) {
+        inventoryService.getProductBySku(initData.sku).then(freshDoc => {
+          if (freshDoc?.images && freshDoc.images.length > 0) {
+            setForm(prev => {
+              if (prev.sku !== initData.sku) return prev;
+              return {
+                ...prev,
+                images: freshDoc.images,
+                image: freshDoc.image || freshDoc.images[0]
+              };
+            });
+            setActiveImageUrl(freshDoc.image || freshDoc.images[0]);
+          }
+        }).catch(() => null);
+      }
 
       // 🚀 Aggregate ALL categories from defaults, DB, and product
       const catMap = new Map();

@@ -100,10 +100,10 @@ export default function useInventoryController() {
     setIsModalOpen(true);
   };
   
-  const handleImportSuccess = () => {
+  const handleImportSuccess = async () => {
     setIsImportModalOpen(false);
     clearCache();
-    fetchInitialProducts();
+    await fetchInitialProducts();
   };
 
   return {

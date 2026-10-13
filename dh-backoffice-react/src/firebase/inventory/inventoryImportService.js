@@ -99,6 +99,19 @@ export const inventoryImportService = {
 
         for (const p of toWrite) {
           const isNew = !existingProductsMap.has(p.sku);
+          const existingProduct = existingProductsMap.get(p.sku);
+
+          // 🛡️ Preserve existing media so cache updates retain authentic images
+          if (!isNew && existingProduct) {
+            if ((!p.images || p.images.length === 0) && existingProduct.images?.length > 0) {
+              p.images = existingProduct.images;
+            }
+            if (!p.image && (existingProduct.image || existingProduct.imageUrl)) {
+              p.image = existingProduct.image || existingProduct.imageUrl;
+              p.imageUrl = p.image;
+            }
+          }
+
           const isAddStockExplicit = p._addStockAmount !== undefined;
           const addedStock = Number(p._addStockAmount || 0);
           const newStockQty = Number(p.stockQuantity || 0);
@@ -129,6 +142,26 @@ export const inventoryImportService = {
           const productDataToSave = { ...p };
           delete productDataToSave._addStockAmount;
           delete productDataToSave._hasStockConflict;
+          const adjustmentDiff = productDataToSave._adjustmentDiff;
+          delete productDataToSave._adjustmentDiff;
+
+          // 🎯 ถ้าเป็นการนับสต๊อกสินค้าเดิมที่มีผลต่าง ให้สะสมเข้า adjustmentHistory
+          if (!isNew && adjustmentDiff !== undefined && adjustmentDiff !== 0) {
+            const existingProduct = existingProductsMap.get(p.sku);
+            const currentAdjHistory = existingProduct?.adjustmentHistory || {};
+            const standardPeriods = ['7', '30', '60', '90', '180', '365'];
+            const updatedAdjHistory = { ...currentAdjHistory };
+            
+            standardPeriods.forEach(period => {
+              const currentVal = Number(currentAdjHistory[period] ?? existingProduct?.[`adjustment${period}D`] ?? 0);
+              updatedAdjHistory[period] = currentVal + adjustmentDiff;
+              productDataToSave[`adjustment${period}D`] = updatedAdjHistory[period];
+              p[`adjustment${period}D`] = updatedAdjHistory[period];
+            });
+
+            productDataToSave.adjustmentHistory = updatedAdjHistory;
+            p.adjustmentHistory = updatedAdjHistory;
+          }
 
           currentBatch.set(docRef, {
             ...productDataToSave,

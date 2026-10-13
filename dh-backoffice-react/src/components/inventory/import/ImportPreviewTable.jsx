@@ -20,13 +20,38 @@ export default function ImportPreviewTable({ headers, parsedData }) {
     
     // Check if this field was changed
     if (row._status === 'CHANGED' && row._changes) {
-       const changeInfo = row._changes.find(c => c.field === h || (h === 'StockQuantity' && c.field === 'Stock'));
+       const changeInfo = row._changes.find(c => {
+         if (h === 'AddStock') return c.field === 'AddStock' || (c.field === 'Stock' && c.type === 'add');
+         if (['StockQuantity', 'Stock', 'stock'].includes(h)) return c.field === h || (c.field === 'Stock' && c.type === 'adjustment');
+         return c.field === h;
+       });
+
        if (changeInfo) {
          if (changeInfo.type === 'add') {
+           if (h === 'AddStock') {
+             return (
+               <div className="flex flex-col">
+                 <span className="text-orange-500 font-bold leading-tight">+{changeInfo.added}</span>
+               </div>
+             );
+           }
            return (
              <div className="flex flex-col">
-               <span className="text-[10px] text-dh-muted leading-tight">{changeInfo.old || '0'} <span className="text-orange-500 font-bold">+{changeInfo.added}</span></span>
-               <span className="text-green-500 font-bold leading-tight">{changeInfo.new || '0'}</span>
+               <span className="text-[10px] text-dh-muted leading-tight">เดิม {changeInfo.old || '0'}</span>
+               <span className="text-green-500 font-bold leading-tight">รวม {changeInfo.new || '0'}</span>
+             </div>
+           );
+         }
+         if (changeInfo.type === 'adjustment') {
+           const diff = Number(changeInfo.diff || 0);
+           const diffFormatted = diff > 0 ? `+${diff}` : String(diff);
+           const diffColor = diff > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400';
+           return (
+             <div className="flex flex-col">
+               <span className="text-[10px] text-dh-muted leading-tight">
+                 เดิม {changeInfo.old || '0'} <span className={`font-black ${diffColor}`}>({diffFormatted})</span>
+               </span>
+               <span className="text-dh-main font-black leading-tight">นับได้ {changeInfo.new || '0'}</span>
              </div>
            );
          }

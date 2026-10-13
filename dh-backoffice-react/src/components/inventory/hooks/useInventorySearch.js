@@ -67,7 +67,20 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
     // 1. Live products (ผสานข้อมูลจาก cache เข้าไป)
     const merged = products.map(liveProduct => {
       const cacheProduct = cacheMap.get(liveProduct.sku);
-      return cacheProduct ? { ...cacheProduct, ...liveProduct } : liveProduct;
+      if (!cacheProduct) return liveProduct;
+
+      const liveImages = Array.isArray(liveProduct.images) && liveProduct.images.length > 0 ? liveProduct.images : [];
+      const cacheImages = Array.isArray(cacheProduct.images) && cacheProduct.images.length > 0 ? cacheProduct.images : [];
+      const finalImages = liveImages.length > 0 ? liveImages : cacheImages;
+      const finalImage = liveProduct.image || liveProduct.imageUrl || cacheProduct.image || cacheProduct.imageUrl || (finalImages[0] || null);
+
+      return {
+        ...cacheProduct,
+        ...liveProduct,
+        images: finalImages,
+        image: finalImage,
+        imageUrl: finalImage
+      };
     });
     
     // 2. เติมสินค้าจาก Cache ที่ยังโหลดมาไม่ถึงใน Live (Pagination fallback)
@@ -106,6 +119,14 @@ export default function useInventorySearch(products, searchTerm, filterCategory,
       const upperSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
       const st = statsMap[p.sku] || statsMap[upperSku] || {};
       const resolveMetric = (statVal, fieldName, historyObj) => {
+        // 0. For adjustmentHistory: If the product itself has an updated adjustmentHistory, prioritize it to reflect live Excel stock-take adjustments
+        if (fieldName === 'adjustmentHistory') {
+          const directAdj = historyObj?.[salesPeriod] ?? p[`adjustment${salesPeriod}D`];
+          if (directAdj != null && !isNaN(Number(directAdj))) {
+            return Number(directAdj);
+          }
+        }
+
         // 1. Authoritative 5D Snapshot: If statsMap has an authentic numeric value (including 0), use it directly
         if (statVal != null && !isNaN(Number(statVal))) {
           return Number(statVal);

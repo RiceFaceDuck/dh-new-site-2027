@@ -79,6 +79,13 @@ export function useExcelImport(onSuccess) {
       const added = num(rawRow['AddStock']) || 0;
       mapped.stockQuantity = isNew ? added : ((existing?.stockQuantity || 0) + added);
       mapped._addStockAmount = added;
+    } else if (hasSQ) {
+      const countedStock = num(rawRow['StockQuantity']) ?? 0;
+      mapped.stockQuantity = countedStock;
+      if (!isNew && existing) {
+        const oldStock = Number(existing.stockQuantity || 0);
+        mapped._adjustmentDiff = countedStock - oldStock;
+      }
     } else {
       setIfDef('stockQuantity', num(rawRow['StockQuantity']), 0);
     }
@@ -127,6 +134,22 @@ export function useExcelImport(onSuccess) {
       mapped.externalLinks = { shopee: '', lazada: '', tiktok: '', facebook: '' };
       mapped.internalComments = [];
       mapped.randomSeed = Math.random();
+    } else if (existing) {
+      // 🛡️ Preserve existing media & metadata to prevent clobbering with empty defaults
+      if (Array.isArray(existing.images) && existing.images.length > 0) {
+        mapped.images = existing.images;
+      }
+      if (existing.image) mapped.image = existing.image;
+      if (existing.imageUrl) mapped.imageUrl = existing.imageUrl;
+      if (existing.externalLinks && mapped.externalLinks === undefined) {
+        mapped.externalLinks = existing.externalLinks;
+      }
+      if (existing.isActive !== undefined && mapped.isActive === undefined) {
+        mapped.isActive = existing.isActive;
+      }
+      if (existing.internalComments && mapped.internalComments === undefined) {
+        mapped.internalComments = existing.internalComments;
+      }
     }
 
     // 🚀 Ensure category_lower is always generated for frontend category matching
@@ -189,7 +212,8 @@ export function useExcelImport(onSuccess) {
               if (item._addStockAmount !== undefined) {
                 changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'add', added: item._addStockAmount });
               } else {
-                changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'overwrite' });
+                const diff = (item._adjustmentDiff !== undefined) ? item._adjustmentDiff : (item.stockQuantity - (existing.stockQuantity || 0));
+                changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'adjustment', diff });
               }
             }
             

@@ -170,12 +170,12 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }
       {/* 10. ปรับยอด [N] วัน */}
       <td className={`px-1 py-1.5 text-center align-middle whitespace-nowrap w-[68px] shrink-0 border-l border-r border-b border-black dark:border-slate-400 transition-colors ${adjustment > 0 ? 'bg-[#00FF00] group-hover:bg-[#00e600] dark:bg-green-600 dark:group-hover:bg-green-700' : adjustment < 0 ? 'bg-[#FF0000] group-hover:bg-[#e60000] dark:bg-red-600 dark:group-hover:bg-red-700' : ''}`}>
         <div className="group/tooltip relative inline-flex justify-center">
-          <span className={`transition-all inline-flex items-center justify-center select-none ${adjustment === 0 ? 'font-bold text-[14px] text-dh-muted/40' : 'font-black text-[17px] text-[#c026d3] dark:text-[#f472b6] tracking-tight'}`}>
+          <span className={`transition-all inline-flex items-center justify-center select-none ${adjustment === 0 ? 'font-bold text-[14px] text-dh-muted/40' : adjustment > 0 ? 'font-black text-[17px] text-black tracking-tight' : 'font-black text-[17px] text-white tracking-tight'}`}>
             {adjustment > 0 ? `+${adjustment}` : adjustment}
           </span>
           {adjustment !== 0 && (
             <div className="absolute bottom-full mb-2 hidden group-hover/tooltip:block bg-dh-main text-dh-base text-[11px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50">
-              ปรับปรุงสต๊อก <span className="text-fuchsia-400">{adjustment > 0 ? `+${adjustment}` : adjustment}</span> รายการ ใน {salesPeriod} วัน
+              ปรับปรุงสต๊อก <span className={adjustment > 0 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>{adjustment > 0 ? `+${adjustment}` : adjustment}</span> รายการ ใน {salesPeriod} วัน
             </div>
           )}
         </div>
