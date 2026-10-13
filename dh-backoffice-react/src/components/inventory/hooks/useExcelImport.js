@@ -216,6 +216,7 @@ export function useExcelImport(onSuccess) {
   };
 
   const [existingMap, setExistingMap] = useState(null);
+  const [importProgress, setImportProgress] = useState(null); // { current, total, percent }
 
   const handleReset = () => {
     setFile(null);
@@ -224,6 +225,7 @@ export function useExcelImport(onSuccess) {
     setImportResult(null);
     setProductsToImport([]);
     setExistingMap(null);
+    setImportProgress(null);
     setIsProcessing(false);
   };
 
@@ -231,8 +233,14 @@ export function useExcelImport(onSuccess) {
     if (productsToImport.length === 0 || hasError) return;
     
     setIsProcessing(true);
+    setImportProgress({ current: 0, total: 1, percent: 0 });
     try {
-      const result = await inventoryService.processBulkImport(productsToImport, conflictStrategy, existingMap);
+      const result = await inventoryService.processBulkImport(
+        productsToImport, 
+        conflictStrategy, 
+        existingMap,
+        (p) => setImportProgress(p)
+      );
       setImportResult(result);
       toast.success(`นำเข้าสินค้าสำเร็จ ${result.successCount || 0} รายการ`);
       if (onSuccess) onSuccess();
@@ -241,11 +249,12 @@ export function useExcelImport(onSuccess) {
       toast.error('เกิดข้อผิดพลาดขณะนำเข้าข้อมูล: ' + (error?.message || ''));
     } finally {
       setIsProcessing(false);
+      setImportProgress(null);
     }
   };
 
   return {
-    file, headers, parsedData, conflictStrategy, isProcessing, importResult, hasError,
+    file, headers, parsedData, conflictStrategy, isProcessing, importProgress, importResult, hasError,
     setConflictStrategy, handleDownloadTemplate, handleFileUpload, handleReset, handleConfirmImport
   };
 }

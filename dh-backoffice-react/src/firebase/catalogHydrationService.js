@@ -283,9 +283,45 @@ export const clearCatalogCache = async () => {
   } catch (e) {}
 };
 
+/**
+ * 🚀 Instant Local-First Catalog Refresh: Injects or updates newly imported/edited products
+ * directly into Memory, SessionStorage, and IndexedDB without purging or refetching from Firestore.
+ */
+export const updateCatalogCacheWithProducts = async (updatedProducts = []) => {
+  if (!Array.isArray(updatedProducts) || updatedProducts.length === 0) return;
+
+  const current = (await hydrateCatalog().catch(() => null))?.products || [];
+  const productMap = new Map();
+
+  current.forEach(p => {
+    if (p && p.sku) productMap.set(String(p.sku).trim().toUpperCase(), p);
+  });
+
+  updatedProducts.forEach(rawP => {
+    const norm = normalizeProduct(rawP);
+    if (norm && norm.sku) {
+      const upperSku = String(norm.sku).trim().toUpperCase();
+      const existing = productMap.get(upperSku);
+      productMap.set(upperSku, existing ? { ...existing, ...norm } : norm);
+    }
+  });
+
+  const merged = Array.from(productMap.values());
+  const newMeta = {
+    version: Date.now(),
+    totalItems: merged.length,
+    timestamp: Date.now(),
+    chunkCount: inMemoryMeta?.chunkCount || 7
+  };
+
+  await persistCatalogCache(merged, newMeta);
+  return merged;
+};
+
 export const catalogHydrationService = {
   hydrateCatalog,
   normalizeProduct,
   findProductInCache,
-  clearCatalogCache
+  clearCatalogCache,
+  updateCatalogCacheWithProducts
 };

@@ -13,7 +13,7 @@ import ImportPreviewTable from './import/ImportPreviewTable';
 
 export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
   const {
-    file, headers, parsedData, conflictStrategy, isProcessing, importResult, hasError,
+    file, headers, parsedData, conflictStrategy, isProcessing, importProgress, importResult, hasError,
     setConflictStrategy, handleDownloadTemplate, handleFileUpload, handleReset, handleConfirmImport
   } = useExcelImport(onSuccess);
 
@@ -125,8 +125,21 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
               )}
             </div>
             
-            {/* Right side: Actions */}
+            {/* Right side: Actions & Progress Bar */}
             <div className="flex items-center gap-3">
+              {isProcessing && importProgress && (
+                <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                  <div className="w-24 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-dh-accent h-full transition-all duration-300 rounded-full"
+                      style={{ width: `${importProgress.percent}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-dh-accent whitespace-nowrap">
+                    Batch {importProgress.current}/{importProgress.total} ({importProgress.percent}%)
+                  </span>
+                </div>
+              )}
               <button 
                 type="button" 
                 onClick={onClose} 
@@ -141,7 +154,7 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
                 className="px-8 py-2.5 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover flex items-center gap-2 shadow-xs transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16}/>}
-                {isProcessing ? 'กำลังประมวลผล...' : 'ยืนยันนำเข้าข้อมูล'}
+                {isProcessing ? 'กำลังบันทึกข้อมูล...' : 'ยืนยันนำเข้าข้อมูล'}
               </button>
             </div>
           </div>
