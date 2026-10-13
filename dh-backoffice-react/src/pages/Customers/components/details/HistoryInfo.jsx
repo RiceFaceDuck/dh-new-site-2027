@@ -161,7 +161,7 @@ export default function HistoryInfo({ history, formatCurrency, formatDate }) {
                                             : 'bg-orange-50 text-orange-600 border-orange-200'
                                       }`}
                                     >
-                                      {isSwap ? 'เคยเปลี่ยนรุ่น' : isReturn ? 'เคยคืนสินค้า' : 'เคยเคลม'} x{claimItem.qty || 1}
+                                      {isSwap ? 'เคยเปลี่ยนสินค้า' : isReturn ? 'เคยคืนสินค้า' : 'เคยเคลม'} x{claimItem.qty || 1}
                                     </span>
                                   );
                                 })}

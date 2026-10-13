@@ -63,7 +63,7 @@ export default function CustomerSyncModal({ isOpen, onClose, customer, onSyncCom
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col items-center text-center">
               <span className="text-xs text-slate-500 font-bold mb-1">บัญชีต้นทาง (บัญชีนี้)</span>
               <span className="font-bold text-sm text-slate-800">{displayName}</span>
-              <span className="text-xs font-mono text-slate-400 mt-1">ID: {customer.id.substring(0,8)}</span>
+              <span className="text-xs font-mono text-slate-400 mt-1">ID: {customer.accountId || customer.customerCode || customer.id.substring(0,8).toUpperCase()}</span>
             </div>
 
             <div className="flex justify-center text-indigo-300">

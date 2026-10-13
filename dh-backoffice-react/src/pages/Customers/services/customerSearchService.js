@@ -25,11 +25,15 @@ export const searchCustomersFromDB = async (rawQuery) => {
     const usersRef = collection(db, getCollectionPath('users'));
     let matches = [];
 
-    // 2. Numeric query -> Phone search across phone, tel, mobile
-    if (/^[0-9]+$/.test(trimmed)) {
-      const qPhone = query(usersRef, where('phone', '==', trimmed), limit(20));
-      const qTel = query(usersRef, where('tel', '==', trimmed), limit(20));
-      const qMobile = query(usersRef, where('mobile', '==', trimmed), limit(20));
+    const cleanDigits = trimmed.replace(/\D/g, '');
+    const isPhoneNumber = cleanDigits.length >= 9 && /^0[0-9]{8,9}$/.test(cleanDigits);
+
+    // 2. Numeric / Phone query -> Phone search across phone, tel, mobile
+    if (/^[0-9]+$/.test(trimmed) || isPhoneNumber) {
+      const searchTarget = isPhoneNumber ? cleanDigits : trimmed;
+      const qPhone = query(usersRef, where('phone', '==', searchTarget), limit(20));
+      const qTel = query(usersRef, where('tel', '==', searchTarget), limit(20));
+      const qMobile = query(usersRef, where('mobile', '==', searchTarget), limit(20));
 
       const [sPhone, sTel, sMobile] = await Promise.all([
         getDocs(qPhone),

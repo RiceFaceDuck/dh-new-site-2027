@@ -54,5 +54,9 @@
     <caution>Manual Refresh Cache Bust: CustomerHeader refresh button must invoke onRefresh(false) so useCustomerData clears customer stats and directory caches for a fresh server sync.</caution>
     <caution>Missing Catalog Cache Guard: customerOrderStatsService must cache missing state for catalogs/customers_active_30d within TTL to eliminate redundant ghost reads on every mount.</caution>
     <caution>Last Order Date Independence: lastOrderDate represents customer all-time most recent order and must never be coupled to 30D Paid Out or active 30D catalog; applyActiveStatsDelta must only update sales30Days and orderCount30Days without clearing or downgrading lastOrderDate.</caution>
+    <caution>Terminology Ban Compliance: HistoryInfo item claims badge must use 'เคยเปลี่ยนสินค้า' (never 'เคยเปลี่ยนรุ่น' or 'เคลมเปลี่ยน') to maintain strict three-domain separation (CLM, EXC, RTN).</caution>
+    <caution>DetailPanel Close Control: DetailPanel header must maintain dedicated top close button X wired to onClose callback for seamless split-view dismissal.</caution>
+    <caution>CustomerSyncModal Account ID Parity: Source account badge must display customer.accountId || customer.customerCode with uppercase fallback instead of raw UID substring to reflect canonical account keys.</caution>
+    <caution>Hyphenated Phone DB Search: searchCustomersFromDB must sanitize raw queries by stripping non-digit characters and testing valid 9-10 digit Thai numbers before routing to phone queries to prevent missing exact-indexed Firestore lookups.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>

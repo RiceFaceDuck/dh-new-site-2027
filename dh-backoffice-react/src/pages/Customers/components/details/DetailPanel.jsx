@@ -175,6 +175,15 @@ export default function DetailPanel({
             >
               <Trash2 size={13} />
             </button>
+            {onClose && (
+              <button 
+                onClick={onClose} 
+                className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors border border-slate-700/60 active:scale-95 ml-1" 
+                title="ปิดหน้ารายละเอียด"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
 
