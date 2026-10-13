@@ -156,15 +156,16 @@ export function useExcelImport(onSuccess) {
           setHeaders(Object.keys(data[0]));
           
           const skus = data.map(r => String(r['SKU'] || '').trim().toUpperCase()).filter(Boolean);
-          const existingMap = await inventoryService.fetchExistingProducts(skus);
+          const fetchedExistingMap = await inventoryService.fetchExistingProducts(skus);
+          setExistingMap(fetchedExistingMap);
           const mappedItems = [];
 
           const analyzedData = data.map((rawRow) => {
             const sku = String(rawRow['SKU'] || '').trim().toUpperCase();
             if (!sku) return null;
 
-            const isNew = !existingMap.has(sku);
-            const existing = existingMap.get(sku);
+            const isNew = !fetchedExistingMap.has(sku);
+            const existing = fetchedExistingMap.get(sku);
             const item = mapDataToSchema(rawRow, isNew, existing);
             
             if (item._hasStockConflict) {
@@ -214,12 +215,15 @@ export function useExcelImport(onSuccess) {
     reader.readAsBinaryString(uploadedFile);
   };
 
+  const [existingMap, setExistingMap] = useState(null);
+
   const handleReset = () => {
     setFile(null);
     setParsedData([]);
     setHeaders([]);
     setImportResult(null);
     setProductsToImport([]);
+    setExistingMap(null);
     setIsProcessing(false);
   };
 
@@ -228,7 +232,7 @@ export function useExcelImport(onSuccess) {
     
     setIsProcessing(true);
     try {
-      const result = await inventoryService.processBulkImport(productsToImport, conflictStrategy);
+      const result = await inventoryService.processBulkImport(productsToImport, conflictStrategy, existingMap);
       setImportResult(result);
       toast.success(`นำเข้าสินค้าสำเร็จ ${result.successCount || 0} รายการ`);
       if (onSuccess) onSuccess();
