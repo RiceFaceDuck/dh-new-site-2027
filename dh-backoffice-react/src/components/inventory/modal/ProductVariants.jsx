@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Trash2, Settings, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Settings, AlertCircle, RefreshCw, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ProductVariants({ form, setForm }) {
   const [newOptionName, setNewOptionName] = useState('');
@@ -9,7 +10,7 @@ export default function ProductVariants({ form, setForm }) {
     if (!newOptionName.trim()) return;
     // ป้องกันการใส่ชื่อซ้ำ
     if (form.variantOptions.some(opt => opt.name === newOptionName.trim())) {
-      alert('ชื่อตัวเลือกนี้มีอยู่แล้ว');
+      toast.error('ชื่อตัวเลือกนี้มีอยู่แล้ว');
       return;
     }
     
@@ -64,7 +65,7 @@ export default function ProductVariants({ form, setForm }) {
     // ตรวจสอบว่าทุก Option มี Values
     for (let opt of form.variantOptions) {
       if (opt.values.length === 0) {
-        alert(`ตัวเลือก "${opt.name}" ยังไม่มีค่า (เช่น แดง, ดำ) กรุณาใส่ให้ครบก่อนสร้างตาราง`);
+        toast.error(`ตัวเลือก "${opt.name}" ยังไม่มีค่า (เช่น แดง, ดำ) กรุณาใส่ให้ครบก่อนสร้างตาราง`);
         return;
       }
     }
@@ -151,11 +152,6 @@ export default function ProductVariants({ form, setForm }) {
       </div>
     );
   };
-
-  // Helper component to fix Lucide import issue in OptionInput
-  const X = ({size}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-  );
 
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-[2px] overflow-hidden shadow-sm relative group">
@@ -253,7 +249,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="text" 
                         value={v.sku || ''} 
                         onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-mono text-xs"
+                        className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-mono text-xs text-slate-900 dark:text-slate-100"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -261,7 +257,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="number" 
                         value={v.retailPrice} 
                         onChange={(e) => handleVariantChange(index, 'retailPrice', e.target.value)}
-                        className="w-full text-right px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-bold text-xs"
+                        className="w-full text-right px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-bold text-xs text-slate-900 dark:text-slate-100"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -269,7 +265,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="number" 
                         value={v.stockQuantity} 
                         onChange={(e) => handleVariantChange(index, 'stockQuantity', e.target.value)}
-                        className="w-full text-right px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-bold text-xs"
+                        className="w-full text-right px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-bold text-xs text-slate-900 dark:text-slate-100"
                       />
                     </td>
                     <td className="px-4 py-2 text-center">

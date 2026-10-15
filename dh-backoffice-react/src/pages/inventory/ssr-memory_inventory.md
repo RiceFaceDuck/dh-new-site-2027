@@ -69,4 +69,34 @@
      2) ปรับพื้นหลัง Modal Body เป็น `bg-slate-100 dark:bg-slate-950` ตัดกับแผงการ์ดสีขาว `border-slate-300 shadow-sm` กำจัดปัญหาขาวโพลน
      3) จัดระเบียบ Grid และ Alignment ทุกแถวให้ความสูงเท่ากันเป๊ะ (`h-10`)
      4) ปรับระบบ ย่อ/ขยาย ของ Compatible Models & Part Number เป็นสไตล์มินิมอล (`ดูทั้งหมด (N) ▾` / `ย่อลง ▴`) ไม่เกะกะสายตา
+9. **ป้องกันการเขียนทับสินค้าเดิมเมื่อพิมพ์ SKU ซ้ำ (Duplicate SKU Guard):**
+   - *สาเหตุ:* `addProduct` เดิมใช้ `setDoc` ทับ `products/{sku}` ตรงๆ โดยไม่ตรวจ `getDoc` ทำให้สินค้าเดิมถูกล้างข้อมูลทับสูญหาย
+   - *วิธีแก้:* เพิ่ม Pre-flight Guard 2 ชั้น: เช็คใน Client Cache (`products.some(...)`) ทันที และตรวจ `getDoc(docRef)` ใน `inventoryMutationService.addProduct` หากซ้ำจะแจ้งเตือนและระงับการบันทึก
+10. **ป้องกันรูปภาพหายจาก Race Condition ของแคช 3-Tier (Preserve Existing Images):**
+    - *สาเหตุ:* แคตตาล็อกแคชตัดรูปภาพออกเพื่อประหยัดขนาด หากผู้ใช้กดบันทึกก่อนที่ Asynchronous Fetch จะดึงรูปจริงกลับมา จะเซฟ `images: []` ทับ Firestore
+    - *วิธีแก้:* เพิ่ม `isImageHealing` บล็อกปุ่มบันทึกขณะกำลังโหลดรูปเดิม และใน `inventoryMutationService.updateProduct` มี Guard คงรูปเดิมไว้เสมอหาก `newData.images` ว่าง
+11. **ชื่อฟิลด์รายละเอียดสินค้าไม่ตรงกับ Storefront (Description Parity):**
+    - *สาเหตุ:* หน้าบ้าน Storefront อ่าน `fullDescription` แต่ฟอร์มใช้ `description` ทำให้รายละเอียดไม่แสดงหน้าเว็บ
+    - *วิธีแก้:* ซิงค์ `description` และ `fullDescription` ให้มีค่าตรงกันเสมอทั้งใน Form, Controller, และ Service
+12. **ข้อมูลสถิติ 5 มิติจาก UI ปนเปื้อนเอกสารหลัก (Synthetic Stats Stripping):**
+    - *สาเหตุ:* `useInventoryData` นำสถิติ 30 วันมาตกแต่งใส่ตัวแปร เมื่อเซฟผ่าน Modal ค่าเหล่านี้จะติดไปเขียนทับ Firestore ทำให้ `claimHistory` กลายสภาพเป็น Object
+    - *วิธีแก้:* Strip ฟิลด์สถิติชั่วคราว (`sales30D`, `stats`, `totalSold` ฯลฯ) ออกจาก Payload และคง Array ดั้งเดิมของ `claimHistory` ไว้เสมอ
+13. **การบันทึกประวัติปรับลดสต็อก (Stock Adjustments Invariant):**
+    - *สาเหตุ:* `inventoryMutationService.updateProduct` เดิมตรวจเฉพาะสต็อกเพิ่ม (`addedStock > 0`) เข้า `stock_receipts` แต่เมื่อลดสต็อก (`addedStock < 0`) ไม่มีการบันทึกประวัติใดๆ
+    - *วิธีแก้:* เมื่อ `addedStock < 0` ให้บันทึกลง `stock_adjustments` เสมอ บันทึกทั้ง `previousStock`, `newStock`, `difference`, และผู้ดำเนินการ เพื่อความสมบูรณ์ทางบัญชี
+14. **ระบบ Smart Write ถูกทำลายด้วย randomSeed:**
+    - *สาเหตุ:* `ProductModal` สุ่ม `randomSeed` ทุกครั้งที่กด Submit ทำให้ตรวจพบว่าข้อมูลเปลี่ยนตลอดเวลา เสียค่าเขียน Firestore ฟรี
+    - *วิธีแก้:* สุ่ม `randomSeed` เฉพาะสินค้าสร้างใหม่เท่านั้น และตัด `randomSeed` ออกจากการเปรียบเทียบ Diff loop ใน `updateProduct`
+15. **ป้องกันการทับยอดขาย POS หน้าร้าน (Concurrency Lost-Update Shield):**
+    - *สาเหตุ:* หากแอดมินเปิดหน้าต่างแก้ไขสินค้าค้างไว้แล้วมีการขายผ่าน POS เมื่อแอดมินกดบันทึก สต็อกเดิมจะเขียนทับสต็อกใหม่
+    - *วิธีแก้:* บันทึก `_initialStock` ไว้ใน Form State หากแอดมินไม่ได้เปลี่ยนตัวเลขสต็อกในฟอร์ม ระบบจะคงค่า `oldData.stockQuantity` สดๆ จาก Firestore เสมอ
+16. **การแสดงผล Dark Mode ในตาราง Variants (Dark Mode Parity):**
+    - *สาเหตุ:* ช่อง Input ในตารางรุ่นย่อยลืมกำหนด `text-slate-900 dark:text-slate-100` ทำให้ตัวเลขใน Dark Mode กลืนกับสีเทาจางของตาราง
+    - *วิธีแก้:* เติมคลาสสีตัวอักษรให้ชัดเจนทั้งในโหมดสว่างและมืด
+17. **การตัดเครื่องหมายทับออกจาก SKU (Forward-Slash Sanitization):**
+    - *สาเหตุ:* การใส่ `/` ใน SKU จะทำให้ Firestore มองว่าเป็น Sub-collection path ทำให้ระบบแครช
+    - *วิธีแก้:* แปลง `/` เป็น `-` อัตโนมัติในช่องกรอก SKU ทันทีที่พิมพ์
+18. **ยกเลิก Native Alert ในระบบสินค้าทั้งหมด (Zero Native Alert Invariant):**
+    - *สาเหตุ:* การใช้ `alert()` บล็อกการทำงานของ Browser และไม่สวยงาม
+    - *วิธีแก้:* เปลี่ยนเป็น `toast.error()` และ `toast.success()` ครบทุกจุด และ import `X` จาก `lucide-react` ตรงๆ ไม่สร้าง component ซ้ำ
 </pitfalls_and_solutions>

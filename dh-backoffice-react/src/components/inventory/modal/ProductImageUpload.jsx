@@ -35,20 +35,23 @@ export default function ProductImageUpload({
         uploadedUrls.push(directLink);
       }
       
-      setForm(prev => ({ 
-        ...prev, 
-        images: [...prev.images, ...uploadedUrls]
-      }));
+      setForm(prev => {
+        const currentImages = Array.isArray(prev.images) ? prev.images : [];
+        const nextImages = [...currentImages, ...uploadedUrls];
+        return { 
+          ...prev, 
+          images: nextImages,
+          image: prev.image || nextImages[0] || null
+        };
+      });
 
       if (!activeImageUrl && uploadedUrls.length > 0) {
         setActiveImageUrl(uploadedUrls[0]);
       }
       
     } catch (error) {
-    console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
-
-      alert("เกิดข้อผิดพลาดในการอัปโหลดภาพ: " + error);
+      console.error("🔥 Error:", error);
+      toast.error(error?.message || "เกิดข้อผิดพลาดในการอัปโหลดภาพ");
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -66,22 +69,38 @@ export default function ProductImageUpload({
 
   const removeImage = (indexToRemove, urlToRemove) => {
     setForm(prev => {
-      const newImages = prev.images.filter((_, idx) => idx !== indexToRemove);
+      const currentImages = Array.isArray(prev.images) ? prev.images : [];
+      const currentHidden = Array.isArray(prev.hiddenImages) ? prev.hiddenImages : [];
+      const newImages = currentImages.filter((_, idx) => idx !== indexToRemove);
+      const newHidden = urlToRemove ? currentHidden.filter(url => url !== urlToRemove) : currentHidden;
+
       if (activeImageUrl === urlToRemove) {
         setActiveImageUrl(newImages.length > 0 ? newImages[0] : '');
       }
-      return { ...prev, images: newImages };
+      return { 
+        ...prev, 
+        images: newImages,
+        hiddenImages: newHidden,
+        image: newImages[0] || null
+      };
     });
   };
 
   const setCoverImage = (indexToCover) => {
     if (indexToCover === 0) return;
     setForm(prev => {
-      const newImages = [...prev.images];
+      const currentImages = Array.isArray(prev.images) ? prev.images : [];
+      const newImages = [...currentImages];
       const selected = newImages.splice(indexToCover, 1)[0];
-      newImages.unshift(selected); 
-      setActiveImageUrl(selected);
-      return { ...prev, images: newImages };
+      if (selected) {
+        newImages.unshift(selected); 
+        setActiveImageUrl(selected);
+      }
+      return { 
+        ...prev, 
+        images: newImages,
+        image: newImages[0] || null
+      };
     });
   };
 

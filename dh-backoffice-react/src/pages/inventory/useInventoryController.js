@@ -5,6 +5,7 @@ import useInventorySearch from '../../components/inventory/hooks/useInventorySea
 import useDebounce from '../../hooks/useDebounce';
 import { inventoryService } from '../../firebase/inventoryService';
 import { inventoryStatsService } from '../../firebase/inventory/inventoryStatsService';
+import { catalogHydrationService } from '../../firebase/catalogHydrationService';
 import { INVENTORY_MASTER_SHEET_URL } from '../../constants/inventoryConstants';
 import toast from 'react-hot-toast';
 
@@ -79,16 +80,34 @@ export default function useInventoryController() {
   const handleSaveProduct = async (productData) => {
     try {
       const isEdit = !!editingProduct;
+      const cleanSku = String(productData.sku || '').trim().toUpperCase();
+
       if (isEdit) {
-        await inventoryService.updateProduct(productData.sku, productData);
-        toast.success(`อัปเดตข้อมูล ${productData.sku} เรียบร้อยแล้ว`);
+        await inventoryService.updateProduct(cleanSku, productData);
+        toast.success(`อัปเดตข้อมูล ${cleanSku} เรียบร้อยแล้ว`);
       } else {
+        // 🛡️ Client-Side Duplicate SKU Guard
+        const isDuplicate = products.some(p => String(p.sku || '').trim().toUpperCase() === cleanSku);
+        if (isDuplicate) {
+          toast.error(`รหัสสินค้า (SKU) "${cleanSku}" มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น`);
+          return;
+        }
+
         await inventoryService.addProduct(productData);
-        toast.success(`เพิ่มสินค้าใหม่ ${productData.sku} เรียบร้อยแล้ว`);
+        toast.success(`เพิ่มสินค้าใหม่ ${cleanSku} เรียบร้อยแล้ว`);
       }
       
-      updateProductInState(productData, isEdit);
-      updateCache(productData, isEdit);
+      // 🛡️ Preserve stats integrity when updating in-memory state
+      const mergedProduct = isEdit && editingProduct 
+        ? { ...editingProduct, ...productData, sku: cleanSku } 
+        : { ...productData, sku: cleanSku };
+
+      updateProductInState(mergedProduct, isEdit);
+      updateCache(mergedProduct, isEdit);
+
+      // 🚀 Sync with Local POS Cache (Zero-Read Invariant)
+      catalogHydrationService.updateCatalogCacheWithProducts([mergedProduct]).catch(() => null);
+
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error saving product:", error);

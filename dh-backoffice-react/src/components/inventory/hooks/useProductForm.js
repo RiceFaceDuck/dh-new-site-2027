@@ -43,6 +43,7 @@ export const DEFAULT_CATEGORIES = [
 export default function useProductForm(productData, isOpen, categoriesData = []) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [isUploading, setIsUploading] = useState(false);
+  const [isImageHealing, setIsImageHealing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeImageUrl, setActiveImageUrl] = useState('');
 
@@ -57,14 +58,31 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
   useEffect(() => {
     if (isOpen) {
       const initData = productData ? { ...INITIAL_FORM, ...productData } : INITIAL_FORM;
-      if (!initData.externalLinks) initData.externalLinks = { shopee: '', lazada: '', tiktok: '', facebook: '' };
-      if (!initData.substituteSkus) initData.substituteSkus = [];
-      if (!initData.internalComments) initData.internalComments = [];
+
+      // 🛡️ Description Parity: Support both canonical fullDescription and legacy description
+      const resolvedDesc = initData.fullDescription || initData.description || '';
+      initData.description = resolvedDesc;
+      initData.fullDescription = resolvedDesc;
+
+      // 🛡️ Robust Array & Object Null Guards (Prevent spreading undefined crashes)
+      if (!Array.isArray(initData.images)) initData.images = [];
+      if (!Array.isArray(initData.hiddenImages)) initData.hiddenImages = [];
+      if (!Array.isArray(initData.compatibleModels)) initData.compatibleModels = [];
+      if (!Array.isArray(initData.compatiblePartNumbers)) initData.compatiblePartNumbers = [];
+      if (!Array.isArray(initData.substituteSkus)) initData.substituteSkus = [];
+      if (!Array.isArray(initData.tags)) initData.tags = [];
+      if (!Array.isArray(initData.internalComments)) initData.internalComments = [];
+      if (!Array.isArray(initData.variantOptions)) initData.variantOptions = [];
+      if (!Array.isArray(initData.variants)) initData.variants = [];
+      if (!initData.externalLinks || typeof initData.externalLinks !== 'object') {
+        initData.externalLinks = { shopee: '', lazada: '', tiktok: '', facebook: '' };
+      }
+      if (!initData.packageSize || typeof initData.packageSize !== 'object') {
+        initData.packageSize = { w: '', l: '', h: '' };
+      }
       if (!initData.sellingModel) initData.sellingModel = '';
       if (!initData.landingPageUrl) initData.landingPageUrl = '';
-      if (!initData.hiddenImages) initData.hiddenImages = [];
-      if (!initData.variantOptions) initData.variantOptions = [];
-      if (!initData.variants) initData.variants = [];
+      initData._initialStock = Number(initData.stockQuantity || 0);
 
       setForm(initData);
       setIsUploading(false);
@@ -74,6 +92,7 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
 
       // 🛡️ Self-Healing Image Recovery: If cached product lacked images, fetch live doc from Firestore
       if (initData.sku && (!initData.images || initData.images.length === 0)) {
+        setIsImageHealing(true);
         inventoryService.getProductBySku(initData.sku).then(freshDoc => {
           if (freshDoc?.images && freshDoc.images.length > 0) {
             setForm(prev => {
@@ -86,7 +105,11 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
             });
             setActiveImageUrl(freshDoc.image || freshDoc.images[0]);
           }
-        }).catch(() => null);
+        }).catch(() => null).finally(() => {
+          setIsImageHealing(false);
+        });
+      } else {
+        setIsImageHealing(false);
       }
 
       // 🚀 Aggregate ALL categories from defaults, DB, and product
@@ -209,24 +232,26 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
   };
 
   const addArrayItem = (e, field, input, setInput) => {
-    if (e.key === 'Enter' && input.trim()) {
+    if (e.key === 'Enter' && input && input.trim()) {
       e.preventDefault();
       const val = field === 'substituteSkus' ? input.trim().toUpperCase() : input.trim();
-      if (!form[field].includes(val)) {
-        setForm({ ...form, [field]: [...form[field], val] });
+      const currentList = Array.isArray(form[field]) ? form[field] : [];
+      if (!currentList.includes(val)) {
+        setForm({ ...form, [field]: [...currentList, val] });
       }
       setInput('');
     }
   };
 
   const removeArrayItem = (field, item) => {
-    setForm({ ...form, [field]: form[field].filter(i => i !== item) });
+    const currentList = Array.isArray(form[field]) ? form[field] : [];
+    setForm({ ...form, [field]: currentList.filter(i => i !== item) });
   };
 
   const handleLinkChange = (platform, value) => {
     setForm(prev => ({
       ...prev,
-      externalLinks: { ...prev.externalLinks, [platform]: value }
+      externalLinks: { ...(prev.externalLinks || {}), [platform]: value }
     }));
 
     if (!value.trim()) {
@@ -248,6 +273,7 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
   return {
     form, setForm,
     isUploading, setIsUploading,
+    isImageHealing,
     uploadProgress, setUploadProgress,
     activeImageUrl, setActiveImageUrl,
     userRole,

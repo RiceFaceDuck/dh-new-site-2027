@@ -15,6 +15,7 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
   const {
     form, setForm,
     isUploading, setIsUploading,
+    isImageHealing,
     uploadProgress, setUploadProgress,
     activeImageUrl, setActiveImageUrl,
     categories,
@@ -35,7 +36,7 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
     if (window.confirm(confirmMsg)) {
       try {
         await todoService.requestProductDeletion(form, auth.currentUser.uid);
-        alert('ส่งคำร้องขออนุมัติลบสำเร็จ แจ้งเตือนไปยังผู้จัดการแล้ว');
+        toast.success('ส่งคำร้องขออนุมัติลบสำเร็จ แจ้งเตือนไปยังผู้จัดการแล้ว');
         onClose();
       } catch (error) {
         console.error('🔥 Error:', error);
@@ -55,8 +56,24 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
       dataToSave.bufferStock = !Number.isNaN(num) ? Math.max(0, Math.floor(num)) : null;
     }
     
-    // Create or update randomSeed for True Randomization query
-    dataToSave.randomSeed = Math.random();
+    // 🛡️ Description Parity: Ensure fullDescription and description stay in sync
+    const resolvedDesc = dataToSave.description || dataToSave.fullDescription || '';
+    dataToSave.description = resolvedDesc;
+    dataToSave.fullDescription = resolvedDesc;
+
+    // 🛡️ Strip synthetic UI fields before passing to onSave
+    delete dataToSave.sales30D;
+    delete dataToSave.stockIn30D;
+    delete dataToSave.claims30D;
+    delete dataToSave.adjustment30D;
+    delete dataToSave.stats;
+    delete dataToSave.totalSold;
+    delete dataToSave.id;
+
+    // Create randomSeed only for new product (avoid breaking Smart Write diff on updates)
+    if (!productData && !dataToSave.randomSeed) {
+      dataToSave.randomSeed = Math.random();
+    }
 
     onSave(dataToSave);
   };
@@ -159,11 +176,11 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
           </div>
           
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} disabled={isUploading} className="px-6 py-2.5 text-slate-800 dark:text-slate-100 font-bold rounded-xl bg-slate-200 dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm shadow-sm disabled:opacity-50 cursor-pointer active:scale-95">ยกเลิก</button>
-            <button type="submit" form="productForm" disabled={isUploading}
+            <button type="button" onClick={onClose} disabled={isUploading || isImageHealing} className="px-6 py-2.5 text-slate-800 dark:text-slate-100 font-bold rounded-xl bg-slate-200 dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm shadow-sm disabled:opacity-50 cursor-pointer active:scale-95">ยกเลิก</button>
+            <button type="submit" form="productForm" disabled={isUploading || isImageHealing}
               className="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-orange-600 dark:hover:bg-orange-500 text-white rounded-xl font-bold border-2 border-slate-900 dark:border-orange-600 hover:border-slate-800 dark:hover:border-orange-500 flex items-center gap-2 shadow-md transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16}/>}
-              {isUploading ? 'กำลังอัปโหลด...' : 'บันทึกข้อมูล'}
+              {(isUploading || isImageHealing) ? <Loader2 size={16} className="animate-spin" /> : <Save size={16}/>}
+              {isUploading ? 'กำลังอัปโหลด...' : (isImageHealing ? 'กำลังโหลดรูปเดิม...' : 'บันทึกข้อมูล')}
             </button>
           </div>
         </div>

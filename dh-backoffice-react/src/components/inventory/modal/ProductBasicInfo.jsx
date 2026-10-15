@@ -72,7 +72,7 @@ export default function ProductBasicInfo({
             </div>
             <div className="relative">
               <input type="text" disabled={!!productData} required value={form.sku} 
-                onChange={e => setForm({...form, sku: e.target.value.toUpperCase()})}
+                onChange={e => setForm({...form, sku: e.target.value.replace(/\//g, '-').toUpperCase()})}
                 className="w-full h-10 px-3 border border-slate-300 dark:border-slate-600 rounded-[2px] bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-bold text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all disabled:bg-slate-100 dark:disabled:bg-slate-800/50 uppercase" 
                 placeholder="เช่น SCR-001" />
             </div>
@@ -293,22 +293,22 @@ export default function ProductBasicInfo({
             <div className="flex gap-1.5">
               <div className="relative flex-1">
                 <span className="absolute left-2 top-2.5 text-[11px] font-bold text-slate-400 pointer-events-none">ก</span>
-                <input type="number" placeholder="0" value={form.packageSize?.w || ''} onChange={e => setForm({...form, packageSize:{...form.packageSize, w: e.target.value}})} className="w-full h-10 pl-6 pr-1.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 rounded-[2px] text-xs font-bold text-slate-900 dark:text-slate-100 outline-hidden text-center transition-all" title="ความกว้าง (ซม.)" />
+                <input type="number" placeholder="0" value={form.packageSize?.w || ''} onChange={e => setForm({...form, packageSize:{...(form.packageSize || {}), w: e.target.value}})} className="w-full h-10 pl-6 pr-1.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 rounded-[2px] text-xs font-bold text-slate-900 dark:text-slate-100 outline-hidden text-center transition-all" title="ความกว้าง (ซม.)" />
               </div>
               <div className="relative flex-1">
                 <span className="absolute left-2 top-2.5 text-[11px] font-bold text-slate-400 pointer-events-none">ย</span>
-                <input type="number" placeholder="0" value={form.packageSize?.l || ''} onChange={e => setForm({...form, packageSize:{...form.packageSize, l: e.target.value}})} className="w-full h-10 pl-6 pr-1.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 rounded-[2px] text-xs font-bold text-slate-900 dark:text-slate-100 outline-hidden text-center transition-all" title="ความยาว (ซม.)" />
+                <input type="number" placeholder="0" value={form.packageSize?.l || ''} onChange={e => setForm({...form, packageSize:{...(form.packageSize || {}), l: e.target.value}})} className="w-full h-10 pl-6 pr-1.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 rounded-[2px] text-xs font-bold text-slate-900 dark:text-slate-100 outline-hidden text-center transition-all" title="ความยาว (ซม.)" />
               </div>
               <div className="relative flex-1">
                 <span className="absolute left-2 top-2.5 text-[11px] font-bold text-slate-400 pointer-events-none">ส</span>
-                <input type="number" placeholder="0" value={form.packageSize?.h || ''} onChange={e => setForm({...form, packageSize:{...form.packageSize, h: e.target.value}})} className="w-full h-10 pl-6 pr-1.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 rounded-[2px] text-xs font-bold text-slate-900 dark:text-slate-100 outline-hidden text-center transition-all" title="ความสูง (ซม.)" />
+                <input type="number" placeholder="0" value={form.packageSize?.h || ''} onChange={e => setForm({...form, packageSize:{...(form.packageSize || {}), h: e.target.value}})} className="w-full h-10 pl-6 pr-1.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 rounded-[2px] text-xs font-bold text-slate-900 dark:text-slate-100 outline-hidden text-center transition-all" title="ความสูง (ซม.)" />
               </div>
             </div>
           </div>
           <div className="md:col-span-4">
             <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">Full Description (รายละเอียดเชิงลึก)</label>
-            <textarea value={form.description} placeholder="ลงรายละเอียดสินค้าเพิ่มเติม..."
-              onChange={e => setForm({...form, description: e.target.value})}
+            <textarea value={form.description || form.fullDescription || ''} placeholder="ลงรายละเอียดสินค้าเพิ่มเติม..."
+              onChange={e => setForm({...form, description: e.target.value, fullDescription: e.target.value})}
               className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-[2px] bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 outline-hidden resize-none h-[88px] text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all custom-scrollbar" />
           </div>
         </div>

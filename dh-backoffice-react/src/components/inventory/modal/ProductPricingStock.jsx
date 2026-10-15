@@ -42,6 +42,12 @@ export default function ProductPricingStock({
               onChange={e => { setIsAutoCalc(false); handlePriceChange(e.target.value, 'retailPrice'); }}
               className="w-full outline-hidden font-black text-xl text-slate-900 dark:text-slate-100 bg-transparent" />
           </div>
+          {Number(form.retailPrice) > 0 && Number(form.Price) > 0 && Number(form.retailPrice) < Number(form.Price) && (
+            <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+              <AlertTriangle size={12} />
+              <span>ราคาปลีกต่ำกว่าราคาส่งฐาน (อาจขาดทุน)</span>
+            </div>
+          )}
         </div>
 
         <div className="md:col-span-1">
