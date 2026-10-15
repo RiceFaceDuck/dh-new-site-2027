@@ -136,14 +136,14 @@ export default function ProductVariants({ form, setForm }) {
           onChange={(e) => setTempVal(e.target.value)}
           onKeyDown={(e) => handleAddOptionValue(e, index, tempVal, setTempVal)}
           placeholder={`พิมพ์ค่า "${opt.name}" (เช่น แดง) แล้วกด Enter`}
-          className="w-full px-4 py-2 bg-dh-base border border-dh-border rounded-xl text-sm text-dh-main focus:outline-hidden focus:border-dh-accent transition-colors"
+          className="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] text-sm text-slate-900 dark:text-slate-100 focus:outline-hidden focus:border-slate-800 dark:focus:border-orange-500 transition-colors font-medium"
         />
         <div className="flex flex-wrap gap-2 mt-2">
           {opt.values.map((v, vIndex) => (
-            <span key={vIndex} className="px-3 py-1 bg-dh-accent/10 text-dh-accent border border-dh-accent/20 rounded-lg text-sm flex items-center gap-2">
+            <span key={vIndex} className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-[2px] text-xs font-semibold flex items-center gap-1.5 shadow-xs">
               {v}
-              <button type="button" onClick={() => handleRemoveOptionValue(index, vIndex)} className="hover:text-red-500">
-                <X size={14} />
+              <button type="button" onClick={() => handleRemoveOptionValue(index, vIndex)} className="p-0.5 rounded-[2px] hover:bg-red-500/20 hover:text-red-600 text-slate-400 transition-colors cursor-pointer">
+                <X size={12} />
               </button>
             </span>
           ))}
@@ -158,15 +158,15 @@ export default function ProductVariants({ form, setForm }) {
   );
 
   return (
-    <div className="bg-dh-surface border border-dh-border rounded-2xl overflow-hidden shadow-xs relative group">
+    <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-[2px] overflow-hidden shadow-sm relative group">
       {/* 📘 In-App Documentation Tooltip */}
       <div className="absolute top-4 right-4 z-10 group/tooltip">
-        <div className="p-1.5 rounded-full bg-dh-accent/10 text-dh-accent cursor-help">
+        <div className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-help">
           <AlertCircle size={18} />
         </div>
-        <div className="absolute right-0 top-full mt-2 w-64 p-4 bg-dh-base border border-dh-border rounded-xl shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all text-sm text-dh-muted z-20">
-          <p className="font-bold text-dh-main mb-2">💡 คำแนะนำ: ระบบสินค้าย่อย</p>
-          <ul className="list-disc pl-4 space-y-1">
+        <div className="absolute right-0 top-full mt-2 w-64 p-4 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-[2px] shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all text-sm text-slate-600 dark:text-slate-300 z-20">
+          <p className="font-bold text-slate-900 dark:text-slate-100 mb-2">💡 คำแนะนำ: ระบบสินค้าย่อย</p>
+          <ul className="list-disc pl-4 space-y-1 text-xs">
             <li>พิมพ์ชื่อตัวเลือก (เช่น "สี" หรือ "รุ่น") แล้วกด <b>+ เพิ่ม</b></li>
             <li>ในช่องที่โผล่มา ให้พิมพ์ค่า (เช่น "แดง", "ดำ") แล้วกด <b>Enter</b></li>
             <li>เมื่อใส่ครบแล้ว ให้กดปุ่ม <b>สร้างตารางรุ่นย่อย</b> ด้านล่างเพื่อแก้ไขราคาและสต็อกแยกตามชิ้นได้เลย</li>
@@ -174,9 +174,9 @@ export default function ProductVariants({ form, setForm }) {
         </div>
       </div>
 
-      <div className="px-5 py-4 border-b border-dh-border bg-dh-base/50 flex items-center gap-2">
-        <Settings size={18} className="text-dh-accent" />
-        <h3 className="font-bold text-dh-main">ตัวเลือกสินค้า (Variants)</h3>
+      <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 flex items-center gap-2">
+        <Settings size={16} className="text-slate-700 dark:text-slate-300" />
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">ตัวเลือกสินค้า (Variants)</h3>
       </div>
       
       <div className="p-5 space-y-6">
@@ -188,26 +188,26 @@ export default function ProductVariants({ form, setForm }) {
               value={newOptionName}
               onChange={(e) => setNewOptionName(e.target.value)}
               placeholder="เพิ่มตัวเลือก เช่น สี, ขนาด, รุ่น"
-              className="flex-1 px-4 py-2 bg-dh-base border border-dh-border rounded-xl text-sm text-dh-main focus:outline-hidden focus:border-dh-accent transition-colors"
+              className="flex-1 h-10 px-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] text-sm text-slate-900 dark:text-slate-100 focus:outline-hidden focus:border-slate-800 dark:focus:border-orange-500 transition-colors font-medium placeholder:text-slate-400"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddOption(); } }}
             />
             <button
               type="button"
               onClick={handleAddOption}
-              className="px-4 py-2 bg-dh-accent text-white rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-dh-accent-hover transition-colors"
+              className="h-10 px-5 bg-slate-900 hover:bg-slate-800 dark:bg-orange-600 dark:hover:bg-orange-500 text-white rounded-xl text-sm font-bold border-2 border-slate-900 dark:border-orange-500 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95 shrink-0"
             >
-              <Plus size={16} /> เพิ่ม
+              <Plus size={16} strokeWidth={2.5} /> เพิ่ม
             </button>
           </div>
 
           {/* Options List */}
           {form.variantOptions && form.variantOptions.length > 0 && (
-            <div className="space-y-4 p-4 border border-dh-border rounded-xl bg-dh-base/30">
+            <div className="space-y-4 p-4 border border-slate-200 dark:border-slate-700 rounded-[2px] bg-slate-50/50 dark:bg-slate-900/30">
               {(form.variantOptions || []).map((opt, index) => (
-                <div key={index} className="flex flex-col sm:flex-row gap-4 p-3 border border-dh-border rounded-xl bg-dh-surface">
+                <div key={index} className="flex flex-col sm:flex-row gap-4 p-3 border border-slate-300 dark:border-slate-700 rounded-[2px] bg-white dark:bg-slate-800 shadow-xs">
                   <div className="w-full sm:w-1/4 flex justify-between items-center sm:items-start">
-                    <span className="font-bold text-dh-main mt-1">{opt.name}</span>
-                    <button type="button" onClick={() => handleRemoveOption(index)} className="text-red-500 hover:text-red-600 p-1">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 mt-1 text-sm">{opt.name}</span>
+                    <button type="button" onClick={() => handleRemoveOption(index)} className="text-red-500 hover:text-red-600 p-1 cursor-pointer">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -219,7 +219,7 @@ export default function ProductVariants({ form, setForm }) {
                 <button 
                   type="button" 
                   onClick={generateVariants}
-                  className="px-4 py-2 bg-dh-main text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-dh-main/90 transition-colors shadow-xs"
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-bold border-2 border-slate-900 dark:border-white flex items-center gap-2 transition-all shadow-md cursor-pointer active:scale-95"
                 >
                   <RefreshCw size={16} /> สร้างตารางรุ่นย่อย (Generate)
                 </button>
@@ -230,9 +230,9 @@ export default function ProductVariants({ form, setForm }) {
 
         {/* Step 2: Variants Table */}
         {form.variants && form.variants.length > 0 && (
-          <div className="border border-dh-border rounded-xl overflow-x-auto">
-            <table className="w-full text-sm text-left text-dh-muted">
-              <thead className="text-xs text-dh-main uppercase bg-dh-base/50 border-b border-dh-border">
+          <div className="border border-slate-300 dark:border-slate-700 rounded-[2px] overflow-x-auto shadow-sm">
+            <table className="w-full text-sm text-left text-slate-600 dark:text-slate-300">
+              <thead className="text-xs text-slate-800 dark:text-slate-200 uppercase bg-slate-100 dark:bg-slate-900 border-b border-slate-300 dark:border-slate-700">
                 <tr>
                   <th className="px-4 py-3">ตัวเลือก</th>
                   <th className="px-4 py-3">SKU</th>
@@ -244,8 +244,8 @@ export default function ProductVariants({ form, setForm }) {
               </thead>
               <tbody>
                 {(form.variants || []).map((v, index) => (
-                  <tr key={index} className="border-b border-dh-border hover:bg-dh-base/30">
-                    <td className="px-4 py-3 font-medium text-dh-main">
+                  <tr key={index} className="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       {Object.values(v.attributes).join(' / ')}
                     </td>
                     <td className="px-4 py-2">
@@ -253,7 +253,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="text" 
                         value={v.sku || ''} 
                         onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                        className="w-full px-2 py-1.5 bg-dh-base border border-dh-border rounded-sm focus:border-dh-accent outline-hidden"
+                        className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-mono text-xs"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -261,7 +261,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="number" 
                         value={v.retailPrice} 
                         onChange={(e) => handleVariantChange(index, 'retailPrice', e.target.value)}
-                        className="w-full text-right px-2 py-1.5 bg-dh-base border border-dh-border rounded-sm focus:border-dh-accent outline-hidden"
+                        className="w-full text-right px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-bold text-xs"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -269,7 +269,7 @@ export default function ProductVariants({ form, setForm }) {
                         type="number" 
                         value={v.stockQuantity} 
                         onChange={(e) => handleVariantChange(index, 'stockQuantity', e.target.value)}
-                        className="w-full text-right px-2 py-1.5 bg-dh-base border border-dh-border rounded-sm focus:border-dh-accent outline-hidden"
+                        className="w-full text-right px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-[2px] focus:border-slate-800 dark:focus:border-orange-500 outline-hidden font-bold text-xs"
                       />
                     </td>
                     <td className="px-4 py-2 text-center">
@@ -277,11 +277,11 @@ export default function ProductVariants({ form, setForm }) {
                         type="checkbox" 
                         checked={v.isActive} 
                         onChange={(e) => handleVariantChange(index, 'isActive', e.target.checked)}
-                        className="cursor-pointer w-4 h-4 rounded-sm border-dh-border text-dh-accent focus:ring-dh-accent"
+                        className="cursor-pointer w-4 h-4 rounded-[2px] border-slate-300 text-slate-900 focus:ring-slate-900"
                       />
                     </td>
                     <td className="px-4 py-2 text-center">
-                      <button type="button" onClick={() => handleRemoveVariant(index)} className="text-red-500 hover:text-red-600">
+                      <button type="button" onClick={() => handleRemoveVariant(index)} className="text-red-500 hover:text-red-600 p-1 cursor-pointer">
                         <Trash2 size={16} />
                       </button>
                     </td>
