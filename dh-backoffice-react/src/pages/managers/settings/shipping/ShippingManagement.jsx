@@ -10,11 +10,15 @@ export default function ShippingManagement() {
   const navigate = useNavigate();
   const {
     rules,
+    categories,
     loading,
     form,
     setForm,
     isProcessing,
+    editingRuleId,
     handleSaveRule,
+    handleEditRule,
+    handleCancelEdit,
     toggleActive,
     deleteRule,
     handleAddCondition,
@@ -61,6 +65,9 @@ export default function ShippingManagement() {
           <ShippingRuleForm 
             form={form} 
             setForm={setForm} 
+            categories={categories}
+            editingRuleId={editingRuleId}
+            handleCancelEdit={handleCancelEdit}
             handleSaveRule={handleSaveRule} 
             isProcessing={isProcessing} 
             handleAddCondition={handleAddCondition}
@@ -73,6 +80,8 @@ export default function ShippingManagement() {
           <ShippingRuleList 
             rules={rules} 
             loading={loading} 
+            editingRuleId={editingRuleId}
+            handleEditRule={handleEditRule}
             toggleActive={toggleActive} 
             deleteRule={deleteRule} 
           />

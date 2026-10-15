@@ -1,7 +1,14 @@
 import { useState } from 'react';
-import { ShieldCheck, AlertCircle, Trash2, Truck, ShieldAlert, Layers } from 'lucide-react';
+import { ShieldCheck, AlertCircle, Trash2, Truck, ShieldAlert, Layers, Edit2 } from 'lucide-react';
 
-export default function ShippingRuleList({ rules, loading, toggleActive, deleteRule }) {
+export default function ShippingRuleList({ 
+  rules, 
+  loading, 
+  editingRuleId,
+  handleEditRule,
+  toggleActive, 
+  deleteRule 
+}) {
   const [activeTab, setActiveTab] = useState('all');
 
   const filteredRules = rules.filter(rule => {
@@ -80,16 +87,23 @@ export default function ShippingRuleList({ rules, loading, toggleActive, deleteR
                  <th className="px-5 py-4 border-b border-slate-100 text-center">จำนวนชิ้น</th>
                  <th className="px-5 py-4 border-b border-slate-100 text-right">ยอดเงิน (฿)</th>
                  <th className="px-5 py-4 border-b border-slate-100 text-center">สถานะ</th>
-                 <th className="px-5 py-4 border-b border-slate-100 text-center">ลบ</th>
+                 <th className="px-5 py-4 border-b border-slate-100 text-center">จัดการ</th>
                </tr>
              </thead>
              <tbody className="divide-y divide-slate-100 text-sm">
                {filteredRules.map(rule => {
                  const isInsurance = rule.ruleType === 'insurance';
                  const isCombo = rule.matchType === 'combo';
+                 const isEditing = editingRuleId === rule.id;
                  
                  return (
-                   <tr key={rule.id} className={`group transition-colors ${!rule.isActive ? 'bg-slate-50/50' : 'hover:bg-slate-50'}`}>
+                   <tr key={rule.id} className={`group transition-colors ${
+                     isEditing 
+                       ? 'bg-amber-50/80 ring-1 ring-amber-300' 
+                       : !rule.isActive 
+                         ? 'bg-slate-50/50' 
+                         : 'hover:bg-slate-50'
+                   }`}>
                      
                      {/* --- ประเภทกฎ / บริษัทขนส่ง --- */}
                      <td className="px-5 py-4">
@@ -111,15 +125,22 @@ export default function ShippingRuleList({ rules, loading, toggleActive, deleteR
                            <div className={`font-black text-sm leading-tight ${!rule.isActive ? 'text-slate-400' : 'text-slate-800'}`}>
                              {isInsurance ? 'ประกันภัยจัดส่ง' : rule.company}
                            </div>
-                           <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm inline-block mt-1 ${
-                             isInsurance 
-                               ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20' 
-                               : isCombo 
-                                 ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20' 
-                                 : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20'
-                           }`}>
-                             {isInsurance ? 'Insurance' : (isCombo ? 'Combo Shipping' : 'Shipping Rule')}
-                           </span>
+                           <div className="flex items-center gap-1.5 mt-1">
+                             <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm inline-block ${
+                               isInsurance 
+                                 ? 'bg-amber-100 text-amber-700' 
+                                 : isCombo 
+                                   ? 'bg-purple-100 text-purple-700' 
+                                   : 'bg-blue-100 text-blue-700'
+                             }`}>
+                               {isInsurance ? 'Insurance' : (isCombo ? 'Combo Shipping' : 'Shipping Rule')}
+                             </span>
+                             {isEditing && (
+                               <span className="text-[9px] font-black bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-sm animate-pulse">
+                                 กำลังแก้ไข
+                               </span>
+                             )}
+                           </div>
                          </div>
                        </div>
                      </td>
@@ -201,7 +222,7 @@ export default function ShippingRuleList({ rules, loading, toggleActive, deleteR
                      <td className="px-5 py-4 text-center">
                        <button 
                           onClick={() => toggleActive(rule)}
-                          className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all active:scale-95 ${
+                          className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all active:scale-95 cursor-pointer ${
                             rule.isActive 
                             ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
                             : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
@@ -211,15 +232,28 @@ export default function ShippingRuleList({ rules, loading, toggleActive, deleteR
                        </button>
                      </td>
 
-                     {/* --- ปุ่มลบ --- */}
+                     {/* --- ปุ่มจัดการ (แก้ไข / ลบ) --- */}
                      <td className="px-5 py-4 text-center">
-                       <button 
-                          onClick={() => deleteRule(rule)} 
-                          className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors opacity-50 group-hover:opacity-100"
-                          title="ลบเงื่อนไขนี้"
-                       >
-                         <Trash2 size={18}/>
-                       </button>
+                       <div className="flex items-center justify-center gap-1">
+                         <button 
+                            onClick={() => handleEditRule(rule)} 
+                            className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                              isEditing
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 opacity-70 group-hover:opacity-100'
+                            }`}
+                            title="แก้ไขเงื่อนไขนี้"
+                         >
+                           <Edit2 size={16}/>
+                         </button>
+                         <button 
+                            onClick={() => deleteRule(rule)} 
+                            className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors opacity-70 group-hover:opacity-100 cursor-pointer"
+                            title="ลบเงื่อนไขนี้"
+                         >
+                           <Trash2 size={16}/>
+                         </button>
+                       </div>
                      </td>
 
                    </tr>

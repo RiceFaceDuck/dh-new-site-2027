@@ -64,6 +64,37 @@ export const shippingService = {
     }
   },
 
+  async updateShippingRule(ruleId, ruleData, uid) {
+    try {
+      await updateDoc(doc(db, getCollectionPath('shipping_rules'), ruleId), {
+        ...ruleData,
+        minQty: Number(ruleData.minQty),
+        maxQty: Number(ruleData.maxQty),
+        shippingFee: Number(ruleData.shippingFee),
+        updatedAt: serverTimestamp()
+      });
+      
+      if (uid) {
+        const isInsurance = ruleData.ruleType === 'insurance';
+        const logMsg = isInsurance 
+          ? `แก้ไขกฎค่าประกันภัย: ${ruleData.matchType === 'sku' ? `SKU ${ruleData.sku}` : 'ทุกสินค้า'} (${ruleData.minQty}-${ruleData.maxQty} ชิ้น) ค่าประกัน ${ruleData.shippingFee}บ.`
+          : `แก้ไขกฎค่าจัดส่ง: ${ruleData.company} (${ruleData.matchType === 'sku' ? `SKU ${ruleData.sku}` : ruleData.productType}) (${ruleData.minQty}-${ruleData.maxQty} ชิ้น) ค่าจัดส่ง ${ruleData.shippingFee}บ.`;
+
+        await historyService.addLog(
+          'SystemConfig', 
+          'Update', 
+          'shipping', 
+          logMsg, 
+          uid
+        );
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("🔥 Error updating shipping rule:", error);
+      return { success: false, message: error.message };
+    }
+  },
+
   async toggleShippingRuleActive(ruleId, currentStatus, ruleDesc, uid) {
     try {
       await updateDoc(doc(db, getCollectionPath('shipping_rules'), ruleId), { isActive: !currentStatus });
