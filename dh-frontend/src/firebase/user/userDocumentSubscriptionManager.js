@@ -40,16 +40,26 @@ export const userProfileCache = {
   }
 };
 
+const subscriptionMap = new Map();
+
 const handleLogout = () => {
   userProfileCache.clearCache();
+  subscriptionMap.forEach((sub) => {
+    if (typeof sub?.unsub === 'function') {
+      try {
+        sub.unsub();
+      } catch (err) {
+        console.warn('Error unsubscribing user document on logout:', err);
+      }
+    }
+  });
+  subscriptionMap.clear();
 };
 
 if (typeof window !== 'undefined') {
   window.removeEventListener('dh_auth_logout', handleLogout);
   window.addEventListener('dh_auth_logout', handleLogout);
 }
-
-const subscriptionMap = new Map();
 
 export const userDocumentSubscriptionManager = {
   subscribe: (uid, callback) => {

@@ -30,9 +30,9 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
     const configSnap = await db.collection("settings").doc("credit_config").get();
     const rawData = configSnap.exists ? configSnap.data() : {};
     const configData = rawData.config || rawData.creditConfig || rawData || {};
-    const costPerClick = Number(configData.adClickCost || 5);
-    const costPerImpressionBatch = Number(configData.adImpressionCost || 5); // ต่อ 100 views
-    const impressionBatchSize = Number(configData.adImpressionCount || 100);
+    const costPerClick = Number(configData.adClickCost ?? 5);
+    const costPerImpressionBatch = Number(configData.adImpressionCost ?? 0.1); // มาตรฐานกลาง 0.1 แต้มต่อ 1,000 views
+    const impressionBatchSize = Number(configData.adImpressionCount ?? 1000);
 
     // 2. ดึงโฆษณาที่กำลังทำงานอยู่ (Active Ads) จาก Single Source of Truth: partner_ads
     const adsSnap = await db.collection("partner_ads")

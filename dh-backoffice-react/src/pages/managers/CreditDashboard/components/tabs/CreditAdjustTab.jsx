@@ -163,7 +163,7 @@ export default function CreditAdjustTab({ onSubmitTransaction, isSubmitting = fa
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Amount (THB)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Amount (Pts)</label>
             <input 
               type="text" 
               value={amount ? parseInt(amount, 10).toLocaleString('th-TH') : ''}

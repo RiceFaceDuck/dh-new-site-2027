@@ -83,5 +83,5 @@ export const getUserTier = (points = 0, customTiers = null) => {
 
 export const formatCredit = (points = 0) => {
   if (points === undefined || points === null) return '0';
-  return new Intl.NumberFormat('th-TH').format(points);
+  return new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 }).format(points);
 };

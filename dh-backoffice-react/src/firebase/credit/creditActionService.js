@@ -239,6 +239,8 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     }
 
     newPointsBalance = Math.round(newPointsBalance * 100) / 100;
+    newTotalAccumulated = Math.round(newTotalAccumulated * 100) / 100;
+    newTotalAllocated = Math.round(newTotalAllocated * 100) / 100;
 
     let newLedgerStatus = 'SECURE';
     const utilization = sysMax > 0 ? (newTotalAllocated / sysMax) : 0;

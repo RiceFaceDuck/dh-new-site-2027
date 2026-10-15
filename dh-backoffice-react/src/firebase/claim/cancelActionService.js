@@ -43,8 +43,9 @@ export const cancelActionService = {
         // 0. Task
         const taskRef = doc(db, CLAIMS_COLLECTION, todoId);
         const taskSnap = await transaction.get(taskRef);
+        let taskData = null;
         if (taskSnap.exists()) {
-          const taskData = taskSnap.data();
+          taskData = taskSnap.data();
           if (taskData.status === 'cancelled') {
             throw new Error("ใบคำขอยกเลิกนี้ถูกดำเนินการไปแล้ว (Duplicate Request Prevention)");
           }
@@ -95,7 +96,19 @@ export const cancelActionService = {
         let userRef = null;
         let userSnap = null;
         let creditPreloadSnaps = null;
-        const pointsToRestore = (isCompleted && hasCustomer && isCancelReturn && refundAmountReturn > 0) ? Math.floor(refundAmountReturn / 100) : 0;
+        const recordedClawback = Number(payload.clawbackPoints ?? taskData?.payload?.clawbackPoints);
+        let returnRecordPoints = null;
+        if (orderSnap?.exists()) {
+          const matchedReturn = (orderSnap.data()?.refundsAndClaims || []).find(r => r.id === payload.returnId && r.clawbackPoints !== undefined);
+          if (matchedReturn) returnRecordPoints = Number(matchedReturn.clawbackPoints);
+        }
+        const pointsToRestore = (isCompleted && hasCustomer && isCancelReturn && refundAmountReturn > 0) 
+          ? (Number.isFinite(recordedClawback) && recordedClawback > 0 
+              ? recordedClawback 
+              : (returnRecordPoints !== null && returnRecordPoints > 0 
+                  ? returnRecordPoints 
+                  : Math.floor(refundAmountReturn / 100))) 
+          : 0;
 
         if (isCompleted && hasCustomer) {
            userRef = doc(db, getCollectionPath('users'), payload.customerUid);

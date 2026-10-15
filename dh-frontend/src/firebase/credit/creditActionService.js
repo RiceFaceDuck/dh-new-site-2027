@@ -57,6 +57,8 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     }
 
     newWalletBalance = Math.round(newWalletBalance * 100) / 100;
+    totalAccumulated = Math.round(totalAccumulated * 100) / 100;
+    newTotalAllocated = Math.round(newTotalAllocated * 100) / 100;
 
     transaction.update(userRef, {
       creditPoints: newWalletBalance,
@@ -179,8 +181,8 @@ export const handlePaymentCompletion = async (orderId, userId) => {
 
       const currentPoints = userDoc.data().creditPoints || 0;
       const currentAccumulated = userDoc.data().totalAccumulatedPoints || currentPoints;
-      const newBalance = currentPoints + pendingPoints;
-      const newAccumulated = currentAccumulated + pendingPoints;
+      const newBalance = Math.round((currentPoints + pendingPoints) * 100) / 100;
+      const newAccumulated = Math.round((currentAccumulated + pendingPoints) * 100) / 100;
 
       transaction.update(orderRef, {
         pointsAwarded: true,

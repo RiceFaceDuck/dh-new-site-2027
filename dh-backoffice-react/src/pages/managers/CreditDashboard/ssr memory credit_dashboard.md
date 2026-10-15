@@ -41,5 +41,10 @@
 - ⚠️ Ledger Parity (Phase 1): `ga4AdSyncCron` & frontend order awards must sync `settings/credit_config.ledger.totalAllocated` in 1:1 parity with `users.creditPoints`.
 - ⚠️ Cursor Pagination (Watchlist): PartnerCredits & CreditHistory use 50-doc batching with Firestore `startAfter(cursor)` and attach `lastDoc`/`hasMore` to preserve array method compatibility while slashing initial reads by 6x and 2x.
 - ⚠️ Ad Credit Parity (Phase 4): `adCreditService.js` (`deductPartnerCredit` & `consumeAdCreditWithTransaction`) must sync `settings/credit_config.ledger.totalAllocated` inside transactions; otherwise, ad impressions and clicks desynchronize the master ledger and trigger discrepancy alarms.
+- ⚠️ Precision Drift: Always round `newTotalAllocated` and `totalAccumulated` with `Math.round(val * 100) / 100` in creditActionService and adCreditService to prevent IEEE-754 decimal drift on master ledger.
+- ⚠️ Return Clawback Accuracy: Calculate return clawback proportionally to order `earnedPoints` or tier multipliers instead of hardcoded 100 THB = 1 Pt.
+- ⚠️ GA4 Ad Sync Default Parity: Fallback values in `ga4AdSyncCron` aligned with `creditUtils` standard (0.1 Pt / 1000 views).
+- ⚠️ Listener Multiplexing & Unsubscribe: Lifted financial listeners to DetailPanel and unsubscribed Map listeners on dh_auth_logout to eliminate dual-listener leaks.
+- ⚠️ Symbol & Decimal Parity: Standardized PT/THB to Pts in CreditAdjustTab/CreditCalculatorTab and enabled maximumFractionDigits: 2 in frontend creditFormatService.
 </pitfalls_and_lessons>
 </grimoire>

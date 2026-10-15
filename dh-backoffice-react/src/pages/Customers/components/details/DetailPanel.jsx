@@ -12,6 +12,7 @@ import CustomerSyncModal from './CustomerSyncModal';
 import CustomerRefundModal from '../../../../components/customers/CustomerRefundModal';
 import WalletDisplay from '../displays/WalletDisplay';
 import PointDisplay from '../displays/PointDisplay';
+import { useCustomerFinancials } from '../../hooks/useCustomerFinancials';
 import { getCollectionPath, formatDate, formatCurrency } from 'dh-shared';
 
 import { getUserTier } from '../../../../firebase/credit/creditFormatService';
@@ -39,6 +40,10 @@ export default function DetailPanel({
 
   // State สำหรับจัดการ Tabs
   const [activeTab, setActiveTab] = useState('overview');
+
+  // ⚡ Lifted single financial listener (Deduplicates listener between WalletDisplay & PointDisplay)
+  const targetFinancialId = customer?.id || customer?.uid;
+  const customerFinancials = useCustomerFinancials(targetFinancialId);
 
   // ⚡ Enriched customer state for on-demand address & profile hydration
   const [enrichedCustomer, setEnrichedCustomer] = useState(customer);
@@ -222,7 +227,7 @@ export default function DetailPanel({
 
           {/* 🏆 Badge Tier (ระดับแต้ม Gamification) */}
           {(() => {
-            const points = Number(activeCustomer.totalAccumulatedPoints || activeCustomer.creditPoints || activeCustomer.stats?.totalAccumulatedPoints || 0);
+            const points = Number(activeCustomer.totalAccumulatedPoints || customerFinancials?.creditPoints || activeCustomer.creditPoints || activeCustomer.stats?.totalAccumulatedPoints || 0);
             const tier = getUserTier(points);
             return (
               <span 
@@ -258,7 +263,7 @@ export default function DetailPanel({
           <div className="bg-slate-800/60 rounded-lg p-2.5 flex flex-col justify-between border border-slate-700/50">
             <span className="text-[11px] font-semibold text-slate-400 tracking-wide">DH ค้างยอด</span>
             <div className="flex items-center justify-between mt-1 gap-2">
-              <WalletDisplay customerId={customer.id} customer={customer} live={true} showSymbol={true} className="text-lg font-bold font-mono text-rose-400" />
+              <WalletDisplay customerId={customer.id} customer={customer} financials={customerFinancials} live={true} showSymbol={true} className="text-lg font-bold font-mono text-rose-400" />
               <button 
                 onClick={() => setIsRefundModalOpen(true)}
                 className="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-semibold border border-rose-500/30 transition-all shrink-0 active:scale-95"
@@ -272,7 +277,7 @@ export default function DetailPanel({
           <div className="bg-slate-800/60 rounded-lg p-2.5 flex flex-col justify-between border border-slate-700/50">
             <span className="text-[11px] font-semibold text-slate-400 tracking-wide">คะแนนสะสม</span>
             <div className="flex items-baseline gap-1 mt-1">
-              <PointDisplay customerId={customer.id} customer={customer} live={true} className="text-lg font-bold font-mono text-amber-400" />
+              <PointDisplay customerId={customer.id} customer={customer} financials={customerFinancials} live={true} className="text-lg font-bold font-mono text-amber-400" />
               <span className="text-xs font-semibold text-amber-300">แต้ม</span>
             </div>
           </div>

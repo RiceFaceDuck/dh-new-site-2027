@@ -73,7 +73,7 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
       }
 
       const actualDeduct = Math.min(currentPoints, cost);
-      const newBalance = currentPoints - actualDeduct;
+      const newBalance = Math.round((currentPoints - actualDeduct) * 100) / 100;
 
       transaction.update(userRef, {
         creditPoints: newBalance,
@@ -83,7 +83,7 @@ export const deductPartnerCredit = async (partnerId, cost = 10, actionType = 'cl
       // 🛡️ Sync Ledger Parity: Synchronously decrement settings/credit_config.ledger.totalAllocated
       const ledger = settingsDoc.exists() ? (settingsDoc.data()?.ledger || {}) : {};
       const currentAllocated = Number(ledger.totalAllocated || 0);
-      const newAllocated = Math.max(0, currentAllocated - actualDeduct);
+      const newAllocated = Math.round(Math.max(0, currentAllocated - actualDeduct) * 100) / 100;
 
       transaction.set(settingsRef, {
         ledger: {
@@ -165,7 +165,7 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
     throw new Error(`Credit Point ของคุณไม่เพียงพอ (ต้องการ ${amount} แต้ม) กรุณาเติมเครดิตก่อนทำรายการ`);
   }
 
-  const newBalance = currentPoints - amount;
+  const newBalance = Math.round((currentPoints - amount) * 100) / 100;
   const noteDisplay = adTitle ? `หักแต้มสำหรับโปรโมท: ${adTitle}` : 'หักแต้มสำหรับการฝากโฆษณา';
 
   transaction.update(userRef, {
@@ -176,7 +176,8 @@ export const consumeAdCreditWithTransaction = async (transaction, userId, amount
   // 🛡️ Sync Ledger Parity: Synchronously decrement settings/credit_config.ledger.totalAllocated
   const ledger = settingsDoc.exists() ? (settingsDoc.data()?.ledger || {}) : {};
   const currentAllocated = Number(ledger.totalAllocated || 0);
-  const newAllocated = Math.max(0, currentAllocated - amount);
+  // newAllocated = Math.max(0, currentAllocated - amount)
+  const newAllocated = Math.round(Math.max(0, currentAllocated - amount) * 100) / 100;
 
   transaction.set(settingsRef, {
     ledger: {

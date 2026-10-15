@@ -5,15 +5,16 @@ import { Loader2 } from 'lucide-react';
  * Component สำหรับแสดงผลคะแนนสะสม (Credit Points)
  * นำไปใช้ใน Table Row หรือ Detail Panel เพื่อให้แสดงผลแบบ Real-time
  */
-export default function PointDisplay({ customerId, customer, className = '', live = false }) {
-  const targetId = live ? (customerId || customer?.id || customer?.uid) : null;
-  const { creditPoints, loading } = useCustomerFinancials(targetId);
+export default function PointDisplay({ customerId, customer, className = '', live = false, financials = null }) {
+  const targetId = (live && !financials) ? (customerId || customer?.id || customer?.uid) : null;
+  const hookFinancials = useCustomerFinancials(targetId);
+  const { creditPoints, loading } = financials || hookFinancials;
 
-  let points = live 
+  let points = (live || financials) 
     ? (loading ? (customer?.totalAccumulatedPoints ?? customer?.creditPoints ?? 0) : (creditPoints ?? 0))
     : Number(customer?.totalAccumulatedPoints ?? customer?.creditPoints ?? customer?.points ?? 0);
 
-  if (live && loading && targetId && creditPoints === undefined) {
+  if ((live || financials) && loading && (targetId || financials) && creditPoints === undefined) {
     return (
       <div className={`inline-flex items-center ${className}`}>
         <Loader2 size={14} className="animate-spin text-slate-300" />

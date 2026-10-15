@@ -123,15 +123,15 @@ export default function CreditCalculatorTab() {
               </h4>
               <div className="flex justify-between text-xs items-center">
                 <span className="text-slate-400">Points Earning Rate:</span>
-                <span className="font-mono font-bold">{config.pointsEarningRate} THB / 1 PT</span>
+                <span className="font-mono font-bold">{config.pointsEarningRate} THB / 1 Pts</span>
               </div>
               <div className="flex justify-between text-xs items-center">
                 <span className="text-slate-400">Ad Impression Cost:</span>
-                <span className="font-mono font-bold">{config.adImpressionCost} PT / {config.adImpressionCount || 100} Views</span>
+                <span className="font-mono font-bold">{config.adImpressionCost} Pts / {config.adImpressionCount || 100} Views</span>
               </div>
               <div className="flex justify-between text-xs items-center">
                 <span className="text-slate-400">Partner Ranking Cost:</span>
-                <span className="font-mono font-bold">{config.partnerRankingCost} PT / Day</span>
+                <span className="font-mono font-bold">{config.partnerRankingCost} Pts / Day</span>
               </div>
               <p className="text-[10px] text-slate-400 pt-2 border-t border-slate-600 text-center">
                 * You can change these rates in the 'Rules & Configs' tab.
@@ -183,7 +183,7 @@ export default function CreditCalculatorTab() {
               <div className="pt-4 border-t flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-600 uppercase">Net Monthly Balance</span>
                 <span className={`text-2xl font-black font-mono ${isDeflationary ? 'text-rose-600' : 'text-emerald-600'}`}>
-                  {netPoints > 0 ? '+' : ''}{netPoints.toLocaleString('th-TH')} PT
+                  {netPoints > 0 ? '+' : ''}{netPoints.toLocaleString('th-TH')} Pts
                 </span>
               </div>
             </div>

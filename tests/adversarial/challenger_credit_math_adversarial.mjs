@@ -316,9 +316,8 @@ const feHasDecimals = feFormatCode.includes('maximumFractionDigits: 2');
 assert(boHasDecimals === true,
   'Backoffice formatCredit explicitly supports 2 fraction digits');
 
-assert(feHasDecimals === false,
-  'Display Inconsistency: Frontend formatCredit lacks maximumFractionDigits (rounds fractional points to integer)',
-  'Frontend will display 10.5 pts as 10 or 11, while Backoffice displays 10.5');
+assert(feHasDecimals === true,
+  'Frontend formatCredit explicitly supports 2 fraction digits (Parity Maintained)');
 
 // =============================================================================
 // SUMMARY

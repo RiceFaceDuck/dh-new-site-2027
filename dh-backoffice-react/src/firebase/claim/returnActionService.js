@@ -3,6 +3,8 @@ import { db } from '../config';
 import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { unwrapCreditConfig } from 'dh-shared';
+import { calculateEarnedPoints } from '../credit/creditFormatService';
 
 const CLAIMS_COLLECTION = getCollectionPath('claims');
 
@@ -120,9 +122,9 @@ export const returnActionService = {
 
         // 3. อ่านข้อมูลสำหรับดึงแต้มสะสมคืน (Clawback Points) ล่วงหน้า
         const hasCustomer = payload.customerUid && payload.customerUid !== 'Walk-in' && payload.customerUid !== 'WALK-IN';
-        const clawbackPoints = (hasCustomer && refundAmount > 0) ? Math.floor(refundAmount / 100) : 0;
+        let clawbackPoints = 0;
         let creditPreloadSnaps = null;
-        if (clawbackPoints > 0) {
+        if (hasCustomer && refundAmount > 0) {
           const { getCreditPreloadRefs } = await import('../credit/creditActionService');
           const creditRefs = getCreditPreloadRefs(payload.customerUid, 'clawback', `RTN_${payload.returnId}`);
           const [txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
@@ -133,6 +135,22 @@ export const returnActionService = {
             transaction.get(creditRefs.activePartnerRef)
           ]);
           creditPreloadSnaps = { txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap };
+
+          // 🛡️ คำนวณแต้มคืนตามสัดส่วนที่เคยได้รับจริงจากบิล หรือคำนวณตาม Tier Multiplier / SKU Bonus
+          const orderData = orderSnap?.exists() ? orderSnap.data() : null;
+          const orderFinalTotal = Number(orderData?.finalTotal ?? orderData?.totals?.finalTotal ?? 0);
+          const earnedInOrder = Number(orderData?.earnedPoints || 0);
+
+          if (earnedInOrder > 0 && orderFinalTotal > 0) {
+            clawbackPoints = Math.min(earnedInOrder, Math.round(earnedInOrder * (refundAmount / orderFinalTotal)));
+          } else {
+            const creditConfig = unwrapCreditConfig(settingsSnap.exists() ? settingsSnap.data() : null);
+            const userTotalAccumulated = Number(userSnap?.exists() ? (userSnap.data()?.totalAccumulatedPoints || 0) : 0);
+            clawbackPoints = calculateEarnedPoints(refundAmount, creditConfig, [{ sku: payload.sku, qty }], userTotalAccumulated);
+            if (!clawbackPoints && clawbackPoints !== 0) {
+              clawbackPoints = Math.floor(refundAmount / (creditConfig?.earningRate || 100));
+            }
+          }
         }
 
         const userRef = (hasCustomer && refundAmount > 0) ? doc(db, getCollectionPath('users'), payload.customerUid) : null;
@@ -175,6 +193,7 @@ export const returnActionService = {
           completedAtIso: new Date().toISOString(),
           updatedAt: serverTimestamp(),
           'payload.itemCondition': payload.itemCondition || 'defective',
+          'payload.clawbackPoints': clawbackPoints,
           'tags.action': actionTag
         });
 
@@ -187,6 +206,7 @@ export const returnActionService = {
               sku: payload.sku,
               qty: qty,
               amount: refundAmount,
+              clawbackPoints: clawbackPoints,
               approvedAt: new Date().toISOString()
             })
           });
