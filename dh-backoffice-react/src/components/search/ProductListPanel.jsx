@@ -33,7 +33,7 @@ function ProductListPanel({
   const totalCount = totalFilteredCount || filteredProducts.length;
 
   return (
-    <div className="w-[32%] min-w-[320px] max-w-[420px] bg-white dark:bg-slate-900 flex flex-col z-10 overflow-hidden shrink-0 transition-colors duration-300">
+    <div className="w-[32%] min-w-[320px] max-w-[420px] bg-white dark:bg-slate-900 flex flex-col z-10 overflow-hidden shrink-0 transition-all duration-300 rounded-[0.1rem] border border-slate-300/80 dark:border-slate-700 shadow-md">
       
       {/* Header */}
       <div className="px-4 py-3 border-b border-dh-border bg-white dark:bg-slate-900 flex justify-between items-center shrink-0 transition-colors duration-300">
@@ -160,7 +160,7 @@ function ProductListPanel({
               <button
                 type="button"
                 onClick={openReportModal}
-                className="flex items-center gap-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 transition-all px-3 py-2 rounded-lg ring-1 ring-cyan-400/50 shadow-md active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 text-xs font-black text-white bg-cyan-600 hover:bg-cyan-500 transition-all px-3 py-2 rounded-lg border-2 border-cyan-700 shadow-md active:scale-95 cursor-pointer"
               >
                 <PlusCircle size={15} strokeWidth={2.5} />
                 <span>แจ้งเพิ่มสินค้า ยังไม่มีขาย</span>

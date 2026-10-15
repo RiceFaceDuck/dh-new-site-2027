@@ -13,7 +13,7 @@ function ProductDetailPanel({
 
   if (!selectedProduct) {
     return (
-      <div className="flex-1 bg-linear-to-b from-white to-slate-50 dark:from-[#1E293B] dark:to-[#0F172A] relative flex flex-col min-h-0 overflow-hidden items-center justify-center p-6">
+      <div className="flex-1 bg-linear-to-b from-white to-slate-50 dark:from-[#1E293B] dark:to-[#0F172A] relative flex flex-col min-h-0 overflow-hidden items-center justify-center p-6 rounded-[0.1rem] border border-slate-300/80 dark:border-slate-700 shadow-md">
         
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -40,7 +40,7 @@ function ProductDetailPanel({
   }
 
   return (
-    <div className="flex-1 bg-white dark:bg-[#1E293B] relative flex flex-col min-h-0 overflow-hidden transition-colors duration-300">
+    <div className="flex-1 bg-white dark:bg-[#1E293B] relative flex flex-col min-h-0 overflow-hidden transition-all duration-300 rounded-[0.1rem] border border-slate-300/80 dark:border-slate-700 shadow-md">
       <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 relative">
         
         {/* Smart Hover Copy Button */}

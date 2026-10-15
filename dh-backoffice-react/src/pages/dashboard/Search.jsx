@@ -30,8 +30,8 @@ export default function Search() {
         openGuideModal={() => searchState.setIsGuideModalOpen(true)}
       />
 
-      {/* Main Content Area - เพิ่มช่องว่างเล็กน้อย (Gap) ตามที่ผู้ใช้ต้องการเพื่อแยกโซนสายตา */}
-      <div className="flex-1 flex min-h-0 overflow-hidden bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5">
+      {/* Main Content Area - จัดช่องว่างให้แผงการ์ดแสดงเงาและมิติได้คมชัด */}
+      <div className="flex-1 flex min-h-0 overflow-hidden bg-dh-base gap-2 p-2 md:gap-2.5 md:p-2.5">
         
         {/* --- ส่วนที่ 2: Product List Panel (ด้านซ้าย) --- */}
         <ProductListPanel 

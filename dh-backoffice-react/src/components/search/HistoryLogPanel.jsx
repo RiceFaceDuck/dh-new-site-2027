@@ -202,7 +202,7 @@ function HistoryLogPanel({
   const hasMoreLogs = mainLogs.length > visibleLimit;
 
   return (
-    <div className="w-[20%] min-w-[280px] max-w-[380px] bg-[#F8FAFC] flex flex-col overflow-hidden shrink-0 transition-colors duration-300 border-l border-slate-200 z-10 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)]">
+    <div className="w-[20%] min-w-[280px] max-w-[380px] bg-[#F8FAFC] dark:bg-slate-900 flex flex-col overflow-hidden shrink-0 transition-all duration-300 rounded-[0.1rem] border border-slate-300/80 dark:border-slate-700 z-10 shadow-md">
       
       {/* --- Header --- */}
       <div className="bg-white px-4 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 shadow-xs z-20">
@@ -296,13 +296,13 @@ function HistoryLogPanel({
                     {hasMoreLogs ? (
                       <button
                         onClick={() => setVisibleLimit(prev => prev + 21)}
-                        className="w-full py-2 px-3 bg-white hover:bg-indigo-50 border border-slate-300 hover:border-indigo-300 text-indigo-600 text-xs font-bold rounded-lg transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5"
+                        className="w-full py-2 px-3 bg-indigo-50 hover:bg-indigo-100 border-2 border-indigo-400 text-indigo-900 text-xs font-black rounded-lg transition-all shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5"
                       >
                         <span>แสดงเพิ่มเติม (+21)</span>
-                        <span className="text-[10px] text-slate-400 font-medium">({mainLogs.length - visibleLimit} เหลือ)</span>
+                        <span className="text-[10px] text-indigo-700 font-bold">({mainLogs.length - visibleLimit} เหลือ)</span>
                       </button>
                     ) : (
-                      <span className="inline-block px-4 py-1 bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-400 rounded-full uppercase tracking-wider">
+                      <span className="inline-block px-4 py-1 bg-slate-100 border-2 border-slate-300 text-[11px] font-black text-slate-500 rounded-full uppercase tracking-wider">
                         สิ้นสุดประวัติ
                       </span>
                     )}
@@ -325,12 +325,12 @@ function HistoryLogPanel({
                 <h4 className="text-xs font-black text-slate-700 mb-1 uppercase tracking-wide">
                   ประวัติความเคลื่อนไหว
                 </h4>
-                <p className="text-[11px] text-slate-400 mb-4 max-w-[200px] leading-relaxed">
+                <p className="text-[11px] text-slate-500 font-medium mb-4 max-w-[200px] leading-relaxed">
                   กดปุ่มเพื่อดูประวัติการขาย ใบเคลม และบันทึกของสินค้านี้
                 </p>
                 <button 
                   onClick={handleLoadHistory}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow-indigo-200 transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-black rounded-xl border-2 border-indigo-800 shadow-md transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <History size={14} strokeWidth={2.5} />
                   <span>กดเพื่อดูประวัติ</span>
@@ -340,13 +340,13 @@ function HistoryLogPanel({
             
             {/* Note Input Box */}
             <div className="mt-auto shrink-0 pt-3 border-t border-slate-200 bg-[#F8FAFC]">
-              <div className="bg-white px-2 py-1.5 rounded-lg border border-slate-300 shadow-xs focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-400/20 transition-all flex items-center gap-2">
+              <div className="bg-white px-2 py-1.5 rounded-lg border-2 border-slate-300 shadow-xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-400/20 transition-all flex items-center gap-2">
                 <input
                   type="text"
                   value={newComment}
                   onChange={e => setNewComment(e.target.value)}
                   placeholder="พิมพ์โน้ตส่วนตัว (Enter)"
-                  className="w-full text-sm font-medium text-slate-800 bg-transparent border-none outline-hidden placeholder-slate-400 ml-1"
+                  className="w-full text-sm font-bold text-slate-900 bg-transparent border-none outline-hidden placeholder-slate-400 ml-1"
                   disabled={isSubmittingComment}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) { 
@@ -364,7 +364,7 @@ function HistoryLogPanel({
                     if (!isHistoryLoaded) handleLoadHistory();
                   })}
                   disabled={!newComment.trim() || isSubmittingComment}
-                  className="shrink-0 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+                  className="shrink-0 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white p-2 rounded-md border-2 border-indigo-800 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
                   title="บันทึกข้อความ"
                 >
                   {isSubmittingComment ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Send size={14} className="ml-px" />}

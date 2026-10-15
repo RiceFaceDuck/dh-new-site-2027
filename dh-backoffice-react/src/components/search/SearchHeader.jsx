@@ -28,7 +28,7 @@ function SearchHeader({
           {/* Guide / Manual Button */}
           <button 
             onClick={openGuideModal} 
-            className="ml-2 bg-white/10 hover:bg-cyan-500/30 text-cyan-50 p-1.5 rounded-lg backdrop-blur-xs transition-all border border-white/10 shadow-xs dh-active-press group" 
+            className="ml-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 p-1.5 rounded-lg transition-all border-2 border-slate-600 shadow-xs dh-active-press group" 
             title="คู่มือการใช้งาน"
           >
             <HelpCircle size={15} className="group-hover:scale-110 transition-transform" />
@@ -37,26 +37,26 @@ function SearchHeader({
         
         <div className="flex items-center gap-2">
           {/* Quick Filters */}
-          <div className="hidden md:flex bg-white/10 p-1 rounded-lg backdrop-blur-xs shadow-inner ring-1 ring-white/10 text-[10px] font-bold">
-            <button onClick={() => setStockFilter('ALL')} className={`px-2 py-1 rounded-sm transition-colors ${stockFilter === 'ALL' ? 'bg-dh-accent text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}>ทั้งหมด</button>
-            <button onClick={() => setStockFilter('IN_STOCK')} className={`px-2 py-1 rounded-sm transition-colors ${stockFilter === 'IN_STOCK' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}>มีของ</button>
-            <button onClick={() => setStockFilter('LOW_STOCK')} className={`px-2 py-1 rounded-sm transition-colors ${stockFilter === 'LOW_STOCK' ? 'bg-yellow-500 text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}>ใกล้หมด</button>
-            <button onClick={() => setStockFilter('OUT_OF_STOCK')} className={`px-2 py-1 rounded-sm transition-colors ${stockFilter === 'OUT_OF_STOCK' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}>หมด</button>
+          <div className="hidden md:flex bg-slate-900/60 p-1 rounded-lg backdrop-blur-xs shadow-inner border border-slate-700/80 text-[10px] font-black gap-1">
+            <button onClick={() => setStockFilter('ALL')} className={`px-2.5 py-1 rounded-sm border-2 transition-all cursor-pointer ${stockFilter === 'ALL' ? 'bg-blue-600 border-blue-400 text-white shadow-sm' : 'bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white'}`}>ทั้งหมด</button>
+            <button onClick={() => setStockFilter('IN_STOCK')} className={`px-2.5 py-1 rounded-sm border-2 transition-all cursor-pointer ${stockFilter === 'IN_STOCK' ? 'bg-emerald-600 border-emerald-400 text-white shadow-sm' : 'bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white'}`}>มีของ</button>
+            <button onClick={() => setStockFilter('LOW_STOCK')} className={`px-2.5 py-1 rounded-sm border-2 transition-all cursor-pointer ${stockFilter === 'LOW_STOCK' ? 'bg-amber-600 border-amber-400 text-white shadow-sm' : 'bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white'}`}>ใกล้หมด</button>
+            <button onClick={() => setStockFilter('OUT_OF_STOCK')} className={`px-2.5 py-1 rounded-sm border-2 transition-all cursor-pointer ${stockFilter === 'OUT_OF_STOCK' ? 'bg-rose-600 border-rose-400 text-white shadow-sm' : 'bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white'}`}>หมด</button>
           </div>
 
           {/* Sync Button */}
           <button 
             onClick={forceSync}
             disabled={loading}
-            className="flex items-center gap-1 text-xs font-bold text-slate-300 hover:text-white bg-white/10 hover:bg-white/20 transition-all px-2 py-1.5 rounded-md disabled:opacity-50"
+            className="flex items-center gap-1 text-xs font-black text-white bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 transition-all px-2.5 py-1.5 rounded-md disabled:opacity-50 shadow-xs cursor-pointer"
             title="รีเฟรชข้อมูลจากระบบหลังบ้าน (Sync)"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin text-dh-accent' : ''} />
+            <RefreshCw size={14} className={loading ? 'animate-spin text-cyan-400' : ''} />
           </button>
 
           <button 
             onClick={openReportModal}
-            className="flex items-center gap-1 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 transition-all px-2.5 py-1.5 rounded-md ring-1 ring-cyan-400/50 shadow-lg active:scale-95 ml-1"
+            className="flex items-center gap-1.5 text-xs font-black text-white bg-cyan-600 hover:bg-cyan-500 transition-all px-3 py-1.5 rounded-md border-2 border-cyan-400 shadow-md active:scale-95 ml-1 cursor-pointer"
           >
             <PlusCircle size={14} strokeWidth={2.5} /> <span className="hidden lg:inline">แจ้งเพิ่มสินค้า ยังไม่มีขาย</span><span className="lg:hidden">แจ้งเพิ่ม</span>
           </button>
@@ -99,8 +99,8 @@ function SearchHeader({
           </div>
         </div>
 
-        <div className={`transition-all duration-300 overflow-hidden flex items-center ${search1 || search2 || search3 ? 'w-[70px] opacity-100 ml-1' : 'w-0 opacity-0 ml-0'}`}>
-          <button onClick={resetSearch} className="flex items-center justify-center gap-1 w-full py-[5px] bg-white/10 hover:bg-red-500 text-slate-300 hover:text-white text-[10px] font-bold rounded-md border border-white/20 hover:border-red-400 transition-colors whitespace-nowrap backdrop-blur-xs">
+        <div className={`transition-all duration-300 overflow-hidden flex items-center ${search1 || search2 || search3 ? 'w-[75px] opacity-100 ml-1' : 'w-0 opacity-0 ml-0'}`}>
+          <button onClick={resetSearch} className="flex items-center justify-center gap-1 w-full py-[5px] bg-slate-800 hover:bg-rose-600 text-white text-[10px] font-black rounded-md border-2 border-slate-600 hover:border-rose-400 transition-colors whitespace-nowrap shadow-xs cursor-pointer">
             <FilterX size={12} /> ล้างค่า
           </button>
         </div>

@@ -41,6 +41,7 @@
     - Alternate search_catalog_chunk_* fallback removed from inventorySyncMetaService to strictly guarantee <= 8 cold-start reads.
     - Product list selection highlight must match strictly on product.sku to avoid double selection visual glitches.
     - Main search presentation panels (Header, List, Detail, History) are wrapped in React.memo with log sorting memoized to avoid keystroke re-renders.
+    - Product Search+ UI Refinement (2026-10-15): ปรับ Card Panels ทั้ง 3 แผงหลักและการ์ดย่อยภายใน (Image box, SHORT banner, Compatible models, Part no.) ให้มีมุมโค้งมนเหลือ 0.1rem (rounded-[0.1rem]) พร้อมขอบคมชัดและเงา shadow-md เพื่อมิติสายตาที่ชัดเจน โดยคงขนาดมุมโค้งของปุ่มต่างๆ ไว้เท่าเดิม (rounded-md/lg/full) และปรับปุ่มทั้งหมด (Quick Filters, Action Links, เพิ่มรุ่น/พาร์ท, ดูประวัติ, ส่งโน้ต) ให้มี Shapes & Borders สีทึบ (Solid 2px) ตัวหนังสือสีขาว/สีเข้มที่มีคอนทราสต์สูง มองเห็นได้ชัดเจน 100%
   </pitfalls_and_lessons>
 
   <watchlist>

@@ -36,7 +36,7 @@ export default function ProductDetailHeader({
   return (
     <div className="flex gap-4 items-start pb-4 relative border-b border-dh-border/60">
       <div 
-        className="w-40 h-40 md:w-44 md:h-44 aspect-square shrink-0 bg-white dark:bg-dh-base border border-slate-200 dark:border-dh-border rounded-xl p-2 cursor-pointer group relative overflow-hidden shadow-xs transition-all duration-300 hover:shadow-md hover:border-indigo-400 flex items-center justify-center"
+        className="w-40 h-40 md:w-44 md:h-44 aspect-square shrink-0 bg-white dark:bg-dh-base border-2 border-slate-300 dark:border-dh-border rounded-[0.1rem] p-2 cursor-pointer group relative overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg hover:border-indigo-400 flex items-center justify-center"
         onClick={() => setIsImageModalOpen(true)}
       >
         {selectedProduct.images?.[0] ? (
@@ -46,7 +46,7 @@ export default function ProductDetailHeader({
               <Maximize2 size={24} className="text-white drop-shadow-md scale-90 group-hover:scale-100 transition-transform duration-300"/>
             </div>
             {selectedProduct.images.length > 1 && (
-              <span className="absolute bottom-1.5 right-1.5 z-10 bg-slate-900/85 text-cyan-300 text-[10px] font-black px-2 py-0.5 rounded-md leading-none flex items-center gap-1 shadow-md border border-cyan-500/30">
+              <span className="absolute bottom-1.5 right-1.5 z-10 bg-slate-900/90 text-cyan-300 text-[10px] font-black px-2 py-0.5 rounded-md leading-none flex items-center gap-1 shadow-md border-2 border-cyan-500/50">
                 <Camera size={11} /> {selectedProduct.images.length} ภาพ
               </span>
             )}
@@ -62,7 +62,7 @@ export default function ProductDetailHeader({
           <button 
             type="button"
             onClick={handleCopySku}
-            className="text-xs font-black bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-2.5 py-1 rounded-lg uppercase shadow-xs tracking-wider font-mono cursor-pointer transition-all flex items-center gap-1.5"
+            className="text-xs font-black bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-2.5 py-1 rounded-lg uppercase shadow-sm tracking-wider font-mono cursor-pointer transition-all flex items-center gap-1.5 border-2 border-indigo-800"
             title="คลิกเพื่อคัดลอกรหัส SKU"
           >
             {copiedSku ? (
@@ -73,11 +73,11 @@ export default function ProductDetailHeader({
             ) : (
               <>
                 <HighlightText text={selectedProduct.sku} highlightData={highlightData} />
-                <Copy size={12} className="opacity-70 hover:opacity-100" />
+                <Copy size={12} className="opacity-80 hover:opacity-100" />
               </>
             )}
           </button>
-          <span className={`flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 rounded-lg border shadow-xs transition-colors ${selectedProduct.stockQuantity <= 0 ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-800' : selectedProduct.stockQuantity <= (selectedProduct.bufferStock || 2) ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`}>
+          <span className={`flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-lg border-2 shadow-xs transition-colors ${selectedProduct.stockQuantity <= 0 ? 'bg-red-50 text-red-800 border-red-500 dark:bg-red-950/40 dark:text-red-300 dark:border-red-600' : selectedProduct.stockQuantity <= (selectedProduct.bufferStock || 2) ? 'bg-amber-50 text-amber-900 border-amber-500 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-600' : 'bg-emerald-50 text-emerald-900 border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-600'}`}>
             {selectedProduct.stockQuantity <= 0 ? <AlertCircle size={13}/> : <Box size={13}/>} 
             {stockStat.text} ({selectedProduct.stockQuantity})
           </span>
@@ -104,7 +104,7 @@ export default function ProductDetailHeader({
             <>
               <div className="h-8 w-[2px] bg-slate-200 dark:bg-slate-700 rounded-full mx-1 hidden md:block"></div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold text-amber-600 uppercase tracking-widest flex items-center gap-1 shrink-0">
+                <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-1 shrink-0">
                   <RefreshCw size={10} /> ใช้แทนได้:
                 </span>
                 <div className="flex gap-1.5 overflow-x-auto custom-scrollbar">
@@ -114,11 +114,11 @@ export default function ProductDetailHeader({
                       <div 
                         key={sub.id} 
                         onClick={() => handleSelectProduct(sub)} 
-                        className={`px-2 py-1 rounded-lg border cursor-pointer flex items-center gap-1.5 transition-all text-xs shrink-0 ${isInactive ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-800 border-amber-200 hover:border-amber-400'}`}
+                        className={`px-2.5 py-1 rounded-lg border-2 cursor-pointer flex items-center gap-1.5 transition-all text-xs shrink-0 font-bold ${isInactive ? 'bg-red-100 text-red-900 border-red-500' : 'bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200 shadow-xs'}`}
                         title={sub.name}
                       >
-                        <span className="font-bold font-mono"><HighlightText text={sub.sku} highlightData={highlightData}/></span>
-                        <span className="text-[10px] opacity-75">({sub.stockQuantity})</span>
+                        <span className="font-black font-mono"><HighlightText text={sub.sku} highlightData={highlightData}/></span>
+                        <span className="text-[10px] font-black">({sub.stockQuantity})</span>
                       </div>
                     );
                   })}
@@ -131,22 +131,22 @@ export default function ProductDetailHeader({
         {/* Action Buttons Row */}
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           {selectedProduct.warehouseLocation && (
-            <span className="flex items-center gap-1 text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-dh-base dark:text-dh-muted px-2.5 py-1 rounded-lg border border-slate-200 dark:border-dh-border shadow-xs">
-              <MapPin size={13} className="text-slate-400"/> {selectedProduct.warehouseLocation}
+            <span className="flex items-center gap-1 text-[11px] font-black bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100 px-2.5 py-1 rounded-lg border-2 border-slate-400 dark:border-slate-600 shadow-xs">
+              <MapPin size={13} className="text-slate-600 dark:text-slate-300"/> {selectedProduct.warehouseLocation}
             </span>
           )}
           <CopyableLinkButton 
             url={displayUrl} 
             label="หน้าเว็บ" 
             defaultIcon={ExternalLink} 
-            className="flex items-center gap-1 text-[11px] font-extrabold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-800/50 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1 rounded-lg shadow-xs transition-all hover:-translate-y-px" 
+            className="flex items-center gap-1 text-[11px] font-black bg-indigo-600 hover:bg-indigo-700 text-white border-2 border-indigo-800 px-2.5 py-1 rounded-lg shadow-sm transition-all hover:-translate-y-px cursor-pointer" 
           />
           {selectedProduct.externalLinks?.shopee && (
             <CopyableLinkButton 
               url={selectedProduct.externalLinks.shopee} 
               label="Shopee" 
               defaultIcon={ExternalLink} 
-              className="flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 bg-[#ee4d2d]/10 text-[#ee4d2d] rounded-lg border border-[#ee4d2d]/20 hover:bg-[#ee4d2d]/20 transition-all shadow-xs hover:-translate-y-px" 
+              className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 bg-[#ee4d2d] hover:bg-[#d83f21] text-white rounded-lg border-2 border-[#b5351c] transition-all shadow-sm hover:-translate-y-px cursor-pointer" 
             />
           )}
           {selectedProduct.externalLinks?.lazada && (
@@ -154,7 +154,7 @@ export default function ProductDetailHeader({
               url={selectedProduct.externalLinks.lazada} 
               label="Lazada" 
               defaultIcon={ExternalLink} 
-              className="flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 bg-[#0f136d]/10 text-[#0f136d] dark:bg-[#2A2D8E]/30 dark:text-[#888DF2] rounded-lg border border-[#0f136d]/20 dark:border-[#888DF2]/30 hover:bg-[#0f136d]/20 transition-all shadow-xs hover:-translate-y-px" 
+              className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 bg-[#0f136d] hover:bg-[#1a1e8a] text-white rounded-lg border-2 border-[#090b42] transition-all shadow-sm hover:-translate-y-px cursor-pointer" 
             />
           )}
           {selectedProduct.externalLinks?.tiktok && (
@@ -162,7 +162,7 @@ export default function ProductDetailHeader({
               url={selectedProduct.externalLinks.tiktok} 
               label="TikTok" 
               defaultIcon={ExternalLink} 
-              className="flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 bg-slate-900 text-white rounded-lg border border-slate-800 transition-all shadow-xs hover:-translate-y-px" 
+              className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 bg-slate-900 hover:bg-black text-white rounded-lg border-2 border-slate-700 transition-all shadow-sm hover:-translate-y-px cursor-pointer" 
             />
           )}
         </div>
