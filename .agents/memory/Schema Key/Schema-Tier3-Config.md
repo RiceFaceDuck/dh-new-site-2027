@@ -166,25 +166,42 @@ export interface Promotion {
 ### Schema Fields
 | Field Name       | Type    | Description                                                                 | Example Value                       | Foreign Key / Ref |
 |------------------|---------|-----------------------------------------------------------------------------|-------------------------------------|-------------------|
+| `ruleType`       | String  | Rule category (`'shipping'` or `'insurance'`).                             | `"shipping"`                        | |
 | `company`        | String  | Shipping provider name.                                                     | `"Kerry Express"`                   | |
+| `matchType`      | String  | Target criteria type (`'category'`, `'sku'`, `'combo'`, `'all'`).          | `"category"`                        | |
 | `productType`    | String  | Product category to apply to (or 'All').                                    | `"All"`                             | |
+| `sku`            | String  | Specific product SKU when matchType is `'sku'`.                             | `"NB-DELL-5400"`                    | |
 | `minQty`         | Number  | Minimum items in cart to trigger rule.                                      | `1`                                 | |
 | `maxQty`         | Number  | Maximum items in cart for this rule.                                        | `5`                                 | |
-| `shippingFee`    | Number  | Flat fee applied when conditions are met.                                   | `50`                                | |
+| `shippingFee`    | Number  | Flat fee applied when conditions are met (THB).                             | `50`                                | |
 | `isActive`       | Boolean | Toggle to enable/disable the rule.                                          | `true`                              | |
+| `conditions`     | Array   | Sub-conditions for Combo rules (`{ type, value, minQty, maxQty }[]`).       | `[]`                                | |
 | `updatedAt`      | Date    | Server timestamp of last update.                                            | `Timestamp`                         | |
+| `deletedAt`      | Date    | Soft delete timestamp (null/undefined if active).                          | `Timestamp`                         | |
 
 ### TypeScript Interface
 ```typescript
+export interface ShippingSubCondition {
+  type: 'category' | 'sku';
+  value: string;
+  minQty: number;
+  maxQty: number;
+}
+
 export interface ShippingRule {
   id?: string;
+  ruleType: 'shipping' | 'insurance';
   company: string;
+  matchType: 'category' | 'sku' | 'combo' | 'all';
   productType: string;
+  sku?: string;
   minQty: number;
   maxQty: number;
   shippingFee: number;
   isActive: boolean;
+  conditions?: ShippingSubCondition[];
   updatedAt: any;
+  deletedAt?: any;
 }
 ```
 

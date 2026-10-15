@@ -7,7 +7,9 @@ export const shippingService = {
   async getShippingRules() {
     try {
       const snap = await getDocs(collection(db, getCollectionPath('shipping_rules')));
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const data = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => !r.deletedAt);
       // Sort: Active first, then ascending by minQty
       data.sort((a, b) => (b.isActive - a.isActive) || (a.minQty - b.minQty));
       return data;
@@ -22,7 +24,9 @@ export const shippingService = {
       const { query, where } = await import('firebase/firestore');
       const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
       const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(r => !r.deletedAt);
     } catch (error) {
       console.error("🔥 Error loading active shipping rules:", error);
       throw error;

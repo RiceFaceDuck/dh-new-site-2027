@@ -113,7 +113,9 @@ export const storefrontSettingsService = {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const q = query(collection(db, getCollectionPath('shipping_rules')), where('isActive', '==', true));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(r => !r.deletedAt);
     } catch (error) {
       console.error("🔥 Error fetching active shipping rules:", error);
       return [];

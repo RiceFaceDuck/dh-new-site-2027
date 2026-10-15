@@ -70,7 +70,7 @@ export default function PosSystem({
                     const rawRules = sessionStorage.getItem(SHIPPING_RULES_CACHE_KEY);
                     if (rawRules) {
                         const parsed = JSON.parse(rawRules);
-                        if (Array.isArray(parsed) && parsed.length > 0) {
+                        if (Array.isArray(parsed)) {
                             setShippingRules(parsed);
                             return;
                         }

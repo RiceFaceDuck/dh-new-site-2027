@@ -54,6 +54,7 @@ Navigate directly to these files when modifying the system's core:
     *   👉 `dbPath.js` or `getCollectionPath`: Firestore path manager.
 *   **`dh-backoffice-react/`** (Backoffice/POS/Inventory/Claims):
     *   Quick Search: `src/pages/managers/settings/` (Manager Settings).
+    *   Shipping Management: [ssr-memory_shipping.md](file:///c:/_DH%20Notebook/Management%20System/dh-backoffice-react/src/pages/managers/settings/shipping/ssr-memory_shipping.md)
 *   **`dh-frontend/`** (B2B Customers):
     *   Cart, Checkout, Credit Points, Wallet.
 *   **`dh-staff-app/`** (Mobile Staff App):

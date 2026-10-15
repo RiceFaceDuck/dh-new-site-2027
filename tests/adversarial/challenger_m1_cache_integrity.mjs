@@ -334,7 +334,7 @@ function createShippingRulesHarness() {
         const rawRules = storage.getItem(SHIPPING_RULES_CACHE_KEY);
         if (rawRules) {
           const parsed = JSON.parse(rawRules);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed)) {
             return { rules: parsed, source: 'sessionStorage' };
           }
         }
@@ -400,7 +400,7 @@ await asyncCheck('Shipping Rules Cache: Expires at 10 minutes and re-fetches fro
   assert.strictEqual(harness.getFetchCount(), 2);
 });
 
-await asyncCheck('Adversarial Nuance: Empty shipping rules array [] bypasses cache check', async () => {
+await asyncCheck('Shipping Rules Cache: Empty shipping rules array [] is cached properly (0 remote reads on repeat)', async () => {
   const harness = createShippingRulesHarness();
   harness.setReturnEmptyRules(true); // store has 0 shipping rules
 
@@ -408,14 +408,12 @@ await asyncCheck('Adversarial Nuance: Empty shipping rules array [] bypasses cac
   await harness.fetchShippingRules(t0);
   assert.strictEqual(harness.getFetchCount(), 1);
 
-  // Because PosSystem.jsx checks `Array.isArray(parsed) && parsed.length > 0`,
-  // an empty rules array [] will fail `parsed.length > 0` and re-fetch on every mount!
+  // Now PosSystem.jsx checks `Array.isArray(parsed)`, so [] is properly cached
   const t1 = t0 + 60 * 1000;
   const res = await harness.fetchShippingRules(t1);
 
-  // Empirical confirmation of adversarial observation:
-  assert.strictEqual(res.source, 'network');
-  assert.strictEqual(harness.getFetchCount(), 2, 'Empty array [] is not cached due to length > 0 guard');
+  assert.strictEqual(res.source, 'sessionStorage');
+  assert.strictEqual(harness.getFetchCount(), 1, 'Empty array [] is properly cached and does not trigger remote reads');
 });
 
 // ============================================================================
