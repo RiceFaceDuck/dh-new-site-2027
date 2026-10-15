@@ -98,8 +98,13 @@ export function computeCatalogHash(catalog) {
     return 'empty_00000000';
   }
 
-  const sorted = [...catalog].sort((a, b) =>
-    String(a.sku || a.id || '').localeCompare(String(b.sku || b.id || ''))
+  const validItems = catalog.filter(Boolean);
+  if (validItems.length === 0) {
+    return 'empty_00000000';
+  }
+
+  const sorted = [...validItems].sort((a, b) =>
+    String(a?.sku || a?.id || '').localeCompare(String(b?.sku || b?.id || ''))
   ).map(item =>
     `${item.sku || item.id || ''}:${Number(item.stockQuantity ?? 0)}:${Number(item.Price ?? item.price ?? item.wholesalePrice ?? 0)}:${Number(item.adjustmentHistory?.['30'] ?? 0)}:${item.updatedAt?.seconds || item.updatedAt || ''}`
   ).join('|');

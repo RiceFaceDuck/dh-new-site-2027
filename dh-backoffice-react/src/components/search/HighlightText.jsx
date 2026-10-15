@@ -1,5 +1,5 @@
 
-export const HighlightText = ({ text, highlightData }) => {
+export const HighlightText = ({ text, highlightData = [] }) => {
   if (!text) return <span className="text-dh-muted opacity-70">n/a</span>;
   
   if (Array.isArray(text)) {
@@ -15,8 +15,9 @@ export const HighlightText = ({ text, highlightData }) => {
 
   let parts = [{ text, isMatch: false, className: '' }];
 
-  highlightData.forEach(({ term, colorClass }) => {
-    if (!term.trim()) return;
+  const safeHighlightData = Array.isArray(highlightData) ? highlightData : [];
+  safeHighlightData.forEach(({ term, colorClass } = {}) => {
+    if (!term || typeof term !== 'string' || !term.trim()) return;
     const lowerTerm = term.toLowerCase();
     let newParts = [];
 

@@ -42,6 +42,8 @@
     - Product list selection highlight must match strictly on product.sku to avoid double selection visual glitches.
     - Main search presentation panels (Header, List, Detail, History) are wrapped in React.memo with log sorting memoized to avoid keystroke re-renders.
     - Product Search+ UI Refinement (2026-10-15): ปรับ Card Panels ทั้ง 3 แผงหลักและการ์ดย่อยภายใน (Image box, SHORT banner, Compatible models, Part no.) ให้มีมุมโค้งมนเหลือ 0.1rem (rounded-[0.1rem]) พร้อมขอบคมชัดและเงา shadow-md เพื่อมิติสายตาที่ชัดเจน โดยคงขนาดมุมโค้งของปุ่มต่างๆ ไว้เท่าเดิม (rounded-md/lg/full) และปรับปุ่มทั้งหมด (Quick Filters, Action Links, เพิ่มรุ่น/พาร์ท, ดูประวัติ, ส่งโน้ต) ให้มี Shapes & Borders สีทึบ (Solid 2px) ตัวหนังสือสีขาว/สีเข้มที่มีคอนทราสต์สูง มองเห็นได้ชัดเจน 100%
+    - Product Search+ Stability Hotfixes (Phase 1, 2026-10-15): แก้ไข 3 จุดเสี่ยง runtime TypeError: (1) เสริม null-coalescing ให้ debouncedSearch1..3 ก่อน .trim() ใน useProductSearchQuery.js (2) กรอง .filter(Boolean) ก่อนคำนวณ Checksum ใน computeCatalogHash() ป้องกัน crash เมื่อมี element ว่าง (3) กำหนด default prop highlightData = [] และ safe array check ใน HighlightText.jsx ผลการรัน adversarial test ผ่านฉลุย 23/23 tests
+    - Product Search+ Navigation Shield (Phase 2, 2026-10-15): แก้ไข Quota Leak ใน useProductSearch.js โดยใส่ debounce timer 300ms ให้กับการเรียก inventoryQueryService.getProductBySku(product.sku) ตอนเลือกสินค้า ทำให้การกดลูกศรคีย์บอร์ดเลื่อนดูสินค้าอย่างรวดเร็ว (ArrowUp/Down) จะยกเลิก timer เดิมและยิงอ่าน Firestore เฉพาะเมื่อหยุดดูสินค้าตัวสุดท้ายเท่านั้น ป้องกันการรั่วไหลของ Firestore reads ระหว่างการเลื่อนสินค้าอย่างสมบูรณ์
   </pitfalls_and_lessons>
 
   <watchlist>

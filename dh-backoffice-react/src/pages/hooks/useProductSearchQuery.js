@@ -161,7 +161,7 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
   // 4. Instant Multi-Keyword Local Filter (0ms, 0 Reads)
   // ==========================================
   const allFilteredProducts = useMemo(() => {
-    if (!debouncedSearch1.trim() && !debouncedSearch2.trim() && !debouncedSearch3.trim() && stockFilter === 'ALL') {
+    if (!(debouncedSearch1 || '').trim() && !(debouncedSearch2 || '').trim() && !(debouncedSearch3 || '').trim() && stockFilter === 'ALL') {
       return mergedProducts;
     }
 

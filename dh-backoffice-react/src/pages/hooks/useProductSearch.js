@@ -114,8 +114,15 @@ export function useProductSearch() {
   }, []);
 
   const liveFetchSeq = useRef(0);
+  const liveFetchTimerRef = useRef(null);
 
-  const handleSelectProduct = useCallback(async (product, index) => {
+  useEffect(() => {
+    return () => {
+      if (liveFetchTimerRef.current) clearTimeout(liveFetchTimerRef.current);
+    };
+  }, []);
+
+  const handleSelectProduct = useCallback((product, index) => {
     if (!product) return;
     setSelectedProduct(product);
 
@@ -138,16 +145,21 @@ export function useProductSearch() {
       setSubstitutes(subs);
     }
 
-    // ✨ Sequence Lock + Stale Protection for Live Fetch
-    const currentSeq = ++liveFetchSeq.current;
-    try {
-      const liveProduct = await inventoryQueryService.getProductBySku(product.sku);
-      if (liveProduct && currentSeq === liveFetchSeq.current) {
-        setSelectedProduct(prev => (prev?.sku === product.sku ? { ...prev, ...liveProduct } : prev));
-      }
-    } catch (e) {
-      console.warn('Live fetch failed', e);
+    // ✨ Navigation Shield: Debounced Live Fetch (300ms) + Sequence Lock to protect read quota
+    if (liveFetchTimerRef.current) {
+      clearTimeout(liveFetchTimerRef.current);
     }
+    const currentSeq = ++liveFetchSeq.current;
+    liveFetchTimerRef.current = setTimeout(async () => {
+      try {
+        const liveProduct = await inventoryQueryService.getProductBySku(product.sku);
+        if (liveProduct && currentSeq === liveFetchSeq.current) {
+          setSelectedProduct(prev => (prev?.sku === product.sku ? { ...prev, ...liveProduct } : prev));
+        }
+      } catch (e) {
+        console.warn('Live fetch failed', e);
+      }
+    }, 300);
   }, [filteredProducts, mergedProducts, actionHooks, setNewComment, setShowCommentInput]);
 
   useProductSearchKeyboard(filteredProducts, selectedIndex, setSelectedIndex, handleSelectProduct, modalsState, loadMore, hasMore);
