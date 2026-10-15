@@ -5,7 +5,7 @@ export default function ManagerDrivePanel({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl h-[80vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl h-[80vh] flex flex-col rounded-[0.2rem] overflow-hidden shadow-2xl border border-slate-300 dark:border-slate-800">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
@@ -23,13 +23,13 @@ export default function ManagerDrivePanel({ isOpen, onClose }) {
               href="https://drive.google.com/drive/folders/1VaeeSqzaUu7F_CgSTyk-e2y6gMFXly3j" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+              className="px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-[0.2rem] transition-colors"
             >
               <ExternalLink size={16} /> เปิดในหน้าต่างใหม่
             </a>
             <button 
               onClick={onClose} 
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-[0.2rem] transition-colors"
             >
               <X size={20} />
             </button>

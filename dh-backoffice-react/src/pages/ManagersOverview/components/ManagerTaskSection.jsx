@@ -12,7 +12,7 @@ import WholesaleCard from '../../../components/todo/WholesaleCard';
 
 // 💎 Premium Skeleton Loader
 const PremiumSkeleton = () => (
-  <div className="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-xs border border-slate-200 dark:border-slate-700 h-[80px] flex items-center animate-pulse">
+  <div className="bg-white dark:bg-slate-800 rounded-[0.2rem] p-3 shadow-sm border border-slate-300 dark:border-slate-700 h-[80px] flex items-center animate-pulse">
     <div className="w-9 h-9 bg-slate-200 dark:bg-slate-700 rounded-lg shrink-0 mr-3"></div>
     <div className="flex-1 space-y-2">
       <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded-sm w-1/2"></div>
@@ -31,7 +31,7 @@ const ManagerDocModal = ({ isOpen, onClose }) => {
       onClick={onClose}
     >
       <div 
-        className="bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700 space-y-3 animate-in zoom-in-95"
+        className="bg-white dark:bg-slate-800 rounded-[0.2rem] p-5 max-w-md w-full shadow-2xl border border-slate-300 dark:border-slate-700 space-y-3 animate-in zoom-in-95"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -59,7 +59,7 @@ const ManagerDocModal = ({ isOpen, onClose }) => {
               <li>สำหรับงานตั้งค่าประกัน สามารถกด <strong>"ตั้งค่าประกัน ↗"</strong> เพื่อไปยังหน้าตั้งค่าโดยตรง</li>
             </ol>
           </div>
-          <div className="bg-rose-50 dark:bg-rose-950/30 p-2.5 rounded-xl border border-rose-100 dark:border-rose-900/50">
+          <div className="bg-rose-50 dark:bg-rose-950/30 p-2.5 rounded-[0.2rem] border border-rose-100 dark:border-rose-900/50">
             <strong className="text-rose-800 dark:text-rose-300 block mb-0.5">⚠️ ข้อควรระวัง:</strong>
             <p className="text-rose-700 dark:text-rose-400 text-[11px]">การปฏิเสธคำขอ ต้องกรอกเหตุผลบันทึกลง History Log เสมอ</p>
           </div>

@@ -131,7 +131,16 @@ export default function PosHeader({
 
                             {safeCartTabs.length > 1 && (
                                 <div 
-                                    onClick={(e) => { e.stopPropagation(); if (!isProcessing) closeTab(tab.id); }}
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (isProcessing) return;
+                                        if (tab.items && tab.items.length > 0) {
+                                            const tabLabel = getTabTitle ? getTabTitle(tab, index) : `แท็บบิล ${index + 1}`;
+                                            const confirmed = window.confirm(`แท็บบิล "${tabLabel}" มีสินค้าค้างอยู่ ${tab.items.length} รายการ\n\nคุณแน่ใจหรือไม่ว่าต้องการปิดแท็บนี้ทิ้ง?`);
+                                            if (!confirmed) return;
+                                        }
+                                        closeTab(tab.id); 
+                                    }}
                                     className={`p-1 rounded-full transition-all flex items-center justify-center ml-0.5 ${
                                         isActive 
                                             ? 'bg-slate-100 hover:bg-red-500 hover:text-white text-slate-400' 

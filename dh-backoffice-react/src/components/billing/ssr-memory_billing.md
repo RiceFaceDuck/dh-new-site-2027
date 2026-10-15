@@ -72,6 +72,37 @@
        วิธีแก้: เปลี่ยนปุ่มเป็น "จัดการบิล" สีเหลือง (Amber) และแก้ `onSwitchView` ใน `BillingMain.jsx` ให้ส่ง `setIsNewBillRequest(false)` เพื่อแค่สลับเข้าหน้า POS โดยไม่สร้างบิลใหม่ลอยๆ หากต้องการสร้างบิลใหม่ให้ทำจากปุ่มในหน้า POS หรือกดปุ่ม [+] ที่ Sidebar ตามความต้องการผู้ใช้งาน [สถานะ: ส่งมอบแล้ว]
     13. ปัญหา: โมดอลเพิ่มลูกค้าใหม่ (QuickAddCustomerModal) โดนแถบบน (PosHeader) แทรกทับ และคลิกฉากหลังไม่ยอมปิด
        วิธีแก้: ใช้ `createPortal(..., document.body)` ยกโมดอลขึ้น Root DOM ชั้นบนสุด ปรับ z-index เป็น z-[100] พร้อมใส่ `onClick={onClose}` ที่ Backdrop และ `onClick={(e) => e.stopPropagation()}` ที่ Card เพื่อให้คลิกพื้นที่ว่างปิดได้ทันที [สถานะ: ส่งมอบแล้ว]
+    14. ปัญหา: บิลเก่าเกิน 50 รายการไม่โหลดเมื่อกดถัดไป (Pagination Deadlock)
+       วิธีแก้: ใน `useBillingOrders.js` ปรับเงื่อนไขให้สลับไปดึงจาก `billingService.subscribeRecentOrders(limitAmount, dateRange)` เมื่อ `limitAmount > 50` หรือมี `dateRange` และให้ `OrderListTable.jsx` อัปเดต `limitAmount` ตาม `pageSize` อัตโนมัติ [สถานะ: ส่งมอบแล้ว]
+    15. ปัญหา: ค้นหาบิลด้วยรหัส SKU สินค้าไม่พบเพราะไม่มีฟิลด์ `itemSkus` ใน Order document
+       วิธีแก้: เติมการสร้าง `itemSkus` (อาเรย์ของ unique uppercase SKU) ใน `billingTransactionService.js`, `usePosActions.js`, และ `orderSyncService.js` เพื่อให้ตรงกับ `where('itemSkus', 'array-contains', ...)` ของระบบค้นหา [สถานะ: ส่งมอบแล้ว]
+    16. ปัญหา: บิลที่มีส่วนลดถูกต้องเกิน 50% อาจถูกคำนวณทับยอดเงินสุทธิ (storedNet)
+       วิธีแก้: ใน `priceEngine.js` เพิ่ม Guard `hasExplicitDiscount` ดักจับส่วนลดชัดเจน (manualDiscount, promoDiscount, overallDiscount ฯลฯ) เพื่อเคารพยอดที่บันทึกจริง ไม่เขียนทับยอดบิล [สถานะ: ส่งมอบแล้ว]
+    17. ปัญหา: คำร้อง To-do ตกค้างในหน้าผู้จัดการเมื่อลบบิลร่างหรือยกเลิกบิล
+       วิธีแก้: ปรับ `billingDeleteService.js` และ `billingStatusTransaction.js` ให้ค้นหาและยกเลิก Todos ครอบคลุมทั้ง `referenceId` และ `payload.orderId` ป้องกันงานค้าง Orphaned Todos [สถานะ: ส่งมอบแล้ว]
+    18. ปัญหา: การค้นหาบิลยิง Firestore ซ้ำซ้อนและสิ้นเปลืองโควต้า โดยไม่ใช้แคชบิลในเครื่อง
+       วิธีแก้: ปรับ `billingQueryService.searchOrders` ให้ค้นหาใน Cache (`readCachedOrders()`) ก่อน, deduplicate SKU searches และเชื่อมโยง Customer Directory Cache (`dh_customers_data_cache_v10`) เพื่อแปลงชื่อลูกค้าเป็น UIDs ยิง Firestore ได้ตรงเป้าหมายแบบประหยัดโควต้า [สถานะ: ส่งมอบแล้ว]
+    19. ปัญหา: ค่าจัดส่งถูกตัดทิ้งหายไปทั้งก้อนบนเซิร์ฟเวอร์ เมื่อบิลเป็นรูปแบบไม่มี VAT (exempt) หรือรวม VAT (included) และไม่ได้ติ๊กคิดภาษีบนค่าส่ง
+       วิธีแก้: ใน `billingTransactionService.js` ปรับเงื่อนไขคืนค่าจัดส่ง `shippingCost` เข้าสู่ `finalSecureNetTotal` ครอบคลุมทุกกรณีที่ไม่ได้คิดภาษีบนค่าส่ง (`!isVatOnShipping`) ป้องกันเงินค่าจัดส่งสูญหายจากระบบบัญชี [สถานะ: ส่งมอบแล้ว]
+    20. ปัญหา: กระเป๋าเงิน Wallet ถูกหักเงินตั้งแต่ตอนบันทึกบิลร่าง (Draft) ทำให้เกิดการหักเงินซ้ำ 2 เท่าเมื่อชำระเงินจริง
+       วิธีแก้: ย้ายบล็อกการหักเงิน Wallet และการแจกแต้มใน `billingTransactionService.js` ให้อยู่ภายใต้เงื่อนไข `statusLower === 'paid' || statusLower === 'approved'` เท่านั้น พร้อมบันทึกฟิลด์ `isWalletDeducted` และปรับ `billingDeleteService.js` ให้ตรวจสอบก่อนคืนเงิน ป้องกันเงินหายและเงินงอก [สถานะ: ส่งมอบแล้ว]
+    21. ปัญหา: คีย์ลัด Alt + N สร้างบิลใหม่กดไม่ติด ทั้งที่ระบุในคู่มือการใช้งาน
+       วิธีแก้: ใน `PosSystem.jsx` สร้างฟังก์ชัน Wrapper `handleCreateNewTab` ที่ตรวจสอบหาแท็บว่างหรือสั่ง `setCartTabs(prev => [...prev, newTab])` พร้อม `setActiveTabId(newTab.id)` ส่งให้ `usePosShortcuts` และ `PosHeader` แทน Factory function เปล่า [สถานะ: ส่งมอบแล้ว]
+    22. ปัญหา: แคชเชียร์เผลอคลิกปุ่ม X ปิดแท็บบิล ทำให้รายการสินค้าที่ยิงไว้สูญหายทันทีโดยไม่มีการเตือน
+       วิธีแก้: ใน `PosHeader.jsx` เพิ่ม Guard ตรวจสอบ `if (tab.items && tab.items.length > 0)` และแจ้งเตือนด้วย `window.confirm` ก่อนปิดแท็บ เพื่อป้องกันข้อมูลบิลร่างสูญหายจากอุบัติเหตุ [สถานะ: ส่งมอบแล้ว]
+    23. ปัญหา: สต็อกสินค้าของแถม (Freebie) ที่ตัดจากคลังจริง ไม่ถูกคืนสต็อกเมื่อยกเลิกบิล
+       วิธีแก้: ปรับปรุง `billingStatusTransaction.js` โดยตัดเงื่อนไข `item.isFreebie` ออกจากการดักข้าม ทำให้สินค้าทุกรายการที่มี `id` หรือ `sku` ในรายการบิลถูกรวมเข้า Map และคืนสต็อกเข้าคลังสินค้าอย่างถูกต้องเมื่อกดยกเลิกบิล [สถานะ: ส่งมอบแล้ว]
+    24. ปัญหา: รหัสบิลร่าง POS มีโอกาสชนกัน (Collision Risk) เนื่องจากใช้เลขสุ่มเพียง 4 หลัก (`DH-TEMP-XXXX`)
+       วิธีแก้: ปรับปรุง `usePosState.js` และ `billingTransactionService.js` ให้สร้างรหัสบิลร่างเป็น Timestamp ละเอียดถึงระดับวินาทีตามด้วยเลขสุ่ม 4 หลัก (`DH-TEMP-YYMMDD-HHMMSS-RAND4`) ป้องกันการบันทึกทับบิลร่างของเครื่องอื่น [สถานะ: ส่งมอบแล้ว]
+    25. ปัญหา: ระบบอัปโหลดสลิปใน `usePosActions.js` มีการเขียนโค้ดซ้ำซ้อนในตัวเองและไม่เชื่อมกับ Cloud Functions OCR และ Google Drive Backup
+       วิธีแก้: ปรับให้ `usePosActions.js` เรียกใช้ Service กลาง `slipStorageService` จาก `src/firebase/slipStorageService.js` โดยตรง พร้อมส่ง `remainingToPay` ป้องกัน ReferenceError และรองรับทั้งการย่อขนาดภาพ WebP, สำรองสลิปไป Drive และตรวจสอบยอดผ่าน OCR [สถานะ: ส่งมอบแล้ว]
+    26. ปัญหา: ชื่อรุ่นสินค้าบนกระดาษพิมพ์ใบเสร็จ A5 ถูกตัดทิ้งด้วย `...` ทำให้อ่านชื่อรุ่นบนกระดาษพิมพ์จริงไม่ครบถ้วน
+       วิธีแก้: ปรับปรุง `ReceiptItems.jsx` ให้ใช้ `line-clamp-2 break-words` ร่วมกับ `items-start` ช่วยให้ชื่อสินค้ายาวสามารถตัดขึ้นบรรทัดที่สองได้บนกระดาษพิมพ์จริงอย่างเรียบร้อย [สถานะ: ส่งมอบแล้ว]
+    27. ปัญหา: ฟังก์ชันแปลงตัวเลขเป็นตัวหนังสือไทย `convertToThaiBahtText` ถูกเขียนซ้ำใน `PosSystem.jsx` และไม่รองรับค่าลบ
+       วิธีแก้: ลบฟังก์ชันเฉพาะถิ่นใน `PosSystem.jsx` และ import ใช้งานจาก `dh-shared` โดยตรง ซึ่งรองรับทั้งเศษสตางค์ ค่าลบ และผ่านการทดสอบครอบคลุม [สถานะ: ส่งมอบแล้ว]
+    28. ปัญหา: ยอดรวมแถวสินค้าในตะกร้าแคชเชียร์แสดงผลติดลบ หากกรอกส่วนลดต่อชิ้นสูงกว่าราคาขาย
+       วิธีแก้: ใน `CartTableRow.jsx` ครอบ `Math.max(0, ...)` ในการคำนวณราคาต่อชิ้นหักส่วนลด ป้องกันไม่ให้ตัวเลขแถวแสดงยอดติดลบในหน้าจอแคชเชียร์ [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
+
 

@@ -143,8 +143,12 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
                             <select
                                 value={pageSize}
                                 onChange={e => {
-                                    setPageSize(Math.max(10, Number(e.target.value) || 10));
+                                    const newPageSize = Math.max(10, Number(e.target.value) || 10);
+                                    setPageSize(newPageSize);
                                     setCurrentPage(1);
+                                    if (newPageSize > limitAmount && typeof setLimitAmount === 'function') {
+                                        setLimitAmount(newPageSize);
+                                    }
                                 }}
                                 className="px-2 py-1 bg-(--dh-bg-surface) border border-(--dh-border) rounded-md text-xs font-bold text-(--dh-text-main) focus:outline-none focus:border-(--dh-accent) cursor-pointer"
                             >

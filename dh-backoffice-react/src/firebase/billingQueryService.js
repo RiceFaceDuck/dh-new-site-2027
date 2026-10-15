@@ -46,14 +46,47 @@ export const billingQueryService = {
       
       const term = searchTerm.trim();
       const termLower = term.toLowerCase();
+      const termUpper = term.toUpperCase();
       const isPhone = /^[0-9]+$/.test(term);
-      const isOrderNum = term.toUpperCase().startsWith('DH-') || term.toUpperCase().startsWith('TEMP-');
+      const isOrderNum = termUpper.startsWith('DH-') || termUpper.startsWith('TEMP-');
       
       let results = [];
       const colRef = getOrdersColRef();
 
+      // ⚡ 1. Check in-memory/session cached orders for instant matches
+      const { orders: cached } = readCachedOrders();
+      const cachedMatches = (Array.isArray(cached) && cached.length > 0)
+        ? cached.filter(o => {
+            const inOrderId = String(o.orderId || '').toLowerCase().includes(termLower);
+            const inCustomer = String(o.customer?.accountName || '').toLowerCase().includes(termLower) ||
+                               String(o.customer?.name || '').toLowerCase().includes(termLower) ||
+                               String(o.customer?.displayName || '').toLowerCase().includes(termLower) ||
+                               String(o.customer?.firstName || '').toLowerCase().includes(termLower) ||
+                               String(o.customer?.lastName || '').toLowerCase().includes(termLower) ||
+                               String(o.customer?.phone || '').includes(termLower) ||
+                               String(o.customerInfo?.fullName || '').toLowerCase().includes(termLower) ||
+                               String(o.customerInfo?.phone || '').includes(termLower) ||
+                               String(o.walkInName || '').toLowerCase().includes(termLower) ||
+                               String(o.walkInPhone || '').includes(termLower);
+            const inStaff = String(o.staffNickname || '').toLowerCase().includes(termLower) ||
+                            String(o.createdBy || '').toLowerCase().includes(termLower);
+            const inTracking = String(o.trackingNumber || o.trackingNo || o.shippingTracking || '').toLowerCase().includes(termLower);
+            const inTax = String(o.taxInvoiceInfo?.taxId || o.taxId || o.companyTaxId || '').toLowerCase().includes(termLower) ||
+                          String(o.taxInvoiceInfo?.companyName || '').toLowerCase().includes(termLower);
+            const inNotes = String(o.notes || o.remark || o.memo || '').toLowerCase().includes(termLower);
+            const inItems = (Array.isArray(o.itemSkus) && o.itemSkus.some(s => String(s).toLowerCase().includes(termLower))) ||
+                            (Array.isArray(o.items) && o.items.some(i => 
+                              String(i.sku || i.productCode || i.code || '').toLowerCase().includes(termLower) ||
+                              String(i.name || i.productName || i.title || '').toLowerCase().includes(termLower) ||
+                              String(i.model || i.brand || '').toLowerCase().includes(termLower) ||
+                              String(i.sn || i.serialNumber || '').toLowerCase().includes(termLower)
+                            ));
+            return inOrderId || inCustomer || inStaff || inTracking || inTax || inNotes || inItems;
+          })
+        : [];
+
       if (isOrderNum) {
-        const q = query(colRef, where('orderId', '==', term.toUpperCase()), limit(50));
+        const q = query(colRef, where('orderId', '==', termUpper), limit(50));
         const snap = await getDocs(q);
         results = snap.docs.map(doc => {
           const data = doc.data();
@@ -61,85 +94,72 @@ export const billingQueryService = {
           return { ...data, id: doc.id };
         });
       } else if (isPhone) {
+        // Query phone on customer and walkIn
         const q1 = query(colRef, where('customer.phone', '==', term), limit(50));
-        const q2 = query(colRef, where('customerInfo.phone', '==', term), limit(50));
-        const q3 = query(colRef, where('walkInPhone', '==', term), limit(50));
-        const q4 = query(colRef, where('trackingNumber', '==', term), limit(50));
-        const q5 = query(colRef, where('trackingNo', '==', term), limit(50));
+        const q2 = query(colRef, where('walkInPhone', '==', term), limit(50));
+        const q3 = query(colRef, where('trackingNumber', '==', term), limit(50));
 
-        const [snap1, snap2, snap3, snap4, snap5] = await Promise.all([
-          getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4), getDocs(q5)
-        ]);
-        
+        const [snap1, snap2, snap3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
         results = [
           ...snap1.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
           ...snap2.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap3.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap4.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap5.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; })
+          ...snap3.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; })
         ];
       } else {
-        const q1 = query(colRef, where('customer.firstName', '==', term), limit(50));
-        const q2 = query(colRef, where('customer.accountName', '==', term), limit(50));
-        const q3 = query(colRef, where('customerInfo.fullName', '==', term), limit(50));
-        const q4 = query(colRef, where('walkInName', '==', term), limit(50));
-        const q5 = query(colRef, where('itemSkus', 'array-contains', term.toUpperCase()), limit(50));
-        const q6 = query(colRef, where('itemSkus', 'array-contains', term), limit(50));
-
-        const [snap1, snap2, snap3, snap4, snap5, snap6] = await Promise.all([
-          getDocs(q1), getDocs(q2), getDocs(q3), getDocs(q4), getDocs(q5), getDocs(q6)
-        ]);
-
-        results = [
-          ...snap1.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap2.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap3.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap4.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap5.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }),
-          ...snap6.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; })
-        ];
-      }
-
-      // If no exact match found from specific index queries, perform deep text search across cached orders or recent 50 orders
-      if (results.length === 0) {
-        let allRecent = [];
-        const { orders: cached } = readCachedOrders();
-        if (Array.isArray(cached) && cached.length > 0) {
-          allRecent = cached;
-        } else {
-          const recentQuery = query(colRef, orderBy('createdAt', 'desc'), limit(50));
-          const recentSnap = await getDocs(recentQuery);
-          allRecent = recentSnap.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; });
-        }
+        // Targeted queries
+        const queryPromises = [];
         
-        results = allRecent.filter(o => {
-          const inOrderId = String(o.orderId || '').toLowerCase().includes(termLower);
-          const inCustomer = String(o.customer?.accountName || '').toLowerCase().includes(termLower) ||
-                             String(o.customer?.firstName || '').toLowerCase().includes(termLower) ||
-                             String(o.customer?.lastName || '').toLowerCase().includes(termLower) ||
-                             String(o.customer?.phone || '').includes(termLower) ||
-                             String(o.customerInfo?.fullName || '').toLowerCase().includes(termLower) ||
-                             String(o.customerInfo?.phone || '').includes(termLower) ||
-                             String(o.walkInName || '').toLowerCase().includes(termLower) ||
-                             String(o.walkInPhone || '').includes(termLower);
-          const inStaff = String(o.staffNickname || '').toLowerCase().includes(termLower) ||
-                          String(o.createdBy || '').toLowerCase().includes(termLower);
-          const inTracking = String(o.trackingNumber || o.trackingNo || o.shippingTracking || '').toLowerCase().includes(termLower);
-          const inTax = String(o.taxInvoiceInfo?.taxId || o.taxId || o.companyTaxId || '').toLowerCase().includes(termLower) ||
-                        String(o.taxInvoiceInfo?.companyName || '').toLowerCase().includes(termLower);
-          const inNotes = String(o.notes || o.remark || o.memo || '').toLowerCase().includes(termLower);
-          const inItems = Array.isArray(o.items) && o.items.some(i => 
-            String(i.sku || i.productCode || i.code || '').toLowerCase().includes(termLower) ||
-            String(i.name || i.productName || i.title || '').toLowerCase().includes(termLower) ||
-            String(i.model || i.brand || '').toLowerCase().includes(termLower) ||
-            String(i.sn || i.serialNumber || '').toLowerCase().includes(termLower)
-          );
+        // 1. SKU query (Exact uppercase matching in itemSkus array)
+        queryPromises.push(
+          getDocs(query(colRef, where('itemSkus', 'array-contains', termUpper), limit(50)))
+            .then(s => s.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }))
+            .catch(() => [])
+        );
 
-          return inOrderId || inCustomer || inStaff || inTracking || inTax || inNotes || inItems;
-        });
+        // 2. Customer name exact match
+        queryPromises.push(
+          getDocs(query(colRef, where('customer.accountName', '==', term), limit(50)))
+            .then(s => s.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }))
+            .catch(() => [])
+        );
+
+        // 3. Check customer directory cache to resolve partial name to customer UIDs
+        let matchedCustomerUids = [];
+        if (typeof window !== 'undefined') {
+          try {
+            const rawCustData = window.sessionStorage.getItem('dh_customers_data_cache_v10') ||
+                                localStorage.getItem('dh_customers_data_cache_v10');
+            if (rawCustData) {
+              const parsedCusts = JSON.parse(rawCustData);
+              if (Array.isArray(parsedCusts)) {
+                matchedCustomerUids = parsedCusts
+                  .filter(c => {
+                    const name = String(c.accountName || c.displayName || c.name || c.firstName || '').toLowerCase();
+                    return name.includes(termLower);
+                  })
+                  .map(c => c.id || c.uid)
+                  .filter(Boolean)
+                  .slice(0, 10);
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (matchedCustomerUids.length > 0) {
+          queryPromises.push(
+            getDocs(query(colRef, where('customer.uid', 'in', matchedCustomerUids), limit(50)))
+              .then(s => s.docs.map(d => { const data = d.data(); delete data.id; return { ...data, id: d.id }; }))
+              .catch(() => [])
+          );
+        }
+
+        const queryResults = await Promise.all(queryPromises);
+        results = queryResults.flat();
       }
 
-      const uniqueResults = results.filter((v,i,a) => a.findIndex(t => (t.id === v.id)) === i);
+      // Merge Firestore results with local cached matches
+      const combined = [...results, ...cachedMatches];
+      const uniqueResults = combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
       return uniqueResults.length > 0 ? uniqueResults : null;
     } catch (error) {
       console.error("🔥 Error searching orders:", error);

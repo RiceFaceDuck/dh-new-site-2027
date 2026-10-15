@@ -62,8 +62,8 @@ export default function useBillingOrders() {
     useEffect(() => {
         setLoading(true);
 
-        // If filtering by custom date, use direct collection query
-        if (dateRange.start || dateRange.end) {
+        // If filtering by custom date, or if user expands limit beyond catalog bundle (> 50), use direct collection query
+        if (dateRange.start || dateRange.end || limitAmount > 50) {
             const unsubscribe = billingService.subscribeRecentOrders(limitAmount, dateRange, (data) => {
                 setRecentOrders(data);
                 setLoading(false);

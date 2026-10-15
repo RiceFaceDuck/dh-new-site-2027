@@ -87,6 +87,7 @@ export const syncRecentOrdersCatalog = async () => {
         staffNickname: d.staffNickname || '',
         createdBy: d.createdBy || '',
         items,
+        itemSkus: Array.isArray(d.itemSkus) ? d.itemSkus : items.map(i => i.sku).filter(Boolean),
         refundsAndClaims: d.refundsAndClaims || [],
         claims: d.claims || [],
         returns: d.returns || [],

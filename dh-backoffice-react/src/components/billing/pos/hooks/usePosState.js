@@ -23,10 +23,17 @@ let inMemoryFreebies = null;
 let inMemoryMarketingTimestamp = 0;
 
 const createNewTab = () => {
-    const yy = new Date().getFullYear().toString().slice(2);
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const now = new Date();
+    const yy = now.getFullYear().toString().slice(2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const sec = String(now.getSeconds()).padStart(2, '0');
+    const rand4 = Math.floor(1000 + Math.random() * 9000);
+    const orderId = `DH-TEMP-${yy}${mm}${dd}-${hh}${min}${sec}-${rand4}`;
     return {
-        id: Date.now().toString(), orderId: `DH-TEMP-${randomSuffix}`, docId: null, items: [], customer: null, priceMode: 'wholesale',
+        id: Date.now().toString(), orderId, docId: null, items: [], customer: null, priceMode: 'wholesale',
         walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
         autoShippingEnabled: false, overallDiscount: 0, overallDiscountType: 'BAHT', promoDiscount: 0, autoPromoEnabled: true, autoFreebieEnabled: true, disabledFreebieIds: [], manualFreebieIds: [], otherFeeName: '', otherFeeAmount: 0, 
     paymentMethod: 'Transfer', bankAccount: 'KBANK', cashReceived: '', slipImage: null, billNote: '', receiptFormat: 'short',

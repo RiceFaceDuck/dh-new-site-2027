@@ -14,7 +14,7 @@ export default function ManagerQRGeneratorModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-200">
-      <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+      <div className="bg-white w-full max-w-sm rounded-[0.2rem] shadow-2xl flex flex-col overflow-hidden border border-slate-300">
         
         {/* Header */}
         <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
@@ -29,7 +29,7 @@ export default function ManagerQRGeneratorModal({ isOpen, onClose }) {
 
         {/* Content */}
         <div className="p-8 flex flex-col items-center justify-center bg-slate-100/50 space-y-6">
-          <div className="bg-white p-6 rounded-3xl shadow-md border-2 border-slate-200 transform transition-transform hover:scale-105">
+          <div className="bg-white p-6 rounded-[0.2rem] shadow-md border-2 border-slate-200 transform transition-transform hover:scale-105">
             <QRCode value={qrData} size={220} fgColor="#0f172a" />
           </div>
           

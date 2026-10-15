@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateItemTotal, calculateSubtotal, calculatePromotionDiscount, calculateNetTotal } from './priceEngine';
+import { calculateItemTotal, calculateSubtotal, calculatePromotionDiscount, calculateNetTotal, calculateCanonicalTotals } from './priceEngine';
 
 describe('Price Engine', () => {
     describe('calculateItemTotal', () => {
@@ -79,6 +79,37 @@ describe('Price Engine', () => {
             // 200 - 20 (discount) + 50 (shipping) = 230. 230 - 30 (wallet) = 200.
             expect(result.netTotal).toBe(200);
             expect(result.subtotal).toBe(200);
+        });
+    });
+
+    describe('calculateCanonicalTotals', () => {
+        it('should preserve legitimate high discounts (> 50%) when explicit discount is present', () => {
+            const order = {
+                items: [{ price: 1000, qty: 1 }],
+                summary: {
+                    manualDiscount: 600,
+                    finalTotal: 400
+                },
+                finalTotal: 400,
+                vatType: 'exempt'
+            };
+            const result = calculateCanonicalTotals(order);
+            expect(result.itemsSubTotal).toBe(1000);
+            expect(result.manualDiscount).toBe(600);
+            expect(result.netTotal).toBe(400);
+        });
+
+        it('should recalculate when storedNet is 0 and subtotal > 0', () => {
+            const order = {
+                items: [{ price: 500, qty: 2 }],
+                summary: {
+                    finalTotal: 0
+                },
+                vatType: 'exempt'
+            };
+            const result = calculateCanonicalTotals(order);
+            expect(result.itemsSubTotal).toBe(1000);
+            expect(result.netTotal).toBe(1000);
         });
     });
 });

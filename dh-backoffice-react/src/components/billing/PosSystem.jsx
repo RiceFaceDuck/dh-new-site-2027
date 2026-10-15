@@ -19,31 +19,7 @@ import { useCartValidation } from './pos/hooks/useCartValidation';
 import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
 import { findExactCatalogMatch } from './pos/hooks/usePosCart.js';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
-
-const convertToThaiBahtText = (number) => {
-    if (isNaN(number) || number === 0) return "ศูนย์บาทถ้วน";
-    const numberStr = parseFloat(number).toFixed(2);
-    const [bahtStr, satangStr] = numberStr.split('.');
-    const readNumber = (numStr) => {
-        const numbers = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
-        const positions = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
-        let text = ""; const length = numStr.length;
-        for (let i = 0; i < length; i++) {
-            const digit = parseInt(numStr[i]); const position = length - i - 1;
-            if (digit !== 0) {
-                if (position === 0 && digit === 1 && length > 1 && parseInt(numStr[i-1]) !== 0) text += "เอ็ด";
-                else if (position === 1 && digit === 2) text += "ยี่สิบ";
-                else if (position === 1 && digit === 1) text += "สิบ";
-                else text += numbers[digit] + positions[position % 6];
-            }
-            if (position % 6 === 0 && position > 0 && digit !== 0) text += "ล้าน";
-        }
-        return text;
-    };
-    let result = readNumber(bahtStr) + "บาท";
-    if (satangStr === "00") result += "ถ้วน"; else result += readNumber(satangStr) + "สตางค์";
-    return result;
-};
+import { convertToThaiBahtText } from 'dh-shared';
 
 const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, slate: {} };
 
@@ -164,12 +140,30 @@ export default function PosSystem({
 
     const activeProducts = ((posState.products && posState.products.length > 0) ? posState.products : products) || [];
 
+    const handleCreateNewTab = () => {
+        if (isProcessing) return;
+        const emptyIdx = safeCartTabs.findIndex(t => 
+            (!t.items || t.items.length === 0) && 
+            !t.customer && !t.walkInName && !t.docId && 
+            (!t.orderId || String(t.orderId).startsWith('DH-TEMP-'))
+        );
+        if (emptyIdx !== -1) {
+            setActiveTabId(safeCartTabs[emptyIdx].id);
+        } else {
+            const newTab = createNewTab();
+            if (typeof setCartTabs === 'function') {
+                setCartTabs(prev => [...prev, newTab]);
+                setActiveTabId(newTab.id);
+            }
+        }
+    };
+
     const actions = usePosActions({
         posState, products: activeProducts, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText
     });
 
     usePosShortcuts({
-        safeCartTabs, searchRef, activeTabId, handleFileUpload: actions.handleFileUpload, createNewTab
+        safeCartTabs, searchRef, activeTabId, handleFileUpload: actions.handleFileUpload, createNewTab: handleCreateNewTab
     });
 
     const handleInteractWithOtherPanels = () => {
@@ -223,7 +217,7 @@ export default function PosSystem({
                 activeTabId={activeTabId} 
                 setActiveTabId={setActiveTabId} 
                 getTabTitle={getTabTitle} 
-                createNewTab={createNewTab} 
+                createNewTab={handleCreateNewTab} 
                 setCartTabs={setCartTabs} 
                 closeTab={closeTab}
             />

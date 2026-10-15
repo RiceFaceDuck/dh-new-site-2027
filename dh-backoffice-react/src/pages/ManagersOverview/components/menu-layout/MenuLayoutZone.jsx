@@ -16,7 +16,7 @@ export default function MenuLayoutZone({
   getMissingMenus
 }) {
   return (
-    <div className="bg-slate-100 rounded-xl p-4 border border-slate-200 shadow-xs flex flex-col">
+    <div className="bg-slate-100 rounded-[0.2rem] p-4 border border-slate-200 shadow-xs flex flex-col">
       {/* Zone Header */}
       <div className="flex justify-between items-center mb-4">
         {editingZoneId === zone.id ? (
@@ -25,10 +25,10 @@ export default function MenuLayoutZone({
               type="text" 
               value={zoneNameInput} 
               onChange={(e) => setZoneNameInput(e.target.value)}
-              className="flex-1 px-2 py-1 text-sm font-bold rounded-sm border-2 border-blue-500 outline-hidden"
+              className="flex-1 px-2 py-1 text-sm font-bold rounded-[0.2rem] border-2 border-blue-500 outline-hidden"
               autoFocus
             />
-            <button onClick={() => saveZoneName(zone.id)} className="p-1 bg-blue-500 text-white rounded-sm"><Save size={14}/></button>
+            <button onClick={() => saveZoneName(zone.id)} className="p-1 bg-blue-500 text-white rounded-[0.2rem]"><Save size={14}/></button>
           </div>
         ) : (
           <h3 className="font-black text-slate-700 text-sm flex items-center gap-2">
@@ -48,13 +48,13 @@ export default function MenuLayoutZone({
 
       {/* Zone Items (Droppable Area) */}
       <SortableContext id={zone.id} items={zone.items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex-1 min-h-[100px] bg-slate-50/50 rounded-lg p-2 border-2 border-dashed border-slate-200">
+        <div className="flex-1 min-h-[100px] bg-slate-50/50 rounded-[0.2rem] p-2 border-2 border-dashed border-slate-200">
           {zone.items.map((item) => (
             <div key={item.id} className="relative group">
               <SortableMenuItem id={item.id} menuId={item.menuId} />
               <button 
                 onClick={() => handleRemoveMenu(item.menuId, zone.id)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-red-100 text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-red-100 text-red-500 rounded-[0.2rem] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white"
                 title="ซ่อนเมนูนี้"
               >
                 <X size={14} />
@@ -72,7 +72,7 @@ export default function MenuLayoutZone({
       {/* Add Missing Menu Dropdown */}
       <div className="mt-3">
         <select 
-          className="w-full text-xs font-bold p-2 bg-white border border-slate-200 rounded-lg text-slate-600 outline-hidden hover:border-blue-400"
+          className="w-full text-xs font-bold p-2 bg-white border border-slate-200 rounded-[0.2rem] text-slate-600 outline-hidden hover:border-blue-400"
           onChange={(e) => {
             if(e.target.value) {
               handleAddMissingMenu(e.target.value, zone.id);

@@ -1,9 +1,8 @@
-import { auth, storage } from '../../../../firebase/config';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { compressImageWithCanvas } from 'dh-shared/src/utils/imageProcessingUtils.js';
+import { auth } from '../../../../firebase/config';
 import { billingService } from '../../../../firebase/billingService';
 import { syncRecentOrdersCatalog } from '../../../../firebase/orderSyncService';
 import { offlinePosService } from '../../../../firebase/offlinePosService';
+import { slipStorageService } from '../../../../firebase/slipStorageService';
 import { toast } from 'react-hot-toast';
 import { useCallback } from 'react';
 
@@ -11,61 +10,8 @@ import { safeJsonParse } from 'dh-shared';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 export const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
 
-// Co-located Slip Storage Service (Firebase Storage upload with Canvas WebP compression)
-export const slipStorageService = {
-    uploadSlipImage: async (file, orderId = 'UNASSIGNED') => {
-        if (!file) throw new Error("กรุณาเลือกไฟล์สลิปโอนเงิน");
-        const compressedFile = await compressImageWithCanvas(file, {
-            maxWidth: 1200,
-            maxHeight: 1600,
-            quality: 0.85,
-            fileType: 'image/webp'
-        });
-        const timestamp = Date.now();
-        const rand = Math.floor(Math.random() * 10000);
-        const safeOrderId = String(orderId || 'UNASSIGNED').replace(/[\/\\#\?]/g, '_');
-        const storagePath = `slips/${safeOrderId}/${timestamp}_${rand}.webp`;
-        const storageRef = ref(storage, storagePath);
-        const metadata = {
-            contentType: 'image/webp',
-            cacheControl: 'public, max-age=31536000, immutable',
-            customMetadata: {
-                uploadedBy: auth.currentUser?.uid || 'anonymous',
-                orderId: safeOrderId,
-                uploadedAt: new Date().toISOString()
-            }
-        };
-        const snapshot = await uploadBytes(storageRef, compressedFile, metadata);
-        return await getDownloadURL(snapshot.ref);
-    },
-    extractSlipData: async (file, uploadedUrl) => {
-        try {
-            const ocrModule = await import(/* @vite-ignore */ 'tesseract.js').catch(() => null);
-            if (ocrModule && ocrModule.createWorker) {
-                const worker = await ocrModule.createWorker('tha+eng');
-                const ret = await worker.recognize(file);
-                await worker.terminate();
-                const text = ret?.data?.text || '';
-                const cleanText = text;
-                const refMatch = cleanText.match(/(?:รหัสอ้างอิง|เลขที่รายการ|Ref|Transaction\s*ID)[:\s]*([A-Za-z0-9]+)/i);
-                const dateMatch = cleanText.match(/(\d{1,2}\s+[^\d\s]+\s+\d{2,4}(?:\s*[-/]?\s*)\d{1,2}:\d{2})/) || cleanText.match(/(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\s+\d{1,2}:\d{2})/);
-                return {
-                    rawText: text,
-                    transactionRef: refMatch ? refMatch[1] : '',
-                    transferDateTime: dateMatch ? dateMatch[1] : '',
-                    transferNote: 'สแกนสลิปสำเร็จ'
-                };
-            }
-        } catch (e) {
-            console.warn('[Slip OCR] Client OCR fallback:', e);
-        }
-        return {
-            transactionRef: '',
-            transferDateTime: new Date().toISOString().replace('T', ' ').substring(0, 16),
-            transferNote: 'อัปโหลดสลิปสำเร็จ (รอตรวจสอบยอด)'
-        };
-    }
-};
+// Centralized Slip Storage Service (with Canvas WebP compression, Firebase Storage upload, async GAS Drive backup, and OCR verification)
+export { slipStorageService };
 
 export const usePosActions = ({
     posState,
@@ -217,7 +163,7 @@ export const usePosActions = ({
         setIsUploadingSlip(true); 
         try {
             const orderIdForSlip = activeTab.orderId || `POS_TEMP_${Date.now()}`;
-            const uploadFn = slipStorageService.uploadSlipImage || slipStorageService.uploadSlip;
+            const uploadFn = slipStorageService.uploadSlip || slipStorageService.uploadSlipImage;
             const uploadedUrl = await uploadFn(file, orderIdForSlip);
 
             // Extract or derive storagePath
@@ -232,13 +178,14 @@ export const usePosActions = ({
             // Run OCR extraction
             let ocrData = null;
             try {
-                if (slipStorageService.extractSlipData) {
-                    ocrData = await slipStorageService.extractSlipData(file, uploadedUrl);
-                } else if (slipStorageService.verifySlipOcr) {
+                if (slipStorageService.verifySlipOcr) {
+                    const remainingToPay = sanitizeNum(activeTab?.summary?.finalTotal ?? activeTab?.finalTotal ?? 0);
                     const ocrRes = await slipStorageService.verifySlipOcr(uploadedUrl, orderIdForSlip, remainingToPay, file);
                     ocrData = ocrRes?.ocrData || null;
                 } else if (slipStorageService.runClientTesseractOcr) {
                     ocrData = await slipStorageService.runClientTesseractOcr(file);
+                } else if (slipStorageService.extractSlipData) {
+                    ocrData = await slipStorageService.extractSlipData(file, uploadedUrl);
                 }
             } catch (ocrErr) {
                 console.warn("[POS OCR] Slip OCR extraction warning:", ocrErr);
@@ -382,7 +329,12 @@ export const usePosActions = ({
                 appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, conditionText: (f.minSpend > 0 ? `ยอด${f.minSpend}฿ ` : '') + (f.minQty > 0 ? `ครบ${f.minQty}ชิ้น ` : '') + (f.applicableSkus?.length > 0 ? `เฉพาะรุ่น` : ''), itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
                 thaiBahtText: convertToThaiBahtText(remainingToPay) || '', billNote: finalNote, sellerUid: auth.currentUser?.uid || 'System',
                 customer: activeTab.customer ? { uid: activeTab.customer.uid || '', accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: activeTab.customer.address || '', hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
-                items: finalOrderItems
+                items: finalOrderItems,
+                itemSkus: Array.from(new Set(
+                    (finalOrderItems || [])
+                        .map(i => String(i.sku || '').trim().toUpperCase())
+                        .filter(Boolean)
+                ))
             };
 
             // 🟢 [OFFLINE SUPPORT] Check if network is offline

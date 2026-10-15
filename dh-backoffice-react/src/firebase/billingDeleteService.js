@@ -24,36 +24,57 @@ export const billingDeleteService = {
       const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
       const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
 
-      // 🌟 ดึง Todos ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction หรือก่อนทำการลบ
+      // 🌟 ดึง Todos ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction หรือก่อนทำการลบ (ตรวจทั้ง referenceId และ payload.orderId)
       let pendingTodoRefs = [];
       try {
           const todosRef = collection(db, getCollectionPath('todos'));
-          const q = query(todosRef, where('referenceId', '==', orderId));
-          const querySnapshot = await getDocs(q);
-          if (!querySnapshot.empty) {
-              querySnapshot.forEach(docSnap => pendingTodoRefs.push(docSnap.ref));
+          const queries = [
+              query(todosRef, where('referenceId', '==', orderId)),
+              query(todosRef, where('payload.orderId', '==', orderId))
+          ];
+          if (orderData.orderId && orderData.orderId !== orderId) {
+              queries.push(query(todosRef, where('referenceId', '==', orderData.orderId)));
+              queries.push(query(todosRef, where('payload.orderId', '==', orderData.orderId)));
           }
+          const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+          const seenTodoIds = new Set();
+          snapshots.forEach(snap => {
+              snap.forEach(docSnap => {
+                  if (!seenTodoIds.has(docSnap.id)) {
+                      seenTodoIds.add(docSnap.id);
+                      pendingTodoRefs.push(docSnap.ref);
+                  }
+              });
+          });
       } catch (e) {
           console.error("🔥 Error querying related todos:", e);
       }
 
-      if (walletUsed > 0 && customerUid && customerUid !== 'WALK-IN') {
+      // 🛡️ Wallet Refund Guard: Only refund wallet if it was actually deducted on the order
+      const shouldRefundWallet = (orderData.isWalletDeducted !== false) && walletUsed > 0 && customerUid && customerUid !== 'WALK-IN';
+      if (shouldRefundWallet) {
          await runTransaction(db, async (transaction) => {
              const userRef = doc(db, getCollectionPath('users'), customerUid);
              const userSnap = await transaction.get(userRef);
              if (userSnap.exists()) {
+                 const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+                 const balanceAfter = Math.round((currentWallet + walletUsed) * 100) / 100;
+                 const txId = `TXW_REF_DEL_${orderId}`;
+
                  transaction.update(userRef, {
-                     walletBalance: increment(walletUsed),
+                     walletBalance: balanceAfter,
+                     lastWalletTxId: txId,
                      updatedAt: serverTimestamp()
                  });
 
-                 const walletTxRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
+                 const walletTxRef = doc(db, getCollectionPath('users'), customerUid, 'wallet_transactions', txId);
                  transaction.set(walletTxRef, {
-                     transactionId: `TXW_REF_DEL_${orderId}`,
+                     transactionId: txId,
                      type: 'REFUND',
                      amount: walletUsed,
+                     balanceAfter: balanceAfter,
                      status: 'SUCCESS',
-                     note: 'คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร)',
+                     note: `คืนเงินอัตโนมัติ (ลบบิลร่างทิ้งถาวร ${orderId})`,
                      operatorUid: actorUid || 'system',
                      timestamp: serverTimestamp()
                  });

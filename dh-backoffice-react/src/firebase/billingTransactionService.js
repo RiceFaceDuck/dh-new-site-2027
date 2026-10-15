@@ -162,7 +162,8 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   if (rawVatType === 'excluded') vatTypeMapped = 'แยก VAT';
   
   const vatResult = calculateVat(calculatedPrices.netTotal, vatTypeMapped);
-  const finalSecureNetTotal = (!isVatOnShipping && isExcludedVat)
+  // 🛡️ Shipping Fee Integrity: When shipping is not taxed, it was excluded from calculateNetTotal, so it must always be added back to finalTotal across all VAT modes
+  const finalSecureNetTotal = (!isVatOnShipping)
     ? Math.round((vatResult.finalTotal + shippingCost) * 100) / 100
     : vatResult.finalTotal;
 
@@ -239,7 +240,15 @@ export const billingTransactionService = {
             const paddedSeq = String(currentSeq).padStart(4, '0');
             finalOrderId = `DH-${yearStr.slice(2)}-${paddedSeq}`;
           } else if (!finalOrderId || (!finalOrderId.startsWith('DH-') && !finalOrderId.startsWith('TEMP-'))) {
-            finalOrderId = `DH-TEMP-${Math.floor(1000 + Math.random() * 9000)}`;
+            const now = new Date();
+            const yy = now.getFullYear().toString().slice(2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const sec = String(now.getSeconds()).padStart(2, '0');
+            const rand4 = Math.floor(1000 + Math.random() * 9000);
+            finalOrderId = `DH-TEMP-${yy}${mm}${dd}-${hh}${min}${sec}-${rand4}`;
           }
 
           const creditPreloadSnaps = await fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower);
@@ -319,11 +328,31 @@ export const billingTransactionService = {
           if (dataToSave.customerInfo) dataToSave.customerInfo.displayName = dataToSave.customerInfo.displayName || dataToSave.customerInfo.accountName || '';
           if (dataToSave.summary) { dataToSave.summary.finalTotal = finalSecureNetTotal; dataToSave.summary.netTotal = finalSecureNetTotal; }
           
+          // 📦 Extract unique item SKUs for direct Firestore indexing & search
+          const itemSkus = Array.from(new Set(
+            (verifiedItems || [])
+              .map(i => String(i.sku || i.id || '').trim().toUpperCase())
+              .filter(Boolean)
+          ));
+
+          const isPaidOrApproved = (statusLower === 'paid' || statusLower === 'approved');
+          const isWalletDeducted = isPaidOrApproved && walletToUse > 0;
+
           transaction.set(newOrderRef, {
-            ...dataToSave, items: verifiedItems, orderId: finalOrderId, earnedPoints, walletUsedAmount: walletToUse, 
-            isStockDeducted: (statusLower === 'paid' || statusLower === 'approved'), updatedAt: serverTimestamp(), 
-            createdBy: actorUid, creatorName: actorName, finalTotal: finalSecureNetTotal, netTotal: finalSecureNetTotal,
-            ...(earnedPoints > 0 ? { pointsAwarded: true, pendingCredits: 0 } : {}),
+            ...dataToSave, 
+            items: verifiedItems, 
+            itemSkus,
+            orderId: finalOrderId, 
+            earnedPoints, 
+            walletUsedAmount: walletToUse, 
+            isStockDeducted: isPaidOrApproved, 
+            isWalletDeducted: isWalletDeducted,
+            updatedAt: serverTimestamp(), 
+            createdBy: actorUid, 
+            creatorName: actorName, 
+            finalTotal: finalSecureNetTotal, 
+            netTotal: finalSecureNetTotal,
+            ...(earnedPoints > 0 && isPaidOrApproved ? { pointsAwarded: true, pendingCredits: 0 } : {}),
             createdAt: orderData.createdAt || serverTimestamp()
           }, { merge: true });
 
@@ -343,7 +372,8 @@ export const billingTransactionService = {
               updatedAt: serverTimestamp()
             };
 
-            if (walletToUse > 0) {
+            // 🛡️ Deduct Wallet ONLY when order is Paid or Approved (Prevents premature & double deduction on drafts)
+            if (isWalletDeducted) {
               const currentWallet = Number(userSnap.data()?.walletBalance || 0);
               const balanceAfter = Math.max(0, Math.round((currentWallet - walletToUse) * 100) / 100);
               const txId = `TXW_POS_${finalOrderId}`;
@@ -366,7 +396,7 @@ export const billingTransactionService = {
 
             transaction.update(userRef, customerUpdates);
 
-            if (earnedPoints > 0) {
+            if (earnedPoints > 0 && isPaidOrApproved) {
               await adjustUserCreditWithTransaction(transaction, customerUid, earnedPoints, 'earn', 'ได้รับจากการซื้อสินค้า', actorUid, `TXP_${finalOrderId}`, creditPreloadSnaps);
             }
           }

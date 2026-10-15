@@ -101,7 +101,7 @@ export default function CartTableRow({
                     {isFreebie ? (
                         <span className="text-emerald-600">0</span>
                     ) : (
-                        <span className="text-slate-800">{(((Number(item.price) || 0) - (Number(item.discount) || 0)) * item.qty).toLocaleString()}</span>
+                        <span className="text-slate-800">{(Math.max(0, (Number(item.price) || 0) - (Number(item.discount) || 0)) * (Number(item.qty) || 1)).toLocaleString()}</span>
                     )}
                 </td>
                 

@@ -86,7 +86,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
 
     return (
       <div 
-        className={`rounded-2xl transition-all duration-200 overflow-hidden relative flex flex-col h-full bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-xs hover:shadow-md border-l-[5px] border-l-amber-500 ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
+        className={`rounded-[0.2rem] transition-all duration-200 overflow-hidden relative flex flex-col h-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 shadow-md hover:shadow-lg border-l-[5px] border-l-amber-500 ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
       >
         {/* Loading Overlay */}
         {isProcessing && (
@@ -121,7 +121,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
           </div>
 
           {/* Structured Data Box (2 Columns) */}
-          <div className="bg-slate-50/90 dark:bg-slate-900/60 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-[12px] flex flex-col gap-1.5 mt-1">
+          <div className="bg-slate-50 dark:bg-slate-900/60 rounded-[0.2rem] p-3 border border-slate-200 dark:border-slate-700 text-[12px] flex flex-col gap-1.5 mt-1 shadow-2xs">
             <div className="grid grid-cols-[68px_1fr] items-baseline gap-2">
               <span className="text-slate-500 dark:text-slate-400 font-medium">บิลอ้างอิง:</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">{parsed.bill}</span>
@@ -161,7 +161,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                   e.stopPropagation(); 
                   navigate(todo.targetUrl || '/managers/warranty'); 
                 }}
-                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold rounded-xl shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold rounded-[0.2rem] shadow-sm hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <ShieldCheck size={14} /> ไปหน้าตั้งค่าระยะเวลารับประกัน <ExternalLink size={12} />
               </button>
@@ -171,7 +171,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleAction(todo.id, 'approve', todo.type, todo.payload || todo); }}
                   disabled={isProcessing}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-[0.2rem] shadow-sm hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   <Check size={16} strokeWidth={2.5} /> อนุมัติ
                 </button>
@@ -179,7 +179,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleRejectClick(); }}
                   disabled={isProcessing}
-                  className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100/80 active:bg-rose-200/70 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-300 font-bold border border-rose-200/80 dark:border-rose-900/50 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100/80 active:bg-rose-200/70 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-300 font-bold border border-rose-200/80 dark:border-rose-900/50 rounded-[0.2rem] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-1.5 text-xs disabled:opacity-50 cursor-pointer"
                 >
                   <X size={15} strokeWidth={2.5} /> ปฏิเสธ
                 </button>
@@ -193,7 +193,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
 
   return (
     <div 
-      className={`rounded-2xl transition-all duration-200 overflow-hidden relative flex flex-col h-full ${getCardBorderStyle(urgencyLevel)} ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
+      className={`rounded-[0.2rem] transition-all duration-200 overflow-hidden relative flex flex-col h-full ${getCardBorderStyle(urgencyLevel)} ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
     >
       
       {/* Manager Badge indicator */}
@@ -337,7 +337,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleRejectClick(); }}
                 disabled={isProcessing}
-                className="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200/80 rounded-xl transition-colors flex items-center justify-center gap-1.5 text-xs disabled:opacity-50 cursor-pointer"
+                className="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200/80 rounded-[0.2rem] transition-colors flex items-center justify-center gap-1.5 text-xs disabled:opacity-50 cursor-pointer"
               >
                 <X size={14} strokeWidth={2.5} /> ปฏิเสธ
               </button>
@@ -349,7 +349,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleAction(todo.id, 'start', todo.type); }}
                   disabled={isProcessing}
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-[0.2rem] shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   <Play size={12} fill="currentColor" /> เริ่มงาน
                 </button>
@@ -360,7 +360,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleAction(todo.id, 'complete', todo.type); }}
                   disabled={isProcessing}
-                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-[0.2rem] shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   <Check size={14} strokeWidth={3} /> เสร็จสิ้น
                 </button>
@@ -371,7 +371,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleMarkArrived(); }}
                   disabled={isProcessing}
-                  className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-[0.2rem] shadow-xs hover:shadow-md transition-all text-xs flex items-center justify-center gap-1 disabled:opacity-50 cursor-pointer"
                 >
                   <Check size={12} strokeWidth={3} /> รับสินค้าแล้ว
                 </button>
@@ -381,7 +381,7 @@ export default function GenericTodoCard({ todo, isProcessing, isManagerTab, urge
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleRejectClick(); }}
                 disabled={isProcessing}
-                className="py-2 px-3 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold border border-slate-200/80 hover:border-rose-200 rounded-xl transition-colors flex items-center justify-center gap-1 text-xs disabled:opacity-50 cursor-pointer"
+                className="py-2 px-3 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold border border-slate-200/80 hover:border-rose-200 rounded-[0.2rem] transition-colors flex items-center justify-center gap-1 text-xs disabled:opacity-50 cursor-pointer"
               >
                 <X size={12} strokeWidth={2.5} /> ยกเลิกงาน
               </button>

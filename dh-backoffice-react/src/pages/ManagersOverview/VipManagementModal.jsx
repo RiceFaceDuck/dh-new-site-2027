@@ -18,7 +18,7 @@ const VipManagementModal = ({ isOpen, onClose, vipUsers, isLoading, onFetchVips,
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
-      <div className="bg-(--dh-bg-surface) w-full max-w-4xl rounded-2xl shadow-2xl border border-(--dh-border) flex flex-col max-h-[85vh] overflow-hidden">
+      <div className="bg-(--dh-bg-surface) w-full max-w-4xl rounded-[0.2rem] shadow-2xl border border-slate-300 dark:border-slate-700 flex flex-col max-h-[85vh] overflow-hidden">
         
         {/* Header */}
         <div className="p-4 border-b border-(--dh-border) flex justify-between items-center bg-amber-500/5">
@@ -31,7 +31,7 @@ const VipManagementModal = ({ isOpen, onClose, vipUsers, isLoading, onFetchVips,
               <p className="text-[12px] font-medium text-(--dh-text-muted)">ดูรายชื่อและปลดสิทธิ์ลูกค้า VIP ในระบบทั้งหมด</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-(--dh-text-muted) hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+          <button onClick={onClose} className="p-2 text-(--dh-text-muted) hover:text-red-500 hover:bg-red-50 rounded-[0.2rem] transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -40,7 +40,7 @@ const VipManagementModal = ({ isOpen, onClose, vipUsers, isLoading, onFetchVips,
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-(--dh-bg-base)">
           
           {/* แจ้งเตือนเรื่องนโยบาย */}
-          <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200 flex gap-3 items-start">
+          <div className="mb-6 p-4 rounded-[0.2rem] bg-blue-50 border border-blue-200 flex gap-3 items-start">
             <ShieldAlert size={20} className="text-blue-500 shrink-0 mt-0.5" />
             <div>
               <h4 className="text-[13px] font-bold text-blue-900 mb-1">นโยบายการอัปเกรด VIP</h4>
@@ -49,7 +49,7 @@ const VipManagementModal = ({ isOpen, onClose, vipUsers, isLoading, onFetchVips,
           </div>
 
           {/* ตารางแสดงรายชื่อ VIP */}
-          <div className="bg-(--dh-bg-surface) border border-(--dh-border) rounded-xl overflow-hidden shadow-xs">
+          <div className="bg-(--dh-bg-surface) border border-slate-300 dark:border-slate-700 rounded-[0.2rem] overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -92,7 +92,7 @@ const VipManagementModal = ({ isOpen, onClose, vipUsers, isLoading, onFetchVips,
                                 onRevokeVip(user.id);
                               }
                             }}
-                            className="px-3 py-1.5 rounded-lg text-[12px] font-bold text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors border border-red-200 opacity-0 group-hover:opacity-100"
+                            className="px-3 py-1.5 rounded-[0.2rem] text-[12px] font-bold text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors border border-red-200 opacity-0 group-hover:opacity-100"
                           >
                             ปลดสิทธิ์
                           </button>

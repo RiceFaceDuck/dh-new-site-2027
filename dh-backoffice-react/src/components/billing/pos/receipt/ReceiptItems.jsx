@@ -67,15 +67,15 @@ export default function ReceiptItems({ items, startIndex = 0, format = 'short', 
                                 {isFreebie ? <span className="text-[10px]">🎁</span> : itemIndex}
                             </td>
                             <td className="pt-1.5 pb-1 pl-1 max-w-0 overflow-hidden align-top">
-                                <div className="flex items-center gap-2 min-w-0">
+                                <div className="flex items-start gap-2 min-w-0">
                                     {item.sku ? (
-                                        <span className="w-[68px] text-[10.5px] font-mono font-black text-slate-900 uppercase shrink-0 tracking-tight leading-none inline-block">
+                                        <span className="w-[68px] text-[10.5px] font-mono font-black text-slate-900 uppercase shrink-0 tracking-tight leading-none inline-block pt-0.5">
                                             {item.sku}
                                         </span>
                                     ) : (
                                         <span className="w-[68px] shrink-0 inline-block" />
                                     )}
-                                    <p className={`font-black text-[11px] leading-tight truncate whitespace-nowrap overflow-hidden text-ellipsis ${isFreebie ? 'italic' : ''}`} title={itemName}>
+                                    <p className={`font-black text-[11px] leading-tight line-clamp-2 break-words ${isFreebie ? 'italic' : ''}`} title={itemName}>
                                         {itemName}
                                     </p>
                                 </div>

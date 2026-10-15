@@ -25,7 +25,7 @@ export const SortableMenuItem = ({ id, menuId }) => {
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between p-3 bg-white border ${isDragging ? 'border-blue-500 shadow-md z-50 relative' : 'border-slate-200'} rounded-lg mb-2`}
+      className={`flex items-center justify-between p-3 bg-white border ${isDragging ? 'border-blue-500 shadow-md z-50 relative' : 'border-slate-200'} rounded-[0.2rem] mb-2`}
     >
       <div className="flex items-center gap-3">
         <button {...attributes} {...listeners} className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing outline-hidden">

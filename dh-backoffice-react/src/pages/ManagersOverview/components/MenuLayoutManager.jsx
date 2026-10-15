@@ -78,7 +78,7 @@ export default function MenuLayoutManager({ isOpen, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
-      <div className="bg-slate-50 w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col h-[85vh] overflow-hidden border border-slate-200">
+      <div className="bg-slate-50 w-full max-w-5xl rounded-[0.2rem] shadow-2xl flex flex-col h-[85vh] overflow-hidden border border-slate-300">
         
         {/* Header */}
         <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
@@ -89,7 +89,7 @@ export default function MenuLayoutManager({ isOpen, onClose, onSaved }) {
             <p className="text-xs font-bold text-slate-500 mt-1">สามารถลากวาง (Drag & Drop) เพื่อย้ายตำแหน่ง หรือซ่อนเมนูที่ไม่ต้องการได้</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={onClose} disabled={isSaving} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+            <button onClick={onClose} disabled={isSaving} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-[0.2rem] transition-colors">
               <X size={20} />
             </button>
           </div>
@@ -134,7 +134,7 @@ export default function MenuLayoutManager({ isOpen, onClose, onSaved }) {
                 {/* Add New Zone Button */}
                 <button 
                   onClick={handleAddZone}
-                  className="flex flex-col items-center justify-center gap-2 bg-white border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50 rounded-xl p-6 text-slate-500 hover:text-blue-600 transition-colors h-[200px]"
+                  className="flex flex-col items-center justify-center gap-2 bg-white border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50 rounded-[0.2rem] p-6 text-slate-500 hover:text-blue-600 transition-colors h-[200px]"
                 >
                   <Plus size={32} />
                   <span className="font-bold text-sm">สร้างโซนใหม่ (Zone)</span>
@@ -145,7 +145,7 @@ export default function MenuLayoutManager({ isOpen, onClose, onSaved }) {
               {/* Drag Overlay for smooth animation */}
               <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.5" } } }) }}>
                 {activeId ? (
-                  <div className="bg-white border-2 border-blue-500 shadow-xl rounded-lg p-3 opacity-90 scale-105">
+                  <div className="bg-white border-2 border-blue-500 shadow-xl rounded-[0.2rem] p-3 opacity-90 scale-105">
                     <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                        <GripVertical size={16} className="text-slate-400" /> กำลังลากเมนู...
                     </span>
@@ -161,14 +161,14 @@ export default function MenuLayoutManager({ isOpen, onClose, onSaved }) {
         <div className="bg-white px-6 py-4 border-t border-slate-200 flex justify-end shrink-0 gap-3">
           <button 
             onClick={onClose}
-            className="px-5 py-2 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+            className="px-5 py-2 rounded-[0.2rem] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
           >
             ยกเลิก
           </button>
           <button 
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black transition-all shadow-xs disabled:opacity-50 active:scale-95"
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[0.2rem] font-black transition-all shadow-xs disabled:opacity-50 active:scale-95"
           >
             {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} />}
             บันทึกเลย์เอาต์

@@ -157,7 +157,20 @@ export const calculateCanonicalTotals = (order) => {
     const storedNet = Number(order.summary?.finalTotal ?? order.finalTotal ?? order.netTotal ?? order.summary?.netTotal ?? order.totals?.netTotal ?? order.totalAmount ?? 0);
 
     let finalNet = storedNet;
-    if ((storedNet === 0 || (subTotal > 500 && storedNet < subTotal * 0.5)) && subTotal > 0) {
+    const hasExplicitDiscount = Boolean(
+        manualDiscount > 0 || 
+        promoDiscount > 0 || 
+        order.appliedPromotions?.length > 0 || 
+        order.appliedPromotion || 
+        Number(order.discountTotal || 0) > 0 ||
+        Number(order.overallDiscount || 0) > 0 ||
+        Number(order.discountAmount || 0) > 0
+    );
+
+    if (storedNet === 0 && subTotal > 0) {
+        finalNet = Math.max(0, Math.round(calculatedNet * 100) / 100);
+    } else if (subTotal > 500 && storedNet < subTotal * 0.5 && !hasExplicitDiscount && subTotal > 0) {
+        // Fallback only if there is no explicit discount recorded and storedNet looks corrupted
         finalNet = Math.max(0, Math.round(calculatedNet * 100) / 100);
     }
 

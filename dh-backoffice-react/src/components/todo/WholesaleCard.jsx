@@ -139,11 +139,11 @@ const WholesaleCard = React.memo(function WholesaleCard({ todo, isProcessing, ur
 
   return (
     <div 
-      className={`rounded-2xl transition-all duration-200 p-4 flex flex-col relative overflow-hidden h-full ${getUrgencyStyles(urgencyLevel)}`}
+      className={`rounded-[0.2rem] transition-all duration-200 p-4 flex flex-col relative overflow-hidden h-full shadow-md ${getUrgencyStyles(urgencyLevel)}`}
     >
       
       {isManagerTab && (
-        <div className="absolute top-0 right-0 bg-linear-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-bl-xl shadow-xs z-10 uppercase tracking-wider">
+        <div className="absolute top-0 right-0 bg-linear-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-bl-[0.2rem] shadow-xs z-10 uppercase tracking-wider">
           Manager
         </div>
       )}
@@ -270,14 +270,14 @@ const WholesaleCard = React.memo(function WholesaleCard({ todo, isProcessing, ur
             <button 
               onClick={handleApprove}
               disabled={isProcessing || isFetching}
-              className="flex-1 flex justify-center items-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl text-sm font-black transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
+              className="flex-1 flex justify-center items-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-[0.2rem] text-sm font-black transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0"
             >
               <Check size={18} strokeWidth={3} /> อนุมัติราคาส่งใหม่ (฿{calculator.calculations.newNetTotal.toLocaleString()})
             </button>
             <button 
               onClick={handleReject}
               disabled={isProcessing || isFetching}
-              className="flex justify-center items-center gap-2 bg-white dark:bg-slate-800 border-2 border-rose-100 dark:border-rose-900/50 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-600 px-6 py-3 rounded-xl font-bold transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex justify-center items-center gap-2 bg-white dark:bg-slate-800 border-2 border-rose-100 dark:border-rose-900/50 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-600 px-6 py-3 rounded-[0.2rem] font-bold transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               title="ไม่อนุมัติราคาส่ง"
             >
               <X size={18} strokeWidth={2.5} /> ปฏิเสธ

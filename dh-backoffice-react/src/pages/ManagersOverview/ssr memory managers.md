@@ -41,5 +41,6 @@
 - ⚠️ Audit Ledger Checksum & Export: Use `balanceBefore ± amount == balanceAfter` for record checksum; use SheetJS (`xlsx`) for instant local export without Cloud Functions overhead.
 - ⚠️ Always explicitly reassure: 'No Deploy & No Git Push' on every user permission request.
 - ⚠️ Always call `ask_question` tool for interactive modal choices when asking user permission, never plain text.
+- ⚠️ UI/UX Corners & Contrast Standard: Cards, panels, and buttons in ManagersOverview use crisp `rounded-[0.2rem]` with visible `shadow-md`/`shadow-lg` and `border-slate-300` on subtle slate canvas to avoid washed-out white glare. Icon containers strictly preserve `rounded-xl` per design requirement.
 </pitfalls_and_lessons>
 </grimoire>

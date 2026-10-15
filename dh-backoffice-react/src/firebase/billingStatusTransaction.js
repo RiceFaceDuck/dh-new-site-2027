@@ -18,16 +18,23 @@ export const billingStatusTransaction = {
       const actualActorUid = actorUid || (typeof currentStatus === 'string' && currentStatus.length > 15 ? currentStatus : 'system');
       const normalizedNewStatus = (newStatus || '').toLowerCase();
 
-      // 🌟 ดึง Todos ที่รออนุมัติ (pending_manager) ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction
+      // 🌟 ดึง Todos ที่รออนุมัติ (pending_manager) ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction (ตรวจทั้ง referenceId และ payload.orderId)
       let pendingTodoRefs = [];
       if (normalizedNewStatus === 'cancelled') {
         const { collection, query, where, getDocs } = await import('firebase/firestore');
         const todosRef = collection(db, getCollectionPath('todos'));
-        const q = query(todosRef, where('referenceId', '==', orderId), where('status', '==', 'pending_manager'));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          querySnapshot.forEach(docSnap => pendingTodoRefs.push(docSnap.ref));
-        }
+        const q1 = query(todosRef, where('referenceId', '==', orderId), where('status', '==', 'pending_manager'));
+        const q2 = query(todosRef, where('payload.orderId', '==', orderId), where('status', '==', 'pending_manager'));
+        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+        const seenTodoIds = new Set();
+        [snap1, snap2].forEach(snap => {
+          snap.forEach(docSnap => {
+            if (!seenTodoIds.has(docSnap.id)) {
+              seenTodoIds.add(docSnap.id);
+              pendingTodoRefs.push(docSnap.ref);
+            }
+          });
+        });
       }
 
       const result = await runTransaction(db, async (transaction) => {
@@ -58,7 +65,7 @@ export const billingStatusTransaction = {
               const aggregatedProductMap = new Map();
               for (const item of (orderData.items || [])) {
                   const itemIdentifier = item.id || item.sku;
-                  if (item.isFreebie || !itemIdentifier) continue;
+                  if (!itemIdentifier) continue;
                   const qty = Math.max(1, Number(item.qty || 1));
                   if (aggregatedProductMap.has(itemIdentifier)) {
                       aggregatedProductMap.get(itemIdentifier).qty += qty;
