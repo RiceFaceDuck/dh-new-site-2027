@@ -6,7 +6,8 @@ import {
   fetchCustomerDirectoryChunk,
   fetchCustomersFromFirestore,
   filterAndSortCustomers,
-  applyActiveStatsDelta
+  applyActiveStatsDelta,
+  reconcileCustomerLastOrderDates
 } from '../services/customerCacheService';
 import { fetchActiveCustomerStats, clearCustomerStatsCache } from '../services/customerOrderStatsService';
 
@@ -117,6 +118,20 @@ export const useCustomerData = () => {
           setCustomers(sorted);
           writeCachedCustomers(sorted);
         }
+      }
+
+      // 4. On Manual Refresh: Run non-blocking historical order reconciliation if any customers lack lastOrderDate
+      if (!useCache) {
+        reconcileCustomerLastOrderDates().then(res => {
+          if (res?.updatedCount > 0) {
+            console.log(`🎉 [Reconcile] Updated ${res.updatedCount} customer last order dates from orders collection`);
+            readCachedCustomers().then(({ cachedUsers }) => {
+              if (cachedUsers && cachedUsers.length > 0) {
+                setCustomers(filterAndSortCustomers(cachedUsers));
+              }
+            });
+          }
+        }).catch(err => console.warn("Background order reconciliation notice:", err));
       }
 
       validateAndRefreshActiveStats(!useCache);

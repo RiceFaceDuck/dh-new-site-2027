@@ -79,11 +79,21 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   let daysSinceLastOrder = null;
 
   if (lastOrderTimestamp) {
-    const date = typeof lastOrderTimestamp === 'number' 
-      ? new Date(lastOrderTimestamp) 
-      : (lastOrderTimestamp.toDate ? lastOrderTimestamp.toDate() : new Date(lastOrderTimestamp));
-    
-    if (!isNaN(date)) {
+    let millis = 0;
+    if (typeof lastOrderTimestamp === 'number') {
+      millis = lastOrderTimestamp > 1e11 ? lastOrderTimestamp : lastOrderTimestamp * 1000;
+    } else if (typeof lastOrderTimestamp.toMillis === 'function') {
+      millis = lastOrderTimestamp.toMillis();
+    } else if (typeof lastOrderTimestamp.toDate === 'function') {
+      millis = lastOrderTimestamp.toDate().getTime();
+    } else if (lastOrderTimestamp.seconds) {
+      millis = lastOrderTimestamp.seconds * 1000;
+    } else {
+      millis = new Date(lastOrderTimestamp).getTime();
+    }
+
+    if (!isNaN(millis) && millis > 0) {
+      const date = new Date(millis);
       lastOrderText = date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
       const now = new Date();
       daysSinceLastOrder = Math.floor((now - date) / (1000 * 60 * 60 * 24));

@@ -483,7 +483,18 @@ export const syncCustomerToDirectoryChunk = async (customer, action = 'upsert') 
         );
 
         if (existingIndex >= 0) {
-          items[existingIndex] = { ...items[existingIndex], ...newEntry };
+          const old = items[existingIndex] || {};
+          const mergedLastOrder = Math.max(
+            Number(customer.lastOrderDate || 0),
+            Number(old.lastOrderDate || 0)
+          );
+          items[existingIndex] = {
+            ...old,
+            ...newEntry,
+            lastOrderDate: mergedLastOrder > 0 ? mergedLastOrder : (old.lastOrderDate || null),
+            sales30Days: newEntry.sales30Days > 0 ? newEntry.sales30Days : (old.sales30Days || 0),
+            orderCount30Days: newEntry.orderCount30Days > 0 ? newEntry.orderCount30Days : (old.orderCount30Days || 0)
+          };
         } else {
           items.unshift(newEntry);
         }
@@ -505,3 +516,97 @@ export const syncCustomerToDirectoryChunk = async (customer, action = 'upsert') 
     console.warn(`⚠️ [Auto-Sync] Failed to sync customer to directory chunk:`, err.message);
   }
 };
+
+/**
+ * 🔄 One-Time / On-Demand Reconciliation: Reconcile lastOrderDate across all customers from orders collection
+ * Gathers most recent completed order per customer, updates directory chunk, and synchronizes local cache.
+ */
+export const reconcileCustomerLastOrderDates = async () => {
+  try {
+    const ordersRef = collection(db, getCollectionPath('orders'));
+    // Read recent paid/completed/approved orders (capped safely to limit(500) to protect quota)
+    const ordersSnap = await getDocs(query(ordersRef, orderBy('createdAt', 'desc'), limit(500)));
+
+    const customerLastOrderMap = new Map();
+
+    ordersSnap.forEach(oDoc => {
+      const oData = oDoc.data() || {};
+      const statusLower = (oData.orderStatus || oData.status || '').toLowerCase();
+      const payStatusLower = (oData.paymentStatus || '').toLowerCase();
+      if (['cancelled', 'void', 'deleted', 'draft', 'ยกเลิก'].includes(statusLower) || ['cancelled', 'ยกเลิก'].includes(payStatusLower)) return;
+
+      const orderTime = parseTimestampNumber(oData.createdAt);
+      if (!orderTime) return;
+
+      const uid = oData.customer?.uid || oData.customerUid || oData.customerId || oData.userId;
+      const accountId = oData.customer?.accountId ? String(oData.customer.accountId).toUpperCase() : null;
+      const rawPhone = oData.customer?.phone || oData.customerPhone || oData.phone;
+      const phone = normalizePhone(rawPhone);
+
+      if (uid && uid !== 'WALK-IN') {
+        const prev = customerLastOrderMap.get(uid) || 0;
+        if (orderTime > prev) customerLastOrderMap.set(uid, orderTime);
+      }
+      if (accountId) {
+        const prev = customerLastOrderMap.get(accountId) || 0;
+        if (orderTime > prev) customerLastOrderMap.set(accountId, orderTime);
+      }
+      if (phone && phone.length >= 9) {
+        const prev = customerLastOrderMap.get(phone) || 0;
+        if (orderTime > prev) customerLastOrderMap.set(phone, orderTime);
+      }
+    });
+
+    if (customerLastOrderMap.size === 0) {
+      return { success: true, updatedCount: 0 };
+    }
+
+    const dirRef = doc(db, getCollectionPath('catalogs'), 'customers_directory');
+
+    let updatedCount = 0;
+    const updatedItems = await runTransaction(db, async (transaction) => {
+      const dirSnap = await transaction.get(dirRef);
+      if (!dirSnap.exists()) return [];
+
+      const data = dirSnap.data();
+      const items = Array.isArray(data.customers) ? [...data.customers] : [];
+
+      items.forEach(c => {
+        const uid = c.uid || c.id;
+        const acc = c.accountId ? String(c.accountId).toUpperCase() : (c.customerCode ? String(c.customerCode).toUpperCase() : null);
+        const normPhone = normalizePhone(c.phone || c.phoneNumber);
+
+        const matchedTime = customerLastOrderMap.get(uid) || 
+          (acc ? customerLastOrderMap.get(acc) : 0) || 
+          (normPhone ? customerLastOrderMap.get(normPhone) : 0) || 0;
+
+        if (matchedTime > 0) {
+          const currentTime = parseTimestampNumber(c.lastOrderDate);
+          if (matchedTime > currentTime) {
+            c.lastOrderDate = matchedTime;
+            updatedCount++;
+          }
+        }
+      });
+
+      transaction.set(dirRef, {
+        chunkId: 'customers_directory',
+        totalCustomers: items.length,
+        generatedAt: Timestamp.now(),
+        customers: items
+      }, { merge: true });
+
+      return items;
+    });
+
+    if (updatedItems.length > 0) {
+      writeCachedCustomers(updatedItems);
+    }
+
+    return { success: true, updatedCount };
+  } catch (err) {
+    console.error("Failed to reconcile customer last order dates:", err);
+    return { success: false, error: err.message };
+  }
+};
+

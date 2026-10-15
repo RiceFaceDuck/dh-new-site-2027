@@ -63,5 +63,11 @@
     <caution>Merge Directory Sync Parity: `syncCustomerAccount` in `customerAdminService` must explicitly call `syncCustomerToDirectoryChunk` with 'delete' for the source account and 'upsert' for the target merged account to prevent ghost records in directory catalog.</caution>
     <caution>Sliding Window Timestamp Advancement: Delta fetch in `useCustomerData` must advance `CUSTOMER_LAST_SYNC_KEY` even when `hasChanges === false` to keep the 5-minute safety window sliding smoothly and prevent runaway query intervals.</caution>
     <caution>Clean Digits Phone Search: `useCustomerFilters` must normalize search terms using clean digits comparison so unhyphenated input (e.g. 0812345678) matches formatted records (e.g. 081-234-5678) seamlessly.</caution>
+    <caution>Role Quick-Filters Parity: CustomerHeader quickFilter dropdown and useCustomerFilters must support explicit role segregation for 'role_mechanic' (⚡ ร้านช่าง) and 'role_vip' (👑 VIP) alongside debt and 30D active filters.</caution>
+    <caution>Zero Legacy Alert Standard: Customer management actions in useCustomerActions must strictly use non-blocking toast notifications (toast.error, toast.success) instead of intrusive window.alert() popups.</caution>
+    <caution>Real-time POS Directory Parity: `billingTransactionService` must sync `lastOrderDate: Date.now()` to `syncCustomerToDirectoryChunk` post-transaction so customer directory updates immediately without waiting for nightly batch.</caution>
+    <caution>Historical Order Reconciliation Standard: `reconcileCustomerLastOrderDates` performs capped (limit 500) historical scan from `orders` and atomic chunk merge, keeping `lastOrderDate` consistent across both cold and warm cached views.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>
+
+

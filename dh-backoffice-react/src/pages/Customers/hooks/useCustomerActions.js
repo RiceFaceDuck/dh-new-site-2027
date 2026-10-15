@@ -57,7 +57,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   const handleCreateCustomer = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!newCustomer.accountName?.trim()) {
-      alert("กรุณากรอกชื่อร้าน/ชื่อบริษัท");
+      toast.error("กรุณากรอกชื่อร้าน/ชื่อบริษัท");
       return;
     }
 
@@ -90,7 +90,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       fetchCustomers(false);
     } catch (error) {
       console.error("Create customer error:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + (error?.message || ''));
     } finally {
       setIsSubmitting(false);
     }
@@ -154,7 +154,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       fetchCustomers(false);
     } catch (error) {
       console.error("Force create customer error:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + (error?.message || ''));
     } finally {
       setIsSubmitting(false);
     }
@@ -210,7 +210,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   const saveCustomerEdit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!editFormData.accountName?.trim()) {
-      alert("กรุณากรอกชื่อร้าน/ชื่อบริษัท");
+      toast.error("กรุณากรอกชื่อร้าน/ชื่อบริษัท");
       return;
     }
     if (!selectedCustomer) return;
@@ -241,7 +241,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       setIsEditMode(false);
     } catch (error) {
       console.error("Save edit error:", error);
-      alert("บันทึกข้อมูลล้มเหลว กรุณาลองใหม่");
+      toast.error("บันทึกข้อมูลล้มเหลว: " + (error?.message || "กรุณาลองใหม่"));
     } finally {
       setIsSavingEdit(false);
     }
@@ -266,7 +266,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       toast.success(`✅ เปลี่ยนระดับบัญชีเป็น ${newRank} เรียบร้อยแล้ว`);
     } catch (error) {
       console.error("Quick rank change error:", error);
-      alert("เกิดข้อผิดพลาดในการเปลี่ยนระดับบัญชี");
+      toast.error("เกิดข้อผิดพลาดในการเปลี่ยนระดับบัญชี: " + (error?.message || ''));
     } finally {
       setIsQuickSaving(false);
     }
@@ -293,17 +293,17 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
           toast.success('ลบข้อมูลลูกค้าเรียบร้อยแล้ว');
         } catch (error) {
           console.error("Delete customer error:", error);
-          alert(error.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
+          toast.error(error.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
         }
       }
     } else {
       if (window.confirm(`คุณไม่มีสิทธิ์ลบข้อมูลโดยตรง\n\nต้องการส่ง "คำขออนุมัติลบลูกค้า" (${customerName}) ไปยังผู้จัดการหรือไม่?`)) {
         try {
           await todoService.requestCustomerDeletion(selectedCustomer, auth.currentUser.uid);
-          alert('✅ ส่งคำขออนุมัติลบลูกค้า ไปยังคิวงาน (To-do) ของผู้จัดการเรียบร้อยแล้ว');
+          toast.success('✅ ส่งคำขออนุมัติลบลูกค้า ไปยังคิวงาน (To-do) ของผู้จัดการเรียบร้อยแล้ว');
         } catch (error) {
           console.error("Request deletion error:", error);
-          alert('เกิดข้อผิดพลาดในการส่งคำขอ');
+          toast.error('เกิดข้อผิดพลาดในการส่งคำขอ: ' + (error?.message || ''));
         }
       }
     }
@@ -313,7 +313,7 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
   const handleRunMigration = async () => {
     const isManager = managerRoles.includes(currentUserRole);
     if (!isManager) {
-      alert("คุณไม่มีสิทธิ์รัน Migration");
+      toast.error("คุณไม่มีสิทธิ์รัน Migration");
       return;
     }
 

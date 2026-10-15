@@ -16,7 +16,15 @@ export const useCustomerFilters = (customers) => {
 
     // 💎 กรองด้วยปุ่มลัด (Smart Filter)
     if (quickFilter === 'has_wallet') result = result.filter(c => (c.walletBalance || 0) > 0);
-    else if (quickFilter === 'is_partner') result = result.filter(c => (c.role || '').toLowerCase().includes('partner') || (c.rank || '').toLowerCase().includes('partner'));
+    else if (quickFilter === 'role_mechanic') result = result.filter(c => {
+      const r = (c.role || c.rank || '').toLowerCase();
+      return r.includes('mechanic') || r.includes('ช่าง') || r.includes('wholesale');
+    });
+    else if (quickFilter === 'is_partner' || quickFilter === 'role_partner') result = result.filter(c => (c.role || '').toLowerCase().includes('partner') || (c.rank || '').toLowerCase().includes('partner'));
+    else if (quickFilter === 'role_vip') result = result.filter(c => {
+      const r = (c.role || c.rank || '').toLowerCase();
+      return r.includes('vip') || r.includes('enterprise');
+    });
     else if (quickFilter === 'has_tax') result = result.filter(c => c.hasTaxInfo === true);
     else if (quickFilter === 'has_points') result = result.filter(c => (c.creditPoints || 0) > 0 || (c.totalAccumulatedPoints || 0) > 0);
 

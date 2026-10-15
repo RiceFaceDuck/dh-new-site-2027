@@ -9,6 +9,7 @@ import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { resolveEffectiveBuffer } from 'dh-shared';
 import { syncRecentOrdersCatalog } from './orderSyncService';
+import { syncCustomerToDirectoryChunk } from '../pages/Customers/services/customerCacheService';
 
 const COLLECTION_NAME = getCollectionPath('orders');
 const POINTS_RATE = 100;
@@ -429,6 +430,20 @@ export const billingTransactionService = {
 
       // ⚡ Background Cache Sync: Refresh catalogs/recent_orders so new order appears on dashboard immediately
       syncRecentOrdersCatalog(finalOrderId).catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
+
+      // ⚡ Real-time Customer Directory Sync: Update customer's lastOrderDate immediately
+      if (customerUid && customerUid !== 'WALK-IN') {
+        const customerPayload = {
+          uid: customerUid,
+          id: customerUid,
+          phone: orderData.customer?.phone || orderData.customerInfo?.phone || '',
+          name: orderData.customer?.accountName || orderData.customer?.name || '',
+          lastOrderDate: Date.now()
+        };
+        syncCustomerToDirectoryChunk(customerPayload, 'upsert').catch(e => 
+          console.warn("[CustomerSync] Background customer last order sync warning:", e)
+        );
+      }
 
       return { id: newDocId, orderId: finalOrderId };
     })(), "เกิดข้อผิดพลาดในการสร้างบิล");

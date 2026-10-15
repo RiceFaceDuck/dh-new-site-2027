@@ -1,4 +1,4 @@
-import { Search, Filter, RefreshCw, UserPlus, Wallet, Star, FileText, Coins, HelpCircle } from 'lucide-react';
+import { Search, Filter, RefreshCw, UserPlus, Wallet, Star, FileText, Coins, HelpCircle, Zap, Crown } from 'lucide-react';
 
 export default function CustomerHeader({ 
   searchTerm, 
@@ -36,7 +36,9 @@ export default function CustomerHeader({
         <div className="relative flex-1 md:flex-none min-w-[150px]">
           <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none z-10">
             {quickFilter === 'has_wallet' ? <Wallet size={14} className="text-emerald-500" /> :
-             quickFilter === 'is_partner' ? <Star size={14} className="text-blue-500" /> :
+             quickFilter === 'is_partner' || quickFilter === 'role_partner' ? <Star size={14} className="text-blue-500" /> :
+             quickFilter === 'role_mechanic' ? <Zap size={14} className="text-amber-500" /> :
+             quickFilter === 'role_vip' ? <Crown size={14} className="text-fuchsia-500" /> :
              quickFilter === 'has_tax' ? <FileText size={14} className="text-indigo-500" /> :
              quickFilter === 'has_points' ? <Coins size={14} className="text-amber-500" /> :
              <Filter size={14} className="text-slate-400" />}
@@ -47,9 +49,11 @@ export default function CustomerHeader({
             onChange={(e) => onQuickFilterChange && onQuickFilterChange(e.target.value)}
           >
             <option value="all">หมวดหมู่ทั้งหมด</option>
+            <option value="role_mechanic">⚡ ร้านช่าง</option>
+            <option value="role_partner">🤝 พาร์ทเนอร์</option>
+            <option value="role_vip">👑 VIP</option>
             <option value="has_wallet">💰 มีเงินค้าง</option>
             <option value="has_points">🪙 มีแต้มสะสม</option>
-            <option value="is_partner">🤝 พาร์ทเนอร์</option>
             <option value="has_tax">📝 พร้อมออกบิล</option>
           </select>
         </div>
