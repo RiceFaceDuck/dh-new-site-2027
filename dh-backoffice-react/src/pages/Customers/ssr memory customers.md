@@ -58,5 +58,10 @@
     <caution>DetailPanel Close Control: DetailPanel header must maintain dedicated top close button X wired to onClose callback for seamless split-view dismissal.</caution>
     <caution>CustomerSyncModal Account ID Parity: Source account badge must display customer.accountId || customer.customerCode with uppercase fallback instead of raw UID substring to reflect canonical account keys.</caution>
     <caution>Hyphenated Phone DB Search: searchCustomersFromDB must sanitize raw queries by stripping non-digit characters and testing valid 9-10 digit Thai numbers before routing to phone queries to prevent missing exact-indexed Firestore lookups.</caution>
+    <caution>30D Stats Zero-Overwrite Guard: `fetchOrderStatsForPage` must return empty map when active catalog is empty or missing, and `applyActiveStatsDelta` must gate resetting unmatched customers behind `isFullCatalog = true` to prevent wiping customer 30D sales to 0.00.</caution>
+    <caution>Edit Form Social Media Parity: `startEditCustomer` in `useCustomerActions` must explicitly map `lineId`, `facebook`, `facebookUrl`, `messengerUrl`, `youtubeUrl`, `storeWebsite`, `otherSocial`, and `taxId` into `editFormData` to ensure online channels are preserved upon saving.</caution>
+    <caution>Merge Directory Sync Parity: `syncCustomerAccount` in `customerAdminService` must explicitly call `syncCustomerToDirectoryChunk` with 'delete' for the source account and 'upsert' for the target merged account to prevent ghost records in directory catalog.</caution>
+    <caution>Sliding Window Timestamp Advancement: Delta fetch in `useCustomerData` must advance `CUSTOMER_LAST_SYNC_KEY` even when `hasChanges === false` to keep the 5-minute safety window sliding smoothly and prevent runaway query intervals.</caution>
+    <caution>Clean Digits Phone Search: `useCustomerFilters` must normalize search terms using clean digits comparison so unhyphenated input (e.g. 0812345678) matches formatted records (e.g. 081-234-5678) seamlessly.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>

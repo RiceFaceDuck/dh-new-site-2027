@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { parseTimestampNumber } from '../services/customerCacheService';
 
 export const useCustomerFilters = (customers) => {
   // 1. States (ลำดับ Hooks ต้องคงที่ ห้ามสลับ เพื่อป้องกันบั๊ก React)
@@ -43,24 +44,36 @@ export const useCustomerFilters = (customers) => {
       });
     }
 
-    // 🔍 กรองด้วย Text Search
+    // 🔍 กรองด้วย Text Search (รองรับค้นหาทั้งแบบมีขีดและไม่มีขีด)
     if (searchTerm.trim()) {
-      const lower = searchTerm.toLowerCase();
-      result = result.filter(c => 
-        (c.accountId && c.accountId.toLowerCase().includes(lower)) ||
-        (c.customerCode && c.customerCode.toLowerCase().includes(lower)) ||
-        (c.accountName && c.accountName.toLowerCase().includes(lower)) ||
-        (c.displayName && c.displayName.toLowerCase().includes(lower)) ||
-        (c.contactName && c.contactName.toLowerCase().includes(lower)) ||
-        (c.phone && c.phone.includes(lower)) ||
-        (c.id && c.id.toLowerCase().includes(lower))
-      );
+      const lower = searchTerm.toLowerCase().trim();
+      const cleanDigitsSearch = lower.replace(/\D/g, '');
+      result = result.filter(c => {
+        const rawPhone = c.phone || c.phoneNumber || '';
+        const cleanPhone = String(rawPhone).replace(/\D/g, '');
+        const phoneMatch = (cleanDigitsSearch.length >= 3 && cleanPhone.includes(cleanDigitsSearch)) ||
+                           (rawPhone && rawPhone.toLowerCase().includes(lower));
+
+        return (
+          (c.accountId && c.accountId.toLowerCase().includes(lower)) ||
+          (c.customerCode && c.customerCode.toLowerCase().includes(lower)) ||
+          (c.accountName && c.accountName.toLowerCase().includes(lower)) ||
+          (c.displayName && c.displayName.toLowerCase().includes(lower)) ||
+          (c.storeName && c.storeName.toLowerCase().includes(lower)) ||
+          (c.contactName && c.contactName.toLowerCase().includes(lower)) ||
+          (c.firstName && c.firstName.toLowerCase().includes(lower)) ||
+          (c.email && c.email.toLowerCase().includes(lower)) ||
+          phoneMatch ||
+          (c.id && c.id.toLowerCase().includes(lower)) ||
+          (c.uid && c.uid.toLowerCase().includes(lower))
+        );
+      });
     }
 
     // 🏆 จัดเรียง: ดันผู้ที่มีบิลล่าสุดใหม่สุดขึ้นข้างบนเสมอ
     result.sort((a, b) => {
-      const lastOrderA = Number(a.lastOrderDate || a.stats?.lastOrderDate || a.stats?.lastPurchaseDate || 0);
-      const lastOrderB = Number(b.lastOrderDate || b.stats?.lastOrderDate || b.stats?.lastPurchaseDate || 0);
+      const lastOrderA = parseTimestampNumber(a.lastOrderDate || a.stats?.lastOrderDate || a.stats?.lastPurchaseDate || 0);
+      const lastOrderB = parseTimestampNumber(b.lastOrderDate || b.stats?.lastOrderDate || b.stats?.lastPurchaseDate || 0);
       if (lastOrderB !== lastOrderA) return lastOrderB - lastOrderA;
 
       const salesA = Number(a.sales30Days || a.stats?.sales30Days || a.stats?.monthlySales || a.stats?.totalSales || 0);

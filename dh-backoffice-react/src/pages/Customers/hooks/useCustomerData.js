@@ -47,7 +47,7 @@ export const useCustomerData = () => {
       if (!customersMap || Object.keys(customersMap).length === 0) return;
 
       setCustomers(prev => {
-        const { updatedList, isChanged } = applyActiveStatsDelta(prev, customersMap);
+        const { updatedList, isChanged } = applyActiveStatsDelta(prev, customersMap, true);
         if (isChanged) {
           writeCachedCustomers(updatedList);
           return updatedList;
@@ -105,6 +105,9 @@ export const useCustomerData = () => {
           const sorted = filterAndSortCustomers(updatedUsers);
           setCustomers(sorted);
           writeCachedCustomers(sorted);
+        } else {
+          // 🛡️ Sliding Window Keeper: Always advance lastSync timestamp to prevent stale query window expansion
+          writeCachedCustomers(currentUsers);
         }
       } else if (currentUsers.length === 0) {
         // Fallback กรณีไม่มีทั้งแคชและ directory chunk

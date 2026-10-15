@@ -192,6 +192,14 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       logisticNote: fullProfile.logisticNote || fullProfile.shippingNotes || '',
       preferredCourier: fullProfile.preferredCourier || fullProfile.logisticProvider || '',
       shippingNotes: fullProfile.shippingNotes || fullProfile.logisticNote || '',
+      lineId: fullProfile.lineId || '',
+      facebook: fullProfile.facebook || fullProfile.facebookUrl || '',
+      facebookUrl: fullProfile.facebookUrl || fullProfile.facebook || '',
+      messengerUrl: fullProfile.messengerUrl || '',
+      youtubeUrl: fullProfile.youtubeUrl || '',
+      storeWebsite: fullProfile.storeWebsite || '',
+      otherSocial: fullProfile.otherSocial || '',
+      taxId: fullProfile.taxId || '',
       rank: fullProfile.rank || fullProfile.role || 'Customer',
       accountRank: fullProfile.accountRank || '' 
     });
@@ -225,6 +233,9 @@ export const useCustomerActions = (customers, setCustomers, fetchCustomers, CACH
       const newCustomersList = updateList(customers);
       setCustomers(newCustomersList);
       localStorage.setItem(CACHE_KEY, JSON.stringify(newCustomersList));
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(newCustomersList));
+      }
       
       toast.success('✅ บันทึกการแก้ไขข้อมูลลูกค้าเรียบร้อยแล้ว');
       setIsEditMode(false);

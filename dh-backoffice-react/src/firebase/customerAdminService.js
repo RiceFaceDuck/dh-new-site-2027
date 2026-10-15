@@ -291,6 +291,7 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
         const walletTxSnap = await getDocs(oldWalletTxRef);
 
         let logManualData = {};
+        let mergedTargetData = null;
 
         // 3. เริ่มโอนย้ายข้อมูล (Transaction ป้องกันเงินหาย)
         await runTransaction(db, async (transaction) => {
@@ -324,6 +325,13 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
             if ((!tTargetData.accountName || tTargetData.accountName === tTargetData.displayName) && tManualData.accountName) updatePayload.accountName = tManualData.accountName;
             
             if (tManualData.rank && !tTargetData.rank) updatePayload.rank = tManualData.rank;
+
+            mergedTargetData = {
+                ...tTargetData,
+                ...updatePayload,
+                id: targetUid,
+                uid: targetUid
+            };
 
             transaction.update(targetDocRef, updatePayload);
 
@@ -395,6 +403,16 @@ export const syncCustomerAccount = async (manualUid, targetAccountId) => {
                 }
             }
         });
+
+        // 5. Non-blocking sync to catalogs/customers_directory chunk
+        try {
+            await syncCustomerToDirectoryChunk({ id: manualUid, uid: manualUid }, 'delete');
+            if (mergedTargetData) {
+                await syncCustomerToDirectoryChunk(mergedTargetData, 'upsert');
+            }
+        } catch (syncErr) {
+            console.warn("⚠️ [CustomerAdminService] Non-blocking directory chunk sync error on merge:", syncErr);
+        }
 
         return { 
             success: true, 

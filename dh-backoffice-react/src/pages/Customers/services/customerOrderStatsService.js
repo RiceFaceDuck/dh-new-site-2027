@@ -194,6 +194,11 @@ export const fetchOrderStatsForPage = async (pageCustomers) => {
     } catch (e) {}
   }
 
+  // 🛡️ Empty Guard: If activeMap is missing, empty, or uninitialized, do not overwrite page stats with zeroes!
+  if (!activeMap || Object.keys(activeMap).length === 0) {
+    return {};
+  }
+
   // Build secondary lookup maps if phoneMap/accountMap not fully populated
   const byPhone = new Map(Object.entries(phoneMap));
   const byAccount = new Map(Object.entries(accountMap));
@@ -244,14 +249,20 @@ export const fetchOrderStatsForPage = async (pageCustomers) => {
       cust.lastPurchaseDate || 0
     );
 
-    const resolvedStats = {
-      lastOrderDate: stats ? Number(stats.lastOrderDate || fallbackLastOrder) : fallbackLastOrder,
-      sales30Days: stats ? Number(stats.sales30Days || 0) : 0,
-      orderCount30Days: stats ? Number(stats.orderCount30Days || 0) : 0
-    };
+    const fallbackSales30 = Number(cust.sales30Days !== undefined ? cust.sales30Days : (cust.stats?.sales30Days || cust.stats?.monthlySales || 0));
+    const fallbackCount30 = Number(cust.orderCount30Days !== undefined ? cust.orderCount30Days : (cust.stats?.orderCount30Days || 0));
 
-    if (uid) orderStatsMap[uid] = resolvedStats;
-    if (cust.id) orderStatsMap[cust.id] = resolvedStats;
+    // Only update if stats were found in active catalog
+    if (stats) {
+      const resolvedStats = {
+        lastOrderDate: Number(stats.lastOrderDate || fallbackLastOrder),
+        sales30Days: stats.sales30Days !== undefined ? Number(stats.sales30Days) : (stats.sales30d !== undefined ? Number(stats.sales30d) : fallbackSales30),
+        orderCount30Days: stats.orderCount30Days !== undefined ? Number(stats.orderCount30Days) : (stats.orderCount30d !== undefined ? Number(stats.orderCount30d) : fallbackCount30)
+      };
+
+      if (uid) orderStatsMap[uid] = resolvedStats;
+      if (cust.id) orderStatsMap[cust.id] = resolvedStats;
+    }
   });
 
   return orderStatsMap;

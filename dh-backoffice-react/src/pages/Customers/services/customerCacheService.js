@@ -322,7 +322,7 @@ export const fetchCustomersFromFirestore = async (lastSyncTime = 0, cachedUsers 
 /**
  * 📊 Apply Active 30-day stats delta onto customer array without re-fetching individual orders
  */
-export const applyActiveStatsDelta = (customersList, activeStatsMap) => {
+export const applyActiveStatsDelta = (customersList, activeStatsMap, isFullCatalog = false) => {
   if (!Array.isArray(customersList) || customersList.length === 0) {
     return { updatedList: customersList || [], isChanged: false };
   }
@@ -397,7 +397,7 @@ export const applyActiveStatsDelta = (customersList, activeStatsMap) => {
           }
         };
       }
-    } else if (currentSales30 > 0 || currentOrderCount30 > 0) {
+    } else if (isFullCatalog && (currentSales30 > 0 || currentOrderCount30 > 0)) {
       isChanged = true;
       return {
         ...cust,
