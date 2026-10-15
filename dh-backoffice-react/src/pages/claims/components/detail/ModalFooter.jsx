@@ -59,7 +59,7 @@ export default function ModalFooter({
             <button 
               disabled={isProcessing || !isManager} 
               onClick={handleMarkArrived} 
-              className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2 shadow-md active:scale-95 disabled:opacity-50 ${isManager ? 'text-white bg-amber-500 hover:bg-amber-600 hover:shadow-lg animate-pulse hover:animate-none' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+              className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2 shadow-md active:scale-95 disabled:opacity-50 ${isManager ? 'text-white bg-amber-500 hover:bg-amber-600 hover:shadow-lg' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
               title={!isManager ? 'สงวนสิทธิ์เฉพาะระดับผู้จัดการขึ้นไป' : 'รับสินค้าเรียบร้อย'}
             >
               <Package className="w-4 h-4" /> ได้รับสินค้าจากลูกค้าแล้ว

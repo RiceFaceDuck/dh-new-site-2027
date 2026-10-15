@@ -11,7 +11,7 @@ const ClaimDetailModal = lazy(() => import('./components/detail/ClaimDetailModal
 const GuideModal = lazy(() => import('../../components/common/GuideModal'));
 
 const claimGuideConfig = {
-  description: "ระบบนี้ใช้สำหรับ <b>จัดการการแจ้งเคลม (ซ่อม/เปลี่ยน) และ การคืนสินค้า (Refund)</b> เพื่อให้สามารถติดตามสถานะและประสานงานกับลูกค้าได้อย่างรวดเร็ว",
+  description: "ระบบนี้ใช้สำหรับ <b>จัดการคำร้องแจ้งเคลม (Claim), เปลี่ยนสินค้า (Exchange) และ คืนสินค้า (Return)</b> เพื่อให้สามารถติดตามสถานะและประสานงานกับลูกค้าได้อย่างรวดเร็ว",
   howTo: [
     "<b>ตรวจสอบรายการ:</b> ดูรายการที่มีสถานะ 'รับเรื่อง' เพื่อตรวจสอบข้อมูลและหลักฐานที่ลูกค้าแนบมา",
     "<b>อนุมัติคำร้อง:</b> หากข้อมูลครบถ้วน ให้กด 'อนุมัติ' สถานะจะเปลี่ยนเป็น <b>รอรับของ</b>",
@@ -47,18 +47,6 @@ export default function ClaimMain() {
     customerProfiles
   } = useClaimData();
 
-  const getStatusDisplay = (status) => {
-    switch(status) {
-      case 'pending_manager': return { label: 'รอรับเรื่อง', color: 'bg-rose-500/10 text-rose-600 border border-rose-500/20' };
-      case 'waiting_item': return { label: 'รอรับของ', color: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' };
-      case 'processing': return { label: 'กำลังตรวจ', color: 'bg-blue-500/10 text-blue-600 border border-blue-500/20' };
-      case 'completed': 
-      case 'approved': return { label: 'เสร็จสิ้น', color: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' };
-      case 'rejected': return { label: 'ไม่อนุมัติ', color: 'bg-red-500/10 text-red-600 border border-red-500/20' };
-      case 'cancelled': return { label: 'ยกเลิก', color: 'bg-gray-500/10 text-gray-600 border border-gray-500/20' };
-      default: return { label: status, color: 'bg-gray-500/10 text-gray-600 border border-gray-500/20' };
-    }
-  };
 
   const printRef = useRef();
   const handlePrint = useReactToPrint({
@@ -81,21 +69,39 @@ export default function ClaimMain() {
     
     const headers = ['Ref ID', 'Type', 'Status', 'SKU', 'Qty', 'Customer Name', 'Tracking No', 'Created At'];
     const rows = filteredRequests.map(req => {
+      const p = req.payload || {};
+      const refId = p.claimId || p.exchangeId || p.returnId || req.id || '-';
+      
+      const rawRef = String(refId).toUpperCase();
+      const isClaim = rawRef.startsWith('CLM') || req.type === 'CLAIM_APPROVAL';
+      const isExchange = rawRef.startsWith('EXC') || req.type === 'EXCHANGE_APPROVAL' || !!p.isSwapSku;
+      const typeLabel = isExchange ? 'Exchange' : isClaim ? 'Claim' : 'Return';
+
+      let dateStr = '-';
+      if (req.createdAt) {
+        if (typeof req.createdAt.toDate === 'function') {
+          dateStr = req.createdAt.toDate().toLocaleString('th-TH');
+        } else {
+          const d = new Date(req.createdAt);
+          dateStr = !isNaN(d.getTime()) ? d.toLocaleString('th-TH') : '-';
+        }
+      }
+
       return [
-        req.payload.claimId || req.payload.returnId || '-',
-        req.type.includes('CLAIM') ? 'Claim' : 'Return',
-        req.status,
-        req.payload.sku || '-',
-        req.payload.qty || 1,
-        req.payload.customerName || 'Walk-in',
-        req.payload.trackingNo || '-',
-        new Date(req.createdAt).toLocaleString('th-TH')
+        refId,
+        typeLabel,
+        req.status || '-',
+        p.sku || '-',
+        p.qty || 1,
+        p.customerName || 'ลูกค้าทั่วไป',
+        p.trackingNo || '-',
+        dateStr
       ];
     });
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
       + headers.join(',') + '\n' 
-      + rows.map(e => e.map(item => `"${item}"`).join(",")).join("\n");
+      + rows.map(e => e.map(item => `"${String(item ?? '').replace(/"/g, '""')}"`).join(",")).join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -126,7 +132,6 @@ export default function ClaimMain() {
             <ClaimTable 
               filteredRequests={paginatedRequests}
               loading={loading}
-              getStatusDisplay={getStatusDisplay}
               setSelectedRequest={setSelectedRequest}
               warrantyConfig={warrantyConfig}
               customerProfiles={customerProfiles}
@@ -149,7 +154,6 @@ export default function ClaimMain() {
             handlePrint={handlePrint}
             handleQuickCopy={handleQuickCopy}
             copiedText={copiedText}
-            getStatusDisplay={getStatusDisplay}
             customerProfile={selectedRequest?.payload?.customerUid ? customerProfiles?.[selectedRequest.payload.customerUid] : null}
             warrantyConfig={warrantyConfig}
           />

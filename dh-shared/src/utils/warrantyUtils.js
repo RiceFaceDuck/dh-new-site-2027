@@ -59,7 +59,7 @@ export function resolveCategoryFromSku(sku) {
   const skuUpper = sku.trim().toUpperCase();
 
   if (skuUpper.startsWith('FADE') || skuUpper.startsWith('FAN')) return 'Fan';
-  if (skuUpper.startsWith('SCR') || skuUpper.startsWith('PANEL') || skuUpper.startsWith('PN')) return 'Panel';
+  if (skuUpper.startsWith('SCR') || skuUpper.startsWith('PANEL') || skuUpper.startsWith('PN') || skuUpper.startsWith('LED')) return 'Panel';
   if (skuUpper.startsWith('BAT') || skuUpper.startsWith('BT')) return 'Battery';
   if (skuUpper.startsWith('ADAP') || skuUpper.startsWith('CHARGER') || skuUpper.startsWith('AD')) return 'Adapter';
   if (skuUpper.startsWith('KEY') || skuUpper.startsWith('KB')) return 'Keyboard';

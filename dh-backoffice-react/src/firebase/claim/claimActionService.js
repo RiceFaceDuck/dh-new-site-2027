@@ -247,13 +247,14 @@ export const claimActionService = {
           });
         }
 
-        // 2. บันทึกข้อมูลและรหัสเคลมลงในประวัติของบิลเดิม
+        // 2. บันทึกข้อมูลและรหัสลงในประวัติของบิลเดิม
         if (payload.orderDocId) {
           const orderRef = doc(db, getCollectionPath('orders'), payload.orderDocId);
+          const refDocId = payload.exchangeId || payload.claimId || todoId;
           transaction.update(orderRef, {
             refundsAndClaims: arrayUnion({
-              type: isSwapSku ? 'ClaimSwap' : 'Claim',
-              id: payload.claimId,
+              type: isSwapSku ? 'Exchange' : 'Claim',
+              id: refDocId,
               sku: payload.sku,
               swapSku: isSwapSku ? payload.swapSku : null,
               qty: qty,
@@ -265,35 +266,54 @@ export const claimActionService = {
 
         // 3. บัญชีและการเงิน (คืนของเก่าเข้า Wallet + หักของใหม่จาก Wallet)
         if (hasValidCustomer && userRef && userSnap?.exists()) {
-          transaction.update(userRef, {
-            walletBalance: increment(-netDifference),
-            updatedAt: serverTimestamp()
-          });
+          const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+          const balanceAfterRefund = Math.round((currentWallet + refundAmount) * 100) / 100;
+          const finalWalletBalance = Math.round((balanceAfterRefund - chargeAmount) * 100) / 100;
 
-          // บันทึกธุรกรรม Wallet 2 รายการ
+          const refDocId = payload.exchangeId || payload.claimId || todoId;
+          const txRefundId = `TXW_EXC_REF_${refDocId}`;
+          const txSpendId = `TXW_EXC_SPD_${refDocId}`;
+          const lastTxId = chargeAmount > 0 ? txSpendId : (refundAmount > 0 ? txRefundId : (userSnap.data()?.lastWalletTxId || null));
+
+          const userUpdateData = {
+            walletBalance: finalWalletBalance,
+            updatedAt: serverTimestamp()
+          };
+          if (lastTxId) {
+            userUpdateData.lastWalletTxId = lastTxId;
+          }
+          transaction.update(userRef, userUpdateData);
+
+          // บันทึกธุรกรรม Wallet 2 รายการ (เฉพาะยอดที่มีจริง)
           // 3.1 คืนของเก่า (REFUND)
-          const walletRefundRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
-          transaction.set(walletRefundRef, {
-            transactionId: `TXW_CLM_REF_${payload.claimId}`,
-            type: 'REFUND',
-            amount: refundAmount,
-            status: 'SUCCESS',
-            note: `คืนเงินสินค้าเดิมจากใบเคลมสลับรุ่น (${payload.claimId}) SKU: ${payload.sku}`,
-            operatorUid: adminUid || 'System',
-            timestamp: serverTimestamp()
-          });
+          if (refundAmount > 0) {
+            const walletRefundRef = doc(db, getCollectionPath('users'), customerUid, 'wallet_transactions', txRefundId);
+            transaction.set(walletRefundRef, {
+              transactionId: txRefundId,
+              type: 'REFUND',
+              amount: refundAmount,
+              balanceAfter: balanceAfterRefund,
+              status: 'SUCCESS',
+              note: `คืนเงินสินค้าเดิมจากใบเปลี่ยนสินค้า (${refDocId}) SKU: ${payload.sku}`,
+              operatorUid: adminUid || 'System',
+              timestamp: serverTimestamp()
+            });
+          }
 
           // 3.2 หักของใหม่ (SPEND)
-          const walletSpendRef = doc(collection(db, getCollectionPath('users'), customerUid, 'wallet_transactions'));
-          transaction.set(walletSpendRef, {
-            transactionId: `TXW_CLM_SPD_${payload.claimId}`,
-            type: 'SPEND',
-            amount: chargeAmount,
-            status: 'SUCCESS',
-            note: `ชำระค่าสินค้าตัวใหม่ที่เปลี่ยนรุ่น (${payload.claimId}) SKU: ${payload.swapSku}`,
-            operatorUid: adminUid || 'System',
-            timestamp: serverTimestamp()
-          });
+          if (chargeAmount > 0) {
+            const walletSpendRef = doc(db, getCollectionPath('users'), customerUid, 'wallet_transactions', txSpendId);
+            transaction.set(walletSpendRef, {
+              transactionId: txSpendId,
+              type: 'SPEND',
+              amount: chargeAmount,
+              balanceAfter: finalWalletBalance,
+              status: 'SUCCESS',
+              note: `ชำระค่าสินค้าตัวใหม่ที่เปลี่ยน (${refDocId}) SKU: ${payload.swapSku}`,
+              operatorUid: adminUid || 'System',
+              timestamp: serverTimestamp()
+            });
+          }
         }
 
         // 4. สร้างใบเสร็จการขาย Order ใหม่รันเลขต่อเนื่อง (เฉพาะกรณี Swap SKU)

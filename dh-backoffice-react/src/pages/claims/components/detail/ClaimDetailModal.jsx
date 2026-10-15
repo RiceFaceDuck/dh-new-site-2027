@@ -18,8 +18,7 @@ export default function ClaimDetailModal({
   handleQuickCopy, 
   copiedText,
   customerProfile: preloadedCustomerProfile = null,
-  warrantyConfig: initialWarrantyConfig = null,
-  getStatusDisplay
+  warrantyConfig: initialWarrantyConfig = null
 }) {
   const {
     trackingNo,
@@ -170,7 +169,6 @@ export default function ClaimDetailModal({
               copiedText={copiedText}
               handleQuickCopy={handleQuickCopy}
               preloadedProfile={customerProfile}
-              getStatusDisplay={getStatusDisplay}
             />
             <ProductInfo 
               selectedRequest={selectedRequest}

@@ -30,8 +30,8 @@ export const getWarrantyInfo = (purchaseDateStr, createdAt, warrantyPeriodDays =
     textColor = 'text-slate-400';
   } else if (remainingDays === 0) {
     label = `🚨 วันสุดท้าย!`;
-    color = 'bg-red-600 animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.6)]';
-    textColor = 'text-red-600 animate-pulse';
+    color = 'bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.6)]';
+    textColor = 'text-red-600';
   } else if (remainingDays <= 3) {
     label = `⚠️ โค้งสุดท้าย (${remainingDays} วัน)`;
     color = 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]';
@@ -59,7 +59,7 @@ export const getSLAIndicator = (createdAt, status) => {
   const cDate = createdAt?.toDate ? new Date(createdAt.toDate()) : new Date();
   const hoursDiff = (new Date() - cDate) / (1000 * 60 * 60);
 
-  if (hoursDiff > 48) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-rose-500 animate-pulse bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded-sm border border-rose-200 dark:border-rose-800/50"><Flame className="w-3 h-3"/> ล่าช้า!</div>;
+  if (hoursDiff > 48) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded-sm border border-rose-200 dark:border-rose-800/50"><Flame className="w-3 h-3"/> ล่าช้า!</div>;
   if (hoursDiff > 24) return <div className="flex items-center gap-1 mt-1.5 text-[9px] font-black text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded-sm border border-orange-200 dark:border-orange-800/50"><Zap className="w-3 h-3"/> เร่งด่วน</div>;
   return null;
 };

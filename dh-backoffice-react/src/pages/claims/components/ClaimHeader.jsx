@@ -34,7 +34,7 @@ export default function ClaimHeader({
           </div>
           <p className="text-slate-300 text-[10px] mt-0.5 font-bold flex items-center gap-2">
             ติดตามสถานะการแจ้งเคลม และ คืนสินค้า
-            <span className="bg-white/10 border border-white/20 px-1.5 py-0.5 rounded-sm text-[9px] uppercase font-black text-white shadow-xs">View Only</span>
+            <span className="bg-white/10 border border-white/20 px-1.5 py-0.5 rounded-sm text-[9px] uppercase font-black text-white shadow-xs">Active</span>
           </p>
         </div>
       </div>

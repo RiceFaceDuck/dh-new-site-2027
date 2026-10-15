@@ -3,6 +3,7 @@ import { Wrench, ArrowLeftRight, Check, Copy, Undo2 } from 'lucide-react';
 import { getWarrantyInfo, getSLAIndicator, getStatusDisplay } from '../../utils/claimFormatters';
 import { userService } from '../../../../firebase/userService';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
+import { calculateItemWarranty } from 'dh-shared/src/utils/warrantyUtils';
 
 const customerCache = {};
 
@@ -91,34 +92,12 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
     indicatorColor = 'bg-[#A78BFA]';
   }
 
-  let warrantyDays = 365;
-  if (warrantyConfig) {
-    if (warrantyConfig.skus?.[payload.sku]) {
-      warrantyDays = isClaim ? warrantyConfig.skus[payload.sku].claimDays : warrantyConfig.skus[payload.sku].returnDays;
-    } else if (warrantyConfig.categories) {
-      let foundCat = 'General';
-      const skuUpper = payload.sku?.toUpperCase() || '';
-      const categoryFromPayload = payload.category?.toLowerCase() || '';
-
-      for (const cat of Object.keys(warrantyConfig.categories)) {
-        const catLower = cat.toLowerCase();
-        if (categoryFromPayload === catLower) {
-          foundCat = cat; break;
-        }
-        if (catLower === 'adapter' && skuUpper.startsWith('AD')) { foundCat = cat; break; }
-        if (catLower === 'keyboard' && skuUpper.startsWith('KB')) { foundCat = cat; break; }
-        if (catLower === 'panel' && skuUpper.startsWith('PN')) { foundCat = cat; break; }
-        if (catLower === 'battery' && skuUpper.startsWith('BT')) { foundCat = cat; break; }
-        if (payload.sku && payload.sku.toLowerCase().includes(catLower)) {
-          foundCat = cat; break;
-        }
-      }
-      const catConfig = warrantyConfig.categories[foundCat] || warrantyConfig.categories['General'];
-      if (catConfig) {
-        warrantyDays = isClaim ? catConfig.claimDays : catConfig.returnDays;
-      }
-    }
-  }
+  const wStatus = calculateItemWarranty(
+    { category: payload.category, sku: payload.sku },
+    payload.purchaseDate,
+    warrantyConfig
+  );
+  const warrantyDays = wStatus ? (isReturn ? wStatus.returnDays : wStatus.claimDays) : 365;
 
   const warranty = getWarrantyInfo(payload.purchaseDate, req.createdAt, warrantyDays);
   const isEven = index % 2 === 0;
@@ -158,7 +137,7 @@ const ClaimTableRow = React.memo(function ClaimTableRow({
               {copiedText === (payload.claimId || payload.returnId || payload.exchangeId) ? <Check className="w-3 h-3 text-emerald-500"/> : <Copy className="w-3 h-3"/>}
             </button>
             {copiedText === (payload.claimId || payload.returnId || payload.exchangeId) && (
-               <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[9px] py-0.5 px-1.5 rounded-sm animate-bounce">Copied!</span>
+               <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[9px] py-0.5 px-1.5 rounded-sm shadow-sm">Copied!</span>
             )}
           </div>
         </div>

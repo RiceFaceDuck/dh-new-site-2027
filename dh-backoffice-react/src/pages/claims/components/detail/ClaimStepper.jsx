@@ -28,7 +28,7 @@ export default function ClaimStepper({ status, isCancel, type = '', isSwapSku = 
   if (isCancel || type?.startsWith('CANCEL_')) {
     return (
       <div className="bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/30 p-3.5 rounded-xl flex items-center gap-3">
-        <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 animate-spin" style={{ animationDuration: '4s' }} />
+        <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
         <div>
           <h4 className="text-sm font-black text-amber-800 dark:text-amber-300">คำร้องขอยกเลิก (รอผู้จัดการพิจารณา)</h4>
           <p className="text-xs text-amber-700/80 dark:text-amber-400">อยู่ระหว่างรอผู้จัดการอนุมัติคำขอยกเลิกรายการ</p>
@@ -89,10 +89,10 @@ export default function ClaimStepper({ status, isCancel, type = '', isSwapSku = 
             <div key={step.id} className="relative z-10 flex flex-col items-center gap-1.5 w-20">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-xs
                 ${isCompleted ? 'bg-dh-accent text-white border border-dh-accent shadow-dh-accent/20' : 
-                  isActive ? 'bg-dh-surface text-dh-accent border-2 border-dh-accent shadow-md animate-pulse' : 
+                  isActive ? 'bg-dh-surface text-dh-accent border-2 border-dh-accent shadow-md' : 
                   'bg-dh-base text-dh-muted border border-dh-border'}`}
               >
-                <Icon className={`w-4 h-4 ${isCompleted ? 'scale-110' : isActive ? 'animate-bounce' : ''}`} />
+                <Icon className={`w-4 h-4 ${isCompleted ? 'scale-110' : ''}`} />
               </div>
               <span className={`text-[10px] font-bold text-center transition-colors
                 ${isCompleted || isActive ? 'text-dh-main' : 'text-dh-muted'}`}
