@@ -113,7 +113,7 @@ export default function ClaimMain() {
   };
 
   return (
-    <div className="flex flex-col h-dvh bg-dh-base overflow-hidden">
+    <div className="flex flex-col h-full bg-dh-base overflow-hidden">
       <ClaimHeader 
         startDate={startDate} setStartDate={setStartDate}
         endDate={endDate} setEndDate={setEndDate}
@@ -122,13 +122,13 @@ export default function ClaimMain() {
         onOpenGuide={() => setIsGuideOpen(true)}
       />
 
-      <div className="flex-1 p-3 md:p-4 pb-0 relative animate-in fade-in duration-300 flex flex-col overflow-hidden">
-        <div className="max-w-[1600px] mx-auto w-full flex-1 flex flex-col space-y-4 pb-4">
+      <div className="flex-1 min-h-0 p-3 md:p-4 pb-2 relative animate-in fade-in duration-300 flex flex-col overflow-hidden">
+        <div className="max-w-[1600px] mx-auto w-full flex-1 min-h-0 flex flex-col gap-3">
           <div>
             <ClaimStatsRow stats={stats} activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
           
-          <div className="flex-1 overflow-hidden bg-dh-surface rounded-xl border border-dh-border shadow-xs flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden bg-dh-surface rounded-xl border border-dh-border shadow-xs flex flex-col">
             <ClaimTable 
               filteredRequests={paginatedRequests}
               loading={loading}

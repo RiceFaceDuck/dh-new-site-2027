@@ -34,9 +34,9 @@ export default function ClaimTable({
   }
 
   return (
-    <div className="flex-1 overflow-hidden h-full w-full flex flex-col justify-between rounded-b-xl">
+    <div className="flex-1 min-h-0 overflow-hidden w-full flex flex-col justify-between rounded-b-xl">
       {/* Single Table Container */}
-      <div className="flex-1 overflow-auto w-full custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto w-full custom-scrollbar">
         <table className="w-full text-left border-collapse table-fixed">
           <thead className="sticky top-0 bg-dh-surface/95 backdrop-blur-md border-b border-dh-border shadow-xs z-10">
             <tr>

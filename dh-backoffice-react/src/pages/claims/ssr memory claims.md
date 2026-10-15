@@ -32,6 +32,7 @@
     <caution>Import Depth: จาก src/pages/claims/hooks/ ไป src/firebase/ ต้องถอย 3 ชั้น (../../../firebase/)</caution>
     <caution>JSX Render Child Contract: getStatusDisplay ใน ClaimFormatters.jsx คืนค่าเป็น JSX Element ขณะที่ helper ท้องถิ่นเดิมใน ClaimMain คืนค่าเป็น Object {label, color} ห้ามส่ง prop สลับกันเพราะจะเกิด Fatal Crash: Objects are not valid as a React child</caution>
     <caution>CSV Export Date & Tri-Division: Firestore Timestamp ใน export CSV ต้องใช้ toDate().toLocaleString('th-TH') และแยก 3 โดเมน Claim / Exchange / Return ให้เด็ดขาด ห้ามรวม Exchange เข้า Return</caution>
+    <caution>Flexbox Table Scroll: เมื่อวาง Table ใน Flex Column ซ้อนกัน ต้องใส่ min-h-0 ให้ flex-1 container ทุกชั้น และใช้ h-full แทน h-dvh เพื่อป้องกันตารางยืดล้นจอจนไม่เกิด Scrollbar และผลัก pagination หลุดขอบจอ</caution>
     <caution>Absolute Deployment Ban: ห้าม deploy หรือ git push ขึ้นเซิฟเวอร์เด็ดขาด บันทึกงานเฉพาะ Git Commit ภายในเครื่องเท่านั้น</caution>
   </pitfalls_and_lessons>
 </ssr_memory>
