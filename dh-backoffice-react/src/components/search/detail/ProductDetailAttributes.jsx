@@ -12,13 +12,11 @@ const renderPills = (data, highlightData, emptyText = 'n/a') => {
   if (items.length === 0) return <span className="text-slate-400 font-medium italic text-xs">{emptyText}</span>;
 
   return (
-    <div className="flex flex-wrap gap-1.5 py-0.5">
+    <div className="text-slate-800 dark:text-slate-200 text-xs font-semibold leading-relaxed py-1 flex flex-wrap items-center gap-y-1">
       {items.map((item, idx) => (
-        <span 
-          key={idx} 
-          className="px-2.5 py-1 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold rounded-lg border-2 border-slate-300 dark:border-slate-600 text-xs shadow-xs hover:border-indigo-400 transition-colors"
-        >
+        <span key={idx} className="inline-flex items-center">
           <HighlightText text={item} highlightData={highlightData} />
+          {idx < items.length - 1 && <span className="text-slate-400 dark:text-slate-500 font-normal mr-2">,</span>}
         </span>
       ))}
     </div>
