@@ -104,7 +104,7 @@ export default function ActiveCustomerCard({
     const custPhone = activeTab.customer?.phone || activeTab.customer?.phoneNumber || '';
 
     return (
-        <div className="bg-white rounded-xl p-3 shadow-xs border border-slate-200/80 animate-in fade-in duration-150">
+        <div className="bg-white rounded-[0.1rem] p-3 shadow-xs border border-slate-200/80 animate-in fade-in duration-150">
             {/* 1. Customer Name Row (First Element - 1:1 Production Parity) */}
             <div className="flex items-center justify-between gap-1 mb-2">
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -121,7 +121,7 @@ export default function ActiveCustomerCard({
                     <button 
                         type="button" 
                         onClick={handleDeselect} 
-                        className="p-1 text-slate-400 hover:text-rose-500 hover:bg-slate-100 rounded-md transition-colors cursor-pointer shrink-0" 
+                        className="p-1 text-slate-400 hover:text-rose-500 hover:bg-slate-100 rounded-[0.1rem] transition-colors cursor-pointer shrink-0" 
                         title="ยกเลิกเลือกลูกค้า"
                     >
                         <X size={13} />
@@ -131,7 +131,7 @@ export default function ActiveCustomerCard({
 
             {/* 1.1 Phone Input / Right Reservation (Only shown if phone missing or editing) */}
             {!custPhone && !activeTab.hidePhone && !isEditingCustomerPhone && (
-                <div className="bg-amber-50/90 border border-amber-200 rounded-lg p-2 mb-2 flex items-center justify-between text-[11px] animate-in fade-in">
+                <div className="bg-amber-50/90 border border-amber-200 rounded-[0.1rem] p-2 mb-2 flex items-center justify-between text-[11px] animate-in fade-in">
                     <span className="text-amber-800 font-bold flex items-center gap-1.5">
                         <Phone size={11} className="text-amber-600" /> ระบุเบอร์ หรือสงวนสิทธิ์
                     </span>
@@ -142,14 +142,14 @@ export default function ActiveCustomerCard({
                                 if (setTempCustomerPhone) setTempCustomerPhone('');
                                 if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(true);
                             }} 
-                            className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-colors shadow-xs"
+                            className="px-2 py-0.5 bg-blue-600 text-white rounded-[0.1rem] text-[10px] font-bold hover:bg-blue-700 transition-colors shadow-xs"
                         >
                             ใส่เบอร์
                         </button>
                         <button 
                             type="button" 
                             onClick={() => updateActiveTab({ hidePhone: true })} 
-                            className="px-2 py-0.5 bg-white border border-slate-300 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors"
+                            className="px-2 py-0.5 bg-white border border-slate-300 text-slate-600 rounded-[0.1rem] text-[10px] font-bold hover:bg-slate-50 transition-colors"
                         >
                             สงวนสิทธิ์
                         </button>
@@ -158,7 +158,7 @@ export default function ActiveCustomerCard({
             )}
 
             {!custPhone && activeTab.hidePhone && !isEditingCustomerPhone && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 mb-2 flex items-center justify-between text-[11px] animate-in fade-in">
+                <div className="bg-slate-50 border border-slate-200 rounded-[0.1rem] p-2 mb-2 flex items-center justify-between text-[11px] animate-in fade-in">
                     <span className="text-slate-600 font-bold flex items-center gap-1.5">
                         <ShieldCheck size={12} className="text-emerald-600" /> สงวนสิทธิ์เบอร์โทร
                     </span>
@@ -177,7 +177,7 @@ export default function ActiveCustomerCard({
             )}
 
             {isEditingCustomerPhone && (
-                <div className="bg-blue-50/60 border border-blue-200 rounded-lg p-2 mb-2 animate-in fade-in space-y-1.5">
+                <div className="bg-blue-50/60 border border-blue-200 rounded-[0.1rem] p-2 mb-2 animate-in fade-in space-y-1.5">
                     <div className="flex items-center gap-1.5">
                         <Phone size={12} className="text-blue-600 shrink-0" />
                         <input 
@@ -189,7 +189,7 @@ export default function ActiveCustomerCard({
                                 if (setTempCustomerPhone) setTempCustomerPhone(formatted);
                             }}
                             autoFocus
-                            className="w-full px-2 py-1 text-[11px] border border-blue-300 bg-white rounded-md font-mono font-bold outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 text-blue-900"
+                            className="w-full px-2 py-1 text-[11px] border border-blue-300 bg-white rounded-[0.1rem] font-mono font-bold outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 text-blue-900"
                         />
                     </div>
                     <div className="flex justify-end gap-1">
@@ -204,7 +204,7 @@ export default function ActiveCustomerCard({
                                     if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(false);
                                 }
                             }}
-                            className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-1"
+                            className="px-2 py-0.5 bg-blue-600 text-white rounded-[0.1rem] text-[10px] font-bold hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-1"
                         >
                             <Check size={10} /> บันทึกเบอร์
                         </button>
@@ -214,7 +214,7 @@ export default function ActiveCustomerCard({
                                 updateActiveTab({ hidePhone: true });
                                 if (setIsEditingCustomerPhone) setIsEditingCustomerPhone(false);
                             }} 
-                            className="px-2 py-0.5 bg-white border border-slate-300 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors"
+                            className="px-2 py-0.5 bg-white border border-slate-300 text-slate-600 rounded-[0.1rem] text-[10px] font-bold hover:bg-slate-50 transition-colors"
                         >
                             สงวนสิทธิ์
                         </button>
@@ -232,7 +232,7 @@ export default function ActiveCustomerCard({
             )}
 
             {/* 2. Inset Address Box with MapPin */}
-            <div className="bg-slate-50 border border-slate-200/70 rounded-lg p-2.5 mb-2.5 flex items-start gap-1.5">
+            <div className="bg-slate-50 border border-slate-200/70 rounded-[0.1rem] p-2.5 mb-2.5 flex items-start gap-1.5">
                 <MapPin size={13} className="text-blue-500 shrink-0 mt-0.5" />
                 <span className="text-[11px] text-slate-600 leading-relaxed font-sans select-all line-clamp-3 break-words" title={detailSummary}>
                     {detailSummary}
@@ -253,7 +253,7 @@ export default function ActiveCustomerCard({
                             ฿{walletBal.toLocaleString(undefined, { minimumFractionDigits: walletBal % 1 !== 0 ? 1 : 0, maximumFractionDigits: 2 })}
                         </span>
                     </div>
-                    <label className="inline-flex items-center gap-1.5 px-1.5 py-0.5 mt-1 bg-blue-50/70 border border-blue-200 rounded text-[10px] text-blue-700 font-bold cursor-pointer hover:bg-blue-100 transition-colors select-none">
+                    <label className="inline-flex items-center gap-1.5 px-1.5 py-0.5 mt-1 bg-blue-50/70 border border-blue-200 rounded-[0.1rem] text-[10px] text-blue-700 font-bold cursor-pointer hover:bg-blue-100 transition-colors select-none">
                         <input 
                             type="checkbox" 
                             disabled={isProcessing || walletBal <= 0}
@@ -264,14 +264,14 @@ export default function ActiveCustomerCard({
                                     walletUsed: e.target.checked ? Math.min(walletBal, netTotal) : 0 
                                 });
                             }}
-                            className="w-3 h-3 text-blue-600 rounded border-blue-300 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                            className="w-3 h-3 text-blue-600 rounded-[0.1rem] border-blue-300 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                         />
                         <span>ใช้หัก</span>
                     </label>
                 </div>
 
                 {/* Right: Solid Blue POINTS Badge */}
-                <div className="bg-[#1D68E2] text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xs">
+                <div className="bg-[#1D68E2] text-white font-bold text-xs px-3 py-1.5 rounded-[0.5rem] flex items-center gap-1.5 shadow-xs">
                     <Sparkles size={12} className="text-amber-300" />
                     <span>POINTS:</span>
                     <span className="text-amber-300">★</span>

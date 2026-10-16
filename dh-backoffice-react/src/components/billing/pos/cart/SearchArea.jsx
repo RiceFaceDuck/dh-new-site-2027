@@ -34,11 +34,11 @@ export default function SearchArea({
                     onBlur={() => setTimeout(() => setShowDropdown(false), 200)} 
                     onKeyDown={handleSearchKeyDown} 
                     disabled={isProcessing}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-md border-2 border-transparent text-sm text-[#2A305A] focus:outline-hidden transition-all font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] placeholder-gray-400 bg-white focus:border-[#D51C39]/30 focus:ring-4 focus:ring-[#D51C39]/10"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-[0.1rem] border-2 border-transparent text-sm text-[#2A305A] focus:outline-hidden transition-all font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.1)] placeholder-gray-400 bg-white focus:border-[#D51C39]/30 focus:ring-4 focus:ring-[#D51C39]/10"
                 />
                 
                 {showDropdown && searchResults.length > 0 && !isProcessing && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 shadow-2xl rounded-lg z-100 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200 origin-top">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 shadow-2xl rounded-[0.1rem] z-100 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200 origin-top">
                         <div className="bg-slate-50 text-slate-500 text-[10px] font-bold px-4 py-2 flex justify-between border-b border-gray-200 sticky top-0 z-10 uppercase tracking-wider">
                             <span>ผลการค้นหา ({searchResults.length})</span>
                             <span>ESC ปิด</span>
@@ -73,7 +73,7 @@ export default function SearchArea({
                                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1 cursor-help whitespace-nowrap">
                                                         เลิกจำหน่าย
                                                     </span>
-                                                    <div className="absolute right-0 top-full mt-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg shadow-xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-50 pointer-events-none text-center">
+                                                    <div className="absolute right-0 top-full mt-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-[0.1rem] shadow-xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-50 pointer-events-none text-center">
                                                         สินค้านี้ถูกตั้งค่าเป็น "ไม่ใช้งาน" (Inactive) หากต้องการขายกรุณาตรวจสอบว่ามีสินค้าทดแทนหรือไม่
                                                     </div>
                                                 </div>
@@ -88,7 +88,7 @@ export default function SearchArea({
             </div>
             
             <button onClick={clearCart} disabled={activeTab.items.length === 0 || isProcessing} 
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-sm transition-all shadow-xs
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.5rem] font-bold text-sm transition-all shadow-xs
                     ${activeTab.items.length > 0 
                         ? 'text-white bg-[#D51C39] hover:bg-[#A3152B] active:scale-95' 
                         : 'text-[#D51C39]/60 bg-[#D51C39]/10 border border-[#D51C39]/20 opacity-70 cursor-not-allowed'}`}>

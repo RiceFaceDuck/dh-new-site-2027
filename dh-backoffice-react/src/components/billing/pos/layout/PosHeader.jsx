@@ -94,13 +94,13 @@ export default function PosHeader({
                         <button 
                             key={tab.id} 
                             onClick={() => !isProcessing && setActiveTabId(tab.id)}
-                            className={`px-3 py-1.5 text-xs font-bold transition-all rounded-lg flex items-center gap-2 border group relative shrink-0 shadow-xs cursor-pointer ${
+                            className={`px-3 py-1.5 text-xs font-bold transition-all rounded-[0.1rem] flex items-center gap-2 border group relative shrink-0 shadow-xs cursor-pointer ${
                                 isActive 
                                     ? 'bg-white text-slate-900 border-red-500 shadow-md ring-2 ring-red-500/20 scale-[1.02] z-10 font-extrabold' 
                                     : 'bg-slate-200/90 text-slate-700 border-slate-300 hover:bg-slate-300 hover:text-slate-900'
                             }`}
                         >
-                            <div className={`p-1 rounded-md transition-colors ${isActive ? 'bg-red-50 text-red-600' : 'bg-slate-300/60 text-slate-600'}`}>
+                            <div className={`p-1 rounded-[0.1rem] transition-colors ${isActive ? 'bg-red-50 text-red-600' : 'bg-slate-300/60 text-slate-600'}`}>
                                 <Receipt size={13} strokeWidth={2.5} />
                             </div>
 
@@ -161,7 +161,7 @@ export default function PosHeader({
                             createNewTab(); 
                         } 
                     }} 
-                    className="flex items-center gap-1 px-2.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all rounded-lg shadow-xs cursor-pointer shrink-0 border border-emerald-700/50"
+                    className="flex items-center gap-1 px-2.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all rounded-[0.5rem] shadow-xs cursor-pointer shrink-0 border border-emerald-700/50"
                     title="เปิดบิลร่างใหม่"
                 >
                     <Plus size={15} strokeWidth={3}/>

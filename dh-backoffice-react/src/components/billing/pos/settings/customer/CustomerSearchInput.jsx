@@ -37,8 +37,8 @@ export default function CustomerSearchInput({
                 disabled={isProcessing}
                 className={`w-full transition-all duration-300 outline-hidden relative z-10 font-bold
                     ${isSearchHighlight && !isSearchFocused 
-                        ? 'pl-8 pr-14 py-2 text-xs bg-white border-2 border-indigo-600 shadow-md text-slate-900 placeholder-indigo-400 rounded-lg' 
-                        : 'pl-9 pr-16 py-2 text-xs border border-slate-300 bg-slate-50 hover:bg-white rounded-lg focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/30 placeholder-slate-400 text-slate-900 shadow-xs'
+                        ? 'pl-8 pr-14 py-2 text-xs bg-white border-2 border-indigo-600 shadow-md text-slate-900 placeholder-indigo-400 rounded-[0.1rem]' 
+                        : 'pl-9 pr-16 py-2 text-xs border border-slate-300 bg-slate-50 hover:bg-white rounded-[0.1rem] focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/30 placeholder-slate-400 text-slate-900 shadow-xs'
                     }`}
             />
             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-20">
@@ -51,20 +51,20 @@ export default function CustomerSearchInput({
                             updateActiveTab({ walkInName: '', walkInPhone: '', hidePhone: false });
                             setShowWalkInPhoneInput(false);
                         }
-                    }} disabled={isProcessing} className="p-1 rounded-md transition-all text-gray-400 hover:text-red-500 hover:bg-red-50">
+                    }} disabled={isProcessing} className="p-1 rounded-[0.1rem] transition-all text-gray-400 hover:text-red-500 hover:bg-red-50">
                         <X size={12}/>
                     </button>
                 )}
                 <button onClick={() => {
                     sessionStorage.removeItem('dh_cache_customers');
                     alert('ล้างแคชลูกค้าสำเร็จ!\nกรุณากด F5 หรือรีเฟรช 1 ครั้งเพื่อโหลดรายชื่อใหม่');
-                }} className="p-1 rounded-md transition-all text-gray-400 hover:text-blue-500 hover:bg-blue-50">
+                }} className="p-1 rounded-[0.1rem] transition-all text-gray-400 hover:text-blue-500 hover:bg-blue-50">
                     <RefreshCw size={12}/>
                 </button>
             </div>
             
             {showCustDropdown && !isProcessing && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 shadow-2xl z-50 max-h-60 overflow-y-auto rounded-lg custom-scrollbar">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 shadow-2xl z-50 max-h-60 overflow-y-auto rounded-[0.1rem] custom-scrollbar">
                     {filteredCustomers.length === 0 ? (
                         <div className="p-1 space-y-1">
                             {/* Option 1: Yellow Smart Quick Paste DB Add Button */}
@@ -75,9 +75,9 @@ export default function CustomerSearchInput({
                                         setShowCustDropdown(false);
                                         onOpenQuickAddModal(localSearchText);
                                     }} 
-                                    className="p-2 bg-yellow-400 hover:bg-yellow-500 cursor-pointer rounded-md text-slate-900 font-bold flex items-center gap-2 transition-all shadow-sm group border border-yellow-500/40"
+                                    className="p-2 bg-yellow-400 hover:bg-yellow-500 cursor-pointer rounded-[0.1rem] text-slate-900 font-bold flex items-center gap-2 transition-all shadow-sm group border border-yellow-500/40"
                                 >
-                                    <div className="p-1.5 bg-slate-900 text-yellow-400 rounded-md shadow-xs group-hover:scale-110 transition-transform"><UserPlus size={14}/></div> 
+                                    <div className="p-1.5 bg-slate-900 text-yellow-400 rounded-[0.1rem] shadow-xs group-hover:scale-110 transition-transform"><UserPlus size={14}/></div> 
                                     <div className="flex flex-col">
                                         <span className="text-slate-900 font-black text-[11px] flex items-center gap-1">
                                             + เพิ่มเป็นลูกค้าใหม่ลง DB (Smart Quick Paste)
@@ -97,9 +97,9 @@ export default function CustomerSearchInput({
                                     setShowWalkInPhoneInput(false);
                                     setShowCustDropdown(false); 
                                 }} 
-                                className="p-2 hover:bg-blue-50 cursor-pointer rounded-md text-blue-600 font-bold flex items-center gap-2 transition-colors group"
+                                className="p-2 hover:bg-blue-50 cursor-pointer rounded-[0.1rem] text-blue-600 font-bold flex items-center gap-2 transition-colors group"
                             >
-                                <div className="p-1.5 bg-blue-100 rounded-lg shadow-xs group-hover:scale-110 transition-transform"><UserPlus size={14}/></div> 
+                                <div className="p-1.5 bg-blue-100 rounded-[0.1rem] shadow-xs group-hover:scale-110 transition-transform"><UserPlus size={14}/></div> 
                                 <div className="flex flex-col">
                                     <span className="text-gray-800 text-[10px]">ตกลงใช้ชื่อ Walk-in (ชั่วคราว)</span>
                                     <span className="text-blue-600 text-xs truncate">"{localSearchText}"</span>
