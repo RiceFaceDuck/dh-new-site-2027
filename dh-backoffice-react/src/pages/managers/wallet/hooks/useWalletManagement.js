@@ -100,8 +100,8 @@ export function useWalletManagement(navigate) {
                             totalWallet: sum('walletBalance'),
                             walletHolders: count()
                         }),
-                        // 2. Fetch only initial 20 users for table display (saved 80 reads)
-                        getDocs(query(qHasBalance, limit(20)))
+                        // 2. Fetch only initial 20 users for table display (ordered by highest balance from server)
+                        getDocs(query(qHasBalance, orderBy('walletBalance', 'desc'), limit(20)))
                     ]);
 
                     const aggData = aggregateSnap.data();

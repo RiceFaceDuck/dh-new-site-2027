@@ -35,5 +35,15 @@
   - In `todoWalletService.js`, enriched `APPROVE`/`REJECT` flows with deterministic Doc ID (`TXW_WD_APV_...`/`TXW_WD_REJ_...`), exact `balanceAfter` calculation, and atomic `lastWalletTxId` update on `userRef`.
   - In `creditActionService.js`, aligned Document ID and `transactionId` to unified `TXW_ADJ_${referenceId}` and added `lastWalletTxId` update on `userRef`.
   - In-App Automated Web Withdrawal is held/locked per manager policy; requests remain handled via LINE OA.
+- ⚠️ Statement & Point Table Domain UI Invariant (Phase 1):
+  - ปลดล็อกปัญหาความสับสนของเครื่องหมาย `+` และ `-` ใน Statement กระเป๋าเงิน โดยยกเลิกเครื่องหมายหน้าตัวเลข และแทนที่ด้วยป้ายกำกับภาษาชาวบ้าน: 🟢 `ค้างยอดเข้า wallet` (ยอดค้างเพิ่ม) และ 🟠 `เบิกจ่ายธุรกรรม` (ยอดค้างลด) พร้อมแก้บั๊กตัวพิมพ์เล็ก-ใหญ่ (`REFUND` vs `refund`)
+  - ใน `PointTransactionTable.jsx` แก้ปัญหาไม่แสดงวันที่โดยเปลี่ยนจาก `pt.createdAt` เป็น `(pt.timestamp || pt.createdAt)` และเพิ่มการตรวจจับ type `'ADD'` เพื่อให้แต้มสะสมแสดงผลถูกต้อง
+- ⚠️ Drawer Refund Standardization (Phase 2):
+  - รวมศูนย์ปุ่ม "จ่ายคืนเป็นเงินสด" ใน `RefundManagement.jsx` ให้เรียกผ่าน `executeCustomerRefund` (`customerRefundService.js`) แทนการปรับยอดแก้ไขบัญชี ทำให้มี `admin_audits`, `system_logs`, ซิงก์ Google Sheets บัญชี (`gasHistoryService`), และเคลียร์ Todo task ค้างถอนอัตโนมัติ
+  - ปรับ `WalletModals.jsx` ให้คำนวณเพดานการจ่ายคืนเงินสดรองรับทั้ง `walletBalance` และ `pendingWithdrawal` รวมกันอย่างถูกต้อง
+- ⚠️ Server Query & UX Empty State Polish (Phase 3):
+  - ใน `useWalletManagement.js` เพิ่ม `orderBy('walletBalance', 'desc')` ใน Query ระดับ Firestore เพื่อให้แน่ใจว่าดึง 20 อันดับที่มียอดค้างสูงสุดจริงจาก Server
+  - ใน `WalletDetailPanel.jsx` เพิ่ม Empty State Card ที่สวยงามพร้อมคำแนะนำเมื่อยังไม่มีการเลือกลูกค้า ขจัดพื้นที่ว่างเปล่าฝั่งขวา
+  - ใน `RefundManagement.jsx` เปลี่ยนฟังก์ชัน `copyAllPhones` จาก native `alert()` เป็น `showNotification()` Toast มาตรฐาน
 </pitfalls_and_lessons>
 </grimoire>

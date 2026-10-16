@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Building2, HelpCircle } from 'lucide-react';
-import { auth } from '../../firebase/config';
+import { auth, db } from '../../firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
+import { getUsersPath } from 'dh-shared/src/firebase/pathUtils';
 import { creditCoreService } from '../../firebase/creditCoreService';
+import { executeCustomerRefund } from '../../firebase/customerRefundService';
 import { todoService } from '../../firebase/todoService';
 import { driveService } from '../../firebase/driveService';
 import GuideModal from '../../components/common/GuideModal';
 
-import { useWalletManagement } from './wallet/hooks/useWalletManagement';
+import { useWalletManagement, updateCachedUserBalance } from './wallet/hooks/useWalletManagement';
 import WalletDashboardStats from './wallet/WalletDashboardStats';
 import PendingWithdrawals from './wallet/PendingWithdrawals';
 import CustomerSearchList from './wallet/CustomerSearchList';
@@ -119,30 +122,56 @@ export default function RefundManagement() {
         const amount = Number(adjAmount);
         
         if (!amount || amount <= 0 || isNaN(amount)) return showNotification('กรุณาระบุจำนวนเงินให้ถูกต้อง', 'error');
-        if (!adjNote.trim()) return showNotification('กรุณาระบุหมายเหตุการแก้ไขบัญชี', 'error');
+        if (!adjNote.trim()) return showNotification('กรุณาระบุรายละเอียด / หมายเหตุ', 'error');
 
         setIsSubmitting(true);
         try {
-            // ✅ [SECURITY FIX] เรียกใช้ adjustUserWallet เพื่อแก้บั๊กปรับยอดผิดกระเป๋า 
-            // ✅ และส่ง currentRefId (UUID) เพื่อป้องกันการส่งซ้ำระดับเครือข่าย
-            await creditCoreService.adjustUserWallet(
-                selectedUser.id, amount, 
-                adjType === 'deposit' ? 'adjust_add' : 'adjust_deduct', 
-                `[แก้ไขข้อผิดพลาดทางบัญชี] ${adjNote}`, 
-                auth.currentUser?.uid || 'Admin',
-                currentRefId || crypto.randomUUID()
-            );
+            if (adjType === 'cash_withdrawal') {
+                // 🚀 [DRAWER STANDARDIZATION] รวมศูนย์การจ่ายคืนเงินสดหน้าร้านให้ได้มาตรฐานเดียวกับ Customer Drawer Refund
+                // บันทึก audit, system_logs, ซิงก์ Google Sheets บัญชี และเคลียร์ Todos task อัตโนมัติ
+                await executeCustomerRefund({
+                    customerId: selectedUser.id,
+                    amount: amount,
+                    refundMethod: 'CASH',
+                    note: adjNote,
+                    adminInfo: {
+                        uid: auth.currentUser?.uid || 'Admin',
+                        displayName: auth.currentUser?.displayName || 'Manager'
+                    }
+                });
+                showNotification(`✅ จ่ายคืนเป็นเงินสดให้ลูกค้าสำเร็จ (บันทึก Audit และส่งฝ่ายบัญชีเรียบร้อย)`);
+            } else {
+                // ✅ [ACCOUNTING CORRECTION] ปรับปรุงแก้ไขยอดเงินกรณีระบุข้อผิดพลาดทางบัญชี
+                await creditCoreService.adjustUserWallet(
+                    selectedUser.id, amount, 
+                    adjType === 'deposit' ? 'adjust_add' : 'adjust_deduct', 
+                    `[แก้ไขข้อผิดพลาดทางบัญชี] ${adjNote}`, 
+                    auth.currentUser?.uid || 'Admin',
+                    currentRefId || crypto.randomUUID()
+                );
+                showNotification(`✅ แก้ไขยอดเงินกระเป๋าเงินสำเร็จ`);
+            }
 
-            showNotification(`✅ แก้ไขยอดเงินกระเป๋าเงินสำเร็จ`);
             setIsModalOpen(false);
             setAdjAmount(''); setAdjNote('');
             
-            const newBal = adjType === 'deposit' ? (selectedUser.walletBalance || 0) + amount : (selectedUser.walletBalance || 0) - amount;
-            setSelectedUser(prev => ({ ...prev, walletBalance: newBal }));
+            // ดึงข้อมูลลูกค้าล่าสุดจาก Firestore เพื่ออัปเดต state และ cache ให้ตรง 100%
+            try {
+                const userRef = doc(db, getUsersPath(), selectedUser.id);
+                const uSnap = await getDoc(userRef);
+                if (uSnap.exists()) {
+                    const freshUser = { id: uSnap.id, ...uSnap.data() };
+                    setSelectedUser(freshUser);
+                    updateCachedUserBalance(selectedUser.id, freshUser.walletBalance || 0);
+                }
+            } catch (fetchErr) {
+                console.warn("⚠️ Failed to re-fetch fresh user doc:", fetchErr);
+            }
+
             await loadTransactions(selectedUser.id);
         } catch (error) {
-            console.error("Manual adjust error:", error);
-            showNotification(`❌ ${error.message}`, "error");
+            console.error("Adjustment/Refund error:", error);
+            showNotification(`❌ ${error.message || 'เกิดข้อผิดพลาดในการทำรายการ'}`, "error");
         } finally {
             setIsSubmitting(false);
         }
@@ -152,9 +181,9 @@ export default function RefundManagement() {
         const phones = defaultUsers.map(u => u.phone || u.phoneNumber).filter(p => p && p.trim() !== '').join(', ');
         if (phones) {
             navigator.clipboard.writeText(phones);
-            alert(`คัดลอกเบอร์โทรลูกค้าเรียบร้อยแล้ว!`);
+            showNotification(`คัดลอกเบอร์โทรลูกค้าเรียบร้อยแล้ว!`);
         } else {
-            alert('ไม่พบเบอร์โทรศัพท์ในรายชื่อนี้');
+            showNotification('ไม่พบเบอร์โทรศัพท์ในรายชื่อนี้', 'error');
         }
     };
 

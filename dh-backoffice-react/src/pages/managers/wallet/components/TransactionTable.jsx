@@ -54,19 +54,38 @@ export default function TransactionTable({ transactions }) {
           </tr>
         )}
         itemContent={(index, tx) => {
-          const isPositive = tx.type === 'deposit' || tx.type === 'refund' || tx.type === 'WITHDRAWAL_REJECTED';
-          const isCash = tx.type === 'cash_withdrawal' || tx.type === 'WITHDRAWAL_COMPLETED' || tx.type === 'WITHDRAWAL_REQUEST';
+          const typeUpper = String(tx.type || '').toUpperCase();
+          // ค้างยอดเข้า wallet: รายการที่ทำให้ยอดเงินในกระเป๋าเพิ่มขึ้น (ยอดที่บริษัทค้างลูกค้าเพิ่ม)
+          const isDeposit = ['DEPOSIT', 'REFUND', 'REFUND_POS', 'WITHDRAWAL_REJECTED', 'ADJUST_ADD', 'ADD'].includes(typeUpper);
+          const isCash = typeUpper === 'CASH_WITHDRAWAL' || typeUpper === 'WITHDRAWAL_COMPLETED' || typeUpper === 'WITHDRAWAL_REQUEST';
+
           return (
             <>
               <td className="px-5 py-3.5">
                 <div className="flex items-start gap-3">
-                  <div className={`mt-0.5 p-1.5 rounded-lg shrink-0 border ${isPositive ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : isCash ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
-                    {isPositive ? <ArrowDownToLine size={14} strokeWidth={2.5}/> : isCash ? <Banknote size={14} strokeWidth={2.5}/> : <ArrowUpFromLine size={14} strokeWidth={2.5}/>}
+                  <div className={`mt-0.5 p-1.5 rounded-lg shrink-0 border ${
+                    isDeposit 
+                      ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
+                      : isCash 
+                      ? 'bg-amber-50 border-amber-100 text-amber-600' 
+                      : 'bg-slate-100 border-slate-200 text-slate-600'
+                  }`}>
+                    {isDeposit ? (
+                      <ArrowDownToLine size={14} strokeWidth={2.5}/>
+                    ) : isCash ? (
+                      <Banknote size={14} strokeWidth={2.5}/>
+                    ) : (
+                      <ArrowUpFromLine size={14} strokeWidth={2.5}/>
+                    )}
                   </div>
                   <div>
-                    <div className="font-black text-xs text-slate-800">{tx.note || tx.type}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-xs text-slate-800">{tx.note || tx.type}</span>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] font-bold text-slate-400">
-                      <span className="flex items-center gap-1"><Clock size={10}/> {tx.timestamp ? new Date(tx.timestamp.toMillis()).toLocaleString('th-TH') : '-'}</span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={10}/> {tx.timestamp ? new Date(tx.timestamp.toMillis()).toLocaleString('th-TH') : '-'}
+                      </span>
                       <span className="text-slate-300">•</span>
                       <span className="font-mono text-slate-500">Ref: {tx.referenceId || tx.transactionId}</span>
                     </div>
@@ -74,15 +93,30 @@ export default function TransactionTable({ transactions }) {
                 </div>
               </td>
               <td className="px-5 py-3.5 text-right align-top">
-                <div className={`font-black text-sm ${isPositive ? 'text-emerald-600' : isCash ? 'text-amber-600' : 'text-rose-600'}`}>
-                  {isPositive ? '+' : '-'} {Number(tx.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                <div className={`font-black text-sm ${isDeposit ? 'text-emerald-700 font-mono' : 'text-slate-800 font-mono'}`}>
+                  ฿{Number(tx.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                 </div>
-                {tx.status && <div className={`text-[9px] font-bold uppercase mt-0.5 ${tx.status === 'SUCCESS' ? 'text-emerald-500' : 'text-amber-500'}`}>{tx.status}</div>}
+                <div className="mt-1 flex justify-end">
+                  {isDeposit ? (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      ค้างยอดเข้า wallet
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                      เบิกจ่ายธุรกรรม
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="px-5 py-3.5 text-right align-top">
-                <div className="font-bold text-xs text-slate-500">
-                  {Number(tx.balanceAfter || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                <div className="font-bold text-xs text-slate-600 font-mono">
+                  ฿{Number(tx.balanceAfter || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                 </div>
+                {tx.status && (
+                  <div className={`text-[9px] font-bold uppercase mt-1 ${tx.status === 'SUCCESS' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {tx.status === 'SUCCESS' ? 'สำเร็จ' : tx.status}
+                  </div>
+                )}
               </td>
             </>
           );

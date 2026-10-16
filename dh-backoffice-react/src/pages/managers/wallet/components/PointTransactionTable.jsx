@@ -20,7 +20,13 @@ export default function PointTransactionTable({ pointTransactions }) {
       </thead>
       <tbody className="divide-y divide-slate-100">
           {pointTransactions.map(pt => {
-              const isEarn = pt.type === 'deposit' || pt.type === 'earn';
+              const ptTypeUpper = String(pt.type || '').toUpperCase();
+              const isEarn = ['DEPOSIT', 'EARN', 'ADD'].includes(ptTypeUpper);
+              const ptTime = pt.timestamp || pt.createdAt;
+              const formattedDate = ptTime 
+                ? (ptTime.toMillis ? new Date(ptTime.toMillis()).toLocaleString('th-TH') : new Date(ptTime).toLocaleString('th-TH'))
+                : '-';
+
               return (
                   <tr key={pt.id} className="hover:bg-amber-50/30 transition-colors group">
                       <td className="px-5 py-3.5">
@@ -31,15 +37,15 @@ export default function PointTransactionTable({ pointTransactions }) {
                               <div>
                                   <div className="font-black text-xs text-slate-800">{pt.note || pt.type}</div>
                                   <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] font-bold text-slate-400">
-                                      <span className="flex items-center gap-1"><Clock size={10}/> {pt.createdAt ? new Date(pt.createdAt.toMillis()).toLocaleString('th-TH') : '-'}</span>
+                                      <span className="flex items-center gap-1"><Clock size={10}/> {formattedDate}</span>
                                       {pt.referenceId && <><span className="text-slate-300">•</span><span className="font-mono text-slate-500">Ref: {pt.referenceId}</span></>}
                                   </div>
                               </div>
                           </div>
                       </td>
                       <td className="px-5 py-3.5 text-right align-top">
-                          <div className={`font-black text-sm ${isEarn ? 'text-amber-600' : 'text-slate-600'}`}>
-                              {isEarn ? '+' : '-'} {Number(pt.amount || 0).toLocaleString('th-TH')}
+                          <div className={`font-black text-sm font-mono ${isEarn ? 'text-amber-600' : 'text-slate-600'}`}>
+                              {isEarn ? '+' : '-'} {Number(pt.amount || 0).toLocaleString('th-TH')} Pts
                           </div>
                       </td>
                   </tr>
