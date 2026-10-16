@@ -102,6 +102,10 @@
        วิธีแก้: ลบฟังก์ชันเฉพาะถิ่นใน `PosSystem.jsx` และ import ใช้งานจาก `dh-shared` โดยตรง ซึ่งรองรับทั้งเศษสตางค์ ค่าลบ และผ่านการทดสอบครอบคลุม [สถานะ: ส่งมอบแล้ว]
     28. ปัญหา: ยอดรวมแถวสินค้าในตะกร้าแคชเชียร์แสดงผลติดลบ หากกรอกส่วนลดต่อชิ้นสูงกว่าราคาขาย
        วิธีแก้: ใน `CartTableRow.jsx` ครอบ `Math.max(0, ...)` ในการคำนวณราคาต่อชิ้นหักส่วนลด ป้องกันไม่ให้ตัวเลขแถวแสดงยอดติดลบในหน้าจอแคชเชียร์ [สถานะ: ส่งมอบแล้ว]
+    29. ปัญหา: หน้า POS พัง (`TypeError: Cannot read properties of undefined (reading 'id')` ที่ `usePosState.js`) เมื่อกดปุ่ม "+ เปิดบิลใหม่" บนแถบหัวตาราง และปุ่มปิดแท็บอ้างอิงตัวแปร `index` ผิด (`idx`)
+       วิธีแก้: ปรับปุ่มเปิดบิลใหม่ใน `PosHeader.jsx` ให้เรียก `createNewTab()` (ซึ่งคือ `handleCreateNewTab` จาก `PosSystem.jsx`) โดยตรง ไม่เรียก `setCartTabs([...safeCartTabs, newTab])` ซ้ำซ้อน, แก้ `index` เป็น `idx` ตอนแจ้งเตือนปิดแท็บ และเพิ่มตัวกรอง `t && typeof t === 'object' && t.id` ใน `usePosState.js` และ `staffPosDraftService.js` เพื่อล้างค่าเสียใน LocalStorage อัตโนมัติ [สถานะ: ส่งมอบแล้ว]
+    30. ปัญหา: กดบันทึกบิลร่างลูกค้าใหม่แล้วขึ้น `ReferenceError: customerUid is not defined` ที่ `billingTransactionService.js` และป้าย `ใกล้เคียง`/`คงเหลือ` ใน Dropdown ค้นหาสินค้า (`SearchArea.jsx`) บี้หักบรรทัดเมื่อเจอชื่อรุ่นยาวๆ
+       วิธีแก้: ประกาศ `customerUid` ไว้ชั้นนอกของ `createOrder` ใน `billingTransactionService.js` (รองรับทั้ง `.uid` และ `.id`), ปรับกล่องรายการค้นหาใน `SearchArea.jsx` ให้ฝั่งซ้ายใช้ `min-w-0 flex-1` + `line-clamp-2` และฝั่งขวา/ป้ายสถานะใส่ `shrink-0 whitespace-nowrap` พร้อมกรองค่าขยะขีด `-` ของ `contactName` ใน `ActiveCustomerCard.jsx` [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

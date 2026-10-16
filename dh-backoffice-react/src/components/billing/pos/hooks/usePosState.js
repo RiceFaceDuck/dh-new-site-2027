@@ -118,10 +118,11 @@ export default function usePosState(products, customers, initialDraft) {
     // 💾 Save to local cache immediately + Debounced Cloud Sync to Firestore
     useEffect(() => {
         const uid = auth?.currentUser?.uid || 'guest';
-        localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(cartTabs));
+        const cleanTabs = Array.isArray(cartTabs) ? cartTabs.filter(t => t && typeof t === 'object' && t.id) : [];
+        localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(cleanTabs));
         window.dispatchEvent(new CustomEvent('dh_cart_updated'));
         if (uid !== 'guest') {
-            staffPosDraftService.saveStaffCloudDraftsDebounced(uid, cartTabs);
+            staffPosDraftService.saveStaffCloudDraftsDebounced(uid, cleanTabs);
         }
     }, [cartTabs]);
 
@@ -132,6 +133,7 @@ export default function usePosState(products, customers, initialDraft) {
                 return;
             }
             setCartTabs(prev => {
+                const validPrev = Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : [];
                 const draftId = (initialDraft.id || initialDraft.orderId) ? String(initialDraft.id || initialDraft.orderId) : Date.now().toString();
                 
                 let fullCustomer = initialDraft.customer || null;
@@ -175,9 +177,9 @@ export default function usePosState(products, customers, initialDraft) {
                     transferDateTime: initialDraft.transferDateTime || ''
                 };
 
-                if (prev.some(tab => tab.id === draftId || tab.orderId === draftId)) {
+                if (validPrev.some(tab => tab.id === draftId || tab.orderId === draftId)) {
                     setActiveTabId(draftId);
-                    return prev.map(tab => {
+                    return validPrev.map(tab => {
                         if (tab.id === draftId || tab.orderId === draftId) {
                             return { ...tab, ...newTab, id: tab.id };
                         }
@@ -187,14 +189,14 @@ export default function usePosState(products, customers, initialDraft) {
 
                 setActiveTabId(draftId);
 
-                const emptyTabIndex = prev.findIndex(t => t.items.length === 0 && !t.customer && !t.walkInName && !t.orderId);
+                const emptyTabIndex = validPrev.findIndex(t => (!t.items || t.items.length === 0) && !t.customer && !t.walkInName && !t.orderId);
                 if (emptyTabIndex !== -1) {
-                    const newPrev = [...prev];
+                    const newPrev = [...validPrev];
                     newPrev[emptyTabIndex] = newTab;
                     return newPrev;
                 }
 
-                return [...prev, newTab];
+                return [...validPrev, newTab];
             });
         }
     }, [initialDraft, customers]);
@@ -293,11 +295,12 @@ export default function usePosState(products, customers, initialDraft) {
         fetchMarketingData();
     }, []);
 
-    const safeCartTabs = cartTabs.length > 0 ? cartTabs : [createNewTab()];
-    const activeTab = safeCartTabs.find(t => t.id === activeTabId) || safeCartTabs[0];
+    const validCartTabs = Array.isArray(cartTabs) ? cartTabs.filter(t => t && typeof t === 'object' && t.id) : [];
+    const safeCartTabs = validCartTabs.length > 0 ? validCartTabs : [createNewTab()];
+    const activeTab = safeCartTabs.find(t => t?.id === activeTabId) || safeCartTabs[0];
 
     const updateActiveTab = useCallback((updates) => {
-        setCartTabs(prev => prev.map(tab => {
+        setCartTabs(prev => (Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : []).map(tab => {
             if (tab.id === activeTabId) {
                 const evaluatedUpdates = typeof updates === 'function' ? updates(tab) : updates;
                 return { ...tab, ...evaluatedUpdates };
@@ -308,7 +311,7 @@ export default function usePosState(products, customers, initialDraft) {
 
     const closeTab = (tabId) => {
         setCartTabs(prev => {
-            const newTabs = prev.filter(t => t.id !== tabId);
+            const newTabs = (Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : []).filter(t => t.id !== tabId);
             if (newTabs.length === 0) {
                 const newTab = createNewTab();
                 setActiveTabId(newTab.id);
@@ -322,7 +325,7 @@ export default function usePosState(products, customers, initialDraft) {
     };
 
     const handlePriceModeChange = (mode) => {
-        const updatedItems = activeTab.items.map(item => { const newPrice = mode === 'wholesale' ? item.baseWholesale : item.baseRetail; return { ...item, price: newPrice }; });
+        const updatedItems = (activeTab?.items || []).map(item => { const newPrice = mode === 'wholesale' ? item.baseWholesale : item.baseRetail; return { ...item, price: newPrice }; });
         updateActiveTab({ priceMode: mode, items: updatedItems });
     };
 
@@ -341,7 +344,7 @@ export default function usePosState(products, customers, initialDraft) {
 
     return {
         // Tab Management
-        cartTabs, setCartTabs,
+        cartTabs: safeCartTabs, setCartTabs,
         activeTabId, setActiveTabId,
         createNewTab, closeTab, safeCartTabs, activeTab, updateActiveTab,
         handlePriceModeChange,

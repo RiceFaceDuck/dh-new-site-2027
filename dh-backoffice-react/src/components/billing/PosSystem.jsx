@@ -104,7 +104,7 @@ export default function PosSystem({
     const lastResumeIdRef = useRef(null);
     useEffect(() => {
         if (resumeTabId && lastResumeIdRef.current !== resumeTabId) {
-            const matchedTab = safeCartTabs.find(t => t.id === resumeTabId || t.orderId === resumeTabId || t.docId === resumeTabId);
+            const matchedTab = safeCartTabs.find(t => t && (t.id === resumeTabId || t.orderId === resumeTabId || t.docId === resumeTabId));
             if (matchedTab) {
                 setActiveTabId(matchedTab.id);
                 lastResumeIdRef.current = resumeTabId;
@@ -117,18 +117,19 @@ export default function PosSystem({
         if (isNewBillRequest && !isNewBillHandledRef.current) {
             isNewBillHandledRef.current = true;
             setCartTabs(tabs => {
-                const emptyIdx = tabs.findIndex(tab => 
+                const validTabs = Array.isArray(tabs) ? tabs.filter(t => t && typeof t === 'object' && t.id) : [];
+                const emptyIdx = validTabs.findIndex(tab => 
                     (!tab.items || tab.items.length === 0) && 
                     !tab.customer && !tab.walkInName && !tab.docId && 
                     (!tab.orderId || String(tab.orderId).startsWith('DH-TEMP-'))
                 );
                 if (emptyIdx !== -1) {
-                    setActiveTabId(tabs[emptyIdx].id);
-                    return tabs;
+                    setActiveTabId(validTabs[emptyIdx].id);
+                    return validTabs;
                 }
                 const newTab = createNewTab();
                 setActiveTabId(newTab.id);
-                return [...tabs, newTab];
+                return [...validTabs, newTab];
             });
             if (typeof onNewBillHandled === 'function') {
                 onNewBillHandled();
@@ -141,20 +142,23 @@ export default function PosSystem({
     const activeProducts = ((posState.products && posState.products.length > 0) ? posState.products : products) || [];
 
     const handleCreateNewTab = () => {
-        if (isProcessing) return;
+        if (isProcessing) return null;
         const emptyIdx = safeCartTabs.findIndex(t => 
+            t &&
             (!t.items || t.items.length === 0) && 
             !t.customer && !t.walkInName && !t.docId && 
             (!t.orderId || String(t.orderId).startsWith('DH-TEMP-'))
         );
         if (emptyIdx !== -1) {
             setActiveTabId(safeCartTabs[emptyIdx].id);
+            return safeCartTabs[emptyIdx];
         } else {
             const newTab = createNewTab();
             if (typeof setCartTabs === 'function') {
-                setCartTabs(prev => [...prev, newTab]);
+                setCartTabs(prev => [...(Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : []), newTab]);
                 setActiveTabId(newTab.id);
             }
+            return newTab;
         }
     };
 

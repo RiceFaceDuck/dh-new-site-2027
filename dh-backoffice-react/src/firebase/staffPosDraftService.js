@@ -9,6 +9,7 @@ import { safeJsonParse } from 'dh-shared';
 export const filterValidDraftTabs = (tabs) => {
   if (!Array.isArray(tabs)) return [];
   return tabs.filter((t) => {
+    if (!t || typeof t !== 'object' || !t.id) return false;
     const stat = (
       t.orderStatus ||
       t.status ||

@@ -135,7 +135,7 @@ export default function PosHeader({
                                         e.stopPropagation(); 
                                         if (isProcessing) return;
                                         if (tab.items && tab.items.length > 0) {
-                                            const tabLabel = getTabTitle ? getTabTitle(tab, index) : `แท็บบิล ${index + 1}`;
+                                            const tabLabel = getTabTitle ? getTabTitle(tab, idx) : `แท็บบิล ${idx + 1}`;
                                             const confirmed = window.confirm(`แท็บบิล "${tabLabel}" มีสินค้าค้างอยู่ ${tab.items.length} รายการ\n\nคุณแน่ใจหรือไม่ว่าต้องการปิดแท็บนี้ทิ้ง?`);
                                             if (!confirmed) return;
                                         }
@@ -157,17 +157,8 @@ export default function PosHeader({
 
                 <button 
                     onClick={() => { 
-                        if (!isProcessing) { 
-                            const emptyIdx = safeCartTabs.findIndex(t => (!t.items || t.items.length === 0) && !t.customer && !t.walkInName && !t.docId && (!t.orderId || String(t.orderId).startsWith('DH-TEMP-')));
-                            if (emptyIdx !== -1) {
-                                setActiveTabId(safeCartTabs[emptyIdx].id);
-                            } else {
-                                const newTab = createNewTab(); 
-                                if(typeof setCartTabs === 'function') { 
-                                    setCartTabs([...safeCartTabs, newTab]); 
-                                    setActiveTabId(newTab.id); 
-                                } 
-                            }
+                        if (!isProcessing && typeof createNewTab === 'function') { 
+                            createNewTab(); 
                         } 
                     }} 
                     className="flex items-center gap-1 px-2.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all rounded-lg shadow-xs cursor-pointer shrink-0 border border-emerald-700/50"

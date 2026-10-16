@@ -85,7 +85,8 @@ export default function ActiveCustomerCard({
     const displayAddress = getDisplayAddress(activeTab.customer);
     const courier = activeTab.customer.logisticProvider || activeTab.customer.preferredCourier;
     const shippingNotes = activeTab.customer.logisticNote || activeTab.customer.shippingNotes;
-    const contactName = activeTab.customer.contactName;
+    const rawContactName = activeTab.customer.contactName ? String(activeTab.customer.contactName).replace(/^[\s-]+/, '').trim() : '';
+    const contactName = (rawContactName && rawContactName !== '-' && rawContactName !== displayName) ? rawContactName : '';
     const taxId = typeof activeTab.customer.taxId === 'object' ? activeTab.customer.taxId?.number : (activeTab.customer.taxId || activeTab.customer.taxNumber);
     const branch = activeTab.customer.branch || activeTab.customer.branchName;
 
@@ -233,7 +234,7 @@ export default function ActiveCustomerCard({
             {/* 2. Inset Address Box with MapPin */}
             <div className="bg-slate-50 border border-slate-200/70 rounded-lg p-2.5 mb-2.5 flex items-start gap-1.5">
                 <MapPin size={13} className="text-blue-500 shrink-0 mt-0.5" />
-                <span className="text-[11px] text-slate-600 leading-relaxed font-sans select-all line-clamp-2" title={detailSummary}>
+                <span className="text-[11px] text-slate-600 leading-relaxed font-sans select-all line-clamp-3 break-words" title={detailSummary}>
                     {detailSummary}
                 </span>
             </div>

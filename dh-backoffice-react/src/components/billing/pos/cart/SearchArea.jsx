@@ -49,28 +49,28 @@ export default function SearchArea({
                             
                             return (
                                 <div key={`${p.sku}-${idx}`} onMouseDown={(e) => e.preventDefault()} onClick={() => addItemToCart(p)} 
-                                    className={`px-4 py-3 cursor-pointer flex justify-between items-center border-b border-gray-100 last:border-0 transition-all 
+                                    className={`px-4 py-3 cursor-pointer flex justify-between items-start gap-3 border-b border-gray-100 last:border-0 transition-all 
                                     ${p.stockQuantity <= 0 ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-blue-50/50'}`}>
-                                    <div className={p.stockQuantity <= 0 ? 'opacity-60' : ''}>
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <p className={`font-bold text-sm ${isExact ? 'text-blue-700' : 'text-gray-800'}`}>{p.name}</p>
-                                            {isExact && <span className="flex items-center gap-1 text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-xs"><CheckCircle size={10}/> ตรงเป๊ะ</span>}
-                                            {isSimilar && <span className="flex items-center gap-1 text-[9px] font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-xs"><Search size={10}/> ใกล้เคียง</span>}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-xs text-gray-500 font-medium font-mono">{p.sku}</p>
-                                            {p.stats?.sold > 0 && <span className="text-[10px] text-gray-400 font-medium">ขายแล้ว {p.stats.sold}</span>}
+                                    <div className={`min-w-0 flex-1 ${p.stockQuantity <= 0 ? 'opacity-60' : ''}`}>
+                                        <p className={`font-bold text-sm leading-snug line-clamp-2 break-words ${isExact ? 'text-blue-700' : 'text-gray-800'}`} title={p.name}>
+                                            {p.name}
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                            <p className="text-xs text-gray-500 font-semibold font-mono shrink-0">{p.sku}</p>
+                                            {isExact && <span className="inline-flex items-center gap-1 text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-xs shrink-0 whitespace-nowrap"><CheckCircle size={10} className="shrink-0"/> ตรงเป๊ะ</span>}
+                                            {isSimilar && <span className="inline-flex items-center gap-1 text-[9px] font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-xs shrink-0 whitespace-nowrap"><Search size={10} className="shrink-0"/> ใกล้เคียง</span>}
+                                            {p.stats?.sold > 0 && <span className="text-[10px] text-gray-400 font-medium shrink-0 whitespace-nowrap">• ขายแล้ว {p.stats.sold}</span>}
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className={`font-black text-sm ${p.stockQuantity <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>฿{(activeTab.priceMode === 'wholesale' ? (p.Price||p.retailPrice||0) : (p.retailPrice||p.Price||0)).toLocaleString()}</p>
+                                    <div className="text-right shrink-0 flex flex-col items-end">
+                                        <p className={`font-black text-sm whitespace-nowrap ${p.stockQuantity <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>฿{(activeTab.priceMode === 'wholesale' ? (p.Price||p.retailPrice||0) : (p.retailPrice||p.Price||0)).toLocaleString()}</p>
                                         <div className="flex flex-col items-end gap-1 mt-1">
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block border ${p.stockQuantity <= 0 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center whitespace-nowrap border ${p.stockQuantity <= 0 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                                 {p.stockQuantity <= 0 ? 'สินค้าหมด' : `คงเหลือ: ${p.stockQuantity}`}
                                             </span>
                                             {p.isActive === false && (
                                                 <div className="group/tooltip relative flex items-center">
-                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1 cursor-help">
+                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1 cursor-help whitespace-nowrap">
                                                         เลิกจำหน่าย
                                                     </span>
                                                     <div className="absolute right-0 top-full mt-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg shadow-xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-50 pointer-events-none text-center">

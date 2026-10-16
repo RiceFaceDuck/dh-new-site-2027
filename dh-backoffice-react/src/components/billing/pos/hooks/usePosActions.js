@@ -275,7 +275,8 @@ export const usePosActions = ({
         setIsProcessing(true);
 
         try {
-            if (activeTab.customer) localStorage.setItem(`dh_cust_pref_${activeTab.customer.uid}`, JSON.stringify({ priceMode: activeTab.priceMode, vatType: activeTab.vatType, fulfillmentType: activeTab.fulfillmentType, receiptFormat: activeTab.receiptFormat }));
+            const custUid = activeTab.customer?.uid || activeTab.customer?.id || '';
+            if (activeTab.customer && custUid) localStorage.setItem(`dh_cust_pref_${custUid}`, JSON.stringify({ priceMode: activeTab.priceMode, vatType: activeTab.vatType, fulfillmentType: activeTab.fulfillmentType, receiptFormat: activeTab.receiptFormat }));
 
             const now = new Date();
             const yy = String(now.getFullYear()).slice(2); const mm = String(now.getMonth() + 1).padStart(2, '0'); const dd = String(now.getDate()).padStart(2, '0');
@@ -306,6 +307,12 @@ export const usePosActions = ({
                 }), ...freebieItems 
             ];
 
+            const resolvedCustAddress = activeTab.customer
+                ? (typeof activeTab.customer.address === 'object'
+                    ? (activeTab.customer.address?.fullAddress || activeTab.customer.legacyAddress || '')
+                    : (activeTab.customer.address || activeTab.customer.legacyAddress || ''))
+                : '';
+
             const orderData = {
                 id: activeTab.docId || null, orderId: finalOrderId,
                 orderStatus: status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending'), paymentStatus: status === 'Draft' ? 'Unpaid' : status,
@@ -328,7 +335,7 @@ export const usePosActions = ({
                 appliedPromotions: activeTab.appliedPromoDetails ? [activeTab.appliedPromoDetails] : [],
                 appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, conditionText: (f.minSpend > 0 ? `ยอด${f.minSpend}฿ ` : '') + (f.minQty > 0 ? `ครบ${f.minQty}ชิ้น ` : '') + (f.applicableSkus?.length > 0 ? `เฉพาะรุ่น` : ''), itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
                 thaiBahtText: convertToThaiBahtText(remainingToPay) || '', billNote: finalNote, sellerUid: auth.currentUser?.uid || 'System',
-                customer: activeTab.customer ? { uid: activeTab.customer.uid || '', accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: activeTab.customer.address || '', hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
+                customer: activeTab.customer ? { uid: custUid, accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: resolvedCustAddress, hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
                 items: finalOrderItems,
                 itemSkus: Array.from(new Set(
                     (finalOrderItems || [])

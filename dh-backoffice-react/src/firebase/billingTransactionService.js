@@ -18,7 +18,7 @@ const POINTS_RATE = 100;
 // 🛡️ Helper: Data Fetching (READS)
 // ==========================================
 async function fetchDependencies(transaction, orderData, statusLower) {
-  const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
+  const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || null;
   const aggregatedProductMap = new Map();
   
   for (const item of (orderData.items || [])) {
@@ -225,6 +225,7 @@ export const billingTransactionService = {
       let successfulUpdates = [];
       let logsToPost = [];
       const statusLower = (orderData.orderStatus || orderData.status || '').toLowerCase();
+      const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || null;
 
       try {
         await runTransaction(db, async (transaction) => {
@@ -233,7 +234,7 @@ export const billingTransactionService = {
           
           // 1. Fetch Dependencies (READS)
           const deps = await fetchDependencies(transaction, orderData, statusLower);
-          const { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, customerUid, promoFreebieSnaps } = deps;
+          const { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, promoFreebieSnaps } = deps;
           
           // 2. Generate Order ID
           if (statusLower === 'paid' || statusLower === 'approved') {
