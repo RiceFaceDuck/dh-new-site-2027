@@ -15,7 +15,6 @@ const TabFavorites = () => {
     selectedIds,
     handleSelect,
     handleSelectAll,
-    handleLiveDataLoaded,
     selectedTotal,
     handleAddSelectedToCart,
     notInCartCount,
@@ -125,7 +124,7 @@ const TabFavorites = () => {
                 className={`px-2 py-0.5 rounded-xs font-semibold text-[11px] border transition-all shrink-0 shadow-2xs flex items-center gap-1 ${selectedTag === tag ? 'bg-emerald-700 text-white border-emerald-800' : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'}`}
               >
                 <span>#{tag}</span>
-                <span className="text-[9px] opacity-75 font-bold">({tagCounts[tag] || 0})</span>
+                <span className="text-[9px] opacity-75 font-bold">({tagCounts?.[tag] ?? 0})</span>
               </button>
             ))}
           </div>
