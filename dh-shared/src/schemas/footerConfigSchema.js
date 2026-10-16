@@ -116,8 +116,8 @@ export const DEFAULT_TRUST_BADGES = {
   badges: [
     { id: 'b2bPartner', label: 'VERIFIED B2B PARTNER', icon: 'ShieldCheck', active: true, description: 'พันธมิตรช่างซ่อมและร้านค้าทั่วประเทศ' },
     { id: 'dbdRegistered', label: 'DBD REGISTERED', icon: 'Award', active: true, description: 'จดทะเบียนพาณิชย์อิเล็กทรอนิกส์ถูกต้อง' },
-    { id: 'genuineWarranty', label: 'รับประกันของแท้ 100%', icon: 'CheckCircle2', active: true, description: 'มั่นใจในคุณภาพสินค้าทุกชิ้น' },
-    { id: 'expressDelivery', label: 'จัดส่งด่วน 24 ชม.', icon: 'Truck', active: true, description: 'จัดส่งรวดเร็วทั่วไทย ถึงมือทันใจ' }
+    { id: 'genuineWarranty', label: 'สินค้ามีการรับประกัน', icon: 'CheckCircle2', active: true, description: 'มั่นใจในคุณภาพสินค้าทุกชิ้น' },
+    { id: 'expressDelivery', label: 'ส่งออกภายในวันทันที', icon: 'Truck', active: true, description: 'จัดส่งรวดเร็วทั่วไทย ถึงมือทันใจ' }
   ]
 };
 

@@ -14,12 +14,12 @@ const BADGE_MAP = {
     },
     genuineWarranty: {
         image: '/badges/badge_genuine_warranty.svg',
-        fallbackLabel: 'รับประกันของแท้ 100%',
+        fallbackLabel: 'สินค้ามีการรับประกัน',
         desc: 'มั่นใจในคุณภาพสินค้าทุกชิ้น'
     },
     expressDelivery: {
         image: '/badges/badge_express_delivery.svg',
-        fallbackLabel: 'จัดส่งด่วน 24 ชม.',
+        fallbackLabel: 'ส่งออกภายในวันทันที',
         desc: 'จัดส่งรวดเร็วทั่วไทย ถึงมือทันใจ'
     }
 };

@@ -107,14 +107,19 @@ export default function LiveStorefrontPreview({ footerConfig }) {
                                     <div className="grid grid-cols-2 gap-2">
                                         {activeBadges.map((badge) => {
                                             const IconComponent = BADGE_ICONS[badge.id] || ShieldCheck;
+                                            const labelOverrides = {
+                                                genuineWarranty: 'สินค้ามีการรับประกัน',
+                                                expressDelivery: 'ส่งออกภายในวันทันที'
+                                            };
+                                            const displayLabel = labelOverrides[badge.id] || badge.label;
                                             return (
                                                 <div 
                                                     key={badge.id}
-                                                    className="flex items-center gap-2 bg-[#064e3b] px-2.5 py-2 min-h-[46px] rounded-[0.1rem] border border-emerald-500/30 shadow-md shadow-black/40 hover:border-emerald-400/60 hover:bg-[#075944] transition-all"
-                                                    title={badge.description || badge.label}
+                                                    className="flex items-center gap-2 bg-white px-2.5 py-2 min-h-[46px] rounded-[0.1rem] border border-slate-200/90 shadow-md shadow-black/30 hover:bg-slate-50 hover:border-slate-300 transition-all group"
+                                                    title={badge.description || displayLabel}
                                                 >
-                                                    <IconComponent size={16} className="text-emerald-400 shrink-0" />
-                                                    <span className="text-[11px] font-semibold leading-snug text-white tracking-normal break-words">{badge.label}</span>
+                                                    <IconComponent size={16} className="text-sky-600 shrink-0 group-hover:scale-105 transition-transform" />
+                                                    <span className="text-[11px] font-bold leading-snug text-slate-800 tracking-tight break-words">{displayLabel}</span>
                                                 </div>
                                             );
                                         })}
