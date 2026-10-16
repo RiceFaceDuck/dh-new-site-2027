@@ -39,5 +39,6 @@
     - ⚠️ Favorites Read Quota Leak & Bloat (FIXED Phase 3): เดิมการ์ดแต่ละใบยิง `productService.getProduct` แยกเดี่ยว (20 รายการ = 20 Reads) และเก็บก้อน Product ทั้งหมดลง User Profile -> ปรับใช้ `productService.getProductsByIds` ดึงแบบ Batch Query ครั้งเดียว (ลดเหลือ 1 Read) พร้อมตัด Re-render ซ้ำซ้อน, เพิ่มป้าย "ยกเลิกจำหน่าย" เมื่อสินค้าถูกลบจากระบบ, และปรับ Schema บันทึกเฉพาะ Lean Metadata ป้องกัน Document บวม
     - ⚠️ Zombie Callback Reference (FIXED): ลบ `handleLiveDataLoaded` ที่หลงเหลือจากการรวบ Batch Query ออกจาก `useFavoriteManagement.js` และ `TabFavorites.jsx` ขจัด ReferenceError บนหน้ารายการสินค้าที่ถูกใจสำเร็จ 100%
     - ⚠️ TagCounts Undefined TypeError (FIXED): ตัวแปร `tagCounts` หายไปจาก return ของ `useFavoriteManagement.js` ทำให้เกิด TypeError เมื่ออ่านค่าแท็ก (เช่น 'ขอนแก่น') -> นำ `tagCounts` กลับเข้า return พร้อมเสริม Null Guard `(tagCounts?.[tag] ?? 0)` ขจัด Error สำเร็จ 100%
+    - ⚠️ Favorites Card Borderless & Pure Elevation (FIXED): การ์ดสินค้าเดิมมีขอบเส้นหนา (border border-slate-300) ทำให้ดูลายตา -> ปรับตามความต้องการของผู้ใช้โดยถอดขอบเส้นสี่เหลี่ยมรอบการ์ดออกทั้งหมด แล้วใช้มิติเงาโปร่ง (shadow-md พร้อม hover:shadow-lg hover:-translate-y-0.5) ลอยเด่นสวยงาม สบายตา ไม่ขาวโพลน และเพิ่มการมองเห็นอย่างนุ่มนวลเป็นธรรมชาติ
   </pitfalls_and_solutions>
 </ssr_memory>

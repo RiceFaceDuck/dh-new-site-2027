@@ -65,7 +65,7 @@ const FavoriteItemCard = ({
 
   return (
     <div 
-      className={`bg-white rounded-xs border border-slate-300 shadow-sm hover:shadow-md transition-all hover:border-slate-400 group relative cursor-pointer ${viewMode === 'grid' ? 'p-3.5 flex flex-col h-full' : 'p-3.5 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/20' : ''}`} 
+      className={`bg-white rounded-xs shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group relative cursor-pointer ${viewMode === 'grid' ? 'p-3.5 flex flex-col h-full' : 'p-3.5 flex flex-col'} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50/20' : ''}`} 
       onClick={() => {
         if (viewMode === 'list') setIsExpanded(!isExpanded);
         else navigate(`/product/${product.id}`);
