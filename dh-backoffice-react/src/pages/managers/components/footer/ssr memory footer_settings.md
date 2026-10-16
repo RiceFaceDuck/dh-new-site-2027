@@ -38,5 +38,6 @@
     - ⚠️ E-commerce Contact Parity: Live preview and actual storefront must align 100% on header titles ("ติดต่อ & เวลาทำการ") and business hours display.
     - ⚠️ Non-blocking Telemetry: Never await or throw on GA4 logEvent; wrap in try/catch to protect UI navigation from ad-blocker crashes.
     - ⚠️ Centralized Test Location: All tests must reside in Management System/tests/verifications/, never in root or scripts/.
+    - ⚠️ Trust Badges Micro-Radius & Parity: Trust badges use `rounded-[0.1rem]`, solid `bg-[#064e3b]`, `border-emerald-500/30`, `shadow-md`, white text, and word wrap without `truncate`; maintain 100% parity between FooterBrand.jsx and LiveStorefrontPreview.jsx.
   </pitfalls_and_lessons>
 </grimoire>

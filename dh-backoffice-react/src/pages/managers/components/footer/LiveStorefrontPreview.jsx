@@ -1,10 +1,10 @@
-import { Eye, ChevronRight, MapPin, MessageCircle, Phone, Clock } from 'lucide-react';
+import { Eye, ChevronRight, MapPin, MessageCircle, Phone, Clock, ShieldCheck, Award, CheckCircle2, Truck } from 'lucide-react';
 
-const BADGE_IMAGES = {
-    b2bPartner: '/badges/badge_b2b_partner.svg',
-    dbdRegistered: '/badges/badge_dbd_registered.svg',
-    genuineWarranty: '/badges/badge_genuine_warranty.svg',
-    expressDelivery: '/badges/badge_express_delivery.svg'
+const BADGE_ICONS = {
+    b2bPartner: ShieldCheck,
+    dbdRegistered: Award,
+    genuineWarranty: CheckCircle2,
+    expressDelivery: Truck
 };
 
 const FacebookIcon = ({ className = 'w-4 h-4' }) => (
@@ -104,17 +104,18 @@ export default function LiveStorefrontPreview({ footerConfig }) {
                             {/* Trust Badges in Preview */}
                             {isTrustBadgesEnabled && activeBadges.length > 0 && (
                                 <div className="space-y-2 pt-1">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         {activeBadges.map((badge) => {
-                                            const img = BADGE_IMAGES[badge.id] || '/badges/badge_b2b_partner.svg';
+                                            const IconComponent = BADGE_ICONS[badge.id] || ShieldCheck;
                                             return (
-                                                <img
+                                                <div 
                                                     key={badge.id}
-                                                    src={img}
-                                                    alt={badge.label}
-                                                    className="h-[38px] w-auto max-w-[176px] object-contain rounded-md shadow-xs drop-shadow-xs transition-transform hover:scale-102"
-                                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                                />
+                                                    className="flex items-center gap-2 bg-[#064e3b] px-2.5 py-2 min-h-[46px] rounded-[0.1rem] border border-emerald-500/30 shadow-md shadow-black/40 hover:border-emerald-400/60 hover:bg-[#075944] transition-all"
+                                                    title={badge.description || badge.label}
+                                                >
+                                                    <IconComponent size={16} className="text-emerald-400 shrink-0" />
+                                                    <span className="text-[11px] font-semibold leading-snug text-white tracking-normal break-words">{badge.label}</span>
+                                                </div>
                                             );
                                         })}
                                     </div>
