@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
 import { creditCacheManager, CREDIT_CACHE_KEYS, CREDIT_CACHE_TTL } from '../../../../../firebase/credit/creditCacheManager';
 import toast from 'react-hot-toast';
 
@@ -45,8 +46,8 @@ export const useCreditSettingsState = () => {
 
         let merged = {};
         if (creditSnap.exists()) {
-          const d = creditSnap.data();
-          if (d.config) merged = { ...merged, ...d.config };
+          const unwrapped = unwrapCreditConfig(creditSnap.data());
+          if (unwrapped) merged = { ...merged, ...unwrapped };
         }
         if (knowledgeSnap.exists()) {
           const kd = knowledgeSnap.data();

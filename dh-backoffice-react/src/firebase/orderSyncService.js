@@ -57,11 +57,15 @@ export const syncRecentOrdersCatalog = async () => {
         discount: Number(i.discount || 0)
       })) : [];
 
+      const rawOrderId = String(d.orderId || docSnap.id || '');
+      const normalizedOrderId = rawOrderId.replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1');
+      const isTempDraft = normalizedOrderId.startsWith('DH-TEMP-') && !['paid', 'approved', 'completed', 'cancelled', 'void'].includes(String(d.orderStatus || d.status || '').toLowerCase());
+
       return {
         id: docSnap.id,
-        orderId: d.orderId || docSnap.id,
-        orderStatus: d.orderStatus || d.status || 'pending',
-        status: d.status || d.orderStatus || 'pending',
+        orderId: normalizedOrderId,
+        orderStatus: isTempDraft ? 'Draft' : (d.orderStatus || d.status || 'pending'),
+        status: isTempDraft ? 'Draft' : (d.status || d.orderStatus || 'pending'),
         paymentStatus: d.paymentStatus || 'unpaid',
         paymentMethod: d.paymentMethod || d.paymentType || 'Cash',
         fulfillmentType: d.fulfillmentType || (d.shippingMethod === 'standard' ? 'Delivery' : 'StorePickup'),

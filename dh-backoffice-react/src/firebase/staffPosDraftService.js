@@ -8,28 +8,39 @@ import { safeJsonParse } from 'dh-shared';
  */
 export const filterValidDraftTabs = (tabs) => {
   if (!Array.isArray(tabs)) return [];
-  return tabs.filter((t) => {
-    if (!t || typeof t !== 'object' || !t.id) return false;
-    const stat = (
-      t.orderStatus ||
-      t.status ||
-      t.paymentStatus ||
-      ''
-    ).toLowerCase();
-    const isFinished =
-      stat === 'approved' ||
-      stat === 'completed' ||
-      stat === 'paid' ||
-      stat === 'cancelled' ||
-      stat === 'void';
-    return (
-      !isFinished &&
-      (t.items?.length > 0 ||
-        t.customer ||
-        t.docId ||
-        (t.orderId && !String(t.orderId).startsWith('DH-TEMP-')))
-    );
-  });
+  return tabs
+    .filter((t) => {
+      if (!t || typeof t !== 'object' || !t.id) return false;
+      const stat = (
+        t.orderStatus ||
+        t.status ||
+        t.paymentStatus ||
+        ''
+      ).toLowerCase();
+      const isFinished =
+        stat === 'approved' ||
+        stat === 'completed' ||
+        stat === 'paid' ||
+        stat === 'cancelled' ||
+        stat === 'void';
+      return (
+        !isFinished &&
+        (t.items?.length > 0 ||
+          t.customer ||
+          t.docId ||
+          (t.orderId && !String(t.orderId).startsWith('DH-TEMP-')))
+      );
+    })
+    .map((t) => {
+      if (t.orderId && String(t.orderId).startsWith('DH-TEMP-')) {
+        const cleanOrderId = String(t.orderId).replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1');
+        const cleanDocId = t.docId ? String(t.docId).replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1') : t.docId;
+        if (cleanOrderId !== t.orderId || cleanDocId !== t.docId) {
+          return { ...t, orderId: cleanOrderId, docId: cleanDocId };
+        }
+      }
+      return t;
+    });
 };
 
 // Debounce timer map per staff UID to prevent quota leaks

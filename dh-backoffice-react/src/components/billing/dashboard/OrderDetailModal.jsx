@@ -138,6 +138,8 @@ export default function OrderDetailModal(props) {
                                         </div>
                                         {isCancelled ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-black">ยกเลิกแล้ว</span>
+                                        ) : (!isPaid && (orderStat === 'draft' || paymentStat === 'draft' || selectedOrder.isDraft === true || String(selectedOrder.orderId || '').startsWith('DH-TEMP-'))) ? (
+                                            <span className="px-2 py-0.5 rounded-sm bg-purple-500/10 text-purple-700 border border-purple-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> ฉบับร่าง (Draft)</span>
                                         ) : orderStat === 'completed' ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-blue-500/10 text-blue-700 border border-blue-500/20 text-[10px] font-black">ส่งออก 🚚</span>
                                         ) : orderStat === 'approved' ? (

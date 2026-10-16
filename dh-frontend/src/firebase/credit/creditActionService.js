@@ -3,6 +3,7 @@ import { db } from '../config';
 import { getUsersPath, invalidateCreditHistoryCache } from './creditConfig';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
+import { COLLECTIONS, validateCreditTransaction } from 'dh-shared';
 import { getUserTier } from './creditFormatService';
 
 export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null) => {
@@ -17,11 +18,11 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     let txRef;
     const refSuffix = referenceId ? referenceId : Date.now().toString();
     if (referenceId) {
-      txRef = doc(db, getCollectionPath('credit_transactions'), `ADJ_${type}_${referenceId}`);
+      txRef = doc(db, getCollectionPath(COLLECTIONS.CREDIT_TRANSACTIONS), `ADJ_${type}_${referenceId}`);
       const txSnap = await transaction.get(txRef);
       if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว");
     } else {
-      txRef = doc(collection(db, getCollectionPath('credit_transactions')));
+      txRef = doc(collection(db, getCollectionPath(COLLECTIONS.CREDIT_TRANSACTIONS)));
     }
 
     const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
@@ -80,7 +81,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     }
 
     const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'add' : 'deduct';
-    transaction.set(txRef, {
+    const txPayload = {
       transactionId: `TXM-${refSuffix}`,
       uid: uid,
       type: mappedType,
@@ -90,7 +91,14 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       note: note || (mappedType === 'deposit' ? 'ปรับเพิ่มเครดิต' : 'ปรับลดเครดิต'),
       recordedBy: actorUid || uid,
       timestamp: serverTimestamp()
-    });
+    };
+
+    const validation = validateCreditTransaction(txPayload);
+    if (!validation.success) {
+      console.warn("⚠️ [Frontend Credit Transaction Validation Warning]:", validation.error);
+    }
+
+    transaction.set(txRef, txPayload);
 
     return { success: true, transactionId: txRef.id, newBalance: newWalletBalance };
   } catch (error) {
@@ -208,8 +216,8 @@ export const handlePaymentCompletion = async (orderId, userId) => {
           updatedAt: serverTimestamp()
         }, { merge: true });
       }
-      const txRef = doc(collection(db, getCollectionPath('credit_transactions')));
-      transaction.set(txRef, {
+      const txRef = doc(collection(db, getCollectionPath(COLLECTIONS.CREDIT_TRANSACTIONS)));
+      const txPayload = {
         transactionId: `EARN-${Date.now()}`,
         uid: userId,
         type: 'add',
@@ -218,7 +226,14 @@ export const handlePaymentCompletion = async (orderId, userId) => {
         referenceId: orderId,
         note: 'ได้รับแต้มจากการสั่งซื้อ',
         timestamp: serverTimestamp()
-      });
+      };
+
+      const validation = validateCreditTransaction(txPayload);
+      if (!validation.success) {
+        console.warn("⚠️ [Frontend Payment Completion Credit Validation Warning]:", validation.error);
+      }
+
+      transaction.set(txRef, txPayload);
     });
 
     invalidateCreditHistoryCache(userId);

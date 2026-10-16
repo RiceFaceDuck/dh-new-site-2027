@@ -43,6 +43,10 @@ export const useAutoCleanup = () => {
           
           const cancelPromises = querySnapshot.docs.map(async (docSnap) => {
             const orderId = docSnap.id;
+            const d = docSnap.data() || {};
+            if (d.isDraft || String(d.orderId || orderId).startsWith('DH-TEMP-') || String(d.orderStatus || '').toLowerCase() === 'draft') {
+              return;
+            }
             try {
               await billingStatusTransaction.updateOrderStatus(
                 orderId, 

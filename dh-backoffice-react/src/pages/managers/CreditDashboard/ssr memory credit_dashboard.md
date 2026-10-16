@@ -46,5 +46,6 @@
 - ⚠️ GA4 Ad Sync Default Parity: Fallback values in `ga4AdSyncCron` aligned with `creditUtils` standard (0.1 Pt / 1000 views).
 - ⚠️ Listener Multiplexing & Unsubscribe: Lifted financial listeners to DetailPanel and unsubscribed Map listeners on dh_auth_logout to eliminate dual-listener leaks.
 - ⚠️ Symbol & Decimal Parity: Standardized PT/THB to Pts in CreditAdjustTab/CreditCalculatorTab and enabled maximumFractionDigits: 2 in frontend creditFormatService.
+- ⚠️ Schema & Type Validation (Phase 3): Centralized COLLECTIONS.CREDIT_TRANSACTIONS in schemaKeys.js and guarded all write transactions with Zod schema validation (creditSchema.js).
 </pitfalls_and_lessons>
 </grimoire>

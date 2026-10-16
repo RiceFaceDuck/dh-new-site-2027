@@ -22,35 +22,31 @@ assert.ok(
 );
 console.log("✅ Passed: Freebie inventory items are aggregated and restored on cancellation.\n");
 
-// 2. Verify usePosState.js unique timestamp orderId
-console.log("Test 2: Check usePosState.js creates timestamp-based draft orderId...");
+// 2. Verify usePosState.js concise 4-digit draft orderId
+console.log("Test 2: Check usePosState.js creates concise 4-digit draft orderId...");
 const posStateContent = fs.readFileSync(
     path.resolve('Management System/dh-backoffice-react/src/components/billing/pos/hooks/usePosState.js'), 
     'utf-8'
 );
 
 assert.ok(
-    posStateContent.includes('`DH-TEMP-${yy}${mm}${dd}-${hh}${min}${sec}-${rand4}`'),
-    "FAIL: usePosState.js does not use timestamp format for draft order ID"
+    posStateContent.includes('`DH-TEMP-${rand4}`'),
+    "FAIL: usePosState.js does not use concise 4-digit format for draft order ID"
 );
-assert.ok(
-    !posStateContent.includes('`DH-TEMP-${randomSuffix}`'),
-    "FAIL: Old random 4-digit draft order ID still found in usePosState.js"
-);
-console.log("✅ Passed: usePosState.js uses timestamp format DH-TEMP-YYMMDD-HHMMSS-RAND4.\n");
+console.log("✅ Passed: usePosState.js uses concise format DH-TEMP-RAND4.\n");
 
 // 3. Verify billingTransactionService.js fallback orderId
-console.log("Test 3: Check billingTransactionService.js uses timestamp format for draft fallback...");
+console.log("Test 3: Check billingTransactionService.js uses concise 4-digit format for draft fallback...");
 const txServiceContent = fs.readFileSync(
     path.resolve('Management System/dh-backoffice-react/src/firebase/billingTransactionService.js'), 
     'utf-8'
 );
 
 assert.ok(
-    txServiceContent.includes('`DH-TEMP-${yy}${mm}${dd}-${hh}${min}${sec}-${rand4}`'),
-    "FAIL: billingTransactionService.js does not use timestamp format for draft order ID"
+    txServiceContent.includes('`DH-TEMP-${rand4}`'),
+    "FAIL: billingTransactionService.js does not use concise 4-digit format for draft order ID"
 );
-console.log("✅ Passed: billingTransactionService.js draft fallback uses timestamp format.\n");
+console.log("✅ Passed: billingTransactionService.js draft fallback uses concise 4-digit format.\n");
 
 // 4. Verify usePosActions.js uses centralized slipStorageService
 console.log("Test 4: Check usePosActions.js imports and uses centralized slipStorageService...");

@@ -60,7 +60,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
     const hasPendingClaim = !!(order.hasPendingClaim || order.pendingClaimCount > 0 || order.pendingClaim);
     const hasPendingReturn = !!(order.hasPendingReturn || order.pendingReturnCount > 0 || order.pendingReturn);
     const hasPendingExchange = !!(order.hasPendingExchange || order.pendingExchangeCount > 0 || order.pendingExchange);
-    const isDraft = statLower === 'draft' || payStatLower === 'draft' || order.isDraft === true;
+    const isDraft = !isCancelled && !isPaid && (statLower === 'draft' || payStatLower === 'draft' || order.isDraft === true || String(order.orderId || '').startsWith('DH-TEMP-'));
 
     // Check tax invoice status
     const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus || order.taxInvoiceUrl || order.taxData || order.hasPendingTax);
@@ -75,7 +75,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                     <div className="flex items-center gap-1.5 text-[13px] font-black text-(--dh-text-main) group-hover:text-(--dh-accent) transition-colors">
                         <Receipt size={14} className="text-(--dh-text-muted) group-hover:text-(--dh-accent) transition-colors" strokeWidth={2.5}/>
                         <span className={isCancelled ? 'line-through opacity-70' : ''}>
-                            {order.orderId}
+                            {String(order.orderId || '').replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1')}
                         </span>
                     </div>
                 </div>

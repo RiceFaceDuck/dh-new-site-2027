@@ -31,12 +31,14 @@ export const COLLECTIONS = {
   YEARLY_ARCHIVES: 'yearly_archives',
   PARTNER_REVIEWS: 'partner_reviews',
   PROMOTIONS: 'promotions',
-  FREEBIES: 'freebies'
+  FREEBIES: 'freebies',
+  CREDIT_TRANSACTIONS: 'credit_transactions'
 };
 
 export const COLLECTION_GROUPS = {
   WALLET_TRANSACTIONS: 'wallet_transactions',
   AUDIT_LOGS: 'audit_logs',
+  CREDIT_TRANSACTIONS: 'credit_transactions',
 };
 
 export const SUBCOLLECTIONS = {
