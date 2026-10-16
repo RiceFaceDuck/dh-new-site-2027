@@ -1,9 +1,8 @@
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { gasHistoryService } from '../gasHistoryService';
 import { withToastError } from '../../utils/safeAsync';
-
-const COLLECTION_NAME = 'products';
 
 /**
  * Service สำหรับจัดการปรับปรุงสต๊อคกรณีพิเศษ (Stock Adjustment)
@@ -27,7 +26,7 @@ export const inventoryAdjustmentService = {
         throw new Error("กรุณาระบุเหตุผลในการปรับปรุงสต๊อค");
       }
 
-      const productRef = doc(db, COLLECTION_NAME, sku);
+      const productRef = doc(db, getCollectionPath('products'), sku);
 
       try {
         await runTransaction(db, async (transaction) => {

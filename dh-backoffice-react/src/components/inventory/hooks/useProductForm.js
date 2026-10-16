@@ -190,11 +190,13 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
     setForm(newForm);
   };
 
-  const handleAddCategory = async () => {
-    const newCat = window.prompt('ระบุชื่อหมวดหมู่ใหม่ (ภาษาอังกฤษหรือไทยก็ได้):');
-    if (!newCat || !newCat.trim()) return;
-    
-    const catName = newCat.trim();
+  const handleAddCategory = async (catNameInput) => {
+    if (!catNameInput || typeof catNameInput !== 'string' || !catNameInput.trim()) {
+      toast.error('กรุณาระบุชื่อหมวดหมู่');
+      return;
+    }
+
+    const catName = catNameInput.trim();
     const existingCat = categories.find(c => 
       (c.name || '').trim().toLowerCase() === catName.toLowerCase() ||
       (c.type || '').trim().toLowerCase() === catName.toLowerCase()
@@ -209,7 +211,6 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
 
     try {
       const loadingToast = toast.loading('กำลังบันทึกหมวดหมู่ใหม่...');
-      
       const newCategoryData = { name: catName, type: catName, isActive: true };
       const savedDoc = await categoryService.createCategory(newCategoryData, null);
       
@@ -224,7 +225,6 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
         return [...prev, newCatObj];
       });
       handleCategoryChange(targetVal);
-      
     } catch (err) {
       console.error('Error adding category:', err);
       toast.error(err?.message || 'เพิ่มหมวดหมู่ไม่สำเร็จ');

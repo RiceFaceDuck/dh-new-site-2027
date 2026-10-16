@@ -13,7 +13,6 @@ import {
   HelpCircle, 
   Plus 
 } from 'lucide-react';
-import { gasStockService } from '../../firebase/gasStockService';
 
 export default function InventoryHeader({
   searchTerm, setSearchTerm,
@@ -39,29 +38,6 @@ export default function InventoryHeader({
     'Speaker': '🔊',
     'Other': '📦'
   };
-
-  const [pendingCount, setPendingCount] = useState(gasStockService.getPendingCount());
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncProgress, setSyncProgress] = useState(0);
-
-  useEffect(() => {
-    return gasStockService.subscribe((count, isFlushing) => {
-      setPendingCount(count);
-      setIsSyncing(isFlushing);
-      if (!isFlushing) setSyncProgress(0);
-    });
-  }, []);
-
-  useEffect(() => {
-    let timer;
-    if (isSyncing) {
-      setSyncProgress(0);
-      timer = setInterval(() => {
-        setSyncProgress(prev => (prev >= 99 ? 99 : prev + Math.max(1, Math.floor((100 - prev) / 15))));
-      }, 200);
-    }
-    return () => clearInterval(timer);
-  }, [isSyncing]);
 
   const [localSearch, setLocalSearch] = useState(searchTerm);
 
@@ -176,20 +152,18 @@ export default function InventoryHeader({
             <span className="hidden xl:inline">Import</span>
           </button>
           
-          {/* GAS Backup Disabled Indicator */}
-          <button 
-            disabled={true}
-            className="flex items-center justify-center gap-1.5 h-[36px] px-3 rounded-md transition-all font-bold text-xs shadow-xs backdrop-blur-xs border relative overflow-hidden bg-slate-800/50 text-slate-400 border-slate-600/50 cursor-not-allowed"
+          {/* GAS Backup Disabled Indicator (Calm UI) */}
+          <div 
+            className="flex items-center justify-center gap-1.5 h-[36px] px-3 rounded-md font-bold text-xs shadow-xs backdrop-blur-xs border bg-slate-800/50 text-slate-400 border-slate-600/50 cursor-not-allowed select-none"
             title="🛑 ปิดการใช้งาน Backup ด้วย GAS (รออัปเกรดเป็นระบบ Cloud Functions)"
           >
-            <div className="absolute inset-y-0 left-0 bg-slate-600/30 transition-all duration-150 ease-out" style={{ width: '0%' }}></div>
-            <AlertTriangle size={14} className="relative z-10 text-amber-500/80" />
-            <span className="hidden xl:inline relative z-10 flex items-center gap-1">
+            <AlertTriangle size={14} className="text-amber-500/80 shrink-0" />
+            <span className="hidden xl:inline flex items-center gap-1">
               <span>GAS Backup Disabled</span>
               <span className="text-[10px] bg-slate-700/80 px-1.5 py-0.5 rounded-sm text-slate-300 ml-1 border border-slate-600">0%</span>
             </span>
-            <span className="xl:hidden relative z-10 text-[10px] bg-slate-700/80 px-1 rounded-sm">0%</span>
-          </button>
+            <span className="xl:hidden text-[10px] bg-slate-700/80 px-1 rounded-sm">0%</span>
+          </div>
 
           {/* Sync Button tied to onRecalculateStats */}
           {onRecalculateStats && (

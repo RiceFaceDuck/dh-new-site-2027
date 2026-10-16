@@ -39,12 +39,19 @@ export default function useInventorySorting(products, sortConfig, salesPeriod) {
           valA = Number(a.adjustmentHistory?.[salesPeriod] || 0);
           valB = Number(b.adjustmentHistory?.[salesPeriod] || 0);
           break;
-        case 'category':
-          valA = String(a.category || '');
-          valB = String(b.category || '');
+        case 'category': {
+          const getCategoryName = (cat) => {
+            if (typeof cat === 'object' && cat !== null) {
+              return cat.name || cat.type || '';
+            }
+            return String(cat || '');
+          };
+          valA = getCategoryName(a.category);
+          valB = getCategoryName(b.category);
           return sortConfig.direction === 'asc' 
             ? valA.localeCompare(valB, 'th') 
             : valB.localeCompare(valA, 'th');
+        }
         default:
           valA = 0;
           valB = 0;

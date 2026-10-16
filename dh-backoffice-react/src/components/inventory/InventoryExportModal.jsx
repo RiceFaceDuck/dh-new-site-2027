@@ -93,10 +93,8 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
 
         setParsedSpecificSkus(skus);
       } catch (err) {
-    console.error("🔥 Error:", err);
-    toast.error(err?.message || "เกิดข้อผิดพลาด");
-
-        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบว่าเป็นไฟล์ Excel (.xlsx)');
+        console.error("🔥 Error:", err);
+        toast.error('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบว่าเป็นไฟล์ Excel (.xlsx)');
       }
     };
     reader.readAsBinaryString(uploadedFile);
@@ -104,7 +102,7 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
 
   const handleExport = async () => {
     if (selectedColumns.length === 0) {
-      alert("กรุณาเลือกอย่างน้อย 1 คอลัมน์");
+      toast.error("กรุณาเลือกอย่างน้อย 1 คอลัมน์");
       return;
     }
     
@@ -131,10 +129,8 @@ export default function InventoryExportModal({ isOpen, onClose, availableCategor
         onClose();
       }, 4000);
     } catch (error) {
-    console.error("🔥 Error:", error);
-    toast.error(error?.message || "เกิดข้อผิดพลาด");
-
-      alert(error.message || "เกิดข้อผิดพลาดในการ Export ข้อมูล");
+      console.error("🔥 Error:", error);
+      toast.error(error?.message || "เกิดข้อผิดพลาดในการ Export ข้อมูล");
     } finally {
       setIsExporting(false);
     }

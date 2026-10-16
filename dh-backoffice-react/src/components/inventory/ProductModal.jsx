@@ -32,17 +32,38 @@ export default function ProductModal({ isOpen, onClose, onSave, productData, glo
 
   const handleRequestDelete = async () => {
     if (!productData) return;
-    const confirmMsg = `ยืนยันการขออนุมัติลบสินค้า ${form.sku} ใช่หรือไม่?\nข้อมูลจะไม่หายไปทันที แต่จะถูกส่งไปให้ผู้จัดการอนุมัติ`;
-    if (window.confirm(confirmMsg)) {
-      try {
-        await todoService.requestProductDeletion(form, auth.currentUser.uid);
-        toast.success('ส่งคำร้องขออนุมัติลบสำเร็จ แจ้งเตือนไปยังผู้จัดการแล้ว');
-        onClose();
-      } catch (error) {
-        console.error('🔥 Error:', error);
-        toast.error(error?.message || 'เกิดข้อผิดพลาด');
-      }
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-2 p-1 text-slate-800">
+        <div className="text-sm font-bold">ยืนยันขออนุมัติลบสินค้า {form.sku}?</div>
+        <div className="text-xs text-slate-500">ข้อมูลจะไม่หายไปทันที แต่จะถูกส่งไปให้ผู้จัดการอนุมัติในระบบ</div>
+        <div className="flex gap-2 justify-end mt-1">
+          <button 
+            type="button"
+            onClick={() => toast.dismiss(t.id)} 
+            className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+          >
+            ยกเลิก
+          </button>
+          <button 
+            type="button"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await todoService.requestProductDeletion(form, auth.currentUser?.uid);
+                toast.success('ส่งคำร้องขออนุมัติลบสำเร็จ แจ้งเตือนไปยังผู้จัดการแล้ว');
+                onClose();
+              } catch (error) {
+                console.error('🔥 Error:', error);
+                toast.error(error?.message || 'เกิดข้อผิดพลาด');
+              }
+            }} 
+            className="px-2.5 py-1 text-xs font-semibold rounded bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors cursor-pointer"
+          >
+            ยืนยันขออนุมัติลบ
+          </button>
+        </div>
+      </div>
+    ), { duration: 6000 });
   };
 
   const handleSubmit = (e) => {

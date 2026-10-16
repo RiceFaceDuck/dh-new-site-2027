@@ -99,4 +99,17 @@
 18. **ยกเลิก Native Alert ในระบบสินค้าทั้งหมด (Zero Native Alert Invariant):**
     - *สาเหตุ:* การใช้ `alert()` บล็อกการทำงานของ Browser และไม่สวยงาม
     - *วิธีแก้:* เปลี่ยนเป็น `toast.error()` และ `toast.success()` ครบทุกจุด และ import `X` จาก `lucide-react` ตรงๆ ไม่สร้าง component ซ้ำ
+19. **Category Object Guard ในระบบเรียงลำดับและค้นหา (Category Object Sorting & Filter Shield):**
+    - *สาเหตุ:* ฟิลด์ `category` ในบางระเบียนเก็บเป็น Object `{ id, name, type }` การใช้ `String(p.category)` ตรงๆ จะกลายเป็น `"[object Object]"` ส่งผลให้สินค้าถูกกรองหายไปจากตารางเมื่อเลือกหมวดหมู่ และการเรียงลำดับผิดเพี้ยน
+    - *วิธีแก้:* ใน `useInventorySorting.js` และ `useInventoryFilters.js` เพิ่ม Helper สกัดชื่อหมวดหมู่อย่างปลอดภัยทั้งจาก String และ Object (`typeof cat === 'object' && cat !== null ? (cat.name || cat.type || '') : String(cat || '')`)
+20. **ขจัด Native Dialogs บล็อกการทำงาน (Zero Native Alert / Confirm / Prompt Invariant):**
+    - *สาเหตุ:* มีการตกค้างของ `alert()` ใน `InventoryExportModal.jsx`, `window.confirm()` ใน `ProductModal.jsx` และ `ProductVariants.jsx`, และ `window.prompt()` ในการสร้างหมวดหมู่ใหม่
+    - *วิธีแก้:* แทนที่ `alert()` ด้วย `toast.error()`, แทนที่ `window.confirm()` ด้วย Interactive Action Toast, และเปลี่ยน `window.prompt()` เป็น Inline Creation Input ใน `ProductBasicInfo.jsx` พร้อมปุ่มบันทึก/ยกเลิก สวยงามตามธีม
+21. **ปรับปรุง Queue Timer เบื้องหลังของ Google Apps Script ให้เป็น On-Demand (On-Demand GAS Timer & Calm Badge):**
+    - *สาเหตุ:* `gasStockService` รัน `setInterval` ทุก 5 วินาทีตลอดเวลาแม้ไม่มีรายการในคิว และ Header มีการจำลอง progress bar ของระบบที่ถูกปิดใช้งาน
+    - *วิธีแก้:* ปรับ `gasStockService` ให้เริ่ม Timer เฉพาะเมื่อมีข้อมูลในคิว (`queueUpdate`) และหยุดพัก Timer ทันทีเมื่อคิวว่าง (`_stopQueueTimer`) พร้อมปรับ Badge บน Header ให้เป็น Calm UI Static Badge สะอาดตา
+22. **จัดระเบียบ Collection Path ใน inventoryAdjustmentService (Collection Path Normalization):**
+    - *สาเหตุ:* `inventoryAdjustmentService.js` มีการ hardcode ชื่อ Collection เป็น `'products'` ตรงๆ
+    - *วิธีแก้:* ใช้ `getCollectionPath('products')` จาก `dh-shared/src/firebase/pathUtils` เพื่อความสอดคล้องกับมาตรฐานความปลอดภัย Multi-environment
 </pitfalls_and_solutions>
+

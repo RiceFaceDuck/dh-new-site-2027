@@ -13,8 +13,6 @@ class GasStockService {
     this.MAX_QUEUE_SIZE = 15;
     this.FLUSH_INTERVAL_MS = 5000;
     this.listeners = [];
-    
-    this._startQueueTimer();
   }
 
   subscribe(callback) {
@@ -118,10 +116,21 @@ class GasStockService {
   }
 
   _startQueueTimer() {
-    if (this.flushInterval) clearInterval(this.flushInterval);
+    if (this.flushInterval) return;
     this.flushInterval = setInterval(() => {
+      if (this.queue.length === 0) {
+        this._stopQueueTimer();
+        return;
+      }
       this._flush();
     }, this.FLUSH_INTERVAL_MS);
+  }
+
+  _stopQueueTimer() {
+    if (this.flushInterval) {
+      clearInterval(this.flushInterval);
+      this.flushInterval = null;
+    }
   }
 
   /**
@@ -144,6 +153,8 @@ class GasStockService {
 
       if (this.queue.length >= this.MAX_QUEUE_SIZE) {
         this._flush();
+      } else {
+        this._startQueueTimer();
       }
     } catch (err) {
       console.error("Failed to queue stock update", err);
@@ -222,6 +233,9 @@ class GasStockService {
       } finally {
         this.isFlushing = false;
         this.flushPromise = null;
+        if (this.queue.length === 0) {
+          this._stopQueueTimer();
+        }
         this._notifyListeners();
       }
     })();

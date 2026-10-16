@@ -42,10 +42,19 @@ export default function useInventoryFilters(sourceProducts, searchTerm, filterCa
     const targetCat = (filterCategory || '').trim().toLowerCase();
 
     let list = sourceProducts.filter(p => {
+      const getCategoryString = (cat) => {
+        if (typeof cat === 'object' && cat !== null) {
+          return (cat.name || cat.type || '').trim().toLowerCase();
+        }
+        return String(cat || '').trim().toLowerCase();
+      };
+      const productCat = getCategoryString(p.category);
+      const productType = (p.type ? String(p.type) : '').trim().toLowerCase();
+
       const matchesSearch = !term || (() => {
         const sku = p.sku ? String(p.sku).toLowerCase() : '';
         const name = p.name ? String(p.name).toLowerCase() : '';
-        const cat = p.category ? String(p.category).toLowerCase() : '';
+        const cat = productCat;
         const brand = p.brand ? String(p.brand).toLowerCase() : '';
         const model = p.model ? String(p.model).toLowerCase() : '';
         let tagMatch = false;
@@ -60,8 +69,13 @@ export default function useInventoryFilters(sourceProducts, searchTerm, filterCa
       })();
 
       const matchesCategory = !filterCategory || filterCategory === 'All' || 
-        (p.category && String(p.category).trim().toLowerCase() === targetCat) || 
-        (p.type && String(p.type).trim().toLowerCase() === targetCat) ||
+        (productCat && productCat === targetCat) || 
+        (productType && productType === targetCat) ||
+        (typeof p.category === 'object' && p.category !== null && (
+          String(p.category.name || '').trim().toLowerCase() === targetCat ||
+          String(p.category.type || '').trim().toLowerCase() === targetCat ||
+          String(p.category.id || '').trim().toLowerCase() === targetCat
+        )) ||
         p.category === filterCategory || p.type === filterCategory;
 
       return matchesSearch && matchesCategory;

@@ -18,6 +18,8 @@ export default function ProductBasicInfo({
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [isModelsExpanded, setIsModelsExpanded] = useState(false);
   const [isPartsExpanded, setIsPartsExpanded] = useState(false);
+  const [showAddCat, setShowAddCat] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
 
   const handleCopySku = () => {
     if (form.sku) {
@@ -79,26 +81,86 @@ export default function ProductBasicInfo({
           </div>
           
           <div className="md:col-span-1">
-            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">หมวดหมู่ *</label>
-            <div className="flex gap-2">
-              <select value={form.category} onChange={e => handleCategoryChange(e.target.value)}
-                className="w-full h-10 px-3 border border-slate-300 dark:border-slate-600 rounded-[2px] outline-hidden focus:border-slate-800 dark:focus:border-orange-500 bg-white dark:bg-slate-900 text-sm font-bold text-slate-900 dark:text-slate-100 transition-all cursor-pointer">
-                {categories.map(cat => {
-                  const val = cat.type || cat.name;
-                  return <option key={cat.id || val} value={val}>{cat.name || val}</option>;
-                })}
-              </select>
-              {isManagerOrOwner && (
-                <button 
-                  type="button" 
-                  onClick={handleAddCategory} 
-                  className="h-10 w-10 bg-slate-800 hover:bg-slate-700 dark:bg-slate-200 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl border border-slate-900 dark:border-white transition-all shadow-xs flex items-center justify-center cursor-pointer active:scale-95 shrink-0" 
-                  title="เพิ่มหมวดหมู่ใหม่"
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">หมวดหมู่ *</label>
+              {isManagerOrOwner && !showAddCat && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddCat(true)}
+                  className="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline font-bold flex items-center gap-0.5 cursor-pointer"
                 >
-                  <Plus size={16} strokeWidth={2.5}/>
+                  <Plus size={11} /> เพิ่มหมวดหมู่
                 </button>
               )}
             </div>
+
+            {!showAddCat ? (
+              <div className="flex gap-2">
+                <select value={form.category} onChange={e => handleCategoryChange(e.target.value)}
+                  className="w-full h-10 px-3 border border-slate-300 dark:border-slate-600 rounded-[2px] outline-hidden focus:border-slate-800 dark:focus:border-orange-500 bg-white dark:bg-slate-900 text-sm font-bold text-slate-900 dark:text-slate-100 transition-all cursor-pointer">
+                  {categories.map(cat => {
+                    const val = cat.type || cat.name;
+                    return <option key={cat.id || val} value={val}>{cat.name || val}</option>;
+                  })}
+                </select>
+                {isManagerOrOwner && (
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAddCat(true)} 
+                    className="h-10 w-10 bg-slate-800 hover:bg-slate-700 dark:bg-slate-200 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl border border-slate-900 dark:border-white transition-all shadow-xs flex items-center justify-center cursor-pointer active:scale-95 shrink-0" 
+                    title="เพิ่มหมวดหมู่ใหม่"
+                  >
+                    <Plus size={16} strokeWidth={2.5}/>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex gap-1.5 items-center">
+                <input
+                  type="text"
+                  placeholder="ชื่อหมวดหมู่ใหม่..."
+                  value={newCatName}
+                  autoFocus
+                  onChange={e => setNewCatName(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newCatName.trim()) {
+                        await handleAddCategory(newCatName.trim());
+                        setNewCatName('');
+                        setShowAddCat(false);
+                      }
+                    } else if (e.key === 'Escape') {
+                      setShowAddCat(false);
+                    }
+                  }}
+                  className="w-full h-10 px-3 border border-cyan-500 rounded-[2px] bg-white dark:bg-slate-900 text-sm font-bold text-slate-900 dark:text-slate-100 outline-hidden"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (newCatName.trim()) {
+                      await handleAddCategory(newCatName.trim());
+                      setNewCatName('');
+                      setShowAddCat(false);
+                    }
+                  }}
+                  className="h-10 px-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-[2px] text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                >
+                  บันทึก
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCatName('');
+                    setShowAddCat(false);
+                  }}
+                  className="h-10 px-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-[2px] text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-1">

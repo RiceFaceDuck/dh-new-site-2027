@@ -56,9 +56,32 @@ export default function ProductVariants({ form, setForm }) {
   // ฟังก์ชันสร้างรายการ Variants จาก Options แบบ Cartesian Product
   const generateVariants = () => {
     if (form.variantOptions.length === 0) {
-      if (window.confirm('คุณไม่มีตัวเลือกย่อย ระบบจะล้างรายการรุ่นย่อยทั้งหมด ยืนยันหรือไม่?')) {
-        setForm({ ...form, variants: [] });
-      }
+      toast((t) => (
+        <div className="flex flex-col gap-2 p-1 text-slate-800">
+          <div className="text-sm font-bold">ไม่มีตัวเลือกย่อย</div>
+          <div className="text-xs text-slate-500">คุณไม่มีตัวเลือกย่อย ระบบจะล้างรายการรุ่นย่อยทั้งหมด ยืนยันหรือไม่?</div>
+          <div className="flex gap-2 justify-end mt-1">
+            <button 
+              type="button"
+              onClick={() => toast.dismiss(t.id)} 
+              className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+            >
+              ยกเลิก
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                toast.dismiss(t.id);
+                setForm({ ...form, variants: [] });
+                toast.success('ล้างรายการรุ่นย่อยแล้ว');
+              }} 
+              className="px-2.5 py-1 text-xs font-semibold rounded bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors cursor-pointer"
+            >
+              ยืนยันล้างข้อมูล
+            </button>
+          </div>
+        </div>
+      ), { duration: 5000 });
       return;
     }
 
