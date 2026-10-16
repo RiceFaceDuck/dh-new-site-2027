@@ -19,15 +19,15 @@ export default function WalletDetailPanel({
 
     if (!selectedUser) {
         return (
-            <div className="flex-1 bg-white rounded-2xl shadow-xs border border-slate-200 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 shadow-xs">
+            <div className="flex-1 bg-white rounded-[0.1rem] shadow-xs border border-slate-200 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+                <div className="w-16 h-16 rounded-[0.1rem] bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 shadow-xs">
                     <Wallet size={32} strokeWidth={1.75} />
                 </div>
                 <h3 className="text-base font-black text-slate-800 mb-1">เลือกบัญชีลูกค้าเพื่อดูข้อมูลกระเป๋าเงิน</h3>
                 <p className="text-xs text-slate-400 font-medium max-w-sm leading-relaxed">
                     คลิกเลือกลูกค้าจากรายการทางด้านซ้าย หรือพิมพ์ค้นหาด้วยชื่อ เบอร์โทร หรือรหัสลูกค้า เพื่อดูประวัติธุรกรรมและจัดการยอดเงิน
                 </p>
-                <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-500">
+                <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-[0.1rem] text-[11px] font-bold text-slate-500">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     พร้อมตรวจสอบและทำรายการแบบเรียลไทม์
                 </div>
@@ -36,7 +36,7 @@ export default function WalletDetailPanel({
     }
 
     return (
-        <div className="flex-1 flex flex-col gap-3 lg:gap-4 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="flex-1 flex flex-col gap-2 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
             <WalletStatusCard 
               selectedUser={selectedUser} 
               currentWalletBalance={currentWalletBalance} 
@@ -47,7 +47,7 @@ export default function WalletDetailPanel({
             />
 
             {/* Statement Table */}
-            <div className="flex-1 bg-white rounded-2xl shadow-xs border border-slate-200 flex flex-col overflow-hidden">
+            <div className="flex-1 bg-white rounded-[0.1rem] shadow-xs border border-slate-200 flex flex-col overflow-hidden">
                 <div className="px-5 pt-4 border-b border-slate-200 bg-slate-50/50">
                     <div className="flex items-center gap-6">
                         <button onClick={() => setActiveTab('wallet')} className={`pb-3 text-sm font-black transition-all border-b-2 flex items-center gap-2 ${activeTab === 'wallet' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>

@@ -63,7 +63,7 @@ export default function TransactionTable({ transactions }) {
             <>
               <td className="px-5 py-3.5">
                 <div className="flex items-start gap-3">
-                  <div className={`mt-0.5 p-1.5 rounded-lg shrink-0 border ${
+                  <div className={`mt-0.5 p-1.5 rounded-[0.1rem] shrink-0 border ${
                     isDeposit 
                       ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
                       : isCash 
@@ -98,11 +98,11 @@ export default function TransactionTable({ transactions }) {
                 </div>
                 <div className="mt-1 flex justify-end">
                   {isDeposit ? (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-[0.1rem] text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
                       ค้างยอดเข้า wallet
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-[0.1rem] text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200">
                       เบิกจ่ายธุรกรรม
                     </span>
                   )}

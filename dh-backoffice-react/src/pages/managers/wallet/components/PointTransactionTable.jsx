@@ -31,7 +31,7 @@ export default function PointTransactionTable({ pointTransactions }) {
                   <tr key={pt.id} className="hover:bg-amber-50/30 transition-colors group">
                       <td className="px-5 py-3.5">
                           <div className="flex items-start gap-3">
-                              <div className={`mt-0.5 p-1.5 rounded-lg shrink-0 border ${isEarn ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-100 border-slate-200 text-slate-500'}`}>
+                              <div className={`mt-0.5 p-1.5 rounded-[0.1rem] shrink-0 border ${isEarn ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-100 border-slate-200 text-slate-500'}`}>
                                   {isEarn ? <Star size={14} strokeWidth={2.5}/> : <History size={14} strokeWidth={2.5}/>}
                               </div>
                               <div>

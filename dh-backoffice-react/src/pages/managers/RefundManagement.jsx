@@ -177,22 +177,12 @@ export default function RefundManagement() {
         }
     };
 
-    const copyAllPhones = () => {
-        const phones = defaultUsers.map(u => u.phone || u.phoneNumber).filter(p => p && p.trim() !== '').join(', ');
-        if (phones) {
-            navigator.clipboard.writeText(phones);
-            showNotification(`คัดลอกเบอร์โทรลูกค้าเรียบร้อยแล้ว!`);
-        } else {
-            showNotification('ไม่พบเบอร์โทรศัพท์ในรายชื่อนี้', 'error');
-        }
-    };
-
     const currentWalletBalance = selectedUser ? (selectedUser.walletBalance || 0) : 0;
     const currentPointsBalance = selectedUser ? (selectedUser.creditPoints || 0) : 0;
     const displayUsers = hasSearched ? searchResults : defaultUsers;
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 p-3 lg:p-4 overflow-hidden font-sans relative">
+        <div className="flex flex-col h-full bg-slate-50 p-2 lg:p-2.5 overflow-hidden font-sans relative">
             
             {/* Notification Toast */}
             {notification && (
@@ -205,13 +195,13 @@ export default function RefundManagement() {
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-white rounded-2xl shadow-xs border border-slate-200 shrink-0 z-20">
+            <div className="flex items-center justify-between px-4 py-3 bg-white rounded-[0.1rem] shadow-xs border border-slate-200 shrink-0 z-20">
                 <div className="flex items-center gap-4">
                     <button onClick={() => navigate('/managers')} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-xl transition-all">
                         <ArrowLeft size={20} strokeWidth={2.5} />
                     </button>
                     <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase tracking-widest mb-1.5 border border-indigo-100">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase tracking-widest mb-1 border border-indigo-100">
                             <Building2 size={12} /> Financial Operations
                         </div>
                         <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">ศูนย์จัดการกระเป๋าเงินและรับเรื่องคืนเงิน (Wallet & Refund Operations)</h1>
@@ -243,7 +233,7 @@ export default function RefundManagement() {
             />
 
             {/* Main Layout: 2 Columns */}
-            <div className="flex-1 overflow-hidden flex flex-col lg:flex-row gap-3 lg:gap-4 mt-3 lg:mt-4">
+            <div className="flex-1 overflow-hidden flex flex-col lg:flex-row gap-2 mt-2">
                 
                 {/* LEFT COLUMN: Customer Search & List */}
                 <CustomerSearchList 
@@ -251,7 +241,6 @@ export default function RefundManagement() {
                     handleSearch={handleSearch} isSearching={isSearching}
                     hasSearched={hasSearched} displayUsers={displayUsers}
                     selectedUser={selectedUser} handleSelectUser={handleSelectUser}
-                    copyAllPhones={copyAllPhones}
                 />
 
                 {/* RIGHT COLUMN: Wallet Status & Statement */}

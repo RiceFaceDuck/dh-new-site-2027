@@ -10,19 +10,19 @@ export default function WalletStatusCard({
   copyToClipboard 
 }) {
   return (
-    <div className="bg-linear-to-br from-slate-900 to-indigo-950 rounded-2xl shadow-lg border border-indigo-900/50 p-5 lg:p-6 shrink-0 relative overflow-hidden text-white">
+    <div className="bg-linear-to-br from-slate-900 to-indigo-950 rounded-[0.1rem] shadow-lg border border-indigo-900/50 p-4 lg:p-5 shrink-0 relative overflow-hidden text-white">
         <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
         
-        <div className="flex flex-col md:flex-row justify-between md:items-start gap-6 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 relative z-10">
             <div>
-                <div className="flex items-center gap-3 mb-5">
-                    <div className="bg-white/10 p-2 rounded-xl backdrop-blur-xs border border-white/10"><User size={20} className="text-indigo-100" /></div>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="bg-white/10 p-2 rounded-[0.1rem] backdrop-blur-xs border border-white/10"><User size={20} className="text-indigo-100" /></div>
                     <div>
                         <h2 className="text-sm font-black text-white">{getCustomerDisplayName(selectedUser, 'ลูกค้าทั่วไป')}</h2>
                         <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-200/70 font-mono mt-0.5">
                             <span>ID: {selectedUser.customerCode || selectedUser.id}</span>
                             {(selectedUser.phone || selectedUser.phoneNumber) && (
-                                <button onClick={() => copyToClipboard(selectedUser.phone || selectedUser.phoneNumber)} className="flex items-center gap-1 hover:text-white transition-colors bg-white/5 px-1.5 py-0.5 rounded-sm border border-white/10">
+                                <button onClick={() => copyToClipboard(selectedUser.phone || selectedUser.phoneNumber)} className="flex items-center gap-1 hover:text-white transition-colors bg-white/5 px-1.5 py-0.5 rounded-[0.1rem] border border-white/10">
                                     <Phone size={10}/> {selectedUser.phone || selectedUser.phoneNumber} 
                                     {copiedPhone === (selectedUser.phone || selectedUser.phoneNumber) ? <CheckCircle2 size={10} className="text-emerald-400"/> : <Copy size={10}/>}
                                 </button>
