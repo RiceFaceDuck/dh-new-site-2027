@@ -94,7 +94,19 @@ export const FavoritesProvider = ({ children }) => {
       if (exists) {
         newFavs = prev.filter(p => p.id !== product.id); // Remove
       } else {
-        newFavs = [...prev, product]; // Add
+        // เก็บเฉพาะข้อมูลที่จำเป็น (Lean Schema) ป้องกัน Document บวม
+        const leanItem = {
+          id: product.id,
+          sku: product.sku || product.model || product.id,
+          name: product.name || '',
+          price: Number(product.price) || 0,
+          salePrice: product.salePrice ? Number(product.salePrice) : null,
+          imageUrl: product.imageUrl || product.images?.[0] || '',
+          note: product.note || '',
+          tags: Array.isArray(product.tags) ? product.tags : [],
+          addedAt: product.addedAt || new Date().toISOString()
+        };
+        newFavs = [...prev, leanItem]; // Add
       }
       
       const user = auth.currentUser;
@@ -134,12 +146,23 @@ export const FavoritesProvider = ({ children }) => {
     });
   }, []);
 
+  const reorderFavorites = useCallback(async (newFavorites) => {
+    setFavorites(newFavorites);
+    const user = auth.currentUser;
+    if (user) {
+      userService.updateUserProfile(user.uid, { favorites: newFavorites }).catch(err => console.error("Sync fav order error:", err));
+    } else {
+      localStorage.setItem('dh_favorites', JSON.stringify(newFavorites));
+    }
+  }, []);
+
   const contextValue = useMemo(() => ({
     favorites,
     toggleFavorite,
     isFavorite,
-    updateFavoriteDetails
-  }), [favorites, toggleFavorite, isFavorite, updateFavoriteDetails]);
+    updateFavoriteDetails,
+    reorderFavorites
+  }), [favorites, toggleFavorite, isFavorite, updateFavoriteDetails, reorderFavorites]);
 
   return (
     <FavoritesContext.Provider value={contextValue}>
