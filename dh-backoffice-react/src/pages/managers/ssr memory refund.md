@@ -31,5 +31,9 @@
 - ⚠️ Storefront Wallet Security Rules Bug: Client checkout previously used random doc ID and omitted `balanceAfter`, causing permission-denied; fixed by aligning doc ID with `TXW-${orderId}` and recording `balanceAfter`.
 - ⚠️ Drawer Refund vs Todos Sync: `CustomerRefundModal` (`customerRefundService.js`) clears `pendingWithdrawal` on user doc but requires syncing status to `todos` to avoid stuck tasks.
 - ⚠️ Watchlist Resolved (Firestore Cost & Aggregation): In `useWalletManagement.js`, replaced `limit(100)` looping with `getAggregateFromServer` (1 read for exact system-wide total & count) and `limit(20)` for initial user list, matching `TotalLiabilityDashboard` and saving 79 reads per cold load. Deduplicated `WalletManagement.jsx` via clean re-export.
+- ⚠️ Ledger Consistency & Deterministic Doc ID Alignment (Phase 1):
+  - In `todoWalletService.js`, enriched `APPROVE`/`REJECT` flows with deterministic Doc ID (`TXW_WD_APV_...`/`TXW_WD_REJ_...`), exact `balanceAfter` calculation, and atomic `lastWalletTxId` update on `userRef`.
+  - In `creditActionService.js`, aligned Document ID and `transactionId` to unified `TXW_ADJ_${referenceId}` and added `lastWalletTxId` update on `userRef`.
+  - In-App Automated Web Withdrawal is held/locked per manager policy; requests remain handled via LINE OA.
 </pitfalls_and_lessons>
 </grimoire>

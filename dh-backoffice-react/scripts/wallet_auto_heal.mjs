@@ -37,6 +37,11 @@ async function initFirebaseAdmin() {
 }
 
 async function runAutoHeal() {
+  if (!process.argv.includes('--confirm-production-run')) {
+    console.warn("⚠️ [Safety Guard] สคริปต์นี้สแกนเอกสารผู้ใช้ทั้งระบบเพื่อตรวจยอดเงินติดลบ");
+    console.warn("   เพื่อความปลอดภัยและประหยัดโควต้า ต้องระบุพารามิเตอร์ --confirm-production-run จึงจะทำงาน");
+    process.exit(0);
+  }
   console.log("🔍 เริ่มต้นสแกนระบบ Wallet (Auto-Heal)...");
   let scannedCount = 0;
   let fixedCount = 0;

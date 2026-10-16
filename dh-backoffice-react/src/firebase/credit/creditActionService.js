@@ -5,6 +5,7 @@ import { formatCredit, calculateEarnedPoints } from './creditFormatService';
 import { getCollectionPath, getUsersPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
+import { COLLECTIONS, validateCreditTransaction } from 'dh-shared';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -166,9 +167,9 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     let txRef;
     const refSuffix = referenceId ? referenceId : Date.now().toString();
     if (referenceId) {
-      txRef = doc(db, getCollectionPath('credit_transactions'), `ADJ_${type}_${referenceId}`);
+      txRef = doc(db, getCollectionPath(COLLECTIONS.CREDIT_TRANSACTIONS), `ADJ_${type}_${referenceId}`);
     } else {
-      txRef = doc(collection(db, getCollectionPath('credit_transactions')));
+      txRef = doc(collection(db, getCollectionPath(COLLECTIONS.CREDIT_TRANSACTIONS)));
     }
 
     let txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap;
@@ -277,7 +278,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     const transactionId = txRef.id;
     const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'add' : 'deduct';
-    transaction.set(txRef, {
+    const txPayload = {
       transactionId: `TXM-${refSuffix}`,
       uid: uid,
       partnerName: resolvedName,
@@ -291,7 +292,14 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       recordedBy: actorUid || 'System',
       operatorUid: actorUid || 'System',
       timestamp: serverTimestamp()
-    });
+    };
+
+    const validation = validateCreditTransaction(txPayload);
+    if (!validation.success) {
+      console.warn("⚠️ [Credit Transaction Validation Warning]:", validation.error);
+    }
+
+    transaction.set(txRef, txPayload);
 
     console.info(`✅ [Credit Engine] Sub-Transaction TXM-${referenceId || 'MANUAL'} Prepped for UID: ${uid} | Amount: ${amount}`);
     return { success: true, transactionId, newBalance: newPointsBalance };
@@ -431,14 +439,15 @@ export const adjustUserWalletWithTransaction = async (transaction, uid, amount, 
     
     // ✅ [SECURITY FIX] ป้องกันการกดเบิ้ล/ส่งซ้ำ (Idempotency Check)
     let txRef;
+    const txId = referenceId ? `TXW_ADJ_${referenceId}` : `TXW_ADJ_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     if (referenceId) {
-      txRef = doc(db, usersColPathTx, uid, 'wallet_transactions', `ADJ_WALLET_${referenceId}`);
+      txRef = doc(db, usersColPathTx, uid, 'wallet_transactions', txId);
       const txSnap = await transaction.get(txRef);
       if (txSnap.exists()) {
         throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
       }
     } else {
-      txRef = doc(collection(db, usersColPathTx, uid, 'wallet_transactions'));
+      txRef = doc(db, usersColPathTx, uid, 'wallet_transactions', txId);
     }
 
     const userSnap = await transaction.get(userRef);
@@ -465,6 +474,7 @@ export const adjustUserWalletWithTransaction = async (transaction, uid, amount, 
     // Update wallet balance on user doc
     transaction.update(userRef, {
       walletBalance: newWalletBalance,
+      lastWalletTxId: txId,
       updatedAt: serverTimestamp()
     });
 
@@ -477,7 +487,7 @@ export const adjustUserWalletWithTransaction = async (transaction, uid, amount, 
     const mappedType = (type === 'adjust_add' || type === 'deposit' || type === 'add') ? 'REFUND' : 'SPEND';
     
     transaction.set(txRef, {
-      transactionId: referenceId ? `TXW_ADJ_${referenceId}` : txRef.id,
+      transactionId: txId,
       type: mappedType,
       amount: safeAmount,
       balanceAfter: newWalletBalance,

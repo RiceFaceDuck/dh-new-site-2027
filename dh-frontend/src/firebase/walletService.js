@@ -135,89 +135,15 @@ export const getWalletHistory = async (userId, lastDoc = null, pageSize = 10, fo
 // ==========================================
 
 /**
- * 🚀 ร้องขอถอนเงินออกจากระบบ (Atomic Transaction)
- * @param {string} userId - ไอดีลูกค้า
- * @param {number} amount - จำนวนเงินที่ต้องการถอน
- * @param {object} bankInfo - ข้อมูลบัญชีธนาคาร { bankName, accountName, accountNumber }
+ * 🔒 [RESERVED / FUTURE FEATURE] ร้องขอถอนเงินอัตโนมัติออกจากระบบ
+ * 
+ * ⚠️ นโยบายปัจจุบัน: ระบบ "ถอนเงินอัตโนมัติบนหน้าเว็บ" ถูกล็อกสถานะ (HOLD) ไว้ก่อนตามคำสั่งผู้บริหาร
+ * การขอคืนเงินของลูกค้าในปัจจุบันดำเนินการผ่านการติดต่อเจ้าหน้าที่ทาง LINE OA
+ * เมื่อมีคำสั่งเปิดใช้งานในอนาคต ฟังก์ชันนี้จะถูกเชื่อมต่อไปยัง Cloud Function `requestWithdrawal` (Admin SDK)
  */
 export const requestWalletWithdrawal = async (userId, amount, bankInfo) => {
-  const safeAmount = Math.round(Number(amount) * 100) / 100;
-  if (!userId || isNaN(safeAmount) || safeAmount <= 0 || !bankInfo) {
-    throw new Error("ข้อมูลไม่ครบถ้วน หรือยอดเงินไม่ถูกต้อง");
-  }
-
-  try {
-    await runTransaction(db, async (transaction) => {
-      const usersPath = getUsersPath();
-      const userRef = doc(db, usersPath, userId);
-      const userSnap = await transaction.get(userRef);
-
-      if (!userSnap.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้งาน");
-
-      const userData = userSnap.data();
-      const currentBalance = Number(userData.walletBalance || 0);
-
-      // 1. ตรวจสอบยอดเงิน (ป้องกันการแก้ HTML เพื่อถอนเงินเกินจริง)
-      if (currentBalance < safeAmount) {
-        throw new Error("ยอดเงินค้างในระบบไม่เพียงพอต่อการถอน");
-      }
-      
-
-
-      const txId = `WD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-      // 2. ล็อกยอดเงินทันที! หักจาก walletBalance ไปไว้ที่ pendingWithdrawal
-      transaction.update(userRef, {
-        walletBalance: increment(-safeAmount),
-        pendingWithdrawal: increment(safeAmount),
-        updatedAt: serverTimestamp()
-      });
-
-      // 3. บันทึกประวัติฝั่งลูกค้า
-      const userTxRef = doc(collection(db, usersPath, userId, 'wallet_transactions'));
-      transaction.set(userTxRef, {
-        transactionId: txId,
-        type: 'WITHDRAWAL_REQUEST',
-        amount: safeAmount,
-        status: 'PENDING',
-        bankInfo: bankInfo,
-        note: 'รอตรวจสอบและโอนเงิน (ดำเนินการได้ใน 14 วัน)',
-        timestamp: serverTimestamp()
-      });
-
-      // 4. 🌟 [COOL FEATURE] ยิงตรงเข้า To-do ส่วนกลางของระบบหลังบ้าน (Backoffice) โดยใช้ Idempotent Key เป็น ID ของเอกสาร
-      const todoRef = doc(db, getCollectionPath('todos'), `WD-${userId}-${txId}`);
-      transaction.set(todoRef, {
-        taskId: txId,
-        taskType: 'WALLET_WITHDRAWAL',
-        status: 'PENDING',
-        priority: 'HIGH',
-        customer: {
-          uid: userId,
-          name: userData.displayName || userData.accountName || 'ลูกค้า',
-          phone: userData.phoneNumber || ''
-        },
-        withdrawalDetails: {
-          amount: safeAmount,
-          bankName: bankInfo.bankName,
-          accountName: bankInfo.accountName,
-          accountNumber: bankInfo.accountNumber
-        },
-        createdAt: serverTimestamp(),
-        createdBy: userId
-      });
-    });
-
-    // 🧹 ล้างแคชประวัติเพื่อบังคับให้หน้าเว็บดึงข้อมูลใหม่
-    invalidateWalletCache(userId);
-
-    console.log("✅ [WalletService] Withdrawal request processed and sent to Backoffice To-do.");
-    return true;
-
-  } catch (error) {
-    console.error("🔥 [WalletService] Withdrawal Transaction Failed:", error.message);
-    throw error;
-  }
+  // 🛡️ Policy Guard: บล็อกการเรียกใช้จากไคลเอนต์โดยตรงจนกว่าจะได้รับคำสั่งเปิดใช้งาน
+  throw new Error("ระบบถอนเงินอัตโนมัติบนหน้าเว็บยังไม่เปิดให้บริการในขณะนี้ กรุณาติดต่อเจ้าหน้าที่ผ่าน LINE OA เพื่อแจ้งขอคืนเงินครับ");
 };
 
 // ==========================================

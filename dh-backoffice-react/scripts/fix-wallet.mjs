@@ -20,6 +20,10 @@ initializeApp({
 const db = getFirestore();
 
 async function fix() {
+    if (!process.argv.includes('--confirm')) {
+        console.warn("⚠️ [Safety Guard] สคริปต์แก้ไขเฉพาะกิจรายบุคคล ต้องระบุ --confirm จึงจะทำงาน");
+        process.exit(0);
+    }
     console.log("Fixing Kwan...");
     const ref = db.collection('users').doc('0AUxlnHivLdwa4gxTAGO9yWmhS82');
     const doc = await ref.get();

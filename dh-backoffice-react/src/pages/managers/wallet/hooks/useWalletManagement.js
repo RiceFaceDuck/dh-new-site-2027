@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, limit, orderBy, onSnapshot, getAggregateFromServer, sum, count } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, orderBy, onSnapshot, getAggregateFromServer, sum, count, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../../../firebase/config';
 import { userService } from '../../../../firebase/userService';
 import { getCollectionPath, getUsersPath, getUserSubcollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -13,6 +13,10 @@ let dashboardMemoryCache = {
     timestamp: 0
 };
 
+// 🔍 In-Memory Search Cache (3-minute TTL to prevent re-querying Firestore on repeat search)
+const SEARCH_CACHE_TTL_MS = 3 * 60 * 1000;
+const walletSearchCache = new Map();
+
 export function invalidateWalletCache() {
     dashboardMemoryCache = {
         stats: null,
@@ -20,6 +24,7 @@ export function invalidateWalletCache() {
         defaultUsers: [],
         timestamp: 0
     };
+    walletSearchCache.clear();
 }
 
 export function updateCachedUserBalance(userId, newBalance) {
@@ -178,35 +183,91 @@ export function useWalletManagement(navigate) {
 
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
-        if (!searchTerm.trim()) {
+        const rawTerm = searchTerm.trim();
+        if (!rawTerm) {
             setHasSearched(false); setSearchResults([]); return;
         }
         
         setIsSearching(true); setHasSearched(true);
         setSearchResults([]); setSelectedUser(null);
         
-        try {
-            const term = searchTerm.trim().toLowerCase();
-            const results = [];
-            const usersRef = collection(db, getUsersPath());
+        const cacheKey = rawTerm.toLowerCase();
+        const cached = walletSearchCache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp < SEARCH_CACHE_TTL_MS)) {
+            setSearchResults(cached.data);
+            setIsSearching(false);
+            return;
+        }
 
-            const snap = await getDocs(query(usersRef, limit(100))); 
-            snap.forEach(d => {
-                const data = d.data();
-                if (
-                    (data.customerCode && data.customerCode.toLowerCase().includes(term)) ||
-                    (data.phoneNumber && data.phoneNumber.includes(term)) ||
-                    (data.phone && data.phone.includes(term)) ||
-                    (data.accountName && data.accountName.toLowerCase().includes(term)) ||
-                    (data.displayName && data.displayName.toLowerCase().includes(term))
-                ) {
-                    results.push({ id: d.id, ...data });
+        try {
+            const usersRef = collection(db, getUsersPath());
+            const cleanDigits = rawTerm.replace(/\D/g, '');
+            const isPhoneNumber = cleanDigits.length >= 9 && /^0[0-9]{8,9}$/.test(cleanDigits);
+            const queries = [];
+
+            // 1. Numeric / Phone Number exact indexed queries (O(1) reads)
+            if (/^[0-9]+$/.test(rawTerm) || isPhoneNumber) {
+                const targetPhone = isPhoneNumber ? cleanDigits : rawTerm;
+                queries.push(query(usersRef, where('phoneNumber', '==', targetPhone), limit(20)));
+                queries.push(query(usersRef, where('phone', '==', targetPhone), limit(20)));
+                queries.push(query(usersRef, where('tel', '==', targetPhone), limit(20)));
+                queries.push(query(usersRef, where('mobile', '==', targetPhone), limit(20)));
+            } else {
+                // 2. CustomerCode / AccountId / Email exact queries
+                const upper = rawTerm.toUpperCase();
+                const lower = rawTerm.toLowerCase();
+                queries.push(query(usersRef, where('customerCode', '==', upper), limit(20)));
+                queries.push(query(usersRef, where('accountId', '==', upper), limit(20)));
+                queries.push(query(usersRef, where('email', '==', lower), limit(20)));
+                if (rawTerm !== upper) {
+                    queries.push(query(usersRef, where('customerCode', '==', rawTerm), limit(20)));
+                    queries.push(query(usersRef, where('accountId', '==', rawTerm), limit(20)));
                 }
+
+                // 3. Name prefix queries (for names >= 2 characters)
+                if (rawTerm.length >= 2) {
+                    const prefixEnd = rawTerm + '\uf8ff';
+                    queries.push(query(usersRef, where('displayName', '>=', rawTerm), where('displayName', '<=', prefixEnd), limit(20)));
+                    queries.push(query(usersRef, where('accountName', '>=', rawTerm), where('accountName', '<=', prefixEnd), limit(20)));
+                    queries.push(query(usersRef, where('firstName', '>=', rawTerm), where('firstName', '<=', prefixEnd), limit(20)));
+                }
+            }
+
+            // 4. Direct UID check if format looks like Firestore UID
+            let directUserDoc = null;
+            if (rawTerm.length >= 20 && !rawTerm.includes(' ')) {
+                try {
+                    const uSnap = await getDoc(doc(db, getUsersPath(), rawTerm));
+                    if (uSnap.exists()) {
+                        directUserDoc = { id: uSnap.id, ...uSnap.data() };
+                    }
+                } catch (_) {}
+            }
+
+            const snaps = await Promise.all(queries.map(q => getDocs(q).catch(() => ({ docs: [] }))));
+            const resultMap = new Map();
+
+            if (directUserDoc) {
+                resultMap.set(directUserDoc.id, directUserDoc);
+            }
+
+            snaps.forEach(snap => {
+                snap.docs?.forEach(d => {
+                    if (!resultMap.has(d.id)) {
+                        resultMap.set(d.id, { id: d.id, ...d.data() });
+                    }
+                });
             });
-            setSearchResults(results);
+
+            const uniqueResults = Array.from(resultMap.values());
+            // Sort by walletBalance descending for manager convenience
+            uniqueResults.sort((a, b) => (Number(b.walletBalance || 0)) - (Number(a.walletBalance || 0)));
+
+            walletSearchCache.set(cacheKey, { timestamp: Date.now(), data: uniqueResults });
+            setSearchResults(uniqueResults);
         } catch (error) {
             console.error("Error searching users:", error);
-            throw new Error("ค้นหาล้มเหลว");
+            setSearchResults([]);
         } finally {
             setIsSearching(false);
         }

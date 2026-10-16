@@ -46,20 +46,24 @@ export const todoWalletService = {
                   return { success: false, orphanedCleared: true, message: "ไม่พบบัญชีลูกค้าในระบบ ระบบได้เคลียร์รายการให้แล้วครับ" };
               }
 
-              const txId = `WD-${action}-${Date.now()}`;
-              const userTxRef = doc(collection(db, getUserSubcollectionPath(customerId, 'wallet_transactions')));
-              const logRef = doc(collection(db, getCollectionPath('system_logs')));
-
               if (action === 'APPROVE') {
                   // ✅ [SECURITY FIX] ป้องกันยอดเงินติดลบ กรณีมีการอนุมัติซ้ำซ้อน
-                  const currentPending = Number(userSnap.data().pendingWithdrawal || 0);
+                  const currentPending = Number(userSnap.data()?.pendingWithdrawal || 0);
                   if (currentPending < amount) {
                       throw new Error("ยอดเงินรอถอนของลูกค้ามีไม่เพียงพอ (อาจถูกดำเนินการไปแล้ว)");
                   }
 
+                  const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+                  const balanceAfter = currentWallet; // Balance is unchanged on approve (already moved to pending earlier)
+                  const newPending = Math.max(0, Math.round((currentPending - amount) * 100) / 100);
+                  const txId = `TXW_WD_APV_${taskId}_${Date.now()}`;
+                  const userTxRef = doc(db, getUsersPath(), customerId, 'wallet_transactions', txId);
+                  const logRef = doc(collection(db, getCollectionPath('system_logs')));
+
                   // ✅ กรณีอนุมัติโอนเงิน (หักเงินรอถอนออกอย่างถาวร)
                   transaction.update(userRef, {
-                      pendingWithdrawal: increment(-amount),
+                      pendingWithdrawal: newPending,
+                      lastWalletTxId: txId,
                       updatedAt: serverTimestamp()
                   });
 
@@ -67,6 +71,7 @@ export const todoWalletService = {
                       transactionId: txId,
                       type: 'WITHDRAWAL_COMPLETED',
                       amount: amount,
+                      balanceAfter: balanceAfter,
                       status: 'SUCCESS',
                       note: extraData.note || 'โอนเงินเข้าบัญชีสำเร็จเรียบร้อย',
                       slipUrl: extraData.slipUrl || null,
@@ -92,15 +97,23 @@ export const todoWalletService = {
 
               } else if (action === 'REJECT') {
                   // ✅ [SECURITY FIX] ป้องกันยอดเงินติดลบ กรณีมีการปฏิเสธซ้ำซ้อน
-                  const currentPending = Number(userSnap.data().pendingWithdrawal || 0);
+                  const currentPending = Number(userSnap.data()?.pendingWithdrawal || 0);
                   if (currentPending < amount) {
                       throw new Error("ยอดเงินรอถอนของลูกค้ามีไม่เพียงพอ (อาจถูกดำเนินการไปแล้ว)");
                   }
 
+                  const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+                  const balanceAfter = Math.round((currentWallet + amount) * 100) / 100;
+                  const newPending = Math.max(0, Math.round((currentPending - amount) * 100) / 100);
+                  const txId = `TXW_WD_REJ_${taskId}_${Date.now()}`;
+                  const userTxRef = doc(db, getUsersPath(), customerId, 'wallet_transactions', txId);
+                  const logRef = doc(collection(db, getCollectionPath('system_logs')));
+
                   // ❌ กรณีปฏิเสธ (ดึงเงินรอถอน คืนกลับเข้ากระเป๋า Wallet ให้ลูกค้าอัตโนมัติ)
                   transaction.update(userRef, {
-                      pendingWithdrawal: increment(-amount),
-                      walletBalance: increment(amount), // คืนเงินเข้าระบบให้ลูกค้า
+                      pendingWithdrawal: newPending,
+                      walletBalance: balanceAfter, // คืนเงินเข้าระบบให้ลูกค้า
+                      lastWalletTxId: txId,
                       updatedAt: serverTimestamp()
                   });
 
@@ -108,6 +121,7 @@ export const todoWalletService = {
                       transactionId: txId,
                       type: 'WITHDRAWAL_REJECTED',
                       amount: amount,
+                      balanceAfter: balanceAfter,
                       status: 'REFUNDED',
                       note: extraData.note || 'คำขอถูกปฏิเสธ (เงินถูกคืนกลับเข้าระบบแล้ว)',
                       adminId: adminInfo?.uid || 'Manager',
