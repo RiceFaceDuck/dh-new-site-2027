@@ -98,7 +98,7 @@ export const usePosActions = ({
         setShowCustDropdown(false);
     };
 
-    const applyPromotionLogic = (promo, subTotalAmount, items = []) => {
+    const applyPromotionLogic = useCallback((promo, subTotalAmount, items = []) => {
         if (!promo) return 0;
         
         let eligibleTotal = subTotalAmount;
@@ -126,7 +126,7 @@ export const usePosActions = ({
             calculatedDiscount = Math.min(calculatedDiscount, promo.maxDiscount);
         }
         return Math.floor(calculatedDiscount);
-    };
+    }, []);
 
     const handleApplyPromotion = (promo, isAuto = false) => {
         if (!promo) return;
@@ -281,8 +281,9 @@ export const usePosActions = ({
             const now = new Date();
             const yy = String(now.getFullYear()).slice(2); const mm = String(now.getMonth() + 1).padStart(2, '0'); const dd = String(now.getDate()).padStart(2, '0');
             const hh = String(now.getHours()).padStart(2, '0'); const min = String(now.getMinutes()).padStart(2, '0'); const sec = String(now.getSeconds()).padStart(2, '0');
+            const rand4 = Math.floor(1000 + Math.random() * 9000);
             
-            let finalOrderId = activeTab.orderId || `DH-TEMP-${yy}${mm}${dd}-${hh}${min}${sec}`;
+            let finalOrderId = activeTab.orderId || `DH-TEMP-${rand4}`;
 
             const finalNote = activeTab.billNote ? `${activeTab.billNote}\n[บันทึกโดยระบบอัตโนมัติ]` : '[บันทึกโดยระบบอัตโนมัติ]';
 
@@ -315,7 +316,10 @@ export const usePosActions = ({
 
             const orderData = {
                 id: activeTab.docId || null, orderId: finalOrderId,
-                orderStatus: status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending'), paymentStatus: status === 'Draft' ? 'Unpaid' : status,
+                orderStatus: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
+                status: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
+                isDraft: status === 'Draft',
+                paymentStatus: status === 'Draft' ? 'Unpaid' : status,
                 paymentMethod: activeTab.paymentMethod || 'Transfer', bankAccount: activeTab.paymentMethod === 'Transfer' ? (activeTab.bankAccount || '') : null,
                 transactionRef: activeTab.paymentMethod === 'Transfer' ? (activeTab.transactionRef || '') : '',
                 transferDateTime: activeTab.paymentMethod === 'Transfer' ? (activeTab.transferDateTime || '') : '',

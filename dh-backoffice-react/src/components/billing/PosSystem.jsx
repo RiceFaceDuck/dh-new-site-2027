@@ -25,9 +25,9 @@ const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, 
 
 export default function PosSystem({ 
     products = [], customers = [], onSwitchView, initialDraft, resumeTabId, 
-    isNewBillRequest, onNewBillHandled 
+    isNewBillRequest, onNewBillHandled, onDraftHandled 
 }) {
-    const posState = usePosState(products, customers, initialDraft);
+    const posState = usePosState(products, customers, initialDraft, onDraftHandled);
     const {
         cartTabs: safeCartTabs, setCartTabs,
         activeTabId, setActiveTabId,

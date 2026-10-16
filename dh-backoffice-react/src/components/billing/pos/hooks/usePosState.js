@@ -23,15 +23,8 @@ let inMemoryFreebies = null;
 let inMemoryMarketingTimestamp = 0;
 
 const createNewTab = () => {
-    const now = new Date();
-    const yy = now.getFullYear().toString().slice(2);
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const sec = String(now.getSeconds()).padStart(2, '0');
     const rand4 = Math.floor(1000 + Math.random() * 9000);
-    const orderId = `DH-TEMP-${yy}${mm}${dd}-${hh}${min}${sec}-${rand4}`;
+    const orderId = `DH-TEMP-${rand4}`;
     return {
         id: Date.now().toString(), orderId, docId: null, items: [], customer: null, priceMode: 'wholesale',
         walkInName: '', walkInPhone: '', hidePhone: false, fulfillmentType: 'Delivery', courier: 'KEX', shippingFee: 0, vatOnShipping: false, vatType: 'exempt', 
@@ -55,7 +48,7 @@ const loadSavedState = (targetUid) => {
     return [createNewTab()];
 };
 
-export default function usePosState(products, customers, initialDraft) {
+export default function usePosState(products, customers, initialDraft, onDraftHandled) {
     const [cartTabs, setCartTabs] = useState(() => loadSavedState());
     const [activeTabId, setActiveTabId] = useState(() => {
         const state = loadSavedState();
@@ -127,79 +120,137 @@ export default function usePosState(products, customers, initialDraft) {
     }, [cartTabs]);
 
     useEffect(() => {
-        if (initialDraft) {
-            const draftStat = (initialDraft.orderStatus || initialDraft.status || initialDraft.paymentStatus || '').toLowerCase();
-            if (draftStat === 'approved' || draftStat === 'completed' || draftStat === 'paid' || draftStat === 'cancelled') {
-                return;
-            }
-            setCartTabs(prev => {
-                const validPrev = Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : [];
-                const draftId = (initialDraft.id || initialDraft.orderId) ? String(initialDraft.id || initialDraft.orderId) : Date.now().toString();
-                
-                let fullCustomer = initialDraft.customer || null;
-                if (fullCustomer && fullCustomer.uid && fullCustomer.uid !== 'WALK-IN') {
-                    const matchedCust = customers.find(c => c.uid === fullCustomer.uid || c.id === fullCustomer.uid);
-                    if (matchedCust) fullCustomer = matchedCust;
-                }
+        if (!initialDraft) return;
 
-                const newTab = {
-                    id: draftId,
-                    orderId: initialDraft.orderId || null,
-                    docId: initialDraft.id || null,
+        const draftStat = (initialDraft.orderStatus || initialDraft.status || initialDraft.paymentStatus || '').toLowerCase();
+        if (draftStat === 'approved' || draftStat === 'completed' || draftStat === 'paid' || draftStat === 'cancelled') {
+            return;
+        }
+
+        const draftOrderId = initialDraft.orderId ? String(initialDraft.orderId) : null;
+        const draftDocId = initialDraft.id ? String(initialDraft.id) : null;
+
+        let fullCustomer = initialDraft.customer || null;
+        if (fullCustomer && fullCustomer.uid && fullCustomer.uid !== 'WALK-IN') {
+            const matchedCust = customers.find(c => c.uid === fullCustomer.uid || c.id === fullCustomer.uid);
+            if (matchedCust) fullCustomer = matchedCust;
+        }
+
+        let targetTabId = null;
+
+        setCartTabs(prev => {
+            const validPrev = Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : [];
+
+            // 🔍 1. ค้นหาแท็บเดิมในระบบที่มีอยู่แล้ว (เช็คทั้ง orderId, docId, และ id)
+            const matchedExistingIndex = validPrev.findIndex(tab => {
+                if (draftOrderId && tab.orderId === draftOrderId) return true;
+                if (draftDocId && (tab.docId === draftDocId || tab.id === draftDocId)) return true;
+                if (draftOrderId && tab.id === draftOrderId) return true;
+                return false;
+            });
+
+            if (matchedExistingIndex !== -1) {
+                const existingTab = validPrev[matchedExistingIndex];
+                targetTabId = existingTab.id; // 🔑 ใช้ tab.id ตัวจริงของแท็บนั้น
+
+                const updatedTab = {
+                    ...existingTab,
+                    orderId: draftOrderId || existingTab.orderId,
+                    docId: draftDocId || existingTab.docId,
                     customer: fullCustomer,
                     items: (initialDraft.items || []).filter(i => !i.isFreebie),
-                    walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : '',
-                    walkInPhone: initialDraft.customer?.phone || '',
+                    walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : (existingTab.walkInName || ''),
+                    walkInPhone: initialDraft.customer?.phone || (existingTab.walkInPhone || ''),
                     hidePhone: initialDraft.customer?.hidePhone || false,
-                    slipImage: initialDraft.slipImage || '',
-                    billNote: initialDraft.billNote || '',
-                    priceMode: initialDraft.priceMode || 'wholesale',
-                    shippingFee: initialDraft.shippingFee || 0,
-                    otherFeeAmount: initialDraft.otherFeeAmount || 0,
-                    otherFeeName: initialDraft.otherFeeName || '',
-                    vatType: initialDraft.vatType || 'exempt',
-                    vatOnShipping: initialDraft.vatOnShipping || false,
-                    overallDiscount: initialDraft.overallDiscount || 0,
-                    overallDiscountType: initialDraft.overallDiscountType || 'BAHT',
+                    slipImage: initialDraft.slipImage || existingTab.slipImage || '',
+                    billNote: initialDraft.billNote || existingTab.billNote || '',
+                    priceMode: initialDraft.priceMode || existingTab.priceMode || 'wholesale',
+                    shippingFee: initialDraft.shippingFee ?? existingTab.shippingFee ?? 0,
+                    otherFeeAmount: initialDraft.otherFeeAmount ?? existingTab.otherFeeAmount ?? 0,
+                    otherFeeName: initialDraft.otherFeeName || existingTab.otherFeeName || '',
+                    vatType: initialDraft.vatType || existingTab.vatType || 'exempt',
+                    vatOnShipping: initialDraft.vatOnShipping !== undefined ? initialDraft.vatOnShipping : existingTab.vatOnShipping,
+                    overallDiscount: initialDraft.overallDiscount ?? existingTab.overallDiscount ?? 0,
+                    overallDiscountType: initialDraft.overallDiscountType || existingTab.overallDiscountType || 'BAHT',
                     useWallet: Boolean(initialDraft.walletUsed > 0),
-                    walletUsed: initialDraft.walletUsed || 0,
-                    promoDiscount: initialDraft.promoDiscount || 0,
-                    appliedPromoId: initialDraft.appliedPromotion?.id || null,
-                    appliedPromoDetails: initialDraft.appliedPromotion || null,
+                    walletUsed: initialDraft.walletUsed ?? existingTab.walletUsed ?? 0,
+                    promoDiscount: initialDraft.promoDiscount ?? existingTab.promoDiscount ?? 0,
+                    appliedPromoId: initialDraft.appliedPromotion?.id || existingTab.appliedPromoId || null,
+                    appliedPromoDetails: initialDraft.appliedPromotion || existingTab.appliedPromoDetails || null,
                     autoPromoEnabled: false,
                     autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : false,
-                    paymentMethod: initialDraft.paymentMethod || 'Transfer',
-                    bankAccount: initialDraft.bankAccount || 'KBANK',
-                    fulfillmentType: initialDraft.fulfillmentType || 'Delivery',
-                    courier: initialDraft.courier || 'KEX',
-                    receiptFormat: initialDraft.receiptFormat || 'short',
-                    transactionRef: initialDraft.transactionRef || '',
-                    transferDateTime: initialDraft.transferDateTime || ''
+                    paymentMethod: initialDraft.paymentMethod || existingTab.paymentMethod || 'Transfer',
+                    bankAccount: initialDraft.bankAccount || existingTab.bankAccount || 'KBANK',
+                    fulfillmentType: initialDraft.fulfillmentType || existingTab.fulfillmentType || 'Delivery',
+                    courier: initialDraft.courier || existingTab.courier || 'KEX',
+                    receiptFormat: initialDraft.receiptFormat || existingTab.receiptFormat || 'short',
+                    transactionRef: initialDraft.transactionRef || existingTab.transactionRef || '',
+                    transferDateTime: initialDraft.transferDateTime || existingTab.transferDateTime || ''
                 };
 
-                if (validPrev.some(tab => tab.id === draftId || tab.orderId === draftId)) {
-                    setActiveTabId(draftId);
-                    return validPrev.map(tab => {
-                        if (tab.id === draftId || tab.orderId === draftId) {
-                            return { ...tab, ...newTab, id: tab.id };
-                        }
-                        return tab;
-                    });
-                }
+                const newTabs = [...validPrev];
+                newTabs[matchedExistingIndex] = updatedTab;
+                return newTabs;
+            }
 
-                setActiveTabId(draftId);
+            // 🌟 2. ถ้ายังไม่มีแท็บนี้ในระบบ -> สร้างแท็บใหม่พร้อมกำหนด ID ชัดเจน
+            const assignedId = Date.now().toString();
+            targetTabId = assignedId;
 
-                const emptyTabIndex = validPrev.findIndex(t => (!t.items || t.items.length === 0) && !t.customer && !t.walkInName && !t.orderId);
-                if (emptyTabIndex !== -1) {
-                    const newPrev = [...validPrev];
-                    newPrev[emptyTabIndex] = newTab;
-                    return newPrev;
-                }
+            const newTab = {
+                id: assignedId,
+                orderId: draftOrderId || null,
+                docId: draftDocId || null,
+                customer: fullCustomer,
+                items: (initialDraft.items || []).filter(i => !i.isFreebie),
+                walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : '',
+                walkInPhone: initialDraft.customer?.phone || '',
+                hidePhone: initialDraft.customer?.hidePhone || false,
+                slipImage: initialDraft.slipImage || '',
+                billNote: initialDraft.billNote || '',
+                priceMode: initialDraft.priceMode || 'wholesale',
+                shippingFee: initialDraft.shippingFee || 0,
+                otherFeeAmount: initialDraft.otherFeeAmount || 0,
+                otherFeeName: initialDraft.otherFeeName || '',
+                vatType: initialDraft.vatType || 'exempt',
+                vatOnShipping: initialDraft.vatOnShipping || false,
+                overallDiscount: initialDraft.overallDiscount || 0,
+                overallDiscountType: initialDraft.overallDiscountType || 'BAHT',
+                useWallet: Boolean(initialDraft.walletUsed > 0),
+                walletUsed: initialDraft.walletUsed || 0,
+                promoDiscount: initialDraft.promoDiscount || 0,
+                appliedPromoId: initialDraft.appliedPromotion?.id || null,
+                appliedPromoDetails: initialDraft.appliedPromotion || null,
+                autoPromoEnabled: false,
+                autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : false,
+                paymentMethod: initialDraft.paymentMethod || 'Transfer',
+                bankAccount: initialDraft.bankAccount || 'KBANK',
+                fulfillmentType: initialDraft.fulfillmentType || 'Delivery',
+                courier: initialDraft.courier || 'KEX',
+                receiptFormat: initialDraft.receiptFormat || 'short',
+                transactionRef: initialDraft.transactionRef || '',
+                transferDateTime: initialDraft.transferDateTime || ''
+            };
 
-                return [...validPrev, newTab];
-            });
+            const emptyTabIndex = validPrev.findIndex(t => (!t.items || t.items.length === 0) && !t.customer && !t.walkInName && !t.orderId && !t.docId);
+            if (emptyTabIndex !== -1) {
+                const newPrev = [...validPrev];
+                newPrev[emptyTabIndex] = newTab;
+                return newPrev;
+            }
+
+            return [...validPrev, newTab];
+        });
+
+        // 🚀 สั่งเปลี่ยนแท็บข้างนอก updater เพื่อกำจัด Side-effect และรับประกันว่า ID ตรงกับ tab.id เสมอ
+        if (targetTabId) {
+            setActiveTabId(targetTabId);
         }
-    }, [initialDraft, customers]);
+
+        if (typeof onDraftHandled === 'function') {
+            onDraftHandled();
+        }
+    }, [initialDraft, customers, onDraftHandled]);
 
     useEffect(() => {
         const fetchMarketingData = async () => {

@@ -5,7 +5,7 @@ import { useCustomerData } from '../Customers/hooks/useCustomerData';
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 
 // Scoped subcomponent to prevent customer directory reads on Order List Dashboard
-const PosViewWrapper = ({ onSwitchView, initialDraft, resumeTabId, isNewBillRequest, onNewBillHandled }) => {
+const PosViewWrapper = ({ onSwitchView, initialDraft, resumeTabId, isNewBillRequest, onNewBillHandled, onDraftHandled }) => {
   const { customers, loading: isCustomersLoading } = useCustomerData();
 
   return (
@@ -22,6 +22,7 @@ const PosViewWrapper = ({ onSwitchView, initialDraft, resumeTabId, isNewBillRequ
         resumeTabId={resumeTabId}
         isNewBillRequest={isNewBillRequest}
         onNewBillHandled={onNewBillHandled}
+        onDraftHandled={onDraftHandled}
       />
     </div>
   );
@@ -111,6 +112,7 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
         resumeTabId={resumeTabId}
         isNewBillRequest={isNewBillRequest}
         onNewBillHandled={() => setIsNewBillRequest(false)}
+        onDraftHandled={() => setDraftOrder(null)}
       />
     );
   }

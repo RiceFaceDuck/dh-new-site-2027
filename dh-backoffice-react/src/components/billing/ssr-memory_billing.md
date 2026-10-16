@@ -92,8 +92,8 @@
        วิธีแก้: ใน `PosHeader.jsx` เพิ่ม Guard ตรวจสอบ `if (tab.items && tab.items.length > 0)` และแจ้งเตือนด้วย `window.confirm` ก่อนปิดแท็บ เพื่อป้องกันข้อมูลบิลร่างสูญหายจากอุบัติเหตุ [สถานะ: ส่งมอบแล้ว]
     23. ปัญหา: สต็อกสินค้าของแถม (Freebie) ที่ตัดจากคลังจริง ไม่ถูกคืนสต็อกเมื่อยกเลิกบิล
        วิธีแก้: ปรับปรุง `billingStatusTransaction.js` โดยตัดเงื่อนไข `item.isFreebie` ออกจากการดักข้าม ทำให้สินค้าทุกรายการที่มี `id` หรือ `sku` ในรายการบิลถูกรวมเข้า Map และคืนสต็อกเข้าคลังสินค้าอย่างถูกต้องเมื่อกดยกเลิกบิล [สถานะ: ส่งมอบแล้ว]
-    24. ปัญหา: รหัสบิลร่าง POS มีโอกาสชนกัน (Collision Risk) เนื่องจากใช้เลขสุ่มเพียง 4 หลัก (`DH-TEMP-XXXX`)
-       วิธีแก้: ปรับปรุง `usePosState.js` และ `billingTransactionService.js` ให้สร้างรหัสบิลร่างเป็น Timestamp ละเอียดถึงระดับวินาทีตามด้วยเลขสุ่ม 4 หลัก (`DH-TEMP-YYMMDD-HHMMSS-RAND4`) ป้องกันการบันทึกทับบิลร่างของเครื่องอื่น [สถานะ: ส่งมอบแล้ว]
+    24. ปัญหา: รหัสบิลร่าง POS แบบพ่วงวันที่-เวลา (`DH-TEMP-YYMMDD-HHMMSS-RAND4`) ยาวเกินไปจนตัดตกบรรทัดในตารางรายการบิล (/billing)
+       วิธีแก้: ปรับปรุง `usePosState.js`, `usePosActions.js` และ `billingTransactionService.js` ให้สร้างรหัสบิลร่างเป็นเลข 4 หลักสั้นกระชับ (`DH-TEMP-XXXX`) อ่านง่ายและไม่ล้นตาราง [สถานะ: ส่งมอบแล้ว]
     25. ปัญหา: ระบบอัปโหลดสลิปใน `usePosActions.js` มีการเขียนโค้ดซ้ำซ้อนในตัวเองและไม่เชื่อมกับ Cloud Functions OCR และ Google Drive Backup
        วิธีแก้: ปรับให้ `usePosActions.js` เรียกใช้ Service กลาง `slipStorageService` จาก `src/firebase/slipStorageService.js` โดยตรง พร้อมส่ง `remainingToPay` ป้องกัน ReferenceError และรองรับทั้งการย่อขนาดภาพ WebP, สำรองสลิปไป Drive และตรวจสอบยอดผ่าน OCR [สถานะ: ส่งมอบแล้ว]
     26. ปัญหา: ชื่อรุ่นสินค้าบนกระดาษพิมพ์ใบเสร็จ A5 ถูกตัดทิ้งด้วย `...` ทำให้อ่านชื่อรุ่นบนกระดาษพิมพ์จริงไม่ครบถ้วน
@@ -106,6 +106,10 @@
        วิธีแก้: ปรับปุ่มเปิดบิลใหม่ใน `PosHeader.jsx` ให้เรียก `createNewTab()` (ซึ่งคือ `handleCreateNewTab` จาก `PosSystem.jsx`) โดยตรง ไม่เรียก `setCartTabs([...safeCartTabs, newTab])` ซ้ำซ้อน, แก้ `index` เป็น `idx` ตอนแจ้งเตือนปิดแท็บ และเพิ่มตัวกรอง `t && typeof t === 'object' && t.id` ใน `usePosState.js` และ `staffPosDraftService.js` เพื่อล้างค่าเสียใน LocalStorage อัตโนมัติ [สถานะ: ส่งมอบแล้ว]
     30. ปัญหา: กดบันทึกบิลร่างลูกค้าใหม่แล้วขึ้น `ReferenceError: customerUid is not defined` ที่ `billingTransactionService.js` และป้าย `ใกล้เคียง`/`คงเหลือ` ใน Dropdown ค้นหาสินค้า (`SearchArea.jsx`) บี้หักบรรทัดเมื่อเจอชื่อรุ่นยาวๆ
        วิธีแก้: ประกาศ `customerUid` ไว้ชั้นนอกของ `createOrder` ใน `billingTransactionService.js` (รองรับทั้ง `.uid` และ `.id`), ปรับกล่องรายการค้นหาใน `SearchArea.jsx` ให้ฝั่งซ้ายใช้ `min-w-0 flex-1` + `line-clamp-2` และฝั่งขวา/ป้ายสถานะใส่ `shrink-0 whitespace-nowrap` พร้อมกรองค่าขยะขีด `-` ของ `contactName` ใน `ActiveCustomerCard.jsx` [สถานะ: ส่งมอบแล้ว]
+    31. ปัญหา: บิลร่าง (`DH-TEMP-...`) ที่กดบันทึกร่างจาก POS แสดงสถานะในตารางเป็น "รอดำเนินการ" แทนที่จะเป็น "ฉบับร่าง (Draft)" และเสี่ยงถูก Auto-Cleanup ยกเลิกทิ้งหลัง 24 ชม.
+        วิธีแก้: ปรับ `usePosActions.js` ให้ส่ง `orderStatus: 'Draft'`, `status: 'Draft'`, `isDraft: true` เมื่อกดบันทึกร่าง, ปรับ `OrderTableRow.jsx` และ `OrderDetailModal.jsx` ให้ตรวจจับทั้งสถานะ `draft` และรหัส `DH-TEMP-` เพื่อแสดงป้าย "ฉบับร่าง (Draft)" และเพิ่ม Guard ใน `useAutoCleanup.js` ไม่ให้ยกเลิกบิลร่างอัตโนมัติ [สถานะ: ส่งมอบแล้ว]
+    32. ปัญหา: กด "แก้ไขบิล" จาก OrderDetailModal แล้วไม่เปิดแท็บของบิลนั้น และเกิดอาการเบราว์เซอร์ค้าง (หน้าไม่ตอบสนอง / Infinite Loop)
+        วิธีแก้: ปรับปรุง `usePosState.js` ให้ค้นหาแท็บเดิมด้วย `orderId` หรือ `docId` และล็อก `activeTabId` ให้ตรงกับ `tab.id` ตัวจริงของแท็บนั้นเสมอ พร้อมย้าย `setActiveTabId` ออกนอก updater ของ `setCartTabs`, เติม `onDraftHandled` เคลียร์ `draftOrder` ใน `BillingMain.jsx` และครอบ `useCallback` ให้กับ `applyPromotionLogic` ใน `usePosActions.js` เพื่อตัดวงจร Infinite Re-render Loop สมบูรณ์ [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

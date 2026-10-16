@@ -123,7 +123,7 @@ export const usePromotionLogic = (
         activeTab?.autoPromoEnabled, 
         activeTab?.appliedPromoId, 
         activeTab?.promoDiscount, 
-        activeTab?.appliedPromoDetails,
+        activeTab?.appliedPromoDetails?.id,
         activeTab?.items, 
         activeTab?.customer, 
         activeTab?.priceMode, 
