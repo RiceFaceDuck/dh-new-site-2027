@@ -112,34 +112,21 @@ export default function AdApprovalCard({ todo, isProcessing, isManagerTab, urgen
 
       {/* Action Buttons */}
       <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-2">
-        {isManagerTab ? (
-          <>
-            <button 
-              onClick={() => handleAction(todo.id, 'approve', todo.type, todo.payload || todo)}
-              disabled={isProcessing}
-              className="flex-1 flex justify-center items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Check size={16} strokeWidth={3} /> อนุมัติโฆษณา
-            </button>
-            <button 
-              onClick={handleRejectClick}
-              disabled={isProcessing}
-              className="flex justify-center items-center gap-2 bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 px-4 py-2.5 rounded-xl transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
-              title="ปฏิเสธคำขอ"
-            >
-              <X size={18} strokeWidth={2.5} />
-            </button>
-          </>
-        ) : (
-          <button 
-            onClick={handleRejectClick}
-            disabled={isProcessing}
-            className="flex-1 flex justify-center items-center gap-2 bg-white border-2 border-slate-100 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 px-4 py-2.5 rounded-xl transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
-            title="ยกเลิกงานนี้"
-          >
-            <X size={18} strokeWidth={2.5} /> ยกเลิกคำขอ
-          </button>
-        )}
+        <button 
+          onClick={() => handleAction(todo.id, 'approve', todo.type, todo.payload || todo)}
+          disabled={isProcessing}
+          className="flex-1 flex justify-center items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <Check size={16} strokeWidth={3} /> อนุมัติโฆษณา
+        </button>
+        <button 
+          onClick={handleRejectClick}
+          disabled={isProcessing}
+          className="flex justify-center items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          title="ปฏิเสธคำขอและระบุเหตุผล"
+        >
+          <X size={16} strokeWidth={2.5} /> ปฏิเสธ
+        </button>
       </div>
     </div>
   );

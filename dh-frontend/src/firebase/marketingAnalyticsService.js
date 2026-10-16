@@ -1,8 +1,6 @@
 /* eslint-disable */
-import { db } from './config';
-import { doc, getDoc, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
-import { deductPartnerCredit, getCreditSettings } from './creditService';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { analytics } from './config';
+import { logEvent } from 'firebase/analytics';
 
 // ==========================================
 // 🧠 SMART CACHE & ANTI-FRAUD BUFFER SYSTEM
@@ -11,164 +9,75 @@ export let adStatsBuffer = {};
 export let flushInterval = null;
 
 const checkAntiFraud = (actionType, adId) => {
-  const sessionKey = `dh_ad_${actionType}_${adId}`;
-  const lastAction = sessionStorage.getItem(sessionKey);
-  const now = Date.now();
-  if (lastAction && (now - parseInt(lastAction)) < 300000) return false; 
-  sessionStorage.setItem(sessionKey, now.toString());
+  if (typeof window === "undefined" || !window.sessionStorage) return true;
+  try {
+    const sessionKey = `dh_ad_${actionType}_${adId}`;
+    const lastAction = sessionStorage.getItem(sessionKey);
+    const now = Date.now();
+    if (lastAction && (now - parseInt(lastAction, 10)) < 300000) return false; 
+    sessionStorage.setItem(sessionKey, now.toString());
+  } catch (e) {
+    // SessionStorage disabled or restricted
+  }
   return true; 
 };
 
-// 🚀 อัปเกรดขั้นสุด: ยิงยอดวิว + หักเครดิต + เช็คงบประมาณ ใน Batch เดียว!
-export const flushAdStatsBatch = async () => {
-  if (Object.keys(adStatsBuffer).length === 0) {
-    if (flushInterval) {
-      clearInterval(flushInterval);
-      flushInterval = null;
-    }
-    return;
-  }
-  const statsToProcess = { ...adStatsBuffer };
-  adStatsBuffer = {}; 
-
-  try {
-    const batch = writeBatch(db);
-    let hasUpdates = false;
-
-    for (const collectionName in statsToProcess) {
-      for (const adId in statsToProcess[collectionName]) {
-        const stats = statsToProcess[collectionName][adId];
-        if (stats.views > 0 || stats.clicks > 0) {
-          const adRef = doc(db, getCollectionPath(collectionName), adId);
-          
-          // 🔍 ดึงข้อมูลโฆษณามาเช็คสถานะการเงิน (Real-time Validation)
-          const adSnap = await getDoc(adRef);
-          
-          if (adSnap.exists()) {
-            const adData = adSnap.data();
-            const updateData = {};
-            if (stats.views > 0) updateData['stats.views'] = increment(stats.views);
-            if (stats.clicks > 0) updateData['stats.clicks'] = increment(stats.clicks);
-
-            // 💰 ดึง Credit Config เพื่อคำนวณหักเงิน
-            const config = await getCreditSettings();
-            const adImpressionCost = config?.adImpressionCost || 5; 
-            const adClickCost = config?.adClickCost || 2;
-
-            let costToDeduct = 0;
-            
-            // 💸 คิดค่าคลิก
-            if (stats.clicks > 0) {
-              costToDeduct += (stats.clicks * adClickCost);
-            }
-
-            // 💸 คิดค่ามองเห็น (100 Views = adImpressionCost)
-            if (stats.views > 0) {
-              const currentUnbilled = adData.unbilledImpressions || 0;
-              const newUnbilled = currentUnbilled + stats.views;
-              
-              if (newUnbilled >= 100) {
-                 const batchesToCharge = Math.floor(newUnbilled / 100);
-                 costToDeduct += (batchesToCharge * adImpressionCost);
-                 updateData['unbilledImpressions'] = newUnbilled - (batchesToCharge * 100);
-              } else {
-                 updateData['unbilledImpressions'] = newUnbilled;
-              }
-            }
-
-            // 🛑 [THE FIX Checksum]: อัปเดตยอดแต้มที่ใช้จริง (spentBudget) และเช็คเพดานงบแต้มอย่างถูกต้อง
-            const currentSpent = Number(adData.spentBudget || 0);
-            const newSpent = currentSpent + costToDeduct;
-            updateData['spentBudget'] = newSpent;
-
-            if (adData.creditLimit !== -1 && adData.creditLimit > 0) {
-               if (newSpent >= adData.creditLimit) {
-                  updateData['status'] = 'COMPLETED'; // ตัดจบแคมเปญเมื่อแต้มที่ใช้ถึงเพดาน
-                  updateData['isActive'] = false;
-               }
-            }
-
-            batch.update(adRef, updateData);
-            // 🚀 Dual-Write Sync: ซิงค์กลับ partner_ads เฉพาะกรณีที่เป็น legacy collection
-            if (collectionName !== 'partner_ads') {
-               const masterRef = doc(db, getCollectionPath('partner_ads'), adId);
-               batch.set(masterRef, updateData, { merge: true });
-            }
-            hasUpdates = true;
-
-            // 💸 หักเครดิตจากกระเป๋าเจ้าของ
-            if (adData.ownerId && costToDeduct > 0) {
-               await deductPartnerCredit(adData.ownerId, costToDeduct, 'ad_campaign');
-            }
-          }
-        }
-      }
-    }
-    if (hasUpdates) {
-      await batch.commit();
-      console.log("✅ [Marketing] Ads stats flushed & credits deducted perfectly.");
-    }
-  } catch (error) {
-    const errMsg = String(error?.code || error?.message || '').toLowerCase();
-    const isPermissionError = errMsg.includes('permission') || errMsg.includes('unauthorized') || errMsg.includes('forbidden');
-
-    if (isPermissionError) {
-      console.warn("🛡️ [Marketing] Anonymous client not authorized for direct ad stats writes. Discarding buffer to prevent infinite loop retry.");
-      if (flushInterval) {
-        clearInterval(flushInterval);
-        flushInterval = null;
-      }
-      return;
-    }
-
-    console.error("🔥 [Marketing] Error flushing ad stats:", error);
-    // คืนค่าเข้า Buffer หากพังจาก network ชั่วคราว
-    for (const col in statsToProcess) {
-      if (!adStatsBuffer[col]) adStatsBuffer[col] = {};
-      for (const id in statsToProcess[col]) {
-        if (!adStatsBuffer[col][id]) adStatsBuffer[col][id] = { views: 0, clicks: 0 };
-        adStatsBuffer[col][id].views += statsToProcess[col][id].views;
-        adStatsBuffer[col][id].clicks += statsToProcess[col][id].clicks;
-      }
-    }
-  }
-};
-
-const startFlushInterval = () => {
-  if (!flushInterval) flushInterval = setInterval(flushAdStatsBatch, 15000);
-};
-
-if (typeof window !== "undefined") {
-  window.addEventListener('beforeunload', flushAdStatsBatch);
-}
-
-export const trackAdView = async (collectionName, adId) => {
+/**
+ * 📊 ส่ง Telemetry ไปยัง Google Analytics 4 (GA4) โดยตรง
+ * ตัดการเขียน Firestore ตรงจาก Client ฝั่งหน้าบ้าน เพื่อความปลอดภัย ป้องกัน Quota รั่ว และป้องกัน Permission Denied
+ */
+export const trackAdView = async (collectionName, adId, meta = {}) => {
   if (!adId || !collectionName) return;
   if (!checkAntiFraud('view', adId)) return;
-  if (!adStatsBuffer[collectionName]) adStatsBuffer[collectionName] = {};
-  if (!adStatsBuffer[collectionName][adId]) adStatsBuffer[collectionName][adId] = { views: 0, clicks: 0 };
-  adStatsBuffer[collectionName][adId].views += 1;
-  startFlushInterval(); 
+
+  try {
+    if (analytics) {
+      logEvent(analytics, 'ad_impression', {
+        ad_id: String(adId),
+        ad_collection: String(collectionName),
+        ad_type: meta?.type || 'unknown',
+        owner_id: meta?.ownerId || 'unknown'
+      });
+    }
+  } catch (err) {
+    // AdBlocker / Offline safe
+  }
 };
 
-export const trackAdClick = async (collectionName, adId) => {
+export const trackAdClick = async (collectionName, adId, meta = {}) => {
   if (!adId || !collectionName) return;
   if (!checkAntiFraud('click', adId)) return;
-  if (!adStatsBuffer[collectionName]) adStatsBuffer[collectionName] = {};
-  if (!adStatsBuffer[collectionName][adId]) adStatsBuffer[collectionName][adId] = { views: 0, clicks: 0 };
-  adStatsBuffer[collectionName][adId].clicks += 1;
-  startFlushInterval();
-  flushAdStatsBatch();
+
+  try {
+    if (analytics) {
+      logEvent(analytics, 'ad_click', {
+        ad_id: String(adId),
+        ad_collection: String(collectionName),
+        ad_type: meta?.type || 'unknown',
+        owner_id: meta?.ownerId || 'unknown',
+        target_url: meta?.targetUrl || ''
+      });
+    }
+  } catch (err) {
+    // AdBlocker / Offline safe
+  }
 };
 
-export const logImpression = async (adId) => {
+export const logImpression = async (adId, meta = {}) => {
   if (!adId) return;
-  // 🚀 SSOT: ชี้เป้า partner_ads เป็น Single Source of Truth
-  return trackAdView('partner_ads', adId);
+  return trackAdView('partner_ads', adId, meta);
 };
 
-export const logClick = async (adId) => {
+export const logClick = async (adId, meta = {}) => {
   if (!adId) return;
-  // 🚀 SSOT: ชี้เป้า partner_ads เป็น Single Source of Truth
-  return trackAdClick('partner_ads', adId);
+  return trackAdClick('partner_ads', adId, meta);
+};
+
+// 🛡️ Backward Compatible dummy for any external callers
+export const flushAdStatsBatch = async () => {
+  adStatsBuffer = {};
+  if (flushInterval) {
+    clearInterval(flushInterval);
+    flushInterval = null;
+  }
 };

@@ -79,9 +79,10 @@ export const storeProfileSubmitService = {
            googleMapLink: finalStoreData.googleMapLink || '',
            latitude: Number(finalStoreData.latitude), 
            longitude: Number(finalStoreData.longitude), 
-           status: 'PENDING', 
+           status: 'pending', 
            isActive: false, // ปิดการแสดงผลจนกว่าจะอนุมัติ
            creditLimit: -1, 
+           createdAt: businessCardAd?.createdAt || serverTimestamp(),
            updatedAt: serverTimestamp()
         };
 

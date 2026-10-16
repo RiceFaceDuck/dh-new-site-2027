@@ -1,4 +1,4 @@
-import { db } from './config';
+import { db, auth } from './config';
 import { 
   collection, doc, getDocs, getDoc, query, where, 
   serverTimestamp, writeBatch, limit, updateDoc, deleteDoc, setDoc 
@@ -55,13 +55,23 @@ export const marketingService = {
 
       // 🛡️ Credit Point Protection: ไม่เรียก/ไม่นำส่งโฆษณาจาก Account ที่ credit point เหลือ 0
       const validAds = [];
+      const currentUid = auth.currentUser?.uid;
+
       for (const ad of adsList) {
+        // 1. กรองจากสถานะบนตัวเอกสารโฆษณาโดยตรงก่อน (0 Read Quota)
+        if (ad.status === 'OUT_OF_CREDIT' || ad.isActive === false) {
+          continue;
+        }
+        if (ad.creditPoints !== undefined && Number(ad.creditPoints) <= 0) {
+          continue;
+        }
+
         if (!ad.ownerId) {
           validAds.push(ad);
           continue;
         }
 
-        // ตรวจสอบจาก Cache ก่อน (0 Read Quota Shield)
+        // 2. ตรวจสอบจาก Cache ก่อน (0 Read Quota Shield)
         const cachedUser = userProfileCache.getProfile(ad.ownerId);
         if (cachedUser) {
           if (Number(cachedUser.creditPoints || 0) <= 0) {
@@ -71,19 +81,22 @@ export const marketingService = {
           continue;
         }
 
-        // ถ้าไม่มีในแคช ดึงตรวจตรงจาก Firestore
-        try {
-          const userRef = doc(db, getCollectionPath('users'), ad.ownerId);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
-            userProfileCache.setProfile(ad.ownerId, userData);
-            if (Number(userData.creditPoints || 0) <= 0) {
-              continue; // ข้าม ไม่แสดงโฆษณา
+        // 3. 🛡️ Permission Guard: ถ้าเป็นเจ้าของบัญชีตัวเอง สามารถอ่านเพื่ออัปเดตแคชได้
+        // แต่ถ้าเป็นผู้เข้าชมทั่วไป (Guest) ห้ามยิงอ่าน users/{ownerId} เพราะจะติด Rule Permission Denied 30 ครั้ง
+        if (currentUid && currentUid === ad.ownerId) {
+          try {
+            const userRef = doc(db, getCollectionPath('users'), ad.ownerId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+              userProfileCache.setProfile(ad.ownerId, userData);
+              if (Number(userData.creditPoints || 0) <= 0) {
+                continue; // ข้าม ไม่แสดงโฆษณา
+              }
             }
+          } catch (e) {
+            // ปล่อยผ่านอย่างปลอดภัย
           }
-        } catch (e) {
-          console.warn(`[MarketingService] Could not check credit for owner ${ad.ownerId}:`, e);
         }
 
         validAds.push(ad);

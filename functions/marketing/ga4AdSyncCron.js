@@ -104,10 +104,18 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
         const settingsRef = db.collection("settings").doc("credit_config");
         const settingsSnap = await transaction.get(settingsRef);
 
+        const currentPoints = Number(userData.creditPoints || 0);
         const newSpent = (Number(freshAd.spentBudget || 0)) + totalDeduct;
         let isExhausted = false;
 
+        // 1. ตรวจสอบเพดานงบประมาณของแคมเปญโฆษณา
         if (creditLimit > 0 && newSpent >= creditLimit) {
+          isExhausted = true;
+        }
+
+        // 2. 🛡️ Financial Shield: ตรวจสอบกระเป๋าเงินรวมของเจ้าของโฆษณา หากแต้มหมด (<= 0) ให้ระงับทันที
+        // ปิดช่องโหว่รันโฆษณาฟรีเมื่อเจ้าของบัญชีแต้มหมด แม้ว่า creditLimit จะตั้งเป็น -1 (ไม่จำกัด) ก็ตาม
+        if (currentPoints <= 0 || (currentPoints - totalDeduct) <= 0) {
           isExhausted = true;
         }
 
@@ -132,6 +140,10 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
         } else if (freshAd.type === "PRODUCT_LINK") {
           const skuRef = db.collection("user_sku_ads").doc(adId);
           transaction.set(skuRef, adUpdate, { merge: true });
+        } else if (freshAd.type === "BUSINESS_CARD" && isExhausted) {
+          // หากเป็นนามบัตรร้านแล้วแต้มหมด ให้ปิดการแสดงผลใน ActivePartners ด้วย
+          const partnerRef = db.collection("ActivePartners").doc(ownerId);
+          transaction.set(partnerRef, { isActive: false, status: "OUT_OF_CREDIT", updatedAt: FieldValue.serverTimestamp() }, { merge: true });
         }
 
         // ตัดยอดจาก creditPoints ของผู้ใช้ และซิงค์ totalAllocated ใน ledger

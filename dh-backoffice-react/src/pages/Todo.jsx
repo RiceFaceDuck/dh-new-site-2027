@@ -71,7 +71,7 @@ export default function Todo() {
            await claimService.rejectRequest(fullTask, payload.reason || 'ปฏิเสธโดยแอดมิน', auth.currentUser.uid);
         } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(actionType)) {
            const { managerActionService } = await import('../firebase/managerActionService');
-           const result = await managerActionService.handleReject(taskId, actionType, payload, fullTask, payload.reason || 'ข้อมูลไม่ผ่านเกณฑ์', auth.currentUser.uid);
+           const result = await managerActionService.handleRejection(taskId, actionType, payload, fullTask, auth.currentUser.uid, payload.reason || 'ข้อมูลไม่ผ่านเกณฑ์');
            if (result.success) {
              toast.success("ปฏิเสธคำขอเรียบร้อยแล้ว");
            }
@@ -130,15 +130,16 @@ export default function Todo() {
   };
 
   const filteredTodos = activeTodos.filter(todo => {
-    const managerTypes = ['USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'];
-    if (managerTypes.includes(todo.type)) return false;
+    const adTypes = ['AD_APPROVAL', 'BUSINESS_CARD_AD_APPROVAL', 'APPROVE_PARTNER_AD', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_BILLBOARD_AD'];
+    const restrictedManagerTypes = ['PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'];
+    if (restrictedManagerTypes.includes(todo.type)) return false;
 
     if (filterType === 'ALL') return true;
     if (filterType === 'TAX_INVOICE') return todo.type === 'issue_tax_invoice';
     if (filterType === 'PAYMENT') return todo.type === 'verify_slip';
     if (filterType === 'CLAIM') return ['CLAIM_APPROVAL', 'RETURN_APPROVAL'].includes(todo.type) || todo.type?.startsWith('CANCEL_');
     if (filterType === 'WHOLESALE') return ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(todo.type);
-    if (filterType === 'STORE_ADS') return ['AD_APPROVAL', 'BUSINESS_CARD_AD_APPROVAL', 'APPROVE_PARTNER_AD'].includes(todo.type);
+    if (filterType === 'STORE_ADS') return adTypes.includes(todo.type);
     if (filterType === 'MANUAL') return todo.type === 'MANUAL';
     
     return true;

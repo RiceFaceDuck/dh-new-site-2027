@@ -23,7 +23,7 @@ const ProductAdCard = ({ ad }) => {
       (entries) => {
         if (entries[0].isIntersecting) {
           const collectionName = ad._collection || (ad.type === 'PRODUCT_LINK' ? 'user_sku_ads' : 'partner_ads');
-          marketingService.trackAdView(collectionName, ad.id);
+          marketingService.trackAdView(collectionName, ad.id, ad);
           setHasTrackedView(true);
           observer.disconnect(); 
         }
@@ -50,7 +50,7 @@ const ProductAdCard = ({ ad }) => {
 
     if (ad?.id && ad.id !== 'preview-mode') {
       const collectionName = ad._collection || (ad.type === 'PRODUCT_LINK' ? 'user_sku_ads' : 'partner_ads');
-      marketingService.trackAdClick(collectionName, ad.id);
+      marketingService.trackAdClick(collectionName, ad.id, ad);
     }
 
     if (ad?.id === 'preview-mode') {
@@ -60,9 +60,8 @@ const ProductAdCard = ({ ad }) => {
 
     if (ad?.type === 'BUSINESS_CARD') {
        navigate(`/store/${ad.ownerId || ad.partnerId || 'unknown'}`);
-    } else if (ad?.type === 'PRODUCT_LINK') {
-       if (ad.targetUrl) openLink(ad.targetUrl);
-       navigate(`/ad/product/${ad.id}`);
+    } else if (ad?.targetUrl) {
+       openLink(ad.targetUrl);
     } else {
        setIsModalOpen(true);
     }

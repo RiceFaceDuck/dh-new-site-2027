@@ -36,7 +36,7 @@ export const useAdManager = (user) => {
 
   const [formData, setFormData] = useState({
     type: 'PRODUCT_LINK', title: '', description: '', imageUrl: '', targetUrl: '', platform: 'other', 
-    billboardRatio: '16:9', price: ''
+    billboardRatio: '1:1', price: ''
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -164,7 +164,7 @@ export const useAdManager = (user) => {
     setIsFormOpen(false);
     setIsEditMode(false);
     setEditingAdId(null);
-    setFormData({ type: 'PRODUCT_LINK', title: '', description: '', richDescription: '', imageUrl: '', targetUrl: '', platform: 'other', billboardRatio: '16:9', price: '' });
+    setFormData({ type: 'PRODUCT_LINK', title: '', description: '', richDescription: '', imageUrl: '', targetUrl: '', platform: 'other', billboardRatio: '1:1', price: '' });
   };
 
   const handleSubmitAd = async (e) => {

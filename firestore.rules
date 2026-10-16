@@ -411,16 +411,12 @@ service cloud.firestore {
           'WALLET_WITHDRAWAL', 'LEAVE_APPROVAL'
         ])
       )) || (isAuthenticated() && (
-        resource == null ||
         resource.data.createdByUid == request.auth.uid || 
         resource.data.createdBy == request.auth.uid || 
         resource.data.customerUid == request.auth.uid || 
         resource.data.uid == request.auth.uid ||
         resource.data.userId == request.auth.uid ||
-        resource.data.partnerId == request.auth.uid ||
-        request.resource.data.createdBy == request.auth.uid ||
-        request.resource.data.userId == request.auth.uid ||
-        request.resource.data.partnerId == request.auth.uid
+        resource.data.partnerId == request.auth.uid
       ) && (
         // 🚀 THE FIX: กรณีคำร้องโฆษณา/นามบัตร พาร์ทเนอร์แก้ไขรายละเอียดเพื่อส่งตรวจใหม่ได้ โดยสถานะต้องคงเป็น pending
         (
@@ -432,7 +428,6 @@ service cloud.firestore {
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'type', 'amount', 'completedAt', 'title', 'description', 'taskType'])
       ));
       allow delete: if isStaff() || (isAuthenticated() && (
-        resource == null ||
         resource.data.createdByUid == request.auth.uid || 
         resource.data.createdBy == request.auth.uid ||
         resource.data.partnerId == request.auth.uid
@@ -635,7 +630,10 @@ service cloud.firestore {
     }
     match /ActivePartners/{partnerId} {
       allow read: if true;
-      allow create, update: if isManagerOrAdmin();
+      allow create: if isManagerOrAdmin();
+      allow update: if isManagerOrAdmin() || (
+        isStaff() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points', 'updatedAt'])
+      );
       allow delete: if isManagerOrAdmin() || (isAuthenticated() && request.auth.uid == partnerId);
     }
     match /promotions/{promoId} {

@@ -42,28 +42,24 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
         if (ratio > 0) setDisplayRatio(ratio);
       }
 
-      // 📥 2. ดึงข้อมูลโฆษณา 2 ประเภท (นามบัตร และ ลิงก์สินค้า) พร้อมกัน
-      // หมายเหตุ: BILLBOARD ไม่นำมาแทรกในนี้ เพราะขนาดและสัดส่วน (16:9) ไม่เข้ากับ Grid สินค้า
-      const [businessCards, productLinks] = await Promise.all([
+      // 📥 2. ดึงข้อมูลโฆษณา 3 ประเภท (นามบัตร, ลิงก์สินค้า, และแผ่นป้าย) พร้อมกัน
+      const [businessCards, productLinks, billboards] = await Promise.all([
         marketingService.getActivePartnerAds('BUSINESS_CARD'),
-        marketingService.getActivePartnerAds('PRODUCT_LINK')
+        marketingService.getActivePartnerAds('PRODUCT_LINK'),
+        marketingService.getActivePartnerAds('BILLBOARD')
       ]);
 
-      // 🌟 ร้านยอดนิยม: จัดลำดับนามบัตรร้านช่างตามคะแนนความนิยม (Points / Views สูงสุดขึ้นก่อน)
-      // เพื่อให้โซนสินค้าที่เกี่ยวข้องและกริดสินค้าแสดง "ร้านยอดนิยม" เป็นอันดับแรก
-      const sortedBusinessCards = [...businessCards].sort((a, b) => {
-        const scoreA = Number(a.points || a.creditPoints || a.viewsCount || 0);
-        const scoreB = Number(b.points || b.creditPoints || b.viewsCount || 0);
-        return scoreB - scoreA;
-      });
+      // 🎯 กรองเฉพาะแผ่นป้ายสัดส่วน 1:1 (Square) เพื่อให้เข้ากับ Grid สินค้า
+      const squareBillboards = (billboards || []).filter(
+        ad => ad.billboardRatio === '1:1' || !ad.billboardRatio
+      );
 
-      // 🔀 3. ให้ร้านยอดนิยมอันดับท็อปได้รับสิทธิ์แทรกในสล็อตแรกๆ ตามด้วยรายการสลับหมุนเวียน
-      const topBusinessCards = sortedBusinessCards.slice(0, 3);
-      const remainingBusinessCards = sortedBusinessCards.slice(3);
-      const combinedAds = [
-        ...topBusinessCards,
-        ...shuffleArray([...remainingBusinessCards, ...productLinks])
-      ].slice(0, adLimit);
+      // 🔀 3. รวมโฆษณาทุกประเภทเข้า Pool เดียวกัน และสับเปลี่ยนอย่างเป็นธรรม (Fair Shuffle)
+      const combinedAds = shuffleArray([
+        ...(businessCards || []),
+        ...(productLinks || []),
+        ...squareBillboards
+      ]).slice(0, adLimit);
 
       setAds(combinedAds);
 
@@ -83,7 +79,7 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
     return () => { isMounted = false; };
   }, [fetchAdsAndSettings]);
 
-  // 3. 🧠 สมองกลคำนวณการแทรกโฆษณาแบบสุ่มตำแหน่ง 100% (True Random Injection)
+  // 3. 🧠 สมองกลคำนวณการแทรกโฆษณาแบบสุ่มตำแหน่ง (Fair Injection Engine with Deduplication)
   const productsWithAds = useMemo(() => {
     if (!regularProducts || !Array.isArray(regularProducts)) return [];
     if (regularProducts.length === 0) return [];
@@ -93,34 +89,58 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
 
     const mergedList = [];
     let adIndex = 0;
+    const usedAdIds = new Set(); // 🛡️ Deduplication Guard: ป้องกันโฆษณาซ้ำซ้อนในกริดเดียวกัน
 
     // 🔄 หั่นสินค้าปกติเป็นกลุ่มๆ (Chunks) ตามอัตราส่วน displayRatio (เช่น กลุ่มละ 10 ชิ้น)
     for (let i = 0; i < regularProducts.length; i += displayRatio) {
       const chunk = regularProducts.slice(i, i + displayRatio);
       
-      // 🎲 สุ่มตำแหน่งที่จะแทรกโฆษณาภายในกลุ่ม ป้องกันไม่ให้บังสินค้าจริงชิ้นแรกสุด (Slot 0)
-      let randomInsertPos;
-      if (chunk.length <= 1) {
-        randomInsertPos = 0;
-      } else if (i === 0) {
-        // กลุ่มแรกสุด: แทรกที่ตำแหน่ง 1 ถึง chunk.length - 1 เพื่อให้สินค้าแนะนำตัวแรกเด่นชัด
-        randomInsertPos = 1 + ((chunk.length * 17 + 7) % (chunk.length - 1));
-      } else {
-        randomInsertPos = (i * 997 + chunk.length * 31) % chunk.length;
+      // ดึงโฆษณาถัดไปที่ยังไม่เคยถูกแทรกในรายการนี้
+      let nextAd = null;
+      while (adIndex < ads.length) {
+        const candidate = ads[adIndex];
+        adIndex++;
+        if (candidate && !usedAdIds.has(candidate.id)) {
+          usedAdIds.add(candidate.id);
+          nextAd = candidate;
+          break;
+        }
       }
 
+      // 🎲 สุ่มตำแหน่งแทรกภายในกลุ่ม โดยล็อกตำแหน่ง Slot 0 ต้องเป็นสินค้าของร้านเสมอ
+      let randomInsertPos = -1;
+      if (nextAd) {
+        if (i === 0) {
+          // กลุ่มแรกสุด: ห้ามแทรกที่ Slot 0 เด็ดขาด สุ่มแทรกที่ตำแหน่ง 1 ถึง chunk.length
+          randomInsertPos = chunk.length > 1 
+            ? 1 + ((chunk.length * 17 + 7) % (chunk.length - 1))
+            : 1;
+        } else {
+          randomInsertPos = (i * 997 + chunk.length * 31) % (chunk.length + 1);
+        }
+      }
+
+      let adInserted = false;
       for (let j = 0; j < chunk.length; j++) {
-        // เมื่อวนลูปถึงตำแหน่งที่สุ่มได้ ให้ยัดโฆษณาลงไป
-        if (j === randomInsertPos) {
+        // เมื่อวนลูปถึงตำแหน่งที่สุ่มได้ ให้แทรกโฆษณา
+        if (nextAd && !adInserted && j === randomInsertPos) {
           mergedList.push({ 
-            ...ads[adIndex % ads.length], // ใช้ Modulo (%) เพื่อหมุนวนเอาโฆษณากลับมาแสดงใหม่ หากโฆษณามีน้อยกว่าจำนวนสินค้า
+            ...nextAd,
             isSponsoredAd: true // ติด Tag ให้ Frontend รู้ว่าเป็นโฆษณา เพื่อเรียกใช้ UI เฉพาะ
           });
-          adIndex++;
+          adInserted = true;
         }
         
         // ตามด้วยยัดสินค้าปกติลงไป
         mergedList.push(chunk[j]);
+      }
+
+      // หากตำแหน่งสุ่มอยู่ท้ายสุดของ chunk และยังไม่ได้แทรก
+      if (nextAd && !adInserted) {
+        mergedList.push({
+          ...nextAd,
+          isSponsoredAd: true
+        });
       }
     }
 

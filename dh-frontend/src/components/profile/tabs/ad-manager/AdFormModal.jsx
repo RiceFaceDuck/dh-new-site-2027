@@ -106,13 +106,16 @@ const AdFormModal = ({
 
             {formData.type === 'BILLBOARD' && (
               <div>
-                 <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2.5">สัดส่วนภาพโฆษณา <span className="text-rose-500">*</span></label>
-                 <div className="flex gap-3">
-                    {[{ id: '16:9', label: 'แนวนอน', icon: <RectangleHorizontal size={20}/> }, { id: '1:1', label: 'จัตุรัส', icon: <Square size={20}/> }, { id: '9:16', label: 'แนวตั้ง', icon: <RectangleVertical size={20}/> }].map(ratio => (
-                      <button key={ratio.id} type="button" onClick={() => setFormData({...formData, billboardRatio: ratio.id})} className={`flex-1 py-3 flex flex-col items-center gap-1.5 rounded-md border ${formData.billboardRatio === ratio.id ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-400'}`}>
-                        {ratio.icon} <span className="text-[10px] font-bold">{ratio.label}</span>
-                      </button>
-                    ))}
+                 <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">สัดส่วนภาพโฆษณา <span className="text-rose-500">*</span></label>
+                 <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-md flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-rose-700">
+                      <Square size={20} className="text-rose-600" />
+                      <div>
+                        <p className="text-xs font-bold">สัดส่วน 1:1 (จัตุรัส / Square)</p>
+                        <p className="text-[10px] text-rose-600/80">ระบบกำหนดเป็นสัดส่วนจัตุรัสมาตรฐาน เพื่อนำไปสุ่มแสดงร่วมในกริดสินค้าหน้าแรก</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-rose-600 text-white rounded">มาตรฐาน 1:1</span>
                  </div>
               </div>
             )}

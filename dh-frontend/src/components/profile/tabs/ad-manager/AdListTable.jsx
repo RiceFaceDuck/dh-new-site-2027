@@ -84,6 +84,14 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
               </div>
             </div>
 
+            {/* 🛑 แสดงเหตุผลการปฏิเสธ (ถ้ามี) */}
+            {['REJECTED', 'rejected'].includes(String(ad.status)) && ad.rejectReason && (
+              <div className="text-[11px] text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1.5 rounded-md">
+                <span className="font-bold">เหตุผลปฏิเสธ: </span>
+                <span>{ad.rejectReason}</span>
+              </div>
+            )}
+
             {/* Stats Row: Views / Clicks / Limit */}
             <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-md border border-slate-200 text-center">
               <div>
@@ -183,6 +191,12 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
                       </a>
                     )}
                   </div>
+                  {['REJECTED', 'rejected'].includes(String(ad.status)) && ad.rejectReason && (
+                    <div className="mt-1.5 text-[10px] text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded flex items-center gap-1 max-w-sm">
+                      <span className="font-bold shrink-0">เหตุผล:</span>
+                      <span className="truncate" title={ad.rejectReason}>{ad.rejectReason}</span>
+                    </div>
+                  )}
                 </td>
                 <td className="p-4">{getStatusBadge(ad.status)}</td>
                 <td className="p-4 text-center">

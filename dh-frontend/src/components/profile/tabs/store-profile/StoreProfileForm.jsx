@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store } from 'lucide-react';
+import { Store, ShieldAlert } from 'lucide-react';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
@@ -84,6 +84,22 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           </label>
         </div>
       </div>
+
+      {/* 🛑 กล่องแจ้งเตือนเหตุผลการปฏิเสธจากผู้จัดการ */}
+      {businessCardAd?.status?.toUpperCase() === 'REJECTED' && (
+        <div className="mx-6 md:mx-8 mt-6 p-4 bg-rose-50 border border-rose-200 rounded-md flex items-start gap-3">
+          <div className="p-1.5 bg-rose-100 text-rose-600 rounded-md shrink-0 mt-0.5">
+            <ShieldAlert size={18} />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-xs font-black text-rose-800 uppercase tracking-wide">คำขอเปิดนามบัตรไม่ผ่านการอนุมัติ</h4>
+            <p className="text-xs text-rose-700 mt-1">
+              <b>เหตุผลจากผู้จัดการ:</b> {businessCardAd.rejectReason || 'ข้อมูลไม่ผ่านเกณฑ์การตรวจสอบ กรุณาตรวจสอบความถูกต้องของข้อมูลร้านและพิกัด'}
+            </p>
+            <p className="text-[11px] text-rose-600/80 mt-1">💡 ท่านสามารถแก้ไขข้อมูลร้านให้ถูกต้องด้านล่าง แล้วกด "บันทึกข้อมูลและส่งตรวจใหม่" ได้ทันที</p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSaveStore} className="p-6 md:p-8 space-y-10">
         
