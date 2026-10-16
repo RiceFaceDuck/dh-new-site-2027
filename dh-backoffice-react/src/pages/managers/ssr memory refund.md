@@ -44,6 +44,10 @@
 - ⚠️ Server Query & UX Empty State Polish (Phase 3):
   - ใน `useWalletManagement.js` เพิ่ม `orderBy('walletBalance', 'desc')` ใน Query ระดับ Firestore เพื่อให้แน่ใจว่าดึง 20 อันดับที่มียอดค้างสูงสุดจริงจาก Server
   - ใน `WalletDetailPanel.jsx` เพิ่ม Empty State Card ที่สวยงามพร้อมคำแนะนำเมื่อยังไม่มีการเลือกลูกค้า ขจัดพื้นที่ว่างเปล่าฝั่งขวา
-  - ใน `RefundManagement.jsx` เปลี่ยนฟังก์ชัน `copyAllPhones` จาก native `alert()` เป็น `showNotification()` Toast มาตรฐาน
+  - ใน `RefundManagement.jsx` ถอนปุ่ม "คัดลอกเบอร์โทร" ออกทั้งหมดเนื่องจากไม่มีการใช้งานจริงและสร้างความสับสน
+- ⚠️ UI Corner Radius 0.1rem & Spacing Compactness (Phase 4):
+  - ปรับความโค้งมนของกล่อง แผง และอินพุตทั้งหมดเป็น `rounded-[0.1rem]` ให้เข้ากับสไตล์มินิมอลตามดีไซน์ของระบบ
+  - **ยกเว้นปุ่ม Action ต่างๆ (เช่น เติมเงิน, จ่ายคืนเป็นเงินสด, ยึดเงิน, ค้นหา, อนุมัติ/ปฏิเสธ) ให้คงความโค้งมนเดิม (`rounded-xl` / `rounded-lg`) ไว้ 100%**
+  - กระชับระยะห่าง (gap, padding, margin) ให้ลดลงอย่างสมดุล (เช่น `gap-2`, `mt-2`, `p-2 lg:p-2.5`) ทำให้แสดงผลได้แน่นและดูสะอาดตาขึ้น
 </pitfalls_and_lessons>
 </grimoire>
