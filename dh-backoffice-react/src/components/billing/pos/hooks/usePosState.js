@@ -8,6 +8,7 @@ import { usePosCart } from './usePosCart';
 import { usePosCustomer } from './usePosCustomer';
 import { usePosPayment } from './usePosPayment';
 import { auth } from '../../../../firebase/config';
+import { useAuth } from '../../../../contexts/AuthContext';
 import { staffPosDraftService, filterValidDraftTabs } from '../../../../firebase/staffPosDraftService';
 
 import { safeJsonParse } from 'dh-shared';
@@ -49,6 +50,7 @@ const loadSavedState = (targetUid) => {
 };
 
 export default function usePosState(products, customers, initialDraft, onDraftHandled) {
+    const { profile } = useAuth();
     const [cartTabs, setCartTabs] = useState(() => loadSavedState());
     const [activeTabId, setActiveTabId] = useState(() => {
         const state = loadSavedState();
@@ -134,8 +136,8 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
 
         // 👤 ดักจับชื่อเจ้าหน้าที่คนแรกที่เปิดบิล (First-Touch Staff Ownership)
         const currentStaffUser = auth?.currentUser;
-        const currentStaffUid = currentStaffUser?.uid || null;
-        const currentStaffName = currentStaffUser?.displayName || currentStaffUser?.email?.split('@')[0] || 'พนักงาน';
+        const currentStaffUid = currentStaffUser?.uid || profile?.uid || null;
+        const currentStaffName = profile?.nickname || profile?.displayName || currentStaffUser?.displayName || currentStaffUser?.email?.split('@')[0] || 'พนักงาน';
 
         if (isWebOrder && !initialDraft.staffNickname && currentStaffUid) {
             const targetOrderId = draftDocId || draftOrderId;

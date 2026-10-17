@@ -141,8 +141,8 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         <User size={12} className="text-slate-500"/>
                     </div>
                     {isWebOrder && !order.staffNickname ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-sm border border-amber-300">
-                            ยังไม่มีผู้รับ
+                        <span className="text-orange-500 dark:text-orange-400 font-black text-xs tracking-wide">
+                            ยังไม่ตรวจสอบ
                         </span>
                     ) : (
                         <span className="truncate max-w-[110px]" title={order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}>

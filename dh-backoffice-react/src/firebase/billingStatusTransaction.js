@@ -352,20 +352,46 @@ export const billingStatusTransaction = {
   },
 
   assignStaffHandler: async (orderId, staffUid, staffNickname) => {
-    if (!orderId || !staffUid) return;
+    if (!orderId || !staffUid) return null;
     try {
-      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
       const docRef = doc(db, COLLECTION_NAME, orderId);
-      await updateDoc(docRef, {
-        staffUid,
-        staffNickname,
-        openedBy: staffUid,
-        openedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+      const assignedResult = await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(docRef);
+        if (!snap.exists()) return null;
+        const data = snap.data();
+
+        // 🔒 First-Touch Guard: หากมีเจ้าหน้าที่รับผิดชอบอยู่แล้ว ให้คงคนแรกไว้ ไม่เขียนทับ
+        if (data.openedBy || data.staffNickname) {
+          return {
+            assigned: false,
+            staffUid: data.staffUid || data.openedBy,
+            staffNickname: data.staffNickname
+          };
+        }
+
+        const effectiveNickname = staffNickname || 'พนักงาน';
+        transaction.update(docRef, {
+          staffUid,
+          staffNickname: effectiveNickname,
+          openedBy: staffUid,
+          openedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        return {
+          assigned: true,
+          staffUid,
+          staffNickname: effectiveNickname
+        };
       });
-      syncRecentOrdersCatalog().catch(() => {});
+
+      if (assignedResult?.assigned) {
+        syncRecentOrdersCatalog().catch(() => {});
+      }
+      return assignedResult;
     } catch (e) {
       console.warn("⚠️ [assignStaffHandler] Error assigning staff:", e);
+      return null;
     }
   }
 };

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Receipt, Copy, Clock, MapPin, Phone, User, CalendarDays, Loader2, CheckCircle, Package } from 'lucide-react';
 import OrderSummary from './OrderSummary';
 import OrderActions from './OrderActions';
 import OrderHistoryTab from './OrderHistoryTab';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
 import { auth } from '../../../firebase/config';
+import { useAuth } from '../../../contexts/AuthContext';
 
 import toast from 'react-hot-toast';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
@@ -21,11 +22,30 @@ export default function OrderDetailModal(props) {
         handleCloseModal,
         setActiveTab
     } = props;
+    const { profile } = useAuth();
     const [trackingInput, setTrackingInput] = useState(selectedOrder?.trackingNumber || '');
     const [courierInput, setCourierInput] = useState(selectedOrder?.shippingMethod || selectedOrder?.courier || '');
     const [isUpdatingShipping, setIsUpdatingShipping] = useState(false);
     
     if (!selectedOrder) return null;
+
+    // 👤 First-Touch: เมื่อเปิดดูบิลหน้าเว็บ คนแรกที่เปิดจะเป็นผู้รับผิดชอบทันที
+    useEffect(() => {
+        const isWebOrder = Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront');
+        if (isWebOrder && !selectedOrder.staffNickname && !selectedOrder.openedBy) {
+            const currentStaffUid = auth?.currentUser?.uid || profile?.uid;
+            const currentStaffName = profile?.nickname || profile?.displayName || auth?.currentUser?.displayName || 'พนักงาน';
+            if (currentStaffUid) {
+                billingStatusTransaction.assignStaffHandler(selectedOrder.id || selectedOrder.orderId, currentStaffUid, currentStaffName)
+                    .then(res => {
+                        if (res?.assigned) {
+                            toast.success(`คุณ (${currentStaffName}) รับผิดชอบบิลนี้แล้ว`, { id: `staff-modal-assign-${selectedOrder.id}` });
+                        }
+                    })
+                    .catch(err => console.warn("Failed to assign staff in modal:", err));
+            }
+        }
+    }, [selectedOrder.id, selectedOrder.orderId, profile]);
     
 
 
@@ -148,6 +168,14 @@ export default function OrderDetailModal(props) {
                                             <span className="px-2 py-0.5 rounded-sm bg-teal-500/10 text-teal-700 border border-teal-500/20 text-[10px] font-black">โอนแล้ว ✅ / หักสต๊อคแล้ว 📤</span>
                                         ) : (
                                             <span className="px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-700 border border-amber-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> รอดำเนินการ</span>
+                                        )}
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs border-t border-(--dh-border) pt-1.5 text-(--dh-text-muted)">
+                                        <span className="font-bold flex items-center gap-1"><User size={11} className="text-slate-400" /> เจ้าหน้าที่:</span>
+                                        {Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront') && !selectedOrder.staffNickname ? (
+                                            <span className="text-orange-500 dark:text-orange-400 font-black text-xs">ยังไม่ตรวจสอบ</span>
+                                        ) : (
+                                            <span className="font-bold text-(--dh-text-main)">{selectedOrder.staffNickname || selectedOrder.creatorName || selectedOrder.actorName || 'พนักงาน'}</span>
                                         )}
                                     </div>
                                 </div>

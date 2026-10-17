@@ -2,7 +2,9 @@ import React, { useState, lazy, Suspense } from 'react';
 import { Plus, AlertTriangle, ArrowLeft, HelpCircle, Receipt } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { billingService } from '../../firebase/billingService';
+import { billingStatusTransaction } from '../../firebase/billingStatusTransaction';
 import { auth } from '../../firebase/config';
+import { useAuth } from '../../contexts/AuthContext';
 
 import useBillingOrders from './hooks/useBillingOrders';
 import OrderFilterBar from './dashboard/OrderFilterBar';
@@ -54,6 +56,32 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
         if (stat === 'cancelled' || stat === 'void') return sum;
         return sum + (Number(order.netTotal) || 0);
     }, 0);
+
+    const { profile } = useAuth();
+
+    const handleSelectOrder = (order) => {
+        if (!order) {
+            setSelectedOrder(null);
+            return;
+        }
+        setSelectedOrder(order);
+
+        // 👤 First-Touch: คนแรกที่คลิกเปิดบิลหน้าเว็บ จะเป็นผู้รับผิดชอบบิลทันที
+        const isWebOrder = Boolean(order.isWebOrder || order.channel === 'storefront' || order.source === 'storefront');
+        if (isWebOrder && !order.staffNickname && !order.openedBy) {
+            const currentStaffUid = auth.currentUser?.uid || profile?.uid;
+            const currentStaffName = profile?.nickname || profile?.displayName || auth.currentUser?.displayName || 'พนักงาน';
+            if (currentStaffUid) {
+                billingStatusTransaction.assignStaffHandler(order.id || order.orderId, currentStaffUid, currentStaffName)
+                    .then(res => {
+                        if (res?.assigned) {
+                            toast.success(`คุณ (${currentStaffName}) รับผิดชอบบิลนี้แล้ว`, { id: `staff-assign-${order.id}` });
+                        }
+                    })
+                    .catch(err => console.warn("Failed to assign staff on open:", err));
+            }
+        }
+    };
 
     const handleCloseModal = () => {
         setSelectedOrder(null);
@@ -177,7 +205,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                     isSearching={isSearching} 
                     limitAmount={limitAmount} 
                     setLimitAmount={setLimitAmount} 
-                    setSelectedOrder={setSelectedOrder} 
+                    setSelectedOrder={handleSelectOrder} 
                 />
             </div>
 

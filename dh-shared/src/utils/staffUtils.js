@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Staff utility functions for DH Notebook monorepo.
  * Resolves staff nicknames, role display labels, and permissions.
  */
@@ -7,6 +7,16 @@ export function getStaffNickname(order, staffMap = {}) {
   if (!order) return 'N/A';
   if (order.staffNickname) return order.staffNickname;
   
+  const isWebOrder = Boolean(order.isWebOrder || order.channel === 'storefront' || order.source === 'storefront');
+  if (isWebOrder) {
+    const handlerId = order.openedBy || order.staffUid || order.staffId;
+    if (handlerId && staffMap[handlerId]) {
+      const s = staffMap[handlerId];
+      return s.nickname || s.displayName || s.name || s.email?.split('@')[0] || handlerId;
+    }
+    return null;
+  }
+
   const staffId = order.staffId || order.createdBy || order.salespersonId;
   if (staffId && staffMap[staffId]) {
     const s = staffMap[staffId];
