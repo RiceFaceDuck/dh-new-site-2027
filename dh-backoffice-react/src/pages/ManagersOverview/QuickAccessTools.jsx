@@ -99,6 +99,17 @@ const QuickAccessTools = ({
     const fetchLayout = async () => {
       setIsLoading(true);
       const data = await menuConfigService.getMenuLayout(!!refreshTrigger);
+      
+      // 🛡️ Automatic Fallback Guard: Guarantee 'payment' is always rendered in Marketing & Sales zone
+      if (data?.zones && !data.zones.some(z => z.menuIds && z.menuIds.includes('payment'))) {
+        const targetZone = data.zones.find(z => z.id === 'zone-3' || z.title?.includes('การตลาด') || z.title?.includes('ขาย')) 
+          || data.zones.find(z => z.id === 'zone-5' || z.title?.includes('หน้าบ้าน')) 
+          || data.zones[0];
+        if (targetZone) {
+          targetZone.menuIds = [...(targetZone.menuIds || []), 'payment'];
+        }
+      }
+
       setLayout(data);
       setIsLoading(false);
     };

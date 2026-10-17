@@ -3,7 +3,7 @@ import { db } from './config';
 
 const COLLECTION_NAME = 'settings';
 const DOC_ID = 'manager_menus';
-const CACHE_KEY = 'dh_manager_menus_cache';
+const CACHE_KEY = 'dh_manager_menus_cache_v5';
 const CACHE_TTL = 3600000; // 1 hour
 
 const DEFAULT_LAYOUT = {
@@ -50,7 +50,10 @@ export const menuConfigService = {
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed?.timestamp && (Date.now() - parsed.timestamp < CACHE_TTL) && parsed?.data) {
-            return parsed.data;
+            const hasPaymentInCache = parsed.data.zones?.some(z => z.menuIds?.includes('payment'));
+            if (hasPaymentInCache) {
+              return parsed.data;
+            }
           }
         }
       } catch (e) {
@@ -90,11 +93,14 @@ export const menuConfigService = {
             }
           }
 
-          const hasPayment = data.zones.some(z => z.menuIds.includes("payment"));
+          const hasPayment = data.zones.some(z => z.menuIds && z.menuIds.includes("payment"));
           if (!hasPayment) {
-            const zone3 = data.zones.find(z => z.id === "zone-3") || data.zones[0];
-            if (zone3) {
-              zone3.menuIds.push("payment");
+            const targetZone = data.zones.find(z => z.id === "zone-3" || z.title?.includes("การตลาด") || z.title?.includes("ขาย"))
+              || data.zones.find(z => z.id === "zone-5" || z.title?.includes("หน้าบ้าน"))
+              || data.zones[0];
+            if (targetZone) {
+              if (!targetZone.menuIds) targetZone.menuIds = [];
+              targetZone.menuIds.push("payment");
               needsUpdate = true;
             }
           }

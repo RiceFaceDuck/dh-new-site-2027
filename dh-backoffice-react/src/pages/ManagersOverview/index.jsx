@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Lock, CheckCircle } from 'lucide-react';
+import { ShieldCheck, Lock, CheckCircle, CreditCard } from 'lucide-react';
 
 // 📦 นำเข้า Components ดั้งเดิม
 import QuickAccessTools from './QuickAccessTools';
@@ -105,6 +105,15 @@ export default function ManagersOverview() {
                 <span className="hidden sm:inline-block">Master DB</span>
               </button>
               
+              <button 
+                onClick={() => navigate('/managers/payment')}
+                title="ตั้งค่าวิธีชำระเงินและบัญชีธนาคาร"
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-[0.2rem] border border-amber-400/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              >
+                <CreditCard className="w-3.5 h-3.5 text-slate-950" />
+                <span>วิธีชำระเงิน/ธนาคาร</span>
+              </button>
+
               <button 
                 onClick={() => navigate('/managers/audit-ledger')}
                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-[0.2rem] border border-indigo-400/30 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
