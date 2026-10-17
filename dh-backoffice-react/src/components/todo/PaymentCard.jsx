@@ -4,6 +4,7 @@ import { creditCoreService } from '../../firebase/creditCoreService';
 import { billingQueryService } from '../../firebase/billingQueryService';
 import PremiumDialog from '../common/PremiumDialog';
 import toast from 'react-hot-toast';
+import { getRenderableImageUrl, handleImageError } from 'dh-shared';
 
 const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,7 +124,14 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
         >
           {task.slipUrl ? (
             <>
-              <img src={task.slipUrl} alt="slip" className="w-full h-full object-cover"  loading="lazy" />
+              <img 
+                src={getRenderableImageUrl(task.slipUrl)} 
+                alt="slip" 
+                referrerPolicy="no-referrer"
+                onError={(e) => handleImageError(e, task.slipUrl)}
+                className="w-full h-full object-cover" 
+                loading="lazy" 
+              />
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
               </div>
@@ -265,10 +273,13 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
           
           <div className="max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
             <img 
-              src={task.slipUrl} 
+              src={getRenderableImageUrl(task.slipUrl)} 
               alt="Slip Fullscreen" 
+              referrerPolicy="no-referrer"
+              onError={(e) => handleImageError(e, task.slipUrl)}
               className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border border-white/10" 
-             loading="lazy" />
+              loading="lazy" 
+            />
             <p className="text-white/60 text-sm mt-4">คลิกที่พื้นที่ว่าง หรือกดปุ่มกากบาทเพื่อปิด</p>
           </div>
         </div>

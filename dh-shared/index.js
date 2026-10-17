@@ -15,3 +15,4 @@ export * from './src/utils/pricingEngine.js';
 export * from './src/schemas/footerConfigSchema.js';
 export * from './src/schemas/creditSchema.js';
 export * from './src/utils/stockUtils.js';
+export * from './src/utils/imageProcessingUtils.js';

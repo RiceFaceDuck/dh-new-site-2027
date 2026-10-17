@@ -9,7 +9,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     const discountType = activeTab?.overallDiscountType || 'BAHT';
     const rawDiscount = activeTab ? sanitizeNum(activeTab.overallDiscount) : 0;
     const manualDiscount = discountType === 'PERCENT'
-        ? Math.round(itemSubTotal * (rawDiscount / 100))
+        ? Math.round(itemSubTotal * (rawDiscount / 100) * 100) / 100
         : rawDiscount;
     const shippingFee = activeTab ? sanitizeNum(activeTab.shippingFee) : 0;
     const otherFeeAmount = activeTab ? sanitizeNum(activeTab.otherFeeAmount) : 0;
@@ -92,7 +92,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
                 bestPromo = promo;
             }
         });
-        autoPromoDiscount = Math.floor(bestDiscount);
+        autoPromoDiscount = Math.round(bestDiscount * 100) / 100;
         autoPromoDetails = bestPromo;
     }
 

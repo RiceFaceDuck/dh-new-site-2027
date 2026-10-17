@@ -129,6 +129,11 @@
         2) ใน `dh-frontend/src/components/profile/tabs/history/HistoryItemCard.jsx` คำนวณหายอดจ่ายจริง `finalPayable` โดยดัก Fallback ครอบคลุม: `order.netTotal ?? order.finalTotal ?? order.summary?.finalTotal ?? order.totals?.netTotal ?? ...` เพื่อแสดงยอดหักส่วนลดที่ถูกต้อง (฿4,625)
         3) ใน `dh-frontend/src/components/profile/tabs/TabHistory.jsx` ปรับเงื่อนไข Filter ให้รองรับสถานะ `approved`, `paid`, `processing` และ `draft`
         4) ใน `dh-backoffice-react/src/firebase/billingTransactionService.js` และ `usePosActions.js` บันทึกฟิลด์ `userId`, `customerId` และก้อน `totals` ลงบิลตั้งแต่ตอนบันทึกออเดอร์ เพื่อให้ Schema สอดคล้องสมบูรณ์ทั้งสองฝั่ง [สถานะ: ส่งมอบแล้ว]
+    37. ปัญหา: Checksum ส่วนลดโปรโมชั่นและยอดชำระสุทธิไม่ตรงกันระหว่างหน้าเว็บ (2,038.40 บ.) กับหลังบ้าน POS (2,039.00 บ.) และรูปสลิปโอนเงินขึ้นไอคอนรูปแตก
+        วิธีแก้: 
+        1) ใน `usePosActions.js` และ `usePosPayment.js` เปลี่ยนการตัดเศษส่วนลดจาก `Math.floor` เป็น Satang Precision 2 ตำแหน่ง (`Math.round(x * 100) / 100`) ตามกฎ Domain Rule 3
+        2) ใน `usePosState.js` ดึงค่าโปรโมชั่นและส่วนลดจากบิลร่างหน้าเว็บ (`appliedPromotions`, `totals.discount`) มาใส่แท็บ POS โดยตรง และเซ็ตทั้ง `slipImage` กับ `slipUrl`
+        3) ใน `PaymentMethods.jsx` และ `PosSystem.jsx` แปลง URL สลิปผ่าน `getRenderableImageUrl` จาก `dh-shared` เป็น Google CDN (`lh3.googleusercontent.com/d/{id}=w1000`), ใส่ `referrerPolicy="no-referrer"` เพื่อป้องกันเบราว์เซอร์ส่ง Referer ไปให้ไดรฟ์บล็อก และใส่ `onError={handleImageError}` สำหรับสลับ URL สำรองอัตโนมัติ [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

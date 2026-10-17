@@ -19,7 +19,7 @@ import { useCartValidation } from './pos/hooks/useCartValidation';
 import { usePromotionLogic } from './pos/hooks/usePromotionLogic';
 import { findExactCatalogMatch } from './pos/hooks/usePosCart.js';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
-import { convertToThaiBahtText } from 'dh-shared';
+import { convertToThaiBahtText, getRenderableImageUrl, handleImageError } from 'dh-shared';
 
 const noteColorMap = { fuchsia: {}, blue: {}, emerald: {}, rose: {}, amber: {}, slate: {} };
 
@@ -263,7 +263,17 @@ export default function PosSystem({
 
             {previewSlip && (
                 <div className="fixed inset-0 z-100 bg-black/80 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-xs" onClick={() => setPreviewSlip(null)}>
-                    <div className="relative max-w-2xl"><button onClick={() => setPreviewSlip(null)} className="absolute -top-12 right-0 text-white opacity-70 hover:opacity-100 dh-active-press bg-black/50 p-2 rounded-full"><X size={24}/></button><img src={previewSlip} alt="Slip" className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"  loading="lazy" /></div>
+                    <div className="relative max-w-2xl" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setPreviewSlip(null)} className="absolute -top-12 right-0 text-white opacity-70 hover:opacity-100 dh-active-press bg-black/50 p-2 rounded-full cursor-pointer"><X size={24}/></button>
+                        <img 
+                            src={getRenderableImageUrl(previewSlip)} 
+                            alt="Slip" 
+                            referrerPolicy="no-referrer"
+                            onError={(e) => handleImageError(e, previewSlip)}
+                            className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl" 
+                            loading="lazy" 
+                        />
+                    </div>
                 </div>
             )}
 

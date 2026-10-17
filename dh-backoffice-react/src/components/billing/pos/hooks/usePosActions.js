@@ -125,7 +125,7 @@ export const usePosActions = ({
         if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
             calculatedDiscount = Math.min(calculatedDiscount, promo.maxDiscount);
         }
-        return Math.floor(calculatedDiscount);
+        return Math.round(calculatedDiscount * 100) / 100;
     }, []);
 
     const handleApplyPromotion = (promo, isAuto = false) => {

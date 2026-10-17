@@ -133,6 +133,10 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
         const draftDocId = initialDraft.id ? String(initialDraft.id) : null;
         const isWebOrder = Boolean(initialDraft.isWebOrder || initialDraft.channel === 'storefront' || initialDraft.source === 'storefront');
         const effectiveSlip = initialDraft.paymentSlipUrl || initialDraft.slipUrl || initialDraft.slipImage || '';
+        const promoFromDraft = (Array.isArray(initialDraft.appliedPromotions) && initialDraft.appliedPromotions.length > 0)
+            ? initialDraft.appliedPromotions[0]
+            : (initialDraft.appliedPromotion || null);
+        const promoDiscountFromDraft = initialDraft.promoDiscount ?? initialDraft.totals?.discount ?? initialDraft.calculationLog?.discountAmount ?? (promoFromDraft?.discountValue ?? 0);
 
         // 👤 ดักจับชื่อเจ้าหน้าที่คนแรกที่เปิดบิล (First-Touch Staff Ownership)
         const currentStaffUser = auth?.currentUser;
@@ -189,6 +193,7 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                     walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : (existingTab.walkInName || ''),
                     walkInPhone: initialDraft.customer?.phone || (existingTab.walkInPhone || ''),
                     hidePhone: initialDraft.customer?.hidePhone || false,
+                    slipUrl: effectiveSlip || existingTab.slipUrl || '',
                     slipImage: effectiveSlip || existingTab.slipImage || '',
                     paymentSlipUrl: effectiveSlip || existingTab.paymentSlipUrl || '',
                     billNote: initialDraft.billNote || existingTab.billNote || '',
@@ -202,10 +207,10 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                     overallDiscountType: initialDraft.overallDiscountType || existingTab.overallDiscountType || 'BAHT',
                     useWallet: Boolean(initialDraft.walletUsed > 0),
                     walletUsed: initialDraft.walletUsed ?? existingTab.walletUsed ?? 0,
-                    promoDiscount: initialDraft.promoDiscount ?? existingTab.promoDiscount ?? 0,
-                    appliedPromoId: initialDraft.appliedPromotion?.id || existingTab.appliedPromoId || null,
-                    appliedPromoDetails: initialDraft.appliedPromotion || existingTab.appliedPromoDetails || null,
-                    autoPromoEnabled: false,
+                    promoDiscount: promoDiscountFromDraft || existingTab.promoDiscount || 0,
+                    appliedPromoId: promoFromDraft?.id || existingTab.appliedPromoId || null,
+                    appliedPromoDetails: promoFromDraft || existingTab.appliedPromoDetails || null,
+                    autoPromoEnabled: isWebOrder ? false : (initialDraft.autoPromoEnabled ?? existingTab.autoPromoEnabled ?? false),
                     autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : false,
                     paymentMethod: initialDraft.paymentMethod || existingTab.paymentMethod || 'Transfer',
                     bankAccount: initialDraft.bankAccount || existingTab.bankAccount || 'KBANK',
@@ -240,6 +245,7 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : '',
                 walkInPhone: initialDraft.customer?.phone || '',
                 hidePhone: initialDraft.customer?.hidePhone || false,
+                slipUrl: effectiveSlip,
                 slipImage: effectiveSlip,
                 paymentSlipUrl: effectiveSlip,
                 billNote: initialDraft.billNote || '',
@@ -253,10 +259,10 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 overallDiscountType: initialDraft.overallDiscountType || 'BAHT',
                 useWallet: Boolean(initialDraft.walletUsed > 0),
                 walletUsed: initialDraft.walletUsed || 0,
-                promoDiscount: initialDraft.promoDiscount || 0,
-                appliedPromoId: initialDraft.appliedPromotion?.id || null,
-                appliedPromoDetails: initialDraft.appliedPromotion || null,
-                autoPromoEnabled: false,
+                promoDiscount: promoDiscountFromDraft || 0,
+                appliedPromoId: promoFromDraft?.id || null,
+                appliedPromoDetails: promoFromDraft || null,
+                autoPromoEnabled: isWebOrder ? false : (initialDraft.autoPromoEnabled !== undefined ? initialDraft.autoPromoEnabled : true),
                 autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : false,
                 paymentMethod: initialDraft.paymentMethod || 'Transfer',
                 bankAccount: initialDraft.bankAccount || 'KBANK',
