@@ -49,15 +49,17 @@ export const useUploadSlip = (selectedOrder, closeModal) => {
         updatedAt: serverTimestamp()
       });
 
+      const payableAmount = Number(selectedOrder.netTotal ?? selectedOrder.finalTotal ?? selectedOrder.summary?.finalTotal ?? selectedOrder.summary?.netTotal ?? selectedOrder.totals?.netTotal ?? selectedOrder.totals?.grandTotal ?? selectedOrder.totals?.finalTotal ?? (selectedOrder.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) || 0));
+
       const todoRef = doc(collection(db, getCollectionPath('todos')));
       batch.set(todoRef, {
         type: "verify_slip",
         status: "pending",
-        title: `ตรวจสอบการชำระเงิน: ออเดอร์ #${selectedOrder.id.slice(-6).toUpperCase()}`,
+        title: `ตรวจสอบการชำระเงิน: ออเดอร์ #${(selectedOrder.orderId || selectedOrder.id).slice(-8).toUpperCase()}`,
         orderId: selectedOrder.id,
         userId: user.uid,
-        customerName: selectedOrder.shippingAddress?.fullName || "ลูกค้าทั่วไป",
-        amount: selectedOrder.totals?.netTotal || 0,
+        customerName: selectedOrder.shippingAddress?.fullName || selectedOrder.customer?.accountName || "ลูกค้าทั่วไป",
+        amount: payableAmount,
         slipUrl: finalSlipUrl,
         requestedAt: serverTimestamp(),
         createdAt: serverTimestamp()
@@ -68,8 +70,8 @@ export const useUploadSlip = (selectedOrder, closeModal) => {
         orderId: selectedOrder.id,
         action: "UPLOAD_SLIP",
         title: "ส่งหลักฐานการโอนเงินแล้ว",
-        description: `ระบบส่งสลิปของออเดอร์ #${selectedOrder.id.slice(-6).toUpperCase()} ไปให้เจ้าหน้าที่ตรวจสอบแล้ว`,
-        amount: selectedOrder.totals?.netTotal || 0,
+        description: `ระบบส่งสลิปของออเดอร์ #${(selectedOrder.orderId || selectedOrder.id).slice(-8).toUpperCase()} ไปให้เจ้าหน้าที่ตรวจสอบแล้ว`,
+        amount: payableAmount,
         createdAt: serverTimestamp()
       });
 

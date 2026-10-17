@@ -370,3 +370,38 @@ export function subscribeStorefrontCatalogUpdates(callback) {
     prefetchListeners = prefetchListeners.filter(l => l !== callback);
   };
 }
+
+/**
+ * ⚡ ดึง URL รูปภาพสินค้าจากแคชหน้าร้านด้วย SKU (0 Firestore Reads)
+ * @param {string} sku - รหัสสินค้า SKU
+ * @returns {Promise<string|null>}
+ */
+export async function getProductImageBySku(sku) {
+  if (!sku) return null;
+  const targetSku = String(sku).trim().toUpperCase();
+
+  // 1. ตรวจสอบใน Memory Singleton ก่อน (0ms)
+  if (Array.isArray(inMemoryCatalog) && inMemoryCatalog.length > 0) {
+    const found = inMemoryCatalog.find(p => String(p.sku || p.id || '').trim().toUpperCase() === targetSku);
+    if (found) {
+      return (Array.isArray(found.images) && found.images[0]) || found.image || found.imageUrl || null;
+    }
+  }
+
+  // 2. ตรวจสอบใน IndexedDB L2 Cache (0 Reads)
+  if (storefrontStore) {
+    try {
+      const cachedProducts = await get(IDB_KEYS.CATALOG, storefrontStore).catch(() => null);
+      if (Array.isArray(cachedProducts) && cachedProducts.length > 0) {
+        if (!inMemoryCatalog) inMemoryCatalog = cachedProducts;
+        const found = cachedProducts.find(p => String(p.sku || p.id || '').trim().toUpperCase() === targetSku);
+        if (found) {
+          return (Array.isArray(found.images) && found.images[0]) || found.image || found.imageUrl || null;
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  return null;
+}
+

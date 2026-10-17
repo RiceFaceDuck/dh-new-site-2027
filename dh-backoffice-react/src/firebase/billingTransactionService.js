@@ -336,9 +336,12 @@ export const billingTransactionService = {
 
           const isPaidOrApproved = (statusLower === 'paid' || statusLower === 'approved');
           const isWalletDeducted = isPaidOrApproved && walletToUse > 0;
+          const validCustomerUid = (customerUid && customerUid !== 'WALK-IN') ? customerUid : null;
 
           transaction.set(newOrderRef, {
             ...dataToSave, 
+            userId: validCustomerUid || dataToSave.userId || null,
+            customerId: validCustomerUid || dataToSave.customerId || null,
             items: verifiedItems, 
             itemSkus,
             orderId: finalOrderId, 
@@ -359,6 +362,14 @@ export const billingTransactionService = {
             staffUid: actorUid || dataToSave.staffUid || null,
             finalTotal: finalSecureNetTotal, 
             netTotal: finalSecureNetTotal,
+            totals: {
+              subtotal: calculatedSubtotal,
+              discount: effectiveTotalDiscount,
+              shipping: calculatedShipping,
+              vat: calculatedVat,
+              netTotal: finalSecureNetTotal,
+              grandTotal: finalSecureNetTotal
+            },
             ...(earnedPoints > 0 && isPaidOrApproved ? { pointsAwarded: true, pendingCredits: 0 } : {}),
             createdAt: orderData.createdAt || serverTimestamp()
           }, { merge: true });

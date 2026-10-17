@@ -304,7 +304,18 @@ export const usePosActions = ({
             const finalOrderItems = [
                 ...activeTab.items.map(i => {
                     const cleanPrice = sanitizeNum(i.price); const cleanDiscount = sanitizeNum(i.discount); const cleanQty = Math.max(1, sanitizeNum(i.qty));
-                    return { sku: i.sku || '', name: i.name || '', qty: cleanQty, price: cleanPrice, discount: cleanDiscount, total: Math.max(0, (cleanPrice - cleanDiscount) * cleanQty), note: i.note || '', noteColor: i.noteColor || 'fuchsia', isFreebie: false };
+                    return { 
+                        sku: i.sku || '', 
+                        name: i.name || '', 
+                        qty: cleanQty, 
+                        price: cleanPrice, 
+                        discount: cleanDiscount, 
+                        total: Math.max(0, (cleanPrice - cleanDiscount) * cleanQty), 
+                        note: i.note || '', 
+                        noteColor: i.noteColor || 'fuchsia', 
+                        isFreebie: false,
+                        image: i.image || i.imageUrl || (Array.isArray(i.images) && i.images[0]) || null
+                    };
                 }), ...freebieItems 
             ];
 
@@ -314,8 +325,12 @@ export const usePosActions = ({
                     : (activeTab.customer.address || activeTab.customer.legacyAddress || ''))
                 : '';
 
+            const validCustUid = (custUid && custUid !== 'WALK-IN') ? custUid : null;
+
             const orderData = {
                 id: activeTab.docId || null, orderId: finalOrderId,
+                userId: validCustUid,
+                customerId: validCustUid,
                 orderStatus: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
                 status: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
                 isDraft: status === 'Draft',

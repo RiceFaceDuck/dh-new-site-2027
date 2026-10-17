@@ -183,5 +183,12 @@ export const driveService = {
   uploadUserSkuImage: async (file) => {
     console.log("⚠️ [DriveService] uploadUserSkuImage is deprecated. Routing to uploadAdImage...");
     return driveService.uploadAdImage(file, 'SKU');
+  },
+
+  /**
+   * 📸 5. อัปโหลดรูปภาพทั่วไป (Claim, Return, Service Action)
+   */
+  uploadImage: async (file) => {
+    return driveService.uploadAdImage(file, 'SERVICE');
   }
 };

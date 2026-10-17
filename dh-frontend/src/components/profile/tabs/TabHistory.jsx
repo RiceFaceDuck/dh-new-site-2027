@@ -51,9 +51,12 @@ const TabHistory = () => {
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
-    if (filter === 'pending') return ['pending_payment', 'awaiting_wholesale_price'].includes(order.status);
-    if (filter === 'processing') return ['pending_payment_verification', 'paid', 'processing'].includes(order.status);
-    if (filter === 'completed') return ['shipped', 'completed'].includes(order.status);
+    const stat = (order.orderStatus || order.status || '').toLowerCase();
+    const payStat = (order.paymentStatus || '').toLowerCase();
+
+    if (filter === 'pending') return ['pending_payment', 'awaiting_wholesale_price', 'draft'].includes(stat) || payStat === 'unpaid';
+    if (filter === 'processing') return ['pending_payment_verification', 'paid', 'processing', 'approved'].includes(stat) || payStat === 'paid';
+    if (filter === 'completed') return ['shipped', 'completed'].includes(stat);
     return true;
   });
 

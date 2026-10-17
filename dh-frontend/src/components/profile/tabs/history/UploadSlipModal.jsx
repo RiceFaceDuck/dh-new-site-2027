@@ -49,8 +49,11 @@ const UploadSlipModal = ({ selectedOrder, closeModal }) => {
 
             <div className="bg-indigo-50/80 border border-indigo-100 rounded-md p-5 mb-6 text-center shadow-inner">
               <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">ยอดที่ต้องชำระ</p>
-              <p className="text-4xl font-black text-indigo-700 mt-1">฿{selectedOrder.totals?.netTotal?.toLocaleString()}</p>
-              <p className="text-xs text-gray-500 mt-2">ออเดอร์ #{selectedOrder.id?.slice(-8).toUpperCase()}</p>
+              {(() => {
+                const payable = Number(selectedOrder.netTotal ?? selectedOrder.finalTotal ?? selectedOrder.summary?.finalTotal ?? selectedOrder.summary?.netTotal ?? selectedOrder.totals?.netTotal ?? selectedOrder.totals?.grandTotal ?? selectedOrder.totals?.finalTotal ?? (selectedOrder.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) || 0));
+                return <p className="text-4xl font-black text-indigo-700 mt-1">฿{payable.toLocaleString()}</p>;
+              })()}
+              <p className="text-xs text-gray-500 mt-2">ออเดอร์ #{selectedOrder.orderId || selectedOrder.id?.slice(-8).toUpperCase()}</p>
             </div>
 
             <div className="mb-6">

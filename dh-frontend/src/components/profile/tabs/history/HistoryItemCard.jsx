@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Wrench, ArrowLeftRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wrench, ArrowLeftRight, Package } from 'lucide-react';
 import { getStatusDisplay } from './HistoryStatusUtil';
+import { getProductImageBySku } from '../../../../services/storefrontCatalogService';
 
 const HistoryItemCard = ({
   order,
@@ -12,6 +13,33 @@ const HistoryItemCard = ({
   openServiceModal
 }) => {
   const [copyStatus, setCopyStatus] = useState(false);
+  const [cachedImages, setCachedImages] = useState({});
+
+  useEffect(() => {
+    let isMounted = true;
+    const missingSkus = (order.items || [])
+      .filter(item => !item.image && !item.imageUrl)
+      .map(item => String(item.sku || item.id || '').trim().toUpperCase())
+      .filter(Boolean);
+
+    if (missingSkus.length > 0) {
+      Promise.all(missingSkus.map(async (sku) => {
+        const img = await getProductImageBySku(sku);
+        return { sku, img };
+      })).then(results => {
+        if (!isMounted) return;
+        const imgMap = {};
+        results.forEach(({ sku, img }) => {
+          if (img) imgMap[sku] = img;
+        });
+        if (Object.keys(imgMap).length > 0) {
+          setCachedImages(prev => ({ ...prev, ...imgMap }));
+        }
+      }).catch(() => {});
+    }
+
+    return () => { isMounted = false; };
+  }, [order.items]);
 
   const handleCopyTracking = (e, trackingNum) => {
     e.stopPropagation();
@@ -32,6 +60,8 @@ const HistoryItemCard = ({
   const displayOrderId = order.orderId && order.orderId.startsWith('DH-') 
     ? order.orderId 
     : `#${(order.orderId || order.id)?.slice(-8).toUpperCase()}`;
+
+  const finalPayable = Number(order.netTotal ?? order.finalTotal ?? order.summary?.finalTotal ?? order.summary?.netTotal ?? order.totals?.netTotal ?? order.totals?.grandTotal ?? order.totals?.finalTotal ?? (order.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) || 0));
 
   return (
     <div className={`bg-white border transition-all duration-300 rounded-md p-4 sm:p-5 shadow-sm hover:shadow-md ${isExpanded ? 'border-indigo-400 ring-2 ring-indigo-500/10' : 'border-slate-200/90 hover:border-slate-300'}`}>
@@ -62,7 +92,7 @@ const HistoryItemCard = ({
             {itemsList}
           </p>
           <p className="text-base text-indigo-700 font-black mt-2">
-            ยอดชำระสุทธิ: ฿{(order.totals?.netTotal ?? order.totals?.grandTotal ?? order.totals?.finalTotal ?? order.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) ?? 0).toLocaleString()}
+            ยอดชำระสุทธิ: ฿{finalPayable.toLocaleString()}
           </p>
         </div>
         
@@ -139,37 +169,44 @@ const HistoryItemCard = ({
           {/* List Items */}
           <div className="space-y-3 mb-5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
             {order.items?.map((item, idx) => {
+              const itemQuantity = Number(item.qty ?? item.quantity ?? 1);
               const approvedPrice = order.totals?.wholesaleDetails?.approvedPrices?.[idx];
               const isWholesaleApplied = approvedPrice !== undefined && approvedPrice < item.price;
               const priceToShow = isWholesaleApplied ? approvedPrice : (item.price || 0);
-              const orderDateStr = order.createdAt?.toDate ? order.createdAt.toDate().toISOString() : null;
+              const lineTotal = Number(item.total ?? (priceToShow * itemQuantity));
+              const itemSku = String(item.sku || item.id || '').trim().toUpperCase();
+              const displayImage = item.image || item.imageUrl || cachedImages[itemSku] || null;
 
               return (
                 <div key={idx} className="flex gap-3 text-sm bg-gray-50/70 p-3 rounded-md border border-slate-200">
-                  <div className="w-14 h-14 bg-white rounded-lg border border-gray-200 overflow-hidden shrink-0 shadow-xs">
-                      {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain"  loading="lazy" /> : null}
+                  <div className="w-14 h-14 bg-white rounded-lg border border-gray-200 overflow-hidden shrink-0 shadow-xs flex items-center justify-center">
+                    {displayImage ? (
+                      <img src={displayImage} alt={item.name} className="w-full h-full object-contain" loading="lazy" />
+                    ) : (
+                      <Package className="w-6 h-6 text-slate-300" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-800 line-clamp-1">{item.name}</p>
                     <div className="flex justify-between mt-1.5 items-end">
-                      <span className="text-gray-500 bg-gray-200/60 px-2 py-0.5 rounded-sm font-medium text-xs">x{item.quantity}</span>
+                      <span className="text-gray-500 bg-gray-200/60 px-2 py-0.5 rounded-sm font-medium text-xs">x{itemQuantity}</span>
                       
                       {isWholesaleApplied ? (
                         <div className="flex flex-col items-end">
-                          <span className="text-xs text-gray-400 line-through">ปกติ: ฿{(item.price * item.quantity).toLocaleString()}</span>
-                          <span className="font-bold text-indigo-600">ราคาส่ง: ฿{(priceToShow * item.quantity).toLocaleString()}</span>
+                          <span className="text-xs text-gray-400 line-through">ปกติ: ฿{(item.price * itemQuantity).toLocaleString()}</span>
+                          <span className="font-bold text-indigo-600">ราคาส่ง: ฿{(priceToShow * itemQuantity).toLocaleString()}</span>
                         </div>
                       ) : (
-                        <span className="font-bold text-gray-900">฿{(priceToShow * item.quantity).toLocaleString()}</span>
+                        <span className="font-bold text-gray-900">฿{lineTotal.toLocaleString()}</span>
                       )}
                     </div>
                     {/* Action Buttons for Claim/Return */}
                     {['shipped', 'completed'].includes(order.status) && (
                       <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
-                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('claim', item, order); }} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded-sm text-[11px] font-bold flex items-center gap-1.5 transition-all border border-orange-200">
+                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('claim', { ...item, quantity: itemQuantity }, order); }} className="px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded-sm text-[11px] font-bold flex items-center gap-1.5 transition-all border border-orange-200">
                           <Wrench size={12}/> แจ้งเคลม
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('return', item, order); }} className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded-sm text-[11px] font-bold flex items-center gap-1.5 transition-all border border-purple-200">
+                        <button onClick={(e) => { e.stopPropagation(); openServiceModal('return', { ...item, quantity: itemQuantity }, order); }} className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded-sm text-[11px] font-bold flex items-center gap-1.5 transition-all border border-purple-200">
                           <ArrowLeftRight size={12}/> แจ้งคืนสินค้า
                         </button>
                       </div>
@@ -184,7 +221,9 @@ const HistoryItemCard = ({
           <div className="bg-indigo-50/50 rounded-md p-5 text-sm space-y-2 border border-indigo-100 text-gray-700 shadow-inner">
               <div className="flex justify-between">
                 <span>ยอดรวมสินค้า</span>
-                <span className="font-semibold text-gray-900">฿{order.totals?.subtotal?.toLocaleString() || 0}</span>
+                <span className="font-semibold text-gray-900">
+                  ฿{Number(order.totals?.subtotal ?? order.subTotal ?? order.subtotal ?? (order.items?.reduce((s, i) => s + (Number(i.price || 0) * Number(i.qty ?? i.quantity ?? 1)), 0) || 0)).toLocaleString()}
+                </span>
               </div>
               
               {order.calculationLog ? (
@@ -209,12 +248,18 @@ const HistoryItemCard = ({
                   )}
                 </>
               ) : (
-                order.totals?.discount > 0 && (
-                  <div className="flex justify-between text-red-500">
-                    <span>ส่วนลดรวม / คูปอง</span>
-                    <span className="font-semibold">-฿{(order.totals.discount - (order.totals?.wholesaleDetails?.itemLevelDiscount || 0) - (order.totals?.wholesaleDetails?.manualExtraDiscount || 0)).toLocaleString()}</span>
-                  </div>
-                )
+                (() => {
+                  const subTotalVal = Number(order.totals?.subtotal ?? order.subTotal ?? order.subtotal ?? (order.items?.reduce((s, i) => s + (Number(i.price || 0) * Number(i.qty ?? i.quantity ?? 1)), 0) || 0));
+                  const effectiveDiscount = Number(order.totals?.discount ?? order.overallDiscount ?? order.manualDiscount ?? order.discountTotal ?? order.discount ?? (subTotalVal > finalPayable ? (subTotalVal - finalPayable) : 0));
+                  const wholesaleDiscounts = Number((order.totals?.wholesaleDetails?.itemLevelDiscount || 0) + (order.totals?.wholesaleDetails?.manualExtraDiscount || 0));
+                  const displayDiscount = effectiveDiscount - wholesaleDiscounts;
+                  return displayDiscount > 0 ? (
+                    <div className="flex justify-between text-red-500 font-medium">
+                      <span>ส่วนลดรวม / ท้ายบิล</span>
+                      <span className="font-semibold">-฿{displayDiscount.toLocaleString()}</span>
+                    </div>
+                  ) : null;
+                })()
               )}
 
               {(order.totals?.wholesaleDetails?.itemLevelDiscount > 0 || order.totals?.wholesaleDetails?.manualExtraDiscount > 0) && (
@@ -244,7 +289,7 @@ const HistoryItemCard = ({
               
               <div className="flex justify-between items-end font-black text-indigo-950 text-base pt-3 border-t-2 border-indigo-100 border-dashed mt-3">
                 <span>ยอดชำระสุทธิ</span>
-                <span className="text-2xl text-indigo-700">฿{(order.totals?.netTotal ?? order.totals?.grandTotal ?? order.totals?.finalTotal ?? order.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) ?? 0).toLocaleString()}</span>
+                <span className="text-2xl text-indigo-700">฿{finalPayable.toLocaleString()}</span>
               </div>
           </div>
 

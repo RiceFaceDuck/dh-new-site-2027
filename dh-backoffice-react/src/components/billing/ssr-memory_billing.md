@@ -123,8 +123,14 @@
         1) แก้ไข `getStaffNickname` ใน `dh-shared/src/utils/staffUtils.js` ไม่ให้นำ `order.createdBy` ของออเดอร์หน้าเว็บมาเป็นชื่อพนักงาน ถ้ายังไม่มีผู้รับผิดชอบให้คืนค่า null
         2) ปรับการแสดงผลใน `OrderTableRow.jsx` และ `OrderDetailModal.jsx` เป็นตัวหนังสือสีส้มสว่างแบบไม่มีกรอบ/shape 'ยังไม่ตรวจสอบ'
         3) ปรับ `billingStatusTransaction.assignStaffHandler` เป็น Atomic Transaction ด้วย `runTransaction` เพื่อไม่ให้เขียนทับหากมีเจ้าหน้าที่รับเรื่องแล้ว
-        4) ผูกการคลิกเปิดดูบิลในตาราง `BillingDashboard.jsx` และ `OrderDetailModal.jsx` เข้ากับ `assignStaffHandler` เพื่อให้คนแรกที่คลิกเปิดบิลกลายเป็นผู้รับผิดชอบทันทีและซิงค์ข้อมูลแบบ Real-time [สถานะ: ส่งมอบแล้ว]
+    36. ปัญหา: บิลที่เปิดจากระบบ POS หลังบ้าน (เช่น DH-26-0049) ไม่แสดงในหน้าประวัติการสั่งซื้อ (Order History) บนหน้าเว็บหน้าร้าน (dh-frontend) และตัวเลขยอดเงินแสดงไม่ตรง (฿7,060 แทนที่จะเป็น ฿4,625)
+        วิธีแก้: 
+        1) ใน `dh-frontend/src/components/profile/tabs/history/useHistoryOrders.js` สั่งดักฟังพร้อมกันทั้ง 3 Query: `where('userId', '==', user.uid)`, `where('customer.uid', '==', user.uid)` และ `where('customerId', '==', user.uid)` โดยละเว้น `orderBy('createdAt')` ในระดับ Firestore เพื่อป้องกัน Index Error แล้วนำข้อมูลมา Merge, Dedupe (ด้วย `Map`) และ Sort วันที่ฝั่ง Client
+        2) ใน `dh-frontend/src/components/profile/tabs/history/HistoryItemCard.jsx` คำนวณหายอดจ่ายจริง `finalPayable` โดยดัก Fallback ครอบคลุม: `order.netTotal ?? order.finalTotal ?? order.summary?.finalTotal ?? order.totals?.netTotal ?? ...` เพื่อแสดงยอดหักส่วนลดที่ถูกต้อง (฿4,625)
+        3) ใน `dh-frontend/src/components/profile/tabs/TabHistory.jsx` ปรับเงื่อนไข Filter ให้รองรับสถานะ `approved`, `paid`, `processing` และ `draft`
+        4) ใน `dh-backoffice-react/src/firebase/billingTransactionService.js` และ `usePosActions.js` บันทึกฟิลด์ `userId`, `customerId` และก้อน `totals` ลงบิลตั้งแต่ตอนบันทึกออเดอร์ เพื่อให้ Schema สอดคล้องสมบูรณ์ทั้งสองฝั่ง [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
+
 
 

@@ -43,7 +43,8 @@ export const cancelOrder = async (orderId, userId) => {
       if (!orderDoc.exists()) throw new Error("ไม่พบคำสั่งซื้อ");
       
       const orderData = orderDoc.data();
-      if (orderData.userId !== userId) throw new Error("ไม่มีสิทธิ์เข้าถึงคำสั่งซื้อนี้");
+      const orderOwnerUid = orderData.userId || orderData.customer?.uid || orderData.customerId;
+      if (orderOwnerUid !== userId) throw new Error("ไม่มีสิทธิ์เข้าถึงคำสั่งซื้อนี้");
       
       if (['paid', 'processing', 'shipped', 'completed', 'received', 'approved'].includes(orderData.status?.toLowerCase())) {
           throw new Error("คำสั่งซื้อนี้ดำเนินการไปแล้ว ไม่สามารถยกเลิกได้");
