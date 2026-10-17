@@ -1,4 +1,4 @@
-﻿# SSR Memory: ระบบค้นหาสินค้าหน้าร้าน (Storefront Search Subsystem)
+# SSR Memory: ระบบค้นหาสินค้าหน้าร้าน (Storefront Search Subsystem)
 
 <usage_workflow>
 1. ลูกค้าหรือผู้ใช้พิมพ์คำค้นหาจาก Header Bar หรือเข้ามาที่ `/search`
@@ -84,6 +84,14 @@
      2. รองรับ Fast First Render (โหลด Chunk 1 ภายใน 100ms) แล้วใช้ requestIdleCallback แอบโหลด Chunks ที่เหลือ (p1..p7) ในเบื้องหลังจนครบ 2,400+ รายการ
      3. ตรวจสอบเวอร์ชันผ่าน catalogs/search_index (1 Read) หรือ 0 Read หากเปิดในเซสชันเดิม
      4. เสริม searchMatcher.js 2.0 ด้วย Levenshtein Distance ตรวจจับคำสะกดผิด (Typo-Tolerance) และปรับน้ำหนักความเกี่ยวข้องให้หมวดหมู่ตรงเป๊ะ (Panel, Adapter, Fan, Hinge) ขึ้นอันดับ 1 เสมอ
+14. **ปลดล็อกสิทธิ์แคตตาล็อกหน้าร้าน และยกระดับความฉลาดภาษาไทย 3.0 (Delivered - 2026-10-17):**
+   - *สาเหตุที่ค้นหา "คีย์บอร์ด lenovo", "5547", "15.6" แล้วขึ้น 0 รายการ:*
+     1. `firestore.rules` ล็อก `catalogs/search_index*` ให้เฉพาะ `isStaff()` ทำให้ลูกค้าหน้าร้าน (Guest/LINE In-app browser) โดน permission-denied และโหลดแคตตาล็อกได้ 0 ชิ้น
+     2. `searchMatcher.js` เดิมยังไม่เข้าใจคำไทยติดกัน (เช่น `จอ15.6`, `15.6นิ้ว`), ไม่มีแบรนด์ภาษาไทย (`เลโนโว`, `เดล`, `เอเซอร์`, `เอซุส`), และระบบ Typo-Tolerance ล็อกเฉพาะตัวอักษรภาษาอังกฤษ ทำให้สะกดผิดไทย (`คีบอร์ด`, `คีย์บอด`) ค้นหาไม่เจอ
+   - *วิธีแก้ (Delivered):*
+     1. Whitelist `search_index` และ `search_index_p[0-9]+` ใน `firestore.rules` ให้ลูกค้าหน้าร้านอ่านได้ (ยืนยันแล้วว่าไม่มีข้อมูลราคาทุนหลุด)
+     2. ปรับปรุง `SearchPage.jsx` ให้มี Error Notification และปุ่ม "ลองใหม่อีกครั้ง" ชัดเจนหากโหลดไม่สำเร็จ
+     3. พัฒนา `searchMatcher.js 3.0`: เพิ่ม Thai Compound Splitting (แยก `จอ15.6` ➔ `จอ 15.6`, `15.6นิ้ว` ➔ `15.6`), รองรับแบรนด์ภาษาไทย, รองรับคำสะกดผิดภาษาไทย, และอัปเกรด `findRelatedProducts` ด้วย Weighted Scoring ป้องกันหน้าจอว่างเปล่า (Zero Dead-End) 100%
 </pitfalls_and_solutions>
 
 

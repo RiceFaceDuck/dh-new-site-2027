@@ -41,23 +41,31 @@ export const SEARCH_SYNONYMS = {
   'cooling': ['cooling', 'fan', 'cooler', 'heatsink', 'พัดลม'],
 
   // คีย์บอร์ด
-  'คีย์บอร์ด': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด'],
+  'คีย์บอร์ด': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด', 'คีบอร์ด', 'คีย์บอด'],
+  'คีบอร์ด': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด', 'คีบอร์ด', 'คีย์บอด'],
+  'คีย์บอด': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด', 'คีบอร์ด', 'คีย์บอด'],
   'แป้นพิมพ์': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด'],
-  'keyboard': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด'],
+  'keyboard': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด', 'คีบอร์ด'],
+  'kb': ['keyboard', 'kb', 'แป้นพิมพ์', 'คีย์บอร์ด'],
 
   // แบตเตอรี่
-  'แบตเตอรี่': ['battery', 'batt', 'แบต', 'แบตเตอรี่'],
-  'แบต': ['battery', 'batt', 'แบต', 'แบตเตอรี่'],
-  'battery': ['battery', 'batt', 'แบต', 'แบตเตอรี่'],
+  'แบตเตอรี่': ['battery', 'batt', 'แบต', 'แบตเตอรี่', 'แบตเตอรี', 'แบ็ต'],
+  'แบตเตอรี': ['battery', 'batt', 'แบต', 'แบตเตอรี่', 'แบตเตอรี', 'แบ็ต'],
+  'แบต': ['battery', 'batt', 'แบต', 'แบตเตอรี่', 'แบตเตอรี'],
+  'แบ็ต': ['battery', 'batt', 'แบต', 'แบตเตอรี่'],
+  'battery': ['battery', 'batt', 'แบต', 'แบตเตอรี่', 'แบตเตอรี'],
 
   // บานพับ
   'บานพับ': ['hinge', 'hinges', 'บานพับ'],
   'hinge': ['hinge', 'hinges', 'บานพับ'],
 
   // สายแพร
-  'สายแพร': ['cable', 'edp', 'lvds', 'screen cable', 'สายแพร', 'สายแพ'],
+  'สายแพร': ['cable', 'edp', 'lvds', 'screen cable', 'สายแพร', 'สายแพ', 'สายต่อจอ'],
   'สายแพ': ['cable', 'edp', 'lvds', 'screen cable', 'สายแพร', 'สายแพ'],
   'cable': ['cable', 'สายแพร', 'สายแพ'],
+
+  // สายไฟ / สายชาร์จ
+  'สายไฟ': ['adapter', 'charger', 'สายชาร์จ', 'สายไฟ', 'cable', 'power'],
 
   // ลำโพง
   'ลำโพง': ['speaker', 'speakers', 'audio', 'sound', 'built in audio', 'ลำโพง'],
@@ -73,14 +81,44 @@ export const SEARCH_SYNONYMS = {
   'motherboard': ['motherboard', 'mainboard', 'board', 'เมนบอร์ด'],
 
   // ซิลิโคน
-  'ซิลิโคน': ['thermal paste', 'grease', 'silicone', 'ซิลิโคน']
+  'ซิลิโคน': ['thermal paste', 'grease', 'silicone', 'ซิลิโคน'],
+
+  // แบรนด์โน๊ตบุ๊ค (รองรับทั้งภาษาไทยและอังกฤษ)
+  'lenovo': ['lenovo', 'เลโนโว', 'เลอโนโว', 'thinkpad', 'ideapad', 'legion', 'yoga'],
+  'เลโนโว': ['lenovo', 'เลโนโว', 'เลอโนโว', 'thinkpad', 'ideapad', 'legion', 'yoga'],
+  'เลอโนโว': ['lenovo', 'เลโนโว', 'thinkpad', 'ideapad'],
+  'dell': ['dell', 'เดล', 'เดลล์', 'inspiron', 'latitude', 'vostro', 'xps', 'alienware'],
+  'เดล': ['dell', 'เดล', 'เดลล์', 'inspiron', 'latitude', 'vostro', 'xps', 'alienware'],
+  'เดลล์': ['dell', 'เดล', 'เดลล์', 'inspiron', 'latitude', 'vostro', 'xps', 'alienware'],
+  'acer': ['acer', 'เอเซอร์', 'เอเซอร', 'aspire', 'predator', 'nitro', 'swift', 'travelmate'],
+  'เอเซอร์': ['acer', 'เอเซอร์', 'เอเซอร', 'aspire', 'predator', 'nitro', 'swift', 'travelmate'],
+  'เอเซอร': ['acer', 'เอเซอร์', 'aspire', 'nitro'],
+  'asus': ['asus', 'เอซุส', 'อัสซุส', 'เอซูส', 'zenbook', 'vivobook', 'rog', 'tuf', 'expertbook'],
+  'เอซุส': ['asus', 'เอซุส', 'อัสซุส', 'เอซูส', 'zenbook', 'vivobook', 'rog', 'tuf'],
+  'อัสซุส': ['asus', 'เอซุส', 'zenbook', 'rog', 'tuf'],
+  'เอซูส': ['asus', 'เอซุส', 'zenbook', 'rog'],
+  'hp': ['hp', 'เอชพี', 'pavilion', 'probook', 'elitebook', 'victus', 'omen', 'envy'],
+  'เอชพี': ['hp', 'เอชพี', 'pavilion', 'probook', 'elitebook', 'victus', 'omen', 'envy'],
+  'apple': ['apple', 'แอปเปิ้ล', 'แอปเปิล', 'macbook', 'แมคบุ๊ค', 'แมคบุค', 'แมค'],
+  'แอปเปิ้ล': ['apple', 'macbook', 'แมคบุ๊ค', 'แอปเปิล'],
+  'แอปเปิล': ['apple', 'macbook', 'แมคบุ๊ค'],
+  'แมคบุ๊ค': ['apple', 'macbook', 'แอปเปิ้ล'],
+  'msi': ['msi', 'เอ็มเอสไอ', 'stealth', 'bravo', 'katana', 'raider'],
+  'samsung': ['samsung', 'ซัมซุง'],
+  'ซัมซุง': ['samsung', 'ซัมซุง'],
+  'toshiba': ['toshiba', 'โตชิบา', 'โตชิบ้า', 'dynabook'],
+  'โตชิบา': ['toshiba', 'โตชิบา', 'dynabook'],
+  'huawei': ['huawei', 'หัวเว่ย', 'matebook'],
+  'หัวเว่ย': ['huawei', 'matebook']
 };
 
 // แบรนด์และหมวดหมู่หลักที่รองรับ Typo-Tolerance อัตโนมัติ
 const COMMON_DICTIONARY = [
   'lenovo', 'dell', 'asus', 'acer', 'hp', 'apple', 'macbook', 'msi', 'toshiba', 'samsung', 'huawei',
   'adapter', 'charger', 'battery', 'keyboard', 'fan', 'cooling', 'hinge', 'cable', 'speaker', 'screen', 'panel',
-  'thinkpad', 'ideapad', 'inspiron', 'latitude', 'vostro', 'zenbook', 'vivobook', 'rog', 'predator', 'aspire', 'pavilion'
+  'thinkpad', 'ideapad', 'inspiron', 'latitude', 'vostro', 'zenbook', 'vivobook', 'rog', 'predator', 'aspire', 'pavilion',
+  'คีย์บอร์ด', 'แป้นพิมพ์', 'แบตเตอรี่', 'อะแดปเตอร์', 'อแดปเตอร์', 'พัดลม', 'บานพับ', 'สายแพร', 'หน้าจอ', 'ลำโพง', 'เมนบอร์ด',
+  'เลโนโว', 'เอเซอร์', 'เอซุส', 'แอปเปิ้ล'
 ];
 
 // คำบอกหน่วยที่ไม่ควรนำมาเป็นเงื่อนไข AND บล็อกการค้นหา หากมีคำระบุขนาดนำหน้าอยู่แล้ว
@@ -108,15 +146,25 @@ export function levenshteinDistance(s1, s2) {
 }
 
 /**
- * แปลงสตริงให้เป็น tokens สะอาด และตัดคำบอกหน่วยทั่วไปหากมี token อื่นอยู่แล้ว
+ * แปลงสตริงให้เป็น tokens สะอาด รองรับการแยกคำประกอบภาษาไทยและตัดคำบอกหน่วย
  * @param {string} text 
  * @returns {string[]}
  */
 export const tokenizeQuery = (text) => {
   if (!text || typeof text !== 'string') return [];
-  const rawTokens = text
-    .trim()
+
+  // 1. แยกคำประกอบภาษาไทยและตัวเลข/หน่วย (Thai Compound Splitting)
+  const cleanText = text
     .toLowerCase()
+    // แยกจอ/บานพับ/พัดลม/สายแพร/คีย์บอร์ด/แบตเตอรี่ ที่ติดกับตัวเลขหรืออังกฤษ เช่น "จอ15.6" -> "จอ 15.6", "คีย์บอร์ดlenovo" -> "คีย์บอร์ด lenovo"
+    .replace(/(หน้าจอ|จอภาพ|จอ|บานพับ|พัดลม|สายแพร|สายแพ|คีย์บอร์ด|คีบอร์ด|แป้นพิมพ์|แบตเตอรี่|แบตเตอรี|แบต|อะแดปเตอร์|อแดปเตอร์|หม้อแปลง|สายชาร์จ|ที่ชาร์จ|ลำโพง)([\d\w])/gi, '$1 $2')
+    // แยกตัวเลขที่ติดกับคำภาษาไทย เช่น "15.6นิ้ว" -> "15.6 นิ้ว"
+    .replace(/(\d+(\.\d+)?)(นิ้ว|inch|inches|cm|mm|w|v|a|pin|hz)/gi, '$1 $3')
+    // ลบเครื่องหมายคำพูดรอบตัวเลขหรือคำ เช่น 15.6" -> 15.6
+    .replace(/["'“”‘’]/g, ' ');
+
+  const rawTokens = cleanText
+    .trim()
     .split(/\s+/)
     .filter(token => token.length > 0);
 
@@ -144,8 +192,8 @@ export const getExpandedTerms = (token) => {
     synonyms.forEach(s => terms.add(s));
   }
 
-  // 2. Typo Tolerance Check สำหรับคำภาษาอังกฤษขนาดยาว >= 4 ตัวอักษร
-  if (lower.length >= 4 && /^[a-z0-9]+$/.test(lower)) {
+  // 2. Typo Tolerance Check (รองรับทั้งภาษาอังกฤษ และภาษาไทยขนาดยาว >= 3 ตัวอักษร)
+  if (lower.length >= 3) {
     for (const dictWord of COMMON_DICTIONARY) {
       if (Math.abs(dictWord.length - lower.length) <= 1) {
         if (levenshteinDistance(lower, dictWord) <= 1) {
@@ -351,14 +399,28 @@ export const findRelatedProducts = (products = [], queryString = '', excludeIds 
   const scored = [];
 
   for (const p of candidates) {
-    const searchText = buildProductSearchIndexText(p);
+    const primaryText = buildPrimarySearchText(p);
+    const secondaryText = buildSecondarySearchText(p);
+    const pBrand = String(p.brand || '').toLowerCase();
+    const pCat = String(p.category || p.category_lower || '').toLowerCase();
     let matchScore = 0;
 
     for (const token of tokens) {
       const terms = getExpandedTerms(token);
-      // หากมีคำพ้องหรือคำใดคำหนึ่งตรง ให้คะแนนตามสัดส่วน
-      if (terms.some(term => searchText.includes(term))) {
-        matchScore += 1;
+
+      // 1. หมวดหมู่ หรือ แบรนด์ตรง ได้คะแนนสูงที่สุด (+50)
+      if (terms.some(t => pBrand === t || pCat === t || pCat.includes(t))) {
+        matchScore += 50;
+      }
+
+      // 2. มีคำพ้องในข้อความหลัก (ชื่อสินค้า, SKU, รุ่น) (+25)
+      if (terms.some(t => primaryText.includes(t))) {
+        matchScore += 25;
+      }
+
+      // 3. มีคำพ้องในข้อความรอง (รุ่นที่รองรับ) (+5)
+      if (terms.some(t => secondaryText.includes(t))) {
+        matchScore += 5;
       }
     }
 
@@ -370,6 +432,13 @@ export const findRelatedProducts = (products = [], queryString = '', excludeIds 
         inStock: Boolean(p.stockQuantity > 0 || p.inStock)
       });
     }
+  }
+
+  // หากไม่มีคะแนนเลย (ไม่มี Token ใดตรงเลย) ➔ Fallback ป้องกันหน้าจอว่างเปล่า (Zero Dead-End)
+  if (scored.length === 0) {
+    return candidates
+      .filter(p => p.stockQuantity > 0 || p.inStock)
+      .slice(0, 8);
   }
 
   // เรียงลำดับ: คะแนนความเกี่ยวข้องสูงกว่ามาก่อน -> มีสต็อกพร้อมขายมาก่อน
