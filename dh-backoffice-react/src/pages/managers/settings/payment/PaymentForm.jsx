@@ -151,7 +151,7 @@ export default function PaymentForm({ settings, updateSettings, saveSettings, is
           <button 
             type="submit" 
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             <span>{isSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่าบัญชี'}</span>
