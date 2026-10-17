@@ -300,8 +300,12 @@ export const billingTransactionService = {
           const newOrderRef = doc(db, COLLECTION_NAME, finalOrderId);
           newDocId = newOrderRef.id;
 
-          // 🧹 If upgrading a temp draft (orderData.id) to a final order (finalOrderId), delete old temp draft doc from Firestore
-          if (orderData.id && orderData.id !== finalOrderId) {
+          // 🧹 If upgrading a temp draft to a final order (finalOrderId), delete old temp draft doc from Firestore
+          const oldDraftDocId = orderData.docId || orderData.id;
+          if (oldDraftDocId && oldDraftDocId !== finalOrderId && String(oldDraftDocId).startsWith('DH-TEMP-')) {
+            const oldDraftRef = doc(db, COLLECTION_NAME, oldDraftDocId);
+            transaction.delete(oldDraftRef);
+          } else if (orderData.id && orderData.id !== finalOrderId) {
             const oldDraftRef = doc(db, COLLECTION_NAME, orderData.id);
             transaction.delete(oldDraftRef);
           }
@@ -338,13 +342,21 @@ export const billingTransactionService = {
             items: verifiedItems, 
             itemSkus,
             orderId: finalOrderId, 
+            orderStatus: isPaidOrApproved ? (statusLower === 'approved' ? 'approved' : 'paid') : (dataToSave.orderStatus || 'Draft'),
+            status: isPaidOrApproved ? (statusLower === 'approved' ? 'approved' : 'paid') : (dataToSave.status || 'Draft'),
+            paymentStatus: isPaidOrApproved ? 'paid' : (dataToSave.paymentStatus || 'unpaid'),
+            fulfillmentStatus: isPaidOrApproved 
+              ? ((dataToSave.fulfillmentType === 'StorePickup' || dataToSave.shippingMethod === 'pickup') ? 'ready_for_pickup' : 'pending_packing')
+              : (dataToSave.fulfillmentStatus || 'pending_payment_verification'),
             earnedPoints, 
             walletUsedAmount: walletToUse, 
             isStockDeducted: isPaidOrApproved, 
             isWalletDeducted: isWalletDeducted,
             updatedAt: serverTimestamp(), 
-            createdBy: actorUid, 
-            creatorName: actorName, 
+            createdBy: actorUid || dataToSave.createdBy, 
+            creatorName: actorName || dataToSave.creatorName, 
+            staffNickname: actorName || dataToSave.staffNickname || 'พนักงาน',
+            staffUid: actorUid || dataToSave.staffUid || null,
             finalTotal: finalSecureNetTotal, 
             netTotal: finalSecureNetTotal,
             ...(earnedPoints > 0 && isPaidOrApproved ? { pointsAwarded: true, pendingCredits: 0 } : {}),

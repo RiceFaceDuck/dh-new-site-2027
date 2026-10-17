@@ -46,6 +46,7 @@ export const AVAILABLE_MENUS = {
   freebie: { title: "ของแถม", subtitle: "จัดการรายการสินค้าสมนาคุณ", iconName: "Gift", colorTheme: "pink" },
   refund: { title: "Wallet & คืนเงิน", subtitle: "ศูนย์รวมพิจารณาคำขอถอนเงินและค้างยอด", iconName: "Wallet", colorTheme: "emerald" },
   shipping: { title: "จัดการค่าจัดส่ง", subtitle: "ตั้งค่าและเงื่อนไขค่าจัดส่ง", iconName: "Truck", colorTheme: "blue" },
+  payment: { title: "วิธีชำระเงิน/ธนาคาร", subtitle: "จัดการบัญชีรับเงินและสลิป", iconName: "CreditCard", colorTheme: "amber" },
   core_settings: { title: "System Core Settings", subtitle: "ตั้งค่าระบบหลักและคอขวด", iconName: "Settings", colorTheme: "slate" },
   data_repair: { title: "Data Repair System", subtitle: "ซ่อมแซมบิลที่มีปัญหา", iconName: "ShieldCheck", colorTheme: "red" },
   warranty_checker: { title: "เช็คประกัน/เคลม", subtitle: "เครื่องมือเช็คอายุประกันด่วน", iconName: "ShieldCheck", colorTheme: "orange" },

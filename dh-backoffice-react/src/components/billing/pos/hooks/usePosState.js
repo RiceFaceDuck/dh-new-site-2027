@@ -129,6 +129,25 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
 
         const draftOrderId = initialDraft.orderId ? String(initialDraft.orderId) : null;
         const draftDocId = initialDraft.id ? String(initialDraft.id) : null;
+        const isWebOrder = Boolean(initialDraft.isWebOrder || initialDraft.channel === 'storefront' || initialDraft.source === 'storefront');
+        const effectiveSlip = initialDraft.paymentSlipUrl || initialDraft.slipUrl || initialDraft.slipImage || '';
+
+        // 👤 ดักจับชื่อเจ้าหน้าที่คนแรกที่เปิดบิล (First-Touch Staff Ownership)
+        const currentStaffUser = auth?.currentUser;
+        const currentStaffUid = currentStaffUser?.uid || null;
+        const currentStaffName = currentStaffUser?.displayName || currentStaffUser?.email?.split('@')[0] || 'พนักงาน';
+
+        if (isWebOrder && !initialDraft.staffNickname && currentStaffUid) {
+            const targetOrderId = draftDocId || draftOrderId;
+            if (targetOrderId) {
+                import('../../../../firebase/billingStatusTransaction').then(({ billingStatusTransaction }) => {
+                    billingStatusTransaction.assignStaffHandler(targetOrderId, currentStaffUid, currentStaffName);
+                }).catch(err => console.warn("Failed to assign staff handler:", err));
+            }
+        }
+
+        const effectiveStaffNickname = initialDraft.staffNickname || (isWebOrder ? currentStaffName : null);
+        const effectiveStaffUid = initialDraft.staffUid || (isWebOrder ? currentStaffUid : null);
 
         let fullCustomer = initialDraft.customer || null;
         if (fullCustomer && fullCustomer.uid && fullCustomer.uid !== 'WALK-IN') {
@@ -157,12 +176,19 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                     ...existingTab,
                     orderId: draftOrderId || existingTab.orderId,
                     docId: draftDocId || existingTab.docId,
+                    isWebOrder,
+                    channel: initialDraft.channel || (isWebOrder ? 'storefront' : 'pos'),
+                    source: initialDraft.source || (isWebOrder ? 'storefront' : 'pos'),
+                    staffNickname: effectiveStaffNickname,
+                    staffUid: effectiveStaffUid,
+                    openedBy: initialDraft.openedBy || (isWebOrder ? currentStaffUid : null),
                     customer: fullCustomer,
                     items: (initialDraft.items || []).filter(i => !i.isFreebie),
                     walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : (existingTab.walkInName || ''),
                     walkInPhone: initialDraft.customer?.phone || (existingTab.walkInPhone || ''),
                     hidePhone: initialDraft.customer?.hidePhone || false,
-                    slipImage: initialDraft.slipImage || existingTab.slipImage || '',
+                    slipImage: effectiveSlip || existingTab.slipImage || '',
+                    paymentSlipUrl: effectiveSlip || existingTab.paymentSlipUrl || '',
                     billNote: initialDraft.billNote || existingTab.billNote || '',
                     priceMode: initialDraft.priceMode || existingTab.priceMode || 'wholesale',
                     shippingFee: initialDraft.shippingFee ?? existingTab.shippingFee ?? 0,
@@ -201,12 +227,19 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 id: assignedId,
                 orderId: draftOrderId || null,
                 docId: draftDocId || null,
+                isWebOrder,
+                channel: initialDraft.channel || (isWebOrder ? 'storefront' : 'pos'),
+                source: initialDraft.source || (isWebOrder ? 'storefront' : 'pos'),
+                staffNickname: effectiveStaffNickname,
+                staffUid: effectiveStaffUid,
+                openedBy: initialDraft.openedBy || (isWebOrder ? currentStaffUid : null),
                 customer: fullCustomer,
                 items: (initialDraft.items || []).filter(i => !i.isFreebie),
                 walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : '',
                 walkInPhone: initialDraft.customer?.phone || '',
                 hidePhone: initialDraft.customer?.hidePhone || false,
-                slipImage: initialDraft.slipImage || '',
+                slipImage: effectiveSlip,
+                paymentSlipUrl: effectiveSlip,
                 billNote: initialDraft.billNote || '',
                 priceMode: initialDraft.priceMode || 'wholesale',
                 shippingFee: initialDraft.shippingFee || 0,

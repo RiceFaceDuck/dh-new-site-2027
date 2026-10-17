@@ -19,9 +19,14 @@ const CheckoutSuccess = ({ isB2B, result }) => {
           {isWholesale ? <Briefcase size={40} className="text-indigo-600" /> : <CheckCircle2 size={40} className="text-[#0870B8]" />}
         </div>
 
-        <h2 className="text-2xl font-black text-gray-800 mb-3 uppercase tracking-tight">
+        <h2 className="text-2xl font-black text-gray-800 mb-1 uppercase tracking-tight">
           {isWholesale ? 'Request Sent!' : 'Success!'}
         </h2>
+        {result?.orderId && (
+          <p className="text-xs font-bold text-gray-500 mb-4">
+            เลขที่คำสั่งซื้อชั่วคราว: <span className="text-[#0870B8] font-mono font-black">{result.orderId}</span>
+          </p>
+        )}
 
         <div className={`${isWholesale ? 'bg-indigo-50/50' : 'bg-[#E6F0F9]/50'} rounded-md p-5 mb-8 border border-slate-200 text-left`}>
           <p className="text-gray-700 text-sm leading-relaxed">

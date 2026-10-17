@@ -52,6 +52,7 @@ const RbacSettings = lazy(() => import('./pages/managers/settings/rbac/index.jsx
 const RoleTierSettings = lazy(() => import('./pages/managers/RoleTierSettings/RoleTierSettingsPage'))
 
 const SystemCoreSettings = lazy(() => import('./pages/managers/settings/core/SystemCoreSettings'))
+const PaymentSettingsPage = lazy(() => import('./pages/managers/settings/payment/PaymentSettingsPage'))
 const DataRepairPage = lazy(() => import('./pages/managers/settings/data_repair/DataRepairPage'))
 const AuditLedger = lazy(() => import('./pages/managers/AuditLedger'))
 const YearlyArchivePage = lazy(() => import('./pages/managers/yearly_archive/YearlyArchivePage'))
@@ -197,6 +198,7 @@ function AppContent() {
             <Route path="managers/inventory-adjustment" element={<StockAdjustment />} />
             <Route path="managers/wallet" element={<WalletManagement />} />
             <Route path="managers/shipping" element={<ShippingManagement />} />
+            <Route path="managers/payment" element={<PaymentSettingsPage />} />
             <Route path="managers/ads" element={<AdManagement />} />
             <Route path="managers/partners" element={<PartnerSettings />} />
             <Route path="managers/refund" element={<RefundManagement />} />

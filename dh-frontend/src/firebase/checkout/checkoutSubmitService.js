@@ -28,7 +28,15 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
   const creditConfig = await getCreditSettings();
 
-  const orderRef = doc(collection(db, getCollectionPath('orders'))); 
+  // 📝 Generate Standardized Temp Order ID (DH-TEMP-YYMMDD-HHMMSS-XXXX)
+  const nowObj = new Date();
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const dateStr = `${String(nowObj.getFullYear()).slice(-2)}${pad2(nowObj.getMonth() + 1)}${pad2(nowObj.getDate())}`;
+  const timeStr = `${pad2(nowObj.getHours())}${pad2(nowObj.getMinutes())}${pad2(nowObj.getSeconds())}`;
+  const rand4 = Math.floor(1000 + Math.random() * 9000);
+  const tempOrderId = `DH-TEMP-${dateStr}-${timeStr}-${rand4}`;
+
+  const orderRef = doc(db, getCollectionPath('orders'), tempOrderId); 
   const userRef = doc(db, getCollectionPath('users'), user.uid);
 
   try {
@@ -227,6 +235,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     const orderData = {
       orderId: orderRef.id,
+      docId: orderRef.id,
       userId: user.uid,
       customer: {
         uid: user.uid,
@@ -244,8 +253,18 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       taxInvoice: checkoutState?.taxData || null,
       paymentMethod: checkoutState?.paymentMethod || "transfer",
       paymentSlipUrl: slipUrl,
-      status: slipUrl ? "pending_payment_verification" : "pending_payment", 
-      orderStatus: slipUrl ? "pending_payment_verification" : "pending_payment",
+      status: "draft", 
+      orderStatus: "Draft",
+      paymentStatus: slipUrl ? "pending_verification" : "unpaid",
+      isDraft: true,
+      isWebOrder: true,
+      channel: "storefront",
+      source: "storefront",
+      staffNickname: null,
+      openedBy: null,
+      creatorName: "ลูกค้าหน้าเว็บ",
+      createdBy: user.uid,
+      fulfillmentStatus: "pending_payment_verification",
       totals: {
         ...totals,
         netTotal: finalNetTotal, // Use secure price

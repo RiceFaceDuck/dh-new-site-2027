@@ -1,5 +1,5 @@
 import React from 'react';
-import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store, User } from 'lucide-react';
+import { Receipt, Calendar, Ban, CheckCircle2, Clock, Phone, Truck, Store, User, Globe } from 'lucide-react';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 
 const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrder }) {
@@ -61,6 +61,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
     const hasPendingReturn = !!(order.hasPendingReturn || order.pendingReturnCount > 0 || order.pendingReturn);
     const hasPendingExchange = !!(order.hasPendingExchange || order.pendingExchangeCount > 0 || order.pendingExchange);
     const isDraft = !isCancelled && !isPaid && (statLower === 'draft' || payStatLower === 'draft' || order.isDraft === true || String(order.orderId || '').startsWith('DH-TEMP-'));
+    const isWebOrder = Boolean(order.isWebOrder || order.channel === 'storefront' || order.source === 'storefront');
 
     // Check tax invoice status
     const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus || order.taxInvoiceUrl || order.taxData || order.hasPendingTax);
@@ -78,6 +79,11 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                             {String(order.orderId || '').replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1')}
                         </span>
                     </div>
+                    {isWebOrder && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-cyan-600 text-white font-black text-[9.5px] tracking-wide shadow-xs border border-cyan-700 shrink-0" title="ออเดอร์สั่งซื้อผ่านระบบหน้าเว็บไซต์">
+                            <Globe size={10} strokeWidth={2.5}/> หน้าเว็บ
+                        </span>
+                    )}
                 </div>
                 <div className="text-[10px] text-(--dh-text-muted) font-bold flex items-center gap-1 ml-5">
                     <Calendar size={10} className="opacity-60"/>
@@ -90,9 +96,16 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         <Ban size={15} strokeWidth={2.5} /> ยกเลิกแล้ว
                     </span>
                 ) : isDraft ? (
-                    <span className="inline-flex items-center justify-start gap-1.5 text-purple-700 text-sm font-black">
-                        <Clock size={15} strokeWidth={2.5} /> ฉบับร่าง (Draft)
-                    </span>
+                    <div className="flex flex-col items-start gap-1">
+                        {isWebOrder && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[0.25rem] bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[11px] font-black shadow-xs tracking-wide border border-cyan-400">
+                                <Globe size={12} strokeWidth={2.5} /> ออเดอร์ใหม่ [หน้าเว็บ]
+                            </span>
+                        )}
+                        <span className="inline-flex items-center justify-start gap-1.5 text-purple-700 text-xs font-black">
+                            <Clock size={13} strokeWidth={2.5} /> ฉบับร่าง (Draft)
+                        </span>
+                    </div>
                 ) : statLower === 'completed' ? (
                     <span className="inline-flex items-center justify-start gap-1.5 text-blue-700 text-sm font-black">
                         ส่งออก 🚚
@@ -127,9 +140,15 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                     <div className="p-1 bg-slate-500/10 rounded-sm overflow-hidden shadow-inner flex items-center justify-center shrink-0">
                         <User size={12} className="text-slate-500"/>
                     </div>
-                    <span className="truncate max-w-[110px]" title={order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}>
-                        {order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}
-                    </span>
+                    {isWebOrder && !order.staffNickname ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-sm border border-amber-300">
+                            ยังไม่มีผู้รับ
+                        </span>
+                    ) : (
+                        <span className="truncate max-w-[110px]" title={order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}>
+                            {order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}
+                        </span>
+                    )}
                 </div>
             </td>
             <td className="py-2.5 px-4 align-middle">

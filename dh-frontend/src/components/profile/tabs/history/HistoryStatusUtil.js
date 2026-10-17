@@ -9,7 +9,13 @@ export const getStatusDisplay = (status, order = {}) => {
       case 'pending_payment':
         return { text: '💳 รอการชำระเงิน', color: 'bg-orange-100 text-orange-700 border-orange-200 animate-pulse shadow-xs' };
       case 'pending_payment_verification':
-        return { text: '⌛ รอตรวจสอบสลิป', color: 'bg-blue-100 text-blue-700 border-blue-200' };
+      case 'draft':
+        return { 
+          text: (order.paymentSlipUrl || order.paymentStatus === 'pending_verification') 
+            ? '⌛ รอตรวจสอบสลิป' 
+            : '📝 ฉบับร่าง', 
+          color: 'bg-blue-100 text-blue-700 border-blue-200' 
+        };
       case 'processing':
       case 'paid':
       case 'approved':

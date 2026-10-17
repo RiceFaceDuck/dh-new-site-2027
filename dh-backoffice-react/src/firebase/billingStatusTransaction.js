@@ -349,5 +349,23 @@ export const billingStatusTransaction = {
 
       return orderId;
     })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะส่งมอบ");
+  },
+
+  assignStaffHandler: async (orderId, staffUid, staffNickname) => {
+    if (!orderId || !staffUid) return;
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      const docRef = doc(db, COLLECTION_NAME, orderId);
+      await updateDoc(docRef, {
+        staffUid,
+        staffNickname,
+        openedBy: staffUid,
+        openedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      syncRecentOrdersCatalog().catch(() => {});
+    } catch (e) {
+      console.warn("⚠️ [assignStaffHandler] Error assigning staff:", e);
+    }
   }
 };

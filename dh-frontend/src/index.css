@@ -6,6 +6,7 @@
   --color-brand-light: var(--color-brand-light);
   --color-brand-accent: var(--color-brand-accent);
   --color-brand-silver: #e0e0e0;
+  --font-sarabun: "TH Sarabun New", "Sarabun", system-ui, -apple-system, sans-serif;
 
   /* =========================================
      Retro/Classic Border Radius Calibration
@@ -149,6 +150,15 @@
 }
 @utility text-glow-gold {
   text-shadow: 0 0 10px var(--color-brand-accent);
+}
+@utility text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+@utility text-shadow-md {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+@utility font-sarabun {
+  font-family: "TH Sarabun New", "Sarabun", system-ui, -apple-system, sans-serif;
 }
 @utility skeleton-shimmer {
   /* Skeleton Shimmer (แสงวิ่งผ่านระหว่างรอโหลดข้อมูล) */

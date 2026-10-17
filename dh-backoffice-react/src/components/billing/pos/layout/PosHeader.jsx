@@ -89,6 +89,7 @@ export default function PosHeader({
                     const totalAmt = items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || i.quantity || 1)), 0);
 
                     const isDraft = !!(tab.docId || items.length > 0 || tab.customer || tab.walkInName);
+                    const isWebOrder = Boolean(tab.isWebOrder || tab.channel === 'storefront' || tab.source === 'storefront');
 
                     return (
                         <button 
@@ -107,7 +108,11 @@ export default function PosHeader({
                             <div className="flex flex-col items-start text-left leading-tight">
                                 <div className="flex items-center gap-1.5">
                                     <span className="truncate max-w-[130px]">{getTabTitle(tab, idx)}</span>
-                                    {isDraft && (
+                                    {isWebOrder ? (
+                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-cyan-600 text-white border border-cyan-700 shadow-2xs flex items-center gap-0.5">
+                                            🌐 หน้าเว็บ
+                                        </span>
+                                    ) : isDraft && (
                                         <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border ${
                                             isActive 
                                                 ? 'bg-amber-100 text-amber-800 border-amber-300/80 shadow-2xs' 

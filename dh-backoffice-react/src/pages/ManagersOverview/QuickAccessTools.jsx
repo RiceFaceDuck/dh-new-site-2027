@@ -120,6 +120,7 @@ const QuickAccessTools = ({
       case 'freebie': return () => navigate('/managers/freebie');
       case 'refund': return () => navigate('/managers/refund');
       case 'shipping': return () => navigate('/managers/shipping');
+      case 'payment': return () => navigate('/managers/payment');
       case 'inventory_adjustment': return () => navigate('/managers/inventory-adjustment');
       case 'core_settings': return () => navigate('/managers/core-settings');
       case 'role_tier': return () => navigate('/managers/role-tier');

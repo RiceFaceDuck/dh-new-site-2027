@@ -110,6 +110,12 @@
         วิธีแก้: ปรับ `usePosActions.js` ให้ส่ง `orderStatus: 'Draft'`, `status: 'Draft'`, `isDraft: true` เมื่อกดบันทึกร่าง, ปรับ `OrderTableRow.jsx` และ `OrderDetailModal.jsx` ให้ตรวจจับทั้งสถานะ `draft` และรหัส `DH-TEMP-` เพื่อแสดงป้าย "ฉบับร่าง (Draft)" และเพิ่ม Guard ใน `useAutoCleanup.js` ไม่ให้ยกเลิกบิลร่างอัตโนมัติ [สถานะ: ส่งมอบแล้ว]
     32. ปัญหา: กด "แก้ไขบิล" จาก OrderDetailModal แล้วไม่เปิดแท็บของบิลนั้น และเกิดอาการเบราว์เซอร์ค้าง (หน้าไม่ตอบสนอง / Infinite Loop)
         วิธีแก้: ปรับปรุง `usePosState.js` ให้ค้นหาแท็บเดิมด้วย `orderId` หรือ `docId` และล็อก `activeTabId` ให้ตรงกับ `tab.id` ตัวจริงของแท็บนั้นเสมอ พร้อมย้าย `setActiveTabId` ออกนอก updater ของ `setCartTabs`, เติม `onDraftHandled` เคลียร์ `draftOrder` ใน `BillingMain.jsx` และครอบ `useCallback` ให้กับ `applyPromotionLogic` ใน `usePosActions.js` เพื่อตัดวงจร Infinite Re-render Loop สมบูรณ์ [สถานะ: ส่งมอบแล้ว]
+    33. ปัญหา: ออเดอร์จากหน้าเว็บสร้างเป็น Document ปกติ ทำให้แคชเชียร์ไม่เห็นในแท็บบิล ไม่มีป้ายแจ้งเตือนเด่นชัด และไม่มีการดักจับเจ้าหน้าที่ผู้เปิดบิล
+        วิธีแก้: 
+        1) หน้าเว็บออกเลขบิลชั่วคราว `DH-TEMP-YYMMDD-HHMMSS-XXXX` บันทึกสถานะเป็น Draft รอตรวจสลิป
+        2) ในตารางบิลและแท็บ POS แสดงป้ายสะดุดตา `🌐 ออเดอร์ใหม่ [หน้าเว็บ]`
+        3) เมื่อเจ้าหน้าที่เปิดบิลเป็นคนแรก ระบบดักจับ `staffNickname` และ `openedBy` บันทึกลงบิลอัตโนมัติ (First-Touch Staff Ownership)
+        4) เมื่อกด `[รับชำระเงิน (Paid)]` ลบบิล Temp เก่า ออกเลขทางการ `DH-26-XXXX` เปลี่ยนสถานะเป็น `paid` ซิงค์เรียลไทม์ทั้งหน้าบ้านและหลังบ้าน พร้อมส่งต่อเข้าคิว `pending_packing` [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

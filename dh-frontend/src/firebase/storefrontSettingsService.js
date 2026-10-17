@@ -43,6 +43,22 @@ export const DEFAULT_HERO_CONFIG = {
 const CACHE_KEY = 'dh_hero_config_cache';
 const CACHE_TTL = 15 * 60 * 1000; // 15 mins
 
+export const DEFAULT_PAYMENT_CONFIG = {
+  bankName: 'ธนาคารกรุงศรีอยุธยา (Krungsri)',
+  bankCode: 'BAY',
+  bankShort: 'กรุงศรี',
+  accountName: 'นายเหว่ย ไห',
+  accountNumber: '692-1-14458-6',
+  promptPayNumber: '',
+  promptPayName: '',
+  enableBankTransfer: true,
+  enablePromptPay: false,
+  note: 'กรุณาตรวจสอบยอดเงินและชื่อบัญชีให้ถูกต้องก่อนโอนเงิน'
+};
+
+const PAYMENT_CACHE_KEY = 'dh_payment_config_cache';
+const PAYMENT_CACHE_TTL = 15 * 60 * 1000; // 15 mins
+
 export const storefrontSettingsService = {
   /**
    * ดึงข้อมูลการตั้งค่าป้ายโฆษณาหลัก (Hero Billboard) พร้อมระบบ Cache ใน LocalStorage
@@ -119,6 +135,57 @@ export const storefrontSettingsService = {
     } catch (error) {
       console.error("🔥 Error fetching active shipping rules:", error);
       return [];
+    }
+  },
+
+  /**
+   * ดึงข้อมูลการตั้งค่าวิธีชำระเงินและบัญชีธนาคาร (Payment Settings) พร้อมระบบ Cache 15 นาที
+   */
+  getPaymentConfig: async () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem(PAYMENT_CACHE_KEY);
+        if (cached) {
+          try {
+            const { data, timestamp } = safeJsonParse(cached);
+            if (Date.now() - timestamp < PAYMENT_CACHE_TTL && data) {
+              return data;
+            }
+          } catch (e) {
+            console.warn("Malformed payment config cache. Refreshing.");
+          }
+        }
+      }
+
+      const docRef = doc(db, getCollectionPath('settings'), 'payment');
+      const snap = await getDoc(docRef);
+      let result = DEFAULT_PAYMENT_CONFIG;
+      if (snap.exists()) {
+        result = { ...DEFAULT_PAYMENT_CONFIG, ...snap.data() };
+      }
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PAYMENT_CACHE_KEY, JSON.stringify({
+          data: result,
+          timestamp: Date.now()
+        }));
+      }
+
+      return result;
+    } catch (error) {
+      console.error("🔥 Error fetching payment config:", error);
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem(PAYMENT_CACHE_KEY);
+        if (cached) {
+          try {
+            const { data } = safeJsonParse(cached);
+            if (data) return data;
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+      return DEFAULT_PAYMENT_CONFIG;
     }
   }
 };

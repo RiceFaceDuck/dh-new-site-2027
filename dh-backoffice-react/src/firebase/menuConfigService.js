@@ -21,7 +21,7 @@ const DEFAULT_LAYOUT = {
     {
       id: "zone-3",
       title: "📈 การตลาด & การขาย",
-      menuIds: ["ads", "pricing", "email"]
+      menuIds: ["ads", "pricing", "email", "payment"]
     },
     {
       id: "zone-5",
@@ -86,6 +86,15 @@ export const menuConfigService = {
             const zone2 = data.zones.find(z => z.id === "zone-2") || data.zones[0];
             if (zone2) {
               zone2.menuIds.push("yearly_archive");
+              needsUpdate = true;
+            }
+          }
+
+          const hasPayment = data.zones.some(z => z.menuIds.includes("payment"));
+          if (!hasPayment) {
+            const zone3 = data.zones.find(z => z.id === "zone-3") || data.zones[0];
+            if (zone3) {
+              zone3.menuIds.push("payment");
               needsUpdate = true;
             }
           }

@@ -1,14 +1,35 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, Upload, CheckCircle2, Copy, Image as ImageIcon, AlertCircle, X, Check } from 'lucide-react';
+import { CreditCard, Upload, CheckCircle2, Copy, Image as ImageIcon, AlertCircle, X, Check, QrCode } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { formatCredit } from '../../firebase/creditService';
+import { storefrontSettingsService, DEFAULT_PAYMENT_CONFIG } from '../../firebase/storefrontSettingsService';
+import bayAccountCardImg from '../../assets/bay_account_card.png';
 
 export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slipUrl, calculatedNetTotal }) {
   const { totals } = useCart();
   
   const [copied, setCopied] = useState(false);
+  const [copiedPromptPay, setCopiedPromptPay] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState('');
+  const [paymentConfig, setPaymentConfig] = useState(DEFAULT_PAYMENT_CONFIG);
+
+  // 🔄 โหลดการตั้งค่าบัญชีธนาคารจาก Backoffice (มีแคช 15 นาที)
+  useEffect(() => {
+    let isMounted = true;
+    const loadPaymentConfig = async () => {
+      try {
+        const config = await storefrontSettingsService.getPaymentConfig();
+        if (isMounted && config) {
+          setPaymentConfig(config);
+        }
+      } catch (e) {
+        console.warn("Failed to load payment config, fallback to default:", e);
+      }
+    };
+    loadPaymentConfig();
+    return () => { isMounted = false; };
+  }, []);
 
   // ♻️ ซิงค์ URL หากมีการอัปโหลดสลิปค้างไว้ (กรณีพับ Accordion แล้วเปิดใหม่)
   useEffect(() => {
@@ -26,10 +47,22 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
   }, [slipUrl]);
 
   // 🪄 UX: ฟังก์ชันคัดลอกเลขบัญชีแบบ One-Click
-  const handleCopy = () => {
-    navigator.clipboard.writeText('1234567890'); // เปลี่ยนเป็นเลขบัญชีจริงของ DH Notebook
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = (customText) => {
+    const textToCopy = customText || paymentConfig.accountNumber?.replace(/-/g, '') || paymentConfig.accountNumber || '';
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleCopyPromptPay = () => {
+    const textToCopy = paymentConfig.promptPayNumber?.replace(/-/g, '') || paymentConfig.promptPayNumber || '';
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      setCopiedPromptPay(true);
+      setTimeout(() => setCopiedPromptPay(false), 2000);
+    }
   };
 
   // 🚀 [NEW] ฟังก์ชันบีบอัดรูปภาพอัตโนมัติ
@@ -135,7 +168,7 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
 
   // 🛒 โหมดสั่งซื้อปกติ
   return (
-    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200 transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200 transition-all duration-300 hover:shadow-md font-sarabun">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <CreditCard className="w-6 h-6 text-blue-600" />
@@ -160,41 +193,107 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
           </div>
         </label>
 
-        {/* บัตรแสดงข้อมูลบัญชีธนาคาร (Bank Account Card) */}
-        <div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-md p-6 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
-          <div className="relative z-10">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <p className="text-gray-400 text-xs font-medium mb-1">ธนาคารกสิกรไทย (KBANK)</p>
-                <p className="font-bold text-lg">บริษัท ดีดี ดาต้า ไอที จำกัด</p>
-              </div>
-              {/* โลโก้ธนาคาร (จำลองด้วยสีเขียว) */}
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-xs">
-                <span className="font-black text-white text-lg">K</span>
+        {/* บัตรแสดงข้อมูลบัญชีธนาคาร (Solid Dark Theme - High Trust - Sarabun New) */}
+        <div className="bg-slate-900 rounded-xl p-5 sm:p-6 text-white shadow-md border border-slate-800 font-sarabun">
+          <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-6">
+            {/* ภาพกราฟิกบัญชีธนาคาร (ตัดขอบขาวสะอาด คมชัด) */}
+            <div className="shrink-0 flex items-center justify-center">
+              <div className="relative overflow-hidden rounded-xl bg-slate-800/90 p-2 border border-slate-700/60 shadow-md flex items-center justify-center">
+                <img 
+                  src={bayAccountCardImg} 
+                  alt="ธนาคารกรุงศรีอยุธยา - นายเหว่ย ไห" 
+                  className="w-36 sm:w-40 md:w-44 h-auto object-contain rounded-lg shadow-sm"
+                  loading="lazy"
+                />
               </div>
             </div>
 
-            <div className="flex items-end justify-between bg-black/20 p-3 rounded-md backdrop-blur-xs border border-white/10">
-              <div>
-                <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-1">เลขที่บัญชี</p>
-                <p className="font-mono text-xl tracking-widest font-medium">123-4-56789-0</p>
+            {/* รายละเอียดบัญชีและการคัดลอก */}
+            <div className="flex-1 flex flex-col justify-between min-w-0 w-full space-y-3.5">
+              {/* ส่วนหัวธนาคารและชื่อบัญชี */}
+              <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 text-shadow-sm">
+                      {paymentConfig.bankShort || 'กรุงศรี'} ({paymentConfig.bankCode || 'BAY'})
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium text-shadow-sm">บัญชีทางการ</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mt-1.5 tracking-wide text-shadow-sm">
+                    {paymentConfig.accountName || 'นายเหว่ย ไห'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 font-medium text-shadow-sm">
+                    {paymentConfig.bankName || 'ธนาคารกรุงศรีอยุธยา (Krungsri)'}
+                  </p>
+                </div>
               </div>
-              <button 
-                type="button"
-                onClick={handleCopy}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${copied ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'คัดลอกแล้ว' : 'คัดลอก'}
-              </button>
-            </div>
-            
-            <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
-              <span className="text-sm text-gray-300">ยอดที่ต้องชำระสุทธิ</span>
-              <span className="text-2xl font-black text-emerald-400">
-                ฿{formatCredit(calculatedNetTotal !== undefined ? calculatedNetTotal : (totals?.grandTotal || 0))}
-              </span>
+
+              {/* กล่องแสดงเลขที่บัญชี + ปุ่มคัดลอก (ไม่มีการตัดคำเด็ดขาด) */}
+              <div className="bg-slate-950/95 p-4 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-bold text-slate-400 tracking-wider text-shadow-sm">
+                    เลขที่บัญชี
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => handleCopy(paymentConfig.accountNumber)}
+                    className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 shadow-sm ${
+                      copied 
+                        ? 'bg-emerald-600 text-white' 
+                        : 'bg-amber-500 hover:bg-amber-400 text-slate-950 hover:shadow active:scale-95'
+                    }`}
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? 'คัดลอกแล้ว' : 'คัดลอกเลขบัญชี'}
+                  </button>
+                </div>
+                <div className="pt-0.5">
+                  <p className="font-mono text-2xl sm:text-3xl font-black text-amber-400 tracking-wider whitespace-nowrap text-shadow-sm select-all">
+                    {paymentConfig.accountNumber || '692-1-14458-6'}
+                  </p>
+                </div>
+              </div>
+
+              {/* แสดงพร้อมเพย์ถ้าเปิดใช้งาน */}
+              {paymentConfig.enablePromptPay && paymentConfig.promptPayNumber && (
+                <div className="bg-slate-950/95 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1 text-shadow-sm">
+                      <QrCode className="w-3.5 h-3.5 text-amber-400" /> พร้อมเพย์ (PromptPay) {paymentConfig.promptPayName ? `• ${paymentConfig.promptPayName}` : ''}
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={handleCopyPromptPay}
+                      className={`shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all duration-200 ${
+                        copiedPromptPay 
+                          ? 'bg-emerald-600 text-white' 
+                          : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                      }`}
+                    >
+                      {copiedPromptPay ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedPromptPay ? 'คัดลอกแล้ว' : 'คัดลอก'}
+                    </button>
+                  </div>
+                  <div>
+                    <p className="font-mono text-xl font-black text-amber-300 tracking-wider whitespace-nowrap text-shadow-sm select-all">
+                      {paymentConfig.promptPayNumber}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {paymentConfig.note && (
+                <p className="text-xs text-slate-400 font-medium text-shadow-sm">
+                  ℹ️ {paymentConfig.note}
+                </p>
+              )}
+              
+              <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
+                <span className="text-sm text-slate-300 font-medium text-shadow-sm">ยอดที่ต้องชำระสุทธิ</span>
+                <span className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight text-shadow-sm">
+                  ฿{formatCredit(calculatedNetTotal !== undefined ? calculatedNetTotal : (totals?.grandTotal || 0))}
+                </span>
+              </div>
             </div>
           </div>
         </div>
