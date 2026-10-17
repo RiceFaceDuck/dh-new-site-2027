@@ -376,7 +376,7 @@ const SearchPage = () => {
                     onClick={() => setShowTechnicianModal(true)}
                     className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 shrink-0 inline-flex items-center justify-center gap-1.5"
                   >
-                    <Phone size={13} /> ติดต่อช่างทันที (นามบัตรช่าง)
+                    <Phone size={13} /> ติดต่อช่างทันที
                   </button>
                 </div>
 
@@ -454,7 +454,7 @@ const SearchPage = () => {
                   onClick={() => setShowTechnicianModal(true)}
                   className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 shrink-0 inline-flex items-center justify-center gap-1.5"
                 >
-                  <Phone size={13} /> ติดต่อช่างทันที (นามบัตรช่าง)
+                  <Phone size={13} /> ติดต่อช่างทันที
                 </button>
               </div>
 
