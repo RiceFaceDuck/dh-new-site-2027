@@ -20,7 +20,7 @@ export function useCheckoutLogic() {
     taxData: contextCheckoutState?.taxInfo || null,
     paymentMethod: 'transfer',
     shippingMethod: contextCheckoutState?.shippingMethod || 'standard',
-    shippingCost: 0,
+    shippingCost: contextCheckoutState?.shippingCost !== undefined ? contextCheckoutState.shippingCost : 50,
     insuranceCost: 0,
     appliedPromotions: contextCheckoutState?.appliedPromotions || [],
     discountAmount: contextCheckoutState?.discountAmount || 0,
@@ -29,17 +29,21 @@ export function useCheckoutLogic() {
     wholesaleReason: '',
   });
 
-  // Sync external changes (like async freebie evaluation) into the local checkout state
+  // Sync external changes (like async freebie evaluation, shipping method/cost) into the local checkout state
   useEffect(() => {
     setCheckoutState(prev => {
       const newFreebies = contextCheckoutState?.qualifiedFreebies || [];
       const newPromos = contextCheckoutState?.appliedPromotions || [];
       const newDiscount = contextCheckoutState?.discountAmount || 0;
+      const newShippingCost = contextCheckoutState?.shippingCost !== undefined ? contextCheckoutState.shippingCost : prev.shippingCost;
+      const newShippingMethod = contextCheckoutState?.shippingMethod || prev.shippingMethod;
       
       if (
         JSON.stringify(prev.qualifiedFreebies) === JSON.stringify(newFreebies) &&
         JSON.stringify(prev.appliedPromotions) === JSON.stringify(newPromos) &&
-        prev.discountAmount === newDiscount
+        prev.discountAmount === newDiscount &&
+        prev.shippingCost === newShippingCost &&
+        prev.shippingMethod === newShippingMethod
       ) {
         return prev;
       }
@@ -48,10 +52,12 @@ export function useCheckoutLogic() {
         ...prev,
         qualifiedFreebies: newFreebies,
         appliedPromotions: newPromos,
-        discountAmount: newDiscount
+        discountAmount: newDiscount,
+        shippingCost: newShippingCost,
+        shippingMethod: newShippingMethod
       };
     });
-  }, [contextCheckoutState?.qualifiedFreebies, contextCheckoutState?.appliedPromotions, contextCheckoutState?.discountAmount]);
+  }, [contextCheckoutState?.qualifiedFreebies, contextCheckoutState?.appliedPromotions, contextCheckoutState?.discountAmount, contextCheckoutState?.shippingCost, contextCheckoutState?.shippingMethod]);
 
   const [slipUrl, setSlipUrl] = useState(null);
   const [saveProfile, setSaveProfile] = useState(true);

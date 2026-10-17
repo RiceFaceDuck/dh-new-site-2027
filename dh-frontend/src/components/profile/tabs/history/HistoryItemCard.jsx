@@ -226,7 +226,10 @@ const HistoryItemCard = ({
 
               <div className="flex justify-between mt-1">
                 <span>ค่าจัดส่ง</span>
-                <span>{order.totals?.shipping === 0 ? <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-sm">ส่งฟรี</span> : `฿${order.totals?.shipping?.toLocaleString() || 0}`}</span>
+                {(() => {
+                  const shipVal = order.totals?.shipping ?? order.totals?.shippingCost ?? order.shippingFee ?? order.shippingCost ?? 0;
+                  return <span>{shipVal === 0 ? <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-sm">ส่งฟรี</span> : `฿${Number(shipVal).toLocaleString()}`}</span>;
+                })()}
               </div>
 
               {(() => {
@@ -241,7 +244,7 @@ const HistoryItemCard = ({
               
               <div className="flex justify-between items-end font-black text-indigo-950 text-base pt-3 border-t-2 border-indigo-100 border-dashed mt-3">
                 <span>ยอดชำระสุทธิ</span>
-                <span className="text-2xl text-indigo-700">฿{(order.totals?.grandTotal ?? order.totals?.netTotal ?? order.totals?.finalTotal ?? order.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) ?? 0).toLocaleString()}</span>
+                <span className="text-2xl text-indigo-700">฿{(order.totals?.netTotal ?? order.totals?.grandTotal ?? order.totals?.finalTotal ?? order.items?.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || item.quantity || 1)), 0) ?? 0).toLocaleString()}</span>
               </div>
           </div>
 

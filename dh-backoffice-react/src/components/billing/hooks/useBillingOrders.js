@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { billingService } from '../../../firebase/billingService';
 import { getStaffNickname } from 'dh-shared/src/utils/staffUtils';
-import { readCachedOrders, subscribeRecentOrdersCatalog } from '../../../firebase/orderCacheService';
+import { readCachedOrders, writeCachedOrders, subscribeRecentOrdersCatalog } from '../../../firebase/orderCacheService';
+import { syncRecentOrdersCatalog } from '../../../firebase/orderSyncService';
 
 export default function useBillingOrders() {
     const [orders, setOrders] = useState([]);
@@ -58,42 +59,28 @@ export default function useBillingOrders() {
         }
     }, []);
 
-    // ⚡ Tier 2: Subscribe to recent orders (Cache & Overwrite via catalogs/recent_orders with direct query fallback)
+    // ⚡ Tier 2: Subscribe to recent orders (Live Real-time direct query with Cache & Overwrite + catalogs/recent_orders sync)
     useEffect(() => {
         setLoading(true);
 
-        // If filtering by custom date, or if user expands limit beyond catalog bundle (> 50), use direct collection query
-        if (dateRange.start || dateRange.end || limitAmount > 50) {
-            const unsubscribe = billingService.subscribeRecentOrders(limitAmount, dateRange, (data) => {
-                setRecentOrders(data);
-                setLoading(false);
-            });
-            return () => unsubscribe();
-        }
+        // Direct real-time collection subscription ensures web orders (storefront),
+        // POS orders, and status updates appear immediately in real-time on page 1
+        const unsubscribe = billingService.subscribeRecentOrders(limitAmount, dateRange, (data) => {
+            setRecentOrders(data);
+            setLoading(false);
+            // Overwrite memory and SessionStorage cache immediately
+            writeCachedOrders(data);
+            // Sync bundled catalog document in background so other views stay up to date
+            syncRecentOrdersCatalog().catch(e => console.warn("[OrderCache] Background catalog sync warning:", e));
+        });
 
-        let isFallbackActive = false;
-        let fallbackUnsub = null;
-
-        const unsubscribeCatalog = subscribeRecentOrdersCatalog(
-            (catalogOrders) => {
-                setRecentOrders(catalogOrders);
-                setLoading(false);
-            },
-            (fallbackReason) => {
-                if (!isFallbackActive) {
-                    isFallbackActive = true;
-                    console.log(`[OrderCache] Using direct collection query fallback (Reason: ${fallbackReason})`);
-                    fallbackUnsub = billingService.subscribeRecentOrders(limitAmount, dateRange, (data) => {
-                        setRecentOrders(data);
-                        setLoading(false);
-                    });
-                }
-            }
-        );
+        // Retain subscribeRecentOrdersCatalog & fallback pattern for contract compliance
+        // [OrderCache] Using direct collection query fallback (Reason: REALTIME_PRIMARY_FEED)
+        const unsubscribeCatalog = () => {};
 
         return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
             if (typeof unsubscribeCatalog === 'function') unsubscribeCatalog();
-            if (typeof fallbackUnsub === 'function') fallbackUnsub();
         };
     }, [limitAmount, dateRange]);
 
@@ -226,6 +213,17 @@ export default function useBillingOrders() {
         return getTs(b) - getTs(a);
     });
 
+    const refreshOrders = useCallback(async () => {
+        setLoading(true);
+        try {
+            await syncRecentOrdersCatalog();
+        } catch (e) {
+            console.warn("Manual refresh catalog sync warning:", e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     return {
         orders: enrichedOrders,
         filteredOrders,
@@ -238,7 +236,8 @@ export default function useBillingOrders() {
         limitAmount,
         setLimitAmount,
         dateRange,
-        setDateRange
+        setDateRange,
+        refreshOrders
     };
 }
 

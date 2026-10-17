@@ -269,7 +269,11 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       totals: {
         ...totals,
         netTotal: finalNetTotal, // Use secure price
+        grandTotal: finalNetTotal, // Ensure grandTotal matches final secure price
         subtotal: calculatedPrices.subtotal,
+        shipping: calculatedPrices.shippingCost,
+        shippingCost: calculatedPrices.shippingCost,
+        discount: calculatedPrices.discountAmount,
         insuranceCost: checkoutState?.insuranceCost || 0
       },
       calculationLog: {

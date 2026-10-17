@@ -26,7 +26,8 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
         limitAmount,
         setLimitAmount,
         dateRange,
-        setDateRange
+        setDateRange,
+        refreshOrders
     } = useBillingOrders();
 
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -117,6 +118,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                         dateRange={dateRange}
                         setDateRange={setDateRange}
                         totalSales={totalSales}
+                        onRefresh={refreshOrders}
                         headerTitle={
                             <div className="flex items-center gap-3 relative z-10">
                                 {isSelectorMode ? (

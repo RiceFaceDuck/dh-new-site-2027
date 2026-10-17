@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, RefreshCw, X, CornerDownLeft, Calendar } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function OrderFilterBar({ 
     filter, 
@@ -10,7 +11,8 @@ export default function OrderFilterBar({
     setDateRange, 
     totalSales, 
     headerTitle, 
-    headerAction 
+    headerAction,
+    onRefresh
 }) {
     const [tempQuery, setTempQuery] = useState(searchQuery || '');
     const [showCustomDate, setShowCustomDate] = useState(false);
@@ -101,12 +103,21 @@ export default function OrderFilterBar({
         return 'custom';
     };
 
-    const handleReset = () => {
+    const handleReset = async () => {
         setFilter('All');
         setTempQuery('');
         setSearchQuery('');
         setDateRange({ start: '', end: '' });
         setShowCustomDate(false);
+        if (typeof onRefresh === 'function') {
+            const toastId = toast.loading('กำลังรีเฟรชข้อมูลบิลล่าสุด...');
+            try {
+                await onRefresh();
+                toast.success('อัปเดตรายการบิลล่าสุดเรียบร้อยแล้ว', { id: toastId });
+            } catch (err) {
+                toast.error('ไม่สามารถรีเฟรชข้อมูลได้: ' + (err.message || ''), { id: toastId });
+            }
+        }
     };
 
     const statusTabs = [
@@ -227,7 +238,7 @@ export default function OrderFilterBar({
 
                 <button
                     onClick={handleReset}
-                    title="ล้างการกรองทั้งหมด"
+                    title="รีเฟรชข้อมูลล่าสุดและล้างการกรองทั้งหมด"
                     className="h-[36px] w-[36px] flex items-center justify-center bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/20 rounded-lg transition-all shadow-xs group cursor-pointer shrink-0"
                 >
                     <RefreshCw size={14} strokeWidth={2.5} className="group-hover:rotate-180 transition-transform duration-500" />
