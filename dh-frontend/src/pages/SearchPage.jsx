@@ -178,7 +178,7 @@ const SearchPage = () => {
   }, [queryParam]);
 
   // Tags ยอดนิยม สำหรับให้กดค้นหาเร็วๆ
-  const popularTags = ["แบตเตอรี่", "อะแดปเตอร์", "คีย์บอร์ด", "หน้าจอ", "พัดลม", "บานพับ", "สายแพร", "Dell", "HP", "Lenovo", "Acer", "Asus", "Apple"];
+  const popularTags = ["อะแดปเตอร์", "คีย์บอร์ด", "หน้าจอ", "พัดลม", "บานพับ", "สายแพร", "ลำโพง", "Dell", "HP", "Lenovo", "Acer", "Asus", "Apple"];
 
   return (
     <div className="w-full flex flex-col animate-fade-in pb-16">
@@ -382,7 +382,7 @@ const SearchPage = () => {
 
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                   <span className="text-xs text-slate-400 font-medium mr-1">ลองค้นหาด้วยคำเหล่านี้:</span>
-                  {["อะแดปเตอร์", "พัดลม", "คีย์บอร์ด", "แบตเตอรี่", "หน้าจอ"].map(term => (
+                  {["อะแดปเตอร์", "พัดลม", "คีย์บอร์ด", "หน้าจอ", "ลำโพง"].map(term => (
                     <button
                       key={term}
                       onClick={() => {
@@ -463,7 +463,7 @@ const SearchPage = () => {
                 {[
                   { name: "อะแดปเตอร์ชาร์จ", query: "อะแดปเตอร์", desc: "ทุกแบรนด์ แท้/เทียบ" },
                   { name: "หน้าจอ LCD/LED", query: "หน้าจอ", desc: "14.0, 15.6, ทุกขนาด" },
-                  { name: "แบตเตอรี่โน๊ตบุ๊ค", query: "แบตเตอรี่", desc: "ตรงรุ่น รับประกันคุณภาพ" },
+                  { name: "ลำโพงโน๊ตบุ๊ค", query: "ลำโพง", desc: "ตรงรุ่น เสียงใสชัดเจน" },
                   { name: "คีย์บอร์ด", query: "คีย์บอร์ด", desc: "ปุ่มไฟ/ธรรมดา ทุกรุ่น" },
                   { name: "พัดลมระบายความร้อน", query: "พัดลม", desc: "ตรงรุ่น ระบายความร้อนดี" },
                   { name: "บานพับและสายแพร", query: "บานพับ", desc: "แข็งแรง ทนทาน" }
@@ -598,7 +598,7 @@ const SearchPage = () => {
                             </span>
                           </div>
                           <h4 className="font-bold text-slate-900 text-base">ศูนย์บริการและอะไหล่โน๊ตบุ๊คครบวงจร</h4>
-                          <p className="text-xs text-slate-500">เชี่ยวชาญเปลี่ยนจอ, คีย์บอร์ด, แบต, ชิปบอร์ด ทุกยี่ห้อ</p>
+                          <p className="text-xs text-slate-500">เชี่ยวชาญเปลี่ยนจอ, คีย์บอร์ด, เมนบอร์ด ทุกยี่ห้อ</p>
                         </div>
                       </div>
 
