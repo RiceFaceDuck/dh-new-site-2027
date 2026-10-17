@@ -251,9 +251,9 @@ const TodoPageList = ({
     );
   }
 
-  // สำหรับฝั่งซ้าย (Card View) แถวละ 2
+  // สำหรับฝั่งซ้าย (Card View) แถวเดี่ยวบนหน้าจอปกติ และ 2 แถวบนจออัลตร้าไวด์
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 w-full mx-auto pb-10">
+    <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4 lg:gap-5 w-full mx-auto pb-10">
       {filteredTodos.map((todo, index) => {
         const isProcessing = processingId === todo.id;
         const urgencyLevel = getUrgencyLevel(todo.createdAt || todo.requestedAt);

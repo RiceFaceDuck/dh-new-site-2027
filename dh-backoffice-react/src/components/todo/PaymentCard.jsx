@@ -114,73 +114,83 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row items-center p-3 sm:p-4 gap-4">
-        
-        {/* 1. Slip Image Thumbnail */}
-        <div 
-          onClick={(e) => { e.stopPropagation(); if (task.slipUrl) setIsImageModalOpen(true); }}
-          className={`w-16 h-20 shrink-0 rounded-md border-2 ${task.slipUrl ? 'border-blue-200 border-dashed cursor-pointer hover:border-blue-400' : 'border-gray-200'} bg-gray-50 flex items-center justify-center relative overflow-hidden group shadow-inner`}
-          title={task.slipUrl ? "คลิกเพื่อดูรูปขยาย" : "ไม่มีสลิป"}
-        >
-          {task.slipUrl ? (
-            <>
-              <img 
-                src={getRenderableImageUrl(task.slipUrl)} 
-                alt="slip" 
-                referrerPolicy="no-referrer"
-                onError={(e) => handleImageError(e, task.slipUrl)}
-                className="w-full h-full object-cover" 
-                loading="lazy" 
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
-              </div>
-            </>
-          ) : (
-            <span className="text-[10px] text-gray-400 text-center leading-tight">No<br/>Slip</span>
-          )}
-        </div>
-
-        {/* 2. Order Info */}
-        <div className="flex-1 min-w-0 w-full sm:w-auto">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-xs uppercase tracking-wider flex items-center gap-1">
+      <div className="p-4 flex flex-col gap-3.5">
+        {/* 1. Header: Badge + Order ID + Timestamp */}
+        <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-xs uppercase tracking-wider flex items-center gap-1 shrink-0">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               Verify Payment
             </span>
-            <span className="text-[11px] text-gray-400 font-medium">{task.requestedAt?.toDate().toLocaleString() || 'N/A'}</span>
+            <span className="text-xs font-black text-gray-800 truncate">#{task.orderId?.slice(-8).toUpperCase()}</span>
           </div>
-          
-          <h3 className="text-base font-black text-gray-900 truncate mb-0.5">ออเดอร์ #{task.orderId?.slice(-8).toUpperCase()}</h3>
-          <p className="text-xs text-gray-600 truncate">
-            ลูกค้า: <span className="font-semibold text-gray-800">{task.customerName}</span>
-          </p>
-          {errorMsg && <p className="text-[10px] text-red-600 font-medium mt-1 truncate bg-red-50 px-2 py-0.5 rounded-xs inline-block">❌ {errorMsg}</p>}
+          <span className="text-[11px] text-gray-400 font-medium shrink-0">
+            {task.requestedAt?.toDate ? task.requestedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (task.requestedAt ? new Date(task.requestedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A')}
+          </span>
         </div>
 
-        {/* 3. Amount */}
-        <div className="flex flex-col items-start sm:items-end sm:border-l-2 border-gray-100 sm:pl-5 shrink-0 w-full sm:w-auto">
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5 font-bold">ยอดโอนที่ต้องตรวจสอบ</p>
-          <p className="text-2xl font-black text-blue-700 leading-none mb-1">฿{displayAmount.toLocaleString()}</p>
-          {!isExpanded && (
-             <button 
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }} 
-                className="text-[10px] text-blue-500 hover:text-blue-700 underline flex items-center gap-1 font-semibold bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-sm transition-colors"
-             >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                ดูรายละเอียด
-             </button>
-          )}
+        {/* 2. Body: Slip Thumbnail + Order Details & Amount */}
+        <div className="flex items-start gap-3.5">
+          {/* Slip Image Thumbnail */}
+          <div 
+            onClick={(e) => { e.stopPropagation(); if (task.slipUrl) setIsImageModalOpen(true); }}
+            className={`w-16 h-22 shrink-0 rounded-lg border-2 ${task.slipUrl ? 'border-blue-200 border-dashed cursor-pointer hover:border-blue-400 shadow-xs' : 'border-gray-200'} bg-gray-50 flex items-center justify-center relative overflow-hidden group shadow-inner transition-colors`}
+            title={task.slipUrl ? "คลิกเพื่อดูรูปขยาย" : "ไม่มีสลิป"}
+          >
+            {task.slipUrl ? (
+              <>
+                <img 
+                  src={getRenderableImageUrl(task.slipUrl)} 
+                  alt="slip" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => handleImageError(e, task.slipUrl)}
+                  className="w-full h-full object-cover" 
+                  loading="lazy" 
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                </div>
+              </>
+            ) : (
+              <span className="text-[10px] text-gray-400 text-center leading-tight">No<br/>Slip</span>
+            )}
+          </div>
+
+          {/* Details & Amount */}
+          <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+            <div>
+              <p className="text-xs text-gray-600 truncate">
+                ลูกค้า: <span className="font-semibold text-gray-900">{task.customerName || 'ไม่ระบุชื่อ'}</span>
+              </p>
+              <div className="mt-1">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">ยอดโอนที่ต้องตรวจสอบ</span>
+                <span className="text-2xl font-black text-blue-700 tracking-tight leading-none block mt-0.5">฿{displayAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 mt-2">
+              {!isExpanded && (
+                <button 
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }} 
+                  className="text-[11px] text-blue-600 hover:text-blue-800 underline flex items-center gap-1 font-semibold bg-blue-50/80 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  ดูรายละเอียด
+                </button>
+              )}
+              {errorMsg && <p className="text-[10px] text-red-600 font-medium truncate bg-red-50 px-2 py-0.5 rounded-xs">❌ {errorMsg}</p>}
+            </div>
+          </div>
         </div>
 
-        {/* 4. Actions */}
-        <div className="flex flex-row sm:flex-col gap-2 shrink-0 w-full sm:w-32 sm:pl-2">
+        {/* 3. Actions: Side-by-side full width buttons */}
+        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
           <button 
             type="button"
             onClick={(e) => { e.stopPropagation(); handleApprove(); }}
             disabled={isSubmitting || !task.slipUrl}
-            className="flex-1 sm:w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm hover:shadow-md transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs hover:shadow transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 active:scale-95 cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
             อนุมัติ
@@ -189,7 +199,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
             type="button"
             onClick={(e) => { e.stopPropagation(); handleReject(); }}
             disabled={isSubmitting}
-            className="flex-1 sm:w-full py-2 bg-white border-2 border-gray-200 hover:border-red-300 hover:bg-red-50 hover:text-red-600 text-gray-600 font-bold rounded-lg transition-colors flex items-center justify-center text-xs disabled:opacity-50"
+            className="w-full py-2 bg-white border border-gray-200 hover:border-red-300 hover:bg-red-50 hover:text-red-600 text-gray-700 font-bold rounded-lg transition-colors flex items-center justify-center text-xs disabled:opacity-50 active:scale-95 cursor-pointer"
           >
             ปฏิเสธ
           </button>
