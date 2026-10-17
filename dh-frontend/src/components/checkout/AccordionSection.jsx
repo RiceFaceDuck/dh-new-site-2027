@@ -1,7 +1,17 @@
 import { ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const AccordionSection = ({ title, summary, step, activeStep, setActiveStep, isCompleted, children }) => {
+const AccordionSection = ({ 
+  title, 
+  summary, 
+  step, 
+  activeStep, 
+  setActiveStep, 
+  isCompleted, 
+  children,
+  isLastStep = false,
+  actionLabel
+}) => {
   const isOpen = activeStep === step;
   return (
     <div className={`border rounded-md mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'border-emerald-500 shadow-md' : 'border-gray-200 bg-white'}`}>
@@ -39,10 +49,11 @@ const AccordionSection = ({ title, summary, step, activeStep, setActiveStep, isC
               
               <div className="mt-6 flex justify-end">
                 <button 
-                  onClick={() => setActiveStep(step + 1)}
-                  className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+                  type="button"
+                  onClick={() => (isLastStep ? setActiveStep(null) : setActiveStep(step + 1))}
+                  className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors shadow-xs"
                 >
-                  ถัดไป
+                  {actionLabel || (isLastStep ? 'บันทึก' : 'ถัดไป')}
                 </button>
               </div>
             </div>

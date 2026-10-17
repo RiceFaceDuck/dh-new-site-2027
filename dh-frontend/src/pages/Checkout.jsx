@@ -227,6 +227,7 @@ const Checkout = () => {
               activeStep={activeStep} 
               setActiveStep={setActiveStep}
               isCompleted={!!checkoutState.paymentMethod}
+              isLastStep={true}
             >
               <PaymentMethod 
                 selectedMethod={checkoutState.paymentMethod}

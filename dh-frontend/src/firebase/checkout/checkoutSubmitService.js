@@ -82,6 +82,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
       for (const freebie of checkoutState.qualifiedFreebies) {
         if (freebie.id) {
           const requestedQty = Number(freebie.calculatedQty || freebie.qty) || 1;
+          const freebieRef = doc(db, getCollectionPath('freebies'), freebie.id);
           freebieSnaps.push({ snap: await transaction.get(freebieRef), name: freebie.name || freebie.title || 'ของแถม', requestedQty });
         }
       }
@@ -343,7 +344,7 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
 
     // ✅ [CONCURRENCY FIX] Lock Promo/Freebie Quota immediately upon checkout to prevent overselling
     (checkoutState?.appliedPromotions || []).forEach(p => p.id && transaction.update(doc(db, getCollectionPath('promotions'), p.id), { quotaUsed: increment(1) }));
-    (checkoutState?.qualifiedFreebies || []).forEach(f => f.id && transaction.update(doc(db, getCollectionPath('freebies'), f.id), { quotaUsed: increment(f.qty || 1) }));
+    (checkoutState?.qualifiedFreebies || []).forEach(f => f.id && transaction.update(doc(db, getCollectionPath('freebies'), f.id), { quotaUsed: increment(Number(f.calculatedQty || f.qty) || 1) }));
 
 
       return { success: true, orderId: orderRef.id, message: "สร้างคำสั่งซื้อสำเร็จ", netTotal: finalNetTotal };
@@ -351,6 +352,6 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
   } catch (error) {
     console.error("🔥 Error in submitOrder Transaction:", error);
     // Rethrow to let the frontend handle the UI error message, using the new Global Error Parser
-    throw new Error(parseFirebaseError(error, "เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง"));
+    throw new Error(parseFirebaseError(error, "เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง"), { cause: error });
   }
 };

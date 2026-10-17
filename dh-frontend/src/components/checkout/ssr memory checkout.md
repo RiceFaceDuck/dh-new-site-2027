@@ -36,5 +36,7 @@
 - ⚠️ Double Compression: `PaymentMethod.jsx` already compresses slip images via HTML5 Canvas; avoid re-compressing in `useCheckoutLogic.js` to prevent image degradation.
 - ⚠️ Quota Leak in Order Transaction: `checkoutSubmitService.js` was reading `DH_CREDIT_POOL` unconditionally inside the transaction without consuming it; removed to save 1 read quota on every order checkout.
 - ⚠️ Wallet Cap Math Consistency: `useCheckoutLogic.js` must incorporate `insuranceCost` alongside shipping and discount into `currentNetBeforeCredit` so the wallet cap accurately reflects the final payable balance calculated in `checkoutSubmitService.js`.
+- ⚠️ Freebie Transaction Reference & Quota: In `checkoutSubmitService.js`, real-time freebie validation requires declaring `const freebieRef = doc(db, getCollectionPath('freebies'), freebie.id)` before `transaction.get(freebieRef)`. Additionally, the quota lock increment must use `Number(f.calculatedQty || f.qty) || 1` to correctly account for multi-quantity freebie eligibility.
+- ⚠️ Accordion Last Step Navigation: `AccordionSection.jsx` now supports `isLastStep` and `actionLabel`. The final step (`วิธีการชำระเงิน`) uses `isLastStep={true}` to render "บันทึก" and collapses the section cleanly (`setActiveStep(null)`), instead of incrementing to a non-existent step 5.
 </pitfalls_and_lessons>
 </grimoire>
