@@ -83,11 +83,19 @@ const SearchPage = () => {
         // ดึงจาก storefrontCatalogService (Memory / IndexedDB / Chunks)
         const result = await getStorefrontCatalog();
         if (result && Array.isArray(result.products)) {
-          performSearch(result.products, result.meta);
+          if (result.products.length === 0) {
+            setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้ กรุณาตรวจสอบการเชื่อมต่อหรือรีเฟรชหน้าเว็บ");
+            setLoading(false);
+          } else {
+            performSearch(result.products, result.meta);
+          }
+        } else {
+          setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้ กรุณาลองใหม่อีกครั้ง");
+          setLoading(false);
         }
       } catch (err) {
         console.error("Error fetching products for search:", err);
-        setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้");
+        setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้ กรุณาลองใหม่อีกครั้ง");
         setLoading(false);
       }
     };
@@ -237,9 +245,36 @@ const SearchPage = () => {
         {/* Results */}
         <div>
           {error ? (
-            <div className="bg-red-50 text-red-500 p-6 rounded-md text-center border border-red-100 shadow-xs">
-              <p className="font-semibold text-lg mb-1">เกิดข้อผิดพลาด</p>
-              <p className="text-sm opacity-80">{error}</p>
+            <div className="bg-red-50 text-red-600 p-6 rounded-md text-center border border-red-200/80 shadow-xs max-w-md mx-auto my-6 space-y-3">
+              <p className="font-semibold text-base mb-1">เกิดข้อผิดพลาดในการโหลดสินค้า</p>
+              <p className="text-xs text-red-500">{error}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  getStorefrontCatalog({ forceRefresh: true }).then(res => {
+                    if (res && res.products && res.products.length > 0) {
+                      setProducts(res.products);
+                      setCatalogMeta(res.meta);
+                      const matched = filterProductsByQuery(res.products, queryParam);
+                      setFilteredProducts(matched);
+                      const matchedIds = matched.map(m => m.id || m.sku);
+                      setRelatedProducts(findRelatedProducts(res.products, queryParam, matchedIds));
+                      setLoading(false);
+                    } else {
+                      setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้ กรุณาตรวจสอบการเชื่อมต่อ");
+                      setLoading(false);
+                    }
+                  }).catch(() => {
+                    setError("ไม่สามารถโหลดข้อมูลสินค้าเพื่อค้นหาได้ กรุณาลองใหม่อีกครั้ง");
+                    setLoading(false);
+                  });
+                }}
+                className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+              >
+                ลองใหม่อีกครั้ง
+              </button>
             </div>
           ) : loading && filteredProducts.length === 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-5">
