@@ -104,6 +104,14 @@
      3. สร้าง `renderTechnicianModal` เชื่อมต่อ `marketingService.getActivePartnerAds('BUSINESS_CARD')` ดึงป้ายโฆษณานามบัตรของช่างพาร์ทเนอร์มาแสดง หรือแสดงนามบัตรช่างใหญ่ประจำศูนย์ DH Notebook พร้อมปุ่มโทรด่วนและแชท LINE/Facebook
      4. บังคับใช้ `rounded-[0.1rem]` กับกล่องคอนเทนเนอร์ คอนเทนต์บล็อก และป๊อปอัปโมดัล โดยคงความโค้งมนของปุ่มกด (`rounded-md`, `rounded-lg`, `rounded-full`) ไว้อย่างสวยงาม
      5. รักษาทั้ง 6 หมวดหมู่ Shortcuts และแท็กคำค้นหายอดนิยมไว้อย่างครบถ้วน 100%
+16. **แก้ไขภาพนามบัตรช่างหลุด (Google Drive 429/403) และเชื่อมระบบนับยอดวิวตัด Credit Points (Delivered - 2026-10-17):**
+   - *สาเหตุที่รูปนามบัตรช่างขึ้น broken image:* URL รูปจาก Google Drive (`drive.google.com/thumbnail?id=...`) หากโหลดด้วย `<img>` ปกติ เบราว์เซอร์จะส่ง `Referer: http://localhost:8988/` ซึ่ง Google Drive จะตอบกลับด้วย HTTP 429/403 Forbidden ทันที
+   - *วิธีแก้:* เปลี่ยนมาใช้ `LazyImage` ที่มี `referrerPolicy="no-referrer"` ในตัว พร้อมระบบดึงรหัสไดรฟ์แปลงเป็น Thumbnail สลับโหมดอัตโนมัติ และใส่ Fallback รูปสำรองหากโหลดไม่ได้
+   - *การนับยอดวิวคิด Credit Points:*
+     1. ติดตั้ง `marketingService.trackAdView('partner_ads', ad.id, meta)` เมื่อเปิด Modal ดูนามบัตรช่าง พร้อมระบบ Anti-Fraud (จำใน sessionStorage 5 นาที ไม่นับยอดเบิ้ลจากการรีเฟรช/เปิดปิดซ้ำ)
+     2. ติดตั้ง `marketingService.trackAdClick` เมื่อลูกค้ากดโทรออกหรือทักแชท Facebook/LINE
+     3. ส่งข้อมูล Telemetry เข้า GA4 (`ad_impression`, `ad_click`) เพื่อไม่ให้เปลืองโควต้าเขียน Firestore หน้าบ้าน
+     4. ระบบหลังบ้านมี Cloud Functions `ga4AdSyncCron.js` ทำการซิงค์ยอดจาก GA4 มาตัดแต้ม `users.creditPoints` ตามสูตรที่ตั้งไว้ใน `settings/credit_config` (มาตรฐาน 1,000 วิว ตัด 0.1 แต้ม / 1 คลิก ตัด 5-10 แต้ม) พร้อมรักษาสมดุล Ledger Parity ใน `credit_config.ledger.totalAllocated` อย่างปลอดภัย
 </pitfalls_and_solutions>
 
 
