@@ -1,7 +1,38 @@
-import { Building2, CreditCard, Save, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Building2, CreditCard, Save, Loader2, Sparkles, AlertCircle, Upload, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { driveService } from '../../../../firebase/driveService';
+import { toast } from 'react-hot-toast';
 import bayAccountCardImg from '../../../../assets/bay_account_card.png';
 
 export default function PaymentForm({ settings, updateSettings, saveSettings, isSaving }) {
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingImage(true);
+      const uploadedUrl = await driveService.uploadImage(file);
+      updateSettings('cardImageUrl', uploadedUrl);
+      toast.success("อัปโหลดรูปภาพบัตรบัญชีเรียบร้อยแล้ว");
+    } catch (error) {
+      console.error("🔥 Error uploading payment card image:", error);
+      toast.error("อัปโหลดรูปภาพล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleResetImage = () => {
+    updateSettings('cardImageUrl', '');
+    toast.success("คืนค่าเป็นรูปภาพบัตรเริ่มต้นเรียบร้อยแล้ว");
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     saveSettings();
@@ -9,6 +40,15 @@ export default function PaymentForm({ settings, updateSettings, saveSettings, is
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Hidden file input for card image */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleImageUpload} 
+        accept="image/*" 
+        className="hidden" 
+      />
+
       {/* 💳 Live Preview of the Bank Card */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
@@ -24,14 +64,28 @@ export default function PaymentForm({ settings, updateSettings, saveSettings, is
         {/* Card Mockup matching storefront style (Solid Dark Theme - High Trust) */}
         <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-5 text-white shadow-md relative overflow-hidden">
           <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-4">
-            {/* Cropped Image */}
+            {/* Cropped / Custom Image */}
             <div className="shrink-0 flex items-center justify-center">
-              <div className="rounded-lg bg-slate-800/80 p-1.5 border border-slate-700/60 shadow-inner">
+              <div 
+                onClick={() => !isUploadingImage && fileInputRef.current?.click()}
+                className="relative group cursor-pointer rounded-lg bg-slate-800/80 p-1.5 border border-slate-700/60 shadow-inner overflow-hidden"
+                title="คลิกเพื่อเปลี่ยนหรืออัปโหลดรูปภาพใหม่"
+              >
                 <img 
-                  src={bayAccountCardImg} 
-                  alt="บัญชีกรุงศรีอยุธยา" 
-                  className="w-36 h-auto object-contain rounded-md"
+                  src={settings.cardImageUrl || bayAccountCardImg} 
+                  alt={settings.bankName || "บัญชีธนาคาร"} 
+                  className="w-36 h-auto object-contain rounded-md transition-opacity group-hover:opacity-60"
                 />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity text-center p-2">
+                  <Upload size={22} className="mb-1 text-amber-400" />
+                  <span className="text-[11px] font-bold text-amber-200">คลิกเปลี่ยนภาพ</span>
+                </div>
+                {isUploadingImage && (
+                  <div className="absolute inset-0 bg-slate-900/85 flex flex-col items-center justify-center text-amber-400">
+                    <Loader2 size={24} className="animate-spin mb-1 text-amber-400" />
+                    <span className="text-[10px] font-bold text-white">กำลังอัปโหลด...</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -73,6 +127,55 @@ export default function PaymentForm({ settings, updateSettings, saveSettings, is
           <Building2 className="w-5 h-5 text-indigo-600" />
           ข้อมูลบัญชีธนาคารหลัก (Default Account)
         </h2>
+
+        {/* 🖼️ Card Image Management */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-amber-500" />
+                รูปภาพการ์ดบัญชีธนาคาร (Card Graphic Image)
+              </label>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                อัปโหลดรูปภาพใหม่เพื่อเปลี่ยนภาพที่แสดงใน Live Preview และหน้าชำระเงินของลูกค้า
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingImage}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {isUploadingImage ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                <span>{isUploadingImage ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปภาพใหม่'}</span>
+              </button>
+
+              {settings.cardImageUrl && (
+                <button
+                  type="button"
+                  onClick={handleResetImage}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-lg transition-all active:scale-95 cursor-pointer"
+                  title="คืนค่าเป็นรูปการ์ดกรุงศรีเริ่มต้น"
+                >
+                  <RotateCcw size={14} />
+                  <span>ใช้รูปเริ่มต้น</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <input 
+              type="text" 
+              value={settings.cardImageUrl || ''} 
+              onChange={(e) => updateSettings('cardImageUrl', e.target.value)}
+              placeholder="หรือวาง URL รูปภาพที่นี่ (เช่น https://... หรือปล่อยว่างเพื่อใช้ภาพเริ่มต้น)"
+              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

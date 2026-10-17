@@ -196,12 +196,12 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
         {/* บัตรแสดงข้อมูลบัญชีธนาคาร (Solid Dark Theme - High Trust - Sarabun New) */}
         <div className="bg-slate-900 rounded-xl p-5 sm:p-6 text-white shadow-md border border-slate-800 font-sarabun">
           <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-6">
-            {/* ภาพกราฟิกบัญชีธนาคาร (ตัดขอบขาวสะอาด คมชัด) */}
+            {/* ภาพกราฟิกบัญชีธนาคาร (รองรับภาพไดนามิก หรือภาพกรุงศรีเริ่มต้น) */}
             <div className="shrink-0 flex items-center justify-center">
               <div className="relative overflow-hidden rounded-xl bg-slate-800/90 p-2 border border-slate-700/60 shadow-md flex items-center justify-center">
                 <img 
-                  src={bayAccountCardImg} 
-                  alt="ธนาคารกรุงศรีอยุธยา - นายเหว่ย ไห" 
+                  src={paymentConfig.cardImageUrl || bayAccountCardImg} 
+                  alt={paymentConfig.bankName || "บัญชีธนาคาร"} 
                   className="w-36 sm:w-40 md:w-44 h-auto object-contain rounded-lg shadow-sm"
                   loading="lazy"
                 />

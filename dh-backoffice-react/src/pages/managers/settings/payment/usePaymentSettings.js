@@ -12,6 +12,7 @@ export const DEFAULT_PAYMENT_CONFIG = {
   accountNumber: '692-1-14458-6',
   promptPayNumber: '',
   promptPayName: '',
+  cardImageUrl: '',
   enableBankTransfer: true,
   enablePromptPay: false,
   note: 'กรุณาตรวจสอบยอดเงินและชื่อบัญชีให้ถูกต้องก่อนโอนเงิน'
