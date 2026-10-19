@@ -16,41 +16,89 @@ export const useCentralTodo = (filterType = 'ALL') => {
   // 🛡️ ป้องกันการกดปุ่มซ้ำ (Double Submission Prevention)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 📥 1. ดึงข้อมูลแบบ Real-time (Read Optimization)
+  // 📥 1. ดึงข้อมูลแบบ Real-time (ผสานทั้ง 'todos' และ 'claims' collection)
   useEffect(() => {
     setLoading(true);
     
-    // 🚀 [อัปเกรด] ดึงเฉพาะงานที่ยังไม่เสร็จจาก Server เพื่อป้องกัน Read Quota รั่วไหล 
-    // และแก้ปัญหา Data Loss ที่งานใหม่ถูกดันตกขอบถ้ามีงาน Completed เยอะ
-    const q = query(
-      collection(db, getCollectionPath('todos')),
-      where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
+    const todosRef = collection(db, getCollectionPath('todos'));
+    const qTodos = query(
+      todosRef,
+      where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']),
       orderBy('createdAt', 'desc'),
-      limit(200) // เพิ่ม limit เป็น 200 เพื่อครอบคลุมทั้ง Manager และ Staff
+      limit(200)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedTodos = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })).sort((a, b) => {
-          const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;
-          const timeB = b.createdAt?.toMillis() || b.requestedAt?.toMillis() || 0;
-          return timeB - timeA;
+    const claimsRef = collection(db, getCollectionPath('claims'));
+    const qClaims = query(
+      claimsRef,
+      where('status', 'in', ['pending_manager', 'waiting_item', 'processing']),
+      orderBy('createdAt', 'desc'),
+      limit(200)
+    );
+
+    let currentTodos = [];
+    let currentClaims = [];
+
+    const getDocTime = (docItem) => {
+      if (!docItem) return 0;
+      const ts = docItem.createdAt || docItem.requestedAt;
+      if (!ts) return 0;
+      if (typeof ts.toMillis === 'function') return ts.toMillis();
+      if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+      if (ts instanceof Date) return ts.getTime();
+      return new Date(ts).getTime() || 0;
+    };
+
+    const emitMerged = () => {
+      const taskMap = new Map();
+
+      // 1. เพิ่ม Todos ทั่วไป
+      currentTodos.forEach(todo => {
+        taskMap.set(todo.id, todo);
       });
-      
-      setTodos(fetchedTodos);
+
+      // 2. ผสาน Claims จากคอลเลกชัน claims โดยตรง (Single Source of Truth)
+      currentClaims.forEach(claim => {
+        const typeToCheck = claim.type || claim.taskType || 'CLAIM_APPROVAL';
+        taskMap.set(claim.id, {
+          ...claim,
+          type: typeToCheck,
+          customerName: claim.customerName || claim.customer?.accountName || claim.customer?.name || 'ลูกค้าทั่วไป',
+          orderId: claim.orderId || claim.payload?.orderId || claim.id
+        });
+      });
+
+      const merged = Array.from(taskMap.values());
+      merged.sort((a, b) => getDocTime(b) - getDocTime(a));
+
+      setTodos(merged);
       setError(null);
       setLoading(false);
+    };
+
+    const unsubscribeTodos = onSnapshot(qTodos, (snapshot) => {
+      currentTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      emitMerged();
     }, (err) => {
       console.error("🔥 Error fetching central todos:", err);
       setError("ไม่สามารถโหลดข้อมูลระบบ To-do ได้ กรุณาตรวจสอบการเชื่อมต่อ");
       setLoading(false);
     });
 
+    const unsubscribeClaims = onSnapshot(qClaims, (snapshot) => {
+      currentClaims = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      emitMerged();
+    }, (err) => {
+      console.error("🔥 Error fetching claims for todos:", err);
+      // Don't crash main todos if claims fails
+    });
+
     // 🧹 คืนทรัพยากรเมื่อ Component ถูกทำลาย (Prevent Memory Leak)
-    return () => unsubscribe();
-  }, [filterType]); // เพิ่ม filterType เป็น dependency เผื่อนำไปใช้คิวรี่ในอนาคต
+    return () => {
+      unsubscribeTodos();
+      unsubscribeClaims();
+    };
+  }, [filterType]);
 
   // 📝 2. อัปเดตสถานะงาน (Optimistic UI Ready)
   const updateTodoStatus = useCallback(async (todoId, newStatus) => {

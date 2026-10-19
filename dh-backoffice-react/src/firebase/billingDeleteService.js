@@ -29,10 +29,12 @@ export const billingDeleteService = {
       try {
           const todosRef = collection(db, getCollectionPath('todos'));
           const queries = [
+              query(todosRef, where('orderId', '==', orderId)),
               query(todosRef, where('referenceId', '==', orderId)),
               query(todosRef, where('payload.orderId', '==', orderId))
           ];
           if (orderData.orderId && orderData.orderId !== orderId) {
+              queries.push(query(todosRef, where('orderId', '==', orderData.orderId)));
               queries.push(query(todosRef, where('referenceId', '==', orderData.orderId)));
               queries.push(query(todosRef, where('payload.orderId', '==', orderData.orderId)));
           }

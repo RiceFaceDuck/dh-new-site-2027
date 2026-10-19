@@ -18,20 +18,36 @@ export const billingStatusTransaction = {
       const actualActorUid = actorUid || (typeof currentStatus === 'string' && currentStatus.length > 15 ? currentStatus : 'system');
       const normalizedNewStatus = (newStatus || '').toLowerCase();
 
-      // 🌟 ดึง Todos ที่รออนุมัติ (pending_manager) ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction (ตรวจทั้ง referenceId และ payload.orderId)
+      // 🌟 ดึง Todos ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction
       let pendingTodoRefs = [];
+      let paymentTodoRefs = [];
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const todosRef = collection(db, getCollectionPath('todos'));
+
       if (normalizedNewStatus === 'cancelled') {
-        const { collection, query, where, getDocs } = await import('firebase/firestore');
-        const todosRef = collection(db, getCollectionPath('todos'));
-        const q1 = query(todosRef, where('referenceId', '==', orderId), where('status', '==', 'pending_manager'));
-        const q2 = query(todosRef, where('payload.orderId', '==', orderId), where('status', '==', 'pending_manager'));
-        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+        const q0 = query(todosRef, where('orderId', '==', orderId));
+        const q1 = query(todosRef, where('referenceId', '==', orderId));
+        const q2 = query(todosRef, where('payload.orderId', '==', orderId));
+        const [snap0, snap1, snap2] = await Promise.all([getDocs(q0), getDocs(q1), getDocs(q2)]);
         const seenTodoIds = new Set();
-        [snap1, snap2].forEach(snap => {
+        [snap0, snap1, snap2].forEach(snap => {
           snap.forEach(docSnap => {
             if (!seenTodoIds.has(docSnap.id)) {
               seenTodoIds.add(docSnap.id);
               pendingTodoRefs.push(docSnap.ref);
+            }
+          });
+        });
+      } else if (['paid', 'approved', 'completed'].includes(normalizedNewStatus)) {
+        const q0 = query(todosRef, where('orderId', '==', orderId), where('status', 'in', ['pending', 'todo', 'in_progress']));
+        const q1 = query(todosRef, where('referenceId', '==', orderId), where('status', 'in', ['pending', 'todo', 'in_progress']));
+        const [snap0, snap1] = await Promise.all([getDocs(q0), getDocs(q1)]);
+        const seenTodoIds = new Set();
+        [snap0, snap1].forEach(snap => {
+          snap.forEach(docSnap => {
+            if (!seenTodoIds.has(docSnap.id)) {
+              seenTodoIds.add(docSnap.id);
+              paymentTodoRefs.push(docSnap.ref);
             }
           });
         });
@@ -269,6 +285,19 @@ export const billingStatusTransaction = {
                       updatedAt: serverTimestamp(),
                       handledBy: actualActorUid,
                       internalNote: 'Auto-cancelled due to order cancellation.'
+                   });
+               }
+           }
+
+           // 🎯 Auto-Complete verify_slip and related payment todos when order is paid/approved
+           if (paymentTodoRefs.length > 0) {
+               for (const tRef of paymentTodoRefs) {
+                   transaction.update(tRef, {
+                      status: 'completed',
+                      completedAt: serverTimestamp(),
+                      updatedAt: serverTimestamp(),
+                      handledBy: actualActorUid,
+                      internalNote: 'Auto-completed via Billing status update.'
                    });
                }
            }

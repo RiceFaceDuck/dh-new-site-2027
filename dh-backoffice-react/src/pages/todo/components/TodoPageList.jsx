@@ -161,13 +161,8 @@ const TodoPageList = ({
      const isRead = readIds.includes(todo.id);
 
      if (isLeftZone === true) {
-       // หากเลือกฟิลเตอร์เฉพาะเจาะจง หรือพิมพ์ค้นหา ให้โชว์ในกระดานฝั่งซ้ายทั้งหมด
-       if (filterType && filterType !== 'ALL') return true;
-       if (searchQuery && searchQuery.trim() !== '') return true;
-
-       // กระดานงานใหม่ (ฝั่งซ้าย):
-       // แสดงงานที่ยังไม่เคยกดเปิดอ่าน (!isRead) หรือ งานที่ยังไม่ด่วน (!isUrgent)
-       return !isRead || !isUrgent;
+       // กระดานหลักฝั่งซ้าย: แสดงงานทั้งหมดที่ตรงตามฟิลเตอร์
+       return true;
      } else if (isLeftZone === false) {
        // โซนขวา: งานสำคัญ & ค้างดำเนินการ (งานด่วน หรือ ค้างนาน)
        return isUrgent;

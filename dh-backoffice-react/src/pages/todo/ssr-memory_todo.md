@@ -62,5 +62,23 @@
     2. ใส่ `e.stopPropagation()` บน Backdrop และ Modal Container ดักไม่ให้ Event คลิกหลุดรอดไปถึง Component แม่
     3. ย้ายจุดคลิกพับ/ขยายการ์ดใน `PaymentCard` มาไว้ที่ Header และปุ่ม "ดูรายละเอียด" โดยตรง ไม่ครอบคลุมทั้ง Card
     4. เพิ่ม Fallback การค้นหาออเดอร์ใน `PaymentCard` ด้วย `billingQueryService.getOrderByOrderId` ป้องกัน False Positive ไม่พบออเดอร์
+- **ปัญหางานที่เสร็จ/ยกเลิก/ลบออเดอร์แล้วยังค้างบนกระดาน (Manual Cleanup Burden & Missing OrderId Sync):**
+  - *สาเหตุ:* 
+    1. เมื่อออเดอร์ในหน้า Billing ถูกชำระเงิน (`paid`/`completed`) หรือถูกยกเลิก (`cancelled`) ระบบไม่ได้ตั้ง Transaction อัปเดต Todo ที่ผูกกับ `orderId` ส่งผลให้การ์ดยังค้างเป็น `pending`
+    2. เมื่อออเดอร์ถูกลบทิ้งใน `billingDeleteService` คำสั่ง Query ค้นหาเฉพาะ `referenceId` และ `payload.orderId` แต่ไม่ได้ค้นหาฟิลด์ `orderId` ทำให้ Todo กลายเป็นงานกำพร้า (Orphaned Task) และแสดงปุ่มลบงานค้างให้พนักงานต้องมากดลบเองทีละใบ
+  - *วิธีแก้:* 
+    1. เพิ่มการ Query และอัปเดต Todo ฟิลด์ `orderId` ให้เป็น `completed` อัตโนมัติใน `billingStatusTransaction` เมื่อบิลถูกชำระเงินหรืออนุมัติ
+    2. เพิ่ม Query ฟิลด์ `orderId` ใน `billingDeleteService` เพื่อลบ Todo ที่เกี่ยวข้องทันทีเมื่อบิลถูกลบ
+    3. ใน `PaymentCard` เมื่อตรวจพบว่าออเดอร์ชำระเงินแล้ว หรือไม่มีอยู่ในระบบ (ถูกลบ) ให้สั่ง Auto-complete / Auto-delete ไปยัง Firestore ทันที และซ่อนการ์ดออกไปจากหน้าจอโดยไม่ต้องรอให้ผู้ใช้มากดลบเอง
+  - *สถานะ:* ส่งมอบสมบูรณ์ ✅
+
+- **ปัญหางานรออนุมัติ (เคลม/คืน) แสดงเฉพาะหน้าผู้จัดการ แต่ไม่แสดงในหน้า To-do (Single Source of Truth Gap & Zone Over-Filtering):**
+  - *สาเหตุ:* 
+    1. ระบบเคลม/คืนสินค้าใช้คอลเลกชัน `claims` เป็น Single Source of Truth แต่ `useCentralTodo` ดึงข้อมูลจากคอลเลกชัน `todos` เพียงอย่างเดียว ทำให้งานเคลม/คืนหายไปจากหน้า To-do ทั้งหมด
+    2. ใน `TodoPageList` มีการกรองฝั่งซ้ายด้วย `!isRead || !isUrgent` ทำให้เมื่อผู้ใช้เคยกดเปิดอ่านงานด่วนหรืองานร้านค้า (เช่น Namhom Software) งานนั้นจะถูกซ่อนออกจากกระดานฝั่งซ้ายโดยไม่ตั้งใจ
+  - *วิธีแก้:* 
+    1. ปรับปรุง `useCentralTodo` ให้ Subscribe ทั้งคอลเลกชัน `todos` และ `claims` แล้ว Merge ข้อมูลเข้าด้วยกันแบบ Real-time รองรับทั้งงานทั่วไปและงานเคลม
+    2. ปรับ `TodoPageList` ฝั่งซ้ายให้แสดงผลงานทั้งหมดตามตัวกรอง (`return true`) ไม่ซ่อนงานที่ถูกเปิดอ่านหรืองานด่วนออกจากกระดานหลัก
+    3. อัปเดต `Todo.jsx` ให้รองรับ `EXCHANGE_APPROVAL` และประเภทงานเคลม/คืนทุกชนิดอย่างครบถ้วน
   - *สถานะ:* ส่งมอบสมบูรณ์ ✅
 </pitfalls_and_solutions>

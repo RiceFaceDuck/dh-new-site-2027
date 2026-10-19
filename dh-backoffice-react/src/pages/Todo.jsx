@@ -47,7 +47,7 @@ export default function Todo() {
       const fullTask = activeTodos.find(t => t.id === taskId);
       
       if (action === 'approve') {
-        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
+        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType === 'EXCHANGE_APPROVAL' || actionType.startsWith('CANCEL_')) {
           if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
           await claimService.approveRequest(fullTask, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
         } else if (actionType === 'wholesale_request' || actionType === 'WHOLESALE_APPROVAL') {
@@ -66,7 +66,7 @@ export default function Todo() {
       } else if (action === 'reject') {
         if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {
            await todoService.rejectWholesale(taskId, payload.orderId);
-        } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
+        } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType === 'EXCHANGE_APPROVAL' || actionType.startsWith('CANCEL_')) {
            if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
            await claimService.rejectRequest(fullTask, payload.reason || 'ปฏิเสธโดยแอดมิน', auth.currentUser.uid);
         } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(actionType)) {
@@ -83,7 +83,7 @@ export default function Todo() {
       } else if (action === 'complete') {
         await todoService.completeTask(taskId);
       } else if (action === 'markArrived') {
-        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType.startsWith('CANCEL_')) {
+        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType === 'EXCHANGE_APPROVAL' || actionType.startsWith('CANCEL_')) {
           if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
           // Save the tracking number locally and remotely for history/reference
           if (payload.trackingNo) {
@@ -137,7 +137,7 @@ export default function Todo() {
     if (filterType === 'ALL') return true;
     if (filterType === 'TAX_INVOICE') return todo.type === 'issue_tax_invoice';
     if (filterType === 'PAYMENT') return todo.type === 'verify_slip';
-    if (filterType === 'CLAIM') return ['CLAIM_APPROVAL', 'RETURN_APPROVAL'].includes(todo.type) || todo.type?.startsWith('CANCEL_');
+    if (filterType === 'CLAIM') return ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'EXCHANGE_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'CANCEL_EXCHANGE_APPROVAL'].includes(todo.type) || todo.type?.startsWith('CANCEL_');
     if (filterType === 'WHOLESALE') return ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(todo.type);
     if (filterType === 'STORE_ADS') return adTypes.includes(todo.type);
     if (filterType === 'MANUAL') return todo.type === 'MANUAL';

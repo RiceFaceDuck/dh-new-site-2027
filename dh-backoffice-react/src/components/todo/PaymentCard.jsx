@@ -42,8 +42,25 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
           if (data) {
             setOrderData(data);
             setIsOrderMissing(false);
+            const paid = data.status === 'paid' || data.orderStatus === 'paid' || data.paymentStatus === 'VERIFIED';
+            if (paid && task.id) {
+              try {
+                await todoActionService.completeTask(task.id);
+                if (onSuccess) onSuccess();
+              } catch (e) {
+                console.warn("Auto-completing paid task:", e);
+              }
+            }
           } else {
             setIsOrderMissing(true);
+            if (task.id) {
+              try {
+                await todoActionService.deleteTask(task.id);
+                if (onSuccess) onSuccess();
+              } catch (e) {
+                console.warn("Auto-cleaning missing order task:", e);
+              }
+            }
           }
         }
       } catch (err) {
@@ -55,9 +72,9 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
     return () => { isMounted = false; };
   }, [task?.orderId]);
 
-  if (!task) return null;
-
   const isOrderPaid = orderData?.status === 'paid' || orderData?.orderStatus === 'paid' || orderData?.paymentStatus === 'VERIFIED';
+
+  if (!task || isOrderMissing || isOrderPaid) return null;
 
   const handleGoToTask = async () => {
     setIsSubmitting(true);
