@@ -102,7 +102,7 @@ export default function OrderSummaryTotals({
                             <Ban size={12}/> บิลยกเลิก (VOIDED)
                         </div>
                     ) : orderStat === 'draft' || paymentStat === 'draft' ? (
-                        <div className="text-center text-amber-800 dark:text-amber-500 font-black text-[11px] border border-amber-500/30 bg-amber-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
+                        <div className="text-center text-orange-500 dark:text-orange-400 font-black text-[11px] border border-orange-500/30 bg-orange-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
                             ฉบับร่าง (Draft)
                         </div>
                     ) : isShipped ? (

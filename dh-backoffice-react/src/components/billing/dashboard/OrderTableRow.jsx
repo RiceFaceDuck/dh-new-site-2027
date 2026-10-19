@@ -99,7 +99,7 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         <Ban size={15} strokeWidth={2.5} /> ยกเลิกแล้ว
                     </span>
                 ) : isDraft ? (
-                    <span className="inline-flex items-center justify-start gap-1.5 text-amber-800 dark:text-amber-500 text-xs font-black">
+                    <span className="inline-flex items-center justify-start gap-1.5 text-orange-500 dark:text-orange-400 text-xs font-black">
                         <Clock size={13} strokeWidth={2.5} /> ฉบับร่าง (Draft)
                     </span>
                 ) : isShipped ? (
