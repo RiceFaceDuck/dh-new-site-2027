@@ -38,5 +38,6 @@
     - ⚠️ E-commerce Contact Parity: Live preview and actual storefront must align 100% on header titles ("ติดต่อ & เวลาทำการ") and business hours display.
     - ⚠️ Non-blocking Telemetry: Never await or throw on GA4 logEvent; wrap in try/catch to protect UI navigation from ad-blocker crashes.
     - ⚠️ Trust Badges Platinum White & Parity: Trust badges use `rounded-[0.1rem]`, solid `bg-white`, `border-slate-200/90`, `shadow-md`, dark text `text-slate-800`, sky blue icons, and word wrap without `truncate`; updated labels: "สินค้ามีการรับประกัน" & "ส่งออกภายในวันทันที"; maintain 100% parity across FooterBrand.jsx, LiveStorefrontPreview.jsx, and footerConfigSchema.js.
+    - ⚠️ Anchor URL (#) & Copyable Error Invariant: `isSafeUrl` must allow `#` (default for placeholder links) and `mailto:`. Never use browser `alert()` which blocks text copying; display formatted error inside `SaveConfirmationModal` with one-click copy button.
   </pitfalls_and_lessons>
 </grimoire>

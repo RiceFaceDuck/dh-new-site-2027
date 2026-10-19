@@ -20,12 +20,14 @@ export const isSafeUrl = (url) => {
     return false;
   }
 
-  // Allow safe web URLs, internal paths, and click-to-call phone schemes
+  // Allow safe web URLs, internal paths, anchor links (#), and click-to-call/mail schemes
   if (
     trimmed.startsWith('/') ||
+    trimmed.startsWith('#') ||
     lower.startsWith('https://') ||
     lower.startsWith('http://') ||
-    lower.startsWith('tel:')
+    lower.startsWith('tel:') ||
+    lower.startsWith('mailto:')
   ) {
     return true;
   }
@@ -193,7 +195,7 @@ export const DEFAULT_FOOTER_CONFIG = {
   },
   trustBadges: {
     enabled: true,
-    badges: []
+    badges: [...DEFAULT_TRUST_BADGES.badges]
   },
   businessHours: { ...DEFAULT_BUSINESS_HOURS },
   marketingUsp: {
@@ -210,7 +212,7 @@ export const DEFAULT_FOOTER_CONFIG = {
 // ============================================================================
 
 const safeUrlSchema = z.string().refine(val => !val || isSafeUrl(val), {
-  message: 'Invalid or unsafe URL scheme. Must be an internal path (e.g. /categories) or safe protocol (https://, http://, tel:)'
+  message: 'Invalid or unsafe URL scheme. Must be an internal path (e.g. /categories), anchor (#), or safe protocol (https://, http://, tel:, mailto:)'
 });
 
 const makeSocialUrlSchema = (platform) => z.string().refine(val => validateSocialUrl(platform, val), {

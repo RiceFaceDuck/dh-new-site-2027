@@ -1,4 +1,4 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 import { safeJsonParse } from 'dh-shared';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
@@ -62,6 +62,33 @@ export const footerClientService = {
     } catch (error) {
       console.error("🔥 Error fetching footer config:", error);
       return CANONICAL_DEFAULT_FOOTER_CONFIG;
+    }
+  },
+
+  /**
+   * 🔄 Real-time Live Sync Listener for Storefront
+   * Synchronizes footer changes instantly whenever updated in Backoffice
+   */
+  subscribeFooterConfig: (callback) => {
+    try {
+      const storefrontRef = doc(db, getCollectionPath('settings'), STOREFRONT_DOC);
+      return onSnapshot(storefrontRef, (snap) => {
+        if (snap.exists() && snap.data()?.footer) {
+          const freshData = { ...CANONICAL_DEFAULT_FOOTER_CONFIG, ...snap.data().footer };
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+              data: freshData,
+              timestamp: Date.now()
+            }));
+          } catch {}
+          callback(freshData);
+        }
+      }, (error) => {
+        console.warn("⚠️ Real-time footer listener error:", error);
+      });
+    } catch (err) {
+      console.warn("Failed to attach footer real-time listener:", err);
+      return () => {};
     }
   }
 };

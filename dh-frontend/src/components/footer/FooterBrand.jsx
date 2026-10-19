@@ -77,7 +77,7 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
                 genuineWarranty: 'สินค้ามีการรับประกัน',
                 expressDelivery: 'ส่งออกภายในวันทันที'
               };
-              const displayLabel = labelOverrides[badge.id] || badge.label;
+              const displayLabel = badge.label || labelOverrides[badge.id] || '';
               return (
                 <div 
                   key={badge.id}

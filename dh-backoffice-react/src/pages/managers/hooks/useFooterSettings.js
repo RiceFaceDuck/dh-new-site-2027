@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { auth } from '../../../firebase/config';
-import { footerSettingsService, DEFAULT_FOOTER_CONFIG } from '../../../firebase/footerSettingsService';
+import { 
+    footerSettingsService, 
+    DEFAULT_FOOTER_CONFIG, 
+    CANONICAL_DEFAULT_FOOTER_CONFIG 
+} from '../../../firebase/footerSettingsService';
 import { historyService } from '../../../firebase/historyService';
 
 const cloneDeep = (obj) => {
@@ -11,7 +16,21 @@ const cloneDeep = (obj) => {
 };
 
 const normalizeConfig = (config = {}) => {
-    const base = DEFAULT_FOOTER_CONFIG;
+    const base = CANONICAL_DEFAULT_FOOTER_CONFIG || DEFAULT_FOOTER_CONFIG;
+    const defaultBadges = base.trustBadges?.badges || [];
+
+    const labelSync = {
+        'รับประกันของแท้ 100%': 'สินค้ามีการรับประกัน',
+        'จัดส่งด่วน 24 ชม.': 'ส่งออกภายในวันทันที'
+    };
+
+    const resolvedBadges = Array.isArray(config.trustBadges?.badges) && config.trustBadges.badges.length > 0
+        ? config.trustBadges.badges.map(b => ({
+            ...b,
+            label: labelSync[b.label] || b.label || ''
+        }))
+        : cloneDeep(defaultBadges);
+
     return {
         ...base,
         ...config,
@@ -21,9 +40,7 @@ const normalizeConfig = (config = {}) => {
         trustBadges: {
             ...base.trustBadges,
             ...(config.trustBadges || {}),
-            badges: Array.isArray(config.trustBadges?.badges) && config.trustBadges.badges.length > 0
-                ? config.trustBadges.badges
-                : cloneDeep(base.trustBadges.badges)
+            badges: resolvedBadges
         },
         businessHours: {
             ...base.businessHours,
@@ -38,6 +55,8 @@ export function useFooterSettings() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
+    const [errorMessage, setErrorMessage] = useState('');
     const [changesDiff, setChangesDiff] = useState([]);
     const [originalConfig, setOriginalConfig] = useState(null);
     const [footerConfig, setFooterConfig] = useState(() => normalizeConfig(DEFAULT_FOOTER_CONFIG));
@@ -122,12 +141,28 @@ export function useFooterSettings() {
                 const origBadges = originalConfig.trustBadges.badges || [];
                 curBadges.forEach(b => {
                     const orig = origBadges.find(o => o.id === b.id);
-                    if (orig && orig.active !== b.active) {
-                        changes.push({
-                            label: `ตราความเชื่อมั่น: ${b.label}`,
-                            oldVal: orig.active ? 'เปิดแสดง' : 'ปิดซ่อน',
-                            newVal: b.active ? 'เปิดแสดง' : 'ปิดซ่อน'
-                        });
+                    if (orig) {
+                        if (orig.active !== b.active) {
+                            changes.push({
+                                label: `ตราความเชื่อมั่น: ${b.label || b.id} (สถานะ)`,
+                                oldVal: orig.active ? 'เปิดแสดง' : 'ปิดซ่อน',
+                                newVal: b.active ? 'เปิดแสดง' : 'ปิดซ่อน'
+                            });
+                        }
+                        if (orig.label !== b.label) {
+                            changes.push({
+                                label: `ตราความเชื่อมั่น (${b.id}) ชื่อป้าย`,
+                                oldVal: orig.label || '(ว่าง)',
+                                newVal: b.label || '(ว่าง)'
+                            });
+                        }
+                        if (orig.description !== b.description) {
+                            changes.push({
+                                label: `ตราความเชื่อมั่น (${b.id}) คำอธิบาย`,
+                                oldVal: orig.description || '(ว่าง)',
+                                newVal: b.description || '(ว่าง)'
+                            });
+                        }
                     }
                 });
             }
@@ -164,11 +199,15 @@ export function useFooterSettings() {
             }
         }
         setChangesDiff(changes);
+        setSaveStatus(null);
+        setErrorMessage('');
         setIsModalOpen(true);
     };
 
     const handleSave = async () => {
         setIsSaving(true);
+        setSaveStatus(null);
+        setErrorMessage('');
         const uid = auth.currentUser?.uid;
         try {
             await footerSettingsService.updateFooterConfig(footerConfig);
@@ -176,17 +215,38 @@ export function useFooterSettings() {
                 ? changesDiff.map(c => `${c.label}: ${c.oldVal}->${c.newVal}`).join(', ')
                 : 'บันทึกโครงสร้างตามมาตรฐานล่าสุด';
             await historyService.addLog('SystemConfig', 'Update', 'footer_config', `อัปเดตตั้งค่าพื้นที่ส่วนล่างหน้าบ้านสำเร็จ | ${diffMsg}`, uid);
-            alert("✅ บันทึกตั้งค่าพื้นที่ส่วนล่างหน้าบ้านสำเร็จ (รวบข้อมูลลง Doc กลางเรียบร้อยแล้ว)");
             setOriginalConfig(cloneDeep(footerConfig));
-            setIsModalOpen(false);
+            setSaveStatus('success');
+            toast.success('บันทึกตั้งค่าพื้นที่ส่วนล่างหน้าบ้านสำเร็จ!');
+            setTimeout(() => {
+                setIsModalOpen(false);
+                setSaveStatus(null);
+            }, 1000);
         } catch (error) {
             console.error("Save Error:", error);
-            if (error?.errors && Array.isArray(error.errors)) {
-                const msgs = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('\n');
-                alert(`❌ เกิดข้อผิดพลาดในการตรวจสอบข้อมูล:\n${msgs}`);
-            } else {
-                alert(`❌ เกิดข้อผิดพลาด: ${error.message}`);
+            setSaveStatus('error');
+
+            let formattedMsg = error?.message || 'เกิดข้อผิดพลาด ไม่สามารถบันทึกข้อมูลได้';
+            const issues = error?.issues || error?.errors;
+            if (Array.isArray(issues) && issues.length > 0) {
+                formattedMsg = issues.map(iss => {
+                    const pathStr = Array.isArray(iss.path) ? iss.path.join('.') : '';
+                    return `• ${pathStr ? `[${pathStr}] ` : ''}${iss.message}`;
+                }).join('\n');
+            } else if (typeof error?.message === 'string' && (error.message.startsWith('[') || error.message.startsWith('{'))) {
+                try {
+                    const parsed = JSON.parse(error.message);
+                    if (Array.isArray(parsed)) {
+                        formattedMsg = parsed.map(iss => {
+                            const pathStr = Array.isArray(iss.path) ? iss.path.join('.') : '';
+                            return `• ${pathStr ? `[${pathStr}] ` : ''}${iss.message || iss.code}`;
+                        }).join('\n');
+                    }
+                } catch {}
             }
+
+            setErrorMessage(formattedMsg);
+            toast.error('บันทึกไม่สำเร็จ กรุณาตรวจสอบข้อมูล');
         } finally {
             setIsSaving(false);
         }
@@ -223,6 +283,13 @@ export function useFooterSettings() {
         });
     };
 
+    const handleTrustBadgeChange = (badgeId, key, value) => {
+        setFooterConfig(prev => {
+            const badges = (prev.trustBadges?.badges || []).map(b => b.id === badgeId ? { ...b, [key]: value } : b);
+            return { ...prev, trustBadges: { ...(prev.trustBadges || {}), badges } };
+        });
+    };
+
     const handleTrustBadgesEnabled = (enabled) => {
         setFooterConfig(prev => ({ ...prev, trustBadges: { ...(prev.trustBadges || {}), enabled } }));
     };
@@ -250,6 +317,9 @@ export function useFooterSettings() {
         isSaving,
         isModalOpen,
         setIsModalOpen,
+        saveStatus,
+        setSaveStatus,
+        errorMessage,
         changesDiff,
         footerConfig,
         handlePreSave,
@@ -261,6 +331,7 @@ export function useFooterSettings() {
         handleSocialChange,
         handleSocialEnabled,
         handleTrustBadgeToggle,
+        handleTrustBadgeChange,
         handleTrustBadgesEnabled,
         updateLink,
         addLink,

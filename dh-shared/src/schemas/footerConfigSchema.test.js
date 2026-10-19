@@ -17,11 +17,14 @@ describe('footerConfigSchema Security & Validation', () => {
     expect(isSafeUrl(null)).toBe(false);
   });
 
-  it('accepts safe internal paths, https, http, and tel links', () => {
+  it('accepts safe internal paths, https, http, anchor, and tel/mailto links', () => {
     expect(isSafeUrl('/categories/inside')).toBe(true);
+    expect(isSafeUrl('#')).toBe(true);
+    expect(isSafeUrl('#contact')).toBe(true);
     expect(isSafeUrl('https://dhnotebook.com')).toBe(true);
     expect(isSafeUrl('http://dhnotebook.com')).toBe(true);
     expect(isSafeUrl('tel:02-xxx-xxxx')).toBe(true);
+    expect(isSafeUrl('mailto:support@dhnotebook.com')).toBe(true);
   });
 
   it('validates legitimate social URLs and rejects cross-platform/spoofs', () => {

@@ -17,6 +17,8 @@ export default function GlobalFooterSettings() {
         isSaving,
         isModalOpen,
         setIsModalOpen,
+        saveStatus,
+        errorMessage,
         changesDiff,
         footerConfig,
         handlePreSave,
@@ -28,6 +30,7 @@ export default function GlobalFooterSettings() {
         handleSocialChange,
         handleSocialEnabled,
         handleTrustBadgeToggle,
+        handleTrustBadgeChange,
         handleTrustBadgesEnabled,
         updateLink,
         addLink,
@@ -53,6 +56,8 @@ export default function GlobalFooterSettings() {
                 onConfirm={handleSave}
                 changes={changesDiff}
                 isSaving={isSaving}
+                status={saveStatus}
+                errorMessage={errorMessage}
             />
 
             <div className="bg-slate-100/70 border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden relative flex flex-col min-h-[60vh]">
@@ -95,6 +100,7 @@ export default function GlobalFooterSettings() {
                                 <TrustBadgesSection 
                                     footerConfig={footerConfig} 
                                     handleTrustBadgeToggle={handleTrustBadgeToggle} 
+                                    handleTrustBadgeChange={handleTrustBadgeChange} 
                                     handleTrustBadgesEnabled={handleTrustBadgesEnabled} 
                                 />
                                 <SocialMediaHubSection 

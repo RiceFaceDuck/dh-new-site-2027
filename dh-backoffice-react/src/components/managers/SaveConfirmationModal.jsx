@@ -1,7 +1,43 @@
-import { X, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CheckCircle2, AlertTriangle, Loader2, Copy, Check } from 'lucide-react';
 
 export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, changes, isSaving, status, errorMessage }) {
+    const [copied, setCopied] = useState(false);
+
     if (!isOpen) return null;
+
+    const handleCopyError = (e) => {
+        e.stopPropagation();
+        if (!errorMessage) return;
+        const textToCopy = typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage, null, 2);
+        if (navigator?.clipboard?.writeText) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                })
+                .catch(() => fallbackCopy(textToCopy));
+        } else {
+            fallbackCopy(textToCopy);
+        }
+    };
+
+    const fallbackCopy = (text) => {
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy text', err);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in zoom-in-95 duration-200">
@@ -21,9 +57,36 @@ export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, chan
                 {/* Content */}
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     {status === 'error' && errorMessage && (
-                        <div className="mb-4 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center gap-2">
-                            <AlertTriangle size={16} className="shrink-0 text-rose-500" />
-                            <span>{errorMessage}</span>
+                        <div className="mb-4 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex flex-col gap-2 animate-in fade-in duration-150">
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start gap-2 flex-1 min-w-0">
+                                    <AlertTriangle size={16} className="shrink-0 text-rose-500 mt-0.5" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-rose-800 font-black mb-1">เกิดข้อผิดพลาดในการบันทึก:</div>
+                                        <div className="font-mono text-[11px] sm:text-xs text-rose-700 whitespace-pre-wrap break-words select-text bg-rose-100/60 p-2.5 rounded-lg border border-rose-200/60 max-h-40 overflow-y-auto custom-scrollbar">
+                                            {errorMessage}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleCopyError}
+                                    title="คลิกเพื่อคัดลอกข้อความแจ้งเตือนทั้งหมด"
+                                    className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-lg text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <Check size={13} className="text-emerald-600" />
+                                            <span className="text-emerald-700 font-extrabold">คัดลอกแล้ว</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy size={13} />
+                                            <span>คัดลอกข้อความ</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     )}
                     {status === 'success' && (

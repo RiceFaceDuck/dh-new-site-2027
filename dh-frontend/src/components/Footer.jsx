@@ -8,11 +8,25 @@ const Footer = () => {
   const [config, setConfig] = useState(null);
 
   useEffect(() => {
-    const fetchConfig = async () => {
-      const data = await footerClientService.getFooterConfig();
-      setConfig(data);
+    let isMounted = true;
+    footerClientService.getFooterConfig().then((data) => {
+      if (isMounted && data) {
+        setConfig(data);
+      }
+    });
+
+    const unsubscribe = footerClientService.subscribeFooterConfig((realtimeData) => {
+      if (isMounted && realtimeData) {
+        setConfig(realtimeData);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
     };
-    fetchConfig();
   }, []);
 
   if (!config) return null;

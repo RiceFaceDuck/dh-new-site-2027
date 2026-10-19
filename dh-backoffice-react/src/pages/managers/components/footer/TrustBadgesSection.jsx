@@ -1,33 +1,31 @@
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Award, CheckCircle2, Truck } from 'lucide-react';
 
-const BADGE_MAP = {
-    b2bPartner: {
-        image: '/badges/badge_b2b_partner.svg',
-        fallbackLabel: 'VERIFIED B2B PARTNER',
-        desc: 'พันธมิตรช่างซ่อมและร้านค้าทั่วประเทศ'
-    },
-    dbdRegistered: {
-        image: '/badges/badge_dbd_registered.svg',
-        fallbackLabel: 'DBD REGISTERED',
-        desc: 'จดทะเบียนพาณิชย์อิเล็กทรอนิกส์ถูกต้อง'
-    },
-    genuineWarranty: {
-        image: '/badges/badge_genuine_warranty.svg',
-        fallbackLabel: 'สินค้ามีการรับประกัน',
-        desc: 'มั่นใจในคุณภาพสินค้าทุกชิ้น'
-    },
-    expressDelivery: {
-        image: '/badges/badge_express_delivery.svg',
-        fallbackLabel: 'ส่งออกภายในวันทันที',
-        desc: 'จัดส่งรวดเร็วทั่วไทย ถึงมือทันใจ'
-    }
+const BADGE_ICONS = {
+    b2bPartner: ShieldCheck,
+    dbdRegistered: Award,
+    genuineWarranty: CheckCircle2,
+    expressDelivery: Truck
 };
 
-export default function TrustBadgesSection({ footerConfig, handleTrustBadgeToggle, handleTrustBadgesEnabled }) {
+const CANONICAL_FALLBACK_BADGES = [
+    { id: 'b2bPartner', label: 'VERIFIED B2B PARTNER', icon: 'ShieldCheck', active: true, description: 'พันธมิตรช่างซ่อมและร้านค้าทั่วประเทศ' },
+    { id: 'dbdRegistered', label: 'DBD REGISTERED', icon: 'Award', active: true, description: 'จดทะเบียนพาณิชย์อิเล็กทรอนิกส์ถูกต้อง' },
+    { id: 'genuineWarranty', label: 'สินค้ามีการรับประกัน', icon: 'CheckCircle2', active: true, description: 'มั่นใจในคุณภาพสินค้าทุกชิ้น' },
+    { id: 'expressDelivery', label: 'ส่งออกภายในวันทันที', icon: 'Truck', active: true, description: 'จัดส่งรวดเร็วทั่วไทย ถึงมือทันใจ' }
+];
+
+export default function TrustBadgesSection({ 
+    footerConfig, 
+    handleTrustBadgeToggle, 
+    handleTrustBadgeChange, 
+    handleTrustBadgesEnabled 
+}) {
     const trustBadges = footerConfig?.trustBadges || { enabled: true, badges: [] };
     const isEnabled = trustBadges.enabled !== false;
-    const badges = trustBadges.badges || [];
+    const rawBadges = Array.isArray(trustBadges.badges) && trustBadges.badges.length > 0 
+        ? trustBadges.badges 
+        : CANONICAL_FALLBACK_BADGES;
 
     return (
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs space-y-5">
@@ -56,13 +54,10 @@ export default function TrustBadgesSection({ footerConfig, handleTrustBadgeToggl
             </div>
 
             <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity ${isEnabled ? '' : 'opacity-50 pointer-events-none'}`}>
-                {badges.map((b) => {
-                    const meta = BADGE_MAP[b.id] || {
-                        image: '/badges/badge_b2b_partner.svg',
-                        fallbackLabel: b.label,
-                        desc: b.description || ''
-                    };
+                {rawBadges.map((b) => {
+                    const IconComponent = BADGE_ICONS[b.id] || ShieldCheck;
                     const isActive = b.active !== false;
+
                     return (
                         <div
                             key={b.id}
@@ -72,14 +67,13 @@ export default function TrustBadgesSection({ footerConfig, handleTrustBadgeToggl
                                     : 'bg-slate-100/40 border-slate-200/60 opacity-60'
                             }`}
                         >
+                            {/* Header row with Icon and Toggle */}
                             <div className="flex items-center justify-between gap-3">
-                                <div className="h-11 flex items-center">
-                                    <img
-                                        src={meta.image}
-                                        alt={b.label || meta.fallbackLabel}
-                                        className="h-10 w-auto object-contain rounded-md shadow-xs drop-shadow-xs"
-                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                    />
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shadow-2xs shrink-0">
+                                        <IconComponent size={18} />
+                                    </div>
+                                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">{b.id}</span>
                                 </div>
                                 <button
                                     type="button"
@@ -93,9 +87,29 @@ export default function TrustBadgesSection({ footerConfig, handleTrustBadgeToggl
                                     {isActive ? 'แสดง' : 'ซ่อน'}
                                 </button>
                             </div>
-                            <div className="pt-1 border-t border-slate-200/60">
-                                <span className="text-[11px] font-bold text-slate-700 block">{b.label || meta.fallbackLabel}</span>
-                                <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{b.description || meta.desc}</p>
+
+                            {/* Editable Fields */}
+                            <div className="space-y-2 pt-2 border-t border-slate-200/60">
+                                <div>
+                                    <label className="text-[11px] font-bold text-slate-600 block mb-1">ชื่อป้าย (Label)</label>
+                                    <input
+                                        type="text"
+                                        value={b.label || ''}
+                                        onChange={(e) => handleTrustBadgeChange && handleTrustBadgeChange(b.id, 'label', e.target.value)}
+                                        placeholder="ชื่อตราสัญลักษณ์"
+                                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-hidden focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-bold text-slate-600 block mb-1">คำอธิบาย (Description)</label>
+                                    <input
+                                        type="text"
+                                        value={b.description || ''}
+                                        onChange={(e) => handleTrustBadgeChange && handleTrustBadgeChange(b.id, 'description', e.target.value)}
+                                        placeholder="คำอธิบายใต้ป้าย"
+                                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-600 outline-hidden focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+                                    />
+                                </div>
                             </div>
                         </div>
                     );
