@@ -1,48 +1,115 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ExternalLink, Check, Trash2, UserCheck, AlertCircle } from 'lucide-react';
 import { todoService } from '../../firebase/todoService';
+import { todoActionService } from '../../firebase/todo/todoActionService';
 import { creditCoreService } from '../../firebase/creditCoreService';
 import { billingQueryService } from '../../firebase/billingQueryService';
+import { billingStatusTransaction } from '../../firebase/billingStatusTransaction';
+import { db } from '../../firebase/config';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import PremiumDialog from '../common/PremiumDialog';
 import toast from 'react-hot-toast';
 import { getRenderableImageUrl, handleImageError } from 'dh-shared';
 
 const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [orderData, setOrderData] = useState(null);
+  const [isOrderMissing, setIsOrderMissing] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
 
   useEffect(() => {
+    let isMounted = true;
     const fetchOrder = async () => {
       try {
         if (!task?.orderId) return;
         const data = await billingQueryService.getOrderById(task.orderId);
-        if (data) setOrderData(data);
+        if (isMounted) {
+          if (data) {
+            setOrderData(data);
+            setIsOrderMissing(false);
+          } else {
+            setIsOrderMissing(true);
+          }
+        }
       } catch (err) {
         console.error("Error fetching order data for slip:", err);
       }
     };
     fetchOrder();
+    return () => { isMounted = false; };
   }, [task?.orderId]);
 
   if (!task) return null;
 
-  const handleApprove = async () => {
+  const isOrderPaid = orderData?.status === 'paid' || orderData?.orderStatus === 'paid' || orderData?.paymentStatus === 'VERIFIED';
+
+  const handleGoToTask = async () => {
     setIsSubmitting(true);
-    setErrorMsg('');
     try {
-      await todoService.verifyPaymentSlip(task.id, task.orderId, currentUser);
-      try {
-        await creditCoreService.handlePaymentCompletion(task.orderId, task.userId);
-      } catch (creditError) {
-        console.error("Failed to update credit points:", creditError);
+      if (task.orderId && currentUser?.uid) {
+        const staffName = currentUser.displayName || 'พนักงาน';
+        if (!orderData?.staffNickname && !orderData?.openedBy) {
+          await billingStatusTransaction.assignStaffHandler(task.orderId, currentUser.uid, staffName);
+        }
+        try {
+          const taskRef = doc(db, getCollectionPath('todos'), task.id);
+          await updateDoc(taskRef, {
+            status: 'in_progress',
+            staffUid: currentUser.uid,
+            staffNickname: staffName,
+            updatedAt: serverTimestamp()
+          });
+        } catch (e) {
+          console.warn("Could not update todo to in_progress:", e);
+        }
       }
+      toast.success('กำลังนำไปยังหน้าบิลเพื่อจัดการงาน...');
+      navigate('/billing', { state: { orderId: task.orderId, selectOrder: true } });
+    } catch (err) {
+      console.error("Error going to task:", err);
+      toast.error('ไม่สามารถเปิดหน้าบิลได้: ' + (err.message || 'เกิดข้อผิดพลาด'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCleanOrphanedTask = () => {
+    setDialogConfig({
+      isOpen: true,
+      title: '🗑️ เคลียร์งานค้าง',
+      message: `ไม่พบข้อมูลออเดอร์ #${task.orderId?.slice(-8).toUpperCase()} ในระบบ (อาจถูกลบหรือดำเนินการเสร็จสิ้นไปแล้ว)\n\nต้องการลบงานค้างนี้ออกจากระบบหรือไม่?`,
+      type: 'warning',
+      requireInput: false,
+      onConfirm: async () => {
+        setDialogConfig(prev => ({ ...prev, isOpen: false }));
+        setIsSubmitting(true);
+        try {
+          await todoActionService.deleteTask(task.id);
+          toast.success('ลบงานค้างออกจากระบบเรียบร้อยแล้ว');
+          if (onSuccess) onSuccess();
+        } catch (err) {
+          toast.error('ลบงานไม่สำเร็จ: ' + err.message);
+          setIsSubmitting(false);
+        }
+      },
+      onCancel: () => setDialogConfig(prev => ({ ...prev, isOpen: false }))
+    });
+  };
+
+  const handleCloseCompletedTask = async () => {
+    setIsSubmitting(true);
+    try {
+      await todoActionService.completeTask(task.id);
+      toast.success('ปิดงานที่เสร็จสิ้นแล้วเรียบร้อย');
       if (onSuccess) onSuccess();
-    } catch (error) {
-      console.error("Approve Slip Error:", error);
-      setErrorMsg(error.message || 'เกิดข้อผิดพลาดในการยืนยันสลิป');
+    } catch (err) {
+      toast.error('ปิดงานไม่สำเร็จ: ' + err.message);
       setIsSubmitting(false);
     }
   };
@@ -105,7 +172,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
   return (
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
-      className={`rounded-2xl transition-all duration-200 overflow-hidden relative cursor-pointer flex flex-col h-full ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
+      className={`rounded-[0.2rem] transition-all duration-200 overflow-hidden relative cursor-pointer flex flex-col h-full ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
     >
       
       {isSubmitting && (
@@ -115,14 +182,33 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
       )}
 
       <div className="p-4 flex flex-col gap-3.5">
-        {/* 1. Header: Badge + Order ID + Timestamp */}
+        {/* 1. Header: Badge + Order ID + Staff / Status + Timestamp */}
         <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-xs uppercase tracking-wider flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+            <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-[0.2rem] shadow-xs uppercase tracking-wider flex items-center gap-1 shrink-0">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               Verify Payment
             </span>
             <span className="text-xs font-black text-gray-800 truncate">#{task.orderId?.slice(-8).toUpperCase()}</span>
+            
+            {/* ป้ายแสดงผู้รับผิดชอบงานจริง */}
+            {(orderData?.staffNickname || task.staffNickname) ? (
+              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-[0.2rem] flex items-center gap-1 shrink-0">
+                <UserCheck size={11} className="text-emerald-600" /> รับงานแล้ว: คุณ{orderData?.staffNickname || task.staffNickname}
+              </span>
+            ) : isOrderMissing ? (
+              <span className="bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold px-1.5 py-0.5 rounded-[0.2rem] flex items-center gap-1 shrink-0">
+                <AlertCircle size={11} /> ไม่พบออเดอร์
+              </span>
+            ) : isOrderPaid ? (
+              <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-[0.2rem] flex items-center gap-1 shrink-0">
+                <Check size={11} strokeWidth={3} /> ชำระเงินแล้ว
+              </span>
+            ) : (
+              <span className="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold px-1.5 py-0.5 rounded-[0.2rem] shrink-0">
+                รอรับงาน
+              </span>
+            )}
           </div>
           <span className="text-[11px] text-gray-400 font-medium shrink-0">
             {task.requestedAt?.toDate ? task.requestedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (task.requestedAt ? new Date(task.requestedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A')}
@@ -134,7 +220,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
           {/* Slip Image Thumbnail */}
           <div 
             onClick={(e) => { e.stopPropagation(); if (task.slipUrl) setIsImageModalOpen(true); }}
-            className={`w-16 h-22 shrink-0 rounded-lg border-2 ${task.slipUrl ? 'border-blue-200 border-dashed cursor-pointer hover:border-blue-400 shadow-xs' : 'border-gray-200'} bg-gray-50 flex items-center justify-center relative overflow-hidden group shadow-inner transition-colors`}
+            className={`w-16 h-22 shrink-0 rounded-[0.2rem] border-2 ${task.slipUrl ? 'border-blue-200 border-dashed cursor-pointer hover:border-blue-400 shadow-xs' : 'border-gray-200'} bg-gray-50 flex items-center justify-center relative overflow-hidden group shadow-inner transition-colors`}
             title={task.slipUrl ? "คลิกเพื่อดูรูปขยาย" : "ไม่มีสลิป"}
           >
             {task.slipUrl ? (
@@ -173,7 +259,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
                 <button 
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }} 
-                  className="text-[11px] text-blue-600 hover:text-blue-800 underline flex items-center gap-1 font-semibold bg-blue-50/80 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors"
+                  className="text-[11px] text-blue-600 hover:text-blue-800 underline flex items-center gap-1 font-semibold bg-blue-50/80 hover:bg-blue-100 px-2 py-0.5 rounded-[0.2rem] transition-colors cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   ดูรายละเอียด
@@ -184,32 +270,64 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
           </div>
         </div>
 
-        {/* 3. Actions: Side-by-side full width buttons */}
-        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
-          <button 
-            type="button"
-            onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-            disabled={isSubmitting || !task.slipUrl}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs hover:shadow transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 active:scale-95 cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-            อนุมัติ
-          </button>
-          <button 
-            type="button"
-            onClick={(e) => { e.stopPropagation(); handleReject(); }}
-            disabled={isSubmitting}
-            className="w-full py-2 bg-white border border-gray-200 hover:border-red-300 hover:bg-red-50 hover:text-red-600 text-gray-700 font-bold rounded-lg transition-colors flex items-center justify-center text-xs disabled:opacity-50 active:scale-95 cursor-pointer"
-          >
-            ปฏิเสธ
-          </button>
-        </div>
+        {/* 3. Actions: ไปที่งาน และ ปฏิเสธ หรือ เคลียร์งานค้าง */}
+        {isOrderMissing ? (
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+            <span className="text-[11px] text-rose-600 font-medium truncate">⚠️ ออเดอร์ต้นทางไม่มีอยู่ในระบบแล้ว</span>
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleCleanOrphanedTask(); }}
+              disabled={isSubmitting}
+              className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 rounded-[0.2rem] transition-colors flex items-center gap-1 text-xs shrink-0 cursor-pointer"
+            >
+              <Trash2 size={13} /> ลบงานค้างนี้
+            </button>
+          </div>
+        ) : isOrderPaid ? (
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleGoToTask(); }}
+              disabled={isSubmitting}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-[0.2rem] shadow-xs hover:shadow transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <ExternalLink size={14} /> ไปที่งาน
+            </button>
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleCloseCompletedTask(); }}
+              disabled={isSubmitting}
+              className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 rounded-[0.2rem] transition-colors flex items-center justify-center gap-1.5 text-xs cursor-pointer"
+            >
+              <Check size={14} strokeWidth={3} /> ปิดงานนี้
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleGoToTask(); }}
+              disabled={isSubmitting}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-[0.2rem] shadow-xs hover:shadow transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 active:scale-95 cursor-pointer"
+            >
+              <ExternalLink size={14} /> ไปที่งาน
+            </button>
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleReject(); }}
+              disabled={isSubmitting}
+              className="w-full py-2.5 bg-white border border-gray-200 hover:border-red-300 hover:bg-red-50 hover:text-red-600 text-gray-700 font-bold rounded-[0.2rem] transition-colors flex items-center justify-center text-xs disabled:opacity-50 active:scale-95 cursor-pointer"
+            >
+              ปฏิเสธ
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ---------------- Inline Expanded Details ---------------- */}
       {isExpanded && orderData && (
         <div className="p-4 sm:p-5 border-t border-gray-100 bg-gray-50 animate-in fade-in slide-in-from-top-1 cursor-default" onClick={(e) => e.stopPropagation()}>
-           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs max-w-2xl mx-auto">
+           <div className="bg-white p-4 rounded-[0.2rem] border border-slate-200 shadow-xs max-w-2xl mx-auto">
               <h3 className="font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 flex items-center justify-between">
                  <div className="flex items-center gap-2">
                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -252,14 +370,14 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                    รายการสินค้าในออเดอร์
                  </h4>
-                 <div className="bg-slate-50 border border-slate-100 rounded-sm p-2 max-h-40 overflow-y-auto">
+                 <div className="bg-slate-50 border border-slate-100 rounded-[0.2rem] p-2 max-h-40 overflow-y-auto">
                     {orderData.items?.length > 0 ? orderData.items.map((item, idx) => (
                        <div key={idx} className="flex justify-between items-start text-xs py-1.5 border-b border-slate-100 last:border-0">
                           <span className="text-slate-700 pr-2 flex-1">
                             {item.name} 
                             {item.isFreebie && <span className="text-emerald-500 font-bold ml-1 px-1.5 py-0.5 bg-emerald-100 rounded-xs text-[9px] uppercase">Free</span>}
                           </span>
-                          <span className="text-slate-600 font-bold whitespace-nowrap bg-white px-1.5 py-0.5 rounded-sm shadow-xs">x{item.qty}</span>
+                          <span className="text-slate-600 font-bold whitespace-nowrap bg-white px-1.5 py-0.5 rounded-[0.2rem] shadow-xs">x{item.qty}</span>
                        </div>
                     )) : <div className="text-xs text-gray-400 text-center py-2">ไม่มีข้อมูลสินค้า</div>}
                  </div>
@@ -287,7 +405,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
               alt="Slip Fullscreen" 
               referrerPolicy="no-referrer"
               onError={(e) => handleImageError(e, task.slipUrl)}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border border-white/10" 
+              className="max-w-full max-h-[85vh] object-contain rounded-[0.2rem] shadow-2xl border border-white/10" 
               loading="lazy" 
             />
             <p className="text-white/60 text-sm mt-4">คลิกที่พื้นที่ว่าง หรือกดปุ่มกากบาทเพื่อปิด</p>

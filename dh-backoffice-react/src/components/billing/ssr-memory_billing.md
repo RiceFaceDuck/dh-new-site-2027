@@ -134,6 +134,8 @@
         1) ใน `usePosActions.js` และ `usePosPayment.js` เปลี่ยนการตัดเศษส่วนลดจาก `Math.floor` เป็น Satang Precision 2 ตำแหน่ง (`Math.round(x * 100) / 100`) ตามกฎ Domain Rule 3
         2) ใน `usePosState.js` ดึงค่าโปรโมชั่นและส่วนลดจากบิลร่างหน้าเว็บ (`appliedPromotions`, `totals.discount`) มาใส่แท็บ POS โดยตรง และเซ็ตทั้ง `slipImage` กับ `slipUrl`
         3) ใน `PaymentMethods.jsx` และ `PosSystem.jsx` แปลง URL สลิปผ่าน `getRenderableImageUrl` จาก `dh-shared` เป็น Google CDN (`lh3.googleusercontent.com/d/{id}=w1000`), ใส่ `referrerPolicy="no-referrer"` เพื่อป้องกันเบราว์เซอร์ส่ง Referer ไปให้ไดรฟ์บล็อก และใส่ `onError={handleImageError}` สำหรับสลับ URL สำรองอัตโนมัติ [สถานะ: ส่งมอบแล้ว]
+    38. ปัญหา: ป้ายระบุแหล่งที่มาของออเดอร์หน้าเว็บแสดงซ้ำซ้อน 2 จุดในตารางบิล (/billing) โดยมีทั้งป้ายเล็ก '🌐 หน้าเว็บ' ตรงช่องเลขที่บิล และป้ายแบนเนอร์ '🌐 ออเดอร์ใหม่ [หน้าเว็บ]' ในช่องสถานะทับกับป้าย 'ฉบับร่าง (Draft)'
+        วิธีแก้: นำป้ายแบนเนอร์ที่ซ้ำซ้อนในช่องสถานะของ `OrderTableRow.jsx` ออก เพื่อให้คงเหลือป้ายเล็ก `🌐 หน้าเว็บ` สีฟ้าคู่กับเลขบิลอย่างเป็นระเบียบ และช่องสถานะแสดงเฉพาะสถานะบิลจริง `ฉบับร่าง (Draft)` อย่างสะอาดตาตามหลัก Calm UI Invariant [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

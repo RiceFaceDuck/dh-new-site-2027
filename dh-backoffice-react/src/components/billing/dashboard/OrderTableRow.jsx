@@ -96,16 +96,9 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         <Ban size={15} strokeWidth={2.5} /> ยกเลิกแล้ว
                     </span>
                 ) : isDraft ? (
-                    <div className="flex flex-col items-start gap-1">
-                        {isWebOrder && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[0.25rem] bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[11px] font-black shadow-xs tracking-wide border border-cyan-400">
-                                <Globe size={12} strokeWidth={2.5} /> ออเดอร์ใหม่ [หน้าเว็บ]
-                            </span>
-                        )}
-                        <span className="inline-flex items-center justify-start gap-1.5 text-purple-700 text-xs font-black">
-                            <Clock size={13} strokeWidth={2.5} /> ฉบับร่าง (Draft)
-                        </span>
-                    </div>
+                    <span className="inline-flex items-center justify-start gap-1.5 text-purple-700 text-xs font-black">
+                        <Clock size={13} strokeWidth={2.5} /> ฉบับร่าง (Draft)
+                    </span>
                 ) : statLower === 'completed' ? (
                     <span className="inline-flex items-center justify-start gap-1.5 text-blue-700 text-sm font-black">
                         ส่งออก 🚚

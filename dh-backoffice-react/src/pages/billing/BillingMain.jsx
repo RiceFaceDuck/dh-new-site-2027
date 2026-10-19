@@ -124,6 +124,7 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
         onResumeDraft={(draft) => { setDraftOrder(draft); setIsNewBillRequest(false); setViewMode('pos'); }}
         isSelectorMode={isSelectorMode}
         onCancelSelector={onCancelSelector}
+        initialOrderId={location.state?.orderId}
       />
     </div>
   );

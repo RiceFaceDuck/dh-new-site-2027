@@ -2,6 +2,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { Plus, AlertTriangle, ArrowLeft, HelpCircle, Receipt } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { billingService } from '../../firebase/billingService';
+import { billingQueryService } from '../../firebase/billingQueryService';
 import { billingStatusTransaction } from '../../firebase/billingStatusTransaction';
 import { auth } from '../../firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,7 +16,7 @@ const OrderDetailModal = lazy(() => import('./dashboard/OrderDetailModal'));
 const GuideModal = lazy(() => import('../common/GuideModal'));
 const ReceiptTemplate = lazy(() => import('./pos/ReceiptTemplate'));
 
-export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelectorMode = false, onCancelSelector }) {
+export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelectorMode = false, onCancelSelector, initialOrderId }) {
     const {
         orders,
         filteredOrders,
@@ -82,6 +83,20 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
             }
         }
     };
+
+    // 🚀 Auto-select order if navigated from Todo
+    React.useEffect(() => {
+        if (!initialOrderId || selectedOrder) return;
+        const targetId = String(initialOrderId).trim();
+        const found = orders.find(o => o.id === targetId || o.orderId === targetId || o.tempOrderId === targetId);
+        if (found) {
+            handleSelectOrder(found);
+        } else if (!loading) {
+            billingQueryService.getOrderById(targetId).then(order => {
+                if (order) handleSelectOrder(order);
+            }).catch(console.error);
+        }
+    }, [initialOrderId, orders, loading]);
 
     const handleCloseModal = () => {
         setSelectedOrder(null);
