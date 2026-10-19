@@ -1,6 +1,6 @@
 import { X, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 
-export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, changes, isSaving }) {
+export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, changes, isSaving, status, errorMessage }) {
     if (!isOpen) return null;
 
     return (
@@ -20,6 +20,18 @@ export default function SaveConfirmationModal({ isOpen, onClose, onConfirm, chan
 
                 {/* Content */}
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    {status === 'error' && errorMessage && (
+                        <div className="mb-4 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center gap-2">
+                            <AlertTriangle size={16} className="shrink-0 text-rose-500" />
+                            <span>{errorMessage}</span>
+                        </div>
+                    )}
+                    {status === 'success' && (
+                        <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-bold flex items-center gap-2">
+                            <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+                            <span>บันทึกข้อมูลสำเร็จเรียบร้อยแล้ว</span>
+                        </div>
+                    )}
                     <p className="text-sm font-bold text-slate-600 mb-4">
                         ตรวจสอบรายการเปลี่ยนแปลงต่อไปนี้ก่อนบันทึก:
                     </p>

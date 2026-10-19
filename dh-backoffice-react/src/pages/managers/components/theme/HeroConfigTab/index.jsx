@@ -131,7 +131,7 @@ export default function HeroConfigTab() {
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleConfirmSave}
         isSaving={isSaving}
-        changesDiff={changesDiff}
+        changes={changesDiff}
         status={saveStatus}
         errorMessage={errorMessage}
       />

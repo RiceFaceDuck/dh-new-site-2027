@@ -118,13 +118,15 @@ export function useHeroConfig() {
       await heroConfigService.updateHeroConfig(heroConfig, changesDiff);
       setOriginalConfig({ ...heroConfig });
       setSaveStatus('success');
+      toast.success('บันทึกการตั้งค่าป้ายต้อนรับ (Hero Banner) สำเร็จ!');
       setTimeout(() => {
         setIsModalOpen(false);
-      }, 1200);
+      }, 1000);
     } catch (error) {
       console.error("🔥 Error saving hero config:", error);
       setSaveStatus('error');
       setErrorMessage(error?.message || 'เกิดข้อผิดพลาด ไม่สามารถบันทึกข้อมูลได้');
+      toast.error(error?.message || 'เกิดข้อผิดพลาด ไม่สามารถบันทึกข้อมูลได้');
     } finally {
       setIsSaving(false);
     }

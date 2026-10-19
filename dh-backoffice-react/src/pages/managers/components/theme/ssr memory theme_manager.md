@@ -29,5 +29,7 @@
     <pitfall id="1">Double Write in UI: Earlier ThemeConfigTab invoked historyService.addLog alongside settingsService.updateStorefrontTheme, doubling write ops into Firestore.</pitfall>
     <pitfall id="2">Cache Key Misalignment: In dh-frontend, writing raw data to localStorage broke the { data, timestamp } contract of storefrontSettingsService, killing the 15-minute TTL cache.</pitfall>
     <pitfall id="3">Mixed Architecture: Putting state, file uploads, and UI in a single monolithic component violated SRP and made responsive device preview maintenance fragile.</pitfall>
+    <pitfall id="4">Google Drive Referer Block (HTTP 429): Loading Google Drive thumbnail links directly sends origin Referer header, causing Google to return 429. Must enforce `referrerPolicy="no-referrer"` on all `<img>` tags.</pitfall>
+    <pitfall id="5">Storefront Cache Stale: Polling `getHeroConfig()` with 15-minute localStorage TTL caused storefront to not show live banner updates; solved by adding onSnapshot real-time listener.</pitfall>
   </pitfalls_and_lessons>
 </ssr_memory>

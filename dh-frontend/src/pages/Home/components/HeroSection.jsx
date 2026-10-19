@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { storefrontSettingsService, DEFAULT_HERO_CONFIG } from '../../../firebase/storefrontSettingsService';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../firebase/config';
+import { DEFAULT_HERO_CONFIG } from '../../../firebase/storefrontSettingsService';
 import { getRenderableImageUrl } from '../../../utils/imageUtils';
 import { safeJsonParse } from 'dh-shared';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 const CACHE_KEY = 'dh_hero_config_cache';
+const HERO_DOC = 'hero_config';
 
 const HeroSection = () => {
   // 1. Initialize from localStorage if available, otherwise DEFAULT
@@ -25,21 +29,27 @@ const HeroSection = () => {
   const [isLoading, setIsLoading] = useState(!localStorage.getItem(CACHE_KEY));
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchConfig = async () => {
-      try {
-        const data = await storefrontSettingsService.getHeroConfig();
-        if (isMounted && data) {
-          setConfig(data);
+    const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const newConfig = { ...DEFAULT_HERO_CONFIG, ...docSnap.data() };
+        setConfig(newConfig);
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            data: newConfig,
+            timestamp: Date.now()
+          }));
+        } catch (e) {
+          // ignore storage error
         }
-      } catch (error) {
-        console.error("Failed to load hero config:", error);
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
-    };
-    fetchConfig();
-    return () => { isMounted = false; };
+      setIsLoading(false);
+    }, (error) => {
+      console.error("🔥 Error listening to hero config:", error);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Use default if custom is disabled
@@ -81,6 +91,8 @@ const HeroSection = () => {
               alt="Hero Banner"
               loading="eager"
               fetchPriority="high"
+              referrerPolicy="no-referrer"
+              onError={(e) => { e.target.onerror = null; e.target.src = DEFAULT_HERO_CONFIG.imageUrl; }}
               className="w-full h-full object-cover object-center"
             />
           ) : (
@@ -104,6 +116,8 @@ const HeroSection = () => {
                 alt="Hero Banner"
                 loading="eager"
                 fetchPriority="high"
+                referrerPolicy="no-referrer"
+                onError={(e) => { e.target.onerror = null; e.target.src = DEFAULT_HERO_CONFIG.imageUrl; }}
                 className="w-full h-full object-cover object-center"
               />
             ) : (

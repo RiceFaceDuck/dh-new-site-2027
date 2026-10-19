@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Monitor, Smartphone, EyeOff } from 'lucide-react';
+import { getRenderableImageUrl, handleImageError } from 'dh-shared/src/utils/imageProcessingUtils.js';
 
 export default function HeroLivePreview({ config }) {
   const [device, setDevice] = useState('desktop');
@@ -78,8 +79,10 @@ export default function HeroLivePreview({ config }) {
             <div className="absolute inset-0 z-0">
               {c.imageUrl ? (
                 <img
-                  src={c.imageUrl}
+                  src={getRenderableImageUrl(c.imageUrl)}
                   alt="Hero Preview"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => handleImageError(e, c.imageUrl)}
                   className="w-full h-full object-cover object-center"
                   loading="lazy"
                 />
@@ -100,8 +103,10 @@ export default function HeroLivePreview({ config }) {
               <div className={`h-full relative transition-all duration-300 ${device === 'mobile' ? 'w-full' : 'w-full md:w-[70%]'}`}>
                 {c.imageUrl ? (
                   <img
-                    src={c.imageUrl}
+                    src={getRenderableImageUrl(c.imageUrl)}
                     alt="Hero Preview"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => handleImageError(e, c.imageUrl)}
                     className="w-full h-full object-cover object-center"
                     loading="lazy"
                   />
