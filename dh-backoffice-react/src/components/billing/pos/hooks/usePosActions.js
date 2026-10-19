@@ -1,4 +1,5 @@
 import { auth } from '../../../../firebase/config';
+import { useAuth } from '../../../../contexts/AuthContext';
 import { billingService } from '../../../../firebase/billingService';
 import { syncRecentOrdersCatalog } from '../../../../firebase/orderSyncService';
 import { offlinePosService } from '../../../../firebase/offlinePosService';
@@ -31,6 +32,7 @@ export const usePosActions = ({
         shippingFee, otherFeeAmount, vatAmount, netTotal,
         walletUsed, remainingToPay, earnedPoints, changeAmount, eligibleFreebies
     } = posState;
+    const { profile } = useAuth();
 
     const addItemToCart = (product) => {
         const existingItem = activeTab.items.find(i => i.sku === product.sku);
@@ -331,6 +333,9 @@ export const usePosActions = ({
                 id: activeTab.docId || null, orderId: finalOrderId,
                 userId: validCustUid,
                 customerId: validCustUid,
+                isWebOrder: Boolean(activeTab.isWebOrder),
+                channel: activeTab.channel || (activeTab.isWebOrder ? 'storefront' : 'pos'),
+                source: activeTab.source || (activeTab.isWebOrder ? 'storefront' : 'pos'),
                 orderStatus: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
                 status: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
                 isDraft: status === 'Draft',
@@ -377,7 +382,8 @@ export const usePosActions = ({
                 return;
             }
 
-            const result = await billingService.createOrder(orderData, auth.currentUser?.uid || 'System', 'POS');
+            const currentStaffName = profile?.nickname || profile?.displayName || auth.currentUser?.displayName || (activeTab.isWebOrder ? 'หน้าเว็บ' : 'พนักงาน');
+            const result = await billingService.createOrder(orderData, auth.currentUser?.uid || 'System', currentStaffName);
             const actualOrderId = result?.orderId || finalOrderId;
 
             // ⚡ Sync recent orders catalog so order list displays new order immediately

@@ -136,8 +136,31 @@
         3) ใน `PaymentMethods.jsx` และ `PosSystem.jsx` แปลง URL สลิปผ่าน `getRenderableImageUrl` จาก `dh-shared` เป็น Google CDN (`lh3.googleusercontent.com/d/{id}=w1000`), ใส่ `referrerPolicy="no-referrer"` เพื่อป้องกันเบราว์เซอร์ส่ง Referer ไปให้ไดรฟ์บล็อก และใส่ `onError={handleImageError}` สำหรับสลับ URL สำรองอัตโนมัติ [สถานะ: ส่งมอบแล้ว]
     38. ปัญหา: ป้ายระบุแหล่งที่มาของออเดอร์หน้าเว็บแสดงซ้ำซ้อน 2 จุดในตารางบิล (/billing) โดยมีทั้งป้ายเล็ก '🌐 หน้าเว็บ' ตรงช่องเลขที่บิล และป้ายแบนเนอร์ '🌐 ออเดอร์ใหม่ [หน้าเว็บ]' ในช่องสถานะทับกับป้าย 'ฉบับร่าง (Draft)'
         วิธีแก้: นำป้ายแบนเนอร์ที่ซ้ำซ้อนในช่องสถานะของ `OrderTableRow.jsx` ออก เพื่อให้คงเหลือป้ายเล็ก `🌐 หน้าเว็บ` สีฟ้าคู่กับเลขบิลอย่างเป็นระเบียบ และช่องสถานะแสดงเฉพาะสถานะบิลจริง `ฉบับร่าง (Draft)` อย่างสะอาดตาตามหลัก Calm UI Invariant [สถานะ: ส่งมอบแล้ว]
+    39. ปัญหา: ป้าย '🌐 หน้าเว็บ' ไม่แสดงในบิลทางการ (เช่น DH-26-0049) แม้จะมาจากหน้าบ้าน และเสี่ยงหลุดหายเมื่อแปลงบิลหรือเปิดดูในโมดอล
+        วิธีแก้: 
+        1) ใน `usePosActions.js` และ `billingTransactionService.js` บันทึกและส่งต่อฟิลด์ `isWebOrder: true`, `channel: 'storefront'`, `source: 'storefront'` เสมอ แม้แปลงเป็นบิลทางการ `DH-26-XXXX`
+        2) ใน `orderSyncService.js` เพิ่มการแมปฟิลด์ `isWebOrder`, `channel`, `source` เข้าสู่ก้อนแคตตาล็อก `catalogs/recent_orders` เพื่อให้หน้าตารางบิลโหลดป้ายขึ้นทันที
+        3) อัปเดตข้อมูลเอกสารเก่าใน Firestore และ `catalogs/recent_orders` ให้บิล DH-26-0049 มีแฟล็กหน้าเว็บสมบูรณ์
+    40. ปัญหา: สีสถานะบิลเดิมในตารางบิลมีความกลืนกัน และข้อความ 'หักสต๊อคแล้ว 📤' ยาวเกินไปจนดูฟุ่มเฟือยและรกสายตา
+        วิธีแก้: 
+        1) ปรับสีสถานะตามมาตรฐาน Calm UI: ฉบับร่าง (Draft) ใช้สีน้ำตาลอ่อน `text-amber-800`, โอนแล้ว ใช้สีเขียวสว่างสดใส `text-emerald-600`, และ print แล้ว / ส่งออก ใช้สีดำคมชัด `text-slate-900 dark:text-white`
+        2) ย่อข้อความหักสต็อกที่ฟุ่มเฟือยเป็นสัญลักษณ์กะทัดรัด `• 📦✓` เช่น `print แล้ว 🖨️ • 📦✓` และ `โอนแล้ว ✅ • 📦✓`
+    41. ปัญหา: บิลที่มีการใส่เลขพัสดุแล้ว (trackingNumber) หรือมีสถานะจัดส่ง (shipped) ไม่ยอมขึ้นสถานะ 'ส่งแล้ว 🚚' แต่กลับไปค้างที่สถานะ 'โอนแล้ว ✅ • 📦✓'
+        วิธีแก้: 
+        1) โค้ดเดิมในตารางบิลและโมดอลดักจับเฉพาะ `statLower === 'completed'` โดยไม่มีการเช็ค `statLower === 'shipped'` และไม่ได้ตรวจจับการมีเลขพัสดุ (`trackingNumber`/`trackingNo`)
+        2) ลำดับเงื่อนไขการเรนเดอร์เดิมเอาเงื่อนไข `isPaid` มาก่อน ส่งผลให้บิลที่ชำระเงินแล้วตกไปแสดง 'โอนแล้ว' แทนที่จะขึ้น 'ส่งแล้ว'
+        3) แก้ไขโดยคำนวณ `hasTracking = Boolean(order.trackingNumber || order.trackingNo || order.shippingTracking)` และ `isShipped = statLower === 'shipped' || statLower === 'completed' || hasTracking`
+    42. ปัญหา: ในตารางบิลและโมดอลรายละเอียด คอลัมน์เจ้าหน้าที่แสดงคำว่า 'POS' แทนที่จะเป็นชื่อเล่นของพนักงานจริงหรือ 'ยังไม่ตรวจสอบ' สำหรับออเดอร์หน้าเว็บ
+        วิธีแก้: 
+        1) โค้ดเดิมใน `usePosActions.js` ฮาร์ดโค้ดส่ง `'POS'` เป็น `actorName` เมื่อสร้างหรือชำระบิล ทำให้ Firestore บันทึก `staffNickname: 'POS'`
+        2) ใน `dh-shared/src/utils/staffUtils.js` ฟังก์ชัน `getStaffNickname` ตรวจสอบ `if (order.staffNickname) return order.staffNickname` โดยไม่ได้กรอง `'POS'` หรือ `'System'` ออก
+        3) แก้ไข `staffUtils.js` ให้ตรวจสอบว่าถ้า `staffNickname` เป็น `'POS'` หรือ `'System'` ให้ถือว่าเป็นค่าว่าง แล้วดึงชื่อจริงจาก `staffMap` ตาม `openedBy`/`staffUid`/`createdBy` หรือส่งคืน `null` สำหรับบิลหน้าเว็บที่ยังไม่มีใครรับงาน
+        4) ปรับปรุง `OrderTableRow.jsx` และ `OrderDetailModal.jsx` ให้กรอง `'POS'` และ `'System'` ออกจากตัวแปรแสดงผล เพื่อให้บิลหน้าเว็บที่ยังไม่มีเจ้าหน้าที่รับงานแสดงป้ายสีส้ม 'ยังไม่ตรวจสอบ' อย่างถูกต้อง
+        5) ปรับ `usePosActions.js` ให้ส่งชื่อเล่น/ชื่อโปรไฟล์จริงของพนักงาน (`profile?.nickname` หรือ `displayName`) แทนค่าคงที่ `'POS'` [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
+
+
 
 
 

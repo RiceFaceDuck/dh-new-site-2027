@@ -338,10 +338,17 @@ export const billingTransactionService = {
           const isWalletDeducted = isPaidOrApproved && walletToUse > 0;
           const validCustomerUid = (customerUid && customerUid !== 'WALK-IN') ? customerUid : null;
 
+          const isWebOrder = Boolean(dataToSave.isWebOrder || orderData.isWebOrder || dataToSave.channel === 'storefront' || orderData.channel === 'storefront');
+          const channel = dataToSave.channel || orderData.channel || (isWebOrder ? 'storefront' : 'pos');
+          const source = dataToSave.source || orderData.source || (isWebOrder ? 'storefront' : 'pos');
+
           transaction.set(newOrderRef, {
             ...dataToSave, 
             userId: validCustomerUid || dataToSave.userId || null,
             customerId: validCustomerUid || dataToSave.customerId || null,
+            isWebOrder,
+            channel,
+            source,
             items: verifiedItems, 
             itemSkus,
             orderId: finalOrderId, 

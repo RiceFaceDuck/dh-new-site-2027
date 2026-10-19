@@ -51,6 +51,9 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
 
     const orderWithMergedItems = { ...selectedOrder, items: displayItems };
 
+    const hasTracking = Boolean(selectedOrder.trackingNumber || selectedOrder.trackingNo || selectedOrder.shippingTracking);
+    const isShipped = oStat === 'shipped' || oStat === 'completed' || hasTracking;
+
     return (
         <div className="flex flex-col md:flex-row h-full bg-(--dh-bg-surface) border border-(--dh-border) rounded-xs shadow-xs overflow-hidden">
             <OrderSummaryItems 
@@ -72,6 +75,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
                 isCancelled={isCancelled}
                 paymentStat={pStat}
                 orderStat={oStat}
+                isShipped={isShipped}
             />
         </div>
     );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Receipt, Copy, Clock, MapPin, Phone, User, CalendarDays, Loader2, CheckCircle, Package } from 'lucide-react';
+import { Receipt, Copy, Clock, MapPin, Phone, User, CalendarDays, Loader2, CheckCircle, Package, Globe } from 'lucide-react';
 import OrderSummary from './OrderSummary';
 import OrderActions from './OrderActions';
 import OrderHistoryTab from './OrderHistoryTab';
@@ -93,6 +93,8 @@ export default function OrderDetailModal(props) {
     const paymentStat = (selectedOrder.paymentStatus || '').toLowerCase();
     const isCancelled = orderStat === 'cancelled' || orderStat === 'void';
     const isPaid = paymentStat === 'paid' || orderStat === 'paid';
+    const hasTracking = Boolean(selectedOrder.trackingNumber || selectedOrder.trackingNo || selectedOrder.shippingTracking);
+    const isShipped = orderStat === 'shipped' || orderStat === 'completed' || hasTracking;
     
     const customerName = getCustomerDisplayName(selectedOrder.customer, 'ลูกค้าทั่วไป (Walk-in)');
     const customerPhone = selectedOrder.customer?.phone || selectedOrder.walkInPhone || '-';
@@ -146,6 +148,11 @@ export default function OrderDetailModal(props) {
                                                 <div className="flex items-center gap-1 font-mono text-xs font-bold text-(--dh-text-muted)">
                                                     <Receipt size={12}/> {selectedOrder.orderId}
                                                 </div>
+                                                {Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront') && (
+                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-cyan-600 text-white font-black text-[9.5px] tracking-wide shadow-xs border border-cyan-700 shrink-0" title="ออเดอร์สั่งซื้อผ่านระบบหน้าเว็บไซต์">
+                                                        <Globe size={10} strokeWidth={2.5}/> หน้าเว็บ
+                                                    </span>
+                                                )}
                                                 <button onClick={(e) => handleCopyId(e, selectedOrder.orderId)} className="text-[10px] text-blue-500 hover:text-blue-600 font-bold flex items-center gap-0.5">
                                                     <Copy size={10}/> คัดลอก
                                                 </button>
@@ -159,24 +166,30 @@ export default function OrderDetailModal(props) {
                                         {isCancelled ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-black">ยกเลิกแล้ว</span>
                                         ) : (!isPaid && (orderStat === 'draft' || paymentStat === 'draft' || selectedOrder.isDraft === true || String(selectedOrder.orderId || '').startsWith('DH-TEMP-'))) ? (
-                                            <span className="px-2 py-0.5 rounded-sm bg-purple-500/10 text-purple-700 border border-purple-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> ฉบับร่าง (Draft)</span>
-                                        ) : orderStat === 'completed' ? (
-                                            <span className="px-2 py-0.5 rounded-sm bg-blue-500/10 text-blue-700 border border-blue-500/20 text-[10px] font-black">ส่งออก 🚚</span>
+                                            <span className="px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-800 dark:text-amber-500 border border-amber-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> ฉบับร่าง (Draft)</span>
+                                        ) : isShipped ? (
+                                            <span className="px-2 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 text-[10px] font-black">ส่งแล้ว 🚚</span>
                                         ) : orderStat === 'approved' ? (
-                                            <span className="px-2 py-0.5 rounded-sm bg-indigo-500/10 text-indigo-700 border border-indigo-500/20 text-[10px] font-black">print แล้ว 🖨️ / หักสต๊อคแล้ว 📤</span>
+                                            <span className="px-2 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 text-[10px] font-black">print แล้ว 🖨️ • 📦✓</span>
                                         ) : isPaid ? (
-                                            <span className="px-2 py-0.5 rounded-sm bg-teal-500/10 text-teal-700 border border-teal-500/20 text-[10px] font-black">โอนแล้ว ✅ / หักสต๊อคแล้ว 📤</span>
+                                            <span className="px-2 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black">โอนแล้ว ✅ • 📦✓</span>
                                         ) : (
                                             <span className="px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-700 border border-amber-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> รอดำเนินการ</span>
                                         )}
                                     </div>
                                     <div className="flex justify-between items-center text-xs border-t border-(--dh-border) pt-1.5 text-(--dh-text-muted)">
                                         <span className="font-bold flex items-center gap-1"><User size={11} className="text-slate-400" /> เจ้าหน้าที่:</span>
-                                        {Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront') && !selectedOrder.staffNickname ? (
-                                            <span className="text-orange-500 dark:text-orange-400 font-black text-xs">ยังไม่ตรวจสอบ</span>
-                                        ) : (
-                                            <span className="font-bold text-(--dh-text-main)">{selectedOrder.staffNickname || selectedOrder.creatorName || selectedOrder.actorName || 'พนักงาน'}</span>
-                                        )}
+                                        {(() => {
+                                            const isWeb = Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront');
+                                            const rawStaff = selectedOrder.staffNickname || selectedOrder.creatorName || selectedOrder.actorName;
+                                            const effectiveStaff = (rawStaff && rawStaff !== 'POS' && rawStaff !== 'System') ? rawStaff : null;
+
+                                            if (isWeb && !effectiveStaff) {
+                                                return <span className="text-orange-500 dark:text-orange-400 font-black text-xs">ยังไม่ตรวจสอบ</span>;
+                                            }
+
+                                            return <span className="font-bold text-(--dh-text-main)">{effectiveStaff || 'พนักงาน'}</span>;
+                                        })()}
                                     </div>
                                 </div>
 

@@ -68,6 +68,9 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
     const isTaxInvoice = order.vatType === 'included' || order.vatType === 'excluded' || !!(order.isTaxInvoice || order.customer?.taxInvoiceNeeded || order.customer?.taxId || hasTaxInvoice);
     const taxStatus = order.taxInvoiceStatus || (order.taxInvoiceUrl ? 'issued' : (hasTaxInvoice ? 'pending' : null));
 
+    const hasTracking = Boolean(order.trackingNumber || order.trackingNo || order.shippingTracking);
+    const isShipped = statLower === 'shipped' || statLower === 'completed' || hasTracking;
+
     return (
         <>
             <td className="py-2.5 px-6 align-middle relative">
@@ -96,20 +99,20 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         <Ban size={15} strokeWidth={2.5} /> ยกเลิกแล้ว
                     </span>
                 ) : isDraft ? (
-                    <span className="inline-flex items-center justify-start gap-1.5 text-purple-700 text-xs font-black">
+                    <span className="inline-flex items-center justify-start gap-1.5 text-amber-800 dark:text-amber-500 text-xs font-black">
                         <Clock size={13} strokeWidth={2.5} /> ฉบับร่าง (Draft)
                     </span>
-                ) : statLower === 'completed' ? (
-                    <span className="inline-flex items-center justify-start gap-1.5 text-blue-700 text-sm font-black">
-                        ส่งออก 🚚
+                ) : isShipped ? (
+                    <span className="inline-flex items-center justify-start gap-1.5 text-slate-900 dark:text-white text-sm font-black">
+                        ส่งแล้ว 🚚
                     </span>
                 ) : statLower === 'approved' ? (
-                    <span className="inline-flex items-center justify-start gap-1.5 text-indigo-700 text-sm font-black">
-                        print แล้ว 🖨️ / หักสต๊อคแล้ว 📤
+                    <span className="inline-flex items-center justify-start gap-1.5 text-slate-900 dark:text-white text-sm font-black">
+                        print แล้ว 🖨️ • 📦✓
                     </span>
                 ) : isPaid ? (
-                    <span className="inline-flex items-center justify-start gap-1.5 text-teal-700 text-sm font-black">
-                        โอนแล้ว ✅ / หักสต๊อคแล้ว 📤
+                    <span className="inline-flex items-center justify-start gap-1.5 text-emerald-600 text-sm font-black">
+                        โอนแล้ว ✅ • 📦✓
                     </span>
                 ) : (
                     <span className="inline-flex items-center justify-start gap-1.5 text-amber-700 text-sm font-black">
@@ -133,15 +136,24 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                     <div className="p-1 bg-slate-500/10 rounded-sm overflow-hidden shadow-inner flex items-center justify-center shrink-0">
                         <User size={12} className="text-slate-500"/>
                     </div>
-                    {isWebOrder && !order.staffNickname ? (
-                        <span className="text-orange-500 dark:text-orange-400 font-black text-xs tracking-wide">
-                            ยังไม่ตรวจสอบ
-                        </span>
-                    ) : (
-                        <span className="truncate max-w-[110px]" title={order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}>
-                            {order.staffNickname || order.creatorName || order.actorName || 'พนักงาน'}
-                        </span>
-                    )}
+                    {(() => {
+                        const rawStaff = order.staffNickname || order.creatorName || order.actorName;
+                        const effectiveStaff = (rawStaff && rawStaff !== 'POS' && rawStaff !== 'System') ? rawStaff : null;
+                        
+                        if (isWebOrder && !effectiveStaff) {
+                            return (
+                                <span className="text-orange-500 dark:text-orange-400 font-black text-xs tracking-wide">
+                                    ยังไม่ตรวจสอบ
+                                </span>
+                            );
+                        }
+                        
+                        return (
+                            <span className="truncate max-w-[110px]" title={effectiveStaff || 'พนักงาน'}>
+                                {effectiveStaff || 'พนักงาน'}
+                            </span>
+                        );
+                    })()}
                 </div>
             </td>
             <td className="py-2.5 px-4 align-middle">

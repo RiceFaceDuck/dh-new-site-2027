@@ -5,7 +5,10 @@
 
 export function getStaffNickname(order, staffMap = {}) {
   if (!order) return 'N/A';
-  if (order.staffNickname) return order.staffNickname;
+  
+  const rawNickname = order.staffNickname;
+  const isValidNickname = rawNickname && rawNickname !== 'POS' && rawNickname !== 'System';
+  if (isValidNickname) return rawNickname;
   
   const isWebOrder = Boolean(order.isWebOrder || order.channel === 'storefront' || order.source === 'storefront');
   if (isWebOrder) {
@@ -23,7 +26,12 @@ export function getStaffNickname(order, staffMap = {}) {
     return s.nickname || s.displayName || s.name || s.email?.split('@')[0] || staffId;
   }
   
-  return order.createdByName || order.createdBy || 'N/A';
+  const rawCreatedByName = order.createdByName || order.createdBy;
+  if (rawCreatedByName && rawCreatedByName !== 'POS' && rawCreatedByName !== 'System') {
+    return rawCreatedByName;
+  }
+  
+  return 'พนักงาน';
 }
 
 export function isStaffRole(role) {

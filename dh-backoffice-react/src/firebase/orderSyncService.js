@@ -100,7 +100,10 @@ export const syncRecentOrdersCatalog = async () => {
         taxInvoiceUrl: d.taxInvoiceUrl || null,
         hasPendingClaim: !!d.hasPendingClaim,
         hasPendingReturn: !!d.hasPendingReturn,
-        hasPendingTax: !!d.hasPendingTax
+        hasPendingTax: !!d.hasPendingTax,
+        isWebOrder: Boolean(d.isWebOrder || d.channel === 'storefront' || d.source === 'storefront'),
+        channel: d.channel || (d.isWebOrder ? 'storefront' : 'pos'),
+        source: d.source || (d.isWebOrder ? 'storefront' : 'pos')
       };
     });
 

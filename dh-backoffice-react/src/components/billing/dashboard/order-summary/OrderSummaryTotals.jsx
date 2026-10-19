@@ -22,7 +22,8 @@ export default function OrderSummaryTotals({
     netTotal,
     isCancelled,
     paymentStat,
-    orderStat
+    orderStat,
+    isShipped
 }) {
     const totalDeducted = (Number(walletUsed) || 0) + (Number(pointsUsed) || 0);
     const payableAmount = Math.max(0, (Number(netTotal) || 0) - totalDeducted);
@@ -100,17 +101,21 @@ export default function OrderSummaryTotals({
                         <div className="text-center text-rose-600 font-black text-[11px] border border-rose-500/30 bg-rose-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
                             <Ban size={12}/> บิลยกเลิก (VOIDED)
                         </div>
-                    ) : orderStat === 'completed' ? (
-                        <div className="text-center text-blue-700 font-black text-[11px] border border-blue-500/30 bg-blue-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
-                            ส่งออก 🚚
+                    ) : orderStat === 'draft' || paymentStat === 'draft' ? (
+                        <div className="text-center text-amber-800 dark:text-amber-500 font-black text-[11px] border border-amber-500/30 bg-amber-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
+                            ฉบับร่าง (Draft)
+                        </div>
+                    ) : isShipped ? (
+                        <div className="text-center text-slate-900 dark:text-white font-black text-[11px] border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 py-1.5 rounded-xs flex items-center justify-center gap-1">
+                            ส่งแล้ว 🚚
                         </div>
                     ) : orderStat === 'approved' ? (
-                        <div className="text-center text-indigo-700 font-black text-[11px] border border-indigo-500/30 bg-indigo-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
-                            print แล้ว 🖨️ / หักสต๊อคแล้ว 📤
+                        <div className="text-center text-slate-900 dark:text-white font-black text-[11px] border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 py-1.5 rounded-xs flex items-center justify-center gap-1">
+                            print แล้ว 🖨️ • 📦✓
                         </div>
                     ) : paymentStat === 'paid' || orderStat === 'paid' ? (
-                        <div className="text-center text-teal-700 font-black text-[11px] border border-teal-500/30 bg-teal-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
-                            โอนแล้ว ✅ / หักสต๊อคแล้ว 📤
+                        <div className="text-center text-emerald-600 font-black text-[11px] border border-emerald-500/30 bg-emerald-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
+                            โอนแล้ว ✅ • 📦✓
                         </div>
                     ) : (
                         <div className="text-center text-amber-700 font-black text-[11px] border border-amber-500/30 bg-amber-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1">
