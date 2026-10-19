@@ -3,6 +3,7 @@ import BillingDashboard from '../../components/billing/BillingDashboard';
 import PosSystem from '../../components/billing/PosSystem';
 import { useCustomerData } from '../Customers/hooks/useCustomerData';
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 // Scoped subcomponent to prevent customer directory reads on Order List Dashboard
 const PosViewWrapper = ({ onSwitchView, initialDraft, resumeTabId, isNewBillRequest, onNewBillHandled, onDraftHandled }) => {
@@ -101,32 +102,36 @@ const BillingMain = ({ isSelectorMode = false, onCancelSelector }) => {
 
   if (viewMode === 'pos') {
     return (
-      <PosViewWrapper 
-        onSwitchView={() => { 
-          setDraftOrder(null); 
-          setIsNewBillRequest(false); 
-          setViewMode('dashboard'); 
-          navigate(location.pathname, { replace: true, state: {} });
-        }}
-        initialDraft={draftOrder}
-        resumeTabId={resumeTabId}
-        isNewBillRequest={isNewBillRequest}
-        onNewBillHandled={() => setIsNewBillRequest(false)}
-        onDraftHandled={() => setDraftOrder(null)}
-      />
+      <ErrorBoundary>
+        <PosViewWrapper 
+          onSwitchView={() => { 
+            setDraftOrder(null); 
+            setIsNewBillRequest(false); 
+            setViewMode('dashboard'); 
+            navigate(location.pathname, { replace: true, state: {} });
+          }}
+          initialDraft={draftOrder}
+          resumeTabId={resumeTabId}
+          isNewBillRequest={isNewBillRequest}
+          onNewBillHandled={() => setIsNewBillRequest(false)}
+          onDraftHandled={() => setDraftOrder(null)}
+        />
+      </ErrorBoundary>
     );
   }
 
   return (
-    <div className="h-full overflow-hidden w-full max-w-full mx-auto">
-      <BillingDashboard 
-        onSwitchView={() => { setDraftOrder(null); setIsNewBillRequest(false); setViewMode('pos'); }} 
-        onResumeDraft={(draft) => { setDraftOrder(draft); setIsNewBillRequest(false); setViewMode('pos'); }}
-        isSelectorMode={isSelectorMode}
-        onCancelSelector={onCancelSelector}
-        initialOrderId={location.state?.orderId}
-      />
-    </div>
+    <ErrorBoundary>
+      <div className="h-full overflow-hidden w-full max-w-full mx-auto">
+        <BillingDashboard 
+          onSwitchView={() => { setDraftOrder(null); setIsNewBillRequest(false); setViewMode('pos'); }} 
+          onResumeDraft={(draft) => { setDraftOrder(draft); setIsNewBillRequest(false); setViewMode('pos'); }}
+          isSelectorMode={isSelectorMode}
+          onCancelSelector={onCancelSelector}
+          initialOrderId={location.state?.orderId}
+        />
+      </div>
+    </ErrorBoundary>
   );
 };
 

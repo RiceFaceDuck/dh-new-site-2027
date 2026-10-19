@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { billingService } from '../../../firebase/billingService';
 import { getStaffNickname } from 'dh-shared/src/utils/staffUtils';
 import { readCachedOrders, writeCachedOrders, subscribeRecentOrdersCatalog } from '../../../firebase/orderCacheService';
@@ -70,8 +70,6 @@ export default function useBillingOrders() {
             setLoading(false);
             // Overwrite memory and SessionStorage cache immediately
             writeCachedOrders(data);
-            // Sync bundled catalog document in background so other views stay up to date
-            syncRecentOrdersCatalog().catch(e => console.warn("[OrderCache] Background catalog sync warning:", e));
         });
 
         // Retain subscribeRecentOrdersCatalog & fallback pattern for contract compliance
@@ -105,12 +103,18 @@ export default function useBillingOrders() {
         }
     }, [recentOrders, isSearching, searchQuery]);
 
-    // Search logic triggered on searchQuery update (Enter / submit)
+    // Keep a stable ref to recentOrders for fallback without re-triggering Firestore query
+    const recentOrdersRef = useRef(recentOrders);
+    useEffect(() => {
+        recentOrdersRef.current = recentOrders;
+    }, [recentOrders]);
+
+    // Search logic triggered strictly on searchQuery update (Enter / submit)
     useEffect(() => {
         const trimmedQuery = (searchQuery || '').trim();
         if (!trimmedQuery || trimmedQuery.length < 2) {
             setIsSearching(false);
-            setOrders(recentOrders); 
+            setOrders(recentOrdersRef.current); 
             return;
         }
 
@@ -120,7 +124,7 @@ export default function useBillingOrders() {
             const searchResults = await billingService.searchOrders(trimmedQuery);
             if (!isCancelled) {
                 if (searchResults) setOrders(searchResults);
-                else setOrders(recentOrders); 
+                else setOrders(recentOrdersRef.current); 
                 setIsSearching(false);
             }
         };
@@ -128,7 +132,7 @@ export default function useBillingOrders() {
         fetchSearchResults();
 
         return () => { isCancelled = true; };
-    }, [searchQuery, recentOrders]);
+    }, [searchQuery]);
 
     const enrichedOrders = orders.map(enrichOrder);
 

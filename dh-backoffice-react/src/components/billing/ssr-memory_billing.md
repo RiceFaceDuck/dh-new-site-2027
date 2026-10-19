@@ -194,8 +194,12 @@
         วิธีแก้: 
         1) ใน `statusWalletHandler.js` สร้างและ export `handleWalletDeduction` เพื่อหักเงิน Wallet ลูกค้าและสร้างรายการ `SPEND` ใน `wallet_transactions` เมื่อมีการเปลี่ยนสถานะเป็น paid/approved
         2) ใน `billingStatusTransaction.js` เรียก `handleWalletDeduction` ในบล็อก `isConfirmingPayment`
-        3) ใน `statusWalletHandler.js` เพิ่ม Security Invariant Guard `wasWalletDeducted = Boolean(orderData.isWalletDeducted)` ใน `handleWalletRefundAndClawback` ป้องกันการคืนเงินเข้ากระเป๋าหากบิลนั้นยังไม่เคยตัดเงินจริง
-        4) ใน `billingDeleteService.js` ปรับ Guard ให้ตรวจ `Boolean(orderData.isWalletDeducted)` ป้องกันการคืนเงินผิดพลาดตอนลบบิลร่าง [สถานะ: ส่งมอบแล้ว]
+    54. ปัญหา: รอยรั่วโควต้า Firestore แบบ Double Read Loop (~100-170 reads / 1 write) เกิดจากการเรียก `syncRecentOrdersCatalog()` ซ้ำซ้อนภายใน callback ของ onSnapshot ใน `useBillingOrders.js`
+        วิธีแก้: นำ `syncRecentOrdersCatalog()` ออกจาก callback ของ `subscribeRecentOrders` และขยายเวลา throttle `SYNC_THROTTLE_MS` เป็น 2000ms ใน `orderSyncService.js` โดยให้การซิงก์ catalog ทำงานเฉพาะเมื่อมีการเปลี่ยนแปลงสถานะเอกสารจริง (Write-driven) [สถานะ: ส่งมอบแล้ว]
+    55. ปัญหา: การค้นหาบิลใน `useBillingOrders.js` ยิง Firestore ซ้ำซ้อนโดยอัตโนมัติเมื่อมีบิลอัปเดตเข้ามาในพื้นหลัง (Search Retrigger Loop)
+        วิธีแก้: ใช้ `useRef(recentOrders)` เป็นตัวอ้างอิงและตัด `recentOrders` ออกจาก dependency array ของ useEffect ค้นหา เพื่อให้ระบบยิงค้นหาเฉพาะเมื่อ `searchQuery` มีการเปลี่ยนแปลงจริงจากผู้ใช้ [สถานะ: ส่งมอบแล้ว]
+    56. ปัญหา: ไม่มี Error Boundary ป้องกันหน้าจอระบบบิล `/billing` ทำให้หากมีคอมโพเนนต์ลูกเรนเดอร์ผิดพลาด หน้าจอจะขาวดับทั้งหน้า (White Screen of Death)
+        วิธีแก้: ปรับปรุง `ErrorBoundary.jsx` ให้แสดงการ์ดข้อผิดพลาดพร้อมปุ่มรีโหลด และนำมาครอบ `<PosViewWrapper>` และ `<BillingDashboard>` ใน `BillingMain.jsx` อย่างมิดชิด [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

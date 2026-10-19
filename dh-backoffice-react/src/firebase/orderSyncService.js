@@ -5,7 +5,7 @@ import { writeCachedOrders } from './orderCacheService';
 
 let inFlightSyncPromise = null;
 let lastSyncTimestamp = 0;
-const SYNC_THROTTLE_MS = 600; // Deduplicate calls within 600ms window
+const SYNC_THROTTLE_MS = 2000; // Deduplicate calls within 2000ms window
 
 /**
  * 🚀 Sync and Bundle the latest 50 Orders into `catalogs/recent_orders`
