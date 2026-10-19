@@ -61,6 +61,9 @@
   - *ปัญหา:* `CartSummaryPanel.jsx` เดิมครอบปุ่มสั่งซื้อผ่าน LINE Official / Messenger และปุ่มบริการช่างด้วยเงื่อนไข `!currentUser` ทำให้เมื่อลูกค้าเข้าสู่ระบบแล้ว ปุ่มเหล่านี้จะหายไป
   - *วิธีแก้:* เอาเงื่อนไข `!currentUser` ออก เพื่อให้แสดงค้างไว้เสมอทั้งกรณีล็อกอินและไม่ล็อกอิน โดยปรับข้อความหัวข้อตามสถานะผู้ใช้
 - 🌐 **Storefront Temp Draft Order Flow:**
-  - *สถานะ:* ลูกค้ากดสั่งซื้อจากหน้าเว็บ ระบบออกเลขชั่วคราว `DH-TEMP-YYMMDD-HHMMSS-XXXX` ทันที บันทึกเป็นสถานะ Draft (`pending_verification`) พร้อมแนบรูปสลิป ส่งเข้าสู่คิวบิลหลังบ้านแบบเรียลไทม์ [สถานะ: ส่งมอบแล้ว]
+  - *สถานะ:* ลูกค้ากดสั่งซื้อจากหน้าเว็บ ระบบออกเลขชั่วคราว `DH-TEMP-YYMMDD-HHMMSS-XXXX` ทันที บันทึกเป็นสถานะ Draft พร้อมแนบรูปสลิป ส่งเข้าสู่คิวบิลหลังบ้านแบบเรียลไทม์ [สถานะ: ส่งมอบแล้ว]
+- ⚠️ **Storefront Order Creation 403 Permission Denied (Firestore Rules Invariant):**
+  - *ปัญหา:* `checkoutSubmitService.js` บันทึก `status: 'draft'`, `orderStatus: 'Draft'`, `paymentStatus: 'pending_verification'` ซึ่งขัดกับ Firestore Security Rules บนคลาวด์ที่กำหนดให้ `status/orderStatus in ['pending', 'pending_payment', 'pending_payment_verification']` และ `paymentStatus == 'pending'` ส่งผลให้เกิดข้อผิดพลาด 403 Forbidden ("คุณไม่มีสิทธิ์ในการดำเนินการนี้ / Missing or insufficient permissions") เมื่อลูกค้ากดสั่งซื้อ
+  - *วิธีแก้:* ปรับ `checkoutSubmitService.js` ให้บันทึก `status: slipUrl ? 'pending_payment_verification' : 'pending_payment'`, `orderStatus: slipUrl ? 'pending_payment_verification' : 'pending_payment'`, และ `paymentStatus: 'pending'` โดยยังคงแฟล็ก `isDraft: true`, `isWebOrder: true` ไว้ครบถ้วน สอดคล้องกับทั้ง Security Rules และระบบหลังบ้าน POS [สถานะ: ส่งมอบแล้ว]
 </pitfalls_and_solutions>
 

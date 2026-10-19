@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
+import { getAuth, updateProfile } from 'firebase/auth';
 import { 
   User, Save, CheckCircle2, AlertCircle, 
   Loader2
@@ -120,8 +120,10 @@ export default function PersonalInfoForm({ user, initialData, onRefresh }) {
       }, { merge: true });
 
       // ซิงค์ชื่อใหม่เข้ากับระบบ Authentication กลางของ Firebase
-      if (user.displayName !== formData.displayName) {
-        await updateProfile(user, { displayName: formData.displayName });
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (currentUser && currentUser.displayName !== formData.displayName) {
+        await updateProfile(currentUser, { displayName: formData.displayName });
       }
 
       setStatus({ type: 'success', message: 'อัปเดตข้อมูลส่วนตัวเรียบร้อยแล้ว' });
