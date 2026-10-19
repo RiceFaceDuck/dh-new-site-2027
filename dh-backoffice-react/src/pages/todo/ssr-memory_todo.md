@@ -52,5 +52,15 @@
     1. เปลี่ยนปุ่มอนุมัติเป็น **[ไปที่งาน]** ทำการ First-Touch Staff Assignment ลงชื่อผู้รับงานอัตโนมัติ แล้วนำทางไปยัง `/billing` พร้อมเปิดหน้าต่างบิลนั้นทันที
     2. ปรับมุมโค้งมนทุกจุดในการ์ดเป็น `rounded-[0.2rem]` ตามมาตรฐานระบบ
     3. ตรวจสอบสถานะคำสั่งซื้อจาก Firestore: หากมีผู้รับงานแล้วจะแสดงป้าย `รับงานแล้ว: คุณ{staffNickname}`, หากชำระแล้วแสดง `ชำระเงินแล้ว`, และหากออเดอร์ไม่มีในระบบจะแสดงปุ่มให้กดลบเคลียร์งานค้างได้ทันที
+- **ปัญหา Modal ติดกับดักใน Card จนถูกตัดขอบ และการ์ดกระตุก/ช็อต/ค้าง (Dialog CSS Containing Block & Event Bubbling Trap):**
+  - *สาเหตุ:* 
+    1. `PremiumDialog` และ Image Modal ไม่ได้ถูกเรนเดอร์ผ่าน `createPortal` ไปยัง `document.body` เมื่อการ์ดหรือกริดครอบด้วย CSS `transform` (เช่น `animate-in slide-in-from-bottom-4`) หรือ `overflow-hidden` หน้าต่าง Modal จะติดกับดักในกรอบการ์ดแคบๆ และโดนตัดขอบด้านล่าง
+    2. การ์ดตั้ง `onClick={() => setIsExpanded(!isExpanded)}` ไว้ที่กรอบนอกสุด เมื่อคลิกโดน Modal หรือปุ่มในหน้าต่าง กิจกรรมคลิกจะ Bubble ทะลุไปสั่งพับ/ขยายการ์ดซ้ำซ้อน ทำให้หน้าจอกระพริบและสั่นไหว
+    3. สเตท `isSubmitting` ใส่ `pointer-events-none` ที่การ์ด ทำให้ Modal ที่อยู่ภายในการ์ดโดนบล็อกปุ่มจนกดอะไรไม่ได้ (ค้าง)
+  - *วิธีแก้:* 
+    1. อัปเกรด `PremiumDialog` และ Fullscreen Image Modal ให้เรนเดอร์ผ่าน `createPortal(..., document.body)` เสมอ เพื่อหลุดพ้นจากข้อจำกัด CSS Transform / Overflow
+    2. ใส่ `e.stopPropagation()` บน Backdrop และ Modal Container ดักไม่ให้ Event คลิกหลุดรอดไปถึง Component แม่
+    3. ย้ายจุดคลิกพับ/ขยายการ์ดใน `PaymentCard` มาไว้ที่ Header และปุ่ม "ดูรายละเอียด" โดยตรง ไม่ครอบคลุมทั้ง Card
+    4. เพิ่ม Fallback การค้นหาออเดอร์ใน `PaymentCard` ด้วย `billingQueryService.getOrderByOrderId` ป้องกัน False Positive ไม่พบออเดอร์
   - *สถานะ:* ส่งมอบสมบูรณ์ ✅
 </pitfalls_and_solutions>

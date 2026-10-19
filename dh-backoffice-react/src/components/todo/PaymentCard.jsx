@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ExternalLink, Check, Trash2, UserCheck, AlertCircle } from 'lucide-react';
 import { todoService } from '../../firebase/todoService';
@@ -27,8 +28,16 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
     let isMounted = true;
     const fetchOrder = async () => {
       try {
-        if (!task?.orderId) return;
-        const data = await billingQueryService.getOrderById(task.orderId);
+        if (!task?.orderId) {
+          if (isMounted) setIsOrderMissing(true);
+          return;
+        }
+        let data = await billingQueryService.getOrderById(task.orderId);
+        if (!data) {
+          try {
+            data = await billingQueryService.getOrderByOrderId(task.orderId);
+          } catch (_) {}
+        }
         if (isMounted) {
           if (data) {
             setOrderData(data);
@@ -39,6 +48,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
         }
       } catch (err) {
         console.error("Error fetching order data for slip:", err);
+        if (isMounted) setIsOrderMissing(true);
       }
     };
     fetchOrder();
@@ -171,8 +181,7 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
 
   return (
     <div 
-      onClick={() => setIsExpanded(!isExpanded)}
-      className={`rounded-[0.2rem] transition-all duration-200 overflow-hidden relative cursor-pointer flex flex-col h-full ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
+      className={`rounded-[0.2rem] transition-all duration-200 overflow-hidden relative flex flex-col h-full ${getUrgencyStyles(urgencyLevel)} ${isSubmitting ? 'opacity-75 pointer-events-none' : ''}`}
     >
       
       {isSubmitting && (
@@ -183,7 +192,10 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
 
       <div className="p-4 flex flex-col gap-3.5">
         {/* 1. Header: Badge + Order ID + Staff / Status + Timestamp */}
-        <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2.5">
+        <div 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2.5 cursor-pointer select-none"
+        >
           <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
             <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-[0.2rem] shadow-xs uppercase tracking-wider flex items-center gap-1 shrink-0">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -387,14 +399,15 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
       )}
 
       {/* ---------------- Modal แสดงรูปขยาย ---------------- */}
-      {isImageModalOpen && (
+      {isImageModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
           className="fixed inset-0 z-120 flex items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-xs transition-opacity"
-          onClick={() => setIsImageModalOpen(false)}
+          onClick={(e) => { e.stopPropagation(); setIsImageModalOpen(false); }}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <button 
             onClick={(e) => { e.stopPropagation(); setIsImageModalOpen(false); }}
-            className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all"
+            className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all cursor-pointer"
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
@@ -410,7 +423,8 @@ const PaymentCard = ({ task, currentUser, onSuccess, urgencyLevel }) => {
             />
             <p className="text-white/60 text-sm mt-4">คลิกที่พื้นที่ว่าง หรือกดปุ่มกากบาทเพื่อปิด</p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       
       <PremiumDialog {...dialogConfig} />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 
 export default function PremiumDialog({ 
@@ -80,9 +81,19 @@ export default function PremiumDialog({
     prompt: 'bg-dh-base border-dh-border text-dh-main'
   };
 
-  return (
-    <div className={`fixed inset-0 z-200 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
-      <div className={`bg-dh-surface w-full max-w-md rounded-2xl shadow-dh-elevated overflow-hidden border border-dh-border transition-all duration-200 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
+  const dialogContent = (
+    <div 
+      className={`fixed inset-0 z-200 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.target === e.currentTarget) handleClose();
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-dh-surface w-full max-w-md rounded-2xl shadow-dh-elevated overflow-hidden border border-dh-border transition-all duration-200 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}
+      >
         
         {/* Header Icon & Close Button */}
         <div className="flex justify-between items-start p-5 pb-0">
@@ -246,4 +257,9 @@ export default function PremiumDialog({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(dialogContent, document.body);
+  }
+  return dialogContent;
 }
