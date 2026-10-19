@@ -24,9 +24,10 @@ const getQtyOfItem = (item) => {
  * Evaluates active shipping and insurance rules based on cart items.
  * @param {Array} cartItems - Current items in the cart
  * @param {Array} rules - All shipping/insurance rules from database
- * @returns {Object} { shippingOptions: [{ company, cost, ruleId }], insuranceFee: number }
+ * @param {number} [defaultShippingFee=60] - Default fallback shipping fee when no rules match
+ * @returns {Object} { shippingOptions: [{ company, cost, ruleId, isDefault }], insuranceFee: number }
  */
-export const evaluateShippingRules = (cartItems, rules) => {
+export const evaluateShippingRules = (cartItems, rules, defaultShippingFee = 60) => {
   if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
     return { shippingOptions: [], insuranceFee: 0 };
   }
@@ -154,8 +155,21 @@ export const evaluateShippingRules = (cartItems, rules) => {
     }
   });
 
+  const options = Object.values(optionsMap);
+  
+  // 🚚 Default Fallback: If cart has items but matches no shipping rule, apply configurable default fee (Standard 60 THB)
+  if (options.length === 0 && cartItems.length > 0) {
+    const fallbackCost = safeNum(defaultShippingFee, 60);
+    options.push({
+      company: 'จัดส่งพัสดุ (ค่าส่งเริ่มต้น)',
+      cost: fallbackCost,
+      ruleId: 'default_fallback',
+      isDefault: true
+    });
+  }
+
   return {
-    shippingOptions: Object.values(optionsMap),
+    shippingOptions: options,
     insuranceFee: maxInsuranceFee
   };
 };

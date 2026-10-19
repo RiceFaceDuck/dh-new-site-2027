@@ -156,7 +156,30 @@
         2) ใน `dh-shared/src/utils/staffUtils.js` ฟังก์ชัน `getStaffNickname` ตรวจสอบ `if (order.staffNickname) return order.staffNickname` โดยไม่ได้กรอง `'POS'` หรือ `'System'` ออก
         3) แก้ไข `staffUtils.js` ให้ตรวจสอบว่าถ้า `staffNickname` เป็น `'POS'` หรือ `'System'` ให้ถือว่าเป็นค่าว่าง แล้วดึงชื่อจริงจาก `staffMap` ตาม `openedBy`/`staffUid`/`createdBy` หรือส่งคืน `null` สำหรับบิลหน้าเว็บที่ยังไม่มีใครรับงาน
         4) ปรับปรุง `OrderTableRow.jsx` และ `OrderDetailModal.jsx` ให้กรอง `'POS'` และ `'System'` ออกจากตัวแปรแสดงผล เพื่อให้บิลหน้าเว็บที่ยังไม่มีเจ้าหน้าที่รับงานแสดงป้ายสีส้ม 'ยังไม่ตรวจสอบ' อย่างถูกต้อง
-        5) ปรับ `usePosActions.js` ให้ส่งชื่อเล่น/ชื่อโปรไฟล์จริงของพนักงาน (`profile?.nickname` หรือ `displayName`) แทนค่าคงที่ `'POS'` [สถานะ: ส่งมอบแล้ว]
+    43. ปัญหา: ในแถบแท็บบิลที่กำลังทำงานอยู่ด้านบนของหน้า POS บรรทัดล่างแสดงข้อความ '{x} รายการ • ฿xxxx' หรือ 'ตะกร้าว่าง' ทำให้พนักงานมองไม่เห็นเลขที่บิลที่กำลังจัดการ
+        วิธีแก้: ปรับปรุง `PosHeader.jsx` เปลี่ยนบรรทัดล่างของแท็บให้แสดงเลขที่บิล (`tab.orderId || tab.docId || 'บิล {N}'`) ด้วยตัวอักษร font-mono หนาคมชัด เพื่อให้พนักงานระบุและสลับแท็บบิลได้สะดวกรวดเร็ว [สถานะ: ส่งมอบแล้ว]
+    44. ปัญหา: แท็บบิลที่กำลังทำงานอยู่ในหน้า POS ค้าง ไม่ยอมเคลียร์ออก แม้ว่าบิลนั้นจะถูกชำระเงิน ตรวจสอบ อนุมัติ หรือเสร็จสิ้นไปแล้ว หรือปิดแท็บแล้วรีเฟรชกลับมาใหม่
+        วิธีแก้: 
+        1) ใน `staffPosDraftService.js` ฟังก์ชัน `filterValidDraftTabs` เพิ่มการรับพารามิเตอร์ `finishedOrderIdsSet` เพื่อตัดแท็บที่มี `orderId` หรือ `docId` ตรงกับบิลที่เสร็จสิ้นแล้วออก
+        2) ใน `usePosState.js` ฟังก์ชัน `loadSavedState` และการสลับบัญชีผู้ใช้ ดึงรายการออเดอร์ล่าสุดจาก `readCachedOrders()` มาสร้าง `finishedOrderIdsSet` (เช็คสถานะ approved, completed, paid, cancelled, void) และกรองแท็บที่จบแล้วออกจากแคชทันที
+        3) ใน `usePosState.js` ฟังก์ชัน `closeTab` ปรับปรุงให้บันทึกสถานะใหม่ลงทั้ง `localStorage` และ Firestore Cloud (`saveStaffCloudDraftsImmediately`) ทันทีแบบ synchronous เพื่อป้องกัน Race condition เมื่อรีเฟรชหน้าเว็บ
+        4) ใน `PosHeader.jsx` ปรับเงื่อนไขปุ่มปิดแท็บ (X) ให้แสดงผลได้เสมอแม้มีแท็บเดียว ช่วยให้พนักงานกดเคลียร์/รีเซ็ตแท็บว่างหรือแท็บบิลที่ค้างได้ทันที [สถานะ: ส่งมอบแล้ว]
+    45. ปัญหา: หากสินค้าในบิลไม่ตรงกับเงื่อนไขการจัดส่งใดๆ เลย ในระบบ POS จะคิดค่าส่งเป็น 0 บาท และในหน้าตั้งค่า /managers/shipping ไม่มีช่องให้กำหนดค่าจัดส่งเริ่มต้น
+        วิธีแก้: 
+        1) ใน `dh-shared/src/shippingEngine.js` เพิ่ม fallback เมื่อไม่ตรงกับเงื่อนไขใดๆ ให้สร้างตัวเลือก `'จัดส่งพัสดุ (ค่าส่งเริ่มต้น)'` ราคาเริ่มต้น 60 บาท (หรือตาม `defaultShippingFee` ที่ส่งมา)
+        2) ใน `shippingService.js` เพิ่ม `getShippingConfig` และ `updateShippingConfig` จัดเก็บเอกสารส่วนกลางที่ `settings/shipping` (1 Document architecture)
+        3) ในหน้า `ShippingManagement.jsx` เพิ่มการ์ดสำหรับตั้งค่าและบันทึกค่าจัดส่งเริ่มต้น (Default Shipping Fee) สู่ฐานข้อมูล
+    46. ปัญหา: การคำนวณจำนวนชิ้นของแถมอัตโนมัติในระบบ POS ไม่ตรงกับหน้าเว็บ เมื่อโปรโมชั่นตั้งค่าแจกของแถมตามจำนวนสินค้า (distributionMode === 'per_item') หรือมีเพดานสูงสุด (maxPerBill)
+    47. ปัญหา: แท็บบิลที่กำลังดำเนินการหรือเสร็จแล้วค้างบนหน้าจอ POS ข้าม Session หรือมีแท็บซ้ำซ้อน (Duplicate Tabs) เช่น บิลเดิมเปิดซ้อนกัน 2 แท็บ
+        วิธีแก้: 
+        1) เพิ่ม Deduplication Guard ใน `filterValidDraftTabs` (`staffPosDraftService.js`) โดยใช้ Set สกัดคีย์ `docId` และ `orderId` ป้องกันไม่ให้มีแท็บบิลเดียวกันเปิดซ้ำกันเกิน 1 แท็บ
+        2) เพิ่ม Reactive Auto-Prune Effect ใน `usePosState.js` ดักฟังสัญญาณ `storage` และอีเวนต์ `dh_recent_orders_updated` เพื่อตรวจเทียบรายการแท็บปัจจุบันกับออเดอร์ที่เสร็จแล้ว (approved, completed, paid, cancelled, void) และคัดออกให้อัตโนมัติทันทีโดยไม่รบกวนบิลที่กำลังเปิดขายอยู่
+        3) เพิ่มการ Destructure `closeTab` ใน `usePosActions.js` เพื่อความเสถียร 100% ในจังหวะปิดบิล [สถานะ: ส่งมอบแล้ว]
+    48. ปัญหา: ในตารางบิลและโมดอลรายละเอียด ออเดอร์จากหน้าเว็บที่มีการแนบสลิปเข้ามาแล้ว (`DH-TEMP-...`) ถูกเหมารวมตัดสินว่าเป็น 'ฉบับร่าง (Draft)' เนื่องจากเงื่อนไขเดิมตรวจจับเพียง `String(orderId).startsWith('DH-TEMP-')` ทำให้สถานะไม่ตรงกับหน้าเว็บลูกค้าที่ขึ้น 'รอตรวจสอบสลิป'
+        วิธีแก้: 
+        1) ใน `OrderTableRow.jsx` และ `OrderDetailModal.jsx` เพิ่มตัวแปร `isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && (hasSlip || paymentStat === 'pending_verification' || orderStat === 'pending_payment_verification')`
+        2) อัปเดต `isDraft` ให้คัดแยก `!isAwaitingSlip` และจำกัดการเช็ค `DH-TEMP-` เฉพาะบิลที่ไม่ใช่ออเดอร์หน้าเว็บ (`!isWebOrder`)
+        3) เพิ่มการแสดงผลป้ายสถานะ 'รอตรวจสอบสลิป ⌛' สีน้ำเงินคมชัด เพื่อให้เจ้าหน้าที่ในหลังบ้านแยกแยะออเดอร์ใหม่จากลูกค้าหน้าเว็บได้อย่างถูกต้องแม่นยำ [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

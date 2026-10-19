@@ -134,5 +134,51 @@ export const shippingService = {
       console.error("🔥 Error deleting shipping rule:", error);
       return { success: false, message: error.message };
     }
+  },
+
+  /**
+   * 🚚 ดึงค่าคอนฟิกจัดส่งส่วนกลาง (เช่น ค่าส่งเริ่มต้น Default Shipping Fee 60 บาท)
+   */
+  async getShippingConfig() {
+    try {
+      const { getDoc } = await import('firebase/firestore');
+      const docRef = doc(db, getCollectionPath('settings'), 'shipping');
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return snap.data();
+      }
+    } catch (error) {
+      console.warn("⚠️ Failed to load shipping config, fallback to default 60:", error);
+    }
+    return { defaultShippingFee: 60 };
+  },
+
+  /**
+   * 🚚 บันทึกค่าคอนฟิกจัดส่งส่วนกลาง
+   */
+  async updateShippingConfig(configData, uid) {
+    try {
+      const { setDoc } = await import('firebase/firestore');
+      const docRef = doc(db, getCollectionPath('settings'), 'shipping');
+      await setDoc(docRef, {
+        ...configData,
+        defaultShippingFee: Number(configData.defaultShippingFee) || 60,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      if (uid) {
+        await historyService.addLog(
+          'SystemConfig',
+          'Update',
+          'shipping',
+          `อัปเดตการตั้งค่าจัดส่งส่วนกลาง: ค่าส่งเริ่มต้น ${configData.defaultShippingFee || 60} บาท`,
+          uid
+        );
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("🔥 Error updating shipping config:", error);
+      return { success: false, message: error.message };
+    }
   }
 };

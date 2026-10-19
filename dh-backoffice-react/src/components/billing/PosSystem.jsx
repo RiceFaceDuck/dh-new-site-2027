@@ -54,12 +54,14 @@ export default function PosSystem({
     const [isVatModalOpen, setIsVatModalOpen] = useState(false);
     const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
     const [shippingRules, setShippingRules] = useState([]);
+    const [defaultShippingFee, setDefaultShippingFee] = useState(60);
 
     // ⚡ Session & Memory Caching for Shipping Rules (Eliminates redundant Firestore reads on mount)
     useEffect(() => {
         const fetchShippingRules = async () => {
             const SHIPPING_RULES_CACHE_KEY = 'dh_pos_shipping_rules_cache_v1';
             const SHIPPING_RULES_CACHE_TIME_KEY = 'dh_pos_shipping_rules_time_v1';
+            const SHIPPING_CONFIG_CACHE_KEY = 'dh_pos_shipping_config_cache_v1';
             const SHIPPING_RULES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
             const now = Date.now();
 
@@ -68,10 +70,17 @@ export default function PosSystem({
                 const cachedTime = sessionStorage.getItem(SHIPPING_RULES_CACHE_TIME_KEY);
                 if (cachedTime && (now - Number(cachedTime)) < SHIPPING_RULES_CACHE_TTL) {
                     const rawRules = sessionStorage.getItem(SHIPPING_RULES_CACHE_KEY);
+                    const rawConfig = sessionStorage.getItem(SHIPPING_CONFIG_CACHE_KEY);
                     if (rawRules) {
                         const parsed = JSON.parse(rawRules);
                         if (Array.isArray(parsed)) {
                             setShippingRules(parsed);
+                            if (rawConfig) {
+                                const parsedConf = JSON.parse(rawConfig);
+                                if (parsedConf && parsedConf.defaultShippingFee !== undefined) {
+                                    setDefaultShippingFee(Number(parsedConf.defaultShippingFee) || 60);
+                                }
+                            }
                             return;
                         }
                     }
@@ -83,17 +92,23 @@ export default function PosSystem({
             // 2. Cache Miss: Fetch from Firestore
             try {
                 const { shippingService } = await import('../../firebase/shippingService');
-                const rules = await shippingService.getActiveShippingRules();
+                const [rules, conf] = await Promise.all([
+                    shippingService.getActiveShippingRules(),
+                    shippingService.getShippingConfig()
+                ]);
                 const validRules = Array.isArray(rules) ? rules : [];
+                const loadedDefaultFee = Number(conf?.defaultShippingFee) || 60;
 
                 try {
                     sessionStorage.setItem(SHIPPING_RULES_CACHE_KEY, JSON.stringify(validRules));
+                    sessionStorage.setItem(SHIPPING_CONFIG_CACHE_KEY, JSON.stringify(conf || { defaultShippingFee: 60 }));
                     sessionStorage.setItem(SHIPPING_RULES_CACHE_TIME_KEY, String(Date.now()));
                 } catch (storageErr) {
                     console.warn('[PosSystem] SessionStorage write error:', storageErr);
                 }
 
                 setShippingRules(validRules);
+                setDefaultShippingFee(loadedDefaultFee);
             } catch (e) {
                 console.error("🔥 Error loading shipping rules in POS:", e);
             }
@@ -234,7 +249,7 @@ export default function PosSystem({
                     <PaymentPanel itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatOnShipping={activeTab?.vatOnShipping} vatAmount={vatAmount} vatType={activeTab?.vatType} walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} activeTab={activeTab} updateActiveTab={updateActiveTab} changeAmount={changeAmount} handleFileUpload={actions.handleFileUpload} setPreviewSlip={setPreviewSlip} handleCheckout={actions.handleCheckout} isProcessing={isProcessing} hasOutOfStock={hasOutOfStock} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} isUploadingSlip={isUploadingSlip} isCollapsed={isPaymentPanelCollapsed} setIsCollapsed={setIsPaymentPanelCollapsed} isLocked={isPaymentPanelLocked} setIsLocked={setIsPaymentPanelLocked} onOpenVatModal={() => setIsVatModalOpen(true)} onOpenShippingModal={() => setIsShippingModalOpen(true)} />
                 </div>
                 <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 bg-(--dh-bg-surface) rounded-[0.1rem] border border-gray-200 h-auto lg:h-full overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]" onFocusCapture={handleInteractWithOtherPanels} onClickCapture={handleInteractWithOtherPanels}>
-                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} setIsFreebieModalOpen={posState.setIsFreebieModalOpen} handleRemovePromotion={actions.handleRemovePromotion} handleRemoveFreebie={actions.handleRemoveFreebie} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} />
+                    <SettingsPanel activeTab={activeTab} updateActiveTab={updateActiveTab} handlePriceModeChange={handlePriceModeChange} custSearchRef={custSearchRef} customerSearchText={customerSearchText} setCustomerSearchText={setCustomerSearchText} showCustDropdown={showCustDropdown} setShowCustDropdown={setShowCustDropdown} filteredCustomers={filteredCustomers} handleSelectCustomer={actions.handleSelectCustomer} netTotal={netTotal} setIsPromoModalOpen={setIsPromoModalOpen} setIsFreebieModalOpen={posState.setIsFreebieModalOpen} handleRemovePromotion={actions.handleRemovePromotion} handleRemoveFreebie={actions.handleRemoveFreebie} isProcessing={isProcessing} eligibleFreebies={eligibleFreebies} shippingRules={shippingRules} defaultShippingFee={defaultShippingFee} />
                 </div>
             </div>
 

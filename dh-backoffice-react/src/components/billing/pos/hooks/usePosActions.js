@@ -24,7 +24,7 @@ export const usePosActions = ({
     convertToThaiBahtText
 }) => {
     const {
-        activeTab, updateActiveTab, createNewTab,
+        activeTab, updateActiveTab, createNewTab, closeTab,
         setSearchQuery, setShowDropdown, setCustomerSearchText,
         setShowCustDropdown, setIsPromoModalOpen,
         setActionBoxItem, setIsProcessing, setIsUploadingSlip,
@@ -295,10 +295,14 @@ export const usePosActions = ({
                 if (f.minQty > 0) conditionText.push(`ครบ${f.minQty}ชิ้น`);
                 if (f.applicableSkus?.length > 0) conditionText.push(`เฉพาะรุ่น`);
                 const reasonStr = conditionText.length > 0 ? ` (${conditionText.join(', ')})` : '';
+                const resolvedQty = sanitizeNum(f.calculatedQty || f.qty || 1);
+                const finalFreebieQty = (f.maxPerBill && Number(f.maxPerBill) > 0)
+                    ? Math.min(resolvedQty, Number(f.maxPerBill))
+                    : resolvedQty;
                 return { 
                     sku: f.itemName, 
                     name: `[แถมฟรี] ${f.productName || f.itemName}`, 
-                    qty: Math.min(sanitizeNum(f.qty), sanitizeNum(f.maxPerBill) || sanitizeNum(f.qty)), 
+                    qty: Math.max(1, finalFreebieQty), 
                     price: 0, discount: 0, total: 0, isFreebie: true, note: `${f.title}${reasonStr}`, noteColor: 'rose' 
                 };
             });

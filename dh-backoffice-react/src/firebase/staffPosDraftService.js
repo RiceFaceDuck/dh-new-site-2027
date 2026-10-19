@@ -6,8 +6,9 @@ import { safeJsonParse } from 'dh-shared';
 /**
  * 🛡️ Helper: Filter out completed and cancelled tabs from draft storage
  */
-export const filterValidDraftTabs = (tabs) => {
+export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
   if (!Array.isArray(tabs)) return [];
+  const seenKeys = new Set();
   return tabs
     .filter((t) => {
       if (!t || typeof t !== 'object' || !t.id) return false;
@@ -23,12 +24,30 @@ export const filterValidDraftTabs = (tabs) => {
         stat === 'paid' ||
         stat === 'cancelled' ||
         stat === 'void';
+
+      if (isFinished) return false;
+
+      // 🔍 Cross-check with known finished orders
+      if (finishedOrderIdsSet) {
+        const tOrderId = t.orderId ? String(t.orderId).trim() : null;
+        const tDocId = t.docId ? String(t.docId).trim() : null;
+        if (tOrderId && finishedOrderIdsSet.has(tOrderId)) return false;
+        if (tDocId && finishedOrderIdsSet.has(tDocId)) return false;
+      }
+
+      // 🛡️ Deduplication Guard: Never allow duplicate tabs with same non-temporary orderId or docId
+      const dedupKey = t.docId ? `doc_${t.docId}` : (t.orderId && !String(t.orderId).startsWith('DH-TEMP-') ? `order_${t.orderId}` : null);
+      if (dedupKey) {
+        if (seenKeys.has(dedupKey)) return false;
+        seenKeys.add(dedupKey);
+      }
+
       return (
-        !isFinished &&
-        (t.items?.length > 0 ||
-          t.customer ||
-          t.docId ||
-          (t.orderId && !String(t.orderId).startsWith('DH-TEMP-')))
+        (t.items && t.items.length > 0) ||
+        t.customer ||
+        t.walkInName ||
+        t.docId ||
+        (t.orderId && !String(t.orderId).startsWith('DH-TEMP-'))
       );
     })
     .map((t) => {

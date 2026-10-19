@@ -26,12 +26,20 @@ export function useShippingManagement() {
   };
 
   const [form, setForm] = useState(initialForm);
+  const [defaultShippingFee, setDefaultShippingFee] = useState(60);
+  const [isSavingDefaultFee, setIsSavingDefaultFee] = useState(false);
 
   const fetchRules = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await shippingService.getShippingRules();
-      setRules(data);
+      const [rulesData, configData] = await Promise.all([
+        shippingService.getShippingRules(),
+        shippingService.getShippingConfig()
+      ]);
+      setRules(rulesData);
+      if (configData && configData.defaultShippingFee !== undefined) {
+        setDefaultShippingFee(Number(configData.defaultShippingFee) || 60);
+      }
     } catch (e) {
       console.error("🔥 Error:", e);
       toast.error("โหลดข้อมูลเงื่อนไขจัดส่งผิดพลาด");
@@ -247,6 +255,30 @@ export function useShippingManagement() {
     }
   };
 
+  const handleSaveDefaultFee = async (feeValue) => {
+    setIsSavingDefaultFee(true);
+    const uid = auth.currentUser?.uid;
+    const numFee = Number(feeValue);
+    if (isNaN(numFee) || numFee < 0) {
+      toast.error("กรุณาระบุค่าจัดส่งเป็นตัวเลขที่ถูกต้อง (0 ขึ้นไป)");
+      setIsSavingDefaultFee(false);
+      return;
+    }
+    try {
+      const res = await shippingService.updateShippingConfig({ defaultShippingFee: numFee }, uid);
+      if (res.success) {
+        setDefaultShippingFee(numFee);
+        toast.success(`บันทึกค่าจัดส่งเริ่มต้น ${numFee} บาท เรียบร้อยแล้ว`);
+      } else {
+        toast.error("บันทึกค่าจัดส่งเริ่มต้นไม่สำเร็จ: " + res.message);
+      }
+    } catch (e) {
+      toast.error("เกิดข้อผิดพลาด: " + e.message);
+    } finally {
+      setIsSavingDefaultFee(false);
+    }
+  };
+
   return {
     rules,
     categories,
@@ -262,6 +294,10 @@ export function useShippingManagement() {
     deleteRule,
     handleAddCondition,
     handleRemoveCondition,
-    handleConditionChange
+    handleConditionChange,
+    defaultShippingFee,
+    setDefaultShippingFee,
+    isSavingDefaultFee,
+    handleSaveDefaultFee
   };
 }

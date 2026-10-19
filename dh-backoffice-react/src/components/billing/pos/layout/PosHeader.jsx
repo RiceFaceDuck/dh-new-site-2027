@@ -123,18 +123,12 @@ export default function PosHeader({
                                     )}
                                 </div>
 
-                                {itemCount > 0 ? (
-                                    <span className={`text-[10px] font-semibold mt-0.5 ${isActive ? 'text-emerald-600 font-bold' : 'text-slate-500'}`}>
-                                        {itemCount} รายการ • ฿{totalAmt.toLocaleString()}
-                                    </span>
-                                ) : (
-                                    <span className="text-[10px] text-slate-400 mt-0.5 italic">
-                                        ตะกร้าว่าง
-                                    </span>
-                                )}
+                                <span className={`text-[10px] font-mono font-bold mt-0.5 ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>
+                                    {tab.orderId || tab.docId || `บิล ${idx + 1}`}
+                                </span>
                             </div>
 
-                            {safeCartTabs.length > 1 && (
+                            {(safeCartTabs.length > 1 || (tab.items && tab.items.length > 0) || tab.customer || tab.walkInName || (tab.orderId && !String(tab.orderId).startsWith('DH-TEMP-'))) && (
                                 <div 
                                     onClick={(e) => { 
                                         e.stopPropagation(); 

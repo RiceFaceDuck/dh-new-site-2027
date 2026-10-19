@@ -10,6 +10,7 @@ import { usePosPayment } from './usePosPayment';
 import { auth } from '../../../../firebase/config';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { staffPosDraftService, filterValidDraftTabs } from '../../../../firebase/staffPosDraftService';
+import { readCachedOrders } from '../../../../firebase/orderCacheService';
 
 import { safeJsonParse } from 'dh-shared';
 
@@ -22,6 +23,27 @@ const MARKETING_CACHE_TTL = 10 * 60 * 1000; // 10 minutes TTL
 let inMemoryPromos = null;
 let inMemoryFreebies = null;
 let inMemoryMarketingTimestamp = 0;
+
+const getFinishedOrderIdsSet = () => {
+    try {
+        const { orders } = readCachedOrders();
+        if (Array.isArray(orders) && orders.length > 0) {
+            const finishedSet = new Set();
+            orders.forEach(o => {
+                const stat = (o.orderStatus || o.status || o.paymentStatus || '').toLowerCase();
+                if (stat === 'approved' || stat === 'completed' || stat === 'paid' || stat === 'cancelled' || stat === 'void') {
+                    if (o.orderId) finishedSet.add(String(o.orderId).trim());
+                    if (o.id) finishedSet.add(String(o.id).trim());
+                    if (o.docId) finishedSet.add(String(o.docId).trim());
+                }
+            });
+            return finishedSet;
+        }
+    } catch (e) {
+        console.warn('[usePosState] getFinishedOrderIdsSet error:', e);
+    }
+    return null;
+};
 
 const createNewTab = () => {
     const rand4 = Math.floor(1000 + Math.random() * 9000);
@@ -42,7 +64,8 @@ const loadSavedState = (targetUid) => {
         
         if (saved) {
             const parsed = safeJsonParse(saved);
-            const valid = filterValidDraftTabs(parsed);
+            const finishedSet = getFinishedOrderIdsSet();
+            const valid = filterValidDraftTabs(parsed, finishedSet);
             if (valid.length > 0) return valid;
         }
     } catch (e) { console.error('Failed to load autosave', e); }
@@ -78,7 +101,8 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 const localSaved = localStorage.getItem(`dh_pos_autosave_${newUid}`);
                 if (localSaved) {
                     const parsed = safeJsonParse(localSaved);
-                    const valid = filterValidDraftTabs(parsed);
+                    const finishedSet = getFinishedOrderIdsSet();
+                    const valid = filterValidDraftTabs(parsed, finishedSet);
                     if (valid.length > 0) {
                         setCartTabs(valid);
                         setActiveTabId(valid[0].id);
@@ -120,6 +144,48 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
             staffPosDraftService.saveStaffCloudDraftsDebounced(uid, cleanTabs);
         }
     }, [cartTabs]);
+
+    // 🧹 Reactive Auto-Prune & Dedup Guard: Clean completed orders & deduplicate tabs
+    useEffect(() => {
+        const pruneTabs = () => {
+            const finishedSet = getFinishedOrderIdsSet();
+            setCartTabs(prev => {
+                if (!Array.isArray(prev) || prev.length === 0) return prev;
+                const filtered = filterValidDraftTabs(prev, finishedSet);
+                // If every tab was filtered out, fallback to 1 fresh tab
+                const resolved = filtered.length > 0 ? filtered : [createNewTab()];
+                
+                // Only trigger update if array changed
+                if (resolved.length !== prev.length || resolved.some((t, i) => t.id !== prev[i]?.id)) {
+                    setActiveTabId(currId => {
+                        const stillExists = resolved.some(t => t.id === currId);
+                        return stillExists ? currId : resolved[0].id;
+                    });
+                    return resolved;
+                }
+                return prev;
+            });
+        };
+
+        // Run once on mount / initial check
+        pruneTabs();
+
+        // Listen for storage or catalog updates
+        const handleStorage = (e) => {
+            if (e.key === 'dh_recent_orders_cache_v1' || e.key === 'dh_recent_orders_meta_v1') {
+                pruneTabs();
+            }
+        };
+        const handleCustomUpdate = () => pruneTabs();
+
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener('dh_recent_orders_updated', handleCustomUpdate);
+
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('dh_recent_orders_updated', handleCustomUpdate);
+        };
+    }, []);
 
     useEffect(() => {
         if (!initialDraft) return;
@@ -404,15 +470,23 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
     const closeTab = (tabId) => {
         setCartTabs(prev => {
             const newTabs = (Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : []).filter(t => t.id !== tabId);
+            const resolvedTabs = newTabs.length === 0 ? [createNewTab()] : newTabs;
+            
             if (newTabs.length === 0) {
-                const newTab = createNewTab();
-                setActiveTabId(newTab.id);
-                return [newTab];
+                setActiveTabId(resolvedTabs[0].id);
+            } else if (activeTabId === tabId) {
+                setActiveTabId(resolvedTabs[0].id);
             }
-            if (activeTabId === tabId) {
-                setActiveTabId(newTabs[0].id);
+
+            // ⚡ Immediate persistence to prevent race condition on page refresh or view switch
+            const uid = auth?.currentUser?.uid || 'guest';
+            localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(resolvedTabs));
+            window.dispatchEvent(new CustomEvent('dh_cart_updated'));
+            if (uid !== 'guest') {
+                staffPosDraftService.saveStaffCloudDraftsImmediately(uid, resolvedTabs);
             }
-            return newTabs;
+
+            return resolvedTabs;
         });
     };
 

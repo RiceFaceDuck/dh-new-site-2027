@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Truck, AlertCircle, ArrowLeft, Save, Sparkles } from 'lucide-react';
 import { useShippingManagement } from './hooks/useShippingManagement';
 import ShippingRuleForm from './components/ShippingRuleForm';
 import ShippingRuleList from './components/ShippingRuleList';
@@ -23,10 +23,20 @@ export default function ShippingManagement() {
     deleteRule,
     handleAddCondition,
     handleRemoveCondition,
-    handleConditionChange
+    handleConditionChange,
+    defaultShippingFee,
+    setDefaultShippingFee,
+    isSavingDefaultFee,
+    handleSaveDefaultFee
   } = useShippingManagement();
 
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [localDefaultFee, setLocalDefaultFee] = useState(defaultShippingFee);
+
+  // Sync local default fee when loaded from db
+  useEffect(() => {
+    setLocalDefaultFee(defaultShippingFee);
+  }, [defaultShippingFee]);
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500">
@@ -55,6 +65,44 @@ export default function ShippingManagement() {
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-200 shadow-xs dh-active-press shrink-0"
           >
               <AlertCircle size={16} /> คู่มือการใช้งาน
+          </button>
+        </div>
+      </div>
+
+      {/* 📦 การตั้งค่าค่าจัดส่งเริ่มต้น (Default Fallback Fee) */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-800">
+              ค่าจัดส่งเริ่มต้น (Default Shipping Fee)
+            </h3>
+            <p className="text-xs text-slate-500 font-medium">
+              หากสินค้าในบิลไม่ตรงกับเงื่อนไขจัดส่งใดๆ เลย ระบบ POS และหน้าเว็บจะคิดค่าส่งเริ่มต้นนี้ให้อัตโนมัติ (ค่าเริ่มต้นแนะนำ: 60 บาท)
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex items-center">
+            <input 
+              type="number"
+              min="0"
+              value={localDefaultFee}
+              onChange={(e) => setLocalDefaultFee(e.target.value)}
+              className="w-28 px-3 py-2 text-sm font-black text-right border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+              placeholder="60"
+            />
+            <span className="ml-2 text-sm font-bold text-slate-600">บาท</span>
+          </div>
+          <button
+            onClick={() => handleSaveDefaultFee(localDefaultFee)}
+            disabled={isSavingDefaultFee || Number(localDefaultFee) === defaultShippingFee}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-xs cursor-pointer"
+          >
+            <Save size={16} /> {isSavingDefaultFee ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>
         </div>
       </div>

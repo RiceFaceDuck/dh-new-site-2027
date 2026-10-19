@@ -117,6 +117,11 @@ export default function OrderDetailModal(props) {
 
 
 
+    const isWebOrder = Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront');
+    const hasSlip = Boolean(selectedOrder.paymentSlipUrl || selectedOrder.slipUrl || selectedOrder.slipImage);
+    const isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && (hasSlip || paymentStat === 'pending_verification' || orderStat === 'pending_payment_verification');
+    const isDraft = !isCancelled && !isPaid && !isAwaitingSlip && (orderStat === 'draft' || paymentStat === 'draft' || selectedOrder.isDraft === true || (!isWebOrder && String(selectedOrder.orderId || '').startsWith('DH-TEMP-')));
+
     return (
         <div 
             onClick={handleCloseModal} 
@@ -165,7 +170,9 @@ export default function OrderDetailModal(props) {
                                         </div>
                                         {isCancelled ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-black">ยกเลิกแล้ว</span>
-                                        ) : (!isPaid && (orderStat === 'draft' || paymentStat === 'draft' || selectedOrder.isDraft === true || String(selectedOrder.orderId || '').startsWith('DH-TEMP-'))) ? (
+                                        ) : isAwaitingSlip ? (
+                                            <span className="px-2 py-0.5 rounded-sm bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> รอตรวจสอบสลิป ⌛</span>
+                                        ) : isDraft ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> ฉบับร่าง (Draft)</span>
                                         ) : isShipped ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 text-[10px] font-black">ส่งแล้ว 🚚</span>

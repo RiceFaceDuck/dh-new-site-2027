@@ -6,10 +6,10 @@ import { evaluateShippingRules } from 'dh-shared';
 export default function LogisticsSettings({
     activeTab, updateActiveTab, handlePriceModeChange, isProcessing,
     localShipping, setLocalShipping, terminalConfig, sectionClass, labelClass, inputClass,
-    shippingRules = []
+    shippingRules = [], defaultShippingFee = 60
 }) {
-    // 🧮 ประเมินราคาจัดส่ง/ค่าประกันตามกฎอัตโนมัติจากสินค้าในตะกร้า
-    const evaluatedShipping = evaluateShippingRules(activeTab.items || [], shippingRules);
+    // 🧮 ประเมินราคาจัดส่ง/ค่าประกันตามกฎอัตโนมัติจากสินค้าในตะกร้า (พร้อมค่าส่งเริ่มต้น Default 60 บ.)
+    const evaluatedShipping = evaluateShippingRules(activeTab.items || [], shippingRules, defaultShippingFee);
 
     // ⚡ [EFFECT] จัดการนำเงื่อนไขไปประเมินและตั้งค่าแบบอัตโนมัติ (Auto-apply by default)
     useEffect(() => {

@@ -59,6 +59,27 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
             } else {
                 return manualFreebieIds.includes(f.id);
             }
+        }).map(f => {
+            const { qty: eligibleQty } = getEligibleTotals(f.applicableSkus, f.applicableTypes);
+            const baseQty = Number(f.qty) || 1;
+            const maxLimit = (f.maxPerBill && Number(f.maxPerBill) > 0) ? Number(f.maxPerBill) : Infinity;
+
+            let calculatedQty = baseQty;
+            if (f.distributionMode === 'per_item') {
+                calculatedQty = baseQty * Math.max(1, eligibleQty);
+            }
+            calculatedQty = Math.min(calculatedQty, maxLimit);
+
+            if (f.quotaLimit && f.quotaLimit > 0) {
+                const remainingQuota = Math.max(0, f.quotaLimit - (f.quotaUsed || 0));
+                calculatedQty = Math.min(calculatedQty, remainingQuota);
+            }
+
+            return {
+                ...f,
+                calculatedQty: Math.max(1, calculatedQty),
+                qty: Math.max(1, calculatedQty)
+            };
         });
     }, [activeFreebies, autoFreebieEnabled, disabledFreebieIds, manualFreebieIds, currentCustomerType, getEligibleTotals]);
 
