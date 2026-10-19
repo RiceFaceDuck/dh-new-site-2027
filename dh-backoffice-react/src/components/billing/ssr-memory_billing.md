@@ -200,6 +200,10 @@
         วิธีแก้: ใช้ `useRef(recentOrders)` เป็นตัวอ้างอิงและตัด `recentOrders` ออกจาก dependency array ของ useEffect ค้นหา เพื่อให้ระบบยิงค้นหาเฉพาะเมื่อ `searchQuery` มีการเปลี่ยนแปลงจริงจากผู้ใช้ [สถานะ: ส่งมอบแล้ว]
     56. ปัญหา: ไม่มี Error Boundary ป้องกันหน้าจอระบบบิล `/billing` ทำให้หากมีคอมโพเนนต์ลูกเรนเดอร์ผิดพลาด หน้าจอจะขาวดับทั้งหน้า (White Screen of Death)
         วิธีแก้: ปรับปรุง `ErrorBoundary.jsx` ให้แสดงการ์ดข้อผิดพลาดพร้อมปุ่มรีโหลด และนำมาครอบ `<PosViewWrapper>` และ `<BillingDashboard>` ใน `BillingMain.jsx` อย่างมิดชิด [สถานะ: ส่งมอบแล้ว]
+    57. ปัญหา: การเลื่อนสถานะบิลร่างเป็นชำระเงินแล้ว (Draft -> Paid) อัปเดตเฉพาะฟิลด์ orderId ภายในเอกสาร แต่ Document ID ใน Firestore ยังเป็น DH-TEMP-XXXX เดิม ทำให้เกิดความไม่สอดคล้องระหว่าง Document ID กับเลขอ้างอิงจริง
+        วิธีแก้: ปรับปรุง `billingStatusTransaction.js` โดยทำ Atomic Document Migration ภายใน `runTransaction` — สร้าง Document ใหม่ด้วย Official ID (`DH-YY-XXXX`), คัดลอกข้อมูลพร้อมปรับสถานะเป็น `paid`, และสั่งลบ Document ร่างเดิม (`DH-TEMP-XXXX`) ทิ้งในธุรกรรมเดียวกัน พร้อมคืนค่า `finalOrderId` [สถานะ: ส่งมอบแล้ว]
+    58. ปัญหา: แม่แบบพิมพ์ใบเสร็จ A5 (`ReceiptTemplate.jsx`) พึ่งพา Tailwind CDN ภายนอก เมื่อเครื่องออฟไลน์หรือเน็ตมีปัญหา การพิมพ์ใบเสร็จจะไม่มีสไตล์และตารางจะแตก
+        วิธีแก้: กำหนดแท็กสคริปต์ Tailwind CDN เป็น `async` และฝัง Offline Fallback CSS สำหรับกระดาษ A5 (การจัดคอลัมน์, กรอบตาราง, ขนาดตัวอักษร) ลงในแท็ก `<style>` ของเอกสารแม่แบบโดยตรง ทำให้พิมพ์เอกสารได้สวยงามแม้ไม่มีอินเทอร์เน็ต [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

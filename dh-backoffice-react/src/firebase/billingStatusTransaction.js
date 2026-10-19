@@ -273,10 +273,20 @@ export const billingStatusTransaction = {
                }
            }
 
-          transaction.update(docRef, updates);
+          const finalResultOrderId = updates.orderId || orderId;
+
+          if (updates.orderId && updates.orderId !== orderId) {
+             // 🧹 Atomic Migration: Move document from TEMP draft ID to official Order ID
+             const newDocRef = doc(db, COLLECTION_NAME, updates.orderId);
+             transaction.set(newDocRef, { ...orderData, ...updates, id: updates.orderId });
+             transaction.delete(docRef);
+          } else {
+             transaction.update(docRef, updates);
+          }
           
           // Return necessary data for outside-transaction side-effects
           return {
+              finalOrderId: finalResultOrderId,
               manualRefundAmount: isCancelling ? (totalSaleAmount - walletUsed) : 0,
               customerUid: orderData.customer?.uid || orderData.customerInfo?.uid || 'Unknown',
               customerName: orderData.customer?.name || orderData.customer?.displayName || 'ลูกค้า',
@@ -285,18 +295,19 @@ export const billingStatusTransaction = {
           };
       }, { maxAttempts: 15 });
 
+      const finalOrderId = result?.finalOrderId || orderId;
       let logMessage = `เปลี่ยนสถานะบิลเป็น: ${normalizedNewStatus}`;
       if (normalizedNewStatus === 'cancelled') {
         logMessage += ' (และปรับปรุงสต็อก/คืนเงิน/ดึงแต้ม/ยกเลิกคำร้อง กลับสู่ระบบเรียบร้อยแล้ว)';
       }
       if (normalizedNewStatus === 'paid') logMessage += ' (ตัดสต๊อกและเก็บสถิติเรียบร้อยแล้ว)';
 
-      await historyService.addLog('Billing', 'Update', orderId, logMessage, actorUid);
+      await historyService.addLog('Billing', 'Update', finalOrderId, logMessage, actorUid);
 
       // ⚡ Background Cache Sync: Refresh catalogs/recent_orders without blocking UI
       syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
 
-      return orderId;
+      return finalOrderId;
     })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะบิล");
   },
 

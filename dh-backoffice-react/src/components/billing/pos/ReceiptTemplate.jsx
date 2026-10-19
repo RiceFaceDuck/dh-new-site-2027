@@ -288,11 +288,32 @@ export default function ReceiptTemplate(props) {
             <head>
                 <meta charset="utf-8">
                 <title>A5 Receipt - ${orderId || 'Draft'}</title>
-                <script src="https://cdn.tailwindcss.com"></script>
+                <script src="https://cdn.tailwindcss.com" async></script>
                 ${styles}
                 <style>
                     @page { size: A5 portrait; margin: 5mm; }
-                    body { background: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    * { box-sizing: border-box; }
+                    body { 
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+                        background: white !important; 
+                        margin: 0; 
+                        padding: 0; 
+                        -webkit-print-color-adjust: exact !important; 
+                        print-color-adjust: exact !important; 
+                    }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { text-align: left; }
+                    .flex { display: flex; }
+                    .flex-col { flex-direction: column; }
+                    .items-center { align-items: center; }
+                    .justify-between { justify-content: space-between; }
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+                    .border { border: 1px solid #e2e8f0; }
+                    .border-b { border-bottom: 1px solid #e2e8f0; }
+                    .border-t { border-top: 1px solid #e2e8f0; }
                     .print-page { page-break-after: always; position: relative; padding: 5px; }
                     .copy-page { filter: grayscale(100%); }
                     #printable-receipt { 
