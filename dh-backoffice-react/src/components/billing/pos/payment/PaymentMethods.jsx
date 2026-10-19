@@ -20,7 +20,7 @@ export default function PaymentMethods({
                 <button 
                     onClick={() => updateActiveTab({ paymentMethod: 'Transfer' })} 
                     className={`flex-1 py-2 text-xs font-extrabold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        activeTab.paymentMethod === 'Transfer' 
+                        String(activeTab.paymentMethod || '').toLowerCase() === 'transfer' 
                             ? 'bg-[#2A305A] text-white shadow-xs border border-[#1A1F3D] scale-[1.01]' 
                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
@@ -30,7 +30,7 @@ export default function PaymentMethods({
                 <button 
                     onClick={() => updateActiveTab({ paymentMethod: 'Cash' })} 
                     className={`flex-1 py-2 text-xs font-extrabold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        activeTab.paymentMethod === 'Cash' 
+                        String(activeTab.paymentMethod || '').toLowerCase() === 'cash' 
                             ? 'bg-[#2A305A] text-white shadow-xs border border-[#1A1F3D] scale-[1.01]' 
                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
@@ -47,7 +47,7 @@ export default function PaymentMethods({
             
             <div className="flex flex-col min-h-[140px] justify-center">
                 {/* โหมดเงินสด */}
-                {activeTab.paymentMethod === 'Cash' && (
+                {String(activeTab.paymentMethod || '').toLowerCase() === 'cash' && (
                     <div className="flex flex-col gap-3 animate-in fade-in duration-200">
                         <div className={`w-full flex items-center gap-3 p-3 rounded-xs border bg-gray-50 transition-colors ${isCashShort ? 'border-red-300' : 'border-gray-200'}`}>
                             <span className={`text-sm font-semibold whitespace-nowrap ${isCashShort ? 'text-red-600' : 'text-gray-600'}`}>รับเงินสด:</span>
@@ -78,7 +78,7 @@ export default function PaymentMethods({
                 )}
 
                 {/* โหมดโอนเงิน */}
-                {activeTab.paymentMethod === 'Transfer' && (
+                {String(activeTab.paymentMethod || '').toLowerCase() === 'transfer' && (
                     <div className="flex justify-between items-stretch animate-in fade-in duration-200 h-full gap-3">
                         <div className="flex-1 flex flex-col gap-2.5">
                             <div className="relative h-8 group flex items-center">

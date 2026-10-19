@@ -80,51 +80,39 @@ export default function PosHeader({
                 )}
             </div>
             
-            {/* 🌟 Modern Premium Draft Tabs Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto max-w-[70vw] custom-scrollbar py-0.5 px-1">
+            {/* 🌟 Modern Responsive Compact Draft Tabs Bar */}
+            <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0 custom-scrollbar py-0.5 px-2">
                 {safeCartTabs.map((tab, idx) => {
                     const isActive = activeTabId === tab.id;
-                    const items = tab.items || [];
-                    const itemCount = items.reduce((sum, i) => sum + (i.qty || i.quantity || 1), 0);
-                    const totalAmt = items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || i.quantity || 1)), 0);
-
-                    const isDraft = !!(tab.docId || items.length > 0 || tab.customer || tab.walkInName);
                     const isWebOrder = Boolean(tab.isWebOrder || tab.channel === 'storefront' || tab.source === 'storefront');
+                    const orderLabel = tab.orderId || tab.docId || `บิล ${idx + 1}`;
+                    const tabTitle = getTabTitle(tab, idx);
 
                     return (
                         <button 
                             key={tab.id} 
                             onClick={() => !isProcessing && setActiveTabId(tab.id)}
-                            className={`px-3 py-1.5 text-xs font-bold transition-all rounded-[0.1rem] flex items-center gap-2 border group relative shrink-0 shadow-xs cursor-pointer ${
+                            title={`${tabTitle} (${orderLabel})`}
+                            className={`transition-all rounded-[0.2rem] flex items-center border group relative shrink-0 shadow-xs cursor-pointer px-2.5 py-1 gap-2 text-xs ${
                                 isActive 
-                                    ? 'bg-white text-slate-900 border-red-500 shadow-md ring-2 ring-red-500/20 scale-[1.02] z-10 font-extrabold' 
-                                    : 'bg-slate-200/90 text-slate-700 border-slate-300 hover:bg-slate-300 hover:text-slate-900'
+                                    ? 'bg-white text-slate-900 border-red-500 shadow-md ring-2 ring-red-500/20 scale-[1.01] z-10 font-black' 
+                                    : 'bg-slate-200/90 text-slate-700 border-slate-300 hover:bg-slate-300 hover:text-slate-900 font-bold'
                             }`}
                         >
-                            <div className={`p-1 rounded-[0.1rem] transition-colors ${isActive ? 'bg-red-50 text-red-600' : 'bg-slate-300/60 text-slate-600'}`}>
-                                <Receipt size={13} strokeWidth={2.5} />
-                            </div>
-
                             <div className="flex flex-col items-start text-left leading-tight">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="truncate max-w-[130px]">{getTabTitle(tab, idx)}</span>
-                                    {isWebOrder ? (
-                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-cyan-600 text-white border border-cyan-700 shadow-2xs flex items-center gap-0.5">
-                                            🌐 หน้าเว็บ
-                                        </span>
-                                    ) : isDraft && (
-                                        <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border ${
-                                            isActive 
-                                                ? 'bg-amber-100 text-amber-800 border-amber-300/80 shadow-2xs' 
-                                                : 'bg-slate-300/80 text-slate-600 border-slate-400/50'
-                                        }`}>
-                                            Draft
+                                <div className="flex items-center gap-1">
+                                    <span className="truncate max-w-[110px] text-[11px] font-bold">
+                                        {tabTitle}
+                                    </span>
+                                    {isWebOrder && (
+                                        <span className="text-[8.5px] font-black px-1 py-0.1 rounded-xs bg-cyan-600 text-white shadow-2xs shrink-0 flex items-center" title="ออเดอร์หน้าเว็บ">
+                                            🌐
                                         </span>
                                     )}
                                 </div>
 
                                 <span className={`text-[10px] font-mono font-bold mt-0.5 ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>
-                                    {tab.orderId || tab.docId || `บิล ${idx + 1}`}
+                                    {orderLabel}
                                 </span>
                             </div>
 
@@ -134,20 +122,19 @@ export default function PosHeader({
                                         e.stopPropagation(); 
                                         if (isProcessing) return;
                                         if (tab.items && tab.items.length > 0) {
-                                            const tabLabel = getTabTitle ? getTabTitle(tab, idx) : `แท็บบิล ${idx + 1}`;
-                                            const confirmed = window.confirm(`แท็บบิล "${tabLabel}" มีสินค้าค้างอยู่ ${tab.items.length} รายการ\n\nคุณแน่ใจหรือไม่ว่าต้องการปิดแท็บนี้ทิ้ง?`);
+                                            const confirmed = window.confirm(`แท็บบิล "${tabTitle} (${orderLabel})" มีสินค้าค้างอยู่ ${tab.items.length} รายการ\n\nคุณแน่ใจหรือไม่ว่าต้องการปิดแท็บนี้ทิ้ง?`);
                                             if (!confirmed) return;
                                         }
                                         closeTab(tab.id); 
                                     }}
-                                    className={`p-1 rounded-full transition-all flex items-center justify-center ml-0.5 ${
+                                    className={`p-1 rounded-full transition-all flex items-center justify-center ml-0.5 shrink-0 ${
                                         isActive 
                                             ? 'bg-slate-100 hover:bg-red-500 hover:text-white text-slate-400' 
                                             : 'hover:bg-red-500 hover:text-white text-slate-400 opacity-60 group-hover:opacity-100'
                                     }`}
                                     title="ปิดแท็บ"
                                 >
-                                    <X size={11} strokeWidth={3}/>
+                                    <X size={10} strokeWidth={3}/>
                                 </div>
                             )}
                         </button>
@@ -160,11 +147,11 @@ export default function PosHeader({
                             createNewTab(); 
                         } 
                     }} 
-                    className="flex items-center gap-1 px-2.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all rounded-[0.5rem] shadow-xs cursor-pointer shrink-0 border border-emerald-700/50"
-                    title="เปิดบิลร่างใหม่"
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all rounded-[0.2rem] shadow-xs cursor-pointer shrink-0 border border-emerald-700/50 ml-1"
+                    title="เปิดบิลใหม่"
                 >
-                    <Plus size={15} strokeWidth={3}/>
-                    <span className="text-[11px]">เปิดบิลใหม่</span>
+                    <Plus size={14} strokeWidth={3}/>
+                    <span className="text-[11px] font-extrabold whitespace-nowrap">เปิดบิลใหม่</span>
                 </button>
             </div>
         </div>

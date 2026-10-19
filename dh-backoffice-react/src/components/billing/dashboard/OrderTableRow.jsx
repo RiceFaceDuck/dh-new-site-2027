@@ -10,12 +10,14 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
     // Determine fulfillment considering frontend's shippingMethod and old orders fallback
     let fulfillment = order.fulfillmentType;
     if (!fulfillment) {
-        if (order.shippingMethod) {
-            fulfillment = order.shippingMethod === 'standard' ? 'Delivery' : 'StorePickup';
+        const method = (order.shippingMethod || '').toLowerCase();
+        const shippingCost = Number(order.shippingFee || order.shippingCost || order.totals?.shippingCost || order.totals?.shipping || 0);
+        if (method === 'pickup' || method.includes('รับหน้าร้าน')) {
+            fulfillment = 'StorePickup';
+        } else if (method || shippingCost > 0) {
+            fulfillment = 'Delivery';
         } else {
-            // Fallback for old orders that didn't save shippingMethod: if they paid shipping, it's delivery
-            const shippingCost = Number(order.shippingFee || order.shippingCost || order.totals?.shipping || 0);
-            fulfillment = shippingCost > 0 ? 'Delivery' : 'StorePickup';
+            fulfillment = 'StorePickup';
         }
     }
 
@@ -139,25 +141,27 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
             </td>
             <td className="py-2.5 px-4 align-middle">
                 <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-(--dh-text-main)">
-                    <div className="p-1 bg-slate-500/10 rounded-sm overflow-hidden shadow-inner flex items-center justify-center shrink-0">
-                        <User size={12} className="text-slate-500"/>
-                    </div>
                     {(() => {
-                        const rawStaff = order.staffNickname || order.creatorName || order.actorName;
-                        const effectiveStaff = (rawStaff && rawStaff !== 'POS' && rawStaff !== 'System') ? rawStaff : null;
+                        const rawStaff = order.staffNickname || order.actorName;
+                        const effectiveStaff = (rawStaff && rawStaff !== 'POS' && rawStaff !== 'System' && rawStaff !== 'ลูกค้าหน้าเว็บ') ? rawStaff : null;
                         
                         if (isWebOrder && !effectiveStaff) {
                             return (
-                                <span className="text-orange-500 dark:text-orange-400 font-black text-xs tracking-wide">
-                                    ยังไม่ตรวจสอบ
+                                <span className="text-yellow-400 font-black text-xs tracking-wide flex items-center gap-1 drop-shadow-xs" title="ออเดอร์จากหน้าเว็บยังไม่มีเจ้าหน้าที่รับงาน">
+                                    🔴ไม่มีผู้รับงาน
                                 </span>
                             );
                         }
                         
                         return (
-                            <span className="truncate max-w-[110px]" title={effectiveStaff || 'พนักงาน'}>
-                                {effectiveStaff || 'พนักงาน'}
-                            </span>
+                            <>
+                                <div className="p-1 bg-slate-500/10 rounded-sm overflow-hidden shadow-inner flex items-center justify-center shrink-0">
+                                    <User size={12} className="text-slate-500"/>
+                                </div>
+                                <span className="truncate max-w-[110px]" title={effectiveStaff || 'พนักงาน'}>
+                                    {effectiveStaff || 'พนักงาน'}
+                                </span>
+                            </>
                         );
                     })()}
                 </div>

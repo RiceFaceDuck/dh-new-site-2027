@@ -188,11 +188,11 @@ export default function OrderDetailModal(props) {
                                         <span className="font-bold flex items-center gap-1"><User size={11} className="text-slate-400" /> เจ้าหน้าที่:</span>
                                         {(() => {
                                             const isWeb = Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront');
-                                            const rawStaff = selectedOrder.staffNickname || selectedOrder.creatorName || selectedOrder.actorName;
-                                            const effectiveStaff = (rawStaff && rawStaff !== 'POS' && rawStaff !== 'System') ? rawStaff : null;
+                                            const rawStaff = selectedOrder.staffNickname || selectedOrder.actorName;
+                                            const effectiveStaff = (rawStaff && rawStaff !== 'POS' && rawStaff !== 'System' && rawStaff !== 'ลูกค้าหน้าเว็บ') ? rawStaff : null;
 
                                             if (isWeb && !effectiveStaff) {
-                                                return <span className="text-orange-500 dark:text-orange-400 font-black text-xs">ยังไม่ตรวจสอบ</span>;
+                                                return <span className="text-yellow-400 font-black text-xs drop-shadow-xs">🔴ไม่มีผู้รับงาน</span>;
                                             }
 
                                             return <span className="font-bold text-(--dh-text-main)">{effectiveStaff || 'พนักงาน'}</span>;
@@ -230,8 +230,9 @@ export default function OrderDetailModal(props) {
                                             <Phone size={12}/> {customerPhone}
                                         </div>
                                         {(() => {
-                                            const shippingCost = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.totals?.shipping || 0);
-                                            const isDelivery = selectedOrder.shippingMethod === 'standard' || selectedOrder.fulfillmentType === 'Delivery' || (!selectedOrder.shippingMethod && !selectedOrder.fulfillmentType && shippingCost > 0);
+                                            const method = (selectedOrder.shippingMethod || '').toLowerCase();
+                                            const shippingCost = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.totals?.shippingCost || selectedOrder.totals?.shipping || 0);
+                                            const isDelivery = selectedOrder.fulfillmentType === 'Delivery' || (method !== 'pickup' && !method.includes('รับหน้าร้าน') && (method || shippingCost > 0));
                                             return isDelivery && selectedOrder.shippingAddress && (
                                                 <div className="text-[11px] text-(--dh-text-muted) leading-tight line-clamp-2 mt-1 border-t border-(--dh-border) pt-1.5" title={`${selectedOrder.shippingAddress.address} ${selectedOrder.shippingAddress.subDistrict || ''} ${selectedOrder.shippingAddress.district || ''} ${selectedOrder.shippingAddress.province || ''} ${selectedOrder.shippingAddress.zipCode || ''}`}>
                                                     <span className="font-bold text-blue-500">ที่อยู่:</span> {selectedOrder.shippingAddress.address} {selectedOrder.shippingAddress.subDistrict} {selectedOrder.shippingAddress.district} {selectedOrder.shippingAddress.province} {selectedOrder.shippingAddress.zipCode}
@@ -247,8 +248,9 @@ export default function OrderDetailModal(props) {
                                         </h3>
                                         <div className="font-bold text-xs text-(--dh-text-main)">
                                             {(() => {
-                                                const shippingCost = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.totals?.shipping || 0);
-                                                const isDelivery = selectedOrder.shippingMethod === 'standard' || selectedOrder.fulfillmentType === 'Delivery' || (!selectedOrder.shippingMethod && !selectedOrder.fulfillmentType && shippingCost > 0);
+                                                const method = (selectedOrder.shippingMethod || '').toLowerCase();
+                                                const shippingCost = Number(selectedOrder.shippingFee || selectedOrder.shippingCost || selectedOrder.totals?.shippingCost || selectedOrder.totals?.shipping || 0);
+                                                const isDelivery = selectedOrder.fulfillmentType === 'Delivery' || (method !== 'pickup' && !method.includes('รับหน้าร้าน') && (method || shippingCost > 0));
                                                 
                                                 return isDelivery ? (
                                                     <div className="flex flex-col gap-1 w-full">

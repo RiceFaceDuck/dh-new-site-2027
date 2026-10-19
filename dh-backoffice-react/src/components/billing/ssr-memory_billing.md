@@ -170,16 +170,25 @@
         2) ใน `shippingService.js` เพิ่ม `getShippingConfig` และ `updateShippingConfig` จัดเก็บเอกสารส่วนกลางที่ `settings/shipping` (1 Document architecture)
         3) ในหน้า `ShippingManagement.jsx` เพิ่มการ์ดสำหรับตั้งค่าและบันทึกค่าจัดส่งเริ่มต้น (Default Shipping Fee) สู่ฐานข้อมูล
     46. ปัญหา: การคำนวณจำนวนชิ้นของแถมอัตโนมัติในระบบ POS ไม่ตรงกับหน้าเว็บ เมื่อโปรโมชั่นตั้งค่าแจกของแถมตามจำนวนสินค้า (distributionMode === 'per_item') หรือมีเพดานสูงสุด (maxPerBill)
-    47. ปัญหา: แท็บบิลที่กำลังดำเนินการหรือเสร็จแล้วค้างบนหน้าจอ POS ข้าม Session หรือมีแท็บซ้ำซ้อน (Duplicate Tabs) เช่น บิลเดิมเปิดซ้อนกัน 2 แท็บ
-        วิธีแก้: 
-        1) เพิ่ม Deduplication Guard ใน `filterValidDraftTabs` (`staffPosDraftService.js`) โดยใช้ Set สกัดคีย์ `docId` และ `orderId` ป้องกันไม่ให้มีแท็บบิลเดียวกันเปิดซ้ำกันเกิน 1 แท็บ
-        2) เพิ่ม Reactive Auto-Prune Effect ใน `usePosState.js` ดักฟังสัญญาณ `storage` และอีเวนต์ `dh_recent_orders_updated` เพื่อตรวจเทียบรายการแท็บปัจจุบันกับออเดอร์ที่เสร็จแล้ว (approved, completed, paid, cancelled, void) และคัดออกให้อัตโนมัติทันทีโดยไม่รบกวนบิลที่กำลังเปิดขายอยู่
-        3) เพิ่มการ Destructure `closeTab` ใน `usePosActions.js` เพื่อความเสถียร 100% ในจังหวะปิดบิล [สถานะ: ส่งมอบแล้ว]
     48. ปัญหา: ในตารางบิลและโมดอลรายละเอียด ออเดอร์จากหน้าเว็บที่มีการแนบสลิปเข้ามาแล้ว (`DH-TEMP-...`) ถูกเหมารวมตัดสินว่าเป็น 'ฉบับร่าง (Draft)' เนื่องจากเงื่อนไขเดิมตรวจจับเพียง `String(orderId).startsWith('DH-TEMP-')` ทำให้สถานะไม่ตรงกับหน้าเว็บลูกค้าที่ขึ้น 'รอตรวจสอบสลิป'
         วิธีแก้: 
         1) ใน `OrderTableRow.jsx` และ `OrderDetailModal.jsx` เพิ่มตัวแปร `isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && (hasSlip || paymentStat === 'pending_verification' || orderStat === 'pending_payment_verification')`
         2) อัปเดต `isDraft` ให้คัดแยก `!isAwaitingSlip` และจำกัดการเช็ค `DH-TEMP-` เฉพาะบิลที่ไม่ใช่ออเดอร์หน้าเว็บ (`!isWebOrder`)
         3) เพิ่มการแสดงผลป้ายสถานะ 'รอตรวจสอบสลิป ⌛' สีน้ำเงินคมชัด เพื่อให้เจ้าหน้าที่ในหลังบ้านแยกแยะออเดอร์ใหม่จากลูกค้าหน้าเว็บได้อย่างถูกต้องแม่นยำ [สถานะ: ส่งมอบแล้ว]
+    49. ปัญหา: แถบแท็บบิลที่กำลังดำเนินการด้านบนของหน้า POS มีขนาดกว้างเกินไป เปลืองเนื้อที่จากไอคอนใบเสร็จ {$} และตรา Draft ทำให้เมื่อมีบิลเปิดหลายใบ แท็บจะล้นจนมองไม่เห็นแท็บทั้งหมดและปุ่ม 'เปิดบิลใหม่' ถูกดันตกขอบ
+        วิธีแก้: 
+        1) ใน `PosHeader.jsx` ถอดกล่องไอคอน Receipt และตรา 'Draft' ออก 100% เพื่อกระชับพื้นที่ความกว้าง
+        2) เพิ่มระบบ Responsive Auto-Compact (`isCompact = safeCartTabs.length >= 4`): เมื่อมีแท็บตั้งแต่ 4 แท็บขึ้นไป ระบบจะสลับไปแสดงเฉพาะหมายเลขบิล (`orderLabel`) พร้อมลด padding ทันที ทำให้ประหยัดพื้นที่หน้าจอได้มากกว่าเท่าตัว
+    50. ปัญหา: ค่าจัดส่ง ฿60 จากหน้าเว็บหลุดหายเมื่อดึงเข้า POS (ทำให้ยอดสุทธิขาดไป 60 บาท), ออเดอร์หน้าเว็บที่ยังไม่มีเจ้าหน้าที่รับงานไม่แสดงป้ายเตือนที่เด่นชัด, และสถานะการจัดส่งแสดงเป็น 'รับหน้าร้าน' ทั้งที่เลือกส่งพัสดุ
+        วิธีแก้: 
+        1) ใน `dh-frontend/src/firebase/checkout/checkoutSubmitService.js` บันทึก `shippingFee: calculatedPrices.shippingCost`, `fulfillmentType: 'Delivery'`, และ `courier` ไว้ที่ root ของ Order Document
+        2) ใน `dh-backoffice-react/src/components/billing/pos/hooks/usePosState.js` สกัด `draftShippingFee` และ `draftCourier` จาก `initialDraft.shippingFee ?? initialDraft.shippingCost ?? initialDraft.totals?.shippingCost ?? initialDraft.totals?.shipping ?? 0` ทำให้ POS โหลดค่าจัดส่ง ฿60 และยอดชำระสุทธิครบถ้วน 100%
+        3) ใน `OrderTableRow.jsx` และ `OrderDetailModal.jsx` ปรับเงื่อนไขให้แสดง '🔴ไม่มีผู้รับงาน' ด้วยตัวอักษรสีเหลืองเด่นชัด (`text-yellow-400 font-black`) เมื่อเป็นออเดอร์หน้าเว็บที่ยังไม่มีเจ้าหน้าที่รับงาน และปรับการตรวจจับ `isDelivery` ให้ครอบคลุมทุกกรณีที่เลือกวิธีจัดส่งที่ไม่ใช่ pickup หรือมีค่าส่ง > 0 [สถานะ: ส่งมอบแล้ว]
+    51. ปัญหา: ในหน้า POS เมื่อกด 'แก้ไขบิล' จากหน้าต่างรายละเอียด (OrderDetailModal): 1) กล่องวิธีการชำระเงินและรูปภาพสลิปแสดงความว่างเปล่า 2) แท็บบิลซ้ำซ้อนกันมั่วระหว่างเลขเต็มและเลขย่อ 3) ระบบไม่สลับไปยังแท็บของบิลที่เลือก
+        วิธีแก้: 
+        1) ใน `PaymentMethods.jsx` เพิ่มการตรวจจับ Case-Insensitive (`String(activeTab.paymentMethod || '').toLowerCase() === 'transfer'` และ `'cash'`) เนื่องจากหน้าเว็บส่ง `paymentMethod: 'transfer'` (พิมพ์เล็ก) ทำให้เงื่อนไขเดิมหลุดและไม่ยอมเรนเดอร์แผงข้อมูลการโอนเงินและสลิป
+        2) ใน `usePosState.js` แก้ไขการกำหนด `targetTabId = newTab.id` ให้ครอบคลุมทุกกรณี (รวมถึงเคสที่ reuse emptyTabIndex) และสกัด `draftPaymentMethod` ให้ปรับเป็นมาตรฐาน Title Case ('Transfer'/'Cash') ส่งผลให้ `setActiveTabId` สลับไปยังแท็บของบิลที่เปิดใหม่อย่างแม่นยำ 100%
+        3) ใน `staffPosDraftService.js` ฟังก์ชัน `filterValidDraftTabs` ปรับการ deduplication ให้ map normalize `DH-TEMP-` ตั้งแต่ก่อนเช็ค key ทำให้แท็บเลขยาว `DH-TEMP-261019-122606-7625` และเลขสั้น `DH-TEMP-7625` ยุบรวมเป็นแท็บเดียวกัน ไม่เกิดปัญหาบิลซ้ำซ้อน [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

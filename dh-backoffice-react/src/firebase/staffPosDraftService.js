@@ -10,6 +10,16 @@ export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
   if (!Array.isArray(tabs)) return [];
   const seenKeys = new Set();
   return tabs
+    .map((t) => {
+      if (t.orderId && String(t.orderId).startsWith('DH-TEMP-')) {
+        const cleanOrderId = String(t.orderId).replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1');
+        const cleanDocId = t.docId ? String(t.docId).replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1') : t.docId;
+        if (cleanOrderId !== t.orderId || cleanDocId !== t.docId) {
+          return { ...t, orderId: cleanOrderId, docId: cleanDocId };
+        }
+      }
+      return t;
+    })
     .filter((t) => {
       if (!t || typeof t !== 'object' || !t.id) return false;
       const stat = (
@@ -35,8 +45,8 @@ export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
         if (tDocId && finishedOrderIdsSet.has(tDocId)) return false;
       }
 
-      // 🛡️ Deduplication Guard: Never allow duplicate tabs with same non-temporary orderId or docId
-      const dedupKey = t.docId ? `doc_${t.docId}` : (t.orderId && !String(t.orderId).startsWith('DH-TEMP-') ? `order_${t.orderId}` : null);
+      // 🛡️ Deduplication Guard: Never allow duplicate tabs with same orderId or docId (including normalized DH-TEMP)
+      const dedupKey = t.docId ? `doc_${t.docId}` : (t.orderId ? `order_${t.orderId}` : null);
       if (dedupKey) {
         if (seenKeys.has(dedupKey)) return false;
         seenKeys.add(dedupKey);
@@ -47,18 +57,8 @@ export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
         t.customer ||
         t.walkInName ||
         t.docId ||
-        (t.orderId && !String(t.orderId).startsWith('DH-TEMP-'))
+        t.orderId
       );
-    })
-    .map((t) => {
-      if (t.orderId && String(t.orderId).startsWith('DH-TEMP-')) {
-        const cleanOrderId = String(t.orderId).replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1');
-        const cleanDocId = t.docId ? String(t.docId).replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1') : t.docId;
-        if (cleanOrderId !== t.orderId || cleanDocId !== t.docId) {
-          return { ...t, orderId: cleanOrderId, docId: cleanDocId };
-        }
-      }
-      return t;
     });
 };
 

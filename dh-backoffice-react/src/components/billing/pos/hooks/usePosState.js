@@ -197,12 +197,23 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
 
         const draftOrderId = initialDraft.orderId ? String(initialDraft.orderId) : null;
         const draftDocId = initialDraft.id ? String(initialDraft.id) : null;
+        const normalizeId = (id) => String(id || '').replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1');
+        const normDraftOrderId = normalizeId(draftOrderId);
+        const normDraftDocId = normalizeId(draftDocId);
+
         const isWebOrder = Boolean(initialDraft.isWebOrder || initialDraft.channel === 'storefront' || initialDraft.source === 'storefront');
         const effectiveSlip = initialDraft.paymentSlipUrl || initialDraft.slipUrl || initialDraft.slipImage || '';
         const promoFromDraft = (Array.isArray(initialDraft.appliedPromotions) && initialDraft.appliedPromotions.length > 0)
             ? initialDraft.appliedPromotions[0]
             : (initialDraft.appliedPromotion || null);
         const promoDiscountFromDraft = initialDraft.promoDiscount ?? initialDraft.totals?.discount ?? initialDraft.calculationLog?.discountAmount ?? (promoFromDraft?.discountValue ?? 0);
+        const draftShippingFee = Number(initialDraft.shippingFee ?? initialDraft.shippingCost ?? initialDraft.totals?.shippingCost ?? initialDraft.totals?.shipping ?? 0);
+        const draftCourier = initialDraft.courier || initialDraft.shippingMethod || (draftShippingFee > 0 ? 'จัดส่งเอกชน' : 'KEX');
+        const draftFulfillment = initialDraft.fulfillmentType || ((initialDraft.shippingMethod === 'pickup' || (initialDraft.shippingMethod || '').includes('รับหน้าร้าน')) ? 'StorePickup' : (draftShippingFee > 0 || initialDraft.shippingMethod ? 'Delivery' : 'StorePickup'));
+        
+        // Normalize payment method to standard Title Case (Transfer or Cash)
+        const rawMethod = String(initialDraft.paymentMethod || '').toLowerCase();
+        const draftPaymentMethod = rawMethod === 'cash' ? 'Cash' : 'Transfer';
 
         // 👤 ดักจับชื่อเจ้าหน้าที่คนแรกที่เปิดบิล (First-Touch Staff Ownership)
         const currentStaffUser = auth?.currentUser;
@@ -232,11 +243,14 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
         setCartTabs(prev => {
             const validPrev = Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : [];
 
-            // 🔍 1. ค้นหาแท็บเดิมในระบบที่มีอยู่แล้ว (เช็คทั้ง orderId, docId, และ id)
+            // 🔍 1. ค้นหาแท็บเดิมในระบบที่มีอยู่แล้ว (เช็คทั้ง orderId, docId, และ id รวมถึง normalized id)
             const matchedExistingIndex = validPrev.findIndex(tab => {
-                if (draftOrderId && tab.orderId === draftOrderId) return true;
-                if (draftDocId && (tab.docId === draftDocId || tab.id === draftDocId)) return true;
-                if (draftOrderId && tab.id === draftOrderId) return true;
+                const normTabOrderId = normalizeId(tab.orderId);
+                const normTabDocId = normalizeId(tab.docId || tab.id);
+
+                if (draftOrderId && (tab.orderId === draftOrderId || normTabOrderId === normDraftOrderId)) return true;
+                if (draftDocId && (tab.docId === draftDocId || tab.id === draftDocId || normTabDocId === normDraftDocId)) return true;
+                if (draftOrderId && (tab.id === draftOrderId || normTabDocId === normDraftOrderId)) return true;
                 return false;
             });
 
@@ -264,7 +278,7 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                     paymentSlipUrl: effectiveSlip || existingTab.paymentSlipUrl || '',
                     billNote: initialDraft.billNote || existingTab.billNote || '',
                     priceMode: initialDraft.priceMode || existingTab.priceMode || 'wholesale',
-                    shippingFee: initialDraft.shippingFee ?? existingTab.shippingFee ?? 0,
+                    shippingFee: (draftShippingFee > 0 ? draftShippingFee : (initialDraft.shippingFee ?? existingTab.shippingFee ?? 0)),
                     otherFeeAmount: initialDraft.otherFeeAmount ?? existingTab.otherFeeAmount ?? 0,
                     otherFeeName: initialDraft.otherFeeName || existingTab.otherFeeName || '',
                     vatType: initialDraft.vatType || existingTab.vatType || 'exempt',
@@ -278,10 +292,10 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                     appliedPromoDetails: promoFromDraft || existingTab.appliedPromoDetails || null,
                     autoPromoEnabled: isWebOrder ? false : (initialDraft.autoPromoEnabled ?? existingTab.autoPromoEnabled ?? false),
                     autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : false,
-                    paymentMethod: initialDraft.paymentMethod || existingTab.paymentMethod || 'Transfer',
+                    paymentMethod: draftPaymentMethod || existingTab.paymentMethod || 'Transfer',
                     bankAccount: initialDraft.bankAccount || existingTab.bankAccount || 'KBANK',
-                    fulfillmentType: initialDraft.fulfillmentType || existingTab.fulfillmentType || 'Delivery',
-                    courier: initialDraft.courier || existingTab.courier || 'KEX',
+                    fulfillmentType: draftFulfillment || existingTab.fulfillmentType || 'Delivery',
+                    courier: draftCourier || existingTab.courier || 'KEX',
                     receiptFormat: initialDraft.receiptFormat || existingTab.receiptFormat || 'short',
                     transactionRef: initialDraft.transactionRef || existingTab.transactionRef || '',
                     transferDateTime: initialDraft.transferDateTime || existingTab.transferDateTime || ''
@@ -316,7 +330,7 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 paymentSlipUrl: effectiveSlip,
                 billNote: initialDraft.billNote || '',
                 priceMode: initialDraft.priceMode || 'wholesale',
-                shippingFee: initialDraft.shippingFee || 0,
+                shippingFee: draftShippingFee > 0 ? draftShippingFee : (initialDraft.shippingFee || 0),
                 otherFeeAmount: initialDraft.otherFeeAmount || 0,
                 otherFeeName: initialDraft.otherFeeName || '',
                 vatType: initialDraft.vatType || 'exempt',
@@ -330,10 +344,10 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 appliedPromoDetails: promoFromDraft || null,
                 autoPromoEnabled: isWebOrder ? false : (initialDraft.autoPromoEnabled !== undefined ? initialDraft.autoPromoEnabled : true),
                 autoShippingEnabled: initialDraft.autoShippingEnabled !== undefined ? initialDraft.autoShippingEnabled : false,
-                paymentMethod: initialDraft.paymentMethod || 'Transfer',
+                paymentMethod: draftPaymentMethod || 'Transfer',
                 bankAccount: initialDraft.bankAccount || 'KBANK',
-                fulfillmentType: initialDraft.fulfillmentType || 'Delivery',
-                courier: initialDraft.courier || 'KEX',
+                fulfillmentType: draftFulfillment,
+                courier: draftCourier,
                 receiptFormat: initialDraft.receiptFormat || 'short',
                 transactionRef: initialDraft.transactionRef || '',
                 transferDateTime: initialDraft.transferDateTime || ''
@@ -343,9 +357,11 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
             if (emptyTabIndex !== -1) {
                 const newPrev = [...validPrev];
                 newPrev[emptyTabIndex] = newTab;
+                targetTabId = newTab.id; // 🔑 รับประกันว่า focus ไปที่ newTab.id แม้จะ reuse ช่องว่างเดิม
                 return newPrev;
             }
 
+            targetTabId = newTab.id;
             return [...validPrev, newTab];
         });
 
