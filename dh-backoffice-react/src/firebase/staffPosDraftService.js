@@ -33,7 +33,8 @@ export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
         stat === 'completed' ||
         stat === 'paid' ||
         stat === 'cancelled' ||
-        stat === 'void';
+        stat === 'void' ||
+        stat === 'superseded';
 
       if (isFinished) return false;
 

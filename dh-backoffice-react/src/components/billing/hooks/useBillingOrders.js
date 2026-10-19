@@ -139,6 +139,7 @@ export default function useBillingOrders() {
     // Derived filtered orders
     const filteredOrders = enrichedOrders.filter(o => {
         const stat = (o.orderStatus || o.status || '').toLowerCase();
+        if (stat === 'superseded') return false;
         const payStat = (o.paymentStatus || '').toLowerCase();
 
         const isCancelled = stat === 'cancelled' || stat === 'void';

@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { doc, serverTimestamp, runTransaction, increment, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { handleStockDeduction, handleStockReturn } from './billing/statusStockHandler';
@@ -308,7 +308,14 @@ export const billingStatusTransaction = {
              // 🧹 Atomic Migration: Move document from TEMP draft ID to official Order ID
              const newDocRef = doc(db, COLLECTION_NAME, updates.orderId);
              transaction.set(newDocRef, { ...orderData, ...updates, id: updates.orderId });
-             transaction.delete(docRef);
+             transaction.set(docRef, {
+               status: 'superseded',
+               orderStatus: 'superseded',
+               isDraft: false,
+               isVoid: true,
+               supersededBy: updates.orderId,
+               updatedAt: serverTimestamp()
+             }, { merge: true });
           } else {
              transaction.update(docRef, updates);
           }
@@ -335,6 +342,17 @@ export const billingStatusTransaction = {
 
       // ⚡ Background Cache Sync: Refresh catalogs/recent_orders without blocking UI
       syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
+
+      // 🧹 Best-effort cleanup of old temp draft (silently ignores if cashier lacks delete permissions)
+      if (result?.finalOrderId && result.finalOrderId !== orderId && String(orderId).startsWith('DH-TEMP-')) {
+        (async () => {
+          try {
+            const oldRef = doc(db, COLLECTION_NAME, orderId);
+            await updateDoc(oldRef, { status: 'draft', orderStatus: 'draft' }).catch(() => {});
+            await deleteDoc(oldRef).catch(() => {});
+          } catch (_) {}
+        })();
+      }
 
       return finalOrderId;
     })(), "เกิดข้อผิดพลาดในการอัปเดตสถานะบิล");

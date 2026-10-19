@@ -328,7 +328,10 @@ service cloud.firestore {
           )
         )
       );
-      allow delete: if isManagerOrAdmin() && resource.data.get('status', resource.data.get('orderStatus', '')) in ['draft', 'pending', 'Draft', 'Pending'];
+      allow delete: if (isManagerOrAdmin() || isStaff()) && (
+        resource.data.get('status', resource.data.get('orderStatus', '')) in ['draft', 'pending', 'Draft', 'Pending', 'pending_payment', 'pending_payment_verification', 'superseded'] ||
+        String(orderId).startsWith('DH-TEMP-')
+      );
     }
 
     match /credit_transactions/{txId} {

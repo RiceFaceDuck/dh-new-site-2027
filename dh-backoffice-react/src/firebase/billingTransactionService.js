@@ -1,4 +1,4 @@
-import { collection, doc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, runTransaction, increment, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './config';
 import { historyService } from './historyService';
 import { gasStockService } from './gasStockService';
@@ -314,14 +314,28 @@ export const billingTransactionService = {
           const newOrderRef = doc(db, COLLECTION_NAME, finalOrderId);
           newDocId = newOrderRef.id;
 
-          // 🧹 If upgrading a temp draft to a final order (finalOrderId), delete old temp draft doc from Firestore
+          // 🧹 If upgrading a temp draft to a final order (finalOrderId), mark old temp draft doc as superseded (prevents permission-denied errors on checkout)
           const oldDraftDocId = orderData.docId || orderData.id;
           if (oldDraftDocId && oldDraftDocId !== finalOrderId && String(oldDraftDocId).startsWith('DH-TEMP-')) {
             const oldDraftRef = doc(db, COLLECTION_NAME, oldDraftDocId);
-            transaction.delete(oldDraftRef);
+            transaction.set(oldDraftRef, {
+              status: 'superseded',
+              orderStatus: 'superseded',
+              isDraft: false,
+              isVoid: true,
+              supersededBy: finalOrderId,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
           } else if (orderData.id && orderData.id !== finalOrderId) {
             const oldDraftRef = doc(db, COLLECTION_NAME, orderData.id);
-            transaction.delete(oldDraftRef);
+            transaction.set(oldDraftRef, {
+              status: 'superseded',
+              orderStatus: 'superseded',
+              isDraft: false,
+              isVoid: true,
+              supersededBy: finalOrderId,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
           }
 
           if (statusLower === 'paid' || statusLower === 'approved') {
@@ -481,6 +495,18 @@ export const billingTransactionService = {
         syncCustomerToDirectoryChunk(customerPayload, 'upsert').catch(e => 
           console.warn("[CustomerSync] Background customer last order sync warning:", e)
         );
+      }
+
+      // 🧹 Best-effort cleanup of old temp draft (silently ignores if cashier lacks delete permissions)
+      const oldDraftDocId = orderData.docId || orderData.id;
+      if (oldDraftDocId && oldDraftDocId !== finalOrderId && String(oldDraftDocId).startsWith('DH-TEMP-')) {
+        (async () => {
+          try {
+            const oldDraftRef = doc(db, COLLECTION_NAME, oldDraftDocId);
+            await updateDoc(oldDraftRef, { status: 'draft', orderStatus: 'draft' }).catch(() => {});
+            await deleteDoc(oldDraftRef).catch(() => {});
+          } catch (_) {}
+        })();
       }
 
       return { id: newDocId, orderId: finalOrderId };

@@ -159,7 +159,12 @@ export const billingQueryService = {
 
       // Merge Firestore results with local cached matches
       const combined = [...results, ...cachedMatches];
-      const uniqueResults = combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
+      const uniqueResults = combined
+        .filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i)
+        .filter(o => {
+          const stat = String(o.orderStatus || o.status || '').toLowerCase();
+          return stat !== 'superseded';
+        });
       return uniqueResults.length > 0 ? uniqueResults : null;
     } catch (error) {
       console.error("🔥 Error searching orders:", error);

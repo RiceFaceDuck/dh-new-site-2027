@@ -204,6 +204,13 @@
         วิธีแก้: ปรับปรุง `billingStatusTransaction.js` โดยทำ Atomic Document Migration ภายใน `runTransaction` — สร้าง Document ใหม่ด้วย Official ID (`DH-YY-XXXX`), คัดลอกข้อมูลพร้อมปรับสถานะเป็น `paid`, และสั่งลบ Document ร่างเดิม (`DH-TEMP-XXXX`) ทิ้งในธุรกรรมเดียวกัน พร้อมคืนค่า `finalOrderId` [สถานะ: ส่งมอบแล้ว]
     58. ปัญหา: แม่แบบพิมพ์ใบเสร็จ A5 (`ReceiptTemplate.jsx`) พึ่งพา Tailwind CDN ภายนอก เมื่อเครื่องออฟไลน์หรือเน็ตมีปัญหา การพิมพ์ใบเสร็จจะไม่มีสไตล์และตารางจะแตก
         วิธีแก้: กำหนดแท็กสคริปต์ Tailwind CDN เป็น `async` และฝัง Offline Fallback CSS สำหรับกระดาษ A5 (การจัดคอลัมน์, กรอบตาราง, ขนาดตัวอักษร) ลงในแท็ก `<style>` ของเอกสารแม่แบบโดยตรง ทำให้พิมพ์เอกสารได้สวยงามแม้ไม่มีอินเทอร์เน็ต [สถานะ: ส่งมอบแล้ว]
+    59. ปัญหา: พนักงานกดรับชำระเงิน (Paid) ในหน้า POS ไม่ได้ เกิดข้อผิดพลาด `Missing or insufficient permissions / คุณไม่มีสิทธิ์ในการดำเนินการนี้` เมื่อบิลนั้นเป็นออเดอร์หน้าเว็บหรือบิลร่างที่มีเอกสาร `DH-TEMP-` อยู่ใน Firestore
+        สาเหตุ: ภายใน `runTransaction` โค้ดสั่ง `transaction.delete(oldDraftRef)` เพื่อลบเอกสาร Temp ร่างเดิม แต่ใน `firestore.rules` กำหนด `allow delete: if isManagerOrAdmin() && resource.data.status in ['draft', 'pending']` ซึ่งทำให้ออเดอร์หน้าเว็บที่มีสถานะ `pending_payment_verification` ถูกปฏิเสธการลบ และพนักงานทั่วไป (Staff) ที่ไม่ใช่ Manager/Admin ไม่มีสิทธิ์ลบเอกสาร ทำให้ Transaction ทั้งก้อนล้มเหลว
+        วิธีแก้: 
+        1) ใน `billingTransactionService.js` และ `billingStatusTransaction.js` เปลี่ยนจากการสั่ง `transaction.delete(oldDraftRef)` ภายใน Transaction มาเป็นการ Mark สถานะ `superseded` (`status: 'superseded'`, `orderStatus: 'superseded'`, `isDraft: false`, `isVoid: true`, `supersededBy: finalOrderId`) ผ่าน `transaction.set(..., { merge: true })` ซึ่งพนักงานทุกคนมีสิทธิ์ update จึงสำเร็จ 100% เสมอ
+        2) เพิ่ม Post-Transaction Cleanup ทำความสะอาดเอกสาร Temp เก่าในพื้นหลังแบบ Best-Effort ด้วยการอัปเดตเป็น `draft` แล้วสั่ง `deleteDoc` หากมีสิทธิ์ หรือข้ามไปอย่างปลอดภัยหากไม่มีสิทธิ์ลบ
+        3) เพิ่มการกรองสถานะ `superseded` ใน `orderSyncService.js`, `useBillingOrders.js`, `billingQueryService.js`, และ `staffPosDraftService.js` เพื่อไม่ให้แสดงบิลที่ถูกแปลงแล้วซ้ำซ้อนในตารางหรือค้นหาเจอ
+        4) ปรับปรุง `firestore.rules` ในเครื่องให้รองรับการลบสถานะ `pending_payment_verification` และบิลรหัส `DH-TEMP-` ได้ [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

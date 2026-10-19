@@ -32,7 +32,13 @@ export const syncRecentOrdersCatalog = async () => {
         return { success: true, count: 0 };
       }
 
-    const bundledOrders = snapshot.docs.map(docSnap => {
+    const bundledOrders = snapshot.docs
+      .filter(docSnap => {
+        const d = docSnap.data();
+        const stat = String(d.status || d.orderStatus || '').toLowerCase();
+        return stat !== 'superseded';
+      })
+      .map(docSnap => {
       const d = docSnap.data();
       
       // Normalize timestamp to epoch ms for lightweight storage
