@@ -3,7 +3,7 @@ import { db } from './config';
 import { historyService } from './historyService';
 import { handleStockDeduction, handleStockReturn } from './billing/statusStockHandler';
 import { handleSalesStatsUpdate } from './billing/statusSalesHandler';
-import { handleWalletRefundAndClawback, handlePointsEarned } from './billing/statusWalletHandler';
+import { handleWalletRefundAndClawback, handlePointsEarned, handleWalletDeduction } from './billing/statusWalletHandler';
 import { handlePromoFreebieReversal } from './billing/statusPromoHandler';
 import { getCreditPreloadRefs } from './credit/creditActionService';
 import { withToastError } from '../utils/safeAsync';
@@ -209,6 +209,7 @@ export const billingStatusTransaction = {
              handleSalesStatsUpdate(transaction, db, totalSaleAmount, orderData, false);
 
              if (userSnap && userSnap.exists()) {
+                 handleWalletDeduction(transaction, db, orderId, orderData, userSnap, userRef, actualActorUid, updates);
                  await handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates, creditPreloadSnaps);
              }
              

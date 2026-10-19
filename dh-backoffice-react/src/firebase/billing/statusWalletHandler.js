@@ -37,7 +37,10 @@ export const handleWalletRefundAndClawback = async (
             updates.pendingCredits = 0;
         }
 
-        if (refundAmount > 0) {
+        // 🛡️ Security Invariant Guard: Only refund wallet if it was ACTUALLY deducted on the order
+        const wasWalletDeducted = Boolean(orderData.isWalletDeducted);
+
+        if (wasWalletDeducted && refundAmount > 0) {
             // ✅ [SECURITY FIX] Refund to walletBalance (Cash) instead of creditPoints (Points)
             const currentWallet = Number(userSnap.data()?.walletBalance || 0);
             const balanceAfter = Math.round((currentWallet + refundAmount) * 100) / 100;
@@ -60,6 +63,8 @@ export const handleWalletRefundAndClawback = async (
                 operatorUid: actualActorUid || 'System',
                 timestamp: serverTimestamp()
             });
+
+            updates.isWalletDeducted = false;
         }
 
         if (clawbackPoints > 0) {
@@ -144,3 +149,58 @@ export const handlePointsEarned = async (
         throw error;
     }
 };
+
+/**
+ * 🛡️ Deduct Wallet when upgrading order from Draft to Paid/Approved
+ */
+export const handleWalletDeduction = (
+    transaction,
+    db,
+    orderId,
+    orderData,
+    userSnap,
+    userRef,
+    actualActorUid,
+    updates
+) => {
+    try {
+        let walletToUse = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+        walletToUse = isNaN(walletToUse) ? 0 : Math.max(0, walletToUse);
+        const wasAlreadyDeducted = Boolean(orderData.isWalletDeducted);
+
+        if (walletToUse > 0 && !wasAlreadyDeducted) {
+            const currentWallet = Number(userSnap.data()?.walletBalance || 0);
+            if (currentWallet < walletToUse) {
+                throw new Error(`ยอดเงินในกระเป๋า (Wallet) ของลูกค้าไม่เพียงพอ (คงเหลือ ${currentWallet.toLocaleString()} บาท, ต้องใช้ ${walletToUse.toLocaleString()} บาท)`);
+            }
+            const balanceAfter = Math.max(0, Math.round((currentWallet - walletToUse) * 100) / 100);
+            const resolvedOrderId = updates.orderId || orderId;
+            const txId = `TXW_POS_${resolvedOrderId}`;
+            const walletTxRef = doc(db, getCollectionPath('users'), userSnap.id, 'wallet_transactions', txId);
+
+            transaction.update(userRef, {
+                walletBalance: balanceAfter,
+                lastWalletTxId: txId,
+                updatedAt: serverTimestamp()
+            });
+
+            transaction.set(walletTxRef, {
+                transactionId: txId,
+                type: 'SPEND',
+                amount: walletToUse,
+                balanceAfter: balanceAfter,
+                status: 'SUCCESS',
+                note: `หักจาก DH ค้างยอดสำหรับชำระค่าสินค้า (บิล ${resolvedOrderId})`,
+                operatorUid: actualActorUid || 'System',
+                timestamp: serverTimestamp()
+            });
+
+            updates.isWalletDeducted = true;
+            updates.walletUsedAmount = walletToUse;
+        }
+    } catch (error) {
+        console.error("🔥 Error in handleWalletDeduction:", error);
+        throw error;
+    }
+};
+

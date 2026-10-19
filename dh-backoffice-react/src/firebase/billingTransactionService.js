@@ -172,7 +172,14 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   if (statusLower === 'paid' && Math.abs(finalSecureNetTotal - reportedNetTotal) > 2) {
     console.warn("POS Price mismatch detected. Using secure server-side price.");
   }
-  return { finalSecureNetTotal, verifiedItems };
+  return { 
+    finalSecureNetTotal, 
+    verifiedItems,
+    calculatedSubtotal: calculatedPrices.subtotal || 0,
+    effectiveTotalDiscount: calculatedPrices.discountAmount || 0,
+    calculatedShipping: shippingCost || 0,
+    calculatedVat: vatResult.vatAmount || 0
+  };
 }
 
 function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps = null) {
@@ -252,7 +259,14 @@ export const billingTransactionService = {
           const defaultBuffer = settingsSnap.exists() ? (settingsSnap.data().defaultBufferStock ?? 2) : 2;
           const canBypassBuffer = Boolean(orderData?.canBypassBuffer || orderData?.canBypassBufferStock);
           const updates = validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower, canBypassBuffer);
-          const { finalSecureNetTotal, verifiedItems } = await calculateSecureTotal(orderData, productSnaps, statusLower);
+          const { 
+            finalSecureNetTotal, 
+            verifiedItems,
+            calculatedSubtotal,
+            effectiveTotalDiscount,
+            calculatedShipping,
+            calculatedVat
+          } = await calculateSecureTotal(orderData, productSnaps, statusLower);
           const { walletToUse, earnedPoints } = calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps);
 
           // 4. Perform Updates (WRITES)

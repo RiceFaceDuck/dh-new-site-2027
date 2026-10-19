@@ -51,7 +51,7 @@ export const billingDeleteService = {
       }
 
       // 🛡️ Wallet Refund Guard: Only refund wallet if it was actually deducted on the order
-      const shouldRefundWallet = (orderData.isWalletDeducted !== false) && walletUsed > 0 && customerUid && customerUid !== 'WALK-IN';
+      const shouldRefundWallet = Boolean(orderData.isWalletDeducted) && walletUsed > 0 && customerUid && customerUid !== 'WALK-IN';
       if (shouldRefundWallet) {
          await runTransaction(db, async (transaction) => {
              const userRef = doc(db, getCollectionPath('users'), customerUid);

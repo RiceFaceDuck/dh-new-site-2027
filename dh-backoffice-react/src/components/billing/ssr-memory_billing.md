@@ -188,7 +188,14 @@
         วิธีแก้: 
         1) ใน `PaymentMethods.jsx` เพิ่มการตรวจจับ Case-Insensitive (`String(activeTab.paymentMethod || '').toLowerCase() === 'transfer'` และ `'cash'`) เนื่องจากหน้าเว็บส่ง `paymentMethod: 'transfer'` (พิมพ์เล็ก) ทำให้เงื่อนไขเดิมหลุดและไม่ยอมเรนเดอร์แผงข้อมูลการโอนเงินและสลิป
         2) ใน `usePosState.js` แก้ไขการกำหนด `targetTabId = newTab.id` ให้ครอบคลุมทุกกรณี (รวมถึงเคสที่ reuse emptyTabIndex) และสกัด `draftPaymentMethod` ให้ปรับเป็นมาตรฐาน Title Case ('Transfer'/'Cash') ส่งผลให้ `setActiveTabId` สลับไปยังแท็บของบิลที่เปิดใหม่อย่างแม่นยำ 100%
-        3) ใน `staffPosDraftService.js` ฟังก์ชัน `filterValidDraftTabs` ปรับการ deduplication ให้ map normalize `DH-TEMP-` ตั้งแต่ก่อนเช็ค key ทำให้แท็บเลขยาว `DH-TEMP-261019-122606-7625` และเลขสั้น `DH-TEMP-7625` ยุบรวมเป็นแท็บเดียวกัน ไม่เกิดปัญหาบิลซ้ำซ้อน [สถานะ: ส่งมอบแล้ว]
+    52. ปัญหา: แคชเชียร์หรือระบบสร้างบิลออนไลน์ล้มเหลวทันทีด้วยข้อผิดพลาด `ReferenceError: calculatedSubtotal is not defined` ที่ `billingTransactionService.js`
+        วิธีแก้: ปรับปรุง `calculateSecureTotal` ให้คืนค่าสรุปยอดภาษีและส่วนลดที่คำนวณจริง (`calculatedSubtotal`, `effectiveTotalDiscount`, `calculatedShipping`, `calculatedVat`) พร้อม destructure ค่าตัวแปรออกมาอย่างครบถ้วนก่อนบันทึกลงก้อน `totals` ของเอกสารบิล [สถานะ: ส่งมอบแล้ว]
+    53. ปัญหา: กระเป๋าเงิน (Wallet) ของลูกค้าไม่ถูกหักเงินเมื่ออนุมัติบิลจากร่าง (Draft -> Paid) และเกิดการเสกเงินคืนเข้า Wallet ฟรีเมื่อยกเลิกหรือลบบิลร่างที่เคยระบุยอดหัก Wallet ไว้
+        วิธีแก้: 
+        1) ใน `statusWalletHandler.js` สร้างและ export `handleWalletDeduction` เพื่อหักเงิน Wallet ลูกค้าและสร้างรายการ `SPEND` ใน `wallet_transactions` เมื่อมีการเปลี่ยนสถานะเป็น paid/approved
+        2) ใน `billingStatusTransaction.js` เรียก `handleWalletDeduction` ในบล็อก `isConfirmingPayment`
+        3) ใน `statusWalletHandler.js` เพิ่ม Security Invariant Guard `wasWalletDeducted = Boolean(orderData.isWalletDeducted)` ใน `handleWalletRefundAndClawback` ป้องกันการคืนเงินเข้ากระเป๋าหากบิลนั้นยังไม่เคยตัดเงินจริง
+        4) ใน `billingDeleteService.js` ปรับ Guard ให้ตรวจ `Boolean(orderData.isWalletDeducted)` ป้องกันการคืนเงินผิดพลาดตอนลบบิลร่าง [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 
