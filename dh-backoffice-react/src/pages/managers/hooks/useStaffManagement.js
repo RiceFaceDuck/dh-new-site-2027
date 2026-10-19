@@ -135,10 +135,11 @@ export function useStaffManagement() {
       `คำเตือน: คุณกำลังจะลบ ${email} ออกจากระบบ ข้อมูลนี้จะไม่สามารถกู้คืนได้ ยืนยันหรือไม่?`,
       async () => {
         try {
-          await userService.deleteUser(uid, uid);
+          const currentAdminUid = auth.currentUser?.uid || 'system';
+          await userService.deleteUser(currentAdminUid, uid, { isStaffRemoval: true });
           
           // Log delete
-          await historyService.addLog('StaffManagement', 'Delete', uid, `ลบบัญชีพนักงาน ${email}`, auth.currentUser?.uid);
+          await historyService.addLog('StaffManagement', 'Delete', uid, `ลบบัญชีพนักงาน ${email}`, currentAdminUid);
 
           // Update React Query Cache directly
           queryClient.setQueryData(['staffList', 'all'], (old) => 
@@ -146,9 +147,8 @@ export function useStaffManagement() {
           );
           showToast('success', 'ลบพนักงานสำเร็จ');
         } catch (error) {
-    console.error("🔥 Error:", error);
-
-          showToast('error', 'ลบพนักงานล้มเหลว');
+          console.error("🔥 Error:", error);
+          showToast('error', error.message || 'ลบพนักงานล้มเหลว');
         }
       },
       true 

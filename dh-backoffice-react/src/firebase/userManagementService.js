@@ -183,7 +183,7 @@ export const restoreUser = async (adminId, targetUid) => {
     }
 };
 
-export const deleteUser = async (adminId, targetUid) => {
+export const deleteUser = async (adminId, targetUid, options = {}) => {
     try {
         const userRef = getUserDocRef(targetUid);
         
@@ -192,21 +192,37 @@ export const deleteUser = async (adminId, targetUid) => {
         if (userSnap.exists()) {
             const data = userSnap.data();
             const credits = Number(data.creditPoints || data.stats?.rewardPoints || data.walletBalance || 0);
-            if (credits > 0) {
+            // บล็อกเฉพาะกรณีไม่ใช่การปลดพนักงาน (ป้องกัน Orphan Data สำหรับลูกค้าทั่วไป)
+            if (!options.isStaffRemoval && credits > 0) {
                 throw new Error("ไม่อนุญาตให้ลบรายชื่อที่มีเครดิต/เงินค้างอยู่ในระบบ (Orphan Data Prevention)");
             }
         }
 
-        // 🗑️ Soft Delete & Anonymize (Preserves historic Order & Claim snapshot references)
-        await updateDoc(userRef, {
-            isDeleted: true,
-            status: 'deleted',
+        // 🗑️ Soft Delete & Demote Staff Access
+        const updatePayload = {
+            isStaff: false,
             isActive: false,
+            status: 'deleted',
+            isDeleted: true,
             deletedAt: serverTimestamp(),
             deletedBy: adminId || auth.currentUser?.uid || 'system'
-        });
+        };
+
+        // หากเป็นการลบพนักงาน ปลดสิทธิ์หลังบ้านกลับเป็นลูกค้าทั่วไป ไม่ให้เข้าถึงระบบจัดการ
+        if (options.isStaffRemoval) {
+            updatePayload.role = 'customer';
+            updatePayload.roles = ['Customer'];
+            updatePayload['metadata.staffRevokedAt'] = serverTimestamp();
+            updatePayload['metadata.staffRevokedBy'] = adminId || auth.currentUser?.uid || 'system';
+        }
+
+        await updateDoc(userRef, updatePayload);
         
-        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, `ลบบัญชีผู้ใช้ UID: ${targetUid} (Soft Delete สงวนประวัติบิล/เคลมเดิม)`, adminId || auth.currentUser?.uid);
+        const logActionText = options.isStaffRemoval 
+            ? `ปลดสิทธิ์และลบบัญชีพนักงาน UID: ${targetUid} (Soft Delete)`
+            : `ลบบัญชีผู้ใช้ UID: ${targetUid} (Soft Delete สงวนประวัติบิล/เคลมเดิม)`;
+            
+        await historyService.addLog('UserManagement', 'DeleteUser', targetUid, logActionText, adminId || auth.currentUser?.uid);
         
         // 🔒 Cascade deactivation for partners, ActivePartners, ads, and todos
         await runCascadeUserDeactivation(targetUid, adminId || auth.currentUser?.uid || 'system');
