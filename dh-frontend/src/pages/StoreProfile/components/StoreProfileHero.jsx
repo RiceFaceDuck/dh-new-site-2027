@@ -1,6 +1,7 @@
 import { useToast } from '../../../context/ToastContext';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 import { getRenderableImageUrl } from '../../../utils/imageUtils';
+import { Phone, MapPin, Share2 } from 'lucide-react';
 
 const StoreProfileHero = ({ partner }) => {
   const { showToast } = useToast();
@@ -44,24 +45,27 @@ const StoreProfileHero = ({ partner }) => {
           </div>
 
           {/* Profile Info */}
-          <div className="flex-1 text-center md:text-left pt-2">
+          <div className="flex-1 min-w-0 w-full text-center md:text-left pt-2">
             <h1 className="text-2xl md:text-4xl font-extrabold text-slate-800 tracking-tight mb-2">
               {name}
             </h1>
             <p className="text-brand font-medium text-sm md:text-lg mb-4">{role}</p>
             
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+            {/* Action Buttons (Balanced 3-Column Grid, Zero-Overflow) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full mt-2">
               {phone && (
                 <a 
                   href={`tel:${phone}`}
+                  title={`โทรติดต่อ: ${phone}`}
                   onClick={() => console.log('Track click contact')} // Should deduct partner credit in full system
-                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-brand hover:bg-brand-dark transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm border-b-[3px] border-emerald-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-full"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  โทรติดต่อร้าน ({phone})
+                  <span className="px-3 py-2 truncate text-center flex-1">
+                    โทรติดต่อร้าน
+                  </span>
+                  <span className="h-full w-10 sm:w-11 bg-white text-emerald-600 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
+                    <Phone size={16} className="group-hover:scale-110 transition-transform" />
+                  </span>
                 </a>
               )}
               {mapsUrl && (
@@ -69,16 +73,19 @@ const StoreProfileHero = ({ partner }) => {
                   href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-6 py-3 border-2 border-brand/20 text-sm font-medium rounded-xl text-brand bg-brand/5 hover:bg-brand hover:text-white transition-all shadow-xs hover:shadow-lg transform hover:-translate-y-0.5"
+                  title="นำทางด้วย Google Maps"
+                  className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs sm:text-sm border-b-[3px] border-sky-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-full"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  นำทางด้วย Google Maps
+                  <span className="px-3 py-2 truncate text-center flex-1">
+                    นำทางร้านค้า
+                  </span>
+                  <span className="h-full w-10 sm:w-11 bg-white text-sky-600 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
+                    <MapPin size={16} className="group-hover:scale-110 transition-transform" />
+                  </span>
                 </a>
               )}
               <button 
+                type="button"
                 onClick={() => {
                   if (navigator.share) {
                     navigator.share({ title: name, url: window.location.href });
@@ -87,12 +94,15 @@ const StoreProfileHero = ({ partner }) => {
                     showToast('คัดลอกลิงก์ร้านค้าแล้ว', 'success');
                   }
                 }}
-                className="inline-flex items-center justify-center px-6 py-3 border-2 border-slate-200 text-sm font-medium rounded-xl text-slate-600 bg-white hover:bg-slate-50 transition-all shadow-xs hover:shadow-lg transform hover:-translate-y-0.5"
+                title="แชร์ร้านค้านี้"
+                className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs sm:text-sm border-b-[3px] border-slate-900 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-full"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                แชร์ร้านค้านี้
+                <span className="px-3 py-2 truncate text-center flex-1">
+                  แชร์ร้านค้านี้
+                </span>
+                <span className="h-full w-10 sm:w-11 bg-white text-slate-700 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
+                  <Share2 size={16} className="group-hover:scale-110 transition-transform" />
+                </span>
               </button>
             </div>
           </div>
