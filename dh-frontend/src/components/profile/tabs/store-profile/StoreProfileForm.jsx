@@ -22,15 +22,18 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
     handleSaveStore
   } = useStoreProfile(storeData, setStoreData, user, appId, businessCardAd, fetchMyAds);
 
-  const { getUserCurrentLocation } = useGeolocation();
+  const { getUserCurrentLocation, isLocating } = useGeolocation();
 
   const handleGetLocation = async () => {
     try {
       const coords = await getUserCurrentLocation();
-      setStoreData({ ...storeData, latitude: coords.latitude, longitude: coords.longitude });
+      setStoreData(prev => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
+      showToast('ดึงพิกัดตำแหน่งปัจจุบันสำเร็จแล้วครับ 📍', 'success');
+      return coords;
     } catch (error) {
       console.error("🔥 Error:", error);
       showToast(error.message, 'error');
+      throw error;
     }
   };
 
@@ -126,6 +129,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           storeData={storeData} 
           setStoreData={setStoreData} 
           handleGetLocation={handleGetLocation} 
+          locationLoading={isLocating}
         />
 
         <div className="pt-6 border-t border-slate-200 flex justify-end">

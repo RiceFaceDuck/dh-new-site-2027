@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapPin, Search, CheckCircle2, Loader2, Info } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 
@@ -10,6 +10,36 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
   const { showToast } = useToast();
   const [resolvingName, setResolvingName] = useState(false);
   const [resolvedName, setResolvedName] = useState('');
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [justFetched, setJustFetched] = useState(false);
+  const successTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
+  }, []);
+
+  const isLoading = Boolean(locationLoading || internalLoading);
+
+  const onGetLocation = async () => {
+    if (isLoading) return;
+    setInternalLoading(true);
+    try {
+      if (handleGetLocation) {
+        await handleGetLocation();
+      }
+      setJustFetched(true);
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
+        setJustFetched(false);
+      }, 2500);
+    } catch {
+      // Toast error is handled in handleGetLocation
+    } finally {
+      setInternalLoading(false);
+    }
+  };
 
   useEffect(() => {
     const lat = Number(storeData.latitude);
@@ -79,6 +109,7 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
 
     const updateLocation = (lat, lng) => {
       setStoreData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+      showToast('ตรวจสอบและตั้งค่าพิกัดสำเร็จ 📍', 'success');
     };
 
     // 1. หาพิกัดแบบตรงๆ (13.956, 100.567 หรือ 13.956 100.567 หรือ 13.956+100.567)
@@ -139,11 +170,33 @@ const StoreProfileLocation = ({ storeData, setStoreData, handleGetLocation, loca
                 </div>
               ) : null}
             </div>
-            <button type="button" disabled={locationLoading} onClick={handleGetLocation} className={`w-full sm:w-auto px-6 py-3 rounded-md font-bold flex items-center justify-center gap-2 shadow-md transition-all whitespace-nowrap ${locationLoading ? 'bg-indigo-100 text-indigo-500 cursor-not-allowed shadow-inner' : (storeData.latitude ? 'bg-slate-800 hover:bg-slate-900 text-white' : 'bg-slate-800 hover:bg-slate-900 text-white')}`}>
-              {locationLoading ? (
-                <><Loader2 size={16} className="animate-spin" /> กำลังสแกนหาดาวเทียม...</>
+            <button 
+              type="button" 
+              disabled={isLoading} 
+              onClick={onGetLocation} 
+              className={`w-full sm:w-auto px-6 py-3 rounded-md font-bold flex items-center justify-center gap-2 shadow-md transition-all whitespace-nowrap active:scale-95 ${
+                justFetched
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 scale-[1.02]'
+                  : isLoading
+                    ? 'bg-indigo-600 text-white cursor-wait shadow-inner animate-pulse ring-2 ring-indigo-300'
+                    : 'bg-slate-800 hover:bg-slate-900 text-white hover:shadow-lg'
+              }`}
+            >
+              {justFetched ? (
+                <>
+                  <CheckCircle2 size={16} className="text-white animate-in zoom-in-75 duration-200" /> 
+                  <span>ดึงพิกัดสำเร็จแล้ว!</span>
+                </>
+              ) : isLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin text-amber-300" /> 
+                  <span>กำลังสแกนหาพิกัด GPS...</span>
+                </>
               ) : (
-                <><MapPin size={16} className={storeData.latitude ? "" : "animate-bounce"} /> {storeData.latitude ? 'ดึงพิกัด จากตำแหน่งที่คุณอยู่' : 'ดึงพิกัด จากตำแหน่งที่คุณอยู่'}</>
+                <>
+                  <MapPin size={16} className={storeData.latitude ? "text-indigo-300" : "animate-bounce text-amber-400"} /> 
+                  <span>{storeData.latitude ? 'อัปเดตพิกัด จากตำแหน่งปัจจุบัน' : 'ดึงพิกัด จากตำแหน่งที่คุณอยู่'}</span>
+                </>
               )}
             </button>
           </div>
