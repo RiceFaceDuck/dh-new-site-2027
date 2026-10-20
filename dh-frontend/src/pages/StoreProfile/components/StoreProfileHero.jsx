@@ -25,12 +25,7 @@ const StoreProfileHero = ({ partner }) => {
             <div className="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 aspect-square rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white transform transition-transform group-hover:scale-105 duration-300">
               <img src={avatar} alt={name} className="w-full h-full object-cover"  loading="lazy" />
             </div>
-            {partner.isActive && (
-              <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-[0.1rem] border-2 border-white shadow-xs flex items-center">
-                <span className="w-2 h-2 rounded-full bg-white mr-1.5 animate-pulse"></span>
-                ร้านเปิด
-              </div>
-            )}
+
           </div>
 
           {/* Profile Info */}
@@ -50,7 +45,8 @@ const StoreProfileHero = ({ partner }) => {
                   className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm sm:text-base border-b-[3px] border-emerald-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-1/2 mx-auto sm:w-full"
                 >
                   <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
-                    โทรติดต่อร้าน
+                    <span className="md:hidden">โทรติดต่อร้าน</span>
+                    <span className="hidden md:inline">โทร</span>
                   </span>
                   <span className="h-full w-10 sm:w-11 bg-white text-emerald-600 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
                     <Phone size={17} className="group-hover:scale-110 transition-transform" />
@@ -66,7 +62,8 @@ const StoreProfileHero = ({ partner }) => {
                   className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm sm:text-base border-b-[3px] border-sky-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-1/2 mx-auto sm:w-full"
                 >
                   <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
-                    Google MAP
+                    <span className="md:hidden">Google MAP</span>
+                    <span className="hidden md:inline">MAP</span>
                   </span>
                   <span className="h-full w-10 sm:w-11 bg-white text-sky-600 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
                     <MapPin size={17} className="group-hover:scale-110 transition-transform" />
@@ -87,7 +84,8 @@ const StoreProfileHero = ({ partner }) => {
                 className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm sm:text-base border-b-[3px] border-slate-900 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-1/2 mx-auto sm:w-full"
               >
                 <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
-                  แชร์ร้านค้านี้
+                  <span className="md:hidden">แชร์ร้านค้านี้</span>
+                  <span className="hidden md:inline">แชร์</span>
                 </span>
                 <span className="h-full w-10 sm:w-11 bg-white text-slate-700 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
                   <Share2 size={17} className="group-hover:scale-110 transition-transform" />
