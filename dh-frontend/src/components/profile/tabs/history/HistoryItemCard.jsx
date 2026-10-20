@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, ArrowLeftRight, Package } from 'lucide-react';
+import { Wrench, ArrowLeftRight, Package, FileText, AlertCircle } from 'lucide-react';
 import { getStatusDisplay } from './HistoryStatusUtil';
 import { getProductImageBySku } from '../../../../services/storefrontCatalogService';
 
@@ -10,7 +10,8 @@ const HistoryItemCard = ({
   handleCancelOrder,
   cancellingOrderId,
   setSelectedOrder,
-  openServiceModal
+  openServiceModal,
+  onOpenTaxModal
 }) => {
   const [copyStatus, setCopyStatus] = useState(false);
   const [cachedImages, setCachedImages] = useState({});
@@ -72,16 +73,39 @@ const HistoryItemCard = ({
           <h3 className="text-base font-bold text-gray-900">ออเดอร์ {displayOrderId}</h3>
           <p className="text-xs text-gray-500 mt-0.5">สั่งซื้อเมื่อ: {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : 'N/A'}</p>
         </div>
-        <div className="flex flex-col sm:items-end gap-1">
+        <div className="flex flex-col sm:items-end gap-1.5">
             <span data-testid="order-status" className={`px-3 py-1.5 text-xs font-bold rounded-full border w-max ${statusObj.color}`}>
               {statusObj.text}
             </span>
-            {/* แจ้งเตือนบิลในหน้าย่อ ถ้ามีใบกำกับภาษีออกแล้ว */}
-            {order.taxInvoiceUrl && !isExpanded && (
-              <span className="text-[10px] text-teal-600 font-bold bg-teal-50 px-2 py-0.5 rounded-sm border border-teal-100 w-max">
-                📄 มีใบกำกับภาษี
+            {/* ป้ายกำกับขอใบกำกับภาษี / ดาวน์โหลด / ขอข้อมูลใหม่ */}
+            {(order.taxInvoiceStatus === 'need_customer_info' || order.taxInvoiceNeedInfo) ? (
+              <button 
+                type="button"
+                onClick={(e) => { e.stopPropagation(); if (onOpenTaxModal) onOpenTaxModal(order); }}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-0.5 rounded-full shadow-xs cursor-pointer transition-transform hover:scale-105"
+                title="คลิกเพื่อระบุข้อมูลใบกำกับภาษีใหม่"
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                ⚠️ ขอข้อมูลภาษีใหม่ (คลิกเพื่อแก้)
+              </button>
+            ) : order.taxInvoiceUrl ? (
+              <a 
+                href={order.taxInvoiceUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-[10.5px] font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2.5 py-0.5 rounded-full shadow-xs cursor-pointer transition-colors"
+                title="คลิกเพื่อเปิดดู/ดาวน์โหลดใบกำกับภาษี"
+              >
+                <FileText className="w-3.5 h-3.5 text-teal-600" />
+                📄 มีใบกำกับภาษี (ดาวน์โหลด)
+              </a>
+            ) : (order.taxInvoice || order.taxData || order.hasPendingTax || order.isTaxInvoice || order.taxInvoiceStatus === 'pending') ? (
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+                <FileText className="w-3 h-3 text-teal-600" />
+                ขอใบกำกับภาษี (รอดำเนินการ)
               </span>
-            )}
+            ) : null}
         </div>
       </div>
 
@@ -293,20 +317,56 @@ const HistoryItemCard = ({
               </div>
           </div>
 
-          {/* 📄 ระบบโหลดใบกำกับภาษี (อัปเดตใหม่) */}
-          {order.taxInvoiceUrl && (
-            <div className="mt-4 flex justify-end">
+          {/* 📄 ระบบใบกำกับภาษีและดาวน์โหลดเอกสาร (อัปเดตครบวงจร) */}
+          {order.taxInvoiceUrl ? (
+            <div className="mt-4 p-4 bg-teal-50/70 border border-teal-200 rounded-md flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-teal-100 text-teal-700 rounded-lg">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-teal-800">ใบกำกับภาษีพร้อมให้ดาวน์โหลดแล้ว</p>
+                  <p className="text-[11px] text-teal-600">เอกสารภาษีอิเล็กทรอนิกส์ (PDF / รูปภาพ) สำหรับเบิกจ่ายบริษัท</p>
+                </div>
+              </div>
               <a 
                 href={order.taxInvoiceUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-bold rounded-md border border-teal-200 transition-colors shadow-xs active:scale-95"
+                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs active:scale-95"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 ดาวน์โหลดใบกำกับภาษี (PDF)
               </a>
             </div>
-          )}
+          ) : (order.taxInvoiceStatus === 'need_customer_info' || order.taxInvoiceNeedInfo) ? (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-start gap-2.5">
+                <div className="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0 mt-0.5 sm:mt-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="text-xs text-amber-900 leading-relaxed">
+                  <p className="font-bold text-amber-800">เจ้าหน้าที่ขอให้ระบุข้อมูลใบกำกับภาษีใหม่อีกครั้ง</p>
+                  <p className="text-gray-700 mt-0.5">{order.taxInvoiceRequestReason || 'ข้อมูลใบกำกับภาษีไม่ครบถ้วนหรือไม่ถูกต้อง กรุณากรอกใหม่อีกครั้ง'}</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => { if (onOpenTaxModal) onOpenTaxModal(order); }}
+                className="w-full sm:w-auto shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <AlertCircle className="w-4 h-4" />
+                กรอกข้อมูลใหม่
+              </button>
+            </div>
+          ) : (order.taxInvoice || order.taxData || order.hasPendingTax || order.isTaxInvoice || order.taxInvoiceStatus === 'pending') ? (
+            <div className="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-md flex items-center gap-2.5 text-xs text-gray-600">
+              <FileText className="w-4 h-4 text-teal-600 shrink-0" />
+              <span>
+                <b>สถานะใบกำกับภาษี:</b> ท่านได้ส่งคำขอใบกำกับภาษีแล้ว อยู่ระหว่างเจ้าหน้าที่ตรวจสอบและจัดทำเอกสาร ระบบจะแสดงปุ่มดาวน์โหลดที่นี่เมื่อเอกสารเสร็จสมบูรณ์
+              </span>
+            </div>
+          ) : null}
 
           {/* ที่อยู่จัดส่ง / รับหน้าร้าน */}
           {order.shippingMethod === 'pickup' ? (

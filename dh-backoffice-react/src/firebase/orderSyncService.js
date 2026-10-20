@@ -104,11 +104,16 @@ export const syncRecentOrdersCatalog = async () => {
         claims: d.claims || [],
         returns: d.returns || [],
         afterSales: d.afterSales || [],
-        taxInvoiceStatus: d.taxInvoiceStatus || (d.taxInvoiceUrl ? 'issued' : null),
+        taxInvoice: d.taxInvoice || d.taxData || null,
+        taxData: d.taxData || d.taxInvoice || null,
+        vatType: d.vatType || '',
+        isTaxInvoice: Boolean(d.isTaxInvoice || d.taxInvoice || d.taxData || d.requestTaxInvoice || d.taxInvoiceRequested),
+        taxInvoiceStatus: d.taxInvoiceStatus || (d.taxInvoiceUrl ? 'issued' : (d.taxInvoice || d.taxData ? 'pending' : null)),
+        taxInvoiceNeedInfo: Boolean(d.taxInvoiceNeedInfo || d.taxInvoiceStatus === 'need_customer_info'),
         taxInvoiceUrl: d.taxInvoiceUrl || null,
         hasPendingClaim: !!d.hasPendingClaim,
         hasPendingReturn: !!d.hasPendingReturn,
-        hasPendingTax: !!d.hasPendingTax,
+        hasPendingTax: Boolean(d.hasPendingTax || d.taxInvoice || d.taxData || d.isTaxInvoice),
         isWebOrder: Boolean(d.isWebOrder || d.channel === 'storefront' || d.source === 'storefront'),
         channel: d.channel || (d.isWebOrder ? 'storefront' : 'pos'),
         source: d.source || (d.isWebOrder ? 'storefront' : 'pos')
@@ -143,3 +148,10 @@ export const syncRecentOrdersCatalog = async () => {
 
   return inFlightSyncPromise;
 };
+
+export const orderSyncService = {
+  syncRecentOrders: syncRecentOrdersCatalog,
+  syncRecentOrdersCatalog
+};
+
+export default orderSyncService;

@@ -8,7 +8,8 @@ const HistoryList = ({
   handleCancelOrder,
   cancellingOrderId,
   setSelectedOrder,
-  openServiceModal
+  openServiceModal,
+  onOpenTaxModal
 }) => {
   if (isLoading) {
     return (
@@ -39,6 +40,7 @@ const HistoryList = ({
           cancellingOrderId={cancellingOrderId}
           setSelectedOrder={setSelectedOrder}
           openServiceModal={openServiceModal}
+          onOpenTaxModal={onOpenTaxModal}
         />
       ))}
     </div>

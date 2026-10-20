@@ -47,7 +47,10 @@ export const billingStatusTransaction = {
           snap.forEach(docSnap => {
             if (!seenTodoIds.has(docSnap.id)) {
               seenTodoIds.add(docSnap.id);
-              paymentTodoRefs.push(docSnap.ref);
+              const tData = docSnap.data();
+              if (tData.type !== 'issue_tax_invoice') {
+                paymentTodoRefs.push(docSnap.ref);
+              }
             }
           });
         });

@@ -88,12 +88,30 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
     React.useEffect(() => {
         if (!initialOrderId || selectedOrder) return;
         const targetId = String(initialOrderId).trim();
-        const found = orders.find(o => o.id === targetId || o.orderId === targetId || o.tempOrderId === targetId);
+        const found = orders.find(o => 
+            o.id === targetId || 
+            o.orderId === targetId || 
+            o.tempOrderId === targetId ||
+            o.draftOrderId === targetId ||
+            o.originalDraftId === targetId
+        );
         if (found) {
             handleSelectOrder(found);
         } else if (!loading) {
             billingQueryService.getOrderById(targetId).then(order => {
-                if (order) handleSelectOrder(order);
+                if (order) {
+                    if (order.supersededBy) {
+                        billingQueryService.getOrderById(order.supersededBy).then(supOrder => {
+                            handleSelectOrder(supOrder || order);
+                        }).catch(() => handleSelectOrder(order));
+                    } else {
+                        handleSelectOrder(order);
+                    }
+                } else {
+                    billingQueryService.getOrderByOrderId(targetId).then(order2 => {
+                        if (order2) handleSelectOrder(order2);
+                    }).catch(console.error);
+                }
             }).catch(console.error);
         }
     }, [initialOrderId, orders, loading]);

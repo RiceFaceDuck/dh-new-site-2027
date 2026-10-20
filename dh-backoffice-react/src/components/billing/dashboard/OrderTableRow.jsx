@@ -218,21 +218,19 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                             คืน (รอ)
                         </span>
                     )}
-                    {isTaxInvoice && (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-purple-600 text-white text-[10px] font-black shadow-xs transition-transform hover:scale-105" title="ลูกค้าต้องการใบกำกับภาษี">
-                            📄 ใบกำกับภาษี
+                    {(taxStatus === 'need_customer_info' || order.taxInvoiceNeedInfo) ? (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-amber-500/10 text-amber-600 text-[10px] font-black border border-amber-500/20 shadow-xs transition-transform hover:scale-105" title="ขอข้อมูลใบกำกับภาษีกับลูกค้าใหม่อีกครั้ง (รอลูกค้ากรอกข้อมูล)">
+                            ⚠️ ภาษี (รอข้อมูลใหม่)
                         </span>
-                    )}
-                    {taxStatus === 'issued' && (
+                    ) : taxStatus === 'issued' ? (
                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 shadow-xs transition-transform hover:scale-105" title="ออกใบกำกับภาษีเรียบร้อยแล้ว">
-                            ภาษี (ออกแล้ว)
+                            📄 ภาษี (ออกแล้ว)
                         </span>
-                    )}
-                    {taxStatus === 'pending' && (
+                    ) : (taxStatus === 'pending' || isTaxInvoice) ? (
                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-teal-500/10 text-teal-600 text-[10px] font-black border border-teal-500/20 shadow-xs transition-transform hover:scale-105" title="รอออกใบกำกับภาษี">
-                            ภาษี (รอ)
+                            📄 ภาษี (รอ)
                         </span>
-                    )}
+                    ) : null}
                     {claimQty === 0 && !hasPendingClaim && exchangeQty === 0 && !hasPendingExchange && returnQty === 0 && !hasPendingReturn && !isTaxInvoice && !taxStatus && (
                         <span className="text-[11px] text-(--dh-text-muted)">-</span>
                     )}

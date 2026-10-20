@@ -24,6 +24,7 @@ export const todoService = {
   createManualTask: todoActionService.createManualTask,
   updateTodoTrackingNo: todoActionService.updateTodoTrackingNo,
   completeTaxInvoiceTask: todoActionService.completeTaxInvoiceTask,
+  requestCustomerTaxInfo: todoActionService.requestCustomerTaxInfo,
   acknowledgePromotionAlert: todoActionService.acknowledgePromotionAlert,
 
   // Feature Specific

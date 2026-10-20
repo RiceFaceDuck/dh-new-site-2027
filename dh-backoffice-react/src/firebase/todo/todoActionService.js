@@ -1,8 +1,9 @@
 import { db } from '../config';
-import { doc, updateDoc, deleteDoc, addDoc, serverTimestamp, collection, writeBatch, arrayUnion, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, collection, writeBatch, arrayUnion, runTransaction } from 'firebase/firestore';
 import { MANAGER_TASK_TYPES } from '../managerTodoService';
 import { gasHistoryService } from '../gasHistoryService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { orderSyncService } from '../orderSyncService';
 
 export const todoActionService = {
   // 🗑️ ลบงานที่ค้าง/กำพร้า
@@ -95,20 +96,91 @@ export const todoActionService = {
     }
   },
 
-  completeTaxInvoiceTask: async (task, fileUrl, currentUser) => {
+  requestCustomerTaxInfo: async (task, reason, currentUser, orderData) => {
     try {
       const batch = writeBatch(db);
+      const targetOrderId = orderData?.id || orderData?.orderId || task.orderId || task.payload?.orderId;
       
-      const orderRef = doc(db, getCollectionPath('orders'), task.payload.orderId);
-      batch.update(orderRef, {
-        taxInvoiceUrl: fileUrl,
-        taxInvoiceStatus: 'issued',
-        updatedAt: serverTimestamp()
-      });
+      if (targetOrderId) {
+        const orderRef = doc(db, getCollectionPath('orders'), targetOrderId);
+        batch.set(orderRef, {
+          taxInvoiceStatus: 'need_customer_info',
+          taxInvoiceNeedInfo: true,
+          taxInvoiceRequestReason: reason || 'ข้อมูลใบกำกับภาษีไม่ครบถ้วนหรือไม่ถูกต้อง กรุณากรอกใหม่อีกครั้ง',
+          taxInvoiceRequestedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        
+        const draftId = orderData?.draftOrderId || orderData?.originalDraftId || (task.orderId !== targetOrderId ? task.orderId : null);
+        if (draftId && draftId !== targetOrderId) {
+          const draftRef = doc(db, getCollectionPath('orders'), draftId);
+          batch.set(draftRef, {
+            taxInvoiceStatus: 'need_customer_info',
+            taxInvoiceNeedInfo: true,
+            taxInvoiceRequestReason: reason || 'ข้อมูลใบกำกับภาษีไม่ครบถ้วนหรือไม่ถูกต้อง กรุณากรอกใหม่อีกครั้ง',
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      }
+
+      if (task.id) {
+        const taskRef = doc(db, getCollectionPath('todos'), task.id);
+        batch.update(taskRef, {
+          status: 'in_progress',
+          taxInvoiceStatus: 'need_customer_info',
+          customerNote: reason || '',
+          staffUid: currentUser?.uid || 'Staff',
+          staffNickname: currentUser?.displayName || 'พนักงาน',
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+
+      try {
+        await orderSyncService.syncRecentOrders();
+      } catch (syncErr) {
+        console.warn('Catalog sync warning:', syncErr);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('🔥 Error requesting customer tax info:', error);
+      throw error;
+    }
+  },
+
+  completeTaxInvoiceTask: async (task, fileUrl, currentUser, orderData) => {
+    try {
+      const batch = writeBatch(db);
+      const rawOrderId = orderData?.id || orderData?.orderId || task.orderId || task.payload?.orderId;
+      
+      if (rawOrderId) {
+        const orderRef = doc(db, getCollectionPath('orders'), rawOrderId);
+        batch.set(orderRef, {
+          taxInvoiceUrl: fileUrl,
+          taxInvoiceStatus: 'issued',
+          taxInvoiceNeedInfo: false,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        const altOrderId = orderData?.draftOrderId || orderData?.originalDraftId || (task.orderId !== rawOrderId ? task.orderId : null) || (orderData?.supersededBy);
+        if (altOrderId && altOrderId !== rawOrderId) {
+          const altRef = doc(db, getCollectionPath('orders'), altOrderId);
+          batch.set(altRef, {
+            taxInvoiceUrl: fileUrl,
+            taxInvoiceStatus: 'issued',
+            taxInvoiceNeedInfo: false,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      }
 
       const taskRef = doc(db, getCollectionPath('todos'), task.id);
       batch.update(taskRef, {
         status: 'completed',
+        taxInvoiceStatus: 'issued',
+        taxInvoiceUrl: fileUrl,
         completedAt: serverTimestamp(),
         actionBy: currentUser?.uid || 'Admin'
       });
@@ -116,9 +188,9 @@ export const todoActionService = {
       const logRef = doc(collection(db, getCollectionPath('system_logs')));
       batch.set(logRef, {
           actionType: 'TAX_INVOICE_ISSUED',
-          orderId: task.payload.orderId,
+          orderId: rawOrderId,
           taskId: task.id,
-          details: `ออกใบกำกับภาษีและอัปโหลดไฟล์สำเร็จ`,
+          details: 'ออกใบกำกับภาษีและอัปโหลดไฟล์สำเร็จ',
           createdBy: currentUser?.uid || 'System',
           createdAt: serverTimestamp()
       });
@@ -127,16 +199,23 @@ export const todoActionService = {
           gasHistoryService.log({
             module: 'Customer History',
             action: 'TAX_INVOICE_ISSUED',
-            target: { id: task.payload.orderId },
-            details: { legacy_details: `ใบกำกับภาษีพร้อมดาวน์โหลด เจ้าหน้าที่ได้อัปโหลดใบกำกับภาษีสำหรับออเดอร์ #${task.payload.orderId.slice(-6).toUpperCase()} เรียบร้อยแล้ว` },
+            target: { id: rawOrderId },
+            details: { legacy_details: 'ใบกำกับภาษีพร้อมดาวน์โหลด เจ้าหน้าที่ได้อัปโหลดใบกำกับภาษีเรียบร้อยแล้ว' },
             actorOverride: { uid: task.userId, name: 'System (For Customer)', email: 'N/A' }
           });
       }
 
       await batch.commit();
+
+      try {
+        await orderSyncService.syncRecentOrders();
+      } catch (syncErr) {
+        console.warn('Catalog sync warning:', syncErr);
+      }
+
       return { success: true };
     } catch (error) {
-      console.error("🔥 Error completing tax invoice:", error);
+      console.error('🔥 Error completing tax invoice:', error);
       throw error;
     }
   }

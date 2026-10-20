@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { auth } from '../../../firebase/config';
 import { cancelOrder } from '../../../firebase/checkoutService';
 import { useHistoryOrders } from './history/useHistoryOrders';
@@ -6,6 +6,7 @@ import HistoryFilterBar from './history/HistoryFilterBar';
 import HistoryList from './history/HistoryList';
 import UploadSlipModal from './history/UploadSlipModal';
 import ServiceActionModal from './history/ServiceActionModal';
+import CustomerTaxInfoModal from './history/CustomerTaxInfoModal';
 import { useToast } from '../../../context/ToastContext';
 
 
@@ -18,8 +19,21 @@ const TabHistory = () => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [serviceModal, setServiceModal] = useState(null);
+  const [taxModalOrder, setTaxModalOrder] = useState(null);
+  const [hasAutoOpenedTax, setHasAutoOpenedTax] = useState(false);
 
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
+
+  // Auto-prompt customer if an order needs updated tax invoice info
+  useEffect(() => {
+    if (orders && orders.length > 0 && !hasAutoOpenedTax) {
+      const needInfoOrder = orders.find(o => o.taxInvoiceStatus === 'need_customer_info' || o.taxInvoiceNeedInfo);
+      if (needInfoOrder) {
+        setTaxModalOrder(needInfoOrder);
+        setHasAutoOpenedTax(true);
+      }
+    }
+  }, [orders, hasAutoOpenedTax]);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm('คุณต้องการยกเลิกคำสั่งซื้อนี้ใช่หรือไม่?')) return;
@@ -84,6 +98,7 @@ const TabHistory = () => {
         cancellingOrderId={cancellingOrderId}
         setSelectedOrder={setSelectedOrder}
         openServiceModal={openServiceModal}
+        onOpenTaxModal={setTaxModalOrder}
       />
 
       <UploadSlipModal
@@ -94,6 +109,13 @@ const TabHistory = () => {
       <ServiceActionModal
         serviceModal={serviceModal}
         setServiceModal={setServiceModal}
+      />
+
+      <CustomerTaxInfoModal
+        order={taxModalOrder}
+        isOpen={!!taxModalOrder}
+        onClose={() => setTaxModalOrder(null)}
+        onSuccess={() => setTaxModalOrder(null)}
       />
 
     </div>
