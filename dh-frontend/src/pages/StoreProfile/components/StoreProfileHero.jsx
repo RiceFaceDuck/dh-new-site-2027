@@ -17,23 +17,12 @@ const StoreProfileHero = ({ partner }) => {
     : rawMapsUrl;
 
   return (
-    <>
-      {/* Premium Header/Cover */}
-      <div className="h-64 md:h-80 w-full bg-linear-to-r from-brand-dark via-brand to-brand-accent relative overflow-hidden">
-        {/* Abstract background shapes */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20">
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white blur-3xl"></div>
-          <div className="absolute bottom-0 right-10 w-64 h-64 rounded-full bg-blue-300 blur-3xl"></div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 md:-mt-32 relative z-10">
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 relative z-10">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
           
           {/* Avatar Area */}
           <div className="relative group shrink-0">
-            <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden ring-4 ring-white shadow-lg bg-white transform transition-transform group-hover:scale-105 duration-300">
+            <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white transform transition-transform group-hover:scale-105 duration-300">
               <img src={avatar} alt={name} className="w-full h-full object-contain"  loading="lazy" />
             </div>
             {partner.isActive && (
@@ -108,7 +97,6 @@ const StoreProfileHero = ({ partner }) => {
           </div>
         </div>
       </div>
-    </>
   );
 };
 

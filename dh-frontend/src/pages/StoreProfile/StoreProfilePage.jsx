@@ -53,9 +53,8 @@ const StoreProfilePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 pb-20 animate-pulse">
-        <div className="h-64 md:h-80 w-full bg-slate-200"></div>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 md:-mt-32 relative z-10">
-          <div className="bg-white/80 rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 relative z-10">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
             <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl bg-slate-200 ring-4 ring-white shadow-sm shrink-0"></div>
             <div className="flex-1 w-full text-center md:text-left flex flex-col items-center md:items-start pt-2">
               <div className="h-8 bg-slate-200 rounded-md w-2/3 mb-4"></div>
