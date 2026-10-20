@@ -61,7 +61,7 @@ export default function ProductPricingSection({
 
   return (
     <div className="p-6 md:p-10 flex flex-col">
-      <div className="mb-2 flex items-center justify-start">
+      <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-tech text-slate-500 font-bold flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-md">
           <Cpu size={14} className="text-slate-400" /> DH-SKU: {model}
           <button 
@@ -74,6 +74,20 @@ export default function ProductPricingSection({
             {copiedSku ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
           </button>
         </span>
+
+        {/* Favorite Button (ย้ายมาไว้มุมขวาบน) */}
+        <button 
+          type="button"
+          onClick={() => product && toggleFavorite(product)}
+          className={`w-9 h-9 md:w-10 md:h-10 border rounded-md flex items-center justify-center transition-colors shadow-xs shrink-0 cursor-pointer ${
+            isFav 
+              ? 'bg-red-50 border-red-300 text-red-500' 
+              : 'bg-white border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50'
+          }`}
+          aria-label={isFav ? "ลบออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
+        >
+          <Heart size={18} className={isFav ? "fill-current text-red-500" : ""} />
+        </button>
       </div>
 
       <h1 className="text-xl md:text-2xl font-semibold text-slate-700 leading-tight mb-3">
@@ -216,31 +230,18 @@ export default function ProductPricingSection({
             )}
           </button>
 
-          {/* Favorite Button */}
-          <button 
-            onClick={() => product && toggleFavorite(product)}
-            className={`w-12 h-12 md:w-14 md:h-14 border rounded-md flex items-center justify-center transition-colors shadow-xs shrink-0 ${
-              isFav 
-                ? 'bg-red-50 border-red-300 text-red-500' 
-                : 'bg-white border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50'
-            }`}
-            aria-label={isFav ? "ลบออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
-          >
-            <Heart size={20} className={isFav ? "fill-current text-red-500" : ""} />
-          </button>
+          {/* Buy Now Button (Quick checkout) - ย้ายมาแทนที่ปุ่มหัวใจ */}
+          {!isOutOfStock && (
+            <button
+              onClick={handleBuyNow}
+              disabled={isAdding}
+              className="flex-1 h-12 md:h-14 rounded-md font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 bg-brand text-white hover:bg-brand-dark transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer active:scale-[0.98]"
+            >
+              <Zap size={18} className="fill-current" />
+              ซื้อเลย
+            </button>
+          )}
         </div>
-
-        {/* Buy Now Button (Quick checkout) */}
-        {!isOutOfStock && (
-          <button
-            onClick={handleBuyNow}
-            disabled={isAdding}
-            className="w-full h-12 md:h-14 rounded-md font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 bg-brand text-white hover:bg-brand-dark transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer"
-          >
-            <Zap size={18} className="fill-current" />
-            ซื้อเลย
-          </button>
-        )}
       </div>
 
       {/* 🛍️ Marketplace Buttons (Modern UI with Telemetry) */}
