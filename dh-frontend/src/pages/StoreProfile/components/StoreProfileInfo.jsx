@@ -3,7 +3,8 @@ import PartnerReviews from './PartnerReviews';
 const StoreProfileInfo = ({ partner, currentUser }) => {
   return (
     <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-      <div className="md:col-span-2 space-y-6">
+      {/* 1. Service Details & Gallery */}
+      <div className="md:col-span-2">
         <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
           <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-brand mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,11 +34,10 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
           )}
         </div>
         
-        {/* Reviews & Ratings Section */}
-        <PartnerReviews partnerId={partner.id} ownerId={partner.ownerId} currentUser={currentUser} />
       </div>
 
-      <div className="space-y-6">
+      {/* 2. Contact, Location & Certifications (Middle on Mobile, Right Column on Desktop) */}
+      <div className="space-y-6 md:col-start-3 md:row-start-1 md:row-span-2 self-start">
         {/* Social Links Section */}
         {(partner.lineUrl || partner.messengerUrl || partner.websiteUrl || partner.youtubeUrl || partner.tiktokUrl || partner.shopeeUrl || partner.lazadaUrl) && (
           <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
@@ -146,6 +146,11 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
           </ul>
         </div>
 
+      </div>
+
+      {/* 3. Reviews & Ratings Section (Bottom on Mobile, Left Column Row 2 on Desktop) */}
+      <div className="md:col-span-2 md:col-start-1 md:row-start-2 self-start">
+        <PartnerReviews partnerId={partner.id} ownerId={partner.ownerId} currentUser={currentUser} />
       </div>
     </div>
   );

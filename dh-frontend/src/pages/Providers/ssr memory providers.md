@@ -42,5 +42,6 @@
     - 🎨 Two-Tone Slanted Action Buttons: Upgraded the 3 store action buttons in `StoreProfileHero.jsx` (Call, Maps, Share) to a balanced two-tone slanted layout with `clip-path`, 3D depth bottom border, and unified height (`h-11 md:h-12`). Updated navigation label to 'Google MAP', enlarged font size to `text-sm sm:text-base`, and applied `w-1/2 mx-auto sm:w-full` for a compact, centered 50% width on mobile.
     - 🎨 StoreProfile Info Cards Sequence: Reordered right column cards in `StoreProfileInfo.jsx` to prioritize customer contact: 1. ช่องทางการติดต่อ (Social Links), 2. ตำแหน่งที่ตั้งร้าน (Location), 3. การรับรองระบบ (Certifications).
     - 🎨 Flush Top Layout (No Cover Banner): Removed top cover gradient banner in `StoreProfileHero.jsx` and `StoreProfilePage.jsx` skeleton, shifting the hero store card flush to the top (`pt-4 md:pt-6`) with crisp white card styling (`bg-white shadow-sm border border-slate-100`).
+    - 🎨 Responsive Review Box Order: Restructured CSS Grid in `StoreProfileInfo.jsx` so Customer Reviews (`PartnerReviews`) naturally renders at the bottom on mobile screens after contact/location/certifications, while preserving the exact 2-column desktop layout (`md:col-start-1 md:row-start-2`) with zero double-mounting or extra Firestore queries.
   </pitfalls_and_lessons>
 </ssr_memory>

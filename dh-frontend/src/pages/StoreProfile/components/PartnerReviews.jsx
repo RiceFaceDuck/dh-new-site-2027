@@ -23,7 +23,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
   } = usePartnerReviews(partnerId, ownerId, currentUser);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8 mt-8">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
