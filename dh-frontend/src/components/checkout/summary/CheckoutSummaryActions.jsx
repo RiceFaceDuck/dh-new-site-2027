@@ -70,15 +70,22 @@ const CheckoutSummaryActions = ({
         </button>
 
         <button
-          onClick={onRequestWholesale}
-          disabled={!isTermsAccepted || isSubmitting}
-          className={`w-full py-3.5 px-4 rounded-md font-semibold text-sm transition-all duration-200 border-2
-            ${(!isTermsAccepted || isSubmitting)
+          id="wholesale-line-btn"
+          type="button"
+          onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook', '_blank', 'noopener,noreferrer')}
+          disabled={isSubmitting}
+          className={`w-full py-3 px-4 rounded-md font-semibold text-sm transition-all duration-200 border-2 flex items-center justify-center gap-2
+            ${isSubmitting
               ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-              : 'border-gray-200 text-gray-700 bg-white hover:border-indigo-600 hover:text-indigo-600 active:scale-[0.98]'
+              : 'border-slate-200 text-slate-700 bg-white hover:border-[#06C755] hover:text-[#06C755] hover:bg-emerald-50/20 active:scale-[0.98] cursor-pointer shadow-2xs'
             }`}
         >
-          ฉันเป็นร้านช่าง ต้องการ ราคาส่ง
+          <img 
+            src="/images/line_logo.png" 
+            alt="LINE" 
+            className="w-5 h-5 object-contain shrink-0" 
+          />
+          <span>ฉันเป็นร้านช่าง ต้องการ ราคาส่ง</span>
         </button>
       </div>
     </>
