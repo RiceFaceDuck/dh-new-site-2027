@@ -34,8 +34,12 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
     }
   };
 
-  // 🛡️ ซิงค์สถานะการเปิดรับงาน: หากการ์ดในระบบทำงานอยู่ หรือ storeData เปิดไว้ ให้ถือว่าเปิดรับงาน
-  const isCardLive = businessCardAd 
+  // 🛡️ ซิงค์สถานะการเปิดรับงาน: ต้องได้รับการอนุมัติจริงจากระบบเท่านั้นจึงจะถือว่า Live
+  const isApprovedAndLive = businessCardAd 
+    && ['APPROVED', 'ACTIVE'].includes(String(businessCardAd.status).toUpperCase());
+
+  // สถานะเปิดสวิตช์ (ทั้งที่อนุมัติแล้ว หรือกำลังเปิดเพื่อเตรียมส่งบันทึก)
+  const isSwitchOn = businessCardAd 
     ? ['APPROVED', 'ACTIVE'].includes(String(businessCardAd.status).toUpperCase()) 
     : Boolean(storeData.isSupportActive);
 
@@ -58,16 +62,16 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
                 <span className="text-orange-600 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
               ) : isAdPending ? (
                 <span className="text-amber-600 font-bold">🟡 รอตรวจสอบ (Pending)</span>
-              ) : isCardLive && hasNoCredit ? (
+              ) : isApprovedAndLive && hasNoCredit ? (
                 <span className="text-slate-500 font-bold">⚪ ไม่แสดง (No Credit)</span>
-              ) : isCardLive ? (
+              ) : isApprovedAndLive ? (
                 <span className="text-emerald-600 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
               ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (
                 <span className="text-rose-600 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
-              ) : !isCardLive ? (
-                <span className="text-slate-500">⚫ ปิดการแสดงผล</span>
+              ) : isSwitchOn ? (
+                <span className="text-amber-600 font-bold">🟡 รอการบันทึก (กรุณากดบันทึกด้านล่าง)</span>
               ) : (
-                <span className="text-amber-600">🟡 รอการบันทึก</span>
+                <span className="text-slate-500">⚫ ปิดการแสดงผล</span>
               )}
             </div>
           </div>
@@ -76,8 +80,8 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
             <input 
               type="checkbox" 
               className="sr-only peer" 
-              checked={isCardLive} 
-              onChange={() => handleToggleSupport(!isCardLive)} 
+              checked={isSwitchOn} 
+              onChange={() => handleToggleSupport(!isSwitchOn)} 
               disabled={isAdPending} 
             />
             <div className="w-14 h-7 bg-slate-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>

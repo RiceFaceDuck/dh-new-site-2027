@@ -62,6 +62,8 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
       } catch (err) {
         console.error("🔥 Error toggling card ad status:", err);
       }
+    } else if (nextSupport) {
+      showToast("เปิดขอรับการสนับสนุนแล้ว อย่าลืมเลื่อนลงไปกด 'บันทึกข้อมูลร้านค้า' เพื่อส่งตรวจนะครับ", 'info');
     }
   };
 
