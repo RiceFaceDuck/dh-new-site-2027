@@ -211,6 +211,18 @@
         2) เพิ่ม Post-Transaction Cleanup ทำความสะอาดเอกสาร Temp เก่าในพื้นหลังแบบ Best-Effort ด้วยการอัปเดตเป็น `draft` แล้วสั่ง `deleteDoc` หากมีสิทธิ์ หรือข้ามไปอย่างปลอดภัยหากไม่มีสิทธิ์ลบ
         3) เพิ่มการกรองสถานะ `superseded` ใน `orderSyncService.js`, `useBillingOrders.js`, `billingQueryService.js`, และ `staffPosDraftService.js` เพื่อไม่ให้แสดงบิลที่ถูกแปลงแล้วซ้ำซ้อนในตารางหรือค้นหาเจอ
         4) ปรับปรุง `firestore.rules` ในเครื่องให้รองรับการลบสถานะ `pending_payment_verification` และบิลรหัส `DH-TEMP-` ได้ [สถานะ: ส่งมอบแล้ว]
+    60. ปัญหา: แท็บบิลค้างในหน้า POS และปุ่มงานค้าง FloatingMiniCart (5 งาน) ทั้งที่บิลเสร็จสิ้นแล้ว (เช่น DH-TEMP-4554 และ DH-TEMP-3418)
+        สาเหตุ:
+        1) เมื่อบิลร่างถูกแปลงหรือชำระเงินเป็นบิลทางการ (DH-26-XXXX) ระบบไม่ได้บันทึกความเชื่อมโยง `draftOrderId` ลงใน Order document และแคตตาล็อก `catalogs/recent_orders`
+        2) `getFinishedOrderIdsSet()` ใน `usePosState.js` จึงไม่รู้จักเลขร่างเดิม ทำให้ Auto-Prune ข้ามการลบแท็บ
+        3) บิลที่พนักงานคนอื่น (เช่น คุณแทน) รับชำระเงิน จะปิดแท็บบนเครื่องตัวเอง แต่บนเครื่องของพนักงานคนอื่นที่เคยเปิดแท็บไว้ แท็บจะค้างอยู่ใน Cloud Drafts (`users/{uid}/private/pos_drafts`) และ LocalStorage
+        4) `FloatingMiniCart.jsx` ไม่ได้ส่ง `finishedOrderIdsSet` ให้ `filterValidDraftTabs`
+        วิธีแก้:
+        1) ปรับ `billingTransactionService.js` และ `billingStatusTransaction.js` ให้บันทึก `draftOrderId` และ `originalDraftId` ลงในบิลทางการเสมอ
+        2) ปรับ `orderSyncService.js` ให้แมป `draftOrderId` เข้าสู่ `catalogs/recent_orders`
+        3) ปรับ `staffPosDraftService.js` สร้าง `getGlobalFinishedOrderIdsSet` รวบรวม `orderId`, `id`, `docId`, `draftOrderId` ของบิลที่เสร็จแล้ว (รวมสถานะ `superseded`) และให้ `filterValidDraftTabs` ดึง Set นี้เป็นค่าเริ่มต้นอัตโนมัติ
+        4) ปรับ `FloatingMiniCart.jsx` ให้ดักฟังสัญญาณ `dh_recent_orders_updated` และแคชบิลล่าสุดเพื่อรีเฟรชงานค้างทันที
+        5) ล้างข้อมูลดราฟต์ผีของบัญชี `dh1notebook@gmail.com` ใน Firestore ให้เหลือเฉพาะ 3 บิลร่างจริงที่รอชำระ [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

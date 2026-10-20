@@ -394,7 +394,7 @@ export default function FloatingMiniCart({
 
     const handleStorage = (e) => {
       const uid = auth?.currentUser?.uid || 'guest';
-      if (!e.key || e.key === `dh_pos_autosave_${uid}`) {
+      if (!e.key || e.key === `dh_pos_autosave_${uid}` || e.key === 'dh_recent_orders_cache_v1' || e.key === 'dh_recent_orders_meta_v1') {
         prevRawSavedRef.current = null;
         loadDrafts();
       }
@@ -411,6 +411,7 @@ export default function FloatingMiniCart({
 
     window.addEventListener('storage', handleStorage);
     window.addEventListener('dh_cart_updated', handleCustomUpdate);
+    window.addEventListener('dh_recent_orders_updated', handleCustomUpdate);
     window.addEventListener('focus', handleFocus);
 
     // Auth change listener for staff account switching & cold start
@@ -425,6 +426,7 @@ export default function FloatingMiniCart({
     return () => {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('dh_cart_updated', handleCustomUpdate);
+      window.removeEventListener('dh_recent_orders_updated', handleCustomUpdate);
       window.removeEventListener('focus', handleFocus);
       unsubAuth?.();
       clearInterval(interval);

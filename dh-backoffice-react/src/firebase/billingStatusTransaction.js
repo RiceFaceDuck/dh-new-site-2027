@@ -307,7 +307,13 @@ export const billingStatusTransaction = {
           if (updates.orderId && updates.orderId !== orderId) {
              // 🧹 Atomic Migration: Move document from TEMP draft ID to official Order ID
              const newDocRef = doc(db, COLLECTION_NAME, updates.orderId);
-             transaction.set(newDocRef, { ...orderData, ...updates, id: updates.orderId });
+             transaction.set(newDocRef, { 
+               ...orderData, 
+               ...updates, 
+               id: updates.orderId,
+               draftOrderId: orderId,
+               originalDraftId: orderData.originalDraftId || orderId
+             });
              transaction.set(docRef, {
                status: 'superseded',
                orderStatus: 'superseded',

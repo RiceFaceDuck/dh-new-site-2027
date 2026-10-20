@@ -70,6 +70,8 @@ export const syncRecentOrdersCatalog = async () => {
       return {
         id: docSnap.id,
         orderId: normalizedOrderId,
+        draftOrderId: d.draftOrderId || d.originalDraftId || null,
+        originalDraftId: d.originalDraftId || d.draftOrderId || null,
         orderStatus: isTempDraft ? 'Draft' : (d.orderStatus || d.status || 'pending'),
         status: isTempDraft ? 'Draft' : (d.status || d.orderStatus || 'pending'),
         paymentStatus: d.paymentStatus || 'unpaid',

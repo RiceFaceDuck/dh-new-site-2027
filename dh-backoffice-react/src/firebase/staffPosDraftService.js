@@ -2,12 +2,47 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { safeJsonParse } from 'dh-shared';
+import { readCachedOrders } from './orderCacheService';
+
+/**
+ * 🔍 Helper: ดึง Set ของเลขที่บิลที่จบแล้วทั้งหมด (รวม draftOrderId เดิม)
+ */
+export const getGlobalFinishedOrderIdsSet = () => {
+  try {
+    const { orders } = readCachedOrders();
+    if (Array.isArray(orders) && orders.length > 0) {
+      const finishedSet = new Set();
+      orders.forEach((o) => {
+        const stat = (o.orderStatus || o.status || o.paymentStatus || '').toLowerCase();
+        if (
+          stat === 'approved' ||
+          stat === 'completed' ||
+          stat === 'paid' ||
+          stat === 'cancelled' ||
+          stat === 'void' ||
+          stat === 'superseded'
+        ) {
+          if (o.orderId) finishedSet.add(String(o.orderId).trim());
+          if (o.id) finishedSet.add(String(o.id).trim());
+          if (o.docId) finishedSet.add(String(o.docId).trim());
+          if (o.draftOrderId) finishedSet.add(String(o.draftOrderId).trim());
+          if (o.originalDraftId) finishedSet.add(String(o.originalDraftId).trim());
+        }
+      });
+      return finishedSet;
+    }
+  } catch (e) {
+    console.warn('[staffPosDraftService] getGlobalFinishedOrderIdsSet error:', e);
+  }
+  return null;
+};
 
 /**
  * 🛡️ Helper: Filter out completed and cancelled tabs from draft storage
  */
 export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
   if (!Array.isArray(tabs)) return [];
+  const effectiveFinishedSet = finishedOrderIdsSet || getGlobalFinishedOrderIdsSet();
   const seenKeys = new Set();
   return tabs
     .map((t) => {
@@ -38,12 +73,17 @@ export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
 
       if (isFinished) return false;
 
-      // 🔍 Cross-check with known finished orders
-      if (finishedOrderIdsSet) {
+      // 🔍 Cross-check with known finished orders (including draftOrderId)
+      if (effectiveFinishedSet) {
         const tOrderId = t.orderId ? String(t.orderId).trim() : null;
         const tDocId = t.docId ? String(t.docId).trim() : null;
-        if (tOrderId && finishedOrderIdsSet.has(tOrderId)) return false;
-        if (tDocId && finishedOrderIdsSet.has(tDocId)) return false;
+        const cleanOrderId = tOrderId ? tOrderId.replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1') : null;
+        const cleanDocId = tDocId ? tDocId.replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1') : null;
+
+        if (tOrderId && effectiveFinishedSet.has(tOrderId)) return false;
+        if (tDocId && effectiveFinishedSet.has(tDocId)) return false;
+        if (cleanOrderId && effectiveFinishedSet.has(cleanOrderId)) return false;
+        if (cleanDocId && effectiveFinishedSet.has(cleanDocId)) return false;
       }
 
       // 🛡️ Deduplication Guard: Never allow duplicate tabs with same orderId or docId (including normalized DH-TEMP)

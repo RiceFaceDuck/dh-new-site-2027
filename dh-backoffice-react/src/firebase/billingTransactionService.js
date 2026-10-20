@@ -395,6 +395,8 @@ export const billingTransactionService = {
             creatorName: actorName || dataToSave.creatorName, 
             staffNickname: actorName || dataToSave.staffNickname || 'พนักงาน',
             staffUid: actorUid || dataToSave.staffUid || null,
+            draftOrderId: (oldDraftDocId && oldDraftDocId !== finalOrderId) ? oldDraftDocId : (dataToSave.draftOrderId || null),
+            originalDraftId: (oldDraftDocId && oldDraftDocId !== finalOrderId) ? oldDraftDocId : (dataToSave.originalDraftId || null),
             finalTotal: finalSecureNetTotal, 
             netTotal: finalSecureNetTotal,
             totals: {

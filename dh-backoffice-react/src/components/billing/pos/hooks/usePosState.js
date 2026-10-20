@@ -31,10 +31,12 @@ const getFinishedOrderIdsSet = () => {
             const finishedSet = new Set();
             orders.forEach(o => {
                 const stat = (o.orderStatus || o.status || o.paymentStatus || '').toLowerCase();
-                if (stat === 'approved' || stat === 'completed' || stat === 'paid' || stat === 'cancelled' || stat === 'void') {
+                if (stat === 'approved' || stat === 'completed' || stat === 'paid' || stat === 'cancelled' || stat === 'void' || stat === 'superseded') {
                     if (o.orderId) finishedSet.add(String(o.orderId).trim());
                     if (o.id) finishedSet.add(String(o.id).trim());
                     if (o.docId) finishedSet.add(String(o.docId).trim());
+                    if (o.draftOrderId) finishedSet.add(String(o.draftOrderId).trim());
+                    if (o.originalDraftId) finishedSet.add(String(o.originalDraftId).trim());
                 }
             });
             return finishedSet;
