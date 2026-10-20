@@ -47,12 +47,14 @@ const MessengerMenu = ({ error, handleFindNearestPartner }) => {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <a href={import.meta.env.VITE_LINE_OA_URL || "https://lin.ee/qvpMIb6"} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#00B900] hover:bg-[#009900] text-white rounded-xl text-xs font-bold transition-all shadow-xs">
-            <span>LINE Official</span>
-            <ExternalLink size={12} />
+            <img src="/images/line_logo.png" alt="LINE" className="w-3.5 h-3.5 object-contain shrink-0" />
+            <span className="whitespace-nowrap">LINE Official</span>
+            <ExternalLink size={11} className="shrink-0 opacity-80" />
           </a>
           <a href={import.meta.env.VITE_FB_MESSENGER_URL || "https://m.me/420556081419367"} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#0084FF] hover:bg-[#0073E6] text-white rounded-xl text-xs font-bold transition-all shadow-xs">
-            <span>Messenger</span>
-            <ExternalLink size={12} />
+            <img src="/images/messenger_logo.png" alt="Messenger" className="w-3.5 h-3.5 object-contain shrink-0" />
+            <span className="whitespace-nowrap">Messenger</span>
+            <ExternalLink size={11} className="shrink-0 opacity-80" />
           </a>
         </div>
       </div>

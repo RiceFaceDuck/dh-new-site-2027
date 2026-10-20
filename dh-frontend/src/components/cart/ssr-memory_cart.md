@@ -65,5 +65,7 @@
 - ⚠️ **Storefront Order Creation 403 Permission Denied (Firestore Rules Invariant):**
   - *ปัญหา:* `checkoutSubmitService.js` บันทึก `status: 'draft'`, `orderStatus: 'Draft'`, `paymentStatus: 'pending_verification'` ซึ่งขัดกับ Firestore Security Rules บนคลาวด์ที่กำหนดให้ `status/orderStatus in ['pending', 'pending_payment', 'pending_payment_verification']` และ `paymentStatus == 'pending'` ส่งผลให้เกิดข้อผิดพลาด 403 Forbidden ("คุณไม่มีสิทธิ์ในการดำเนินการนี้ / Missing or insufficient permissions") เมื่อลูกค้ากดสั่งซื้อ
   - *วิธีแก้:* ปรับ `checkoutSubmitService.js` ให้บันทึก `status: slipUrl ? 'pending_payment_verification' : 'pending_payment'`, `orderStatus: slipUrl ? 'pending_payment_verification' : 'pending_payment'`, และ `paymentStatus: 'pending'` โดยยังคงแฟล็ก `isDraft: true`, `isWebOrder: true` ไว้ครบถ้วน สอดคล้องกับทั้ง Security Rules และระบบหลังบ้าน POS [สถานะ: ส่งมอบแล้ว]
+- 🎨 **Compact Social Logo Integration (Zero Layout Shift):**
+  - *สถานะ:* ปรับปรุงปุ่มแชตคู่ (LINE Official & Messenger) ใน `CartSummaryPanel.jsx`, `LoginRequiredModal.jsx`, และ `MessengerMenu.jsx` โดยแทรกรูปโลโก้ทางการขนาด 14px (`w-3.5 h-3.5`) พร้อม `shrink-0` และ `whitespace-nowrap` โดยคงความสูงและสัดส่วนโครงสร้างของปุ่มเดิมไว้ 100% [สถานะ: ส่งมอบแล้ว]
 </pitfalls_and_solutions>
 

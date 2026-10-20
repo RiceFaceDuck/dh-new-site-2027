@@ -95,13 +95,15 @@ import { useNavigate } from 'react-router-dom';
                 onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook', '_blank')}
                 className="w-full font-bold py-3.5 rounded-md text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#00B900] hover:bg-[#009900] text-white shadow-xs hover:shadow-md active:scale-95"
               >
-                <MessageCircle size={18} /> LINE
+                <img src="/images/line_logo.png" alt="LINE" className="w-4.5 h-4.5 object-contain shrink-0" />
+                <span>LINE</span>
               </button>
               <button 
                 onClick={() => window.open('https://m.me/dhnotebook', '_blank')}
                 className="w-full font-bold py-3.5 rounded-md text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#0084FF] hover:bg-[#0070D6] text-white shadow-xs hover:shadow-md active:scale-95"
               >
-                <MessageSquare size={18} /> Messenger
+                <img src="/images/messenger_logo.png" alt="Messenger" className="w-4.5 h-4.5 object-contain shrink-0" />
+                <span>Messenger</span>
               </button>
             </div>
           </div>
@@ -147,17 +149,19 @@ import { useNavigate } from 'react-router-dom';
             <div className="flex gap-2">
               <button 
                 onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook', '_blank', 'noopener,noreferrer')}
-                className="flex-1 py-2.5 px-3 rounded-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
               >
-                <span>LINE Official</span>
-                <ExternalLink size={12} strokeWidth={2.5} />
+                <img src="/images/line_logo.png" alt="LINE" className="w-3.5 h-3.5 object-contain shrink-0" />
+                <span className="whitespace-nowrap">LINE Official</span>
+                <ExternalLink size={11} strokeWidth={2.5} className="shrink-0 opacity-80" />
               </button>
               <button 
                 onClick={() => window.open('https://m.me/dhnotebook', '_blank', 'noopener,noreferrer')}
-                className="flex-1 py-2.5 px-3 rounded-full bg-[#0084FF] hover:bg-[#0073e6] text-white font-bold text-xs flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-full bg-[#0084FF] hover:bg-[#0073e6] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
               >
-                <span>Messenger</span>
-                <ExternalLink size={12} strokeWidth={2.5} />
+                <img src="/images/messenger_logo.png" alt="Messenger" className="w-3.5 h-3.5 object-contain shrink-0" />
+                <span className="whitespace-nowrap">Messenger</span>
+                <ExternalLink size={11} strokeWidth={2.5} className="shrink-0 opacity-80" />
               </button>
             </div>
             <button

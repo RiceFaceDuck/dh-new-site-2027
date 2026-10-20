@@ -106,15 +106,17 @@ const LoginRequiredModal = ({ isOpen, onClose, onLogin }) => {
               onClick={() => window.open('https://line.me/R/ti/p/@dhnotebook', '_blank', 'noopener,noreferrer')}
               className="flex-1 py-3 px-3 rounded-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              <span>LINE Official</span>
-              <ExternalLink size={14} strokeWidth={2.5} />
+              <img src="/images/line_logo.png" alt="LINE" className="w-4 h-4 object-contain shrink-0" />
+              <span className="whitespace-nowrap">LINE Official</span>
+              <ExternalLink size={13} strokeWidth={2.5} className="shrink-0 opacity-80" />
             </button>
             <button 
               onClick={() => window.open('https://m.me/dhnotebook', '_blank', 'noopener,noreferrer')}
               className="flex-1 py-3 px-3 rounded-full bg-[#0084FF] hover:bg-[#0073e6] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              <span>Messenger</span>
-              <ExternalLink size={14} strokeWidth={2.5} />
+              <img src="/images/messenger_logo.png" alt="Messenger" className="w-4 h-4 object-contain shrink-0" />
+              <span className="whitespace-nowrap">Messenger</span>
+              <ExternalLink size={13} strokeWidth={2.5} className="shrink-0 opacity-80" />
             </button>
           </div>
 
