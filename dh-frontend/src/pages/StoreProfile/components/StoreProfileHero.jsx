@@ -58,13 +58,13 @@ const StoreProfileHero = ({ partner }) => {
                   href={`tel:${phone}`}
                   title={`โทรติดต่อ: ${phone}`}
                   onClick={() => console.log('Track click contact')} // Should deduct partner credit in full system
-                  className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm border-b-[3px] border-emerald-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-full"
+                  className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm sm:text-base border-b-[3px] border-emerald-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-1/2 mx-auto sm:w-full"
                 >
-                  <span className="px-3 py-2 truncate text-center flex-1">
+                  <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
                     โทรติดต่อร้าน
                   </span>
                   <span className="h-full w-10 sm:w-11 bg-white text-emerald-600 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
-                    <Phone size={16} className="group-hover:scale-110 transition-transform" />
+                    <Phone size={17} className="group-hover:scale-110 transition-transform" />
                   </span>
                 </a>
               )}
@@ -73,14 +73,14 @@ const StoreProfileHero = ({ partner }) => {
                   href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="นำทางด้วย Google Maps"
-                  className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs sm:text-sm border-b-[3px] border-sky-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-full"
+                  title="Google MAP"
+                  className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm sm:text-base border-b-[3px] border-sky-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-1/2 mx-auto sm:w-full"
                 >
-                  <span className="px-3 py-2 truncate text-center flex-1">
-                    นำทางร้านค้า
+                  <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
+                    Google MAP
                   </span>
                   <span className="h-full w-10 sm:w-11 bg-white text-sky-600 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
-                    <MapPin size={16} className="group-hover:scale-110 transition-transform" />
+                    <MapPin size={17} className="group-hover:scale-110 transition-transform" />
                   </span>
                 </a>
               )}
@@ -95,13 +95,13 @@ const StoreProfileHero = ({ partner }) => {
                   }
                 }}
                 title="แชร์ร้านค้านี้"
-                className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs sm:text-sm border-b-[3px] border-slate-900 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-full"
+                className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm sm:text-base border-b-[3px] border-slate-900 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-12 cursor-pointer w-1/2 mx-auto sm:w-full"
               >
-                <span className="px-3 py-2 truncate text-center flex-1">
+                <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
                   แชร์ร้านค้านี้
                 </span>
                 <span className="h-full w-10 sm:w-11 bg-white text-slate-700 flex items-center justify-center [clip-path:polygon(12px_0,100%_0,100%_100%,0_100%)] pl-2.5 shrink-0">
-                  <Share2 size={16} className="group-hover:scale-110 transition-transform" />
+                  <Share2 size={17} className="group-hover:scale-110 transition-transform" />
                 </span>
               </button>
             </div>
