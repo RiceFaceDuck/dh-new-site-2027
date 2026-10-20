@@ -36,9 +36,9 @@ const StoreProfileHero = ({ partner }) => {
               <img src={avatar} alt={name} className="w-full h-full object-contain"  loading="lazy" />
             </div>
             {partner.isActive && (
-              <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full border-2 border-white shadow-xs flex items-center">
+              <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-[0.1rem] border-2 border-white shadow-xs flex items-center">
                 <span className="w-2 h-2 rounded-full bg-white mr-1.5 animate-pulse"></span>
-                กำลังเปิดรับงาน
+                ร้านเปิด
               </div>
             )}
           </div>

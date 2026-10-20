@@ -38,5 +38,6 @@
     - ⚠️ Mount Read Duplication: Concurrent calls on mount fired 2x Firebase reads. [RESOLVED] Added `inFlightFetchPromise` lock in `partnerLocationService.js`.
     - ⚠️ Image Aspect Ratio Squish: `LazyImage` wrapper div intercepted `object-*` while inner `img` received none, defaulting to `object-fit: fill`. [RESOLVED] Extracted `object-*` directly onto `img` and set `object-cover` on `PartnerCard.jsx`.
     - ⚠️ PartnerCard Whiteout & Element Overflow: Card was washed out (`bg-white/80 border-slate-200/60 shadow-[...0.05]`), avatar was overly wide (`155px`), and distance badge/View Profile used `w-max` without `min-w-0`, causing text, badge, and button to overflow the card boundary on desktop grid. Status dot also leaked past bottom edge due to `-bottom-1`. [RESOLVED] Changed to solid `bg-white`, crisp `border border-slate-200 shadow-md`, balanced avatar (`105px-125px`), added `min-w-0 truncate` and `w-fit max-w-full`, and moved status dot safely inside avatar (`bottom-1 right-1`).
+    - 🎨 StoreProfile Visual Polish: Replaced text badges with official brand icons for LINE and Messenger in `StoreProfileInfo.jsx`, cleaned up technician reputation badge to display only 'ช่างเครดิตดีเยี่ยม' without raw points, and styled store status badge in `StoreProfileHero.jsx` to 'ร้านเปิด' with `rounded-[0.1rem]`.
   </pitfalls_and_lessons>
 </ssr_memory>

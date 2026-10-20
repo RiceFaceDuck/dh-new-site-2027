@@ -57,7 +57,7 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
                 <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-sm text-slate-600">ช่างเครดิตดีเยี่ยม ({partner.points} Points)</span>
+                <span className="text-sm text-slate-600">ช่างเครดิตดีเยี่ยม</span>
               </li>
             )}
           </ul>
@@ -100,13 +100,13 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
             <div className="flex flex-col gap-3">
               {partner.lineUrl && (
                 <a href={partner.lineUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-3 group-hover:bg-green-500 group-hover:text-white transition-colors">LINE</div>
+                  <img src="/images/line_logo.png" alt="LINE" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-green-700">LINE Official</span>
                 </a>
               )}
               {partner.messengerUrl && (
                 <a href={partner.messengerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-blue-50 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 group-hover:bg-blue-500 group-hover:text-white transition-colors">FB</div>
+                  <img src="/images/messenger_logo.png" alt="Messenger" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-blue-700">Messenger</span>
                 </a>
               )}
