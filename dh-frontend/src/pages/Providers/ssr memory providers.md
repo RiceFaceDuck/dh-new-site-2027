@@ -43,5 +43,6 @@
     - 🎨 StoreProfile Info Cards Sequence: Reordered right column cards in `StoreProfileInfo.jsx` to prioritize customer contact: 1. ช่องทางการติดต่อ (Social Links), 2. ตำแหน่งที่ตั้งร้าน (Location), 3. การรับรองระบบ (Certifications).
     - 🎨 Flush Top Layout (No Cover Banner): Removed top cover gradient banner in `StoreProfileHero.jsx` and `StoreProfilePage.jsx` skeleton, shifting the hero store card flush to the top (`pt-4 md:pt-6`) with crisp white card styling (`bg-white shadow-sm border border-slate-100`).
     - 🎨 Responsive Review Box Order: Restructured CSS Grid in `StoreProfileInfo.jsx` so Customer Reviews (`PartnerReviews`) naturally renders at the bottom on mobile screens after contact/location/certifications, while preserving the exact 2-column desktop layout (`md:col-start-1 md:row-start-2`) with zero double-mounting or extra Firestore queries.
+    - 🎨 Store Hero Image 400% 1:1 Scale: Expanded hero image box 400% in area from 128px (`w-32`) to 256px-320px (`w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 aspect-square`), using `object-cover` to crop edges at strict 1:1 ratio without letterboxing or aspect distortion.
   </pitfalls_and_lessons>
 </ssr_memory>

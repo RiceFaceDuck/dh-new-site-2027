@@ -22,8 +22,8 @@ const StoreProfileHero = ({ partner }) => {
           
           {/* Avatar Area */}
           <div className="relative group shrink-0">
-            <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white transform transition-transform group-hover:scale-105 duration-300">
-              <img src={avatar} alt={name} className="w-full h-full object-contain"  loading="lazy" />
+            <div className="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 aspect-square rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white transform transition-transform group-hover:scale-105 duration-300">
+              <img src={avatar} alt={name} className="w-full h-full object-cover"  loading="lazy" />
             </div>
             {partner.isActive && (
               <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-[0.1rem] border-2 border-white shadow-xs flex items-center">
