@@ -353,6 +353,14 @@ export const marketingService = {
             }
 
             const combinedStore = storeData || adDocData;
+            // 🛡️ ใช้เครดิตจริงของเจ้าของร้าน (users.creditPoints) เป็น points เพื่อให้ Visibility Guard หน้าบ้านกรองถูกต้อง
+            let ownerCredit = Number(combinedStore.points || combinedStore.creditPoints || 0);
+            try {
+              const ownerSnap = await getDoc(doc(db, getCollectionPath('users'), partnerId));
+              if (ownerSnap.exists()) ownerCredit = Number(ownerSnap.data().creditPoints || 0);
+            } catch (e) {
+              console.warn("Could not fetch owner credit for ActivePartners restore:", e);
+            }
             await setDoc(activePartnerRef, {
               partnerId: partnerId,
               storeName: combinedStore.storeName || combinedStore.partnerName || combinedStore.title || '',
@@ -374,7 +382,7 @@ export const marketingService = {
               tiktokUrl: combinedStore.tiktokUrl || '',
               shopeeUrl: combinedStore.shopeeUrl || '',
               lazadaUrl: combinedStore.lazadaUrl || '',
-              points: Number(combinedStore.points || combinedStore.creditPoints || 0),
+              points: ownerCredit,
               isActive: true,
               updatedAt: serverTimestamp()
             }, { merge: true });
@@ -382,7 +390,7 @@ export const marketingService = {
           // ล้าง localStorage active partners cache
           if (typeof window !== 'undefined' && window.localStorage) {
             const appId = window.__app_id || 'default-app-id';
-            window.localStorage.removeItem(`active_partners_cache_v4_${appId}`);
+            window.localStorage.removeItem(`active_partners_cache_v5_${appId}`);
             window.localStorage.removeItem(`active_partners_cache_v3_${appId}`);
           }
         } catch (e) {

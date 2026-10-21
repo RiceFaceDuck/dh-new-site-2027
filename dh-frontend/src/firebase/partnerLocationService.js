@@ -5,10 +5,14 @@ import { calculateDistance } from '../utils/geoUtils';
 import { safeJsonParse } from 'dh-shared';
 
 const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
-const CACHE_KEY = `active_partners_cache_v4_${appId}`;
+const CACHE_KEY = `active_partners_cache_v5_${appId}`;
 const CACHE_TTL_MINUTES = 15; // เก็บแคชไว้ 15 นาที เพื่อประหยัด Firebase Reads
 
 let inFlightFetchPromise = null;
+
+// 🛡️ Visibility Guard: ไม่แสดงร้านที่ปิด/พัก (isActive false) หรือไม่มีเครดิต (points <= 0)
+// `points` ถูกซิงค์จาก users.creditPoints โดย Cloud Function `partnerVisibilitySync`
+const isVisiblePartner = (p) => Boolean(p) && p.isActive !== false && Number(p.points || 0) > 0;
 
 /**
  * 📦 ดึงข้อมูลพาร์ทเนอร์ที่เปิดรับการสนับสนุนทั้งหมด
@@ -35,7 +39,7 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
             // ถ้าแคชยังไม่หมดอายุ (น้อยกว่า CACHE_TTL_MINUTES)
             if (now - timestamp < CACHE_TTL_MINUTES * 60 * 1000) {
               console.log("📍 [LocationService] ดึงข้อมูลพาร์ทเนอร์จาก Cache (Tier 1 LocalStorage, 0 Reads)");
-              return data;
+              return Array.isArray(data) ? data.filter(isVisiblePartner) : [];
             }
           }
         }
@@ -51,11 +55,11 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
           if (bundleData && Array.isArray(bundleData.items) && bundleData.items.length > 0) {
             console.log(`📍 [LocationService] โหลดพาร์ทเนอร์สำเร็จจาก Starter Bundle (${bundleData.items.length} ร้าน, 1 Read)`);
             const cachePayload = {
-              data: bundleData.items,
+              data: bundleData.items.filter(isVisiblePartner),
               timestamp: new Date().getTime()
             };
             localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
-            return bundleData.items;
+            return cachePayload.data;
           }
         }
       } catch (bundleErr) {
@@ -68,10 +72,7 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
       const q = query(partnersRef, limit(100));
       const snapshot = await getDocs(q);
       
-      const partners = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const partners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(isVisiblePartner);
 
       // 4. เซฟลง Cache เพื่อใช้ในครั้งต่อไป
       const cachePayload = {

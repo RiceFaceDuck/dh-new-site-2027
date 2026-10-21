@@ -46,5 +46,6 @@
     - 🎨 Store Hero Image 400% 1:1 Scale: Expanded hero image box 400% in area from 128px (`w-32`) to 256px-320px (`w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 aspect-square`), using `object-cover` to crop edges at strict 1:1 ratio without letterboxing or aspect distortion.
     - 🎨 Responsive PC Action Button Labels: Adopted concise button wording on PC ('โทร' | 'MAP' | 'แชร์') via `hidden md:inline` to completely eliminate text truncation next to the expanded 320px hero image, while preserving full labels on mobile (`md:hidden`).
     - 🎨 Removed Status Badge: Removed 'ร้านเปิด' floating status badge from store hero image in `StoreProfileHero.jsx` for an unobstructed, clean storefront photo display.
+    - 🛡️ Out-Of-Credit & Mock Cleanup: ลบ Mock AI Technical Service (`y2rG...`), ซ่อนร้านที่ไม่มีเครดิต (creditPoints <= 0) ทั้งหมดออกจาก `ActivePartners` และโฆษณาเป็น `OUT_OF_CREDIT`, พร้อมเพิ่ม Cloud Function `partnerVisibilitySync` (`onUserCreditChanged`, `onActivePartnerWritten`), ปรับ `nightlyChunkGuard` และ `partnerLocationService` ให้กรองเฉพาะ `isActive !== false && points > 0`, และอัปเกรดแคชหน้าร้านเป็น `active_partners_cache_v5` เพื่อให้หน้าร้านและเรดาร์แสดงเฉพาะร้านที่มีเครดิตจริงและกำลังเปิดทำการเท่านั้น.
   </pitfalls_and_lessons>
 </ssr_memory>

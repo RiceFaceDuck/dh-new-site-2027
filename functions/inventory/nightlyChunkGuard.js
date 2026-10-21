@@ -325,7 +325,8 @@ const rebuildAllChunksLogic = async (db) => {
 
     partnersSnap.forEach(pDoc => {
       const p = pDoc.data() || {};
-      if (p.isActive !== false) {
+      // 🛡️ Visibility Guard: ซ่อนร้านที่ปิด/พัก (isActive false) และร้านที่ไม่มีเครดิต (points <= 0)
+      if (p.isActive !== false && Number(p.points || 0) > 0) {
         allActivePartners.push({
           id: pDoc.id,
           partnerId: p.partnerId || pDoc.id,
