@@ -26,6 +26,11 @@ export const storeProfileSubmitService = {
         }
       });
 
+      // 📍 เสริมพิกัด Google Map ลิงก์อัตโนมัติหากมี latitude/longitude แต่ไม่มี googleMapLink
+      if (!finalStoreData.googleMapLink && finalStoreData.latitude && finalStoreData.longitude) {
+        finalStoreData.googleMapLink = `https://www.google.com/maps?q=${finalStoreData.latitude},${finalStoreData.longitude}`;
+      }
+
       const batch = writeBatch(db); 
 
       // 2. บันทึกข้อมูลร้านลงระบบ Profile หลัก

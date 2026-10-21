@@ -11,10 +11,17 @@ const StoreProfileHero = ({ partner }) => {
   const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
   const role = partner.services || partner.role || 'บริการซ่อมคอมพิวเตอร์และอุปกรณ์ไอที';
   const phone = partner.phone || partner.storeProfile?.phone || '';
-  const rawMapsUrl = partner.mapsUrl || partner.googleMapLink || partner.googleMapsUrl || partner.storeProfile?.mapsUrl || partner.storeProfile?.googleMapLink || '';
-  const mapsUrl = rawMapsUrl && !rawMapsUrl.startsWith('http') 
-    ? `https://www.google.com/maps?q=${encodeURIComponent(rawMapsUrl)}`
-    : rawMapsUrl;
+
+  // 📍 คำนวณลิงก์ Google Maps จาก mapsUrl, googleMapLink หรือพิกัด GPS (latitude, longitude)
+  const lat = Number(partner.latitude ?? partner.storeProfile?.latitude ?? 0);
+  const lng = Number(partner.longitude ?? partner.storeProfile?.longitude ?? 0);
+  const hasCoords = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+  const coordsUrl = hasCoords ? `https://www.google.com/maps?q=${lat},${lng}` : '';
+
+  const rawMapsUrl = (partner.mapsUrl || partner.googleMapLink || partner.googleMapsUrl || partner.storeProfile?.mapsUrl || partner.storeProfile?.googleMapLink || coordsUrl || '').trim();
+  const mapsUrl = rawMapsUrl 
+    ? (rawMapsUrl.startsWith('http') ? rawMapsUrl : `https://www.google.com/maps?q=${encodeURIComponent(rawMapsUrl)}`)
+    : '';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 relative z-10">

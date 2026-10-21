@@ -1,6 +1,18 @@
 import PartnerReviews from './PartnerReviews';
+import { MapPin, ExternalLink } from 'lucide-react';
 
 const StoreProfileInfo = ({ partner, currentUser }) => {
+  // 📍 คำนวณลิงก์ Google Maps จาก mapsUrl, googleMapLink หรือพิกัด GPS (latitude, longitude)
+  const lat = Number(partner.latitude ?? partner.storeProfile?.latitude ?? 0);
+  const lng = Number(partner.longitude ?? partner.storeProfile?.longitude ?? 0);
+  const hasCoords = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+  const coordsUrl = hasCoords ? `https://www.google.com/maps?q=${lat},${lng}` : '';
+
+  const rawMapsUrl = (partner.mapsUrl || partner.googleMapLink || partner.googleMapsUrl || partner.storeProfile?.mapsUrl || partner.storeProfile?.googleMapLink || coordsUrl || '').trim();
+  const mapsUrl = rawMapsUrl 
+    ? (rawMapsUrl.startsWith('http') ? rawMapsUrl : `https://www.google.com/maps?q=${encodeURIComponent(rawMapsUrl)}`)
+    : '';
+
   return (
     <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
       {/* 1. Service Details & Gallery */}
@@ -97,7 +109,7 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
         )}
 
         {/* Location Section */}
-        {(partner.address || partner.landmarks) && (
+        {(partner.address || partner.landmarks || hasCoords || mapsUrl) && (
           <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-rose-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,9 +125,23 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
               </div>
             )}
             {partner.landmarks && (
-              <div>
+              <div className="mb-3">
                 <p className="text-xs font-bold text-slate-500 uppercase">จุดสังเกต</p>
                 <p className="text-sm text-slate-700">{partner.landmarks}</p>
+              </div>
+            )}
+            {mapsUrl && (
+              <div className="pt-1">
+                <a 
+                  href={mapsUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-600 hover:text-sky-700 hover:underline"
+                >
+                  <MapPin size={14} className="text-rose-500" />
+                  <span>เปิดดูตำแหน่งบน Google Maps</span>
+                  <ExternalLink size={12} className="text-sky-500" />
+                </a>
               </div>
             )}
           </div>

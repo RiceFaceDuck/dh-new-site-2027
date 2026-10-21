@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, ShieldAlert } from 'lucide-react';
+import { Store, ShieldAlert, ExternalLink } from 'lucide-react';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
@@ -57,7 +57,23 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           <p className="text-[11px] text-slate-500 mt-1">ข้อมูลในหน้านี้จะถูกนำไปใช้สร้าง <b>"โฆษณานามบัตร"</b> และแสดงผลบนแผนที่เรดาร์อัตโนมัติ</p>
         </div>
         
-        <div className="bg-white p-3 rounded-md flex items-center gap-4 border border-slate-200 shadow-2xs">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+          {/* 🌟 ปุ่มทางลัด [หน้าร้าน] เพื่อเข้าสู่หน้าโปรไฟล์ตัวเอง */}
+          {user?.uid && (
+            <a
+              href={`/store/${user.uid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="เปิดดูหน้าร้านของคุณในมุมมองลูกค้า (แท็บใหม่)"
+              className="bg-white hover:bg-slate-50 text-slate-800 hover:text-indigo-600 px-3.5 py-3 rounded-md flex items-center gap-2 border border-slate-200 shadow-2xs hover:border-indigo-300 transition-all text-xs font-bold active:scale-95 group shrink-0"
+            >
+              <Store size={16} className="text-indigo-600 group-hover:scale-110 transition-transform" />
+              <span>หน้าร้าน</span>
+              <ExternalLink size={13} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
+            </a>
+          )}
+
+          <div className="bg-white p-3 rounded-md flex items-center gap-4 border border-slate-200 shadow-2xs">
           <div className="text-right">
             <div className="text-xs font-bold text-slate-800 uppercase tracking-widest">นามบัตรโฆษณา</div>
             <div className="text-[10px]">
@@ -91,6 +107,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
           </label>
         </div>
       </div>
+    </div>
 
       {/* 🛑 กล่องแจ้งเตือนเหตุผลการปฏิเสธจากผู้จัดการ */}
       {businessCardAd?.status?.toUpperCase() === 'REJECTED' && (
