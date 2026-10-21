@@ -1,4 +1,4 @@
-import { doc, getDoc, getDocs, runTransaction, collection, serverTimestamp, query, where, documentId, limit } from 'firebase/firestore';
+import { doc, getDoc, getDocs, runTransaction, writeBatch, collection, serverTimestamp, query, where, documentId, limit } from 'firebase/firestore';
 import { db } from '../config';
 import { historyService } from '../historyService';
 import { formatCredit, calculateEarnedPoints } from './creditFormatService';
@@ -6,6 +6,7 @@ import { getCollectionPath, getUsersPath } from 'dh-shared/src/firebase/pathUtil
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
 import { COLLECTIONS, validateCreditTransaction } from 'dh-shared';
+import { syncCustomerToDirectoryChunk } from '../../pages/Customers/services/customerCacheService';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -269,7 +270,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     // ✨ NEW FIX: Sync points to ActivePartners to prevent denormalization issues
     if (activePartnerSnap.exists()) {
-      transaction.set(activePartnerRef, { points: newPointsBalance, updatedAt: serverTimestamp() }, { merge: true });
+      transaction.set(activePartnerRef, { points: newPointsBalance, isActive: true, updatedAt: serverTimestamp() }, { merge: true });
     }
 
     const userData = userSnap.data();
@@ -320,16 +321,88 @@ export const adjustUserCredit = async (inputUid, amount, type, note, actorUid, r
     const uid = await resolveSmartUid(inputUid);
 
     let transactionId = null;
+    let newBalance = 0;
     await runTransaction(db, async (transaction) => {
       const result = await adjustUserCreditWithTransaction(transaction, uid, amount, type, note, actorUid, referenceId);
       transactionId = result.transactionId;
+      newBalance = result.newBalance;
     });
 
     const mappedType = (type === 'deposit' || type === 'add' || type === 'earn') ? 'add' : 'deduct';
     if (historyService && historyService.addLog) {
-      await historyService.addLog('CyberAuditCore', mappedType === 'add' ? 'CreditDeposit' : 'CreditDeduct', uid, `${mappedType === 'add' ? 'เพิ่ม' : 'ลด'}เครดิต ฿${amount.toLocaleString()}`, actorUid);
+      await historyService.addLog('CyberAuditCore', mappedType === 'add' ? 'CreditDeposit' : 'CreditDeduct', uid, `${mappedType === 'add' ? 'เพิ่ม' : 'ลด'}เครดิต ${amount.toLocaleString()} Pts`, actorUid);
     }
-    return { success: true, transactionId };
+
+    // 🌟 Self-Healing: ปลดล็อกโฆษณานามบัตรที่เคยถูกพักเพราะแต้มหมด (OUT_OF_CREDIT) กลับมาทำงานทันที
+    if (mappedType === 'add' && newBalance > 0) {
+      try {
+        const adsCol = collection(db, getCollectionPath('partner_ads'));
+        const outOfCreditSnap = await getDocs(query(adsCol, where('ownerId', '==', uid), where('status', '==', 'OUT_OF_CREDIT')));
+        if (!outOfCreditSnap.empty) {
+          const batch = writeBatch(db);
+          let hasCard = false;
+          let cardData = null;
+          outOfCreditSnap.forEach(adDoc => {
+            const d = adDoc.data() || {};
+            batch.update(adDoc.ref, { status: 'active', isActive: true, updatedAt: serverTimestamp() });
+            if (d.type === 'BUSINESS_CARD') {
+              hasCard = true;
+              cardData = d;
+            }
+          });
+          if (hasCard && cardData) {
+            const apRef = doc(db, getCollectionPath('ActivePartners'), uid);
+            batch.set(apRef, {
+              partnerId: uid,
+              storeName: cardData.partnerName || cardData.title || '',
+              partnerName: cardData.partnerName || cardData.title || '',
+              services: cardData.services || cardData.description || '',
+              phone: cardData.phone || '',
+              messengerUrl: cardData.messengerUrl || '',
+              lineUrl: cardData.lineUrl || '',
+              googleMapLink: cardData.googleMapLink || '',
+              latitude: Number(cardData.latitude || 0),
+              longitude: Number(cardData.longitude || 0),
+              storeImage: cardData.imageUrl || '',
+              imageUrl: cardData.imageUrl || '',
+              address: cardData.address || '',
+              landmarks: cardData.landmarks || '',
+              richDescription: cardData.richDescription || '',
+              galleryImages: Array.isArray(cardData.galleryImages) ? cardData.galleryImages : [],
+              openHours: cardData.openHours || '',
+              points: newBalance,
+              viewsCount: Number(cardData.stats?.views || 0),
+              isActive: true,
+              isVerified: true,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          }
+          await batch.commit();
+        }
+      } catch (e) {
+        console.warn('⚠️ [Credit Engine] Auto-restore paused ads notice:', e);
+      }
+    }
+
+    // 🌟 Directory Chunk Parity: ซิงค์แต้มล่าสุดเข้าแคตตาล็อกลูกค้ารวม (0-Read Cache Parity)
+    try {
+      const userDocRef = doc(db, getUsersPath(), uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        const uData = userSnap.data();
+        syncCustomerToDirectoryChunk({
+          id: uid,
+          uid: uid,
+          ...uData,
+          creditPoints: newBalance,
+          points: newBalance
+        }, 'upsert').catch(err => console.warn('⚠️ [Credit Engine] Directory chunk sync notice:', err));
+      }
+    } catch (e) {
+      console.warn('⚠️ [Credit Engine] Post-adjust directory sync skipped:', e);
+    }
+
+    return { success: true, transactionId, newBalance };
   } catch (error) {
     console.error("🔥 System Error [adjustUserCredit]:", error);
     throw error;

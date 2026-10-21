@@ -47,5 +47,6 @@
 - ⚠️ Listener Multiplexing & Unsubscribe: Lifted financial listeners to DetailPanel and unsubscribed Map listeners on dh_auth_logout to eliminate dual-listener leaks.
 - ⚠️ Symbol & Decimal Parity: Standardized PT/THB to Pts in CreditAdjustTab/CreditCalculatorTab and enabled maximumFractionDigits: 2 in frontend creditFormatService.
 - ⚠️ Schema & Type Validation (Phase 3): Centralized COLLECTIONS.CREDIT_TRANSACTIONS in schemaKeys.js and guarded all write transactions with Zod schema validation (creditSchema.js).
+- ⚠️ Partner Ad Auto-Restore & Directory Parity (Self-Healing): ร้านที่เคยแต้มหมดแล้วถูกระงับเป็น OUT_OF_CREDIT และลบออกจาก ActivePartners เมื่อผู้จัดการเติมเครดิตใหม่ผ่าน adjustUserCredit ระบบจะปลดล็อกโฆษณานามบัตรกลับเป็น active, คืนข้อมูลลง ActivePartners และซิงค์แต้มลง catalogs/customers_directory อัตโนมัติ ป้องกันปัญหาแต้มไม่ขึ้นในตารางและโฆษณาหายหน้าบ้าน
 </pitfalls_and_lessons>
 </grimoire>

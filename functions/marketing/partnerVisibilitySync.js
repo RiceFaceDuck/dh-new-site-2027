@@ -31,6 +31,71 @@ const hidePartnerForNoCredit = async (db, uid) => {
   console.log(`🛑 [partnerVisibilitySync] Hid zero-credit partner ${uid} (ads paused: ${adsSnap.size})`);
 };
 
+/** Restore paused ads (OUT_OF_CREDIT) and re-link ActivePartners if owner now has credit > 0. */
+const restorePartnerForCredit = async (db, uid, credit, userData) => {
+  const batch = db.batch();
+  const outOfCreditAds = await db.collection("partner_ads")
+    .where("ownerId", "==", uid)
+    .where("status", "==", "OUT_OF_CREDIT")
+    .get();
+
+  let cardData = null;
+  outOfCreditAds.forEach((adDoc) => {
+    const ad = adDoc.data() || {};
+    batch.update(adDoc.ref, { status: "active", isActive: true, updatedAt: FieldValue.serverTimestamp() });
+    if (ad.type === "BUSINESS_CARD") {
+      cardData = ad;
+    }
+  });
+
+  const apRef = db.collection("ActivePartners").doc(uid);
+  const apSnap = await apRef.get();
+
+  if (apSnap.exists) {
+    batch.update(apRef, { points: credit, isActive: true, updatedAt: FieldValue.serverTimestamp() });
+    await batch.commit();
+    const currentAp = { ...(apSnap.data() || {}), points: credit, isActive: true };
+    await syncBundleItem(db, uid, toBundleItem(uid, currentAp));
+  } else if (cardData) {
+    const name = cardData.partnerName || cardData.title || userData?.storeName || userData?.accountName || userData?.displayName || "ร้านช่างพาร์ทเนอร์";
+    const apData = {
+      partnerId: uid,
+      storeName: name,
+      partnerName: name,
+      services: cardData.services || cardData.description || "",
+      phone: cardData.phone || userData?.phone || userData?.phoneNumber || "",
+      messengerUrl: cardData.messengerUrl || userData?.messengerUrl || "",
+      lineUrl: cardData.lineUrl || "",
+      googleMapLink: cardData.googleMapLink || "",
+      latitude: Number(cardData.latitude || 0),
+      longitude: Number(cardData.longitude || 0),
+      storeImage: cardData.imageUrl || userData?.photoURL || "",
+      imageUrl: cardData.imageUrl || userData?.photoURL || "",
+      address: cardData.address || "",
+      landmarks: cardData.landmarks || "",
+      richDescription: cardData.richDescription || "",
+      galleryImages: Array.isArray(cardData.galleryImages) ? cardData.galleryImages : [],
+      openHours: cardData.openHours || "",
+      websiteUrl: cardData.websiteUrl || "",
+      youtubeUrl: cardData.youtubeUrl || "",
+      tiktokUrl: cardData.tiktokUrl || "",
+      shopeeUrl: cardData.shopeeUrl || "",
+      lazadaUrl: cardData.lazadaUrl || "",
+      points: credit,
+      viewsCount: Number(cardData.stats?.views || 0),
+      isActive: true,
+      isVerified: true,
+      updatedAt: FieldValue.serverTimestamp()
+    };
+    batch.set(apRef, apData, { merge: true });
+    await batch.commit();
+    await syncBundleItem(db, uid, toBundleItem(uid, apData));
+  } else if (outOfCreditAds.size > 0) {
+    await batch.commit();
+  }
+  console.log(`🎉 [partnerVisibilitySync] Restored credit partner ${uid} (points: ${credit}, ads restored: ${outOfCreditAds.size})`);
+};
+
 /** Build the compact bundle item (same shape as nightlyChunkGuard). */
 const toBundleItem = (id, p) => ({
   id,
@@ -93,11 +158,7 @@ const onUserCreditChanged = onDocumentWritten({
       await hidePartnerForNoCredit(db, uid);
       return null;
     }
-    const apRef = db.collection("ActivePartners").doc(uid);
-    const apSnap = await apRef.get();
-    if (apSnap.exists && Number(apSnap.data().points) !== newCredit) {
-      await apRef.update({ points: newCredit, updatedAt: FieldValue.serverTimestamp() });
-    }
+    await restorePartnerForCredit(db, uid, newCredit, after);
   } catch (error) {
     console.error(`[partnerVisibilitySync] onUserCreditChanged failed for ${uid}:`, error);
   }
