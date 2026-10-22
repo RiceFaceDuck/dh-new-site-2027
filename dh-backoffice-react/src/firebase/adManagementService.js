@@ -138,7 +138,7 @@ export const adManagementService = {
         batch.update(legacyRef, updatePayload);
       }
 
-      // 🌟 THE FIX [Data Relationship]: Sync full store profile to ActivePartners upon approval
+      // 🌟 THE FIX [Data Relationship]: Sync full store profile to ActivePartners and active_partners_bundle upon approval
       if (adData.type === 'BUSINESS_CARD') {
          const partnerId = adData.ownerId;
          const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
@@ -156,31 +156,97 @@ export const adManagementService = {
            console.warn("Could not fetch user points for partner sync:", e);
          }
 
+         const storeImage = adData.imageUrl || '';
+         const storeName = adData.partnerName || adData.title || '';
+         const services = adData.services || adData.description || '';
+         const phone = adData.phone || '';
+         const messengerUrl = adData.messengerUrl || '';
+         const lineUrl = adData.lineUrl || '';
+         const googleMapLink = adData.googleMapLink || '';
+         const latitude = Number(adData.latitude || 0);
+         const longitude = Number(adData.longitude || 0);
+         const address = adData.address || '';
+         const landmarks = adData.landmarks || '';
+         const richDescription = adData.richDescription || '';
+         const galleryImages = Array.isArray(adData.galleryImages) ? adData.galleryImages : [];
+         const openHours = adData.openHours || '';
+         const websiteUrl = adData.websiteUrl || '';
+         const youtubeUrl = adData.youtubeUrl || '';
+         const tiktokUrl = adData.tiktokUrl || '';
+         const shopeeUrl = adData.shopeeUrl || '';
+         const lazadaUrl = adData.lazadaUrl || '';
+
          batch.set(activePartnerRef, {
             partnerId: partnerId,
-            storeName: adData.partnerName || adData.title || '',
-            services: adData.services || adData.description || '',
-            phone: adData.phone || '',
-            messengerUrl: adData.messengerUrl || '',
-            lineUrl: adData.lineUrl || '',
-            googleMapLink: adData.googleMapLink || '',
-            latitude: Number(adData.latitude || 0),
-            longitude: Number(adData.longitude || 0),
-            storeImage: adData.imageUrl || '',
-            address: adData.address || '',
-            landmarks: adData.landmarks || '',
-            richDescription: adData.richDescription || '',
-            galleryImages: Array.isArray(adData.galleryImages) ? adData.galleryImages : [],
-            openHours: adData.openHours || '',
-            websiteUrl: adData.websiteUrl || '',
-            youtubeUrl: adData.youtubeUrl || '',
-            tiktokUrl: adData.tiktokUrl || '',
-            shopeeUrl: adData.shopeeUrl || '',
-            lazadaUrl: adData.lazadaUrl || '',
+            storeName: storeName,
+            services: services,
+            phone: phone,
+            messengerUrl: messengerUrl,
+            lineUrl: lineUrl,
+            googleMapLink: googleMapLink,
+            latitude: latitude,
+            longitude: longitude,
+            storeImage: storeImage,
+            address: address,
+            landmarks: landmarks,
+            richDescription: richDescription,
+            galleryImages: galleryImages,
+            openHours: openHours,
+            websiteUrl: websiteUrl,
+            youtubeUrl: youtubeUrl,
+            tiktokUrl: tiktokUrl,
+            shopeeUrl: shopeeUrl,
+            lazadaUrl: lazadaUrl,
             points: points,
             isActive: true,
             updatedAt: serverTimestamp()
          }, { merge: true });
+
+         // 🌟 Event-Driven Starter Bundle Snapshot: อัปเดตร้านช่างใน catalogs/active_partners_bundle ทันที
+         try {
+           const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
+           const bundleSnap = await getDoc(bundleRef);
+           if (bundleSnap.exists()) {
+             const bData = bundleSnap.data() || {};
+             let items = Array.isArray(bData.items) ? [...bData.items] : [];
+             const partnerItem = {
+               id: partnerId,
+               partnerId: partnerId,
+               storeName: storeName,
+               partnerName: storeName,
+               services: services,
+               phone: phone,
+               messengerUrl: messengerUrl,
+               lineUrl: lineUrl,
+               googleMapLink: googleMapLink,
+               latitude: latitude,
+               longitude: longitude,
+               storeImage: storeImage,
+               imageUrl: storeImage,
+               address: address,
+               landmarks: landmarks,
+               openHours: openHours,
+               points: points,
+               viewsCount: 0,
+               isVerified: true,
+               isActive: true
+             };
+             const existingIdx = items.findIndex(i => (i.id === partnerId || i.partnerId === partnerId));
+             if (existingIdx >= 0) {
+               items[existingIdx] = { ...items[existingIdx], ...partnerItem };
+             } else {
+               items.unshift(partnerItem);
+             }
+             batch.set(bundleRef, {
+               items: items.slice(0, 100),
+               totalActivePartners: items.length,
+               bundledCount: items.slice(0, 100).length,
+               updatedAt: serverTimestamp()
+             }, { merge: true });
+           }
+         } catch (e) {
+           console.warn("Could not sync partner into active_partners_bundle:", e);
+         }
       }
 
       // 2.2 ปิดงานใน To-do ของผู้จัดการโดยตรง (Direct Update ไม่ต้อง Query)
@@ -191,55 +257,6 @@ export const adManagementService = {
           resolution: 'approved',
           updatedAt: serverTimestamp() 
         });
-      }
-
-      // 🌟 Event-Driven Starter Bundle Snapshot: อัปเดตร้านช่างใน catalogs/active_partners_bundle ทันที
-      if (adData.type === 'BUSINESS_CARD') {
-        const partnerId = adData.ownerId;
-        try {
-          const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
-          const bundleSnap = await getDoc(bundleRef);
-          if (bundleSnap.exists()) {
-            const bData = bundleSnap.data() || {};
-            let items = Array.isArray(bData.items) ? [...bData.items] : [];
-            const partnerItem = {
-              id: partnerId,
-              partnerId: partnerId,
-              storeName: adData.partnerName || adData.title || '',
-              partnerName: adData.partnerName || adData.title || '',
-              services: adData.services || adData.description || '',
-              phone: adData.phone || '',
-              messengerUrl: adData.messengerUrl || '',
-              lineUrl: adData.lineUrl || '',
-              googleMapLink: adData.googleMapLink || '',
-              latitude: Number(adData.latitude || 0),
-              longitude: Number(adData.longitude || 0),
-              storeImage: adData.imageUrl || '',
-              imageUrl: adData.imageUrl || '',
-              address: adData.address || '',
-              landmarks: adData.landmarks || '',
-              openHours: adData.openHours || '',
-              points: points,
-              viewsCount: 0,
-              isVerified: true,
-              isActive: true
-            };
-            const existingIdx = items.findIndex(i => (i.id === partnerId || i.partnerId === partnerId));
-            if (existingIdx >= 0) {
-              items[existingIdx] = { ...items[existingIdx], ...partnerItem };
-            } else {
-              items.unshift(partnerItem);
-            }
-            batch.set(bundleRef, {
-              items: items.slice(0, 100),
-              totalActivePartners: items.length,
-              bundledCount: items.slice(0, 100).length,
-              updatedAt: serverTimestamp()
-            }, { merge: true });
-          }
-        } catch (e) {
-          console.warn("Could not sync partner into active_partners_bundle:", e);
-        }
       }
 
       await batch.commit(); // สั่งรันทุกคำสั่งพร้อมกัน
@@ -365,10 +382,30 @@ export const adManagementService = {
         batch.update(legacyRef, updatePayload);
       }
 
-      // 🌟 THE FIX [Data Relationship]: Remove from ActivePartners if paused
+      // 🌟 THE FIX [Data Relationship]: Remove from ActivePartners and active_partners_bundle if paused
       if (adData && adData.type === 'BUSINESS_CARD' && adData.ownerId) {
          const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), adData.ownerId);
          batch.delete(activePartnerRef);
+
+         try {
+           const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
+           const bundleSnap = await getDoc(bundleRef);
+           if (bundleSnap.exists()) {
+             const bData = bundleSnap.data() || {};
+             const items = Array.isArray(bData.items) ? bData.items : [];
+             const filtered = items.filter(i => (i.id !== adData.ownerId && i.partnerId !== adData.ownerId));
+             if (filtered.length !== items.length) {
+               batch.set(bundleRef, {
+                 items: filtered,
+                 totalActivePartners: filtered.length,
+                 bundledCount: filtered.length,
+                 updatedAt: serverTimestamp()
+               }, { merge: true });
+             }
+           }
+         } catch (e) {
+           console.warn("Could not remove partner from active_partners_bundle in pauseAd:", e);
+         }
       }
 
       await batch.commit();
@@ -407,6 +444,26 @@ export const adManagementService = {
       if (adData && adData.type === 'BUSINESS_CARD' && adData.ownerId) {
         const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), adData.ownerId);
         batch.delete(activePartnerRef);
+
+        try {
+          const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
+          const bundleSnap = await getDoc(bundleRef);
+          if (bundleSnap.exists()) {
+            const bData = bundleSnap.data() || {};
+            const items = Array.isArray(bData.items) ? bData.items : [];
+            const filtered = items.filter(i => (i.id !== adData.ownerId && i.partnerId !== adData.ownerId));
+            if (filtered.length !== items.length) {
+              batch.set(bundleRef, {
+                items: filtered,
+                totalActivePartners: filtered.length,
+                bundledCount: filtered.length,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+            }
+          }
+        } catch (e) {
+          console.warn("Could not remove partner from active_partners_bundle in deleteAd:", e);
+        }
       }
 
       const todoRef = doc(getTodosCollection(), `TODO-${adId}`);

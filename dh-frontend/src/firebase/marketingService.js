@@ -341,6 +341,26 @@ export const marketingService = {
         try {
           if (newStatus === 'paused') {
             await deleteDoc(activePartnerRef);
+            // 🌟 ตัดร้านออกจาก catalogs/active_partners_bundle ทันที
+            try {
+              const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
+              const bundleSnap = await getDoc(bundleRef);
+              if (bundleSnap.exists()) {
+                const bData = bundleSnap.data() || {};
+                const items = Array.isArray(bData.items) ? bData.items : [];
+                const filtered = items.filter(i => (i.id !== partnerId && i.partnerId !== partnerId));
+                if (filtered.length !== items.length) {
+                  await setDoc(bundleRef, {
+                    items: filtered,
+                    totalActivePartners: filtered.length,
+                    bundledCount: filtered.length,
+                    updatedAt: serverTimestamp()
+                  }, { merge: true });
+                }
+              }
+            } catch (bundleErr) {
+              console.warn("Could not remove partner from active_partners_bundle on pause:", bundleErr);
+            }
           } else if (newStatus === 'active') {
             // ดึง storeProfile หรือใช้ข้อมูลใน adDocData กู้คืนลง ActivePartners
             let storeData = null;
@@ -386,6 +406,52 @@ export const marketingService = {
               isActive: true,
               updatedAt: serverTimestamp()
             }, { merge: true });
+
+            // 🌟 อัปเดตร้านเข้าสู่ catalogs/active_partners_bundle ทันที
+            try {
+              const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
+              const bundleSnap = await getDoc(bundleRef);
+              if (bundleSnap.exists()) {
+                const bData = bundleSnap.data() || {};
+                let items = Array.isArray(bData.items) ? [...bData.items] : [];
+                const partnerItem = {
+                  id: partnerId,
+                  partnerId: partnerId,
+                  storeName: combinedStore.storeName || combinedStore.partnerName || combinedStore.title || '',
+                  partnerName: combinedStore.partnerName || combinedStore.storeName || combinedStore.title || '',
+                  services: combinedStore.services || combinedStore.description || '',
+                  phone: combinedStore.phone || '',
+                  messengerUrl: combinedStore.messengerUrl || '',
+                  lineUrl: combinedStore.lineUrl || '',
+                  googleMapLink: combinedStore.googleMapLink || '',
+                  latitude: Number(combinedStore.latitude || 0),
+                  longitude: Number(combinedStore.longitude || 0),
+                  storeImage: combinedStore.storeImage || combinedStore.imageUrl || '',
+                  imageUrl: combinedStore.storeImage || combinedStore.imageUrl || '',
+                  address: combinedStore.address || '',
+                  landmarks: combinedStore.landmarks || '',
+                  openHours: combinedStore.openHours || '',
+                  points: ownerCredit,
+                  viewsCount: Number(combinedStore.stats?.views || combinedStore.viewsCount || 0),
+                  isVerified: true,
+                  isActive: true
+                };
+                const existingIdx = items.findIndex(i => (i.id === partnerId || i.partnerId === partnerId));
+                if (existingIdx >= 0) {
+                  items[existingIdx] = { ...items[existingIdx], ...partnerItem };
+                } else {
+                  items.unshift(partnerItem);
+                }
+                await setDoc(bundleRef, {
+                  items: items.slice(0, 100),
+                  totalActivePartners: items.length,
+                  bundledCount: items.slice(0, 100).length,
+                  updatedAt: serverTimestamp()
+                }, { merge: true });
+              }
+            } catch (bundleErr) {
+              console.warn("Could not upsert partner into active_partners_bundle on active:", bundleErr);
+            }
           }
           // ล้าง localStorage active partners cache
           if (typeof window !== 'undefined' && window.localStorage) {
