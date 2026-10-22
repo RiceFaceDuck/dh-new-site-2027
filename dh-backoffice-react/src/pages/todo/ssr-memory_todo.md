@@ -108,4 +108,14 @@
     4. ปรับปรุง `orderSyncService` และ `OrderTableRow` ให้ซิงก์และแสดงป้าย `📄 ภาษี (รอ)`, `📄 ภาษี (ออกแล้ว)` และ `⚠️ ภาษี (รอข้อมูลใหม่)` ในตารางบิล
     5. สร้าง `CustomerTaxInfoModal` ใน Storefront (`dh-frontend`) พร้อม Pop-up แจ้งเตือนและปุ่มกรอกข้อมูลใหม่ รวมถึงป้ายกำกับและปุ่มดาวน์โหลดใบกำกับภาษี (PDF) ครบวงจร
   - *สถานะ:* ส่งมอบสมบูรณ์ ✅
+
+- **ปัญหาความสับสนระหว่าง Task ID กับ Customer ID บนการ์ดอนุมัติร้านค้า/โฆษณา (Store Profile & Ad Approval ID Parity):**
+  - *สาเหตุ:* 
+    1. บนการ์ด `StoreProfileApprovalCard` และ `AdApprovalCard` เดิมแสดงเพียง `#{todo.id?.slice(-8).toUpperCase()}` ซึ่งเป็น 8 ตัวท้ายของ Task ID (เช่น `TODO-AD-CARD-...IP2wwPu2` -> `#IP2WWPU2`) ทำให้ผู้ใช้งานเข้าใจผิดว่าเป็น Customer ID และเมื่อนำไปค้นหาในหน้ารายชื่อลูกค้าจึงหาไม่พบ เพราะ Customer ID จริงคือ 8 ตัวแรกของ UID (`JMSIF3BF`)
+    2. ในระบบฐานข้อมูลของลูกค้าที่สมัครผ่าน Google Auth บางรายเก็บเบอร์โทรในฟิลด์ `phoneNumber` แต่ `customerSearchService` เดิมตรวจสอบเฉพาะ `phone`, `tel`, และ `mobile` ทำให้การค้นหาด้วยเบอร์โทรหลุดรอดไป
+  - *วิธีแก้:* 
+    1. เพิ่มการแสดงป้าย **`ID: [Customer ID]`** ที่โดดเด่นบนการ์ด พร้อมปุ่มคลิกเพื่อคัดลอก (Click-to-Copy) โดยดึงจาก `accountId` / `customerId` หรือสกัดจาก 8 ตัวแรกของ Partner UID และแยกป้าย Task ID ไว้ชัดเจน
+    2. บันทึก `accountId` และ `customerId` แนบลงใน `todoPayload` และ `adPayload` ใน `storeProfileSubmitService.js` ตั้งแต่ต้นทาง
+    3. เสริม Query `where('phoneNumber', '==', searchTarget)` ใน `customerSearchService.js` เพื่อให้ค้นหาลูกค้าด้วยเบอร์โทรศัพท์ได้ครบทุกรูปแบบ
+  - *สถานะ:* ส่งมอบสมบูรณ์ ✅
 </pitfalls_and_solutions>

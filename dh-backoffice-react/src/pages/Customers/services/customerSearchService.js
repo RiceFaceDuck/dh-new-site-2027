@@ -28,23 +28,26 @@ export const searchCustomersFromDB = async (rawQuery) => {
     const cleanDigits = trimmed.replace(/\D/g, '');
     const isPhoneNumber = cleanDigits.length >= 9 && /^0[0-9]{8,9}$/.test(cleanDigits);
 
-    // 2. Numeric / Phone query -> Phone search across phone, tel, mobile
+    // 2. Numeric / Phone query -> Phone search across phone, tel, mobile, phoneNumber
     if (/^[0-9]+$/.test(trimmed) || isPhoneNumber) {
       const searchTarget = isPhoneNumber ? cleanDigits : trimmed;
       const qPhone = query(usersRef, where('phone', '==', searchTarget), limit(20));
       const qTel = query(usersRef, where('tel', '==', searchTarget), limit(20));
       const qMobile = query(usersRef, where('mobile', '==', searchTarget), limit(20));
+      const qPhoneNumber = query(usersRef, where('phoneNumber', '==', searchTarget), limit(20));
 
-      const [sPhone, sTel, sMobile] = await Promise.all([
+      const [sPhone, sTel, sMobile, sPhoneNumber] = await Promise.all([
         getDocs(qPhone),
         getDocs(qTel),
-        getDocs(qMobile)
+        getDocs(qMobile),
+        getDocs(qPhoneNumber)
       ]);
 
       matches = [
         ...sPhone.docs.map(d => ({ id: d.id, ...d.data() })),
         ...sTel.docs.map(d => ({ id: d.id, ...d.data() })),
-        ...sMobile.docs.map(d => ({ id: d.id, ...d.data() }))
+        ...sMobile.docs.map(d => ({ id: d.id, ...d.data() })),
+        ...sPhoneNumber.docs.map(d => ({ id: d.id, ...d.data() }))
       ];
     } else {
       // 3. String query -> AccountId, CustomerCode, Email

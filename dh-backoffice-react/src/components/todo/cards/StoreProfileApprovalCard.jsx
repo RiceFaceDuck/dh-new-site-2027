@@ -13,7 +13,9 @@ import {
   ZoomIn,
   Sparkles,
   Wrench,
-  FileText
+  FileText,
+  User,
+  Copy
 } from 'lucide-react';
 import { getRenderableImageUrl, handleImageError } from 'dh-shared/src/utils/imageProcessingUtils.js';
 
@@ -27,10 +29,21 @@ export default function StoreProfileApprovalCard({
   handleRejectClick 
 }) {
   const [previewImage, setPreviewImage] = useState(null);
+  const [copiedId, setCopiedId] = useState(false);
 
   // สกัดข้อมูลร้านค้าจาก Payload หรือ Details
   const store = todo.adPayload || todo.adDetails || todo.payload?.adPayload || todo.payload?.adDetails || {};
   const storeName = store.title || store.partnerName || todo.customerName || todo.title?.replace('ตรวจสอบนามบัตร: ', '') || 'ไม่ระบุชื่อร้าน';
+  const partnerUid = todo.partnerId || todo.createdBy || store.ownerId || (todo.targetSkuId?.startsWith('AD-CARD-') ? todo.targetSkuId.replace('AD-CARD-', '') : '') || '';
+  const customerId = todo.accountId || todo.customerId || store.accountId || store.customerId || (partnerUid ? partnerUid.substring(0, 8).toUpperCase() : '');
+
+  const handleCopyId = (e) => {
+    e.stopPropagation();
+    if (!customerId) return;
+    navigator.clipboard.writeText(customerId);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
   const phone = store.phone || todo.phone || '';
   const description = store.description || '';
   const services = store.services || '';
@@ -85,8 +98,24 @@ export default function StoreProfileApprovalCard({
             <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base leading-snug mt-1 truncate" title={storeName}>
               {storeName}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-semibold text-slate-400 font-mono">
+            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+              {customerId && (
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-mono font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors shadow-2xs group cursor-pointer"
+                  title="คลิกเพื่อคัดลอกรหัสลูกค้า (Customer ID)"
+                >
+                  <User size={12} className="text-indigo-500" />
+                  <span>ID: {customerId}</span>
+                  {copiedId ? (
+                    <Check size={11} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={11} className="text-indigo-400 opacity-60 group-hover:opacity-100" />
+                  )}
+                </button>
+              )}
+              <span className="text-xs font-medium text-slate-400 font-mono" title={`Task ID: ${todo.id || todo.taskId}`}>
                 #{todo.id?.slice(-8).toUpperCase()}
               </span>
               {getStatusBadge ? getStatusBadge(todo.status) : (

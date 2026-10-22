@@ -1,7 +1,20 @@
-import { Megaphone, ExternalLink, Image as ImageIcon, Clock, Calendar, Check, X } from 'lucide-react';
+import { useState } from 'react';
+import { Megaphone, ExternalLink, Image as ImageIcon, Clock, Calendar, Check, X, User, Copy } from 'lucide-react';
 import ManagerBadge from './ManagerBadge';
 
 export default function AdApprovalCard({ todo, isProcessing, isManagerTab, urgencyClass, handleAction, getStatusBadge, formatDate, handleRejectClick }) {
+  const [copiedId, setCopiedId] = useState(false);
+  const adPayload = todo.payload || todo.adPayload || todo.adDetails || {};
+  const partnerUid = todo.partnerId || todo.createdBy || adPayload.ownerId || (todo.targetSkuId?.startsWith('AD-CARD-') ? todo.targetSkuId.replace('AD-CARD-', '') : '') || '';
+  const customerId = todo.accountId || todo.customerId || adPayload.accountId || adPayload.customerId || (partnerUid ? partnerUid.substring(0, 8).toUpperCase() : '');
+
+  const handleCopyId = (e) => {
+    e.stopPropagation();
+    if (!customerId) return;
+    navigator.clipboard.writeText(customerId);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-xs border ${urgencyClass} flex flex-col h-full relative overflow-hidden transition-all hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600`}>
       
@@ -26,7 +39,23 @@ export default function AdApprovalCard({ todo, isProcessing, isManagerTab, urgen
               {todo.title || 'ฝากโฆษณาสินค้า'}
             </h3>
             <div className="flex items-center flex-wrap gap-2 mt-1.5">
-              <span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+              {customerId && (
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-mono font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors shadow-2xs group cursor-pointer"
+                  title="คลิกเพื่อคัดลอกรหัสลูกค้า (Customer ID)"
+                >
+                  <User size={12} className="text-indigo-500" />
+                  <span>ID: {customerId}</span>
+                  {copiedId ? (
+                    <Check size={11} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={11} className="text-indigo-400 opacity-60 group-hover:opacity-100" />
+                  )}
+                </button>
+              )}
+              <span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md" title={`Task ID: ${todo.id}`}>
                 #{todo.id?.slice(-6).toUpperCase()}
               </span>
               {getStatusBadge(todo.status)}

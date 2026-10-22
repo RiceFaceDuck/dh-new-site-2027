@@ -57,10 +57,15 @@ export const storeProfileSubmitService = {
         // It must be approved by Manager before appearing on the map again.
         batch.delete(activePartnerRef);
 
+        // 🆔 ระบุ Customer ID / Account ID เพื่อความแม่นยำในการเชื่อมโยงข้อมูล
+        const customerAccountId = user.accountId || user.customerCode || (user.uid ? user.uid.substring(0, 8).toUpperCase() : '');
+
         const adPayload = {
            id: adId,
            type: 'BUSINESS_CARD',
            ownerId: user.uid,
+           accountId: customerAccountId,
+           customerId: customerAccountId,
            title: finalStoreData.storeName,
            description: finalStoreData.description || finalStoreData.services || '',
            imageUrl: finalStoreData.storeImage || '/logo.png',
@@ -105,6 +110,8 @@ export const storeProfileSubmitService = {
           description: `พาร์ทเนอร์อัปเดตข้อมูลและขอเปิดใช้นามบัตรโฆษณา`,
           targetSkuId: adId,
           partnerId: user.uid,
+          customerId: customerAccountId,
+          accountId: customerAccountId,
           customerName: finalStoreData.storeName,
           adDetails: adPayload,
           adPayload: adPayload,
