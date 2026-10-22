@@ -8,8 +8,13 @@ const ProvidersPage = () => {
   const {
     loading,
     visiblePartners,
-    hasMore,
-    loadMore,
+    currentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    goToPage,
+    nextPage,
+    prevPage,
     searchTerm,
     setSearchTerm,
     userLocation,
@@ -60,8 +65,13 @@ const ProvidersPage = () => {
         <ProvidersList 
           loading={loading}
           visiblePartners={visiblePartners}
-          hasMore={hasMore}
-          loadMore={loadMore}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          goToPage={goToPage}
+          nextPage={nextPage}
+          prevPage={prevPage}
           totalCount={totalCount}
         />
 

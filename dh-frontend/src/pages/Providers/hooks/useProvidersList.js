@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchAllActivePartners } from '../../../firebase/partnerLocationService';
 import { calculateDistance } from '../../../utils/geoUtils';
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 15;
 
 export const useProvidersList = () => {
   const [allPartners, setAllPartners] = useState([]);
@@ -13,9 +13,8 @@ export const useProvidersList = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   
-  
-  // Pagination State
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  // Pagination State (เริ่มต้น 15 ร้านต่อหน้า)
+  const [currentPage, setCurrentPage] = useState(1);
 
   // 1. Load Data
   const loadPartners = useCallback(async () => {
@@ -140,17 +139,36 @@ export const useProvidersList = () => {
     return result;
   }, [allPartners, searchTerm, userLocation]);
 
-  // 4. Pagination
-  const visiblePartners = processedPartners.slice(0, visibleCount);
-  const hasMore = visibleCount < processedPartners.length;
+  // 4. Page-based Pagination (15 ร้านต่อหน้า)
+  const totalCount = processedPartners.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+  
+  // Safe bounded page number
+  const activePage = Math.min(Math.max(1, currentPage), totalPages);
+  
+  const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalCount);
+  const visiblePartners = processedPartners.slice(startIndex, endIndex);
 
-  const loadMore = useCallback(() => {
-    setVisibleCount(prev => prev + ITEMS_PER_PAGE);
-  }, []);
+  const goToPage = useCallback((page) => {
+    setCurrentPage(prev => {
+      const target = typeof page === 'function' ? page(prev) : page;
+      return Math.max(1, Math.min(target, totalPages));
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [totalPages]);
 
-  // Reset pagination when filter changes
+  const nextPage = useCallback(() => {
+    goToPage(prev => Math.min(prev + 1, totalPages));
+  }, [goToPage, totalPages]);
+
+  const prevPage = useCallback(() => {
+    goToPage(prev => Math.max(prev - 1, 1));
+  }, [goToPage]);
+
+  // Reset pagination when search term changes
   useEffect(() => {
-    setVisibleCount(ITEMS_PER_PAGE);
+    setCurrentPage(1);
   }, [searchTerm]);
 
   // Initial load
@@ -166,13 +184,19 @@ export const useProvidersList = () => {
   return {
     loading,
     visiblePartners,
-    hasMore,
-    loadMore,
+    currentPage: activePage,
+    totalPages,
+    itemsPerPage: ITEMS_PER_PAGE,
+    startIndex,
+    endIndex,
+    goToPage,
+    nextPage,
+    prevPage,
     searchTerm,
     setSearchTerm,
     userLocation,
     locationError,
     requestLocation,
-    totalCount: processedPartners.length
+    totalCount
   };
 };
