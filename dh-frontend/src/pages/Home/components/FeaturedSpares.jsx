@@ -14,7 +14,7 @@ const FeaturedSpares = ({ products, loading, error, isSlowConnection }) => {
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-              FEATURED SPARES
+              สินค้าวางจำหน่าย
             </h2>
             {isSlowConnection && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] md:text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">

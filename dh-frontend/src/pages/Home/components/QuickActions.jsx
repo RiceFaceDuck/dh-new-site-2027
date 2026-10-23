@@ -7,7 +7,7 @@ const QuickActions = () => {
   const actions = [
     {
       id: 'shop-parts',
-      title: 'SHOP PART CATEGORIES',
+      title: 'ค้นหาอะไหล่ทั้งหมด',
       subtitle: 'ค้นหาหมวดหมู่อะไหล่ทั้งหมด',
       icon: <LayoutGrid className="w-8 h-8 md:w-10 md:h-10 text-slate-700" strokeWidth={1.5} />,
       link: '/categories',
@@ -23,7 +23,7 @@ const QuickActions = () => {
     },
     {
       id: 'service-providers',
-      title: 'SERVICE PROVIDERS',
+      title: 'ค้นหาบริการช่าง',
       subtitle: 'ค้นหาช่างผู้ให้บริการใกล้คุณ',
       icon: <MapPin className="w-8 h-8 md:w-10 md:h-10 text-slate-700" strokeWidth={1.5} />,
       link: '/providers', 
