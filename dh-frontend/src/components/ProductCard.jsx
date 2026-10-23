@@ -21,12 +21,15 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
           onError={(e) => { e.target.src = '/logo.png' }}
         />
         
-        <div className="absolute top-2 left-2 flex items-center space-x-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-md border border-slate-200/70 shadow-2xs z-20">
-          <span className={`w-1.5 h-1.5 rounded-full ${hasStock ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-          <span className="text-[9px] md:text-[10px] font-bold text-slate-700 uppercase">
-            {hasStock ? 'READY' : 'OUT OF STOCK'}
-          </span>
-        </div>
+        {/* ป้ายเตือนเฉพาะกรณีสินค้าหมด (OUT OF STOCK) เท่านั้น ไม่แสดงป้าย READY เพื่อให้ภาพสินค้าสะอาดตา */}
+        {!hasStock && (
+          <div className="absolute top-2 left-2 flex items-center space-x-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-md border border-slate-200/70 shadow-2xs z-20">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            <span className="text-[9px] md:text-[10px] font-bold text-rose-600 uppercase">
+              OUT OF STOCK
+            </span>
+          </div>
+        )}
       </div>
       
       <div className="flex flex-col grow px-0.5 text-center">
