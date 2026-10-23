@@ -251,11 +251,11 @@ const ProductAdCard = ({ ad }) => {
                 </span>
               </div>
             ) : (
-              <div className="absolute top-2.5 left-2.5 max-w-[85%] flex items-center space-x-1 bg-slate-800/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-700/50 shadow-xs z-20">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-emerald-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <div className="absolute top-1.5 left-1.5 max-w-[85%] flex items-center space-x-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-[0.1rem] border border-slate-200 shadow-2xs z-20">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-emerald-600 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                <span className="text-[9px] md:text-[10px] font-bold text-white truncate">
+                <span className="text-[10px] md:text-[11px] font-bold text-slate-800 tracking-tight truncate">
                   {distanceText ? `ห่างออกไป ${distanceText}` : 'ไม่ทราบระยะทาง'}
                 </span>
               </div>
