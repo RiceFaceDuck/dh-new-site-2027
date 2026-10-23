@@ -6,12 +6,48 @@ import { useNavigate } from 'react-router-dom';
 import { marketingService } from '../../firebase/marketingService';
 import LazyImage from '../common/LazyImage';
 import { getRenderableImageUrl } from '../../utils/imageUtils';
+import { fetchAllActivePartners } from '../../firebase/partnerLocationService';
+import { calculateDistance } from '../../utils/geoUtils';
 
 const ProductAdCard = ({ ad }) => {
   const navigate = useNavigate();
   const cardRef = useRef(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [distanceText, setDistanceText] = useState(ad.formattedDistance || null);
+
+  useEffect(() => {
+    if (ad.formattedDistance) {
+      setDistanceText(ad.formattedDistance);
+      return;
+    }
+    if (ad.type === 'PRODUCT_LINK') return;
+
+    let isMounted = true;
+    const resolveDistance = async () => {
+      try {
+        const locStr = sessionStorage.getItem('dh_user_location');
+        if (!locStr) return;
+        const { lat, lng } = JSON.parse(locStr);
+        if (!lat || !lng) return;
+
+        const partners = await fetchAllActivePartners();
+        const partnerId = ad.ownerId || ad.partnerId || (ad.id?.startsWith('AD-CARD-') ? ad.id.replace('AD-CARD-', '') : ad.id);
+        const matched = partners.find(p => (p.id || p.partnerId || p.userId) === partnerId);
+
+        if (matched && matched.latitude && matched.longitude && isMounted) {
+          const distKm = calculateDistance(lat, lng, matched.latitude, matched.longitude);
+          const formatted = distKm < 1 ? `${Math.round(distKm * 1000)} เมตร` : `${distKm.toFixed(1)} กม.`;
+          setDistanceText(formatted);
+        }
+      } catch (e) {
+        console.warn("Could not calculate distance for ad", e);
+      }
+    };
+
+    resolveDistance();
+    return () => { isMounted = false; };
+  }, [ad]);
 
   // ==========================================
   // 👁️ 1. ระบบตรวจจับการมองเห็น (Real View Tracking)
@@ -205,50 +241,66 @@ const ProductAdCard = ({ ad }) => {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
           />
           
-          {/* 🏷️ ป้าย Sponsored */}
+          {/* 🏷️ ป้ายมุมบนซ้าย (ระยะทางสำหรับนามบัตรช่าง / Sponsored สำหรับสินค้า) */}
           {ad.isSponsoredAd && (
-            <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-slate-800/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-700/50 shadow-xs z-20">
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-              <span className="text-[9px] md:text-[10px] font-bold text-white uppercase tracking-wider">
-                SPONSORED
-              </span>
-            </div>
+            isProduct ? (
+              <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-slate-800/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-700/50 shadow-xs z-20">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                <span className="text-[9px] md:text-[10px] font-bold text-white uppercase tracking-wider">
+                  SPONSORED
+                </span>
+              </div>
+            ) : (
+              <div className="absolute top-2.5 left-2.5 max-w-[85%] flex items-center space-x-1 bg-slate-800/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-700/50 shadow-xs z-20">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-emerald-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-[9px] md:text-[10px] font-bold text-white truncate">
+                  {distanceText ? `ห่างออกไป ${distanceText}` : 'ไม่ทราบระยะทาง'}
+                </span>
+              </div>
+            )
           )}
         </div>
 
         {/* 📝 พื้นที่เนื้อหา */}
         <div className="flex flex-col grow px-1 cursor-pointer" onClick={handleAdClick}>
-          <h3 className="text-sm md:text-base font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors leading-relaxed">
+          <h3 
+            className="text-sm md:text-base font-bold text-slate-800 leading-snug mb-1 group-hover:text-indigo-600 transition-colors line-clamp-2 break-words" 
+            title={ad.title}
+          >
             {ad.title}
           </h3>
           {(() => {
             const rawDisplayName = ad.partnerName || ad.customerName || 'DH Partner';
             const isTitleSameAsName = ad.title?.trim().toLowerCase() === rawDisplayName.trim().toLowerCase();
-            const customSubtitle = ad.description || ad.role || ad.services || (isProduct ? 'สินค้าแนะนำ' : 'Official Partner');
-            const displaySubtitle = isTitleSameAsName ? customSubtitle : rawDisplayName;
+            const shopBio = ad.description || ad.services || ad.role || (isProduct ? 'สินค้าแนะนำ' : 'Official Partner');
+            const displaySubtitle = isTitleSameAsName ? shopBio : (ad.description ? `${rawDisplayName} - ${ad.description}` : rawDisplayName);
             
             return (
-              <div className="text-[10px] md:text-xs text-slate-600 line-clamp-1 mb-2 flex items-center gap-1 uppercase">
-                {isProduct ? <ShoppingBag size={12} className="shrink-0"/> : <Store size={12} className="shrink-0"/>}
-                <span className="truncate">{displaySubtitle}</span>
+              <div className="text-[11px] md:text-xs text-slate-600 leading-snug line-clamp-3 mb-2 flex items-start gap-1">
+                {isProduct ? <ShoppingBag size={12} className="shrink-0 mt-0.5 text-slate-400"/> : <Store size={12} className="shrink-0 mt-0.5 text-slate-400"/>}
+                <span className="break-words">{displaySubtitle || shopBio}</span>
               </div>
             );
           })()}
 
           {/* 💰 ปุ่ม Call to Action */}
           <div className="mt-auto flex flex-col pt-1">
-            <div className="text-base md:text-lg font-bold text-slate-800 leading-none mb-3 h-5 flex items-center">
-              {isProduct && ad.price ? (
-                `฿${Number(ad.price).toLocaleString()}`
-              ) : (
-                <span className="flex items-center gap-1 text-emerald-600 text-sm"><ShieldCheck size={16}/> Verified</span>
-              )}
-            </div>
+            {isProduct && ad.price && (
+              <div className="text-base md:text-lg font-bold text-slate-800 leading-none mb-2.5 h-5 flex items-center">
+                ฿{Number(ad.price).toLocaleString()}
+              </div>
+            )}
 
             <button 
-              className="w-full py-1.5 md:py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-xs z-20 text-xs font-bold uppercase tracking-widest bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white hover:shadow-md active:scale-95"
+              className={`w-full py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-md z-20 text-xs md:text-sm font-bold active:scale-95 ${
+                isProduct 
+                  ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white uppercase tracking-wider' 
+                  : 'bg-slate-800 text-white hover:bg-indigo-600 hover:shadow-indigo-500/30'
+              }`}
             >
-              {isProduct ? 'เข้าชมสินค้า' : 'ไปที่หน้าร้าน'}
+              {isProduct ? 'เข้าชมสินค้า' : 'ติดต่อทันที'}
             </button>
           </div>
         </div>

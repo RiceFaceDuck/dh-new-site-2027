@@ -49,6 +49,7 @@ export const useProvidersList = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        try { sessionStorage.setItem('dh_user_location', JSON.stringify({ lat: latitude, lng: longitude })); } catch (_) {}
         setUserLocation({ lat: latitude, lng: longitude });
       },
       (error) => {
