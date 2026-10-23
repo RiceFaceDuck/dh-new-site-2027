@@ -41,13 +41,13 @@ const QuickActions = () => {
               <div
                 key={action.id}
                 onClick={() => showToast('บริการนี้กำลังอยู่ระหว่างการพัฒนา', 'info')}
-                className="relative flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4]/50 rounded-xl border border-[#B3E1C1]/50 shadow-xs cursor-not-allowed group opacity-80 active:scale-95 transition-all duration-300"
+                className="relative flex flex-row items-center py-3.5 px-4 md:py-4 md:px-5 lg:py-4.5 lg:px-6 bg-[#C8EFD4]/50 rounded-xl border border-[#B3E1C1]/50 shadow-xs cursor-not-allowed group opacity-80 active:scale-95 transition-all duration-300 min-h-[72px] md:min-h-[80px]"
               >
                 <div className="mr-4 md:mr-5 shrink-0 opacity-60">
                   {action.icon}
                 </div>
                 <div className="flex flex-col pr-8">
-                  <span className="font-bold text-slate-600 text-sm md:text-[15px] leading-tight mb-1">
+                  <span className="font-black text-slate-600 text-base md:text-lg lg:text-[19px] tracking-tight leading-tight mb-0.5">
                     {action.title}
                   </span>
                   <span className="text-xs text-slate-500 leading-snug">
@@ -68,13 +68,13 @@ const QuickActions = () => {
             <Link
               key={action.id}
               to={action.link}
-              className="flex flex-row items-center p-4 md:p-5 lg:p-6 bg-[#C8EFD4] rounded-xl border border-[#B3E1C1] shadow-xs hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all duration-300 group"
+              className="flex flex-row items-center py-3.5 px-4 md:py-4 md:px-5 lg:py-4.5 lg:px-6 bg-[#C8EFD4] rounded-xl border border-[#B3E1C1] shadow-xs hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all duration-300 group min-h-[72px] md:min-h-[80px]"
             >
               <div className="mr-4 md:mr-5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
                 {action.icon}
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-slate-800 text-sm md:text-[15px] leading-tight mb-1">
+                <span className="font-black text-slate-900 text-base md:text-lg lg:text-[19px] tracking-tight leading-tight mb-0.5">
                   {action.title}
                 </span>
                 <span className="text-xs text-slate-600 leading-snug">
