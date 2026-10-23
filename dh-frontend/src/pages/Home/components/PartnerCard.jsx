@@ -27,17 +27,11 @@ const PartnerCard = ({ partner }) => {
       <div className="relative shrink-0">
         <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-md blur-md group-hover:blur-lg transition-all"></div>
         <LazyImage src={avatar} alt={name} className="relative w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] rounded-md object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
-        
-        {/* Pulsing Status Dot */}
-        <div className="absolute bottom-1 right-1 flex h-4 w-4 z-20">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white shadow-xs"></span>
-        </div>
       </div>
 
       <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
         <h3 className="text-sm md:text-base font-black text-slate-800 leading-tight mb-0.5 group-hover:text-indigo-600 transition-colors truncate">{name}</h3>
-        <p className="text-xs text-slate-500 font-medium mb-1.5 line-clamp-1" title={role}>{role}</p>
+        <p className="text-xs text-slate-500 font-normal leading-snug line-clamp-2 min-h-[2.25rem] mb-2 break-words" title={role}>{role}</p>
         
         {/* Distance Display */}
         {partner.formattedDistance ? (
@@ -57,7 +51,7 @@ const PartnerCard = ({ partner }) => {
         )}
         
         <Link onClick={handleClick} to={`/store/${partner.id || partner.userId}`} className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-md font-bold text-xs md:text-sm hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
-          <span>View Profile</span>
+          <span>ติดต่อช่าง</span>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
