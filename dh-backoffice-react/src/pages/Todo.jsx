@@ -22,7 +22,7 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 export default function Todo() {
   const navigate = useNavigate();
   
-  const [filterType, setFilterType] = useState('ALL');
+  const [filterType, setFilterType] = useState('PENDING');
   const [searchQuery, setSearchQuery] = useState('');
   const [processingId, setProcessingId] = useState(null);
   const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
@@ -141,24 +141,19 @@ export default function Todo() {
     return ['completed', 'cancelled', 'rejected', 'done'].includes(s);
   };
 
-  const pendingCount = (todos || []).filter(t => isPendingStatus(t.status)).length;
-  const completedCount = (todos || []).filter(t => isCompletedStatus(t.status)).length;
+  const pendingCount = activeTodos.length;
+  const completedCount = completedTodos.length > 0 ? completedTodos.length : undefined;
   const filterCounts = {
-    all: (todos || []).length,
     pending: pendingCount,
-    completed: completedCount
+    completed: completedCount,
+    all: completedTodos.length > 0 ? (activeTodos.length + completedTodos.length) : undefined
   };
 
-  const filteredTodos = (todos || []).filter(todo => {
-    if (filterType === 'PENDING') {
-      return isPendingStatus(todo.status);
-    }
-    if (filterType === 'COMPLETED') {
-      return isCompletedStatus(todo.status);
-    }
-    // 'ALL' -> แสดงทั้งหมด
-    return true;
-  });
+  const filteredTodos = filterType === 'PENDING'
+    ? activeTodos
+    : filterType === 'COMPLETED'
+      ? completedTodos
+      : todos;
 
   const displayTodos = filteredTodos.filter(todo => {
     const searchLower = searchQuery.toLowerCase();

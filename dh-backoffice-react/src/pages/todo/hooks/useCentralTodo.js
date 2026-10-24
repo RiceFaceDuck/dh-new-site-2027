@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebase/config';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, where, getDocs } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { historyService } from '../../../firebase/historyService';
 
@@ -8,15 +8,27 @@ import { historyService } from '../../../firebase/historyService';
  * 🎯 Hook สำหรับจัดการข้อมูล To-do ส่วนกลาง (Operations, CS, Sales)
  * ทำหน้าที่ดึงข้อมูล Real-time, เพิ่ม, ลบ, แก้ไขสถานะ และจัดหมวดหมู่ข้อมูลให้พร้อมใช้งาน
  */
-export const useCentralTodo = (filterType = 'ALL') => {
-  const [todos, setTodos] = useState([]);
+export const useCentralTodo = (filterType = 'PENDING') => {
+  const [activeTodos, setActiveTodos] = useState([]);
+  const [completedTodos, setCompletedTodos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [completedLoading, setCompletedLoading] = useState(false);
   const [error, setError] = useState(null);
   
   // 🛡️ ป้องกันการกดปุ่มซ้ำ (Double Submission Prevention)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 📥 1. ดึงข้อมูลแบบ Real-time (ผสานทั้ง 'todos' และ 'claims' collection ทั้งงานค้างและงานเสร็จสิ้น)
+  const getDocTime = (docItem) => {
+    if (!docItem) return 0;
+    const ts = docItem.completedAt || docItem.createdAt || docItem.requestedAt;
+    if (!ts) return 0;
+    if (typeof ts.toMillis === 'function') return ts.toMillis();
+    if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+    if (ts instanceof Date) return ts.getTime();
+    return new Date(ts).getTime() || 0;
+  };
+
+  // 📥 1. ดึงเฉพาะงานค้างจริงแบบ Real-time ตอนเปิดหน้าจอ (ประหยัด Reads สูงสุด)
   useEffect(() => {
     setLoading(true);
     
@@ -28,13 +40,6 @@ export const useCentralTodo = (filterType = 'ALL') => {
       limit(200)
     );
 
-    const qCompletedTodos = query(
-      todosRef,
-      where('status', 'in', ['completed', 'rejected', 'cancelled', 'done']),
-      orderBy('createdAt', 'desc'),
-      limit(100)
-    );
-
     const claimsRef = collection(db, getCollectionPath('claims'));
     const qClaims = query(
       claimsRef,
@@ -44,20 +49,9 @@ export const useCentralTodo = (filterType = 'ALL') => {
     );
 
     let currentTodos = [];
-    let currentCompletedTodos = [];
     let currentClaims = [];
 
-    const getDocTime = (docItem) => {
-      if (!docItem) return 0;
-      const ts = docItem.completedAt || docItem.createdAt || docItem.requestedAt;
-      if (!ts) return 0;
-      if (typeof ts.toMillis === 'function') return ts.toMillis();
-      if (typeof ts.toDate === 'function') return ts.toDate().getTime();
-      if (ts instanceof Date) return ts.getTime();
-      return new Date(ts).getTime() || 0;
-    };
-
-    const emitMerged = () => {
+    const emitActive = () => {
       const taskMap = new Map();
 
       // 1. เพิ่ม Todos ทั่วไป (งานค้าง)
@@ -65,12 +59,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
         taskMap.set(todo.id, todo);
       });
 
-      // 2. เพิ่ม Todos ที่เสร็จแล้ว
-      currentCompletedTodos.forEach(todo => {
-        taskMap.set(todo.id, todo);
-      });
-
-      // 3. ผสาน Claims จากคอลเลกชัน claims โดยตรง (Single Source of Truth)
+      // 2. ผสาน Claims จากคอลเลกชัน claims โดยตรง (Single Source of Truth)
       currentClaims.forEach(claim => {
         const typeToCheck = claim.type || claim.taskType || 'CLAIM_APPROVAL';
         taskMap.set(claim.id, {
@@ -84,30 +73,23 @@ export const useCentralTodo = (filterType = 'ALL') => {
       const merged = Array.from(taskMap.values());
       merged.sort((a, b) => getDocTime(b) - getDocTime(a));
 
-      setTodos(merged);
+      setActiveTodos(merged);
       setError(null);
       setLoading(false);
     };
 
     const unsubscribeTodos = onSnapshot(qTodos, (snapshot) => {
       currentTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      emitMerged();
+      emitActive();
     }, (err) => {
       console.error("🔥 Error fetching central todos:", err);
       setError("ไม่สามารถโหลดข้อมูลระบบ To-do ได้ กรุณาตรวจสอบการเชื่อมต่อ");
       setLoading(false);
     });
 
-    const unsubscribeCompleted = onSnapshot(qCompletedTodos, (snapshot) => {
-      currentCompletedTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      emitMerged();
-    }, (err) => {
-      console.warn("⚠️ Snapshot warning fetching completed todos:", err);
-    });
-
     const unsubscribeClaims = onSnapshot(qClaims, (snapshot) => {
       currentClaims = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      emitMerged();
+      emitActive();
     }, (err) => {
       console.error("🔥 Error fetching claims for todos:", err);
     });
@@ -115,12 +97,51 @@ export const useCentralTodo = (filterType = 'ALL') => {
     // 🧹 คืนทรัพยากรเมื่อ Component ถูกทำลาย (Prevent Memory Leak)
     return () => {
       if (typeof unsubscribeTodos === 'function') unsubscribeTodos();
-      if (typeof unsubscribeCompleted === 'function') unsubscribeCompleted();
       if (typeof unsubscribeClaims === 'function') unsubscribeClaims();
     };
   }, []);
 
-  // 📝 2. อัปเดตสถานะงาน (Optimistic UI Ready)
+  // 📥 2. ดึงงานที่เสร็จแล้วแบบ On-Demand (Lazy-load เฉพาะเมื่อผู้ใช้คลิกเลือกแท็บ 'เสร็จแล้ว' หรือ 'ทั้งหมด')
+  useEffect(() => {
+    // 🚀 หากอยู่แท็บ 'ยังไม่ดำเนินการ' จะไม่มีการอ่านหรือดึงข้อมูลงานเก่าเด็ดขาด (ประหยัด Reads 100%)
+    if (filterType !== 'COMPLETED' && filterType !== 'ALL') {
+      return;
+    }
+
+    if (completedTodos.length > 0) return; // โหลดครั้งเดียวในเซสชัน
+
+    let isMounted = true;
+    setCompletedLoading(true);
+
+    const fetchCompleted = async () => {
+      try {
+        const todosRef = collection(db, getCollectionPath('todos'));
+        const qCompleted = query(
+          todosRef,
+          where('status', 'in', ['completed', 'rejected', 'cancelled', 'done']),
+          orderBy('createdAt', 'desc'),
+          limit(50)
+        );
+        const snap = await getDocs(qCompleted);
+        if (isMounted) {
+          const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setCompletedTodos(list);
+        }
+      } catch (err) {
+        console.warn("⚠️ Warning fetching completed todos on demand:", err);
+      } finally {
+        if (isMounted) setCompletedLoading(false);
+      }
+    };
+
+    fetchCompleted();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [filterType, completedTodos.length]);
+
+  // 📝 3. อัปเดตสถานะงาน (Optimistic UI Ready)
   const updateTodoStatus = useCallback(async (todoId, newStatus) => {
     if (isSubmitting) return false;
     setIsSubmitting(true);
@@ -142,7 +163,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
     }
   }, [isSubmitting]);
 
-  // 🗑️ 3. ลบงาน (Delete Task)
+  // 🗑️ 4. ลบงาน (Delete Task)
   const removeTodo = useCallback(async (todoId) => {
     if (isSubmitting) return false;
     setIsSubmitting(true);
@@ -160,7 +181,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
     }
   }, [isSubmitting]);
 
-  // ➕ 4. สร้างงานใหม่แบบ Manual (Add Manual Task)
+  // ➕ 5. สร้างงานใหม่แบบ Manual (Add Manual Task)
   const addManualTodo = useCallback(async (taskData) => {
     if (isSubmitting) return false;
     setIsSubmitting(true);
@@ -187,21 +208,20 @@ export const useCentralTodo = (filterType = 'ALL') => {
     }
   }, [isSubmitting]);
 
-  // 📊 5. ส่งออกข้อมูลพร้อมหมวดหมู่ที่จัดเตรียมไว้ให้ UI ใช้งานได้ทันที
+  // 📊 6. ส่งออกข้อมูลพร้อมหมวดหมู่ที่จัดเตรียมไว้ให้ UI ใช้งานได้ทันที
+  const taskMap = new Map();
+  activeTodos.forEach(t => taskMap.set(t.id, t));
+  completedTodos.forEach(t => taskMap.set(t.id, t));
+  const allMerged = Array.from(taskMap.values());
+  allMerged.sort((a, b) => getDocTime(b) - getDocTime(a));
+
   return {
-    todos,
-    // คัดกรองข้อมูลให้ UI ใช้ได้เลย (รองรับทั้งตัวพิมพ์เล็ก-ใหญ่)
-    activeTodos: todos.filter(t => {
-        const s = typeof t.status === 'string' ? t.status.toLowerCase() : '';
-        return !['completed', 'cancelled', 'rejected', 'done'].includes(s);
-    }),
-    completedTodos: todos.filter(t => {
-        const s = typeof t.status === 'string' ? t.status.toLowerCase() : '';
-        return ['completed', 'cancelled', 'rejected', 'done'].includes(s);
-    }),
+    todos: allMerged,
+    activeTodos,
+    completedTodos,
     
     // Status
-    loading,
+    loading: loading || (completedLoading && (filterType === 'COMPLETED' || filterType === 'ALL') && completedTodos.length === 0),
     error,
     isSubmitting,
     
