@@ -26,6 +26,10 @@
 3. **Circular Geometry Guard**: ปกป้อง `rounded-full` สำหรับจุดแสดงสถานะ, อวาตาร์ และ Badge วงกลมเท่านั้น
 4. **Centralized Token Authority**: ค่ามาตรฐานความโค้งมนและเงาต้องถูกกำกับจาก `src/index.css` เป็นหลัก
 5. **Absolute Deployment Ban**: ห้ามรันคำสั่ง deploy หรือ git push ขึ้นรีโมตเด็ดขาด (สถานะล็อก: Severity ⚫ / Priority 🚫 block / Complexity 🛡️block / Risk n/a)
+3. **Favicon Google Search Invariant & Standard Assets**:
+   - Googlebot บังคับขนาดไอคอนสี่เหลี่ยมจัตุรัส 1:1 (ทวีคูณของ 48px เช่น 48x48, 96x96, 192x192)
+   - ต้องมี `favicon.ico` อยู่ที่ Root (`dh-frontend/public/favicon.ico`) เสมอ ป้องกัน Firebase Hosting rewrite ส่งคืน `text/html`
+   - ต้องประกาศ `<link rel="icon" type="image/x-icon" href="/favicon.ico" />` และ `<link rel="icon" type="image/png" ... />` ใน `index.html`
 </domain_rules>
 
 <core_schema>
@@ -54,4 +58,7 @@
    - **วิธีแก้**: ควบคุมระดับ Token ใน `index.css` ให้ `--radius-lg` ถึง `--radius-4xl` ไม่เกิน `0.5rem` และเปลี่ยนคลาสใน JSX เป็น `rounded-md` พร้อมยกระดับขอบเป็น `border-slate-200`
 2. **ปัญหาเดิม**: การค้นหาแบบ regex ใน CSS bundle อาจชนกับ selector ของ override เอง ทำให้ทดสอบ cascade order ผิดพลาด
    - **วิธีแก้**: ตรวจสอบ full rule declaration (`.border-gray-100{border-color:var(--color-gray-100)}`) เพื่อให้ผลการทดสอบสะท้อน CSS Cascade ที่ถูกต้องแท้จริง
+3. **ปัญหาเดิม**: รูปโลโก้บนผลการค้นหา Google Search ของ `dh-servicehub.com` ขึ้นเป็นรูปลูกโลกสีฟ้า (Default Globe) แทนที่จะเป็นโลโก้ร้าน
+   - **สาเหตุ**: ขาดไฟล์ `favicon.ico` ที่ root ทำให้ Firebase rewrite เป็น `text/html` และไฟล์ `logo.png` เดิมมีขนาด 381x394 ไม่ใช่สี่เหลี่ยมจัตุรัสตามเกณฑ์ Google
+   - **วิธีแก้**: นำภาพโลโก้จัตุรัสมาแปลงเป็น `favicon.ico` (48x48), `logo.png` (200x200), `apple-touch-icon.png` (180x180) ไว้ใน `public/` พร้อมประกาศแท็กใน `index.html` ให้ครบถ้วน
 </pitfalls_and_solutions>
