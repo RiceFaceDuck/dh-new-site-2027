@@ -52,17 +52,66 @@ export const useCustomerFilters = (customers) => {
       });
     }
 
-    // 🔍 กรองด้วย Text Search (รองรับค้นหาทั้งแบบมีขีดและไม่มีขีด)
+    // 🔍 กรองด้วย Text Search (รองรับค้นหาทั้งแบบมีขีดและไม่มีขีด + ข้อมูลโฆษณา + ที่อยู่ + ภาษี + หลายคำ)
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase().trim();
       const cleanDigitsSearch = lower.replace(/\D/g, '');
+      const tokens = lower.split(/\s+/).filter(Boolean);
+
       result = result.filter(c => {
         const rawPhone = c.phone || c.phoneNumber || '';
         const cleanPhone = String(rawPhone).replace(/\D/g, '');
         const phoneMatch = (cleanDigitsSearch.length >= 3 && cleanPhone.includes(cleanDigitsSearch)) ||
                            (rawPhone && rawPhone.toLowerCase().includes(lower));
 
-        return (
+        // 🏡 ข้อมูลที่อยู่ (Address decoding)
+        let addressText = '';
+        const addr = c.address || c.legacyAddress || c.shippingAddress;
+        if (typeof addr === 'string') {
+          addressText = addr.toLowerCase();
+        } else if (addr && typeof addr === 'object') {
+          addressText = [
+            addr.fullAddress,
+            addr.addressLine,
+            addr.address,
+            addr.subDistrict,
+            addr.subdistrict,
+            addr.district,
+            addr.amphur,
+            addr.province,
+            addr.changwat,
+            addr.zipCode,
+            addr.postalCode
+          ].filter(Boolean).join(' ').toLowerCase();
+        }
+
+        // 📢 ข้อมูลโฆษณาและร้านค้า (Ad & Store Profile Keywords)
+        const adText = [
+          c.adStoreTitle,
+          c.adSearchBlob,
+          c.storeProfile?.storeName,
+          c.storeProfile?.description,
+          c.storeProfile?.services,
+          c.storeProfile?.landmarks,
+          c.storeProfile?.openHours
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        // 📦 ข้อมูลจัดส่งและภาษี (Logistics & Tax & Social)
+        const extraText = [
+          c.taxId,
+          c.taxInfo?.taxId,
+          c.logisticProvider,
+          c.preferredCourier,
+          c.shippingNotes,
+          c.logisticNote,
+          c.lineId,
+          c.facebook,
+          c.facebookUrl,
+          c.storeWebsite,
+          c.websiteUrl
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        const isBasicMatch = (
           (c.accountId && c.accountId.toLowerCase().includes(lower)) ||
           (c.customerCode && c.customerCode.toLowerCase().includes(lower)) ||
           (c.accountName && c.accountName.toLowerCase().includes(lower)) ||
@@ -70,11 +119,43 @@ export const useCustomerFilters = (customers) => {
           (c.storeName && c.storeName.toLowerCase().includes(lower)) ||
           (c.contactName && c.contactName.toLowerCase().includes(lower)) ||
           (c.firstName && c.firstName.toLowerCase().includes(lower)) ||
+          (c.lastName && c.lastName.toLowerCase().includes(lower)) ||
           (c.email && c.email.toLowerCase().includes(lower)) ||
           phoneMatch ||
           (c.id && c.id.toLowerCase().includes(lower)) ||
-          (c.uid && c.uid.toLowerCase().includes(lower))
+          (c.uid && c.uid.toLowerCase().includes(lower)) ||
+          (addressText && addressText.includes(lower)) ||
+          (adText && adText.includes(lower)) ||
+          (extraText && extraText.includes(lower))
         );
+
+        if (isBasicMatch) return true;
+
+        // Multi-token match: ทุกคำที่พิมพ์ (เมื่อพิมพ์เว้นวรรค) ต้องปรากฏในข้อมูลของลูกค้า
+        if (tokens.length > 1) {
+          const combinedSearchBlob = [
+            c.accountId,
+            c.customerCode,
+            c.accountName,
+            c.displayName,
+            c.storeName,
+            c.contactName,
+            c.firstName,
+            c.lastName,
+            c.email,
+            rawPhone,
+            cleanPhone,
+            c.id,
+            c.uid,
+            addressText,
+            adText,
+            extraText
+          ].filter(Boolean).join(' ').toLowerCase();
+
+          return tokens.every(token => combinedSearchBlob.includes(token));
+        }
+
+        return false;
       });
     }
 

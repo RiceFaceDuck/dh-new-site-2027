@@ -4,7 +4,7 @@ import { useCustomerFilters } from './useCustomerFilters';
 import { useCustomerActions } from './useCustomerActions';
 import { useCustomerHistory } from './useCustomerHistory';
 import { fetchOrderStatsForPage } from '../services/customerOrderStatsService';
-import { searchCustomersFromDB } from '../services/customerSearchService';
+import { searchCustomersFromDB, fetchCustomerAdsIndex, enrichCustomerWithAdData } from '../services/customerSearchService';
 
 /**
  * Main Hook (Facade) สำหรับระบบ Customers
@@ -56,6 +56,33 @@ export const useCustomers = () => {
   }, [filterHook.state.currentPage, filterHook.state.paginatedCustomers.map(c => c.uid || c.id).join(','), loading, enrichCustomersWithOrderStats]);
 
   // ==========================================
+  // Orchestration: ดึงดัชนีโฆษณา (Partner Ads) และเชื่อมโยงเข้ากับลูกค้ารายตัว (0 Read ในโหมดแคช)
+  // ==========================================
+  useEffect(() => {
+    if (!customers || customers.length === 0 || loading) return;
+
+    let isSubscribed = true;
+    fetchCustomerAdsIndex(isRefreshing).then(adsIndex => {
+      if (isSubscribed && adsIndex && (Object.keys(adsIndex.byUid || {}).length > 0 || Object.keys(adsIndex.byAccountId || {}).length > 0)) {
+        setCustomers(prev => {
+          let hasChanges = false;
+          const enriched = prev.map(c => {
+            const updated = enrichCustomerWithAdData(c, adsIndex);
+            if (updated.adStoreTitle !== c.adStoreTitle || updated.adSearchBlob !== c.adSearchBlob) {
+              hasChanges = true;
+              return updated;
+            }
+            return c;
+          });
+          return hasChanges ? enriched : prev;
+        });
+      }
+    }).catch(err => console.warn("Failed to load customer ads index:", err));
+
+    return () => { isSubscribed = false; };
+  }, [customers.length, loading, isRefreshing, setCustomers]);
+
+  // ==========================================
   // Orchestration: ค้นหาข้อมูลเชิงลึกจาก Database (เมื่อพิมพ์คำค้นหา >= 2 ตัวอักษร)
   // ==========================================
   useEffect(() => {
@@ -68,10 +95,26 @@ export const useCustomers = () => {
         const dbResults = await searchCustomersFromDB(term);
         if (isSubscribed && dbResults && dbResults.length > 0) {
           setCustomers(prev => {
-            const existingIds = new Set((prev || []).map(c => c.uid || c.id));
-            const toAdd = dbResults.filter(c => !existingIds.has(c.uid || c.id));
-            if (toAdd.length === 0) return prev;
-            return [...prev, ...toAdd];
+            const existingMap = new Map((prev || []).map(c => [c.uid || c.id, c]));
+            let hasChanges = false;
+            const updated = [...prev];
+
+            dbResults.forEach(dbCust => {
+              const custId = dbCust.uid || dbCust.id;
+              if (existingMap.has(custId)) {
+                const existing = existingMap.get(custId);
+                if (dbCust.adStoreTitle && !existing.adStoreTitle) {
+                  existing.adStoreTitle = dbCust.adStoreTitle;
+                  existing.adSearchBlob = dbCust.adSearchBlob;
+                  hasChanges = true;
+                }
+              } else {
+                updated.push(dbCust);
+                hasChanges = true;
+              }
+            });
+
+            return hasChanges ? updated : prev;
           });
         }
       } catch (err) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crown, Star, Building2, User, FileText, Copy, CheckCircle2 } from 'lucide-react';
+import { Crown, Star, Building2, User, FileText, Copy, CheckCircle2, Megaphone } from 'lucide-react';
 import WalletDisplay from '../displays/WalletDisplay';
 import PointDisplay from '../displays/PointDisplay';
 import { getUserTier } from '../../../../firebase/credit/creditFormatService';
@@ -55,6 +55,8 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
   };
 
   const displayName = resolveDisplayName(customer);
+  const adStoreTitle = customer.adStoreTitle || customer.storeProfile?.storeName || '';
+  const showAdBadge = Boolean(adStoreTitle && adStoreTitle.trim().toLowerCase() !== displayName.trim().toLowerCase());
   
   // 🌟 ใช้ Account ID ของจริง ถ้าหาไม่เจอถึงจะ Fallback ไปใช้ Document ID (ของเก่า)
   const isMigrated = Boolean(customer.accountId);
@@ -138,15 +140,23 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
           </button>
         </div>
 
-        {/* 2. ชื่อ-นามสกุล */}
-        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-          <span className={`text-[13px] font-bold truncate tracking-tight ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
-            {displayName}
-          </span>
-          {hasTax && (
-            <span className="shrink-0 flex items-center px-1.5 py-[1.5px] bg-blue-100 text-blue-700 rounded-xs text-[10px] font-black uppercase border border-blue-200 shadow-2xs" title="พร้อมออกใบกำกับภาษี">
-              <FileText size={10} className="mr-0.5" /> TAX
+        {/* 2. ชื่อ-นามสกุล และชื่อร้านในโฆษณา */}
+        <div className="flex flex-col justify-center min-w-0 pr-2 py-0.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`text-[13px] font-bold truncate tracking-tight ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
+              {displayName}
             </span>
+            {hasTax && (
+              <span className="shrink-0 flex items-center px-1.5 py-[1.5px] bg-blue-100 text-blue-700 rounded-xs text-[10px] font-black uppercase border border-blue-200 shadow-2xs" title="พร้อมออกใบกำกับภาษี">
+                <FileText size={10} className="mr-0.5" /> TAX
+              </span>
+            )}
+          </div>
+          {showAdBadge && (
+            <div className="text-[11px] text-indigo-600 font-semibold truncate flex items-center gap-1 mt-0.5" title={`ชื่อร้านในโฆษณา: ${adStoreTitle}`}>
+              <Megaphone size={11} className="text-indigo-500 shrink-0" />
+              <span className="truncate">{adStoreTitle}</span>
+            </div>
           )}
         </div>
 

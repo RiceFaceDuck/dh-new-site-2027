@@ -10,6 +10,7 @@ import {
   reconcileCustomerLastOrderDates
 } from '../services/customerCacheService';
 import { fetchActiveCustomerStats, clearCustomerStatsCache } from '../services/customerOrderStatsService';
+import { clearCustomerAdsCache } from '../services/customerSearchService';
 
 export const useCustomerData = () => {
   const [customers, setCustomers] = useState([]);
@@ -67,6 +68,7 @@ export const useCustomerData = () => {
     if (!useCache) {
       setIsRefreshing(true);
       clearCustomerStatsCache();
+      clearCustomerAdsCache();
     }
 
     try {

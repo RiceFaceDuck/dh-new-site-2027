@@ -22,7 +22,7 @@ export default function CustomerHeader({
         </span>
         <input 
           type="text" 
-          placeholder="ค้นหาชื่อ, เบอร์โทร, รหัสลูกค้า..." 
+          placeholder="ค้นหาชื่อ, เบอร์โทร, รหัส, ที่อยู่, ร้านค้า, โฆษณา..." 
           className="pl-9 pr-4 py-2 h-[36px] bg-white border border-slate-200 rounded-md w-full outline-hidden focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all font-medium text-xs text-slate-900 placeholder:text-slate-400 shadow-xs"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
