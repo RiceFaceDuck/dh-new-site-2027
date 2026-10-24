@@ -7,7 +7,6 @@ import TodoItem from '../../../components/todo/TodoItem';
 import { auth } from '../../../firebase/config';
 import { formatDate } from 'dh-shared';
 
-
 // -------------------------------------------------------------
 // Component: Compact Row (Google Drive Style)
 // -------------------------------------------------------------
@@ -101,6 +100,39 @@ const CompactTodoRow = ({ todo, urgencyLevel, isProcessing, fullCard, formatDate
 };
 
 // -------------------------------------------------------------
+// Helper: Resolve Card Component by Type (Single Source of Truth)
+// -------------------------------------------------------------
+const renderTodoCard = (todo, { isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge }) => {
+  if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
+    return (
+      <WholesaleCard 
+        todo={todo} 
+        isProcessing={isProcessing}
+        urgencyLevel={urgencyLevel}
+        handleAction={handleAction}
+        formatDate={formatDate}
+        getStatusBadge={getStatusBadge}
+      />
+    );
+  }
+  if (todo.type === 'verify_slip') {
+    return <PaymentCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />;
+  }
+  if (todo.type === 'issue_tax_invoice') {
+    return <TaxInvoiceCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />;
+  }
+  return (
+    <TodoItem 
+      todo={todo}
+      isProcessing={isProcessing}
+      isManagerTab={false} 
+      urgencyLevel={urgencyLevel}
+      handleAction={handleAction}
+    />
+  );
+};
+
+// -------------------------------------------------------------
 // Component: TodoPageList
 // -------------------------------------------------------------
 const TodoPageList = ({
@@ -110,9 +142,6 @@ const TodoPageList = ({
   filterType,
   processingId,
   handleAction,
-  fetchedPrices,
-  wholesaleInputs,
-  setWholesaleInputs,
   isLeftZone
 }) => {
   const [readIds, setReadIds] = useState(() => {
@@ -162,7 +191,6 @@ const TodoPageList = ({
   const filteredTodos = displayTodos.filter(todo => {
      const urgency = getUrgencyLevel(todo.createdAt || todo.requestedAt);
      const isUrgent = urgency === 'high' || urgency === 'medium' || todo.priority === 'High';
-     const isRead = readIds.includes(todo.id);
 
      if (isLeftZone === true) {
        // กระดานหลักฝั่งซ้าย: แสดงงานทั้งหมดที่ตรงตามฟิลเตอร์
@@ -170,7 +198,7 @@ const TodoPageList = ({
      } else if (isLeftZone === false) {
        // โซนขวา: งานสำคัญ & ค้างดำเนินการ (งานด่วน หรือ ค้างนาน)
        const isNotDone = !['completed', 'cancelled', 'rejected', 'done'].includes(todo.status?.toLowerCase());
-        return isNotDone && isUrgent;
+       return isNotDone && isUrgent;
      }
      return true; 
   });
@@ -218,21 +246,10 @@ const TodoPageList = ({
 
         {/* List Body */}
         <div className="flex flex-col">
-          {filteredTodos.map((todo, index) => {
+          {filteredTodos.map((todo) => {
             const isProcessing = processingId === todo.id;
             const urgencyLevel = getUrgencyLevel(todo.createdAt || todo.requestedAt);
-            
-            // Build the original full card to pass into the row
-            let cardContent = null;
-            if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
-              cardContent = <WholesaleCard todo={todo} isProcessing={isProcessing} urgencyLevel={urgencyLevel} handleAction={handleAction} formatDate={formatDate} getStatusBadge={getStatusBadge} />;
-            } else if (todo.type === 'verify_slip') {
-              cardContent = <PaymentCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />;
-            } else if (todo.type === 'issue_tax_invoice') {
-              cardContent = <TaxInvoiceCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />;
-            } else {
-              cardContent = <TodoItem todo={todo} isProcessing={isProcessing} isManagerTab={false} urgencyLevel={urgencyLevel} handleAction={handleAction} />;
-            }
+            const cardContent = renderTodoCard(todo, { isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge });
 
             return (
               <CompactTodoRow 
@@ -257,35 +274,7 @@ const TodoPageList = ({
       {filteredTodos.map((todo, index) => {
         const isProcessing = processingId === todo.id;
         const urgencyLevel = getUrgencyLevel(todo.createdAt || todo.requestedAt);
-        
-        let cardContent = null;
-
-        if (todo.type === 'WHOLESALE_APPROVAL' || todo.type === 'wholesale_request') {
-          cardContent = (
-              <WholesaleCard 
-                todo={todo} 
-                isProcessing={isProcessing}
-                urgencyLevel={urgencyLevel}
-                handleAction={handleAction}
-                formatDate={formatDate}
-                getStatusBadge={getStatusBadge}
-              />
-          );
-        } else if (todo.type === 'verify_slip') {
-          cardContent = <PaymentCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />;
-        } else if (todo.type === 'issue_tax_invoice') {
-          cardContent = <TaxInvoiceCard task={todo} currentUser={auth.currentUser} urgencyLevel={urgencyLevel} />;
-        } else {
-          cardContent = (
-            <TodoItem 
-              todo={todo}
-              isProcessing={isProcessing}
-              isManagerTab={false} 
-              urgencyLevel={urgencyLevel}
-              handleAction={handleAction}
-            />
-          );
-        }
+        const cardContent = renderTodoCard(todo, { isProcessing, urgencyLevel, handleAction, formatDate, getStatusBadge });
         
         return (
           <div 

@@ -1,146 +1,51 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../firebase/config';
-import { doc, deleteDoc } from 'firebase/firestore'; 
 import { AlertCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
-
-import { todoService } from '../firebase/todoService';
-import { claimService } from '../firebase/claimService';
 
 import NewTaskModal from '../components/todo/forms/NewTaskModal'; 
 import GuideModal from '../components/common/GuideModal';
 import PremiumDialog from '../components/common/PremiumDialog';
 import { useCentralTodo } from './todo/hooks/useCentralTodo'; 
-import { useWholesalePrices } from './todo/hooks/useWholesalePrices'; 
+import { useTodoActionDispatcher } from './todo/hooks/useTodoActionDispatcher';
 import TodoPageHeader from './todo/components/TodoPageHeader';
 import TodoPageFilterBar from './todo/components/TodoPageFilterBar';
 import TodoPageList from './todo/components/TodoPageList';
 import NonExistingProducts from './todo/NonExistingProducts';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export default function Todo() {
   const navigate = useNavigate();
   
   const [filterType, setFilterType] = useState('PENDING');
   const [searchQuery, setSearchQuery] = useState('');
-  const [processingId, setProcessingId] = useState(null);
-  const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
   
   const { 
     todos,
     activeTodos, 
     completedTodos,
     loading, 
+    completedLoading,
     error: fetchError, 
     isSubmitting: isHookSubmitting,
     addManualTodo,
-    completedLoading,
+    updateTodoStatus,
     refreshCompletedTodos
   } = useCentralTodo(filterType);
+
+  const {
+    processingId,
+    dialogConfig,
+    handleAction
+  } = useTodoActionDispatcher({ todos, activeTodos, updateTodoStatus });
   
   const [showHelp, setShowHelp] = useState(false);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [showSourcingModal, setShowSourcingModal] = useState(false);
-  
-  const { fetchedPrices, wholesaleInputs, setWholesaleInputs } = useWholesalePrices(activeTodos);
-
-  const handleAction = async (taskId, action, actionType, payload = {}) => {
-    setProcessingId(taskId);
-    try {
-      const fullTask = (todos || activeTodos).find(t => t.id === taskId);
-      
-      if (action === 'approve') {
-        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType === 'EXCHANGE_APPROVAL' || actionType.startsWith('CANCEL_')) {
-          if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
-          await claimService.approveRequest(fullTask, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
-        } else if (actionType === 'wholesale_request' || actionType === 'WHOLESALE_APPROVAL') {
-          const { managerActionService } = await import('../firebase/managerActionService');
-          const result = await managerActionService.handleApproval(taskId, actionType, payload, fullTask, auth.currentUser.uid);
-          if (result.success && result.newStatus) {
-            await updateTodoStatus(taskId, result.newStatus);
-          }
-        } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(actionType)) {
-          const { managerActionService } = await import('../firebase/managerActionService');
-          const result = await managerActionService.handleApproval(taskId, actionType, payload, fullTask, auth.currentUser.uid);
-          if (result.success) {
-            toast.success("✅ อนุมัติข้อมูลร้านค้า/โฆษณาเรียบร้อยแล้ว");
-          }
-        }
-      } else if (action === 'reject') {
-        if (actionType === 'WHOLESALE_APPROVAL' || actionType === 'wholesale_request') {
-           await todoService.rejectWholesale(taskId, payload.orderId);
-        } else if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType === 'EXCHANGE_APPROVAL' || actionType.startsWith('CANCEL_')) {
-           if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
-           await claimService.rejectRequest(fullTask, payload.reason || 'ปฏิเสธโดยแอดมิน', auth.currentUser.uid);
-        } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(actionType)) {
-           const { managerActionService } = await import('../firebase/managerActionService');
-           const result = await managerActionService.handleRejection(taskId, actionType, payload, fullTask, auth.currentUser.uid, payload.reason || 'ข้อมูลไม่ผ่านเกณฑ์');
-           if (result.success) {
-             toast.success("ปฏิเสธคำขอเรียบร้อยแล้ว");
-           }
-        } else {
-           await todoService.rejectTask(taskId, payload.reason);
-        }
-      } else if (action === 'start') {
-        await todoService.startTask(taskId);
-      } else if (action === 'complete') {
-        await todoService.completeTask(taskId);
-      } else if (action === 'markArrived') {
-        if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType === 'EXCHANGE_APPROVAL' || actionType.startsWith('CANCEL_')) {
-          if (!fullTask) throw new Error("ไม่พบข้อมูลงานในระบบ กรุณารีเฟรชหน้าจอ");
-          // Save the tracking number locally and remotely for history/reference
-          if (payload.trackingNo) {
-            fullTask.payload = { ...fullTask.payload, trackingNo: payload.trackingNo };
-            await updateDoc(doc(db, getCollectionPath('todos'), taskId), { 'payload.trackingNo': payload.trackingNo });
-          }
-          await claimService.markArrived(fullTask, auth.currentUser.uid, auth.currentUser.displayName || 'Admin');
-        }
-      }
-    } catch (error) {
-      console.error(`Error performing ${action} on task ${taskId}:`, error);
-      const errMsg = error.message || '';
-      
-      if (errMsg.includes('ไม่พบออเดอร์') || errMsg.includes('ไม่พบข้อมูล') || errMsg.includes('not found')) {
-        setDialogConfig({
-          isOpen: true,
-          title: '⚠️ เกิดข้อผิดพลาด: ออเดอร์หลักอาจถูกลบไปแล้ว',
-          message: `รหัสงาน: ${taskId.slice(-6).toUpperCase()}\n\nต้องการลบงานค้างนี้ทิ้งถาวรหรือไม่?`,
-          type: 'warning',
-          onConfirm: async () => {
-             setDialogConfig({ ...dialogConfig, isOpen: false });
-             try {
-               await deleteDoc(doc(db, getCollectionPath('todos'), taskId));
-               toast.success('🗑️ ลบงานที่ค้างออกจากระบบเรียบร้อยแล้ว');
-             } catch (deleteError) {
-               toast.error(`ลบงานไม่สำเร็จ: ${deleteError.message}`);
-             }
-          },
-          onCancel: () => setDialogConfig({ ...dialogConfig, isOpen: false }),
-        });
-      } else {
-        toast.error(`ทำรายการไม่สำเร็จ: ${errMsg}`);
-      }
-    } finally {
-      setProcessingId(null);
-    }
-  };
 
   const handleCreateTask = async (formData) => {
     const success = await addManualTodo(formData);
     if (success) {
       setShowNewTaskModal(false);
     }
-  };
-
-  const isPendingStatus = (status) => {
-    const s = typeof status === 'string' ? status.toLowerCase() : '';
-    return !['completed', 'cancelled', 'rejected', 'done'].includes(s);
-  };
-
-  const isCompletedStatus = (status) => {
-    const s = typeof status === 'string' ? status.toLowerCase() : '';
-    return ['completed', 'cancelled', 'rejected', 'done'].includes(s);
   };
 
   const pendingCount = activeTodos.length;
@@ -210,9 +115,6 @@ export default function Todo() {
                 filterType={filterType}
                 processingId={processingId}
                 handleAction={handleAction}
-                fetchedPrices={fetchedPrices}
-                wholesaleInputs={wholesaleInputs}
-                setWholesaleInputs={setWholesaleInputs}
                 isLeftZone={true}
               />
            </div>
@@ -236,9 +138,6 @@ export default function Todo() {
                 filterType={filterType}
                 processingId={processingId}
                 handleAction={handleAction}
-                fetchedPrices={fetchedPrices}
-                wholesaleInputs={wholesaleInputs}
-                setWholesaleInputs={setWholesaleInputs}
                 isLeftZone={false}
               />
           </div>
@@ -274,29 +173,29 @@ export default function Todo() {
         </div>
       )}
 
-        <GuideModal 
-          isOpen={showHelp}
-          onClose={() => setShowHelp(false)}
-          title="คู่มือศูนย์ปฏิบัติการ (Todo Tasks)"
-          config={{
-            description: "ระบบกระดานงาน (Todo Board) สำหรับจัดการงานต่างๆ แบบรวมศูนย์ ไม่ว่าจะเป็นการอนุมัติเคลม, ตรวจสอบสลิปโอนเงิน หรือคำร้องต่างๆ",
-            howTo: [
-              "<b>1. ภาพรวมการทำงาน:</b> ดูตัวกรอง (Filter) ด้านบนเพื่อเลือกประเภทงานที่ต้องการจัดการ",
-              "<b>2. การเริ่มงาน:</b> กดรับงาน เพื่อแสดงตัวตนว่าใครกำลังดูแลงานนี้อยู่",
-              "<b>3. การตรวจสอบสลิปโอนเงิน:</b> คลิกที่ 'การ์ดตรวจสอบยอด' เพื่อดูรายละเอียดที่มาของยอดชำระสุทธิ จากนั้นให้คลิกที่รูปสลิปเพื่อดูรูปขยาย แล้วตรวจสอบยอดเงิน-บัญชี-เวลา ให้ตรงกัน",
-              "<b>4. การตัดสินใจ:</b> ตรวจสอบข้อมูลให้ละเอียด ก่อนกด <b>'อนุมัติ'</b> หรือ <b>'ปฏิเสธ'</b>"
-            ],
-            tips: [
-              "งานตรวจสอบสลิป: หากมีข้อสงสัยว่าสลิปนี้ซ้ำหรือไม่ หรือรูปภาพไม่ชัดเจน คุณสามารถนำรูปสลิปส่งตรวจสอบกับทางธนาคารหรือบัญชีได้ก่อนกดอนุมัติ",
-              "งานเคลม: จะผูกกับระบบคลังสินค้า หากกดยอมรับ ระบบจะจัดการสต็อกและบันทึกประวัติให้ทันทีโดยอัตโนมัติ"
-            ],
-            expectedResults: "<b>เมื่ออนุมัติสลิป:</b> ระบบจะสร้างเลขที่บิลรันนิ่งอัตโนมัติ แจ้งเตือนโกดัง และตัดสต็อก\n<b>เมื่อจัดการงานสำเร็จ:</b> งานนั้นจะหายไปจากหน้าจอนี้ และถูกเก็บไว้ในเมนู 'ประวัติ / จัดเก็บ' อย่างถาวร"
-          }}
-        />
+      <GuideModal 
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        title="คู่มือศูนย์ปฏิบัติการ (Todo Tasks)"
+        config={{
+          description: "ระบบกระดานงาน (Todo Board) สำหรับจัดการงานต่างๆ แบบรวมศูนย์ ไม่ว่าจะเป็นการอนุมัติเคลม, ตรวจสอบสลิปโอนเงิน หรือคำร้องต่างๆ",
+          howTo: [
+            "<b>1. ภาพรวมการทำงาน:</b> ดูตัวกรอง (Filter) ด้านบนเพื่อเลือกประเภทงานที่ต้องการจัดการ",
+            "<b>2. การเริ่มงาน:</b> กดรับงาน เพื่อแสดงตัวตนว่าใครกำลังดูแลงานนี้อยู่",
+            "<b>3. การตรวจสอบสลิปโอนเงิน:</b> คลิกที่ 'การ์ดตรวจสอบยอด' เพื่อดูรายละเอียดที่มาของยอดชำระสุทธิ จากนั้นให้คลิกที่รูปสลิปเพื่อดูรูปขยาย แล้วตรวจสอบยอดเงิน-บัญชี-เวลา ให้ตรงกัน",
+            "<b>4. การตัดสินใจ:</b> ตรวจสอบข้อมูลให้ละเอียด ก่อนกด <b>'อนุมัติ'</b> หรือ <b>'ปฏิเสธ'</b>"
+          ],
+          tips: [
+            "งานตรวจสอบสลิป: หากมีข้อสงสัยว่าสลิปนี้ซ้ำหรือไม่ หรือรูปภาพไม่ชัดเจน คุณสามารถนำรูปสลิปส่งตรวจสอบกับทางธนาคารหรือบัญชีได้ก่อนกดอนุมัติ",
+            "งานเคลม: จะผูกกับระบบคลังสินค้า หากกดยอมรับ ระบบจะจัดการสต็อกและบันทึกประวัติให้ทันทีโดยอัตโนมัติ"
+          ],
+          expectedResults: "<b>เมื่ออนุมัติสลิป:</b> ระบบจะสร้างเลขที่บิลรันนิ่งอัตโนมัติ แจ้งเตือนโกดัง และตัดสต็อก\n<b>เมื่อจัดการงานสำเร็จ:</b> งานนั้นจะหายไปจากหน้าจอนี้ และถูกเก็บไว้ในเมนู 'ประวัติ / จัดเก็บ' อย่างถาวร"
+        }}
+      />
 
-        <PremiumDialog
-          {...dialogConfig}
-        />
-      </div>
+      <PremiumDialog
+        {...dialogConfig}
+      />
+    </div>
   );
 }

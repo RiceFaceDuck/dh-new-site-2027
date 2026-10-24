@@ -21,6 +21,7 @@
 
 <core_schema>
 - Entry Page: `Management System/dh-backoffice-react/src/pages/Todo.jsx`
+- Action Dispatcher Hook: `Management System/dh-backoffice-react/src/pages/todo/hooks/useTodoActionDispatcher.js`
 - List Component: `Management System/dh-backoffice-react/src/pages/todo/components/TodoPageList.jsx`
 - Payment Card: `Management System/dh-backoffice-react/src/components/todo/PaymentCard.jsx`
 - Billing Dashboard: `Management System/dh-backoffice-react/src/components/billing/BillingDashboard.jsx`
@@ -141,5 +142,15 @@
     3. **In-Memory & Action Sync:** เมื่อพนักงานกดอนุมัติ/ปฏิเสธงานบนหน้าจอ ระบบจะย้ายงานเข้าก้อนแคชในเครื่องทันที และซิงก์ขึ้น Bundle doc ในเบื้องหลัง ทำให้ไม่ต้องยิง Query ดึงซ้ำ (**0 Reads**)
     4. **Listener Cap:** ลดเพดาน `limit` ของ Active Listeners ทั้ง `todos` และ `claims` จากเดิม 200-300 เหลือ **50 รายการ** ซึ่งพอดีกับงานค้างจริง ช่วยประหยัด Reads รายวันได้มหาศาล
     5. อัปเกรด `TodoArchive.jsx` ให้ใช้งาน `fetchCompletedTodosBundle` ด้วย ทำให้พื้นที่จัดเก็บงานทั้งระบบใช้ Snapshot ร่วมกัน
+  - *สถานะ:* ส่งมอบสมบูรณ์ ✅
+- **การจัดระเบียบ Clean Architecture และลดการทำงานหนัก/ลูกโซ่ (Action Controller Extraction & Heavy Hook Pruning):**
+  - *สาเหตุ:* 
+    1. `Todo.jsx` เดิมมีฟังก์ชัน `handleAction` ซับซ้อน 80+ บรรทัด รวบรวมการจัดการ Claim, Wholesale, Partner Ad, Error Dialog และการเข้าถึง Firestore โดยตรง ละเมิดกฎ Pure UI Component และ Single Responsibility Principle
+    2. มีการเรียกใช้ Hook `useWholesalePrices(activeTodos)` ใน `Todo.jsx` ซึ่งยิง Query หนักไปที่คอลเลกชัน `products` เพื่อดึงราคาขายส่งทุกครั้งตอนเปิดหน้า ทั้งๆ ที่ `TodoPageList` และ `WholesaleCard` มีระบบดึงราคาเฉพาะตอนกดขยายการ์ดอยู่แล้ว ทำให้เกิดการอ่านฐานข้อมูลซ้ำซ้อนและ Re-render หน้าจอบ่อยเกินจำเป็น
+    3. `TodoPageList.jsx` มีบล็อกการเลือกการ์ดตามประเภทงานซ้ำซ้อนกัน 2 จุด (List View และ Grid View) รวมกว่า 60 บรรทัด
+  - *วิธีแก้:* 
+    1. สกัด Logic แอคชันทั้งหมดออกเป็น Custom Hook `useTodoActionDispatcher.js` ทำให้ `Todo.jsx` กลายเป็น Pure UI Presentational Component ที่สะอาดและเบาลง
+    2. ตัดการเรียกใช้ `useWholesalePrices` ออกจาก `Todo.jsx` และลบ Props ตกค้าง (`fetchedPrices`, `wholesaleInputs`) ออกจาก `TodoPageList` ช่วยลด Firestore Reads และตัดวงจร Re-render ที่ไม่จำเป็น
+    3. สกัดฟังก์ชัน `renderTodoCard` รวมศูนย์การเลือกว่าจะเรนเดอร์การ์ดใดไว้จุดเดียวใน `TodoPageList.jsx`
   - *สถานะ:* ส่งมอบสมบูรณ์ ✅
 </pitfalls_and_solutions>
