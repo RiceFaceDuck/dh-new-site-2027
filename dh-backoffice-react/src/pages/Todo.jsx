@@ -28,7 +28,9 @@ export default function Todo() {
   const [dialogConfig, setDialogConfig] = useState({ isOpen: false });
   
   const { 
+    todos,
     activeTodos, 
+    completedTodos,
     loading, 
     error: fetchError, 
     isSubmitting: isHookSubmitting,
@@ -44,7 +46,7 @@ export default function Todo() {
   const handleAction = async (taskId, action, actionType, payload = {}) => {
     setProcessingId(taskId);
     try {
-      const fullTask = activeTodos.find(t => t.id === taskId);
+      const fullTask = (todos || activeTodos).find(t => t.id === taskId);
       
       if (action === 'approve') {
         if (actionType === 'CLAIM_APPROVAL' || actionType === 'RETURN_APPROVAL' || actionType === 'EXCHANGE_APPROVAL' || actionType.startsWith('CANCEL_')) {
@@ -129,19 +131,32 @@ export default function Todo() {
     }
   };
 
-  const filteredTodos = activeTodos.filter(todo => {
-    const adTypes = ['AD_APPROVAL', 'BUSINESS_CARD_AD_APPROVAL', 'APPROVE_PARTNER_AD', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_BILLBOARD_AD'];
-    const restrictedManagerTypes = ['PARTNER_APPROVAL', 'ACCOUNT_APPROVAL'];
-    if (restrictedManagerTypes.includes(todo.type)) return false;
+  const isPendingStatus = (status) => {
+    const s = typeof status === 'string' ? status.toLowerCase() : '';
+    return !['completed', 'cancelled', 'rejected', 'done'].includes(s);
+  };
 
-    if (filterType === 'ALL') return true;
-    if (filterType === 'TAX_INVOICE') return todo.type === 'issue_tax_invoice';
-    if (filterType === 'PAYMENT') return todo.type === 'verify_slip';
-    if (filterType === 'CLAIM') return ['CLAIM_APPROVAL', 'RETURN_APPROVAL', 'EXCHANGE_APPROVAL', 'CANCEL_CLAIM_APPROVAL', 'CANCEL_RETURN_APPROVAL', 'CANCEL_EXCHANGE_APPROVAL'].includes(todo.type) || todo.type?.startsWith('CANCEL_');
-    if (filterType === 'WHOLESALE') return ['WHOLESALE_APPROVAL', 'wholesale_request'].includes(todo.type);
-    if (filterType === 'STORE_ADS') return adTypes.includes(todo.type);
-    if (filterType === 'MANUAL') return todo.type === 'MANUAL';
-    
+  const isCompletedStatus = (status) => {
+    const s = typeof status === 'string' ? status.toLowerCase() : '';
+    return ['completed', 'cancelled', 'rejected', 'done'].includes(s);
+  };
+
+  const pendingCount = (todos || []).filter(t => isPendingStatus(t.status)).length;
+  const completedCount = (todos || []).filter(t => isCompletedStatus(t.status)).length;
+  const filterCounts = {
+    all: (todos || []).length,
+    pending: pendingCount,
+    completed: completedCount
+  };
+
+  const filteredTodos = (todos || []).filter(todo => {
+    if (filterType === 'PENDING') {
+      return isPendingStatus(todo.status);
+    }
+    if (filterType === 'COMPLETED') {
+      return isCompletedStatus(todo.status);
+    }
+    // 'ALL' -> แสดงทั้งหมด
     return true;
   });
 
@@ -183,6 +198,7 @@ export default function Todo() {
                 filterType={filterType}
                 setFilterType={setFilterType}
                 displayCount={displayTodos.length}
+                counts={filterCounts}
               />
            </div>
 

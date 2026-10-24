@@ -16,7 +16,7 @@ export const useCentralTodo = (filterType = 'ALL') => {
   // 🛡️ ป้องกันการกดปุ่มซ้ำ (Double Submission Prevention)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 📥 1. ดึงข้อมูลแบบ Real-time (ผสานทั้ง 'todos' และ 'claims' collection)
+  // 📥 1. ดึงข้อมูลแบบ Real-time (ผสานทั้ง 'todos' และ 'claims' collection ทั้งงานค้างและงานเสร็จสิ้น)
   useEffect(() => {
     setLoading(true);
     
@@ -28,6 +28,13 @@ export const useCentralTodo = (filterType = 'ALL') => {
       limit(200)
     );
 
+    const qCompletedTodos = query(
+      todosRef,
+      where('status', 'in', ['completed', 'rejected', 'cancelled', 'done']),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    );
+
     const claimsRef = collection(db, getCollectionPath('claims'));
     const qClaims = query(
       claimsRef,
@@ -37,11 +44,12 @@ export const useCentralTodo = (filterType = 'ALL') => {
     );
 
     let currentTodos = [];
+    let currentCompletedTodos = [];
     let currentClaims = [];
 
     const getDocTime = (docItem) => {
       if (!docItem) return 0;
-      const ts = docItem.createdAt || docItem.requestedAt;
+      const ts = docItem.completedAt || docItem.createdAt || docItem.requestedAt;
       if (!ts) return 0;
       if (typeof ts.toMillis === 'function') return ts.toMillis();
       if (typeof ts.toDate === 'function') return ts.toDate().getTime();
@@ -52,12 +60,17 @@ export const useCentralTodo = (filterType = 'ALL') => {
     const emitMerged = () => {
       const taskMap = new Map();
 
-      // 1. เพิ่ม Todos ทั่วไป
+      // 1. เพิ่ม Todos ทั่วไป (งานค้าง)
       currentTodos.forEach(todo => {
         taskMap.set(todo.id, todo);
       });
 
-      // 2. ผสาน Claims จากคอลเลกชัน claims โดยตรง (Single Source of Truth)
+      // 2. เพิ่ม Todos ที่เสร็จแล้ว
+      currentCompletedTodos.forEach(todo => {
+        taskMap.set(todo.id, todo);
+      });
+
+      // 3. ผสาน Claims จากคอลเลกชัน claims โดยตรง (Single Source of Truth)
       currentClaims.forEach(claim => {
         const typeToCheck = claim.type || claim.taskType || 'CLAIM_APPROVAL';
         taskMap.set(claim.id, {
@@ -85,20 +98,27 @@ export const useCentralTodo = (filterType = 'ALL') => {
       setLoading(false);
     });
 
+    const unsubscribeCompleted = onSnapshot(qCompletedTodos, (snapshot) => {
+      currentCompletedTodos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      emitMerged();
+    }, (err) => {
+      console.warn("⚠️ Snapshot warning fetching completed todos:", err);
+    });
+
     const unsubscribeClaims = onSnapshot(qClaims, (snapshot) => {
       currentClaims = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       emitMerged();
     }, (err) => {
       console.error("🔥 Error fetching claims for todos:", err);
-      // Don't crash main todos if claims fails
     });
 
     // 🧹 คืนทรัพยากรเมื่อ Component ถูกทำลาย (Prevent Memory Leak)
     return () => {
-      unsubscribeTodos();
-      unsubscribeClaims();
+      if (typeof unsubscribeTodos === 'function') unsubscribeTodos();
+      if (typeof unsubscribeCompleted === 'function') unsubscribeCompleted();
+      if (typeof unsubscribeClaims === 'function') unsubscribeClaims();
     };
-  }, [filterType]);
+  }, []);
 
   // 📝 2. อัปเดตสถานะงาน (Optimistic UI Ready)
   const updateTodoStatus = useCallback(async (todoId, newStatus) => {
@@ -109,7 +129,8 @@ export const useCentralTodo = (filterType = 'ALL') => {
       const todoRef = doc(db, getCollectionPath('todos'), todoId);
       await updateDoc(todoRef, {
         status: newStatus,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        completedAt: ['completed', 'rejected', 'cancelled', 'done'].includes(newStatus?.toLowerCase()) ? serverTimestamp() : null
       });
       return true; // สำเร็จ
     } catch (err) {

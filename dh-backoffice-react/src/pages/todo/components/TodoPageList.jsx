@@ -150,6 +150,10 @@ const TodoPageList = ({
       case 'in_progress': return <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse border border-blue-200 shadow-inner">⏳ กำลังดำเนินการ</span>;
       case 'pending_manager': 
       case 'pending': return <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-xs font-bold border border-orange-200 shadow-inner">👑 รอผู้จัดการอนุมัติ</span>;
+      case 'completed':
+      case 'done': return <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-200 shadow-inner">✅ เสร็จแล้ว</span>;
+      case 'rejected': return <span className="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-xs font-bold border border-rose-200 shadow-inner">❌ ปฏิเสธ</span>;
+      case 'cancelled': return <span className="bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full text-xs font-bold border border-slate-200 shadow-inner">⚪ ยกเลิก</span>;
       default: return <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold">{status}</span>;
     }
   };
@@ -165,7 +169,8 @@ const TodoPageList = ({
        return true;
      } else if (isLeftZone === false) {
        // โซนขวา: งานสำคัญ & ค้างดำเนินการ (งานด่วน หรือ ค้างนาน)
-       return isUrgent;
+       const isNotDone = !['completed', 'cancelled', 'rejected', 'done'].includes(todo.status?.toLowerCase());
+        return isNotDone && isUrgent;
      }
      return true; 
   });
