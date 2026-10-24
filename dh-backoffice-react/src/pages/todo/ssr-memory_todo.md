@@ -118,4 +118,12 @@
     2. บันทึก `accountId` และ `customerId` แนบลงใน `todoPayload` และ `adPayload` ใน `storeProfileSubmitService.js` ตั้งแต่ต้นทาง
     3. เสริม Query `where('phoneNumber', '==', searchTarget)` ใน `customerSearchService.js` เพื่อให้ค้นหาลูกค้าด้วยเบอร์โทรศัพท์ได้ครบทุกรูปแบบ
   - *สถานะ:* ส่งมอบสมบูรณ์ ✅
+- **ปัญหาเมนู To-do บนแถบ Sidebar ไม่แสดงตัวเลขแจ้งเตือนงานค้าง และป้ายแจ้งเตือนกลืนกับพื้นหลัง (Sidebar Notification Badge Disconnect & Low Contrast):**
+  - *สาเหตุ:* 
+    1. ฟังก์ชัน subscribePendingTodos ใน 	odoQueryService.js เดิมใส่ตัวกรอง !MANAGER_TASK_TYPES.includes(currentType) ทำให้งานประเภทอนุมัติร้าน/โฆษณา (AD_APPROVAL, PARTNER_APPROVAL) หรือขอราคาส่ง ถูกตัดทิ้งจนตัวนับกลายเป็น   แม้ว่าบนกระดาน /todo จะมีงานค้างแสดงอยู่จริง
+    2. ป้ายแจ้งเตือนบน Sidebar เดิมใช้สีชมพูจาง g-red-100 text-red-600 เมื่อไม่ได้เลือกเมนู และใช้สีขาวโปร่งแสง g-white/20 เมื่อเลือกเมนู ทำให้ตัวเลขกลืนไปกับพื้นหลังและมองเห็นได้ยากมาก
+  - *วิธีแก้:* 
+    1. ปรับปรุง subscribePendingTodos ให้นับงานค้างจริงทุกประเภทในศูนย์ปฏิบัติการ 	odos โดยไม่ตัดกลุ่มงานผู้จัดการออก พร้อมเสริมสถานะ 'processing' ให้ครอบคลุมสอดคล้องกับ useCentralTodo
+    2. ยกระดับสไตล์ป้ายแจ้งเตือนใน Sidebar.jsx เป็น Solid Vivid Red Alert (g-rose-500 text-white font-black shadow-xs) เมื่อไม่ได้เลือกเมนู และเพิ่มขอบขาวคมชัด (ing-2 ring-white) เมื่อเลือกเมนู (ปุ่มน้ำเงิน) ทำให้ตัวเลขเด่นชัดสะดุดตาทันที
+  - *สถานะ:* ส่งมอบสมบูรณ์ ✅
 </pitfalls_and_solutions>

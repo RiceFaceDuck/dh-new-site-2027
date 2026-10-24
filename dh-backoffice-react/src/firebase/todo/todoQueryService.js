@@ -1,6 +1,5 @@
 import { db } from '../config';
 import { collection, query, where, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
-import { MANAGER_TASK_TYPES } from '../managerTodoService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const todoQueryService = {
@@ -9,7 +8,7 @@ export const todoQueryService = {
     try {
       const q = query(
         collection(db, getCollectionPath('todos')),
-        where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item']),
+        where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']),
         orderBy('createdAt', 'desc'),
         limit(300) // 🚀 [Optimization] เพิ่ม Limit เป็น 300 เพื่อป้องกันงานข้ามประเภทดันตกขอบ
       );
@@ -17,11 +16,13 @@ export const todoQueryService = {
       return onSnapshot(q, (snapshot) => {
         const pendingTodos = snapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
-          // 🚀 [อัปเกรด-ความปลอดภัย] คัดกรองงานขยะ และกรองงานของผู้จัดการออกไป เพื่อให้กระดานส่วนกลางสะอาด
+          // 🚀 [อัปเกรดความสมบูรณ์] คัดกรองงานขยะ และนับงานค้างจริงทุกประเภทในศูนย์ปฏิบัติการ To-do
           .filter(t => {
               const currentType = t.type || t.taskType;
               if (!currentType) return false; // สกัดกั้น: งานที่ไม่มี Type (งานขยะ)
-              return !MANAGER_TASK_TYPES.includes(currentType);
+              const s = typeof t.status === 'string' ? t.status.toLowerCase() : '';
+              if (['completed', 'cancelled', 'rejected', 'done'].includes(s)) return false;
+              return true;
           })
           .sort((a, b) => {
               const timeA = a.createdAt?.toMillis() || a.requestedAt?.toMillis() || 0;

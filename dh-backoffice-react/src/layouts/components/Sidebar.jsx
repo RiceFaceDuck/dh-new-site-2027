@@ -158,8 +158,8 @@ export default function Sidebar({
                 {item.badge > 0 && !isLocked && (
                   <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-xs ${
                     isActive 
-                      ? 'bg-white/20 text-white' 
-                      : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400'
+                      ? 'bg-rose-500 text-white ring-2 ring-white shadow-sm' 
+                      : 'bg-rose-500 text-white ring-1 ring-rose-600/30 shadow-xs'
                   }`}>
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
