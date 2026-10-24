@@ -1,9 +1,9 @@
- 
-import { Wallet, Plus, Activity, TrendingUp, ShieldCheck, Sparkles } from 'lucide-react';
+import { Wallet, Plus, Activity, TrendingUp, ShieldCheck, Sparkles, AlertTriangle } from 'lucide-react';
 
 const AdStatsOverview = ({ userCredit, onOpenForm }) => {
   // Helper สำหรับจัดฟอร์แมตตัวเลข
   const formatNumber = (num) => new Intl.NumberFormat('th-TH').format(num || 0);
+  const isOutOfCredit = Number(userCredit || 0) <= 0;
 
   return (
     <div className="relative overflow-hidden bg-slate-100/90 rounded-md p-6 md:p-8 shadow-sm border border-slate-200/90 animate-in fade-in zoom-in-95 duration-500">
@@ -13,10 +13,16 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
         
         <div className="flex items-center gap-5">
           <div className="w-14 h-14 bg-white border border-slate-200/80 rounded-md flex items-center justify-center shadow-xs relative">
-            <Wallet size={28} className="text-indigo-600" />
+            <Wallet size={28} className={isOutOfCredit ? "text-amber-500" : "text-indigo-600"} />
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              {isOutOfCredit ? (
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              ) : (
+                <>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </>
+              )}
             </span>
           </div>
           <div>
@@ -24,7 +30,7 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
               Available Credits <Sparkles size={12} className="text-amber-500"/>
             </p>
             <div className="flex items-baseline gap-2">
-              <p className="text-4xl font-black text-slate-900 tracking-tight">
+              <p className={`text-4xl font-black tracking-tight ${isOutOfCredit ? 'text-amber-600' : 'text-slate-900'}`}>
                 {formatNumber(userCredit)}
               </p>
               <span className="text-xs font-bold text-slate-600 uppercase tracking-widest bg-slate-200/80 px-2 py-0.5 rounded-md">PTS</span>
@@ -39,9 +45,11 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
           <div className="hidden sm:flex gap-5 mr-2">
             <div className="flex flex-col items-end justify-center pr-5 border-r border-slate-300/70">
                <span className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-widest">
-                 <Activity size={12} className="text-emerald-600"/> Ad Engine
+                 <Activity size={12} className={isOutOfCredit ? "text-amber-500" : "text-emerald-600"}/> Ad Engine
                </span>
-               <span className="text-sm font-bold text-emerald-600 tracking-wide">ACTIVE</span>
+               <span className={`text-sm font-bold tracking-wide ${isOutOfCredit ? "text-amber-600" : "text-emerald-600"}`}>
+                 {isOutOfCredit ? "OUT OF CREDIT" : "ACTIVE"}
+               </span>
             </div>
             <div className="flex flex-col items-end justify-center pr-3 border-r border-slate-300/70">
                <span className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-widest">
@@ -62,12 +70,35 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
         </div>
 
       </div>
+
+      {/* ⚠️ Out-of-Credit Notification Banner */}
+      {isOutOfCredit && (
+        <div className="relative z-10 mt-5 p-4 rounded-md bg-amber-50/90 border border-amber-300/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 text-xs shadow-xs animate-in fade-in duration-300">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle size={20} className="text-amber-600 shrink-0" />
+            <div>
+              <p className="font-bold text-amber-950">เครดิตโฆษณาของคุณหมดแล้ว (0 Pts)</p>
+              <p className="text-amber-800 text-[11px] mt-0.5">
+                โฆษณาและหมุดร้านของคุณถูกพักการแสดงผลชั่วคราวเพื่อป้องกันค่าใช้จ่ายส่วนเกิน กรุณาติดต่อทีมงานเพื่อเติมเครดิตโฆษณา
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://lin.ee/qvpMIb6"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-md shadow-xs transition-colors flex items-center gap-1.5"
+          >
+            ติดต่อเติมเครดิต
+          </a>
+        </div>
+      )}
       
       {/* ℹ️ Transparency Note */}
       <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="text-[11px] text-slate-500 font-medium space-y-1">
-          <p>* <strong className="text-emerald-700">ค่ามองเห็น (Impression)</strong>: ระบบสะสมยอดวิวครบ 100 ครั้ง ถึงจะหักพอยต์โฆษณา 1 รอบ (ตามที่กำหนดในหลังบ้าน)</p>
-          <p>* <strong className="text-indigo-700">ค่าคลิก (Click)</strong>: หักพอยต์ทันทีที่มีคนกดดูโปรไฟล์หรือสินค้าของคุณ</p>
+          <p>* <strong className="text-emerald-700">ค่ามองเห็น (Impression)</strong>: ระบบสะสมยอดวิวครบ 1,000 ครั้ง ถึงจะหักพอยต์โฆษณา 0.1 แต้ม (คิดเฉลี่ยตามจริง)</p>
+          <p>* <strong className="text-indigo-700">ค่าคลิก (Click)</strong>: หักพอยต์ 5 แต้มเมื่อมีคนกดดูโปรไฟล์หรือสินค้าของคุณ</p>
         </div>
         <div className="text-[10px] font-bold text-slate-600 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg w-max border border-slate-200/80 uppercase tracking-widest shadow-2xs">
           <TrendingUp size={14} className="text-indigo-600"/> Real-time Smart Tracking

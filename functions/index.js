@@ -4,6 +4,7 @@ const nightlyChunkGuard = require('./inventory/nightlyChunkGuard');
 const walletFunctions = require('./inventory/walletFunctions');
 const ga4AdSync = require('./marketing/ga4AdSyncCron');
 const partnerVisibilitySync = require('./marketing/partnerVisibilitySync');
+const recordAdTelemetry = require('./marketing/recordAdTelemetry');
 const userClaimsTrigger = require('./auth/userClaimsTrigger');
 
 module.exports = {
@@ -13,5 +14,6 @@ module.exports = {
   ...walletFunctions,
   ...ga4AdSync,
   ...partnerVisibilitySync,
+  ...recordAdTelemetry,
   ...userClaimsTrigger
 };

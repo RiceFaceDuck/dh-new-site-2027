@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config.js';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils.js';
 
@@ -202,38 +202,60 @@ export const evaluateFreebie = (freebie, cartItems = [], subTotal = 0, customerT
   };
 };
 
+const PROMO_CACHE_TTL_MS = 30 * 60 * 1000; // 30 นาที แคชในเครื่อง ลด 2 Snapshot Queries
+let inMemoryPromoCache = {
+  promotions: null,
+  freebies: null,
+  timestamp: 0
+};
+
+export const invalidatePromoCache = () => {
+  inMemoryPromoCache = { promotions: null, freebies: null, timestamp: 0 };
+};
+
 export function usePromotions() {
-  const [promotions, setPromotions] = useState([]);
-  const [freebies, setFreebies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [promotions, setPromotions] = useState(() => inMemoryPromoCache.promotions || []);
+  const [freebies, setFreebies] = useState(() => inMemoryPromoCache.freebies || []);
+  const [loading, setLoading] = useState(() => !inMemoryPromoCache.promotions);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let isPromoLoaded = false;
-    let isFreebieLoaded = false;
+    let isMounted = true;
+    const now = Date.now();
 
-    const checkAllLoaded = () => {
-      if (isPromoLoaded && isFreebieLoaded) {
-        setLoading(false);
-      }
-    };
+    // หากมีแคชและยังไม่หมดอายุ (30 นาที) ใช้ทันที: 0 Reads, 0 Listener
+    if (inMemoryPromoCache.promotions && (now - inMemoryPromoCache.timestamp) < PROMO_CACHE_TTL_MS) {
+      setPromotions(inMemoryPromoCache.promotions);
+      setFreebies(inMemoryPromoCache.freebies || []);
+      setLoading(false);
+      return;
+    }
 
-    // 1. Promotions Listener
-    let unsubPromo = () => {};
-    try {
-      const qPromo = query(
-        collection(db, getCollectionPath('promotions')),
-        where('isActive', '==', true)
-      );
-      unsubPromo = onSnapshot(qPromo, (snapshot) => {
+    const loadPromotionsAndFreebies = async () => {
+      try {
+        setLoading(true);
+
+        const qPromo = query(
+          collection(db, getCollectionPath('promotions')),
+          where('isActive', '==', true)
+        );
+        const qFreebie = query(
+          collection(db, getCollectionPath('freebies')),
+          where('isActive', '==', true)
+        );
+
+        const [promoSnap, freebieSnap] = await Promise.all([
+          getDocs(qPromo),
+          getDocs(qFreebie)
+        ]);
+
         const activePromos = [];
-        snapshot.forEach((doc) => {
+        promoSnap.forEach((doc) => {
           const data = doc.data();
           if (!data.deletedAt) {
             activePromos.push({ id: doc.id, ...data });
           }
         });
-
         activePromos.sort((a, b) => {
           if ((b.priority || 0) !== (a.priority || 0)) return (b.priority || 0) - (a.priority || 0);
           const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
@@ -241,58 +263,39 @@ export function usePromotions() {
           return bTime - aTime;
         });
 
-        setPromotions(activePromos);
-        isPromoLoaded = true;
-        checkAllLoaded();
-      }, (err) => {
-        console.error('Error fetching promotions:', err);
-        setError(err.message);
-        isPromoLoaded = true;
-        checkAllLoaded();
-      });
-    } catch (err) {
-      console.error('Failed to setup promotions listener:', err);
-      setError(err.message);
-      isPromoLoaded = true;
-      checkAllLoaded();
-    }
-
-    // 2. Freebies Listener
-    let unsubFreebie = () => {};
-    try {
-      const qFreebie = query(
-        collection(db, getCollectionPath('freebies')),
-        where('isActive', '==', true)
-      );
-      unsubFreebie = onSnapshot(qFreebie, (snapshot) => {
         const activeFreebies = [];
-        snapshot.forEach((doc) => {
+        freebieSnap.forEach((doc) => {
           const data = doc.data();
           if (!data.deletedAt) {
             activeFreebies.push({ id: doc.id, ...data });
           }
         });
-
         activeFreebies.sort((a, b) => (a.minSpend || 0) - (b.minSpend || 0));
-        setFreebies(activeFreebies);
-        isFreebieLoaded = true;
-        checkAllLoaded();
-      }, (err) => {
-        console.error('Error fetching freebies:', err);
-        setError(err.message);
-        isFreebieLoaded = true;
-        checkAllLoaded();
-      });
-    } catch (err) {
-      console.error('Failed to setup freebies listener:', err);
-      setError(err.message);
-      isFreebieLoaded = true;
-      checkAllLoaded();
-    }
+
+        inMemoryPromoCache = {
+          promotions: activePromos,
+          freebies: activeFreebies,
+          timestamp: Date.now()
+        };
+
+        if (isMounted) {
+          setPromotions(activePromos);
+          setFreebies(activeFreebies);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error fetching promotions/freebies:', err);
+        if (isMounted) {
+          setError(err.message);
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPromotionsAndFreebies();
 
     return () => {
-      unsubPromo();
-      unsubFreebie();
+      isMounted = false;
     };
   }, []);
 
@@ -316,6 +319,7 @@ export function usePromotions() {
     error,
     evaluatePromotion: memoEvaluatePromotion,
     evaluateFreebie: memoEvaluateFreebie,
-    getEligibleTotals: memoGetEligibleTotals
+    getEligibleTotals: memoGetEligibleTotals,
+    invalidateCache: invalidatePromoCache
   };
 }

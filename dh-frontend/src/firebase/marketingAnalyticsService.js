@@ -88,9 +88,10 @@ const scheduleFlush = () => {
   }, FLUSH_INTERVAL_MS);
 };
 
-// 🛡️ ผูกตัวดักตรวจจับการปิดแท็บหรือสลับหน้าเว็บ (Page Lifecycle)
-if (typeof window !== 'undefined') {
+// 🛡️ ผูกตัวดักตรวจจับการปิดแท็บหรือสลับหน้าเว็บ (Page Lifecycle Singleton Guard)
+if (typeof window !== 'undefined' && !window.__dh_ad_telemetry_attached) {
   try {
+    window.__dh_ad_telemetry_attached = true;
     window.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
         flushTelemetryQueue(true);

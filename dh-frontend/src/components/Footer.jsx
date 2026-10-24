@@ -15,17 +15,8 @@ const Footer = () => {
       }
     });
 
-    const unsubscribe = footerClientService.subscribeFooterConfig((realtimeData) => {
-      if (isMounted && realtimeData) {
-        setConfig(realtimeData);
-      }
-    });
-
     return () => {
       isMounted = false;
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
     };
   }, []);
 

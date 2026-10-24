@@ -5,7 +5,8 @@
     1. Operational Overview: Firebase Cloud Functions v1/v2 provide automated triggers, cron maintenance jobs, and backend security validations.
     2. Auth Custom Claims Trigger (`auth/userClaimsTrigger.js`): Listens to `users/{uid}` onWrite. Maps database role strings (English & Thai) into Firebase Auth Custom Claims (`role`, `isStaff`, `isManager`, `isAdmin`) so client tokens carry authorization without database lookups.
     3. GA4 Ad Sync Cron (`marketing/ga4AdSyncCron.js`): Scheduled job pulling Google Analytics impressions and clicks to update partner ad metrics. Enforces strict bearer token authentication with fail-closed security.
-    4. Nightly Maintenance: Chunks product catalogs, guards against orphaned storage files, and summarizes daily telemetry logs.
+    4. Ad Telemetry Batch Ingestion (`marketing/recordAdTelemetry.js`): High-throughput HTTP endpoint batch-processing aggregated impression/click deltas. Executes atomic Firestore transactions updating ad stats, deducting partner wallet creditPoints, synchronizing ledger totalAllocated, and auto-suspending zero-credit ads.
+    5. Nightly Maintenance: Chunks product catalogs, guards against orphaned storage files, and summarizes daily telemetry logs.
   </workflow>
 
   <core_schema>
@@ -40,5 +41,6 @@
     1. ⚠️ Thai Manager Demotion Vulnerability: Previously, `userClaimsTrigger.js` only checked `['staff', 'manager', 'admin', 'owner', 'vp']`. Any employee assigned a Thai role like `'ผู้จัดการ'` or `'เจ้าของ'` fell through the check and was demoted to `'staff'` or `'customer'`. Fixed by including all Thai roles in the mapper.
     2. ⚠️ Hardcoded Fallback Secret in ga4AdSyncCron: Previously, if `INTERNAL_CRON_SECRET` was missing from environment config, `ga4AdSyncCron.js` fell back to a default hardcoded secret string. Removed fallback secret to fail closed with 401 Unauthorized.
     3. ⚠️ Cloud Functions Deployment Desync: Functions modified locally must be checked against live deployment state to avoid silent regression where clients invoke old Cloud Function revisions.
+    4. 🚀 Ad Telemetry Batch Transaction Guard (Phase 2): Batch ingestion aggregates ad impressions and clicks in memory before writing. Deductions synchronously debit users.creditPoints and settings/credit_config.ledger.totalAllocated while auto-flagging OUT_OF_CREDIT to prevent free ad runs.
   </lessons_learned>
-</grimoire>
+</grimoire>
