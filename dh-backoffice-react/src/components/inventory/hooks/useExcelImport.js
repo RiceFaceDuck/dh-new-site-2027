@@ -62,7 +62,9 @@ export function useExcelImport(onSuccess) {
       else if (isNew && defaultIfNew !== undefined) mapped[key] = defaultIfNew;
     };
 
-    setIfDef('name', str(rawRow['Name']), '');
+    // 🛡️ Selective Column-Level Patching:
+    // ช่องว่าง = ไม่แตะต้องข้อมูลเดิมในระบบ | มีค่า = เขียนทับเฉพาะคอลัมน์นั้น
+    setIfDef('name', str(rawRow['Name']), str(rawRow['SKU']) || '');
     setIfDef('category', str(rawRow['Category']), 'Other');
     setIfDef('brand', str(rawRow['Brand']), '');
     setIfDef('unit', str(rawRow['Unit']), 'ชิ้น');
@@ -86,8 +88,8 @@ export function useExcelImport(onSuccess) {
         const oldStock = Number(existing.stockQuantity || 0);
         mapped._adjustmentDiff = countedStock - oldStock;
       }
-    } else {
-      setIfDef('stockQuantity', num(rawRow['StockQuantity']), 0);
+    } else if (isNew) {
+      mapped.stockQuantity = 0;
     }
     // -------------------
 
@@ -191,14 +193,20 @@ export function useExcelImport(onSuccess) {
             const existing = fetchedExistingMap.get(sku);
             const item = mapDataToSchema(rawRow, isNew, existing);
             
+            // แสดงชื่อสินค้าเดิมในพรีวิวเมื่อ Excel ไม่มีคอลัมน์ชื่อ เพื่อความชัดเจนของแอดมิน
+            const previewRow = {
+              ...rawRow,
+              Name: rawRow['Name'] || existing?.name || (isNew ? sku : '')
+            };
+
             if (item._hasStockConflict) {
-              return { ...rawRow, _status: 'ERROR', _errorReason: 'ระบุแค่ StockQuantity หรือ AddStock เท่านั้น ห้ามใส่สองช่องพร้อมกัน' };
+              return { ...previewRow, _status: 'ERROR', _errorReason: 'ระบุแค่ StockQuantity หรือ AddStock เท่านั้น ห้ามใส่สองช่องพร้อมกัน' };
             }
 
             mappedItems.push(item);
 
             if (isNew) {
-              return { ...rawRow, _status: 'NEW', _changes: [] };
+              return { ...previewRow, _status: 'NEW', _changes: [] };
             }
             
             const changes = [];
@@ -218,14 +226,15 @@ export function useExcelImport(onSuccess) {
             }
             
             if (changes.length > 0) {
-              return { ...rawRow, _status: 'CHANGED', _changes: changes };
+              return { ...previewRow, _status: 'CHANGED', _changes: changes };
             } else {
-              return { ...rawRow, _status: 'UNCHANGED', _changes: [] };
+              return { ...previewRow, _status: 'UNCHANGED', _changes: [] };
             }
           }).filter(Boolean);
           
           setParsedData(analyzedData);
-          setProductsToImport(mappedItems.filter(p => p.sku && p.name));
+          // 🛡️ Selective Column Patching: กรองเฉพาะแถวที่มี SKU (ไม่ตัดทิ้งเมื่อไม่มี Name)
+          setProductsToImport(mappedItems.filter(p => p && p.sku));
         } else {
           toast.error('ไม่พบข้อมูลในไฟล์ Excel');
         }
@@ -254,7 +263,14 @@ export function useExcelImport(onSuccess) {
   };
 
   const handleConfirmImport = async () => {
-    if (productsToImport.length === 0 || hasError) return;
+    if (productsToImport.length === 0 || hasError) {
+      if (productsToImport.length === 0) {
+        toast.error('ไม่พบรายการสินค้าที่สามารถนำเข้าได้');
+      } else if (hasError) {
+        toast.error('มีข้อมูลที่ไม่ถูกต้องในไฟล์ กรุณาแก้ไขก่อนนำเข้า');
+      }
+      return;
+    }
     
     setIsProcessing(true);
     setImportProgress({ current: 0, total: 1, percent: 0 });

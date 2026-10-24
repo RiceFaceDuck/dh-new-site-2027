@@ -14,7 +14,7 @@
 </usage_workflow>
 
 <domain_rules>
-1. **Partial Overwrite (Patch Update):** การนำเข้า Excel ต้องเขียนทับเฉพาะคอลัมน์ที่ระบุใน Excel ส่วนข้อมูลที่มีอยู่เดิมใน Firestore (รูปภาพ `images`, ลิงก์ `externalLinks`, แท็ก `tags`, วันที่สร้าง `createdAt`) **ต้องคงไว้เสมอ ห้ามถูกล้างเป็นค่าว่าง**
+1. **Selective Column-Level Patching:** การนำเข้า Excel ต้องยึดหลัก "ช่องว่าง = ไม่แตะต้องข้อมูลเดิมในระบบ 100% / มีค่า = เขียนทับเฉพาะคอลัมน์นั้นตรงๆ" ส่วนข้อมูลที่มีอยู่เดิมใน Firestore (รูปภาพ `images`, ลิงก์ `externalLinks`, แท็ก `tags`, หมวดหมู่ `category`, วันที่สร้าง `createdAt`) **ต้องคงไว้เสมอ ห้ามถูกล้างเป็นค่าว่าง** และแถวที่มี SKU ครบถ้วนสามารถนำเข้าได้แม้ไม่มีคอลัมน์ชื่อ
 2. **การนับสต๊อก vs การเพิ่มสต๊อก:**
    - `StockQuantity`: นับยอดสต๊อกจริง (Overwrite) แสดงในช่องที่ 6 "คงเหลือ (Stock)"
    - `AddStock`: เพิ่มสต๊อกต่อยอดเดิม (Increment) แสดงผลบวกในช่องที่ 6 "คงเหลือ (Stock)"
@@ -22,6 +22,8 @@
 3. **Firestore Op Limit:** ทุก Batch ต้องไม่เกิน 400 ops (ปลอดภัยจากเพดาน 500 ops)
 4. **Bundle Receipts:** สรุปการรับเข้าสต๊อกจาก Excel รวมเป็น 1 Document แม่ใน `inventory_import_batches` แทนการเขียนแยกหลายพันรายการ
 5. **UI & Layout:** รูปแบบการแสดงผล สีของตาราง และป้ายบน Header ตรงตามจุดประสงค์การใช้งานจริงแล้ว ให้คงไว้ตามเดิม
+6. **GAS Permanently Deprecated (Zero GAS Invariant):** ระบบปิดการทำงานของ Google Apps Script ถาวร ห้ามมีคิว หรือส่ง HTTP requests ไป GAS จากกระบวนการ Import โดยเด็ดขาด
+7. **Local In-Memory Staging Buffer & Undefined Sanitizer:** ประมวลผลและตรวจสอบข้อมูลในเครื่องให้เรียบร้อยสมบูรณ์ก่อน commit และต้องกวาดลบคีย์ `undefined` ออกจาก doc payload 100% ป้องกัน Firestore SDK error
 </domain_rules>
 
 <core_schema>
@@ -39,7 +41,7 @@
 
 <third_party>
 - XLSX: ประมวลผลชีต Excel
-- Google Apps Script (GAS): คิวซิงค์สต๊อกเบื้องหลัง
+- Google Apps Script (GAS): [DEPRECATED & DISABLED] สั่งปิดระบบถาวร ไม่มีการเชื่อมต่ออีกต่อไป
 </third_party>
 
 <pitfalls_and_solutions>
@@ -111,5 +113,14 @@
 22. **จัดระเบียบ Collection Path ใน inventoryAdjustmentService (Collection Path Normalization):**
     - *สาเหตุ:* `inventoryAdjustmentService.js` มีการ hardcode ชื่อ Collection เป็น `'products'` ตรงๆ
     - *วิธีแก้:* ใช้ `getCollectionPath('products')` จาก `dh-shared/src/firebase/pathUtils` เพื่อความสอดคล้องกับมาตรฐานความปลอดภัย Multi-environment
+23. **บั๊กตัวกรองชื่อใน useExcelImport ทำให้อัปโหลดไฟล์สต็อก/ราคาไม่ได้ (Selective Column Patching Bug):**
+    - *สาเหตุ:* โค้ดเดิมกรอง `mappedItems.filter(p => p.sku && p.name)` เมื่อผู้ใช้นำเข้าไฟล์ที่มีแค่ SKU, Stock, Price (ไม่มีคอลัมน์ชื่อ) ข้อมูลทั้งหมดจะถูกตัดทิ้งเป็น 0 แถว ทำให้กดยืนยันแล้วเงียบสนิท
+    - *วิธีแก้:* ปรับเป็น `filter(p => p && p.sku)` โดยไม่บังคับชื่อ และหากเป็นสินค้าใหม่ที่ไม่มีชื่อให้ fallback เป็น SKU พร้อมแสดงชื่อเดิมใน Preview ตาราง
+24. **แคช IndexedDB ถูกล้างชื่อ/หมวดหมู่เป็นค่าว่างจากการ Normalize (Selective Cache Merge):**
+    - *สาเหตุ:* `updateCatalogCacheWithProducts` นำผลลัพธ์จาก `normalizeProduct` ซึ่งเติม Default ค่าว่างมา spread ทับ existing data ในแคช ทำให้ชื่อและหมวดหมู่เดิมใน IndexedDB หายไป
+    - *วิธีแก้:* ใช้ Selective Merge นำเฉพาะคีย์ที่ส่งมาจริงใน `rawP` (`rawP[k] !== undefined`) มาอัปเดตทับ existing data
+25. **หน้าต่างสรุปผลนำเข้า (ImportResultSummary) ถูกปิดทันทีก่อนผู้ใช้ได้เห็น:**
+    - *สาเหตุ:* `handleImportSuccess` ใน `useInventoryController` เรียก `setIsImportModalOpen(false)` ทันที
+    - *วิธีแก้:* ให้ `handleImportSuccess` ทำเฉพาะการรีเฟรชแคชเบื้องหลัง แล้วปล่อยให้ผู้ใช้ดูสรุปและกดปุ่ม "ปิดหน้าต่าง" ได้ด้วยตนเอง
 </pitfalls_and_solutions>
 

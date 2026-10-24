@@ -121,7 +121,7 @@ export default function useInventoryController() {
   };
   
   const handleImportSuccess = async () => {
-    setIsImportModalOpen(false);
+    // 🛡️ ไม่สั่งปิด Modal อัตโนมัติ เพื่อให้ผู้ใช้ตรวจเช็คผลสรุปใน ImportResultSummary และเป็นคนกดปิดเอง
     clearCache();
     await fetchInitialProducts();
   };

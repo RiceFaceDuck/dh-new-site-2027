@@ -1,7 +1,5 @@
 import { limit, writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId } from 'firebase/firestore';
 import { db, auth } from '../config';
-import { gasHistoryService } from '../gasHistoryService';
-import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 export const inventoryImportService = {
@@ -163,6 +161,13 @@ export const inventoryImportService = {
             p.adjustmentHistory = updatedAdjHistory;
           }
 
+          // 🛡️ Undefined Sanitizer Guard: Remove all undefined keys to prevent Firestore SDK rejection
+          Object.keys(productDataToSave).forEach(key => {
+            if (productDataToSave[key] === undefined) {
+              delete productDataToSave[key];
+            }
+          });
+
           currentBatch.set(docRef, {
             ...productDataToSave,
             updatedAt: serverTimestamp(),
@@ -205,21 +210,6 @@ export const inventoryImportService = {
             onProgress({ current: bIdx + 1, total: totalBatches, percent: Math.round(((bIdx + 1) / totalBatches) * 100) });
           }
         }
-        
-        // 🚀 รวบ Summary Audit Log บันทึกเพียง 1 ครั้ง ไม่ยิง Loop N พันครั้ง
-        gasHistoryService.log({
-          level: 'INFO',
-          module: 'Inventory',
-          action: 'Bulk Import Summary',
-          target: { id: 'Multiple', type: 'System' },
-          details: {
-            legacy_details: `นำเข้าสินค้าสำเร็จ ${toWrite.length} รายการ (ข้าม ${toSkip.length} รายการ)`,
-            totalWritten: toWrite.length,
-            totalSkipped: toSkip.length,
-            receiptsBundled: batchReceiptItems.length,
-            tags: ['bulk_import', 'summary']
-          }
-        });
 
         // 🚀 Instant Local-First Cache Hydration: ฉีดเข้า Memory & IndexedDB ทันที (0 Reads หลังบ้าน)
         try {
@@ -228,11 +218,6 @@ export const inventoryImportService = {
         } catch (cacheErr) {
           console.warn('⚠️ [inventoryImportService] Instant cache update warning:', cacheErr.message);
         }
-
-        // คิวซิงค์ Google Sheets (Background asynchronous)
-        toWrite.forEach(p => {
-          gasStockService.queueUpdate(p);
-        });
       }
       
       return {

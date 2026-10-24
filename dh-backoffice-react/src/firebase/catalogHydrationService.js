@@ -309,13 +309,35 @@ export const updateCatalogCacheWithProducts = async (updatedProducts = []) => {
         const finalImages = normImages.length > 0 ? normImages : existingImages;
         const finalImage = norm.image || norm.imageUrl || existing.image || existing.imageUrl || (finalImages[0] || null);
 
-        productMap.set(upperSku, {
-          ...existing,
-          ...norm,
-          images: finalImages,
-          image: finalImage,
-          imageUrl: finalImage
+        // 🛡️ Selective Column Patching for Cache:
+        // อัปเดตเฉพาะคีย์ที่ส่งมาจริงใน rawP ไม่ให้ Default ว่างของ normalizeProduct ไปลบข้อมูลเดิมใน IndexedDB
+        const mergedObj = { ...existing };
+        Object.keys(norm).forEach(k => {
+          if (rawP[k] !== undefined) {
+            mergedObj[k] = norm[k];
+          }
         });
+
+        if (rawP.Price !== undefined) {
+          mergedObj.Price = norm.Price;
+          mergedObj.wholesalePrice = norm.wholesalePrice;
+        }
+        if (rawP.RetailPrice !== undefined || rawP.retailPrice !== undefined) {
+          mergedObj.retailPrice = norm.retailPrice;
+        }
+        if (rawP.stockQuantity !== undefined || rawP.stock !== undefined) {
+          mergedObj.stockQuantity = norm.stockQuantity;
+          mergedObj.stock = norm.stock;
+        }
+        if (rawP.category_lower) {
+          mergedObj.category_lower = rawP.category_lower;
+        }
+
+        mergedObj.images = finalImages;
+        mergedObj.image = finalImage;
+        mergedObj.imageUrl = finalImage;
+
+        productMap.set(upperSku, mergedObj);
       } else {
         productMap.set(upperSku, norm);
       }
