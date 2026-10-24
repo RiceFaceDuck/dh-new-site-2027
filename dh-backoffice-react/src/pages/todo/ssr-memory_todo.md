@@ -24,14 +24,13 @@
 - List Component: `Management System/dh-backoffice-react/src/pages/todo/components/TodoPageList.jsx`
 - Payment Card: `Management System/dh-backoffice-react/src/components/todo/PaymentCard.jsx`
 - Billing Dashboard: `Management System/dh-backoffice-react/src/components/billing/BillingDashboard.jsx`
-- Firestore Collection: `todos`
-- Key Fields:
-  - `type`: ประเภทงาน (`verify_slip`, `issue_tax_invoice`, `WHOLESALE_APPROVAL`, ฯลฯ)
-  - `orderId`: รหัสคำสั่งซื้ออ้างอิง
-  - `slipUrl`: ลิงก์รูปสลิปโอนเงิน (Google Drive / Firebase Storage)
-  - `amount`: ยอดเงินที่โอน
-  - `customerName`: ชื่อลูกค้า
-  - `staffUid` / `staffNickname`: พนักงานผู้รับผิดชอบงาน
+- Bundle & Cache Service: `Management System/dh-backoffice-react/src/firebase/todo/todoCatalogService.js`
+- Firestore Collections:
+  - `todos`: รายการงานปัจจุบัน
+  - `catalogs/todos_completed_bundle`: ก้อน Snapshot Bundle งานที่เสร็จแล้ว มัดรวมได้ถึง 250 รายการต่อ 1 Document (อ่าน 1 Read ได้ครบ)
+- LocalStorage Keys:
+  - `dh_todos_completed_bundle_v1`: แคชก้อนงานที่เสร็จแล้ว (TTL 24 ชม.)
+  - `dh_todos_completed_meta_v1`: เมทาดาต้าและ Timestamp ของแคช
 </core_schema>
 
 <third_party>
@@ -133,5 +132,14 @@
     2. นำการดึงงานเสร็จแล้วออกจากจุดเริ่มต้น และปรับปรุง `useCentralTodo.js` เป็นระบบ **Lazy-load On-Demand**: จะดึงงานที่เสร็จแล้วเฉพาะเมื่อผู้ใช้คลิกแท็บ "เสร็จแล้ว" หรือ "ทั้งหมด" เท่านั้น ประหยัดโควต้าอ่าน 100% ตอนเปิดใช้งานปกติ
     3. ปรับปรุง `TodoPageFilterBar.jsx` เป็น 3 ปุ่มสถานะ: [ทั้งหมด] (Slate), [ยังไม่ดำเนินการ] (Amber), [เสร็จแล้ว] (Emerald) พร้อมป้ายตัวเลขนับจำนวนแต่ละกลุ่ม
     4. ปรับปรุง `TodoPageList.jsx` และ `TodoItem.jsx` ให้แสดงป้ายสถานะ '✅ เสร็จแล้ว', '❌ ปฏิเสธ', '⚪ ยกเลิก' ชัดเจนสวยงาม
+  - *สถานะ:* ส่งมอบสมบูรณ์ ✅
+- **การยกระดับความประหยัดโควต้าอ่านสูงสุด (Maximum Savings / Zero-Waste Reads): สถาปัตยกรรม 4 เสาหลัก Snapshot Bundle + LocalStorage Cache + In-Memory Transition + Listener Caps:**
+  - *เป้าหมาย:* แก้ปัญหาความสิ้นเปลืองของ Firestore Reads ที่ต้องอ่านงานที่เสร็จแล้วใบละ 1 Read โดยยึดความต้องการของพี่ "ดึงช้าไม่เป็นไร แต่ต้องประหยัดที่สุด"
+  - *วิธีแก้ (4 เสาหลัก):*
+    1. **Snapshot Bundle Document (`catalogs/todos_completed_bundle`):** มัดรวมประวัติงานที่เสร็จแล้วเก็บเป็นก้อนเดียวใน Firestore (สูงสุด 250 รายการต่อเอกสาร ~100KB) ทำให้การอ่าน 250 งาน เสียเพียง **1 Read เดียวเท่านั้น** แทนที่จะเป็น 250 Reads
+    2. **LocalStorage Cache-First (`todoCatalogService.js`):** แคชก้อนงานที่เสร็จแล้วลง LocalStorage (TTL 24 ชม.) ทำให้การสลับแท็บไปดู "เสร็จแล้ว" ในการใช้งานปกติเสีย **0 Reads** พร้อมปุ่ม [🔄 รีเฟรช] สำหรับกดดึงก้อน Snapshot ใหม่สดๆ เมื่อต้องการ
+    3. **In-Memory & Action Sync:** เมื่อพนักงานกดอนุมัติ/ปฏิเสธงานบนหน้าจอ ระบบจะย้ายงานเข้าก้อนแคชในเครื่องทันที และซิงก์ขึ้น Bundle doc ในเบื้องหลัง ทำให้ไม่ต้องยิง Query ดึงซ้ำ (**0 Reads**)
+    4. **Listener Cap:** ลดเพดาน `limit` ของ Active Listeners ทั้ง `todos` และ `claims` จากเดิม 200-300 เหลือ **50 รายการ** ซึ่งพอดีกับงานค้างจริง ช่วยประหยัด Reads รายวันได้มหาศาล
+    5. อัปเกรด `TodoArchive.jsx` ให้ใช้งาน `fetchCompletedTodosBundle` ด้วย ทำให้พื้นที่จัดเก็บงานทั้งระบบใช้ Snapshot ร่วมกัน
   - *สถานะ:* ส่งมอบสมบูรณ์ ✅
 </pitfalls_and_solutions>

@@ -10,7 +10,7 @@ export const todoQueryService = {
         collection(db, getCollectionPath('todos')),
         where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']),
         orderBy('createdAt', 'desc'),
-        limit(300) // 🚀 [Optimization] เพิ่ม Limit เป็น 300 เพื่อป้องกันงานข้ามประเภทดันตกขอบ
+        limit(50) // 🚀 [Optimization: Pillar 4] คุมเพดาน Listener 50 รายการ ประหยัด Reads สูงสุด
       );
       
       return onSnapshot(q, (snapshot) => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Archive, Loader2 } from 'lucide-react';
-import { todoService } from '../../firebase/todoService';
+import { fetchCompletedTodosBundle } from '../../firebase/todo/todoCatalogService';
 
 export default function TodoArchive() {
   const navigate = useNavigate();
@@ -11,8 +11,8 @@ export default function TodoArchive() {
   useEffect(() => {
     const fetchArchive = async () => {
       try {
-        const data = await todoService.getCompletedTodos(100);
-        setArchivedTodos(data);
+        const result = await fetchCompletedTodosBundle({ fallbackLimit: 50 });
+        setArchivedTodos(result.todos || []);
       } catch (err) {
         console.error("Error fetching archive:", err);
       } finally {

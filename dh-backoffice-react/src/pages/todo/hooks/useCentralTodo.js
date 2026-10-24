@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../../firebase/config';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, where, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, where } from 'firebase/firestore';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { historyService } from '../../../firebase/historyService';
+import { fetchCompletedTodosBundle, syncCompletedTodoToBundle } from '../../../firebase/todo/todoCatalogService';
 
 /**
  * 🎯 Hook สำหรับจัดการข้อมูล To-do ส่วนกลาง (Operations, CS, Sales)
@@ -37,7 +38,7 @@ export const useCentralTodo = (filterType = 'PENDING') => {
       todosRef,
       where('status', 'in', ['todo', 'in_progress', 'pending', 'pending_manager', 'waiting_item', 'processing']),
       orderBy('createdAt', 'desc'),
-      limit(200)
+      limit(50) // 🚀 [Optimization: Pillar 4] คุมเพดาน Listener 50 รายการ
     );
 
     const claimsRef = collection(db, getCollectionPath('claims'));
@@ -45,7 +46,7 @@ export const useCentralTodo = (filterType = 'PENDING') => {
       claimsRef,
       where('status', 'in', ['pending_manager', 'waiting_item', 'processing']),
       orderBy('createdAt', 'desc'),
-      limit(200)
+      limit(50) // 🚀 [Optimization: Pillar 4] คุมเพดาน Listener 50 รายการ
     );
 
     let currentTodos = [];
@@ -101,7 +102,21 @@ export const useCentralTodo = (filterType = 'PENDING') => {
     };
   }, []);
 
-  // 📥 2. ดึงงานที่เสร็จแล้วแบบ On-Demand (Lazy-load เฉพาะเมื่อผู้ใช้คลิกเลือกแท็บ 'เสร็จแล้ว' หรือ 'ทั้งหมด')
+  // 📥 2. ดึงงานที่เสร็จแล้วแบบ Snapshot Bundle & Local Cache-First (ประหยัดสูงสุด 0 Reads เมื่อมีแคช / 1 Read เมื่อดึงจากเซิร์ฟเวอร์)
+  const loadCompletedTodos = useCallback(async (forceRefresh = false) => {
+    setCompletedLoading(true);
+    try {
+      const result = await fetchCompletedTodosBundle({ forceRefresh, fallbackLimit: 50 });
+      if (result && Array.isArray(result.todos)) {
+        setCompletedTodos(result.todos);
+      }
+    } catch (err) {
+      console.warn("⚠️ Warning fetching completed todos bundle:", err);
+    } finally {
+      setCompletedLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     // 🚀 หากอยู่แท็บ 'ยังไม่ดำเนินการ' จะไม่มีการอ่านหรือดึงข้อมูลงานเก่าเด็ดขาด (ประหยัด Reads 100%)
     if (filterType !== 'COMPLETED' && filterType !== 'ALL') {
@@ -110,49 +125,40 @@ export const useCentralTodo = (filterType = 'PENDING') => {
 
     if (completedTodos.length > 0) return; // โหลดครั้งเดียวในเซสชัน
 
-    let isMounted = true;
-    setCompletedLoading(true);
+    loadCompletedTodos(false);
+  }, [filterType, completedTodos.length, loadCompletedTodos]);
 
-    const fetchCompleted = async () => {
-      try {
-        const todosRef = collection(db, getCollectionPath('todos'));
-        const qCompleted = query(
-          todosRef,
-          where('status', 'in', ['completed', 'rejected', 'cancelled', 'done']),
-          orderBy('createdAt', 'desc'),
-          limit(50)
-        );
-        const snap = await getDocs(qCompleted);
-        if (isMounted) {
-          const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setCompletedTodos(list);
-        }
-      } catch (err) {
-        console.warn("⚠️ Warning fetching completed todos on demand:", err);
-      } finally {
-        if (isMounted) setCompletedLoading(false);
-      }
-    };
-
-    fetchCompleted();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [filterType, completedTodos.length]);
-
-  // 📝 3. อัปเดตสถานะงาน (Optimistic UI Ready)
+  // 📝 3. อัปเดตสถานะงาน (Optimistic UI & In-Memory Snapshot Transition)
   const updateTodoStatus = useCallback(async (todoId, newStatus) => {
     if (isSubmitting) return false;
     setIsSubmitting(true);
     
     try {
+      const isCompletedStatus = ['completed', 'rejected', 'cancelled', 'done'].includes(newStatus?.toLowerCase());
       const todoRef = doc(db, getCollectionPath('todos'), todoId);
+      
       await updateDoc(todoRef, {
         status: newStatus,
         updatedAt: serverTimestamp(),
-        completedAt: ['completed', 'rejected', 'cancelled', 'done'].includes(newStatus?.toLowerCase()) ? serverTimestamp() : null
+        completedAt: isCompletedStatus ? serverTimestamp() : null
       });
+
+      // ⚡ Optimistic In-Memory & Snapshot Transition (ประหยัด 0 Reads ทันที!)
+      if (isCompletedStatus) {
+        const targetTask = activeTodos.find(t => t.id === todoId);
+        if (targetTask) {
+          const completedTask = {
+            ...targetTask,
+            status: newStatus,
+            completedAt: { toDate: () => new Date(), toMillis: () => Date.now() },
+            updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() }
+          };
+          setCompletedTodos(prev => [completedTask, ...prev.filter(t => t.id !== todoId)]);
+          // เสียบเข้าก้อน Snapshot Bundle & Local Cache ในเครื่องทันที
+          syncCompletedTodoToBundle(completedTask);
+        }
+      }
+
       return true; // สำเร็จ
     } catch (err) {
       console.error("🔥 Error updating todo status:", err);
@@ -161,7 +167,7 @@ export const useCentralTodo = (filterType = 'PENDING') => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting]);
+  }, [isSubmitting, activeTodos]);
 
   // 🗑️ 4. ลบงาน (Delete Task)
   const removeTodo = useCallback(async (todoId) => {
@@ -222,12 +228,14 @@ export const useCentralTodo = (filterType = 'PENDING') => {
     
     // Status
     loading: loading || (completedLoading && (filterType === 'COMPLETED' || filterType === 'ALL') && completedTodos.length === 0),
+    completedLoading,
     error,
     isSubmitting,
     
     // Actions
     updateTodoStatus,
     removeTodo,
-    addManualTodo
+    addManualTodo,
+    refreshCompletedTodos: () => loadCompletedTodos(true)
   };
 };

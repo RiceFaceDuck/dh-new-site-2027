@@ -34,7 +34,9 @@ export default function Todo() {
     loading, 
     error: fetchError, 
     isSubmitting: isHookSubmitting,
-    addManualTodo
+    addManualTodo,
+    completedLoading,
+    refreshCompletedTodos
   } = useCentralTodo(filterType);
   
   const [showHelp, setShowHelp] = useState(false);
@@ -194,6 +196,8 @@ export default function Todo() {
                 setFilterType={setFilterType}
                 displayCount={displayTodos.length}
                 counts={filterCounts}
+                onRefreshCompleted={refreshCompletedTodos}
+                isRefreshing={completedLoading}
               />
            </div>
 

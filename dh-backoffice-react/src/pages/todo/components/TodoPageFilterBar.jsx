@@ -1,4 +1,4 @@
-import { PackageSearch, Filter } from 'lucide-react';
+import { PackageSearch, Filter, RotateCcw } from 'lucide-react';
 
 const TodoPageFilterBar = ({ 
   searchQuery, 
@@ -6,7 +6,9 @@ const TodoPageFilterBar = ({
   filterType, 
   setFilterType, 
   displayCount,
-  counts = {}
+  counts = {},
+  onRefreshCompleted,
+  isRefreshing = false
 }) => {
   return (
     <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-sm ring-1 ring-slate-900/5 border border-white/50 dark:border-slate-700/80 flex flex-col gap-4 transition-all duration-500 relative z-0">
@@ -111,6 +113,20 @@ const TodoPageFilterBar = ({
               </span>
             )}
           </button>
+
+          {/* 🔄 ปุ่มรีเฟรช Snapshot Bundle (อ่าน 1 Read ได้ 250 งาน) */}
+          {(filterType === 'COMPLETED' || filterType === 'ALL') && onRefreshCompleted && (
+            <button
+              type="button"
+              onClick={onRefreshCompleted}
+              disabled={isRefreshing}
+              title="รีเฟรชดึงข้อมูลก้อนล่าสุดจากเซิร์ฟเวอร์ (1 Read)"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap border shrink-0 cursor-pointer ml-auto bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 disabled:opacity-50 active:scale-95"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">{isRefreshing ? 'กำลังโหลด...' : 'รีเฟรช'}</span>
+            </button>
+          )}
       </div>
     </div>
   );
