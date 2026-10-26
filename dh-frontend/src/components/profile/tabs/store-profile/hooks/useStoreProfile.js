@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { storageService } from '../../../../../firebase/storageService';
 import { driveService } from '../../../../../firebase/driveService';
 import { storeProfileSubmitService } from '../../../../../firebase/storeProfileSubmitService';
 import { useToast } from '../../../../../context/ToastContext';
@@ -19,7 +20,7 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
     setUploadingStoreImage(true);
     try {
       const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 });
-      const url = await driveService.uploadAdImage(compressed, 'STORE_PROFILE');
+      const url = await storageService.uploadStoreImage(compressed, user?.uid, 'profile');
       setStoreData(prev => ({ ...prev, storeImage: url }));
       showToast("อัปโหลดรูปโปรไฟล์ร้านเรียบร้อย", 'success');
     } catch (error) {
@@ -51,7 +52,7 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
     try {
       for (const file of filesToUpload) {
         const compressed = await compressImage(file, { maxWidth: 1440, maxHeight: 1440, quality: 0.8 });
-        const url = await driveService.uploadAdImage(compressed, 'STORE_GALLERY');
+        const url = await storageService.uploadStoreImage(compressed, user?.uid, 'gallery');
         newUrls.push(url);
       }
       setStoreData(prev => ({

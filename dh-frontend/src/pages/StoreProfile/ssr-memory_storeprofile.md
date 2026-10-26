@@ -6,6 +6,12 @@
 3. ในส่วน "ช่องทางการติดต่อ" (`StoreProfileInfo.jsx`):
    - แสดงไอคอนพร้อมลิงก์ไปยัง LINE, Messenger, เว็บไซต์ร้าน, YouTube, TikTok, Shopee, Lazada
    - ลูกค้าคลิกเพื่อไปยังช่องทางติดต่อของร้านพาร์ทเนอร์รายนั้นๆ ทันที
+4. ในส่วน "แกลเลอรี่ผลงาน":
+   - คลิกที่รูปใดก็ได้เพื่อเปิด Pop-up เต็มจอ (`GalleryLightbox.jsx`)
+   - มีปุ่ม ซ้าย-ขวา, เลื่อนรูปด้วยคีย์บอร์ด (Arrow Keys / ESC), รองรับ Swipe บนมือถือ และแถบ Thumbnail ด้านล่าง
+5. พาร์ทเนอร์แก้ไขข้อมูลร้านและอัปโหลดภาพ (`StoreProfileBasicInfo.jsx`):
+   - อัปโหลดได้สูงสุด 20 รูป พร้อมบีบอัดเป็น WebP บน Client ทันที
+   - อัปโหลดตรงเข้าสู่ Firebase Storage (`stores/{userId}/...`) เสถียรและเร็ว ไม่ติด Quota GAS
 
 ## 2. <domain_rules>
 - **Universal Dynamic Contact Channels:** ทุกพาร์ทเนอร์ใช้จุดกลางเดียวกันใน `StoreProfileInfo.jsx`
@@ -14,13 +20,17 @@
 - **Responsive Architecture (Mobile First):** โครงสร้างหน้าร้านใช้ `max-w-4xl lg:max-w-6xl xl:max-w-7xl` โดยมือถือยังคงขนาดและเลย์เอาต์เดิม 100% ไม่เปลี่ยนแปลง ส่วนบน PC ขยายออกด้านข้างสมดุลกับ Header ทันที และแกลเลอรี่ผลงานขยายเป็น 4 คอลัมน์บนจอใหญ่ (`xl:grid-cols-4`)
 - **Client-Side Image Compression:** ใช้ `imageCompressor.js` แปลงภาพก่อนอัปโหลดเป็น WebP คุณภาพ 80% ไม่เกิน 1440px ลดขนาดไฟล์ลง ~95% (เหลือ ~100-200KB)
 - **Gallery Quota:** รองรับสูงสุด 20 ภาพ (`MAX_GALLERY_IMAGES = 20`) พร้อม Multi-file upload
+- **Cloud Storage Standard:** ใช้ Firebase Storage เก็บรูปภาพพาร์ทเนอร์ทั้งหมด แทน Google Drive GAS
 
 ## 3. <core_schema>
 - **Entry File:** `StoreProfilePage.jsx`
 - **Contact Component:** `components/StoreProfileInfo.jsx`
 - **Gallery Lightbox:** `components/GalleryLightbox.jsx` (Pop-up แสดงภาพเต็มจอ, Prev/Next, Thumbnails, ESC & Swipe support)
 - **Image Compressor:** `utils/imageCompressor.js`
+- **Storage Service:** `firebase/storageService.js` (ฟังก์ชัน `uploadStoreImage`, `deleteStoreImage` รองรับ fallback)
 - **Edit Component & Hook:** `StoreProfileBasicInfo.jsx`, `hooks/useStoreProfile.js`
+- **Migration Script:** `tests/verifications/migrate_drive_images_to_firebase.mjs`
+- **Mapping Archive:** `tests/verifications/drive_to_firebase_mapping.json` (สำรองคู่ URL 181 ภาพ เพื่อตรวจสอบและย้อนกลับได้)
 - **Asset Files:**
   - `public/images/line_logo.png`
   - `public/images/messenger_logo.png`
@@ -35,11 +45,16 @@
   - `tiktokUrl` (string): ลิงก์ช่อง TikTok หรือ `@handle`
   - `shopeeUrl` (string): ลิงก์ร้าน Shopee
   - `lazadaUrl` (string): ลิงก์ร้าน Lazada
+  - `storeImage` (string): URL ภาพประจำร้าน (Firebase Storage)
+  - `galleryImages` (string[]): อาร์เรย์ของภาพผลงานร้าน สูงสุด 20 ภาพ (Firebase Storage)
 
 ## 4. <third_party>
+- **Firebase Storage:** เก็บไฟล์ภาพ WebP ภายใต้บักเก็ต `dh-notebook-69f3b.firebasestorage.app/stores/`
 - **Social Platforms:** LINE (`line.me`), Facebook Messenger (`m.me`), YouTube (`youtube.com`), TikTok (`tiktok.com`)
 - **Map:** Google Maps
 
 ## 5. <pitfalls_and_solutions>
 - **Problem:** พาร์ทเนอร์บางร้านกรอก `@channel_name` หรือ `username` หรือไม่มี `https://` ทำให้ระบบเดิมที่เชื่อมสตริงแบบดิบพาไปหน้า 404
 - **Solution:** สร้างฟังก์ชัน Normalizer (`formatLineUrl`, `formatMessengerUrl`, `formatYoutubeUrl`, `formatTiktokUrl`, `formatExternalUrl`) แปลง input ทุกรูปแบบให้ออกมาเป็น Full URL ที่เปิดใช้งานได้ 100% สำหรับทุกพาร์ทเนอร์
+- **Problem:** Firestore ปฏิเสธการอัปเดต snapshot bundle ด้วย error `Unsupported field value: undefined` เมื่ออาร์เรย์มีอ็อบเจ็กต์ที่มีคีย์ `undefined`
+- **Solution:** ทำ Deep clone ผ่าน `JSON.parse(JSON.stringify(item))` ก่อนส่งเข้า Firestore `updateDoc` เพื่อกำจัดค่า `undefined` ทั้งหมดโดยอัตโนมัติ
