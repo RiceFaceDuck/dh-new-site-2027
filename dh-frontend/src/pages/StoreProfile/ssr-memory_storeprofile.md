@@ -58,3 +58,7 @@
 - **Solution:** สร้างฟังก์ชัน Normalizer (`formatLineUrl`, `formatMessengerUrl`, `formatYoutubeUrl`, `formatTiktokUrl`, `formatExternalUrl`) แปลง input ทุกรูปแบบให้ออกมาเป็น Full URL ที่เปิดใช้งานได้ 100% สำหรับทุกพาร์ทเนอร์
 - **Problem:** Firestore ปฏิเสธการอัปเดต snapshot bundle ด้วย error `Unsupported field value: undefined` เมื่ออาร์เรย์มีอ็อบเจ็กต์ที่มีคีย์ `undefined`
 - **Solution:** ทำ Deep clone ผ่าน `JSON.parse(JSON.stringify(item))` ก่อนส่งเข้า Firestore `updateDoc` เพื่อกำจัดค่า `undefined` ทั้งหมดโดยอัตโนมัติ
+- **Problem:** บล็อกแกลเลอรี่ผลงานเดิมใส่กรอบสี่เหลี่ยมจตุรัสแข็งๆ (`border`, `shadow`, `bg-slate-50`) ทำให้เห็นกรอบสีเทาชัดเจน และหากบังคับ `object-cover` จะตัดเนื้อหาภาพแนวนอน/แนวตั้ง
+- **Solution:** ปรับให้รูปภาพแสดงผลได้เต็มภาพ 100% (ทั้งภาพแนวนอนและแนวตั้ง ไม่โดนตัดขอบ) โดยถอดกรอบ (border), ขอบเส้น, เงา, และพื้นหลังสีเทาออกทั้งหมด ให้ภาพลอยเด่นอย่างเป็นธรรมชาติบนการ์ดขาว
+
+

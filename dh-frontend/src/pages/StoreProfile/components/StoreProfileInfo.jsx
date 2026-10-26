@@ -118,23 +118,25 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
                   <h4 className="text-lg font-bold text-slate-700">ผลงาน / แกลลอรี่ภาพ</h4>
                   <span className="text-xs text-slate-400 font-medium">คลิกเพื่อดูภาพเต็มจอ</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 items-center">
                   {partner.galleryImages.map((img, idx) => (
                     <div 
                       key={idx} 
                       onClick={() => setActiveImageIndex(idx)}
-                      className="rounded-xl overflow-hidden aspect-square shadow-xs border border-slate-100 cursor-pointer relative group bg-slate-50"
+                      className="cursor-pointer flex items-center justify-center h-48 sm:h-56 md:h-64 w-full"
                     >
-                      <img 
-                        loading="lazy" 
-                        src={img} 
-                        alt={`Gallery ${idx + 1}`} 
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" 
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur-xs shadow-md">
-                          ดูภาพใหญ่
-                        </span>
+                      <div className="relative inline-block max-w-full max-h-full group">
+                        <img 
+                          loading="lazy" 
+                          src={img} 
+                          alt={`Gallery ${idx + 1}`} 
+                          className="max-h-48 sm:max-h-56 md:max-h-64 max-w-full h-auto w-auto object-contain rounded-lg group-hover:scale-105 transition-transform duration-300" 
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition-colors flex items-center justify-center pointer-events-none">
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur-xs shadow-md">
+                            ดูภาพใหญ่
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
