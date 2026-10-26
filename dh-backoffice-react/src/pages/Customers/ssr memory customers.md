@@ -2,7 +2,7 @@
   <flow_and_entry>
     <entry_file>src/pages/Customers/index.jsx</entry_file>
     <sub_components>components/layout/CustomerTable.jsx, components/details/DetailPanel.jsx, components/forms/CustomerModal.jsx, components/forms/CustomerDuplicateComparisonModal.jsx</sub_components>
-    <data_flow>useCustomers -> customerCacheService (chunk cache + 30D delta) -> CustomerTable (9-col list) -> DetailPanel (history with 5-min cache) -> DuplicateModal (pre-create match)</data_flow>
+    <data_flow>useCustomers -> customerCacheService (chunk cache + 30D delta) -> customerMatchingService (pure in-memory scoring & gap engine) -> CustomerTable (9-col list) -> DetailPanel (history with 5-min cache) -> DuplicateModal (pre-create match)</data_flow>
   </flow_and_entry>
 
   <core_schema>

@@ -223,6 +223,8 @@
         3) ปรับ `staffPosDraftService.js` สร้าง `getGlobalFinishedOrderIdsSet` รวบรวม `orderId`, `id`, `docId`, `draftOrderId` ของบิลที่เสร็จแล้ว (รวมสถานะ `superseded`) และให้ `filterValidDraftTabs` ดึง Set นี้เป็นค่าเริ่มต้นอัตโนมัติ
         4) ปรับ `FloatingMiniCart.jsx` ให้ดักฟังสัญญาณ `dh_recent_orders_updated` และแคชบิลล่าสุดเพื่อรีเฟรชงานค้างทันที
         5) ล้างข้อมูลดราฟต์ผีของบัญชี `dh1notebook@gmail.com` ใน Firestore ให้เหลือเฉพาะ 3 บิลร่างจริงที่รอชำระ [สถานะ: ส่งมอบแล้ว]
+    61. ปัญหา: พนักงานก๊อปปี้ข้อมูลลูกค้าจาก LINE มาเปิดบิลแล้วสร้างลูกค้าใหม่ซ้ำซ้อน ทำให้บัญชีสมาชิกหน้าเว็บ Partner ไม่ได้รับแต้ม และข้อมูลที่อยู่กระจัดกระจาย
+        วิธีแก้: เชื่อมโยงระบบ `CustomerSuggestionCard` เข้ากับโมดอล Smart Quick Paste ของหน้าบิล (`QuickAddCustomerModal.jsx`) รันการจับคู่ในหน่วยความจำ (0 Firestore Reads) จัดอันดับให้บัญชีหน้าเว็บเป็นอันดับ 1 เสมอ แจ้งเตือน Gap Alert สรุปข้อมูลที่มี vs ข้อมูลที่ยังขาด และให้พนักงานคลิกเลือก "ดำเนินการต่อด้วยบัญชีนี้" เพื่อผูกเข้ากับบิลขายทันที พร้อมติ๊กเติมเฉพาะช่องว่างโดยไม่เขียนทับข้อมูลเดิม [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 
@@ -230,3 +232,8 @@
 
 
 
+
+
+### Lesson Learned: Smart Customer Matching & Storefront Priority
+- ปัญหา: QuickAddCustomerModal ใน POS ตรวจไม่พบบัญชีลูกค้าหน้าเว็บเก่า (เช่น FYSISLBP) เพราะ POS เดิมส่งมาแค่ filteredCustomers (.slice(0, 10)) และตั้งเกณฑ์คะแนนไว้สูง 60
+- การแก้ไข: ส่ง allCustomers เข้า SettingsPanel -> CustomerSection -> QuickAddCustomerModal และปรับเกณฑ์ตรวจจับเป็น 35 คะแนน พร้อมให้ความสำคัญกับบัญชีหน้าเว็บ (Storefront Golden Record) เป็นอันดับ 1 ก่อนเสมอ

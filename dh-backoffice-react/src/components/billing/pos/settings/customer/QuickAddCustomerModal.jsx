@@ -12,6 +12,8 @@ import { getCollectionPath, parseCustomerAddress } from 'dh-shared';
 import { userService } from '../../../../../firebase/userService';
 import { settingsService } from '../../../../../firebase/settingsService';
 import CustomerDuplicateComparisonModal, { checkPotentialDuplicates } from '../../../../../pages/Customers/components/forms/CustomerDuplicateComparisonModal';
+import { findBestCustomerMatches } from '../../../../../pages/Customers/services/customerMatchingService';
+import CustomerSuggestionCard from '../../../../../pages/Customers/components/forms/CustomerSuggestionCard';
 
 /**
  * 📦 Quick Customer Helper Services
@@ -141,15 +143,16 @@ const quickCustomerService = {
  */
 function QuickAddStep1({
     rawInputText, handleTextChange, selectedRole, setSelectedRole, 
-    dynamicRoles, parsedData, handleFieldChange, onClose, isSaving, handleStep1SaveDB
+    dynamicRoles, parsedData, handleFieldChange, onClose, isSaving, handleStep1SaveDB,
+    matchedCustomer, onSelectSuggestedCustomer, onDismissSuggestion
 }) {
     return (
         <>
             <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                 {/* Textarea Paste Area */}
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <Sparkles size={14} className="text-yellow-500" />
+                <div className="p-4 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-400 dark:border-amber-600 rounded-[0.1rem] shadow-md space-y-2">
+                    <label className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-amber-500" />
                         วางข้อมูลลูกค้าชุดเดียวที่นี่ (ก๊อปปี้จาก Chat / Line / FB)
                     </label>
                     <textarea 
@@ -157,13 +160,26 @@ function QuickAddStep1({
                         value={rawInputText} 
                         onChange={e => handleTextChange(e.target.value)} 
                         placeholder="ตัวอย่าง: คุณ ภวัต บุญมา 065-4428822 91/364 ม.2 พฤกษา14บี ต.บางคูรัด อ.บางบัวทอง จ.นนทบุรี 11110" 
-                        className="w-full p-3 border border-yellow-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-400/30 rounded-xl text-xs bg-yellow-50/40 text-slate-900 placeholder:text-slate-400 outline-hidden transition-all resize-none font-sans" 
+                        className="w-full p-2.5 border border-amber-400 dark:border-amber-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-400/20 rounded-[0.1rem] shadow-inner text-xs bg-white text-slate-900 placeholder:text-slate-400 outline-hidden transition-all resize-none font-sans" 
                         autoFocus
                     />
                 </div>
 
+                {/* 🔍 Smart Customer Matching Suggestion Card */}
+                {matchedCustomer && (
+                    <div className="animate-in fade-in duration-200">
+                        <CustomerSuggestionCard
+                            match={matchedCustomer}
+                            parsedData={parsedData}
+                            onSelectCustomer={onSelectSuggestedCustomer}
+                            onCreateNew={onDismissSuggestion}
+                            onDismiss={onDismissSuggestion}
+                        />
+                    </div>
+                )}
+
                 {/* Role / Rank Selector */}
-                <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-xl space-y-1.5">
+                <div className="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-[0.1rem] shadow-xs space-y-1.5">
                     <label className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
                         <Shield size={14} className="text-indigo-600" />
                         ระดับสิทธิ์บัญชี (Role / Rank)
@@ -171,7 +187,7 @@ function QuickAddStep1({
                     <select 
                         value={selectedRole} 
                         onChange={e => setSelectedRole(e.target.value)} 
-                        className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-hidden cursor-pointer"
+                        className="w-full px-3 py-2 bg-white border border-indigo-300 rounded-[0.1rem] text-xs font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-hidden cursor-pointer"
                     >
                         {dynamicRoles && dynamicRoles.length > 0 ? (
                             dynamicRoles.map(role => (
@@ -197,12 +213,12 @@ function QuickAddStep1({
                             <CheckCircle2 size={14} className="text-emerald-500" />
                             ผลลัพธ์การจัดสรรข้อมูลอัตโนมัติ (แก้ไขได้)
                         </span>
-                        <span className="text-[10px] text-indigo-600 bg-indigo-50 font-bold px-2 py-0.5 rounded-full border border-indigo-100">
+                        <span className="text-[10px] text-indigo-700 bg-indigo-50 font-bold px-2 py-0.5 rounded-[0.1rem] border border-indigo-200">
                             Real-time Parser
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-[0.1rem] border border-slate-300 shadow-xs">
                         <div className="space-y-1">
                             <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
                                 <User size={12} className="text-indigo-500" />
@@ -213,7 +229,7 @@ function QuickAddStep1({
                                 value={parsedData.accountName} 
                                 onChange={e => handleFieldChange('accountName', e.target.value)} 
                                 placeholder="ระบุชื่อลูกค้า หรือ ชื่อร้าน" 
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
                             />
                         </div>
 
@@ -227,7 +243,7 @@ function QuickAddStep1({
                                 value={parsedData.contactName || ''} 
                                 onChange={e => handleFieldChange('contactName', e.target.value)} 
                                 placeholder="ระบุชื่อผู้รับ หรือ ผู้ติดต่อ (ถ้ามี)" 
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 bg-white focus:ring-1 focus:ring-blue-500 outline-hidden" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs font-semibold text-slate-900 bg-white focus:ring-1 focus:ring-blue-500 outline-hidden" 
                             />
                         </div>
 
@@ -241,7 +257,7 @@ function QuickAddStep1({
                                 value={parsedData.phone} 
                                 onChange={e => handleFieldChange('phone', e.target.value)} 
                                 placeholder="0812345678" 
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs font-mono font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
                             />
                         </div>
 
@@ -255,7 +271,7 @@ function QuickAddStep1({
                                 value={parsedData.postalCode} 
                                 onChange={e => handleFieldChange('postalCode', e.target.value)} 
                                 placeholder="50200" 
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs font-mono font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
                             />
                         </div>
 
@@ -269,7 +285,7 @@ function QuickAddStep1({
                                 value={parsedData.email || ''} 
                                 onChange={e => handleFieldChange('email', e.target.value)} 
                                 placeholder="example@mail.com" 
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 bg-white focus:ring-1 focus:ring-violet-500 outline-hidden" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-900 bg-white focus:ring-1 focus:ring-violet-500 outline-hidden" 
                             />
                         </div>
 
@@ -283,7 +299,7 @@ function QuickAddStep1({
                                 value={parsedData.lineId || ''} 
                                 onChange={e => handleFieldChange('lineId', e.target.value)} 
                                 placeholder="@lineid หรือ id" 
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 bg-white focus:ring-1 focus:ring-emerald-500 outline-hidden" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-900 bg-white focus:ring-1 focus:ring-emerald-500 outline-hidden" 
                             />
                         </div>
 
@@ -297,7 +313,7 @@ function QuickAddStep1({
                                 value={parsedData.addressLine} 
                                 onChange={e => handleFieldChange('addressLine', e.target.value)} 
                                 placeholder="เลขที่ห้อง, ชั้น, ชื่อตึก, ซอย, ถนน" 
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
+                                className="w-full px-3 py-2 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-hidden" 
                             />
                         </div>
 
@@ -308,7 +324,7 @@ function QuickAddStep1({
                                 value={parsedData.subDistrict} 
                                 onChange={e => handleFieldChange('subDistrict', e.target.value)} 
                                 placeholder="สุเทพ" 
-                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white" 
+                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-800 bg-white" 
                             />
                         </div>
 
@@ -319,7 +335,7 @@ function QuickAddStep1({
                                 value={parsedData.district} 
                                 onChange={e => handleFieldChange('district', e.target.value)} 
                                 placeholder="เมือง" 
-                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white" 
+                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-800 bg-white" 
                             />
                         </div>
 
@@ -330,7 +346,7 @@ function QuickAddStep1({
                                 value={parsedData.province} 
                                 onChange={e => handleFieldChange('province', e.target.value)} 
                                 placeholder="เชียงใหม่" 
-                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white" 
+                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-800 bg-white" 
                             />
                         </div>
 
@@ -344,7 +360,7 @@ function QuickAddStep1({
                                 value={parsedData.preferredCourier || parsedData.logisticProvider || ''} 
                                 onChange={e => handleFieldChange('preferredCourier', e.target.value)} 
                                 placeholder="เช่น Flash, Kerry, ไปรษณีย์ไทย" 
-                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white focus:ring-1 focus:ring-amber-500 outline-hidden" 
+                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-800 bg-white focus:ring-1 focus:ring-amber-500 outline-hidden" 
                             />
                         </div>
 
@@ -358,7 +374,7 @@ function QuickAddStep1({
                                 value={parsedData.shippingNotes || parsedData.logisticNote || ''} 
                                 onChange={e => handleFieldChange('shippingNotes', e.target.value)} 
                                 placeholder="เช่น โทรแจ้งก่อนส่ง, ฝากป้อมยาม" 
-                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-800 bg-white focus:ring-1 focus:ring-slate-400 outline-hidden" 
+                                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-[0.1rem] shadow-2xs text-xs text-slate-800 bg-white focus:ring-1 focus:ring-slate-400 outline-hidden" 
                             />
                         </div>
                     </div>
@@ -555,7 +571,7 @@ function QuickAddStep2({
  * 🌟 Main QuickAddCustomerModal Component
  * Full 2-Step Wizard with Real-time Parser, Duplicate Check, and Points Integration
  */
-export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '', onCustomerCreated }) {
+export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '', existingCustomers = [], onCustomerCreated }) {
     const [modalStep, setModalStep] = useState(1);
     const [createdCustomerObj, setCreatedCustomerObj] = useState(null);
     const [rawInputText, setRawInputText] = useState('');
@@ -565,6 +581,7 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
     const [syncEmail, setSyncEmail] = useState('');
     const [isCheckingAccount, setIsCheckingAccount] = useState(false);
     const [matchedWebAccount, setMatchedWebAccount] = useState(null);
+    const [matchedCustomer, setMatchedCustomer] = useState(null);
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
     const [duplicateCandidates, setDuplicateCandidates] = useState([]);
     const [pendingNewCustPayload, setPendingNewCustPayload] = useState(null);
@@ -596,6 +613,7 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
             setHasWebAccountChoice(null);
             setSyncEmail('');
             setMatchedWebAccount(null);
+            setMatchedCustomer(null);
             setIsDuplicateModalOpen(false);
             setDuplicateCandidates([]);
             setPendingNewCustPayload(null);
@@ -671,14 +689,54 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
         };
     }, [modalStep, hasWebAccountChoice, syncEmail]);
 
-    // Real-time Text Parsing Handler
+    // Real-time Text Parsing Handler & In-Memory Matching
     const handleTextChange = (text) => {
         setRawInputText(text);
+        if (!text.trim()) {
+            setMatchedCustomer(null);
+            return;
+        }
         const parsed = parseCustomerAddress(text);
         setParsedData(parsed);
         if (parsed.email && !syncEmail) {
             setSyncEmail(parsed.email);
         }
+
+        // 🔍 In-memory customer matching (0 Firestore Reads)
+        if (Array.isArray(existingCustomers) && existingCustomers.length > 0) {
+            const matches = findBestCustomerMatches(parsed, existingCustomers, 35, 1);
+            if (matches && matches.length > 0) {
+                setMatchedCustomer(matches[0]);
+            } else {
+                setMatchedCustomer(null);
+            }
+        } else {
+            setMatchedCustomer(null);
+        }
+    };
+
+    const handleSelectSuggestedCustomer = async (candidate, payload) => {
+        if (payload && Object.keys(payload).length > 0) {
+            try {
+                const uid = candidate.uid || candidate.id;
+                await userService.updateCustomerProfile(uid, payload);
+                toast.success(`อัปเดตข้อมูลเพิ่มเติมให้ ${candidate.storeName || candidate.accountId} เรียบร้อยแล้ว`);
+            } catch (err) {
+                console.warn('[QuickAddCustomerModal] Auto-fill update warning:', err);
+            }
+        }
+        const finalCustomer = {
+            ...candidate,
+            ...(payload || {}),
+            uid: candidate.uid || candidate.id,
+            id: candidate.uid || candidate.id,
+            storeName: candidate.storeName || candidate.accountName || candidate.displayName
+        };
+        if (onCustomerCreated) {
+            onCustomerCreated(finalCustomer);
+        }
+        toast.success(`เลือกบัญชี ${finalCustomer.storeName || finalCustomer.accountId} สำหรับบิลนี้แล้ว`);
+        onClose();
     };
 
     const handleFieldChange = (field, value) => {
@@ -798,14 +856,14 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
                 onClick={onClose}
             >
                 <div 
-                    className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]"
+                    className="bg-white rounded-[0.1rem] shadow-2xl border border-slate-300 w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
                     <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2.5">
-                            <div className="p-2 bg-yellow-400 text-slate-900 rounded-xl font-bold shadow-sm">
-                                <Sparkles size={18} className="animate-pulse" />
+                            <div className="p-2 bg-yellow-400 text-slate-900 rounded-[0.1rem] font-bold shadow-sm">
+                                <Sparkles size={18} />
                             </div>
                             <div>
                                 <h2 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
@@ -837,6 +895,9 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
                             onClose={onClose}
                             isSaving={isSaving}
                             handleStep1SaveDB={handleStep1SaveDB}
+                            matchedCustomer={matchedCustomer}
+                            onSelectSuggestedCustomer={handleSelectSuggestedCustomer}
+                            onDismissSuggestion={() => setMatchedCustomer(null)}
                         />
                     )}
 

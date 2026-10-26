@@ -16,6 +16,7 @@ export default function CustomerSection({
     showCustDropdown,
     setShowCustDropdown,
     filteredCustomers,
+    allCustomers = [],
     handleSelectCustomer,
     netTotal,
     isProcessing,
@@ -210,6 +211,7 @@ export default function CustomerSection({
                 isOpen={isQuickAddModalOpen}
                 onClose={() => setIsQuickAddModalOpen(false)}
                 initialText={quickAddInitialText}
+                existingCustomers={allCustomers && allCustomers.length > 0 ? allCustomers : filteredCustomers}
                 onCustomerCreated={(newCustomer) => {
                     updateActiveTab({ 
                         customer: newCustomer, 

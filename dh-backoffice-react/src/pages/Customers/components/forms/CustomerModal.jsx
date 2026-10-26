@@ -9,6 +9,8 @@ import { syncCustomerAccount } from '../../../../firebase/customerAdminService';
 import MainInfoSection from './sections/MainInfoSection';
 import ContactInfoSection from './sections/ContactInfoSection';
 import ShippingInfoSection from './sections/ShippingInfoSection';
+import { findBestCustomerMatches } from '../../services/customerMatchingService';
+import CustomerSuggestionCard from './CustomerSuggestionCard';
 
 export default function CustomerModal({
   isOpen,
@@ -17,7 +19,9 @@ export default function CustomerModal({
   formData,
   setFormData,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  existingCustomers = [],
+  onSelectExistingCustomer
 }) {
   const [isValidatingId, setIsValidatingId] = useState(false);
   const [idError, setIdError] = useState('');
@@ -25,18 +29,39 @@ export default function CustomerModal({
   const [duplicateIdToSync, setDuplicateIdToSync] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [rawInputText, setRawInputText] = useState('');
+  const [matchedCustomer, setMatchedCustomer] = useState(null);
+  const [parsedDataState, setParsedDataState] = useState(null);
 
   useEffect(() => {
     if (!isOpen) {
       setRawInputText('');
+      setMatchedCustomer(null);
+      setParsedDataState(null);
     }
   }, [isOpen]);
 
   const handlePasteTextChange = (text) => {
     setRawInputText(text);
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      setMatchedCustomer(null);
+      setParsedDataState(null);
+      return;
+    }
 
     const parsed = parseCustomerAddress(text);
+    setParsedDataState(parsed);
+
+    // 🔍 In-memory customer matching (0 Firestore Reads)
+    if (!isEditMode && Array.isArray(existingCustomers) && existingCustomers.length > 0) {
+      const matches = findBestCustomerMatches(parsed, existingCustomers, 35, 1);
+      if (matches && matches.length > 0) {
+        setMatchedCustomer(matches[0]);
+      } else {
+        setMatchedCustomer(null);
+      }
+    } else {
+      setMatchedCustomer(null);
+    }
     setFormData(prev => ({
       ...prev,
       accountName: parsed.accountName || prev.accountName,
@@ -157,6 +182,20 @@ export default function CustomerModal({
     }
   };
 
+  const handleSelectSuggestedCustomer = (candidate, payload) => {
+    if (onSelectExistingCustomer) {
+      onSelectExistingCustomer(candidate, payload);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        ...candidate,
+        ...(payload || {})
+      }));
+      toast.success(`โหลดข้อมูลของ ${candidate.storeName || candidate.accountId} เรียบร้อยแล้ว`);
+    }
+    setMatchedCustomer(null);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center p-4 sm:p-6">
       {/* พื้นหลังเบลอ */}
@@ -193,13 +232,13 @@ export default function CustomerModal({
           <div className="space-y-6">
 
             {/* 🌟 Smart Quick Paste / Real-time Parser Section */}
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
+            <div className="p-4 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-400 dark:border-amber-600 rounded-[0.1rem] shadow-md space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-amber-500 flex items-center gap-1.5">
+                <label className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                   <Sparkles size={14} className="text-amber-500" />
                   วางข้อมูลลูกค้าชุดเดียวที่นี่ (ก๊อปปี้จาก Chat / Line / FB)
                 </label>
-                <span className="text-[10px] text-amber-500 bg-amber-500/20 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">
+                <span className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 font-bold px-2 py-0.5 rounded-[0.1rem] border border-amber-400 dark:border-amber-600">
                   Smart Real-time Parser
                 </span>
               </div>
@@ -208,12 +247,25 @@ export default function CustomerModal({
                 value={rawInputText} 
                 onChange={e => handlePasteTextChange(e.target.value)} 
                 placeholder="ตัวอย่าง: ร้านดีไอวาย คอมพิวเตอร์ คุณ ภวัต บุญมา 065-4428822 91/364 ม.2 พฤกษา14บี ต.บางคูรัด อ.บางบัวทอง จ.นนทบุรี 11110" 
-                className="w-full p-2.5 border border-amber-500/40 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 rounded-lg text-xs bg-dh-surface text-dh-main placeholder:text-dh-muted outline-hidden transition-all resize-none font-sans" 
+                className="w-full p-2.5 border border-amber-400 dark:border-amber-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-400/20 rounded-[0.1rem] shadow-inner text-xs bg-dh-surface text-dh-main placeholder:text-dh-muted outline-hidden transition-all resize-none font-sans" 
               />
               <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium">
                 ⚡ ระบบจะจำแนกชื่อร้าน, ชื่อผู้ติดต่อ, เบอร์โทรศัพท์, และที่อยู่อัตโนมัติลงในแบบฟอร์มด้านล่างทันที
               </p>
             </div>
+
+            {/* 🔍 Smart Customer Matching Suggestion Card */}
+            {!isEditMode && matchedCustomer && (
+              <div className="animate-in fade-in duration-200">
+                <CustomerSuggestionCard
+                  match={matchedCustomer}
+                  parsedData={parsedDataState}
+                  onSelectCustomer={handleSelectSuggestedCustomer}
+                  onCreateNew={() => setMatchedCustomer(null)}
+                  onDismiss={() => setMatchedCustomer(null)}
+                />
+              </div>
+            )}
             
             {/* ส่วนที่ 1: ข้อมูลหลัก */}
             <MainInfoSection

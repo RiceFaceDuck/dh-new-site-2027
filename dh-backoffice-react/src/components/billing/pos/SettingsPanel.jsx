@@ -11,7 +11,7 @@ import NoteSettings from './settings/panel/NoteSettings';
 
 export default function SettingsPanel({
     activeTab, updateActiveTab, handlePriceModeChange, custSearchRef, customerSearchText, setCustomerSearchText, 
-    showCustDropdown, setShowCustDropdown, filteredCustomers, handleSelectCustomer, netTotal, setIsPromoModalOpen, setIsFreebieModalOpen, handleRemovePromotion, handleRemoveFreebie,
+    showCustDropdown, setShowCustDropdown, filteredCustomers, allCustomers = [], handleSelectCustomer, netTotal, setIsPromoModalOpen, setIsFreebieModalOpen, handleRemovePromotion, handleRemoveFreebie,
     isProcessing, eligibleFreebies, shippingRules, defaultShippingFee = 60
 }) {
     // ⚡ Local State
@@ -133,6 +133,7 @@ export default function SettingsPanel({
                     showCustDropdown={showCustDropdown}
                     setShowCustDropdown={setShowCustDropdown}
                     filteredCustomers={filteredCustomers}
+                    allCustomers={allCustomers}
                     handleSelectCustomer={handleSelectCustomer}
                     netTotal={netTotal}
                     isProcessing={isProcessing}

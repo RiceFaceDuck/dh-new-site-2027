@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { userService } from '../../firebase/userService';
 import { useCustomers } from './hooks/useCustomers';
 import GuideModal from '../../components/common/GuideModal';
 
@@ -15,6 +17,25 @@ export default function Customers() {
 
   // ข้อมูลที่ผ่านการกรองทุกมิติ (Text, Smart Filter, Date Filter)
   const displayCustomers = state.filteredCustomers;
+
+  const handleSelectExistingFromSuggestion = async (candidate, autofillPayload) => {
+    actions.setIsAddModalOpen(false);
+    actions.handleSelectCustomer(candidate);
+
+    if (autofillPayload && Object.keys(autofillPayload).length > 0) {
+      try {
+        const targetId = candidate.id || candidate.uid;
+        await userService.updateCustomerProfile(targetId, autofillPayload);
+        toast.success(`อัปเดตข้อมูลเพิ่มเติมให้ ${candidate.storeName || candidate.accountId} เรียบร้อยแล้ว`);
+        actions.fetchCustomers(false);
+      } catch (err) {
+        console.error('Auto-fill error:', err);
+        toast.error('ไม่สามารถอัปเดตข้อมูลเพิ่มเติมได้: ' + (err?.message || ''));
+      }
+    } else {
+      toast.success(`เลือกบัญชี ${candidate.storeName || candidate.accountId} เรียบร้อยแล้ว`);
+    }
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-full animate-in fade-in duration-500 bg-dh-base gap-1 p-1 md:gap-1.5 md:p-1.5 text-dh-main overflow-hidden">
@@ -82,6 +103,8 @@ export default function Customers() {
         setFormData={state.isEditMode ? actions.setEditFormData : actions.setNewCustomer}
         onSubmit={state.isEditMode ? actions.saveCustomerEdit : actions.handleCreateCustomer}
         isSubmitting={state.isSubmitting || state.isSavingEdit}
+        existingCustomers={state.customers}
+        onSelectExistingCustomer={handleSelectExistingFromSuggestion}
       />
 
       {/* 4. ส่วน Modal ตรวจสอบรายชื่อซ้ำซ้อน (Duplicate Comparison Guard) */}
