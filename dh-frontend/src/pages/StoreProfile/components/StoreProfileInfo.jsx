@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import PartnerReviews from './PartnerReviews';
+import GalleryLightbox from './GalleryLightbox';
 import { MapPin, ExternalLink } from 'lucide-react';
 
 const formatLineUrl = (url) => {
@@ -67,6 +69,8 @@ const formatExternalUrl = (url) => {
 };
 
 const StoreProfileInfo = ({ partner, currentUser }) => {
+  const [activeImageIndex, setActiveImageIndex] = useState(null);
+
   // 📍 คำนวณลิงก์ Google Maps จาก mapsUrl, googleMapLink หรือพิกัด GPS (latitude, longitude)
   const lat = Number(partner.latitude ?? partner.storeProfile?.latitude ?? 0);
   const lng = Number(partner.longitude ?? partner.storeProfile?.longitude ?? 0);
@@ -89,39 +93,57 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
   const hasSocialLinks = Boolean(lineUrl || messengerUrl || websiteUrl || youtubeUrl || tiktokUrl || shopeeUrl || lazadaUrl);
 
   return (
-    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-      {/* 1. Service Details & Gallery */}
-      <div className="md:col-span-2">
-        <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
-          <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-brand mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            รายละเอียดบริการ
-          </h3>
-          <div className="prose prose-slate max-w-none">
-            {partner.richDescription || partner.description ? (
-              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{partner.richDescription || partner.description}</p>
-            ) : (
-              <p className="text-slate-500 italic">ร้านค้านี้ยังไม่ได้เพิ่มรายละเอียดเพิ่มเติม แต่พร้อมให้บริการตามหมวดหมู่ความเชี่ยวชาญครับ</p>
+    <>
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        {/* 1. Service Details & Gallery */}
+        <div className="md:col-span-2">
+          <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-brand mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              รายละเอียดบริการ
+            </h3>
+            <div className="prose prose-slate max-w-none">
+              {partner.richDescription || partner.description ? (
+                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{partner.richDescription || partner.description}</p>
+              ) : (
+                <p className="text-slate-500 italic">ร้านค้านี้ยังไม่ได้เพิ่มรายละเอียดเพิ่มเติม แต่พร้อมให้บริการตามหมวดหมู่ความเชี่ยวชาญครับ</p>
+              )}
+            </div>
+            
+            {partner.galleryImages && partner.galleryImages.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-bold text-slate-700">ผลงาน / แกลลอรี่ภาพ</h4>
+                  <span className="text-xs text-slate-400 font-medium">คลิกเพื่อดูภาพเต็มจอ</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {partner.galleryImages.map((img, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setActiveImageIndex(idx)}
+                      className="rounded-xl overflow-hidden aspect-square shadow-xs border border-slate-100 cursor-pointer relative group bg-slate-50"
+                    >
+                      <img 
+                        loading="lazy" 
+                        src={img} 
+                        alt={`Gallery ${idx + 1}`} 
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" 
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur-xs shadow-md">
+                          ดูภาพใหญ่
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
           
-          {partner.galleryImages && partner.galleryImages.length > 0 && (
-            <div className="mt-8">
-              <h4 className="text-lg font-bold text-slate-700 mb-4">ผลงาน / แกลลอรี่ภาพ</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                {partner.galleryImages.map((img, idx) => (
-                  <div key={idx} className="rounded-xl overflow-hidden aspect-square shadow-xs border border-slate-100">
-                    <img loading="lazy" src={img} alt={`Gallery ${idx}`} className="w-full h-full object-contain hover:scale-110 transition-transform duration-500 cursor-pointer" onClick={() => window.open(img, '_blank')} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-        
-      </div>
 
       {/* 2. Contact, Location & Certifications (Middle on Mobile, Right Column on Desktop) */}
       <div className="space-y-6 md:col-start-3 md:row-start-1 md:row-span-2 self-start">
@@ -252,6 +274,16 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
         <PartnerReviews partnerId={partner.id} ownerId={partner.ownerId} currentUser={currentUser} />
       </div>
     </div>
+
+    {/* Full Screen Lightbox Modal */}
+    {activeImageIndex !== null && (
+      <GalleryLightbox
+        images={partner.galleryImages || []}
+        initialIndex={activeImageIndex}
+        onClose={() => setActiveImageIndex(null)}
+      />
+    )}
+    </>
   );
 };
 

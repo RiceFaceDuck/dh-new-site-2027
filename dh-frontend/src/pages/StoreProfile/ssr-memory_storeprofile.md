@@ -18,6 +18,7 @@
 ## 3. <core_schema>
 - **Entry File:** `StoreProfilePage.jsx`
 - **Contact Component:** `components/StoreProfileInfo.jsx`
+- **Gallery Lightbox:** `components/GalleryLightbox.jsx` (Pop-up แสดงภาพเต็มจอ, Prev/Next, Thumbnails, ESC & Swipe support)
 - **Image Compressor:** `utils/imageCompressor.js`
 - **Edit Component & Hook:** `StoreProfileBasicInfo.jsx`, `hooks/useStoreProfile.js`
 - **Asset Files:**
