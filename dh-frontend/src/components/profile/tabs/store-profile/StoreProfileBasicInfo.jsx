@@ -63,31 +63,49 @@ const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploading
 
       {/* Image Gallery */}
       <div className="mt-6">
-        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">แกลลอรี่ร้านค้า (สูงสุด 5 รูป) {uploadingGallery && <Loader2 className="animate-spin text-indigo-500 w-4 h-4"/>}</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-[11px] font-bold text-slate-600 uppercase flex items-center gap-2">
+            แกลลอรี่ร้านค้า (สูงสุด 20 รูป)
+            {uploadingGallery && (
+              <span className="inline-flex items-center gap-1.5 text-indigo-600 font-normal">
+                <Loader2 className="animate-spin w-3.5 h-3.5" />
+                กำลังบีบอัดและอัปโหลด...
+              </span>
+            )}
+          </label>
+          <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+            {(storeData.galleryImages || []).length} / 20
+          </span>
+        </div>
         <div className="flex flex-wrap gap-4">
           {(storeData.galleryImages || []).map((imgUrl, idx) => (
-            <div key={idx} className="relative w-24 h-24 rounded-md border border-slate-200 overflow-hidden group">
+            <div key={idx} className="relative w-24 h-24 rounded-md border border-slate-200 overflow-hidden group shadow-2xs">
               <LazyImage 
                 src={imgUrl} 
-                alt={`Gallery ${idx}`} 
+                alt={`Gallery ${idx + 1}`} 
                 className="w-full h-full" 
                 imgClassName="object-contain" 
                 fallbackSrc="/logo.png"
               />
+              <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] font-mono px-1 rounded-sm">
+                #{idx + 1}
+              </span>
               <button 
                 type="button"
                 onClick={() => handleRemoveGalleryImage(idx)}
-                className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                title="ลบรูปนี้"
+                className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white w-5 h-5 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 text-xs font-bold shadow-xs cursor-pointer"
               >
-                X
+                ×
               </button>
             </div>
           ))}
-          {(storeData.galleryImages || []).length < 5 && (
-            <label className={`w-24 h-24 flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-md cursor-pointer hover:border-indigo-400 transition-colors ${uploadingGallery ? 'pointer-events-none opacity-50' : ''}`}>
+          {(storeData.galleryImages || []).length < 20 && (
+            <label className={`w-24 h-24 flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-md cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/20 transition-all ${uploadingGallery ? 'pointer-events-none opacity-50' : ''}`}>
               <UploadCloud className="text-slate-400 mb-1" size={20}/>
-              <span className="text-[10px] font-bold text-slate-400">เพิ่มรูป</span>
-              <input type="file" accept="image/*" onChange={handleGalleryImageUpload} className="hidden" disabled={uploadingGallery} />
+              <span className="text-[10px] font-bold text-slate-500">เพิ่มรูป</span>
+              <span className="text-[9px] text-slate-400">เลือกได้หลายรูป</span>
+              <input type="file" accept="image/*" multiple onChange={handleGalleryImageUpload} className="hidden" disabled={uploadingGallery} />
             </label>
           )}
         </div>

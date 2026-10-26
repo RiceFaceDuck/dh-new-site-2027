@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { driveService } from '../../../../../firebase/driveService';
 import { storeProfileSubmitService } from '../../../../../firebase/storeProfileSubmitService';
 import { useToast } from '../../../../../context/ToastContext';
+import { compressImage } from '../../../../../utils/imageCompressor';
+
+export const MAX_GALLERY_IMAGES = 20;
 
 export const useStoreProfile = (storeData, setStoreData, user, appId, businessCardAd, fetchMyAds) => {
   const { showToast } = useToast();
@@ -10,38 +13,64 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
   const [uploadingGallery, setUploadingGallery] = useState(false);
 
   const handleStoreImageUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return showToast("ไฟล์ใหญ่เกินไป (Max 5MB)", 'error');
     
     setUploadingStoreImage(true);
     try {
-      const url = await driveService.uploadAdImage(file, 'STORE_PROFILE');
-      setStoreData({ ...storeData, storeImage: url });
+      const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 });
+      const url = await driveService.uploadAdImage(compressed, 'STORE_PROFILE');
+      setStoreData(prev => ({ ...prev, storeImage: url }));
+      showToast("อัปโหลดรูปโปรไฟล์ร้านเรียบร้อย", 'success');
     } catch (error) {
       console.error("🔥 Error:", error);
       showToast("อัปโหลดไม่สำเร็จ: " + error.message, 'error');
     } finally { 
       setUploadingStoreImage(false); 
+      if (e.target) e.target.value = '';
     }
   };
 
   const handleGalleryImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return showToast("ไฟล์ใหญ่เกินไป (Max 5MB)", 'error');
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    const currentGallery = storeData.galleryImages || [];
+    if (currentGallery.length >= MAX_GALLERY_IMAGES) {
+      return showToast(`อัปโหลดได้สูงสุด ${MAX_GALLERY_IMAGES} รูป`, 'error');
+    }
+
+    const availableSlots = MAX_GALLERY_IMAGES - currentGallery.length;
+    const filesToUpload = files.slice(0, availableSlots);
+    if (files.length > availableSlots) {
+      showToast(`เลือกได้อีก ${availableSlots} รูป (ระบบจะอัปโหลดเฉพาะ ${availableSlots} รูปแรก)`, 'info');
+    }
     
     setUploadingGallery(true);
+    const newUrls = [];
     try {
-      const url = await driveService.uploadAdImage(file, 'STORE_GALLERY');
-      const currentGallery = storeData.galleryImages || [];
-      if (currentGallery.length >= 5) return showToast("อัปโหลดได้สูงสุด 5 รูป", 'error');
-      setStoreData({ ...storeData, galleryImages: [...currentGallery, url] });
+      for (const file of filesToUpload) {
+        const compressed = await compressImage(file, { maxWidth: 1440, maxHeight: 1440, quality: 0.8 });
+        const url = await driveService.uploadAdImage(compressed, 'STORE_GALLERY');
+        newUrls.push(url);
+      }
+      setStoreData(prev => ({
+        ...prev,
+        galleryImages: [...(prev.galleryImages || []), ...newUrls]
+      }));
+      showToast(`อัปโหลดภาพแกลเลอรี่สำเร็จ ${newUrls.length} รูป`, 'success');
     } catch (error) {
       console.error("🔥 Error:", error);
-      showToast("อัปโหลดไม่สำเร็จ: " + error.message, 'error');
+      if (newUrls.length > 0) {
+        setStoreData(prev => ({
+          ...prev,
+          galleryImages: [...(prev.galleryImages || []), ...newUrls]
+        }));
+      }
+      showToast("อัปโหลดไม่สำเร็จบางส่วน: " + error.message, 'error');
     } finally { 
       setUploadingGallery(false); 
+      if (e.target) e.target.value = '';
     }
   };
 

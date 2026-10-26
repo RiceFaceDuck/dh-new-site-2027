@@ -12,10 +12,14 @@
 - **URL Normalization Guard:** ต้องจัดรูปแบบลิงก์ให้อยู่ในรูป `https://...` และแปลง URL เฉพาะแพลตฟอร์ม (เช่น YouTube `@handle`, TikTok, LINE ID/`@id`, Messenger) ให้คลิกแล้วเปิดไปยังปลายทางที่ถูกต้องเสมอ ไม่ตกหล่นหรือเกิด relative URL 404
 - **Calm UI Invariant & Pure Assets:** ใช้ภาพไอคอนโปร่งใส (RGBA PNG) ขนาดมาตรฐาน `400x400` เก็บไว้ที่ `dh-frontend/public/images/`
 - **Responsive Architecture (Mobile First):** โครงสร้างหน้าร้านใช้ `max-w-4xl lg:max-w-6xl xl:max-w-7xl` โดยมือถือยังคงขนาดและเลย์เอาต์เดิม 100% ไม่เปลี่ยนแปลง ส่วนบน PC ขยายออกด้านข้างสมดุลกับ Header ทันที และแกลเลอรี่ผลงานขยายเป็น 4 คอลัมน์บนจอใหญ่ (`xl:grid-cols-4`)
+- **Client-Side Image Compression:** ใช้ `imageCompressor.js` แปลงภาพก่อนอัปโหลดเป็น WebP คุณภาพ 80% ไม่เกิน 1440px ลดขนาดไฟล์ลง ~95% (เหลือ ~100-200KB)
+- **Gallery Quota:** รองรับสูงสุด 20 ภาพ (`MAX_GALLERY_IMAGES = 20`) พร้อม Multi-file upload
 
 ## 3. <core_schema>
 - **Entry File:** `StoreProfilePage.jsx`
 - **Contact Component:** `components/StoreProfileInfo.jsx`
+- **Image Compressor:** `utils/imageCompressor.js`
+- **Edit Component & Hook:** `StoreProfileBasicInfo.jsx`, `hooks/useStoreProfile.js`
 - **Asset Files:**
   - `public/images/line_logo.png`
   - `public/images/messenger_logo.png`
