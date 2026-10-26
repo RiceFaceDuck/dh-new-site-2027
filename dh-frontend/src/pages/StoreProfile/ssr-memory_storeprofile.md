@@ -12,6 +12,9 @@
 5. พาร์ทเนอร์แก้ไขข้อมูลร้านและอัปโหลดภาพ (`StoreProfileBasicInfo.jsx`):
    - อัปโหลดได้สูงสุด 20 รูป พร้อมบีบอัดเป็น WebP บน Client ทันที
    - อัปโหลดตรงเข้าสู่ Firebase Storage (`stores/{userId}/...`) เสถียรและเร็ว ไม่ติด Quota GAS
+6. ในส่วน "สินค้าแนะนำด้านล่างสุด" (`StoreRecommendedProducts.jsx`):
+   - เมื่อเลื่อนจอลงมาใกล้ถึงด้านล่าง (Viewport Lazy Load) ระบบจะสุ่มสินค้า 4 รายการจาก `featuredQueryService.getRandomFeaturedProducts(4)`
+   - ส่งเข้าสู่ `ProductList` ซึ่งมีระบบ `useAdInjection` แทรกโฆษณาพาร์ทเนอร์ (นามบัตร/แบนเนอร์) 1 รายการ ลงในกริดสินค้าอัตโนมัติ รวมเป็น 5 รายการ (1 แถวพอดีบนจอเดสก์ท็อป)
 
 ## 2. <domain_rules>
 - **Universal Dynamic Contact Channels:** ทุกพาร์ทเนอร์ใช้จุดกลางเดียวกันใน `StoreProfileInfo.jsx`
@@ -21,11 +24,13 @@
 - **Client-Side Image Compression:** ใช้ `imageCompressor.js` แปลงภาพก่อนอัปโหลดเป็น WebP คุณภาพ 80% ไม่เกิน 1440px ลดขนาดไฟล์ลง ~95% (เหลือ ~100-200KB)
 - **Gallery Quota:** รองรับสูงสุด 20 ภาพ (`MAX_GALLERY_IMAGES = 20`) พร้อม Multi-file upload
 - **Cloud Storage Standard:** ใช้ Firebase Storage เก็บรูปภาพพาร์ทเนอร์ทั้งหมด แทน Google Drive GAS
+- **Low-Quota Recommended Products:** ส่วนสินค้าแนะนำด้านล่างสุด ใช้ Viewport Lazy Loading (`useInView`) เมื่อเลื่อนจอมาถึงเท่านั้น เพื่อป้องกันการอ่านโควต้าโดยไม่จำเป็น
 
 ## 3. <core_schema>
 - **Entry File:** `StoreProfilePage.jsx`
 - **Contact Component:** `components/StoreProfileInfo.jsx`
 - **Gallery Lightbox:** `components/GalleryLightbox.jsx` (Pop-up แสดงภาพเต็มจอ, Prev/Next, Thumbnails, ESC & Swipe support)
+- **Recommended Products Block:** `components/StoreRecommendedProducts.jsx` (Random 4 items via `featuredQueryService`, unified `ProductList` with auto `useAdInjection` = 5 cards total in 1 row)
 - **Image Compressor:** `utils/imageCompressor.js`
 - **Storage Service:** `firebase/storageService.js` (ฟังก์ชัน `uploadStoreImage`, `deleteStoreImage` รองรับ fallback)
 - **Edit Component & Hook:** `StoreProfileBasicInfo.jsx`, `hooks/useStoreProfile.js`
@@ -62,6 +67,5 @@
 - **Solution:** ปรับให้รูปภาพแสดงผลได้เต็มภาพ 100% (ทั้งภาพแนวนอนและแนวตั้ง ไม่โดนตัดขอบ) โดยถอดกรอบ (border), ขอบเส้น, เงา, และพื้นหลังสีเทาออกทั้งหมด ให้ภาพลอยเด่นอย่างเป็นธรรมชาติบนการ์ดขาว
 - **Problem:** ปุ่ม Action (โทร, MAP, แชร์) บน PC เดิมลอยอยู่ใต้ชื่อร้าน ทำให้เกิดพื้นที่ว่างด้านล่าง และขนาดปุ่มใหญ่เกินไป
 - **Solution:** ปรับใช้ `md:flex-col md:justify-between md:self-stretch` ให้ปุ่มดันลงมาชิดขอบล่างของการ์ดบน PC (`md:mt-auto`) ขนานพอดีกับขอบล่างของภาพประจำร้าน พร้อมลดขนาดลง 20% (`md:h-[38px]`, `md:max-w-md`, `md:text-xs lg:text-sm`) โดยมือถือคงเดิม 100%
-
-
-
+- **Problem:** ต้องการแสดงสินค้าแนะนำแบบสุ่มที่ด้านล่างหน้าร้านค้า พร้อมโฆษณาพาร์ทเนอร์แทรกโดยไม่กระทบโควต้า
+- **Solution:** ใช้ `featuredQueryService.getRandomFeaturedProducts(8)` ร่วมกับ `<ProductList />` ที่มี `useAdInjection` ฝังในตัว และครอบด้วย `useInView` โหลดเมื่อเลื่อนจอลงมาเท่านั้น

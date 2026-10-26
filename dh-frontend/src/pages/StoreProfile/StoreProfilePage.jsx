@@ -6,6 +6,7 @@ import { db } from '../../firebase/config';
 import PartnerAds from './components/PartnerAds';
 import StoreProfileHero from './components/StoreProfileHero';
 import StoreProfileInfo from './components/StoreProfileInfo';
+import StoreRecommendedProducts from './components/StoreRecommendedProducts';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
 // Ensure appId is defined
@@ -136,6 +137,7 @@ const StoreProfilePage = () => {
       <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pb-8">
         <StoreProfileInfo partner={partner} currentUser={currentUser} />
         <PartnerAds partnerId={partner.id} />
+        <StoreRecommendedProducts />
       </div>
     </div>
   );
