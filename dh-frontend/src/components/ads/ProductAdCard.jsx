@@ -14,11 +14,20 @@ const ProductAdCard = ({ ad }) => {
   const cardRef = useRef(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [distanceText, setDistanceText] = useState(ad.formattedDistance || null);
+  // ฟังก์ชันจัดรูปแบบระยะทาง: ปัดเศษกิโลเมตรลงเป็นจำนวนเต็มเสมอ (เช่น 411.7 กม. -> 411 กม.)
+  const formatDistanceValue = (raw) => {
+    if (!raw) return null;
+    if (typeof raw === 'number') {
+      return raw < 1 ? `${Math.round(raw * 1000)} เมตร` : `${Math.floor(raw)} กม.`;
+    }
+    return String(raw).replace(/(\d+)\.\d+\s*กม\./, (_, intPart) => `${intPart} กม.`);
+  };
+
+  const [distanceText, setDistanceText] = useState(() => formatDistanceValue(ad.formattedDistance));
 
   useEffect(() => {
     if (ad.formattedDistance) {
-      setDistanceText(ad.formattedDistance);
+      setDistanceText(formatDistanceValue(ad.formattedDistance));
       return;
     }
     if (ad.type === 'PRODUCT_LINK') return;
@@ -37,7 +46,7 @@ const ProductAdCard = ({ ad }) => {
 
         if (matched && matched.latitude && matched.longitude && isMounted) {
           const distKm = calculateDistance(lat, lng, matched.latitude, matched.longitude);
-          const formatted = distKm < 1 ? `${Math.round(distKm * 1000)} เมตร` : `${distKm.toFixed(1)} กม.`;
+          const formatted = distKm < 1 ? `${Math.round(distKm * 1000)} เมตร` : `${Math.floor(distKm)} กม.`;
           setDistanceText(formatted);
         }
       } catch (e) {
@@ -229,6 +238,30 @@ const ProductAdCard = ({ ad }) => {
         ref={cardRef}
         className="group relative flex flex-col h-full cursor-pointer bg-slate-100 p-2 md:p-3 rounded-xl border border-slate-200 overflow-hidden hover:border-indigo-300 hover:shadow-premium-hover transition-all duration-300 animate-in fade-in"
       >
+        {/* 🏷️ ป้ายมุมบนซ้ายของการ์ด (เลยมุมภาพ ไปชิดมุมการ์ดโฆษณา) */}
+        {ad.isSponsoredAd && (
+          isProduct ? (
+            <div className="absolute top-2 left-2 flex items-center space-x-1.5 bg-slate-800/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-700/50 shadow-xs z-30 pointer-events-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+              <span className="text-[9px] md:text-[10px] font-bold text-white uppercase tracking-wider">
+                SPONSORED
+              </span>
+            </div>
+          ) : (
+            <div className="absolute top-2 left-2 max-w-[85%] z-30 pointer-events-none group-hover:scale-105 transition-transform duration-200">
+              <div className="p-[1.5px] rounded-lg bg-linear-to-r from-violet-500 via-pink-500 via-amber-400 via-emerald-400 to-cyan-500 shadow-xs">
+                <div className="flex items-center space-x-1.5 bg-white/95 backdrop-blur-xs px-2.5 py-0.5 rounded-[6px]">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-[10px] md:text-[11px] font-black text-indigo-950 tracking-tight truncate drop-shadow-2xs">
+                    {distanceText ? `เดินทาง ${distanceText}` : 'ไม่ทราบระยะทาง'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )
+        )}
         {/* 🖼️ พื้นที่รูปภาพ */}
         <div 
           className="relative aspect-square w-full bg-white rounded-lg flex items-center justify-center overflow-hidden mb-2 cursor-pointer"
@@ -241,26 +274,7 @@ const ProductAdCard = ({ ad }) => {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
           />
           
-          {/* 🏷️ ป้ายมุมบนซ้าย (ระยะทางสำหรับนามบัตรช่าง / Sponsored สำหรับสินค้า) */}
-          {ad.isSponsoredAd && (
-            isProduct ? (
-              <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-slate-800/90 backdrop-blur-xs px-2 py-1 rounded-md border border-slate-700/50 shadow-xs z-20">
-                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-                <span className="text-[9px] md:text-[10px] font-bold text-white uppercase tracking-wider">
-                  SPONSORED
-                </span>
-              </div>
-            ) : (
-              <div className="absolute top-1.5 left-1.5 max-w-[85%] flex items-center space-x-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-[0.1rem] border border-slate-200 shadow-2xs z-20">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-emerald-600 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-[10px] md:text-[11px] font-bold text-slate-800 tracking-tight truncate">
-                  {distanceText ? `ห่างออกไป ${distanceText}` : 'ไม่ทราบระยะทาง'}
-                </span>
-              </div>
-            )
-          )}
+
         </div>
 
         {/* 📝 พื้นที่เนื้อหา */}

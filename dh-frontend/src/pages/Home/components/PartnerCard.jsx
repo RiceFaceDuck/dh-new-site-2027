@@ -39,7 +39,7 @@ const PartnerCard = ({ partner }) => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
-            <span className="truncate">ห่างออกไป {partner.formattedDistance}</span>
+            <span className="truncate">เดินทาง {partner.formattedDistance}</span>
           </div>
         ) : (
           <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-slate-50 text-slate-500 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">

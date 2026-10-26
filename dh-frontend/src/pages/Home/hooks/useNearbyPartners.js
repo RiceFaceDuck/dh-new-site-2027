@@ -32,7 +32,7 @@ export const useNearbyPartners = () => {
         let formattedDistance = null;
         if (lat && lng && partner.latitude && partner.longitude) {
           distanceKm = calculateDistance(lat, lng, partner.latitude, partner.longitude);
-          formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${distanceKm.toFixed(1)} กม.`;
+          formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${Math.floor(distanceKm)} กม.`;
         }
         return { ...partner, distanceKm, formattedDistance };
       });

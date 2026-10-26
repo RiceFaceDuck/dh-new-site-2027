@@ -83,7 +83,7 @@ export const useProvidersList = () => {
         const lng = Number(p.longitude ?? p.lng);
         if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
           distanceKm = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
-          formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${distanceKm.toFixed(1)} กม.`;
+          formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${Math.floor(distanceKm)} กม.`;
         }
         return { ...p, distanceKm, formattedDistance };
       });

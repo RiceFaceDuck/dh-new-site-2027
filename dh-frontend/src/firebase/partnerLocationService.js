@@ -129,7 +129,7 @@ export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) =
           bestPartner = { 
             ...partner, 
             distanceKm: distance,
-            formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${distance.toFixed(1)} กม.`
+            formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${Math.floor(distance)} กม.`
           };
         }
       }
