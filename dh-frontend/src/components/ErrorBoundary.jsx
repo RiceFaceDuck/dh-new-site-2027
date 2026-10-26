@@ -3,19 +3,85 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
+const MAX_AUTO_RETRIES = 3;
+const RETRY_KEY = 'dh_eb_retry_count';
+const RETRY_PATH_KEY = 'dh_eb_retry_path';
+
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = {
+      hasError: false,
+      error: null,
+      isAutoReloading: false,
+      retryCount: 0
+    };
+    this.clearTimer = null;
   }
 
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
 
+  componentDidMount() {
+    // หากหน้าเว็บเรนเดอร์สำเร็จและทำงานได้ปกติเกิน 4 วินาที ให้เคลียร์ตัวนับรอบ
+    this.clearTimer = setTimeout(() => {
+      try {
+        sessionStorage.removeItem(RETRY_KEY);
+        sessionStorage.removeItem(RETRY_PATH_KEY);
+      } catch {
+        // ป้องกันกรณีเว็บบราวเซอร์ปิดการใช้งาน storage
+      }
+    }, 4000);
+  }
+
+  componentWillUnmount() {
+    if (this.clearTimer) {
+      clearTimeout(this.clearTimer);
+    }
+  }
+
   async componentDidCatch(error, errorInfo) {
     console.error("ErrorBoundary caught an error", error, errorInfo);
-    
+
+    let currentRetries = 0;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+
+    try {
+      const savedPath = sessionStorage.getItem(RETRY_PATH_KEY);
+      if (savedPath === currentPath) {
+        currentRetries = parseInt(sessionStorage.getItem(RETRY_KEY) || '0', 10);
+      } else {
+        sessionStorage.setItem(RETRY_PATH_KEY, currentPath);
+        sessionStorage.setItem(RETRY_KEY, '0');
+        currentRetries = 0;
+      }
+    } catch (storageErr) {
+      console.warn("Storage access warning:", storageErr);
+    }
+
+    const shouldAutoRetry = currentRetries < MAX_AUTO_RETRIES;
+    const nextRetries = currentRetries + 1;
+
+    if (shouldAutoRetry) {
+      try {
+        sessionStorage.setItem(RETRY_KEY, nextRetries.toString());
+        sessionStorage.setItem(RETRY_PATH_KEY, currentPath);
+      } catch {}
+
+      this.setState({
+        isAutoReloading: true,
+        retryCount: nextRetries
+      });
+
+      // หน่วงเวลาสั้นๆ 600ms เพื่อให้ส่ง Firestore error log ทัน และ reload อย่างนุ่มนวล
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      }, 600);
+    }
+
     // Log to Firestore system_logs
     try {
       const user = auth?.currentUser;
@@ -26,7 +92,10 @@ export class ErrorBoundary extends React.Component {
           errorMessage: error.toString(),
           componentStack: errorInfo.componentStack,
           url: window.location.href,
-          userAgent: navigator.userAgent
+          userAgent: navigator.userAgent,
+          autoRetried: shouldAutoRetry,
+          retryAttempt: shouldAutoRetry ? nextRetries : currentRetries,
+          maxRetries: MAX_AUTO_RETRIES
         },
         userUid: user?.uid || 'anonymous',
         userRole: 'customer',
@@ -37,8 +106,32 @@ export class ErrorBoundary extends React.Component {
     }
   }
 
+  handleManualRefresh = () => {
+    try {
+      sessionStorage.removeItem(RETRY_KEY);
+      sessionStorage.removeItem(RETRY_PATH_KEY);
+    } catch {}
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
+      // กรณีอยู่ในระหว่างพยายาม Auto-Refresh (ไม่เกิน 3 รอบ)
+      if (this.state.isAutoReloading) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800 p-4">
+            <div className="max-w-md w-full bg-white rounded-2xl shadow-sm p-8 text-center border border-slate-100 flex flex-col items-center">
+              <div className="w-12 h-12 mb-4 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+              <h2 className="text-lg font-semibold text-slate-800 mb-2">กำลังเชื่อมต่อและโหลดข้อมูลใหม่...</h2>
+              <p className="text-slate-500 text-xs">
+                ระบบกำลังปรับปรุงการเชื่อมต่ออัตโนมัติ (ครั้งที่ {this.state.retryCount}/{MAX_AUTO_RETRIES})
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // กรณีพยายามครบ 3 รอบแล้วยังพบปัญหา ให้แสดงหน้าจอปกติพร้อมปุ่มรีเซ็ต
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800 p-4">
           <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center border border-slate-100">
@@ -54,8 +147,8 @@ export class ErrorBoundary extends React.Component {
               ระบบกำลังประสบปัญหาขัดข้องชั่วคราว กรุณารีเฟรชหน้าเว็บหรือลองใหม่อีกครั้งในภายหลัง
             </p>
             <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors font-medium"
+              onClick={this.handleManualRefresh}
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors font-medium cursor-pointer"
             >
               รีเฟรชหน้าเว็บ
             </button>
