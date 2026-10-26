@@ -1,6 +1,71 @@
 import PartnerReviews from './PartnerReviews';
 import { MapPin, ExternalLink } from 'lucide-react';
 
+const formatLineUrl = (url) => {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+  if (trimmed.includes('lin.ee') || trimmed.includes('line.me')) {
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+  }
+  const cleaned = trimmed.replace(/^https?:\/\//i, '').replace(/^id:\s*/i, '').trim();
+  if (!cleaned) return '';
+  if (cleaned.startsWith('@')) return `https://line.me/R/ti/p/${cleaned}`;
+  if (cleaned.includes('.') || cleaned.includes('/')) return `https://${cleaned}`;
+  return `https://line.me/R/ti/p/~${cleaned}`;
+};
+
+const formatMessengerUrl = (url) => {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+  if (trimmed.includes('m.me') || trimmed.includes('facebook.com')) {
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+  }
+  const cleaned = trimmed.replace(/^https?:\/\//i, '').trim();
+  if (!cleaned.includes('.') && !cleaned.includes('/')) return `https://m.me/${cleaned}`;
+  return `https://${cleaned}`;
+};
+
+const formatYoutubeUrl = (url) => {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+  const m = trimmed.match(/^https?:\/\/@(.*)/i);
+  if (m) return `https://www.youtube.com/@${m[1]}`;
+  if (trimmed.startsWith('@')) return `https://www.youtube.com/${trimmed}`;
+  if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+  }
+  const cleaned = trimmed.replace(/^https?:\/\//i, '').trim();
+  if (!cleaned.includes('.') && !cleaned.includes('/')) return `https://www.youtube.com/@${cleaned}`;
+  return `https://${cleaned}`;
+};
+
+const formatTiktokUrl = (url) => {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+  const m = trimmed.match(/^https?:\/\/@(.*)/i);
+  if (m) return `https://www.tiktok.com/@${m[1]}`;
+  if (trimmed.startsWith('@')) return `https://www.tiktok.com/${trimmed}`;
+  if (trimmed.includes('tiktok.com')) {
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+  }
+  const cleaned = trimmed.replace(/^https?:\/\//i, '').trim();
+  if (!cleaned.includes('.') && !cleaned.includes('/') && !cleaned.endsWith('@gmail.com')) {
+    return `https://www.tiktok.com/@${cleaned}`;
+  }
+  return `https://${cleaned}`;
+};
+
+const formatExternalUrl = (url) => {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
 const StoreProfileInfo = ({ partner, currentUser }) => {
   // 📍 คำนวณลิงก์ Google Maps จาก mapsUrl, googleMapLink หรือพิกัด GPS (latitude, longitude)
   const lat = Number(partner.latitude ?? partner.storeProfile?.latitude ?? 0);
@@ -12,6 +77,16 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
   const mapsUrl = rawMapsUrl 
     ? (rawMapsUrl.startsWith('http') ? rawMapsUrl : `https://www.google.com/maps?q=${encodeURIComponent(rawMapsUrl)}`)
     : '';
+
+  const lineUrl = formatLineUrl(partner.lineUrl || partner.storeProfile?.lineUrl);
+  const messengerUrl = formatMessengerUrl(partner.messengerUrl || partner.storeProfile?.messengerUrl);
+  const websiteUrl = formatExternalUrl(partner.websiteUrl || partner.storeWebsite || partner.storeProfile?.websiteUrl || partner.storeProfile?.storeWebsite);
+  const youtubeUrl = formatYoutubeUrl(partner.youtubeUrl || partner.storeProfile?.youtubeUrl);
+  const tiktokUrl = formatTiktokUrl(partner.tiktokUrl || partner.storeProfile?.tiktokUrl);
+  const shopeeUrl = formatExternalUrl(partner.shopeeUrl || partner.storeProfile?.shopeeUrl);
+  const lazadaUrl = formatExternalUrl(partner.lazadaUrl || partner.storeProfile?.lazadaUrl);
+
+  const hasSocialLinks = Boolean(lineUrl || messengerUrl || websiteUrl || youtubeUrl || tiktokUrl || shopeeUrl || lazadaUrl);
 
   return (
     <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -51,7 +126,7 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
       {/* 2. Contact, Location & Certifications (Middle on Mobile, Right Column on Desktop) */}
       <div className="space-y-6 md:col-start-3 md:row-start-1 md:row-span-2 self-start">
         {/* Social Links Section */}
-        {(partner.lineUrl || partner.messengerUrl || partner.websiteUrl || partner.youtubeUrl || partner.tiktokUrl || partner.shopeeUrl || partner.lazadaUrl) && (
+        {hasSocialLinks && (
           <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -60,46 +135,44 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
               ช่องทางการติดต่อ
             </h3>
             <div className="flex flex-col gap-3">
-              {partner.lineUrl && (
-                <a href={partner.lineUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors group">
+              {lineUrl && (
+                <a href={lineUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors group">
                   <img src="/images/line_logo.png" alt="LINE" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-green-700">LINE Official</span>
                 </a>
               )}
-              {partner.messengerUrl && (
-                <a href={partner.messengerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-blue-50 transition-colors group">
+              {messengerUrl && (
+                <a href={messengerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-blue-50 transition-colors group">
                   <img src="/images/messenger_logo.png" alt="Messenger" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-blue-700">Messenger</span>
                 </a>
               )}
-              {partner.websiteUrl && (
-                <a href={partner.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-slate-50 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mr-3 group-hover:bg-slate-800 group-hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
-                  </div>
+              {websiteUrl && (
+                <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-slate-50 transition-colors group">
+                  <img src="/images/website_logo.png" alt="Website" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-slate-800">เว็บไซต์ร้าน</span>
                 </a>
               )}
-              {partner.youtubeUrl && (
-                <a href={partner.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-red-50 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center mr-3 group-hover:bg-red-600 group-hover:text-white transition-colors">YT</div>
+              {youtubeUrl && (
+                <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-red-50 transition-colors group">
+                  <img src="/images/youtube_logo.png" alt="YouTube" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-red-700">YouTube</span>
                 </a>
               )}
-              {partner.tiktokUrl && (
-                <a href={partner.tiktokUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-slate-100 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center mr-3 group-hover:bg-black group-hover:text-white transition-colors">TT</div>
+              {tiktokUrl && (
+                <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-slate-100 transition-colors group">
+                  <img src="/images/tiktok_logo.png" alt="TikTok" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-black">TikTok</span>
                 </a>
               )}
-              {partner.shopeeUrl && (
-                <a href={partner.shopeeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-orange-50 transition-colors group">
+              {shopeeUrl && (
+                <a href={shopeeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-orange-50 transition-colors group">
                   <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mr-3 group-hover:bg-orange-500 group-hover:text-white transition-colors">SH</div>
                   <span className="text-sm text-slate-600 font-medium group-hover:text-orange-700">Shopee</span>
                 </a>
               )}
-              {partner.lazadaUrl && (
-                <a href={partner.lazadaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-indigo-50 transition-colors group">
+              {lazadaUrl && (
+                <a href={lazadaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-indigo-50 transition-colors group">
                   <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3 group-hover:bg-indigo-800 group-hover:text-white transition-colors">LZ</div>
                   <span className="text-sm text-slate-600 font-medium group-hover:text-indigo-800">Lazada</span>
                 </a>
