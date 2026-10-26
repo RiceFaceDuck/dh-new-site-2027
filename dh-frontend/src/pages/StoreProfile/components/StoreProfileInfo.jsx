@@ -110,7 +110,7 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
           {partner.galleryImages && partner.galleryImages.length > 0 && (
             <div className="mt-8">
               <h4 className="text-lg font-bold text-slate-700 mb-4">ผลงาน / แกลลอรี่ภาพ</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 {partner.galleryImages.map((img, idx) => (
                   <div key={idx} className="rounded-xl overflow-hidden aspect-square shadow-xs border border-slate-100">
                     <img loading="lazy" src={img} alt={`Gallery ${idx}`} className="w-full h-full object-contain hover:scale-110 transition-transform duration-500 cursor-pointer" onClick={() => window.open(img, '_blank')} />

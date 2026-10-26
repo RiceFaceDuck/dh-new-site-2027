@@ -11,6 +11,7 @@
 - **Universal Dynamic Contact Channels:** ทุกพาร์ทเนอร์ใช้จุดกลางเดียวกันใน `StoreProfileInfo.jsx`
 - **URL Normalization Guard:** ต้องจัดรูปแบบลิงก์ให้อยู่ในรูป `https://...` และแปลง URL เฉพาะแพลตฟอร์ม (เช่น YouTube `@handle`, TikTok, LINE ID/`@id`, Messenger) ให้คลิกแล้วเปิดไปยังปลายทางที่ถูกต้องเสมอ ไม่ตกหล่นหรือเกิด relative URL 404
 - **Calm UI Invariant & Pure Assets:** ใช้ภาพไอคอนโปร่งใส (RGBA PNG) ขนาดมาตรฐาน `400x400` เก็บไว้ที่ `dh-frontend/public/images/`
+- **Responsive Architecture (Mobile First):** โครงสร้างหน้าร้านใช้ `max-w-4xl lg:max-w-6xl xl:max-w-7xl` โดยมือถือยังคงขนาดและเลย์เอาต์เดิม 100% ไม่เปลี่ยนแปลง ส่วนบน PC ขยายออกด้านข้างสมดุลกับ Header ทันที และแกลเลอรี่ผลงานขยายเป็น 4 คอลัมน์บนจอใหญ่ (`xl:grid-cols-4`)
 
 ## 3. <core_schema>
 - **Entry File:** `StoreProfilePage.jsx`

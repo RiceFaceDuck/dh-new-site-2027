@@ -24,8 +24,8 @@ const StoreProfileHero = ({ partner }) => {
     : '';
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 relative z-10">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+    <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 relative z-10">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 lg:p-10 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 lg:gap-10">
           
           {/* Avatar Area */}
           <div className="relative group shrink-0">
@@ -43,7 +43,7 @@ const StoreProfileHero = ({ partner }) => {
             <p className="text-brand font-medium text-sm md:text-lg mb-4">{role}</p>
             
             {/* Action Buttons (Balanced 3-Column Grid, Zero-Overflow) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full mt-2 lg:max-w-xl">
               {phone && (
                 <a 
                   href={`tel:${phone}`}
