@@ -61,8 +61,12 @@ export const parseCustomerAddress = (rawInput) => {
         }
         if (cleaned.length >= 9 && cleaned.length <= 10) {
             phone = cleaned;
-            workingText = workingText.replace(rawPhone, ' ');
+            // Clean all extracted phone numbers and slash/comma separators
+            for (const p of phoneMatches) {
+                workingText = workingText.replace(p, ' ');
+            }
             workingText = workingText.replace(/(?:เบอร์โทรศัพท์|เบอร์โทร|เบอร์|โทร|tel|phone|mobile)\s*:?/gi, ' ');
+            workingText = workingText.replace(/[\/\,\;]/g, ' ');
         }
     }
 

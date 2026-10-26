@@ -12,15 +12,16 @@ import {
   Mail,
   Coins,
   MapPin,
-  Truck
+  Truck,
+  Users
 } from 'lucide-react';
 import { computeSafeGapFilling } from '../../services/customerMatchingService';
 
 /**
  * CustomerSuggestionCard Component (Presentation Layer)
  * 
- * Displays existing customer matching alert, profile gap analysis, and 
- * two professional decision pathways for cashier/staff.
+ * Displays existing customer matching alerts, profile gap analysis, and 
+ * multiple potential customer choices for cashier/staff.
  * 
  * Strict Styling Invariants:
  * - Container & Shapes: rounded-[0.1rem], solid thin borders, elevated drop shadow
@@ -29,32 +30,43 @@ import { computeSafeGapFilling } from '../../services/customerMatchingService';
  */
 export const CustomerSuggestionCard = ({
   match,
+  matches = [],
   parsedData,
   onSelectCustomer,
   onCreateNew,
   onDismiss,
   className = ''
 }) => {
+  // Normalize matches list: supports either single `match` or multiple `matches`
+  const matchList = Array.isArray(matches) && matches.length > 0 
+    ? matches 
+    : (match ? [match] : []);
+
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [autoFillMissing, setAutoFillMissing] = useState(true);
 
-  if (!match || !match.candidate) return null;
+  if (matchList.length === 0) return null;
 
-  const { candidate, score, matchReasons = [], gapAnalysis = {} } = match;
+  // Active match being viewed/focused
+  const currentMatch = matchList[selectedIndex] || matchList[0];
+  const { candidate, score, matchReasons = [], gapAnalysis = {} } = currentMatch;
+
   const isStorefront = gapAnalysis.isStorefront;
   const existingItems = gapAnalysis.existingItems || [];
   const missingItems = gapAnalysis.missingItems || [];
   const fillableItems = gapAnalysis.fillableItems || [];
 
-  const handleProceedWithCandidate = () => {
+  const handleProceedWithCandidate = (targetCandidate) => {
+    const cand = targetCandidate || candidate;
     let payload = null;
     if (autoFillMissing && parsedData) {
-      const fillResult = computeSafeGapFilling(candidate, parsedData);
+      const fillResult = computeSafeGapFilling(cand, parsedData);
       if (fillResult.hasUpdates) {
         payload = fillResult.payload;
       }
     }
     if (onSelectCustomer) {
-      onSelectCustomer(candidate, payload);
+      onSelectCustomer(cand, payload);
     }
   };
 
@@ -62,7 +74,7 @@ export const CustomerSuggestionCard = ({
     <div 
       className={`w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-[0.1rem] shadow-xl overflow-hidden transition-all text-slate-800 dark:text-slate-100 ${className}`}
     >
-      {/* 1. Header Bar: Match Notice & Score Badge */}
+      {/* 1. Header Bar: Match Notice & Count Badge */}
       <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-blue-100 dark:bg-blue-900/60 rounded-[0.1rem] border border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300">
@@ -70,7 +82,7 @@ export const CustomerSuggestionCard = ({
           </div>
           <div>
             <h4 className="text-sm font-semibold flex items-center gap-2">
-              ตรวจพบบัญชีที่ตรงกันในระบบ
+              ตรวจพบบัญชีที่ตรงหรือใกล้เคียงในระบบ ({matchList.length} รายการ)
               {isStorefront && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-[0.1rem] border border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-200">
                   <Globe className="w-3 h-3" /> สมาชิก Partner หน้าเว็บ
@@ -87,13 +99,44 @@ export const CustomerSuggestionCard = ({
           <button
             type="button"
             onClick={onDismiss}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             title="ปิดการแจ้งเตือน"
           >
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
+
+      {/* 🌟 Multi-Match Selector Tabs (If more than 1 match found) */}
+      {matchList.length > 1 && (
+        <div className="px-4 pt-3 pb-1 bg-slate-100/70 dark:bg-slate-800/50 border-b border-slate-300 dark:border-slate-700 flex flex-wrap gap-2">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 self-center mr-1">
+            เลือกรายชื่อที่ต้องการตรวจสอบ:
+          </span>
+          {matchList.map((m, idx) => {
+            const isSelected = idx === selectedIndex;
+            const cand = m.candidate;
+            const isSF = m.gapAnalysis?.isStorefront;
+            return (
+              <button
+                key={cand.id || cand.accountId || idx}
+                type="button"
+                onClick={() => setSelectedIndex(idx)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-[0.1rem] border transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                {isSF && <span className="text-[10px]">⭐ (แนะนำเว็บ)</span>}
+                <span className="font-mono">[{cand.accountId || cand.id}]</span>
+                <span>{cand.storeName || cand.displayName || cand.accountName}</span>
+                {cand.phone && <span className="opacity-75">({cand.phone})</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* 2. Main Content Body */}
       <div className="p-4 space-y-3.5">
@@ -107,6 +150,11 @@ export const CustomerSuggestionCard = ({
             <span className="text-sm font-bold text-slate-900 dark:text-white">
               {candidate.storeName || candidate.displayName || candidate.accountName || 'ไม่ระบุชื่อร้าน'}
             </span>
+            {isStorefront && (
+              <span className="ml-2 text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-100/70 dark:bg-emerald-950 px-1.5 py-0.5 rounded-[0.1rem] border border-emerald-300 dark:border-emerald-700">
+                ⭐ แนะนำเป็นพิเศษ (บัญชีหน้าเว็บ)
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-xs">
@@ -124,11 +172,11 @@ export const CustomerSuggestionCard = ({
           </div>
         </div>
 
-        {/* 3. Profile Readiness & Gap Analysis Section */}
+        {/* 3. Gap Analysis Grid (2 Columns: Completed vs Missing) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
           
-          {/* Left Column: Existing Verified Data */}
-          <div className="p-3 rounded-[0.1rem] border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 space-y-1.5">
+          {/* Left Column: Existing Profile Fields */}
+          <div className="p-3 rounded-[0.1rem] border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 space-y-1.5">
             <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>มีข้อมูลในบัญชีแล้ว:</span>
@@ -137,12 +185,12 @@ export const CustomerSuggestionCard = ({
               {existingItems.length > 0 ? (
                 existingItems.map((item, idx) => (
                   <div key={idx} className="truncate">
-                    <span className="text-slate-400 dark:text-slate-500">{item.label}:</span>{' '}
-                    <span className="font-medium text-slate-800 dark:text-slate-200">{item.value}</span>
+                    <span className="font-medium text-slate-500 dark:text-slate-400">{item.label}:</span>{' '}
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{item.value}</span>
                   </div>
                 ))
               ) : (
-                <div className="text-slate-400">ข้อมูลเบื้องต้น</div>
+                <div className="text-slate-400 italic">มีเฉพาะชื่อร้านเบื้องต้น</div>
               )}
             </div>
           </div>
@@ -213,7 +261,7 @@ export const CustomerSuggestionCard = ({
           <button
             type="button"
             onClick={onCreateNew}
-            className="w-full sm:w-auto px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>ยืนยันสร้างรายชื่อใหม่ (คนละคนกัน)</span>
@@ -221,8 +269,8 @@ export const CustomerSuggestionCard = ({
 
           <button
             type="button"
-            onClick={handleProceedWithCandidate}
-            className="w-full sm:w-auto px-5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+            onClick={() => handleProceedWithCandidate(candidate)}
+            className="w-full sm:w-auto px-5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>(แนะนำ) ดำเนินการต่อด้วยบัญชีนี้ ({candidate.accountId || candidate.id})</span>
             <ArrowRight className="w-3.5 h-3.5" />

@@ -143,11 +143,13 @@ export function calculateCustomerMatchScore(parsed = {}, candidate = {}) {
   }
 
   // 6. Storefront Golden Record Bonus (+10 pts)
-  // Storefront accounts have auth emails, partner tiers, or web registration flags
+  // Storefront accounts have auth emails, partner tiers, loyalty points, or web registration flags
   const isStorefront = !candidate.isManualCustomer && (
     Boolean(candidate.email) ||
     candidate.isWebRegistered ||
     candidate.source === 'storefront' ||
+    (candidate.tier && String(candidate.tier).toUpperCase() !== 'MEMBER') ||
+    ((candidate.creditPoints || candidate.totalAccumulatedPoints || 0) > 0) ||
     (candidate.role && candidate.role.toLowerCase().includes('partner'))
   );
 
@@ -202,24 +204,32 @@ export function analyzeProfileGaps(candidate = {}, parsed = {}) {
     existingItems.push({ label: 'แต้มสะสม', value: `${points.toLocaleString()} แต้ม` });
   }
 
+  // Helper to test if a candidate field value is truly empty (null, undefined, empty string, or non-data dash "-")
+  const isFieldEmpty = (val) => {
+    if (val === undefined || val === null) return true;
+    const str = String(val).trim();
+    return str === '' || str === '-' || str === '--' || str === 'null' || str === 'undefined';
+  };
+
   // Check Phone Gap
-  const hasCandPhone = Boolean(candidate.phone || candidate.phoneNumber);
+  const candPhone = candidate.phone || candidate.phoneNumber;
+  const hasCandPhone = !isFieldEmpty(candPhone) && normalizePhone(candPhone).length >= 9;
   const parsedPhone = parsed.phone || parsed.phoneNumber;
   if (hasCandPhone) {
     existingItems.push({ label: 'เบอร์โทรศัพท์', value: candidate.phone || candidate.phoneNumber });
   } else {
     missingItems.push({ field: 'phone', label: 'เบอร์โทรศัพท์ติดต่อ' });
-    if (parsedPhone) {
-      fillableItems.push({ field: 'phone', label: 'เบอร์โทรศัพท์', value: parsedPhone });
+    if (parsedPhone && normalizePhone(parsedPhone).length >= 9) {
+      fillableItems.push({ field: 'phone', label: 'เบอร์โทรศัพท์', value: parsed.formattedPhone || parsedPhone });
     }
   }
 
   // Check Address Gap
-  const hasCandAddress = Boolean(
-    (candidate.address && (candidate.address.addressLine || candidate.address.province)) ||
-    candidate.addressLine ||
-    candidate.province
-  );
+  const candAddress = candidate.address || {};
+  const hasCandAddress = !isFieldEmpty(candidate.addressLine) || 
+    !isFieldEmpty(candAddress.addressLine) || 
+    !isFieldEmpty(candidate.province) || 
+    !isFieldEmpty(candAddress.province);
   const hasParsedAddress = Boolean(
     parsed.addressLine || parsed.address || parsed.province || parsed.zipCode || parsed.postalCode
   );
@@ -259,6 +269,8 @@ export function analyzeProfileGaps(candidate = {}, parsed = {}) {
     Boolean(candidate.email) ||
     candidate.isWebRegistered ||
     candidate.source === 'storefront' ||
+    (candidate.tier && String(candidate.tier).toUpperCase() !== 'MEMBER') ||
+    ((candidate.creditPoints || candidate.totalAccumulatedPoints || 0) > 0) ||
     (candidate.role && candidate.role.toLowerCase().includes('partner'))
   );
 
@@ -289,8 +301,12 @@ export function computeSafeGapFilling(candidate = {}, parsed = {}) {
   const payload = {};
   let hasUpdates = false;
 
-  // Helper to test if candidate value is empty
-  const isEmpty = (val) => val === undefined || val === null || String(val).trim() === '';
+  // Helper to test if candidate value is empty (null, undefined, empty string, or placeholder dash "-")
+  const isEmpty = (val) => {
+    if (val === undefined || val === null) return true;
+    const str = String(val).trim();
+    return str === '' || str === '-' || str === '--' || str === 'null' || str === 'undefined';
+  };
 
   // 1. Phone Dual-Key Parity
   const currentPhone = candidate.phone || candidate.phoneNumber;

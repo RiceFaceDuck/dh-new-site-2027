@@ -30,12 +30,14 @@ export default function CustomerModal({
   const [isSyncing, setIsSyncing] = useState(false);
   const [rawInputText, setRawInputText] = useState('');
   const [matchedCustomer, setMatchedCustomer] = useState(null);
+  const [matchedCustomers, setMatchedCustomers] = useState([]);
   const [parsedDataState, setParsedDataState] = useState(null);
 
   useEffect(() => {
     if (!isOpen) {
       setRawInputText('');
       setMatchedCustomer(null);
+      setMatchedCustomers([]);
       setParsedDataState(null);
     }
   }, [isOpen]);
@@ -44,6 +46,7 @@ export default function CustomerModal({
     setRawInputText(text);
     if (!text.trim()) {
       setMatchedCustomer(null);
+      setMatchedCustomers([]);
       setParsedDataState(null);
       return;
     }
@@ -51,16 +54,19 @@ export default function CustomerModal({
     const parsed = parseCustomerAddress(text);
     setParsedDataState(parsed);
 
-    // 🔍 In-memory customer matching (0 Firestore Reads)
+    // 🔍 In-memory customer matching (0 Firestore Reads - Returns all potential matches)
     if (!isEditMode && Array.isArray(existingCustomers) && existingCustomers.length > 0) {
-      const matches = findBestCustomerMatches(parsed, existingCustomers, 35, 1);
+      const matches = findBestCustomerMatches(parsed, existingCustomers, 25, 5);
       if (matches && matches.length > 0) {
         setMatchedCustomer(matches[0]);
+        setMatchedCustomers(matches);
       } else {
         setMatchedCustomer(null);
+        setMatchedCustomers([]);
       }
     } else {
       setMatchedCustomer(null);
+      setMatchedCustomers([]);
     }
     setFormData(prev => ({
       ...prev,
@@ -255,14 +261,21 @@ export default function CustomerModal({
             </div>
 
             {/* 🔍 Smart Customer Matching Suggestion Card */}
-            {!isEditMode && matchedCustomer && (
+            {!isEditMode && (matchedCustomer || (matchedCustomers && matchedCustomers.length > 0)) && (
               <div className="animate-in fade-in duration-200">
                 <CustomerSuggestionCard
                   match={matchedCustomer}
+                  matches={matchedCustomers}
                   parsedData={parsedDataState}
                   onSelectCustomer={handleSelectSuggestedCustomer}
-                  onCreateNew={() => setMatchedCustomer(null)}
-                  onDismiss={() => setMatchedCustomer(null)}
+                  onCreateNew={() => {
+                    setMatchedCustomer(null);
+                    setMatchedCustomers([]);
+                  }}
+                  onDismiss={() => {
+                    setMatchedCustomer(null);
+                    setMatchedCustomers([]);
+                  }}
                 />
               </div>
             )}

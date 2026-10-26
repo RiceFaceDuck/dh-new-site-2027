@@ -144,7 +144,7 @@ const quickCustomerService = {
 function QuickAddStep1({
     rawInputText, handleTextChange, selectedRole, setSelectedRole, 
     dynamicRoles, parsedData, handleFieldChange, onClose, isSaving, handleStep1SaveDB,
-    matchedCustomer, onSelectSuggestedCustomer, onDismissSuggestion
+    matchedCustomer, matchedCustomers = [], onSelectSuggestedCustomer, onDismissSuggestion
 }) {
     return (
         <>
@@ -165,11 +165,12 @@ function QuickAddStep1({
                     />
                 </div>
 
-                {/* 🔍 Smart Customer Matching Suggestion Card */}
-                {matchedCustomer && (
+                {/* 🔍 Smart Customer Matching Suggestion Card (Multiple Potential Matches) */}
+                {(matchedCustomer || (matchedCustomers && matchedCustomers.length > 0)) && (
                     <div className="animate-in fade-in duration-200">
                         <CustomerSuggestionCard
                             match={matchedCustomer}
+                            matches={matchedCustomers}
                             parsedData={parsedData}
                             onSelectCustomer={onSelectSuggestedCustomer}
                             onCreateNew={onDismissSuggestion}
@@ -582,6 +583,7 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
     const [isCheckingAccount, setIsCheckingAccount] = useState(false);
     const [matchedWebAccount, setMatchedWebAccount] = useState(null);
     const [matchedCustomer, setMatchedCustomer] = useState(null);
+    const [matchedCustomers, setMatchedCustomers] = useState([]);
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
     const [duplicateCandidates, setDuplicateCandidates] = useState([]);
     const [pendingNewCustPayload, setPendingNewCustPayload] = useState(null);
@@ -694,6 +696,7 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
         setRawInputText(text);
         if (!text.trim()) {
             setMatchedCustomer(null);
+            setMatchedCustomers([]);
             return;
         }
         const parsed = parseCustomerAddress(text);
@@ -702,16 +705,19 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
             setSyncEmail(parsed.email);
         }
 
-        // 🔍 In-memory customer matching (0 Firestore Reads)
+        // 🔍 In-memory customer matching (0 Firestore Reads - Returns ALL potential matches)
         if (Array.isArray(existingCustomers) && existingCustomers.length > 0) {
-            const matches = findBestCustomerMatches(parsed, existingCustomers, 35, 1);
+            const matches = findBestCustomerMatches(parsed, existingCustomers, 25, 5);
             if (matches && matches.length > 0) {
                 setMatchedCustomer(matches[0]);
+                setMatchedCustomers(matches);
             } else {
                 setMatchedCustomer(null);
+                setMatchedCustomers([]);
             }
         } else {
             setMatchedCustomer(null);
+            setMatchedCustomers([]);
         }
     };
 
@@ -896,8 +902,12 @@ export default function QuickAddCustomerModal({ isOpen, onClose, initialText = '
                             isSaving={isSaving}
                             handleStep1SaveDB={handleStep1SaveDB}
                             matchedCustomer={matchedCustomer}
+                            matchedCustomers={matchedCustomers}
                             onSelectSuggestedCustomer={handleSelectSuggestedCustomer}
-                            onDismissSuggestion={() => setMatchedCustomer(null)}
+                            onDismissSuggestion={() => {
+                                setMatchedCustomer(null);
+                                setMatchedCustomers([]);
+                            }}
                         />
                     )}
 
