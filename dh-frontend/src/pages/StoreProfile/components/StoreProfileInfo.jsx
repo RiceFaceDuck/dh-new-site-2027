@@ -191,13 +191,13 @@ const StoreProfileInfo = ({ partner, currentUser }) => {
               )}
               {shopeeUrl && (
                 <a href={shopeeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-orange-50 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mr-3 group-hover:bg-orange-500 group-hover:text-white transition-colors">SH</div>
+                  <img src="/images/shopee_logo.png" alt="Shopee" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-orange-700">Shopee</span>
                 </a>
               )}
               {lazadaUrl && (
                 <a href={lazadaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-2 rounded-lg hover:bg-indigo-50 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3 group-hover:bg-indigo-800 group-hover:text-white transition-colors">LZ</div>
+                  <img src="/images/lazada_logo.png" alt="Lazada" className="w-8 h-8 object-contain mr-3 shrink-0" />
                   <span className="text-sm text-slate-600 font-medium group-hover:text-indigo-800">Lazada</span>
                 </a>
               )}

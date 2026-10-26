@@ -42,6 +42,8 @@
   - `public/images/website_logo.png`
   - `public/images/youtube_logo.png`
   - `public/images/tiktok_logo.png`
+  - `public/images/shopee_logo.png`
+  - `public/images/lazada_logo.png`
 - **Fields Schema:**
   - `lineUrl` (string): ลิงก์ LINE หรือ LINE ID
   - `messengerUrl` (string): ลิงก์ Messenger หรือ Page handle
