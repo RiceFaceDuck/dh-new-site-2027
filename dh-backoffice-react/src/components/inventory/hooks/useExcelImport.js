@@ -140,7 +140,9 @@ export function useExcelImport(onSuccess) {
 
     if (isNew) {
       mapped.images = [];
-      mapped.isActive = true;
+      // 🔒 นโยบายความปลอดภัย: สินค้าใหม่จาก Excel ต้อง "ถูกซ่อน" (isActive: false) ไว้เสมอ
+      // จนกว่าจะมีพนักงานไปตรวจสอบข้อมูลและเปิดด้วยมือตนเอง
+      mapped.isActive = false;
       mapped.externalLinks = { shopee: '', lazada: '', tiktok: '', facebook: '' };
       mapped.internalComments = [];
       mapped.randomSeed = Math.random();
@@ -154,9 +156,8 @@ export function useExcelImport(onSuccess) {
       if (existing.externalLinks && mapped.externalLinks === undefined) {
         mapped.externalLinks = existing.externalLinks;
       }
-      if (existing.isActive !== undefined && mapped.isActive === undefined) {
-        mapped.isActive = existing.isActive;
-      }
+      // 🔒 สินค้าเดิม: คงสถานะ isActive เดิมไว้ 100% (ถ้าเคยซ่อนอยู่ ก็ต้องซ่อนต่อไปเด็ดขาด)
+      mapped.isActive = existing.isActive !== undefined ? existing.isActive : true;
       if (existing.internalComments && mapped.internalComments === undefined) {
         mapped.internalComments = existing.internalComments;
       }

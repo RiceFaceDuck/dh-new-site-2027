@@ -80,7 +80,12 @@ export default function ImportPreviewTable({ headers, parsedData }) {
 
   const getStatusBadge = (status) => {
     switch(status) {
-      case 'NEW': return <span className="px-2 py-0.5 bg-green-500/10 text-green-500 rounded-md text-[10px] font-bold border border-green-500/20">NEW</span>;
+      case 'NEW': return (
+        <div className="flex flex-col gap-0.5">
+          <span className="px-2 py-0.5 bg-green-500/10 text-green-500 rounded-md text-[10px] font-bold border border-green-500/20 w-fit">NEW</span>
+          <span className="text-[9px] text-slate-400 font-medium whitespace-nowrap">ซ่อนสินค้าไว้</span>
+        </div>
+      );
       case 'CHANGED': return <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-md text-[10px] font-bold border border-orange-500/20">CHANGED</span>;
       case 'UNCHANGED': return <span className="px-2 py-0.5 bg-gray-500/10 text-gray-400 rounded-md text-[10px] font-bold border border-gray-500/20">UNCHANGED</span>;
       case 'ERROR': return <span className="px-2 py-0.5 bg-red-500/10 text-red-500 rounded-md text-[10px] font-bold border border-red-500/20">ERROR</span>;
