@@ -17,6 +17,7 @@ export function useExcelImport(onSuccess) {
   const [headers, setHeaders] = useState([]);
   const [conflictStrategy, setConflictStrategy] = useState('overwrite'); // 'overwrite', 'skip'
   const [isProcessing, setIsProcessing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(null); // { current, total, totalRows, percent, stage: 'reading' | 'scanning' | 'analyzing' }
   const [importResult, setImportResult] = useState(null);
   const [productsToImport, setProductsToImport] = useState([]);
 
@@ -175,6 +176,8 @@ export function useExcelImport(onSuccess) {
 
     setFile(uploadedFile);
     setIsProcessing(true);
+    setAnalysisProgress({ current: 0, total: 0, totalRows: 0, percent: 0, stage: 'reading' });
+
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
@@ -187,57 +190,94 @@ export function useExcelImport(onSuccess) {
         if (data.length > 0) {
           setHeaders(Object.keys(data[0]));
           
-          const skus = data.map(r => String(r['SKU'] || '').trim().toUpperCase()).filter(Boolean);
+          // 🚀 ขั้นที่ 1: ตรวจนับแถวทั้งหมด และกรองเฉพาะแถวที่มี SKU เบื้องต้น
+          const totalRows = data.length;
+          const rowsWithSku = data.filter(r => String(r['SKU'] || '').trim() !== '');
+          const totalValidSkus = rowsWithSku.length;
+
+          setAnalysisProgress({
+            current: 0,
+            total: totalValidSkus,
+            totalRows: totalRows,
+            percent: 0,
+            stage: 'scanning'
+          });
+
+          // ให้ UI ได้ขยับแสดงสถานะรอบแรก
+          await new Promise(r => setTimeout(r, 60));
+
+          const skus = rowsWithSku.map(r => String(r['SKU'] || '').trim().toUpperCase());
           const fetchedExistingMap = await inventoryService.fetchExistingProducts(skus);
           setExistingMap(fetchedExistingMap);
+          
           const mappedItems = [];
+          const analyzedData = [];
 
-          const analyzedData = data.map((rawRow) => {
-            const sku = String(rawRow['SKU'] || '').trim().toUpperCase();
-            if (!sku) return null;
-
-            const isNew = !fetchedExistingMap.has(sku);
-            const existing = fetchedExistingMap.get(sku);
-            const item = mapDataToSchema(rawRow, isNew, existing);
+          // 🚀 ขั้นที่ 2: ซอยวิเคราะห์ทีละก้อน (Chunked Processing) พร้อมอัปเดตตัวเลขสด (XXXX / XXXX)
+          const CHUNK_SIZE = 100;
+          for (let i = 0; i < rowsWithSku.length; i += CHUNK_SIZE) {
+            const chunk = rowsWithSku.slice(i, i + CHUNK_SIZE);
             
-            // แสดงชื่อสินค้าเดิมในพรีวิวเมื่อ Excel ไม่มีคอลัมน์ชื่อ เพื่อความชัดเจนของแอดมิน
-            const previewRow = {
-              ...rawRow,
-              Name: rawRow['Name'] || existing?.name || (isNew ? sku : '')
-            };
+            for (const rawRow of chunk) {
+              const sku = String(rawRow['SKU'] || '').trim().toUpperCase();
+              if (!sku) continue;
 
-            if (item._hasStockConflict) {
-              return { ...previewRow, _status: 'ERROR', _errorReason: 'ระบุแค่ นับสต๊อค หรือ AddStock เท่านั้น ห้ามใส่สองช่องพร้อมกัน' };
-            }
+              const isNew = !fetchedExistingMap.has(sku);
+              const existing = fetchedExistingMap.get(sku);
+              const item = mapDataToSchema(rawRow, isNew, existing);
+              
+              // แสดงชื่อสินค้าเดิมในพรีวิวเมื่อ Excel ไม่มีคอลัมน์ชื่อ เพื่อความชัดเจนของแอดมิน
+              const previewRow = {
+                ...rawRow,
+                Name: rawRow['Name'] || existing?.name || (isNew ? sku : '')
+              };
 
-            mappedItems.push(item);
+              if (item._hasStockConflict) {
+                analyzedData.push({ ...previewRow, _status: 'ERROR', _errorReason: 'ระบุแค่ นับสต๊อค หรือ AddStock เท่านั้น ห้ามใส่สองช่องพร้อมกัน' });
+                continue;
+              }
 
-            if (isNew) {
-              return { ...previewRow, _status: 'NEW', _changes: [] };
-            }
-            
-            const changes = [];
-            
-            if (item.name !== undefined && item.name !== existing.name) 
-              changes.push({ field: 'Name', old: existing.name, new: item.name });
-            if (item.Price !== undefined && item.Price !== existing.Price) 
-              changes.push({ field: 'Price', old: existing.Price, new: item.Price });
-            
-            if (item.stockQuantity !== undefined && item.stockQuantity !== existing.stockQuantity) {
-              if (item._addStockAmount !== undefined) {
-                changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'add', added: item._addStockAmount });
+              mappedItems.push(item);
+
+              if (isNew) {
+                analyzedData.push({ ...previewRow, _status: 'NEW', _changes: [] });
+                continue;
+              }
+              
+              const changes = [];
+              if (item.name !== undefined && item.name !== existing.name) 
+                changes.push({ field: 'Name', old: existing.name, new: item.name });
+              if (item.Price !== undefined && item.Price !== existing.Price) 
+                changes.push({ field: 'Price', old: existing.Price, new: item.Price });
+              
+              if (item.stockQuantity !== undefined && item.stockQuantity !== existing.stockQuantity) {
+                if (item._addStockAmount !== undefined) {
+                  changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'add', added: item._addStockAmount });
+                } else {
+                  const diff = (item._adjustmentDiff !== undefined) ? item._adjustmentDiff : (item.stockQuantity - (existing.stockQuantity || 0));
+                  changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'adjustment', diff });
+                }
+              }
+              
+              if (changes.length > 0) {
+                analyzedData.push({ ...previewRow, _status: 'CHANGED', _changes: changes });
               } else {
-                const diff = (item._adjustmentDiff !== undefined) ? item._adjustmentDiff : (item.stockQuantity - (existing.stockQuantity || 0));
-                changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'adjustment', diff });
+                analyzedData.push({ ...previewRow, _status: 'UNCHANGED', _changes: [] });
               }
             }
-            
-            if (changes.length > 0) {
-              return { ...previewRow, _status: 'CHANGED', _changes: changes };
-            } else {
-              return { ...previewRow, _status: 'UNCHANGED', _changes: [] };
-            }
-          }).filter(Boolean);
+
+            const currentCount = Math.min(i + CHUNK_SIZE, totalValidSkus);
+            setAnalysisProgress({
+              current: currentCount,
+              total: totalValidSkus,
+              totalRows: totalRows,
+              percent: Math.round((currentCount / totalValidSkus) * 100),
+              stage: 'analyzing'
+            });
+
+            // คืนคิวให้เบราว์เซอร์ขยับจอ ทำให้ป๊อปอัปวิ่งตัวเลข (XXXX/XXXX) ได้สดๆ
+            await new Promise(r => setTimeout(r, 0));
+          }
           
           setParsedData(analyzedData);
           // 🛡️ Selective Column Patching: กรองเฉพาะแถวที่มี SKU (ไม่ตัดทิ้งเมื่อไม่มี Name)
@@ -250,6 +290,7 @@ export function useExcelImport(onSuccess) {
         toast.error('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบว่าเป็นไฟล์ Excel (.xlsx)');
       } finally {
         setIsProcessing(false);
+        setAnalysisProgress(null);
       }
     };
     reader.readAsBinaryString(uploadedFile);
@@ -266,6 +307,7 @@ export function useExcelImport(onSuccess) {
     setProductsToImport([]);
     setExistingMap(null);
     setImportProgress(null);
+    setAnalysisProgress(null);
     setIsProcessing(false);
   };
 
@@ -301,7 +343,7 @@ export function useExcelImport(onSuccess) {
   };
 
   return {
-    file, headers, parsedData, conflictStrategy, isProcessing, importProgress, importResult, hasError,
+    file, headers, parsedData, conflictStrategy, isProcessing, analysisProgress, importProgress, importResult, hasError,
     setConflictStrategy, handleDownloadTemplate, handleFileUpload, handleReset, handleConfirmImport
   };
 }

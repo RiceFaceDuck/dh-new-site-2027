@@ -13,7 +13,7 @@ import ImportPreviewTable from './import/ImportPreviewTable';
 
 export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
   const {
-    file, headers, parsedData, conflictStrategy, isProcessing, importProgress, importResult, hasError,
+    file, headers, parsedData, conflictStrategy, isProcessing, analysisProgress, importProgress, importResult, hasError,
     setConflictStrategy, handleDownloadTemplate, handleFileUpload, handleReset, handleConfirmImport
   } = useExcelImport(onSuccess);
 
@@ -60,6 +60,46 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
         <div className="p-6 overflow-y-auto bg-dh-base/50 custom-scrollbar flex-1 text-dh-main space-y-6">
           {importResult ? (
             <ImportResultSummary importResult={importResult} onClose={onClose} />
+          ) : analysisProgress ? (
+            /* 🚀 Live Pre-flight & Scanning Pop-up */
+            <div className="bg-dh-surface p-8 rounded-2xl border border-dh-border shadow-xs flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in duration-200 min-h-[300px]">
+              <div className="w-16 h-16 bg-dh-accent/10 rounded-full flex items-center justify-center text-dh-accent animate-spin">
+                <Loader2 size={36} />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-black text-dh-main">
+                  {analysisProgress.stage === 'reading' && 'กำลังเปิดอ่านไฟล์ Excel...'}
+                  {analysisProgress.stage === 'scanning' && 'กำลังตรวจสอบโครงสร้างและนับจำนวน SKU...'}
+                  {analysisProgress.stage === 'analyzing' && 'กำลังวิเคราะห์และเปรียบเทียบข้อมูลสินค้า...'}
+                </h3>
+                {analysisProgress.total > 0 && (
+                  <p className="text-sm text-dh-muted font-medium">
+                    ตรวจพบแถวที่มี SKU <span className="font-bold text-dh-main text-base">{analysisProgress.total.toLocaleString()}</span> รายการ
+                    <span className="text-xs text-slate-400 ml-1.5">(จากข้อมูลทั้งหมดในไฟล์ {analysisProgress.totalRows.toLocaleString()} แถว)</span>
+                  </p>
+                )}
+              </div>
+
+              {analysisProgress.total > 0 && (
+                <div className="w-full max-w-md space-y-2.5 pt-2">
+                  <div className="flex justify-between items-center text-xs font-black">
+                    <span className="text-dh-accent text-sm">
+                      ({analysisProgress.current.toLocaleString()} / {analysisProgress.total.toLocaleString()})
+                    </span>
+                    <span className="text-dh-muted">{analysisProgress.percent}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700">
+                    <div 
+                      className="bg-dh-accent h-full rounded-full transition-all duration-150 ease-out shadow-xs" 
+                      style={{ width: `${analysisProgress.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    กำลังประมวลผลข้อมูลอย่างแม่นยำ ไม่ปิดหน้าต่างนี้จนกว่าจะเสร็จสิ้น
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               {/* Step 1: Upload or Download Template */}
@@ -79,7 +119,7 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
                     tips={[
                       "SKU ควรเป็นตัวพิมพ์ใหญ่ และไม่ควรมีเว้นวรรค เช่น 'SCR-15-PRO'",
                       "หากต้องการอัปเดตสต็อกเพียงอย่างเดียว สามารถกรอกแค่ SKU และ นับสต๊อค ได้ (หากเลือกเขียนทับ)",
-                      "ไม่ควรนำเข้าเกิน 500 รายการต่อ 1 ไฟล์ เพื่อป้องกันการหน่วงของระบบ"
+                      "ระบบรองรับไฟล์ขนาดใหญ่หลายพันรายการได้อย่างแม่นยำ 100% พร้อมแบ่งหน้าพรีวิวให้ตรวจเช็คได้อย่างสบายตา"
                     ]}
                     expectedResult="เมื่อนำเข้าสำเร็จ ข้อมูลจะถูกบันทึกลงฐานข้อมูลทันที หากมีข้อมูลซ้ำตามตัวเลือก ระบบจะจัดการเขียนทับหรือข้ามตามที่คุณตั้งค่าไว้"
                   />

@@ -37,21 +37,26 @@ export const inventoryImportService = {
       });
 
       // หากมี SKU ตัวใดที่ไม่มีในแคช ค่อยดึงเฉพาะ Delta จาก Firestore (ประหยัด Reads มหาศาล)
+      // 🛡️ Safe Concurrency: ทยอยดึงทีละ 8 ก้อน (ก้อนละ 30 SKUs) ป้องกัน Network Overwhelm เมื่อไฟล์มีหลายพันแถว
       if (missingSkus.length > 0) {
         const chunks = [];
         for (let i = 0; i < missingSkus.length; i += 30) {
           chunks.push(missingSkus.slice(i, i + 30));
         }
         
-        const chunkPromises = chunks.map(chunk => {
-          const q = query(collection(db, getCollectionPath('products')), where(documentId(), 'in', chunk), limit(300));
-          return getDocs(q);
-        });
-        
-        const snapshots = await Promise.all(chunkPromises);
-        snapshots.forEach(snap => {
-          snap.forEach(docSnap => existingProducts.set(docSnap.id, docSnap.data()));
-        });
+        const CONCURRENT_BATCH = 8;
+        for (let i = 0; i < chunks.length; i += CONCURRENT_BATCH) {
+          const batchChunks = chunks.slice(i, i + CONCURRENT_BATCH);
+          const chunkPromises = batchChunks.map(chunk => {
+            const q = query(collection(db, getCollectionPath('products')), where(documentId(), 'in', chunk), limit(300));
+            return getDocs(q);
+          });
+          
+          const snapshots = await Promise.all(chunkPromises);
+          snapshots.forEach(snap => {
+            snap.forEach(docSnap => existingProducts.set(docSnap.id, docSnap.data()));
+          });
+        }
       }
       
       return existingProducts;

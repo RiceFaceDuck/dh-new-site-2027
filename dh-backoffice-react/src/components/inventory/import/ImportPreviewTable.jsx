@@ -1,7 +1,17 @@
-import React, { useMemo } from 'react';
-import { TableVirtuoso } from 'react-virtuoso';
+import React, { useMemo, useState } from 'react';
 
 export default function ImportPreviewTable({ headers, parsedData }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+
+  const totalPages = Math.max(1, Math.ceil(parsedData.length / pageSize));
+  const activePage = Math.min(currentPage, totalPages);
+
+  const paginatedData = useMemo(() => {
+    const start = (activePage - 1) * pageSize;
+    return parsedData.slice(start, start + pageSize);
+  }, [parsedData, activePage, pageSize]);
+
   const priority = useMemo(() => ['SKU', 'Name', 'นับสต๊อค', 'StockQuantity', 'AddStock', 'Price (ราคาส่ง)', 'Price', 'RetailPrice'], []);
   const sortedHeaders = useMemo(() => {
     return [...headers].sort((a, b) => {
@@ -80,18 +90,6 @@ export default function ImportPreviewTable({ headers, parsedData }) {
 
   const errorCount = parsedData.filter(d => d._status === 'ERROR').length;
 
-  const virtuosoComponents = useMemo(() => ({
-    Table: ({ style, ...props }) => (
-      <table {...props} style={style} className="w-full text-left text-sm whitespace-nowrap border-collapse" />
-    ),
-    TableHead: React.forwardRef((props, ref) => (
-      <thead {...props} ref={ref} className="bg-dh-base sticky top-0 shadow-xs z-10" />
-    )),
-    TableBody: React.forwardRef((props, ref) => (
-      <tbody {...props} ref={ref} className="divide-y divide-dh-border" />
-    ))
-  }), []);
-
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
@@ -133,32 +131,91 @@ export default function ImportPreviewTable({ headers, parsedData }) {
         </div>
       )}
 
-      <div className="border border-dh-border rounded-xl shadow-xs custom-scrollbar-thick bg-dh-surface h-[55vh] min-h-[350px] overflow-hidden">
-        <TableVirtuoso
-          data={parsedData}
-          components={virtuosoComponents}
-          fixedHeaderContent={() => (
+      {/* 🚀 Table Container (Fixed height with sticky header) */}
+      <div className="border border-dh-border rounded-xl shadow-xs custom-scrollbar-thick bg-dh-surface h-[52vh] min-h-[350px] overflow-auto">
+        <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
+          <thead className="bg-dh-base sticky top-0 shadow-xs z-10">
             <tr>
-              <th className="px-4 py-3 font-bold text-dh-muted w-24 bg-dh-base">Status</th>
+              <th className="px-4 py-3 font-bold text-dh-muted w-14 bg-dh-base border-b border-dh-border">#</th>
+              <th className="px-4 py-3 font-bold text-dh-muted w-24 bg-dh-base border-b border-dh-border">Status</th>
               {sortedHeaders.map((h) => (
-                <th key={h} className="px-4 py-3 font-bold text-dh-muted bg-dh-base">{h}</th>
+                <th key={h} className="px-4 py-3 font-bold text-dh-muted bg-dh-base border-b border-dh-border">{h}</th>
               ))}
             </tr>
-          )}
-          itemContent={(idx, row) => (
-            <>
-              <td className="px-4 py-2 align-middle">
-                {getStatusBadge(row._status)}
-                {row._errorReason && <p className="text-[10px] text-red-500 mt-1 max-w-[120px] whitespace-normal leading-tight font-medium">{row._errorReason}</p>}
-              </td>
-              {sortedHeaders.map((h) => (
-                <td key={h} className="px-4 py-2 align-middle">
-                  {renderCell(row, h)}
-                </td>
-              ))}
-            </>
-          )}
-        />
+          </thead>
+          <tbody className="divide-y divide-dh-border">
+            {paginatedData.map((row, idx) => {
+              const globalIdx = (activePage - 1) * pageSize + idx + 1;
+              return (
+                <tr key={row['SKU'] ? `${row['SKU']}-${globalIdx}` : globalIdx} className="hover:bg-dh-accent/5 transition-colors">
+                  <td className="px-4 py-2 align-middle text-xs text-dh-muted font-mono">{globalIdx}</td>
+                  <td className="px-4 py-2 align-middle">
+                    {getStatusBadge(row._status)}
+                    {row._errorReason && (
+                      <p className="text-[10px] text-red-500 mt-1 max-w-[140px] whitespace-normal leading-tight font-medium">
+                        {row._errorReason}
+                      </p>
+                    )}
+                  </td>
+                  {sortedHeaders.map((h) => (
+                    <td key={h} className="px-4 py-2 align-middle">
+                      {renderCell(row, h)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 🚀 Pagination Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-dh-surface px-4 py-2.5 rounded-xl border border-dh-border text-xs">
+        <div className="text-dh-muted font-medium">
+          แสดงรายการที่ <span className="font-bold text-dh-main">{parsedData.length === 0 ? 0 : (activePage - 1) * pageSize + 1}</span> ถึง{' '}
+          <span className="font-bold text-dh-main">{Math.min(activePage * pageSize, parsedData.length)}</span> จากทั้งหมด{' '}
+          <span className="font-bold text-dh-main">{parsedData.length.toLocaleString()}</span> รายการ
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setCurrentPage(1)}
+            disabled={activePage === 1}
+            className="px-2.5 py-1 bg-dh-base border border-dh-border rounded-lg font-bold hover:bg-dh-border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            « หน้าแรก
+          </button>
+          <button
+            type="button"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={activePage === 1}
+            className="px-2.5 py-1 bg-dh-base border border-dh-border rounded-lg font-bold hover:bg-dh-border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            ‹ ก่อนหน้า
+          </button>
+          
+          <span className="px-3 py-1 font-bold text-dh-main bg-dh-base/50 rounded-lg border border-dh-border">
+            หน้า {activePage} / {totalPages}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={activePage === totalPages}
+            className="px-2.5 py-1 bg-dh-base border border-dh-border rounded-lg font-bold hover:bg-dh-border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            ถัดไป ›
+          </button>
+          <button
+            type="button"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={activePage === totalPages}
+            className="px-2.5 py-1 bg-dh-base border border-dh-border rounded-lg font-bold hover:bg-dh-border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            หน้าสุดท้าย »
+          </button>
+        </div>
       </div>
     </div>
   );
