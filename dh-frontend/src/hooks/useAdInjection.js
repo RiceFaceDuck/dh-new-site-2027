@@ -1,17 +1,20 @@
- 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { marketingService } from '../firebase/marketingService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { fetchAllActivePartners } from '../firebase/partnerLocationService';
+import { calculateDistance } from '../utils/geoUtils';
 
 /**
  * 🎯 Custom Hook: Smart Ad Injection Engine (ระบบสมองกลแทรกโฆษณา)
  * อัปเกรด: 
- * 1. รองรับ Unified Ads (นามบัตร + ลิงก์สินค้า)
- * 2. สุ่มตำแหน่งแทรก 100% (Fully Randomized) ไม่บังคับให้โฆษณาอยู่ชิ้นแรก
- * 3. มีระบบ Shuffle สับเปลี่ยนโฆษณาอย่างเป็นธรรม
- * * @param {Array} regularProducts - Array ของรายการสินค้าปกติที่ต้องการนำมาแทรกโฆษณา
+ * 1. ตารางสินค้าแสดงร้านช่างอันดับ 4 และอันดับ 5 ต่อเนื่องจาก 3 ป้ายบน (Squad Highlight)
+ * 2. ตัด 3 ร้านแรกทิ้งเสมอ ป้องกันการแสดงซ้ำ (Zero Duplication Guard)
+ * 3. เรียงตามระยะทาง GPS 100% พร้อม Fallback เป็นคะแนนความนิยมเมื่อไม่มีพิกัด
+ * 4. รองรับการอัปเดตแบบเรียลไทม์ทันทีที่เบราว์เซอร์อ่านค่า GPS สำเร็จ
+ * 
+ * @param {Array} regularProducts - Array ของรายการสินค้าปกติที่ต้องการนำมาแทรกโฆษณา
  * @param {Number} adLimit - จำนวนโฆษณาที่จะดึงมาหมุนเวียน (ค่าเริ่มต้น 20 ตัว)
  * @returns {Object} { productsWithAds, loadingAds, refreshAds }
  */
@@ -30,7 +33,7 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
     return shuffled;
   };
 
-  // 1. ฟังก์ชันดึงโฆษณาและการตั้งค่าจาก Firebase
+  // 1. ฟังก์ชันดึงโฆษณาและการตั้งค่าจาก Firebase พร้อมคำนวณระยะทาง
   const fetchAdsAndSettings = useCallback(async () => {
     try {
       setLoadingAds(true);
@@ -42,11 +45,12 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
         if (ratio > 0) setDisplayRatio(ratio);
       }
 
-      // 📥 2. ดึงข้อมูลโฆษณา 3 ประเภท (นามบัตร, ลิงก์สินค้า, และแผ่นป้าย) พร้อมกัน
-      const [businessCards, productLinks, billboards] = await Promise.all([
+      // 📥 2. ดึงข้อมูลโฆษณา 3 ประเภท + พาร์ทเนอร์ทั้งหมด (อาศัย LocalStorage Tier 1 = 0 Reads)
+      const [businessCards, productLinks, billboards, activePartners] = await Promise.all([
         marketingService.getActivePartnerAds('BUSINESS_CARD'),
         marketingService.getActivePartnerAds('PRODUCT_LINK'),
-        marketingService.getActivePartnerAds('BILLBOARD')
+        marketingService.getActivePartnerAds('BILLBOARD'),
+        fetchAllActivePartners()
       ]);
 
       // 🎯 กรองเฉพาะแผ่นป้ายสัดส่วน 1:1 (Square) เพื่อให้เข้ากับ Grid สินค้า
@@ -54,14 +58,88 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
         ad => ad.billboardRatio === '1:1' || !ad.billboardRatio
       );
 
-      // 🔀 3. รวมโฆษณาทุกประเภทเข้า Pool เดียวกัน และสับเปลี่ยนอย่างเป็นธรรม (Fair Shuffle)
-      const combinedAds = shuffleArray([
-        ...(businessCards || []),
-        ...(productLinks || []),
-        ...squareBillboards
-      ]).slice(0, adLimit);
+      // 📍 ดึงพิกัดผู้ใช้งานจาก sessionStorage
+      let userLat = null;
+      let userLng = null;
+      try {
+        const locStr = sessionStorage.getItem('dh_user_location');
+        if (locStr) {
+          const parsed = JSON.parse(locStr);
+          if (parsed && parsed.lat && parsed.lng) {
+            userLat = Number(parsed.lat);
+            userLng = Number(parsed.lng);
+          }
+        }
+      } catch (_) {}
 
-      setAds(combinedAds);
+      // 🗺️ จับคู่ข้อมูลพิกัดและคำนวณระยะทางของการ์ดนามบัตรช่าง (BUSINESS_CARD)
+      const partnersMap = new Map();
+      (activePartners || []).forEach(p => {
+        const id = p.id || p.partnerId || p.userId;
+        if (id) partnersMap.set(id, p);
+      });
+
+      const enrichedBusinessCards = (businessCards || []).map(ad => {
+        const partnerId = ad.ownerId || ad.partnerId || (ad.id?.startsWith('AD-CARD-') ? ad.id.replace('AD-CARD-', '') : ad.id);
+        const matchedPartner = partnersMap.get(partnerId);
+
+        const lat = Number(ad.latitude || matchedPartner?.latitude);
+        const lng = Number(ad.longitude || matchedPartner?.longitude);
+        const points = Number(ad.creditPoints ?? matchedPartner?.points ?? 0);
+
+        let distanceKm = null;
+        let formattedDistance = null;
+        if (userLat && userLng && lat && lng) {
+          distanceKm = calculateDistance(userLat, userLng, lat, lng);
+          formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${Math.floor(distanceKm)} กม.`;
+        }
+
+        return {
+          ...ad,
+          partnerId,
+          latitude: lat || null,
+          longitude: lng || null,
+          points,
+          distanceKm,
+          formattedDistance
+        };
+      });
+
+      // 🚀 จัดเรียงลำดับร้านช่าง:
+      // - หากมีพิกัด GPS: เรียงตามระยะทางจากใกล้ไปไกล 100% (Nearest First)
+      // - หากไม่มีพิกัด GPS (Fallback): เรียงตามคะแนนความนิยม
+      if (userLat && userLng) {
+        enrichedBusinessCards.sort((a, b) => {
+          const distA = typeof a.distanceKm === 'number' ? a.distanceKm : Infinity;
+          const distB = typeof b.distanceKm === 'number' ? b.distanceKm : Infinity;
+          if (distA !== distB) return distA - distB;
+          return (b.points || 0) - (a.points || 0);
+        });
+      } else {
+        enrichedBusinessCards.sort((a, b) => (b.points || 0) - (a.points || 0));
+      }
+
+      // 🛡️ ข้าม 3 อันดับแรกออกเสมอ (เพราะแสดงใน Squad Highlight 3 ป้ายบนแล้ว ป้องกันร้านซ้ำ 100%)
+      const rankedCardsFromRank4 = enrichedBusinessCards.slice(3);
+
+      // 🎯 ดึงอันดับ 4 และอันดับ 5 มายืนเป็น 2 ช่องแรกของตารางสินค้า
+      const rank4 = rankedCardsFromRank4[0];
+      const rank5 = rankedCardsFromRank4[1];
+      const remainingCards = rankedCardsFromRank4.slice(2);
+
+      // โฆษณาที่เหลือ (สินค้าโปรโมท, ป้ายแบนเนอร์, ร้านอันดับ 6 เป็นต้นไป)
+      const otherAds = shuffleArray([
+        ...(productLinks || []),
+        ...squareBillboards,
+        ...remainingCards
+      ]);
+
+      const orderedAds = [];
+      if (rank4) orderedAds.push(rank4);
+      if (rank5) orderedAds.push(rank5);
+      orderedAds.push(...otherAds);
+
+      setAds(orderedAds.slice(0, adLimit));
 
     } catch (error) {
       console.error("🔥 [useAdInjection] Error fetching ads or settings:", error);
@@ -70,13 +148,25 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
     }
   }, [adLimit]);
 
-  // 2. ดึงข้อมูลอัตโนมัติ 1 ครั้ง เมื่อเรียกใช้งาน Hook นี้
+  // 2. ดึงข้อมูลอัตโนมัติ 1 ครั้ง และคอยรับฟังเหตุการณ์เมื่อพิกัด GPS พร้อมทำงาน
   useEffect(() => {
     let isMounted = true;
     if (isMounted) {
       fetchAdsAndSettings();
     }
-    return () => { isMounted = false; };
+
+    const handleLocationUpdate = () => {
+      if (isMounted) {
+        fetchAdsAndSettings();
+      }
+    };
+
+    window.addEventListener('dh:location_updated', handleLocationUpdate);
+
+    return () => { 
+      isMounted = false; 
+      window.removeEventListener('dh:location_updated', handleLocationUpdate);
+    };
   }, [fetchAdsAndSettings]);
 
   // 3. 🧠 สมองกลคำนวณการแทรกโฆษณาแบบสุ่มตำแหน่ง (Fair Injection Engine with Deduplication)

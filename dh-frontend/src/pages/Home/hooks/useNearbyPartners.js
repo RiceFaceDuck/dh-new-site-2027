@@ -84,7 +84,10 @@ export const useNearbyPartners = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        try { sessionStorage.setItem('dh_user_location', JSON.stringify({ lat: latitude, lng: longitude })); } catch (_) {}
+        try { 
+          sessionStorage.setItem('dh_user_location', JSON.stringify({ lat: latitude, lng: longitude })); 
+          window.dispatchEvent(new CustomEvent('dh:location_updated', { detail: { lat: latitude, lng: longitude } }));
+        } catch (_) {}
         setUserLocation({ lat: latitude, lng: longitude });
         setLocationError(null);
         fetchPartnersAndCalculate(latitude, longitude);
