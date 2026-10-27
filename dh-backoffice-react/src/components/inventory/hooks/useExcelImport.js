@@ -238,9 +238,9 @@ export function useExcelImport(onSuccess) {
                 continue;
               }
 
-              mappedItems.push(item);
-
               if (isNew) {
+                item._status = 'NEW';
+                mappedItems.push(item);
                 analyzedData.push({ ...previewRow, _status: 'NEW', _changes: [] });
                 continue;
               }
@@ -250,6 +250,8 @@ export function useExcelImport(onSuccess) {
                 changes.push({ field: 'Name', old: existing.name, new: item.name });
               if (item.Price !== undefined && item.Price !== existing.Price) 
                 changes.push({ field: 'Price', old: existing.Price, new: item.Price });
+              if (item.retailPrice !== undefined && item.retailPrice !== existing.retailPrice) 
+                changes.push({ field: 'RetailPrice', old: existing.retailPrice, new: item.retailPrice });
               
               if (item.stockQuantity !== undefined && item.stockQuantity !== existing.stockQuantity) {
                 if (item._addStockAmount !== undefined) {
@@ -259,10 +261,21 @@ export function useExcelImport(onSuccess) {
                   changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'adjustment', diff });
                 }
               }
+
+              // ตรวจจับฟิลด์ทั่วไปอื่นๆ เพิ่มเติม (เช่น หมวดหมู่, แบรนด์, ที่จัดเก็บ)
+              ['category', 'brand', 'unit', 'bufferStock', 'warehouseLocation', 'shortDescription', 'fullDescription'].forEach(f => {
+                if (item[f] !== undefined && item[f] !== existing[f]) {
+                  changes.push({ field: f, old: existing[f], new: item[f] });
+                }
+              });
               
               if (changes.length > 0) {
+                item._status = 'CHANGED';
+                mappedItems.push(item);
                 analyzedData.push({ ...previewRow, _status: 'CHANGED', _changes: changes });
               } else {
+                item._status = 'UNCHANGED';
+                mappedItems.push(item);
                 analyzedData.push({ ...previewRow, _status: 'UNCHANGED', _changes: [] });
               }
             }

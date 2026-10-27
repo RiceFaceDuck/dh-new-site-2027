@@ -81,7 +81,13 @@ export const inventoryImportService = {
       products.forEach(p => {
         if (existingProductsMap.has(p.sku)) {
           if (conflictStrategy === 'overwrite') {
-            toWrite.push(p);
+            // 🛡️ Smart Write Guard:
+            // หากแถวนี้ไม่มีการเปลี่ยนแปลงข้อมูลใดๆ เลย (UNCHANGED) ให้ข้าม ไม่ต้องส่งไปเขียน Firestore ให้เปลืองโควต้า
+            if (p._status === 'UNCHANGED') {
+              toSkip.push(p);
+            } else {
+              toWrite.push(p);
+            }
           } else {
             toSkip.push(p); // skip is default for existing if not overwrite
           }
@@ -145,6 +151,7 @@ export const inventoryImportService = {
           const productDataToSave = { ...p };
           delete productDataToSave._addStockAmount;
           delete productDataToSave._hasStockConflict;
+          delete productDataToSave._status;
           const adjustmentDiff = productDataToSave._adjustmentDiff;
           delete productDataToSave._adjustmentDiff;
 
