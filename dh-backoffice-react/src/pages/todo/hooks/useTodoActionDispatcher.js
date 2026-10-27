@@ -32,11 +32,17 @@ export const useTodoActionDispatcher = ({ todos = [], activeTodos = [], updateTo
           if (result?.success && result?.newStatus && updateTodoStatus) {
             await updateTodoStatus(taskId, result.newStatus);
           }
-        } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL'].includes(actionType)) {
+        } else if (['AD_APPROVAL', 'USER_SKU_APPROVAL', 'BILLBOARD_APPROVAL', 'APPROVE_PARTNER_AD', 'APPROVE_BILLBOARD_AD', 'BUSINESS_CARD_AD_APPROVAL', 'PRODUCT_DELETE_APPROVAL', 'CUSTOMER_DELETE_APPROVAL'].includes(actionType)) {
           const { managerActionService } = await import('../../../firebase/managerActionService');
           const result = await managerActionService.handleApproval(taskId, actionType, payload, fullTask, currentUid);
           if (result?.success) {
-            toast.success("✅ อนุมัติข้อมูลร้านค้า/โฆษณาเรียบร้อยแล้ว");
+            if (actionType === 'PRODUCT_DELETE_APPROVAL') {
+              toast.success("✅ อนุมัติการลบสินค้าเรียบร้อยแล้ว");
+            } else if (actionType === 'CUSTOMER_DELETE_APPROVAL') {
+              toast.success("✅ อนุมัติการลบข้อมูลลูกค้าเรียบร้อยแล้ว");
+            } else {
+              toast.success("✅ อนุมัติข้อมูลร้านค้า/โฆษณาเรียบร้อยแล้ว");
+            }
           }
         }
       } else if (action === 'reject') {

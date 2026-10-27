@@ -30,28 +30,6 @@ export default function useInventoryController() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
 
-  const handleRecalculateStats = useCallback(async () => {
-    try {
-      setIsRecalculating(true);
-      await inventoryStatsService.recalculateDailyStats();
-      await fetchInitialProducts(); // Refresh UI after recalculate
-      toast.success("ซิงค์และคำนวณข้อมูลสถิติ 5 มิติสำเร็จ");
-    } catch (error) {
-      console.error("Error recalculating stats:", error);
-      toast.error(error?.message || "เกิดข้อผิดพลาดในการซิงค์ข้อมูลสถิติ");
-    } finally {
-      setIsRecalculating(false);
-    }
-  }, [fetchInitialProducts]);
-
-  const handleOpenMasterSheet = () => {
-    if (isManagerOrOwner) {
-      window.open(INVENTORY_MASTER_SHEET_URL, '_blank');
-    } else {
-      toast.error('คุณไม่สามารถใช้งานได้ ต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า');
-    }
-  };
-
   const { 
     filteredProducts, isSearching, 
     totalItems, currentPage, setCurrentPage,
@@ -61,6 +39,42 @@ export default function useInventoryController() {
   } = useInventorySearch(
     products, debouncedSearchTerm, filterCategory, sortConfig, salesPeriod
   );
+
+  const handleRecalculateStats = useCallback(async (options = {}) => {
+    try {
+      setIsRecalculating(true);
+      // 1. Recalculate 5-dimension stats snapshot (soft failure tolerance)
+      try {
+        await inventoryStatsService.recalculateDailyStats();
+      } catch (statsErr) {
+        console.warn("⚠️ [useInventoryController] Daily stats recalculation error:", statsErr);
+      }
+
+      // 2. Clear search and table cache
+      if (typeof clearCache === 'function') {
+        clearCache();
+      }
+
+      // 3. Clear stale cache & instant force refresh catalog
+      const bypassShards = (options && typeof options === 'object') ? !!(options.bypassShards || options.shiftKey || options.altKey) : false;
+      await fetchInitialProducts({ forceRefresh: true, bypassShards }); // fetchInitialProducts()
+
+      toast.success(bypassShards ? "ซิงค์และดึงข้อมูลสดจากฐานข้อมูลสำเร็จ" : "ซิงค์และรีเฟรชข้อมูลคลังสินค้าสำเร็จ");
+    } catch (error) {
+      console.error("Error recalculating stats:", error);
+      toast.error(error?.message || "เกิดข้อผิดพลาดในการซิงค์ข้อมูลสถิติ");
+    } finally {
+      setIsRecalculating(false);
+    }
+  }, [fetchInitialProducts, clearCache]);
+
+  const handleOpenMasterSheet = () => {
+    if (isManagerOrOwner) {
+      window.open(INVENTORY_MASTER_SHEET_URL, '_blank');
+    } else {
+      toast.error('คุณไม่สามารถใช้งานได้ ต้องใช้ตำแหน่ง ผู้จัดการ หรือสูงกว่า');
+    }
+  };
 
   const handleSort = useCallback((key) => {
     setSortConfig(prev => {
@@ -123,7 +137,7 @@ export default function useInventoryController() {
   const handleImportSuccess = async () => {
     // 🛡️ ไม่สั่งปิด Modal อัตโนมัติ เพื่อให้ผู้ใช้ตรวจเช็คผลสรุปใน ImportResultSummary และเป็นคนกดปิดเอง
     clearCache();
-    await fetchInitialProducts();
+    await fetchInitialProducts({ forceRefresh: true });
   };
 
   return {

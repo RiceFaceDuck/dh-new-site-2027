@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '../../../firebase/inventoryService';
 import { categoryService } from '../../../firebase/categoryService';
@@ -7,15 +7,26 @@ import { catalogHydrationService } from '../../../firebase/catalogHydrationServi
 export default function useInventoryData(PAGE_LIMIT = 50) {
   const queryClient = useQueryClient();
   const [loadingMore, setLoadingMore] = useState(false);
-  
-  const { data, isLoading: loading, refetch: fetchInitialProducts } = useQuery({
+  const forceRefreshRef = useRef(false);
+  const bypassShardsRef = useRef(false);
+
+  const { data, isLoading: loading, refetch } = useQuery({
     queryKey: ['inventoryInitial', PAGE_LIMIT],
     queryFn: async () => {
-      // 🚀 Zero-Read Optimization: Hydrate catalog from 3-Tier Cache (0-8 Reads for all 2,412 items)
-      // Eliminates 50 redundant direct collection reads on cold start!
+      const isForce = forceRefreshRef.current;
+      const bypassShards = bypassShardsRef.current;
+      forceRefreshRef.current = false;
+      bypassShardsRef.current = false;
+
+      // 🚀 Zero-Read Optimization: Hydrate catalog from 3-Tier Cache (0-8 Reads for all items)
+      // Eliminates redundant direct collection reads on cold start, while supporting instant force-refresh
+      const catalogPromise = (isForce || bypassShards)
+        ? catalogHydrationService.hydrateCatalog({ forceRefresh: isForce, bypassShards })
+        : catalogHydrationService.hydrateCatalog();
+
       const [settingsResult, catalogResult, categoriesResult] = await Promise.all([
         inventoryService.getInventorySettings(),
-        catalogHydrationService.hydrateCatalog().catch(() => ({ products: [] })),
+        catalogPromise.catch(() => ({ products: [] })),
         categoryService.getAllCategories()
       ]);
 
@@ -95,6 +106,17 @@ export default function useInventoryData(PAGE_LIMIT = 50) {
       return { ...old, products: newProducts };
     });
   };
+
+  const fetchInitialProducts = useCallback(async (options = {}) => {
+    const isForce = options === true || !!options?.forceRefresh;
+    const bypassShards = !!options?.bypassShards;
+    if (isForce || bypassShards) {
+      forceRefreshRef.current = isForce;
+      bypassShardsRef.current = bypassShards;
+      await catalogHydrationService.clearCatalogCache();
+    }
+    return refetch();
+  }, [refetch]);
 
   return {
     products: data?.products || [],

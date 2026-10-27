@@ -127,6 +127,21 @@ export const managerActionService = {
       return { success: true, newStatus: 'completed' };
     }
 
+    // 7. PRODUCT_DELETE_APPROVAL (ดำเนินการลบสินค้าจริงและซิงค์ Shards/Caches อัตโนมัติ)
+    if (type === 'PRODUCT_DELETE_APPROVAL') {
+      const { inventoryMutationService } = await import('./inventory/inventoryMutationService');
+      const targetSku = payload?.sku || originalTask?.payload?.sku || originalTask?.targetSkuId || originalTask?.referenceId;
+      const productName = payload?.name || originalTask?.payload?.name || originalTask?.title || targetSku;
+
+      if (!targetSku) {
+        throw new Error("ไม่พบรหัสสินค้า (SKU) ที่ต้องการลบในคำขอ");
+      }
+
+      await inventoryMutationService.deleteProduct(targetSku, productName);
+      await historyService.addLog('ManagerAction', 'ApproveProductDelete', targetSku, `อนุมัติการลบสินค้า SKU: ${targetSku} - ${productName}`, auth.currentUser?.uid);
+      return { success: true, newStatus: 'completed' };
+    }
+
     // Default fallback
     await historyService.addLog('ManagerAction', 'ApproveTask', taskId, `อนุมัติคำขอ: ${type}`, auth.currentUser?.uid);
     return { success: true, newStatus: 'completed' };

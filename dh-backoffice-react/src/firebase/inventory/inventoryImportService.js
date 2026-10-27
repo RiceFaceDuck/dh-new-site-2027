@@ -223,12 +223,16 @@ export const inventoryImportService = {
           }
         }
 
-        // 🚀 Instant Local-First Cache Hydration: ฉีดเข้า Memory & IndexedDB ทันที (0 Reads หลังบ้าน)
+        // 🚀 Instant Local-First Cache Hydration & Cross-Device Shard Auto-Sync
         try {
           const { catalogHydrationService } = await import('../catalogHydrationService');
-          await catalogHydrationService.updateCatalogCacheWithProducts(toWrite);
+          await catalogHydrationService.syncCatalogShardsWithProducts(toWrite, { action: 'import' });
         } catch (cacheErr) {
-          console.warn('⚠️ [inventoryImportService] Instant cache update warning:', cacheErr.message);
+          console.warn('⚠️ [inventoryImportService] Shard sync warning, falling back to local cache update:', cacheErr.message);
+          try {
+            const { catalogHydrationService } = await import('../catalogHydrationService');
+            await catalogHydrationService.updateCatalogCacheWithProducts(toWrite);
+          } catch {}
         }
       }
       

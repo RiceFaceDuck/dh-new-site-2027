@@ -46,18 +46,31 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
           if (deltaProducts.length > 0 && isMounted) {
             setProducts((prevList) => {
               const deltaMap = new Map(deltaProducts.map((p) => [p.sku, p]));
-              const updatedList = prevList.map((p) =>
+              // 🛡️ Prune soft-deleted / inactive delta items from state
+              const filteredList = prevList.filter((p) => {
+                const delta = deltaMap.get(p.sku);
+                return !delta || delta.isActive !== false;
+              });
+              const updatedList = filteredList.map((p) =>
                 deltaMap.has(p.sku) ? { ...p, ...deltaMap.get(p.sku) } : p
               );
               const existingSkus = new Set(updatedList.map((p) => p.sku));
               deltaProducts.forEach((p) => {
-                if (!existingSkus.has(p.sku)) {
+                if (!existingSkus.has(p.sku) && p.isActive !== false) {
                   updatedList.unshift(p);
                   existingSkus.add(p.sku);
                 }
               });
               return updatedList;
             });
+
+            // 🚀 Propagate delta products to Local POS Cache & Shard Cache
+            try {
+              const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
+              await catalogHydrationService.updateCatalogCacheWithProducts(deltaProducts);
+            } catch (err) {
+              console.warn('⚠️ [useProductSearchQuery] updateCatalogCacheWithProducts error:', err);
+            }
           }
         } else if (meta.fullSyncRequired) {
           // Full re-sync when rebuild or large changes occurred
@@ -65,6 +78,10 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
           const items = catalog || freshList || [];
           if (isMounted && items.length > 0) {
             setProducts(items);
+            try {
+              const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
+              await catalogHydrationService.clearCatalogCache();
+            } catch {}
           }
         }
       } catch (syncErr) {
@@ -81,24 +98,38 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
           if (deltaProducts.length > 0 && isMounted) {
             setProducts((prevList) => {
               const deltaMap = new Map(deltaProducts.map((p) => [p.sku, p]));
-              const updatedList = prevList.map((p) =>
+              // 🛡️ Prune soft-deleted / inactive delta items from state
+              const filteredList = prevList.filter((p) => {
+                const delta = deltaMap.get(p.sku);
+                return !delta || delta.isActive !== false;
+              });
+              const updatedList = filteredList.map((p) =>
                 deltaMap.has(p.sku) ? { ...p, ...deltaMap.get(p.sku) } : p
               );
               const existingSkus = new Set(updatedList.map((p) => p.sku));
               deltaProducts.forEach((p) => {
-                if (!existingSkus.has(p.sku)) {
+                if (!existingSkus.has(p.sku) && p.isActive !== false) {
                   updatedList.unshift(p);
                   existingSkus.add(p.sku);
                 }
               });
               return updatedList;
             });
+
+            try {
+              const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
+              await catalogHydrationService.updateCatalogCacheWithProducts(deltaProducts);
+            } catch {}
           }
         } else {
           const { catalog, products: freshList } = await inventorySyncMetaService.getOrFetchCatalog({ forceRefresh: false });
           const items = catalog || freshList || [];
           if (isMounted && items.length > 0) {
             setProducts(items);
+            try {
+              const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
+              await catalogHydrationService.clearCatalogCache();
+            } catch {}
           }
         }
       } catch (err) {
@@ -161,8 +192,11 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
   // 4. Instant Multi-Keyword Local Filter (0ms, 0 Reads)
   // ==========================================
   const allFilteredProducts = useMemo(() => {
+    // 🛡️ Always filter out soft-deleted / inactive products in POS Product Search
+    const activeProducts = mergedProducts.filter((p) => p.isActive !== false);
+
     if (!(debouncedSearch1 || '').trim() && !(debouncedSearch2 || '').trim() && !(debouncedSearch3 || '').trim() && stockFilter === 'ALL') {
-      return mergedProducts;
+      return activeProducts;
     }
 
     const term1 = (debouncedSearch1 || '').trim().toLowerCase();
@@ -191,7 +225,7 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
       );
     };
 
-    return mergedProducts.filter((p) => {
+    return activeProducts.filter((p) => {
       if (!checkMatch(p, term1) || !checkMatch(p, term2) || !checkMatch(p, term3)) return false;
 
       if (stockFilter === 'IN_STOCK') return p.stockQuantity > (p.bufferStock || 2);

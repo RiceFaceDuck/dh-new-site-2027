@@ -91,7 +91,7 @@ export default function Inventory() {
             </div>
           </div>
           <h3 className="text-dh-accent font-black tracking-wide text-lg mb-1 text-center">
-            กำลังโหลดคลังสินค้า ({Math.min(100, Math.max(0, Math.round(loadingProgress)))}%)
+            กำลังโหลดคลังสินค้า... ({Math.min(100, Math.max(0, Math.round(loadingProgress)))}%)
           </h3>
           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 mb-3 overflow-hidden border border-slate-200/60 dark:border-slate-700/60">
             <div 

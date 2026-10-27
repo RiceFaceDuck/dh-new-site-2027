@@ -55,6 +55,14 @@ export const inventoryMutationService = {
 
     inventorySyncService.broadcastCreate(productData);
     await inventorySyncService.syncCategory(productData.category);
+
+    // ⚡ Cross-Device Catalog Shard & Manifest Auto-Sync
+    try {
+      const { catalogHydrationService } = await import('../catalogHydrationService');
+      await catalogHydrationService.syncCatalogShardsWithProducts([productData], { action: 'create' });
+    } catch (syncErr) {
+      console.warn('⚠️ [inventoryMutationService] Shard sync error on addProduct:', syncErr.message);
+    }
   },
 
   updateProduct: async (sku, newData) => {
@@ -174,6 +182,15 @@ export const inventoryMutationService = {
 
       inventorySyncService.broadcastUpdate(sku, newData, oldData);
       await inventorySyncService.syncCategory(newData.category, oldData.category);
+
+      // ⚡ Cross-Device Catalog Shard & Manifest Auto-Sync
+      try {
+        const { catalogHydrationService } = await import('../catalogHydrationService');
+        const mergedForShard = { ...oldData, ...newData, sku };
+        await catalogHydrationService.syncCatalogShardsWithProducts([mergedForShard], { action: 'update' });
+      } catch (syncErr) {
+        console.warn('⚠️ [inventoryMutationService] Shard sync error on updateProduct:', syncErr.message);
+      }
     } else {
       // Safe Fallback if doc didn't exist before (setDoc with merge instead of failing updateDoc)
       await setDoc(docRef, {
@@ -187,6 +204,15 @@ export const inventoryMutationService = {
 
       inventorySyncService.broadcastUpdate(sku, newData, null);
       await inventorySyncService.syncCategory(newData.category);
+
+      // ⚡ Cross-Device Catalog Shard & Manifest Auto-Sync
+      try {
+        const { catalogHydrationService } = await import('../catalogHydrationService');
+        const mergedForShard = { ...newData, sku };
+        await catalogHydrationService.syncCatalogShardsWithProducts([mergedForShard], { action: 'create' });
+      } catch (syncErr) {
+        console.warn('⚠️ [inventoryMutationService] Shard sync error on updateProduct fallback:', syncErr.message);
+      }
     }
   },
 
@@ -257,5 +283,13 @@ export const inventoryMutationService = {
     }
 
     inventorySyncService.broadcastDelete(sku, productName);
+
+    // ⚡ Cross-Device Catalog Shard & Manifest Auto-Sync (Soft Delete)
+    try {
+      const { catalogHydrationService } = await import('../catalogHydrationService');
+      await catalogHydrationService.syncCatalogShardsWithProducts([{ sku, isActive: false, stockQuantity: 0 }], { action: 'delete' });
+    } catch (syncErr) {
+      console.warn('⚠️ [inventoryMutationService] Shard sync error on deleteProduct:', syncErr.message);
+    }
   }
 };

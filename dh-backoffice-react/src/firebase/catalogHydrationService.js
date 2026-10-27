@@ -123,7 +123,28 @@ const persistCatalogCache = async (products, meta) => {
  * Graceful Fallback: Google Apps Script backup inventory (gasStockService) if chunks fail
  */
 export const hydrateCatalog = async (options = {}) => {
-  const { forceRefresh = false } = options;
+  const { forceRefresh = false, bypassShards = false } = options;
+
+  // 0. Live Direct Bypass & Healing if discrepancies suspected
+  if (bypassShards) {
+    try {
+      const { catalogShardSyncService } = await import('./inventory/catalogShardSyncService');
+      const reconResult = await catalogShardSyncService.reconcileAllShardsFromProducts();
+      if (reconResult && Array.isArray(reconResult.items) && reconResult.items.length > 0) {
+        const normalizedItems = reconResult.items.map(normalizeProduct).filter(Boolean);
+        const newMeta = {
+          version: reconResult.version || Date.now(),
+          totalItems: normalizedItems.length,
+          timestamp: Date.now(),
+          chunkCount: 7
+        };
+        await persistCatalogCache(normalizedItems, newMeta);
+        return { products: normalizedItems, meta: newMeta, source: 'live_reconciled' };
+      }
+    } catch (bypassErr) {
+      console.warn('⚠️ [catalogHydrationService] bypassShards error, falling back to chunk loading:', bypassErr.message);
+    }
+  }
 
   // 1. Fast Tier 1 Check
   if (!forceRefresh) {
@@ -272,6 +293,8 @@ export const clearCatalogCache = async () => {
       window.sessionStorage.removeItem(SESSION_CATALOG_KEY);
       window.sessionStorage.removeItem(SESSION_META_KEY);
       window.sessionStorage.removeItem('search_hybrid_cache_expiry');
+      window.sessionStorage.removeItem('inventory_full_cache');
+      window.sessionStorage.removeItem('inventory_full_cache_expiry');
     } catch (e) {}
   }
 
@@ -287,7 +310,7 @@ export const clearCatalogCache = async () => {
  * 🚀 Instant Local-First Catalog Refresh: Injects or updates newly imported/edited products
  * directly into Memory, SessionStorage, and IndexedDB without purging or refetching from Firestore.
  */
-export const updateCatalogCacheWithProducts = async (updatedProducts = []) => {
+export const updateCatalogCacheWithProducts = async (updatedProducts = [], options = {}) => {
   if (!Array.isArray(updatedProducts) || updatedProducts.length === 0) return;
 
   const current = (await hydrateCatalog().catch(() => null))?.products || [];
@@ -298,9 +321,18 @@ export const updateCatalogCacheWithProducts = async (updatedProducts = []) => {
   });
 
   updatedProducts.forEach(rawP => {
+    if (!rawP) return;
     const norm = normalizeProduct(rawP);
     if (norm && norm.sku) {
       const upperSku = String(norm.sku).trim().toUpperCase();
+      const isDeleting = options.action === 'delete' || rawP.isActive === false || norm.isActive === false;
+
+      // 🛡️ Soft-Delete & Inactive Guard: Prune from in-memory and IDB cache
+      if (isDeleting) {
+        productMap.delete(upperSku);
+        return;
+      }
+
       const existing = productMap.get(upperSku);
       if (existing) {
         // 🛡️ Preserve existing media if updated object lacks them
@@ -346,14 +378,38 @@ export const updateCatalogCacheWithProducts = async (updatedProducts = []) => {
 
   const merged = Array.from(productMap.values());
   const newMeta = {
-    version: Date.now(),
+    version: options.version || Date.now(),
     totalItems: merged.length,
     timestamp: Date.now(),
     chunkCount: inMemoryMeta?.chunkCount || 7
   };
 
   await persistCatalogCache(merged, newMeta);
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.removeItem('inventory_full_cache');
+      window.sessionStorage.removeItem('inventory_full_cache_expiry');
+    } catch (e) {}
+  }
   return merged;
+};
+
+/**
+ * ⚡ Cross-Device Shard & Manifest Auto-Sync
+ * Updates modified products directly into Firestore Shards (catalogs/search_index_p1..p7)
+ * and updates the central catalog manifest (catalogs/search_index) version in Firestore.
+ */
+export const syncCatalogShardsWithProducts = async (updatedProducts = [], options = {}) => {
+  try {
+    const { catalogShardSyncService } = await import('./inventory/catalogShardSyncService');
+    const result = await catalogShardSyncService.syncProductsToShards(updatedProducts, options);
+    await updateCatalogCacheWithProducts(updatedProducts, { ...options, version: result?.version });
+    return result;
+  } catch (err) {
+    console.warn('⚠️ [catalogHydrationService] syncCatalogShardsWithProducts warning:', err.message);
+    await updateCatalogCacheWithProducts(updatedProducts, options);
+    return { success: false, error: err };
+  }
 };
 
 export const catalogHydrationService = {
@@ -361,5 +417,6 @@ export const catalogHydrationService = {
   normalizeProduct,
   findProductInCache,
   clearCatalogCache,
-  updateCatalogCacheWithProducts
+  updateCatalogCacheWithProducts,
+  syncCatalogShardsWithProducts
 };

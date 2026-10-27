@@ -145,5 +145,10 @@
       1) ส่งสถานะ `_status` กำกับติดไปกับทุกรายการ
       2) ใน `inventoryImportService.processBulkImport` กรองเขียนเฉพาะแถวที่เป็น `NEW` หรือ `CHANGED` เท่านั้น ส่วนแถว `UNCHANGED` จัดเข้า `toSkip` อัตโนมัติ
       3) ลดจำนวน Batch ลง 30% ประหยัดโควต้าเขียนหลายหมื่นครั้งต่อเดือน และบันทึกเสร็จไวกว่าเดิม
+30. **ปัญหาข้อมูลสต็อกไม่ตรงกันข้ามเครื่องจากแคช Shard ค้าง (Cross-Device Catalog Shard Parity & Force Sync Bypass):**
+    - *สาเหตุ:* ระบบ Zero-Read Architecture ดึงข้อมูลสินค้าจาก `catalogs/search_index_p1..p7` และ IndexedDB ในเครื่อง เมื่อมีการนำเข้า Excel หรือปรับสต็อก โค้ดเดิมอัปเดตเฉพาะเอกสาร `products` และแคชในเครื่องที่กด แต่ไม่ได้ตัดรอบ Manifest (`catalogs/search_index`) หรืออัปเดต Shards กลางบนคลาวด์ ทำให้เครื่องอื่นที่เปิดดูยังคงอ่านแคชเดิม และการกด Ctrl+Shift+R ไม่ล้าง IndexedDB
+    - *วิธีแก้:* 
+      1) สร้าง `catalogShardSyncService` อัปเดต Manifest Timestamp และจัดก้อน Shards กลางอัตโนมัติเมื่อเกิดการ Mutation หรือ Import
+      2) เพิ่มฟังก์ชัน Force Bypass ให้ปุ่ม Sync และการกด Shift+Click ใน `useInventoryController` ให้ล้างแคช IndexedDB และดึงยอดสดล่าสุดจาก Firestore ทันทีเมื่อผู้ใช้สงสัยว่าข้อมูลไม่ตรงกัน
 </pitfalls_and_solutions>
 

@@ -7,14 +7,16 @@ import { getAnalytics } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // ข้อมูล Config จาก Firestore Project settings (DH New Site)
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : (typeof process !== 'undefined' && process.env ? process.env : {});
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: env.VITE_FIREBASE_API_KEY || "AIzaSyBSl7KV5HheJ4MSKR7udZkrMKQdSUBLJng",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "dh-notebook-69f3b.firebaseapp.com",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || "dh-notebook-69f3b",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "dh-notebook-69f3b.firebasestorage.app",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "713635574580",
+  appId: env.VITE_FIREBASE_APP_ID || "1:713635574580:web:8d60ac45a28d5938972b61",
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || "G-2L7Q326K4S"
 };
 
 // Initialize Firebase
@@ -24,9 +26,9 @@ const app = initializeApp(firebaseConfig);
 let appCheck;
 if (typeof window !== "undefined") {
    
-  if (import.meta.env.VITE_RECAPTCHA_SITE_KEY && import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your-recaptcha-site-key') {
+  if (env.VITE_RECAPTCHA_SITE_KEY && env.VITE_RECAPTCHA_SITE_KEY !== 'your-recaptcha-site-key') {
     appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+      provider: new ReCaptchaV3Provider(env.VITE_RECAPTCHA_SITE_KEY),
       isTokenAutoRefreshEnabled: true
     });
   } else {

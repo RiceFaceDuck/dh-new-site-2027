@@ -165,17 +165,19 @@ export default function InventoryHeader({
             <span className="xl:hidden text-[10px] bg-slate-700/80 px-1 rounded-sm">0%</span>
           </div>
 
-          {/* Sync Button tied to onRecalculateStats */}
+          {/* 5D Sync Button tied to onRecalculateStats */}
           {onRecalculateStats && (
             <button
               type="button"
               onClick={onRecalculateStats}
+              onDoubleClick={(e) => onRecalculateStats({ ...e, bypassShards: true })}
               disabled={isRecalculating}
               className="flex items-center justify-center gap-1.5 bg-white/10 text-white border border-white/20 h-[36px] px-2.5 rounded-md hover:bg-white/20 transition-all font-bold text-xs shadow-xs backdrop-blur-xs disabled:opacity-50"
               title="Sync ข้อมูลและคำนวณสถิติยอดเข้า/ยอดขาย/ของเสีย/ปรับยอดทั้งหมด"
+              data-hint="Shift+คลิก หรือ ดับเบิ้ลคลิก เพื่อดึงข้อมูลสด 100% จากฐานข้อมูลเมื่อสงสัยว่ายอดไม่ตรง"
             >
-              <RefreshCw size={14} className={isRecalculating ? "animate-spin text-cyan-300" : "text-slate-200"} />
-              <span className="hidden xl:inline">{isRecalculating ? "กำลัง Sync..." : "Sync"}</span>
+              <RefreshCw size={14} className={isRecalculating ? "animate-spin" : ""} />
+              <span className="hidden xl:inline">{isRecalculating ? "กำลังคำนวณ..." : "5D Sync"}</span>
             </button>
           )}
 
