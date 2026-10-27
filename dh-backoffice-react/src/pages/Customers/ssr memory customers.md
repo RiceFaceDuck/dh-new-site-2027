@@ -68,6 +68,7 @@
     <caution>Real-time POS Directory Parity: `billingTransactionService` must sync `lastOrderDate: Date.now()` to `syncCustomerToDirectoryChunk` post-transaction so customer directory updates immediately without waiting for nightly batch.</caution>
     <caution>Historical Order Reconciliation Standard: `reconcileCustomerLastOrderDates` performs capped (limit 500) historical scan from `orders` and atomic chunk merge, keeping `lastOrderDate` consistent across both cold and warm cached views.</caution>
     <caution>Customer Omni & Ad Search Parity: `fetchCustomerAdsIndex` in `customerSearchService` caches `partner_ads` in `sessionStorage` (10-min TTL) to enrich customer records with `adStoreTitle` and `adSearchBlob` (0 Read in warm cache). `useCustomerFilters` implements multi-token and omni-field matching across profile names, phones, addresses (subdistrict/province), tax IDs, and ad titles/descriptions (e.g. "ดีไวซ์ ไอที", "ซ่อมคอมภูเก็ต"), with `CustomerRow` displaying dedicated `📢` ad store badge when ad name differs from profile name.</caution>
+    <caution>Marketing Drawer Responsive & 0.1 Invariant: In `MarketingInfo`, tab content is rendered inside `DetailPanel` (~400px width). Never use viewport breakpoints like `xl:flex-row` that force horizontal wrapping and squash action buttons off-screen. Adopt vertical drawer layout, 3-column stats grid, non-blocking toast notifications for pause/delete, and enforce `rounded-[0.1rem]` corner radius across all cards, badges, thumbnails, and buttons.</caution>
   </pitfalls_and_lessons>
 </ssr_memory>
 
