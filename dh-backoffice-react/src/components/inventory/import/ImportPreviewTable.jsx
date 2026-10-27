@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 
 export default function ImportPreviewTable({ headers, parsedData }) {
-  const priority = useMemo(() => ['SKU', 'Name', 'StockQuantity', 'AddStock', 'Price', 'RetailPrice'], []);
+  const priority = useMemo(() => ['SKU', 'Name', 'นับสต๊อค', 'StockQuantity', 'AddStock', 'Price (ราคาส่ง)', 'Price', 'RetailPrice'], []);
   const sortedHeaders = useMemo(() => {
     return [...headers].sort((a, b) => {
       const idxA = priority.indexOf(a);
@@ -21,8 +21,9 @@ export default function ImportPreviewTable({ headers, parsedData }) {
     // Check if this field was changed
     if (row._status === 'CHANGED' && row._changes) {
        const changeInfo = row._changes.find(c => {
-         if (h === 'AddStock') return c.field === 'AddStock' || (c.field === 'Stock' && c.type === 'add');
-         if (['StockQuantity', 'Stock', 'stock'].includes(h)) return c.field === h || (c.field === 'Stock' && c.type === 'adjustment');
+         if (['AddStock', 'เพิ่มสต๊อก', 'เพิ่มสต๊อค'].includes(h)) return c.field === 'AddStock' || (c.field === 'Stock' && c.type === 'add');
+         if (['นับสต๊อค', 'นับสต๊อก', 'StockQuantity', 'Stock', 'stock'].includes(h)) return c.field === h || (c.field === 'Stock' && c.type === 'adjustment');
+         if (['Price (ราคาส่ง)', 'Price(ราคาส่ง)', 'Price', 'price', 'ราคาส่ง'].includes(h)) return c.field === 'Price';
          return c.field === h;
        });
 

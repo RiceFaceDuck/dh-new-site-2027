@@ -4,8 +4,8 @@ import { inventoryService } from '../../../firebase/inventoryService';
 import toast from 'react-hot-toast';
 
 export const EXPECTED_HEADERS = [
-  'SKU', 'Name', 'Category', 'Brand', 'Unit', 'Price', 'RetailPrice', 
-  'StockQuantity', 'AddStock', 'BufferStock', 'WarehouseLocation',
+  'SKU', 'Name', 'Category', 'Brand', 'Unit', 'Price (ราคาส่ง)', 'RetailPrice', 
+  'นับสต๊อค', 'AddStock', 'BufferStock', 'WarehouseLocation',
   'CompatibleModels', 'CompatiblePartNumbers', 'SubstituteSkus', 
   'LandingPageUrl', 'ShortDescription', 'Description', 
   'PackageW', 'PackageL', 'PackageH', 'Tags'
@@ -68,21 +68,28 @@ export function useExcelImport(onSuccess) {
     setIfDef('category', str(rawRow['Category']), 'Other');
     setIfDef('brand', str(rawRow['Brand']), '');
     setIfDef('unit', str(rawRow['Unit']), 'ชิ้น');
-    setIfDef('Price', num(rawRow['Price']), 0);
+    
+    // 🏷️ Smart Price Recognition: รองรับ 'Price (ราคาส่ง)', 'Price', 'ราคาส่ง'
+    const rawPrice = rawRow['Price (ราคาส่ง)'] ?? rawRow['Price(ราคาส่ง)'] ?? rawRow['Price'] ?? rawRow['price'] ?? rawRow['ราคาส่ง'];
+    setIfDef('Price', num(rawPrice), 0);
     setIfDef('retailPrice', num(rawRow['RetailPrice']), 0);
     
     // --- Stock Logic ---
-    const hasSQ = rawRow['StockQuantity'] !== undefined && rawRow['StockQuantity'] !== '';
-    const hasAS = rawRow['AddStock'] !== undefined && rawRow['AddStock'] !== '';
+    // 📦 Smart Stock Recognition: รองรับ 'นับสต๊อค', 'นับสต๊อก', 'StockQuantity', 'Stock'
+    const rawSQ = rawRow['นับสต๊อค'] ?? rawRow['นับสต๊อก'] ?? rawRow['StockQuantity'] ?? rawRow['stockQuantity'] ?? rawRow['Stock'] ?? rawRow['stock'];
+    const rawAS = rawRow['AddStock'] ?? rawRow['addStock'] ?? rawRow['เพิ่มสต๊อก'] ?? rawRow['เพิ่มสต๊อค'];
+
+    const hasSQ = rawSQ !== undefined && rawSQ !== '';
+    const hasAS = rawAS !== undefined && rawAS !== '';
     
     if (hasSQ && hasAS) {
       mapped._hasStockConflict = true;
     } else if (hasAS) {
-      const added = num(rawRow['AddStock']) || 0;
+      const added = num(rawAS) || 0;
       mapped.stockQuantity = isNew ? added : ((existing?.stockQuantity || 0) + added);
       mapped._addStockAmount = added;
     } else if (hasSQ) {
-      const countedStock = num(rawRow['StockQuantity']) ?? 0;
+      const countedStock = num(rawSQ) ?? 0;
       mapped.stockQuantity = countedStock;
       if (!isNew && existing) {
         const oldStock = Number(existing.stockQuantity || 0);
@@ -200,7 +207,7 @@ export function useExcelImport(onSuccess) {
             };
 
             if (item._hasStockConflict) {
-              return { ...previewRow, _status: 'ERROR', _errorReason: 'ระบุแค่ StockQuantity หรือ AddStock เท่านั้น ห้ามใส่สองช่องพร้อมกัน' };
+              return { ...previewRow, _status: 'ERROR', _errorReason: 'ระบุแค่ นับสต๊อค หรือ AddStock เท่านั้น ห้ามใส่สองช่องพร้อมกัน' };
             }
 
             mappedItems.push(item);
