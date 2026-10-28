@@ -7,7 +7,7 @@ import { compressImage } from '../../../../../utils/imageCompressor';
 
 export const MAX_GALLERY_IMAGES = 20;
 
-export const useStoreProfile = (storeData, setStoreData, user, appId, businessCardAd, fetchMyAds) => {
+export const useStoreProfile = (storeData, setStoreData, user, appId, businessCardAd, fetchMyAds, commitSavedData) => {
   const { showToast } = useToast();
   const [savingStore, setSavingStore] = useState(false);
   const [uploadingStoreImage, setUploadingStoreImage] = useState(false);
@@ -106,7 +106,11 @@ export const useStoreProfile = (storeData, setStoreData, user, appId, businessCa
     setSavingStore(true);
     try {
       const updatedStoreData = await storeProfileSubmitService.saveStoreProfile(appId, user, storeData, businessCardAd);
-      setStoreData(updatedStoreData);
+      if (typeof commitSavedData === 'function') {
+        commitSavedData(updatedStoreData);
+      } else {
+        setStoreData(updatedStoreData);
+      }
       if (fetchMyAds) fetchMyAds();
       showToast("บันทึกข้อมูลเรียบร้อยแล้ว", 'success');
     } catch (error) {

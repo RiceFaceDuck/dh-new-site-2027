@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, ShieldAlert, ExternalLink } from 'lucide-react';
+import { Store, ShieldAlert, ExternalLink, RefreshCw } from 'lucide-react';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
@@ -8,7 +8,18 @@ import { useStoreProfile } from './hooks/useStoreProfile';
 import { useGeolocation } from '../../../../hooks/useGeolocation';
 import { useToast } from '../../../../context/ToastContext';
 
-const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd, fetchMyAds, userCredit = 0 }) => {
+const StoreProfileForm = ({ 
+  storeData, 
+  setStoreData, 
+  user, 
+  appId, 
+  businessCardAd, 
+  fetchMyAds, 
+  userCredit = 0,
+  hasDraft = false,
+  discardDraft,
+  commitSavedData
+}) => {
   const { showToast } = useToast();
   const {
     savingStore,
@@ -20,7 +31,7 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
     handleRemoveGalleryImage,
     handleToggleSupport,
     handleSaveStore
-  } = useStoreProfile(storeData, setStoreData, user, appId, businessCardAd, fetchMyAds);
+  } = useStoreProfile(storeData, setStoreData, user, appId, businessCardAd, fetchMyAds, commitSavedData);
 
   const { getUserCurrentLocation, isLocating } = useGeolocation();
 
@@ -127,6 +138,28 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
             </p>
             <p className="text-[11px] text-rose-600/80 mt-1">💡 ท่านสามารถแก้ไขข้อมูลร้านให้ถูกต้องด้านล่าง แล้วกด "บันทึกข้อมูลและส่งตรวจใหม่" ได้ทันที</p>
           </div>
+        </div>
+      )}
+
+      {/* 📝 กล่องแจ้งเตือนกู้คืนแบบร่างชั่วคราวอัตโนมัติ */}
+      {hasDraft && (
+        <div className="mx-6 md:mx-8 mt-6 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-[2px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 text-xs text-amber-900 font-medium">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+            <span>
+              <b>ระบบจำข้อมูลแบบร่างชั่วคราวให้แล้ว</b> (ข้อมูล รูปภาพ หรือพิกัด GPS ที่ทำค้างไว้ในเครื่องยังอยู่ครบ ไม่ต้องกรอกใหม่)
+            </span>
+          </div>
+          {discardDraft && (
+            <button
+              type="button"
+              onClick={discardDraft}
+              className="text-amber-700 hover:text-rose-600 text-xs font-bold underline cursor-pointer shrink-0 transition-colors flex items-center gap-1"
+            >
+              <RefreshCw size={12} />
+              <span>ยกเลิกแบบร่าง / คืนค่าข้อมูลเดิมจากระบบ</span>
+            </button>
+          )}
         </div>
       )}
 

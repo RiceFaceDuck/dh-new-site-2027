@@ -43,7 +43,10 @@ const TabAdManager = ({ user }) => {
     handleSubmitAd,
     handleDeleteAd,
     handleToggleAdStatus,
-    handleResubmitAd
+    handleResubmitAd,
+    hasDraft,
+    discardDraft,
+    commitSavedData
   } = useAdManager(user);
 
   if (loading) {
@@ -99,6 +102,9 @@ const TabAdManager = ({ user }) => {
           businessCardAd={businessCardAd} 
           fetchMyAds={fetchMyAds} 
           userCredit={userCredit}
+          hasDraft={hasDraft}
+          discardDraft={discardDraft}
+          commitSavedData={commitSavedData}
         />
       )}
 
