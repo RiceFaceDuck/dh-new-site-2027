@@ -2,8 +2,9 @@ import { doc, getDoc, setDoc, getDocs, collection, query, where, orderBy, limit,
 import { db } from '../../../firebase/config';
 import { getCollectionPath, safeJsonParse } from 'dh-shared';
 
-export const CUSTOMER_CACHE_KEY = 'dh_customers_data_cache_v10';
-export const CUSTOMER_LAST_SYNC_KEY = 'dh_customers_last_sync_v10';
+export const CUSTOMER_CACHE_KEY = 'dh_customers_data_cache_v11';
+export const CUSTOMER_LAST_SYNC_KEY = 'dh_customers_last_sync_v11';
+export const CUSTOMER_CATALOG_VERSION_KEY = 'dh_customers_catalog_ver_v11';
 
 export const STAFF_ROLES = [
   'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ',
@@ -27,12 +28,26 @@ export const normalizePhone = (phoneStr) => {
  */
 export const parseTimestampNumber = (val) => {
   if (!val) return 0;
-  if (typeof val === 'number') return isNaN(val) ? 0 : val;
-  if (typeof val?.toMillis === 'function') return val.toMillis();
-  if (typeof val?.toDate === 'function') return val.toDate().getTime();
-  if (val.seconds) return val.seconds * 1000;
-  const p = new Date(val).getTime();
-  return isNaN(p) ? 0 : p;
+  let millis = 0;
+  if (typeof val === 'number') {
+    millis = isNaN(val) ? 0 : (val > 1e11 ? val : val * 1000);
+  } else if (typeof val?.toMillis === 'function') {
+    millis = val.toMillis();
+  } else if (typeof val?.toDate === 'function') {
+    millis = val.toDate().getTime();
+  } else if (val.seconds) {
+    millis = val.seconds * 1000;
+  } else {
+    const p = new Date(val).getTime();
+    millis = isNaN(p) ? 0 : p;
+  }
+
+  // 🛡️ Sanity Date Guard: Ignore invalid timestamps, negative times, or dates far in the future (> tomorrow)
+  const maxReasonableTime = Date.now() + 86400000;
+  if (millis <= 0 || millis > maxReasonableTime) {
+    return 0;
+  }
+  return millis;
 };
 
 /**
@@ -149,9 +164,26 @@ export const readCachedCustomers = async () => {
 };
 
 /**
+ * 🧹 Clear cached customers from SessionStorage & LocalStorage
+ */
+export const clearCachedCustomers = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(CUSTOMER_CACHE_KEY);
+    window.sessionStorage.removeItem(CUSTOMER_LAST_SYNC_KEY);
+    window.sessionStorage.removeItem(CUSTOMER_CATALOG_VERSION_KEY);
+    localStorage.removeItem(CUSTOMER_CACHE_KEY);
+    localStorage.removeItem(CUSTOMER_LAST_SYNC_KEY);
+    localStorage.removeItem(CUSTOMER_CATALOG_VERSION_KEY);
+  } catch (e) {
+    console.warn("Failed to clear customer cache:", e);
+  }
+};
+
+/**
  * 💾 Write customer directory to SessionStorage & LocalStorage
  */
-export const writeCachedCustomers = (customersList) => {
+export const writeCachedCustomers = (customersList, serverVersion = null) => {
   if (typeof window === 'undefined' || !Array.isArray(customersList)) return;
 
   try {
@@ -162,6 +194,10 @@ export const writeCachedCustomers = (customersList) => {
     window.sessionStorage.setItem(CUSTOMER_LAST_SYNC_KEY, syncTime);
     localStorage.setItem(CUSTOMER_CACHE_KEY, serialized);
     localStorage.setItem(CUSTOMER_LAST_SYNC_KEY, syncTime);
+    if (serverVersion !== null && serverVersion !== undefined) {
+      window.sessionStorage.setItem(CUSTOMER_CATALOG_VERSION_KEY, String(serverVersion));
+      localStorage.setItem(CUSTOMER_CATALOG_VERSION_KEY, String(serverVersion));
+    }
   } catch (err) {
     console.error("Failed to write customer cache:", err);
   }
@@ -308,7 +344,22 @@ export const fetchCustomersFromFirestore = async (lastSyncTime = 0, cachedUsers 
   let mergedUsers = [];
   if (isIncremental) {
     const fetchedMap = new Map(fetchedData.map(u => [u.id, u]));
-    mergedUsers = cachedUsers.map(u => fetchedMap.has(u.id) ? fetchedMap.get(u.id) : u);
+    mergedUsers = cachedUsers.map(u => {
+      if (fetchedMap.has(u.id)) {
+        const fetched = fetchedMap.get(u.id);
+        // 🛡️ Zero-Data-Loss Guard: Do not wipe existing valid lastOrderDate with 0 or undefined from users doc
+        const preservedLastOrder = Math.max(
+          Number(fetched.lastOrderDate || 0),
+          Number(u.lastOrderDate || 0)
+        );
+        return {
+          ...u,
+          ...fetched,
+          lastOrderDate: preservedLastOrder > 0 ? preservedLastOrder : null
+        };
+      }
+      return u;
+    });
     const existingIds = new Set(cachedUsers.map(u => u.id));
     const brandNew = fetchedData.filter(u => !existingIds.has(u.id));
     mergedUsers = [...mergedUsers, ...brandNew];

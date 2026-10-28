@@ -3,6 +3,7 @@ import {
   CUSTOMER_CACHE_KEY,
   readCachedCustomers,
   writeCachedCustomers,
+  clearCachedCustomers,
   fetchCustomerDirectoryChunk,
   fetchCustomersFromFirestore,
   filterAndSortCustomers,
@@ -67,6 +68,7 @@ export const useCustomerData = () => {
   const fetchCustomers = useCallback(async (useCache = true) => {
     if (!useCache) {
       setIsRefreshing(true);
+      clearCachedCustomers();
       clearCustomerStatsCache();
       clearCustomerAdsCache();
     }
@@ -76,13 +78,15 @@ export const useCustomerData = () => {
       let lastSync = 0;
 
       // 1. อ่านแคชจาก SessionStorage / LocalStorage ก่อนเพื่อแสดงผลแบบ Instant (0 Read)
-      const cached = await readCachedCustomers();
-      cachedUsers = cached?.cachedUsers || [];
-      lastSync = cached?.lastSync || 0;
+      if (useCache) {
+        const cached = await readCachedCustomers();
+        cachedUsers = cached?.cachedUsers || [];
+        lastSync = cached?.lastSync || 0;
 
-      if (useCache && cachedUsers.length > 0) {
-        setCustomers(filterAndSortCustomers(cachedUsers));
-        setLoading(false);
+        if (cachedUsers.length > 0) {
+          setCustomers(filterAndSortCustomers(cachedUsers));
+          setLoading(false);
+        }
       }
 
       let currentUsers = cachedUsers;

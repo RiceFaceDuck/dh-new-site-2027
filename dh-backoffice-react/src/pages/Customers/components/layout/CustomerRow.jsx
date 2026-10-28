@@ -94,7 +94,9 @@ export default function CustomerRow({ customer, isSelected, onSelect, gridLayout
       millis = new Date(lastOrderTimestamp).getTime();
     }
 
-    if (!isNaN(millis) && millis > 0) {
+    // 🛡️ Sanity Date Guard: ดักจับ Timestamp ที่ผิดปกติ ไม่ให้หลุดเกินปัจจุบัน + 1 วัน หรือติดลบ
+    const maxReasonableTime = Date.now() + 86400000;
+    if (!isNaN(millis) && millis > 0 && millis <= maxReasonableTime) {
       const date = new Date(millis);
       lastOrderText = date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
       const now = new Date();
