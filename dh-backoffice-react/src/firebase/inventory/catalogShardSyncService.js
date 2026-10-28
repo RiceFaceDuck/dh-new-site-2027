@@ -94,6 +94,7 @@ function sanitizeItemForShard(item) {
     category_lower: String(item.category_lower || item.category || '').trim().toLowerCase(),
     brand: String(item.brand || '').trim(),
     type: String(item.type || '').trim(),
+    unit: String(item.unit || '').trim(),
     tags: Array.isArray(item.tags) ? item.tags.filter(Boolean) : [],
     compatibleModels: Array.isArray(item.compatibleModels) ? item.compatibleModels.filter(Boolean) : [],
     compatiblePartNumbers: Array.isArray(item.compatiblePartNumbers) ? item.compatiblePartNumbers.filter(Boolean) : [],

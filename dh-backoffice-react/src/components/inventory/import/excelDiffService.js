@@ -42,12 +42,35 @@ export function detectRowChanges(item, existing) {
   }
 
   // Detect general attribute changes
-  const generalFields = ['category', 'brand', 'unit', 'bufferStock', 'warehouseLocation', 'shortDescription', 'fullDescription'];
+  const generalFields = ['category', 'brand', 'unit', 'bufferStock', 'warehouseLocation', 'shortDescription'];
   generalFields.forEach(f => {
-    if (item[f] !== undefined && item[f] !== existing[f]) {
-      changes.push({ field: f, old: existing[f], new: item[f] });
+    if (item[f] !== undefined) {
+      // 🛡️ Legacy Shard Cache Guard:
+      // If existing item came from a cache/shard that did not store 'unit', don't flag phantom change
+      if (f === 'unit' && existing.unit === undefined) {
+        return;
+      }
+
+      if (f === 'bufferStock') {
+        const numItem = Number(item.bufferStock);
+        const numExist = Number(existing.bufferStock);
+        if (!isNaN(numItem) && numItem !== numExist) {
+          changes.push({ field: f, old: existing[f], new: item[f] });
+        }
+      } else if (item[f] !== existing[f]) {
+        changes.push({ field: f, old: existing[f], new: item[f] });
+      }
     }
   });
+
+  // 🛡️ Full Description Phantom Change Guard:
+  // Shards intentionally omit fullDescription to prevent hitting Firestore 1MB doc limits.
+  // Only detect diff if existing record explicitly contains fullDescription.
+  if (item.fullDescription !== undefined && existing.fullDescription !== undefined) {
+    if (String(item.fullDescription).trim() !== String(existing.fullDescription).trim()) {
+      changes.push({ field: 'fullDescription', old: existing.fullDescription, new: item.fullDescription });
+    }
+  }
 
   return changes;
 }

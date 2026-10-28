@@ -180,5 +180,11 @@
     - *วิธีแก้:* 
       1) ใน `useExcelImport.js` นับความถี่ SKU ตั้งแต่ขั้นตอน Scan หาก SKU ใดปรากฏมากกว่า 1 แถวในไฟล์ ให้ติด Flag `_isDuplicateInFile: true` และข้อความ `_duplicateWarning`
       2) ใน `ImportPreviewTable.jsx` แสดงข้อความเตือนสีส้ม `⚠️ พบ SKU XXXX ซ้ำอยู่ในไฟล์ กรุณาตรวจสอบ` ใต้รหัส SKU ในตาราง และแสดงแถบสรุปรวมรหัสที่ซ้ำด้านบนเพื่อความชัดเจน
+37. **การกำจัด Phantom Change จากแคช Shard ที่ตัดฟิลด์ (Shard Cache Omission & Phantom Diff Elimination):**
+    - *สาเหตุ:* แคช Shards ของหน้าร้านเก็บข้อมูลแบบ Lean Catalog จึงตัด `fullDescription` ออกเพื่อป้องกันเอกสารเกิน 1MB และไม่ได้บันทึก `unit` ทำให้เมื่อเทียบกับแถวใน Excel ที่มี `Unit` และ `Description` ระบบจะมองว่า `existing[f] === undefined` ไม่ตรงกับข้อมูลใน Excel จึงเข้าใจผิดว่าข้อมูลเปลี่ยนแปลงทุกครั้ง ทั้งที่ข้อมูลใน Firestore ตรงกันเป๊ะ 100%
+    - *วิธีแก้:* 
+      1) ใน `catalogShardSyncService.js` เพิ่มการจัดเก็บ `unit` ลง Shard เพื่อความสมบูรณ์
+      2) ใน `excelDiffService.js` เพิ่ม Guard: หาก `existing.unit` ยังไม่มีในแคชเก่า หรือ `existing.fullDescription` ไม่มีในแคช Shards ไม่ให้นำมาฟ้องว่าเปลี่ยน
+      3) ผลลัพธ์: รายการที่เป็นข้อมูลเดิมจะถูกมองเป็น `UNCHANGED` และเข้าสู่โหมด "ข้าม (100%)" ทันที ไม่เกิดการเขียนทับซ้ำซาก
 </pitfalls_and_solutions>
 
