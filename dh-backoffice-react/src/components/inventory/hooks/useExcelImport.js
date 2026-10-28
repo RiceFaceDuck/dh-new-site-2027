@@ -2,6 +2,7 @@ import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { inventoryService } from '../../../firebase/inventoryService';
 import toast from 'react-hot-toast';
+import { detectRowChanges } from '../import/excelDiffService';
 
 export const EXPECTED_HEADERS = [
   'SKU', 'Name', 'Category', 'Brand', 'Unit', 'Price (ราคาส่ง)', 'RetailPrice', 
@@ -245,29 +246,7 @@ export function useExcelImport(onSuccess) {
                 continue;
               }
               
-              const changes = [];
-              if (item.name !== undefined && item.name !== existing.name) 
-                changes.push({ field: 'Name', old: existing.name, new: item.name });
-              if (item.Price !== undefined && item.Price !== existing.Price) 
-                changes.push({ field: 'Price', old: existing.Price, new: item.Price });
-              if (item.retailPrice !== undefined && item.retailPrice !== existing.retailPrice) 
-                changes.push({ field: 'RetailPrice', old: existing.retailPrice, new: item.retailPrice });
-              
-              if (item.stockQuantity !== undefined && item.stockQuantity !== existing.stockQuantity) {
-                if (item._addStockAmount !== undefined) {
-                  changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'add', added: item._addStockAmount });
-                } else {
-                  const diff = (item._adjustmentDiff !== undefined) ? item._adjustmentDiff : (item.stockQuantity - (existing.stockQuantity || 0));
-                  changes.push({ field: 'Stock', old: existing.stockQuantity, new: item.stockQuantity, type: 'adjustment', diff });
-                }
-              }
-
-              // ตรวจจับฟิลด์ทั่วไปอื่นๆ เพิ่มเติม (เช่น หมวดหมู่, แบรนด์, ที่จัดเก็บ)
-              ['category', 'brand', 'unit', 'bufferStock', 'warehouseLocation', 'shortDescription', 'fullDescription'].forEach(f => {
-                if (item[f] !== undefined && item[f] !== existing[f]) {
-                  changes.push({ field: f, old: existing[f], new: item[f] });
-                }
-              });
+              const changes = detectRowChanges(item, existing);
               
               if (changes.length > 0) {
                 item._status = 'CHANGED';

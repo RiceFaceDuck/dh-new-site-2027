@@ -14,8 +14,14 @@ export const inventoryImportService = {
       try {
         const { catalogHydrationService } = await import('../catalogHydrationService');
         const fastResult = await catalogHydrationService.hydrateCatalog();
-        if (Array.isArray(fastResult?.products)) {
+        if (Array.isArray(fastResult?.products) && fastResult.products.length > 0) {
           cachedCatalog = fastResult.products;
+        } else {
+          // หากแคชว่างสนิท ให้ดึง 7 Shards ครั้งเดียว (7 Reads ได้สินค้าทั้งระบบ แทนการยิง query ทีละ 30 SKUs)
+          const hydrated = await catalogHydrationService.hydrateCatalog({ forceRefresh: true });
+          if (Array.isArray(hydrated?.products)) {
+            cachedCatalog = hydrated.products;
+          }
         }
       } catch (cacheErr) {
         console.warn('⚠️ [inventoryImportService] Local catalog check fallback:', cacheErr.message);
@@ -26,12 +32,16 @@ export const inventoryImportService = {
         if (p.sku) cachedMap.set(String(p.sku).trim().toUpperCase(), p);
       });
 
+      // ⚡ Zero-Query In-Memory Resolution:
+      // หากแคชกลางมีสินค้าอยู่แล้ว (>0) SKU ใดที่ไม่อยู่ในแคช = เป็นสินค้าใหม่ 100%
+      // ไม่ต้องยิง Firestore Query ก้อนละ 30 อีกต่อไป ประหยัดโควต้าอ่าน 100%
       const missingSkus = [];
       skus.forEach(sku => {
         const upper = String(sku).trim().toUpperCase();
         if (cachedMap.has(upper)) {
           existingProducts.set(upper, cachedMap.get(upper));
-        } else {
+        } else if (cachedMap.size === 0) {
+          // กรณีฉุกเฉินเท่านั้น: หากทั้ง IndexedDB และ Shards ว่างเปล่าจริงๆ ค่อย fallback ไป query
           missingSkus.push(upper);
         }
       });

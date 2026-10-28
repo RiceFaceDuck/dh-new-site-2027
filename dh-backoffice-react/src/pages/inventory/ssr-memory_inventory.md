@@ -155,5 +155,14 @@
     - *วิธีแก้:* 
       1) เพิ่ม Concurrency Deduplication (`inFlightReconciliation`) และ Throttle Cooldown (30 วินาที) ใน `catalogShardSyncService` ป้องกันการกวาดอ่าน Firestore ซ้ำซ้อน
       2) เพิ่ม Debounce Timer (2,500ms สำหรับ Full Sync และ 300ms สำหรับ Delta Batching) ใน `useProductSearchQuery` เพื่อหน่วงเวลาให้การบันทึกฐานข้อมูลนิ่งก่อนดึงข้อมูล ป้องกัน Thundering Herd ข้ามเครื่อง
+32. **การสเกลนำเข้า Excel 10,000+ แถวด้วย Zero-Query In-Memory SKU Resolution:**
+    - *สาเหตุ:* โค้ดเดิมเมื่อนำเข้าไฟล์ที่มี SKU ใหม่หลายพันรายการ จะนำ SKU ที่ไม่มีในแคชไปซอยก้อนละ 30 รายการแล้วยิง Query ถาม Firestore ทีละหลายร้อยรอบ ทำให้เสีย Reads มหาศาลและระบบค้าง
+    - *วิธีแก้:* 
+      1) ใน `inventoryImportService.fetchExistingProducts` ปรับให้ดึงเทียบกับ IndexedDB Catalog 100%
+      2) หากแคชว่างสนิท ให้ดึง 7 Shards ครั้งเดียว (7 Reads) เพื่อได้สินค้าทั้งระบบ
+      3) SKU ใดที่ไม่อยู่ในแคช ถือเป็นสินค้าใหม่ทันที ไม่ต้องยิง Firestore Query อีกต่อไป ใช้ 0 Reads ตลอดกระบวนการนำเข้า
+33. **การแยกหน้าที่โมดูล (SRP) เพื่อความเบาและบำรุงรักษาง่าย:**
+    - *สาเหตุ:* `useExcelImport.js` แบกทั้งการอ่านไฟล์ Excel, การเปรียบเทียบ Diff, และการคุม State
+    - *วิธีแก้:* สกัดฟังก์ชัน `detectRowChanges` ออกเป็น `excelDiffService.js` และสกัดฟังก์ชัน Checksum ออกเป็น `catalogChecksumService.js` เพื่อแยกหน้าที่ชัดเจน
 </pitfalls_and_solutions>
 
