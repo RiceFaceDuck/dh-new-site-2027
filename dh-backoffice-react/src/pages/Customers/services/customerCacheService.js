@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, getDocs, collection, query, where, orderBy, limit, Timestamp, runTransaction } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
+import { db } from '../../../firebase/config.js';
 import { getCollectionPath, safeJsonParse } from 'dh-shared';
 
 export const CUSTOMER_CACHE_KEY = 'dh_customers_data_cache_v11';
