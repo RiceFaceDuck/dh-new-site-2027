@@ -8,6 +8,11 @@
 
 const { onRequest } = require("firebase-functions/v2/https");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { initializeApp, getApps } = require("firebase-admin/app");
+
+if (getApps().length === 0) {
+  initializeApp();
+}
 
 const REGION = "asia-southeast1";
 const MAX_EVENTS_PER_BATCH = 100;

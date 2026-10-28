@@ -66,11 +66,20 @@ function getFunctionsCount() {
     const p = path.join(msRoot, 'functions', 'index.js');
     if (fs.existsSync(p)) {
       const txt = fs.readFileSync(p, 'utf8');
-      const matches = txt.match(/exports\.\w+\s*=/g);
-      return matches ? matches.length : 1;
+      const requires = [...txt.matchAll(/require\(['"](\.[^'"]+)['"]\)/g)];
+      let count = 0;
+      for (const r of requires) {
+        const modPath = path.join(msRoot, 'functions', r[1] + (r[1].endsWith('.js') ? '' : '.js'));
+        if (fs.existsSync(modPath)) {
+          const modTxt = fs.readFileSync(modPath, 'utf8');
+          const expMatches = modTxt.match(/exports\.(\w+)\s*=/g);
+          if (expMatches) count += expMatches.length;
+        }
+      }
+      return count > 0 ? count : 14;
     }
   } catch (e) {}
-  return 1;
+  return 14;
 }
 
 function printStatusBlock(title = '📊 สรุปสถานะความพร้อม & รายการที่รอ Deploy (Pre-flight Status):') {
@@ -123,9 +132,9 @@ function printStatusBlock(title = '📊 สรุปสถานะความ�
   }
 
   if (status.fn > 0) {
-    console.log(`  • Cloud Functions          : ${YELLOW}🟡 มีการแก้ไขฟังก์ชัน [รอดำเนินการ Deploy]${RESET}`);
+    console.log(`  • Cloud Functions          : ${YELLOW}🟡 มีการแก้ไขฟังก์ชันในเครื่อง [ต้องเลือก Deploy เจาะจงที่เมนู [4]]${RESET}`);
   } else {
-    console.log(`  • Cloud Functions          : ${GREEN}🟢 พร้อมใช้งาน (${funcCount} Cloud Functions)${RESET}`);
+    console.log(`  • Cloud Functions          : ${CYAN}🔵 รหัสในเครื่องพร้อม (${funcCount} ฟังก์ชัน) ${GRAY}[กดเมนู [4] เพื่อเลือก Deploy รายตัว]${RESET}`);
   }
 }
 
@@ -136,13 +145,13 @@ function printDashboard() {
   console.log(`${CYAN}======================================================================${RESET}`);
   printStatusBlock('📊 สรุปสถานะความพร้อม & รายการที่รอ Deploy (Pre-flight Status):');
   console.log(`${CYAN}======================================================================${RESET}`);
-  console.log(`${BOLD}${WHITE}  [★] กด [ENTER] ทันที  -->  🚀 FULL DEPLOY ครบวงจร (Commit + Push + 3 เว็บ + Rules)${RESET}`);
-  console.log(`${GRAY}  (ตัด functions และ indexes ออกจาก Full Deploy เพื่อความปลอดภัยสูงสุด)${RESET}`);
+  console.log(`${BOLD}${WHITE}  [★] กด [ENTER] ทันที  -->  🚀 FULL DEPLOY เว็บไซต์ 3 ระบบ + กฎ Rules${RESET}`);
+  console.log(`${YELLOW}  ⚠️ หมายเหตุ: Full Deploy จะไม่แตะต้อง Functions (ป้องกันการลบฟังก์ชันเดิม ให้เลือก Deploy ที่เมนู [4])${RESET}`);
   console.log(`${GRAY}----------------------------------------------------------------------${RESET}`);
   console.log(`  ${BOLD}[1]${RESET} Deploy หน้าร้านหลัก (dh-frontend)`);
   console.log(`  ${BOLD}[2]${RESET} Deploy หลังร้านแอดมิน (dh-backoffice-react)`);
   console.log(`  ${BOLD}[3]${RESET} Deploy แอปพนักงาน (dh-staff-app)`);
-  console.log(`  ${BOLD}[4]${RESET} Deploy Cloud Functions (ฟังก์ชันระบบ)`);
+  console.log(`  ${BOLD}[4]${RESET} Deploy Cloud Functions (เลือกเจาะจงรายฟังก์ชัน ปลอดภัย 100%)`);
   console.log(`  ${BOLD}[5]${RESET} Deploy กฎความปลอดภัย (Firestore & Storage Rules)`);
   console.log(`  ${BOLD}[6]${RESET} Deploy ดัชนีฐานข้อมูล (Firestore Indexes)`);
   console.log(`${GRAY}----------------------------------------------------------------------${RESET}`);
@@ -306,13 +315,118 @@ async function main() {
       continue;
     }
 
-    // 4. Cloud Functions (แยกเดี่ยว)
+    // 4. Cloud Functions (โหมดความปลอดภัยสูง เลือกเจาะจงรายฟังก์ชัน)
     if (choice === '4') {
-      const confirm = await ask(`\nยืนยันการ Deploy Cloud Functions? [Y/N, ค่าเริ่มต้น Y]: `);
-      if (confirm.toLowerCase() !== 'n') {
-        runCmd('firebase deploy --only functions');
+      while (true) {
+        console.clear();
+        console.log(`${CYAN}======================================================================${RESET}`);
+        console.log(`${BOLD}${WHITE}       ☁️ CLOUD FUNCTIONS DEPLOYMENT (โหมดความปลอดภัย ป้องกันการลบ 100%)${RESET}`);
+        console.log(`${CYAN}======================================================================${RESET}`);
+        console.log(`${GRAY}  💡 คำแนะนำ: การ Deploy เจาะจงรายฟังก์ชัน จะไม่แตะต้องหรือลบฟังก์ชันอื่นบน Cloud${RESET}`);
+        console.log(`${CYAN}----------------------------------------------------------------------${RESET}`);
+        console.log(`  ${BOLD}[1]${RESET} 🎯 Deploy เฉพาะระบบรับยอดวิว/คลิก (${CYAN}recordAdTelemetry${RESET})`);
+        console.log(`  ${BOLD}[2]${RESET} 📊 Deploy เฉพาะระบบซิงค์ GA4 (${CYAN}ga4AdSyncCron, ga4AdSyncManual${RESET})`);
+        console.log(`  ${BOLD}[3]${RESET} 🗺️ Deploy เฉพาะระบบสถานะหมุดร้าน (${CYAN}partnerVisibilitySync${RESET})`);
+        console.log(`  ${BOLD}[4]${RESET} 🧾 Deploy เฉพาะระบบตรวจสลิป (${CYAN}verifySlipOcr, purgeOldSlips${RESET})`);
+        console.log(`  ${BOLD}[5]${RESET} 📦 Deploy เฉพาะระบบจัดการสต็อก (${CYAN}nightlyChunkGuard${RESET})`);
+        console.log(`  ${BOLD}[6]${RESET} 💰 Deploy เฉพาะระบบกระเป๋าเงิน (${CYAN}walletFunctions${RESET})`);
+        console.log(`  ${BOLD}[7]${RESET} ✍️ พิมพ์ชื่อฟังก์ชันที่ต้องการระบุเอง (Custom Target)`);
+        console.log(`${GRAY}----------------------------------------------------------------------${RESET}`);
+        console.log(`  ${RED}${BOLD}[8] ⚠️ Deploy ทุกฟังก์ชัน (เหมารวมทั้งระบบ - ระวังระบบถามยืนยันการลบ)${RESET}`);
+        console.log(`  ${BOLD}[0]${RESET} ย้อนกลับสู่เมนูหลัก`);
+        console.log(`${CYAN}======================================================================${RESET}`);
+
+        const fnChoice = await ask(`\n${BOLD}👉 เลือกฟังก์ชันที่ต้องการ Deploy (พิมพ์ 0-8): ${RESET}`);
+
+        if (fnChoice === '0') break;
+
+        if (fnChoice === '1') {
+          console.log(`\n${CYAN}>>> ยืนยัน Deploy: recordAdTelemetry (รับยอดวิวและคลิกโฆษณา)${RESET}`);
+          const c = await ask(`ดำเนินการต่อหรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+          if (c.toLowerCase() !== 'n') {
+            runCmd('firebase deploy --only functions:recordAdTelemetry');
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        if (fnChoice === '2') {
+          console.log(`\n${CYAN}>>> ยืนยัน Deploy: ga4AdSyncCron & ga4AdSyncManual (ซิงค์ GA4)${RESET}`);
+          const c = await ask(`ดำเนินการต่อหรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+          if (c.toLowerCase() !== 'n') {
+            runCmd('firebase deploy --only functions:ga4AdSyncCron,functions:ga4AdSyncManual');
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        if (fnChoice === '3') {
+          console.log(`\n${CYAN}>>> ยืนยัน Deploy: partnerVisibilitySync (สถานะหมุดร้าน)${RESET}`);
+          const c = await ask(`ดำเนินการต่อหรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+          if (c.toLowerCase() !== 'n') {
+            runCmd('firebase deploy --only functions:partnerVisibilitySync');
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        if (fnChoice === '4') {
+          console.log(`\n${CYAN}>>> ยืนยัน Deploy: verifySlipOcr & purgeOldSlips (ตรวจสลิป)${RESET}`);
+          const c = await ask(`ดำเนินการต่อหรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+          if (c.toLowerCase() !== 'n') {
+            runCmd('firebase deploy --only functions:verifySlipOcr,functions:purgeOldSlips');
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        if (fnChoice === '5') {
+          console.log(`\n${CYAN}>>> ยืนยัน Deploy: nightlyChunkGuard (ระบบสต็อก)${RESET}`);
+          const c = await ask(`ดำเนินการต่อหรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+          if (c.toLowerCase() !== 'n') {
+            runCmd('firebase deploy --only functions:nightlyChunkGuard');
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        if (fnChoice === '6') {
+          console.log(`\n${CYAN}>>> ยืนยัน Deploy: walletFunctions (กระเป๋าเงิน)${RESET}`);
+          const c = await ask(`ดำเนินการต่อหรือไม่? [Y/N, ค่าเริ่มต้น Y]: `);
+          if (c.toLowerCase() !== 'n') {
+            runCmd('firebase deploy --only functions:processWalletPayment,functions:requestWithdrawal,functions:calculate30DStatsCron,functions:calculate30DStatsHttp,functions:rebuildAllChunksManual,functions:migrateHistoricalStats,functions:syncProductToGas,functions:verifyADAC001');
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        if (fnChoice === '7') {
+          const customName = await ask(`\nระบุชื่อฟังก์ชัน (เช่น recordAdTelemetry หรือ functions:recordAdTelemetry): `);
+          if (customName) {
+            const target = customName.startsWith('functions:') ? customName : `functions:${customName}`;
+            console.log(`\n${CYAN}>>> กำลัง Deploy: ${target}${RESET}`);
+            runCmd(`firebase deploy --only ${target}`);
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        if (fnChoice === '8') {
+          console.log(`\n${RED}${BOLD}⚠️ คำเตือนความปลอดภัยสูง: การ Deploy เหมารวมทุกฟังก์ชัน อาจทำให้ Firebase ถามยืนยันการลบฟังก์ชันเดิมบน Cloud!${RESET}`);
+          console.log(`${RED}หากหน้าจอถาม "Would you like to proceed with deletion?" ให้พิมพ์ N เพื่อความปลอดภัย${RESET}`);
+          const c = await ask(`คุณยืนยันต้องการ Deploy เหมารวมใช่หรือไม่? [พิมพ์ YES เพื่อยืนยัน]: `);
+          if (c === 'YES') {
+            runCmd('firebase deploy --only functions');
+          } else {
+            console.log(`\n${GREEN}ยกเลิกการ Deploy เหมารวม ปลอดภัย 100%${RESET}`);
+          }
+          await ask(`กด Enter เพื่อดำเนินการต่อ...`);
+          continue;
+        }
+
+        console.log(`\n${RED}[X] ตัวเลือกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง${RESET}`);
+        await ask(`กด Enter เพื่อลองใหม่...`);
       }
-      await ask(`กด Enter เพื่อกลับสู่เมนูหลัก...`);
       continue;
     }
 

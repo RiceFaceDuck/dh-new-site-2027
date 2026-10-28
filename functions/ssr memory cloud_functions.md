@@ -42,5 +42,6 @@
     2. ⚠️ Hardcoded Fallback Secret in ga4AdSyncCron: Previously, if `INTERNAL_CRON_SECRET` was missing from environment config, `ga4AdSyncCron.js` fell back to a default hardcoded secret string. Removed fallback secret to fail closed with 401 Unauthorized.
     3. ⚠️ Cloud Functions Deployment Desync: Functions modified locally must be checked against live deployment state to avoid silent regression where clients invoke old Cloud Function revisions.
     4. 🚀 Ad Telemetry Batch Transaction Guard (Phase 2): Batch ingestion aggregates ad impressions and clicks in memory before writing. Deductions synchronously debit users.creditPoints and settings/credit_config.ledger.totalAllocated while auto-flagging OUT_OF_CREDIT to prevent free ad runs.
+    5. ⚠️ Admin SDK initializeApp Guard (FIXED): Cloud Functions calling getFirestore() MUST initialize Firebase Admin (`if (getApps().length === 0) initializeApp()`) at the file root to prevent runtime Error 500 "The default Firebase app does not exist". Deployed to asia-southeast1 and verified live.
   </lessons_learned>
 </grimoire>

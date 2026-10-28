@@ -1,3 +1,8 @@
+const { initializeApp, getApps } = require('firebase-admin/app');
+if (getApps().length === 0) {
+  initializeApp();
+}
+
 const verifySlipOcr = require('./slips/verifySlipOcr');
 const purgeOldSlips = require('./slips/purgeOldSlips');
 const nightlyChunkGuard = require('./inventory/nightlyChunkGuard');
