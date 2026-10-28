@@ -150,5 +150,10 @@
     - *วิธีแก้:* 
       1) สร้าง `catalogShardSyncService` อัปเดต Manifest Timestamp และจัดก้อน Shards กลางอัตโนมัติเมื่อเกิดการ Mutation หรือ Import
       2) เพิ่มฟังก์ชัน Force Bypass ให้ปุ่ม Sync และการกด Shift+Click ใน `useInventoryController` ให้ล้างแคช IndexedDB และดึงยอดสดล่าสุดจาก Firestore ทันทีเมื่อผู้ใช้สงสัยว่าข้อมูลไม่ตรงกัน
+31. **ปัญหาโควต้าอ่านพุ่งกระฉูดจากการ Rebuild Shards และ Thundering Herd (Runaway Quota & Debounced Invalidation Guard):**
+    - *สาเหตุ:* คำสั่ง `reconcileAllShardsFromProducts()` ยิงกวาดอ่านสินค้าทั้งหมดในระบบ (2,400+ ชิ้นต่อรอบ) และเมื่อรันเสร็จจะส่งสัญญาณ `rebuild` ไปที่ `settings/inventory_meta` ทำให้เครื่องลูกข่ายที่เปิดแท็บค้างไว้ทั้งหมดแย่งกันดาวน์โหลดข้อมูลใหม่พร้อมกันทันที ส่งผลให้โควต้าอ่านพุ่งกระฉูด 77,000 ครั้งในเวลาสั้นๆ
+    - *วิธีแก้:* 
+      1) เพิ่ม Concurrency Deduplication (`inFlightReconciliation`) และ Throttle Cooldown (30 วินาที) ใน `catalogShardSyncService` ป้องกันการกวาดอ่าน Firestore ซ้ำซ้อน
+      2) เพิ่ม Debounce Timer (2,500ms สำหรับ Full Sync และ 300ms สำหรับ Delta Batching) ใน `useProductSearchQuery` เพื่อหน่วงเวลาให้การบันทึกฐานข้อมูลนิ่งก่อนดึงข้อมูล ป้องกัน Thundering Herd ข้ามเครื่อง
 </pitfalls_and_solutions>
 

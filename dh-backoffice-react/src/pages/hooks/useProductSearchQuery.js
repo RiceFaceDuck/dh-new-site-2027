@@ -34,6 +34,11 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
 
     loadInitialCatalog();
 
+    // 🛡️ Quota & Storm Guard: Debounce timers to prevent thundering herd across connected clients
+    let fullSyncDebounceTimer = null;
+    let deltaDebounceTimer = null;
+    const pendingSkusToFetch = new Set();
+
     // ⚡ Subscribe to settings/inventory_meta for real-time delta updates
     const unsubscribeMeta = inventorySyncMetaService.subscribeInventoryMeta(async (meta) => {
       if (!isMounted || !meta) return;
@@ -42,47 +47,62 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
         const canDelta = !meta.fullSyncRequired && recentSkus.length > 0 && recentSkus.length <= 150;
 
         if (canDelta) {
-          const deltaProducts = await inventorySyncMetaService.fetchDeltaProducts(recentSkus);
-          if (deltaProducts.length > 0 && isMounted) {
-            setProducts((prevList) => {
-              const deltaMap = new Map(deltaProducts.map((p) => [p.sku, p]));
-              // 🛡️ Prune soft-deleted / inactive delta items from state
-              const filteredList = prevList.filter((p) => {
-                const delta = deltaMap.get(p.sku);
-                return !delta || delta.isActive !== false;
-              });
-              const updatedList = filteredList.map((p) =>
-                deltaMap.has(p.sku) ? { ...p, ...deltaMap.get(p.sku) } : p
-              );
-              const existingSkus = new Set(updatedList.map((p) => p.sku));
-              deltaProducts.forEach((p) => {
-                if (!existingSkus.has(p.sku) && p.isActive !== false) {
-                  updatedList.unshift(p);
-                  existingSkus.add(p.sku);
-                }
-              });
-              return updatedList;
-            });
+          recentSkus.forEach((s) => pendingSkusToFetch.add(s));
+          if (deltaDebounceTimer) clearTimeout(deltaDebounceTimer);
 
-            // 🚀 Propagate delta products to Local POS Cache & Shard Cache
-            try {
-              const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
-              await catalogHydrationService.updateCatalogCacheWithProducts(deltaProducts);
-            } catch (err) {
-              console.warn('⚠️ [useProductSearchQuery] updateCatalogCacheWithProducts error:', err);
+          deltaDebounceTimer = setTimeout(async () => {
+            if (!isMounted || pendingSkusToFetch.size === 0) return;
+            const targetSkus = Array.from(pendingSkusToFetch);
+            pendingSkusToFetch.clear();
+
+            const deltaProducts = await inventorySyncMetaService.fetchDeltaProducts(targetSkus);
+            if (deltaProducts.length > 0 && isMounted) {
+              setProducts((prevList) => {
+                const deltaMap = new Map(deltaProducts.map((p) => [p.sku, p]));
+                // 🛡️ Prune soft-deleted / inactive delta items from state
+                const filteredList = prevList.filter((p) => {
+                  const delta = deltaMap.get(p.sku);
+                  return !delta || delta.isActive !== false;
+                });
+                const updatedList = filteredList.map((p) =>
+                  deltaMap.has(p.sku) ? { ...p, ...deltaMap.get(p.sku) } : p
+                );
+                const existingSkus = new Set(updatedList.map((p) => p.sku));
+                deltaProducts.forEach((p) => {
+                  if (!existingSkus.has(p.sku) && p.isActive !== false) {
+                    updatedList.unshift(p);
+                    existingSkus.add(p.sku);
+                  }
+                });
+                return updatedList;
+              });
+
+              // 🚀 Propagate delta products to Local POS Cache & Shard Cache
+              try {
+                const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
+                await catalogHydrationService.updateCatalogCacheWithProducts(deltaProducts);
+              } catch (err) {
+                console.warn('⚠️ [useProductSearchQuery] updateCatalogCacheWithProducts error:', err);
+              }
             }
-          }
+          }, 300);
         } else if (meta.fullSyncRequired) {
-          // Full re-sync when rebuild or large changes occurred
-          const { catalog, products: freshList } = await inventorySyncMetaService.getOrFetchCatalog({ forceRefresh: true });
-          const items = catalog || freshList || [];
-          if (isMounted && items.length > 0) {
-            setProducts(items);
-            try {
-              const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
-              await catalogHydrationService.clearCatalogCache();
-            } catch {}
-          }
+          // 🛡️ Debounce Full Sync: Wait 2.5s for bulk batch commits to complete before refetching
+          if (fullSyncDebounceTimer) clearTimeout(fullSyncDebounceTimer);
+
+          fullSyncDebounceTimer = setTimeout(async () => {
+            if (!isMounted) return;
+            // Full re-sync when rebuild or large changes occurred
+            const { catalog, products: freshList } = await inventorySyncMetaService.getOrFetchCatalog({ forceRefresh: true });
+            const items = catalog || freshList || [];
+            if (isMounted && items.length > 0) {
+              setProducts(items);
+              try {
+                const { catalogHydrationService } = await import('../../firebase/catalogHydrationService');
+                await catalogHydrationService.clearCatalogCache();
+              } catch {}
+            }
+          }, 2500);
         }
       } catch (syncErr) {
         console.warn('⚠️ [useProductSearchQuery] Real-time delta update error:', syncErr);
@@ -139,6 +159,8 @@ export function useProductSearchQuery(debouncedSearch1, debouncedSearch2, deboun
 
     return () => {
       isMounted = false;
+      if (deltaDebounceTimer) clearTimeout(deltaDebounceTimer);
+      if (fullSyncDebounceTimer) clearTimeout(fullSyncDebounceTimer);
       if (typeof unsubscribeMeta === 'function') unsubscribeMeta();
       if (typeof unsubscribeChannel === 'function') unsubscribeChannel();
     };

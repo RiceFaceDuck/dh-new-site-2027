@@ -12,6 +12,13 @@ import { db } from '../config.js';
 import { getCollectionPath } from 'dh-shared';
 import { inventorySyncMetaService } from './inventorySyncMetaService.js';
 
+// 🛡️ Runaway Quota Guard: Concurrency deduplication & throttle state
+let inFlightReconciliation = null;
+let lastReconcileTime = 0;
+let lastReconcileVersion = 0;
+let lastReconciledItems = [];
+const RECONCILE_THROTTLE_MS = 30000;
+
 /**
  * Resolves secondary field aliases so incoming updates to `stock`, `wholesalePrice`, `price`, or `RetailPrice`
  * are not shadowed by stale primary aliases (`stockQuantity`, `Price`, `retailPrice`) present on existing shard items.
@@ -306,73 +313,100 @@ export const catalogShardSyncService = {
   /**
    * Reconciles all 7 catalog shards directly from the live `products` collection.
    * Completely heals any discrepancies between live products and catalog shards.
+   * 🛡️ Quota & Concurrency Guard: Enforces in-flight deduplication and a 30s throttle cooldown
+   * to strictly block runaway multi-thousand document reads across concurrent tabs or bots.
    * 
+   * @param {Object} options - { force?: boolean }
    * @returns {Promise<{success: boolean, version: number, totalItems: number, items: Array<Object>}>}
    */
-  reconcileAllShardsFromProducts: async () => {
-    try {
-      console.log('🔄 [catalogShardSyncService] Starting full catalog shard reconciliation from live products collection...');
-      const prodCollection = collection(db, getCollectionPath('products'));
-      const q = query(prodCollection, limit(4000));
-      const snapshot = await getDocs(q);
-
-      const allItems = [];
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data && data.isActive !== false) {
-          const norm = sanitizeItemForShard({ id: docSnap.id, ...data });
-          if (norm && norm.sku) {
-            allItems.push(norm);
-          }
-        }
-      });
-
-      // Deterministic sort by SKU
-      allItems.sort((a, b) => a.sku.localeCompare(b.sku));
-
-      const chunkCount = 7;
-      const shards = [];
-      const baseSize = Math.floor(allItems.length / chunkCount);
-      const remainder = allItems.length % chunkCount;
-      let currentIndex = 0;
-
-      for (let i = 0; i < chunkCount; i++) {
-        const currentChunkSize = baseSize + (i < remainder ? 1 : 0);
-        shards.push(allItems.slice(currentIndex, currentIndex + currentChunkSize));
-        currentIndex += currentChunkSize;
-      }
-
-      const manifestVersion = Date.now();
-      const batch = writeBatch(db);
-      for (let i = 1; i <= chunkCount; i++) {
-        const chunkRef = doc(db, getCollectionPath('catalogs'), `search_index_p${i}`);
-        batch.set(chunkRef, {
-          chunkId: `search_index_p${i}`,
-          items: shards[i - 1],
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-      }
-
-      const manifestRef = doc(db, getCollectionPath('catalogs'), 'search_index');
-      batch.set(manifestRef, {
-        chunkId: 'search_index',
-        version: manifestVersion,
-        chunkCount,
-        totalItems: allItems.length,
-        updatedAt: serverTimestamp(),
-        lastUpdated: serverTimestamp()
-      }, { merge: true });
-
-      await batch.commit();
-
-      // Trigger rebuild signal
-      await inventorySyncMetaService.recordInventoryChange([], 'rebuild');
-
-      console.log(`✅ [catalogShardSyncService] Reconciled all 7 shards (${allItems.length} items total) successfully!`);
-      return { success: true, version: manifestVersion, totalItems: allItems.length, items: allItems };
-    } catch (err) {
-      console.error('🔥 [catalogShardSyncService] Error reconciling shards from products:', err);
-      throw err;
+  reconcileAllShardsFromProducts: async (options = {}) => {
+    // 🛡️ 1. In-flight promise sharing (Zero duplicate Firestore collection sweeps)
+    if (inFlightReconciliation) {
+      console.log('⏳ [catalogShardSyncService] Full reconciliation already in flight, sharing active promise...');
+      return inFlightReconciliation;
     }
+
+    // 🛡️ 2. Rate-limit cooldown guard (Skip duplicate multi-thousand reads if run within 30s)
+    const now = Date.now();
+    if (!options.force && (now - lastReconcileTime) < RECONCILE_THROTTLE_MS && lastReconciledItems.length > 0) {
+      console.warn(`🛡️ [catalogShardSyncService] Reconcile throttled (${Math.round((RECONCILE_THROTTLE_MS - (now - lastReconcileTime)) / 1000)}s cooldown remaining). Returning cached items.`);
+      return { success: true, version: lastReconcileVersion || now, totalItems: lastReconciledItems.length, items: lastReconciledItems, throttled: true };
+    }
+
+    inFlightReconciliation = (async () => {
+      try {
+        console.log('🔄 [catalogShardSyncService] Starting full catalog shard reconciliation from live products collection...');
+        const prodCollection = collection(db, getCollectionPath('products'));
+        const q = query(prodCollection, limit(4000));
+        const snapshot = await getDocs(q);
+
+        const allItems = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data && data.isActive !== false) {
+            const norm = sanitizeItemForShard({ id: docSnap.id, ...data });
+            if (norm && norm.sku) {
+              allItems.push(norm);
+            }
+          }
+        });
+
+        // Deterministic sort by SKU
+        allItems.sort((a, b) => a.sku.localeCompare(b.sku));
+
+        const chunkCount = 7;
+        const shards = [];
+        const baseSize = Math.floor(allItems.length / chunkCount);
+        const remainder = allItems.length % chunkCount;
+        let currentIndex = 0;
+
+        for (let i = 0; i < chunkCount; i++) {
+          const currentChunkSize = baseSize + (i < remainder ? 1 : 0);
+          shards.push(allItems.slice(currentIndex, currentIndex + currentChunkSize));
+          currentIndex += currentChunkSize;
+        }
+
+        const manifestVersion = Date.now();
+        const batch = writeBatch(db);
+        for (let i = 1; i <= chunkCount; i++) {
+          const chunkRef = doc(db, getCollectionPath('catalogs'), `search_index_p${i}`);
+          batch.set(chunkRef, {
+            chunkId: `search_index_p${i}`,
+            items: shards[i - 1],
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+
+        const manifestRef = doc(db, getCollectionPath('catalogs'), 'search_index');
+        batch.set(manifestRef, {
+          chunkId: 'search_index',
+          version: manifestVersion,
+          chunkCount,
+          totalItems: allItems.length,
+          updatedAt: serverTimestamp(),
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
+
+        await batch.commit();
+
+        // Update in-memory state tracking
+        lastReconcileTime = Date.now();
+        lastReconcileVersion = manifestVersion;
+        lastReconciledItems = allItems;
+
+        // Trigger rebuild signal
+        await inventorySyncMetaService.recordInventoryChange([], 'rebuild');
+
+        console.log(`✅ [catalogShardSyncService] Reconciled all 7 shards (${allItems.length} items total) successfully!`);
+        return { success: true, version: manifestVersion, totalItems: allItems.length, items: allItems };
+      } catch (err) {
+        console.error('🔥 [catalogShardSyncService] Error reconciling shards from products:', err);
+        throw err;
+      } finally {
+        inFlightReconciliation = null;
+      }
+    })();
+
+    return inFlightReconciliation;
   }
 };
