@@ -51,17 +51,26 @@ export const parseCustomerAddress = (rawInput) => {
     let storeName = '';
     let contactName = '';
 
-    // 1. Phone extraction (+66 or 0 prefix, 9-10 digits)
+    // 1. Phone extraction (+66 or 0 prefix, 9-10 digits) - Multi-phone preservation
     const phoneMatches = workingText.match(/(?:\+?66|0)[- ]?\d{1,2}[- ]?\d{3,4}[- ]?\d{3,4}/g);
+    const phones = [];
     if (phoneMatches && phoneMatches.length > 0) {
-        const rawPhone = phoneMatches[0];
-        let cleaned = rawPhone.replace(/\D/g, '');
-        if (cleaned.startsWith('66')) {
-            cleaned = '0' + cleaned.substring(2);
+        for (const rawPhone of phoneMatches) {
+            let cleaned = rawPhone.replace(/\D/g, '');
+            if (cleaned.startsWith('66') && cleaned.length >= 10) {
+                cleaned = '0' + cleaned.substring(2);
+            }
+            if (cleaned.length >= 9 && cleaned.length <= 10 && !phones.includes(cleaned)) {
+                phones.push(cleaned);
+            }
         }
-        if (cleaned.length >= 9 && cleaned.length <= 10) {
-            phone = cleaned;
-            // Clean all extracted phone numbers and slash/comma separators
+
+        if (phones.length > 0) {
+            // Prioritize mobile phone (08x, 09x, 06x) as primary contact phone
+            const mobile = phones.find(p => /^(08|09|06)/.test(p));
+            phone = mobile || phones[0];
+
+            // Clean extracted phone numbers from working text
             for (const p of phoneMatches) {
                 workingText = workingText.replace(p, ' ');
             }
@@ -160,10 +169,17 @@ export const parseCustomerAddress = (rawInput) => {
     }
 
     // 6. Province, District, SubDistrict extraction
-    const provMatch = workingText.match(/(?:จ\.|จังหวัด)\s*([^\s,1-9\n\r]+)/);
-    if (provMatch && provMatch[1]) {
-        province = provMatch[1].trim();
-        workingText = workingText.replace(provMatch[0], ' ');
+    // Bangkok / Krung Thep special detection (supports กทม, กรุงเทพ, กรุงเทพฯ, กรุงเทพมหานคร without จ. prefix)
+    const bkkMatch = workingText.match(/(?:^|\s+)(?:จ\.|จังหวัด\s*)?(กรุงเทพมหานคร|กรุงเทพฯ|กรุงเทพ|กทม)(?:\s+|$)/i);
+    if (bkkMatch) {
+        province = 'กรุงเทพมหานคร';
+        workingText = workingText.replace(bkkMatch[0], ' ');
+    } else {
+        const provMatch = workingText.match(/(?:จ\.|จังหวัด)\s*([^\s,1-9\n\r]+)/);
+        if (provMatch && provMatch[1]) {
+            province = provMatch[1].trim();
+            workingText = workingText.replace(provMatch[0], ' ');
+        }
     }
 
     const distMatch = workingText.match(/(?:อ\.|อำเภอ|เขต)\s*([^\s,1-9\n\r]+)/);
@@ -316,12 +332,21 @@ export const parseCustomerAddress = (rawInput) => {
         cleanAddress = addressLines.join(' ').trim();
     }
 
+    const formattedPhones = phones.map(p => {
+        if (p.length === 10) return `${p.substring(0, 3)}-${p.substring(3, 6)}-${p.substring(6)}`;
+        if (p.length === 9) return `${p.substring(0, 2)}-${p.substring(2, 5)}-${p.substring(5)}`;
+        return p;
+    });
+
     return {
         accountName: finalAccountName,
         contactName: finalContactName,
         storeName: storeName || finalAccountName,
         phone,
+        phoneNumber: phone,
+        phones: phones.length > 0 ? phones : (phone ? [phone] : []),
         formattedPhone,
+        formattedPhones,
         email,
         lineId,
         facebook,
@@ -336,7 +361,8 @@ export const parseCustomerAddress = (rawInput) => {
         logisticProvider: preferredCourier,
         shippingNotes,
         logisticNote: shippingNotes,
-        rawText: text
+        rawText: text,
+        rawAddress: cleanAddress
     };
 };
 

@@ -225,6 +225,14 @@
         5) ล้างข้อมูลดราฟต์ผีของบัญชี `dh1notebook@gmail.com` ใน Firestore ให้เหลือเฉพาะ 3 บิลร่างจริงที่รอชำระ [สถานะ: ส่งมอบแล้ว]
     61. ปัญหา: พนักงานก๊อปปี้ข้อมูลลูกค้าจาก LINE มาเปิดบิลแล้วสร้างลูกค้าใหม่ซ้ำซ้อน ทำให้บัญชีสมาชิกหน้าเว็บ Partner ไม่ได้รับแต้ม และข้อมูลที่อยู่กระจัดกระจาย
         วิธีแก้: เชื่อมโยงระบบ `CustomerSuggestionCard` เข้ากับโมดอล Smart Quick Paste ของหน้าบิล (`QuickAddCustomerModal.jsx`) รันการจับคู่ในหน่วยความจำ (0 Firestore Reads) จัดอันดับให้บัญชีหน้าเว็บเป็นอันดับ 1 เสมอ แจ้งเตือน Gap Alert สรุปข้อมูลที่มี vs ข้อมูลที่ยังขาด และให้พนักงานคลิกเลือก "ดำเนินการต่อด้วยบัญชีนี้" เพื่อผูกเข้ากับบิลขายทันที พร้อมติ๊กเติมเฉพาะช่องว่างโดยไม่เขียนทับข้อมูลเดิม [สถานะ: ส่งมอบแล้ว]
+    62. ปัญหา: โมดอลเพิ่มลูกค้าใหม่ (QuickAddCustomerModal) เดิมมีความยาวเกือบ 1,000 บรรทัด, กรอบซ้อนกรอบรบกวนสายตา, บั๊กตัดเบอร์หลุดหายเหลือเบอร์เดียวใน thaiAddressParser, บั๊กแปลงเบอร์บ้าน (+662), การยิง Firestore 6 Reads ซ้ำซ้อนตอนกดสร้างลูกค้าใหม่, และที่อยู่จัดส่งเฉพาะบิลปนกับที่อยู่โปรไฟล์
+        วิธีแก้:
+        1) Refactor แยก Controller Hook (`useQuickAddCustomer.js`), Service (`quickCustomerService.js`), และ Presentation Sheets (`CustomerDetectedSheet.jsx`, `NewCustomerPreviewSheet.jsx`) ตาม Clean Architecture (SRP)
+        2) ออกแบบ UI สไตล์ Single-Sheet Document 1 บรรทัดต่อ 1 ข้อมูล (`w-36` Left-aligned) ตามสเปก `modal_preview.html`, กรอบทุกส่วนใช้มุมมน `0.1` (`rounded-[0.1rem]`), กล่องข้อความสีอำพันทึบ Solid `bg-amber-200 border-amber-400`, และปุ่ม Footer 2 ทางเลือก (🟡 สร้างลูกค้าใหม่ vs 🟢 ดำเนินการต่อด้วยบัญชีนี้) โดยรักษาความโค้งมนปุ่มเดิม (`rounded-lg`) ตามข้อยกเว้น Buttons Exception 100%
+        3) แก้ไข `thaiAddressParser.js` ให้เก็บทุกเบอร์โทรศัพท์ลงใน `phones: string[]`, จัดลำดับเบอร์มือถือเป็นเบอร์หลักก่อนเบอร์บ้าน, รองรับที่อยู่กรุงเทพฯ ไม่เติม `ต.` และ `อ.`, และเก็บ `rawAddress`
+        4) แก้ไข `normalizePhone` ใน `customerMatchingService.js` ให้รองรับเบอร์บ้านไทย 9 หลัก (`+662...` -> `02...`), รองรับการเทียบหลายเบอร์ (`phones` matching), และเติมเต็ม Facebook จากโฆษณา Partner หน้าเว็บ
+        5) ปรับการตรวจสอบความซ้ำซ้อนให้รันบน `existingCustomers` ในหน่วยความจำโดยตรง อุดรอยรั่ว 6 Reads เดิมให้เป็น 0 Reads ใน Warm Cache (Quota Zero-Leak 100%)
+        6) แยก `shippingAddress` ประจำบิลออกจาก `customer.address` ในโปรไฟล์เพื่อความถูกต้องในการจัดส่งพัสดุ [สถานะ: ส่งมอบแล้ว]
   </pitfalls_and_solutions>
 </grimoire>
 

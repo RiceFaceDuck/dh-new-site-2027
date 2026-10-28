@@ -17,7 +17,7 @@
 export function normalizePhone(phone) {
   if (!phone) return '';
   let p = String(phone).replace(/\D/g, '');
-  if (p.startsWith('66') && p.length >= 11) {
+  if (p.startsWith('66') && p.length >= 10) {
     p = '0' + p.slice(2);
   }
   return p;
@@ -63,10 +63,32 @@ export function calculateCustomerMatchScore(parsed = {}, candidate = {}) {
   const breakdown = {};
   const matchReasons = [];
 
-  // 1. Phone Comparison (Weight: 45 pts)
-  const parsedPhone = normalizePhone(parsed.phone || parsed.phoneNumber);
-  const candPhone = normalizePhone(candidate.phone || candidate.phoneNumber);
-  if (parsedPhone && candPhone && parsedPhone === candPhone) {
+  // 1. Phone Comparison (Weight: 45 pts) - Multi-Phone Parity
+  const extractPhones = (obj) => {
+    if (!obj) return [];
+    const set = new Set();
+    if (obj.phone) set.add(normalizePhone(obj.phone));
+    if (obj.phoneNumber) set.add(normalizePhone(obj.phoneNumber));
+    if (Array.isArray(obj.phones)) {
+      obj.phones.forEach(p => {
+        const norm = normalizePhone(p);
+        if (norm) set.add(norm);
+      });
+    }
+    if (Array.isArray(obj.phoneNumbers)) {
+      obj.phoneNumbers.forEach(p => {
+        const norm = normalizePhone(p);
+        if (norm) set.add(norm);
+      });
+    }
+    return Array.from(set).filter(p => p.length >= 9);
+  };
+
+  const parsedPhones = extractPhones(parsed);
+  const candPhones = extractPhones(candidate);
+  const hasPhoneMatch = parsedPhones.some(p => candPhones.includes(p));
+
+  if (hasPhoneMatch) {
     score += 45;
     breakdown.phone = 45;
     matchReasons.push('เบอร์โทรศัพท์ตรงกัน 100%');
@@ -308,13 +330,33 @@ export function computeSafeGapFilling(candidate = {}, parsed = {}) {
     return str === '' || str === '-' || str === '--' || str === 'null' || str === 'undefined';
   };
 
-  // 1. Phone Dual-Key Parity
+  // 1. Phone Dual-Key Parity & Multiple Phones
   const currentPhone = candidate.phone || candidate.phoneNumber;
   const newPhone = parsed.phone || parsed.phoneNumber;
   if (isEmpty(currentPhone) && !isEmpty(newPhone)) {
     const cleanPhone = normalizePhone(newPhone);
     payload.phone = cleanPhone;
     payload.phoneNumber = cleanPhone;
+    hasUpdates = true;
+  }
+
+  // Preserve & expand multiple phones array without overwriting existing
+  const currentPhones = Array.isArray(candidate.phones) 
+    ? [...candidate.phones] 
+    : (currentPhone && !isEmpty(currentPhone) ? [normalizePhone(currentPhone)] : []);
+  const incomingPhones = Array.isArray(parsed.phones) 
+    ? parsed.phones 
+    : (newPhone && !isEmpty(newPhone) ? [newPhone] : []);
+
+  const mergedPhones = [...currentPhones];
+  for (const p of incomingPhones) {
+    const norm = normalizePhone(p);
+    if (norm && norm.length >= 9 && !mergedPhones.map(normalizePhone).includes(norm)) {
+      mergedPhones.push(norm);
+    }
+  }
+  if (mergedPhones.length > currentPhones.length) {
+    payload.phones = mergedPhones;
     hasUpdates = true;
   }
 
@@ -345,9 +387,17 @@ export function computeSafeGapFilling(candidate = {}, parsed = {}) {
     hasUpdates = true;
   }
 
-  // 5. Line ID
+  // 5. Line ID & Facebook
   if (isEmpty(candidate.lineId) && !isEmpty(parsed.lineId)) {
     payload.lineId = String(parsed.lineId).trim();
+    hasUpdates = true;
+  }
+  const currentFb = candidate.facebook || candidate.facebookUrl;
+  const newFb = parsed.facebook || parsed.facebookUrl;
+  if (isEmpty(currentFb) && !isEmpty(newFb)) {
+    const cleanFb = String(newFb).trim();
+    payload.facebook = cleanFb;
+    payload.facebookUrl = cleanFb;
     hasUpdates = true;
   }
 

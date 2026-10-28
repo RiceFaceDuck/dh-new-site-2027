@@ -1,0 +1,386 @@
+/**
+ * useQuickAddCustomer Hook (Feature Controller Layer)
+ * 
+ * Orchestrates modal state, real-time address parsing, in-memory customer matching,
+ * partner ads index enrichment, inline-edit staging, and cashier decision flows.
+ * 
+ * Strict Clean Architecture: Zero presentation markup, pure controller logic.
+ */
+import { useState, useEffect, useRef, useCallback } from 'react';
+import toast from 'react-hot-toast';
+import { parseCustomerAddress } from 'dh-shared';
+import { 
+    findBestCustomerMatches, 
+    computeSafeGapFilling 
+} from '../../../../../../pages/Customers/services/customerMatchingService';
+import { 
+    fetchCustomerAdsIndex, 
+    enrichCustomerWithAdData 
+} from '../../../../../../pages/Customers/services/customerSearchService';
+import { quickCustomerService } from '../services/quickCustomerService';
+
+export function useQuickAddCustomer({
+    isOpen,
+    initialText = '',
+    existingCustomers = [],
+    onCustomerCreated,
+    onClose
+}) {
+    const [modalStep, setModalStep] = useState(1);
+    const [rawInputText, setRawInputText] = useState('');
+    const [selectedRole, setSelectedRole] = useState('Member / General');
+    const [dynamicRoles, setDynamicRoles] = useState([]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Matching States
+    const [matchedCustomer, setMatchedCustomer] = useState(null);
+    const [matchedCustomers, setMatchedCustomers] = useState([]);
+    const [adsIndex, setAdsIndex] = useState(null);
+
+    // Inline Staging & Decision States
+    const [isTaxRequested, setIsTaxRequested] = useState(false);
+    const [stagedLineId, setStagedLineId] = useState('');
+    const [isEditingLine, setIsEditingLine] = useState(false);
+    const [autoFillMissing, setAutoFillMissing] = useState(true);
+
+    // Duplicate Modal Flow
+    const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+    const [duplicateCandidates, setDuplicateCandidates] = useState([]);
+    const [pendingNewCustPayload, setPendingNewCustPayload] = useState(null);
+    const [createdCustomerObj, setCreatedCustomerObj] = useState(null);
+
+    // Parsed Fields
+    const [parsedData, setParsedData] = useState({
+        accountName: '',
+        contactName: '',
+        storeName: '',
+        phone: '',
+        phoneNumber: '',
+        phones: [],
+        formattedPhone: '',
+        email: '',
+        lineId: '',
+        facebook: '',
+        facebookUrl: '',
+        addressLine: '',
+        subDistrict: '',
+        district: '',
+        province: '',
+        postalCode: '',
+        zipCode: '',
+        preferredCourier: '',
+        logisticProvider: '',
+        shippingNotes: '',
+        logisticNote: '',
+        rawAddress: '',
+        rawText: ''
+    });
+
+    // 1. Initialize or reset modal state
+    useEffect(() => {
+        if (isOpen) {
+            setModalStep(1);
+            setCreatedCustomerObj(null);
+            setRawInputText(initialText || '');
+            setMatchedCustomer(null);
+            setMatchedCustomers([]);
+            setIsDuplicateModalOpen(false);
+            setDuplicateCandidates([]);
+            setPendingNewCustPayload(null);
+            setIsTaxRequested(false);
+            setStagedLineId('');
+            setIsEditingLine(false);
+            setAutoFillMissing(true);
+
+            if (initialText) {
+                const parsed = parseCustomerAddress(initialText);
+                setParsedData(parsed);
+                if (parsed.lineId) setStagedLineId(parsed.lineId);
+            } else {
+                setParsedData({
+                    accountName: '',
+                    contactName: '',
+                    storeName: '',
+                    phone: '',
+                    phoneNumber: '',
+                    phones: [],
+                    formattedPhone: '',
+                    email: '',
+                    lineId: '',
+                    facebook: '',
+                    facebookUrl: '',
+                    addressLine: '',
+                    subDistrict: '',
+                    district: '',
+                    province: '',
+                    postalCode: '',
+                    zipCode: '',
+                    preferredCourier: '',
+                    logisticProvider: '',
+                    shippingNotes: '',
+                    logisticNote: '',
+                    rawAddress: '',
+                    rawText: ''
+                });
+            }
+        }
+    }, [isOpen, initialText]);
+
+    // 2. Load Role Tier Config (Warm Cache)
+    useEffect(() => {
+        if (!isOpen) return;
+        quickCustomerService.fetchRoleTierConfig().then(roles => {
+            if (roles && roles.length > 0) {
+                setDynamicRoles(roles);
+                const defaultRole = roles.find(r => 
+                    (r.name && (r.name.includes('ร้านช่าง') || r.name.toLowerCase().includes('wholesale') || r.name.toLowerCase().includes('mechanic'))) ||
+                    (r.id && (r.id === 'wholesale' || r.id.includes('ช่าง'))) ||
+                    (r.description && r.description.includes('ช่าง'))
+                ) || roles[0];
+                setSelectedRole(defaultRole ? defaultRole.name || defaultRole.id : roles[0]?.name);
+            }
+        });
+    }, [isOpen]);
+
+    // 3. Load Partner Ads Index (SessionStorage cached / 0 Read Warm Cache)
+    useEffect(() => {
+        if (!isOpen) return;
+        fetchCustomerAdsIndex().then(index => {
+            if (index) setAdsIndex(index);
+        }).catch(err => {
+            console.warn('[useQuickAddCustomer] Ads index fetch warning:', err);
+        });
+    }, [isOpen]);
+
+    // 4. Real-time text change and in-memory customer matching
+    const handleTextChange = useCallback((text) => {
+        setRawInputText(text);
+        if (!text.trim()) {
+            setMatchedCustomer(null);
+            setMatchedCustomers([]);
+            return;
+        }
+
+        const parsed = parseCustomerAddress(text);
+        setParsedData(parsed);
+        if (parsed.lineId && !stagedLineId) {
+            setStagedLineId(parsed.lineId);
+        }
+
+        // 🔍 In-memory matching (0 Firestore Reads)
+        if (Array.isArray(existingCustomers) && existingCustomers.length > 0) {
+            const matches = findBestCustomerMatches(parsed, existingCustomers, 35, 5);
+            if (matches && matches.length > 0) {
+                // Enrich matched candidates with Partner Ads data
+                const enrichedMatches = matches.map(m => {
+                    const enriched = enrichCustomerWithAdData(m.candidate, adsIndex);
+                    return {
+                        ...m,
+                        candidate: enriched
+                    };
+                });
+                setMatchedCustomer(enrichedMatches[0]);
+                setMatchedCustomers(enrichedMatches);
+            } else {
+                setMatchedCustomer(null);
+                setMatchedCustomers([]);
+            }
+        } else {
+            setMatchedCustomer(null);
+            setMatchedCustomers([]);
+        }
+    }, [existingCustomers, adsIndex, stagedLineId]);
+
+    // 5. Handle field changes in manual editor
+    const handleFieldChange = useCallback((field, value) => {
+        setParsedData(prev => {
+            const next = { ...prev, [field]: value };
+            if (field === 'postalCode') next.zipCode = value;
+            if (field === 'zipCode') next.postalCode = value;
+            if (field === 'preferredCourier') next.logisticProvider = value;
+            if (field === 'logisticProvider') next.preferredCourier = value;
+            if (field === 'shippingNotes') next.logisticNote = value;
+            if (field === 'logisticNote') next.shippingNotes = value;
+            if (field === 'facebook') next.facebookUrl = value;
+            if (field === 'facebookUrl') next.facebook = value;
+            if (field === 'contactName') next.firstName = value;
+            if (field === 'firstName') next.contactName = value;
+            return next;
+        });
+    }, []);
+
+    // 6. Proceed with Matched Candidate (Action 1: Green Button)
+    const handleProceedWithCandidate = async (targetCandidate) => {
+        const candidate = targetCandidate || matchedCustomer?.candidate;
+        if (!candidate) return;
+
+        let payload = null;
+        if (autoFillMissing && parsedData) {
+            const fillResult = computeSafeGapFilling(candidate, parsedData);
+            if (fillResult.hasUpdates) {
+                payload = fillResult.payload;
+            }
+        }
+
+        // Apply staged Line ID if modified
+        if (stagedLineId && (!candidate.lineId || candidate.lineId !== stagedLineId)) {
+            payload = payload || {};
+            payload.lineId = stagedLineId;
+        }
+
+        if (payload && Object.keys(payload).length > 0) {
+            try {
+                const uid = candidate.uid || candidate.id;
+                await quickCustomerService.overwriteExistingCustomer(candidate, payload);
+                toast.success(`อัปเดตข้อมูลเพิ่มเติมให้ ${candidate.storeName || candidate.accountId} เรียบร้อยแล้ว`);
+            } catch (err) {
+                console.warn('[useQuickAddCustomer] Auto-fill update warning:', err);
+            }
+        }
+
+        // Synthesize final customer object with POS billing shipping address & tax
+        const finalCustomer = {
+            ...candidate,
+            ...(payload || {}),
+            uid: candidate.uid || candidate.id,
+            id: candidate.uid || candidate.id,
+            storeName: candidate.storeName || candidate.accountName || candidate.displayName,
+            shippingAddress: parsedData.addressLine ? {
+                addressLine: parsedData.addressLine,
+                subDistrict: parsedData.subDistrict,
+                district: parsedData.district,
+                province: parsedData.province,
+                postalCode: parsedData.postalCode || parsedData.zipCode,
+                zipCode: parsedData.postalCode || parsedData.zipCode
+            } : candidate.address,
+            isTaxRequested
+        };
+
+        if (onCustomerCreated) {
+            onCustomerCreated(finalCustomer);
+        }
+        toast.success(`เลือกบัญชี ${finalCustomer.storeName || finalCustomer.accountId} สำหรับบิลนี้แล้ว`);
+        onClose();
+    };
+
+    // 7. Save New Customer to DB (Action 2: Yellow Button)
+    const handleCreateNewCustomer = async () => {
+        if (isSaving) return;
+        if (!parsedData.accountName || !parsedData.accountName.trim()) {
+            toast.error('⚠️ กรุณาระบุชื่อลูกค้าหรือชื่อร้านค้า');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            // Apply staged Line ID to payload
+            const effectiveParsedData = {
+                ...parsedData,
+                lineId: stagedLineId || parsedData.lineId
+            };
+
+            const checkRes = await quickCustomerService.checkDuplicateAndCreate(
+                effectiveParsedData, 
+                selectedRole, 
+                existingCustomers
+            );
+
+            if (checkRes.isDuplicate) {
+                setDuplicateCandidates(checkRes.duplicates);
+                setPendingNewCustPayload(checkRes.payload);
+                setIsDuplicateModalOpen(true);
+            } else if (checkRes.newCust) {
+                const newCustomerWithTax = {
+                    ...checkRes.newCust,
+                    isTaxRequested
+                };
+                setCreatedCustomerObj(newCustomerWithTax);
+                if (onCustomerCreated) onCustomerCreated(newCustomerWithTax);
+                toast.success(`สร้างลูกค้าใหม่ ${newCustomerWithTax.accountName} สำเร็จแล้ว`);
+                onClose();
+            }
+        } catch (err) {
+            console.error('🔥 Error checking quick customer:', err);
+            toast.error('ไม่สามารถบันทึกลูกค้าได้ กรุณาตรวจสอบข้อมูลและลองใหม่');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // 8. Duplicate Handlers
+    const handleSelectExistingCustomer = (existing) => {
+        if (onCustomerCreated && existing) onCustomerCreated({ ...existing, isTaxRequested });
+        setIsDuplicateModalOpen(false);
+        onClose();
+    };
+
+    const handleOverwriteExistingCustomer = async (existing, newPayload) => {
+        setIsSaving(true);
+        try {
+            const updated = await quickCustomerService.overwriteExistingCustomer(existing, newPayload);
+            if (onCustomerCreated) onCustomerCreated({ ...updated, isTaxRequested });
+            toast.success('✅ อัปเดตและรวมข้อมูลลูกค้าเดิมเรียบร้อยแล้ว');
+            setIsDuplicateModalOpen(false);
+            onClose();
+        } catch (err) {
+            console.error('Error overwriting customer:', err);
+            toast.error('ไม่สามารถรวมข้อมูลลูกค้าได้');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleForceCreateNewCustomer = async () => {
+        if (!pendingNewCustPayload) return;
+        setIsSaving(true);
+        try {
+            const newCust = await quickCustomerService.executeCreateCustomer(pendingNewCustPayload);
+            const newCustomerWithTax = { ...newCust, isTaxRequested };
+            setCreatedCustomerObj(newCustomerWithTax);
+            if (onCustomerCreated) onCustomerCreated(newCustomerWithTax);
+            toast.success(`สร้างลูกค้าใหม่ ${newCustomerWithTax.accountName} สำเร็จ`);
+            setIsDuplicateModalOpen(false);
+            onClose();
+        } catch (err) {
+            console.error('🔥 Error creating customer:', err);
+            toast.error('ไม่สามารถบันทึกลูกค้าได้');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return {
+        modalStep,
+        setModalStep,
+        rawInputText,
+        handleTextChange,
+        selectedRole,
+        setSelectedRole,
+        dynamicRoles,
+        parsedData,
+        handleFieldChange,
+        isSaving,
+        matchedCustomer,
+        matchedCustomers,
+        isTaxRequested,
+        setIsTaxRequested,
+        stagedLineId,
+        setStagedLineId,
+        isEditingLine,
+        setIsEditingLine,
+        autoFillMissing,
+        setAutoFillMissing,
+        isDuplicateModalOpen,
+        setIsDuplicateModalOpen,
+        duplicateCandidates,
+        pendingNewCustPayload,
+        createdCustomerObj,
+        handleProceedWithCandidate,
+        handleCreateNewCustomer,
+        handleSelectExistingCustomer,
+        handleOverwriteExistingCustomer,
+        handleForceCreateNewCustomer
+    };
+}
+
+export default useQuickAddCustomer;
