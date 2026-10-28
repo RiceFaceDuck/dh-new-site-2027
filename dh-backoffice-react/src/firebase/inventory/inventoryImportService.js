@@ -1,6 +1,9 @@
 import { limit, writeBatch, collection, doc, serverTimestamp, getDocs, query, where, documentId } from 'firebase/firestore';
+import { get, set } from 'idb-keyval';
 import { db, auth } from '../config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+
+export const IDB_INACTIVE_PRODUCTS_KEY = 'dh_inactive_products_cache';
 
 export const inventoryImportService = {
   // Check which SKUs already exist and fetch their data using Local-First 3-Tier Cache
@@ -32,21 +35,32 @@ export const inventoryImportService = {
         if (p.sku) cachedMap.set(String(p.sku).trim().toUpperCase(), p);
       });
 
+      // 🔒 ดึงแคชสินค้าที่ถูกซ่อน/Draft ของหลังบ้านจาก IndexedDB (0 Reads)
+      const inactiveMap = new Map();
+      try {
+        const cachedInactive = await get(IDB_INACTIVE_PRODUCTS_KEY).catch(() => []);
+        if (Array.isArray(cachedInactive)) {
+          cachedInactive.forEach(p => {
+            if (p.sku) inactiveMap.set(String(p.sku).trim().toUpperCase(), p);
+          });
+        }
+      } catch (e) {}
+
       // ⚡ Zero-Query In-Memory Resolution:
-      // หากแคชกลางมีสินค้าอยู่แล้ว (>0) SKU ใดที่ไม่อยู่ในแคช = เป็นสินค้าใหม่ 100%
-      // ไม่ต้องยิง Firestore Query ก้อนละ 30 อีกต่อไป ประหยัดโควต้าอ่าน 100%
+      // เทียบกับทั้งสินค้า Active ใน Shards และสินค้า Inactive ในแคชหลังบ้าน
       const missingSkus = [];
       skus.forEach(sku => {
         const upper = String(sku).trim().toUpperCase();
         if (cachedMap.has(upper)) {
           existingProducts.set(upper, cachedMap.get(upper));
-        } else if (cachedMap.size === 0) {
-          // กรณีฉุกเฉินเท่านั้น: หากทั้ง IndexedDB และ Shards ว่างเปล่าจริงๆ ค่อย fallback ไป query
+        } else if (inactiveMap.has(upper)) {
+          existingProducts.set(upper, inactiveMap.get(upper));
+        } else {
           missingSkus.push(upper);
         }
       });
 
-      // หากมี SKU ตัวใดที่ไม่มีในแคช ค่อยดึงเฉพาะ Delta จาก Firestore (ประหยัด Reads มหาศาล)
+      // หากมี SKU ตัวใดที่ไม่อยู่ในทั้ง 2 แคช ค่อยดึงเฉพาะ Delta จาก Firestore (ประหยัด Reads มหาศาล)
       // 🛡️ Safe Concurrency: ทยอยดึงทีละ 8 ก้อน (ก้อนละ 30 SKUs) ป้องกัน Network Overwhelm เมื่อไฟล์มีหลายพันแถว
       if (missingSkus.length > 0) {
         const chunks = [];
@@ -54,6 +68,7 @@ export const inventoryImportService = {
           chunks.push(missingSkus.slice(i, i + 30));
         }
         
+        let newInactiveFound = false;
         const CONCURRENT_BATCH = 8;
         for (let i = 0; i < chunks.length; i += CONCURRENT_BATCH) {
           const batchChunks = chunks.slice(i, i + CONCURRENT_BATCH);
@@ -64,8 +79,22 @@ export const inventoryImportService = {
           
           const snapshots = await Promise.all(chunkPromises);
           snapshots.forEach(snap => {
-            snap.forEach(docSnap => existingProducts.set(docSnap.id, docSnap.data()));
+            snap.forEach(docSnap => {
+              const data = docSnap.data();
+              existingProducts.set(docSnap.id, data);
+              if (data && data.isActive === false) {
+                inactiveMap.set(String(docSnap.id).trim().toUpperCase(), { id: docSnap.id, ...data });
+                newInactiveFound = true;
+              }
+            });
           });
+        }
+
+        // เซฟสินค้า Inactive ที่ค้นพบลง IndexedDB เพื่อให้รอบต่อไปเป็น 0 Reads ทันที
+        if (newInactiveFound) {
+          try {
+            await set(IDB_INACTIVE_PRODUCTS_KEY, Array.from(inactiveMap.values()));
+          } catch (e) {}
         }
       }
       
@@ -243,6 +272,20 @@ export const inventoryImportService = {
             const { catalogHydrationService } = await import('../catalogHydrationService');
             await catalogHydrationService.updateCatalogCacheWithProducts(toWrite);
           } catch {}
+        }
+
+        // 🔒 Backoffice Inactive Products Cache Update (ช่วยให้รอบถัดไปเป็น 0 Reads ทันที)
+        try {
+          const inactiveWritten = toWrite.filter(p => p.isActive === false);
+          if (inactiveWritten.length > 0) {
+            const currentInactive = (await get(IDB_INACTIVE_PRODUCTS_KEY).catch(() => [])) || [];
+            const inactiveMap = new Map();
+            currentInactive.forEach(p => { if (p && p.sku) inactiveMap.set(String(p.sku).trim().toUpperCase(), p); });
+            inactiveWritten.forEach(p => { if (p && p.sku) inactiveMap.set(String(p.sku).trim().toUpperCase(), p); });
+            await set(IDB_INACTIVE_PRODUCTS_KEY, Array.from(inactiveMap.values()));
+          }
+        } catch (idbErr) {
+          console.warn('⚠️ [inventoryImportService] Inactive cache update warning:', idbErr);
         }
       }
       

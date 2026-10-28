@@ -212,6 +212,13 @@ export function useExcelImport(onSuccess) {
           const fetchedExistingMap = await inventoryService.fetchExistingProducts(skus);
           setExistingMap(fetchedExistingMap);
           
+          // 🔍 ตรวจจับ SKU ซ้ำในไฟล์ Excel (Duplicate In-File Detection)
+          const skuFrequency = new Map();
+          rowsWithSku.forEach(r => {
+            const s = String(r['SKU'] || '').trim().toUpperCase();
+            if (s) skuFrequency.set(s, (skuFrequency.get(s) || 0) + 1);
+          });
+
           const mappedItems = [];
           const analyzedData = [];
 
@@ -228,10 +235,14 @@ export function useExcelImport(onSuccess) {
               const existing = fetchedExistingMap.get(sku);
               const item = mapDataToSchema(rawRow, isNew, existing);
               
+              const isDuplicateInFile = (skuFrequency.get(sku) || 0) > 1;
+
               // แสดงชื่อสินค้าเดิมในพรีวิวเมื่อ Excel ไม่มีคอลัมน์ชื่อ เพื่อความชัดเจนของแอดมิน
               const previewRow = {
                 ...rawRow,
-                Name: rawRow['Name'] || existing?.name || (isNew ? sku : '')
+                Name: rawRow['Name'] || existing?.name || (isNew ? sku : ''),
+                _isDuplicateInFile: isDuplicateInFile,
+                _duplicateWarning: isDuplicateInFile ? `พบ SKU ${sku} ซ้ำอยู่ในไฟล์ กรุณาตรวจสอบ` : null
               };
 
               if (item._hasStockConflict) {
@@ -272,6 +283,14 @@ export function useExcelImport(onSuccess) {
             await new Promise(r => setTimeout(r, 0));
           }
           
+          // 🚀 จัดเรียงลำดับการแสดงผล: ผิดพลาด (ERROR) -> ข้อมูลใหม่ (NEW) -> ข้อมูลเปลี่ยนแปลง (CHANGED) -> ข้อมูลคงเดิม (UNCHANGED)
+          const STATUS_PRIORITY = { ERROR: 0, NEW: 1, CHANGED: 2, UNCHANGED: 3 };
+          analyzedData.sort((a, b) => {
+            const pA = STATUS_PRIORITY[a._status] ?? 99;
+            const pB = STATUS_PRIORITY[b._status] ?? 99;
+            return pA - pB;
+          });
+
           setParsedData(analyzedData);
           // 🛡️ Selective Column Patching: กรองเฉพาะแถวที่มี SKU (ไม่ตัดทิ้งเมื่อไม่มี Name)
           setProductsToImport(mappedItems.filter(p => p && p.sku));

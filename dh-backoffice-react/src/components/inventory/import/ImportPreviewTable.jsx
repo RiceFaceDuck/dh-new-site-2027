@@ -2,15 +2,56 @@ import React, { useMemo, useState } from 'react';
 
 export default function ImportPreviewTable({ headers, parsedData }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'NEW' | 'CHANGED' | 'UNCHANGED' | 'ERROR'
   const pageSize = 50;
 
-  const totalPages = Math.max(1, Math.ceil(parsedData.length / pageSize));
+  const STATUS_PRIORITY = useMemo(() => ({ ERROR: 0, NEW: 1, CHANGED: 2, UNCHANGED: 3 }), []);
+
+  const counts = useMemo(() => {
+    let newCount = 0;
+    let changedCount = 0;
+    let unchangedCount = 0;
+    let errorCount = 0;
+    for (const d of parsedData) {
+      if (d._status === 'NEW') newCount++;
+      else if (d._status === 'CHANGED') changedCount++;
+      else if (d._status === 'UNCHANGED') unchangedCount++;
+      else if (d._status === 'ERROR') errorCount++;
+    }
+    return { newCount, changedCount, unchangedCount, errorCount, total: parsedData.length };
+  }, [parsedData]);
+
+  const duplicateSkus = useMemo(() => {
+    const list = [];
+    parsedData.forEach(d => {
+      const s = String(d['SKU'] || '').trim().toUpperCase();
+      if (d._isDuplicateInFile && s && !list.includes(s)) {
+        list.push(s);
+      }
+    });
+    return list;
+  }, [parsedData]);
+
+  const filteredAndSortedData = useMemo(() => {
+    const list = statusFilter === 'ALL'
+      ? parsedData
+      : parsedData.filter(d => d._status === statusFilter);
+
+    // 🚀 ลำดับความสำคัญ: ERROR -> NEW -> CHANGED -> UNCHANGED
+    return [...list].sort((a, b) => {
+      const pA = STATUS_PRIORITY[a._status] ?? 99;
+      const pB = STATUS_PRIORITY[b._status] ?? 99;
+      return pA - pB;
+    });
+  }, [parsedData, statusFilter, STATUS_PRIORITY]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedData.length / pageSize));
   const activePage = Math.min(currentPage, totalPages);
 
   const paginatedData = useMemo(() => {
     const start = (activePage - 1) * pageSize;
-    return parsedData.slice(start, start + pageSize);
-  }, [parsedData, activePage, pageSize]);
+    return filteredAndSortedData.slice(start, start + pageSize);
+  }, [filteredAndSortedData, activePage, pageSize]);
 
   const priority = useMemo(() => ['SKU', 'Name', 'นับสต๊อค', 'StockQuantity', 'AddStock', 'Price (ราคาส่ง)', 'Price', 'RetailPrice'], []);
   const sortedHeaders = useMemo(() => {
@@ -75,6 +116,17 @@ export default function ImportPreviewTable({ headers, parsedData }) {
        }
     }
     
+    if (h === 'SKU' && row._duplicateWarning) {
+      return (
+        <div className="flex flex-col">
+          <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{val}{suffix}</span>
+          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold leading-tight whitespace-normal mt-0.5">
+            ⚠️ {row._duplicateWarning}
+          </span>
+        </div>
+      );
+    }
+
     return <span className={row._status === 'ERROR' ? 'text-red-500 opacity-50' : ''}>{val}{suffix}</span>;
   };
 
@@ -93,11 +145,9 @@ export default function ImportPreviewTable({ headers, parsedData }) {
     }
   };
 
-  const errorCount = parsedData.filter(d => d._status === 'ERROR').length;
-
   return (
     <div className="space-y-3">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <h4 className="font-bold flex items-center gap-2">
           สรุปผลการวิเคราะห์ข้อมูล ({parsedData.length.toLocaleString()} รายการ)
           {!headers.includes('SKU') && (
@@ -105,34 +155,88 @@ export default function ImportPreviewTable({ headers, parsedData }) {
           )}
         </h4>
 
-        {parsedData.length > 0 && parsedData[0]._status && (
-          <div className="flex gap-3 text-[11px] bg-dh-surface px-2.5 py-1 rounded-md border border-dh-border">
-            <div className="flex items-center gap-1.5">
+        {parsedData.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => { setStatusFilter('ALL'); setCurrentPage(1); }}
+              className={`px-2.5 py-1 rounded-md font-bold transition-all border ${
+                statusFilter === 'ALL'
+                  ? 'bg-dh-primary/10 text-dh-primary border-dh-primary/30 shadow-xs'
+                  : 'bg-dh-surface text-slate-500 border-dh-border hover:bg-dh-base'
+              }`}
+            >
+              ทั้งหมด ({counts.total.toLocaleString()})
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStatusFilter('NEW'); setCurrentPage(1); }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold transition-all border ${
+                statusFilter === 'NEW'
+                  ? 'bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/40 shadow-xs'
+                  : 'bg-dh-surface text-slate-600 border-dh-border hover:bg-dh-base'
+              }`}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> 
-              <span className="font-bold text-slate-600">ใหม่: {parsedData.filter(d => d._status === 'NEW').length}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
+              ใหม่: {counts.newCount.toLocaleString()}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStatusFilter('CHANGED'); setCurrentPage(1); }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold transition-all border ${
+                statusFilter === 'CHANGED'
+                  ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/40 shadow-xs'
+                  : 'bg-dh-surface text-slate-600 border-dh-border hover:bg-dh-base'
+              }`}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span> 
-              <span className="font-bold text-slate-600">เปลี่ยน: {parsedData.filter(d => d._status === 'CHANGED').length}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
+              เปลี่ยน: {counts.changedCount.toLocaleString()}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStatusFilter('UNCHANGED'); setCurrentPage(1); }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold transition-all border ${
+                statusFilter === 'UNCHANGED'
+                  ? 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/40 shadow-xs'
+                  : 'bg-dh-surface text-slate-500 border-dh-border hover:bg-dh-base'
+              }`}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span> 
-              <span className="font-bold text-slate-500">คงเดิม: {parsedData.filter(d => d._status === 'UNCHANGED').length}</span>
-            </div>
-            {errorCount > 0 && (
-              <div className="flex items-center gap-1.5">
+              คงเดิม: {counts.unchangedCount.toLocaleString()}
+            </button>
+            {counts.errorCount > 0 && (
+              <button
+                type="button"
+                onClick={() => { setStatusFilter('ERROR'); setCurrentPage(1); }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold transition-all border ${
+                  statusFilter === 'ERROR'
+                    ? 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/40 shadow-xs'
+                    : 'bg-dh-surface text-red-500 border-dh-border hover:bg-dh-base'
+                }`}
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> 
-                <span className="font-bold text-red-500">ผิด: {errorCount}</span>
-              </div>
+                ผิด: {counts.errorCount.toLocaleString()}
+              </button>
             )}
           </div>
         )}
       </div>
 
-      {errorCount > 0 && (
+      {counts.errorCount > 0 && (
         <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-red-600 dark:text-red-400 text-sm">
-          <p className="font-bold">⚠️ พบข้อมูลที่กรอกผิดพลาด {errorCount} แถว</p>
+          <p className="font-bold">⚠️ พบข้อมูลที่กรอกผิดพลาด {counts.errorCount} แถว</p>
           <p className="opacity-90 mt-1">กรุณาแก้ไขไฟล์ Excel ให้ถูกต้องตามข้อความที่ระบุในตาราง แล้วอัปโหลดใหม่อีกครั้ง</p>
+        </div>
+      )}
+
+      {duplicateSkus.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-amber-700 dark:text-amber-300 text-xs flex items-center gap-2">
+          <span className="text-sm">⚠️</span>
+          <div>
+            <span className="font-bold">พบ SKU ซ้ำอยู่ในไฟล์ ({duplicateSkus.length} รายการ): </span>
+            <span className="font-mono font-semibold">{duplicateSkus.join(', ')}</span>
+            <span className="opacity-90 ml-1">กรุณาตรวจสอบ</span>
+          </div>
         </div>
       )}
 
@@ -177,9 +281,10 @@ export default function ImportPreviewTable({ headers, parsedData }) {
       {/* 🚀 Pagination Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-dh-surface px-4 py-2.5 rounded-xl border border-dh-border text-xs">
         <div className="text-dh-muted font-medium">
-          แสดงรายการที่ <span className="font-bold text-dh-main">{parsedData.length === 0 ? 0 : (activePage - 1) * pageSize + 1}</span> ถึง{' '}
-          <span className="font-bold text-dh-main">{Math.min(activePage * pageSize, parsedData.length)}</span> จากทั้งหมด{' '}
-          <span className="font-bold text-dh-main">{parsedData.length.toLocaleString()}</span> รายการ
+          แสดงรายการที่ <span className="font-bold text-dh-main">{filteredAndSortedData.length === 0 ? 0 : (activePage - 1) * pageSize + 1}</span> ถึง{' '}
+          <span className="font-bold text-dh-main">{Math.min(activePage * pageSize, filteredAndSortedData.length)}</span> จากทั้งหมด{' '}
+          <span className="font-bold text-dh-main">{filteredAndSortedData.length.toLocaleString()}</span> รายการ
+          {statusFilter !== 'ALL' && <span className="ml-1 text-dh-primary font-bold">(กรอง: {statusFilter})</span>}
         </div>
 
         <div className="flex items-center gap-1.5">
