@@ -31,8 +31,13 @@ const StoreProfileForm = ({ storeData, setStoreData, user, appId, businessCardAd
       showToast('ดึงพิกัดตำแหน่งปัจจุบันสำเร็จแล้วครับ 📍', 'success');
       return coords;
     } catch (error) {
-      console.error("🔥 Error:", error);
-      showToast(error.message, 'error');
+      if (error?.isPermissionDenied || error?.code === 1) {
+        // ไม่แสดง Error สีแดงที่ทำให้ตกใจ แนะนำวิธีเปิดสิทธิ์อย่างนุ่มนวล
+        showToast('💡 หากต้องการให้ระบุพิกัดอัตโนมัติ สามารถแตะเปิดการอนุญาตที่ไอคอน 🔒 ข้างแถบ URL ได้ครับ', 'info');
+      } else {
+        console.error("🔥 Geolocation Error:", error);
+        showToast(error?.message || 'ไม่สามารถค้นหาพิกัดได้ในขณะนี้', 'warning');
+      }
       throw error;
     }
   };

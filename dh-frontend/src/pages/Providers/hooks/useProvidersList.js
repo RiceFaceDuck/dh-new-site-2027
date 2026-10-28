@@ -53,8 +53,13 @@ export const useProvidersList = () => {
         setUserLocation({ lat: latitude, lng: longitude });
       },
       (error) => {
-        console.warn("Location permission denied or error:", error);
-        setLocationError("ไม่สามารถเข้าถึงพิกัดได้ (ระบบจะเรียงตามคะแนนแนะนำ)");
+        console.warn("Location permission status/error:", error);
+        if (error?.code === 1) {
+          // ไม่แสดงข้อความผิดพลาดเรื่องไม่ได้รับอนุญาตตามที่ต้องการ (Calm UI)
+          setLocationError(null);
+        } else if (showExplanation) {
+          setLocationError("ไม่พบสัญญาณพิกัด (จัดเรียงตามคะแนนแนะนำ)");
+        }
       },
       { timeout: 10000, enableHighAccuracy: true }
     );

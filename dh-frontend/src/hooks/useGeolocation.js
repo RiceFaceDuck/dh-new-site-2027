@@ -27,13 +27,26 @@ export const useGeolocation = () => {
         },
         (error) => {
           let errorMsg = "ไม่สามารถดึงตำแหน่งได้";
-          if (error.code === 1) errorMsg = "ผู้ใช้งานไม่อนุญาตให้เข้าถึงตำแหน่งที่ตั้ง (Permission Denied)";
-          if (error.code === 2) errorMsg = "ไม่พบสัญญาณ GPS (Position Unavailable)";
-          if (error.code === 3) errorMsg = "หมดเวลาในการค้นหาตำแหน่ง (Timeout)";
+          const isPermissionDenied = error.code === 1;
+          if (isPermissionDenied) {
+            errorMsg = "ผู้ใช้งานยังไม่ได้เปิดการอนุญาตตำแหน่ง";
+          } else if (error.code === 2) {
+            errorMsg = "ไม่พบสัญญาณ GPS (Position Unavailable)";
+          } else if (error.code === 3) {
+            errorMsg = "หมดเวลาในการค้นหาตำแหน่ง (Timeout)";
+          }
           
-          setLocationError(errorMsg);
+          if (!isPermissionDenied) {
+            setLocationError(errorMsg);
+          } else {
+            setLocationError(null);
+          }
           setIsLocating(false);
-          reject(new Error(errorMsg));
+          
+          const err = new Error(errorMsg);
+          err.code = error.code;
+          err.isPermissionDenied = isPermissionDenied;
+          reject(err);
         },
         {
           enableHighAccuracy: true,
