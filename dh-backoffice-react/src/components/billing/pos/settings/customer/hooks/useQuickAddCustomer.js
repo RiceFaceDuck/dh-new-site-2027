@@ -222,6 +222,20 @@ export function useQuickAddCustomer({
             }
         }
 
+        // Business / Store Name takes HIGHEST precedence for DH B2B system
+        const effectiveStoreName = (parsedData.storeName && parsedData.storeName !== 'ลูกค้าใหม่')
+            ? parsedData.storeName
+            : (candidate.storeName || candidate.accountName || candidate.displayName);
+
+        const effectiveContactName = parsedData.contactName || candidate.contactName || candidate.firstName || candidate.displayName;
+
+        // If candidate doesn't have a distinct storeName in DB, also update it in profile payload
+        if (!candidate.storeName && effectiveStoreName && effectiveStoreName !== candidate.displayName) {
+            payload = payload || {};
+            payload.storeName = effectiveStoreName;
+            payload.accountName = effectiveStoreName;
+        }
+
         // Apply staged Line ID if modified
         if (stagedLineId && (!candidate.lineId || candidate.lineId !== stagedLineId)) {
             payload = payload || {};
@@ -232,7 +246,7 @@ export function useQuickAddCustomer({
             try {
                 const uid = candidate.uid || candidate.id;
                 await quickCustomerService.overwriteExistingCustomer(candidate, payload);
-                toast.success(`อัปเดตข้อมูลเพิ่มเติมให้ ${candidate.storeName || candidate.accountId} เรียบร้อยแล้ว`);
+                toast.success(`อัปเดตข้อมูลเพิ่มเติมให้ ${effectiveStoreName || candidate.accountId} เรียบร้อยแล้ว`);
             } catch (err) {
                 console.warn('[useQuickAddCustomer] Auto-fill update warning:', err);
             }
@@ -244,7 +258,11 @@ export function useQuickAddCustomer({
             ...(payload || {}),
             uid: candidate.uid || candidate.id,
             id: candidate.uid || candidate.id,
-            storeName: candidate.storeName || candidate.accountName || candidate.displayName,
+            storeName: effectiveStoreName,
+            accountName: effectiveStoreName,
+            displayName: effectiveStoreName,
+            contactName: effectiveContactName,
+            firstName: effectiveContactName,
             shippingAddress: parsedData.addressLine ? {
                 addressLine: parsedData.addressLine,
                 subDistrict: parsedData.subDistrict,

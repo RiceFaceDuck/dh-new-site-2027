@@ -35,8 +35,18 @@ export default function CustomerDetectedSheet({
         (candidate.role && candidate.role.toLowerCase().includes('partner'))
     );
 
-    const storeName = candidate.storeName || candidate.displayName || candidate.accountName || parsedData.storeName || '-';
-    const contactName = candidate.contactName || candidate.firstName || parsedData.contactName || storeName;
+    // Business / Store Name takes HIGHEST precedence for DH B2B workflow
+    const storeName = (parsedData.storeName && parsedData.storeName !== 'ลูกค้าใหม่')
+        ? parsedData.storeName 
+        : (candidate.storeName || candidate.accountName || candidate.displayName || '-');
+
+    // Contact Person Name
+    const candidatePerson = candidate.displayName || candidate.firstName || candidate.contactName || '';
+    const parsedPerson = parsedData.contactName && parsedData.contactName !== storeName ? parsedData.contactName : '';
+    let contactName = candidatePerson || parsedPerson || storeName;
+    if (candidatePerson && parsedPerson && candidatePerson.toLowerCase() !== parsedPerson.toLowerCase()) {
+        contactName = `${candidatePerson} (${parsedPerson.startsWith('คุณ') ? parsedPerson : `คุณ ${parsedPerson}`})`;
+    }
     const accountId = candidate.accountId || candidate.customerCode || candidate.id?.substring(0, 8)?.toUpperCase() || 'TRJEHNHG';
     const points = candidate.creditPoints ?? candidate.totalAccumulatedPoints ?? 0;
     const primaryPhone = candidate.phone || candidate.phoneNumber || parsedData.phone || '-';

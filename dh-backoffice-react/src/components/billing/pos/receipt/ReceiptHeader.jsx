@@ -18,6 +18,7 @@ export default function ReceiptHeader({
     const courierName = data?.courier || data?.shippingMethod || orderData?.courier || orderData?.shippingMethod;
     const customerTaxId = customer?.taxId || data?.taxId || orderData?.customer?.taxId || orderData?.taxId || '';
     const customerBranch = customer?.branch || data?.branch || orderData?.customer?.branch || '';
+    const contactPerson = customer?.contactName || customer?.firstName || orderData?.customer?.contactName || orderData?.contactName || data?.contactName || '';
 
     return (
         <>
@@ -53,6 +54,9 @@ export default function ReceiptHeader({
                 <div>
                     <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">ผู้รับสินค้า (Customer)</p>
                     <p className="font-black text-[12px] truncate">{displayName}</p>
+                    {contactPerson && contactPerson !== displayName && (
+                        <p className="text-[10px] text-gray-600 font-medium truncate">ผู้ติดต่อ: {contactPerson}</p>
+                    )}
                     <p className="font-bold text-blue-700 flex items-center gap-1 mt-0.5"><Phone size={10}/> {displayPhone}</p>
                     {customerTaxId && (
                         <p className="text-[9px] text-slate-700 font-bold mt-0.5">

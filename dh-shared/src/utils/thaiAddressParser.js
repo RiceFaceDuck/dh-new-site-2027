@@ -210,6 +210,16 @@ export const parseCustomerAddress = (rawInput) => {
 
     const splitCompoundName = (text) => {
         if (!text) return null;
+
+        // Detect "StoreName (ContactPerson)" pattern (e.g. "Micro computer & Service (โปษยา ผั่งวิภาส)")
+        const parenMatch = text.match(/^([^(]+)\s*\(([^)]+)\)$/);
+        if (parenMatch) {
+            return {
+                store: parenMatch[1].trim(),
+                contact: parenMatch[2].trim()
+            };
+        }
+
         const s = storePrefixInTextRegex.exec(text);
         const p = personHonorificInTextRegex.exec(text);
         if (s && p) {
