@@ -28,7 +28,15 @@
 
 <core_schema>
 - Entry Point: `Management System/_deploy/deploy-all.bat`
-- Dedicated Deploy Scripts: `Management System/_deploy/deploy-*.bat`
+- Dedicated Deploy Scripts: `Management System/_deploy/`
+  * `deploy-all.bat`: Master Deployment Center
+  * `deploy-frontend.bat`: หน้าร้านหลัก
+  * `deploy-backoffice.bat`: ระบบหลังร้าน
+  * `deploy-staff.bat`: แอปพนักงาน
+  * `deploy-functions.bat`: Cloud Functions (Safe Mode ระบุรายตัว)
+  * `deploy-rules.bat`: Security Rules (Firestore + Storage)
+  * `deploy-indexes.bat`: Firestore Indexes
+  * `git-push.bat`: Auto Commit & Push to GitHub
 - Main Logic: `Management System/scripts/deploy_center.mjs`
 - Database Backup Runner: `Management System/scripts/backupDatabase.mjs`
 - Backup Output Directory: `Management System/backups/{YYYY-MM-DD}_{HH-mm-ss}/{collection}.json`
