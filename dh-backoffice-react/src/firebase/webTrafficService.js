@@ -2,7 +2,7 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 
-const COLLECTION_NAME = 'system_stats';
+const COLLECTION_NAME = 'settings';
 const DOC_ID = 'web_traffic';
 
 export const webTrafficService = {
