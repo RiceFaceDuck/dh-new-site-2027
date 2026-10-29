@@ -8,11 +8,25 @@ import LazyImage from '../common/LazyImage';
 import { getRenderableImageUrl } from '../../utils/imageUtils';
 import { fetchAllActivePartners } from '../../firebase/partnerLocationService';
 import { calculateDistance } from '../../utils/geoUtils';
+import useAdViewTracker from '../../hooks/useAdViewTracker';
 
-const ProductAdCard = ({ ad }) => {
+const ProductAdCard = ({ ad, placement = 'product_grid_card' }) => {
   const navigate = useNavigate();
-  const cardRef = useRef(null);
-  const [hasTrackedView, setHasTrackedView] = useState(false);
+  const collectionName = ad?._collection || (ad?.type === 'PRODUCT_LINK' ? 'user_sku_ads' : 'partner_ads');
+  const adType = ad?.type || 'BUSINESS_CARD';
+  const ownerId = ad?.userId || ad?.ownerId || 'unknown';
+
+  const { ref: cardRef } = useAdViewTracker({
+    adId: ad?.id,
+    adCollection: collectionName,
+    adType,
+    ownerId,
+    placement,
+    threshold: 0.5,
+    dwellTimeMs: 1000,
+    enabled: Boolean(ad?.id && ad.id !== 'preview-mode'),
+    metadata: ad
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   // ฟังก์ชันจัดรูปแบบระยะทาง: ปัดเศษกิโลเมตรลงเป็นจำนวนเต็มเสมอ (เช่น 411.7 กม. -> 411 กม.)
   const formatDistanceValue = (raw) => {
@@ -58,27 +72,7 @@ const ProductAdCard = ({ ad }) => {
     return () => { isMounted = false; };
   }, [ad]);
 
-  // ==========================================
-  // 👁️ 1. ระบบตรวจจับการมองเห็น (Real View Tracking)
-  // ==========================================
-  useEffect(() => {
-    if (!cardRef.current || hasTrackedView || !ad?.id || ad.id === 'preview-mode') return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          const collectionName = ad._collection || (ad.type === 'PRODUCT_LINK' ? 'user_sku_ads' : 'partner_ads');
-          marketingService.trackAdView(collectionName, ad.id, ad);
-          setHasTrackedView(true);
-          observer.disconnect(); 
-        }
-      },
-      { threshold: 0.5 } 
-    );
-
-    observer.observe(cardRef.current);
-    return () => observer.disconnect();
-  }, [ad, hasTrackedView]);
+  // 👁️ ระบบตรวจจับการมองเห็นถูกยกระดับเป็น useAdViewTracker (MRC standard: continuous 1,000ms dwell time)
 
   // ==========================================
   // 🖱️ 2. ระบบจัดการการคลิกและเปิด Pop-up

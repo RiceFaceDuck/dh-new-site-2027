@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import ProductAdCard from '../../../components/ads/ProductAdCard';
-
 import { getUserPartnerAds } from '../../../firebase/marketingService';
-
-// 🔐 App ID logic matching the rest of the app
-const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
 const PartnerAds = ({ partnerId }) => {
   const [ads, setAds] = useState([]);
@@ -30,7 +26,10 @@ const PartnerAds = ({ partnerId }) => {
           return;
         }
 
-        const activeAds = allAds.filter((adData) => {
+        // ดึงโฆษณาทั้งหมดของพาร์ทเนอร์รายนี้
+        const allAds = await getUserPartnerAds(partnerId);
+
+        const activeAds = (allAds || []).filter((adData) => {
           // Check for active status
           const isActive = ['active', 'ACTIVE', 'APPROVED'].includes(adData.status) || adData.isActive === true;
           // Exclude business cards
@@ -76,7 +75,7 @@ const PartnerAds = ({ partnerId }) => {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
         {ads.map((ad) => (
-          <ProductAdCard key={ad.id} ad={ad} />
+          <ProductAdCard key={ad.id} ad={ad} placement="store_partner_ads" />
         ))}
       </div>
     </div>

@@ -38,9 +38,12 @@ const aggregateTelemetryEvents = (events = []) => {
     const adId = ev?.adId ? String(ev.adId).trim() : null;
     if (!adId) continue;
 
+    const collection = ev?.collection === "user_sku_ads" ? "user_sku_ads" : "partner_ads";
+
     if (!adAggregates[adId]) {
       adAggregates[adId] = {
         adId,
+        collection,
         views: 0,
         clicks: 0,
         ownerId: ev.ownerId && ev.ownerId !== "unknown" ? String(ev.ownerId).trim() : null,
@@ -89,13 +92,20 @@ const calculateAdDeductions = (validAdMap, config = {}) => {
 
     const clickDeduct = deltaClicks * costPerClick;
     const viewDeduct = (deltaViews / impressionBatchSize) * costPerImpressionBatch;
-    const totalDeduct = Math.round((clickDeduct + viewDeduct) * 100) / 100;
+    const rawTotal = clickDeduct + viewDeduct;
+    // Micro-deduction precision: ensure small view batches (< 50 views) aren't lost to zero rounding
+    const totalDeduct = rawTotal > 0 && rawTotal < 0.01
+      ? Math.round(rawTotal * 10000) / 10000
+      : Math.round(rawTotal * 100) / 100;
 
     if (ownerId && totalDeduct > 0) {
       if (!ownerDeductions[ownerId]) {
         ownerDeductions[ownerId] = { totalDeduct: 0, ads: [] };
       }
-      ownerDeductions[ownerId].totalDeduct = Math.round((ownerDeductions[ownerId].totalDeduct + totalDeduct) * 100) / 100;
+      const newOwnerTotal = ownerDeductions[ownerId].totalDeduct + totalDeduct;
+      ownerDeductions[ownerId].totalDeduct = newOwnerTotal > 0 && newOwnerTotal < 0.01
+        ? Math.round(newOwnerTotal * 10000) / 10000
+        : Math.round(newOwnerTotal * 100) / 100;
       ownerDeductions[ownerId].ads.push({ adId, deltaViews, deltaClicks, totalDeduct });
     }
   }
@@ -119,8 +129,11 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
   let totalAdsUpdated = 0;
 
   await db.runTransaction(async (transaction) => {
-    // A. Read Phase: ดึงข้อมูลโฆษณา, ผู้ใช้, และ Settings ทั้งหมดก่อนทำการเขียน
-    const adRefs = adIds.map((id) => db.collection("partner_ads").doc(id));
+    // A. Read Phase: ดึงข้อมูลโฆษณา, ผู้ใช้, และ Settings ทั้งหมดก่อนทำการเขียน (รองรับทั้ง partner_ads และ user_sku_ads)
+    const adRefs = adIds.map((id) => {
+      const coll = adAggregates[id]?.collection || "partner_ads";
+      return db.collection(coll).doc(id);
+    });
     const adSnaps = await Promise.all(adRefs.map((ref) => transaction.get(ref)));
 
     const ownerIdsToFetch = new Set();
@@ -134,6 +147,7 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
         validAdMap[adId] = {
           ref: snap.ref,
           data: adData,
+          collection: adAggregates[adId]?.collection || "partner_ads",
           ownerId,
           deltaViews: adAggregates[adId].views,
           deltaClicks: adAggregates[adId].clicks
@@ -171,7 +185,8 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
       const currentPoints = Number(userData.creditPoints || 0);
       const creditLimit = Number(adData.creditLimit || -1);
       const currentSpent = Number(adData.spentBudget || 0);
-      const adCost = (deltaClicks * costPerClick) + ((deltaViews / impressionBatchSize) * costPerImpressionBatch);
+      const rawAdCost = (deltaClicks * costPerClick) + ((deltaViews / impressionBatchSize) * costPerImpressionBatch);
+      const adCost = rawAdCost > 0 && rawAdCost < 0.01 ? Math.round(rawAdCost * 10000) / 10000 : Math.round(rawAdCost * 100) / 100;
       const newSpent = Math.round((currentSpent + adCost) * 100) / 100;
 
       let isExhausted = false;
@@ -287,6 +302,14 @@ exports.recordAdTelemetry = onRequest(
     if (req.method !== "POST") {
       res.status(405).json({ success: false, error: "Method not allowed. Use POST." });
       return;
+    }
+
+    if (process.env.AD_TELEMETRY_SECRET) {
+      const authHeader = req.headers["x-ad-telemetry-secret"] || req.headers["authorization"];
+      if (!authHeader || authHeader !== process.env.AD_TELEMETRY_SECRET) {
+        res.status(401).json({ success: false, error: "Unauthorized: Invalid or missing telemetry secret." });
+        return;
+      }
     }
 
     try {

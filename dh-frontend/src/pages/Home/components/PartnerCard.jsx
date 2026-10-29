@@ -1,27 +1,50 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { logClick } from '../../../firebase/marketingAnalyticsService';
+import { trackAdClick } from '../../../firebase/marketingAnalyticsService';
 import LazyImage from '../../../components/common/LazyImage';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
 import { getRenderableImageUrl } from '../../../utils/imageUtils';
+import useAdViewTracker from '../../../hooks/useAdViewTracker';
 
-const PartnerCard = ({ partner }) => {
+const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
   // Use storeProfile data if available, fallback to partner root level data
   const rawAvatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || partner.photoURL || partner.profileImage || partner.profilePicture || partner.logo || partner.photo || null;
   const avatar = getRenderableImageUrl(rawAvatar, 400);
   const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
   const role = partner.services || partner.role || 'ช่างซ่อมคอมพิวเตอร์';
+  const partnerUid = partner.id || partner.userId;
+  const adId = 'AD-CARD-' + partnerUid;
+
+  // 👁️ ระบบตรวจจับสายตาจริง (IntersectionObserver + Dwell Time 1s + Anti-Fraud 5m)
+  const { ref: cardRef } = useAdViewTracker({
+    adId,
+    adCollection: 'partner_ads',
+    adType: 'BUSINESS_CARD',
+    ownerId: partnerUid || 'unknown',
+    placement,
+    threshold: 0.5,
+    dwellTimeMs: 1000,
+    enabled: Boolean(partnerUid),
+    metadata: {
+      partnerName: name,
+      services: role
+    }
+  });
 
   const handleClick = async () => {
     try {
-      await logClick('AD-CARD-' + (partner.id || partner.userId));
+      await trackAdClick('partner_ads', adId, {
+        type: 'BUSINESS_CARD',
+        ownerId: partnerUid || 'unknown',
+        placement
+      });
     } catch (e) {
       console.error("Failed to track click", e);
     }
   };
 
   return (
-    <div className="group relative bg-white p-3 md:p-3.5 rounded-md flex items-center space-x-3 md:space-x-4 border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200">
+    <div ref={cardRef} className="group relative bg-white p-3 md:p-3.5 rounded-md flex items-center space-x-3 md:space-x-4 border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200">
       
       {/* Avatar Container */}
       <div className="relative shrink-0">

@@ -19,17 +19,26 @@ const getTelemetryEndpoint = () => {
   return `https://asia-southeast1-${projectId}.cloudfunctions.net/recordAdTelemetry`;
 };
 
+const inMemoryAntiFraudCache = new Map();
+
 const checkAntiFraud = (actionType, adId) => {
-  if (typeof window === "undefined" || !window.sessionStorage) return true;
-  try {
-    const sessionKey = `dh_ad_${actionType}_${adId}`;
-    const lastAction = sessionStorage.getItem(sessionKey);
-    const now = Date.now();
-    if (lastAction && (now - parseInt(lastAction, 10)) < 300000) return false; // 5-minute cooldown per ad
-    sessionStorage.setItem(sessionKey, now.toString());
-  } catch (e) {
-    // SessionStorage disabled or restricted
+  const sessionKey = `dh_ad_${actionType}_${adId}`;
+  const now = Date.now();
+
+  if (typeof window !== "undefined" && window.sessionStorage) {
+    try {
+      const lastAction = sessionStorage.getItem(sessionKey);
+      if (lastAction && (now - parseInt(lastAction, 10)) < 300000) return false; // 5-minute cooldown per ad
+      sessionStorage.setItem(sessionKey, now.toString());
+      return true;
+    } catch (e) {
+      // SessionStorage disabled or restricted, fall back to memory
+    }
   }
+
+  const lastMemoryAction = inMemoryAntiFraudCache.get(sessionKey);
+  if (lastMemoryAction && (now - lastMemoryAction) < 300000) return false;
+  inMemoryAntiFraudCache.set(sessionKey, now);
   return true; 
 };
 
@@ -119,7 +128,8 @@ export const trackAdView = async (collectionName, adId, meta = {}) => {
         ad_id: String(adId),
         ad_collection: String(collectionName),
         ad_type: meta?.type || 'unknown',
-        owner_id: meta?.ownerId || 'unknown'
+        owner_id: meta?.ownerId || 'unknown',
+        placement: meta?.placement || 'unknown'
       });
     }
   } catch (err) {
@@ -133,6 +143,7 @@ export const trackAdView = async (collectionName, adId, meta = {}) => {
     collection: String(collectionName),
     ownerId: meta?.ownerId || 'unknown',
     adType: meta?.type || 'unknown',
+    placement: meta?.placement || 'unknown',
     timestamp: Date.now()
   });
 
@@ -155,6 +166,7 @@ export const trackAdClick = async (collectionName, adId, meta = {}) => {
         ad_collection: String(collectionName),
         ad_type: meta?.type || 'unknown',
         owner_id: meta?.ownerId || 'unknown',
+        placement: meta?.placement || 'unknown',
         target_url: meta?.targetUrl || ''
       });
     }
@@ -169,6 +181,7 @@ export const trackAdClick = async (collectionName, adId, meta = {}) => {
     collection: String(collectionName),
     ownerId: meta?.ownerId || 'unknown',
     adType: meta?.type || 'unknown',
+    placement: meta?.placement || 'unknown',
     targetUrl: meta?.targetUrl || '',
     timestamp: Date.now()
   });

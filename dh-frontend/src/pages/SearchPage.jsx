@@ -7,6 +7,86 @@ import { Search, Sparkles, ChevronLeft, Database, Wrench, Phone, MessageCircle, 
 import { filterProductsByQuery, findRelatedProducts } from '../utils/searchMatcher';
 import { getStorefrontCatalog, subscribeStorefrontCatalogUpdates } from '../services/storefrontCatalogService';
 import { marketingService } from '../firebase/marketingService';
+import useAdViewTracker from '../hooks/useAdViewTracker';
+
+const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
+  const { ref: cardRef } = useAdViewTracker({
+    adId: ad?.id,
+    adCollection: 'partner_ads',
+    adType: ad?.type || 'BUSINESS_CARD',
+    ownerId: ad?.ownerId || 'unknown',
+    placement: 'search_technician_modal',
+    threshold: 0.5,
+    dwellTimeMs: 1000,
+    enabled: Boolean(ad?.id),
+    metadata: {
+      title: ad.title || ad.partnerName
+    }
+  });
+
+  return (
+    <div ref={cardRef} className="bg-white rounded-[0.1rem] border border-slate-200/90 p-4 shadow-xs space-y-3">
+      {ad.imageUrl && (
+        <div className="w-full h-36 bg-slate-100 rounded-[0.1rem] overflow-hidden border border-slate-100 flex items-center justify-center">
+          <LazyImage 
+            src={ad.imageUrl} 
+            alt={ad.title || ad.partnerName || "นามบัตรช่าง"} 
+            className="w-full h-full object-contain" 
+            fallbackSrc="/logo.png"
+          />
+        </div>
+      )}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+              <ShieldCheck size={11} /> ช่างที่ผ่านการรับรอง
+            </span>
+          </div>
+          <h4 className="font-bold text-slate-800 text-base">{ad.title || ad.partnerName || "ร้านช่างซ่อมโน๊ตบุ๊ค"}</h4>
+        </div>
+      </div>
+      {ad.description && (
+        <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-[0.1rem] border border-slate-100 leading-relaxed">
+          {ad.description}
+        </p>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+        {ad.phone && (
+          <a
+            href={	el:${ad.phone}}
+            onClick={() => onContactClick(ad, 'phone_call', 	el:${ad.phone})}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+          >
+            <Phone size={13} /> โทร: {ad.phone}
+          </a>
+        )}
+        {ad.messengerUrl && (
+          <a
+            href={ad.messengerUrl.startsWith('http') ? ad.messengerUrl : https://${ad.messengerUrl}}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => onContactClick(ad, 'facebook_chat', ad.messengerUrl)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+          >
+            <MessageCircle size={13} /> แชท Facebook
+          </a>
+        )}
+        {ad.lineUrl && (
+          <a
+            href={ad.lineUrl.startsWith('http') ? ad.lineUrl : https://${ad.lineUrl}}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => onContactClick(ad, 'line_chat', ad.lineUrl)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+          >
+            <MessageCircle size={13} /> ทัก LINE ร้าน
+          </a>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,25 +144,14 @@ const SearchPage = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // 👁️ บันทึก Telemetry ยอดวิว (Impression) เมื่อเปิด Modal นามบัตรช่าง (พร้อม Anti-Fraud ในตัว)
-  useEffect(() => {
-    if (showTechnicianModal && Array.isArray(technicianAds) && technicianAds.length > 0) {
-      technicianAds.forEach(ad => {
-        if (ad?.id) {
-          marketingService.trackAdView('partner_ads', ad.id, {
-            type: ad.type || 'BUSINESS_CARD',
-            ownerId: ad.ownerId || ''
-          });
-        }
-      });
-    }
-  }, [showTechnicianModal, technicianAds]);
+  // 👁️ View Tracking สำหรับ Modal ช่างถูกจัดการด้วย useAdViewTracker ในการ์ดแต่ละใบตามสายตาจริง
 
   // 🎯 บันทึก Telemetry ยอดคลิกติดต่อช่าง (Ad Click)
   const handleTechnicianContactClick = (ad, actionType, targetUrl) => {
     if (ad?.id) {
       marketingService.trackAdClick('partner_ads', ad.id, {
         type: ad.type || 'BUSINESS_CARD',
+        placement: 'search_technician_modal',
         ownerId: ad.ownerId || '',
         action: actionType,
         targetUrl: targetUrl
@@ -522,68 +591,7 @@ const SearchPage = () => {
                 {/* Modal Body */}
                 <div className="p-5 overflow-y-auto space-y-4 bg-slate-50/50">
                   {technicianAds.length > 0 ? (
-                    technicianAds.map((ad) => (
-                      <div key={ad.id} className="bg-white rounded-[0.1rem] border border-slate-200/90 p-4 shadow-xs space-y-3">
-                        {ad.imageUrl && (
-                          <div className="w-full h-36 bg-slate-100 rounded-[0.1rem] overflow-hidden border border-slate-100 flex items-center justify-center">
-                            <LazyImage 
-                              src={ad.imageUrl} 
-                              alt={ad.title || ad.partnerName || "นามบัตรช่าง"} 
-                              className="w-full h-full object-contain" 
-                              fallbackSrc="/logo.png"
-                            />
-                          </div>
-                        )}
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                <ShieldCheck size={11} /> ช่างที่ผ่านการรับรอง
-                              </span>
-                            </div>
-                            <h4 className="font-bold text-slate-800 text-base">{ad.title || ad.partnerName || "ร้านช่างซ่อมโน๊ตบุ๊ค"}</h4>
-                          </div>
-                        </div>
-                        {ad.description && (
-                          <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-[0.1rem] border border-slate-100 leading-relaxed">
-                            {ad.description}
-                          </p>
-                        )}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                          {ad.phone && (
-                            <a
-                              href={`tel:${ad.phone}`}
-                              onClick={() => handleTechnicianContactClick(ad, 'phone_call', `tel:${ad.phone}`)}
-                              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-                            >
-                              <Phone size={13} /> โทร: {ad.phone}
-                            </a>
-                          )}
-                          {ad.messengerUrl && (
-                            <a
-                              href={ad.messengerUrl.startsWith('http') ? ad.messengerUrl : `https://${ad.messengerUrl}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={() => handleTechnicianContactClick(ad, 'facebook_chat', ad.messengerUrl)}
-                              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-                            >
-                              <MessageCircle size={13} /> แชท Facebook
-                            </a>
-                          )}
-                          {ad.lineUrl && (
-                            <a
-                              href={ad.lineUrl.startsWith('http') ? ad.lineUrl : `https://${ad.lineUrl}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={() => handleTechnicianContactClick(ad, 'line_chat', ad.lineUrl)}
-                              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-                            >
-                              <MessageCircle size={13} /> ทัก LINE ร้าน
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                    technicianAds.map((ad) => (<SearchTechnicianCardItem key={ad.id} ad={ad} onContactClick={handleTechnicianContactClick} />))
                   ) : (
                     /* บัตรมาตรฐานศูนย์ช่าง DH Notebook */
                     <div className="bg-white rounded-[0.1rem] border border-slate-200/90 p-5 shadow-xs space-y-4">

@@ -2,13 +2,14 @@ import { ShieldCheck, Phone, CheckCircle2, MapPin, Award } from 'lucide-react';
 import LazyImage from '../common/LazyImage';
 import { useToast } from '../../context/ToastContext';
 import { useNearestPartner } from './hooks/useNearestPartner';
+import useAdViewTracker from '../../hooks/useAdViewTracker';
+import { trackAdClick } from '../../firebase/marketingAnalyticsService';
 
 // ==========================================
 // 🧩 Sub-Components (SRP)
 // ==========================================
 
 const PartnerServiceBadges = ({ servicesText }) => {
-  const { showToast } = useToast();
   if (!servicesText) return null;
   const servicesList = Array.isArray(servicesText)
     ? servicesText.map(s => String(s).trim()).filter(Boolean)
@@ -48,9 +49,38 @@ const SkeletonLoader = () => (
 
 const PartnerSupportBox = () => {
   const { partner, loading, error } = useNearestPartner();
+  const { showToast } = useToast();
+
+  const partnerUid = partner?.id || partner?.userId;
+  const adId = 'AD-CARD-' + partnerUid;
+
+  // 👁️ ระบบตรวจจับสายตาจริง (IntersectionObserver + Dwell Time 1s + Anti-Fraud 5m)
+  const { ref: boxRef } = useAdViewTracker({
+    adId,
+    adCollection: 'partner_ads',
+    adType: 'BUSINESS_CARD',
+    ownerId: partnerUid || 'unknown',
+    placement: 'product_detail_nearest_partner',
+    threshold: 0.5,
+    dwellTimeMs: 1000,
+    enabled: Boolean(partnerUid),
+    metadata: {
+      storeName: partner?.storeName,
+      services: partner?.services
+    }
+  });
 
   const handleContactClick = () => {
     if (!partner) return;
+    if (partnerUid) {
+      trackAdClick('partner_ads', adId, {
+        type: 'BUSINESS_CARD',
+        ownerId: partnerUid || 'unknown',
+        placement: 'product_detail_nearest_partner',
+        actionType: 'phone_call',
+        targetUrl: partner.phone ? `tel:${partner.phone}` : ''
+      }).catch(() => {});
+    }
     if (partner.phone) {
       window.location.href = `tel:${partner.phone}`;
     } else {
@@ -58,11 +88,47 @@ const PartnerSupportBox = () => {
     }
   };
 
+  const handleLineClick = () => {
+    if (!partner) return;
+    if (partnerUid) {
+      trackAdClick('partner_ads', adId, {
+        type: 'BUSINESS_CARD',
+        ownerId: partnerUid || 'unknown',
+        placement: 'product_detail_nearest_partner',
+        actionType: 'line_chat',
+        targetUrl: partner.lineUrl || ''
+      }).catch(() => {});
+    }
+    if (partner.lineUrl) {
+      window.open(partner.lineUrl, '_blank');
+    } else {
+      showToast('ร้านค้านี้ยังไม่ได้ระบุลิงก์ LINE ติดต่อ', 'info');
+    }
+  };
+
+  const handleMessengerClick = () => {
+    if (!partner) return;
+    if (partnerUid) {
+      trackAdClick('partner_ads', adId, {
+        type: 'BUSINESS_CARD',
+        ownerId: partnerUid || 'unknown',
+        placement: 'product_detail_nearest_partner',
+        actionType: 'facebook_chat',
+        targetUrl: partner.messengerUrl || ''
+      }).catch(() => {});
+    }
+    if (partner.messengerUrl) {
+      window.open(partner.messengerUrl, '_blank');
+    } else {
+      showToast('ร้านค้านี้ยังไม่ได้ระบุลิงก์ Messenger ติดต่อ', 'info');
+    }
+  };
+
   if (loading) return <SkeletonLoader />;
   if (error || !partner) return null; 
 
   return (
-    <div className="bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] rounded-2xl relative flex flex-row items-center group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 my-4 sm:my-6 p-2 sm:p-2.5 gap-3 sm:gap-4">
+    <div ref={boxRef} className="bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] rounded-2xl relative flex flex-row items-center group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 my-4 sm:my-6 p-2 sm:p-2.5 gap-3 sm:gap-4">
       
       {/* 🖼️ ฝั่งซ้าย: ภาพร้านค้า (สัดส่วน 1:1) */}
       <div className="w-[120px] sm:w-[140px] md:w-[150px] aspect-square relative shrink-0 overflow-hidden bg-slate-100 rounded-xl shadow-xs border border-slate-100 flex items-center justify-center">
@@ -108,7 +174,7 @@ const PartnerSupportBox = () => {
          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100/80">
             <button 
               onClick={handleContactClick}
-              className="flex-1 min-w-[120px] px-3 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065A96] hover:to-[#0870B8] text-white font-bold py-2 rounded-lg shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 border border-[#0870B8]/20"
+              className="flex-1 min-w-[120px] px-3 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065A96] hover:to-[#0870B8] text-white font-bold py-2 rounded-lg shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 border border-[#0870B8]/20 cursor-pointer"
             >
               <Phone size={14} className="animate-pulse shrink-0" /> 
               <span className="tracking-wide text-xs whitespace-nowrap">โทรติดต่อทันที</span>
@@ -116,8 +182,8 @@ const PartnerSupportBox = () => {
 
             <div className="flex items-center gap-2 shrink-0">
               <button 
-                onClick={() => partner.lineUrl ? window.open(partner.lineUrl, '_blank') : showToast('ร้านค้านี้ยังไม่ได้ระบุลิงก์ LINE ติดต่อ', 'info')} 
-                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.lineUrl ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                onClick={handleLineClick} 
+                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all cursor-pointer ${partner.lineUrl ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.lineUrl ? "ติดต่อผ่าน LINE" : "ยังไม่มีข้อมูล LINE"}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
@@ -126,8 +192,8 @@ const PartnerSupportBox = () => {
               </button>
 
               <button 
-                onClick={() => partner.messengerUrl ? window.open(partner.messengerUrl, '_blank') : showToast('ร้านค้านี้ยังไม่ได้ระบุลิงก์ Messenger ติดต่อ', 'info')} 
-                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all ${partner.messengerUrl ? 'bg-[#0084FF] hover:bg-[#0073e6]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                onClick={handleMessengerClick} 
+                className={`w-9 h-9 text-white rounded-lg flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition-all cursor-pointer ${partner.messengerUrl ? 'bg-[#0084FF] hover:bg-[#0073e6]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 title={partner.messengerUrl ? "ติดต่อผ่าน Messenger" : "ยังไม่มีข้อมูล Messenger"}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
