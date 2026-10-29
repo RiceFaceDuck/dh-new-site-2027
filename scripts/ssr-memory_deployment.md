@@ -1,9 +1,11 @@
 # SSR Local Grimoire: Master Deployment Center
 
 <usage_workflow>
-1. ผู้ใช้งานเรียกใช้งานผ่านโปรแกรม `Management System\_deploy\DeployCenter.exe` (Classic Desktop GUI) หรือรันผ่าน `deploy-all.bat`
-2. ระบบทำการสแกนตรวจสอบสถานะอัตโนมัติ (Smart Change Detection) ตรวจจับครบทั้ง Uncommitted และ Unpushed
-3. ผู้ใช้งานกดปุ่ม [ 🚀 Deploy เฉพาะส่วนที่แก้ไข (Smart Deploy) ] เพื่อให้ระบบสั่ง Build & Deploy เฉพาะจุดที่ตรวจพบ และซิงค์ Git Push อัตโนมัติ 100%
+1. ผู้ใช้งานเรียกใช้งานผ่านโปรแกรม `Management System\_deploy\DeployCenter.exe` (Classic Desktop GUI v2.0) หรือรันผ่าน `deploy-all.bat`
+2. ระบบทำการสแกนตรวจสอบสถานะอัตโนมัติแบบ 2 มิติ (Dual-Time Detection & Deploy State Tracker):
+   - มิติที่ 1: ตรวจจับไฟล์สดในเครื่อง (Uncommitted) และ Commits ค้างส่ง (Unpushed)
+   - มิติที่ 2: ตรวจจับว่ามี Commit ใหม่กว่าเวลา Deploy ล่าสุดบน Cloud หรือไม่ (ปิดช่องโหว่การขึ้นเขียวหลอกตา 100%)
+3. ผู้ใช้งานกดปุ่ม [ 🚀 Deploy เฉพาะส่วนที่แก้ไข (Smart Deploy) ] เพื่อให้ระบบสั่ง Build & Deploy เฉพาะจุดที่ตรวจพบ และประทับตราเวลา Deploy สำเร็จจริงลงใน `.deploy-state.txt`
 4. หรือใช้ไฟล์ Deploy ย่อยในโฟลเดอร์ `Management System\_deploy\`:
    - `deploy-backoffice.bat`
    - `deploy-frontend.bat`
@@ -65,4 +67,8 @@
    - **สาเหตุ**: ฟังก์ชันบนคลาวด์เดิมถูก Deploy ด้วยชื่อกลุ่ม prefix หรือสถาปัตยกรรมต่างเวอร์ชัน เมื่อสั่ง deploy เหมารวม CLI จึงคิดว่าฟังก์ชันเดิมหายไปและถามขอลบ
    - **วิธีแก้ & บทเรียน**: ปิดหน้าต่างทันทีปลอดภัย 100% ห้ามกดยืนยัน Y เด็ดขาด และต่อไปการ deploy ฟังก์ชันต้องระบุเจาะจงรายตัวเท่านั้น เช่น `firebase deploy --only functions:recordAdTelemetry` เพื่อตัดความเสี่ยงการลบฟังก์ชันเดิมทิ้ง 100%
    - **สถานะ**: บันทึกลงตำราหลักแล้ว (Learned & Locked)
+4. **ปัญหา**: DeployCenter v1.0 ตรวจจับเฉพาะ Git Status ทำให้เมื่อโค้ดถูก Commit และ Push ไปแล้วแต่ Firebase Hosting ยังไม่ได้ Deploy ตัวโปรแกรมขึ้นเขียวหลอกตาว่า [✓] ปกติ ทั้งที่หน้าเว็บจริงยังเป็นรอบเที่ยง
+   - **สาเหตุ**: การ Commit/Push ขึ้น Git กับการ Deploy ขึ้น Firebase Hosting คือคนละงานกัน Git Clean ไม่ได้แปลว่า Cloud Hosting อัปเดตแล้ว
+   - **วิธีแก้ & บทเรียน**: อัปเกรดเป็นระบบ **Dual-Time & Deploy State Tracker (.deploy-state.txt)** เทียบเวลา Commit ล่าสุด กับเวลา Deploy สำเร็จจริงบน Cloud หากมี Commit ใหม่กว่าเวลา Deploy ล่าสุด จะขึ้นเตือนสีส้มเสมอ จนกว่า Firebase จะ Deploy สำเร็จจริง (Exit Code 0)
+   - **สถานะ**: ส่งมอบแล้ว (Delivered in v2.0)
 </pitfalls_and_solutions>

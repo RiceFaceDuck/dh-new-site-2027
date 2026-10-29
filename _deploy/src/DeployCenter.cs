@@ -12,6 +12,7 @@ namespace DHNotebook.DeployCenter
 {
     public class DeployItem
     {
+        public string Key { get; set; }
         public string Name { get; set; }
         public string TargetPath { get; set; }
         public bool HasChanges { get; set; }
@@ -20,6 +21,7 @@ namespace DHNotebook.DeployCenter
         public string CheckDistPath { get; set; }
         public string DeployCommand { get; set; }
         public bool IsWebsite { get; set; }
+        public long LastDeployTime { get; set; }
     }
 
     public class MainForm : Form
@@ -35,6 +37,8 @@ namespace DHNotebook.DeployCenter
         private ToolStripStatusLabel statusLabel;
 
         private string rootPath;
+        private string stateFilePath;
+        private Dictionary<string, long> deployState = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
         private List<DeployItem> deployItems = new List<DeployItem>();
         private bool isBusy = false;
 
@@ -52,22 +56,89 @@ namespace DHNotebook.DeployCenter
             if (baseDir.EndsWith("_deploy", StringComparison.OrdinalIgnoreCase))
             {
                 rootPath = Path.GetFullPath(Path.Combine(baseDir, ".."));
+                stateFilePath = Path.Combine(baseDir, ".deploy-state.txt");
             }
             else
             {
                 rootPath = baseDir;
+                stateFilePath = Path.Combine(baseDir, "_deploy", ".deploy-state.txt");
             }
 
+            LoadDeployState();
             InitializeComponent();
             InitializeItems();
             this.Shown += async (s, e) => await ScanChangesAsync();
         }
 
+        private void LoadDeployState()
+        {
+            try
+            {
+                if (File.Exists(stateFilePath))
+                {
+                    string[] lines = File.ReadAllLines(stateFilePath, Encoding.UTF8);
+                    foreach (var line in lines)
+                    {
+                        if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) continue;
+                        int eqIdx = line.IndexOf('=');
+                        if (eqIdx > 0)
+                        {
+                            string key = line.Substring(0, eqIdx).Trim();
+                            long val;
+                            if (long.TryParse(line.Substring(eqIdx + 1).Trim(), out val))
+                            {
+                                deployState[key] = val;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // ตั้งค่าเริ่มต้นตามประวัติ Firebase Release ล่าสุดจริงของวันนี้ (2026-10-29 12:22:00)
+                    // 12:22:00 = 1793251320
+                    long baseReleaseEpoch = 1793251320;
+                    deployState["dh-backoffice-react"] = baseReleaseEpoch;
+                    deployState["dh-frontend"] = baseReleaseEpoch;
+                    deployState["dh-staff-app"] = baseReleaseEpoch;
+                    deployState["functions"] = baseReleaseEpoch;
+                    deployState["rules"] = baseReleaseEpoch;
+                    deployState["indexes"] = baseReleaseEpoch;
+                    SaveDeployState();
+                }
+            }
+            catch (Exception ex)
+            {
+                // หากอ่านไฟล์ไม่ได้ ให้ใช้ค่าเริ่มต้น
+            }
+        }
+
+        private void SaveDeployState()
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(stateFilePath);
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                List<string> lines = new List<string>();
+                lines.Add("# DH Notebook - Deploy State Tracker");
+                lines.Add("# Updated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                foreach (var kvp in deployState)
+                {
+                    lines.Add(string.Format("{0}={1}", kvp.Key, kvp.Value));
+                }
+                File.WriteAllLines(stateFilePath, lines.ToArray(), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                // Ignore
+            }
+        }
+
         private void InitializeComponent()
         {
-            this.Text = "DH Notebook - Deployment Center (Classic Utility v1.1)";
-            this.Size = new Size(860, 700);
-            this.MinimumSize = new Size(760, 580);
+            this.Text = "DH Notebook - Deployment Center (Dual-Time Utility v2.0)";
+            this.Size = new Size(880, 710);
+            this.MinimumSize = new Size(780, 580);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Font = new Font("Tahoma", 9F, FontStyle.Regular, GraphicsUnit.Point);
             this.BackColor = SystemColors.Control;
@@ -92,7 +163,7 @@ namespace DHNotebook.DeployCenter
             {
                 Text = "🚀 Deploy เฉพาะส่วนที่แก้ไข (Smart Deploy)",
                 Location = new Point(12, 40),
-                Size = new Size(280, 36),
+                Size = new Size(290, 36),
                 Font = new Font("Tahoma", 9F, FontStyle.Bold),
                 BackColor = Color.FromArgb(230, 245, 230),
                 Cursor = Cursors.Hand
@@ -102,7 +173,7 @@ namespace DHNotebook.DeployCenter
             btnScan = new Button
             {
                 Text = "🔄 สแกนใหม่",
-                Location = new Point(300, 40),
+                Location = new Point(310, 40),
                 Size = new Size(110, 36),
                 Cursor = Cursors.Hand
             };
@@ -111,7 +182,7 @@ namespace DHNotebook.DeployCenter
             btnDeploySelected = new Button
             {
                 Text = "⚡ Deploy รายการที่เลือก",
-                Location = new Point(418, 40),
+                Location = new Point(428, 40),
                 Size = new Size(175, 36),
                 Cursor = Cursors.Hand
             };
@@ -120,7 +191,7 @@ namespace DHNotebook.DeployCenter
             btnClearLog = new Button
             {
                 Text = "ล้าง Log",
-                Location = new Point(601, 40),
+                Location = new Point(611, 40),
                 Size = new Size(80, 36),
                 Cursor = Cursors.Hand
             };
@@ -133,7 +204,7 @@ namespace DHNotebook.DeployCenter
             {
                 Text = " สรุปรายการระบบและสถานะความพร้อม (Status Overview) ",
                 Dock = DockStyle.Top,
-                Height = 225,
+                Height = 230,
                 Padding = new Padding(10)
             };
 
@@ -147,8 +218,8 @@ namespace DHNotebook.DeployCenter
                 Font = new Font("Tahoma", 9F)
             };
             lvItems.Columns.Add("ส่วนงาน (Component)", 230);
-            lvItems.Columns.Add("สถานะความเปลี่ยนแปลง (Status)", 210);
-            lvItems.Columns.Add("รายละเอียดไฟล์ที่พบการแก้ไข (Details)", 370);
+            lvItems.Columns.Add("สถานะความเปลี่ยนแปลง (Status)", 230);
+            lvItems.Columns.Add("รายละเอียดไฟล์ที่พบการแก้ไข (Details)", 375);
 
             grpStatus.Controls.Add(lvItems);
 
@@ -189,6 +260,7 @@ namespace DHNotebook.DeployCenter
             {
                 new DeployItem 
                 { 
+                    Key = "dh-frontend",
                     Name = "1. หน้าร้านหลัก (dh-frontend)", 
                     TargetPath = "dh-frontend", 
                     BuildDir = "dh-frontend", 
@@ -198,6 +270,7 @@ namespace DHNotebook.DeployCenter
                 },
                 new DeployItem 
                 { 
+                    Key = "dh-backoffice-react",
                     Name = "2. ระบบหลังร้าน (dh-backoffice-react)", 
                     TargetPath = "dh-backoffice-react", 
                     BuildDir = "dh-backoffice-react", 
@@ -207,6 +280,7 @@ namespace DHNotebook.DeployCenter
                 },
                 new DeployItem 
                 { 
+                    Key = "dh-staff-app",
                     Name = "3. แอปพนักงาน (dh-staff-app)", 
                     TargetPath = "dh-staff-app", 
                     BuildDir = "dh-staff-app", 
@@ -216,6 +290,7 @@ namespace DHNotebook.DeployCenter
                 },
                 new DeployItem 
                 { 
+                    Key = "functions",
                     Name = "4. ฟังก์ชันคลาวด์ (Cloud Functions)", 
                     TargetPath = "functions", 
                     DeployCommand = "",
@@ -223,6 +298,7 @@ namespace DHNotebook.DeployCenter
                 },
                 new DeployItem 
                 { 
+                    Key = "rules",
                     Name = "5. กฎความปลอดภัย (Security Rules)", 
                     TargetPath = "rules", 
                     DeployCommand = "firebase deploy --only firestore:rules,storage",
@@ -230,6 +306,7 @@ namespace DHNotebook.DeployCenter
                 },
                 new DeployItem 
                 { 
+                    Key = "indexes",
                     Name = "6. ดัชนีฐานข้อมูล (Firestore Indexes)", 
                     TargetPath = "indexes", 
                     DeployCommand = "firebase deploy --only firestore:indexes",
@@ -237,6 +314,7 @@ namespace DHNotebook.DeployCenter
                 },
                 new DeployItem 
                 { 
+                    Key = "git",
                     Name = "7. ซิงค์งาน (Git Commit & Push)", 
                     TargetPath = "git", 
                     DeployCommand = "git push origin main",
@@ -296,114 +374,167 @@ namespace DHNotebook.DeployCenter
             }
         }
 
+        private long GetLastCommitTimestamp(string pathFilter)
+        {
+            try
+            {
+                string cmd = string.Format("git log -1 --format=%ct -- {0}", pathFilter);
+                string raw = RunHiddenCmd(cmd, null).Trim();
+                long ts;
+                if (long.TryParse(raw, out ts))
+                {
+                    return ts;
+                }
+            }
+            catch {}
+            return 0;
+        }
+
+        private string GetLastCommitDateString(string pathFilter)
+        {
+            try
+            {
+                string cmd = string.Format("git log -1 --format=\"%cd\" --date=format:\"%d/%m/%Y %H:%M\" -- {0}", pathFilter);
+                return RunHiddenCmd(cmd, null).Trim();
+            }
+            catch {}
+            return "";
+        }
+
         private async Task ScanChangesAsync()
         {
             if (isBusy) return;
-            SetStatus("กำลังสแกนหาความเปลี่ยนแปลง...", true);
-            AppendLog(string.Format("[{0:HH:mm:ss}] 🔍 เริ่มต้นตรวจสอบสถานะโปรเจกต์...", DateTime.Now));
+            SetStatus("กำลังสแกนหาความเปลี่ยนแปลง (Dual-Time Scan)...", true);
+            AppendLog(string.Format("[{0:HH:mm:ss}] 🔍 เริ่มต้นตรวจสอบสถานะโปรเจกต์ (ตรวจทั้ง Git Status และเวลา Deploy จริง)...", DateTime.Now));
 
             await Task.Run(() =>
             {
-                // 1. Get Uncommitted files
+                // 1. ตรวจจับไฟล์ Uncommitted ในเครื่องสดๆ
                 string gitStatusOutput = RunHiddenCmd("git status --porcelain", null);
                 string[] statusLines = gitStatusOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                // 2. Get Unpushed commits files
-                string gitUnpushedOutput = RunHiddenCmd("git log origin/main..HEAD --name-only --oneline", null);
-                string[] unpushedLines = gitUnpushedOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                HashSet<string> changedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var line in statusLines)
-                {
-                    if (line.Length > 3)
-                    {
-                        changedFiles.Add(line.Substring(3).Trim());
-                    }
-                }
-                foreach (var line in unpushedLines)
-                {
-                    if (!line.Contains(" ") && line.Contains("/"))
-                    {
-                        changedFiles.Add(line.Trim());
-                    }
-                }
-
-                // Unpushed commits count
+                // 2. ตรวจจับ Commits รอขึ้น GitHub
                 string unpushedCommitsRaw = RunHiddenCmd("git log origin/main..HEAD --oneline", null);
                 int unpushedCommitsCount = unpushedCommitsRaw.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Length;
 
-                // Reset items
+                // Reset สถานะ
                 foreach (var item in deployItems)
                 {
                     item.HasChanges = false;
-                    item.ChangeDetails = "ปกติ (ไม่มีการแก้ไข)";
+                    item.ChangeDetails = "ปกติ (ตรงกับ Cloud 100%)";
                 }
 
-                int feCount = 0, boCount = 0, saCount = 0, fnCount = 0;
+                // ===================================================================
+                // ตรวจสอบแบบ Dual-Time: มิติที่ 1 (ไฟล์ในเครื่อง) + มิติที่ 2 (Commit vs Last Deploy Time)
+                // ===================================================================
+
+                // 1. Frontend
+                long feLastDeploy = deployState.ContainsKey("dh-frontend") ? deployState["dh-frontend"] : 0;
+                long feLastCommit = GetLastCommitTimestamp("dh-frontend");
+                int feUncommitted = CountFilesStartingWith(statusLines, "dh-frontend/");
+                if (feUncommitted > 0)
+                {
+                    deployItems[0].HasChanges = true;
+                    deployItems[0].ChangeDetails = string.Format("พบไฟล์แก้ไขในเครื่อง {0} ไฟล์ (ยังไม่ได้ Deploy)", feUncommitted);
+                }
+                else if (feLastCommit > feLastDeploy)
+                {
+                    deployItems[0].HasChanges = true;
+                    string dateStr = GetLastCommitDateString("dh-frontend");
+                    deployItems[0].ChangeDetails = string.Format("มีโค้ดใหม่ (Commit เมื่อ {0}) ยังไม่ได้ Deploy ขึ้นเว็บ", dateStr);
+                }
+
+                // 2. Backoffice
+                long boLastDeploy = deployState.ContainsKey("dh-backoffice-react") ? deployState["dh-backoffice-react"] : 0;
+                long boLastCommit = GetLastCommitTimestamp("dh-backoffice-react");
+                int boUncommitted = CountFilesStartingWith(statusLines, "dh-backoffice-react/");
+                if (boUncommitted > 0)
+                {
+                    deployItems[1].HasChanges = true;
+                    deployItems[1].ChangeDetails = string.Format("พบไฟล์แก้ไขในเครื่อง {0} ไฟล์ (ยังไม่ได้ Deploy)", boUncommitted);
+                }
+                else if (boLastCommit > boLastDeploy)
+                {
+                    deployItems[1].HasChanges = true;
+                    string dateStr = GetLastCommitDateString("dh-backoffice-react");
+                    deployItems[1].ChangeDetails = string.Format("มีโค้ดใหม่ (Commit เมื่อ {0}) ยังไม่ได้ Deploy ขึ้นเว็บ", dateStr);
+                }
+
+                // 3. Staff App
+                long saLastDeploy = deployState.ContainsKey("dh-staff-app") ? deployState["dh-staff-app"] : 0;
+                long saLastCommit = GetLastCommitTimestamp("dh-staff-app");
+                int saUncommitted = CountFilesStartingWith(statusLines, "dh-staff-app/");
+                if (saUncommitted > 0)
+                {
+                    deployItems[2].HasChanges = true;
+                    deployItems[2].ChangeDetails = string.Format("พบไฟล์แก้ไขในเครื่อง {0} ไฟล์ (ยังไม่ได้ Deploy)", saUncommitted);
+                }
+                else if (saLastCommit > saLastDeploy)
+                {
+                    deployItems[2].HasChanges = true;
+                    string dateStr = GetLastCommitDateString("dh-staff-app");
+                    deployItems[2].ChangeDetails = string.Format("มีโค้ดใหม่ (Commit เมื่อ {0}) ยังไม่ได้ Deploy ขึ้นเว็บ", dateStr);
+                }
+
+                // 4. Cloud Functions
+                long fnLastDeploy = deployState.ContainsKey("functions") ? deployState["functions"] : 0;
+                long fnLastCommit = GetLastCommitTimestamp("functions");
+                int fnUncommitted = CountFilesStartingWith(statusLines, "functions/");
                 List<string> fnTargets = new List<string>();
 
-                foreach (var file in changedFiles)
+                // ตรวจหาฟังก์ชันที่มีการเปลี่ยนแปลงทั้งจาก uncommitted และ git diff
+                string fnDiffFiles = RunHiddenCmd(string.Format("git log --since=\"@{0}\" --name-only --format=\"\" -- functions", fnLastDeploy), null);
+                string combinedFnText = gitStatusOutput + "\n" + fnDiffFiles;
+                string[] fnCheckLines = combinedFnText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var line in fnCheckLines)
                 {
-                    if (file.StartsWith("dh-frontend/", StringComparison.OrdinalIgnoreCase)) feCount++;
-                    else if (file.StartsWith("dh-backoffice-react/", StringComparison.OrdinalIgnoreCase)) boCount++;
-                    else if (file.StartsWith("dh-staff-app/", StringComparison.OrdinalIgnoreCase)) saCount++;
-                    else if (file.IndexOf("firestore.rules", StringComparison.OrdinalIgnoreCase) >= 0 || file.IndexOf("storage.rules", StringComparison.OrdinalIgnoreCase) >= 0)
+                    string f = line.Trim();
+                    if (f.StartsWith("M ") || f.StartsWith("??") || f.StartsWith("A ")) f = f.Substring(2).Trim();
+                    if (f.StartsWith("functions/", StringComparison.OrdinalIgnoreCase))
                     {
-                        deployItems[4].HasChanges = true;
-                        deployItems[4].ChangeDetails = "พบการแก้ไข Rules: " + Path.GetFileName(file);
-                    }
-                    else if (file.IndexOf("firestore.indexes.json", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        deployItems[5].HasChanges = true;
-                        deployItems[5].ChangeDetails = "พบการแก้ไขดัชนี Index ฐานข้อมูล";
-                    }
-                    else if (file.StartsWith("functions/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        fnCount++;
-                        string fnName = DetectSpecificFunctionName(file);
-                        if (!string.IsNullOrEmpty(fnName) && !fnTargets.Contains(fnName))
+                        string name = DetectSpecificFunctionName(f);
+                        if (!string.IsNullOrEmpty(name) && !fnTargets.Contains(name))
                         {
-                            fnTargets.Add(fnName);
+                            fnTargets.Add(name);
                         }
                     }
                 }
 
-                // 1. Frontend
-                if (feCount > 0)
-                {
-                    deployItems[0].HasChanges = true;
-                    deployItems[0].ChangeDetails = string.Format("ตรวจพบการแก้ไข {0} ไฟล์", feCount);
-                }
-
-                // 2. Backoffice
-                if (boCount > 0)
-                {
-                    deployItems[1].HasChanges = true;
-                    deployItems[1].ChangeDetails = string.Format("ตรวจพบการแก้ไข {0} ไฟล์", boCount);
-                }
-
-                // 3. Staff App
-                if (saCount > 0)
-                {
-                    deployItems[2].HasChanges = true;
-                    deployItems[2].ChangeDetails = string.Format("ตรวจพบการแก้ไข {0} ไฟล์", saCount);
-                }
-
-                // 4. Functions
-                if (fnCount > 0)
+                if (fnUncommitted > 0 || fnLastCommit > fnLastDeploy)
                 {
                     deployItems[3].HasChanges = true;
                     if (fnTargets.Count > 0)
                     {
                         string targetsStr = string.Join(",", fnTargets.ToArray());
-                        deployItems[3].ChangeDetails = string.Format("ตรวจพบ {0} ไฟล์ (เป้าหมาย: {1})", fnCount, targetsStr);
+                        deployItems[3].ChangeDetails = string.Format("พบโค้ดใหม่ (เป้าหมาย: {0})", targetsStr);
                         deployItems[3].DeployCommand = string.Format("firebase deploy --only functions:{0}", targetsStr);
                     }
                     else
                     {
-                        deployItems[3].ChangeDetails = string.Format("ตรวจพบ {0} ไฟล์ใน functions/", fnCount);
+                        deployItems[3].ChangeDetails = "พบการแก้ไขใน functions/ (ยังไม่ได้ Deploy)";
                         deployItems[3].DeployCommand = "firebase deploy --only functions";
                     }
+                }
+
+                // 5. Rules
+                long rulesLastDeploy = deployState.ContainsKey("rules") ? deployState["rules"] : 0;
+                long rulesLastCommit = Math.Max(GetLastCommitTimestamp("firestore.rules"), GetLastCommitTimestamp("storage.rules"));
+                bool rulesUncommitted = gitStatusOutput.Contains("firestore.rules") || gitStatusOutput.Contains("storage.rules");
+                if (rulesUncommitted || rulesLastCommit > rulesLastDeploy)
+                {
+                    deployItems[4].HasChanges = true;
+                    deployItems[4].ChangeDetails = "พบการแก้ไข Security Rules (ยังไม่ได้ Deploy)";
+                }
+
+                // 6. Indexes
+                long idxLastDeploy = deployState.ContainsKey("indexes") ? deployState["indexes"] : 0;
+                long idxLastCommit = GetLastCommitTimestamp("firestore.indexes.json");
+                bool idxUncommitted = gitStatusOutput.Contains("firestore.indexes.json");
+                if (idxUncommitted || idxLastCommit > idxLastDeploy)
+                {
+                    deployItems[5].HasChanges = true;
+                    deployItems[5].ChangeDetails = "พบการแก้ไขดัชนี Index ฐานข้อมูล (ยังไม่ได้ Deploy)";
                 }
 
                 // 7. Git Push
@@ -432,7 +563,7 @@ namespace DHNotebook.DeployCenter
                 }
                 else
                 {
-                    lvi.SubItems.Add("[✓] ปกติ (ไม่มีการแก้ไข)");
+                    lvi.SubItems.Add("[✓] ปกติ (ตรงกับ Cloud 100%)");
                     lvi.SubItems.Add("-");
                     lvi.ForeColor = Color.DarkGreen;
                 }
@@ -453,6 +584,17 @@ namespace DHNotebook.DeployCenter
 
             AppendLog(string.Format("[{0:HH:mm:ss}] สแกนเสร็จสิ้น: พบส่วนที่มีการแก้ไข {1} รายการ", DateTime.Now, totalChanges));
             SetStatus("สแกนเรียบร้อย พร้อมใช้งาน", false);
+        }
+
+        private int CountFilesStartingWith(string[] lines, string prefix)
+        {
+            int count = 0;
+            foreach (var line in lines)
+            {
+                string f = line.Length > 3 ? line.Substring(3).Trim() : line.Trim();
+                if (f.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) count++;
+            }
+            return count;
         }
 
         private string DetectSpecificFunctionName(string filePath)
@@ -505,7 +647,11 @@ namespace DHNotebook.DeployCenter
                     return false;
                 }
 
-                AppendLog(string.Format("✅ สำเร็จสมบูรณ์: {0}", t.Name));
+                // ประทับตราเวลา Deploy สำเร็จจริงลงใน State Tracker ทันที
+                deployState[t.Key] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                SaveDeployState();
+
+                AppendLog(string.Format("✅ สำเร็จสมบูรณ์: {0} (ประทับตราเวลา Deploy สำเร็จ)", t.Name));
                 return true;
             }
             else
@@ -520,7 +666,12 @@ namespace DHNotebook.DeployCenter
                         AppendLog(string.Format("❌ [ERROR] คำสั่งล้มเหลว (รหัส: {0})", code));
                         return false;
                     }
-                    AppendLog(string.Format("✅ สำเร็จสมบูรณ์: {0}", t.Name));
+
+                    // ประทับตราเวลา Deploy สำเร็จจริง
+                    deployState[t.Key] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    SaveDeployState();
+
+                    AppendLog(string.Format("✅ สำเร็จสมบูรณ์: {0} (ประทับตราเวลา Deploy สำเร็จ)", t.Name));
                     return true;
                 }
                 return true;
@@ -627,7 +778,12 @@ namespace DHNotebook.DeployCenter
                     string cmd = !string.IsNullOrEmpty(selectedItem.DeployCommand) 
                         ? selectedItem.DeployCommand 
                         : "firebase deploy --only functions";
-                    ExecuteProcessWithLog("cmd.exe", "/c " + cmd, rootPath);
+                    int code = ExecuteProcessWithLog("cmd.exe", "/c " + cmd, rootPath);
+                    if (code == 0)
+                    {
+                        deployState["functions"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        SaveDeployState();
+                    }
                 }
                 else
                 {

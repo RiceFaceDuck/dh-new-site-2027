@@ -1,0 +1,8 @@
+# DH Notebook - Deploy State Tracker
+# Synchronized with Firebase Hosting Releases (2026-10-29 12:22:00)
+dh-backoffice-react=1793251320
+dh-frontend=1793251332
+dh-staff-app=1793251302
+functions=1793251320
+rules=1793251320
+indexes=1793251320
