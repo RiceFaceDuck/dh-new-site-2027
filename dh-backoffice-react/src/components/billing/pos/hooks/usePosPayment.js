@@ -122,27 +122,31 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     const totalDiscount = manualDiscount + promoDiscount;
     
     // 🧮 Clean Separation of Calculations (VAT 7% & Shipping Correction)
-    const baseTotal = Math.max(0, itemSubTotal - totalDiscount) + otherFeeAmount;
+    // 🛡️ Post-Tax/Shipping Adjustment: otherFeeAmount is applied at the very end so it does NOT distort taxable base
+    const baseTotal = Math.max(0, itemSubTotal - totalDiscount);
     const isVatOnShipping = Boolean(activeTab?.vatOnShipping);
     const taxableAmount = baseTotal + (isVatOnShipping ? shippingFee : 0);
     const vatType = activeTab?.vatType || 'exempt';
 
     let vatAmount = 0;
-    let netTotal = 0;
+    let preOtherFeeTotal = 0;
 
     if (vatType === 'included') {
         // VAT 7% extracted: (taxableAmount * 7 / 107). Net total is baseTotal + shippingFee. Zero double-counting of shipping!
         vatAmount = Math.round((taxableAmount * 7 / 107) * 100) / 100;
-        netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
+        preOtherFeeTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
     } else if (vatType === 'excluded') {
         // VAT 7% added: (taxableAmount * 0.07). Net total is baseTotal + shippingFee + vatAmount. Zero dropping of shipping fee!
         vatAmount = Math.round((taxableAmount * 0.07) * 100) / 100;
-        netTotal = Math.round((baseTotal + shippingFee + vatAmount) * 100) / 100;
+        preOtherFeeTotal = Math.round((baseTotal + shippingFee + vatAmount) * 100) / 100;
     } else {
         // 'exempt' or 'none': VAT is 0. Net total is baseTotal + shippingFee.
         vatAmount = 0;
-        netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
+        preOtherFeeTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
     }
+
+    // 🎯 ยอดอื่นๆ (+/-) คิดท้ายสุด (หลังภาษี VAT และค่าส่ง)
+    const netTotal = Math.max(0, Math.round((preOtherFeeTotal + otherFeeAmount) * 100) / 100);
 
     let walletUsed = sanitizeNum(activeTab?.walletUsed);
     if (activeTab?.useWallet && activeTab?.customer) {

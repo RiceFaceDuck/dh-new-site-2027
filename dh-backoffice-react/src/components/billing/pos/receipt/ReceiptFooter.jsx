@@ -110,18 +110,6 @@ export default function ReceiptFooter({
                                     </td>
                                 </tr>
                                 <tr className="h-5">
-                                    <td className="text-slate-700 font-bold">{_otherFeeName || 'ยอดอื่นๆ'}</td>
-                                    <td className="text-right font-black text-slate-950">
-                                        {_otherFeeAmount > 0 ? `+ ${_otherFeeAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : '0.00'}
-                                    </td>
-                                </tr>
-                                <tr className="h-5">
-                                    <td className="text-slate-700 font-bold">หักยอดค้าง</td>
-                                    <td className="text-right font-black text-slate-950">
-                                        {_walletUsed > 0 ? `- ${_walletUsed.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : '0.00'}
-                                    </td>
-                                </tr>
-                                <tr className="h-5">
                                     <td className="text-slate-700 font-bold">
                                         ค่าส่ง {_vatOnShipping ? '(รวม VAT)' : ''}
                                     </td>
@@ -135,6 +123,22 @@ export default function ReceiptFooter({
                                     </td>
                                     <td className="text-right font-black text-blue-950 pr-1 text-[11.5px]">
                                         {vatAmount > 0 ? `+ ${vatAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : '0.00'}
+                                    </td>
+                                </tr>
+                                <tr className="h-5">
+                                    <td className={`font-bold ${_otherFeeAmount < 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+                                        {_otherFeeName || (_otherFeeAmount < 0 ? 'หักยอดอื่นๆ' : 'ยอดอื่นๆ')}
+                                    </td>
+                                    <td className={`text-right font-black ${_otherFeeAmount < 0 ? 'text-rose-600' : 'text-slate-950'}`}>
+                                        {_otherFeeAmount !== 0 
+                                            ? `${_otherFeeAmount > 0 ? '+ ' : '- '}${Math.abs(_otherFeeAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}` 
+                                            : '0.00'}
+                                    </td>
+                                </tr>
+                                <tr className="h-5">
+                                    <td className="text-slate-700 font-bold">หักยอดค้าง</td>
+                                    <td className="text-right font-black text-slate-950">
+                                        {_walletUsed > 0 ? `- ${_walletUsed.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : '0.00'}
                                     </td>
                                 </tr>
                                 <tr className="border-t-2 border-slate-900 bg-emerald-100/90 border-b border-emerald-300">

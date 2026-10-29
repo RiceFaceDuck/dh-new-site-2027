@@ -75,7 +75,7 @@ export default function DiscountSettings({
             <div>
                 <div className="flex items-center justify-between h-6 mb-1.5">
                     <label className={labelClass || "text-xs font-bold text-white/90 mb-1 flex items-center gap-1.5 uppercase tracking-wider"}>
-                        <FileText size={12} className="text-indigo-400"/> ยอดอื่นๆ (+/-)
+                        <FileText size={12} className="text-indigo-400"/> ยอดอื่นๆ (+/-) คิดท้ายสุด
                     </label>
                 </div>
 

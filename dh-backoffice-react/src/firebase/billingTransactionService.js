@@ -132,6 +132,7 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   });
 
   const shippingCost = Number(orderData.summary?.shippingFee ?? orderData.shippingFee ?? 0);
+  const otherFeeAmount = Number(orderData.summary?.otherFeeAmount ?? orderData.otherFeeAmount ?? 0);
   const rawVatType = (orderData.summary?.vatType || orderData.vatType || '').toLowerCase();
   const isVatOnShipping = Boolean(orderData.vatOnShipping ?? orderData.summary?.vatOnShipping ?? false);
   const isExcludedVat = rawVatType === 'excluded';
@@ -153,7 +154,7 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   const calculatedPrices = calculateNetTotal({
     items: verifiedItems,
     shippingCost: taxableShippingCost,
-    otherFeeAmount: Number(orderData.summary?.otherFeeAmount ?? orderData.otherFeeAmount ?? 0),
+    otherFeeAmount: 0, // 🛡️ Post-Tax/Shipping: do not include in taxable base for calculateVat
     discountAmount: discountToPass,
     promotions: orderData.appliedPromotions || []
   });
@@ -164,9 +165,11 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   
   const vatResult = calculateVat(calculatedPrices.netTotal, vatTypeMapped);
   // 🛡️ Shipping Fee Integrity: When shipping is not taxed, it was excluded from calculateNetTotal, so it must always be added back to finalTotal across all VAT modes
-  const finalSecureNetTotal = (!isVatOnShipping)
+  const baseSecureNetTotal = (!isVatOnShipping)
     ? Math.round((vatResult.finalTotal + shippingCost) * 100) / 100
     : vatResult.finalTotal;
+  // 🎯 Post-Tax/Shipping Adjustment: ยอดอื่นๆ (+/-) คิดท้ายสุด
+  const finalSecureNetTotal = Math.max(0, Math.round((baseSecureNetTotal + otherFeeAmount) * 100) / 100);
 
   const reportedNetTotal = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || 0);
   if (statusLower === 'paid' && Math.abs(finalSecureNetTotal - reportedNetTotal) > 2) {

@@ -42,10 +42,6 @@ export default function BillSummary({
                     <span>โปรโมชัน</span>
                     <span>{promoDiscount > 0 ? '-' : ''} ฿{(promoDiscount || 0).toLocaleString()}</span>
                 </div>
-                <div className={`flex justify-between items-center ${otherFeeAmount === 0 ? 'text-slate-500' : 'text-slate-800 font-semibold'}`}>
-                    <span>{activeTab?.otherFeeName || 'ยอดอื่นๆ'}</span>
-                    <span>{otherFeeAmount > 0 ? '+' : ''} ฿{(otherFeeAmount || 0).toLocaleString()}</span>
-                </div>
                 <div className={`flex justify-between items-center ${shippingFee > 0 ? 'text-slate-800 font-semibold' : 'text-slate-500'}`}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <span>ค่าจัดส่ง {shippingFee > 0 && activeTab?.vatOnShipping && '(VAT)'}</span>
@@ -87,6 +83,11 @@ export default function BillSummary({
                         )}
                     </div>
                     <span>{vatAmount > 0 ? '+' : ''} ฿{(vatAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                {/* 🎯 ยอดอื่นๆ (+/-) คิดท้ายสุด (หลัง VAT และค่าส่ง) */}
+                <div className={`flex justify-between items-center ${otherFeeAmount === 0 ? 'text-slate-500' : (otherFeeAmount < 0 ? 'text-rose-600 font-bold' : 'text-slate-800 font-semibold')}`}>
+                    <span>{activeTab?.otherFeeName || (otherFeeAmount < 0 ? 'หักยอดอื่นๆ' : 'ยอดอื่นๆ')}</span>
+                    <span>{otherFeeAmount !== 0 ? (otherFeeAmount > 0 ? '+ ' : '- ') : ''}฿{Math.abs(otherFeeAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className={`flex justify-between items-center pt-2 border-t border-slate-300/80 ${walletUsed > 0 ? 'text-blue-700 font-bold' : 'text-slate-500'}`}>
                     <span>หักจาก DH ค้างยอด</span>

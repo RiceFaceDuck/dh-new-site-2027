@@ -83,7 +83,8 @@ function processReceiptData(props) {
     const _vatType = data.vatType || vatType || 'exempt';
     const _vatOnShipping = !!data.vatOnShipping;
     const _vatRate = Number(data.vatRate || 7);
-    const _baseTotal = Math.max(0, _itemSubTotal - _manualDiscount - _promoDiscount + _otherFeeAmount);
+    // 🛡️ Post-Tax/Shipping Adjustment: do not include _otherFeeAmount in _baseTotal for VAT calculation
+    const _baseTotal = Math.max(0, _itemSubTotal - _manualDiscount - _promoDiscount);
 
     const vatBreakdown = canonical 
         ? canonical.vatBreakdown 
@@ -96,8 +97,8 @@ function processReceiptData(props) {
         });
 
     const _vatAmount = vatBreakdown.vatAmount;
-    // Canonical calculation or fallback draft preview: (_vatType === 'excluded' ? _vatAmount : 0)
-    const _netTotal = canonical ? canonical.netTotal : vatBreakdown.netTotal;
+    // Canonical calculation or fallback draft preview: other fees applied at the very end
+    const _netTotal = canonical ? canonical.netTotal : Math.max(0, Math.round((vatBreakdown.netTotal + _otherFeeAmount) * 100) / 100);
 
     // Freebies handling
     let finalItems = items ? [...items] : [];

@@ -144,7 +144,8 @@ export const calculateCanonicalTotals = (order) => {
     const vatOnShipping = Boolean(order.vatOnShipping || order.summary?.vatOnShipping);
     const vatRate = Number(order.vatRate || order.summary?.vatRate || 7);
 
-    const productNet = Math.max(0, subTotal - manualDiscount - promoDiscount + otherFees);
+    // 🛡️ Post-Tax/Shipping Adjustment: otherFees is applied after VAT & shipping to avoid distorting taxable base
+    const productNet = Math.max(0, subTotal - manualDiscount - promoDiscount);
     const vatBreakdown = calculateDetailedVat({
         productNet,
         shippingFee,
@@ -153,7 +154,7 @@ export const calculateCanonicalTotals = (order) => {
         vatRate
     });
 
-    const calculatedNet = vatBreakdown.netTotal;
+    const calculatedNet = Math.max(0, Math.round((vatBreakdown.netTotal + otherFees) * 100) / 100);
     const storedNet = Number(order.summary?.finalTotal ?? order.finalTotal ?? order.netTotal ?? order.summary?.netTotal ?? order.totals?.netTotal ?? order.totalAmount ?? 0);
 
     let finalNet = storedNet;
