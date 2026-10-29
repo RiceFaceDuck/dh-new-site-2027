@@ -54,8 +54,8 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
         {ad.phone && (
           <a
-            href={	el:${ad.phone}}
-            onClick={() => onContactClick(ad, 'phone_call', 	el:${ad.phone})}
+            href={`tel:${ad.phone}`}
+            onClick={() => onContactClick(ad, 'phone_call', `tel:${ad.phone}`)}
             className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
           >
             <Phone size={13} /> โทร: {ad.phone}
@@ -63,7 +63,7 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
         )}
         {ad.messengerUrl && (
           <a
-            href={ad.messengerUrl.startsWith('http') ? ad.messengerUrl : https://${ad.messengerUrl}}
+            href={ad.messengerUrl.startsWith('http') ? ad.messengerUrl : `https://${ad.messengerUrl}`}
             target="_blank"
             rel="noreferrer"
             onClick={() => onContactClick(ad, 'facebook_chat', ad.messengerUrl)}
@@ -74,7 +74,7 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
         )}
         {ad.lineUrl && (
           <a
-            href={ad.lineUrl.startsWith('http') ? ad.lineUrl : https://${ad.lineUrl}}
+            href={ad.lineUrl.startsWith('http') ? ad.lineUrl : `https://${ad.lineUrl}`}
             target="_blank"
             rel="noreferrer"
             onClick={() => onContactClick(ad, 'line_chat', ad.lineUrl)}

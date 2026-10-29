@@ -162,6 +162,7 @@ export const activateAdWithPrepaidQuota = async (userId, adId, adType, currentAd
       remainingViews: pricing.count,
       activePackageCost: safeCost,
       isQuotaExhausted: false,
+      autoRollover: true,
       updatedAt: serverTimestamp()
     });
 

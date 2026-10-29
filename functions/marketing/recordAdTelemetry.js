@@ -90,8 +90,8 @@ const calculateAdDeductions = (validAdMap, config = {}) => {
   for (const adId of Object.keys(validAdMap)) {
     const { ownerId, deltaViews, deltaClicks, data } = validAdMap[adId];
 
-    // โฆษณาที่ใช้ระบบ Prepaid โควต้าวิวจะจ่ายล่วงหน้าแล้ว ไม่ต้องหักซ้ำตอนเกิดวิว
-    const isPrepaid = data?.remainingViews !== undefined;
+    // โฆษณาที่ใช้ระบบ Prepaid หรือเปิด Auto-Rollover โควต้าวิวจะตัดจากแพ็กเกจล่วงหน้า ไม่ต้องหักซ้ำตอนเกิดวิว
+    const isPrepaid = data?.remainingViews !== undefined || data?.autoRollover === true;
 
     const clickDeduct = deltaClicks * costPerClick;
     const viewDeduct = isPrepaid ? 0 : ((deltaViews / impressionBatchSize) * costPerImpressionBatch);
@@ -190,25 +190,84 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
       const currentSpent = Number(adData.spentBudget || 0);
       const rawAdCost = (deltaClicks * costPerClick) + ((deltaViews / impressionBatchSize) * costPerImpressionBatch);
       const adCost = rawAdCost > 0 && rawAdCost < 0.01 ? Math.round(rawAdCost * 10000) / 10000 : Math.round(rawAdCost * 100) / 100;
-      const newSpent = Math.round((currentSpent + adCost) * 100) / 100;
 
       let isExhausted = false;
+
+      // 📦 จัดการโควต้าวิวคงเหลือสำหรับระบบ Prepaid & Auto-Rollover
+      const isPrepaid = adData.remainingViews !== undefined;
+      const prepaidCost = Number(config.adImpressionCost ?? 15);
+      const prepaidCount = Number(config.adImpressionCount ?? 100);
+      const isAutoRolloverAllowed = adData.autoRollover !== false; // เปิด Auto-Rollover เป็นค่าเริ่มต้น
+
+      let newRemaining = null;
+      let autoRolloverCost = 0;
+
+      if (isPrepaid) {
+        const curRemaining = Number(adData.remainingViews || 0);
+        const rem = curRemaining - deltaViews;
+
+        if (rem <= 0) {
+          if (isAutoRolloverAllowed && ownerId) {
+            const deficit = Math.abs(rem);
+            const cycles = deficit === 0 ? 1 : Math.ceil(deficit / prepaidCount) + (deficit % prepaidCount === 0 ? 1 : 0);
+            const requiredPts = cycles * prepaidCost;
+            const currentTotalDeduct = ownerDeductions[ownerId]?.totalDeduct || 0;
+            const availablePts = currentPoints - currentTotalDeduct;
+
+            if (availablePts >= requiredPts) {
+              autoRolloverCost = requiredPts;
+              newRemaining = (curRemaining + (cycles * prepaidCount)) - deltaViews;
+              isExhausted = false; // ต่อแพ็กเกจอัตโนมัติสำเร็จ ป้ายไม่ดับ!
+            } else {
+              newRemaining = 0;
+              isExhausted = true;
+            }
+          } else {
+            newRemaining = 0;
+            isExhausted = true;
+          }
+        } else {
+          newRemaining = rem;
+        }
+      } else if (adData.isActive !== false && ['APPROVED', 'ACTIVE'].includes(String(adData.status).toUpperCase())) {
+        // กรณี Legacy Active Ad (เช่น 43 ร้านเดิมในระบบที่ยังไม่มีฟิลด์ remainingViews)
+        // เมื่อมีวิวเข้ามา ให้ Auto-Enroll เข้าสู่ระบบโควต้าอัตโนมัติแบบเนียนๆ
+        if (isAutoRolloverAllowed && ownerId) {
+          const currentTotalDeduct = ownerDeductions[ownerId]?.totalDeduct || 0;
+          const availablePts = currentPoints - currentTotalDeduct;
+
+          if (availablePts >= prepaidCost) {
+            autoRolloverCost = prepaidCost;
+            newRemaining = Math.max(0, prepaidCount - deltaViews);
+            isExhausted = false;
+          } else {
+            if (currentPoints <= 0) isExhausted = true;
+          }
+        }
+      }
+
+      if (autoRolloverCost > 0 && ownerId) {
+        if (!ownerDeductions[ownerId]) {
+          ownerDeductions[ownerId] = { totalDeduct: 0, ads: [] };
+        }
+        ownerDeductions[ownerId].totalDeduct = Math.round((ownerDeductions[ownerId].totalDeduct + autoRolloverCost) * 100) / 100;
+        ownerDeductions[ownerId].ads.push({
+          adId,
+          deltaViews,
+          deltaClicks,
+          totalDeduct: autoRolloverCost,
+          type: 'AUTO_ROLLOVER'
+        });
+      }
+
+      const finalAdCost = adCost + autoRolloverCost;
+      const newSpent = Math.round((currentSpent + finalAdCost) * 100) / 100;
+
       if (creditLimit > 0 && newSpent >= creditLimit) {
         isExhausted = true;
       }
-      if (ownerId && (currentPoints <= 0 || (currentPoints - (ownerDeductions[ownerId]?.totalDeduct || 0)) <= 0)) {
+      if (ownerId && (currentPoints <= 0 || (currentPoints - (ownerDeductions[ownerId]?.totalDeduct || 0)) <= 0) && !isPrepaid && autoRolloverCost === 0) {
         isExhausted = true;
-      }
-
-      // 📦 จัดการโควต้าวิวคงเหลือสำหรับระบบ Prepaid
-      const isPrepaid = adData.remainingViews !== undefined;
-      let newRemaining = null;
-      if (isPrepaid) {
-        const curRemaining = Number(adData.remainingViews || 0);
-        newRemaining = Math.max(0, curRemaining - deltaViews);
-        if (newRemaining <= 0) {
-          isExhausted = true;
-        }
       }
 
       const adUpdate = {
@@ -218,11 +277,10 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
         updatedAt: FieldValue.serverTimestamp()
       };
 
-      if (isPrepaid) {
+      if (newRemaining !== null) {
         adUpdate.remainingViews = newRemaining;
-        if (newRemaining <= 0) {
-          adUpdate.isQuotaExhausted = true;
-        }
+        adUpdate.isQuotaExhausted = newRemaining <= 0;
+        adUpdate.autoRollover = isAutoRolloverAllowed;
       }
 
       if (isExhausted) {

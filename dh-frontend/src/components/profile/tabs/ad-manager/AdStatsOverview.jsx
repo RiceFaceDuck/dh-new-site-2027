@@ -1,4 +1,4 @@
-import { Wallet, Plus, Activity, TrendingUp, ShieldCheck, Sparkles, AlertTriangle } from 'lucide-react';
+import { Wallet, Plus, Activity, ShieldCheck, Sparkles, AlertTriangle } from 'lucide-react';
 
 const AdStatsOverview = ({ userCredit, onOpenForm }) => {
   // Helper สำหรับจัดฟอร์แมตตัวเลข
@@ -93,17 +93,6 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
           </a>
         </div>
       )}
-      
-      {/* ℹ️ Transparency Note */}
-      <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="text-[11px] text-slate-500 font-medium space-y-1">
-          <p>* <strong className="text-emerald-700">ค่ามองเห็น (Impression)</strong>: ระบบสะสมยอดวิวครบ 1,000 ครั้ง ถึงจะหักพอยต์โฆษณา 0.1 แต้ม (คิดเฉลี่ยตามจริง)</p>
-          <p>* <strong className="text-indigo-700">ค่าคลิก (Click)</strong>: หักพอยต์ 5 แต้มเมื่อมีคนกดดูโปรไฟล์หรือสินค้าของคุณ</p>
-        </div>
-        <div className="text-[10px] font-bold text-slate-600 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg w-max border border-slate-200/80 uppercase tracking-widest shadow-2xs">
-          <TrendingUp size={14} className="text-indigo-600"/> Real-time Smart Tracking
-        </div>
-      </div>
     </div>
   );
 };

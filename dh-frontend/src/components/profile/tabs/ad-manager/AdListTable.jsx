@@ -100,6 +100,11 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
               <div>
                 <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Views</span>
                 <span className="font-black text-slate-700 text-xs">{Number(ad.stats?.views || 0).toLocaleString()}</span>
+                {ad.remainingViews !== undefined && (
+                  <span className="block text-[9px] text-emerald-600 font-bold mt-0.5">
+                    เหลือ {Number(ad.remainingViews).toLocaleString()} วิว
+                  </span>
+                )}
               </div>
               <div>
                 <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Clicks</span>
@@ -206,6 +211,11 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
                   <span className="font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">
                     {Number(ad.stats?.views || 0).toLocaleString()}
                   </span>
+                  {ad.remainingViews !== undefined && (
+                    <div className="text-[10px] text-emerald-600 font-bold mt-1">
+                      เหลือ {Number(ad.remainingViews).toLocaleString()} วิว
+                    </div>
+                  )}
                 </td>
                 <td className="p-4 text-center">
                   <span className="font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
