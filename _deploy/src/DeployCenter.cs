@@ -16,8 +16,10 @@ namespace DHNotebook.DeployCenter
         public string TargetPath { get; set; }
         public bool HasChanges { get; set; }
         public string ChangeDetails { get; set; }
+        public string BuildDir { get; set; }
+        public string CheckDistPath { get; set; }
         public string DeployCommand { get; set; }
-        public string WorkingDir { get; set; }
+        public bool IsWebsite { get; set; }
     }
 
     public class MainForm : Form
@@ -46,7 +48,6 @@ namespace DHNotebook.DeployCenter
 
         public MainForm()
         {
-            // Determine Management System Root
             string baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
             if (baseDir.EndsWith("_deploy", StringComparison.OrdinalIgnoreCase))
             {
@@ -64,9 +65,9 @@ namespace DHNotebook.DeployCenter
 
         private void InitializeComponent()
         {
-            this.Text = "DH Notebook - Deployment Center (Classic Utility v1.0)";
-            this.Size = new Size(840, 680);
-            this.MinimumSize = new Size(740, 560);
+            this.Text = "DH Notebook - Deployment Center (Classic Utility v1.1)";
+            this.Size = new Size(860, 700);
+            this.MinimumSize = new Size(760, 580);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Font = new Font("Tahoma", 9F, FontStyle.Regular, GraphicsUnit.Point);
             this.BackColor = SystemColors.Control;
@@ -75,7 +76,7 @@ namespace DHNotebook.DeployCenter
             Panel pnlTop = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 85,
+                Height = 88,
                 Padding = new Padding(12, 10, 12, 6)
             };
 
@@ -90,8 +91,8 @@ namespace DHNotebook.DeployCenter
             btnSmartDeploy = new Button
             {
                 Text = "🚀 Deploy เฉพาะส่วนที่แก้ไข (Smart Deploy)",
-                Location = new Point(12, 38),
-                Size = new Size(270, 36),
+                Location = new Point(12, 40),
+                Size = new Size(280, 36),
                 Font = new Font("Tahoma", 9F, FontStyle.Bold),
                 BackColor = Color.FromArgb(230, 245, 230),
                 Cursor = Cursors.Hand
@@ -101,7 +102,7 @@ namespace DHNotebook.DeployCenter
             btnScan = new Button
             {
                 Text = "🔄 สแกนใหม่",
-                Location = new Point(290, 38),
+                Location = new Point(300, 40),
                 Size = new Size(110, 36),
                 Cursor = Cursors.Hand
             };
@@ -110,8 +111,8 @@ namespace DHNotebook.DeployCenter
             btnDeploySelected = new Button
             {
                 Text = "⚡ Deploy รายการที่เลือก",
-                Location = new Point(408, 38),
-                Size = new Size(170, 36),
+                Location = new Point(418, 40),
+                Size = new Size(175, 36),
                 Cursor = Cursors.Hand
             };
             btnDeploySelected.Click += async (s, e) => await RunDeploySelectedAsync();
@@ -119,7 +120,7 @@ namespace DHNotebook.DeployCenter
             btnClearLog = new Button
             {
                 Text = "ล้าง Log",
-                Location = new Point(586, 38),
+                Location = new Point(601, 40),
                 Size = new Size(80, 36),
                 Cursor = Cursors.Hand
             };
@@ -132,7 +133,7 @@ namespace DHNotebook.DeployCenter
             {
                 Text = " สรุปรายการระบบและสถานะความพร้อม (Status Overview) ",
                 Dock = DockStyle.Top,
-                Height = 220,
+                Height = 225,
                 Padding = new Padding(10)
             };
 
@@ -145,9 +146,9 @@ namespace DHNotebook.DeployCenter
                 MultiSelect = false,
                 Font = new Font("Tahoma", 9F)
             };
-            lvItems.Columns.Add("ส่วนงาน (Component)", 220);
+            lvItems.Columns.Add("ส่วนงาน (Component)", 230);
             lvItems.Columns.Add("สถานะความเปลี่ยนแปลง (Status)", 210);
-            lvItems.Columns.Add("รายละเอียดไฟล์ที่พบการแก้ไข (Details)", 360);
+            lvItems.Columns.Add("รายละเอียดไฟล์ที่พบการแก้ไข (Details)", 370);
 
             grpStatus.Controls.Add(lvItems);
 
@@ -186,13 +187,61 @@ namespace DHNotebook.DeployCenter
         {
             deployItems = new List<DeployItem>
             {
-                new DeployItem { Name = "1. หน้าร้านหลัก (dh-frontend)", TargetPath = "dh-frontend", WorkingDir = "dh-frontend", DeployCommand = "npm run build && firebase deploy --only hosting:dh-notebook-frontend" },
-                new DeployItem { Name = "2. ระบบหลังร้าน (dh-backoffice-react)", TargetPath = "dh-backoffice-react", WorkingDir = "dh-backoffice-react", DeployCommand = "npm run build && firebase deploy --only hosting:dhnotebook-work" },
-                new DeployItem { Name = "3. แอปพนักงาน (dh-staff-app)", TargetPath = "dh-staff-app", WorkingDir = "dh-staff-app", DeployCommand = "npm run build && firebase deploy --only hosting:dh-notebook-69f3b" },
-                new DeployItem { Name = "4. ฟังก์ชันคลาวด์ (Cloud Functions)", TargetPath = "functions", WorkingDir = "", DeployCommand = "" },
-                new DeployItem { Name = "5. กฎความปลอดภัย (Security Rules)", TargetPath = "rules", WorkingDir = "", DeployCommand = "firebase deploy --only firestore:rules,storage" },
-                new DeployItem { Name = "6. ดัชนีฐานข้อมูล (Firestore Indexes)", TargetPath = "indexes", WorkingDir = "", DeployCommand = "firebase deploy --only firestore:indexes" },
-                new DeployItem { Name = "7. ซิงค์งาน (Git Commit & Push)", TargetPath = "git", WorkingDir = "", DeployCommand = "git push origin main" }
+                new DeployItem 
+                { 
+                    Name = "1. หน้าร้านหลัก (dh-frontend)", 
+                    TargetPath = "dh-frontend", 
+                    BuildDir = "dh-frontend", 
+                    CheckDistPath = "dh-frontend/dist",
+                    DeployCommand = "firebase deploy --only hosting:dh-notebook-frontend",
+                    IsWebsite = true
+                },
+                new DeployItem 
+                { 
+                    Name = "2. ระบบหลังร้าน (dh-backoffice-react)", 
+                    TargetPath = "dh-backoffice-react", 
+                    BuildDir = "dh-backoffice-react", 
+                    CheckDistPath = "dh-backoffice-react/dist",
+                    DeployCommand = "firebase deploy --only hosting:dhnotebook-work",
+                    IsWebsite = true
+                },
+                new DeployItem 
+                { 
+                    Name = "3. แอปพนักงาน (dh-staff-app)", 
+                    TargetPath = "dh-staff-app", 
+                    BuildDir = "dh-staff-app", 
+                    CheckDistPath = "dh-staff-app/dist",
+                    DeployCommand = "firebase deploy --only hosting:dh-notebook-69f3b",
+                    IsWebsite = true
+                },
+                new DeployItem 
+                { 
+                    Name = "4. ฟังก์ชันคลาวด์ (Cloud Functions)", 
+                    TargetPath = "functions", 
+                    DeployCommand = "",
+                    IsWebsite = false
+                },
+                new DeployItem 
+                { 
+                    Name = "5. กฎความปลอดภัย (Security Rules)", 
+                    TargetPath = "rules", 
+                    DeployCommand = "firebase deploy --only firestore:rules,storage",
+                    IsWebsite = false
+                },
+                new DeployItem 
+                { 
+                    Name = "6. ดัชนีฐานข้อมูล (Firestore Indexes)", 
+                    TargetPath = "indexes", 
+                    DeployCommand = "firebase deploy --only firestore:indexes",
+                    IsWebsite = false
+                },
+                new DeployItem 
+                { 
+                    Name = "7. ซิงค์งาน (Git Commit & Push)", 
+                    TargetPath = "git", 
+                    DeployCommand = "git push origin main",
+                    IsWebsite = false
+                }
             };
         }
 
@@ -376,14 +425,14 @@ namespace DHNotebook.DeployCenter
                 if (item.HasChanges)
                 {
                     totalChanges++;
-                    lvi.SubItems.Add("🟡 ตรวจพบการแก้ไข");
+                    lvi.SubItems.Add("[!] ตรวจพบการแก้ไข");
                     lvi.SubItems.Add(item.ChangeDetails);
                     lvi.ForeColor = Color.DarkGoldenrod;
                     lvi.Font = new Font("Tahoma", 9F, FontStyle.Bold);
                 }
                 else
                 {
-                    lvi.SubItems.Add("🟢 ปกติ (ไม่มีการแก้ไข)");
+                    lvi.SubItems.Add("[✓] ปกติ (ไม่มีการแก้ไข)");
                     lvi.SubItems.Add("-");
                     lvi.ForeColor = Color.DarkGreen;
                 }
@@ -418,6 +467,64 @@ namespace DHNotebook.DeployCenter
             if (p.Contains("inventory/walletFunctions")) return "processWalletPayment,requestWithdrawal,calculate30DStatsCron,calculate30DStatsHttp,rebuildAllChunksManual,migrateHistoricalStats,syncProductToGas,verifyADAC001";
             if (p.Contains("auth/userClaimsTrigger")) return "userClaimsTrigger";
             return "";
+        }
+
+        private bool ExecuteDeployItem(DeployItem t)
+        {
+            if (t.TargetPath == "git") return true;
+
+            AppendLog(string.Format("\n>>> กำลังประมวลผล: {0}...", t.Name));
+
+            if (t.IsWebsite)
+            {
+                // [Step 1] Build ในโฟลเดอร์โปรเจกต์
+                string buildWorkDir = Path.Combine(rootPath, t.BuildDir);
+                AppendLog(string.Format("🔨 [1/2] กำลัง Build โครงสร้าง ({0})...", t.BuildDir));
+                int buildCode = ExecuteProcessWithLog("cmd.exe", "/c npm run build", buildWorkDir);
+                if (buildCode != 0)
+                {
+                    AppendLog(string.Format("❌ [ERROR] Build ล้มเหลว (รหัส: {0}) ยกเลิกการ Deploy เว็บไซต์นี้!", buildCode));
+                    return false;
+                }
+
+                // ตรวจสอบความถูกต้องของโฟลเดอร์ dist ก่อน deploy
+                string fullDistPath = Path.Combine(rootPath, t.CheckDistPath);
+                if (!Directory.Exists(fullDistPath))
+                {
+                    AppendLog(string.Format("❌ [ERROR] ไม่พบโฟลเดอร์ผลลัพธ์: {0} กรุณาตรวจสอบการ build", t.CheckDistPath));
+                    return false;
+                }
+                AppendLog(string.Format("✅ Build สำเร็จสมบูรณ์! พร้อมส่งไฟล์ขึ้น Hosting"));
+
+                // [Step 2] Deploy ขึ้น Firebase Hosting (รันที่ rootPath เสมอ เพื่อให้อิง firebase.json ได้ถูกต้อง 100%)
+                AppendLog(string.Format("🚀 [2/2] กำลังส่งไฟล์ขึ้น Firebase Hosting..."));
+                int deployCode = ExecuteProcessWithLog("cmd.exe", "/c " + t.DeployCommand, rootPath);
+                if (deployCode != 0)
+                {
+                    AppendLog(string.Format("❌ [ERROR] Firebase Hosting Deploy ล้มเหลว (รหัส: {0})", deployCode));
+                    return false;
+                }
+
+                AppendLog(string.Format("✅ สำเร็จสมบูรณ์: {0}", t.Name));
+                return true;
+            }
+            else
+            {
+                // Non-website (Functions, Rules, Indexes) รันที่ rootPath เสมอ
+                if (!string.IsNullOrEmpty(t.DeployCommand))
+                {
+                    AppendLog(string.Format("🚀 กำลังสั่งรัน: {0}...", t.DeployCommand));
+                    int code = ExecuteProcessWithLog("cmd.exe", "/c " + t.DeployCommand, rootPath);
+                    if (code != 0)
+                    {
+                        AppendLog(string.Format("❌ [ERROR] คำสั่งล้มเหลว (รหัส: {0})", code));
+                        return false;
+                    }
+                    AppendLog(string.Format("✅ สำเร็จสมบูรณ์: {0}", t.Name));
+                    return true;
+                }
+                return true;
+            }
         }
 
         private async Task RunSmartDeployAsync()
@@ -464,34 +571,7 @@ namespace DHNotebook.DeployCenter
                 // 2. Deploy Changed Targets
                 foreach (var t in targets)
                 {
-                    if (t.TargetPath == "git") continue;
-
-                    AppendLog(string.Format("\n>>> กำลังประมวลผล: {0}...", t.Name));
-                    if (!string.IsNullOrEmpty(t.DeployCommand))
-                    {
-                        string[] parts = t.DeployCommand.Split(new[] { "&&" }, StringSplitOptions.RemoveEmptyEntries);
-                        bool success = true;
-                        foreach (var part in parts)
-                        {
-                            string cmd = part.Trim();
-                            string exeName = "cmd.exe";
-                            string args = "/c " + cmd;
-                            string workingDir = string.IsNullOrEmpty(t.WorkingDir) ? rootPath : Path.Combine(rootPath, t.WorkingDir);
-
-                            int exitCode = ExecuteProcessWithLog(exeName, args, workingDir);
-                            if (exitCode != 0)
-                            {
-                                AppendLog(string.Format("❌ [ERROR] คำสั่งล้มเหลว (รหัส: {0}): {1}", exitCode, cmd));
-                                success = false;
-                                break;
-                            }
-                        }
-
-                        if (success)
-                        {
-                            AppendLog(string.Format("✅ เรียบร้อย: {0}", t.Name));
-                        }
-                    }
+                    ExecuteDeployItem(t);
                 }
 
                 // 3. Git Push
@@ -551,13 +631,7 @@ namespace DHNotebook.DeployCenter
                 }
                 else
                 {
-                    string[] parts = selectedItem.DeployCommand.Split(new[] { "&&" }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var part in parts)
-                    {
-                        string cmd = part.Trim();
-                        string workingDir = string.IsNullOrEmpty(selectedItem.WorkingDir) ? rootPath : Path.Combine(rootPath, selectedItem.WorkingDir);
-                        ExecuteProcessWithLog("cmd.exe", "/c " + cmd, workingDir);
-                    }
+                    ExecuteDeployItem(selectedItem);
                 }
             });
 
